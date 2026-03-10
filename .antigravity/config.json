@@ -1,0 +1,30 @@
+﻿{
+  "agents": {
+    "architect": {
+      "model": "claude-opus-4-5",
+      "mode": "plan",
+      "description": "Planification architecture Django"
+    },
+    "coder": {
+      "model": "claude-sonnet-4-5",
+      "mode": "build",
+      "description": "Generation code Django/HTMX"
+    },
+    "designer": {
+      "model": "claude-sonnet-4-5",
+      "mode": "build",
+      "description": "Generation templates HTML conformes au Design System"
+    },
+    "reviewer": {
+      "model": "claude-sonnet-4-5",
+      "mode": "plan",
+      "description": "Revue code, securite, tests"
+    }
+  },
+  "alwaysRead": [
+    "docs/PROMPT_V3_3.md",
+    "docs/PROMPT_V3_4.md",
+    "docs/DESIGN_SYSTEM.md"
+  ],
+  "autoContext": true
+}
