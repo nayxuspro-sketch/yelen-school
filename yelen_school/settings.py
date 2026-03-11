@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Apps YELEN SCHOOL
     'core',
     'accounts',
+    'licences',
     'etablissements',
 ]
 
@@ -55,6 +56,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'licences.middleware.LicenceCheckMiddleware',
+    'licences.middleware.LicenceLimitsMiddleware',
+    'licences.middleware.LicenceContextMiddleware',
 ]
 
 ROOT_URLCONF = 'yelen_school.urls'
@@ -87,7 +91,7 @@ DATABASES = {
         'NAME': os.environ.get('DB_NAME', 'yelen_school_db'),
         'USER': os.environ.get('DB_USER', 'yelen_user'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'yelen_password_dev'),
-        'HOST': os.environ.get('DB_HOST', 'db'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
@@ -113,7 +117,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fr-fr'
 
 TIME_ZONE = 'UTC'
 

@@ -11,58 +11,20 @@ Ce module gère le cœur commercial de l'application :
 
 Auteur: YELEN SCHOOL Team
 Date: Mars 2026
-Version: 1.1 - Corrigée
 """
 
 import hashlib
 import hmac
+import secrets
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
-
-# Récupérer le modèle User (compatible avec custom user model)
-User = get_user_model()
-
-
-# ═══════════════════════════════════════════════════════════════════
-# MODÈLE DE BASE
-# ═══════════════════════════════════════════════════════════════════
-
-# Essayer d'importer BaseModel depuis core, sinon le définir localement
-try:
-    from core.models import BaseModel
-except ImportError:
-    # Si core.models n'existe pas encore, définir BaseModel ici temporairement
-    # NOTE: Ce modèle devrait être déplacé vers core/models.py pour être partagé
-    class BaseModel(models.Model):
-        """Modèle abstrait de base pour tous les modèles de l'application."""
-        
-        id = models.UUIDField(
-            primary_key=True,
-            default=uuid.uuid4,
-            editable=False,
-            verbose_name=_("Identifiant unique")
-        )
-        created_at = models.DateTimeField(
-            auto_now_add=True,
-            verbose_name=_("Date de création")
-        )
-        updated_at = models.DateTimeField(
-            auto_now=True,
-            verbose_name=_("Date de modification")
-        )
-        
-        class Meta:
-            abstract = True
-            ordering = ['-created_at']
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -145,6 +107,33 @@ LIMITES_LICENCES: Dict[str, Dict[str, int]] = {
 
 
 # ═══════════════════════════════════════════════════════════════════
+# MODÈLE ABSTRAIT DE BASE
+# ═══════════════════════════════════════════════════════════════════
+
+class BaseModel(models.Model):
+    """Modèle abstrait de base pour tous les modèles de l'application."""
+    
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        verbose_name=_("Identifiant unique")
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Date de création")
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("Date de modification")
+    )
+    
+    class Meta:
+        abstract = True
+        ordering = ['-created_at']
+
+
+# ═══════════════════════════════════════════════════════════════════
 # MODÈLE PRINCIPAL : LICENCE
 # ═══════════════════════════════════════════════════════════════════
 
@@ -198,9 +187,7 @@ class Licence(BaseModel):
     les fonctionnalités accessibles via le système de Feature Flags.
     """
     
-    # Référence établissement
-    # NOTE: Si l'app etablissements n'existe pas encore, commentez cette ligne
-    # et décommentez la ligne suivante (etablissement_id)
+    # Référence établissement (FK sera ajoutée lors de la création du module etablissements)
     etablissement = models.OneToOneField(
         'etablissements.Etablissement',
         on_delete=models.PROTECT,
@@ -208,13 +195,6 @@ class Licence(BaseModel):
         verbose_name=_("Établissement"),
         help_text=_("Établissement associé à cette licence")
     )
-    
-    # ALTERNATIVE SI etablissements n'existe pas encore :
-    # etablissement_id = models.UUIDField(
-    #     verbose_name=_("ID Établissement (temporaire)"),
-    #     help_text=_("Sera remplacé par FK vers etablissements.Etablissement"),
-    #     unique=True
-    # )
     
     # Informations de la licence
     cle_licence = models.CharField(
@@ -263,7 +243,6 @@ class Licence(BaseModel):
     # Métadonnées
     notes_interne = models.TextField(
         blank=True,
-        default='',
         verbose_name=_("Notes internes"),
         help_text=_("Remarques internes (non visibles par l'établissement)")
     )
@@ -294,16 +273,9 @@ class Licence(BaseModel):
         """Override save pour générer la clé et la signature HMAC."""
         # Générer la clé de licence si elle n'existe pas
         if not self.cle_licence:
-            # Récupérer l'ID de l'établissement
-            if hasattr(self, 'etablissement') and self.etablissement:
-                etablissement_id = str(self.etablissement.id)
-            else:
-                # Si utilisation de etablissement_id temporaire
-                etablissement_id = str(self.etablissement_id)
-            
             self.cle_licence = Licence.objects.generer_cle_licence(
                 type_licence=self.type_licence,
-                etablissement_id=etablissement_id
+                etablissement_id=str(self.etablissement.id)
             )
         
         # Générer la signature HMAC
@@ -496,7 +468,6 @@ class LicenceActivation(BaseModel):
     user_agent = models.CharField(
         max_length=500,
         blank=True,
-        default='',
         verbose_name=_("User Agent"),
         help_text=_("Informations sur le navigateur/système")
     )
@@ -600,7 +571,7 @@ class LicenceAuditLog(BaseModel):
     
     # Acteur (utilisateur ou système)
     acteur_user = models.ForeignKey(
-        User,  # Utilise get_user_model()
+        'accounts.User',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -624,7 +595,6 @@ class LicenceAuditLog(BaseModel):
     user_agent = models.CharField(
         max_length=500,
         blank=True,
-        default='',
         verbose_name=_("User Agent")
     )
     
@@ -632,7 +602,6 @@ class LicenceAuditLog(BaseModel):
     hash_precedent = models.CharField(
         max_length=64,
         blank=True,
-        default='',
         verbose_name=_("Hash de l'entrée précédente"),
         help_text=_("Lien vers l'entrée précédente pour détecter les modifications")
     )
