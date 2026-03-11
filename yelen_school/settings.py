@@ -41,9 +41,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Apps YELEN SCHOOL
     'core',
+    'personnel',
+    'parametres',
     'accounts',
     'licences',
     'etablissements',
+    
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
