@@ -1,0 +1,76 @@
+{% for groupe in classes_groupes %}
+<div class="table-wrapper" style="margin-bottom: 1.5rem;">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; padding: 0.6rem 1rem; background:#f1f5f9; border-radius:8px 8px 0 0; border-bottom: 2px solid #e2e8f0;">
+    <div style="display:flex; align-items:center; gap:0.6rem;">
+      <span style="font-weight:700; font-size:1rem; text-transform:uppercase; color:#1e293b;">{{ groupe.classe.nom }}</span>
+      {% if groupe.classe.cycle %}
+        <span class="badge badge-secondary" style="font-size:0.7rem;">{{ groupe.classe.cycle.nom }}</span>
+      {% endif %}
+    </div>
+    <span class="badge badge-primary" style="font-size:0.75rem;">{{ groupe.enseignements|length }} matière{{ groupe.enseignements|length|pluralize }}</span>
+  </div>
+
+  <div class="table-scroll">
+    <table class="data-table" style="border-radius:0 0 8px 8px;">
+      <thead>
+        <tr>
+          <th>Matière</th>
+          <th>Enseignant</th>
+          <th>Coeff</th>
+          <th>Volume h.</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ens in groupe.enseignements %}
+        <tr>
+          <td>
+            <div class="fw-medium">{{ ens.matiere.nom }}</div>
+            <div class="text-muted" style="font-size:0.75rem;">{{ ens.matiere.code }}</div>
+          </td>
+          <td>
+            {% if ens.personnel %}
+              <div class="d-flex align-center gap-2">
+                <span class="avatar-initials avatar-sm">{{ ens.personnel.nom|slice:":1" }}{{ ens.personnel.prenom|slice:":1" }}</span>
+                <span class="text-secondary">{{ ens.personnel.get_nom_complet }}</span>
+              </div>
+            {% else %}
+              <span class="badge badge-danger">Non assigné</span>
+            {% endif %}
+          </td>
+          <td class="fw-medium">{{ ens.get_coefficient }}</td>
+          <td class="text-muted">{{ ens.heures_hebdomadaires|default:ens.matiere.heures_hebdomadaires }}h / sem</td>
+          <td style="text-align:right;">
+            <div class="d-flex justify-end gap-2">
+              <a href="{% url 'pedagogie:enseignement_update' ens.pk %}" class="btn-icon" title="Modifier">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" style="text-align:right; font-size:0.8rem; color:#64748b; padding: 0.5rem 1rem; background:#f8fafc;">
+            Total : <strong>{{ groupe.enseignements|length }} matière{{ groupe.enseignements|length|pluralize }}</strong>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+</div>
+{% empty %}
+<div class="empty-state">
+  <div class="empty-state-icon">
+    <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+    </svg>
+  </div>
+  <p class="empty-state-text">Aucune affectation trouvée pour cette année scolaire.</p>
+</div>
+{% endfor %}

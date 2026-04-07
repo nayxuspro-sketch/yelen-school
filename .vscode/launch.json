@@ -1,0 +1,368 @@
+{
+  // ═══════════════════════════════════════════════════════════════════
+  // YELEN SCHOOL - Configurations Debug VSCode
+  // Debug Django, pytest, et scripts Python
+  // ═══════════════════════════════════════════════════════════════════
+  
+  "version": "0.2.0",
+  "configurations": [
+    // ─────────────────────────────────────────────────────────────────
+    // 🚀 DJANGO SERVER
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "name": "🚀 Django: Debug Server",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "runserver",
+        "0.0.0.0:8000",
+        "--noreload"
+      ],
+      "django": true,
+      "justMyCode": false,
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "console": "integratedTerminal",
+      "stopOnEntry": false,
+      "presentation": {
+        "hidden": false,
+        "group": "Django",
+        "order": 1
+      }
+    },
+    {
+      "name": "🚀 Django: Debug Server (Docker)",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/app"
+        }
+      ],
+      "django": true,
+      "justMyCode": false,
+      "presentation": {
+        "hidden": false,
+        "group": "Django",
+        "order": 2
+      }
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🧪 PYTEST
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "name": "🧪 Pytest: Debug Current File",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "${file}",
+        "-v",
+        "--color=yes",
+        "-s"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Tests",
+        "order": 1
+      }
+    },
+    {
+      "name": "🧪 Pytest: Debug All Tests",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        ".",
+        "-v",
+        "--color=yes",
+        "-s"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Tests",
+        "order": 2
+      }
+    },
+    {
+      "name": "🧪 Pytest: Debug Failed Tests",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "--lf",
+        "-v",
+        "--color=yes",
+        "-s"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Tests",
+        "order": 3
+      }
+    },
+    {
+      "name": "🧪 Pytest: Debug with Coverage",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        ".",
+        "-v",
+        "--cov=apps",
+        "--cov-report=html",
+        "--cov-report=term-missing"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Tests",
+        "order": 4
+      }
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🎯 DJANGO MANAGEMENT COMMANDS
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "name": "🎯 Django: Debug Command",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "${input:djangoCommand}"
+      ],
+      "django": true,
+      "console": "integratedTerminal",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Django",
+        "order": 3
+      }
+    },
+    {
+      "name": "🎯 Django: Debug Migrations",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "migrate",
+        "--verbosity=2"
+      ],
+      "django": true,
+      "console": "integratedTerminal",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Django",
+        "order": 4
+      }
+    },
+    {
+      "name": "🎯 Django: Debug Shell",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "shell"
+      ],
+      "django": true,
+      "console": "integratedTerminal",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Django",
+        "order": 5
+      }
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 📄 PDF GENERATION (WeasyPrint)
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "name": "📄 Debug: Bulletin MENA",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "test_bulletin_mena"
+      ],
+      "django": true,
+      "console": "integratedTerminal",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Documents",
+        "order": 1
+      }
+    },
+    {
+      "name": "📄 Debug: Certificat Scolarité",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "test_certificat"
+      ],
+      "django": true,
+      "console": "integratedTerminal",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Documents",
+        "order": 2
+      }
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🔧 SCRIPTS PYTHON
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "name": "🔧 Debug: Current Python File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Scripts",
+        "order": 1
+      }
+    },
+    {
+      "name": "🔧 Debug: Script with Args",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "args": [
+        "${input:scriptArgs}"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Scripts",
+        "order": 2
+      }
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🔄 CELERY
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "name": "🔄 Celery: Debug Worker",
+      "type": "python",
+      "request": "launch",
+      "module": "celery",
+      "args": [
+        "-A",
+        "config",
+        "worker",
+        "--loglevel=info"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Celery",
+        "order": 1
+      }
+    },
+    {
+      "name": "🔄 Celery: Debug Beat",
+      "type": "python",
+      "request": "launch",
+      "module": "celery",
+      "args": [
+        "-A",
+        "config",
+        "beat",
+        "--loglevel=info"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Celery",
+        "order": 2
+      }
+    }
+  ],
+
+  // ─────────────────────────────────────────────────────────────────
+  // INPUTS PERSONNALISÉS
+  // ─────────────────────────────────────────────────────────────────
+  "inputs": [
+    {
+      "id": "djangoCommand",
+      "type": "promptString",
+      "description": "Django management command",
+      "default": "help"
+    },
+    {
+      "id": "scriptArgs",
+      "type": "promptString",
+      "description": "Script arguments",
+      "default": ""
+    }
+  ]
+}

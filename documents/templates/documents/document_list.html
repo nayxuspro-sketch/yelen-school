@@ -1,0 +1,105 @@
+{% extends "core/base.html" %}
+
+{% block title %}Documents — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Documents générés</h1>
+    <p class="page-subtitle">Historique de tous les documents officiels.</p>
+  </div>
+</div>
+
+<div class="card animate-fade-up" style="margin-bottom:var(--space-4); padding:var(--space-3) var(--space-4);">
+  <form method="get" style="display:flex; align-items:center; gap:var(--space-3);">
+    <div class="search-wrapper" style="flex:1; max-width:400px;">
+      <span class="search-icon">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </span>
+      <input type="text" name="q" value="{{ query }}" placeholder="Numéro, élève, type…"
+             class="input" style="padding-left:2.5rem;" autocomplete="off">
+    </div>
+    <button type="submit" class="btn btn-primary" style="font-size:0.85rem;">Rechercher</button>
+    {% if query %}
+    <a href="{% url 'documents:document_list' %}" class="btn btn-outline" style="font-size:0.85rem;">Effacer</a>
+    {% endif %}
+    <span style="margin-left:auto; font-size:0.8rem; color:var(--color-text-muted);">
+      {{ page_obj.paginator.count }} document{{ page_obj.paginator.count|pluralize }}
+    </span>
+  </form>
+</div>
+
+<div class="table-wrapper animate-fade-up delay-1">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Type</th>
+          <th>Destinataire</th>
+          <th>Année</th>
+          <th>Généré par</th>
+          <th>Date</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in documents %}
+        <tr>
+          <td class="text-mono text-primary col-matricule">{{ doc.numero_document }}</td>
+          <td class="fw-medium">{{ doc.type_document.libelle }}</td>
+          <td class="text-secondary">
+            {% if doc.inscription %}
+              {{ doc.inscription.eleve.get_nom_complet }}
+            {% elif doc.classe %}
+              Classe {{ doc.classe.nom }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-muted">{{ doc.annee_scolaire }}</td>
+          <td class="text-muted">{{ doc.genere_par.get_full_name|default:"—" }}</td>
+          <td class="text-muted" style="font-size:0.8rem;">{{ doc.created_at|date:"d/m/Y H:i" }}</td>
+          <td style="text-align:right;">
+            {% if doc.fichier %}
+            <a href="{{ doc.fichier.url }}" target="_blank" class="btn-secondary btn-sm">Télécharger</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+              <p class="empty-state-text">Aucun document généré.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div style="display:flex; justify-content:center; align-items:center; gap:var(--space-2); margin-top:var(--space-4);">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
+     class="btn btn-outline btn-sm">← Précédent</a>
+  {% endif %}
+  <span style="font-size:0.85rem; color:var(--color-text-muted);">
+    Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
+     class="btn btn-outline btn-sm">Suivant →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

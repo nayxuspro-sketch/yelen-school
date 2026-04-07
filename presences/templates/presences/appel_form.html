@@ -1,0 +1,66 @@
+{% extends "core/base.html" %}
+
+{% block title %}Nouvel appel — {{ classe.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'presences:classe_select' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Nouvel appel — {{ classe.nom }}</h1>
+      <p class="page-subtitle">{{ classe.cycle.nom }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="max-width:560px;">
+  <div class="card-header">
+    <h2 class="card-title">Paramètres de l'appel</h2>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="input-label" for="date">Date <span class="text-danger">*</span></label>
+        <input type="date" id="date" name="date" required
+               value="{{ today }}"
+               class="input" style="max-width:200px;">
+      </div>
+
+      <div class="form-group">
+        <label class="input-label" for="matiere">Matière (optionnel)</label>
+        <select id="matiere" name="matiere" class="input select">
+          <option value="">— Appel général —</option>
+          {% for m in matieres %}
+          <option value="{{ m.pk }}">{{ m.nom }}</option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-muted" style="margin-top:0.25rem;">Laisser vide pour un appel général de la classe.</p>
+      </div>
+
+      <div class="d-flex gap-3" style="margin-top:0.5rem;">
+        <div class="form-group" style="flex:1;">
+          <label class="input-label" for="heure_debut">Heure début</label>
+          <input type="time" id="heure_debut" name="heure_debut" class="input">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="input-label" for="heure_fin">Heure fin</label>
+          <input type="time" id="heure_fin" name="heure_fin" class="input">
+        </div>
+      </div>
+
+      <div class="d-flex justify-end gap-3" style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--color-border);">
+        <a href="{% url 'presences:classe_select' %}" class="btn-secondary">Annuler</a>
+        <button type="submit" class="btn-primary">Démarrer l'appel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

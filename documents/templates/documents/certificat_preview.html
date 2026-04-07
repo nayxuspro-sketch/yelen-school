@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+
+{% block title %}Certificat de scolarité — {{ eleve.get_nom_complet }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Certificat de Scolarité</h1>
+    <p class="page-subtitle">{{ eleve.get_nom_complet }} · {{ classe.nom }} · {{ annee_scolaire }}</p>
+  </div>
+  <a href="?format=pdf" class="btn-primary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+    </svg>
+    Télécharger PDF
+  </a>
+</div>
+
+<div style="max-width:640px;" class="animate-fade-up delay-1">
+  <div class="card">
+    <div style="padding:var(--space-6);">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+        <div>
+          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Élève</div>
+          <div class="fw-semibold">{{ eleve.get_nom_complet }}</div>
+        </div>
+        <div>
+          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Matricule</div>
+          <div class="text-mono">{{ eleve.matricule }}</div>
+        </div>
+        <div>
+          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Né(e) le</div>
+          <div>{{ eleve.date_naissance|date:"d F Y" }}</div>
+        </div>
+        <div>
+          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Lieu de naissance</div>
+          <div>{{ eleve.lieu_naissance }}</div>
+        </div>
+        <div>
+          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Classe</div>
+          <div>{{ classe.nom }}</div>
+        </div>
+        <div>
+          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Cycle</div>
+          <div>{{ classe.cycle.nom }}</div>
+        </div>
+        <div>
+          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Année scolaire</div>
+          <div>{{ annee_scolaire }}</div>
+        </div>
+        <div>
+          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Signataire</div>
+          <div>{% if signataire %}{{ signataire.get_nom_complet_avec_titre }}{% else %}<span class="text-warning">Non configuré</span>{% endif %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if not signataire %}
+  <div class="card mt-4" style="border-color:var(--color-warning); padding:var(--space-4);">
+    <p class="text-warning" style="font-size:0.875rem;">
+      Aucun signataire configuré pour le cycle {{ classe.cycle.nom }}. Configurez-le dans
+      <a href="{% url 'parametres:signataires_list' %}" style="color:var(--color-warning); text-decoration:underline;">Paramètres → Signataires</a>.
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

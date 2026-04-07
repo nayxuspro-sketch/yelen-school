@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+
+{% block title %}Nouvelle justification — {{ inscription.eleve.get_nom_complet }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'presences:bilan_eleve' inscription.pk %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Nouvelle justification</h1>
+      <p class="page-subtitle">{{ inscription.eleve.get_nom_complet }} · {{ inscription.classe.nom }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="max-width:560px;">
+  <div class="card-header">
+    <h2 class="card-title">Justification d'absence</h2>
+  </div>
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="d-flex gap-3">
+        <div class="form-group" style="flex:1;">
+          <label class="input-label" for="date_debut">Date de début <span class="text-danger">*</span></label>
+          <input type="date" id="date_debut" name="date_debut" required class="input">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="input-label" for="date_fin">Date de fin <span class="text-danger">*</span></label>
+          <input type="date" id="date_fin" name="date_fin" required class="input">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label" for="motif">Motif <span class="text-danger">*</span></label>
+        <textarea id="motif" name="motif" required rows="3" class="input"
+                  placeholder="Ex : Maladie, raison familiale, ..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label" for="document">Document justificatif</label>
+        <input type="file" id="document" name="document" class="input"
+               accept=".pdf,.jpg,.jpeg,.png">
+        <p class="text-xs text-muted" style="margin-top:0.25rem;">Certificat médical, courrier, etc. (optionnel)</p>
+      </div>
+
+      <div class="d-flex justify-end gap-3" style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--color-border);">
+        <a href="{% url 'presences:bilan_eleve' inscription.pk %}" class="btn-secondary">Annuler</a>
+        <button type="submit" class="btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

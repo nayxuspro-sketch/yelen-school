@@ -1,0 +1,47 @@
+{% extends "core/base.html" %}
+
+{% block title %}Sélectionner une classe — Présences — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'presences:appel_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Sélectionner une classe</h1>
+      <p class="page-subtitle">Choisissez la classe pour démarrer un appel{% if annee %} · {{ annee.libelle }}{% endif %}</p>
+    </div>
+  </div>
+</div>
+
+{% for groupe in classes_par_cycle %}
+<div class="card animate-fade-up delay-1" style="margin-bottom:1.5rem;">
+  <div class="card-header">
+    <h2 class="card-title">{{ groupe.cycle.nom }}</h2>
+    <span class="badge badge-neutral">{{ groupe.classes|length }} classe{% if groupe.classes|length > 1 %}s{% endif %}</span>
+  </div>
+  <div class="card-body" style="padding:1rem;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:0.75rem;">
+      {% for classe in groupe.classes %}
+      <a href="{% url 'presences:appel_create' classe.pk %}"
+         class="btn-secondary"
+         style="text-align:center; padding:0.75rem 1rem; font-weight:500; border-radius:8px; display:block;">
+        {{ classe.nom }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="card animate-fade-up delay-1">
+  <div class="card-body" style="text-align:center; padding:3rem 1.5rem;">
+    <p class="text-muted">Aucune classe active trouvée.</p>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}

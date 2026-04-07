@@ -1,0 +1,101 @@
+<div id="liste-container"
+     hx-trigger="parametreUpdated from:body"
+     hx-get="{% url 'parametres:tarif_list' %}{% if selected_annee %}?annee={{ selected_annee }}{% endif %}{% if selected_niveau %}{% if selected_annee %}&{% else %}?{% endif %}niveau={{ selected_niveau }}{% endif %}"
+     hx-target="#liste-container"
+     hx-swap="outerHTML">
+
+{% if not grouped_tarifs %}
+<div class="card">
+    <div class="empty-state" style="padding:3rem;">
+        <div class="empty-state-icon">
+            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        </div>
+        <p class="fw-medium">Aucun tarif configuré</p>
+        <p class="empty-state-text">Commencez par créer votre premier tarif de scolarité.</p>
+    </div>
+</div>
+{% else %}
+
+{% for niveau, tarifs in grouped_tarifs %}
+<div class="card" style="margin-bottom:1rem;">
+    {# En-tête du groupe #}
+    <div style="padding:.75rem 1.25rem; border-bottom:1px solid var(--color-border); display:flex; justify-content:space-between; align-items:center; background:var(--color-bg-subtle, #f8fafc); border-radius: var(--radius) var(--radius) 0 0;">
+        <div style="display:flex; align-items:center; gap:.75rem;">
+            <span style="font-size:1.05rem; font-weight:700; color:#0f172a;">{{ niveau|default:"Sans niveau" }}</span>
+        </div>
+        <span class="text-muted" style="font-size:.8rem;">{{ tarifs|length }} tarif{{ tarifs|length|pluralize }}</span>
+    </div>
+
+    {# Tableau des tarifs de ce niveau #}
+    <div class="table-scroll">
+        <table class="data-table" style="margin:0;">
+            <thead>
+                <tr>
+                    <th>Classe</th>
+                    <th>Année scolaire</th>
+                    <th>Statut élève</th>
+                    <th>Rubrique</th>
+                    <th style="text-align:right;">Montant</th>
+                    <th>Actif</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tarifs %}
+                <tr>
+                    <td class="fw-medium">{{ t.classe.nom }}</td>
+                    <td><span class="badge badge-neutral text-mono">{{ t.annee_scolaire.libelle }}</span></td>
+                    <td>
+                        {% if t.statut_eleve %}
+                        <span class="badge" style="background:{{ t.statut_eleve.couleur }}22; color:{{ t.statut_eleve.couleur }}; border:1px solid {{ t.statut_eleve.couleur }}44;">
+                            {{ t.statut_eleve.nom }}
+                        </span>
+                        {% else %}
+                        <span class="badge badge-neutral">Tous</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ t.rubrique.nom }}</td>
+                    <td style="text-align:right;" class="fw-semibold text-warning">{{ t.montant|floatformat:0 }} FCFA</td>
+                    <td>
+                        {% if t.actif %}
+                        <span class="badge badge-success">Actif</span>
+                        {% else %}
+                        <span class="badge badge-neutral">Inactif</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;">
+                        <button hx-post="{% url 'parametres:tarif_toggle' t.pk %}"
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                            hx-target="#liste-container"
+                            hx-swap="outerHTML"
+                            class="btn-icon"
+                            title="{% if t.actif %}Désactiver{% else %}Activer{% endif %}">
+                            {% if t.actif %}
+                            <svg width="16" height="16" fill="none" stroke="#dc2626" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                            {% else %}
+                            <svg width="16" height="16" fill="none" stroke="#16a34a" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            {% endif %}
+                        </button>
+                        <button hx-get="{% url 'parametres:tarif_edit' t.pk %}"
+                            hx-target="#modal-container"
+                            hx-swap="innerHTML"
+                            class="btn-icon" title="Modifier">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button hx-post="{% url 'parametres:tarif_delete' t.pk %}"
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                            hx-confirm="Supprimer ce tarif ?"
+                            class="btn-icon" title="Supprimer" style="color:var(--color-danger);">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+
+{% endif %}
+</div>

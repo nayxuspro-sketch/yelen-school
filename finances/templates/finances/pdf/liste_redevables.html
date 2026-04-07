@@ -1,0 +1,248 @@
+{% load signataire_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 15mm;
+            @bottom-right {
+                content: "Page " counter(page) " sur " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        body {
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 10pt;
+            color: #1A1A1A;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .pdf-entete {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1B5E20;
+        }
+        .pdf-entete-gauche {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .pdf-logo {
+            width: 55px;
+            height: 55px;
+            object-fit: contain;
+        }
+        .pdf-etab-nom {
+            font-size: 15pt;
+            font-weight: bold;
+            color: #1B5E20;
+            margin: 0 0 3px 0;
+        }
+        .pdf-etab-info {
+            font-size: 8pt;
+            color: #444;
+            margin: 2px 0;
+        }
+        .pdf-entete-droit {
+            text-align: right;
+        }
+        .doc-title {
+            background: #f0f9f4;
+            border: 1px solid #1B5E20;
+            padding: 8px 16px;
+            border-radius: 4px;
+        }
+        .doc-title h2 {
+            margin: 0;
+            font-size: 12pt;
+            color: #1B5E20;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .info-box {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .cycle-section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        
+        .cycle-header {
+            background: #1B5E20;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px 4px 0 0;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+        
+        .classe-section {
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+        
+        .classe-header {
+            background: #e8f5e9;
+            padding: 8px 12px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+        
+        th {
+            background: #f5f5f5;
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+        }
+        
+        td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th.right, td.right {
+            text-align: right;
+        }
+        
+        .total-row {
+            background: #fff3e0;
+            font-weight: bold;
+        }
+        
+        .total-general {
+            background: #1B5E20;
+            color: white;
+            padding: 12px;
+            border-radius: 4px;
+            text-align: right;
+            font-size: 12pt;
+            margin-top: 20px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            font-size: 8pt;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <!-- En-tête -->
+    <div class="pdf-entete">
+        <div class="pdf-entete-gauche">
+            {% if logo_url %}
+            <img src="{{ logo_url }}" class="pdf-logo" alt="Logo">
+            {% elif etab_logo_url %}
+            <img src="{{ etab_logo_url }}" class="pdf-logo" alt="Logo">
+            {% endif %}
+            <div>
+                <h1 class="pdf-etab-nom">
+                    {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom }}{% endif %}
+                </h1>
+                {% if identite %}
+                {% if identite.numero_agrement_mena %}
+                <p class="pdf-etab-info" style="font-style:italic;">N° Agrément MENA: {{ identite.numero_agrement_mena }}</p>
+                {% endif %}
+                <p class="pdf-etab-info">
+                    {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
+                    {% if identite.ville %}, {{ identite.ville }}{% endif %}
+                    {% if identite.telephone %} - Tél: {{ identite.telephone }}{% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="pdf-entete-droit">
+            <div class="doc-title">
+                <h2>LISTE DES REDEVABLES</h2>
+            </div>
+            <p style="font-size:9pt; margin:5px 0 0 0;">
+                Année scolaire: <strong>{{ annee_courante.libelle }}</strong>
+            </p>
+            <p style="font-size:9pt; margin:3px 0 0 0;">
+                Date: {{ now|date:"d/m/Y" }}
+            </p>
+        </div>
+    </div>
+    
+    <!-- Info -->
+    <div class="info-box">
+        <strong>{{ nb_redevables }}</strong> élève(s) redevable(s)
+    </div>
+    
+    <!-- Cycles et classes -->
+    {% for cycle_data in cycles_list %}
+    <div class="cycle-section">
+        <div class="cycle-header">
+            <span>{{ cycle_data.cycle.nom }}</span>
+            <span>{{ cycle_data.total|floatformat:0 }} FCFA</span>
+        </div>
+        
+        {% for classe_data in cycle_data.classes %}
+        <div class="classe-section">
+            <div class="classe-header">
+                <span>{{ classe_data.classe.nom }}</span>
+                <span>{{ classe_data.total|floatformat:0 }} FCFA</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Matricule</th>
+                        <th>Élève</th>
+                        <th class="right">Total Dû</th>
+                        <th class="right">Payé</th>
+                        <th class="right">Reste</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in classe_data.eleves %}
+                    <tr>
+                        <td>{{ item.inscription.eleve.matricule }}</td>
+                        <td>{{ item.inscription.eleve.nom }} {{ item.inscription.eleve.prenom }}</td>
+                        <td class="right">{{ item.total_du|floatformat:0 }}</td>
+                        <td class="right">{{ item.total_paye|floatformat:0 }}</td>
+                        <td class="right"><strong>{{ item.reste|floatformat:0 }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    
+    <!-- Total général -->
+    <div class="total-general">
+        TOTAL REDEVABLE: {{ total_redevable|floatformat:0 }} FCFA
+    </div>
+
+    {% signataire_auto "LISTE_REDEVABLES" %}
+
+</body>
+</html>

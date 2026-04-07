@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(venv/Scripts/python manage.py makemigrations finances --name=\"add_rubrique_to_paiement\")",
+      "Bash(venv/Scripts/python manage.py migrate finances)",
+      "Bash(venv/Scripts/python manage.py check)",
+      "Bash(python -c \":*)",
+      "Bash(python fix_requirements.py)",
+      "Bash(xargs grep:*)",
+      "Bash(find /e/yelen-school/docs -type f -name *.md)",
+      "Read(//e/yelen-school/**)",
+      "Bash(python -m pytest finances/tests/test_views.py -v --no-header)",
+      "Bash(python -m pip show pytest)",
+      "Bash(py -m pytest --version)",
+      "Bash(.venv/Scripts/pytest finances/tests/test_views.py -v --no-header)",
+      "Bash(venv/Scripts/pytest finances/tests/test_views.py -v --no-header)",
+      "Bash(venv/Scripts/python manage.py shell -c \":*)",
+      "Bash(find /e/yelen-school/documents/templates -type f -name *.html)",
+      "Bash(xargs ls:*)",
+      "Bash(while read:*)",
+      "Bash(do echo:*)",
+      "Bash(python -c \"import parametres.views; print\\(''''OK''''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''parametres/views.py''\\).read\\(\\)\\); print\\(''Syntaxe OK''\\)\")",
+      "Bash(find e:/yelen-school/parametres -name *.pyc -delete)",
+      "Bash(find e:/yelen-school/parametres -name \"__pycache__\" -type d -exec rm -rf {} +)",
+      "Bash(python -c \"print\\(''SignataireDocument''.lower\\(\\)\\)\")",
+      "Bash(python3 -c \"import sys; print\\(sys.stdin.read\\(\\).strip\\(\\).lower\\(\\)\\)\")",
+      "Bash(python -c \"s=''''SignataireDocument''''; print\\(s.lower\\(\\)\\)\")",
+      "Bash(grep -rn \"sig-zone\\\\|signature-zone\" /e/yelen-school --include=\"*.html\" --include=\"*.css\" ! -path \"*/venv/*\")",
+      "Bash(grep -rn \"sig-zone\" /e/yelen-school --include=\"*.html\" --include=\"*.css\" ! -path \"*/venv/*\")",
+      "Bash(find /e/yelen-school -name \"*.py\" -type f ! -path \"*/venv/*\" -exec grep -l \"\\\\.sig-zone\\\\|signature-zone\\\\|signataire\" {})",
+      "Bash(grep -r \"resolve_signataire\" /e/yelen-school --include=\"*.py\" --include=\"*.html\" ! -path \"*/venv/*\")",
+      "Bash(python -c \"import django; import os; os.environ.setdefault\\(''DJANGO_SETTINGS_MODULE'', ''yelen_school.settings''\\); django.setup\\(\\); from parametres import views; print\\(''Views OK''\\)\")",
+      "Bash(python manage.py migrate pedagogie 0004_matierecycle --check)",
+      "Bash(python manage.py shell -c \":*)",
+      "Bash(python manage.py shell -c \"from parametres.models import TypeDocument, SignataireDocument; sigs_lc = list\\(SignataireDocument.objects.filter\\(type_document__code__icontains=''liste''\\).values\\(''cycle__nom'',''type_document__code'',''actif'',''membre_personnel_id''\\)\\); print\\(''Signataires liste:'', sigs_lc\\)\")"
+    ]
+  }
+}

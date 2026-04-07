@@ -1,0 +1,118 @@
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">{% if tarif %}Modifier le Tarif{% else %}Nouveau Tarif de scolarité{% endif %}</span>
+      <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form hx-post="{% if tarif %}{% url 'parametres:tarif_edit' tarif.pk %}{% else %}{% url 'parametres:tarif_create' %}{% endif %}"
+          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-target="#modal-container" hx-swap="innerHTML">
+      {% csrf_token %}
+      <div class="modal-body">
+        {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label">Année scolaire <span style="color:#FF6B7A;">*</span></label>
+            <select name="annee_scolaire" required class="input select">
+              <option value="">— Choisir —</option>
+              {% for a in annees %}
+              <option value="{{ a.pk }}" {% if tarif and tarif.annee_scolaire_id == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Cycle</label>
+            <select name="cycle" class="input select" id="id_cycle">
+              {% if not tarif %}
+              <option value="__all__">— Tous les cycles —</option>
+              {% else %}
+              <option value="">— Tous les cycles —</option>
+              {% endif %}
+              {% for c in cycles %}
+              <option value="{{ c.pk }}" {% if tarif and tarif.cycle_id == c.pk %}selected{% endif %}>{{ c.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label">Niveau <span style="color:#FF6B7A;">*</span></label>
+            <select name="niveau" required class="input select" id="id_niveau">
+              <option value="">— Choisir —</option>
+              <option value="__all__">— Tous les niveaux —</option>
+              {% for n in niveaux %}
+              <option value="{{ n }}" {% if tarif and tarif.classe.niveau == n %}selected{% endif %}>{{ n }}</option>
+              {% endfor %}
+            </select>
+
+          </div>
+          <div class="form-group">
+            <label class="input-label">Statut élève <span style="color:#FF6B7A;">*</span></label>
+            <select name="statut_eleve" required class="input select">
+              {% if not tarif %}
+              <option value="">— Choisir —</option>
+              <option value="__all__">— Tous les statuts —</option>
+              {% else %}
+              <option value="__all__">— Tous les statuts —</option>
+              {% endif %}
+              {% for s in statuts %}
+              <option value="{{ s.pk }}" {% if tarif and tarif.statut_eleve_id == s.pk %}selected{% endif %}>{{ s.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="input-label">Rubrique <span style="color:#FF6B7A;">*</span></label>
+          <select name="rubrique" required class="input select" id="id_rubrique_tarif">
+            <option value="">— Choisir —</option>
+            {% for r in rubriques %}
+            <option value="{{ r.pk }}"
+              data-montant="{{ r.montant|default:'' }}"
+              {% if tarif and tarif.rubrique_id == r.pk %}selected{% endif %}>{{ r.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="input-label">Montant (FCFA) <span style="color:#FF6B7A;">*</span></label>
+          <input type="number" name="montant" id="id_montant_tarif"
+                 value="{{ tarif.montant|default:'' }}"
+                 min="0" step="100" placeholder="Sélectionnez une rubrique…" required class="input text-mono"
+                 style="background:#f1f5f9; cursor:default;"
+                 readonly>
+          <small style="color:#64748b; font-size:0.75rem;">Automatiquement renseigné d'après le montant de la rubrique sélectionnée</small>
+        </div>
+
+
+        {% if tarif %}
+        <label class="d-flex align-center gap-3" style="cursor:pointer; margin-top:var(--space-3);">
+          <input type="checkbox" name="actif" {% if tarif.actif %}checked{% endif %}
+                 style="width:16px; height:16px; accent-color:var(--color-primary); cursor:pointer;">
+          <span style="font-size:var(--text-sm); color:var(--color-text-secondary);">Tarif actif</span>
+        </label>
+        {% endif %}
+
+        <div class="modal-footer">
+          <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-secondary">Annuler</button>
+          <button type="submit" class="btn-primary">Enregistrer</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+(function() {
+  var sel = document.getElementById('id_rubrique_tarif');
+  var inp = document.getElementById('id_montant_tarif');
+  if (!sel || !inp) return;
+  sel.addEventListener('change', function() {
+    var opt = sel.options[sel.selectedIndex];
+    var m = opt ? opt.dataset.montant : '';
+    if (m) inp.value = m;
+  });
+})();
+</script>

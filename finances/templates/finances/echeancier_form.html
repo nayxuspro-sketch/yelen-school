@@ -1,0 +1,80 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'finances:situation_eleve' inscription.id %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{{ title }}</h1>
+      <p class="page-subtitle">Élève : <strong class="text-primary">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</strong> · Classe : <strong>{{ inscription.classe.nom }}</strong></p>
+    </div>
+  </div>
+</div>
+
+<div class="animate-fade-up delay-1" style="max-width:600px;">
+  <div class="card">
+    <form method="post" class="form-vertical">
+      {% csrf_token %}
+      
+      {% if form.non_field_errors %}
+      <div class="alert alert-error mb-4">
+        {% for error in form.non_field_errors %}
+        <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="{{ form.libelle.id_for_label }}" class="form-label">{{ form.libelle.label }}</label>
+        {{ form.libelle }}
+        {% if form.libelle.errors %}
+        <p class="form-error">{{ form.libelle.errors.0 }}</p>
+        {% endif %}
+        <p class="form-help">Ex: 1ère tranche, Scolarité octobre, etc.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.date_limite.id_for_label }}" class="form-label">{{ form.date_limite.label }}</label>
+        {{ form.date_limite }}
+        {% if form.date_limite.errors %}
+        <p class="form-error">{{ form.date_limite.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.montant_du.id_for_label }}" class="form-label">{{ form.montant_du.label }}</label>
+        {{ form.montant_du }}
+        {% if form.montant_du.errors %}
+        <p class="form-error">{{ form.montant_du.errors.0 }}</p>
+        {% endif %}
+        <p class="form-help">Montant attendu pour cette échéance (en FCA)</p>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label d-flex align-center gap-2">
+          {{ form.paye }}
+          <span>{{ form.paye.label }}</span>
+        </label>
+        {% if form.paye.errors %}
+        <p class="form-error">{{ form.paye.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div class="form-actions mt-6">
+        <button type="submit" class="btn-primary">
+          {% if echeancier %}Mettre à jour{% else %}Créer l'échéance{% endif %}
+        </button>
+        <a href="{% url 'finances:situation_eleve' inscription.id %}" class="btn-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

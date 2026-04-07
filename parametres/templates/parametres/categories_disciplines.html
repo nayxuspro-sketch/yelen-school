@@ -1,0 +1,27 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Catégories de disciplines — Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+            <span class="text-muted"> / </span>
+            <span>Catégories de disciplines</span>
+        </p>
+        <h1 class="page-title">Catégories de disciplines</h1>
+    </div>
+    <button type="button" hx-get="{% url 'parametres:categorie_discipline_create' %}" hx-target="#modal-container" hx-swap="innerHTML"
+        class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nouvelle Catégorie
+    </button>
+</div>
+
+<div id="modal-container"></div>
+
+<div id="categorie-table" class="table-wrapper animate-fade-up delay-1">
+    {% include 'parametres/partials/categorie_discipline_list.html' %}
+</div>
+{% endblock %}

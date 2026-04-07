@@ -1,0 +1,65 @@
+{% extends "core/base.html" %}
+
+{% block title %}Bulletins Vacation — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Bulletins de Vacation</h1>
+    {% if annee_courante %}<p class="page-subtitle">{{ annee_courante }}</p>{% endif %}
+  </div>
+  <a href="{% url 'vacations:contrat_list' %}" class="btn-secondary">Contrats</a>
+</div>
+
+<div class="table-wrapper animate-fade-up delay-1">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Vacataire</th>
+          <th>Période</th>
+          <th>Total heures</th>
+          <th>Montant</th>
+          <th>Statut</th>
+          <th>Paiement</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bulletins %}
+        <tr>
+          <td class="fw-medium">{{ b.personnel.get_nom_complet }}</td>
+          <td class="text-secondary">{{ b.get_mois_display }} {{ b.annee }}</td>
+          <td class="fw-medium">{{ b.total_heures }}h</td>
+          <td class="fw-semibold text-warning">{{ b.montant_total|floatformat:0 }} FCFA</td>
+          <td>
+            {% if b.statut == 'PAYE' %}
+              <span class="badge badge-success">Payé</span>
+            {% elif b.statut == 'VALIDE' %}
+              <span class="badge badge-warning">Validé</span>
+            {% else %}
+              <span class="badge badge-neutral">Brouillon</span>
+            {% endif %}
+          </td>
+          <td class="text-muted" style="font-size:0.8rem;">{{ b.date_paiement|date:"d/m/Y"|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+              <p class="empty-state-text">Aucun bulletin généré.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

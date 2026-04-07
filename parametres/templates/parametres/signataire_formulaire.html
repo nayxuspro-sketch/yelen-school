@@ -1,0 +1,142 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Nouveau Signataire — Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-text">
+        <p class="page-subtitle">
+          <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+          <span class="text-muted"> / </span>
+          <a href="{% url 'parametres:signataires_list' %}" class="text-secondary">Signataires</a>
+          <span class="text-muted"> / </span>
+          <span>{% if signataire_existant %}Modifier{% else %}Nouveau{% endif %}</span>
+        </p>
+        <h1 class="page-title">
+          {% if signataire_existant %}Modifier le signataire{% else %}Nouveau signataire{% endif %}
+        </h1>
+      </div>
+      <div class="header-actions">
+        <a href="{% url 'parametres:signataires_list' %}" class="btn-secondary">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Retour à la liste
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} mb-4">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  {% if error %}
+  <div class="alert alert-danger mb-4">{{ error }}</div>
+  {% endif %}
+
+  <div class="card" style="max-width:640px;">
+    <div class="card-header">
+      <h2 class="card-title">Configurer un signataire</h2>
+      <p class="text-sm text-muted" style="margin-top:0.25rem;">
+        Associez un membre du personnel à un cycle et un type de document pour l'année en cours.
+      </p>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{% url 'parametres:signataire_formulaire' %}">
+        {% csrf_token %}
+
+        <!-- 1. Année scolaire -->
+        <div class="form-group">
+          <label for="annee_id" class="input-label">Année scolaire <span class="text-danger">*</span></label>
+          <select name="annee_id" id="annee_id" required class="input select">
+            <option value="">-- Sélectionner une année --</option>
+            {% for a in annees %}
+              <option value="{{ a.id }}" {% if selected_annee_id == a.id|stringformat:"s" %}selected{% endif %}>
+                {{ a.libelle }}{% if a.est_courante %} (En cours){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- 2. Cycle -->
+        <div class="form-group">
+          <label for="cycle_id" class="input-label">Cycle <span class="text-danger">*</span></label>
+          <select name="cycle_id" id="cycle_id" required class="input select">
+            <option value="">-- Sélectionner un cycle --</option>
+            <option value="all" {% if selected_cycle_id == "all" %}selected{% endif %}>Tout cycle</option>
+            {% for c in cycles %}
+              <option value="{{ c.id }}" {% if selected_cycle_id == c.id|stringformat:"s" %}selected{% endif %}>
+                {{ c.nom }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- 3. Catégorie de type de document -->
+        <div class="form-group">
+          <label for="categorie" class="input-label">Catégorie de type de document <span class="text-danger">*</span></label>
+          <select name="categorie" id="categorie" required class="input select">
+            <option value="">-- Sélectionner une catégorie --</option>
+            {% for val, label in categories %}
+              <option value="{{ val }}" {% if selected_categorie == val %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- 4. Titre (Fonction du personnel) -->
+        <div class="form-group">
+          <label for="titre_personnel" class="input-label">Titre (Fonction)</label>
+          <select name="titre_personnel" id="titre_personnel" class="input select">
+            <option value="">-- Sélectionner un titre --</option>
+            {% for f in fonctions %}
+              <option value="{{ f.nom }}" {% if selected_fonction == f.nom %}selected{% endif %}>{{ f.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- 5. Nom et Prénom -->
+        <div class="form-group">
+          <label for="membre_personnel" class="input-label">Nom et Prénom <span class="text-danger">*</span></label>
+          <select name="membre_personnel" id="membre_personnel" required class="input select">
+            <option value="">-- Sélectionner un membre --</option>
+            {% for p in personnel %}
+              <option value="{{ p.id }}" {% if selected_membre_id == p.id|stringformat:"s" %}selected{% endif %}>
+                {{ p.nom }} {{ p.prenom }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- 6. Titre honorifique -->
+        <div class="form-group">
+          <label for="titre_honorifique" class="input-label">Titre honorifique</label>
+          <select name="titre_honorifique" id="titre_honorifique" class="input select">
+            <option value="">-- Sélectionner un titre honorifique --</option>
+            {% for t in titres_honorifiques %}
+              <option value="{{ t }}" {% if selected_titre == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
+          <p class="text-xs text-muted" style="margin-top:0.25rem; font-style:italic;">
+            Ce titre apparaîtra avant le nom complet du signataire sur les documents.
+          </p>
+        </div>
+
+        <div class="d-flex justify-end gap-3" style="margin-top:2rem; border-top:1px solid var(--color-border); padding-top:1.5rem;">
+          <a href="{% url 'parametres:signataires_list' %}" class="btn-secondary">Annuler</a>
+          <button type="submit" class="btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

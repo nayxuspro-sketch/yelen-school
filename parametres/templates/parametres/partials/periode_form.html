@@ -1,0 +1,63 @@
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal-box" style="max-width:36rem;">
+        <div class="modal-header">
+            <span class="modal-title">{% if periode %}Modifier la période{% else %}Nouvelle période{% endif %}</span>
+            <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form hx-post="{% if periode %}{% url 'parametres:periode_edit' periode.pk %}{% else %}{% url 'parametres:periode_create' %}{% endif %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#modal-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="input-label">Nom <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="nom" value="{{ periode.nom|default:'' }}" placeholder="Ex: Trimestre 1" required class="input">
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="input-label">Type <span style="color:#FF6B7A;">*</span></label>
+                        <select name="type_periode" required class="input select">
+                            {% for val, label in type_choices %}<option value="{{ val }}" {% if periode.type_periode == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Numéro <span style="color:#FF6B7A;">*</span></label>
+                        <input type="number" name="numero" value="{{ periode.numero|default:1 }}" min="1" max="3" required class="input">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Année scolaire <span style="color:#FF6B7A;">*</span></label>
+                        <select name="annee_scolaire" required class="input select">
+                            {% for a in annees %}<option value="{{ a.pk }}" {% if periode.annee_scolaire_id == a.pk %}selected{% endif %}>{{ a.libelle }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="input-label">Date de début <span style="color:#FF6B7A;">*</span></label>
+                        <input type="date" name="date_debut" value="{{ periode.date_debut|default:'' }}" required class="input">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Date de fin <span style="color:#FF6B7A;">*</span></label>
+                        <input type="date" name="date_fin" value="{{ periode.date_fin|default:'' }}" required class="input">
+                    </div>
+                </div>
+
+                <label class="d-flex align-center gap-3" style="cursor:pointer;">
+                    <input type="checkbox" name="est_en_cours" {% if periode.est_en_cours %}checked{% endif %}
+                        style="width:1rem; height:1rem; accent-color:var(--color-primary);">
+                    <span class="text-sm text-secondary">Période en cours</span>
+                </label>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-secondary">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

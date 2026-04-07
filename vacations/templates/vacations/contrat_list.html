@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+
+{% block title %}Vacations — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Contrats de Vacation</h1>
+    {% if annee_courante %}<p class="page-subtitle">{{ annee_courante }}</p>{% endif %}
+  </div>
+  <a href="{% url 'vacations:bulletin_list' %}" class="btn-secondary">Bulletins du mois</a>
+</div>
+
+<div class="table-wrapper animate-fade-up delay-1">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Vacataire</th>
+          <th>Matière / Classe</th>
+          <th>Taux / heure</th>
+          <th>H/semaine</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for contrat in contrats %}
+        <tr>
+          <td class="fw-medium">{{ contrat.personnel.get_nom_complet }}</td>
+          <td class="text-secondary">
+            {% if contrat.enseignement %}
+              {{ contrat.enseignement.matiere.nom }} — {{ contrat.enseignement.classe.nom }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="fw-semibold text-warning">{{ contrat.taux_horaire|floatformat:0 }} FCFA</td>
+          <td class="fw-medium">{{ contrat.heures_hebdo_prevues }}h</td>
+          <td style="text-align:right;">
+            <a href="{% url 'vacations:saisie_heures' contrat.pk %}" class="btn-primary btn-sm">Saisir heures</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+              <p class="empty-state-text">Aucun contrat de vacation pour cette année.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

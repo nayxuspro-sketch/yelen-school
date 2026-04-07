@@ -1,0 +1,24 @@
+{% extends "core/base.html" %}
+
+{% block title %}Affectations — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Affectations Des Enseignants</h1>
+    <p class="page-subtitle">Gérez les matières et les professeurs par classe pour {{ annee_courante.libelle }}.</p>
+  </div>
+  <a href="{% url 'pedagogie:enseignement_create' %}" class="btn-primary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+    Nouvelle affectation
+  </a>
+</div>
+
+<div id="enseignement-table" class="table-wrapper animate-fade-up delay-1">
+  {% include "pedagogie/partials/enseignement_table.html" %}
+</div>
+
+{% endblock %}

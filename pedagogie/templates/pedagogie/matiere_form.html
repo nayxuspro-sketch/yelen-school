@@ -1,0 +1,116 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }} — Pédagogie{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'pedagogie:matiere_list' %}" class="btn-secondary btn-sm" style="margin-bottom:var(--space-3); display:inline-flex;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Retour au référentiel
+    </a>
+    <h1 class="page-title">{{ title }}</h1>
+  </div>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags|default:'info' }} mb-4">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+<!-- ── Informations de base ── -->
+<div class="card animate-fade-up delay-1" style="max-width:720px;">
+  <div class="card-header">
+    <h2 class="card-title">Informations de base</h2>
+    <p class="text-sm text-muted" style="margin-top:.25rem;">
+      Le coefficient et le barème ici sont les <strong>valeurs par défaut</strong> utilisées
+      si aucune configuration spécifique n'est définie pour un cycle.
+    </p>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid-2">
+      {% for field in form %}
+      <div class="form-group {% if field.field.widget.input_type == 'checkbox' %}d-flex align-center gap-3{% endif %}"
+           {% if field.name == 'nom_complet' %}style="grid-column:1/-1;"{% endif %}>
+        {% if field.field.widget.input_type == 'checkbox' %}
+          <label class="d-flex align-center gap-3" style="cursor:pointer;">
+            {{ field }}
+            <span class="input-label" style="margin-bottom:0;">{{ field.label }}</span>
+          </label>
+        {% else %}
+          <label for="{{ field.id_for_label }}" class="input-label">
+            {{ field.label }}{% if field.field.required %} <span style="color:#FF6B7A;">*</span>{% endif %}
+          </label>
+          {{ field }}
+          {% if field.errors %}<p class="input-error">{{ field.errors.0 }}</p>{% endif %}
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="divider" style="margin-top:var(--space-6);"></div>
+    <div class="d-flex justify-end gap-3" style="padding-top:var(--space-4);">
+      <a href="{% url 'pedagogie:matiere_list' %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Enregistrer la matière
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ── Configuration par cycle ── -->
+{% if matiere and cycles_config %}
+<div class="card animate-fade-up delay-2" style="max-width:860px; margin-top:var(--space-6);">
+  <div class="card-header">
+    <h2 class="card-title">Configuration par cycle</h2>
+    <p class="text-sm text-muted" style="margin-top:.25rem;">
+      Définissez un coefficient et un barème spécifiques par cycle.
+      Les valeurs s'appliquent à toutes les classes de ce cycle.
+      Laissez le coefficient vide pour utiliser la valeur par défaut.
+    </p>
+  </div>
+
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Cycle</th>
+          <th>Coefficient</th>
+          <th>Barème (min → max)</th>
+          <th>H/semaine</th>
+          <th style="text-align:center;">Obligatoire</th>
+          <th style="text-align:right;">Action</th>
+        </tr>
+      </thead>
+      <tbody id="cycles-config-body">
+        {% for entry in cycles_config %}
+          {% include "pedagogie/partials/cycle_config_row.html" with matiere=matiere cycle=entry.cycle config=entry.config form=entry.form %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer" style="padding:.75rem 1rem; font-size:.8rem; color:var(--color-text-secondary);">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="vertical-align:middle; margin-right:.25rem;">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    Cliquez sur ✓ pour enregistrer chaque ligne. La corbeille supprime la configuration du cycle (le défaut sera alors utilisé).
+  </div>
+</div>
+{% elif matiere %}
+<div class="card animate-fade-up delay-2" style="max-width:860px; margin-top:var(--space-6);">
+  <div class="card-body" style="text-align:center; padding:2rem; color:var(--color-text-secondary);">
+    Aucun cycle actif trouvé. Configurez d'abord les cycles dans <a href="{% url 'parametres:cycles' %}">Paramètres → Cycles</a>.
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

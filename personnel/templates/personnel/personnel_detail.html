@@ -1,0 +1,210 @@
+{% extends "core/base.html" %}
+
+{% block title %}Profil : {{ membre.get_nom_complet }} — Personnel — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'personnel:personnel_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{{ membre.get_nom_complet }}</h1>
+      <p class="page-subtitle">{{ membre.fonction }} · Matricule : <span class="text-primary text-mono">{{ membre.matricule }}</span></p>
+    </div>
+  </div>
+  <div class="d-flex gap-2 align-center">
+    {% if not membre.is_active %}
+      <span class="badge badge-danger" style="font-size:0.8rem; padding:4px 10px;">Inactif</span>
+    {% endif %}
+    <a href="{% url 'personnel:update' membre.pk %}" class="btn-secondary">Modifier le profil</a>
+    <a href="{% url 'personnel:inscription_create' membre.pk %}" class="btn-primary">Nouvelle inscription</a>
+    <form method="post" action="{% url 'personnel:toggle_active' membre.pk %}"
+          onsubmit="return confirm('{% if membre.is_active %}Désactiver {{ membre.get_nom_complet }} ? Il ne sera plus disponible dans le système.{% else %}Réactiver {{ membre.get_nom_complet }} ?{% endif %}')">
+      {% csrf_token %}
+      {% if membre.is_active %}
+        <button type="submit" class="btn-secondary" style="color:var(--color-danger, #e53e3e); border-color:var(--color-danger, #e53e3e);">
+          Désactiver
+        </button>
+      {% else %}
+        <button type="submit" class="btn-primary">
+          Réactiver
+        </button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Info rapide -->
+<div class="card mb-6 animate-fade-up delay-1" style="padding:var(--space-4);">
+  <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-4);">
+    <div>
+      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Téléphone</div>
+      <div class="fw-medium">{{ membre.telephone|default:"-" }}</div>
+    </div>
+    <div>
+      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Email</div>
+      <div class="fw-medium truncate">{{ membre.email|default:"-" }}</div>
+    </div>
+    <div>
+      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Embauche</div>
+      <div class="fw-medium">{{ membre.date_embauche|date:"d M Y" }}</div>
+    </div>
+    <div>
+      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Contrat</div>
+      <div class="fw-medium">{% if membre.est_contractuel %}Contractuel{% elif membre.est_vacataire %}Vacataire{% else %}Permanent{% endif %}</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:280px 1fr; gap:var(--space-6); align-items:start;" class="animate-fade-up delay-2">
+
+  <!-- Sidebar -->
+  <div>
+    <div class="card mb-4">
+      <div class="card-header"><span class="card-title">Informations Personnelles</span></div>
+      <div style="padding:var(--space-4);">
+        <div class="d-flex justify-between" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
+          <span class="text-muted">Né le</span>
+          <span>{{ membre.date_naissance|date:"d F Y" }} à {{ membre.lieu_naissance }}</span>
+        </div>
+        <div class="d-flex justify-between" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
+          <span class="text-muted">Sexe</span>
+          <span>{{ membre.genre_display }}</span>
+        </div>
+        <div class="d-flex justify-between" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
+          <span class="text-muted">Nationalité</span>
+          <span>{{ membre.nationalite }}</span>
+        </div>
+        <div class="d-flex justify-between" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
+          <span class="text-muted">CNI N°</span>
+          <span class="text-mono">{{ membre.numero_cni }}</span>
+        </div>
+        <div class="d-flex justify-between" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
+          <span class="text-muted">Situation</span>
+          <span>{{ membre.get_situation_matrimoniale_display }}</span>
+        </div>
+        <div style="padding:var(--space-2) 0; font-size:0.85rem;">
+          <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; margin-bottom:4px;">Adresse</div>
+          <p style="line-height:1.5;">{{ membre.adresse|default:"Aucune adresse renseignée." }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Affectations (Cycles)</span></div>
+      <div style="padding:var(--space-4); display:flex; flex-wrap:wrap; gap:var(--space-2);">
+        {% for cycle in membre.cycles.all %}
+          <span class="badge badge-info">{{ cycle.nom }}</span>
+        {% empty %}
+          <span class="text-muted" style="font-size:0.85rem; font-style:italic;">Aucun cycle assigné.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div>
+    <div class="table-wrapper mb-4">
+      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+        <span class="card-title">Inscriptions Annuelles</span>
+        <span class="text-muted" style="font-size:0.75rem;">Historique complet</span>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Année</th>
+              <th>Cycle</th>
+              <th>Poste</th>
+              <th>Statut</th>
+              <th>Inscrit le</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inscr in inscriptions %}
+            <tr>
+              <td class="fw-bold">{{ inscr.annee_scolaire.libelle }}</td>
+              <td class="text-secondary">{{ inscr.cycle.nom }}</td>
+              <td class="text-secondary">{{ inscr.poste.nom }}</td>
+              <td>
+                {% if inscr.est_actif %}
+                  <span class="badge badge-success">Active</span>
+                {% else %}
+                  <span class="badge badge-neutral">Terminée</span>
+                {% endif %}
+              </td>
+              <td class="text-muted">{{ inscr.date_inscription|date:"d/m/Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5">
+                <div class="empty-state">
+                  <div class="empty-state-icon">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                  </div>
+                  <p class="empty-state-text">Aucune inscription trouvée pour ce membre.</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+      {% if not est_public %}
+      <a href="{% url 'personnel:contrat' membre.pk %}" class="card" style="padding:var(--space-4); cursor:pointer; text-decoration:none; display:block; transition:box-shadow 0.15s ease;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,168,107,0.2)'" onmouseout="this.style.boxShadow=''">
+        <div class="d-flex align-center gap-3">
+          <div class="stat-icon stat-icon-green" style="width:40px; height:40px; flex-shrink:0;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="fw-bold">Contrat de travail</div>
+            <p class="text-muted" style="font-size:0.75rem;">Aperçu et impression du contrat</p>
+          </div>
+        </div>
+      </a>
+      {% else %}
+      <div class="card" style="padding:var(--space-4); opacity:0.45; cursor:not-allowed;">
+        <div class="d-flex align-center gap-3">
+          <div class="stat-icon stat-icon-green" style="width:40px; height:40px; flex-shrink:0;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="fw-bold">Contrat de travail</div>
+            <p class="text-muted" style="font-size:0.75rem;">Non disponible (établissement public)</p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      <a href="{% url 'personnel:badge' membre.pk %}" class="card" style="padding:var(--space-4); cursor:pointer; text-decoration:none; display:block; transition:box-shadow 0.15s ease;" onmouseover="this.style.boxShadow='0 4px 20px rgba(59,130,246,0.2)'" onmouseout="this.style.boxShadow=''">
+        <div class="d-flex align-center gap-3">
+          <div class="stat-icon stat-icon-blue" style="width:40px; height:40px; flex-shrink:0;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm5 3a2 2 0 100-4 2 2 0 000 4z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="fw-bold">Badge Personnel</div>
+            <p class="text-muted" style="font-size:0.75rem;">Aperçu et impression du badge</p>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

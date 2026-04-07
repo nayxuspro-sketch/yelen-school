@@ -1,0 +1,259 @@
+{% extends "core/base.html" %}
+
+{% block title %}Appels — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Appels</h1>
+    <p class="page-subtitle">Suivi des présences par séance{% if annee %} · {{ annee.libelle }}{% endif %}</p>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'presences:justification_list' %}" class="btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      Justifications
+    </a>
+    <a href="{% url 'presences:classe_select' %}" class="btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+      Nouvel appel
+    </a>
+  </div>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4 animate-fade-up delay-1">
+  <div class="card-body" style="padding:1rem 1.25rem;">
+    <form method="get" class="filter-row">
+      <div class="filter-field">
+        <label class="filter-label">Date début</label>
+        <input type="date" name="date_debut" value="{{ date_debut }}" class="input">
+      </div>
+      <div class="filter-field">
+        <label class="filter-label">Date fin</label>
+        <input type="date" name="date_fin" value="{{ date_fin }}" class="input">
+      </div>
+      <div class="filter-field filter-field--wide">
+        <label class="filter-label">Classe</label>
+        <select name="classe" class="input select">
+          <option value="">— Toutes les classes —</option>
+          {% for c in classes %}
+          <option value="{{ c.id }}" {% if c.id|stringformat:"s" == classe_id %}selected{% endif %}>
+            {{ c.nom }}{% if c.cycle %} ({{ c.cycle.nom }}){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button type="submit" class="btn-primary">Filtrer</button>
+        <a href="{% url 'presences:appel_list' %}" class="btn-secondary">Réinitialiser</a>
+        <a href="{% url 'presences:appel_print' %}?{{ request.GET.urlencode }}" target="_blank" class="btn-secondary">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+          </svg>
+          Imprimer
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if groupes_dates %}
+  {% for groupe_date in groupes_dates %}
+  <div class="appel-date-section animate-fade-up delay-1">
+
+    <!-- En-tête date -->
+    <div class="date-header">
+      <span class="date-label">{{ groupe_date.date|date:"l d F Y" }}</span>
+      <span class="date-count">
+        {% with nb=groupe_date.groupes_classes|length %}
+          {{ nb }} classe{{ nb|pluralize }}
+        {% endwith %}
+      </span>
+    </div>
+
+    <!-- Groupes par classe -->
+    {% for groupe_classe in groupe_date.groupes_classes %}
+    <div class="classe-block">
+      <div class="classe-header">
+        <span class="classe-nom">{{ groupe_classe.classe.nom }}</span>
+        {% if groupe_classe.classe.cycle %}
+        <span class="cycle-badge">{{ groupe_classe.classe.cycle.nom }}</span>
+        {% endif %}
+      </div>
+
+      <div class="table-wrapper">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Matière</th>
+                <th>Heure</th>
+                <th>Présents</th>
+                <th>Absents</th>
+                <th>Retards</th>
+                <th>Statut</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appel in groupe_classe.appels %}
+              <tr>
+                <td class="fw-medium">{{ appel.matiere.nom|default:"—" }}</td>
+                <td class="text-secondary">
+                  {% if appel.heure_debut %}{{ appel.heure_debut|time:"H:i" }}{% if appel.heure_fin %} – {{ appel.heure_fin|time:"H:i" }}{% endif %}{% else %}—{% endif %}
+                </td>
+                <td class="fw-medium text-success">{{ appel.nb_presents }}</td>
+                <td class="fw-medium text-danger">{{ appel.nb_absents }}</td>
+                <td class="fw-medium" style="color:var(--color-warning,#d97706);">{{ appel.nb_retards }}</td>
+                <td>
+                  {% if appel.est_clos %}
+                    <span class="badge badge-neutral">Clôturé</span>
+                  {% else %}
+                    <span class="badge badge-success">En cours</span>
+                  {% endif %}
+                </td>
+                <td style="text-align:right;">
+                  {% if not appel.est_clos %}
+                  <a href="{% url 'presences:appel_saisie' appel.pk %}" class="btn-primary btn-sm">Saisir</a>
+                  {% else %}
+                  <a href="{% url 'presences:appel_saisie' appel.pk %}" class="btn-secondary btn-sm">Voir</a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+  {% endfor %}
+
+{% if page_obj.has_other_pages %}
+<div class="pagination" style="display:flex; align-items:center; justify-content:center; gap:var(--space-2); padding:var(--space-4) 0;">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}&date_debut={{ date_debut }}&date_fin={{ date_fin }}&classe={{ classe_id }}"
+     class="btn-icon" title="Page précédente">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+  </a>
+  {% endif %}
+  <span class="text-secondary" style="font-size:0.875rem;">
+    Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    &nbsp;&mdash;&nbsp;{{ page_obj.paginator.count }} appel{{ page_obj.paginator.count|pluralize }}
+  </span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}&date_debut={{ date_debut }}&date_fin={{ date_fin }}&classe={{ classe_id }}"
+     class="btn-icon" title="Page suivante">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+    </svg>
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="table-wrapper animate-fade-up delay-1">
+  <div class="empty-state" style="padding:3rem;">
+    <div class="empty-state-icon">
+      <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+      </svg>
+    </div>
+    <p class="empty-state-text">Aucun appel enregistré.</p>
+    <a href="{% url 'presences:classe_select' %}" class="btn-primary" style="margin-top:1rem;">Démarrer un premier appel</a>
+  </div>
+</div>
+{% endif %}
+
+<style>
+.filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 150px;
+}
+.filter-field--wide { min-width: 200px; }
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #555;
+}
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 1px;
+}
+
+.appel-date-section {
+  margin-bottom: 2rem;
+}
+
+.date-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
+  background: var(--color-bg-secondary, #f8fafc);
+  border-left: 3px solid var(--color-primary, #00a86b);
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 0.75rem;
+}
+
+.date-label {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #1a1a1a;
+  text-transform: capitalize;
+}
+
+.date-count {
+  font-size: 0.75rem;
+  color: #555555;
+}
+
+.classe-block {
+  margin-bottom: 1rem;
+  margin-left: 1rem;
+}
+
+.classe-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.375rem;
+}
+
+.classe-nom {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+.cycle-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  background: rgba(0,168,107,0.1);
+  color: var(--color-primary, #00a86b);
+  border-radius: 9999px;
+}
+</style>
+
+{% endblock %}

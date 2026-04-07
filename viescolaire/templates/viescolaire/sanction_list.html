@@ -1,0 +1,142 @@
+{% extends "core/base.html" %}
+
+{% block title %}Sanctions — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Sanctions Disciplinaires</h1>
+    {% if annee_courante %}<p class="page-subtitle">{{ annee_courante }} — {{ total }} sanction{{ total|pluralize }}</p>{% endif %}
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'viescolaire:conseil_list' %}" class="btn-secondary">Vie Scolaire</a>
+    <a href="{% url 'viescolaire:sanction_create' %}" class="btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nouvelle sanction
+    </a>
+  </div>
+</div>
+
+<!-- Filtres par type -->
+<div class="d-flex gap-2 mb-4 animate-fade-up delay-1" style="flex-wrap:wrap;">
+  <a href="{% url 'viescolaire:sanction_list' %}"
+     class="btn-sm {% if not type_filtre %}btn-primary{% else %}btn-secondary{% endif %}">
+    Tous types
+  </a>
+  {% for ts in types_sanction %}
+  <a href="?type={{ ts.pk }}"
+     class="btn-sm {% if type_filtre == ts.pk|stringformat:'s' %}btn-primary{% else %}btn-secondary{% endif %}">
+    {{ ts.libelle }}
+  </a>
+  {% endfor %}
+</div>
+
+{% if groupes %}
+  {% for groupe in groupes %}
+  <div class="animate-fade-up delay-2" style="margin-bottom:1.5rem;">
+
+    <!-- En-tête de classe -->
+    <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.4rem;">
+      <div style="font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+                  color:#fff; background:var(--color-primary,#059669);
+                  padding:.2rem .7rem; border-radius:9999px;">
+        {{ groupe.classe.cycle.nom }}
+      </div>
+      <h3 style="margin:0; font-size:.95rem; font-weight:700; color:var(--color-text);">
+        {{ groupe.classe.nom }}
+      </h3>
+      <span style="font-size:.78rem; color:var(--color-text-secondary);">
+        {{ groupe.sanctions|length }} sanction{{ groupe.sanctions|length|pluralize }}
+      </span>
+    </div>
+
+    <div class="table-wrapper">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Élève</th>
+              <th>Type</th>
+              <th style="white-space:nowrap;">Date</th>
+              <th>Motif</th>
+              <th style="text-align:center;">Points</th>
+              <th>Conduite</th>
+              <th>Trimestre</th>
+              <th>Statut</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in groupe.sanctions %}
+            <tr>
+              <td class="fw-medium" style="white-space:nowrap;">{{ s.inscription.eleve.get_nom_complet }}</td>
+              <td><span class="badge badge-neutral">{{ s.type_sanction.libelle }}</span></td>
+              <td class="text-secondary" style="white-space:nowrap;">{{ s.date_sanction|date:"d/m/Y" }}</td>
+              <td class="truncate" style="max-width:160px; font-size:.82rem;">{{ s.motif|truncatechars:40 }}</td>
+
+              <td style="text-align:center; font-weight:700; font-size:.95rem;">
+                {% if s.points and s.points != 0 %}
+                  {% if s.points > 0 %}<span style="color:#16a34a;">+{{ s.points }}</span>
+                  {% else %}<span style="color:#dc2626;">{{ s.points }}</span>{% endif %}
+                {% else %}<span style="color:#94a3b8;">—</span>{% endif %}
+              </td>
+
+              <td style="font-size:.82rem; font-style:italic;">
+                {{ s.appreciation_conduite|default:"—" }}
+              </td>
+
+              <td class="text-secondary" style="font-size:.82rem; white-space:nowrap;">
+                {% if s.trimestre %}{{ s.trimestre }}{% else %}<span style="color:#94a3b8;">—</span>{% endif %}
+              </td>
+
+              <td>
+                {% if s.statut == 'CONFIRME' %}<span class="badge badge-danger">Confirmée</span>
+                {% elif s.statut == 'LEVEE' %}<span class="badge badge-success">Levée</span>
+                {% elif s.statut == 'ANNULE' %}<span class="badge badge-neutral">Annulée</span>
+                {% else %}<span class="badge badge-warning">En cours</span>{% endif %}
+                {% if s.a_impact_points %}
+                  <br><span style="font-size:.7rem; color:{% if s.points > 0 %}#16a34a{% else %}#dc2626{% endif %};">
+                    impact moyenne
+                  </span>
+                {% endif %}
+              </td>
+              <td style="white-space:nowrap;">
+                <form method="post" action="{% url 'viescolaire:sanction_delete' s.pk %}"
+                      onsubmit="return confirm('Supprimer cette sanction ?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-icon" title="Supprimer"
+                          style="color:#dc2626;">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3M3 7h18"/>
+                    </svg>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+{% else %}
+<div class="card animate-fade-up delay-2">
+  <div class="empty-state" style="padding:2rem;">
+    <div class="empty-state-icon">
+      <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+    </div>
+    <p class="empty-state-text">Aucune sanction enregistrée{% if type_filtre %} pour ce type{% endif %}.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

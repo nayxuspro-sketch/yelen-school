@@ -1,0 +1,53 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Personnel — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Gestion du Personnel</h1>
+    <p class="page-subtitle">Gérez les enseignants et le personnel administratif.</p>
+  </div>
+  <a href="{% url 'personnel:create' %}" class="btn-primary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+    Ajouter un membre
+  </a>
+</div>
+
+<div class="card mb-4 animate-fade-up delay-1" style="padding:var(--space-4); display:flex; align-items:center; gap:var(--space-4); flex-wrap:wrap;">
+  <div class="search-wrapper" style="flex:1; min-width:220px;">
+    <span class="search-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+    </span>
+    <input type="text"
+           name="q"
+           class="input search-input"
+           placeholder="Rechercher par nom, prénom ou matricule..."
+           hx-get="{% url 'personnel:personnel_list' %}{% if show_all %}?tous=1{% endif %}"
+           hx-trigger="keyup changed delay:500ms"
+           hx-target="#personnel-table"
+           value="{{ query }}">
+  </div>
+  {% if show_all %}
+    <a href="{% url 'personnel:personnel_list' %}" class="btn-secondary btn-sm">
+      Masquer les inactifs
+    </a>
+  {% elif nb_inactifs %}
+    <a href="{% url 'personnel:personnel_list' %}?tous=1" class="btn-secondary btn-sm"
+       style="color:var(--color-text-muted);">
+      Voir aussi les inactifs ({{ nb_inactifs }})
+    </a>
+  {% endif %}
+</div>
+
+<div id="personnel-table" class="table-wrapper animate-fade-up delay-2">
+  {% include "personnel/partials/personnel_table.html" %}
+</div>
+
+{% endblock %}

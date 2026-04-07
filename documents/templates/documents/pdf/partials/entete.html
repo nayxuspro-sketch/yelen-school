@@ -1,0 +1,94 @@
+{# ─────────────────────────────────────────────────────────────────
+   En-tête commun — tous documents PDF YELEN SCHOOL
+   Contexte : identite (IdentiteEtablissement, peut être None)
+             etablissement (Etablissement, peut être None)
+             annee_scolaire (AnneeScolaire)
+             logo_url (URL absolue du logo de identite)
+             etab_logo_url (URL absolue du logo de etablissement)
+   Priorité : identite > etablissement > annee_scolaire.etablissement
+   ───────────────────────────────────────────────────────────────── #}
+
+{# Champs resolus selon la source disponible #}
+{% if identite %}
+  {% with nom=identite.nom_etablissement adresse=identite.adresse_complete ville=identite.ville tel=identite.telephone cachet_obj=identite.cachet_etablissement %}
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:4px;">
+    <tr>
+      <td width="80" valign="middle" align="left">
+        {% if logo_url %}
+        <img src="{{ logo_url }}" width="72" height="72"
+             style="display:block; object-fit:contain;" alt="Logo">
+        {% endif %}
+      </td>
+      <td valign="middle" align="center" style="padding:0 10px;">
+        <p style="margin:0; font-size:14pt; font-weight:bold; text-transform:uppercase;
+                  letter-spacing:1px; color:#111;">{{ nom }}</p>
+        {% if identite.numero_agrement_mena %}
+        <p style="margin:3px 0 0 0; font-size:8pt; color:#666; font-style:italic;">
+          N° Agrément MENA: {{ identite.numero_agrement_mena }}
+        </p>
+        {% endif %}
+        {% if identite.get_type_etablissement_display or identite.sigle %}
+        <p style="margin:3px 0 0 0; font-size:8pt; color:#666; text-transform:uppercase;
+                  letter-spacing:1px;">
+          {{ identite.get_type_etablissement_display }}{% if identite.sigle %} &mdash; {{ identite.sigle }}{% endif %}
+        </p>
+        {% endif %}
+        {% if adresse or ville %}
+        <p style="margin:5px 0 0 0; font-size:8.5pt; color:#333;">
+          {% if adresse %}{{ adresse }}{% endif %}{% if adresse and ville %} &mdash; {% endif %}{% if ville %}<strong>{{ ville }}</strong>{% endif %}
+        </p>
+        {% endif %}
+        {% if tel or identite.email %}
+        <p style="margin:2px 0 0 0; font-size:8.5pt; color:#333;">
+          {% if tel %}T&eacute;l&nbsp;: {{ tel }}{% endif %}
+          {% if tel and identite.email %} &nbsp;&middot;&nbsp; {% endif %}
+          {% if identite.email %}{{ identite.email }}{% endif %}
+        </p>
+        {% endif %}
+      </td>
+      <td width="80" valign="middle" align="right">
+        {% if cachet_obj %}
+        <img src="{{ cachet_obj.url }}" width="70" height="70"
+             style="display:block; object-fit:contain; margin-left:auto;" alt="Cachet">
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+  {% endwith %}
+{% elif etablissement %}
+  {% with nom=etablissement.nom adresse=etablissement.adresse ville=etablissement.ville tel=etablissement.telephone %}
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:4px;">
+    <tr>
+      <td width="80" valign="middle" align="left">
+        {% if etab_logo_url %}
+        <img src="{{ etab_logo_url }}" width="72" height="72"
+             style="display:block; object-fit:contain;" alt="Logo">
+        {% endif %}
+      </td>
+      <td valign="middle" align="center" style="padding:0 10px;">
+        <p style="margin:0; font-size:14pt; font-weight:bold; text-transform:uppercase;
+                  letter-spacing:1px; color:#111;">{{ nom }}</p>
+        {% if adresse or ville %}
+        <p style="margin:5px 0 0 0; font-size:8.5pt; color:#333;">
+          {% if adresse %}{{ adresse }}{% endif %}{% if adresse and ville %} &mdash; {% endif %}{% if ville %}<strong>{{ ville }}</strong>{% endif %}
+        </p>
+        {% endif %}
+        {% if tel %}
+        <p style="margin:2px 0 0 0; font-size:8.5pt; color:#333;">T&eacute;l&nbsp;: {{ tel }}</p>
+        {% endif %}
+      </td>
+      <td width="80" valign="middle" align="right"></td>
+    </tr>
+  </table>
+  {% endwith %}
+{% else %}
+  <p style="font-size:14pt; font-weight:bold; text-align:center; text-transform:uppercase;
+            margin:0 0 8px 0;">{{ annee_scolaire.etablissement }}</p>
+{% endif %}
+
+<!-- Séparateur double barre -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td style="border-top:3px solid #1a1a1a; font-size:0; line-height:0;">&nbsp;</td></tr>
+  <tr><td style="border-top:1px solid #bbb; font-size:0; line-height:0; padding-top:2px;">&nbsp;</td></tr>
+</table>
+<div style="height:10px;"></div>

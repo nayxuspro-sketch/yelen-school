@@ -1,0 +1,39 @@
+{% extends "core/base.html" %}
+
+{% block title %}Mon Profil — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Mon Profil</h1>
+    <p class="page-subtitle">Informations de votre compte.</p>
+  </div>
+</div>
+
+<div style="max-width:560px;" class="animate-fade-up delay-1">
+  <div class="card">
+    <div style="padding:var(--space-6);">
+      <div class="d-flex justify-between align-center" style="padding:var(--space-3) 0; font-size:0.9rem; border-bottom:1px solid var(--color-border);">
+        <span class="text-muted">Email</span>
+        <span class="fw-medium">{{ user.email }}</span>
+      </div>
+      <div class="d-flex justify-between align-center" style="padding:var(--space-3) 0; font-size:0.9rem; border-bottom:1px solid var(--color-border);">
+        <span class="text-muted">Nom complet</span>
+        <span class="fw-medium">{{ user.get_full_name|default:"—" }}</span>
+      </div>
+      <div class="d-flex justify-between align-center" style="padding:var(--space-3) 0; font-size:0.9rem; border-bottom:1px solid var(--color-border);">
+        <span class="text-muted">Rôle</span>
+        <span class="fw-medium">{{ user.get_role_display }}</span>
+      </div>
+      {% if user.etablissement %}
+      <div class="d-flex justify-between align-center" style="padding:var(--space-3) 0; font-size:0.9rem;">
+        <span class="text-muted">Établissement</span>
+        <span class="fw-medium">{{ user.etablissement }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

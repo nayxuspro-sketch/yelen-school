@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+</head>
+<body style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--color-bg-app);">
+
+<div style="width:100%; max-width:420px; padding:var(--space-6);">
+
+  <!-- Logo -->
+  <div style="text-align:center; margin-bottom:var(--space-8);">
+    <h1 class="logo-font" style="font-size:1.8rem; color:var(--color-primary); letter-spacing:.04em;">YELEN SCHOOL</h1>
+    <p class="text-muted" style="margin-top:4px; font-size:0.875rem;">Système de Gestion Scolaire</p>
+  </div>
+
+  <!-- Card -->
+  <div class="card">
+    <div style="padding:var(--space-6);">
+      <h2 class="fw-semibold" style="font-size:1.1rem; margin-bottom:var(--space-6);">Connexion</h2>
+
+      {% if messages %}
+        {% for message in messages %}
+        <div style="margin-bottom:var(--space-4); padding:var(--space-3); border-radius:var(--radius-md); background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); color:#FCA5A5; font-size:0.875rem;">
+          {{ message }}
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label for="email" class="input-label">Adresse email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            autofocus
+            value="{{ request.POST.email }}"
+            class="input w-full"
+            placeholder="directeur@ecole.bf">
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="input-label">Mot de passe</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            class="input w-full"
+            placeholder="••••••••">
+        </div>
+
+        <button type="submit" class="btn-primary w-full" style="margin-top:var(--space-4); justify-content:center;">
+          Se connecter
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <p style="text-align:center; font-size:0.75rem; margin-top:var(--space-6); color:var(--color-text-muted);">
+    &copy; 2026 YELEN SCHOOL — Burkina Faso
+  </p>
+</div>
+
+</body>
+</html>

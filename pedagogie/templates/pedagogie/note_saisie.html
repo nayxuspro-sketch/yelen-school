@@ -1,0 +1,290 @@
+{% extends "core/base.html" %}
+
+{% block title %}Saisie — {{ evaluation.titre }}{% endblock %}
+
+{% block content %}
+
+<!-- ── En-tête ── -->
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}" class="text-muted" style="text-decoration:none;">
+        {{ evaluation.enseignement.classe.nom }}
+      </a>
+      <span>›</span>
+      <span>{{ evaluation.enseignement.matiere.nom }}</span>
+      <span>›</span>
+      <span>{{ evaluation.trimestre.nom }}</span>
+    </div>
+    <h1 class="page-title">{{ evaluation.titre }}</h1>
+    <div class="d-flex align-center gap-4 flex-wrap" style="margin-top:.5rem;">
+      <span class="text-mono" style="font-size:.85rem; color:var(--color-primary);">
+        Barème : /{{ evaluation.bareme|floatformat:0 }}
+      </span>
+      <span class="text-muted" style="font-size:.85rem;">
+        {{ evaluation.type_evaluation.nom }}
+      </span>
+      <span class="text-muted" style="font-size:.85rem;">
+        {{ evaluation.date_planifiee|date:"d/m/Y" }}
+      </span>
+    </div>
+  </div>
+  <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}" class="btn-secondary">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Retour
+  </a>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags|default:'info' }} mb-4 animate-fade-up">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+<!-- ── Panneau stats ── -->
+<div class="d-flex gap-3 flex-wrap mb-4 animate-fade-up delay-1">
+  <div class="card" style="flex:1; min-width:140px; padding:.875rem 1.25rem;">
+    <div class="text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.25rem;">Élèves</div>
+    <div class="fw-bold" style="font-size:1.5rem;">{{ nb_total }}</div>
+  </div>
+  <div class="card" style="flex:1; min-width:140px; padding:.875rem 1.25rem; border-color:var(--color-primary);">
+    <div class="text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.25rem;">Notes saisies</div>
+    <div class="fw-bold" style="font-size:1.5rem; color:var(--color-primary);">
+      <span id="stat-saisies">{{ nb_saisies }}</span> / {{ nb_total }}
+    </div>
+  </div>
+  <div class="card" style="flex:1; min-width:140px; padding:.875rem 1.25rem;">
+    <div class="text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.25rem;">Moyenne classe</div>
+    <div class="fw-bold" style="font-size:1.5rem;"><span id="stat-moy">—</span></div>
+  </div>
+  <div class="card" style="flex:1; min-width:140px; padding:.875rem 1.25rem;">
+    <div class="text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.25rem;">Min / Max</div>
+    <div class="fw-bold" style="font-size:1.1rem;"><span id="stat-min">—</span> / <span id="stat-max">—</span></div>
+  </div>
+</div>
+
+<!-- ── Tableau de saisie ── -->
+<form method="post" id="form-saisie">
+  {% csrf_token %}
+  <input type="hidden" name="bareme" value="{{ evaluation.bareme }}">
+
+  <div class="card animate-fade-up delay-2" style="padding:0; overflow:hidden;">
+    <div class="table-scroll">
+      <table class="data-table" id="table-notes">
+        <thead>
+          <tr>
+            <th style="width:3rem; text-align:center;">#</th>
+            <th>Élève</th>
+            <th style="text-align:center; width:120px;">
+              Note
+              <span class="text-muted" style="font-size:.75rem; font-weight:400;">/{{ evaluation.bareme|floatformat:0 }}</span>
+            </th>
+            <th style="text-align:center; width:80px;">Absent</th>
+            <th style="text-align:center; width:100px;" title="L'élève est dispensé(e) : cette matière ne compte pas dans la moyenne générale">Dispensé</th>
+            <th>Observation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in eleves_data %}
+          <tr id="row-{{ item.inscription.pk }}"
+              class="note-row {% if item.note and not item.est_dispense %}row-saisie{% endif %} {% if item.est_dispense %}row-dispense{% endif %}"
+              style="transition:background .2s; {% if item.est_dispense %}opacity:.6;{% endif %}">
+            <td class="text-muted text-mono" style="text-align:center; font-size:.8rem;">{{ forloop.counter }}</td>
+            <td>
+              <div class="fw-semibold" style="text-transform:uppercase;">{{ item.inscription.eleve.nom }}</div>
+              <div class="text-muted" style="font-size:.8rem;">{{ item.inscription.eleve.prenom }}</div>
+              <div class="text-mono" style="font-size:.7rem; color:var(--color-text-secondary);">{{ item.inscription.eleve.matricule }}</div>
+            </td>
+            <td style="text-align:center;">
+              <input type="number"
+                     class="input note-input"
+                     name="note_{{ item.inscription.id }}"
+                     id="note-{{ item.inscription.pk }}"
+                     step="0.25"
+                     min="0"
+                     max="{{ evaluation.bareme }}"
+                     value="{{ item.note.valeur|default:'' }}"
+                     placeholder="—"
+                     data-row="{{ item.inscription.pk }}"
+                     style="width:90px; text-align:center; font-weight:700; font-size:1rem;"
+                     {% if item.est_dispense %}disabled{% endif %}>
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox"
+                     class="abs-checkbox"
+                     name="abs_{{ item.inscription.id }}"
+                     id="abs-{{ item.inscription.pk }}"
+                     data-row="{{ item.inscription.pk }}"
+                     data-note-id="note-{{ item.inscription.pk }}"
+                     {% if item.est_absent %}checked{% endif %}
+                     {% if item.est_dispense %}disabled{% endif %}
+                     title="Marquer absent (note = 0)">
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox"
+                     class="disp-checkbox"
+                     name="disp_{{ item.inscription.id }}"
+                     id="disp-{{ item.inscription.pk }}"
+                     data-row="{{ item.inscription.pk }}"
+                     {% if item.est_dispense %}checked{% endif %}
+                     title="Dispensé : cette matière est exclue de la moyenne générale">
+            </td>
+            <td>
+              <input type="text"
+                     class="input w-full"
+                     name="obs_{{ item.inscription.id }}"
+                     id="obs-{{ item.inscription.pk }}"
+                     value="{{ item.note.observation|default:'' }}"
+                     placeholder="RAS…"
+                     {% if item.est_dispense %}disabled{% endif %}>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Footer sticky ── -->
+  <div style="position:sticky; bottom:var(--space-4); z-index:10; margin-top:var(--space-4);">
+    <div class="card d-flex justify-between align-center gap-4 flex-wrap"
+         style="padding:var(--space-3) var(--space-5); border-color:var(--color-primary);">
+      <div class="d-flex align-center gap-4 flex-wrap">
+        <span class="text-muted" style="font-size:.85rem;">
+          <span class="fw-bold text-primary" id="footer-saisies">{{ nb_saisies }}</span>/{{ nb_total }} saisies
+        </span>
+        <span class="text-muted" style="font-size:.8rem; font-style:italic;">
+          Utilisez <kbd style="border:1px solid var(--color-border); border-radius:3px; padding:1px 5px; font-size:.75rem;">Tab</kbd>
+          pour naviguer rapidement.
+        </span>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}"
+           class="btn-secondary">Annuler</a>
+        <button type="submit" class="btn-primary" style="min-width:160px;">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          Enregistrer les notes
+        </button>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const bareme = parseFloat("{{ evaluation.bareme }}");
+  const noteInputs = document.querySelectorAll('.note-input');
+  const absCheckboxes = document.querySelectorAll('.abs-checkbox');
+
+  // ── Couleur de ligne ──
+  function updateRowColor(row) {
+    const noteInput = row.querySelector('.note-input');
+    const absCheck  = row.querySelector('.abs-checkbox');
+    if (absCheck && absCheck.checked) {
+      row.style.background = 'rgba(255,107,122,.07)';
+    } else if (noteInput && noteInput.value !== '') {
+      row.style.background = 'rgba(0,168,107,.07)';
+    } else {
+      row.style.background = '';
+    }
+  }
+
+  // ── Stats live ──
+  function updateStats() {
+    const vals = [];
+    document.querySelectorAll('.note-input').forEach(inp => {
+      const v = parseFloat(inp.value);
+      if (!isNaN(v)) vals.push(v);
+    });
+    // Ajouter les ABS (note=0)
+    document.querySelectorAll('.abs-checkbox:checked').forEach(() => vals.push(0));
+
+    const saisies = vals.length;
+    document.getElementById('stat-saisies').textContent = saisies;
+    document.getElementById('footer-saisies').textContent = saisies;
+
+    if (vals.length > 0) {
+      const moy = vals.reduce((a, b) => a + b, 0) / vals.length;
+      document.getElementById('stat-moy').textContent = moy.toFixed(2);
+      document.getElementById('stat-min').textContent = Math.min(...vals).toFixed(2);
+      document.getElementById('stat-max').textContent = Math.max(...vals).toFixed(2);
+    } else {
+      document.getElementById('stat-moy').textContent = '—';
+      document.getElementById('stat-min').textContent = '—';
+      document.getElementById('stat-max').textContent = '—';
+    }
+
+    // Colorier toutes les lignes
+    document.querySelectorAll('.note-row').forEach(updateRowColor);
+  }
+
+  // ── Gestion case Dispensé ──
+  document.querySelectorAll('.disp-checkbox').forEach(cb => {
+    cb.addEventListener('change', function () {
+      const row      = document.getElementById('row-' + this.dataset.row);
+      const noteInp  = document.getElementById('note-' + this.dataset.row);
+      const absInp   = document.getElementById('abs-'  + this.dataset.row);
+      const obsInp   = document.getElementById('obs-'  + this.dataset.row);
+      const disabled = this.checked;
+      if (noteInp) { noteInp.disabled = disabled; if (disabled) noteInp.value = ''; }
+      if (absInp)  { absInp.disabled  = disabled; if (disabled) absInp.checked = false; }
+      if (obsInp)  { obsInp.disabled  = disabled; if (disabled) obsInp.value = ''; }
+      row.style.opacity = disabled ? '0.6' : '';
+      updateStats();
+    });
+  });
+
+  // ── Gestion case ABS ──
+  absCheckboxes.forEach(cb => {
+    cb.addEventListener('change', function () {
+      const noteInput = document.getElementById(this.dataset.noteId);
+      const obsInput  = document.getElementById('obs-' + this.dataset.row);
+      if (this.checked) {
+        noteInput.value = '';
+        noteInput.disabled = true;
+        if (obsInput && !obsInput.value) obsInput.value = 'ABS';
+      } else {
+        noteInput.disabled = false;
+        noteInput.value = '';
+        if (obsInput && obsInput.value === 'ABS') obsInput.value = '';
+      }
+      updateStats();
+    });
+  });
+
+  // ── Validation + stats à la saisie ──
+  noteInputs.forEach(inp => {
+    inp.addEventListener('input', function () {
+      const v = parseFloat(this.value);
+      if (!isNaN(v)) {
+        if (v < 0) this.value = '0';
+        if (v > bareme) this.value = bareme;
+      }
+      updateStats();
+    });
+  });
+
+  // ── Init ──
+  absCheckboxes.forEach(cb => {
+    if (cb.checked) {
+      const noteInput = document.getElementById(cb.dataset.noteId);
+      if (noteInput) noteInput.disabled = true;
+    }
+  });
+  // Les dispensés sont déjà désactivés côté serveur via l'attribut `disabled`
+  // On s'assure juste de l'opacité de la ligne
+  document.querySelectorAll('.disp-checkbox:checked').forEach(cb => {
+    const row = document.getElementById('row-' + cb.dataset.row);
+    if (row) row.style.opacity = '0.6';
+  });
+  updateStats();
+})();
+</script>
+{% endblock %}

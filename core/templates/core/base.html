@@ -1,0 +1,713 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}YELEN SCHOOL{% endblock %}</title>
+
+  {# ── CSS principal — 100% local, zéro CDN ── #}
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+
+  {# ── HTMX ── #}
+  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+
+  <style>
+  /* ═══ POLICES LOCALES ═══ */
+  @font-face { font-family:'Outfit'; src:url('/static/fonts/Outfit-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'Outfit'; src:url('/static/fonts/Outfit-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+  @font-face { font-family:'Outfit'; src:url('/static/fonts/Outfit-SemiBold.woff2') format('woff2'); font-weight:600; font-display:swap; }
+  @font-face { font-family:'Outfit'; src:url('/static/fonts/Outfit-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+  @font-face { font-family:'Playfair Display'; src:url('/static/fonts/PlayfairDisplay-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+
+  /* ═══ SIDEBAR PREMIUM ═══ */
+  .sidebar {
+    width: 260px;
+    min-width: 260px;
+    height: 100vh;
+    background: #0A1628;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-family: 'Outfit', system-ui, sans-serif;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.10) transparent;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 2px; }
+
+  /* Logo */
+  .sb-logo {
+    padding: 1.125rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    animation: sbFadeUp 0.4s ease both;
+  }
+  .sb-logo-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #00A86B, #007A4D);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(0,168,107,0.40);
+  }
+  .sb-logo-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: #E8EDF5;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    display: block;
+  }
+  .sb-logo-tagline {
+    font-size: 0.625rem;
+    color: #5A7A9A;
+    display: block;
+    margin-top: 0.125rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* Utilisateur */
+  .sb-user {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    flex-shrink: 0;
+    animation: sbFadeUp 0.4s 0.05s ease both;
+  }
+  .sb-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00A86B, #007A4D);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,168,107,0.30);
+  }
+  .sb-user-info { flex: 1; min-width: 0; }
+  .sb-user-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #E8EDF5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+  .sb-user-sub {
+    font-size: 0.6875rem;
+    color: #5A7A9A;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    margin-top: 0.0625rem;
+  }
+  .sb-online {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #00A86B;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(0,168,107,0.65);
+  }
+
+  /* Navigation */
+  .sb-nav { flex: 1; padding: 0.5rem 0; }
+
+  /* Labels de section */
+  .sb-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #3A5270;
+    padding: 1rem 1rem 0.25rem;
+    display: block;
+    user-select: none;
+  }
+
+  /* Items menu */
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.4375rem 1rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #7A9AB8;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+    line-height: 1.4;
+    background: none;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+  }
+  .menu-item:hover {
+    background: #162238;
+    color: #E8EDF5;
+  }
+  .menu-item.active {
+    background: rgba(0,168,107,0.13);
+    color: #00A86B;
+    border-left-color: #00A86B;
+    font-weight: 600;
+    box-shadow: inset 0 0 12px rgba(0,168,107,0.07);
+  }
+  .menu-icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    stroke-width: 1.75;
+    opacity: 0.65;
+    transition: opacity 0.15s ease;
+  }
+  .menu-item:hover .menu-icon,
+  .menu-item.active .menu-icon { opacity: 1; }
+
+  /* Chevron accordéon */
+  .sb-chevron {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    transition: transform 0.22s ease;
+    opacity: 0.5;
+    margin-left: auto;
+  }
+
+  /* Sous-menu */
+  .sidebar-submenu {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+  }
+  .menu-item-sub {
+    padding-left: 2.625rem;
+    font-size: 0.7875rem;
+    font-weight: 400;
+    color: #4A6A88;
+  }
+  .menu-item-sub:hover { color: #C8D8E8; background: #111E35; }
+  .menu-item-sub.active {
+    color: #00A86B;
+    border-left-color: #00A86B;
+    background: rgba(0,168,107,0.08);
+    font-weight: 500;
+  }
+
+  /* Pied de sidebar */
+  .sb-footer {
+    padding: 0.625rem 1rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .sb-version { font-size: 0.625rem; color: #2A4060; font-weight: 500; }
+  .sb-logout {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    font-family: 'Outfit', sans-serif;
+    color: #4A6A88;
+    text-decoration: none;
+    transition: color 0.15s ease;
+    padding: 0.25rem 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .sb-logout:hover { color: #DC3545; }
+
+  /* Animations */
+  @keyframes sbFadeUp {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Séparateur visuel avant label section */
+  .sb-sep {
+    height: 1px;
+    background: rgba(255,255,255,0.04);
+    margin: 0.5rem 1rem 0;
+  }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="app-layout" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  {# Lueurs Aura d'arrière-plan #}
+  <div class="aura-glow-container" aria-hidden="true">
+    <div class="aura-glow aura-glow-1"></div>
+    <div class="aura-glow aura-glow-2"></div>
+  </div>
+
+  {# ════════════════════════════════════════ SIDEBAR ══════════════════════════════════════ #}
+  <aside id="sidebar" class="sidebar">
+
+    {# ── Logo ── #}
+    <div class="sb-logo">
+      <div class="sb-logo-mark" aria-hidden="true">
+        <svg width="20" height="20" fill="white" viewBox="0 0 20 20">
+          <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+        </svg>
+      </div>
+      <div>
+        <span class="sb-logo-name">YELEN SCHOOL</span>
+        <span class="sb-logo-tagline">Gestion scolaire · Burkina Faso</span>
+      </div>
+    </div>
+
+    {# ── Utilisateur ── #}
+    {% if user.is_authenticated %}
+    <div class="sb-user">
+      <div class="sb-avatar" aria-hidden="true">{{ user.get_full_name|default:user.username|first|upper }}</div>
+      <div class="sb-user-info">
+        <span class="sb-user-name">{{ user.get_full_name|default:user.username }}</span>
+        <span class="sb-user-sub">{{ user.email }}</span>
+      </div>
+      <div class="sb-online" title="En ligne"></div>
+    </div>
+    {% endif %}
+
+    {# ── Navigation ── #}
+    <nav class="sb-nav" aria-label="Navigation principale">
+
+      {# Accueil #}
+      <a href="/" class="menu-item" data-url="/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        Tableau de bord
+      </a>
+
+      {# ── SCOLARITÉ ── #}
+      <div class="sb-sep"></div>
+      <span class="sb-label">Scolarité</span>
+
+      {# Élèves #}
+      <a href="{% url 'inscriptions:eleve_list' %}" class="menu-item" data-url="/inscriptions/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        Élèves
+      </a>
+
+      {# Pédagogie #}
+      <button class="menu-item accordion-toggle" id="pedagogie-toggle" data-submenu="pedagogie-submenu" data-chevron="pedagogie-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+          Pédagogie
+        </span>
+        <svg id="pedagogie-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="pedagogie-submenu" class="sidebar-submenu">
+        <a href="{% url 'pedagogie:matiere_list' %}"       class="menu-item menu-item-sub" data-url="/pedagogie/matieres/">Matières</a>
+        <a href="{% url 'pedagogie:enseignement_list' %}"  class="menu-item menu-item-sub" data-url="/pedagogie/enseignements/">Enseignements</a>
+        <a href="{% url 'pedagogie:evaluation_list' %}"    class="menu-item menu-item-sub" data-url="/pedagogie/evaluations/">Évaluations</a>
+        <a href="{% url 'pedagogie:releve_notes' %}"           class="menu-item menu-item-sub" data-url="/pedagogie/releve-notes/">Relevé de notes</a>
+        <a href="{% url 'pedagogie:classe_result_list' %}"    class="menu-item menu-item-sub" data-url="/pedagogie/resultats/">Résultats</a>
+        <a href="{% url 'pedagogie:moyennes_disciplines' %}"  class="menu-item menu-item-sub" data-url="/pedagogie/resultats/moyennes-disciplines/">Moyennes par discipline</a>
+      </div>
+
+      {# Présences #}
+      <button class="menu-item accordion-toggle" id="presences-toggle" data-submenu="presences-submenu" data-chevron="presences-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+          </svg>
+          Présences
+        </span>
+        <svg id="presences-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="presences-submenu" class="sidebar-submenu">
+        <a href="{% url 'presences:appel_list' %}"        class="menu-item menu-item-sub" data-url="/presences/">Appels</a>
+        <a href="{% url 'presences:justification_list' %}" class="menu-item menu-item-sub" data-url="/presences/justifications/">Justifications</a>
+      </div>
+
+      {# Examens #}
+      <button class="menu-item accordion-toggle" id="examens-toggle" data-submenu="examens-submenu" data-chevron="examens-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Examens
+        </span>
+        <svg id="examens-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="examens-submenu" class="sidebar-submenu">
+        <a href="{% url 'examens:session_list' %}" class="menu-item menu-item-sub" data-url="/examens/">Sessions d'examens</a>
+      </div>
+
+      {# Vie Scolaire #}
+      <button class="menu-item accordion-toggle" id="viescolaire-toggle" data-submenu="viescolaire-submenu" data-chevron="viescolaire-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          Vie Scolaire
+        </span>
+        <svg id="viescolaire-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="viescolaire-submenu" class="sidebar-submenu">
+        <a href="{% url 'viescolaire:conseil_list' %}"  class="menu-item menu-item-sub" data-url="/viescolaire/conseils/">Conseils de classe</a>
+        <a href="{% url 'viescolaire:sanction_list' %}" class="menu-item menu-item-sub" data-url="/viescolaire/sanctions/">Sanctions disciplinaires</a>
+        <a href="{% url 'viescolaire:activite_list' %}" class="menu-item menu-item-sub" data-url="/viescolaire/activites/">Activités parascolaires</a>
+      </div>
+
+      {# ── ADMINISTRATION ── #}
+      <div class="sb-sep"></div>
+      <span class="sb-label">Administration</span>
+
+      {# Personnel #}
+      <a href="{% url 'personnel:personnel_list' %}" class="menu-item" data-url="/personnel/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        Personnel
+      </a>
+
+      {# Finances #}
+      <button class="menu-item accordion-toggle" id="finances-toggle" data-submenu="finances-submenu" data-chevron="finances-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Finances
+        </span>
+        <svg id="finances-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="finances-submenu" class="sidebar-submenu">
+        <a href="{% url 'finances:paiement_list' %}"       class="menu-item menu-item-sub" data-url="/finances/paiements/">Paiements</a>
+        <a href="{% url 'finances:liste_redevables' %}"    class="menu-item menu-item-sub" data-url="/finances/redevables/">Redevables</a>
+        <a href="{% url 'finances:liste_exoneres' %}"      class="menu-item menu-item-sub" data-url="/finances/exoneres/">Exonérés</a>
+        <a href="{% url 'finances:relance_paiement' %}"    class="menu-item menu-item-sub" data-url="/finances/relances/">Relances</a>
+        <a href="{% url 'finances:bilan_encaissements' %}" class="menu-item menu-item-sub" data-url="/finances/bilan/encaissements/">Bilan encaissements</a>
+      </div>
+
+      {# Vacations #}
+      <button class="menu-item accordion-toggle" id="vacations-toggle" data-submenu="vacations-submenu" data-chevron="vacations-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          Vacations
+        </span>
+        <svg id="vacations-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="vacations-submenu" class="sidebar-submenu">
+        <a href="{% url 'vacations:contrat_list' %}"  class="menu-item menu-item-sub" data-url="/vacations/">Contrats</a>
+        <a href="{% url 'vacations:bulletin_list' %}" class="menu-item menu-item-sub" data-url="/vacations/bulletins/">Bulletins de vacation</a>
+      </div>
+
+      {# Documents #}
+      <button class="menu-item accordion-toggle" id="documents-toggle" data-submenu="documents-submenu" data-chevron="documents-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Documents
+        </span>
+        <svg id="documents-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="documents-submenu" class="sidebar-submenu">
+        <a href="{% url 'documents:liste_classes_selector' %}"   class="menu-item menu-item-sub" data-url="/documents/listes/">Listes de classes</a>
+        <a href="{% url 'documents:liste_personnel_selector' %}" class="menu-item menu-item-sub" data-url="/documents/personnel/">Liste du personnel</a>
+        <a href="{% url 'parametres:signataire_formulaire' %}"   class="menu-item menu-item-sub" data-url="/parametres/signataires/formulaire/">Signataires</a>
+      </div>
+
+      {# ── CONFIGURATION ── #}
+      <div class="sb-sep"></div>
+      <span class="sb-label">Configuration</span>
+
+      <button class="menu-item accordion-toggle" id="params-toggle" data-submenu="params-submenu" data-chevron="params-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          Paramètres
+        </span>
+        <svg id="params-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="params-submenu" class="sidebar-submenu">
+        <a href="{% url 'parametres:etablissement' %}"              class="menu-item menu-item-sub" data-url="/parametres/etablissement/">Établissement</a>
+        <a href="{% url 'parametres:identite_etablissement' %}"     class="menu-item menu-item-sub" data-url="/parametres/identite-etablissement/">Identité établissement</a>
+        <a href="{% url 'parametres:annee_list' %}"                 class="menu-item menu-item-sub" data-url="/parametres/annees/">Années scolaires</a>
+        <a href="{% url 'parametres:cycle_list' %}"                 class="menu-item menu-item-sub" data-url="/parametres/cycles/">Cycles</a>
+        <a href="{% url 'parametres:classe_list' %}"                class="menu-item menu-item-sub" data-url="/parametres/classes/">Classes</a>
+        <a href="{% url 'parametres:poste_list' %}"                 class="menu-item menu-item-sub" data-url="/parametres/postes/">Postes</a>
+        <a href="{% url 'parametres:statut_list' %}"                class="menu-item menu-item-sub" data-url="/parametres/statuts/">Statuts élèves</a>
+        <a href="{% url 'parametres:rubrique_list' %}"              class="menu-item menu-item-sub" data-url="/parametres/rubriques/">Rubriques paiement</a>
+        <a href="{% url 'parametres:tarif_list' %}"                 class="menu-item menu-item-sub" data-url="/parametres/tarifs/">Tarifs de scolarité</a>
+        <a href="{% url 'parametres:discipline_list' %}"            class="menu-item menu-item-sub" data-url="/parametres/disciplines/">Disciplines</a>
+        <a href="{% url 'parametres:categorie_discipline_list' %}"  class="menu-item menu-item-sub" data-url="/parametres/categories-disciplines/">Catégories disciplines</a>
+        <a href="{% url 'parametres:periode_list' %}"               class="menu-item menu-item-sub" data-url="/parametres/periodes/">Périodes</a>
+        <a href="{% url 'parametres:appreciation_list' %}"          class="menu-item menu-item-sub" data-url="/parametres/appreciations/">Appréciation Secondaire</a>
+        <a href="{% url 'parametres:appreciation_primaire_list' %}" class="menu-item menu-item-sub" data-url="/parametres/appreciations-primaire/">Appréciation Primaire</a>
+        <a href="{% url 'parametres:signataires_list' %}"           class="menu-item menu-item-sub" data-url="/parametres/signataires/">Signataires</a>
+        <a href="{% url 'parametres:signataire_config' %}"          class="menu-item menu-item-sub" data-url="/parametres/signataires/configurer/">Configurer signataires</a>
+
+        <a href="{% url 'parametres:type_evaluation_list' %}"       class="menu-item menu-item-sub" data-url="/parametres/types-evaluations/">Types d'évaluation</a>
+        <a href="{% url 'parametres:type_document_list' %}"         class="menu-item menu-item-sub" data-url="/parametres/types-documents/">Types Documents</a>
+        <a href="{% url 'parametres:type_sanction_list' %}"         class="menu-item menu-item-sub" data-url="/parametres/types-sanctions/">Types Sanctions</a>
+        <a href="{% url 'parametres:titre_fonction_list' %}"        class="menu-item menu-item-sub" data-url="/parametres/titres-fonctions/">Titres Fonctions</a>
+        <a href="{% url 'parametres:titre_honorifique_list' %}"     class="menu-item menu-item-sub" data-url="/parametres/titres-honorifiques/">Titres Honorifiques</a>
+      </div>
+
+      {# Licences (superuser uniquement) #}
+      {% if user.is_superuser %}
+      <span class="sb-label" style="margin-top:var(--space-3);">Système</span>
+      <a href="/licences/" class="menu-item" data-url="/licences/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+        </svg>
+        Licences
+      </a>
+      {% endif %}
+
+    </nav>
+
+    {# ── Pied de sidebar ── #}
+    <div class="sb-footer">
+      <span class="sb-version">YELEN SCHOOL v3.4</span>
+      {% if user.is_authenticated %}
+      <a href="/accounts/logout/" class="sb-logout" title="Déconnexion">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        Déconnexion
+      </a>
+      {% endif %}
+    </div>
+
+  </aside>
+
+  {# ════════════════════════════════ ZONE PRINCIPALE ════════════════════════════════ #}
+  <div class="main-wrapper">
+
+    {# ── Topbar mobile (masquée sur desktop via JS) ── #}
+    <header id="topbar-mobile" class="topbar"
+            style="display:none; justify-content:space-between; padding:0 var(--space-4);">
+      <button id="menu-btn"
+              style="background:none; border:none; color:var(--color-text-secondary); cursor:pointer; padding:var(--space-2);">
+        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Menu">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="logo-app-name" style="font-size:var(--text-lg);">YELEN SCHOOL</span>
+      <div style="width:32px;"></div>
+    </header>
+
+    {# ── Messages Django ── #}
+    {% if messages %}
+    <div id="django-messages" style="padding:var(--space-4) var(--space-6) 0;">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} animate-fade-up" role="alert">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ── Contenu principal ── #}
+    <main class="content" id="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    {# ── Footer ── #}
+    <footer style="border-top:1px solid var(--color-border);
+                   padding:var(--space-4) var(--space-6);
+                   text-align:center;
+                   font-size:var(--text-xs);
+                   color:var(--color-text-muted);">
+      &copy; 2026 YELEN SCHOOL — Système de Gestion Scolaire (Burkina Faso)
+    </footer>
+
+  </div>{# /main-wrapper #}
+
+  {# ── Overlay sidebar mobile ── #}
+  <div id="sidebar-overlay"
+       style="display:none; position:fixed; inset:0; z-index:30; background:rgba(0,0,0,0.6);"
+       aria-hidden="true"></div>
+
+  {# ════════════════════════════════ SCRIPTS (zéro Alpine.js) ════════════════════════════════ #}
+  <script>
+  (function () {
+    var path = window.location.pathname;
+
+    // ── 1. Lien actif ──────────────────────────────────────────────────────
+    document.querySelectorAll('.menu-item[data-url]').forEach(function (link) {
+      var url = link.dataset.url;
+      var isHome   = url === '/' && path === '/';
+      var isActive = isHome || (url !== '/' && path.startsWith(url));
+      if (isActive) { link.classList.add('active'); }
+    });
+
+    // ── 2. Accordéons (auto-détection via .accordion-toggle) ──────────────
+    function makeAccordion(toggle, submenu, chevron, activePrefix) {
+      var open = path.startsWith(activePrefix);
+
+      function openMenu() {
+        submenu.style.maxHeight = 'none';
+        var h = submenu.scrollHeight;
+        submenu.style.maxHeight = '0';
+        submenu.offsetHeight; // force reflow
+        submenu.style.maxHeight = h + 'px';
+        submenu.style.opacity   = '1';
+        chevron.style.transform = 'rotate(180deg)';
+        toggle.classList.add('active');
+        open = true;
+      }
+      function closeMenu() {
+        submenu.style.maxHeight = '0';
+        submenu.style.opacity   = '0';
+        chevron.style.transform = 'rotate(0deg)';
+        toggle.classList.remove('active');
+        open = false;
+      }
+
+      if (open) { openMenu(); }
+      toggle.addEventListener('click', function () { open ? closeMenu() : openMenu(); });
+    }
+
+    // Préfixes associés à chaque accordéon
+    var accordionPrefixes = {
+      'pedagogie-toggle':   '/pedagogie/',
+      'presences-toggle':   '/presences/',
+      'examens-toggle':     '/examens/',
+      'viescolaire-toggle': '/viescolaire/',
+      'finances-toggle':    '/finances/',
+      'vacations-toggle':   '/vacations/',
+      'documents-toggle':   '/documents/',
+      'params-toggle':      '/parametres/',
+    };
+
+    document.querySelectorAll('.accordion-toggle').forEach(function (toggle) {
+      var submenuId = toggle.dataset.submenu;
+      var chevronId = toggle.dataset.chevron;
+      var submenu   = document.getElementById(submenuId);
+      var chevron   = document.getElementById(chevronId);
+      var prefix    = accordionPrefixes[toggle.id] || '/__never__/';
+      if (submenu && chevron) { makeAccordion(toggle, submenu, chevron, prefix); }
+    });
+
+    // ── 3. Responsive sidebar mobile ──────────────────────────────────────
+    var sidebar  = document.getElementById('sidebar');
+    var overlay  = document.getElementById('sidebar-overlay');
+    var menuBtn  = document.getElementById('menu-btn');
+    var topbarM  = document.getElementById('topbar-mobile');
+
+    function isMobile() { return window.innerWidth < 768; }
+
+    function applyLayout() {
+      if (isMobile()) {
+        topbarM.style.display   = 'flex';
+        sidebar.style.position  = 'fixed';
+        sidebar.style.zIndex    = '40';
+        sidebar.style.height    = '100vh';
+        sidebar.style.transform = 'translateX(-100%)';
+        sidebar.style.transition = 'transform 0.25s ease';
+        // Décaler le main-wrapper
+        document.querySelector('.main-wrapper').style.marginLeft = '0';
+      } else {
+        topbarM.style.display   = 'none';
+        sidebar.style.position  = 'sticky';
+        sidebar.style.zIndex    = '';
+        sidebar.style.height    = '100vh';
+        sidebar.style.transform = '';
+        sidebar.style.transition = '';
+        overlay.style.display   = 'none';
+        document.querySelector('.main-wrapper').style.marginLeft = '';
+      }
+    }
+
+    applyLayout();
+    window.addEventListener('resize', applyLayout);
+
+    if (menuBtn) {
+      menuBtn.addEventListener('click', function () {
+        var hidden = sidebar.style.transform === 'translateX(-100%)';
+        sidebar.style.transform = hidden ? 'translateX(0)' : 'translateX(-100%)';
+        overlay.style.display   = hidden ? 'block' : 'none';
+      });
+    }
+
+    overlay.addEventListener('click', function () {
+      sidebar.style.transform = 'translateX(-100%)';
+      overlay.style.display   = 'none';
+    });
+
+    // ── 4. Auto-disparition messages Django (5s) ───────────────────────────
+    var msgs = document.getElementById('django-messages');
+    if (msgs) {
+      setTimeout(function () {
+        msgs.style.transition = 'opacity 0.5s ease';
+        msgs.style.opacity    = '0';
+        setTimeout(function () { msgs.remove(); }, 500);
+      }, 5000);
+    }
+
+    // ── 5. Events HTMX custom (modals) ────────────────────────────────────
+    ['parametreUpdated', 'signataireUpdated'].forEach(function (evt) {
+      document.body.addEventListener(evt, function () {
+        var m = document.getElementById('modal-overlay');
+        if (m) { m.remove(); }
+      });
+    });
+
+  })();
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,140 @@
+{% extends "core/base.html" %}
+{% load pedagogie_tags %}
+
+{% block title %}Résultats — {{ classe.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+{% if error %}
+<div class="alert alert-danger mb-4">{{ error }}</div>
+{% endif %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Résultats : {{ classe.nom }}</h1>
+    <p class="page-subtitle">Suivi des moyennes et des rangs{% if trimestre %} — {{ trimestre.nom }}{% endif %}{% if annee_courante %} ({{ annee_courante.libelle }}){% endif %}.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <form method="get" class="d-flex align-center gap-2">
+      <select name="annee" onchange="this.form.submit()" class="input select" style="min-width:160px;">
+        {% for a in annees %}
+          <option value="{{ a.id }}" {% if a == annee_courante %}selected{% endif %}>{{ a.libelle }}</option>
+        {% endfor %}
+      </select>
+      <select name="trimestre" onchange="this.form.submit()" class="input select" style="min-width:160px;">
+        {% for t in trimestres %}
+          <option value="{{ t.id }}" {% if t == trimestre %}selected{% endif %}>{{ t.nom }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% if trimestre %}
+    <form method="post" action="{% url 'pedagogie:calculer_moyennes_classe' classe.id %}">
+      {% csrf_token %}
+      <input type="hidden" name="trimestre_id" value="{{ trimestre.id }}">
+      <input type="hidden" name="annee_id" value="{{ annee_courante.id }}">
+      <button type="submit" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+        </svg>
+        Calculer les moyennes
+      </button>
+    </form>
+    {% endif %}
+    {% if trimestre %}
+    <a href="{% url 'pedagogie:bulletin_classe_batch_pdf' classe.id trimestre.id %}" target="_blank" class="btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      Tous les bulletins
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="table-wrapper animate-fade-up delay-1">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Rang</th>
+          <th>Élève</th>
+          <th style="text-align:center;" class="text-primary">Moyenne Générale</th>
+          <th style="text-align:center;">Mat. Validées</th>
+          <th>Total Points</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ins in inscriptions %}
+        {% with mg=moyennes_gen|dict_get:ins.id %}
+        <tr>
+          <td>
+            {% if mg.rang %}
+              <span style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; font-size:0.8rem; font-weight:700;
+                {% if mg.rang <= 3 %}background:rgba(212,175,55,0.15); color:var(--color-gold);{% else %}background:var(--color-bg-input); color:var(--color-text-muted);{% endif %}">
+                {{ mg.rang }}{% if mg.rang == 1 %}er{% else %}e{% endif %}
+              </span>
+            {% else %}
+              <span class="text-muted" style="font-size:0.8rem; font-style:italic;">-</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="fw-bold" style="text-transform:uppercase;">{{ ins.eleve.nom }}</div>
+            <div class="text-muted" style="font-size:0.75rem;">{{ ins.eleve.prenom }}</div>
+          </td>
+          <td style="text-align:center;">
+            {% if mg %}
+              <span class="fw-bold" style="font-size:1.2rem; color:{% if mg.moyenne >= 10 %}var(--color-primary){% else %}var(--color-danger){% endif %};">{{ mg.moyenne }}</span>
+              <span class="text-muted" style="font-size:0.75rem;">/20</span>
+            {% else %}
+              <span class="text-muted" style="font-size:0.8rem; font-style:italic;">À calculer</span>
+            {% endif %}
+          </td>
+          <td style="text-align:center;">
+            {% if mg %}
+              <span class="badge badge-neutral text-mono">{{ mg.nb_matieres_validees }} / {{ mg.nb_matieres_total }}</span>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+          <td class="text-mono" style="font-size:0.8rem; white-space:nowrap;">
+            {% if mg %}
+              <span style="font-weight:600; color:var(--color-text);">{{ mg.total_points }}</span>
+              <span style="color:var(--color-text-muted);">/{{ mg.total_points_max }}</span>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            <div class="d-flex justify-end gap-2">
+              {% if mg %}
+              <a href="{% url 'pedagogie:bulletin_pdf' ins.id trimestre.id %}" target="_blank" class="btn-icon" title="Télécharger le bulletin" style="color:var(--color-primary);">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+              </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endwith %}
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+              <p class="empty-state-text">Aucun élève inscrit dans cette classe.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

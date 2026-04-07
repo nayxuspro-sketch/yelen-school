@@ -1,0 +1,189 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Identité Établissement — Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+            <span class="text-muted"> / </span>
+            <span>Identité Établissement</span>
+        </p>
+        <h1 class="page-title">Identité de l'établissement</h1>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger mb-4">{{ error }}</div>
+{% endif %}
+
+{% if success %}
+<div class="alert alert-success mb-4">{{ success }}</div>
+{% endif %}
+
+<div class="card animate-fade-up delay-1">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <h3 style="font-size:1rem; margin-bottom:var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+            Informations officielles
+        </h3>
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="input-label">Nom de l'établissement</label>
+                <input type="text" name="nom_etablissement" value="{{ identite.nom_etablissement|default:etablissement.nom }}"
+                    class="input" placeholder="Ex: Lycée d'Excellence Yelen">
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Sigle</label>
+                <input type="text" name="sigle" value="{{ identite.sigle|default:'' }}"
+                    class="input" placeholder="Ex: LEY, CEG, Lycée...">
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Type d'établissement</label>
+                <select name="type_etablissement" class="input select">
+                    <option value="PUBLIC" {% if identite.type_etablissement == 'PUBLIC' %}selected{% endif %}>Public</option>
+                    <option value="PRIVE" {% if identite.type_etablissement != 'PUBLIC' and identite.type_etablissement != 'CONFESSIONNEL' %}selected{% endif %}>Privé</option>
+                    <option value="CONFESSIONNEL" {% if identite.type_etablissement == 'CONFESSIONNEL' %}selected{% endif %}>Confessionnel</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">N° Agrément MENA</label>
+                <input type="text" name="numero_agrement_mena" value="{{ identite.numero_agrement_mena|default:'' }}"
+                    class="input" placeholder="Ex: 2024-001/MENA">
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Date d'agrément</label>
+                <input type="date" name="date_agrement" value="{{ identite.date_agrement|date:'Y-m-d'|default:'' }}"
+                    class="input">
+            </div>
+        </div>
+
+        <h3 style="font-size:1rem; margin:var(--space-6) 0 var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+            Adresse complète
+        </h3>
+        <div class="form-grid-2">
+            <div class="form-group" style="grid-column:1/-1;">
+                <label class="input-label">Adresse complète</label>
+                <textarea name="adresse_complete" rows="2" class="input" placeholder="Adresse complète (Rue, Quartier, Secteur...)">{{ identite.adresse_complete|default:'' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Ville</label>
+                <input type="text" name="ville" value="{{ identite.ville|default:'' }}"
+                    class="input" placeholder="Ouagadougou">
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Province</label>
+                <input type="text" name="province" value="{{ identite.province|default:'' }}"
+                    class="input" placeholder="Kadiogo">
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Région</label>
+                <input type="text" name="region" value="{{ identite.region|default:'' }}"
+                    class="input" placeholder="Centre">
+            </div>
+        </div>
+
+        <h3 style="font-size:1rem; margin:var(--space-6) 0 var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+            Contact
+        </h3>
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="input-label">Téléphone</label>
+                <input type="text" name="telephone" value="{{ identite.telephone|default:'' }}"
+                    class="input" placeholder="+226 25 30 00 00">
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Email</label>
+                <input type="email" name="email" value="{{ identite.email|default:'' }}"
+                    class="input" placeholder="direction@yelen.bf">
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Site web</label>
+                <input type="url" name="site_web" value="{{ identite.site_web|default:'' }}"
+                    class="input" placeholder="https://www.yelen.bf">
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Nom du Directeur</label>
+                <input type="text" name="nom_directeur" value="{{ identite.nom_directeur|default:'' }}"
+                    class="input" placeholder="Nom et prénom du directeur">
+            </div>
+        </div>
+
+        <h3 style="font-size:1rem; margin:var(--space-6) 0 var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+            Éléments graphiques pour documents
+        </h3>
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="input-label">Logo de l'établissement</label>
+                <div class="d-flex align-center gap-4 mt-2">
+                    {% if identite.logo %}
+                    <div style="flex-shrink:0;">
+                        <img src="{{ identite.logo.url }}" alt="Logo" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    </div>
+                    {% endif %}
+                    <div class="flex-1">
+                        <input type="file" name="logo" accept="image/*" class="input">
+                        <p class="text-xs text-muted" style="margin-top:0.25rem;">Formats: PNG, JPG. 300×300px minimum</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Signature du Directeur</label>
+                <div class="d-flex align-center gap-4 mt-2">
+                    {% if identite.signature_directeur %}
+                    <div style="flex-shrink:0;">
+                        <img src="{{ identite.signature_directeur.url }}" alt="Signature" style="height:3rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    </div>
+                    {% endif %}
+                    <div class="flex-1">
+                        <input type="file" name="signature_directeur" accept="image/*" class="input">
+                        <p class="text-xs text-muted" style="margin-top:0.25rem;">Image PNG transparente</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1;">
+                <label class="input-label">Cachet officiel</label>
+                <div class="d-flex align-center gap-4 mt-2">
+                    {% if identite.cachet_etablissement %}
+                    <div style="flex-shrink:0;">
+                        <img src="{{ identite.cachet_etablissement.url }}" alt="Cachet" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    </div>
+                    {% endif %}
+                    <div class="flex-1">
+                        <input type="file" name="cachet_etablissement" accept="image/*" class="input">
+                        <p class="text-xs text-muted" style="margin-top:0.25rem;">Image PNG transparente (cachet rond)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="font-size:1rem; margin:var(--space-6) 0 var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+            Devise de l'établissement
+        </h3>
+        <div class="form-group">
+            <label class="input-label">Devise</label>
+            <textarea name="devise" rows="2" class="input" placeholder="Ex: Ensemble pour la réussite de chaque élève">{{ identite.devise|default:'' }}</textarea>
+        </div>
+
+        <div class="d-flex justify-end gap-3 mt-6" style="padding-top:2rem; border-top:1px solid var(--color-border);">
+            <button type="submit" class="btn-primary">
+                Enregistrer les modifications
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

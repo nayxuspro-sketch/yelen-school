@@ -1,0 +1,53 @@
+<div class="d-flex justify-between align-center mb-6">
+    <h2 class="text-xl fw-semibold">Documents - {{ cycle.nom }}</h2>
+</div>
+
+<div class="table-scroll">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Type de Document</th>
+                <th>Signataire Actuel</th>
+                <th>Titre Honorifique</th>
+                <th style="text-align:right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in docs_config %}
+            <tr>
+                <td class="fw-medium">{{ doc.type.libelle }}</td>
+                <td>
+                    {% if doc.signataire %}
+                        {% with personnel=doc.signataire.get_membre_personnel %}
+                        <div class="d-flex align-center gap-2">
+                            <span style="display:inline-block; width:0.5rem; height:0.5rem; border-radius:50%; background:var(--color-success);"></span>
+                            {{ personnel }}
+                        </div>
+                        {% endwith %}
+                    {% else %}
+                        <span class="text-muted" style="font-style:italic;">Non défini (Directeur par défaut)</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if doc.signataire %}
+                        <span class="badge badge-neutral">{{ doc.signataire.titre_honorifique|default:"-" }}</span>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td style="text-align:right;">
+                    <div class="d-flex justify-end gap-2">
+                        <button class="btn-secondary btn-sm"
+                                hx-get="{% url 'parametres:signataire_edit' cycle.id doc.type.id %}"
+                                hx-target="#modal-content">
+                            {% if doc.signataire %}Modifier{% else %}Configurer{% endif %}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4"><div class="empty-state"><p class="empty-state-text">Aucun document configuré.</p></div></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

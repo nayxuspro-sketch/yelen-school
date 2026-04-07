@@ -1,0 +1,121 @@
+{% load qr_tags signataire_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+    body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 11pt; color: #1a1a1a; margin: 0; padding: 0; }
+    .page { padding: 2cm; }
+    .entete { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5cm; }
+    .entete-logo img { width: 80px; height: 80px; object-fit: contain; }
+    .entete-centre { text-align: center; flex: 1; padding: 0 1cm; }
+    .entete-centre .pays { font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .entete-centre .etablissement { font-size: 13pt; font-weight: bold; text-transform: uppercase; }
+    .entete-centre .agrement { font-size: 9pt; color: #666; font-style: italic; margin-top: 3px; }
+    .entete-centre .type { font-size: 9pt; color: #555; }
+    .entete-cachet img { width: 80px; height: 80px; object-fit: contain; }
+    .separateur { border: none; border-top: 2px solid #1a1a1a; margin: 0.5cm 0; }
+    .titre-doc { text-align: center; margin: 1cm 0; }
+    .titre-doc h1 { font-size: 16pt; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 2px solid #1a1a1a; display: inline-block; padding-bottom: 4px; }
+    .corps { line-height: 2; font-size: 11pt; margin: 1cm 0; }
+    .corps p { margin: 0.3cm 0; }
+    .corps strong { font-weight: bold; text-decoration: underline; }
+    .signature { margin-top: 2cm; text-align: right; }
+    .signature .lieu-date { margin-bottom: 0.5cm; }
+    .signature .titre-signataire { font-size: 10pt; margin-bottom: 0.3cm; }
+    .signature img { width: 100px; height: 60px; object-fit: contain; }
+    .signature .nom-signataire { font-weight: bold; margin-top: 0.3cm; }
+    .numero { font-size: 9pt; color: #888; margin-top: 1cm; text-align: center; }
+</style>
+</head>
+<body>
+<div class="page">
+
+    <!-- En-tête -->
+    <div class="entete">
+        <div class="entete-logo">
+            {% if logo_url %}
+            <img src="{{ logo_url }}" alt="Logo">
+            {% elif etab_logo_url %}
+            <img src="{{ etab_logo_url }}" alt="Logo">
+            {% endif %}
+        </div>
+        <div class="entete-centre">
+            <div class="pays">Burkina Faso</div>
+            <div class="etablissement">
+                {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ annee_scolaire.etablissement }}{% endif %}
+            </div>
+            {% if identite and identite.numero_agrement_mena %}
+            <div class="agrement">N° Agrément MENA: {{ identite.numero_agrement_mena }}</div>
+            {% endif %}
+            <div class="type">
+                {% if identite %}{{ identite.get_type_etablissement_display }}{% endif %}
+            </div>
+        </div>
+        <div class="entete-cachet">
+            {% if identite and identite.cachet_etablissement %}
+            <img src="{{ identite.cachet_etablissement.url }}" alt="Cachet">
+            {% endif %}
+        </div>
+    </div>
+
+    <hr class="separateur">
+
+    <!-- Titre -->
+    <div class="titre-doc">
+        <h1>Certificat de Scolarité</h1>
+        <p style="font-size:9pt; color:#555; margin-top:4px;">Année scolaire {{ annee_scolaire }}</p>
+    </div>
+
+    <!-- Corps -->
+    <div class="corps">
+        <p>
+            Le soussigné,
+            {% if sig_membre %}
+                {% if signataire.titre_honorifique %}{{ signataire.titre_honorifique }},{% endif %}
+                <strong>{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</strong>,
+                {{ signataire.fonction|default:"Directeur/Proviseur" }}{% if identite %} de <strong>{{ identite.nom_etablissement }}</strong>{% endif %},
+            {% elif identite and identite.nom_directeur %}
+                <strong>{{ identite.nom_directeur }}</strong>,
+                Directeur/Proviseur de <strong>{{ identite.nom_etablissement }}</strong>,
+            {% else %}
+                Directeur de l'établissement,
+            {% endif %}
+            certifie que :
+        </p>
+
+        <p>
+            <strong>{{ eleve.get_nom_complet }}</strong>,
+            né(e) le <strong>{{ eleve.date_naissance|date:"d F Y" }}</strong>
+            à <strong>{{ eleve.lieu_naissance }}</strong>,
+            de nationalité <strong>{{ eleve.nationalite }}</strong>,
+        </p>
+
+        <p>
+            est régulièrement inscrit(e) dans cet établissement pour l'année scolaire
+            <strong>{{ annee_scolaire }}</strong>,
+            en classe de <strong>{{ classe.nom }}</strong> ({{ classe.cycle.nom }}).
+        </p>
+
+        <p>Ce certificat est délivré à l'intéressé(e) pour servir et valoir ce que de droit.</p>
+    </div>
+
+    <!-- Signature -->
+    {% signataire_auto "CERT_SCOL" %}
+
+    <div class="numero">N° {{ document.numero_document|default:"—" }}</div>
+
+    <!-- QR Code élève -->
+    <div style="margin-top:0.8cm; display:flex; align-items:flex-start; gap:0.4cm;">
+        {% with etab_nom=identite.nom_etablissement|default:annee_scolaire.etablissement %}
+        {% qr_eleve eleve.matricule eleve.nom eleve.prenom etab_nom 'grand' adresse=identite.adresse ville=identite.ville telephone=identite.telephone %}
+        {% endwith %}
+        <div style="font-size:7pt; color:#888; line-height:1.6; margin-top:4px;">
+            {{ eleve.matricule }}<br>
+            {{ eleve.nom|upper }} {{ eleve.prenom }}
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,56 @@
+{% extends "core/base.html" %}
+
+{% block title %}Nouveau Conseil — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'viescolaire:conseil_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Créer un conseil de classe</h1>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:520px;" class="animate-fade-up delay-1">
+  <div class="card">
+    <form method="post" style="padding:var(--space-6);">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="input-label">Classe</label>
+        <select name="classe" required class="input select w-full">
+          <option value="">— Choisir une classe —</option>
+          {% for cl in classes %}
+          <option value="{{ cl.pk }}">{{ cl.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="input-label">Trimestre</label>
+        <select name="trimestre" required class="input select w-full">
+          <option value="">— Choisir un trimestre —</option>
+          {% for t in trimestres %}
+          <option value="{{ t.pk }}">{{ t.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="input-label">Date du conseil</label>
+        <input type="date" name="date_conseil" required class="input w-full">
+      </div>
+      <div class="d-flex justify-end mt-4">
+        <button type="submit" class="btn-primary">Créer le conseil et générer les décisions</button>
+      </div>
+    </form>
+  </div>
+  <p class="text-muted mt-4" style="font-size:0.8rem;">
+    Les décisions individuelles seront générées automatiquement pour tous les élèves de la classe.
+  </p>
+</div>
+
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "core/base.html" %}
+
+{% block title %}Conseils de Classe — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Conseils de Classe</h1>
+    {% if annee_courante %}<p class="page-subtitle">{{ annee_courante }}</p>{% endif %}
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'viescolaire:sanction_list' %}" class="btn-secondary">Sanctions</a>
+    <a href="{% url 'viescolaire:activite_list' %}" class="btn-secondary">Activités</a>
+    <a href="{% url 'viescolaire:conseil_create' %}" class="btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+      Nouveau conseil
+    </a>
+  </div>
+</div>
+
+{% if trimestres %}
+<div class="d-flex gap-2 mb-4 animate-fade-up delay-1" style="flex-wrap:wrap;">
+  <a href="{% url 'viescolaire:conseil_list' %}"
+     class="btn-sm {% if not trimestre_selectionne %}btn-primary{% else %}btn-secondary{% endif %}">
+    Tous
+  </a>
+  {% for t in trimestres %}
+  <a href="?trimestre={{ t.pk }}"
+     class="btn-sm {% if trimestre_selectionne.pk == t.pk %}btn-primary{% else %}btn-secondary{% endif %}">
+    {{ t.nom }}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="table-wrapper animate-fade-up delay-2">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Classe</th>
+          <th>Trimestre</th>
+          <th>Date</th>
+          <th>Président</th>
+          <th>Statut</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in conseils %}
+        <tr>
+          <td class="fw-medium">{{ c.classe.nom }}</td>
+          <td class="text-secondary">{{ c.trimestre.nom }}</td>
+          <td class="text-secondary">{{ c.date_conseil|date:"d/m/Y" }}</td>
+          <td>{{ c.president.get_full_name|default:"—" }}</td>
+          <td>
+            {% if c.tenu %}
+              <span class="badge badge-success">Tenu</span>
+            {% else %}
+              <span class="badge badge-info">Planifié</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            <a href="{% url 'viescolaire:conseil_detail' c.pk %}" class="btn-secondary btn-sm">Voir</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+              <p class="empty-state-text">Aucun conseil de classe planifié.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

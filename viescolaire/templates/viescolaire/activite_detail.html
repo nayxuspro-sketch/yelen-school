@@ -1,0 +1,103 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ activite.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'viescolaire:activite_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{{ activite.nom }}</h1>
+      <p class="page-subtitle">
+        {{ activite.get_type_activite_display }}
+        {% if activite.responsable %} · Responsable : {{ activite.responsable.get_full_name }}{% endif %}
+        · {{ activite.nb_participants }}/{{ activite.capacite_max }} participants
+      </p>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 300px; gap:var(--space-6); align-items:start;" class="animate-fade-up delay-1">
+
+  <!-- Participants -->
+  <div>
+    <div class="table-wrapper">
+      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+        <span class="card-title">Participants ({{ participations|length }})</span>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Élève</th>
+              <th>Classe</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in participations %}
+            <tr>
+              <td class="fw-medium">{{ p.inscription.eleve.get_nom_complet }}</td>
+              <td class="text-secondary">{{ p.inscription.classe.nom }}</td>
+              <td style="text-align:right;">
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="retirer">
+                  <input type="hidden" name="participation_id" value="{{ p.pk }}">
+                  <button type="submit" class="btn-icon btn-icon-danger" title="Retirer">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3">
+                <div class="empty-state">
+                  <p class="empty-state-text">Aucun participant.</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulaire inscription -->
+  <div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Inscrire un élève</span></div>
+      <div style="padding:var(--space-4);">
+        {% if inscriptions_dispo %}
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="inscrire">
+          <div class="form-group">
+            <select name="inscription" required class="input select w-full">
+              <option value="">— Choisir un élève —</option>
+              {% for ins in inscriptions_dispo %}
+              <option value="{{ ins.pk }}">{{ ins.eleve.get_nom_complet }} ({{ ins.classe.nom }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn-primary w-full">Inscrire</button>
+        </form>
+        {% else %}
+        <p class="text-muted" style="font-size:0.85rem;">Tous les élèves sont inscrits ou la capacité est atteinte.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

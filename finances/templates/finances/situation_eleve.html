@@ -1,0 +1,276 @@
+{% extends "core/base.html" %}
+
+{% block title %}Situation financière — {{ inscription.eleve.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'finances:paiement_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</h1>
+      <p class="page-subtitle">Classe : <strong class="text-primary">{{ inscription.classe.nom }}</strong> · {{ inscription.classe.get_cycle_display }}</p>
+    </div>
+  </div>
+  <a href="{% url 'finances:paiement_create' %}?inscription={{ inscription.id %}" class="btn-primary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+    Nouvel Encaissement
+  </a>
+  <a href="{% url 'finances:certificat_non_redevabilite' inscription.id %}" target="_blank" class="btn-secondary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+    </svg>
+    Certificat
+  </a>
+</div>
+
+<div class="grid-layout animate-fade-up delay-1" style="display:grid; grid-template-columns:300px 1fr; gap:var(--space-6); align-items:start;">
+
+  <!-- Sidebar -->
+  <div class="sidebar-content" style="display:flex; flex-direction:column; gap:var(--space-4);">
+    
+    <!-- Résumé Financier -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Résumé Financier</span>
+      </div>
+      <div style="padding:var(--space-4);">
+        <div class="stat-item mb-3">
+          <span class="stat-label">Total Dû</span>
+          <span class="stat-value">{{ total_du|default:0 }} <small>FCFA</small></span>
+        </div>
+        <div class="stat-item mb-3">
+          <span class="stat-label text-success">Total Payé</span>
+          <span class="stat-value text-success">{{ total_paye|default:0 }} <small>FCFA</small></span>
+        </div>
+        
+        {% if total_du > 0 %}
+        <div class="progress-bar mb-2" style="height:8px; background:var(--color-border); border-radius:4px; overflow:hidden;">
+          <div class="progress-fill" style="height:100%; width:{{ total_paye|default:0|divisibleby:total_du|yesno:'100'|default:0 }}%; background:var(--color-success); border-radius:4px; transition:width 0.3s ease;"></div>
+        </div>
+        <p class="text-muted" style="font-size:0.75rem; text-align:right;">
+          {{ total_paye|default:0|divisibleby:total_du|yesno:'100'|default:0|floatformat:0 }}% payé
+        </p>
+        {% endif %}
+        
+        <div class="divider my-4"></div>
+        
+        <div class="stat-item">
+          <span class="stat-label fw-semibold">Reste à Payer</span>
+          <span class="stat-value fw-bold" style="font-size:1.5rem; color:{% if reste_a_payer > 0 %}var(--color-danger){% else %}var(--color-success){% endif %};">
+            {{ reste_a_payer|default:0 }} <small>FCFA</small>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rubriques de Paiement -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Rubriques à Payer</span>
+      </div>
+      <div style="padding:var(--space-4);">
+        {% for f in frais_details %}
+        <div class="d-flex justify-between align-center" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
+          <span class="text-secondary text-truncate" style="max-width:150px;">{{ f.rubrique.nom }}</span>
+          <span class="fw-semibold">{{ f.montant }} <small class="text-muted">FCFA</small></span>
+        </div>
+        {% empty %}
+        <p class="text-muted text-center py-4" style="font-size:0.85rem;">Aucun tarif configuré pour ce profil.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Infos Élève -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Informations</span>
+      </div>
+      <div style="padding:var(--space-4); font-size:0.85rem;">
+        <div class="d-flex justify-between mb-2">
+          <span class="text-muted">Matricule</span>
+          <span class="fw-medium">{{ inscription.eleve.matricule|default:"—" }}</span>
+        </div>
+        <div class="d-flex justify-between mb-2">
+          <span class="text-muted">Année</span>
+          <span class="fw-medium">{{ inscription.annee_scolaire.libelle|default:"—" }}</span>
+        </div>
+        <div class="d-flex justify-between mb-2">
+          <span class="text-muted">Statut inscription</span>
+          <span class="badge badge-{% if inscription.statut == 'AFFECTE' %}success{% else %}secondary{% endif %}">{{ inscription.get_statut_display }}</span>
+        </div>
+        <div class="d-flex justify-between">
+          <span class="text-muted">Statut élève</span>
+          <span class="fw-medium">{{ inscription.statut_eleve.nom|default:"—" }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" style="display:flex; flex-direction:column; gap:var(--space-6);">
+    
+    <!-- Échéancier -->
+    <div class="card">
+      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+        <div class="d-flex align-center justify-between" style="width:100%;">
+          <div class="d-flex align-center gap-3">
+            <div class="icon-box" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:var(--color-primary-light); border-radius:8px;">
+              <svg width="18" height="18" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <span class="card-title">Échéancier de Paiement</span>
+          </div>
+          <a href="{% url 'finances:echeancier_create' inscription.id %}" class="btn-primary btn-sm">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Ajouter
+          </a>
+        </div>
+      </div>
+      
+      {% if echeancier_list %}
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Libellé</th>
+              <th>Date limite</th>
+              <th style="text-align:right">Montant</th>
+              <th>Statut</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for echeance in echeancier_list %}
+            <tr>
+              <td class="fw-medium">{{ echeance.libelle }}</td>
+              <td>
+                <span class="{% if echeance.date_limite|default:''|date:'Y-m-d' < today %}text-danger{% endif %}">
+                  {{ echeance.date_limite|date:"d M Y" }}
+                </span>
+              </td>
+              <td style="text-align:right;" class="fw-semibold">{{ echeance.montant_du|default:0 }} <span class="text-muted">FCFA</span></td>
+              <td>
+                {% if echeance.paye %}
+                <span class="badge badge-success">Payé</span>
+                {% else %}
+                <span class="badge badge-warning">En attente</span>
+                {% endif %}
+              </td>
+              <td style="text-align:right;">
+                <div class="d-flex gap-1 justify-end">
+                  <a href="{% url 'finances:echeancier_edit' echeance.id %}" class="btn-icon btn-sm" title="Modifier">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                  </a>
+                  <a href="{% url 'finances:echeancier_delete' echeance.id %}" class="btn-icon btn-sm text-danger" title="Supprimer">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--color-bg-secondary);">
+              <td colspan="2" class="fw-bold">Total échéancier</td>
+              <td style="text-align:right;" class="fw-bold">{{ echeancier_total|default:0 }} <span class="text-muted">FCFA</span></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:var(--space-8);">
+        <div class="empty-state-icon">
+          <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <p class="empty-state-text">Aucun échéancier défini</p>
+        <a href="{% url 'finances:echeancier_create' inscription.id %}" class="btn-primary mt-2">Créer un échéancier</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Historique des versements -->
+    <div class="card">
+      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+        <div class="d-flex align-center justify-between" style="width:100%;">
+          <div class="d-flex align-center gap-3">
+            <div class="icon-box" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:var(--color-success-light); border-radius:8px;">
+              <svg width="18" height="18" fill="none" stroke="var(--color-success)" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <span class="card-title">Historique des Versements</span>
+          </div>
+          <a href="{% url 'finances:historique_pdf' inscription.id %}" target="_blank" class="btn-secondary btn-sm">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+            </svg>
+            PDF
+          </a>
+        </div>
+      </div>
+      
+      {% if paiements %}
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Rubrique</th>
+              <th>Mode</th>
+              <th>Référence</th>
+              <th style="text-align:right">Montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in paiements %}
+            <tr>
+              <td>{{ p.date_paiement|date:"d M Y" }}</td>
+              <td>{{ p.rubrique.nom|default:"—" }}</td>
+              <td class="text-secondary">{{ p.get_mode_paiement_display }}</td>
+              <td class="text-muted font-mono" style="font-size:0.8rem;">{{ p.reference|default:"-" }}</td>
+              <td style="text-align:right;" class="fw-bold text-success">{{ p.montant }} <span class="text-muted">FCFA</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--color-bg-secondary);">
+              <td colspan="4" class="fw-bold">Total payé</td>
+              <td style="text-align:right;" class="fw-bold text-success">{{ total_paye|default:0 }} <span class="text-muted">FCFA</span></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:var(--space-8);">
+        <div class="empty-state-icon">
+          <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+        </div>
+        <p class="empty-state-text">Aucun versement effectué</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

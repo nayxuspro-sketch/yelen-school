@@ -1,0 +1,18 @@
+<a href="{% url url %}" class="param-card">
+  <div class="param-card-inner">
+    <div class="param-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="{{ icon }}"/>
+      </svg>
+    </div>
+    <div class="param-body">
+      <div class="param-header">
+        <span class="param-title">{{ title }}</span>
+        {% if count != '' %}
+        <span class="param-count">{{ count }}</span>
+        {% endif %}
+      </div>
+      <p class="param-description">{{ description }}</p>
+    </div>
+  </div>
+</a>

@@ -1,0 +1,269 @@
+{
+  // ═══════════════════════════════════════════════════════════════════
+  // YELEN SCHOOL - Tâches VSCode
+  // Commandes rapides pour le développement
+  // ═══════════════════════════════════════════════════════════════════
+  
+  "version": "2.0.0",
+  "tasks": [
+    // ─────────────────────────────────────────────────────────────────
+    // 🐳 DOCKER
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "label": "🐳 Docker: Build & Start All",
+      "type": "shell",
+      "command": "docker-compose up --build -d",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "🐳 Docker: Start All Services",
+      "type": "shell",
+      "command": "docker-compose up -d",
+      "problemMatcher": []
+    },
+    {
+      "label": "🐳 Docker: Stop All Services",
+      "type": "shell",
+      "command": "docker-compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "🐳 Docker: Restart Django",
+      "type": "shell",
+      "command": "docker-compose restart web",
+      "problemMatcher": []
+    },
+    {
+      "label": "🐳 Docker: View Logs",
+      "type": "shell",
+      "command": "docker-compose logs -f --tail=100",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🐳 Docker: Clean All (⚠️ Danger)",
+      "type": "shell",
+      "command": "docker-compose down -v --remove-orphans && docker system prune -af",
+      "problemMatcher": []
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🐍 DJANGO
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "label": "🚀 Django: Run Server",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py runserver 0.0.0.0:8000",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "📦 Django: Make Migrations",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py makemigrations",
+      "problemMatcher": []
+    },
+    {
+      "label": "📦 Django: Migrate",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py migrate",
+      "problemMatcher": []
+    },
+    {
+      "label": "📦 Django: Make & Migrate",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py makemigrations && docker-compose exec web python manage.py migrate",
+      "problemMatcher": []
+    },
+    {
+      "label": "👤 Django: Create Superuser",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py createsuperuser",
+      "problemMatcher": []
+    },
+    {
+      "label": "🗄️ Django: DB Shell",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py dbshell",
+      "problemMatcher": []
+    },
+    {
+      "label": "🐚 Django: Python Shell",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py shell",
+      "problemMatcher": []
+    },
+    {
+      "label": "🎨 Django: Collect Static",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py collectstatic --noinput",
+      "problemMatcher": []
+    },
+    {
+      "label": "🧹 Django: Clear Cache",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py clear_cache",
+      "problemMatcher": []
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🧪 TESTS & QUALITÉ (obligatoire coverage > 80%)
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "label": "🧪 Tests: Run All (pytest)",
+      "type": "shell",
+      "command": "docker-compose exec web pytest -v --color=yes",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "📊 Tests: With Coverage",
+      "type": "shell",
+      "command": "docker-compose exec web pytest --cov=apps --cov-report=html --cov-report=term-missing --cov-fail-under=80",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "📊 Tests: Coverage Report (HTML)",
+      "type": "shell",
+      "command": "docker-compose exec web pytest --cov=apps --cov-report=html && open htmlcov/index.html",
+      "problemMatcher": []
+    },
+    {
+      "label": "⚡ Tests: Failed Only",
+      "type": "shell",
+      "command": "docker-compose exec web pytest --lf -v",
+      "problemMatcher": []
+    },
+    {
+      "label": "🔍 Lint: Flake8",
+      "type": "shell",
+      "command": "docker-compose exec web flake8 apps --max-line-length=120 --exclude=migrations,__pycache__",
+      "problemMatcher": []
+    },
+    {
+      "label": "🎨 Format: Black Check",
+      "type": "shell",
+      "command": "docker-compose exec web black --check apps",
+      "problemMatcher": []
+    },
+    {
+      "label": "🎨 Format: Black Apply",
+      "type": "shell",
+      "command": "docker-compose exec web black apps",
+      "problemMatcher": []
+    },
+    {
+      "label": "🔍 Type Check: mypy",
+      "type": "shell",
+      "command": "docker-compose exec web mypy apps --ignore-missing-imports",
+      "problemMatcher": []
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🗄️ BASE DE DONNÉES
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "label": "🗄️ DB: Backup",
+      "type": "shell",
+      "command": "docker-compose exec db pg_dump -U yelen_user yelen_db > backup_$(date +%Y%m%d_%H%M%S).sql",
+      "problemMatcher": []
+    },
+    {
+      "label": "🗄️ DB: Reset (⚠️ Danger)",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py flush --noinput",
+      "problemMatcher": []
+    },
+    {
+      "label": "🗄️ DB: Load Fixtures",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py loaddata fixtures/*.json",
+      "problemMatcher": []
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 📦 DÉPENDANCES
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "label": "📦 Pip: Install Requirements",
+      "type": "shell",
+      "command": "docker-compose exec web pip install -r requirements.txt",
+      "problemMatcher": []
+    },
+    {
+      "label": "📦 Pip: Freeze Requirements",
+      "type": "shell",
+      "command": "docker-compose exec web pip freeze > requirements.txt",
+      "problemMatcher": []
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 📄 GÉNÉRATION DOCUMENTS (WeasyPrint)
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "label": "📄 PDF: Test Bulletin MENA",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py test_bulletin_mena",
+      "problemMatcher": []
+    },
+    {
+      "label": "📄 PDF: Test Certificat Scolarité",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py test_certificat",
+      "problemMatcher": []
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🔧 UTILITAIRES
+    // ─────────────────────────────────────────────────────────────────
+    {
+      "label": "🔧 Shell: Django Container",
+      "type": "shell",
+      "command": "docker-compose exec web bash",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🔧 Shell: PostgreSQL Container",
+      "type": "shell",
+      "command": "docker-compose exec db bash",
+      "problemMatcher": []
+    },
+    {
+      "label": "📊 System: Check Status",
+      "type": "shell",
+      "command": "docker-compose exec web python manage.py check",
+      "problemMatcher": []
+    },
+    {
+      "label": "🧹 Clean: Python Cache",
+      "type": "shell",
+      "command": "find . -type d -name '__pycache__' -exec rm -rf {} + && find . -type f -name '*.pyc' -delete",
+      "problemMatcher": []
+    }
+  ]
+}

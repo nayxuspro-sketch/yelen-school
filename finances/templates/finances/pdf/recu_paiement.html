@@ -1,0 +1,257 @@
+{% load qr_tags signataire_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 10mm 12mm;
+        }
+        body {
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 9pt;
+            color: #1A1A1A;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ─── En-tête ─── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #1B5E20;
+            margin-bottom: 10px;
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .pdf-logo { width: 48px; height: 48px; object-fit: contain; }
+        .etab-nom  { font-size: 13pt; font-weight: bold; color: #1B5E20; margin: 0 0 2px; }
+        .etab-info { font-size: 7.5pt; color: #333; margin: 1px 0; }
+        .header-right { text-align: right; }
+        .doc-badge {
+            background: #f0f9f4; border: 1.5px solid #1B5E20;
+            padding: 4px 12px; border-radius: 4px; display: inline-block;
+        }
+        .doc-badge h2 { margin: 0; font-size: 11pt; text-transform: uppercase; letter-spacing: .5px; color: #1B5E20; }
+        .doc-meta { font-size: 7pt; color: #666; margin-top: 4px; line-height: 1.5; }
+
+        /* ─── Infos élève ─── */
+        .eleve-section {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px 10px;
+        }
+        .eleve-cols { flex: 1; display: flex; gap: 16px; }
+        .eleve-col  { flex: 1; }
+        .lbl { font-size: 7pt; color: #666; text-transform: uppercase; margin-bottom: 1px; }
+        .val {
+            font-size: 9.5pt; font-weight: bold;
+            border-bottom: 1px dashed #ccc; padding-bottom: 2px; margin-bottom: 6px;
+        }
+        .val.mono { font-family: monospace; color: #1B5E20; }
+        .qr-zone { text-align: center; border-left: 1px dashed #ddd; padding-left: 8px; }
+        .qr-zone small { font-size: 6pt; color: #999; display: block; margin-top: 2px; }
+
+        /* ─── Résumé 3 blocs ─── */
+        .resume {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .r-box {
+            flex: 1; text-align: center;
+            padding: 7px 6px; border-radius: 5px; border: 1.5px solid;
+        }
+        .r-box.du    { background: #fff5f5; border-color: #e57373; }
+        .r-box.paye  { background: #f0f9f4; border-color: #81c784; }
+        .r-box.reste { background: #fff8e1; border-color: #ffb74d; }
+        .r-lbl { font-size: 7pt; text-transform: uppercase; color: #555; margin-bottom: 3px; }
+        .r-val { font-size: 13pt; font-weight: bold; line-height: 1; }
+        .r-box.du    .r-val { color: #c62828; }
+        .r-box.paye  .r-val { color: #2e7d32; }
+        .r-box.reste .r-val { color: #ef6c00; }
+        .r-val span { font-size: 8pt; font-weight: normal; }
+
+        /* ─── Tableau rubriques ─── */
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            background: #1B5E20; color: #fff;
+            padding: 5px 8px; font-size: 8pt; text-transform: uppercase;
+        }
+        th.r { text-align: right; }
+        th.c { text-align: center; }
+        td { padding: 5px 8px; border-bottom: 1px solid #e8e8e8; font-size: 8.5pt; vertical-align: middle; }
+        td.r { text-align: right; font-weight: bold; }
+        td.c { text-align: center; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .total-row td {
+            font-weight: bold; font-size: 9pt;
+            border-top: 2px solid #1B5E20; background: #f0f9f4; color: #1B5E20;
+        }
+        .badge-ok {
+            background: #e8f5e9; color: #2e7d32;
+            border: 1px solid #81c784; border-radius: 8px;
+            padding: 1px 7px; font-size: 7.5pt; font-weight: bold;
+        }
+        .badge-reste {
+            background: #fff3e0; color: #e65100;
+            border: 1px solid #ffb74d; border-radius: 8px;
+            padding: 1px 7px; font-size: 7.5pt; font-weight: bold;
+        }
+        .empty { text-align: center; color: #888; font-style: italic; padding: 14px; }
+
+        /* ─── Pied de page ─── */
+        .footer {
+            margin-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-top: 8px;
+            border-top: 1px solid #ddd;
+        }
+        .footer-info { font-size: 7.5pt; color: #777; line-height: 1.6; }
+        .sig-zone { text-align: center; }
+        .sig-line {
+            margin-top: 22px; border-top: 1px solid #444;
+            padding-top: 3px; font-size: 8pt; color: #444;
+        }
+    </style>
+</head>
+<body>
+
+<!-- En-tête -->
+<div class="header">
+    <div class="header-left">
+        {% if logo_url %}<img src="{{ logo_url }}" class="pdf-logo" alt="Logo">
+        {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" class="pdf-logo" alt="Logo">{% endif %}
+        <div>
+            <p class="etab-nom">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</p>
+            {% if identite and identite.numero_agrement_mena %}
+            <p class="etab-info" style="font-style:italic;">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>{% endif %}
+            <p class="etab-info">{% if identite %}{{ identite.adresse_complete|default:etablissement.adresse|default:"Burkina Faso" }}{% else %}{{ etablissement.adresse|default:"Burkina Faso" }}{% endif %}</p>
+            <p class="etab-info">{% if identite %}Tél : {{ identite.telephone }}{% else %}Tél : {{ etablissement.telephone|default:"—" }}{% endif %}</p>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="doc-badge"><h2>Reçu de Paiement</h2></div>
+        <div class="doc-meta">
+            Réf. : <strong>{{ paiement.id }}</strong><br>
+            {% if paiement.reference %}Tx Réf. : {{ paiement.reference }}<br>{% endif %}
+            Imprimé le {{ now|date:"d/m/Y à H:i" }}
+        </div>
+    </div>
+</div>
+
+<!-- Infos élève -->
+{% with etab_nom=identite.nom_etablissement|default:etablissement.nom %}
+<div class="eleve-section">
+    <div class="eleve-cols">
+        <div class="eleve-col">
+            <div class="lbl">Élève</div>
+            <div class="val">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</div>
+            <div class="lbl">Matricule</div>
+            <div class="val mono">{{ inscription.eleve.matricule }}</div>
+        </div>
+        <div class="eleve-col">
+            <div class="lbl">Classe</div>
+            <div class="val">{{ inscription.classe.nom }}</div>
+            <div class="lbl">Année scolaire</div>
+            <div class="val">{{ inscription.annee_scolaire.libelle }}</div>
+            {% if paiement.statut_eleve %}
+            <div class="lbl">Statut</div>
+            <div class="val">{{ paiement.statut_eleve.nom }}</div>{% endif %}
+        </div>
+        <div class="eleve-col">
+            <div class="lbl">Mode de paiement</div>
+            <div class="val">{{ paiement.get_mode_paiement_display }}</div>
+            <div class="lbl">Date du versement</div>
+            <div class="val">{{ paiement.date_paiement|date:"d/m/Y" }}</div>
+        </div>
+    </div>
+    <div class="qr-zone">
+        {% qr_eleve inscription.eleve.matricule inscription.eleve.nom inscription.eleve.prenom etab_nom 'grand' adresse=identite.adresse ville=identite.ville telephone=identite.telephone %}
+        <small>{{ inscription.eleve.matricule }}</small>
+    </div>
+</div>
+{% endwith %}
+
+<!-- Résumé financier -->
+<div class="resume">
+    <div class="r-box du">
+        <div class="r-lbl">Total Dû</div>
+        <div class="r-val">{{ total_du }} <span>FCFA</span></div>
+    </div>
+    <div class="r-box paye">
+        <div class="r-lbl">Total Versé</div>
+        <div class="r-val">{{ total_paye }} <span>FCFA</span></div>
+    </div>
+    <div class="r-box reste">
+        <div class="r-lbl">Reste à Payer</div>
+        <div class="r-val">{{ reste_total }} <span>FCFA</span></div>
+    </div>
+</div>
+
+<!-- Tableau rubriques -->
+<table>
+    <thead>
+        <tr>
+            <th>Rubrique</th>
+            <th class="r">Montant Dû (FCFA)</th>
+            <th class="r">Total Versé (FCFA)</th>
+            <th class="r">Reste à Payer (FCFA)</th>
+            <th class="c">Statut</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ligne in lignes_rubriques %}
+        <tr>
+            <td>{{ ligne.rubrique.nom|default:"Divers" }}</td>
+            <td class="r">{% if ligne.montant_du %}{{ ligne.montant_du }}{% else %}—{% endif %}</td>
+            <td class="r">{{ ligne.verse }}</td>
+            <td class="r">{% if ligne.reste %}{{ ligne.reste }}{% else %}0{% endif %}</td>
+            <td class="c">
+                {% if ligne.reste == 0 or not ligne.reste %}
+                    <span class="badge-ok">✓ Soldé</span>
+                {% else %}
+                    <span class="badge-reste">En cours</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty">Aucun paiement enregistré.</td></tr>
+        {% endfor %}
+        {% if lignes_rubriques %}
+        <tr class="total-row">
+            <td>TOTAL</td>
+            <td class="r">{{ total_du }} FCFA</td>
+            <td class="r">{{ total_paye }} FCFA</td>
+            <td class="r">{{ reste_total }} FCFA</td>
+            <td class="c">
+                {% if reste_total == 0 %}<span class="badge-ok">✓ Soldé</span>
+                {% else %}<span class="badge-reste">En cours</span>{% endif %}
+            </td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<!-- Pied de page -->
+<div class="footer">
+    <div class="footer-info">
+        YELEN SCHOOL — Logiciel de gestion scolaire<br>
+        Année scolaire {{ inscription.annee_scolaire.libelle }}<br>
+        {% if paiement.observation %}Observation : {{ paiement.observation }}{% endif %}
+    </div>
+    <div class="sig-zone">
+        {% signataire_auto "RECU_PAIEMENT" %}
+    </div>
+</div>
+
+</body>
+</html>

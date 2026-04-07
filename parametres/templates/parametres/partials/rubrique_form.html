@@ -1,0 +1,59 @@
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">{% if rubrique %}Modifier la Rubrique{% else %}Nouvelle Rubrique{% endif %}</span>
+      <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form hx-post="{% if rubrique %}{% url 'parametres:rubrique_edit' rubrique.pk %}{% else %}{% url 'parametres:rubrique_create' %}{% endif %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-target="#modal-container" hx-swap="innerHTML">
+      {% csrf_token %}
+      <div class="modal-body">
+        {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+        
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="input-label">Nom <span style="color:#FF6B7A;">*</span></label>
+            <input type="text" name="nom" value="{{rubrique.nom|default:''}}" placeholder="Ex : Scolarité" required class="input">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Code <span style="color:#FF6B7A;">*</span></label>
+            <input type="text" name="code" value="{{rubrique.code|default:''}}" placeholder="Ex : SCOL" required class="input text-mono">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Montant (FCFA)</label>
+            <input type="number" name="montant" value="{{rubrique.montant|default:0}}" min="0" step="100" placeholder="Ex : 50000" class="input text-mono">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="input-label">Description</label>
+          <textarea name="description" rows="3" class="input" style="resize:none;" placeholder="Description de laRubrique…">{{rubrique.description|default:''}}</textarea>
+        </div>
+
+        <div class="d-flex align-center justify-between" style="background:rgba(255,255,255,0.03); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:var(--space-3) var(--space-4);">
+          <label class="d-flex align-center gap-3" style="cursor:pointer;">
+            <input type="checkbox" name="obligatoire" {% if rubrique.obligatoire or not rubrique %}checked{% endif %} style="width:16px; height:16px; accent-color:var(--color-primary); cursor:pointer;">
+            <span style="font-size:var(--text-sm); color:var(--color-text-secondary);">Obligatoire</span>
+          </label>
+          <div class="d-flex align-center gap-3">
+            <label class="input-label" style="margin-bottom:0;">Ordre</label>
+            <input type="number" name="ordre" value="{{rubrique.ordre|default:1}}" min="1" class="input text-mono" style="width:64px; padding:6px; text-align:center;">
+          </div>
+        </div>
+
+        {% if rubrique %}
+        <label class="d-flex align-center gap-3" style="cursor:pointer; margin-top:var(--space-3);">
+          <input type="checkbox" name="actif" {% if rubrique.actif %}checked{% endif %} style="width:16px; height:16px; accent-color:var(--color-primary); cursor:pointer;">
+          <span style="font-size:var(--text-sm); color:var(--color-text-secondary);">Rubrique active</span>
+        </label>
+        {% endif %}
+
+        <div class="modal-footer">
+          <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-secondary">Annuler</button>
+          <button type="submit" class="btn-primary">Enregistrer</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

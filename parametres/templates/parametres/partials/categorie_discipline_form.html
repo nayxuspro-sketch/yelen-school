@@ -1,0 +1,51 @@
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">{% if categorie %}Modifier la Catégorie{% else %}Nouvelle Catégorie{% endif %}</span>
+      <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form hx-post="{% if categorie %}{% url 'parametres:categorie_discipline_edit' categorie.pk %}{% else %}{% url 'parametres:categorie_discipline_create' %}{% endif %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-target="#modal-container" hx-swap="innerHTML">
+      {% csrf_token %}
+      <div class="modal-body">
+        {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+        
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label">Nom <span style="color:#FF6B7A;">*</span></label>
+            <input type="text" name="nom" value="{{categorie.nom|default:''}}" placeholder="Ex : Sciences" required class="input">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Code <span style="color:#FF6B7A;">*</span></label>
+            <input type="text" name="code" value="{{categorie.code|default:''}}" placeholder="Ex : SCI" required class="input text-mono">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label">Couleur</label>
+            <input type="color" name="couleur" value="{{ categorie.couleur|default:'#6366F1' }}"
+                style="width:100%; height:2.375rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-input); cursor:pointer; padding:2px;">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Ordre</label>
+            <input type="number" name="ordre" value="{{categorie.ordre|default:1}}" min="1" class="input text-mono">
+          </div>
+        </div>
+
+        {% if categorie %}
+        <label class="d-flex align-center gap-3" style="cursor:pointer; margin-top:var(--space-3);">
+          <input type="checkbox" name="actif" {% if categorie.actif %}checked{% endif %} style="width:16px; height:16px; accent-color:var(--color-primary); cursor:pointer;">
+          <span style="font-size:var(--text-sm); color:var(--color-text-secondary);">Catégorie active</span>
+        </label>
+        {% endif %}
+
+        <div class="modal-footer">
+          <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-secondary">Annuler</button>
+          <button type="submit" class="btn-primary">Enregistrer</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

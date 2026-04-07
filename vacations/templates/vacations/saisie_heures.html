@@ -1,0 +1,109 @@
+{% extends "core/base.html" %}
+
+{% block title %}Heures — {{ contrat.personnel.get_nom_complet }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'vacations:contrat_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Saisie des heures</h1>
+      <p class="page-subtitle">{{ contrat.personnel.get_nom_complet }}{% if contrat.enseignement %} · {{ contrat.enseignement.matiere.nom }}{% endif %} · {{ contrat.taux_horaire|floatformat:0 }} FCFA/h</p>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-6 animate-fade-up delay-1">
+  <div class="card-header"><span class="card-title">Nouvelle saisie</span></div>
+  <div style="padding:var(--space-4);">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-grid-3 mb-4">
+        <div class="form-group">
+          <label class="input-label">Mois</label>
+          <select name="mois" class="input select">
+            {% for val, label in mois_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Année</label>
+          <select name="annee" class="input select">
+            {% for a in annees %}
+            <option value="{{ a }}" {% if a == annee_courante %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Heures effectuées</label>
+          <input type="number" name="heures_effectuees" step="0.5" min="0" value="0" class="input">
+        </div>
+        <div class="form-group">
+          <label class="input-label">Heures annulées</label>
+          <input type="number" name="heures_annulees" step="0.5" min="0" value="0" class="input">
+        </div>
+        <div class="form-group" style="grid-column:span 2;">
+          <label class="input-label">Observations</label>
+          <input type="text" name="observations" placeholder="Optionnel" class="input w-full">
+        </div>
+      </div>
+      <div class="d-flex justify-end">
+        <button type="submit" class="btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="table-wrapper animate-fade-up delay-2">
+  <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+    <span class="card-title">Historique des heures</span>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Période</th>
+          <th>Effectuées</th>
+          <th>Annulées</th>
+          <th>Nettes</th>
+          <th>Montant</th>
+          <th>Validé</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in heures_list %}
+        <tr>
+          <td class="fw-medium">{{ h.get_mois_display }} {{ h.annee }}</td>
+          <td class="text-secondary">{{ h.heures_effectuees }}h</td>
+          <td class="text-danger">{{ h.heures_annulees }}h</td>
+          <td class="fw-medium">{{ h.heures_nettes }}h</td>
+          <td class="fw-semibold text-warning">{{ h.montant_du|floatformat:0 }} FCFA</td>
+          <td>
+            {% if h.est_valide %}
+              <span class="badge badge-success">Validé</span>
+            {% else %}
+              <span class="badge badge-neutral">En attente</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <p class="empty-state-text">Aucune saisie.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

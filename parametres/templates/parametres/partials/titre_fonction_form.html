@@ -1,0 +1,39 @@
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title">{% if titre %}Modifier le titre fonction{% else %}Nouveau titre fonction{% endif %}</span>
+            <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form hx-post="{% if titre %}{% url 'parametres:titre_fonction_edit' titre.pk %}{% else %}{% url 'parametres:titre_fonction_create' %}{% endif %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#modal-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+
+                <div class="form-group">
+                    <label class="input-label">Titre / Fonction <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="nom" value="{{ titre.nom|default:'' }}"
+                           placeholder="Ex: Directeur, Censeur, Professeur Principal"
+                           required class="input">
+                </div>
+
+                {% if titre %}
+                <label class="d-flex align-center gap-3" style="cursor:pointer;">
+                    <input type="checkbox" name="actif" {% if titre.actif %}checked{% endif %}
+                           style="width:1rem; height:1rem; accent-color:var(--color-primary);">
+                    <span class="text-sm text-secondary">Titre actif</span>
+                </label>
+                {% endif %}
+
+                <div class="modal-footer">
+                    <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-secondary">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm 1.2cm;
+            @bottom-right {
+                content: "Page " counter(page) " sur " counter(pages);
+                font-size: 7pt;
+                color: #000000;
+            }
+            @bottom-left {
+                content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }} — Système de Gestion Scolaire";
+                font-size: 7pt;
+                color: #000000;
+            }
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            font-size: 9pt;
+            color: #1e293b;
+            line-height: 1.3;
+            margin: 0;
+            padding: 0;
+            background: white;
+        }
+
+        /* ── En-tête établissement ── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1.5pt solid #00A86B;
+            padding-bottom: 6pt;
+            margin-bottom: 8pt;
+        }
+        .school-info h1 {
+            color: #00A86B;
+            font-family: 'Playfair Display', serif;
+            margin: 0;
+            font-size: 16pt;
+            text-transform: uppercase;
+        }
+        .school-info p {
+            margin: 1pt 0;
+            font-size: 7.5pt;
+            color: #000000;
+        }
+
+        /* ── Titre du document ── */
+        .document-title {
+            text-align: center;
+            background: #f8fafc;
+            border: 1pt solid #e2e8f0;
+            padding: 5pt 8pt;
+            margin-bottom: 8pt;
+            border-radius: 3pt;
+        }
+        .document-title h2 {
+            margin: 0;
+            font-size: 11pt;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: .8pt;
+        }
+        .document-title p { margin: 2pt 0 0; font-size: 8pt; color: #000000; }
+
+        /* ── Fiche élève ── */
+        .student-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12pt;
+            margin-bottom: 8pt;
+            padding: 6pt 10pt;
+            border: 1pt solid #e2e8f0;
+            border-radius: 3pt;
+        }
+        .info-group { margin-bottom: 3pt; }
+        .info-label {
+            font-weight: bold;
+            color: #000000;
+            font-size: 7pt;
+            text-transform: uppercase;
+        }
+        .info-value { font-size: 10pt; color: #0f172a; }
+        .matricule {
+            font-family: 'DejaVu Sans Mono', monospace;
+            font-weight: bold;
+            color: #00A86B;
+        }
+
+        /* ── Tableau des matières ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8pt;
+        }
+        th {
+            background: #00A86B;
+            color: white;
+            text-align: left;
+            padding: 5pt 6pt;
+            font-size: 8pt;
+            text-transform: uppercase;
+        }
+        td {
+            border-bottom: 0.5pt solid #e2e8f0;
+            padding: 4pt 6pt;
+            font-size: 8.5pt;
+        }
+        .moyenne-col { font-weight: bold; text-align: center; }
+
+        /* ── Bloc récapitulatif (vert) ── */
+        .recap-box {
+            border: 1.5pt solid #00A86B;
+            border-radius: 3pt;
+            padding: 6pt 10pt;
+            background: #f0fdf4;
+            margin-bottom: 8pt;
+        }
+        .recap-box .info-label { font-size: 7pt; }
+        .recap-box .info-value { font-size: 10pt; }
+
+        /* ── Bloc signataires ── */
+        .footer-sig {
+            margin-top: 10pt;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20pt;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        .sig-box { text-align: center; }
+        .sig-title {
+            font-weight: bold;
+            font-size: 8.5pt;
+            text-decoration: underline;
+            margin-bottom: 30pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="school-info">
+            <h1>{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</h1>
+            {% if identite and identite.numero_agrement_mena %}
+            <p style="font-style:italic;">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>
+            {% endif %}
+            <p>{% if identite %}{{ identite.adresse_complete|default:etablissement.adresse|default:"Burkina Faso" }}{% else %}Burkina Faso{% endif %}</p>
+            <p>{% if identite and identite.telephone %}{% if identite.email %}{{ identite.email }} · {% endif %}Tél : {{ identite.telephone }}{% endif %}</p>
+        </div>
+        <div class="school-logo">
+            {% if logo_url %}<img src="{{ logo_url }}" alt="Logo" style="max-height:50px;">
+            {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo" style="max-height:50px;">{% endif %}
+        </div>
+    </div>
+
+    {% block pdf_content %}{% endblock %}
+
+</body>
+</html>

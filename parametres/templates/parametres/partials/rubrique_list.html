@@ -1,0 +1,78 @@
+<div id="liste-container" hx-trigger="parametreUpdated from:body" hx-get="{% url 'parametres:rubrique_list' %}" hx-target="#liste-container" hx-swap="outerHTML">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Code</th>
+                    <th>Montant</th>
+                    <th>Obligatoire</th>
+                    <th>Ordre</th>
+                    <th>Statut</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rubriques %}
+                <tr {% if not r.actif %}style="opacity:0.55;"{% endif %}>
+                    <td class="fw-medium">{{ r.nom }}</td>
+                    <td><span class="badge badge-neutral text-mono">{{ r.code }}</span></td>
+                    <td class="fw-semibold text-warning">{{ r.montant|default:0|floatformat:0 }} FCFA</td>
+                    <td>
+                        {% if r.obligatoire %}
+                        <span class="badge badge-success">Oui</span>
+                        {% else %}
+                        <span class="badge badge-neutral">Non</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-mono text-secondary text-xs">{{ r.ordre }}</td>
+                    <td>
+                        {% if r.actif %}
+                        <span class="badge badge-success">Active</span>
+                        {% else %}
+                        <span class="badge badge-neutral">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;">
+                        <div class="d-flex justify-end gap-2">
+                            <button hx-post="{% url 'parametres:rubrique_toggle' r.pk %}"
+                                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                    hx-confirm="{% if r.actif %}Désactiver cette rubrique ? Elle ne sera plus disponible dans le système.{% else %}Réactiver cette rubrique ?{% endif %}"
+                                    class="btn-icon"
+                                    title="{% if r.actif %}Désactiver{% else %}Activer{% endif %}">
+                                {% if r.actif %}
+                                <svg width="16" height="16" fill="none" stroke="#F87171" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                {% else %}
+                                <svg width="16" height="16" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                {% endif %}
+                            </button>
+                            <button hx-get="{% url 'parametres:rubrique_edit' r.pk %}" hx-target="#modal-container" hx-swap="innerHTML"
+                                class="btn-icon" title="Modifier">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <button hx-post="{% url 'parametres:rubrique_delete' r.pk %}"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-confirm="Supprimer cette rubrique ?"
+                                class="btn-icon" title="Supprimer" style="color:var(--color-danger);">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            </div>
+                            <p class="fw-medium">Aucune rubrique de paiement</p>
+                            <p class="empty-state-text">Commencez par créer votre première rubrique.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

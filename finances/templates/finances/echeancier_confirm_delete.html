@@ -1,0 +1,54 @@
+{% extends "core/base.html" %}
+
+{% block title %}Supprimer l'échéance — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'finances:situation_eleve' inscription.id %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Confirmer la suppression</h1>
+      <p class="page-subtitle">Élève : <strong class="text-primary">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</strong></p>
+    </div>
+  </div>
+</div>
+
+<div class="animate-fade-up delay-1" style="max-width:500px;">
+  <div class="card">
+    <div class="card-body">
+      <p class="mb-4">Êtes-vous sûr de vouloir supprimer l'échéance suivante ?</p>
+      
+      <div class="card" style="background:var(--color-bg-secondary);">
+        <div style="padding:var(--space-4);">
+          <div class="d-flex justify-between align-center mb-2">
+            <span class="text-muted">Libellé</span>
+            <span class="fw-semibold">{{ echeancier.libelle }}</span>
+          </div>
+          <div class="d-flex justify-between align-center mb-2">
+            <span class="text-muted">Date limite</span>
+            <span class="fw-semibold">{{ echeancier.date_limite|date:"d M Y" }}</span>
+          </div>
+          <div class="d-flex justify-between align-center">
+            <span class="text-muted">Montant</span>
+            <span class="fw-bold text-primary">{{ echeancier.montant_du }} <small class="text-muted">FCFA</small></span>
+          </div>
+        </div>
+      </div>
+      
+      <p class="text-muted mt-4" style="font-size:0.9rem;">Cette action est irréversible.</p>
+      
+      <form method="post" class="form-actions mt-6">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger">Supprimer</button>
+        <a href="{% url 'finances:situation_eleve' inscription.id %}" class="btn-secondary">Annuler</a>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

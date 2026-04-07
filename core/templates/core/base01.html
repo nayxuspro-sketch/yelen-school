@@ -1,0 +1,285 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}YELEN SCHOOL{% endblock %}</title>
+
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { DEFAULT: '#00A86B', hover: '#00915C' },
+                        surface: { DEFAULT: '#0A1628', card: '#111E35', border: '#1E293B' },
+                        gold: '#F5A623',
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['"Playfair Display"', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap">
+
+    <!-- CSS personnalisé -->
+    <link rel="stylesheet" href="{% static 'core/css/yelen.css' %}">
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
+
+    <!-- Alpine.js (accordéon sidebar) -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-[#0A1628] font-sans text-slate-200 flex min-h-screen">
+
+    <!-- ═══ SIDEBAR ════════════════════════════════════════════════════════ -->
+    <aside id="sidebar"
+           class="fixed inset-y-0 left-0 z-40 flex flex-col w-60 bg-[#111E35] border-r border-[#1E293B]
+                  transition-transform duration-300 -translate-x-full md:translate-x-0">
+
+        <!-- Logo -->
+        <div class="flex items-center gap-3 px-5 py-5 border-b border-[#1E293B]">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#00A86B;">
+                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+                </svg>
+            </div>
+            <div>
+                <span class="font-display text-lg font-bold leading-tight" style="color:#00A86B;">YELEN</span>
+                <span class="block text-[10px] text-slate-600 uppercase tracking-widest -mt-0.5">School</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+
+            <a href="/" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Tableau de bord
+            </a>
+
+            <p class="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Scolarité</p>
+
+            <a href="{% url 'inscriptions:eleve_list' %}" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                Élèves
+            </a>
+
+            <a href="{% url 'pedagogie:matiere_list' %}" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                Pédagogie
+            </a>
+
+            <a href="{% url 'pedagogie:classe_result_list' %}" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Résultats
+            </a>
+
+            <a href="{% url 'presences:appel_list' %}" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                Présences
+            </a>
+
+            <a href="{% url 'viescolaire:conseil_list' %}" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Vie Scolaire
+            </a>
+
+            <p class="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Administration</p>
+
+            <a href="{% url 'personnel:personnel_list' %}" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Personnel
+            </a>
+
+            <a href="{% url 'finances:paiement_list' %}" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Finance
+            </a>
+
+            <a href="{% url 'examens:session_list' %}" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Examens
+            </a>
+
+            <a href="{% url 'vacations:contrat_list' %}" class="nav-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Vacations
+            </a>
+
+            <p class="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Configuration</p>
+
+            <!-- Paramètres (accordéon) -->
+            <div x-data="{ open: window.location.pathname.startsWith('/parametres/') }">
+                <button @click="open = !open"
+                    class="nav-link w-full group flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                    :class="open ? 'text-white bg-white/5' : ''">
+                    <span class="flex items-center gap-3">
+                        <svg class="w-[18px] h-[18px] flex-shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-[#00A86B] transition-all" :class="open ? 'opacity-100 text-[#00A86B]' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Paramètres
+                    </span>
+                    <svg class="w-3.5 h-3.5 flex-shrink-0 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="ml-4 mt-0.5 space-y-0.5 border-l border-[#1E293B] pl-3">
+                    <a href="{% url 'parametres:etablissement' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Établissement</a>
+                    <a href="{% url 'parametres:annee_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Années scolaires</a>
+                    <a href="{% url 'parametres:cycle_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Cycles</a>
+                    <a href="{% url 'parametres:classe_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Classes</a>
+                    <a href="{% url 'parametres:poste_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Postes</a>
+                    <a href="{% url 'parametres:statut_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Statuts élèves</a>
+                    <a href="{% url 'parametres:rubrique_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Rubriques paiement</a>
+                    <a href="{% url 'parametres:discipline_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Disciplines</a>
+                    <a href="{% url 'parametres:periode_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Périodes</a>
+                    <a href="{% url 'parametres:appreciation_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Appréciation Secondaire</a>
+                    <a href="{% url 'parametres:appreciation_primaire_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Appréciation Primaire</a>
+                    <a href="{% url 'parametres:signataires_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Signataires</a>
+                    <a href="{% url 'parametres:type_document_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Types Documents</a>
+                    <a href="{% url 'parametres:type_sanction_list' %}" class="nav-link block px-2 py-1.5 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all">Types Sanctions</a>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Utilisateur connecté -->
+        {% if user.is_authenticated %}
+        <div class="border-t border-[#1E293B] px-4 py-3">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                     style="background:rgba(0,168,107,0.2); color:#00A86B;">
+                    {{ user.get_full_name|default:user.username|first|upper }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate">{{ user.get_full_name|default:user.username }}</p>
+                    <p class="text-xs text-slate-500 truncate">{{ user.email }}</p>
+                </div>
+                <a href="/accounts/logout/" title="Déconnexion"
+                   class="text-slate-500 hover:text-red-400 transition-colors flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </aside>
+
+    <!-- ═══ CONTENU PRINCIPAL ══════════════════════════════════════════════ -->
+    <div class="flex-1 flex flex-col min-h-screen md:ml-60">
+
+        <!-- Topbar mobile -->
+        <header class="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-[#111E35] border-b border-[#1E293B]">
+            <button id="menu-btn" class="text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+            <span class="font-display font-bold" style="color:#00A86B;">YELEN SCHOOL</span>
+            <div class="w-6"></div>
+        </header>
+
+        <main class="flex-1 p-6 lg:p-8">
+
+            <!-- Messages flash -->
+            {% if messages %}
+            <div class="mb-6 space-y-2">
+                {% for message in messages %}
+                <div class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm
+                    {% if message.tags == 'success' %}border{% elif message.tags == 'error' %}border{% elif message.tags == 'warning' %}border{% else %}border{% endif %}"
+                    style="{% if message.tags == 'success' %}background:rgba(0,168,107,0.1); color:#00A86B; border-color:rgba(0,168,107,0.25);{% elif message.tags == 'error' %}background:rgba(239,68,68,0.1); color:#F87171; border-color:rgba(239,68,68,0.25);{% elif message.tags == 'warning' %}background:rgba(245,166,35,0.1); color:#F5A623; border-color:rgba(245,166,35,0.25);{% else %}background:rgba(59,130,246,0.1); color:#60A5FA; border-color:rgba(59,130,246,0.25);{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+
+        </main>
+
+        <footer class="border-t border-[#1E293B] py-4 px-6 text-center text-xs text-slate-700">
+            &copy; 2026 YELEN SCHOOL — Système de Gestion Scolaire (Burkina Faso)
+        </footer>
+    </div>
+
+    <!-- Overlay sidebar mobile -->
+    <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/60 hidden md:hidden"></div>
+
+    <script>
+        // Active nav link
+        (function() {
+            const path = window.location.pathname;
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const href = link.getAttribute('href');
+                const isHome = href === '/' && path === '/';
+                const isActive = !isHome ? (href !== '/' && path.startsWith(href)) : isHome;
+                if (isActive) {
+                    link.style.background = 'rgba(0,168,107,0.1)';
+                    link.style.color = '#fff';
+                    link.style.borderLeft = '3px solid #00A86B';
+                    link.style.paddingLeft = '9px';
+                }
+            });
+        })();
+
+        // Mobile sidebar
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        document.getElementById('menu-btn')?.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        });
+
+        // Fermeture automatique des modals après sauvegarde HTMX
+        document.body.addEventListener('parametreUpdated', function() {
+            var m = document.getElementById('modal-overlay');
+            if (m) m.remove();
+        });
+        document.body.addEventListener('signataireUpdated', function() {
+            var m = document.getElementById('modal-overlay');
+            if (m) m.remove();
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

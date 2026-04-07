@@ -1,0 +1,27 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Postes — Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+            <span class="text-muted"> / </span>
+            <span>Postes</span>
+        </p>
+        <h1 class="page-title">Postes du personnel</h1>
+    </div>
+    <button hx-get="{% url 'parametres:poste_create' %}" hx-target="#modal-container" hx-swap="innerHTML"
+        class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nouveau poste
+    </button>
+</div>
+
+<div id="modal-container"></div>
+
+<div id="poste-table" class="table-wrapper animate-fade-up delay-1">
+    {% include 'parametres/partials/poste_list.html' %}
+</div>
+{% endblock %}

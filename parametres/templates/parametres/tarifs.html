@@ -1,0 +1,56 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Tarifs de scolarité — Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+            <span class="text-muted"> / </span>
+            <span>Tarifs de scolarité</span>
+        </p>
+        <h1 class="page-title">Tarifs de scolarité</h1>
+    </div>
+    <button type="button" hx-get="{% url 'parametres:tarif_create' %}" hx-target="#modal-container" hx-swap="innerHTML"
+        class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nouveau Tarif
+    </button>
+</div>
+
+<div id="modal-container"></div>
+
+{# Filtres #}
+<div class="card animate-fade-up delay-1" style="margin-bottom:1rem;">
+    <form method="get" style="padding:1rem 1.25rem; display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+        <div class="form-group" style="margin:0; min-width:200px;">
+            <label class="input-label">Année scolaire</label>
+            <select name="annee" class="input select" onchange="this.form.submit()">
+                <option value="">— Toutes —</option>
+                {% for a in annees %}
+                <option value="{{ a.pk }}" {% if selected_annee == a.pk|stringformat:"s" %}selected{% endif %}>{{ a.libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin:0; min-width:200px;">
+            <label class="input-label">Niveau</label>
+            <select name="niveau" class="input select" onchange="this.form.submit()">
+                <option value="">— Tous —</option>
+                {% for n in niveaux %}
+                <option value="{{ n }}" {% if selected_niveau == n %}selected{% endif %}>{{ n }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if selected_annee or selected_niveau %}
+        <a href="{% url 'parametres:tarif_list' %}" class="btn-secondary" style="margin-bottom:0;">
+            Réinitialiser
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<div id="tarif-table" class="table-wrapper animate-fade-up delay-2">
+    {% include 'parametres/partials/tarif_list.html' %}
+</div>
+{% endblock %}

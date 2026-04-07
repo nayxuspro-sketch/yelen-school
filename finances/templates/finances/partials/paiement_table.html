@@ -1,0 +1,64 @@
+<div class="table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Élève</th>
+        <th style="width:90px;">Classe</th>
+        <th style="width:155px;">Dernière rubrique</th>
+        <th style="width:110px;">Montant</th>
+        <th style="width:95px;">Date</th>
+        <th style="width:95px;">Mode</th>
+        <th style="width:72px; text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for paiement in paiements %}
+      <tr>
+        <td>
+          <div class="d-flex align-center gap-2">
+            <span class="avatar-initials avatar-sm">{{ paiement.inscription.eleve.nom.0 }}{{ paiement.inscription.eleve.prenom.0 }}</span>
+            <div class="min-w-0">
+              <div class="fw-semibold" style="white-space:normal; word-break:break-word;">{{ paiement.inscription.eleve.nom|upper }} {{ paiement.inscription.eleve.prenom }}</div>
+              <div class="text-mono text-muted" style="font-size:0.7rem;">{{ paiement.inscription.eleve.matricule }}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="badge badge-neutral">{{ paiement.inscription.classe.nom }}</span></td>
+        <td class="text-secondary" style="font-size:0.85rem;">
+          {{ paiement.rubrique.nom|default:"—" }}
+        </td>
+        <td class="fw-bold">{{ paiement.montant|floatformat:0 }} <small class="text-muted fw-medium">FCFA</small></td>
+        <td class="text-secondary" style="font-size:0.85rem;">{{ paiement.date_paiement|date:"d/m/Y" }}</td>
+        <td class="text-secondary" style="font-size:0.85rem;">{{ paiement.get_mode_paiement_display }}</td>
+        <td style="text-align:right;">
+          <div class="d-flex justify-end gap-2">
+            <a href="{% url 'finances:situation_eleve' paiement.inscription.id %}" class="btn-icon" title="Situation financière">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </a>
+            <a href="{% url 'finances:recu_pdf' paiement.id %}" target="_blank" class="btn-icon" title="Reçu PDF" style="color:var(--color-primary);">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7">
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <p class="empty-state-text">Aucun paiement enregistré pour le moment.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

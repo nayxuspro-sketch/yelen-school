@@ -1,0 +1,124 @@
+{
+  // ═══════════════════════════════════════════════════════════════════
+  // YELEN SCHOOL - Extensions VSCode Recommandées
+  // Ces extensions sont OBLIGATOIRES pour le développement
+  // ═══════════════════════════════════════════════════════════════════
+
+  "recommendations": [
+    // ─────────────────────────────────────────────────────────────────
+    // 🐍 PYTHON & DJANGO (OBLIGATOIRES)
+    // ─────────────────────────────────────────────────────────────────
+    "ms-python.python",                    // Python officiel (IntelliSense, linting, debugging)
+    "ms-python.vscode-pylance",            // Language server Python ultra-rapide
+    "batisteo.vscode-django",              // Support Django templates + snippets
+    "ms-python.black-formatter",           // Black formatter (obligatoire Yelen School)
+    "ms-python.flake8",                    // Flake8 linter
+    "littlefoxteam.vscode-python-test-adapter", // Test Explorer pour pytest
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🎨 TAILWIND CSS (OBLIGATOIRE)
+    // ─────────────────────────────────────────────────────────────────
+    "bradlc.vscode-tailwindcss",           // Autocomplete classes Tailwind
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 🟢 HTMX & Alpine.js
+    // ─────────────────────────────────────────────────────────────────
+    "otovo-oss.htmx-tags",                 // Support attributs HTMX
+    "adrianwilczynski.alpine-js-intellisense", // IntelliSense Alpine.js
+
+    // ─────────────────────────────────────────────────────────────────
+    // 🌐 HTML, CSS, JS
+    // ─────────────────────────────────────────────────────────────────
+    "ecmel.vscode-html-css",               // Support HTML/CSS avancé
+    "formulahendry.auto-rename-tag",       // Renommage automatique balises
+    "formulahendry.auto-close-tag",        // Fermeture automatique balises
+    "pranaygp.vscode-css-peek",            // Peek CSS definitions
+    "zignd.html-css-class-completion",     // Autocomplete classes CSS
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 🐳 DOCKER (OBLIGATOIRE)
+    // ─────────────────────────────────────────────────────────────────
+    "ms-azuretools.vscode-docker",         // Support Docker + Docker Compose
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 🗄️ BASE DE DONNÉES
+    // ─────────────────────────────────────────────────────────────────
+    "mtxr.sqltools",                       // Client SQL universel
+    "mtxr.sqltools-driver-pg",             // Driver PostgreSQL pour SQLTools
+    "cweijan.vscode-postgresql-client2",   // Client PostgreSQL dédié
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 📝 FORMATAGE & QUALITÉ CODE
+    // ─────────────────────────────────────────────────────────────────
+    "esbenp.prettier-vscode",              // Prettier (JS, JSON, YAML)
+    "editorconfig.editorconfig",           // Support .editorconfig
+    "tamasfe.even-better-toml",            // Support TOML (pyproject.toml)
+    "redhat.vscode-yaml",                  // Support YAML avancé
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 🔧 GIT & VERSION CONTROL
+    // ─────────────────────────────────────────────────────────────────
+    "eamodio.gitlens",                     // GitLens (historique, blame, etc.)
+    "mhutchie.git-graph",                  // Graphe visuel Git
+    "donjayamanne.githistory",             // Historique Git détaillé
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 🧪 TESTING & DEBUGGING
+    // ─────────────────────────────────────────────────────────────────
+    "ms-python.debugpy",                   // Debugger Python
+    "ryanluker.vscode-coverage-gutters",   // Affichage coverage dans l'éditeur
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 📦 UTILITAIRES
+    // ─────────────────────────────────────────────────────────────────
+    "christian-kohler.path-intellisense",  // Autocomplete chemins fichiers
+    "visualstudioexptteam.vscodeintellicode", // IA IntelliSense
+    "streetsidesoftware.code-spell-checker", // Correcteur orthographique
+    "streetsidesoftware.code-spell-checker-french", // Dictionnaire français
+    "usernamehw.errorlens",                // Affichage inline des erreurs
+    "oderwat.indent-rainbow",              // Coloration indentation
+    "gruntfuggly.todo-tree",               // Gestion TODO, FIXME, etc.
+    "aaron-bond.better-comments",          // Mise en forme commentaires
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 🎨 THÈMES & ICÔNES
+    // ─────────────────────────────────────────────────────────────────
+    "zhuangtongfa.material-theme",         // One Dark Pro (thème recommandé)
+    "pkief.material-icon-theme",           // Material Icon Theme
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 📊 PRODUCTIVITÉ
+    // ─────────────────────────────────────────────────────────────────
+    "alefragnani.bookmarks",               // Bookmarks dans le code
+    "wayou.vscode-todo-highlight",         // Highlight TODO/FIXME
+    "shardulm94.trailing-spaces",          // Détection espaces inutiles
+    "tyriar.sort-lines",                   // Tri de lignes
+    "mechatroner.rainbow-csv",             // Coloration CSV
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 🔐 SÉCURITÉ & ENV
+    // ─────────────────────────────────────────────────────────────────
+    "mikestead.dotenv",                    // Support fichiers .env
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 📚 DOCUMENTATION
+    // ─────────────────────────────────────────────────────────────────
+    "yzhang.markdown-all-in-one",          // Support Markdown complet
+    "davidanson.vscode-markdownlint",      // Linting Markdown
+    
+    // ─────────────────────────────────────────────────────────────────
+    // 🌐 REST API (pour tester DRF)
+    // ─────────────────────────────────────────────────────────────────
+    "humao.rest-client"                    // Client HTTP REST
+  ],
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Extensions NON recommandées (conflits ou inutiles)
+  // ═══════════════════════════════════════════════════════════════════
+  "unwantedRecommendations": [
+    "ms-python.autopep8",                  // On utilise Black, pas autopep8
+    "ms-python.isort",                     // Organisé via Black
+    "donjayamanne.python-extension-pack",  // Trop de dépendances inutiles
+    "visualstudioexptteam.vscodeintellicode-completions" // Conflit avec Pylance
+  ]
+}

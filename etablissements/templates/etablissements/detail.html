@@ -1,0 +1,215 @@
+{% extends 'core/base.html' %}
+{% block title %}Établissement — YELEN SCHOOL{% endblock %}
+{% block content %}
+
+<div class="breadcrumb animate-fade-up">
+    <a href="{% url 'parametres:index' %}">Paramètres</a>
+    <span class="breadcrumb-sep">/</span>
+    <span class="breadcrumb-current">Établissement</span>
+</div>
+
+<div class="page-header animate-fade-up delay-1">
+    <div>
+        <h1 class="page-title">Identité de l'Établissement</h1>
+        <p class="page-subtitle">Configurez le cœur de votre système de gestion scolaire.</p>
+    </div>
+</div>
+
+<!-- Section Statistiques Rapides -->
+<div class="stats-grid animate-fade-up delay-1 mb-6">
+    <div class="card stat-card">
+        <div class="stat-icon" style="background: rgba(0,168,107,0.1); color: var(--color-primary);">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </div>
+        <div>
+            <div class="stat-label">Élèves Inscrits</div>
+            <div class="stat-value">{{ stats.eleves|default:0 }}</div>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon" style="background: rgba(245,166,35,0.1); color: var(--color-gold);">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        </div>
+        <div>
+            <div class="stat-label">Personnel Actif</div>
+            <div class="stat-value">{{ stats.personnel|default:0 }}</div>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon" style="background: rgba(59,130,246,0.1); color: #60A5FA;">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        </div>
+        <div>
+            <div class="stat-label">Classes Ouvertes</div>
+            <div class="stat-value">{{ stats.classes|default:0 }}</div>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger animate-fade-up">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+</div>
+{% endif %}
+
+{% if success %}
+<div class="alert alert-success animate-fade-up">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    {{ success }}
+</div>
+{% endif %}
+
+{% if etablissement or request.user.is_superuser %}
+<form method="post" enctype="multipart/form-data" class="animate-fade-up delay-2">
+    {% csrf_token %}
+    
+    <div class="d-flex gap-4" style="align-items: flex-start; flex-wrap: wrap;">
+        
+        <!-- Colonne de gauche : Formulaire principal -->
+        <div style="flex: 2; min-width: 400px;" class="d-flex flex-column gap-4">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Informations de l'établissement</h2>
+                </div>
+                
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="input-label">Nom officiel *</label>
+                        <input type="text" name="nom" value="{{ etablissement.nom|default:'' }}" required class="input" placeholder="Ex: Lycée d'Excellence Yelen">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="input-label">Code établissement *</label>
+                        <input type="text" name="code" value="{{ etablissement.code|default:'' }}" required class="input" placeholder="Ex: LEY-OUA">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="input-label">Téléphone</label>
+                        <input type="text" name="telephone" value="{{ etablissement.telephone|default:'' }}" class="input" placeholder="+226 25 30 00 00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="input-label">E-mail de contact</label>
+                        <input type="email" name="email" value="{{ etablissement.email|default:'' }}" class="input" placeholder="direction@yelen.bf">
+                    </div>
+
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label class="input-label">Cycles d'enseignement proposés</label>
+                        <div class="d-flex gap-3 flex-wrap" style="background: var(--color-bg-card); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                            {% for code, label in cycles_all %}
+                            <label class="d-flex align-center gap-2 cursor-pointer p-2 rounded hover:bg-[var(--color-bg-hover)]" style="user-select: none; transition: background 0.2s;">
+                                <input type="checkbox" name="cycles" value="{{ code }}" class="custom-checkbox" {% if code in cycles_selected %}checked{% endif %}>
+                                <span class="badge {% if code == 'PRESCOLAIRE' %}badge-info{% elif code == 'PRIMAIRE' %}badge-success{% elif code == 'POST_PRIMAIRE' %}badge-warning{% else %}badge-neutral{% endif %}" style="padding: 4px 10px;">{{ label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        <p class="text-xs text-muted mt-2">Cochez tous les cycles actifs au sein de votre établissement.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Localisation et Siège</h2>
+                </div>
+                
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="input-label">Ville / Commune</label>
+                        <input type="text" name="ville" value="{{ etablissement.ville|default:'' }}" class="input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="input-label">Pays</label>
+                        <input type="text" name="pays" value="{{ etablissement.pays|default:'Burkina Faso' }}" class="input">
+                    </div>
+
+                    <div class="form-group mb-0" style="grid-column: span 2;">
+                        <label class="input-label">Adresse physique complète</label>
+                        <textarea name="adresse" rows="3" class="input" placeholder="Secteur, Quartier, Rue...">{{ etablissement.adresse|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne de droite : Logo et Actions -->
+        <div style="flex: 1; min-width: 300px;" class="d-flex flex-column gap-4">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Identité Visuelle</h2>
+                </div>
+
+                <div class="d-flex flex-column align-center">
+                    <div id="logo-dropzone" 
+                         style="width: 100%; max-width: 220px; aspect-ratio: 1/1; 
+                                border: 2px dashed var(--color-border); border-radius: var(--radius-xl);
+                                display: flex; align-items: center; justify-content: center;
+                                margin-bottom: var(--space-4); background: var(--color-bg-input);
+                                overflow: hidden; position: relative; transition: all 0.3s ease;
+                                cursor: pointer;"
+                         onclick="document.getElementById('logo-input').click()"
+                         onmouseover="this.style.borderColor='var(--color-primary)'; this.style.backgroundColor='rgba(0,168,107,0.05)';"
+                         onmouseout="this.style.borderColor='var(--color-border)'; this.style.backgroundColor='var(--color-bg-input)';">
+                        
+                        {% if etablissement.logo %}
+                            <img id="logo-preview" src="{{ etablissement.logo.url }}" style="max-width: 85%; max-height: 85%; object-fit: contain;" alt="Logo current">
+                        {% else %}
+                            <div id="logo-placeholder" class="text-center text-muted">
+                                <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.3; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <div class="text-xs">Cliquez pour ajouter un logo</div>
+                            </div>
+                            <img id="logo-preview" src="" style="display: none; max-width: 85%; max-height: 85%; object-fit: contain;" alt="Preview">
+                        {% endif %}
+                    </div>
+                    
+                    <input type="file" id="logo-input" name="logo" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                    <p class="text-[10px] text-muted text-center px-4">Utilisez un format PNG transparent ou SVG pour un rendu optimal sur les documents officiels.</p>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid var(--color-primary);">
+                <div class="d-flex flex-column gap-3">
+                    <button type="submit" class="btn-primary w-full" style="justify-content: center; height: 50px; font-weight: 600;">
+                        {% if etablissement %}Enregistrer les modifications{% else %}Finaliser l'installation{% endif %}
+                    </button>
+                    <a href="{% url 'parametres:index' %}" class="btn-secondary w-full" style="justify-content: center;">
+                        Annuler
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card p-3" style="background: rgba(0,168,107,0.02); border: 1px dashed rgba(0,168,107,0.2);">
+                <div class="d-flex align-center gap-2 text-xs text-muted">
+                    <svg width="14" height="14" fill="var(--color-primary)" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/></svg>
+                    <span>Dernière mise à jour : {{ etablissement.updated_at|date:"d/m/Y à H:i"|default:"Jamais" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endif %}
+
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('logo-preview');
+    const placeholder = document.getElementById('logo-placeholder');
+    const container = document.getElementById('logo-dropzone');
+
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (preview) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            if (placeholder) placeholder.style.display = 'none';
+            container.style.borderColor = 'var(--color-primary)';
+            container.style.backgroundColor = 'rgba(0,168,107,0.05)';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+
+{% endblock %}

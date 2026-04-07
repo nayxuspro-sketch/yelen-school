@@ -1,0 +1,36 @@
+{% if signataire %}
+{% with membre=signataire.get_membre_personnel %}
+{% if membre %}
+<style>
+.sig-zone          { margin-top:32pt; text-align:right; page-break-inside:avoid; break-inside:avoid; }
+.sig-date          { font-size:10pt; color:#222; font-weight:normal; }
+.sig-fonction      { font-size:11pt; font-weight:normal; color:#111; margin-top:1cm; }
+.sig-name          { font-size:11pt; font-weight:bold; color:#000; margin-top:2cm; line-height:1.3; }
+.sig-honors        { font-size:8.5pt; font-style:italic; font-weight:normal; color:#333; margin-top:2px; line-height:1.5; }
+</style>
+<div class="sig-zone">
+
+  <div class="sig-date">
+    {% if identite and identite.ville %}{{ identite.ville }}, {% endif %}le {% now "d F Y" %}
+  </div>
+
+  <div class="sig-fonction">
+    {{ signataire.fonction|default:signataire.titre|default:"Le Directeur" }}
+  </div>
+
+  <div class="sig-name">
+    {{ membre.nom|upper }} {{ membre.prenom }}
+  </div>
+
+  {% if signataire.titres_honorifiques %}
+  <div class="sig-honors">
+    {% for titre in signataire.titres_honorifiques %}{{ titre }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+  </div>
+  {% elif signataire.titre_honorifique %}
+  <div class="sig-honors">{{ signataire.titre_honorifique }}</div>
+  {% endif %}
+
+</div>
+{% endif %}
+{% endwith %}
+{% endif %}

@@ -1,0 +1,197 @@
+{% extends "core/base.html" %}
+
+{% block title %}Bilan des Encaissements - YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div style="max-width:64rem; margin:0 auto;">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Bilan des Encaissements</h1>
+            <p class="page-subtitle">Statistiques des paiements reçus</p>
+        </div>
+    </div>
+
+    <form method="get" class="card mb-6">
+        <div class="d-flex gap-3 align-end flex-wrap">
+            <div class="form-group" style="flex:1; min-width:150px;">
+                <label class="input-label">Année scolaire</label>
+                <select name="annee" class="input select">
+                    <option value="">Toutes</option>
+                    {% for a in annees %}
+                    <option value="{{ a.pk }}" {% if annee_selected and annee_selected.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="flex:1; min-width:150px;">
+                <label class="input-label">Rubrique</label>
+                <select name="rubrique" class="input select">
+                    <option value="">Toutes</option>
+                    {% for r in rubriques %}
+                    <option value="{{ r.pk }}" {% if rub_selected and rub_selected.pk == r.pk %}selected{% endif %}>{{ r.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="width:140px;">
+                <label class="input-label">Date début</label>
+                <input type="date" name="date_debut" value="{{ date_debut }}" class="input">
+            </div>
+            <div class="form-group" style="width:140px;">
+                <label class="input-label">Date fin</label>
+                <input type="date" name="date_fin" value="{{ date_fin }}" class="input">
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-primary">Filtrer</button>
+                <a href="{% url 'finances:bilan_encaissements' %}" class="btn-secondary" title="Réinitialiser">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </a>
+                <a href="{% url 'finances:bilan_encaissements_pdf' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}" 
+                   target="_blank" class="btn-secondary" title="Imprimer PDF">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Statistiques globales -->
+    <div class="stats-grid mb-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--color-success);">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Total Encaissé</div>
+                <div class="stat-value" style="color:var(--color-success);">{{ total_encaissement|floatformat:0 }} FCFA</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--color-primary);">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Nombre de transactions</div>
+                <div class="stat-value">{{ nb_paiements }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-grid-2 mb-6">
+        <!-- Par mode de paiement -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Par Mode de Paiement</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Mode</th>
+                        <th style="text-align:right;">Nombre</th>
+                        <th style="text-align:right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mode, data in par_mode.items %}
+                    <tr>
+                        <td>{{ mode }}</td>
+                        <td style="text-align:right;">{{ data.count }}</td>
+                        <td style="text-align:right;" class="fw-bold">{{ data.total|floatformat:0 }} FCFA</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">Aucune donnée</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Par jour -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Par Jour</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th style="text-align:right;">Nombre</th>
+                        <th style="text-align:right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for jour, data in par_jour.items|slice:":10" %}
+                    <tr>
+                        <td>{{ jour }}</td>
+                        <td style="text-align:right;">{{ data.count }}</td>
+                        <td style="text-align:right;" class="fw-bold">{{ data.total|floatformat:0 }} FCFA</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">Aucune donnée</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Liste des paiements par cycle et classe -->
+    {% for cycle_data in cycles_list %}
+    <div class="card mb-4">
+        <div class="card-header" style="background:var(--color-primary); color:white;">
+            <div class="d-flex justify-between align-center">
+                <span class="fw-bold">{{ cycle_data.cycle.nom }}</span>
+                <span class="badge" style="background:rgba(255,255,255,0.2); color:white;">
+                    {{ cycle_data.total|floatformat:0 }} FCFA
+                </span>
+            </div>
+        </div>
+        
+        {% for classe_data in cycle_data.classes %}
+        <div style="padding:1rem; border-bottom:1px solid var(--color-border);">
+            <div class="d-flex justify-between align-center mb-3">
+                <span class="fw-semibold">{{ classe_data.classe.nom }}</span>
+                <span class="badge badge-warning">{{ classe_data.total|floatformat:0 }} FCFA</span>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Élève</th>
+                        <th>Rubrique</th>
+                        <th>Mode</th>
+                        <th style="text-align:right;">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in classe_data.paiements %}
+                    <tr>
+                        <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
+                        <td class="fw-medium">{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
+                        <td>{{ p.rubrique.nom|default:"—" }}</td>
+                        <td>{{ p.mode_paiement|default:"—" }}</td>
+                        <td style="text-align:right;" class="fw-bold" style="color:var(--color-success);">{{ p.montant|floatformat:0 }} FCFA</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+    {% empty %}
+    <div class="card">
+        <div class="empty-state">
+            <p class="empty-state-text">Aucun paiement trouvé pour les critères sélectionnés.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

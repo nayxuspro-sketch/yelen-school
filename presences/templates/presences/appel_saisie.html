@@ -1,0 +1,125 @@
+{% extends "core/base.html" %}
+
+{% block title %}Saisie appel — {{ appel.classe.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'presences:appel_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Appel — {{ appel.classe.nom }}</h1>
+      <p class="page-subtitle">{{ appel.date|date:"l d F Y" }}{% if appel.matiere %} · {{ appel.matiere.nom }}{% endif %}</p>
+    </div>
+  </div>
+</div>
+
+<div class="stats-grid mb-4 animate-fade-up delay-1" style="grid-template-columns:repeat(3,1fr);">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ appel.nb_presents }}</div>
+      <div class="stat-label">Présents</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-red">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ appel.nb_absents }}</div>
+      <div class="stat-label">Absents</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-gold">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ appel.nb_retards }}</div>
+      <div class="stat-label">Retards</div>
+    </div>
+  </div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="table-wrapper mb-4 animate-fade-up delay-2">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Statut</th>
+            <th>Retard (min)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for presence in presences %}
+          <tr>
+            <td class="fw-medium">
+              <a href="{% url 'presences:bilan_eleve' presence.inscription.pk %}"
+                 style="color:inherit; text-decoration:none;"
+                 title="Voir le bilan de {{ presence.inscription.eleve.get_nom_complet }}">
+                {{ presence.inscription.eleve.get_nom_complet }}
+              </a>
+            </td>
+            <td>
+              <select name="statut_{{ presence.pk }}"
+                      {% if appel.est_clos %}disabled{% endif %}
+                      class="input select" style="min-width:120px;">
+                {% for val, label in statuts %}
+                <option value="{{ val }}" {% if presence.statut == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <input type="number"
+                     name="retard_{{ presence.pk }}"
+                     value="{{ presence.minutes_retard }}"
+                     min="0" max="120"
+                     {% if appel.est_clos %}disabled{% endif %}
+                     class="input"
+                     style="width:80px;">
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3">
+              <div class="empty-state">
+                <p class="empty-state-text">Aucun élève inscrit dans cette classe.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if not appel.est_clos %}
+  <div class="d-flex justify-end gap-2">
+    <button type="submit" class="btn-secondary">Enregistrer</button>
+    <button type="submit" name="clore" value="1" class="btn-primary"
+            onclick="return confirm('Clôturer cet appel ? Cette action est irréversible.')">
+      Clôturer l'appel
+    </button>
+  </div>
+  {% else %}
+  <p class="text-muted" style="text-align:center; font-size:0.85rem;">Appel clôturé — lecture seule.</p>
+  {% endif %}
+</form>
+
+{% endblock %}

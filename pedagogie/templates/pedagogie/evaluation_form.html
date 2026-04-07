@@ -1,0 +1,49 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }} — Pédagogie{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'pedagogie:evaluation_list' %}" class="btn-secondary btn-sm" style="margin-bottom:var(--space-3); display:inline-flex;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Retour aux évaluations
+    </a>
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="page-subtitle">Définissez les paramètres du devoir ou de la composition.</p>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="max-width:720px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid-2">
+      {% for field in form %}
+      <div class="form-group"
+           {% if field.name == 'titre' or field.name == 'description' %}style="grid-column:1/-1;"{% endif %}>
+        <label for="{{ field.id_for_label }}" class="input-label">
+          {{ field.label }}{% if field.field.required %} <span style="color:#FF6B7A;">*</span>{% endif %}
+        </label>
+        {{ field }}
+        {% if field.errors %}<p class="input-error">{{ field.errors.0 }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="divider" style="margin-top:var(--space-6);"></div>
+    <div class="d-flex justify-end gap-3" style="padding-top:var(--space-4);">
+      <a href="{% url 'pedagogie:evaluation_list' %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Enregistrer l'évaluation
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

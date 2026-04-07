@@ -1,0 +1,46 @@
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title">{% if type_sanction %}Modifier le type de sanction{% else %}Nouveau type de sanction{% endif %}</span>
+            <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form hx-post="{% if type_sanction %}{% url 'parametres:type_sanction_edit' type_sanction.pk %}{% else %}{% url 'parametres:type_sanction_create' %}{% endif %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#modal-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+
+                <div class="form-group">
+                    <label class="input-label">Code <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="code" value="{{ type_sanction.code|default:'' }}" placeholder="Ex: AVERTISSEMENT" required class="input">
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label">Libellé <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="libelle" value="{{ type_sanction.libelle|default:'' }}" placeholder="Ex: Avertissement" required class="input">
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label">Description</label>
+                    <textarea name="description" rows="3" class="input" placeholder="Description du type de sanction...">{{ type_sanction.description|default:'' }}</textarea>
+                </div>
+
+                {% if type_sanction %}
+                <label class="d-flex align-center gap-3" style="cursor:pointer;">
+                    <input type="checkbox" name="actif" {% if type_sanction.actif %}checked{% endif %} style="width:1rem; height:1rem; accent-color:var(--color-primary);">
+                    <span class="text-sm text-secondary">Type de sanction actif</span>
+                </label>
+                {% endif %}
+
+                <div class="modal-footer">
+                    <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-secondary">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

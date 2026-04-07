@@ -1,0 +1,177 @@
+{% extends "core/base.html" %}
+
+{% block title %}Justifications — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Justifications d'absences</h1>
+    <p class="page-subtitle">{% if annee %}{{ annee.libelle }}{% endif %}</p>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'presences:appel_list' %}" class="btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      Retour aux appels
+    </a>
+  </div>
+</div>
+
+<!-- Statistiques globales -->
+<div class="stats-grid mb-6 animate-fade-up delay-1" style="grid-template-columns:repeat(4,1fr);">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:var(--color-surface-2);">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ stats.total }}</div>
+      <div class="stat-label">Total</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-gold">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ stats.en_attente }}</div>
+      <div class="stat-label">En attente</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ stats.acceptees }}</div>
+      <div class="stat-label">Acceptées</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-red">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ stats.refusees }}</div>
+      <div class="stat-label">Refusées</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4 animate-fade-up delay-2">
+  <div class="card-body" style="padding:1rem 1.5rem;">
+    <form method="get" class="d-flex align-center gap-3 flex-wrap">
+      <div class="d-flex align-center gap-2">
+        <label class="input-label" style="margin:0; white-space:nowrap;">Statut :</label>
+        <select name="statut" class="input select" style="width:160px;" onchange="this.form.submit()">
+          <option value="">— Tous —</option>
+          {% for val, label in statuts %}
+          <option value="{{ val }}" {% if statut_filtre == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="d-flex align-center gap-2">
+        <label class="input-label" style="margin:0; white-space:nowrap;">Classe :</label>
+        <select name="classe" class="input select" style="width:160px;" onchange="this.form.submit()">
+          <option value="">— Toutes —</option>
+          {% for c in classes %}
+          <option value="{{ c.pk }}" {% if classe_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="d-flex align-center gap-2" style="flex:1; min-width:200px;">
+        <input type="text" name="q" value="{{ q }}" class="input" placeholder="Rechercher un élève..." style="flex:1;">
+        <button type="submit" class="btn-secondary" style="padding:0.5rem 0.75rem;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </button>
+      </div>
+      {% if statut_filtre or classe_id or q %}
+      <a href="{% url 'presences:justification_list' %}" class="btn-secondary" style="white-space:nowrap;">Réinitialiser</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="table-wrapper animate-fade-up delay-3">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Classe</th>
+          <th>Période</th>
+          <th>Motif</th>
+          <th>Document</th>
+          <th>Statut</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for j in justifications %}
+        <tr>
+          <td class="fw-medium">{{ j.inscription.eleve.get_nom_complet }}</td>
+          <td class="text-secondary">{{ j.inscription.classe.nom }}</td>
+          <td class="text-secondary" style="white-space:nowrap;">
+            {{ j.date_debut|date:"d/m/Y" }}
+            {% if j.date_fin != j.date_debut %} → {{ j.date_fin|date:"d/m/Y" }}{% endif %}
+            <span class="text-muted">({{ j.nb_jours }} j.)</span>
+          </td>
+          <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            {{ j.motif }}
+          </td>
+          <td>
+            {% if j.document %}
+            <a href="{{ j.document.url }}" target="_blank" class="text-primary text-xs">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="vertical-align:middle;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+              </svg>
+              Voir
+            </a>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if j.statut == 'EN_ATTENTE' %}
+              <span class="badge badge-warning">En attente</span>
+            {% elif j.statut == 'ACCEPTEE' %}
+              <span class="badge badge-success">Acceptée</span>
+            {% else %}
+              <span class="badge badge-danger">Refusée</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            {% if j.statut == 'EN_ATTENTE' %}
+            <a href="{% url 'presences:justification_process' j.pk %}" class="btn-primary btn-sm">Traiter</a>
+            {% else %}
+            <a href="{% url 'presences:justification_process' j.pk %}" class="btn-secondary btn-sm">Voir</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <p class="empty-state-text">Aucune justification trouvée.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

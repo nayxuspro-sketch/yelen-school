@@ -1,0 +1,190 @@
+{% load static %}
+
+{% with all_groups=cycles_personnel %}
+
+{% for group in cycles_personnel %}
+{% if group.membres %}
+<div class="mb-6">
+  <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+    <h3 style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-text-muted); margin:0;">
+      {{ group.cycle.nom }}
+    </h3>
+    <span class="badge badge-neutral" style="font-size:0.75rem;">{{ group.membres.count }}</span>
+    <div style="flex:1; height:1px; background:var(--color-border);"></div>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table" style="table-layout:fixed; width:100%;">
+      <thead>
+        <tr>
+          <th>Membre</th>
+          <th style="width:155px;">Matricule</th>
+          <th style="width:150px;">Fonction</th>
+          <th style="width:165px;">Contact</th>
+          <th style="width:75px;">Statut</th>
+          <th style="width:105px; text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for membre in group.membres %}
+        <tr>
+          <td>
+            <div class="d-flex align-center gap-3">
+              <span class="avatar-initials" style="flex-shrink:0;">{{ membre.nom|slice:":1" }}{{ membre.prenom|slice:":1" }}</span>
+              <div style="min-width:0;">
+                <div class="fw-semibold" style="white-space:normal; word-break:break-word;">{{ membre.get_nom_complet }}</div>
+                <div class="text-muted" style="font-size:0.75rem;">{{ membre.genre_display }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-mono text-primary col-matricule">{{ membre.matricule }}</td>
+          <td class="text-secondary">{{ membre.fonction }}</td>
+          <td>
+            <div style="font-size:0.8rem;">{{ membre.telephone }}</div>
+            <div class="text-muted" style="font-size:0.75rem;">{{ membre.email }}</div>
+          </td>
+          <td>
+            {% if membre.is_active %}
+              <span class="badge badge-success">Actif</span>
+            {% else %}
+              <span class="badge badge-danger">Inactif</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            <div class="d-flex justify-end gap-2">
+              <a href="{% url 'personnel:detail' membre.pk %}" class="btn-icon" title="Voir détails">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+              </a>
+              <a href="{% url 'personnel:update' membre.pk %}" class="btn-icon" title="Modifier">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </a>
+              <form method="post" action="{% url 'personnel:toggle_active' membre.pk %}"
+                    onsubmit="return confirm('{% if membre.is_active %}Désactiver {{ membre.get_nom_complet }} ?{% else %}Réactiver {{ membre.get_nom_complet }} ?{% endif %}')">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon"
+                        title="{% if membre.is_active %}Désactiver{% else %}Réactiver{% endif %}"
+                        style="{% if membre.is_active %}color:var(--color-danger,#e53e3e);{% else %}color:var(--color-success,#38a169);{% endif %}">
+                  {% if membre.is_active %}
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                    </svg>
+                  {% else %}
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  {% endif %}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% if sans_cycle %}
+<div class="mb-6">
+  <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+    <h3 style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-text-muted); margin:0;">
+      Non affecté à un cycle
+    </h3>
+    <span class="badge badge-neutral" style="font-size:0.75rem;">{{ sans_cycle.count }}</span>
+    <div style="flex:1; height:1px; background:var(--color-border);"></div>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table" style="table-layout:fixed; width:100%;">
+      <thead>
+        <tr>
+          <th>Membre</th>
+          <th style="width:155px;">Matricule</th>
+          <th style="width:150px;">Fonction</th>
+          <th style="width:165px;">Contact</th>
+          <th style="width:75px;">Statut</th>
+          <th style="width:105px; text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for membre in sans_cycle %}
+        <tr>
+          <td>
+            <div class="d-flex align-center gap-3">
+              <span class="avatar-initials" style="flex-shrink:0;">{{ membre.nom|slice:":1" }}{{ membre.prenom|slice:":1" }}</span>
+              <div style="min-width:0;">
+                <div class="fw-semibold" style="white-space:normal; word-break:break-word;">{{ membre.get_nom_complet }}</div>
+                <div class="text-muted" style="font-size:0.75rem;">{{ membre.genre_display }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-mono text-primary col-matricule">{{ membre.matricule }}</td>
+          <td class="text-secondary">{{ membre.fonction }}</td>
+          <td>
+            <div style="font-size:0.8rem;">{{ membre.telephone }}</div>
+            <div class="text-muted" style="font-size:0.75rem;">{{ membre.email }}</div>
+          </td>
+          <td>
+            {% if membre.is_active %}
+              <span class="badge badge-success">Actif</span>
+            {% else %}
+              <span class="badge badge-danger">Inactif</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            <div class="d-flex justify-end gap-2">
+              <a href="{% url 'personnel:detail' membre.pk %}" class="btn-icon" title="Voir détails">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+              </a>
+              <a href="{% url 'personnel:update' membre.pk %}" class="btn-icon" title="Modifier">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </a>
+              <form method="post" action="{% url 'personnel:toggle_active' membre.pk %}"
+                    onsubmit="return confirm('{% if membre.is_active %}Désactiver {{ membre.get_nom_complet }} ?{% else %}Réactiver {{ membre.get_nom_complet }} ?{% endif %}')">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon"
+                        title="{% if membre.is_active %}Désactiver{% else %}Réactiver{% endif %}"
+                        style="{% if membre.is_active %}color:var(--color-danger,#e53e3e);{% else %}color:var(--color-success,#38a169);{% endif %}">
+                  {% if membre.is_active %}
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                    </svg>
+                  {% else %}
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  {% endif %}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if not cycles_personnel and not sans_cycle %}
+<div class="empty-state">
+  <div class="empty-state-icon">
+    <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+    </svg>
+  </div>
+  <p class="empty-state-text">Aucun membre du personnel trouvé.</p>
+</div>
+{% endif %}
+
+{% endwith %}

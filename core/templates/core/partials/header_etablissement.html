@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>En-tête Établissement</title>
+    <style>
+        .doc-header {
+            text-align: center;
+            margin-bottom: 0.4cm;
+            padding-bottom: 0.3cm;
+            border-bottom: 2px solid #2c3e50;
+        }
+        
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4cm;
+            margin-bottom: 0.15cm;
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+        
+        .header-text {
+            text-align: left;
+        }
+        
+        .etablissement-nom {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #1a1a1a;
+            line-height: 1.2;
+        }
+        
+        .etablissement-type {
+            font-size: 8pt;
+            color: #666;
+        }
+        
+        .header-address {
+            font-size: 8pt;
+            color: #555;
+            margin-top: 0.1cm;
+            line-height: 1.4;
+        }
+        
+        .header-contact {
+            font-size: 8pt;
+            color: #555;
+            margin-top: 0.05cm;
+        }
+    </style>
+</head>
+<body>
+    <div class="doc-header">
+        <div class="header-top">
+            {% if logo_url %}
+            <img src="{{ logo_url }}" alt="Logo" class="logo">
+            {% elif etab_logo_url %}
+            <img src="{{ etab_logo_url }}" alt="Logo" class="logo">
+            {% endif %}
+            <div class="header-text">
+                <div class="etablissement-nom">
+                    {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom }}{% endif %}
+                </div>
+                {% if identite and identite.sigle %}
+                <div class="etablissement-type">{{ identite.sigle }} · {% if identite.type_etablissement %}{{ identite.get_type_etablissement_display }}{% endif %}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="header-address">
+            {% if identite %}
+                {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
+                {% if identite.ville %}, {{ identite.ville }}{% endif %}
+                {% if identite.province %}, {{ identite.province }}{% endif %}
+                {% if identite.region %}, {{ identite.region }}{% endif %}
+            {% else %}
+                {% if etablissement.adresse %}{{ etablissement.adresse }}{% endif %}
+            {% endif %}
+        </div>
+        
+        <div class="header-contact">
+            {% if identite %}
+                {% if identite.telephone %}Tél: {{ identite.telephone }}{% endif %}
+                {% if identite.email %} · Email: {{ identite.email }}{% endif %}
+                {% if identite.site_web %} · Web: {{ identite.site_web }}{% endif %}
+            {% else %}
+                {% if etablissement.telephone %}Tél: {{ etablissement.telephone }}{% endif %}
+                {% if etablissement.email %} · Email: {{ etablissement.email }}{% endif %}
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

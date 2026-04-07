@@ -1,0 +1,292 @@
+{% load signataire_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 15mm;
+            @bottom-right {
+                content: "Page " counter(page) " sur " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        body {
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 10pt;
+            color: #1A1A1A;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .pdf-entete {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1B5E20;
+        }
+        .pdf-entete-gauche {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .pdf-logo {
+            width: 55px;
+            height: 55px;
+            object-fit: contain;
+        }
+        .pdf-etab-nom {
+            font-size: 15pt;
+            font-weight: bold;
+            color: #1B5E20;
+            margin: 0 0 3px 0;
+        }
+        .pdf-etab-info {
+            font-size: 8pt;
+            color: #444;
+            margin: 2px 0;
+        }
+        .pdf-entete-droit {
+            text-align: right;
+        }
+        .doc-title {
+            background: #f0f9f4;
+            border: 1px solid #1B5E20;
+            padding: 6px 14px;
+            border-radius: 4px;
+        }
+        .doc-title h2 {
+            margin: 0;
+            font-size: 12pt;
+            color: #1B5E20;
+        }
+        
+        .info-box {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .stats-grid {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            flex: 1;
+            background: #e8f5e9;
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 9pt;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #1B5E20;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            background: #1B5E20;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px 4px 0 0;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+            border: 1px solid #ddd;
+        }
+        
+        th {
+            background: #f5f5f5;
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+        }
+        
+        td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th.right, td.right {
+            text-align: right;
+        }
+        
+        .total-row {
+            background: #e8f5e9;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- En-tête -->
+    <div class="pdf-entete">
+        <div class="pdf-entete-gauche">
+            {% if logo_url %}
+            <img src="{{ logo_url }}" class="pdf-logo" alt="Logo">
+            {% elif etab_logo_url %}
+            <img src="{{ etab_logo_url }}" class="pdf-logo" alt="Logo">
+            {% endif %}
+            <div>
+                <h1 class="pdf-etab-nom">
+                    {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom }}{% endif %}
+                </h1>
+                {% if identite %}
+                {% if identite.numero_agrement_mena %}
+                <p class="pdf-etab-info" style="font-style:italic;">N° Agrément MENA: {{ identite.numero_agrement_mena }}</p>
+                {% endif %}
+                <p class="pdf-etab-info">
+                    {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
+                    {% if identite.ville %}, {{ identite.ville }}{% endif %}
+                    {% if identite.telephone %} - Tél: {{ identite.telephone }}{% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="pdf-entete-droit">
+            <div class="doc-title">
+                <h2>BILAN DES ENCAISSEMENTS</h2>
+            </div>
+            <p style="font-size:9pt; margin:5px 0 0 0;">
+                {% if annee_selected %}Année: <strong>{{ annee_selected.libelle }}</strong>{% else %}Toutes les années{% endif %}
+            </p>
+            {% if rub_selected %}
+            <p style="font-size:9pt; margin:3px 0 0 0;">
+                Rubrique: <strong>{{ rub_selected.nom }}</strong>
+            </p>
+            {% endif %}
+            {% if date_debut or date_fin %}
+            <p style="font-size:9pt; margin:3px 0 0 0;">
+                Période: 
+                {% if date_debut %}{{ date_debut }}{% else %}...{% endif %}
+                au 
+                {% if date_fin %}{{ date_fin }}{% else %}...{% endif %}
+            </p>
+            {% endif %}
+            <p style="font-size:9pt; margin:3px 0 0 0;">
+                Date: {{ now|date:"d/m/Y" }}
+            </p>
+        </div>
+    </div>
+    
+    <!-- Statistiques globales -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Encaissé</div>
+            <div class="stat-value">{{ total_encaissement|floatformat:0 }} FCFA</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Nombre de transactions</div>
+            <div class="stat-value">{{ nb_paiements }}</div>
+        </div>
+    </div>
+    
+    <!-- Par mode de paiement -->
+    <div class="section">
+        <div class="section-title">Par Mode de Paiement</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mode</th>
+                    <th class="right">Nombre</th>
+                    <th class="right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mode, data in par_mode.items %}
+                <tr>
+                    <td>{{ mode }}</td>
+                    <td class="right">{{ data.count }}</td>
+                    <td class="right"><strong>{{ data.total|floatformat:0 }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Par jour -->
+    <div class="section">
+        <div class="section-title">Par Jour</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th class="right">Nombre</th>
+                    <th class="right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for jour, data in par_jour.items %}
+                <tr>
+                    <td>{{ jour }}</td>
+                    <td class="right">{{ data.count }}</td>
+                    <td class="right"><strong>{{ data.total|floatformat:0 }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Historique des paiements par cycle et classe -->
+    {% for cycle_data in cycles_list %}
+    <div class="section">
+        <div class="section-title">{{ cycle_data.cycle.nom }} - {{ cycle_data.total|floatformat:0 }} FCFA</div>
+        
+        {% for classe_data in cycle_data.classes %}
+        <div style="margin-bottom:15px; page-break-inside:avoid;">
+            <div style="background:#e8f5e9; padding:6px 10px; font-weight:bold; border-bottom:1px solid #ddd;">
+                {{ classe_data.classe.nom }} - {{ classe_data.total|floatformat:0 }} FCFA
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Élève</th>
+                        <th>Rubrique</th>
+                        <th class="right">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in classe_data.paiements %}
+                    <tr>
+                        <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
+                        <td>{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
+                        <td>{{ p.rubrique.nom|default:"—" }}</td>
+                        <td class="right"><strong>{{ p.montant|floatformat:0 }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    {% signataire_auto "BILAN_ENCAISSEMENTS" %}
+
+</body>
+</html>

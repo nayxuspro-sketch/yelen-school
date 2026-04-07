@@ -1,0 +1,81 @@
+<div class="d-flex justify-between align-center mb-6">
+    <h3 class="text-xl fw-bold">{% if signataire %}Modifier{% else %}Configurer{% endif %} le signataire</h3>
+    <button type="button" class="btn-icon" onclick="closeModal()" aria-label="Fermer">
+        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+</div>
+
+<form hx-post="{% url 'parametres:signataire_edit' cycle.id doc_type.id %}" hx-swap="none">
+    {% csrf_token %}
+
+    <!-- 1. Cycle -->
+    <div class="form-group">
+        <label for="cycle_display" class="input-label">Cycle</label>
+        <select id="cycle_display" class="input select" disabled>
+            {% for c in cycles %}
+                <option value="{{ c.id }}" {% if c.id == cycle.id %}selected{% endif %}>{{ c.nom }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- 2. Catégorie de type de document -->
+    <div class="form-group">
+        <label for="categorie_display" class="input-label">Catégorie de type de document</label>
+        <select id="categorie_display" class="input select" disabled>
+            {% for val, label in categories %}
+                <option value="{{ val }}" {% if val == doc_type.categorie %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <p class="text-xs text-muted" style="margin-top:0.25rem;">Document : <strong>{{ doc_type.libelle }}</strong></p>
+    </div>
+
+    <!-- 3. Titre (Fonction du personnel) -->
+    <div class="form-group">
+        <label for="titre_personnel" class="input-label">Titre (Fonction)</label>
+        <select name="titre_personnel" id="titre_personnel" class="input select">
+            <option value="">-- Sélectionner un titre --</option>
+            {% for f in fonctions %}
+                <option value="{{ f.nom }}"
+                    {% if signataire and signataire.fonction == f.nom %}selected{% endif %}>
+                    {{ f.nom }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- 4. Nom et Prénom -->
+    <div class="form-group">
+        <label for="membre_personnel" class="input-label">Nom et Prénom</label>
+        <select name="membre_personnel" id="membre_personnel" required class="input select">
+            <option value="">-- Sélectionner un membre --</option>
+            {% for p in personnel %}
+                <option value="{{ p.id }}"
+                    {% if signataire and signataire.membre_personnel_id == p.id %}selected{% endif %}>
+                    {{ p.nom }} {{ p.prenom }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- 5. Titre honorifique -->
+    <div class="form-group">
+        <label for="titre_honorifique" class="input-label">Titre honorifique</label>
+        <select name="titre_honorifique" id="titre_honorifique" class="input select">
+            <option value="">-- Sélectionner un titre honorifique --</option>
+            {% for t in titres_honorifiques %}
+                <option value="{{ t }}"
+                    {% if signataire and signataire.titre_honorifique == t %}selected{% endif %}>
+                    {{ t }}
+                </option>
+            {% endfor %}
+        </select>
+        <p class="text-xs text-muted" style="margin-top:0.25rem; font-style:italic;">Ce titre apparaîtra avant le nom complet du signataire sur les documents.</p>
+    </div>
+
+    <div class="d-flex justify-end gap-3" style="margin-top:2rem;">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Enregistrer</button>
+    </div>
+</form>

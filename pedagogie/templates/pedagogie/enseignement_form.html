@@ -1,0 +1,54 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }} — Pédagogie{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'pedagogie:enseignement_list' %}" class="btn-secondary btn-sm" style="margin-bottom:var(--space-3); display:inline-flex;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Retour aux affectations
+    </a>
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="page-subtitle">Associez un enseignant à une matière et une classe spécifique.</p>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="max-width:600px;">
+  <form method="post">
+    {% csrf_token %}
+
+    {% for field in form %}
+    <div class="form-group">
+      {% if field.field.widget.input_type == 'checkbox' %}
+      <label class="d-flex align-center gap-3" style="cursor:pointer;">
+        {{ field }}
+        <span class="input-label" style="margin-bottom:0;">{{ field.label }}</span>
+      </label>
+      {% else %}
+      <label for="{{ field.id_for_label }}" class="input-label">
+        {{ field.label }}{% if field.field.required %} <span style="color:#FF6B7A;">*</span>{% endif %}
+      </label>
+      {{ field }}
+      {% endif %}
+      {% if field.errors %}<p class="input-error">{{ field.errors.0 }}</p>{% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="divider"></div>
+    <div class="d-flex justify-end gap-3" style="padding-top:var(--space-4);">
+      <a href="{% url 'pedagogie:enseignement_list' %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Enregistrer l'affectation
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "core/base.html" %}
+
+{% block title %}Traiter la justification — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'presences:justification_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">
+        {% if justification.statut == 'EN_ATTENTE' %}Traiter la justification{% else %}Détail de la justification{% endif %}
+      </h1>
+      <p class="page-subtitle">
+        {{ justification.inscription.eleve.get_nom_complet }}
+        · {{ justification.inscription.classe.nom }}
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Détail de la justification -->
+<div class="card animate-fade-up delay-1" style="max-width:640px; margin-bottom:1.5rem;">
+  <div class="card-header">
+    <h2 class="card-title">Justification</h2>
+    {% if justification.statut == 'EN_ATTENTE' %}
+      <span class="badge badge-warning">En attente</span>
+    {% elif justification.statut == 'ACCEPTEE' %}
+      <span class="badge badge-success">Acceptée</span>
+    {% else %}
+      <span class="badge badge-danger">Refusée</span>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <dl style="display:grid; grid-template-columns:160px 1fr; gap:0.5rem 1rem; font-size:0.9rem;">
+      <dt class="text-muted">Élève</dt>
+      <dd class="fw-medium">{{ justification.inscription.eleve.get_nom_complet }}</dd>
+      <dt class="text-muted">Classe</dt>
+      <dd>{{ justification.inscription.classe.nom }}</dd>
+      <dt class="text-muted">Période</dt>
+      <dd>{{ justification.date_debut|date:"d/m/Y" }} → {{ justification.date_fin|date:"d/m/Y" }} ({{ justification.nb_jours }} jour{% if justification.nb_jours > 1 %}s{% endif %})</dd>
+      <dt class="text-muted">Motif</dt>
+      <dd>{{ justification.motif }}</dd>
+      {% if justification.document %}
+      <dt class="text-muted">Document</dt>
+      <dd><a href="{{ justification.document.url }}" target="_blank" class="text-primary">Télécharger le document</a></dd>
+      {% endif %}
+      {% if justification.statut != 'EN_ATTENTE' %}
+      <dt class="text-muted">Traitée le</dt>
+      <dd>{{ justification.date_traitement|date:"d/m/Y"|default:"—" }}</dd>
+      {% if justification.observation_traitement %}
+      <dt class="text-muted">Observation</dt>
+      <dd>{{ justification.observation_traitement }}</dd>
+      {% endif %}
+      {% endif %}
+    </dl>
+  </div>
+</div>
+
+<!-- Absences concernées dans la période -->
+<div class="table-wrapper animate-fade-up delay-2" style="max-width:640px; margin-bottom:1.5rem;">
+  <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+    <span class="card-title">Absences dans la période</span>
+    <span class="text-muted text-sm">{{ absences_concernees.count }} absence{% if absences_concernees.count > 1 %}s{% endif %}</span>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Matière</th>
+          <th>Statut actuel</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in absences_concernees %}
+        <tr>
+          <td>{{ p.appel.date|date:"d/m/Y" }}</td>
+          <td class="text-secondary">{{ p.appel.matiere.nom|default:"—" }}</td>
+          <td>
+            {% if p.statut == 'ABSENT' %}
+              <span class="badge badge-danger">Absent</span>
+            {% elif p.statut == 'EXCUSE' %}
+              <span class="badge badge-info">Excusé</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3">
+            <div class="empty-state" style="padding:1.5rem;">
+              <p class="empty-state-text">Aucune absence enregistrée sur cette période.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if justification.statut == 'EN_ATTENTE' %}
+<!-- Formulaire de traitement -->
+<div class="card animate-fade-up delay-3" style="max-width:640px;">
+  <div class="card-header">
+    <h2 class="card-title">Décision</h2>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="input-label" for="observation">Observation (optionnel)</label>
+        <textarea id="observation" name="observation" rows="3" class="input"
+                  placeholder="Commentaire sur la décision..."></textarea>
+      </div>
+
+      {% if absences_concernees %}
+      <div class="alert" style="background:color-mix(in srgb,var(--color-info) 10%,transparent); border:1px solid color-mix(in srgb,var(--color-info) 30%,transparent); border-radius:var(--radius); padding:0.75rem 1rem; font-size:0.875rem; color:var(--color-text-secondary); margin-bottom:1rem;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="vertical-align:middle; margin-right:0.5rem;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        En acceptant, les {{ absences_concernees.count }} absence{% if absences_concernees.count > 1 %}s{% endif %} non encore excusée{% if absences_concernees.count > 1 %}s{% endif %} de cette période seront marquées comme <strong>Excusé</strong>.
+      </div>
+      {% endif %}
+
+      <div class="d-flex gap-3" style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--color-border);">
+        <button type="submit" name="decision" value="REFUSEE" class="btn-secondary"
+                onclick="return confirm('Confirmer le refus de cette justification ?')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          Refuser
+        </button>
+        <button type="submit" name="decision" value="ACCEPTEE" class="btn-primary"
+                onclick="return confirm('Confirmer l\'acceptation ? Les absences de cette période seront marquées comme excusées.')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          Accepter
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% else %}
+<div class="card animate-fade-up delay-3" style="max-width:640px;">
+  <div class="card-body" style="text-align:center; padding:2rem;">
+    <p class="text-muted">Cette justification a déjà été traitée.</p>
+    <div class="d-flex justify-center gap-3" style="margin-top:1rem;">
+      <a href="{% url 'presences:bilan_eleve' justification.inscription.pk %}" class="btn-secondary">
+        Bilan de l'élève
+      </a>
+      <a href="{% url 'presences:justification_list' %}" class="btn-secondary">
+        Retour à la liste
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

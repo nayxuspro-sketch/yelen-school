@@ -1,0 +1,382 @@
+{
+  // ═══════════════════════════════════════════════════════════════════
+  // YELEN SCHOOL - Snippets Python Django
+  // Accélérateurs de code pour le développement
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ─────────────────────────────────────────────────────────────────
+  // 📦 DJANGO MODELS
+  // ─────────────────────────────────────────────────────────────────
+  "Django Model Yelen": {
+    "prefix": "yelen-model",
+    "body": [
+      "\"\"\"",
+      "${1:Description du modèle}",
+      "",
+      "Attributs:",
+      "    ${2:attribut} (${3:Type}): ${4:Description}",
+      "\"\"\"",
+      "",
+      "class ${5:NomModele}(models.Model):",
+      "    \"\"\"${1:Description du modèle}\"\"\"",
+      "",
+      "    # Champs",
+      "    ${2:nom} = models.${6:CharField}(max_length=${7:100}, verbose_name=\"${8:Nom}\")",
+      "    actif = models.BooleanField(default=True, verbose_name=\"Actif\")",
+      "    ",
+      "    # Métadonnées",
+      "    date_creation = models.DateTimeField(auto_now_add=True, verbose_name=\"Date de création\")",
+      "    date_modification = models.DateTimeField(auto_now=True, verbose_name=\"Date de modification\")",
+      "",
+      "    class Meta:",
+      "        verbose_name = \"${9:Nom singulier}\"",
+      "        verbose_name_plural = \"${10:Nom pluriel}\"",
+      "        ordering = [\"-date_creation\"]",
+      "",
+      "    def __str__(self) -> str:",
+      "        \"\"\"Représentation textuelle\"\"\"",
+      "        return f\"{self.${2:nom}}\"",
+      "",
+      "    def save(self, *args, **kwargs) -> None:",
+      "        \"\"\"Sauvegarde avec logique métier\"\"\"",
+      "        ${11:# Logique avant sauvegarde}",
+      "        super().save(*args, **kwargs)",
+      "$0"
+    ],
+    "description": "Modèle Django standard Yelen School"
+  },
+
+  "Django Model Field": {
+    "prefix": "yelen-field",
+    "body": [
+      "${1:nom_champ} = models.${2:CharField}(${3:max_length=100}, verbose_name=\"${4:Nom du champ}\", ${5:blank=True, null=True})"
+    ],
+    "description": "Champ de modèle Django"
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 🎯 DJANGO VIEWS
+  // ─────────────────────────────────────────────────────────────────
+  "Django ListView Yelen": {
+    "prefix": "yelen-listview",
+    "body": [
+      "class ${1:Nom}ListView(LoginRequiredMixin, ListView):",
+      "    \"\"\"",
+      "    Vue liste ${2:des objets}",
+      "    ",
+      "    Template: ${3:app/nom}_list.html",
+      "    Context: object_list",
+      "    \"\"\"",
+      "    ",
+      "    model = ${4:Modele}",
+      "    template_name = \"${3:app/nom}_list.html\"",
+      "    context_object_name = \"${5:objets}\"",
+      "    paginate_by = 20",
+      "    ",
+      "    def get_queryset(self):",
+      "        \"\"\"Filtre personnalisé\"\"\"",
+      "        queryset = super().get_queryset()",
+      "        return queryset.filter(actif=True).select_related(${6:}).prefetch_related(${7:})",
+      "    ",
+      "    def get_context_data(self, **kwargs):",
+      "        \"\"\"Contexte supplémentaire\"\"\"",
+      "        context = super().get_context_data(**kwargs)",
+      "        ${8:# Ajout de données au contexte}",
+      "        return context",
+      "$0"
+    ],
+    "description": "ListView Django Yelen School"
+  },
+
+  "Django CreateView Yelen": {
+    "prefix": "yelen-createview",
+    "body": [
+      "class ${1:Nom}CreateView(LoginRequiredMixin, CreateView):",
+      "    \"\"\"",
+      "    Vue création ${2:d'objet}",
+      "    ",
+      "    Template: ${3:app/nom}_form.html",
+      "    Form: ${4:NomForm}",
+      "    \"\"\"",
+      "    ",
+      "    model = ${5:Modele}",
+      "    form_class = ${4:NomForm}",
+      "    template_name = \"${3:app/nom}_form.html\"",
+      "    success_url = reverse_lazy(\"${6:app:liste}\")",
+      "    ",
+      "    def form_valid(self, form):",
+      "        \"\"\"Traitement après validation\"\"\"",
+      "        ${7:# Logique métier}",
+      "        messages.success(self.request, \"${8:Objet créé avec succès}\")",
+      "        return super().form_valid(form)",
+      "    ",
+      "    def form_invalid(self, form):",
+      "        \"\"\"Traitement si formulaire invalide\"\"\"",
+      "        messages.error(self.request, \"Erreur lors de la création\")",
+      "        return super().form_invalid(form)",
+      "$0"
+    ],
+    "description": "CreateView Django Yelen School"
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 📝 DJANGO FORMS
+  // ─────────────────────────────────────────────────────────────────
+  "Django ModelForm Yelen": {
+    "prefix": "yelen-form",
+    "body": [
+      "class ${1:Nom}Form(forms.ModelForm):",
+      "    \"\"\"",
+      "    Formulaire ${2:description}",
+      "    ",
+      "    Champs: ${3:liste des champs}",
+      "    \"\"\"",
+      "    ",
+      "    class Meta:",
+      "        model = ${4:Modele}",
+      "        fields = [${5:'nom', 'prenom'}]",
+      "        widgets = {",
+      "            ${6:'nom': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Nom'}),}",
+      "        }",
+      "        labels = {",
+      "            ${7:'nom': 'Nom complet',}",
+      "        }",
+      "    ",
+      "    def clean_${8:champ}(self):",
+      "        \"\"\"Validation personnalisée du champ\"\"\"",
+      "        ${8:champ} = self.cleaned_data.get('${8:champ}')",
+      "        ${9:# Logique de validation}",
+      "        return ${8:champ}",
+      "    ",
+      "    def clean(self):",
+      "        \"\"\"Validation globale du formulaire\"\"\"",
+      "        cleaned_data = super().clean()",
+      "        ${10:# Validation inter-champs}",
+      "        return cleaned_data",
+      "$0"
+    ],
+    "description": "ModelForm Django Yelen School"
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 🧪 TESTS PYTEST
+  // ─────────────────────────────────────────────────────────────────
+  "Pytest Test Class": {
+    "prefix": "yelen-test",
+    "body": [
+      "@pytest.mark.django_db",
+      "class Test${1:NomModele}:",
+      "    \"\"\"",
+      "    Tests pour ${2:description}",
+      "    ",
+      "    Couverture:",
+      "        - Création",
+      "        - Lecture",
+      "        - Mise à jour",
+      "        - Suppression",
+      "    \"\"\"",
+      "    ",
+      "    def test_creation_${3:objet}(self):",
+      "        \"\"\"Test création ${3:objet}\"\"\"",
+      "        ${3:objet} = ${1:NomModele}.objects.create(",
+      "            ${4:nom=\"Test\"}",
+      "        )",
+      "        assert ${3:objet}.pk is not None",
+      "        assert str(${3:objet}) == ${5:\"Test\"}",
+      "    ",
+      "    def test_str_representation(self):",
+      "        \"\"\"Test représentation string\"\"\"",
+      "        ${3:objet} = ${1:NomModele}(${4:nom=\"Test\"})",
+      "        assert str(${3:objet}) == ${5:\"Test\"}",
+      "    ",
+      "    def test_validation_${6:champ}(self):",
+      "        \"\"\"Test validation ${6:champ}\"\"\"",
+      "        with pytest.raises(ValidationError):",
+      "            ${3:objet} = ${1:NomModele}(${6:champ}=${7:\"\"})",
+      "            ${3:objet}.full_clean()",
+      "$0"
+    ],
+    "description": "Classe de tests pytest Yelen School"
+  },
+
+  "Pytest Fixture": {
+    "prefix": "yelen-fixture",
+    "body": [
+      "@pytest.fixture",
+      "def ${1:nom_fixture}():",
+      "    \"\"\"${2:Description de la fixture}\"\"\"",
+      "    ${3:# Création de l'objet}",
+      "    ${4:objet} = ${5:Modele}.objects.create(",
+      "        ${6:attributs}",
+      "    )",
+      "    return ${4:objet}",
+      "$0"
+    ],
+    "description": "Fixture pytest"
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 🎨 TYPE HINTS
+  // ─────────────────────────────────────────────────────────────────
+  "Function with Type Hints": {
+    "prefix": "yelen-def",
+    "body": [
+      "def ${1:nom_fonction}(${2:param}: ${3:str}) -> ${4:None}:",
+      "    \"\"\"",
+      "    ${5:Description de la fonction}",
+      "    ",
+      "    Args:",
+      "        ${2:param}: ${6:Description du paramètre}",
+      "    ",
+      "    Returns:",
+      "        ${7:Description du retour}",
+      "    ",
+      "    Raises:",
+      "        ${8:ExceptionType}: ${9:Description de l'exception}",
+      "    \"\"\"",
+      "    ${10:pass}",
+      "$0"
+    ],
+    "description": "Fonction avec type hints"
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 🔄 SIGNALS DJANGO
+  // ─────────────────────────────────────────────────────────────────
+  "Django Post Save Signal": {
+    "prefix": "yelen-signal-save",
+    "body": [
+      "@receiver(post_save, sender=${1:Modele})",
+      "def ${2:nom_signal}(sender, instance, created, **kwargs) -> None:",
+      "    \"\"\"",
+      "    Signal post-save pour ${1:Modele}",
+      "    ",
+      "    Args:",
+      "        sender: Modèle émetteur",
+      "        instance: Instance du modèle",
+      "        created: True si création, False si mise à jour",
+      "    \"\"\"",
+      "    if created:",
+      "        ${3:# Logique à la création}",
+      "        pass",
+      "    else:",
+      "        ${4:# Logique à la mise à jour}",
+      "        pass",
+      "$0"
+    ],
+    "description": "Signal post_save Django"
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 📄 GÉNÉRATION PDF (WeasyPrint)
+  // ─────────────────────────────────────────────────────────────────
+  "Generate PDF WeasyPrint": {
+    "prefix": "yelen-pdf",
+    "body": [
+      "def generer_${1:document}_pdf(${2:objet}) -> HttpResponse:",
+      "    \"\"\"",
+      "    Génère le PDF ${3:description}",
+      "    ",
+      "    Args:",
+      "        ${2:objet}: Instance du modèle",
+      "    ",
+      "    Returns:",
+      "        HttpResponse avec le PDF",
+      "    \"\"\"",
+      "    # Contexte du template",
+      "    context = {",
+      "        '${2:objet}': ${2:objet},",
+      "        ${4:# Autres données}",
+      "    }",
+      "    ",
+      "    # Rendu HTML",
+      "    html_string = render_to_string('${5:app/template}.html', context)",
+      "    ",
+      "    # Génération PDF",
+      "    html = HTML(string=html_string)",
+      "    pdf = html.write_pdf()",
+      "    ",
+      "    # Réponse HTTP",
+      "    response = HttpResponse(pdf, content_type='application/pdf')",
+      "    response['Content-Disposition'] = f'inline; filename=\"${6:document}_{${2:objet}.pk}.pdf\"'",
+      "    ",
+      "    return response",
+      "$0"
+    ],
+    "description": "Génération PDF avec WeasyPrint"
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 🔐 PERMISSIONS
+  // ─────────────────────────────────────────────────────────────────
+  "Permission Mixin": {
+    "prefix": "yelen-permission",
+    "body": [
+      "class ${1:Nom}PermissionMixin:",
+      "    \"\"\"Mixin de permission pour ${2:description}\"\"\"",
+      "    ",
+      "    def has_permission(self, request, view) -> bool:",
+      "        \"\"\"Vérifie les permissions\"\"\"",
+      "        ${3:return request.user.has_perm('app.permission')}",
+      "    ",
+      "    def has_object_permission(self, request, view, obj) -> bool:",
+      "        \"\"\"Vérifie les permissions sur l'objet\"\"\"",
+      "        ${4:return obj.user == request.user}",
+      "$0"
+    ],
+    "description": "Mixin de permissions"
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 🎯 HTMX VIEWS
+  // ─────────────────────────────────────────────────────────────────
+  "HTMX Partial View": {
+    "prefix": "yelen-htmx",
+    "body": [
+      "def ${1:nom}_htmx(request) -> HttpResponse:",
+      "    \"\"\"",
+      "    Vue partielle HTMX pour ${2:description}",
+      "    ",
+      "    Args:",
+      "        request: Requête HTTP",
+      "    ",
+      "    Returns:",
+      "        Fragment HTML",
+      "    \"\"\"",
+      "    if not request.htmx:",
+      "        return HttpResponseBadRequest(\"Requête HTMX requise\")",
+      "    ",
+      "    ${3:# Logique métier}",
+      "    ",
+      "    context = {",
+      "        ${4:'objets': objets,}",
+      "    }",
+      "    ",
+      "    return render(",
+      "        request,",
+      "        '${5:app/partials/fragment.html}',",
+      "        context",
+      "    )",
+      "$0"
+    ],
+    "description": "Vue partielle HTMX"
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 📊 QUERYSETS OPTIMISÉS
+  // ─────────────────────────────────────────────────────────────────
+  "Optimized Queryset": {
+    "prefix": "yelen-qs",
+    "body": [
+      "queryset = (",
+      "    ${1:Modele}.objects",
+      "    .select_related(${2:'relation1', 'relation2'})",
+      "    .prefetch_related(${3:'relation_multiple'})",
+      "    .filter(${4:actif=True})",
+      "    .order_by(${5:'-date_creation'})",
+      ")",
+      "$0"
+    ],
+    "description": "Queryset optimisé"
+  }
+}

@@ -1,0 +1,57 @@
+<div id="liste-container" hx-trigger="parametreUpdated from:body" hx-get="{% url 'parametres:annee_list' %}" hx-target="#liste-container" hx-swap="outerHTML">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Libellé</th>
+                    <th>Début</th>
+                    <th>Fin</th>
+                    <th>Statut</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for annee in annees %}
+                <tr>
+                    <td class="fw-medium">{{ annee.libelle }}</td>
+                    <td class="text-secondary">{{ annee.date_debut }}</td>
+                    <td class="text-secondary">{{ annee.date_fin }}</td>
+                    <td>
+                        {% if annee.est_courante %}
+                        <span class="badge badge-success">En cours</span>
+                        {% elif annee.cloturee %}
+                        <span class="badge badge-neutral">Clôturée</span>
+                        {% else %}
+                        <button
+                            hx-post="{% url 'parametres:annee_set_courante' annee.pk %}"
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                            class="btn-secondary btn-sm">
+                            Définir comme courante
+                        </button>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;">
+                        <div class="d-flex justify-end gap-2">
+                            <button
+                                hx-get="{% url 'parametres:annee_edit' annee.pk %}"
+                                hx-target="#modal-container"
+                                hx-swap="innerHTML"
+                                class="btn-icon" title="Modifier">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <button hx-post="{% url 'parametres:annee_delete' annee.pk %}"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-confirm="Supprimer cette année scolaire ?"
+                                class="btn-icon" title="Supprimer" style="color:var(--color-danger);">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5"><div class="empty-state"><p class="empty-state-text">Aucune année scolaire. Créez la première.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

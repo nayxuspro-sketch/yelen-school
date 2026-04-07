@@ -1,0 +1,147 @@
+{% extends "core/base.html" %}
+
+{% block title %}Personnel — {{ cycle.nom }} — {{ annee_scolaire }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'documents:liste_personnel_selector' %}{% if annee_scolaire %}?annee_id={{ annee_scolaire.pk }}{% endif %}"
+       class="btn-icon" title="Retour aux cycles">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{{ cycle.nom }}</h1>
+      <p class="page-subtitle">
+        Liste alphabétique du personnel · {{ annee_scolaire }} ·
+        <span class="text-primary fw-semibold">{{ nb_total }} membre{% if nb_total > 1 %}s{% endif %}</span>
+      </p>
+    </div>
+  </div>
+  <a href="?format=pdf{% if annee_scolaire %}&annee_id={{ annee_scolaire.pk }}{% endif %}"
+     target="_blank" class="btn-primary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    Télécharger PDF
+  </a>
+</div>
+
+<!-- Compteurs genre -->
+<div class="stats-grid animate-fade-up delay-1" style="grid-template-columns:repeat(3,1fr); max-width:600px;">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_total }}</div>
+      <div class="stat-label">Total</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(100,149,237,.15);">
+      <svg width="20" height="20" fill="none" stroke="cornflowerblue" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_hommes }}</div>
+      <div class="stat-label">Hommes</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(255,105,180,.12);">
+      <svg width="20" height="20" fill="none" stroke="hotpink" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_femmes }}</div>
+      <div class="stat-label">Femmes</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tableau liste alphabétique -->
+<div class="table-wrapper animate-fade-up delay-2">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:42px; text-align:center;">N°</th>
+          <th>Nom et Prénom(s)</th>
+          <th style="width:175px;">Matricule</th>
+          <th style="width:90px; text-align:center;">Genre</th>
+          <th style="width:200px;">Poste / Fonction</th>
+          <th style="width:52px; text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for membre in membres %}
+        <tr>
+          <td style="text-align:center; color:var(--color-text-muted); font-size:0.8rem;">
+            {{ forloop.counter }}
+          </td>
+          <td>
+            <div class="fw-semibold">{{ membre.nom|upper }} {{ membre.prenom }}</div>
+          </td>
+          <td class="text-mono" style="font-size:0.8rem; color:var(--color-primary);">
+            {{ membre.matricule }}
+          </td>
+          <td style="text-align:center;">
+            {% if membre.genre == 'F' %}
+              <span class="badge" style="background:rgba(255,105,180,.12); color:hotpink; border-color:rgba(255,105,180,.3);">F</span>
+            {% else %}
+              <span class="badge" style="background:rgba(100,149,237,.12); color:cornflowerblue; border-color:rgba(100,149,237,.3);">M</span>
+            {% endif %}
+          </td>
+          <td class="text-secondary" style="font-size:0.875rem;">
+            {{ membre.fonction }}
+          </td>
+          <td style="text-align:right;">
+            <a href="{% url 'personnel:detail' membre.pk %}"
+               class="btn-icon" title="Voir le dossier">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              <p class="empty-state-text">Aucun personnel actif dans ce cycle.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .table-wrapper { width: 100%; }
+  .table-scroll  { overflow-x: unset; }
+  .data-table    { width: 100%; table-layout: fixed; }
+</style>
+
+{% endblock %}

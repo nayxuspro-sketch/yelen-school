@@ -1,0 +1,199 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if is_update %}Modifier l'Inscription{% else %}Nouvelle Inscription{% endif %} : {{ eleve.get_nom_complet }} - YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div style="max-width:42rem; margin:0 auto;">
+    <div class="page-header">
+        <div>
+            <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="btn-secondary btn-sm">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Profil de l'élève
+            </a>
+            <h1 class="page-title">{% if is_update %}Modifier l'Inscription{% else %}Finaliser l'Inscription{% endif %}</h1>
+            <p class="page-subtitle">{% if is_update %}Modifiez les informations d'inscription.{% else %}Affectation à une classe et règlement de la scolarité.{% endif %}</p>
+        </div>
+    </div>
+
+    <form method="post" class="card" id="inscription-form">
+        {% csrf_token %}
+
+        <div style="padding:1rem; border:1px solid var(--color-border); border-radius:var(--radius-md); background:var(--color-bg-input); display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+            <div class="avatar-initials" style="background:linear-gradient(135deg, var(--color-primary), var(--color-info)); flex-shrink:0;">
+                {% if eleve.photo %}
+                    <img src="{{ eleve.photo.url }}" alt="" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                {% else %}
+                    {{ eleve.nom|slice:":1" }}
+                {% endif %}
+            </div>
+            <div>
+                <div class="fw-semibold" style="color:var(--color-text-primary);">{{ eleve.get_nom_complet }}</div>
+                <div class="text-xs text-mono" style="color:var(--color-primary);">{{ eleve.matricule }}</div>
+            </div>
+        </div>
+
+        {% for field in form %}
+            {% if field.name != 'eleve' %}
+            <div class="{% if field.field.widget.input_type == 'checkbox' %}d-flex align-center gap-3{% else %}form-group{% endif %}" style="{% if field.field.widget.input_type == 'checkbox' %}padding:0.5rem 0;{% endif %}">
+                {% if field.field.widget.input_type == 'checkbox' %}
+                    {{ field }}
+                    <label for="{{ field.id_for_label }}" class="input-label" style="margin-bottom:0;">{{ field.label }}</label>
+                {% else %}
+                    <label for="{{ field.id_for_label }}" class="input-label">
+                        {{ field.label }}
+                        {% if field.field.required %}<span style="color:#FF6B7A;">*</span>{% endif %}
+                    </label>
+                    {{ field }}
+                {% endif %}
+
+                {% if field.help_text %}
+                    <p class="text-xs" style="color:var(--color-text-muted); font-style:italic;">{{ field.help_text }}</p>
+                {% endif %}
+
+                {% if field.errors %}
+                    <p class="input-error">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% else %}
+                <input type="hidden" name="{{ field.name }}" value="{{ eleve.pk }}">
+            {% endif %}
+        {% endfor %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-error mb-4">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+                {% for error in form.non_field_errors %}
+                <p class="text-sm">{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="d-flex justify-end gap-4" style="padding:1.5rem; background:var(--color-bg-card); border-top:1px solid var(--color-border);">
+            <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="btn-secondary">Annuler</a>
+            <button type="submit" class="btn-primary">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {% if is_update %}Enregistrer les modifications{% else %}Confirmer l'Inscription{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const classeSelect = document.getElementById('id_classe');
+    const niveauInput = document.getElementById('id_niveau');
+    const cycleInput = document.getElementById('id_cycle');
+    const statutSelect = document.getElementById('id_statut_eleve');
+    const codePaiementInput = document.getElementById('id_code_paiement');
+    
+    // Function to update niveau and cycle using fetch API
+    window.updateNiveauAndCycle = function(selectEl) {
+        const classeId = selectEl.value;
+        if (!classeId) {
+            niveauInput.value = '';
+            cycleInput.value = '';
+            codePaiementInput.value = '';
+            return;
+        }
+        
+        // Fetch the niveau from the API
+        fetch('/inscriptions/api/classes/' + classeId + '/niveau/')
+            .then(response => response.json())
+            .then(data => {
+                niveauInput.value = data.niveau || '';
+                // Update code_paiement after niveau changes
+                updateCodePaiementFromFields();
+            })
+            .catch(error => {
+                console.error('Error fetching niveau:', error);
+                niveauInput.value = '';
+            });
+        
+        // Fetch the cycle from the API
+        fetch('/inscriptions/api/classes/' + classeId + '/cycle/')
+            .then(response => response.json())
+            .then(data => {
+                cycleInput.value = data.cycle || '';
+                // Update code_paiement after cycle changes
+                updateCodePaiementFromFields();
+            })
+            .catch(error => {
+                console.error('Error fetching cycle:', error);
+                cycleInput.value = '';
+            });
+    };
+    
+    // Function to update code_paiement based on niveau and statut_eleve
+    window.updateCodePaiement = function(selectEl) {
+        updateCodePaiementFromFields();
+    };
+    
+    function updateCodePaiementFromFields() {
+        const niveau = niveauInput.value;
+        const statutId = statutSelect.value;
+        const cycle = cycleInput.value;
+        
+        if (!niveau || !statutId) {
+            codePaiementInput.value = '';
+            return;
+        }
+        
+        // Fetch the statut nom from the API
+        fetch('/inscriptions/api/statut-eleve/' + statutId + '/code/')
+            .then(response => response.json())
+            .then(data => {
+                if (niveau && data.nom) {
+                    const parts = [niveau, data.nom];
+                    if (cycle) {
+                        parts.push(cycle);
+                    }
+                    codePaiementInput.value = parts.join('-');
+                } else {
+                    codePaiementInput.value = '';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching statut nom:', error);
+                codePaiementInput.value = '';
+            });
+    }
+    
+    // Initial update if class is pre-selected (for update mode)
+    if (classeSelect.value) {
+        let needsUpdate = false;
+        
+        if (niveauInput.value) {
+            // Value already set from form initial data
+            needsUpdate = true;
+        } else {
+            // Try to fetch it
+            fetch('/inscriptions/api/classes/' + classeSelect.value + '/niveau/')
+                .then(response => response.json())
+                .then(data => {
+                    niveauInput.value = data.niveau || '';
+                    updateCodePaiementFromFields();
+                });
+        }
+        
+        // Fetch cycle
+        if (!cycleInput.value) {
+            fetch('/inscriptions/api/classes/' + classeSelect.value + '/cycle/')
+                .then(response => response.json())
+                .then(data => {
+                    cycleInput.value = data.cycle || '';
+                    updateCodePaiementFromFields();
+                });
+        } else {
+            needsUpdate = true;
+        }
+        
+        // If both are already set, update code_paiement
+        if (needsUpdate && niveauInput.value && cycleInput.value && statutSelect.value) {
+            updateCodePaiementFromFields();
+        }
+    }
+});
+</script>
+{% endblock %}

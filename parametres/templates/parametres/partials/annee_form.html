@@ -1,0 +1,56 @@
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title">
+                {% if annee %}Modifier l'année scolaire{% else %}Nouvelle année scolaire{% endif %}
+            </span>
+            <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="param-form"
+              hx-post="{% if annee %}{% url 'parametres:annee_edit' annee.pk %}{% else %}{% url 'parametres:annee_create' %}{% endif %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#modal-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+
+                <div class="form-group">
+                    <label class="input-label">Libellé <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="libelle" value="{{ annee.libelle|default:'' }}" placeholder="Ex: 2025-2026"
+                        required class="input">
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="input-label">Date de début <span style="color:#FF6B7A;">*</span></label>
+                        <input type="date" name="date_debut" value="{{ annee.date_debut|default:'' }}"
+                            required class="input">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Date de fin <span style="color:#FF6B7A;">*</span></label>
+                        <input type="date" name="date_fin" value="{{ annee.date_fin|default:'' }}"
+                            required class="input">
+                    </div>
+                </div>
+
+                <label class="d-flex align-center gap-3" style="cursor:pointer;">
+                    <input type="checkbox" name="est_courante" {% if annee.est_courante %}checked{% endif %}
+                        style="width:1rem; height:1rem; accent-color:var(--color-primary);">
+                    <span class="text-sm text-secondary">Année en cours</span>
+                </label>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="document.getElementById('modal-overlay').remove()"
+                        class="btn-secondary">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

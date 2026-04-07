@@ -1,0 +1,86 @@
+{% extends "core/base.html" %}
+
+{% block title %}Résultats {{ session.libelle }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'examens:session_detail' session.pk %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Saisie des résultats</h1>
+      <p class="page-subtitle">{{ session.libelle }}</p>
+    </div>
+  </div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="table-wrapper mb-4 animate-fade-up delay-1">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#Table</th>
+            <th>Candidat</th>
+            <th>Centre</th>
+            <th>Moyenne</th>
+            <th>Statut</th>
+            <th>Mention</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for candidat in candidats %}
+          <tr>
+            <td class="text-mono text-primary" style="font-size:0.8rem;">{{ candidat.numero_table|default:"—" }}</td>
+            <td class="fw-medium">{{ candidat.inscription.eleve.get_nom_complet }}</td>
+            <td class="text-muted" style="font-size:0.8rem;">{{ candidat.centre.code_centre|default:"—" }}</td>
+            <td>
+              <input type="number"
+                     name="moyenne_{{ candidat.pk }}"
+                     value="{{ candidat.moyenne_examen|default:'' }}"
+                     step="0.01" min="0" max="20"
+                     class="input"
+                     style="width:80px; text-align:center;">
+            </td>
+            <td>
+              <select name="statut_{{ candidat.pk }}" class="input select" style="min-width:110px;">
+                {% for val, label in statuts %}
+                <option value="{{ val }}" {% if candidat.statut == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <input type="text"
+                     name="mention_{{ candidat.pk }}"
+                     value="{{ candidat.mention }}"
+                     placeholder="Passable, Bien…"
+                     class="input"
+                     style="width:120px;">
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <p class="empty-state-text">Aucun candidat inscrit.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if candidats %}
+  <div class="d-flex justify-end">
+    <button type="submit" class="btn-primary">Enregistrer les résultats</button>
+  </div>
+  {% endif %}
+</form>
+
+{% endblock %}

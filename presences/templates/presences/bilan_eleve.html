@@ -1,0 +1,191 @@
+{% extends "core/base.html" %}
+
+{% block title %}Bilan présences — {{ inscription.eleve.get_nom_complet }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'presences:appel_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Bilan des présences</h1>
+      <p class="page-subtitle">
+        {{ inscription.eleve.get_nom_complet }}
+        · {{ inscription.classe.nom }}
+        · {{ inscription.annee_scolaire }}
+      </p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'presences:justification_create' inscription.pk %}" class="btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+      Nouvelle justification
+    </a>
+  </div>
+</div>
+
+<!-- Statistiques -->
+<div class="stats-grid mb-6 animate-fade-up delay-1" style="grid-template-columns:repeat(4,1fr);">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ stats.presents }}</div>
+      <div class="stat-label">Présences</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-red">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ stats.absents }}</div>
+      <div class="stat-label">Absences</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-gold">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ stats.retards }}</div>
+      <div class="stat-label">Retards</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ stats.excuses }}</div>
+      <div class="stat-label">Excusés</div>
+    </div>
+  </div>
+</div>
+
+<!-- Détail des séances -->
+<div class="table-wrapper animate-fade-up delay-2" style="margin-bottom:1.5rem;">
+  <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+    <span class="card-title">Détail des séances</span>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Matière</th>
+          <th>Statut</th>
+          <th>Retard</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in presences %}
+        <tr>
+          <td>{{ p.appel.date|date:"d/m/Y" }}</td>
+          <td class="text-secondary">{{ p.appel.matiere.nom|default:"—" }}</td>
+          <td>
+            {% if p.statut == 'PRESENT' %}
+              <span class="badge badge-success">Présent</span>
+            {% elif p.statut == 'ABSENT' %}
+              <span class="badge badge-danger">Absent</span>
+            {% elif p.statut == 'RETARD' %}
+              <span class="badge badge-warning">Retard</span>
+            {% else %}
+              <span class="badge badge-info">Excusé</span>
+            {% endif %}
+          </td>
+          <td class="text-muted">
+            {% if p.minutes_retard %}{{ p.minutes_retard }} min{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">
+            <div class="empty-state">
+              <p class="empty-state-text">Aucun appel enregistré.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Justifications -->
+<div class="table-wrapper animate-fade-up delay-3">
+  <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+    <span class="card-title">Justifications</span>
+    <a href="{% url 'presences:justification_create' inscription.pk %}" class="btn-primary btn-sm">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+      Nouvelle
+    </a>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Période</th>
+          <th>Motif</th>
+          <th>Statut</th>
+          <th style="text-align:right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for j in justifications %}
+        <tr>
+          <td class="text-secondary" style="white-space:nowrap;">
+            {{ j.date_debut|date:"d/m/Y" }}
+            {% if j.date_fin != j.date_debut %} → {{ j.date_fin|date:"d/m/Y" }}{% endif %}
+            <span class="text-muted">({{ j.nb_jours }} j.)</span>
+          </td>
+          <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ j.motif }}</td>
+          <td>
+            {% if j.statut == 'EN_ATTENTE' %}
+              <span class="badge badge-warning">En attente</span>
+            {% elif j.statut == 'ACCEPTEE' %}
+              <span class="badge badge-success">Acceptée</span>
+            {% else %}
+              <span class="badge badge-danger">Refusée</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            {% if j.statut == 'EN_ATTENTE' %}
+            <a href="{% url 'presences:justification_process' j.pk %}" class="btn-primary btn-sm">Traiter</a>
+            {% else %}
+            <a href="{% url 'presences:justification_process' j.pk %}" class="btn-secondary btn-sm">Voir</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">
+            <div class="empty-state" style="padding:1.5rem;">
+              <p class="empty-state-text">Aucune justification pour cet élève.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
