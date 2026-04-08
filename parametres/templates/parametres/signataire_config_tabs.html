@@ -1,0 +1,257 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Configurer les Signataires{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Configurer les Signataires</h1>
+    <p class="page-subtitle">
+      <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+      <span class="text-muted"> / </span>Signataires
+    </p>
+  </div>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags|default:'info' }} mb-4">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+<!-- Année scolaire -->
+<div class="card mb-4" style="max-width:340px;">
+  <div class="card-body" style="padding:.875rem 1rem;">
+    <label class="input-label" style="margin-bottom:.375rem;display:block;">Année scolaire</label>
+    <form method="get">
+      <select name="annee" class="input select" onchange="this.form.submit()">
+        {% for a in annees %}
+        <option value="{{ a.id }}" {% if annee and annee.id == a.id %}selected{% endif %}>
+          {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+</div>
+
+{% if not annee %}
+<div class="card"><div class="card-body" style="text-align:center;padding:2rem;color:var(--color-text-secondary);">
+  Aucune année scolaire trouvée.
+</div></div>
+{% else %}
+
+<!-- Onglets cycles -->
+<div class="sc-tabs">
+  {% for cd in cycles_data %}
+  <button class="sc-tab {% if forloop.first %}sc-tab--active{% endif %}"
+          data-tab="cycle-{{ cd.cycle.id }}">
+    {{ cd.cycle.nom }}
+    <span class="sc-tab-count {% if cd.total_configured == cd.total_docs and cd.total_docs > 0 %}sc-count--ok{% elif cd.total_configured > 0 %}sc-count--partial{% endif %}">
+      {{ cd.total_configured }}/{{ cd.total_docs }}
+    </span>
+  </button>
+  {% endfor %}
+</div>
+
+<!-- Panneaux cycles -->
+{% for cd in cycles_data %}
+<div class="sc-panel {% if forloop.first %}sc-panel--active{% endif %}" id="cycle-{{ cd.cycle.id }}">
+  {% for cat in cd.categories %}
+  <div class="sc-card">
+
+    <!-- En-tête carte -->
+    <div class="sc-card-head">
+      <div>
+        <div class="sc-card-title">{{ cat.label }}</div>
+        <div class="sc-badges">
+          {% for td in cat.type_docs %}<span class="sc-badge">{{ td.code }}</span>{% endfor %}
+        </div>
+      </div>
+      <span class="sc-dot {% if cat.configured == cat.total and cat.total > 0 %}sc-dot--ok{% elif cat.configured > 0 %}sc-dot--partial{% else %}sc-dot--none{% endif %}"
+            title="{{ cat.configured }}/{{ cat.total }} configuré(s)"></span>
+    </div>
+
+    <!-- Formulaire inline -->
+    <form method="post" class="sc-form">
+      {% csrf_token %}
+      <input type="hidden" name="annee_id"   value="{{ annee.id }}">
+      <input type="hidden" name="cycle_id"   value="{{ cd.cycle.id }}">
+      <input type="hidden" name="categorie"  value="{{ cat.value }}">
+
+      <div class="sc-form-row">
+        <!-- Signataire -->
+        <div class="sc-field sc-field--wide">
+          <label class="sc-label">Signataire</label>
+          <select name="membre_personnel" class="input select" required>
+            <option value="">-- Sélectionner un membre du personnel --</option>
+            {% for p in personnel %}
+            <option value="{{ p.id }}"
+              {% if cat.sig_ref and cat.sig_ref.membre_personnel_id == p.id %}selected{% endif %}>
+              {{ p.nom|upper }} {{ p.prenom }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Fonction -->
+        <div class="sc-field">
+          <label class="sc-label">Fonction</label>
+          <select name="fonction" class="input select">
+            <option value="">-- Sélectionner une fonction --</option>
+            {% for f in fonctions %}
+            <option value="{{ f.nom }}"
+              {% if cat.sig_ref and cat.sig_ref.fonction == f.nom %}selected{% endif %}>
+              {{ f.nom }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Titre honorifique -->
+        <div class="sc-field">
+          <label class="sc-label">Titre honorifique</label>
+          <select name="titre_honorifique" class="input select">
+            <option value="">-- Sélectionner un titre honorifique --</option>
+            {% for t in titres_honorifiques %}
+            <option value="{{ t.nom }}"
+              {% if cat.sig_ref and cat.sig_ref.titre_honorifique == t.nom %}selected{% endif %}>
+              {{ t.nom }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary sc-btn">Enregistrer</button>
+      </div>
+    </form>
+
+  </div>
+  {% empty %}
+  <p style="color:var(--color-text-secondary);padding:1rem;">Aucun type de document actif.</p>
+  {% endfor %}
+</div>
+{% endfor %}
+
+{% endif %}{# annee #}
+
+<style>
+/* ── Onglets ── */
+.sc-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+.sc-tab {
+  padding: .625rem 1.25rem;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  white-space: nowrap;
+  transition: color .15s ease;
+}
+.sc-tab:hover { color: var(--color-text-primary); }
+.sc-tab--active {
+  color: var(--color-primary, #00A86B);
+  border-bottom-color: var(--color-primary, #00A86B);
+  font-weight: 600;
+}
+.sc-tab-count {
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .1rem .45rem;
+  border-radius: 9999px;
+  background: var(--color-bg-hover);
+  color: var(--color-text-muted);
+}
+.sc-count--ok      { background: rgba(0,168,107,.15); color: #00A86B; }
+.sc-count--partial { background: rgba(245,166,35,.15); color: #d97706; }
+
+/* ── Panneaux ── */
+.sc-panel { display: none; }
+.sc-panel--active { display: grid; grid-template-columns: repeat(auto-fill, minmax(540px, 1fr)); gap: 1rem; }
+
+/* ── Cartes ── */
+.sc-card {
+  background: var(--color-bg-card, #111E35);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1rem 1.125rem;
+}
+.sc-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: .75rem;
+}
+.sc-card-title {
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--color-text-primary);
+  margin-bottom: .375rem;
+}
+.sc-badges { display: flex; flex-wrap: wrap; gap: .3rem; }
+.sc-badge {
+  font-size: .6875rem;
+  font-weight: 500;
+  padding: .125rem .5rem;
+  border-radius: 4px;
+  background: var(--color-bg-hover);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  font-family: monospace;
+}
+
+/* ── Dot statut ── */
+.sc-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: .25rem;
+}
+.sc-dot--ok      { background: #00A86B; box-shadow: 0 0 6px rgba(0,168,107,.5); }
+.sc-dot--partial { background: #d97706; }
+.sc-dot--none    { background: var(--color-text-muted); opacity: .4; }
+
+/* ── Formulaire inline ── */
+.sc-form-row {
+  display: flex;
+  align-items: flex-end;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+.sc-field { display: flex; flex-direction: column; gap: .25rem; min-width: 160px; }
+.sc-field--wide { flex: 1; min-width: 200px; }
+.sc-label { font-size: .75rem; font-weight: 600; color: var(--color-text-secondary); }
+.sc-btn { flex-shrink: 0; align-self: flex-end; }
+</style>
+
+<script>
+(function () {
+  var tabs   = document.querySelectorAll('.sc-tab');
+  var panels = document.querySelectorAll('.sc-panel');
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('sc-tab--active'); });
+      panels.forEach(function (p) { p.classList.remove('sc-panel--active'); });
+      tab.classList.add('sc-tab--active');
+      var target = document.getElementById(tab.dataset.tab);
+      if (target) { target.classList.add('sc-panel--active'); }
+    });
+  });
+})();
+</script>
+
+{% endblock %}

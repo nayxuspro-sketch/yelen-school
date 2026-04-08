@@ -1,0 +1,181 @@
+{% extends "core/base.html" %}
+{% block title %}{% if bourse %}Modifier la bourse{% else %}Attribuer une bourse{% endif %} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'finances:situation_eleve' inscription.id %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{% if bourse %}Modifier la bourse{% else %}Attribuer une bourse / aide{% endif %}</h1>
+      <p class="page-subtitle">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }} · {{ inscription.classe.nom }}</p>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:640px; margin:0 auto;">
+<div class="card animate-fade-up delay-1">
+  <div class="card-header" style="display:flex; align-items:center; gap:.75rem;">
+    <div style="width:34px; height:34px; border-radius:9px; background:rgba(0,168,107,0.13); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+      <svg width="17" height="17" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <div>
+      <span class="card-title">Informations de la bourse</span>
+      <p style="font-size:.78rem; color:var(--color-text-muted); margin:1px 0 0;">Renseignez le type, le montant et la rubrique concernée</p>
+    </div>
+  </div>
+
+  <form method="post" style="padding:var(--space-6); display:flex; flex-direction:column; gap:1.2rem;">
+    {% csrf_token %}
+
+    <!-- Type de bourse -->
+    <div class="form-group" style="margin:0;">
+      <label class="input-label" for="type_bourse">
+        Type de bourse / aide <span style="color:var(--color-danger);">*</span>
+      </label>
+      <select name="type_bourse" id="type_bourse" class="input select" required onchange="calculerMontant()">
+        <option value="">— Sélectionner un type —</option>
+        {% for t in types_bourses %}
+        <option value="{{ t.id }}"
+          data-type="{{ t.type_reduction }}"
+          data-valeur="{{ t.valeur_reduction }}"
+          data-desc="{{ t.description }}"
+          {% if bourse and bourse.type_bourse_id == t.id %}selected{% endif %}>
+          {{ t.nom }} ({{ t.get_source_display }}){% if t.type_reduction == 'POURCENTAGE' %} — {{ t.valeur_reduction }}%{% else %} — {{ t.valeur_reduction|floatformat:0 }} FCFA fixe{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      <div id="type-desc" style="display:none; margin-top:.4rem; font-size:.8rem; color:var(--color-text-muted);"></div>
+      <div style="margin-top:.35rem;">
+        <small style="font-size:.78rem; color:var(--color-text-muted);">
+          Aucun type ?
+          <a href="{% url 'finances:type_bourse_create' %}" style="color:var(--color-primary); text-decoration:none;">Créer un type</a>
+        </small>
+      </div>
+    </div>
+
+    <!-- Montant accordé -->
+    <div class="form-group" style="margin:0;">
+      <label class="input-label" for="montant_accorde">
+        Montant accordé (FCFA) <span style="color:var(--color-danger);">*</span>
+      </label>
+      <input type="number" id="montant_accorde" name="montant_accorde" class="input"
+             min="1" step="1" required
+             value="{{ bourse.montant_accorde|default:'' }}"
+             placeholder="Ex : 25 000">
+      <div style="margin-top:.35rem; font-size:.8rem; color:var(--color-text-muted);">
+        Calculé automatiquement selon le type ; modifiable si besoin.
+      </div>
+    </div>
+
+    <!-- Rubrique -->
+    <div class="form-group" style="margin:0;">
+      <label class="input-label" for="rubrique">Rubrique concernée</label>
+      <select name="rubrique" id="rubrique" class="input select">
+        <option value="">Globale (toutes rubriques)</option>
+        {% for r in rubriques %}
+        <option value="{{ r.id }}" {% if bourse and bourse.rubrique_id == r.id %}selected{% endif %}>
+          {{ r.nom }}
+        </option>
+        {% endfor %}
+      </select>
+      <div style="margin-top:.35rem; font-size:.8rem; color:var(--color-text-muted);">
+        Laisser vide pour une réduction sur le total toutes rubriques.
+      </div>
+    </div>
+
+    <!-- Dates -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem;">
+      <div class="form-group" style="margin:0;">
+        <label class="input-label" for="date_attribution">Date d'attribution</label>
+        <input type="date" id="date_attribution" name="date_attribution" class="input"
+               value="{{ bourse.date_attribution|date:'Y-m-d'|default:today }}">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="input-label" for="date_expiration">Date d'expiration</label>
+        <input type="date" id="date_expiration" name="date_expiration" class="input"
+               value="{{ bourse.date_expiration|date:'Y-m-d'|default:'' }}">
+      </div>
+    </div>
+
+    <!-- Référence -->
+    <div class="form-group" style="margin:0;">
+      <label class="input-label" for="reference_document">N° décision / référence</label>
+      <input type="text" id="reference_document" name="reference_document" class="input"
+             value="{{ bourse.reference_document|default:'' }}"
+             placeholder="Ex : DEC-2026-0123">
+    </div>
+
+    <!-- Observation -->
+    <div class="form-group" style="margin:0;">
+      <label class="input-label" for="observation">Observation</label>
+      <textarea id="observation" name="observation" class="input" rows="2"
+                style="resize:vertical; min-height:64px;">{{ bourse.observation|default:'' }}</textarea>
+    </div>
+
+    {% if bourse %}
+    <!-- Statut actif -->
+    <div class="form-group" style="margin:0;">
+      <label style="display:flex; align-items:center; gap:.6rem; cursor:pointer; font-size:.9rem; color:var(--color-text);">
+        <input type="checkbox" name="actif" {% if bourse.actif %}checked{% endif %}
+               style="width:16px; height:16px; accent-color:var(--color-primary);">
+        Bourse active
+      </label>
+    </div>
+    {% endif %}
+
+    <div class="d-flex gap-3 justify-end" style="margin-top:.5rem;">
+      <a href="{% url 'finances:situation_eleve' inscription.id %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary">
+        {% if bourse %}Enregistrer les modifications{% else %}Attribuer la bourse{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+</div>
+
+<script>
+let totalDu = 0;
+
+function calculerMontant() {
+  const sel = document.getElementById('type_bourse');
+  const opt = sel.options[sel.selectedIndex];
+  const desc = opt.dataset.desc || '';
+  const typeR = opt.dataset.type || '';
+  const valeur = parseFloat(opt.dataset.valeur || 0);
+  const descEl = document.getElementById('type-desc');
+
+  descEl.style.display = desc ? 'block' : 'none';
+  descEl.textContent = desc;
+
+  if (!valeur || !typeR) return;
+
+  const params = new URLSearchParams({ type_bourse: opt.value, total_du: totalDu });
+  fetch(`/finances/api/bourse/calculer/?${params}`)
+    .then(r => r.json())
+    .then(data => {
+      const f = document.getElementById('montant_accorde');
+      if (!f.value) {
+        f.value = data.montant;
+      } else {
+        f.placeholder = `Suggestion : ${data.montant} FCFA`;
+      }
+    })
+    .catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const url = new URL(window.location.href);
+  const td = url.searchParams.get('total_du');
+  if (td) totalDu = parseFloat(td) || 0;
+
+  const sel = document.getElementById('type_bourse');
+  if (sel.value) calculerMontant();
+});
+</script>
+{% endblock %}

@@ -21,7 +21,24 @@
 
 <div id="modal-container"></div>
 
-<div id="classe-table" class="table-wrapper animate-fade-up delay-1">
+<div class="card mb-4" style="padding:var(--space-4);">
+  <div class="search-wrapper">
+    <span class="search-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+    </span>
+    <input type="text" name="q" class="input search-input"
+           placeholder="Rechercher par nom ou cycle…"
+           value="{{ query }}"
+           hx-get="{% url 'parametres:classe_list' %}"
+           hx-trigger="keyup changed delay:400ms"
+           hx-target="#classe-list-container"
+           hx-push-url="true">
+  </div>
+</div>
+
+<div id="classe-list-container" class="animate-fade-up delay-1">
     {% include 'parametres/partials/classe_list.html' %}
 </div>
 {% endblock %}

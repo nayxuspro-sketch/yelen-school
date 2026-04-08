@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 10mm 12mm 10mm 12mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-size: 9pt;
+    color: #1E293B;
+    line-height: 1.35;
+  }
+
+  /* ── En-tête établissement ── */
+  .entete-wrapper { margin-bottom: 3mm; }
+  .entete-wrapper table { width: 100%; border-collapse: collapse; }
+  .entete-wrapper td { padding: 0 3mm; vertical-align: middle; }
+  .entete-wrapper td:first-child { width: 70px; text-align: center; }
+  .entete-wrapper td:first-child img { width: 62px; height: 62px; object-fit: contain; }
+  .entete-wrapper td:nth-child(2) { text-align: center; }
+  .entete-wrapper td:nth-child(2) p:first-child {
+    font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .entete-wrapper td:nth-child(2) p.sous { font-size: 8pt; color: #64748B; margin-top: 1mm; }
+  .entete-wrapper td:last-child { width: 65px; text-align: center; }
+  .entete-wrapper td:last-child img { width: 58px; height: 58px; object-fit: contain; }
+  .entete-sep { border: none; border-top: 1.5px solid #1E293B; margin: 2mm 0; }
+
+  /* ── Titre bulletin ── */
+  .titre-bulletin {
+    text-align: center;
+    margin: 2.5mm 0 2mm;
+  }
+  .titre-bulletin h1 {
+    font-size: 11.5pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .titre-bulletin p { font-size: 9pt; color: #475569; }
+
+  /* ── Bloc identité salarié ── */
+  .bloc-salarie {
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    border-radius: 3px;
+    padding: 2mm 3mm;
+    margin-bottom: 3mm;
+  }
+  .bloc-salarie table { width: 100%; border-collapse: collapse; }
+  .bloc-salarie td { padding: 0.6mm 2mm; font-size: 8.5pt; vertical-align: top; }
+  .bloc-salarie td.label { color: #64748B; width: 30%; }
+  .bloc-salarie td.valeur { font-weight: bold; }
+
+  /* ── Deux colonnes pour gains + retenues ── */
+  .deux-col { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
+  .deux-col > tbody > tr > td { vertical-align: top; padding: 0; }
+  .deux-col > tbody > tr > td:first-child { width: 54%; padding-right: 3mm; }
+  .deux-col > tbody > tr > td:last-child  { width: 46%; }
+
+  /* ── Tableaux gains / retenues ── */
+  .t-salaire {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+  }
+  .t-salaire th {
+    background: #1E293B;
+    color: #fff;
+    padding: 1.5mm 2.5mm;
+    text-align: left;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+  }
+  .t-salaire th.right { text-align: right; }
+  .t-salaire td { padding: 1.2mm 2.5mm; border-bottom: 1px solid #E2E8F0; }
+  .t-salaire td.montant { text-align: right; font-family: 'DejaVu Sans Mono', monospace; }
+  .t-salaire tr.sous-total td {
+    font-weight: bold;
+    background: #F1F5F9;
+    border-top: 1.5px solid #1E293B;
+    font-size: 8.5pt;
+  }
+  .t-salaire tr.retenue td { color: #DC2626; }
+  .t-salaire tr.net td {
+    background: #0F4C2A;
+    color: #fff;
+    font-size: 10pt;
+    font-weight: bold;
+    padding: 2mm 2.5mm;
+  }
+  .t-salaire tr.net td.montant { font-size: 11pt; }
+
+  /* ── Ligne paiement ── */
+  .ligne-paiement {
+    font-size: 8.5pt;
+    color: #475569;
+    margin-bottom: 3mm;
+  }
+
+  /* ── Signatures ── */
+  .pied {
+    margin-top: 4mm;
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .pied td { text-align: center; font-size: 8.5pt; padding: 0 4mm; }
+  .pied .ligne-sign {
+    margin-top: 10mm;
+    border-top: 1px solid #1E293B;
+    padding-top: 1.5mm;
+    font-size: 8pt;
+    color: #475569;
+  }
+
+  /* ── Mention bas ── */
+  .mention {
+    font-size: 7.5pt;
+    color: #94A3B8;
+    text-align: center;
+    margin-top: 3mm;
+    border-top: 1px solid #E2E8F0;
+    padding-top: 2mm;
+  }
+</style>
+</head>
+<body>
+
+{% load static %}
+
+{# ── En-tête établissement ── #}
+<div class="entete-wrapper">
+  <table>
+    <tr>
+      <td>{% if logo_url %}<img src="{{ logo_url }}" alt="Logo">{% endif %}</td>
+      <td>
+        <p>{{ identite.nom_etablissement|default:etablissement }}</p>
+        {% if identite.adresse %}<p class="sous">{{ identite.adresse }}</p>{% endif %}
+        {% if identite.telephone %}<p class="sous">Tél. : {{ identite.telephone }}</p>{% endif %}
+      </td>
+      <td>{% if etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Cachet">{% endif %}</td>
+    </tr>
+  </table>
+</div>
+<hr class="entete-sep">
+
+{# ── Titre ── #}
+<div class="titre-bulletin">
+  <h1>Bulletin de Salaire</h1>
+  <p>{{ salaire.get_mois_display }} {{ salaire.annee }}</p>
+</div>
+
+{# ── Identité salarié ── #}
+<div class="bloc-salarie">
+  <table>
+    <tr>
+      <td class="label">Nom et Prénom(s)</td>
+      <td class="valeur">{{ salaire.personnel.get_nom_complet }}</td>
+      <td class="label">Matricule</td>
+      <td class="valeur">{{ salaire.personnel.matricule }}</td>
+      <td class="label">Date d'embauche</td>
+      <td class="valeur">{{ salaire.personnel.date_embauche|date:"d/m/Y" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Fonction / Poste</td>
+      <td class="valeur">{{ salaire.personnel.fonction }}</td>
+      <td class="label">Situation familiale</td>
+      <td class="valeur">{{ salaire.personnel.get_situation_matrimoniale_display }}</td>
+      <td class="label">Enfants à charge</td>
+      <td class="valeur">{{ salaire.personnel.nombre_enfants }}</td>
+    </tr>
+  </table>
+</div>
+
+{# ── Gains et Retenues côte à côte ── #}
+<table class="deux-col">
+  <tbody>
+    <tr>
+      {# Colonne gauche : Gains #}
+      <td>
+        <table class="t-salaire">
+          <thead>
+            <tr>
+              <th>Éléments de rémunération</th>
+              <th class="right">Montant (FCFA)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Salaire de base</td>
+              <td class="montant">{{ salaire.salaire_base|floatformat:"0" }}</td>
+            </tr>
+            {% if salaire.prime_anciennete %}
+            <tr>
+              <td>Prime d'ancienneté</td>
+              <td class="montant">{{ salaire.prime_anciennete|floatformat:"0" }}</td>
+            </tr>
+            {% endif %}
+            {% if salaire.indemnite_transport %}
+            <tr>
+              <td>Indemnité de transport</td>
+              <td class="montant">{{ salaire.indemnite_transport|floatformat:"0" }}</td>
+            </tr>
+            {% endif %}
+            {% if salaire.indemnite_logement %}
+            <tr>
+              <td>Indemnité de logement</td>
+              <td class="montant">{{ salaire.indemnite_logement|floatformat:"0" }}</td>
+            </tr>
+            {% endif %}
+            {% if salaire.autres_primes %}
+            <tr>
+              <td>Autres primes</td>
+              <td class="montant">{{ salaire.autres_primes|floatformat:"0" }}</td>
+            </tr>
+            {% endif %}
+            <tr class="sous-total">
+              <td>SALAIRE BRUT</td>
+              <td class="montant">{{ salaire.salaire_brut|floatformat:"0" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+
+      {# Colonne droite : Retenues + Net #}
+      <td>
+        <table class="t-salaire">
+          <thead>
+            <tr>
+              <th>Retenues</th>
+              <th class="right">Montant (FCFA)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if salaire.retenue_cnss %}
+            <tr class="retenue">
+              <td>Retenue CNSS</td>
+              <td class="montant">- {{ salaire.retenue_cnss|floatformat:"0" }}</td>
+            </tr>
+            {% endif %}
+            {% if salaire.retenue_iuts %}
+            <tr class="retenue">
+              <td>Retenue IUTS</td>
+              <td class="montant">- {{ salaire.retenue_iuts|floatformat:"0" }}</td>
+            </tr>
+            {% endif %}
+            {% if salaire.autres_retenues %}
+            <tr class="retenue">
+              <td>Autres retenues</td>
+              <td class="montant">- {{ salaire.autres_retenues|floatformat:"0" }}</td>
+            </tr>
+            {% endif %}
+            <tr class="sous-total">
+              <td>TOTAL RETENUES</td>
+              <td class="montant">- {{ salaire.total_retenues|floatformat:"0" }}</td>
+            </tr>
+            <tr class="net">
+              <td>NET À PAYER</td>
+              <td class="montant">{{ salaire.salaire_net|floatformat:"0" }} FCFA</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+{% if salaire.date_paiement %}
+<p class="ligne-paiement">
+  Payé le <strong>{{ salaire.date_paiement|date:"d/m/Y" }}</strong>{% if salaire.reference_paiement %} — Réf. : <strong>{{ salaire.reference_paiement }}</strong>{% endif %}
+</p>
+{% endif %}
+
+{# ── Signatures ── #}
+<table class="pied">
+  <tr>
+    <td><div class="ligne-sign">L'Employeur</div></td>
+    <td><div class="ligne-sign">Le/La Salarié(e)</div></td>
+  </tr>
+</table>
+
+<p class="mention">
+  Bulletin généré par YELEN SCHOOL — {{ identite.nom_etablissement|default:etablissement }} — {{ salaire.annee }}
+</p>
+
+</body>
+</html>

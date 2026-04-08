@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Appels — Impression</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; background: #fff; }
+
+    .print-header { text-align: center; margin-bottom: 1.5rem; border-bottom: 2px solid #000; padding-bottom: 0.75rem; }
+    .print-header h1 { font-size: 14pt; font-weight: bold; }
+    .print-header p { font-size: 10pt; color: #444; margin-top: 0.25rem; }
+
+    .date-section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+    .date-title {
+      font-size: 12pt;
+      font-weight: bold;
+      background: #f0f0f0;
+      border-left: 4px solid #000;
+      padding: 0.3rem 0.6rem;
+      margin-bottom: 0.5rem;
+      text-transform: capitalize;
+    }
+    .classe-block { margin-bottom: 1rem; margin-left: 0.5rem; page-break-inside: avoid; }
+    .classe-title { font-size: 10.5pt; font-weight: bold; margin-bottom: 0.25rem; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+    th { background: #e8e8e8; border: 1px solid #bbb; padding: 4px 8px; text-align: left; font-weight: bold; }
+    td { border: 1px solid #ccc; padding: 4px 8px; }
+    tr:nth-child(even) td { background: #fafafa; }
+
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+
+    .no-data { text-align: center; padding: 2rem; color: #666; font-style: italic; }
+
+    .print-footer { margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 0.5rem; font-size: 9pt; color: #666; display: flex; justify-content: space-between; }
+
+    @media screen {
+      body { max-width: 900px; margin: 2rem auto; padding: 1rem; }
+      .no-print { display: flex; gap: 1rem; justify-content: flex-end; margin-bottom: 1.5rem; }
+      .btn { padding: 0.5rem 1.25rem; border-radius: 6px; border: none; cursor: pointer; font-size: 10pt; font-weight: 600; }
+      .btn-print { background: #1a1a1a; color: #fff; }
+      .btn-close { background: #e5e7eb; color: #111; text-decoration: none; display: inline-flex; align-items: center; }
+    }
+    @media print {
+      .no-print { display: none; }
+      body { margin: 0; padding: 0.5cm; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <a href="javascript:history.back()" class="btn btn-close">← Retour</a>
+  <button class="btn btn-print" onclick="window.print()">🖨 Imprimer</button>
+</div>
+
+<div class="print-header">
+  <h1>Liste des Appels{% if annee %} — {{ annee.libelle }}{% endif %}</h1>
+  <p>
+    {% if date_debut and date_fin %}
+      Du {{ date_debut }} au {{ date_fin }}
+    {% elif date_debut %}
+      À partir du {{ date_debut }}
+    {% elif date_fin %}
+      Jusqu'au {{ date_fin }}
+    {% else %}
+      Toute la période
+    {% endif %}
+  </p>
+</div>
+
+{% if groupes_dates %}
+  {% for groupe_date in groupes_dates %}
+  <div class="date-section">
+    <div class="date-title">{{ groupe_date.date|date:"l d F Y" }}</div>
+
+    {% for groupe_classe in groupe_date.groupes_classes %}
+    <div class="classe-block">
+      <div class="classe-title">
+        {{ groupe_classe.classe.nom }}{% if groupe_classe.classe.cycle %} — {{ groupe_classe.classe.cycle.nom }}{% endif %}
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Matière</th>
+            <th class="text-center">Heure</th>
+            <th class="text-center">Présents</th>
+            <th class="text-center">Absents</th>
+            <th class="text-center">Retards</th>
+            <th class="text-center">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for appel in groupe_classe.appels %}
+          <tr>
+            <td>{{ appel.enseignement.matiere.nom|default:"—" }}</td>
+            <td class="text-center">
+              {% if appel.heure_debut %}{{ appel.heure_debut|time:"H:i" }}{% if appel.heure_fin %} – {{ appel.heure_fin|time:"H:i" }}{% endif %}{% else %}—{% endif %}
+            </td>
+            <td class="text-center">{{ appel.nb_presents }}</td>
+            <td class="text-center">{{ appel.nb_absents }}</td>
+            <td class="text-center">{{ appel.nb_retards }}</td>
+            <td class="text-center">{% if appel.est_clos %}Clôturé{% else %}En cours{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+{% else %}
+  <p class="no-data">Aucun appel pour les critères sélectionnés.</p>
+{% endif %}
+
+<div class="print-footer">
+  <span>YELEN SCHOOL</span>
+  <span>Imprimé le {% now "d/m/Y à H:i" %}</span>
+</div>
+
+</body>
+</html>

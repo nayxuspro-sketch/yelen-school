@@ -1,0 +1,93 @@
+{% extends "core/base.html" %}
+{% block title %}Contester une décision — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'viescolaire:conseil_detail' decision.conseil.pk %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Contester une décision</h1>
+      <p class="page-subtitle">
+        {{ decision.inscription.eleve.get_nom_complet }} —
+        {{ decision.get_decision_display }} ({{ decision.conseil.trimestre.nom }})
+      </p>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:640px; margin:0 auto;">
+
+  <!-- Récapitulatif de la décision -->
+  <div class="card animate-fade-up delay-1 mb-4"
+       style="padding:var(--space-4); background:#fef2f2; border-color:#fecaca;">
+    <div class="d-flex align-center gap-3">
+      <svg width="20" height="20" fill="none" stroke="#b91c1c" viewBox="0 0 24 24" style="flex-shrink:0;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+      <div>
+        <div style="font-weight:700; color:#b91c1c; font-size:.9rem;">Décision à contester</div>
+        <div style="font-size:.85rem; color:#991b1b; margin-top:2px;">
+          <strong>{{ decision.get_decision_display }}</strong> prononcée le
+          {{ decision.conseil.date_conseil|date:"d/m/Y" }} · {{ decision.conseil.classe.nom }}
+        </div>
+        {% if decision.appreciation %}
+        <div style="font-size:.8rem; color:#991b1b; margin-top:4px; font-style:italic;">
+          « {{ decision.appreciation }} »
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card animate-fade-up delay-2">
+    <div class="card-header">
+      <span class="card-title">Formulaire d'appel</span>
+    </div>
+    <form method="post" style="padding:var(--space-6); display:flex; flex-direction:column; gap:1.2rem;">
+      {% csrf_token %}
+
+      {% if messages %}
+      {% for msg in messages %}
+      <div style="padding:.75rem 1rem; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; font-size:.875rem; color:#b91c1c;">
+        {{ msg }}
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      <div>
+        <label class="input-label" for="motif">
+          Motif de la contestation <span style="color:var(--color-danger);">*</span>
+        </label>
+        <textarea id="motif" name="motif" class="input" rows="5" required
+                  placeholder="Exposez les raisons pour lesquelles cette décision est contestée…"
+                  style="resize:vertical; min-height:120px;"></textarea>
+        <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:.35rem;">
+          Soyez précis : éléments factuels, pièces jointes éventuelles, attentes de la famille.
+        </div>
+      </div>
+
+      <div>
+        <label class="input-label" for="date_depot">Date de dépôt</label>
+        <input type="date" id="date_depot" name="date_depot" class="input"
+               value="{{ today }}" style="max-width:200px;">
+      </div>
+
+      <div class="d-flex gap-3 justify-end" style="margin-top:.5rem;">
+        <a href="{% url 'viescolaire:conseil_detail' decision.conseil.pk %}" class="btn-secondary">Annuler</a>
+        <button type="submit" class="btn-primary">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          Déposer l'appel
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

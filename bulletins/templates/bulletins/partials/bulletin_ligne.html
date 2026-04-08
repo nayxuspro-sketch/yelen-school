@@ -1,0 +1,91 @@
+<tr id="ligne-{{ inscription.pk }}">
+  <td>
+    <div class="fw-semibold">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</div>
+    <div style="font-size:0.75rem; color:var(--color-text-muted);">{{ inscription.eleve.matricule }}</div>
+  </td>
+  <td style="text-align:center;">
+    {% if mg and mg.moyenne is not None %}
+    <span class="fw-semibold" style="color:{% if mg.moyenne >= 10 %}var(--color-primary){% else %}var(--color-danger, #e53e3e){% endif %};">
+      {{ mg.moyenne|floatformat:2 }}
+    </span>
+    {% else %}
+    <span style="color:var(--color-text-muted); font-size:0.8rem;">—</span>
+    {% endif %}
+  </td>
+  <td style="text-align:center; font-size:0.85rem;">
+    {% if mg and mg.rang %}{{ mg.rang }}{% else %}—{% endif %}
+  </td>
+  <td style="text-align:center; font-size:0.85rem;">
+    {% if bulletin %}{{ bulletin.absences_justifiees }}{% else %}0{% endif %}
+  </td>
+  <td style="text-align:center; font-size:0.85rem;">
+    {% if bulletin %}{{ bulletin.absences_non_justifiees }}{% else %}0{% endif %}
+  </td>
+  <td style="text-align:center; font-size:0.85rem;">
+    {% if bulletin %}{{ bulletin.retards }}{% else %}0{% endif %}
+  </td>
+  <td style="font-size:0.8rem; color:var(--color-text-secondary); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+    {% if bulletin and bulletin.appreciation_conseil %}
+    {{ bulletin.appreciation_conseil|truncatechars:60 }}
+    {% else %}
+    <span style="color:var(--color-text-muted); font-style:italic;">Non renseignée</span>
+    {% endif %}
+  </td>
+  <td style="text-align:center;">
+    {% if bulletin and bulletin.est_publie %}
+    <span class="badge badge-success" style="font-size:0.7rem;">Publié</span>
+    {% elif moyenne_calculee %}
+    <span class="badge badge-warning" style="font-size:0.7rem;">Prêt</span>
+    {% else %}
+    <span class="badge badge-default" style="font-size:0.7rem;">Sans moy.</span>
+    {% endif %}
+  </td>
+  <td style="text-align:center;">
+    <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+      <button
+        hx-get="{% url 'bulletins:bulletin_saisir' inscription_id=inscription.pk trimestre_id=trimestre.pk %}"
+        hx-target="#modal-content"
+        hx-trigger="click"
+        onclick="document.getElementById('bulletin-modal').style.display='flex'"
+        class="btn btn-sm btn-outline"
+        title="Saisir absences et appréciation"
+        style="padding:4px 8px;">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+      </button>
+
+      {% if moyenne_calculee %}
+      <button
+        hx-post="{% url 'bulletins:bulletin_publier' inscription_id=inscription.pk trimestre_id=trimestre.pk %}"
+        hx-target="#ligne-{{ inscription.pk }}"
+        hx-swap="outerHTML"
+        class="btn btn-sm {% if bulletin and bulletin.est_publie %}btn-danger{% else %}btn-primary{% endif %}"
+        style="padding:4px 8px; font-size:0.75rem;">
+        {% if bulletin and bulletin.est_publie %}Dépublier{% else %}Publier{% endif %}
+      </button>
+      {% endif %}
+
+      {% if moyenne_calculee %}
+      <a href="{% url 'pedagogie:bulletin_apercu' inscription_id=inscription.pk trimestre_id=trimestre.pk %}"
+         class="btn btn-sm btn-outline"
+         title="Aperçu HTML du bulletin"
+         style="padding:4px 8px; color:var(--color-primary);">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+      </a>
+      <a href="{% url 'pedagogie:bulletin_pdf' inscription_id=inscription.pk trimestre_id=trimestre.pk %}"
+         target="_blank"
+         class="btn btn-sm btn-outline"
+         title="Télécharger le bulletin PDF"
+         style="padding:4px 8px;">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 002 2v14a2 2 0 002 2z"/>
+        </svg>
+      </a>
+      {% endif %}
+    </div>
+  </td>
+</tr>

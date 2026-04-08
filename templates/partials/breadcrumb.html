@@ -1,0 +1,15 @@
+{# Fil d'Ariane - Breadcrumb #}
+{# Utilisation: Inclure ce partial et définir les items #}
+{% if breadcrumb_items %}
+<div class="breadcrumb">
+  <a href="{% url 'core:home' %}" class="breadcrumb-link">Accueil</a>
+  {% for item in breadcrumb_items %}
+    <span class="breadcrumb-sep">/</span>
+    {% if item.url %}
+      <a href="{{ item.url }}" class="breadcrumb-link">{{ item.label }}</a>
+    {% else %}
+      <span class="breadcrumb-current">{{ item.label }}</span>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}

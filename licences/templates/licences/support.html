@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support technique — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--color-bg, #f8fafc); }
+    .licence-card { max-width:560px; width:100%; background:#fff; border-radius:16px; box-shadow:0 4px 32px rgba(0,0,0,.10); padding:48px 40px; text-align:center; }
+    .licence-icon { font-size:52px; margin-bottom:16px; }
+    .licence-title { font-size:1.5rem; font-weight:700; color:#1a2a42; margin-bottom:8px; }
+    .licence-subtitle { color:#64748b; font-size:0.9rem; margin-bottom:28px; }
+    .alert-box { background:#fee2e2; border-left:4px solid #dc2626; border-radius:6px; padding:14px 18px; text-align:left; margin-bottom:24px; font-size:0.85rem; color:#7f1d1d; }
+    .info-box { background:#f1f5f9; border-radius:10px; padding:20px 24px; text-align:left; margin-bottom:24px; }
+    .info-box p { margin:0 0 6px; font-size:0.85rem; color:#374151; }
+    .info-box p:last-child { margin-bottom:0; }
+    .info-label { font-weight:600; color:#1a2a42; }
+    .contacts { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:24px 0; }
+    .contact-card { border:1.5px solid var(--color-border, #e2e8f0); border-radius:10px; padding:16px; text-align:left; }
+    .contact-type { font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; color:#64748b; margin-bottom:4px; }
+    .contact-value { font-weight:600; font-size:0.9rem; color:#1a2a42; }
+    .btn-admin { display:inline-block; background:#1a2a42; color:#fff; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.9rem; }
+    .divider { border:none; border-top:1px solid #e2e8f0; margin:24px 0; }
+    .infos-needed { text-align:left; background:#f0fdf4; border-radius:10px; padding:16px 20px; margin-top:24px; }
+    .infos-needed p { font-size:0.82rem; color:#374151; margin:0 0 4px; }
+    .infos-needed strong { color:#065f46; }
+  </style>
+</head>
+<body>
+<div class="licence-card">
+
+  <div class="licence-icon">🛟</div>
+  <div class="licence-title">Support technique YELEN SCHOOL</div>
+  <div class="licence-subtitle">Notre équipe est disponible pour vous aider.</div>
+
+  {% if licence and licence.statut == 'REVOQUEE' %}
+  <div class="alert-box">
+    Votre licence a été révoquée. Contactez le support en urgence pour comprendre la situation et régulariser votre compte.
+  </div>
+  {% elif not licence %}
+  <div class="alert-box">
+    Aucune licence n'est associée à votre établissement. Contactez-nous pour régulariser votre situation.
+  </div>
+  {% endif %}
+
+  {% if etab %}
+  <div class="info-box">
+    <p><span class="info-label">Établissement :</span> {{ etab.nom }}</p>
+    {% if licence %}
+    <p><span class="info-label">Clé de licence :</span> <code>{{ licence.cle_licence }}</code></p>
+    <p><span class="info-label">Statut :</span> {{ statut_display }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="contacts">
+    <div class="contact-card">
+      <div class="contact-type">Email</div>
+      <div class="contact-value">support@yelengroup.com</div>
+    </div>
+    <div class="contact-card">
+      <div class="contact-type">Téléphone</div>
+      <div class="contact-value">+226 XX XX XX XX</div>
+    </div>
+    <div class="contact-card">
+      <div class="contact-type">Horaires</div>
+      <div class="contact-value">Lun–Ven, 8h–17h</div>
+    </div>
+    <div class="contact-card">
+      <div class="contact-type">Urgences</div>
+      <div class="contact-value">+226 XX XX XX XX</div>
+    </div>
+  </div>
+
+  <div class="infos-needed">
+    <p><strong>Informations à fournir lors de votre contact :</strong></p>
+    <p>· Nom de l'établissement</p>
+    <p>· Clé de licence (si disponible)</p>
+    <p>· Description du problème rencontré</p>
+  </div>
+
+  <hr class="divider">
+
+  <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+    {% if is_superuser %}
+    <a href="/licences/" class="btn-admin">Gérer les licences</a>
+    {% endif %}
+    <a href="mailto:support@yelengroup.com" class="btn-admin" style="background:var(--color-primary,#00a86b);">Envoyer un email</a>
+    <a href="{% url 'accounts:logout' %}" class="btn-admin" style="background:#64748b;">Se déconnecter</a>
+  </div>
+
+</div>
+</body>
+</html>

@@ -188,6 +188,12 @@
                     <p class="text-sm font-medium text-white truncate">{{ user.get_full_name|default:user.username }}</p>
                     <p class="text-xs text-slate-500 truncate">{{ user.email }}</p>
                 </div>
+                <a href="{% url 'licences:guide' %}" title="Aide / Guide"
+                   class="text-slate-500 hover:text-green-400 transition-colors flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.02 2.788-1.12.143-2.15.672-2.838 1.56-.46.594-.722 1.315-.722 2.152 0 1.65 1.35 3 3 3 1.5 0 2.77-.98 3.06-2.28"/>
+                    </svg>
+                </a>
                 <a href="/accounts/logout/" title="Déconnexion"
                    class="text-slate-500 hover:text-red-400 transition-colors flex-shrink-0">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,13 +221,28 @@
 
         <main class="flex-1 p-6 lg:p-8">
 
-            <!-- Messages flash -->
+            <!-- Messages flash (toast) -->
             {% if messages %}
-            <div class="mb-6 space-y-2">
+            <div id="django-messages" style="
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                max-width: 400px;
+              ">
                 {% for message in messages %}
-                <div class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm
-                    {% if message.tags == 'success' %}border{% elif message.tags == 'error' %}border{% elif message.tags == 'warning' %}border{% else %}border{% endif %}"
-                    style="{% if message.tags == 'success' %}background:rgba(0,168,107,0.1); color:#00A86B; border-color:rgba(0,168,107,0.25);{% elif message.tags == 'error' %}background:rgba(239,68,68,0.1); color:#F87171; border-color:rgba(239,68,68,0.25);{% elif message.tags == 'warning' %}background:rgba(245,166,35,0.1); color:#F5A623; border-color:rgba(245,166,35,0.25);{% else %}background:rgba(59,130,246,0.1); color:#60A5FA; border-color:rgba(59,130,246,0.25);{% endif %}">
+                <div class="animate-fade-up shadow-lg"
+                     style="
+                       background: {% if message.tags == 'success' %}#dcfce7{% elif message.tags == 'error' %}#fee2e2{% elif message.tags == 'warning' %}#fef9c3{% else %}#e0f2fe{% endif %};
+                       border: 1px solid {% if message.tags == 'success' %}#22c55e{% elif message.tags == 'error' %}#ef4444{% elif message.tags == 'warning' %}#eab308{% else %}#3b82f6{% endif %};
+                       border-radius: 8px;
+                       padding: 1rem 1.25rem;
+                       color: #1f2937;
+                       font-weight: 500;
+                     ">
                     {{ message }}
                 </div>
                 {% endfor %}
@@ -278,6 +299,16 @@
             var m = document.getElementById('modal-overlay');
             if (m) m.remove();
         });
+
+        // Auto-disparition messages Django (5s)
+        var msgs = document.getElementById('django-messages');
+        if (msgs) {
+            setTimeout(function () {
+                msgs.style.transition = 'opacity 0.5s ease';
+                msgs.style.opacity = '0';
+                setTimeout(function () { msgs.remove(); }, 500);
+            }, 5000);
+        }
     </script>
 
     {% block extra_js %}{% endblock %}

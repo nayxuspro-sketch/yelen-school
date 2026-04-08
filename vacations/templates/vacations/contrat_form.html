@@ -1,0 +1,104 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'vacations:contrat_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{{ title }}</h1>
+      <p class="page-subtitle">Créer un nouveau contrat de vacation</p>
+    </div>
+  </div>
+</div>
+
+<div class="card animate-fade-up" style="max-width:640px;">
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="input-label" for="id_personnel">Vacataire <span class="text-danger">*</span></label>
+        {{ form.personnel }}
+        {% if form.personnel.errors %}
+        <div class="input-error">{{ form.personnel.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="input-label" for="id_annee_scolaire">Année scolaire <span class="text-danger">*</span></label>
+        {{ form.annee_scolaire }}
+        {% if form.annee_scolaire.errors %}
+        <div class="input-error">{{ form.annee_scolaire.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="input-label" for="id_enseignement">Enseignement (matière × classe)</label>
+        {{ form.enseignement }}
+        {% if form.enseignement.errors %}
+        <div class="input-error">{{ form.enseignement.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+        <div class="form-group">
+          <label class="input-label" for="id_taux_horaire">Taux horaire (FCFA) <span class="text-danger">*</span></label>
+          {{ form.taux_horaire }}
+          {% if form.taux_horaire.errors %}
+          <div class="input-error">{{ form.taux_horaire.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="input-label" for="id_heures_hebdo_prevues">Heures/semaine <span class="text-danger">*</span></label>
+          {{ form.heures_hebdo_prevues }}
+          {% if form.heures_hebdo_prevues.errors %}
+          <div class="input-error">{{ form.heures_hebdo_prevues.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+        <div class="form-group">
+          <label class="input-label" for="id_date_debut">Date de début <span class="text-danger">*</span></label>
+          {{ form.date_debut }}
+          {% if form.date_debut.errors %}
+          <div class="input-error">{{ form.date_debut.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="input-label" for="id_date_fin">Date de fin</label>
+          {{ form.date_fin }}
+          {% if form.date_fin.errors %}
+          <div class="input-error">{{ form.date_fin.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label" style="display:flex; align-items:center; gap:var(--space-2);">
+          {{ form.actif }}
+          <span>Contrat actif</span>
+        </label>
+        {% if form.actif.errors %}
+        <div class="input-error">{{ form.actif.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="d-flex gap-3" style="margin-top:var(--space-5);">
+        <button type="submit" class="btn-primary">Créer le contrat</button>
+        <a href="{% url 'vacations:contrat_list' %}" class="btn-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

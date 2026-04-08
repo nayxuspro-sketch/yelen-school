@@ -1,0 +1,201 @@
+{% extends "core/base.html" %}
+{% block title %}Scanner QR — {{ appel.classe.nom }}{% endblock %}
+
+{% block content %}
+<div style="max-width:480px; margin:0 auto;">
+
+  <!-- En-tête -->
+  <div class="page-header" style="margin-bottom:1rem;">
+    <div class="d-flex align-center gap-3">
+      <a href="{% url 'presences:appel_saisie' appel.pk %}" class="btn-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="page-title" style="font-size:1.1rem;">Pointage QR — {{ appel.classe.nom }}</h1>
+        <p class="page-subtitle" style="font-size:.8rem;">{{ appel.date|date:"d/m/Y" }}{% if appel.matiere %} · {{ appel.matiere.nom }}{% endif %}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compteur -->
+  <div class="card mb-3" style="padding:.75rem 1.25rem; border-color:var(--color-primary); display:flex; align-items:center; justify-content:space-between;">
+    <span style="font-size:.85rem; color:var(--color-text-muted);">Présents pointés</span>
+    <span style="font-weight:700; font-size:1.4rem; color:var(--color-primary);">
+      <span id="nb-presents">{{ nb_presents }}</span>
+      <span style="font-size:.9rem; font-weight:400; color:var(--color-text-muted);">/ {{ nb_total }}</span>
+    </span>
+  </div>
+
+  <!-- Zone caméra -->
+  <div class="card mb-3" style="padding:0; overflow:hidden; border-radius:14px; position:relative;">
+    <video id="qr-video" autoplay playsinline muted
+           style="width:100%; display:block; max-height:320px; object-fit:cover; background:#111;"></video>
+    <!-- Réticule -->
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+      <div style="width:200px; height:200px; border:3px solid rgba(0,168,107,.8); border-radius:12px;
+                  box-shadow:0 0 0 4000px rgba(0,0,0,.35);"></div>
+    </div>
+    <!-- Message navigateur non supporté -->
+    <div id="unsupported-msg" style="display:none; padding:1.5rem; text-align:center; color:#f87171; font-size:.9rem;">
+      Votre navigateur ne supporte pas le scan QR. Utilisez Chrome sur Android ou Safari 17+ sur iOS.
+    </div>
+  </div>
+
+  <!-- Feedback dernier scan -->
+  <div id="scan-feedback" style="min-height:64px; margin-bottom:.75rem;"></div>
+
+  <!-- Historique des pointages de cette session -->
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="padding:.6rem 1rem; border-bottom:1px solid var(--color-border); display:flex; align-items:center; justify-content:space-between;">
+      <span style="font-weight:600; font-size:.85rem;">Cette session</span>
+      <span id="session-count" style="font-size:.8rem; color:var(--color-text-muted);">0 pointage(s)</span>
+    </div>
+    <ul id="scan-list" style="list-style:none; margin:0; padding:0; max-height:260px; overflow-y:auto;"></ul>
+    <div id="scan-empty" style="padding:1rem; text-align:center; font-size:.82rem; color:var(--color-text-muted);">
+      Scannez un QR code pour commencer
+    </div>
+  </div>
+
+</div>
+
+<style>
+@keyframes flash-green { 0%,100%{background:transparent} 50%{background:rgba(0,168,107,.15)} }
+@keyframes flash-red   { 0%,100%{background:transparent} 50%{background:rgba(239,68,68,.15)} }
+.flash-ok  { animation: flash-green .5s ease; }
+.flash-err { animation: flash-red .5s ease; }
+</style>
+
+<script>
+(function () {
+  const APPEL_ID   = '{{ appel.pk }}';
+  const API_URL    = '{% url "presences:api_qr_pointer" appel.pk %}';
+  const CSRF_TOKEN = '{{ csrf_token }}';
+
+  const video       = document.getElementById('qr-video');
+  const feedback    = document.getElementById('scan-feedback');
+  const scanList    = document.getElementById('scan-list');
+  const scanEmpty   = document.getElementById('scan-empty');
+  const sessionCnt  = document.getElementById('session-count');
+  const nbPresents  = document.getElementById('nb-presents');
+
+  let scanning  = true;   // anti-double-scan
+  let cooldown  = false;
+  let sessionNb = 0;
+
+  /* ── Affichage feedback ── */
+  function showFeedback(nom, message, ok, dejaPresent) {
+    const couleur  = ok ? (dejaPresent ? '#92400e' : '#065f46') : '#991b1b';
+    const bg       = ok ? (dejaPresent ? '#fffbeb' : '#f0fdf4') : '#fef2f2';
+    const border   = ok ? (dejaPresent ? '#fde68a' : '#bbf7d0') : '#fecaca';
+    const icone    = ok ? (dejaPresent ? '⚠' : '✓') : '✗';
+    feedback.innerHTML = `
+      <div class="card" style="padding:.75rem 1rem; border-color:${border}; background:${bg}; display:flex; align-items:center; gap:.75rem;">
+        <span style="font-size:1.5rem; flex-shrink:0;">${icone}</span>
+        <div>
+          <div style="font-weight:700; color:${couleur}; font-size:.95rem;">${nom || '—'}</div>
+          <div style="font-size:.8rem; color:${couleur}; opacity:.8;">${message}</div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Ajouter à l'historique session ── */
+  function addToList(nom, statut, dejaPresent) {
+    scanEmpty.style.display = 'none';
+    sessionNb++;
+    sessionCnt.textContent = sessionNb + ' pointage(s)';
+    const li = document.createElement('li');
+    li.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;border-bottom:1px solid var(--color-border);font-size:.85rem;';
+    li.innerHTML = `
+      <span style="font-weight:600;">${nom}</span>
+      <span style="font-size:.75rem; padding:.15rem .5rem; border-radius:99px;
+        background:${dejaPresent ? '#fef3c7' : '#dcfce7'}; color:${dejaPresent ? '#92400e' : '#166534'}; font-weight:600;">
+        ${dejaPresent ? 'Déjà présent' : 'Pointé ✓'}
+      </span>`;
+    scanList.insertBefore(li, scanList.firstChild);
+  }
+
+  /* ── Appel API ── */
+  async function pointer(matricule) {
+    if (cooldown) return;
+    cooldown = true;
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({ matricule }),
+      });
+      const data = await resp.json();
+      showFeedback(data.nom || matricule, data.message, data.ok, data.deja_present);
+      if (data.ok) {
+        addToList(data.nom, data.statut, data.deja_present);
+        if (!data.deja_present && data.nb_presents !== undefined) {
+          nbPresents.textContent = data.nb_presents;
+        }
+        document.body.classList.add('flash-ok');
+        setTimeout(() => document.body.classList.remove('flash-ok'), 500);
+      } else {
+        document.body.classList.add('flash-err');
+        setTimeout(() => document.body.classList.remove('flash-err'), 500);
+      }
+    } catch (e) {
+      showFeedback('', 'Erreur réseau — réessayez', false, false);
+    }
+    // Anti-double scan : pause 2s avant prochain scan
+    setTimeout(() => { cooldown = false; }, 2000);
+  }
+
+  /* ── Démarrage scanner ── */
+  async function startScanner() {
+    // Vérifier support BarcodeDetector
+    if (!('BarcodeDetector' in window)) {
+      document.getElementById('unsupported-msg').style.display = 'block';
+      video.style.display = 'none';
+      return;
+    }
+
+    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+    } catch (err) {
+      document.getElementById('unsupported-msg').style.display = 'block';
+      document.getElementById('unsupported-msg').textContent =
+        'Accès à la caméra refusé. Autorisez la caméra dans les paramètres du navigateur.';
+      video.style.display = 'none';
+      return;
+    }
+
+    video.srcObject = stream;
+    await video.play();
+
+    async function tick() {
+      if (!scanning) return;
+      if (video.readyState >= video.HAVE_ENOUGH_DATA && !cooldown) {
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0) {
+            const raw = barcodes[0].rawValue.trim();
+            if (raw) await pointer(raw);
+          }
+        } catch (_) {}
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  startScanner();
+
+  // Arrêter la caméra en quittant la page
+  window.addEventListener('beforeunload', () => {
+    scanning = false;
+    if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+  });
+})();
+</script>
+{% endblock %}

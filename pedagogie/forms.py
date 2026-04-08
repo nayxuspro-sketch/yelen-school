@@ -146,8 +146,25 @@ class NoteForm(forms.ModelForm):
             'observation': forms.TextInput(attrs={'placeholder': 'Observation facultative'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, evaluation=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._evaluation = evaluation
         self.fields['valeur'].widget.attrs.update({'class': 'input input-note-val'})
         self.fields['observation'].widget.attrs.update({'class': 'input input-note-obs'})
         self.fields['statut'].widget.attrs.update({'class': 'input select input-note-statut'})
+        if evaluation:
+            self.fields['valeur'].widget.attrs['max'] = float(evaluation.bareme)
+            self.fields['valeur'].widget.attrs['placeholder'] = f"/ {evaluation.bareme}"
+
+    def clean_valeur(self):
+        valeur = self.cleaned_data.get('valeur')
+        if valeur is None:
+            return valeur
+        if valeur < 0:
+            raise forms.ValidationError("La note ne peut pas être négative.")
+        evaluation = self._evaluation or (self.instance.evaluation if self.instance and self.instance.pk else None)
+        if evaluation and valeur > evaluation.bareme:
+            raise forms.ValidationError(
+                f"La note {valeur} dépasse le barème maximum de {evaluation.bareme}."
+            )
+        return valeur

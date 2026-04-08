@@ -53,3 +53,14 @@ bash:
 ## Ouvrir psql dans le conteneur db
 psql:
 	$(COMPOSE) exec db psql -U yelen_user -d yelen_school_db
+
+## Afficher l'IP locale (pour accès depuis le téléphone)
+ip:
+	@echo "Adresse locale :"; \
+	ip route get 1 2>/dev/null | awk '{print $$7; exit}' || \
+	ipconfig 2>/dev/null | grep -A1 "LAN sans fil" | grep "IPv4" | awk '{print $$NF}'
+
+## Exporter le certificat auto-signé (à installer sur le téléphone)
+export-cert:
+	$(COMPOSE) cp nginx:/etc/nginx/certs/yelen.crt ./yelen-dev.crt
+	@echo "Certificat exporté : yelen-dev.crt — installez-le sur votre téléphone"

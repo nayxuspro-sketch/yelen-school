@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  /* ── Base ────────────────────────────────────────────────────────────── */
+  @page {
+    size: A4;
+    margin: 1.2cm 1.5cm 1.5cm 1.5cm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'DejaVu Serif', 'Times New Roman', serif;
+    font-size: 10.5pt;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+  }
+
+  /* ── Entête ──────────────────────────────────────────────────────────── */
+  .entete-wrapper {
+    padding-bottom: 4pt;
+    margin-bottom: 4pt;
+  }
+
+  /* Agrandir le logo et le cachet dans le contexte circulaire */
+  .entete-wrapper table { border-collapse: collapse; }
+  .entete-wrapper table tr td:first-child { width: 110px; }
+  .entete-wrapper table tr td:first-child img {
+    width: 100px;
+    height: 100px;
+    display: block;
+    object-fit: contain;
+  }
+  .entete-wrapper table tr td:last-child { width: 100px; }
+  .entete-wrapper table tr td:last-child img {
+    width: 90px;
+    height: 90px;
+    display: block;
+    object-fit: contain;
+    margin-left: auto;
+  }
+  /* Nom de l'établissement plus grand */
+  .entete-wrapper table tr td:nth-child(2) p:first-child {
+    font-size: 15pt;
+  }
+
+  /* ── Bandeau titre ───────────────────────────────────────────────────── */
+  .bandeau-titre {
+    background: #1a1a1a;
+    color: #fff;
+    display: table;
+    width: 100%;
+    margin: 4pt 0 3pt;
+  }
+  .bandeau-titre-gauche {
+    display: table-cell;
+    vertical-align: middle;
+    padding: 5pt 12pt;
+    font-size: 13pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    width: 60%;
+  }
+  .bandeau-titre-droite {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+    padding: 5pt 12pt;
+    font-size: 8.5pt;
+    font-style: italic;
+    color: #ccc;
+    letter-spacing: 0;
+    width: 40%;
+    border-left: 1px solid rgba(255,255,255,0.25);
+  }
+
+  /* ── Bloc méta (diffusion + date) ────────────────────────────────────── */
+  .bloc-meta {
+    display: table;
+    width: 100%;
+    margin: 8pt 0 4pt;
+    border: 1px solid #ddd;
+  }
+  .bloc-meta-diffusion {
+    display: table-cell;
+    vertical-align: top;
+    padding: 7pt 10pt;
+    width: 60%;
+    border-right: 1px solid #ddd;
+  }
+  .bloc-meta-date {
+    display: table-cell;
+    vertical-align: top;
+    padding: 7pt 10pt;
+    width: 40%;
+    background: #f8f8f8;
+  }
+  .meta-lbl {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #888;
+    margin-bottom: 2pt;
+  }
+  .meta-val {
+    font-size: 10pt;
+    color: #111;
+    line-height: 1.5;
+  }
+  .meta-sep { height: 6pt; }
+
+  /* ── Objet ───────────────────────────────────────────────────────────── */
+  .objet-zone {
+    margin: 8pt 0 6pt;
+    display: table;
+    width: 100%;
+  }
+  .objet-accent {
+    display: table-cell;
+    width: 4pt;
+    background: #1a1a1a;
+  }
+  .objet-content {
+    display: table-cell;
+    padding: 6pt 10pt;
+    background: #f2f2f2;
+    vertical-align: middle;
+  }
+  .objet-etiq {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #777;
+    margin-bottom: 2pt;
+  }
+  .objet-texte {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #111;
+  }
+
+  /* ── Titre de la circulaire ──────────────────────────────────────────── */
+  .titre-circulaire {
+    font-size: 12pt;
+    font-weight: bold;
+    text-align: center;
+    margin: 8pt 0 6pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── Séparateur ──────────────────────────────────────────────────────── */
+  .sep {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 6pt 0;
+  }
+
+  /* ── Corps ───────────────────────────────────────────────────────────── */
+  .corps {
+    font-size: 10.5pt;
+    line-height: 1.65;
+    text-align: justify;
+    margin: 6pt 0;
+  }
+  .corps p { margin: 0 0 6pt 0; }
+
+  /* ── Signature (override du partial) ────────────────────────────────── */
+  .sig-zone          { margin-top: 18pt; text-align: right; page-break-inside: avoid; }
+  .sig-date          { font-size: 9.5pt; color: #222; }
+  .sig-fonction      { font-size: 10pt; color: #111; margin-top: 0.8cm; }
+  .sig-name          { font-size: 11pt; font-weight: bold; color: #000; margin-top: 1.4cm; line-height: 1.3; }
+  .sig-honors        { font-size: 8pt; font-style: italic; color: #444; margin-top: 2pt; }
+
+  /* ── Numéro de document ──────────────────────────────────────────────── */
+  .numero-doc {
+    margin-top: 6pt;
+    font-size: 7.5pt;
+    color: #bbb;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Entête établissement -->
+  <div class="entete-wrapper">
+    {% include "documents/pdf/partials/entete.html" %}
+  </div>
+
+  <!-- Bandeau titre + référence -->
+  <table class="bandeau-titre" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="bandeau-titre-gauche">Circulaire</td>
+      <td class="bandeau-titre-droite">{% if ref_circ %}Réf.&nbsp;: {{ ref_circ }}{% endif %}</td>
+    </tr>
+  </table>
+
+  <!-- Bloc métadonnées -->
+  <div class="bloc-meta">
+    <div class="bloc-meta-diffusion">
+      <div class="meta-lbl">Destinataires</div>
+      <div class="meta-val">
+        {% if classes_sel %}
+          {% for cl in classes_sel %}{{ cl.nom }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% else %}
+          Tout le personnel et les familles de l'établissement
+        {% endif %}
+      </div>
+      <div class="meta-sep"></div>
+      <div class="meta-lbl">Année scolaire</div>
+      <div class="meta-val">{{ annee_scolaire }}</div>
+    </div>
+    <div class="bloc-meta-date">
+      {% if date_circulaire %}
+      <div class="meta-lbl">Date</div>
+      <div class="meta-val">{{ date_circulaire }}</div>
+      <div class="meta-sep"></div>
+      {% endif %}
+      {% if ref_circ %}
+      <div class="meta-lbl">Numéro</div>
+      <div class="meta-val">{{ ref_circ }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Objet -->
+  {% if objet %}
+  <div class="objet-zone">
+    <div class="objet-accent"></div>
+    <div class="objet-content">
+      <div class="objet-etiq">Objet</div>
+      <div class="objet-texte">{{ objet }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <hr class="sep">
+
+  <!-- Titre de la circulaire -->
+  {% if titre %}
+  <div class="titre-circulaire">{{ titre }}</div>
+  {% endif %}
+
+  <!-- Corps -->
+  <div class="corps">
+    {{ corps|linebreaksbr }}
+  </div>
+
+  <!-- Signature -->
+  {% include "documents/pdf/partials/signataire_bloc.html" %}
+
+  {% if ref_circ %}
+  <div class="numero-doc">N°&nbsp;{{ ref_circ }}</div>
+  {% endif %}
+
+</body>
+</html>

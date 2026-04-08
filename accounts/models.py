@@ -114,6 +114,27 @@ class User(AbstractUser, BaseModel):
         default='',
         verbose_name='Téléphone',
     )
+    eleves_lies = models.ManyToManyField(
+        'inscriptions.Eleve',
+        blank=True,
+        related_name='utilisateurs_lies',
+        verbose_name='Élèves liés',
+        help_text='Élèves associés à ce compte (enfants pour un parent, soi-même pour un élève).',
+    )
+
+    # ── Double authentification (TOTP) ──
+    totp_secret = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        verbose_name='Secret TOTP',
+        help_text='Secret base32 pour la double authentification (TOTP).',
+    )
+    totp_enabled = models.BooleanField(
+        default=False,
+        verbose_name='2FA activée',
+        help_text='Authentification à deux facteurs via application TOTP.',
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
@@ -153,3 +174,9 @@ class User(AbstractUser, BaseModel):
     def is_secretaire(self) -> bool:
         """L'utilisateur a-t-il le rôle Secrétaire ?"""
         return self.role == RoleChoices.SECRETAIRE
+
+    def is_parent(self) -> bool:
+        return self.role == RoleChoices.PARENT
+
+    def is_eleve(self) -> bool:
+        return self.role == RoleChoices.ELEVE

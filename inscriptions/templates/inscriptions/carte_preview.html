@@ -1,0 +1,284 @@
+{% extends "core/base.html" %}
+
+{% block title %}Carte Scolaire — {{ eleve.nom }} {{ eleve.prenom }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Carte Scolaire</h1>
+      <p class="page-subtitle">{{ eleve.nom|upper }} {{ eleve.prenom }} · {{ eleve.matricule }}</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'inscriptions:eleve_carte' eleve.pk %}?format=pdf" target="_blank" class="btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      Télécharger PDF
+    </a>
+    {% if inscription %}
+    <a href="{% url 'inscriptions:classe_cartes_pdf' inscription.classe.pk %}?annee={{ inscription.annee_scolaire.pk }}" target="_blank" class="btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Toute la classe
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="animate-fade-up delay-1" style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
+
+  <!-- ── Aperçu Recto ── -->
+  <div>
+    <p class="text-muted text-sm" style="margin-bottom:0.5rem; font-size:0.75rem;">Recto — 85,6 × 54 mm</p>
+
+    <!-- RECTO -->
+    <div style="
+      width:342px; height:216px;
+      border-radius:12px; overflow:hidden;
+      box-shadow:0 8px 32px rgba(0,0,0,0.30);
+      display:flex; flex-direction:column;
+      font-family:'Outfit', sans-serif;
+      position:relative;
+    ">
+      <!-- Accent gauche -->
+      <div style="position:absolute; left:0; top:0; bottom:0; width:5px;
+                  background:linear-gradient(to bottom,#00A86B,#0A1628); z-index:2;"></div>
+
+      <!-- Header -->
+      <div style="background:#0A1628; padding:8px 12px 7px 17px;
+                  display:flex; align-items:center; gap:8px; flex-shrink:0;">
+        <div style="width:32px; height:32px; flex-shrink:0; border-radius:6px; overflow:hidden;
+                    display:flex; align-items:center; justify-content:center;">
+          {% if logo_url %}
+            <img src="{{ logo_url }}" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+          {% elif etab_logo_url %}
+            <img src="{{ etab_logo_url }}" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+          {% else %}
+            <div style="background:#00A86B; width:100%; height:100%; border-radius:6px;
+                        display:flex; align-items:center; justify-content:center;">
+              <svg width="18" height="18" fill="white" viewBox="0 0 20 20">
+                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+              </svg>
+            </div>
+          {% endif %}
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:0.68rem; font-weight:700; color:#E8EDF5;
+                      text-transform:uppercase; letter-spacing:0.3px; line-height:1.2;
+                      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            {% if identite %}{{ identite.nom_etablissement }}{% elif etablissement %}{{ etablissement.nom }}{% else %}Établissement{% endif %}
+          </div>
+          <div style="font-size:0.5rem; color:#00A86B; margin-top:1px;
+                      letter-spacing:0.5px; text-transform:uppercase;">
+            {% if identite %}{{ identite.get_type_etablissement_display }}{% else %}Établissement scolaire{% endif %}
+          </div>
+        </div>
+        <div style="font-size:0.5rem; color:#475569; text-align:right; white-space:nowrap;">
+          CARTE SCOLAIRE
+        </div>
+      </div>
+
+      <!-- Corps -->
+      <div style="flex:1; display:flex; padding:8px 12px 8px 17px; gap:10px; background:#fff;">
+
+        <!-- Photo -->
+        <div style="flex-shrink:0;">
+          {% if eleve.photo %}
+            <img src="{{ eleve.photo.url }}" alt="Photo"
+                 style="width:66px; height:82px; object-fit:cover; border-radius:5px; border:1px solid #E2E8F0;">
+          {% else %}
+            <div style="width:66px; height:82px; background:linear-gradient(135deg,#F1F5F9,#E2E8F0);
+                        border-radius:5px; border:1px solid #E2E8F0;
+                        display:flex; align-items:center; justify-content:center;
+                        font-size:1.4rem; font-weight:700; color:#94A3B8;">
+              {{ eleve.prenom|first|upper }}{{ eleve.nom|first|upper }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Infos -->
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div>
+            <div style="font-size:0.85rem; font-weight:700; color:#0A1628;
+                        text-transform:uppercase; letter-spacing:0.3px; line-height:1.2;">
+              {{ eleve.nom|upper }}
+            </div>
+            <div style="font-size:0.72rem; color:#334155; margin-top:1px;">{{ eleve.prenom }}</div>
+          </div>
+
+          {% if inscription %}
+          <div style="font-size:0.58rem; color:#00A86B; font-weight:700;
+                      text-transform:uppercase; letter-spacing:0.4px;
+                      padding:2px 7px; background:rgba(0,168,107,0.10);
+                      border-left:3px solid #00A86B; border-radius:0 4px 4px 0;
+                      display:inline-block;">
+            {{ inscription.classe.nom }}
+          </div>
+          {% endif %}
+
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            {% if eleve.date_naissance %}
+            <div style="font-size:0.52rem; color:#64748B;">
+              Né{{ eleve.genre|yesno:",e," }} le {{ eleve.date_naissance|date:"d/m/Y" }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="background:#F8FAFC; border-top:1px solid #E2E8F0;
+                  padding:4px 12px 4px 17px;
+                  display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+        <div>
+          <div style="font-size:0.45rem; color:#94A3B8; text-transform:uppercase; letter-spacing:0.5px;">Matricule</div>
+          <div style="font-size:0.58rem; color:#334155; font-family:monospace;">{{ eleve.matricule }}</div>
+        </div>
+        {% if inscription %}
+        <div style="font-size:0.52rem; color:#94A3B8; text-align:right;">
+          {{ inscription.annee_scolaire.libelle }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- VERSO -->
+    <p class="text-muted text-sm" style="margin:1rem 0 0.5rem; font-size:0.75rem;">Verso</p>
+    <div style="
+      width:342px; height:216px;
+      border-radius:12px; overflow:hidden;
+      box-shadow:0 8px 32px rgba(0,0,0,0.30);
+      display:flex; flex-direction:column;
+      font-family:'Outfit', sans-serif;
+      background:#0A1628; position:relative;
+    ">
+      <div style="position:absolute; right:0; top:0; bottom:0; width:5px;
+                  background:linear-gradient(to bottom,#0A1628,#00A86B); z-index:2;"></div>
+
+      <div style="flex:1; padding:14px 20px 14px 14px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:0.55rem; font-weight:700; color:#00A86B;
+                    text-transform:uppercase; letter-spacing:0.6px; border-bottom:1px solid #1e3a5f;
+                    padding-bottom:5px;">
+          Informations
+        </div>
+
+        <div style="display:grid; grid-template-columns:auto 1fr; gap:3px 8px; font-size:0.52rem;">
+          {% if identite and identite.adresse_complete %}
+          <span style="color:#64748B;">Adresse</span>
+          <span style="color:#CBD5E1;">{{ identite.adresse_complete }}</span>
+          {% elif etablissement and etablissement.adresse %}
+          <span style="color:#64748B;">Adresse</span>
+          <span style="color:#CBD5E1;">{{ etablissement.adresse }}</span>
+          {% endif %}
+
+          {% if identite and identite.telephone %}
+          <span style="color:#64748B;">Tél.</span>
+          <span style="color:#CBD5E1;">{{ identite.telephone }}</span>
+          {% elif etablissement and etablissement.telephone %}
+          <span style="color:#64748B;">Tél.</span>
+          <span style="color:#CBD5E1;">{{ etablissement.telephone }}</span>
+          {% endif %}
+
+          {% if eleve.telephone_urgence %}
+          <span style="color:#64748B;">Urgence</span>
+          <span style="color:#CBD5E1;">{{ eleve.telephone_urgence }}</span>
+          {% endif %}
+        </div>
+
+        <div style="margin-top:auto;">
+          <div style="font-size:0.5rem; color:#475569; font-style:italic; line-height:1.4;">
+            Cette carte est la propriété de l'établissement. En cas de perte, la signaler à l'administration.
+          </div>
+          {% if inscription %}
+          <div style="margin-top:5px; font-size:0.52rem; color:#00A86B; font-weight:600;">
+            Valable pour l'année scolaire {{ inscription.annee_scolaire.libelle }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Signature -->
+      <div style="background:#071020; padding:6px 20px 6px 14px;
+                  display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+        <div style="font-size:0.48rem; color:#475569;">Cachet et signature</div>
+        <div style="width:70px; height:20px; border-bottom:1px solid #1e3a5f;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Fiche récapitulative ── -->
+  <div class="card animate-fade-up delay-2" style="flex:1; min-width:280px; max-width:420px;">
+    <div class="card-header">
+      <h2 class="card-title">Informations sur la carte</h2>
+    </div>
+    <div class="card-body">
+      <dl style="display:grid; grid-template-columns:140px 1fr; gap:0.5rem 1rem; font-size:0.875rem;">
+        <dt class="text-muted">Nom complet</dt>
+        <dd class="fw-medium">{{ eleve.nom|upper }} {{ eleve.prenom }}</dd>
+        <dt class="text-muted">Matricule</dt>
+        <dd style="font-family:monospace;">{{ eleve.matricule }}</dd>
+        {% if eleve.date_naissance %}
+        <dt class="text-muted">Date de naissance</dt>
+        <dd>{{ eleve.date_naissance|date:"d/m/Y" }}</dd>
+        {% endif %}
+        {% if inscription %}
+        <dt class="text-muted">Classe</dt>
+        <dd>{{ inscription.classe.nom }}</dd>
+        <dt class="text-muted">Année scolaire</dt>
+        <dd>{{ inscription.annee_scolaire.libelle }}</dd>
+        {% endif %}
+        <dt class="text-muted">Photo</dt>
+        <dd>
+          {% if eleve.photo %}
+            <span class="badge badge-success">Disponible</span>
+          {% else %}
+            <span class="badge badge-warning">Initiales utilisées</span>
+          {% endif %}
+        </dd>
+      </dl>
+
+      {% if not eleve.photo %}
+      <div style="margin-top:1rem; padding:0.75rem; background:rgba(245,166,35,0.1);
+                  border:1px solid rgba(245,166,35,0.3); border-radius:var(--radius);
+                  font-size:0.8rem; color:var(--color-text-secondary);">
+        Aucune photo — les initiales seront affichées.
+        <a href="{% url 'inscriptions:eleve_update' eleve.pk %}" class="text-primary">Ajouter une photo</a>.
+      </div>
+      {% endif %}
+
+      <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--color-border);
+                  display:flex; flex-direction:column; gap:0.5rem;">
+        <a href="{% url 'inscriptions:eleve_carte' eleve.pk %}?format=pdf" target="_blank"
+           class="btn-primary" style="justify-content:center;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          Télécharger la carte (PDF)
+        </a>
+        {% if inscription %}
+        <a href="{% url 'inscriptions:classe_cartes_pdf' inscription.classe.pk %}?annee={{ inscription.annee_scolaire.pk }}"
+           target="_blank" class="btn-secondary" style="justify-content:center;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+          </svg>
+          Imprimer toute la classe
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

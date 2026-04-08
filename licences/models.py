@@ -218,7 +218,7 @@ class Licence(BaseModel):
     
     # Informations de la licence
     cle_licence = models.CharField(
-        max_length=19,  # Format: YELEN-XXXX-XXXX-XXXX
+        max_length=20,  # Format: YELEN-XXXX-XXXX-XXXX (20 chars)
         unique=True,
         editable=False,
         verbose_name=_("Clé de licence"),

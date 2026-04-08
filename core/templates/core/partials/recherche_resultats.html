@@ -1,0 +1,17 @@
+{% if resultats %}
+<div class="sb-search-results" role="listbox">
+  {% for groupe in resultats %}
+  <div class="sb-search-group">
+    <div class="sb-search-cat">{{ groupe.categorie }}</div>
+    {% for item in groupe.items %}
+    <a href="{{ item.url }}" class="sb-search-item">
+      <span class="sb-search-label">{{ item.label }}</span>
+      {% if item.sub %}<span class="sb-search-sub">{{ item.sub }}</span>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% elif q|length >= 2 %}
+<div class="sb-search-empty">Aucun résultat pour « {{ q }} »</div>
+{% endif %}

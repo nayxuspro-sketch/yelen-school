@@ -16,6 +16,28 @@
       <p class="page-subtitle">{{ appel.date|date:"l d F Y" }}{% if appel.matiere %} · {{ appel.matiere.nom }}{% endif %}</p>
     </div>
   </div>
+  {% if not appel.est_clos %}
+  <div class="d-flex gap-2">
+    <a href="{% url 'presences:qr_scanner' appel.pk %}"
+       class="btn-primary"
+       title="Pointer les élèves par scan QR-code (mobile/tablette)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 4h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+      </svg>
+      Scanner QR
+    </a>
+    <a href="{% url 'presences:cartes_qr_classe' appel.classe.pk %}"
+       class="btn-secondary" target="_blank"
+       title="Générer et imprimer les cartes QR de la classe">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Cartes QR
+    </a>
+  </div>
+  {% endif %}
 </div>
 
 <div class="stats-grid mb-4 animate-fade-up delay-1" style="grid-template-columns:repeat(3,1fr);">

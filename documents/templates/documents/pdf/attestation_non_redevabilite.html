@@ -1,0 +1,125 @@
+{% load signataire_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  body    { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 11pt; color: #1a1a1a; margin: 0; padding: 0; }
+  .page   { padding: 2cm; }
+
+  .titre-doc { text-align: center; margin: 0.9cm 0 0.6cm; }
+  .titre-doc h1 {
+    font-size: 14pt; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;
+    border-bottom: 2px solid #1a1a1a; display: inline-block; padding-bottom: 4px;
+  }
+  .titre-doc .annee { font-size: 9pt; color: #555; margin-top: 5px; }
+
+  .corps { line-height: 2; font-size: 11pt; margin: 0.7cm 0; }
+  .corps p { margin: 0.3cm 0; }
+  .corps strong { font-weight: bold; text-decoration: underline; }
+
+  .recap {
+    border: 1px solid #ccc; border-radius: 3px; padding: 0.4cm 0.75cm;
+    margin: 0.6cm 0; font-size: 10pt; line-height: 1.8; background: #fafafa;
+  }
+  .recap table { width: 100%; border-collapse: collapse; }
+  .recap td { padding: 2px 4px; }
+  .recap .lbl { color: #555; }
+  .recap .val { text-align: right; font-weight: bold; }
+  .recap .total-row td { border-top: 1px solid #ccc; padding-top: 5px; font-size: 11pt; }
+  .recap .solde-ok  { color: #007a45; }
+  .recap .solde-nok { color: #c0392b; }
+
+  .numero { font-size: 8pt; color: #aaa; text-align: center; margin-top: 0.8cm; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  {% include "documents/pdf/partials/entete.html" %}
+
+  <!-- Titre -->
+  <div class="titre-doc">
+    <h1>Attestation de Non-Redevabilité</h1>
+    <div class="annee">Année scolaire {{ annee_scolaire }}</div>
+  </div>
+
+  <!-- Corps -->
+  <div class="corps">
+    <p>
+      Le soussigné,
+      {% if sig_membre %}
+        {% if signataire.titre_honorifique %}{{ signataire.titre_honorifique }},{% endif %}
+        <strong>{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</strong>,
+        {{ signataire.fonction|default:"Directeur/Proviseur" }}{% if identite %} de <strong>{{ identite.nom_etablissement }}</strong>{% endif %},
+      {% elif identite and identite.nom_directeur %}
+        <strong>{{ identite.nom_directeur }}</strong>,
+        Directeur/Proviseur de <strong>{{ identite.nom_etablissement }}</strong>,
+      {% else %}
+        Directeur de l'établissement,
+      {% endif %}
+      certifie que :
+    </p>
+
+    <p>
+      <strong>{{ eleve.nom|upper }} {{ eleve.prenom }}</strong>,
+      inscrit(e) en classe de <strong>{{ classe.nom }}</strong>
+      ({{ classe.cycle.nom }}) pour l'année scolaire <strong>{{ annee_scolaire }}</strong>,
+    </p>
+
+    <!-- Récapitulatif financier -->
+    <div class="recap">
+      <table>
+        <tr>
+          <td class="lbl">Total des frais de scolarité :</td>
+          <td class="val">{{ situation.total_du|floatformat:0 }} FCFA</td>
+        </tr>
+        {% if situation.total_reduction %}
+        <tr>
+          <td class="lbl">Réductions / Bourses :</td>
+          <td class="val">- {{ situation.total_reduction|floatformat:0 }} FCFA</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td class="lbl">Total payé :</td>
+          <td class="val">{{ situation.total_paye|floatformat:0 }} FCFA</td>
+        </tr>
+        <tr class="total-row">
+          <td class="lbl"><strong>Reste à payer :</strong></td>
+          <td class="val {% if solde %}solde-ok{% else %}solde-nok{% endif %}">
+            <strong>{{ reste|floatformat:0 }} FCFA</strong>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    {% if solde %}
+    <p>
+      <strong>a réglé la totalité de ses frais scolaires</strong>
+      et n'est redevable d'aucune somme envers l'établissement au titre de l'année scolaire
+      {{ annee_scolaire }}.
+    </p>
+    {% else %}
+    <p>
+      présente un solde restant dû de
+      <strong>{{ reste|floatformat:0 }} FCFA</strong>
+      au titre de l'année scolaire {{ annee_scolaire }}.
+    </p>
+    {% endif %}
+
+    <p>
+      En foi de quoi, la présente attestation est délivrée à l'intéressé(e)
+      pour servir et valoir ce que de droit.
+    </p>
+  </div>
+
+  <!-- Signature -->
+  {% include "documents/pdf/partials/signataire_bloc.html" %}
+
+  {% if document %}
+  <div class="numero">N° {{ document.numero_document }}</div>
+  {% endif %}
+
+</div>
+</body>
+</html>

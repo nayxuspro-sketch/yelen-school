@@ -1,0 +1,78 @@
+{% extends "core/base.html" %}
+
+{% block title %}Aperçu convocation — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Aperçu — Convocation</h1>
+    <p class="page-subtitle">{{ type_label }} · {{ inscriptions_sel|length }} élève{{ inscriptions_sel|length|pluralize }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'documents:convocation_form' %}" class="btn-secondary">Modifier</a>
+    <form method="post" action="{% url 'documents:convocation_form' %}" style="display:inline;">
+      {% csrf_token %}
+      {% for ins in inscriptions_sel %}
+      <input type="hidden" name="inscriptions" value="{{ ins.pk }}">
+      {% endfor %}
+      <input type="hidden" name="type_convocation" value="{{ type_conv }}">
+      <input type="hidden" name="date_convocation" value="{{ date_conv }}">
+      <input type="hidden" name="heure_convocation" value="{{ heure_conv }}">
+      <input type="hidden" name="lieu" value="{{ lieu }}">
+      <input type="hidden" name="objet" value="{{ objet }}">
+      <input type="hidden" name="corps" value="{{ corps }}">
+      <button type="submit" name="format" value="pdf" class="btn-primary">
+        Générer PDF ({{ inscriptions_sel|length }} lettre{{ inscriptions_sel|length|pluralize }})
+      </button>
+    </form>
+  </div>
+</div>
+
+{% for inscr in inscriptions_sel %}
+<div class="card animate-fade-up delay-1" style="margin-bottom:1.25rem; padding:2rem; max-width:700px;">
+
+  <!-- Simulacre en-tête -->
+  <div style="text-align:center; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:2px solid #1a1a1a;">
+    <div style="font-size:.75rem; letter-spacing:.05em; color:#666; text-transform:uppercase;">Établissement scolaire</div>
+    <div style="font-size:1rem; font-weight:700; margin:.25rem 0;">CONVOCATION</div>
+    <div style="font-size:.82rem; color:#555;">{{ type_label }}</div>
+  </div>
+
+  <!-- Destinataire -->
+  <div style="margin-bottom:1.25rem; font-size:.9rem; line-height:1.7;">
+    <p style="margin:0;"><strong>À l'attention de :</strong> Monsieur / Madame le(la) Parent(e) ou tuteur(trice) de</p>
+    <p style="margin:.25rem 0 0; font-size:1rem; font-weight:700;">
+      {{ inscr.eleve.nom|upper }} {{ inscr.eleve.prenom }}
+    </p>
+    <p style="margin:0; color:#666; font-size:.82rem;">Classe : {{ inscr.classe.nom }} · {{ inscr.annee_scolaire }}</p>
+  </div>
+
+  <!-- Objet -->
+  {% if objet %}
+  <p style="margin-bottom:1rem; font-size:.9rem;"><strong>Objet :</strong> {{ objet }}</p>
+  {% endif %}
+
+  <!-- Corps -->
+  <div style="font-size:.9rem; line-height:1.8; margin-bottom:1.25rem;">
+    <p>
+      Vous êtes convié(e) à vous présenter à l'établissement pour
+      <strong>{{ type_label|lower }}</strong>
+      {% if date_conv %}le <strong>{{ date_conv }}</strong>{% endif %}
+      {% if heure_conv %}à <strong>{{ heure_conv }}</strong>{% endif %}
+      {% if lieu %}en <strong>{{ lieu }}</strong>{% endif %}.
+    </p>
+    {% if corps %}<p>{{ corps|linebreaksbr }}</p>{% endif %}
+    <p>Nous vous prions de bien vouloir accuser réception de la présente convocation.</p>
+  </div>
+
+  <!-- Signature fictive -->
+  <div style="text-align:right; font-size:.85rem; color:#555;">
+    <p>Le Directeur / La Directrice</p>
+    <p style="margin-top:.75rem; font-style:italic;">(Signature et cachet)</p>
+  </div>
+
+</div>
+{% endfor %}
+
+{% endblock %}

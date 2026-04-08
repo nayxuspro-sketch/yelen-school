@@ -1,0 +1,100 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activation de licence — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--color-bg, #f8fafc); }
+    .licence-card { max-width:560px; width:100%; background:#fff; border-radius:16px; box-shadow:0 4px 32px rgba(0,0,0,.10); padding:48px 40px; text-align:center; }
+    .licence-icon { font-size:52px; margin-bottom:16px; }
+    .licence-title { font-size:1.5rem; font-weight:700; color:#1a2a42; margin-bottom:8px; }
+    .licence-subtitle { color:#64748b; font-size:0.9rem; margin-bottom:32px; }
+    .info-box { background:#f1f5f9; border-radius:10px; padding:20px 24px; text-align:left; margin-bottom:24px; }
+    .info-box p { margin:0 0 6px; font-size:0.85rem; color:#374151; }
+    .info-box p:last-child { margin-bottom:0; }
+    .info-label { font-weight:600; color:#1a2a42; }
+    .plans-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:24px 0; text-align:left; }
+    .plan-card { border:1.5px solid var(--color-border, #e2e8f0); border-radius:10px; padding:14px 16px; }
+    .plan-name { font-weight:700; font-size:0.9rem; color:#1a2a42; margin-bottom:4px; }
+    .plan-detail { font-size:0.78rem; color:#64748b; }
+    .plan-price { font-size:0.85rem; font-weight:600; color:var(--color-primary, #00a86b); margin-top:6px; }
+    .btn-admin { display:inline-block; background:#1a2a42; color:#fff; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.9rem; margin-top:8px; }
+    .btn-admin:hover { background:#243a5a; }
+    .contact-line { font-size:0.82rem; color:#64748b; margin-top:20px; }
+  </style>
+</head>
+<body>
+<div class="licence-card">
+
+  <div class="licence-icon">🔑</div>
+  <div class="licence-title">Activation de licence YELEN SCHOOL</div>
+
+  {% if licence %}
+    <div class="licence-subtitle">
+      Votre licence est en cours de traitement.
+    </div>
+    <div class="info-box">
+      <p><span class="info-label">Établissement :</span> {{ etab.nom }}</p>
+      <p><span class="info-label">Clé de licence :</span> <code>{{ licence.cle_licence }}</code></p>
+      <p><span class="info-label">Type :</span> {{ licence.get_type_licence_display }}</p>
+      <p><span class="info-label">Statut :</span> {{ licence.get_statut_display }}</p>
+    </div>
+    {% if is_superuser %}
+      <a href="/licences/" class="btn-admin">Gérer les licences</a>
+    {% else %}
+      <p class="contact-line">Contactez l'équipe YELEN SCHOOL pour activer votre licence.</p>
+    {% endif %}
+
+  {% else %}
+    <div class="licence-subtitle">
+      {% if etab %}
+        Aucune licence trouvée pour <strong>{{ etab.nom }}</strong>.<br>
+        Choisissez un plan et contactez-nous pour démarrer.
+      {% else %}
+        Votre compte n'est pas encore associé à un établissement.
+      {% endif %}
+    </div>
+
+    <div class="plans-grid">
+      <div class="plan-card">
+        <div class="plan-name">Starter</div>
+        <div class="plan-detail">Jusqu'à 150 élèves · 10 classes</div>
+        <div class="plan-price">15 000 FCFA / an</div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name">Standard</div>
+        <div class="plan-detail">Jusqu'à 500 élèves · 30 classes</div>
+        <div class="plan-price">35 000 FCFA / an</div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name">Premium</div>
+        <div class="plan-detail">Jusqu'à 2 000 élèves · 100 classes</div>
+        <div class="plan-price">75 000 FCFA / an</div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name">Réseau</div>
+        <div class="plan-detail">Illimité · Multi-établissements</div>
+        <div class="plan-price">Sur devis</div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:8px;">
+      {% if is_superuser %}
+      <a href="/licences/nouvelle/" class="btn-admin">Créer une licence</a>
+      {% endif %}
+      <a href="mailto:support@yelengroup.com" class="btn-admin" style="background:var(--color-primary,#00a86b);">Contacter le support</a>
+      <a href="{% url 'accounts:logout' %}" class="btn-admin" style="background:#64748b;">Se déconnecter</a>
+    </div>
+
+    <p class="contact-line">
+      Pour obtenir une licence, contactez l'équipe YELEN SCHOOL.<br>
+      <strong>support@yelengroup.com</strong>
+    </p>
+  {% endif %}
+
+</div>
+</body>
+</html>

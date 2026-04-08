@@ -1,0 +1,91 @@
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">{% if type_eval %}Modifier le type d'évaluation{% else %}Nouveau type d'évaluation{% endif %}</span>
+      <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <form hx-post="{% if type_eval %}{% url 'parametres:type_evaluation_edit' type_eval.pk %}{% else %}{% url 'parametres:type_evaluation_create' %}{% endif %}"
+          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+          hx-target="#modal-container" hx-swap="innerHTML">
+      {% csrf_token %}
+      <div class="modal-body">
+
+        {% if error %}
+        <div class="alert alert-danger mb-4">{{ error }}</div>
+        {% endif %}
+
+        <div class="form-grid-3">
+          <div class="form-group" style="grid-column:span 2;">
+            <label class="input-label">Nom <span style="color:#FF6B7A;">*</span></label>
+            <input type="text" name="nom" value="{{ type_eval.nom|default:'' }}"
+                   placeholder="Ex : Devoir sur table, Composition…"
+                   required class="input">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Code <span style="color:#FF6B7A;">*</span></label>
+            <input type="text" name="code" value="{{ type_eval.code|default:'' }}"
+                   placeholder="Ex : DST, COMP"
+                   required class="input text-mono" maxlength="10"
+                   style="text-transform:uppercase;">
+          </div>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="input-label">Coefficient</label>
+            <input type="number" name="coefficient" value="{{ type_eval.coefficient|default:'1.00' }}"
+                   min="0" step="0.01" class="input text-mono">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Pondération</label>
+            <input type="number" name="ponderation" value="{{ type_eval.ponderation|default:'1.00' }}"
+                   min="0" step="0.01" class="input text-mono">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Ordre d'affichage</label>
+            <input type="number" name="ordre" value="{{ type_eval.ordre|default:'0' }}"
+                   min="0" class="input text-mono">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="input-label">
+            Nb meilleures notes conservées
+            <span class="text-muted" style="font-weight:400; font-size:.8rem;">(0 = toutes)</span>
+          </label>
+          <input type="number" name="nb_meilleures_notes"
+                 value="{{ type_eval.nb_meilleures_notes|default:'0' }}"
+                 min="0" class="input text-mono" style="max-width:120px;">
+        </div>
+
+        <div class="form-group">
+          <label class="input-label">Description</label>
+          <textarea name="description" rows="2" class="input" style="resize:none;"
+                    placeholder="Description optionnelle…">{{ type_eval.description|default:'' }}</textarea>
+        </div>
+
+        <div class="d-flex align-center gap-4" style="background:rgba(255,255,255,0.03); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:var(--space-3) var(--space-4);">
+          <label class="d-flex align-center gap-3" style="cursor:pointer;">
+            <input type="checkbox" name="est_visible"
+                   {% if type_eval.est_visible or not type_eval %}checked{% endif %}
+                   style="width:16px; height:16px; accent-color:var(--color-primary); cursor:pointer;">
+            <span style="font-size:var(--text-sm); color:var(--color-text-secondary);">Visible dans le bulletin</span>
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-secondary">
+            Annuler
+          </button>
+          <button type="submit" class="btn-primary">Enregistrer</button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+</div>

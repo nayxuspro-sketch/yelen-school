@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4 landscape;
+    margin: 10mm 8mm 8mm 8mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 8pt;
+    color: #111;
+    background: #fff;
+  }
+
+  /* ── Entête ── */
+  .entete {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid #00A86B;
+    padding-bottom: 4mm;
+    margin-bottom: 4mm;
+  }
+  .entete-gauche .etablissement {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #00A86B;
+  }
+  .entete-gauche .sous-titre {
+    font-size: 8pt;
+    color: #555;
+    margin-top: 2px;
+  }
+  .entete-droite { text-align: right; }
+  .entete-droite .classe-nom {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #111;
+  }
+  .entete-droite .annee {
+    font-size: 8pt;
+    color: #555;
+    margin-top: 2px;
+  }
+
+  /* ── Grille ── */
+  .grille {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .grille-head {
+    display: table-row;
+  }
+  .grille-body {
+    display: table-row-group;
+  }
+  .jour-col {
+    display: table-cell;
+    width: 16.666%;
+    vertical-align: top;
+    border: 1px solid #ccc;
+  }
+  .jour-header {
+    background: #e8f5e9;
+    border-bottom: 1px solid #aaa;
+    padding: 3px 5px;
+    font-size: 8pt;
+    font-weight: bold;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #1B5E20;
+  }
+  .jour-body {
+    padding: 3px;
+    min-height: 30mm;
+  }
+
+  /* ── Séance ── */
+  .seance {
+    border-left: 3px solid #00A86B;
+    background: #f9f9f9;
+    border-radius: 2px;
+    padding: 3px 4px;
+    margin-bottom: 3px;
+    page-break-inside: avoid;
+  }
+  .seance-matiere {
+    font-size: 8pt;
+    font-weight: bold;
+    color: #111;
+    margin-bottom: 1px;
+  }
+  .seance-heure {
+    font-size: 7.5pt;
+    font-weight: bold;
+    color: #007A4D;
+    margin-bottom: 1px;
+  }
+  .seance-salle {
+    font-size: 7pt;
+    color: #444;
+    margin-bottom: 1px;
+  }
+  .seance-prof {
+    font-size: 6.5pt;
+    color: #666;
+    font-style: italic;
+  }
+
+  .vide {
+    font-size: 7pt;
+    color: #bbb;
+    text-align: center;
+    padding: 6mm 0;
+  }
+
+  /* ── Signataire ── */
+  .sig-zone {
+    margin-top: 10mm;
+    text-align: right;
+    page-break-inside: avoid;
+  }
+  .sig-lieu-date { font-size: 9pt; color: #222; }
+  .sig-fonction  { font-size: 10pt; color: #111; margin-top: 6mm; }
+  .sig-espace    { height: 18mm; }
+  .sig-name      { font-size: 10pt; font-weight: bold; color: #000; border-top: 1px solid #bbb; padding-top: 2mm; display: inline-block; min-width: 60mm; }
+  .sig-honors    { font-size: 7.5pt; font-style: italic; color: #444; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div class="entete">
+  <div class="entete-gauche">
+    {% if etab %}<div class="etablissement">{{ etab.nom }}</div>{% else %}<div class="etablissement">YELEN SCHOOL</div>{% endif %}
+    <div class="sous-titre">Emploi du temps</div>
+  </div>
+  <div class="entete-droite">
+    <div class="classe-nom">{{ classe.nom }}</div>
+    {% if annee %}<div class="annee">Année scolaire {{ annee.libelle }}</div>{% endif %}
+  </div>
+</div>
+
+<table class="grille">
+  <thead>
+    <tr>
+      {% for jour in grille %}
+      <th class="jour-header" style="width:16.666%; border:1px solid #aaa; padding:3px 5px;">
+        {{ jour.jour_label }}
+      </th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      {% for jour in grille %}
+      <td style="vertical-align:top; border:1px solid #ccc; padding:3px; width:16.666%;">
+        {% for seance in jour.seances %}
+        <div class="seance">
+          <div class="seance-matiere">{{ seance.enseignement.matiere.nom }}</div>
+          <div class="seance-heure">{{ seance.heure_debut|time:"H\hi" }} – {{ seance.heure_fin|time:"H\hi" }}</div>
+          {% if seance.salle %}<div class="seance-salle">{{ seance.salle }}</div>{% endif %}
+          {% if seance.enseignement.personnel %}<div class="seance-prof">{{ seance.enseignement.personnel.get_nom_complet }}</div>{% endif %}
+        </div>
+        {% empty %}
+        <div class="vide">—</div>
+        {% endfor %}
+      </td>
+      {% endfor %}
+    </tr>
+  </tbody>
+</table>
+
+{% if signataire %}
+{% with membre=signataire.get_membre_personnel %}
+{% if membre %}
+<div class="sig-zone">
+  <div class="sig-lieu-date">
+    {% if identite and identite.ville %}{{ identite.ville }}, {% endif %}le {% now "d F Y" %}
+  </div>
+  <div class="sig-fonction">
+    {{ signataire.fonction|default:signataire.titre|default:"Le Directeur" }}
+  </div>
+  <div class="sig-espace"></div>
+  <div class="sig-name">{{ membre.nom|upper }} {{ membre.prenom }}</div>
+  {% if signataire.titre_honorifique %}
+  <div class="sig-honors">{{ signataire.titre_honorifique }}</div>
+  {% endif %}
+</div>
+{% endif %}
+{% endwith %}
+{% endif %}
+
+</body>
+</html>

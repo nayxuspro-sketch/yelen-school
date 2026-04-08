@@ -1,0 +1,97 @@
+{% extends "core/base.html" %}
+
+{% block title %}Inscrire {{ classe.nom }} — {{ session.libelle }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'examens:session_detail' session.pk %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Inscription — Classe {{ classe.nom }}</h1>
+      <p class="page-subtitle">{{ session.libelle }} · {{ inscriptions_scolaires.count }} élève{{ inscriptions_scolaires.count|pluralize }} actif{{ inscriptions_scolaires.count|pluralize }}</p>
+    </div>
+  </div>
+</div>
+
+<form method="post" style="max-width:720px;">
+  {% csrf_token %}
+
+  {# ── Centre d'affectation ── #}
+  {% if centres %}
+  <div class="card animate-fade-up" style="margin-bottom:1.25rem; padding:1.25rem 1.5rem;">
+    <div class="form-group" style="margin:0; max-width:400px;">
+      <label class="input-label" for="id_centre">Centre d'affectation
+        <span style="color:var(--color-text-muted); font-weight:400;">(facultatif)</span>
+      </label>
+      <select name="centre" id="id_centre" class="input">
+        <option value="">— Sans centre défini —</option>
+        {% for centre in centres %}
+        <option value="{{ centre.pk }}">{{ centre.nom }} ({{ centre.code_centre }})</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Liste des élèves ── #}
+  <div class="table-wrapper animate-fade-up delay-1">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:40px;">#</th>
+            <th>Élève</th>
+            <th>Matricule</th>
+            <th>Statut inscription</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ins in inscriptions_scolaires %}
+          <tr {% if ins.pk in deja_inscrits %}style="opacity:.5;"{% endif %}>
+            <td class="text-muted" style="font-size:0.8rem;">{{ forloop.counter }}</td>
+            <td class="fw-medium">{{ ins.eleve.get_nom_complet }}</td>
+            <td style="font-family:monospace; font-size:0.8rem; color:var(--color-text-secondary);">
+              {{ ins.eleve.matricule|default:"—" }}
+            </td>
+            <td>
+              {% if ins.pk in deja_inscrits %}
+                <span class="badge" style="background:rgba(0,168,107,0.15); color:#00A86B;">
+                  <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:2px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Déjà inscrit
+                </span>
+              {% else %}
+                <span class="badge" style="background:rgba(59,130,246,0.12); color:#60A5FA;">À inscrire</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4">
+              <div class="empty-state" style="padding:2rem 0;">
+                <p class="empty-state-text">Aucun élève actif dans cette classe pour cette année scolaire.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-flex gap-3 animate-fade-up delay-2" style="margin-top:1.25rem;">
+    <button type="submit" class="btn-primary" {% if not inscriptions_scolaires %}disabled{% endif %}>
+      Inscrire {{ inscriptions_scolaires.count }} élève{{ inscriptions_scolaires.count|pluralize }} à la session
+    </button>
+    <a href="{% url 'examens:session_detail' session.pk %}" class="btn-secondary">Annuler</a>
+  </div>
+
+</form>
+
+{% endblock %}

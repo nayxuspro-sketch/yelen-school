@@ -1,0 +1,132 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Mon espace élève{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">Espace élève</p>
+        <h1 class="page-title">Bonjour, {{ request.user.first_name }}</h1>
+    </div>
+    {% if annee %}
+    <span class="badge badge-info" style="font-size:0.85rem; padding:6px 12px;">{{ annee.libelle }}</span>
+    {% endif %}
+</div>
+
+{% if erreur %}
+<div class="card animate-fade-up" style="padding:var(--space-8); text-align:center;">
+    <p style="color:var(--color-text-muted);">{{ erreur }}</p>
+</div>
+{% else %}
+
+{# ── Carte identité #}
+{% if inscription %}
+<div class="card animate-fade-up" style="padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5); display:flex; align-items:center; gap:var(--space-4); flex-wrap:wrap;">
+    <div style="width:52px; height:52px; border-radius:50%; background:var(--color-primary-ambient); display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:700; color:var(--color-primary); flex-shrink:0;">
+        {{ eleve.prenom|first|upper }}
+    </div>
+    <div style="flex:1;">
+        <div style="font-size:1.1rem; font-weight:700; color:var(--color-text-primary);">{{ eleve.get_nom_complet }}</div>
+        <div style="font-size:0.85rem; color:var(--color-text-muted);">
+            {{ inscription.classe.nom }}
+            {% if eleve.matricule %} &nbsp;·&nbsp; Matricule : {{ eleve.matricule }}{% endif %}
+            {% if inscription.statut_eleve %} &nbsp;·&nbsp; {{ inscription.statut_eleve.nom }}{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Stat cards #}
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:var(--space-4); margin-bottom:var(--space-5);">
+    <div class="stat-card animate-fade-up delay-1">
+        <div class="stat-value" style="color:{% if nb_absences > 5 %}#ef4444{% elif nb_absences > 0 %}#f59e0b{% else %}var(--color-primary){% endif %};">{{ nb_absences }}</div>
+        <div class="stat-label">Absences (30 jours)</div>
+    </div>
+    <div class="stat-card animate-fade-up delay-1">
+        <div class="stat-value" style="color:{% if nb_retards > 3 %}#f59e0b{% else %}var(--color-text-primary){% endif %};">{{ nb_retards }}</div>
+        <div class="stat-label">Retards (30 jours)</div>
+    </div>
+    {% if moyennes %}
+    <div class="stat-card animate-fade-up delay-1">
+        <div class="stat-value" style="color:{% if moyennes.last.valeur >= 10 %}var(--color-primary){% else %}#ef4444{% endif %};">
+            {{ moyennes.last.valeur|floatformat:2 }}
+        </div>
+        <div class="stat-label">Dernière moyenne</div>
+    </div>
+    {% endif %}
+</div>
+
+{# ── Moyennes par trimestre #}
+{% if moyennes %}
+<div class="card animate-fade-up delay-2" style="margin-bottom:var(--space-5);">
+    <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">
+        Mes moyennes générales
+    </div>
+    <div class="table-scroll">
+        <table class="data-table" style="margin:0;">
+            <thead>
+                <tr>
+                    <th>Trimestre</th>
+                    <th style="text-align:right;">Moyenne</th>
+                    <th style="text-align:right;">Rang</th>
+                    <th>Mention</th>
+                    <th>Appréciation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mg in moyennes %}
+                <tr>
+                    <td>{{ mg.trimestre.nom }}</td>
+                    <td style="text-align:right; font-weight:600; color:{% if mg.valeur >= 10 %}var(--color-primary){% else %}#ef4444{% endif %};">
+                        {{ mg.valeur|floatformat:2 }}
+                    </td>
+                    <td style="text-align:right;">{{ mg.rang|default:"—" }}</td>
+                    <td>
+                        {% if mg.mention %}
+                        <span class="badge badge-{% if mg.valeur >= 16 %}success{% elif mg.valeur >= 14 %}primary{% elif mg.valeur >= 12 %}info{% elif mg.valeur >= 10 %}warning{% else %}danger{% endif %}">
+                            {{ mg.mention }}
+                        </span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td style="font-size:0.85rem; color:var(--color-text-muted);">{{ mg.appreciation|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# ── Derniers paiements #}
+{% if paiements %}
+<div class="card animate-fade-up delay-3">
+    <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">
+        Mes derniers paiements
+    </div>
+    <div class="table-scroll">
+        <table class="data-table" style="margin:0;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Rubrique</th>
+                    <th style="text-align:right;">Montant</th>
+                    <th>Reçu</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in paiements %}
+                <tr>
+                    <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
+                    <td>{{ p.rubrique.nom|default:"—" }}</td>
+                    <td style="text-align:right; font-family:var(--font-mono);">{{ p.montant|floatformat:0 }} CFA</td>
+                    <td style="font-size:0.8rem; color:var(--color-text-muted);">{{ p.numero_recu|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

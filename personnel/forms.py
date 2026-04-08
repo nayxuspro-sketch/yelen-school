@@ -1,5 +1,5 @@
 from django import forms
-from .models import MembrePersonnel, InscriptionPersonnel
+from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel
 from parametres.models import Cycle, TitreFonction, TitreHonorifiquePersonnel
 
 def _apply_yelen_classes(fields):
@@ -71,4 +71,57 @@ class InscriptionPersonnelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        _apply_yelen_classes(self.fields)
+
+
+class SalairePersonnelForm(forms.ModelForm):
+    """Formulaire de saisie d'un bulletin de salaire mensuel."""
+
+    class Meta:
+        model = SalairePersonnel
+        fields = [
+            'personnel', 'annee_scolaire', 'mois', 'annee',
+            'salaire_base', 'indemnite_transport', 'indemnite_logement',
+            'prime_anciennete', 'autres_primes',
+            'retenue_cnss', 'retenue_iuts', 'autres_retenues',
+            'statut', 'date_paiement', 'reference_paiement', 'observations',
+        ]
+        widgets = {
+            'date_paiement': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+            'observations': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        etablissement = kwargs.pop('etablissement', None)
+        super().__init__(*args, **kwargs)
+        if etablissement:
+            self.fields['personnel'].queryset = MembrePersonnel.objects.filter(
+                etablissement=etablissement, is_active=True
+            ).order_by('nom', 'prenom')
+        _apply_yelen_classes(self.fields)
+
+
+class CongePersonnelForm(forms.ModelForm):
+    """Formulaire de demande / saisie d'un congé."""
+
+    class Meta:
+        model = CongePersonnel
+        fields = [
+            'personnel', 'type_conge', 'date_debut', 'date_fin',
+            'motif', 'observations',
+        ]
+        widgets = {
+            'date_debut': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+            'date_fin': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+            'motif': forms.Textarea(attrs={'rows': 3}),
+            'observations': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        etablissement = kwargs.pop('etablissement', None)
+        super().__init__(*args, **kwargs)
+        if etablissement:
+            self.fields['personnel'].queryset = MembrePersonnel.objects.filter(
+                etablissement=etablissement, is_active=True
+            ).order_by('nom', 'prenom')
         _apply_yelen_classes(self.fields)

@@ -164,9 +164,15 @@
           </div>
         </div>
       </div>
-      <div style="margin-top: var(--space-3);">
-        <a href="{% url 'logout' %}" class="btn-secondary btn-sm w-full"
-           style="justify-content: center;">
+      <div style="margin-top: var(--space-3); display: flex; gap: 8px;">
+        <a href="{% url 'licences:support' %}" class="btn-secondary btn-sm" style="flex: 1; justify-content: center;" target="_blank" title="Aide / Guide">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.02 2.788-1.12.143-2.15.672-2.838 1.56-.46.594-.722 1.315-.722 2.152 0 1.65 1.35 3 3 3 1.5 0 2.77-.98 3.06-2.28"/>
+          </svg>
+          Aide
+        </a>
+        <a href="{% url 'logout' %}" class="btn-secondary btn-sm"
+           style="flex: 1; justify-content: center;">
           Déconnexion
         </a>
       </div>
@@ -197,10 +203,27 @@
 
     {# ── Messages Django (succès / erreur / info) ── #}
     {% if messages %}
-    <div style="padding: var(--space-4) var(--space-6) 0;" id="django-messages">
+    <div id="django-messages" style="
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: 400px;
+      ">
       {% for message in messages %}
-      <div class="alert alert-{{ message.tags|default:'info' }} animate-fade-up"
-           role="alert">
+      <div class="alert alert-{{ message.tags|default:'info' }} animate-fade-up shadow-lg"
+           role="alert"
+           style="
+             background: {% if message.tags == 'success' %}#dcfce7{% elif message.tags == 'error' or message.tags == 'danger' %}#fee2e2{% elif message.tags == 'warning' %}#fef9c3{% else %}#e0f2fe{% endif %};
+             border: 1px solid {% if message.tags == 'success' %}#22c55e{% elif message.tags == 'error' or message.tags == 'danger' %}#ef4444{% elif message.tags == 'warning' %}#eab308{% else %}#3b82f6{% endif %};
+             border-radius: 8px;
+             padding: 1rem 1.25rem;
+             color: #1f2937;
+             font-weight: 500;
+           ">
         {{ message }}
       </div>
       {% endfor %}

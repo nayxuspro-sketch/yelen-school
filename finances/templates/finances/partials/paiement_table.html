@@ -2,6 +2,7 @@
   <table class="data-table">
     <thead>
       <tr>
+        <th style="width:100px;">Reçu N°</th>
         <th>Élève</th>
         <th style="width:90px;">Classe</th>
         <th style="width:155px;">Dernière rubrique</th>
@@ -14,6 +15,11 @@
     <tbody>
       {% for paiement in paiements %}
       <tr>
+        <td>
+          <span class="text-mono text-primary" style="font-size:0.75rem; font-weight:600;">
+            {{ paiement.numero_recu|default:"—" }}
+          </span>
+        </td>
         <td>
           <div class="d-flex align-center gap-2">
             <span class="avatar-initials avatar-sm">{{ paiement.inscription.eleve.nom.0 }}{{ paiement.inscription.eleve.prenom.0 }}</span>

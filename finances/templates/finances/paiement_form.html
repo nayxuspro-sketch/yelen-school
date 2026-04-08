@@ -148,7 +148,7 @@
         <svg style="flex-shrink:0;" width="16" height="16" fill="none" stroke="#F87171" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
         </svg>
-        <span style="color:#F87171; font-size:0.845rem; font-weight:500;">Le montant versé dépasse le reste à payer pour une ou plusieurs rubriques.</span>
+        <span style="color:#F87171; font-size:0.845rem; font-weight:500;">Veuillez corriger les montants en rouge : montant nul ou dépassant le reste à payer.</span>
       </div>
 
       <div style="padding:1.5rem;">
@@ -433,12 +433,16 @@
     inpDeja.value  = du   > 0 ? deja.toLocaleString('fr-FR') + ' FCFA' : '';
     inpReste.value = du   > 0 ? reste.toLocaleString('fr-FR') + ' FCFA' : '';
     /* Dépassement : montant versé > reste avant versement */
-    var surpaye = du > 0 && versement > resteAvant;
-    ligne.dataset.surpaye = surpaye ? '1' : '0';
-    inpVerse.style.borderColor = surpaye ? '#F87171' : '';
-    inpVerse.style.background  = surpaye ? 'rgba(220,53,69,0.08)' : '';
+    var surpaye     = du > 0 && versement > resteAvant;
+    var rubriqueSel = opt !== null;
+    var montantNul  = rubriqueSel && !(versement > 0);
+    var enErreur    = surpaye || montantNul;
+    ligne.dataset.surpaye = enErreur ? '1' : '0';
+    inpVerse.style.borderColor = enErreur ? '#F87171' : '';
+    inpVerse.style.background  = enErreur ? 'rgba(220,53,69,0.08)' : '';
     inpVerse.title = surpaye
       ? 'Montant trop élevé — reste à payer : ' + resteAvant.toLocaleString('fr-FR') + ' FCFA'
+      : montantNul ? 'Le montant doit être supérieur à 0'
       : '';
     /* Griser Échéance si reste ≤ 0 */
     var solde = reste <= 0 && du > 0 && !surpaye;

@@ -369,10 +369,37 @@ button {
   line-height: 1.2;
 }
 
+/* Fil d'Ariane (breadcrumb) - intégré dans page-subtitle */
 .page-subtitle {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin-top: var(--space-1);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.page-subtitle a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.page-subtitle a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.page-subtitle .breadcrumb-sep {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+  margin: 0 2px;
+}
+
+.page-subtitle .breadcrumb-current {
+  color: var(--color-text-primary);
+  font-weight: var(--font-medium);
 }
 
 /* Breadcrumb */
@@ -380,13 +407,31 @@ button {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
 
-.breadcrumb-sep { color: var(--color-text-muted); }
-.breadcrumb-current { color: var(--color-text-primary); font-weight: var(--font-medium); }
+.breadcrumb-link {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.breadcrumb-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.breadcrumb-sep {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+
+.breadcrumb-current {
+  color: var(--color-text-primary);
+  font-weight: var(--font-medium);
+}
 
 /* ─────────────────────────────────────────────────────────────── */
 /*  4. COMPOSANTS                                                   */
@@ -947,6 +992,12 @@ button {
   margin-bottom: var(--space-1);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Indicateur visuel pour champs obligatoires - ajouté via JS */
+.required-star {
+  color: var(--color-danger);
+  font-weight: 700;
 }
 
 .input-error {

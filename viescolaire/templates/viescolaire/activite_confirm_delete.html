@@ -1,0 +1,44 @@
+{% extends "core/base.html" %}
+
+{% block title %}Supprimer {{ activite.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'viescolaire:activite_detail' activite.pk %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <h1 class="page-title">Supprimer l'activité</h1>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="max-width:480px;">
+  <div style="padding:var(--space-6);">
+    <p style="margin-bottom:var(--space-4);">
+      Voulez-vous vraiment supprimer l'activité
+      <strong>« {{ activite.nom }} »</strong> ?
+    </p>
+    {% with nb=activite.nb_participants %}
+    {% if nb > 0 %}
+    <div class="alert alert-warning" style="margin-bottom:var(--space-4); font-size:0.88rem;">
+      Cette activité compte <strong>{{ nb }} participant{{ nb|pluralize }}</strong>.
+      Ils seront tous retirés.
+    </div>
+    {% endif %}
+    {% endwith %}
+    <div style="display:flex; gap:var(--space-3); justify-content:flex-end;">
+      <a href="{% url 'viescolaire:activite_detail' activite.pk %}" class="btn btn-outline">Annuler</a>
+      <form method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" style="background:var(--color-danger,#e53e3e); color:#fff; border:none;">
+          Supprimer définitivement
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+
+{% block title %}Réinscription — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'inscriptions:eleve_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Réinscription</h1>
+      {% if annee_courante and annee_suivante %}
+      <p class="page-subtitle">{{ annee_courante.libelle }} → {{ annee_suivante.libelle }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if not annee_suivante %}
+<div class="card animate-fade-up" style="padding:var(--space-4); background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);">
+  <p style="color: #f59e0b; margin: 0;">
+    <strong>Attention :</strong> L'année scolaire suivante n'est pas configurée. 
+    Veuillez créer l'année scolaire {{ annee_courante.date_fin.year }}-{{ annee_courante.date_fin.year|add:1 }} dans Paramètres.
+  </p>
+</div>
+{% elif eleves %}
+<div class="table-wrapper animate-fade-up delay-1">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Classe actuelle</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in eleves %}
+        <tr>
+          <td class="fw-medium">{{ item.eleve.get_nom_complet }}</td>
+          <td class="text-secondary">{{ item.classe_actuelle.nom }}</td>
+          <td style="text-align:right;">
+            <a href="{% url 'inscriptions:reinscrire_eleve' item.eleve.pk %}" class="btn-primary btn-sm">
+              Réinscrire
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card animate-fade-up" style="padding:var(--space-6); text-align:center;">
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <p class="empty-state-text" style="font-size:1rem;">Tous les élèves ont déjà été réinscrits pour l'année suivante.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,30 +1,166 @@
 ﻿{
+  "_comment": "YELEN SCHOOL — Configuration Antigravity v3.4 — Mars 2026",
+  "_deadline": "Go-Live : 1er Août 2026 — NON NÉGOCIABLE",
+
+  "project": "YELEN SCHOOL — Système de Gestion Scolaire Burkina Faso",
+  "version": "3.4",
+  "language": "fr",
+
   "agents": {
     "architect": {
-      "model": "claude-opus-4-5",
+      "model": "claude-opus-4-6",
+      "model_fallback": "claude-sonnet-4-6",
       "mode": "plan",
-      "description": "Planification architecture Django"
+      "description": "Planification architecture Django — produit des plans en 5 étapes séquentielles, ne modifie aucun fichier sans validation"
     },
     "coder": {
-      "model": "claude-sonnet-4-5",
+      "model": "claude-sonnet-4-6",
+      "model_fallback": "claude-haiku-4-5-20251001",
       "mode": "build",
-      "description": "Generation code Django/HTMX"
+      "description": "Génération code Django/HTMX — modèles, vues, URLs, admin, tests unitaires"
     },
     "designer": {
-      "model": "claude-sonnet-4-5",
+      "model": "claude-sonnet-4-6",
+      "model_fallback": "claude-haiku-4-5-20251001",
       "mode": "build",
-      "description": "Generation templates HTML conformes au Design System"
+      "description": "Génération templates HTML conformes au Design System YELEN — couleurs #1B4332/#D4AF37, police Lato/Playfair, JAMAIS fond blanc"
     },
     "reviewer": {
-      "model": "claude-sonnet-4-5",
+      "model": "claude-sonnet-4-6",
+      "model_fallback": "claude-sonnet-4-6",
       "mode": "plan",
-      "description": "Revue code, securite, tests"
+      "description": "Revue code, sécurité, tests — vérifie Feature Flags, coverage > 80%, conformité règles métier Burkina Faso"
+    },
+    "documenter": {
+      "model": "claude-sonnet-4-6",
+      "model_fallback": "claude-haiku-4-5-20251001",
+      "mode": "build",
+      "description": "Rédaction et mise à jour du guide d'utilisation — docs/GUIDE_UTILISATION_YELEN_SCHOOL.md — déclenché après chaque livraison de fonctionnalité"
     }
   },
+
   "alwaysRead": [
+    "docs/GUIDE_UTILISATION_INSTRUCTIONS.md",
+    "docs/PROMPT_V3_4.md",
+    "docs/DESIGN_SYSTEM.md",
+    "docs/GUIDE_DEV_V2.md"
+  ],
+
+  "context_files": [
     "docs/PROMPT_V3_3.md",
     "docs/PROMPT_V3_4.md",
-    "docs/DESIGN_SYSTEM.md"
+    "docs/DESIGN_SYSTEM.md",
+    "docs/GUIDE_DEV_V2.md",
+    "docs/GUIDE_UTILISATION_INSTRUCTIONS.md",
+    "docs/GUIDE_UTILISATION_YELEN_SCHOOL.md"
   ],
-  "autoContext": true
+
+  "skills_folder": "skills/",
+  "skills": {
+    "01": {
+      "file": "skills/01-django-models.md",
+      "invoke": "/01-django-models",
+      "description": "Modèles Django — champs, FK, Meta, BaseModel"
+    },
+    "02": {
+      "file": "skills/02-htmx-views.md",
+      "invoke": "/02-htmx-views",
+      "description": "Vues Django avec HTMX — partial rendering, hx-swap"
+    },
+    "03": {
+      "file": "skills/03-tailwind-templates.md",
+      "invoke": "/03-css-templates",
+      "description": "Templates HTML — Tailwind + classes yelen.css"
+    },
+    "04": {
+      "file": "skills/04-pdf-generator.md",
+      "invoke": "/04-pdf-generator",
+      "description": "Génération PDF WeasyPrint — BaseDocumentGenerator"
+    },
+    "05": {
+      "file": "skills/05-tests-pytest.md",
+      "invoke": "/05-tests-pytest",
+      "description": "Tests pytest + model_bakery — coverage > 80%"
+    },
+    "06": {
+      "file": "skills/06-forms-validation.md",
+      "invoke": "/06-forms-valid",
+      "description": "Formulaires Django — validation, messages d'erreur"
+    },
+    "07": {
+      "file": "skills/07-licence-system.md",
+      "invoke": "/07-licence-flags",
+      "description": "Feature Flags — Starter / Standard / Premium / Réseau"
+    },
+    "08": {
+      "file": "skills/08-burkina-context.md",
+      "invoke": "/08-burkina-ctx",
+      "description": "Contexte Burkina Faso — FCFA, MENA, cycles, calendrier"
+    },
+    "09": {
+      "file": "skills/09-matricule-system.md",
+      "invoke": "/09-matricule",
+      "description": "Matricules BF-AAAA-NNNNN et PERS-AAAA-NNNNN — unicité"
+    },
+    "10": {
+      "file": "skills/10-age-calcul.md",
+      "invoke": "/10-age-calcul",
+      "description": "Âge calculé automatiquement depuis date naissance — readonly"
+    },
+    "11": {
+      "file": "skills/11-signataires-documents.md",
+      "invoke": "/11-signataires",
+      "description": "Signataires PDF configurables par cycle et type de document"
+    }
+  },
+
+  "global_rules": {
+    "langue": "Toujours répondre en français",
+    "monnaie": "Toujours FCFA — jamais € ou $",
+    "notes": "Toujours sur 20 — jamais sur 100",
+    "matricule_eleve": "Format BF-AAAA-NNNNN — généré automatiquement, jamais modifiable",
+    "matricule_personnel": "Format PERS-AAAA-NNNNN — même logique",
+    "age": "Calculé automatiquement depuis date_naissance — jamais saisi manuellement",
+    "design": "Couleurs #1B4332 (vert) + #D4AF37 (or) — JAMAIS fond blanc, JAMAIS Arial/Inter",
+    "licence": "Chaque vue métier doit avoir @requires_licence_feature — obligatoire",
+    "tests": "Coverage minimum 80% — 90% pour le module licences",
+    "guide_utilisation": "Mettre à jour docs/GUIDE_UTILISATION_YELEN_SCHOOL.md après chaque fonctionnalité livrée — OBLIGATOIRE"
+  },
+
+  "phases": {
+    "phase_0": { "semaines": "1-2", "livrable": "Repo GitHub + Docker + structure Django 13 apps" },
+    "phase_1": { "semaines": "3-4", "livrable": "Module Licences + Feature Flags complets" },
+    "phase_2": {
+      "semaines": "5-8",
+      "livrable": "MVP Core — inscriptions, notes, bulletins, présences, personnel, AVS"
+    },
+    "phase_3": {
+      "semaines": "9-10",
+      "livrable": "Documents PDF — 8 générateurs + carte ID scolaire"
+    },
+    "phase_4": {
+      "semaines": "11-14",
+      "livrable": "Statistiques, examens, finances, tests, déploiement"
+    }
+  },
+
+  "apps_django": [
+    "core",
+    "accounts",
+    "licences",
+    "etablissements",
+    "parametres",
+    "inscriptions",
+    "personnel",
+    "pedagogie",
+    "bulletins",
+    "presences",
+    "vacations",
+    "examens",
+    "finances",
+    "documents"
+  ],
+
+  "autoContext": true,
+  "autoUpdateGuide": true
 }

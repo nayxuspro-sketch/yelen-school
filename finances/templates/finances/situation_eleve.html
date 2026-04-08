@@ -22,11 +22,17 @@
     </svg>
     Nouvel Encaissement
   </a>
-  <a href="{% url 'finances:certificat_non_redevabilite' inscription.id %}" target="_blank" class="btn-secondary">
+  <a href="{% url 'viescolaire:fiche_suivi_eleve' inscription.id %}" class="btn-secondary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+    </svg>
+    Fiche de suivi
+  </a>
+  <a href="{% url 'documents:attestation_non_redevabilite' inscription.id %}" class="btn-secondary">
     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
     </svg>
-    Certificat
+    Attestation non-redevabilité
   </a>
 </div>
 
@@ -41,21 +47,37 @@
         <span class="card-title">Résumé Financier</span>
       </div>
       <div style="padding:var(--space-4);">
+        {% if total_du_brut and total_du_brut != total_du %}
+        <div class="stat-item mb-2">
+          <span class="stat-label text-muted" style="font-size:0.8rem;">Frais bruts</span>
+          <span class="stat-value text-muted" style="font-size:0.9rem; text-decoration:line-through;">{{ total_du_brut|default:0 }}</span>
+        </div>
+        <div class="stat-item mb-3">
+          <span class="stat-label" style="color:var(--color-success);">Réductions bourses</span>
+          <span class="stat-value" style="color:var(--color-success);">− {{ total_reduction|default:0 }} <small>FCFA</small></span>
+        </div>
+        {% endif %}
         <div class="stat-item mb-3">
           <span class="stat-label">Total Dû</span>
           <span class="stat-value">{{ total_du|default:0 }} <small>FCFA</small></span>
         </div>
         <div class="stat-item mb-3">
-          <span class="stat-label text-success">Total Payé</span>
+          <span class="stat-label text-success">Total Versé</span>
           <span class="stat-value text-success">{{ total_paye|default:0 }} <small>FCFA</small></span>
         </div>
+        {% if total_rembourse > 0 %}
+        <div class="stat-item mb-3">
+          <span class="stat-label" style="color:var(--color-danger);">Remboursé</span>
+          <span class="stat-value" style="color:var(--color-danger);">− {{ total_rembourse|default:0 }} <small>FCFA</small></span>
+        </div>
+        {% endif %}
         
         {% if total_du > 0 %}
         <div class="progress-bar mb-2" style="height:8px; background:var(--color-border); border-radius:4px; overflow:hidden;">
-          <div class="progress-fill" style="height:100%; width:{{ total_paye|default:0|divisibleby:total_du|yesno:'100'|default:0 }}%; background:var(--color-success); border-radius:4px; transition:width 0.3s ease;"></div>
+          <div class="progress-fill" style="height:100%; width:{{ pourcentage_paye }}%; background:var(--color-primary); border-radius:4px; transition:width 0.3s ease;"></div>
         </div>
         <p class="text-muted" style="font-size:0.75rem; text-align:right;">
-          {{ total_paye|default:0|divisibleby:total_du|yesno:'100'|default:0|floatformat:0 }}% payé
+          {{ pourcentage_paye }}% payé
         </p>
         {% endif %}
         
@@ -63,7 +85,7 @@
         
         <div class="stat-item">
           <span class="stat-label fw-semibold">Reste à Payer</span>
-          <span class="stat-value fw-bold" style="font-size:1.5rem; color:{% if reste_a_payer > 0 %}var(--color-danger){% else %}var(--color-success){% endif %};">
+          <span class="stat-value fw-bold" style="font-size:1.5rem; color:{% if reste_a_payer > 0 %}var(--color-danger){% else %}var(--color-primary){% endif %};">
             {{ reste_a_payer|default:0 }} <small>FCFA</small>
           </span>
         </div>
@@ -84,6 +106,56 @@
         {% empty %}
         <p class="text-muted text-center py-4" style="font-size:0.85rem;">Aucun tarif configuré pour ce profil.</p>
         {% endfor %}
+      </div>
+    </div>
+
+    <!-- Bourses & Aides -->
+    <div class="card">
+      <div class="card-header" style="display:flex; align-items:center; justify-content:space-between;">
+        <span class="card-title">Bourses &amp; Aides</span>
+        <a href="{% url 'finances:bourse_create' inscription.id %}?total_du={{ total_du_brut|default:total_du }}" class="btn-icon" title="Attribuer une bourse">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </a>
+      </div>
+      <div style="padding:var(--space-3) var(--space-4);">
+        {% for b in bourses %}
+        <div style="padding:var(--space-2) 0; font-size:0.82rem; border-bottom:1px solid var(--color-border);">
+          <div class="d-flex justify-between align-center">
+            <span class="fw-medium text-truncate" style="max-width:130px;" title="{{ b.type_bourse.nom }}">{{ b.type_bourse.nom }}</span>
+            <span class="fw-semibold text-success">− {{ b.montant_accorde|floatformat:0 }} <small class="text-muted">F</small></span>
+          </div>
+          <div class="d-flex justify-between align-center" style="margin-top:1px;">
+            <span class="text-muted" style="font-size:0.76rem;">{{ b.rubrique.nom|default:"Globale" }}</span>
+            <div class="d-flex gap-1">
+              <a href="{% url 'finances:bourse_edit' b.id %}" class="btn-icon" style="padding:1px;" title="Modifier">
+                <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </a>
+              <form method="post" action="{% url 'finances:bourse_delete' b.id %}" onsubmit="return confirm('Supprimer cette bourse ?')" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon text-danger" style="padding:1px;" title="Supprimer">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted text-center py-3" style="font-size:0.82rem;">Aucune bourse attribuée.
+          <a href="{% url 'finances:bourse_create' inscription.id %}" class="text-primary">+ Ajouter</a>
+        </p>
+        {% endfor %}
+        {% if bourses %}
+        <div class="d-flex justify-between align-center" style="padding-top:var(--space-2); font-size:0.82rem; font-weight:600;">
+          <span>Total réductions</span>
+          <span class="text-success">− {{ total_reduction|floatformat:0 }} FCFA</span>
+        </div>
+        {% endif %}
       </div>
     </div>
 
@@ -184,7 +256,7 @@
             {% endfor %}
           </tbody>
           <tfoot>
-            <tr style="background:var(--color-bg-secondary);">
+            <tr style="background:var(--color-bg-hover);">
               <td colspan="2" class="fw-bold">Total échéancier</td>
               <td style="text-align:right;" class="fw-bold">{{ echeancier_total|default:0 }} <span class="text-muted">FCFA</span></td>
               <td></td>
@@ -211,8 +283,8 @@
       <div class="card-header" style="padding:var(--space-4) var(--space-6);">
         <div class="d-flex align-center justify-between" style="width:100%;">
           <div class="d-flex align-center gap-3">
-            <div class="icon-box" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:var(--color-success-light); border-radius:8px;">
-              <svg width="18" height="18" fill="none" stroke="var(--color-success)" viewBox="0 0 24 24">
+            <div class="icon-box" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:var(--color-primary-ambient); border-radius:8px;">
+              <svg width="18" height="18" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </div>
@@ -237,6 +309,7 @@
               <th>Mode</th>
               <th>Référence</th>
               <th style="text-align:right">Montant</th>
+              <th style="width:40px;"></th>
             </tr>
           </thead>
           <tbody>
@@ -247,13 +320,23 @@
               <td class="text-secondary">{{ p.get_mode_paiement_display }}</td>
               <td class="text-muted font-mono" style="font-size:0.8rem;">{{ p.reference|default:"-" }}</td>
               <td style="text-align:right;" class="fw-bold text-success">{{ p.montant }} <span class="text-muted">FCFA</span></td>
+              <td>
+                <a href="{% url 'finances:remboursement_create' p.pk %}"
+                   class="btn-icon" title="Rembourser ce versement"
+                   style="color:var(--color-danger);">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                  </svg>
+                </a>
+              </td>
             </tr>
             {% endfor %}
           </tbody>
           <tfoot>
-            <tr style="background:var(--color-bg-secondary);">
-              <td colspan="4" class="fw-bold">Total payé</td>
+            <tr style="background:var(--color-bg-hover);">
+              <td colspan="4" class="fw-bold">Total versé</td>
               <td style="text-align:right;" class="fw-bold text-success">{{ total_paye|default:0 }} <span class="text-muted">FCFA</span></td>
+              <td></td>
             </tr>
           </tfoot>
         </table>
@@ -269,6 +352,126 @@
       </div>
       {% endif %}
     </div>
+
+    {# ── Remboursements ── #}
+    {% if remboursements %}
+    <div class="card">
+      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+        <div class="d-flex align-center gap-3">
+          <div class="icon-box" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:rgba(220,53,69,0.12); border-radius:8px;">
+            <svg width="18" height="18" fill="none" stroke="var(--color-danger)" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+            </svg>
+          </div>
+          <span class="card-title">Remboursements</span>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Paiement d'origine</th>
+              <th>Motif</th>
+              <th>Par</th>
+              <th style="text-align:right">Montant</th>
+              <th style="width:40px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for remb in remboursements %}
+            <tr>
+              <td>{{ remb.date_remboursement|date:"d M Y" }}</td>
+              <td class="text-secondary" style="font-size:0.85rem;">
+                {{ remb.paiement.rubrique.nom|default:"—" }}
+                <span class="text-muted">({{ remb.paiement.date_paiement|date:"d/m/Y" }})</span>
+              </td>
+              <td class="text-muted" style="font-size:0.85rem;">{{ remb.motif|default:"—" }}</td>
+              <td class="text-muted" style="font-size:0.8rem;">{{ remb.rembourse_par.get_full_name|default:"—" }}</td>
+              <td style="text-align:right;" class="fw-bold" style="color:var(--color-danger);">
+                − {{ remb.montant|floatformat:0 }} <span class="text-muted">FCFA</span>
+              </td>
+              <td>
+                <form method="post" action="{% url 'finances:remboursement_delete' remb.pk %}" style="display:inline;"
+                      onsubmit="return confirm('Annuler ce remboursement de {{ remb.montant|floatformat:0 }} FCFA ?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-icon" title="Annuler ce remboursement"
+                          style="color:var(--color-danger);">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--color-bg-hover);">
+              <td colspan="4" class="fw-bold">Total remboursé</td>
+              <td style="text-align:right;" class="fw-bold" style="color:var(--color-danger);">
+                − {{ total_rembourse|default:0 }} <span class="text-muted">FCFA</span>
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if relances_eleve %}
+    <div class="card">
+      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+        <div class="d-flex align-center gap-3">
+          <div class="icon-box" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(234,179,8,0.12);border-radius:8px;">
+            <svg width="18" height="18" fill="none" stroke="#b45309" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+          </div>
+          <span class="card-title">Historique des relances</span>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Canal</th>
+              <th>Rubrique</th>
+              <th style="text-align:right">Montant réclamé</th>
+              <th>Envoyé par</th>
+              <th>Détail</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rel in relances_eleve %}
+            <tr>
+              <td>{{ rel.date_relance|date:"d M Y" }}</td>
+              <td>
+                {% if rel.canal == 'SMS' %}
+                <span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;color:#15803d;background:#f0fdf4;padding:.15rem .5rem;border-radius:99px;">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  SMS
+                </span>
+                {% else %}
+                <span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;color:#1d4ed8;background:#eff6ff;padding:.15rem .5rem;border-radius:99px;">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                  PDF
+                </span>
+                {% endif %}
+              </td>
+              <td>{{ rel.rubrique.nom|default:"—" }}</td>
+              <td style="text-align:right;" class="fw-bold">{{ rel.montant_reclame|floatformat:0 }} <span class="text-muted">FCFA</span></td>
+              <td class="text-muted" style="font-size:.85rem;">{{ rel.envoye_par.get_full_name|default:"—" }}</td>
+              <td class="text-muted" style="font-size:.8rem;">{{ rel.detail|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
 
   </div>
 </div>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+{% load signataire_tags %}
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 1.2cm 1.5cm 1.5cm 1.5cm;
+      @bottom-center {
+        content: "Page " counter(page) " / " counter(pages);
+        font-size: 7pt;
+        color: #94a3b8;
+      }
+      @bottom-right {
+        content: "{{ annee.libelle }}";
+        font-size: 7pt;
+        color: #94a3b8;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'DejaVu Sans', sans-serif;
+      font-size: 9pt;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      background: white;
+    }
+
+    /* ══ EN-TÊTE ══ */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2.5pt solid #00A86B;
+      padding-bottom: 8pt;
+      margin-bottom: 10pt;
+    }
+    .header-left { flex: 1; }
+    .school-name {
+      font-size: 15pt;
+      font-weight: bold;
+      color: #00A86B;
+      text-transform: uppercase;
+      letter-spacing: 0.8pt;
+    }
+    .school-meta {
+      font-size: 7.5pt;
+      color: #64748b;
+      margin-top: 3pt;
+      line-height: 1.5;
+    }
+    .header-right { text-align: right; flex-shrink: 0; margin-left: 12pt; }
+    .header-right img { max-height: 48pt; max-width: 80pt; }
+
+    /* ══ BANDEAU TITRE ══ */
+    .doc-banner {
+      background: #0f172a;
+      color: white;
+      border-radius: 4pt;
+      padding: 7pt 14pt;
+      margin-bottom: 8pt;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .doc-banner h2 {
+      margin: 0;
+      font-size: 11pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1pt;
+    }
+    .doc-banner .banner-sub {
+      font-size: 8pt;
+      color: #94a3b8;
+      margin-top: 3pt;
+    }
+    .badge-count {
+      background: #00A86B;
+      border-radius: 20pt;
+      padding: 4pt 12pt;
+      font-size: 8pt;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    /* ══ BARRE D'INFOS ══ */
+    .info-bar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5pt;
+      margin-bottom: 8pt;
+    }
+    .info-card {
+      border: 1pt solid #e2e8f0;
+      border-radius: 3pt;
+      padding: 5pt 8pt;
+      background: #f8fafc;
+    }
+    .info-card label {
+      display: block;
+      font-size: 6.5pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: .4pt;
+      color: #94a3b8;
+      margin-bottom: 2pt;
+    }
+    .info-card span {
+      font-size: 8.5pt;
+      font-weight: bold;
+      color: #0f172a;
+    }
+    .info-card .sub {
+      font-size: 7pt;
+      color: #64748b;
+      font-weight: normal;
+    }
+
+    /* ══ TABLEAU ══ */
+    table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+
+    thead th {
+      background: #0f172a;
+      color: white;
+      padding: 5pt 3pt;
+      text-align: center;
+      font-size: 7.5pt;
+      font-weight: bold;
+      vertical-align: bottom;
+    }
+    thead th.th-num   { width: 16pt; color: #64748b; }
+    thead th.th-eleve { text-align: left; min-width: 130pt; padding-left: 7pt; }
+    thead th.th-note  { min-width: 34pt; }
+    thead th.th-moy   {
+      background: #00A86B;
+      min-width: 40pt;
+      border-left: 2pt solid #059669;
+    }
+
+    .ev-label  { font-size: 7pt; font-weight: bold; }
+    .ev-date   { font-size: 6pt; opacity: .8; margin-top: 1pt; }
+    .ev-bareme { font-size: 6pt; opacity: .7; font-style: italic; }
+
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+
+    td {
+      padding: 3.5pt 3pt;
+      border-bottom: 0.5pt solid #e2e8f0;
+      vertical-align: middle;
+    }
+    td.td-num   { text-align: center; color: #94a3b8; font-size: 7pt; border-right: 0.5pt solid #e2e8f0; }
+    td.td-eleve { padding-left: 7pt; }
+    td.td-eleve .nom { font-weight: bold; font-size: 8.5pt; }
+    td.td-eleve .mat { font-size: 6.5pt; color: #94a3b8; }
+
+    /* Coloration des notes (/20 calculé en Python via sur_20) */
+    td.note-ok   { text-align: center; font-weight: bold; color: #15803d; background: #f0fdf4; }
+    td.note-low  { text-align: center; font-weight: bold; color: #dc2626; background: #fff1f2; }
+    td.note-abs  { text-align: center; font-weight: bold; color: #dc2626; font-size: 7pt; }
+    td.note-vide { text-align: center; color: #cbd5e1; }
+
+    /* Colonne moyenne */
+    td.td-moy {
+      text-align: center;
+      font-weight: bold;
+      font-size: 10pt;
+      border-left: 2pt solid #00A86B;
+    }
+    td.td-moy.moy-ok  { color: #15803d; background: #f0fdf4; }
+    td.td-moy.moy-low { color: #dc2626; background: #fff1f2; }
+    td.td-moy.moy-est { color: #0369a1; background: #f0f9ff; }
+    td.td-moy.moy-nd  { color: #94a3b8; }
+
+    /* ══ PIED DE TABLEAU ══ */
+    tfoot tr.tf-avg td {
+      border-top: 2pt solid #0f172a;
+      border-bottom: 0.5pt solid #94a3b8;
+      background: #e2e8f0;
+      font-size: 7.5pt;
+      font-weight: bold;
+      color: #0f172a;
+      padding: 4pt 3pt;
+      text-align: center;
+    }
+    tfoot tr.tf-count td {
+      background: #f1f5f9;
+      font-size: 7pt;
+      color: #1e293b;
+      padding: 3pt 3pt;
+      text-align: center;
+      border-bottom: 1pt solid #cbd5e1;
+    }
+    tfoot td.tf-label {
+      text-align: left;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 6.5pt;
+      letter-spacing: .4pt;
+      padding-left: 7pt;
+      color: #0f172a;
+    }
+    tfoot td.tf-moy-col { border-left: 2pt solid #00A86B; }
+    tfoot td.tf-ok  { color: #15803d; }
+    tfoot td.tf-low { color: #dc2626; }
+
+    /* ══ SIGNATAIRE ══ */
+    .sig-zone     { margin-top: 20pt; text-align: right; page-break-inside: avoid; }
+    .sig-date     { font-size: 9pt; color: #475569; margin: 0; }
+    .sig-fonction { font-size: 10pt; font-weight: bold; color: #0f172a; margin: 24pt 0 0; }
+    .sig-name     { font-size: 10pt; font-weight: bold; color: #000; margin: 20pt 0 0; text-transform: uppercase; }
+    .sig-honors   { font-size: 8pt; font-style: italic; color: #475569; margin: 2pt 0 0; }
+
+    /* ══ LÉGENDE ══ */
+    .legende { display: flex; gap: 12pt; margin-top: 6pt; font-size: 6.5pt; color: #64748b; align-items: center; }
+    .leg-item { display: flex; align-items: center; gap: 3pt; }
+    .leg-dot  { width: 7pt; height: 7pt; border-radius: 50%; display: inline-block; }
+    .leg-ok   { background: #bbf7d0; }
+    .leg-low  { background: #fecaca; }
+    .leg-est  { background: #bae6fd; }
+  </style>
+</head>
+<body>
+
+<!-- ══ En-tête établissement ══ -->
+<div class="header">
+  <div class="header-left">
+    <div class="school-name">
+      {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}
+    </div>
+    <div class="school-meta">
+      {% if identite %}
+        {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
+        {% if identite.telephone %} &nbsp;&middot;&nbsp; Tél : {{ identite.telephone }}{% endif %}
+        {% if identite.email %} &nbsp;&middot;&nbsp; {{ identite.email }}{% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="header-right">
+    {% if logo_url %}<img src="{{ logo_url }}" alt="Logo">
+    {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo">{% endif %}
+  </div>
+</div>
+
+<!-- ══ Bandeau titre ══ -->
+<div class="doc-banner">
+  <div>
+    <h2>Relevé de Notes &mdash; {{ enseignement.matiere.nom }}</h2>
+    <div class="banner-sub">
+      Classe : <strong>{{ enseignement.classe.nom }}</strong>
+      &nbsp;&middot;&nbsp; Année : <strong>{{ annee.libelle }}</strong>
+      {% if periode %}&nbsp;&middot;&nbsp; Période : <strong>{{ periode.nom }}</strong>{% else %}&nbsp;&middot;&nbsp; <em>Toutes périodes</em>{% endif %}
+    </div>
+  </div>
+  <div class="badge-count">
+    {{ table|length }} élève{{ table|length|pluralize }}
+    &nbsp;&middot;&nbsp;
+    {{ evaluations_cols|length }} éval{{ evaluations_cols|length|pluralize }}.
+  </div>
+</div>
+
+<!-- ══ Barre d'infos ══ -->
+<div class="info-bar">
+  <div class="info-card">
+    <label>Classe</label>
+    <span>{{ enseignement.classe.nom }}</span>
+    {% if enseignement.classe.cycle %}<div class="sub">{{ enseignement.classe.cycle.nom }}</div>{% endif %}
+  </div>
+  <div class="info-card">
+    <label>Discipline</label>
+    <span>{{ enseignement.matiere.nom }}</span>
+    {% if enseignement.coefficient %}<div class="sub">Coeff. {{ enseignement.coefficient }}</div>{% endif %}
+  </div>
+  <div class="info-card">
+    <label>Enseignant</label>
+    {% if enseignement.personnel %}
+      <span>{{ enseignement.personnel.prenom }} {{ enseignement.personnel.nom }}</span>
+    {% else %}
+      <span style="color:#94a3b8; font-weight:normal;">Non assigné</span>
+    {% endif %}
+  </div>
+  <div class="info-card">
+    <label>Période</label>
+    <span>{% if periode %}{{ periode.nom }}{% else %}Toutes{% endif %}</span>
+  </div>
+  <div class="info-card">
+    <label>Année scolaire</label>
+    <span>{{ annee.libelle }}</span>
+  </div>
+</div>
+
+<!-- ══ Tableau des notes ══ -->
+{% if table %}
+<table>
+  <thead>
+    <tr>
+      <th class="th-num">#</th>
+      <th class="th-eleve">Élève</th>
+      {% for ev in evaluations_cols %}
+      <th class="th-note">
+        <div class="ev-label">{{ ev.type_evaluation.nom|truncatechars:10 }}</div>
+        <div class="ev-date">{{ ev.date_planifiee|date:"d/m/Y" }}</div>
+        <div class="ev-bareme">/{{ ev.bareme }}</div>
+      </th>
+      {% endfor %}
+      <th class="th-moy">Moy /20</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for row in table %}
+    <tr>
+      <td class="td-num">{{ forloop.counter }}</td>
+      <td class="td-eleve">
+        <div class="nom">{{ row.inscription.eleve.nom|upper }} {{ row.inscription.eleve.prenom }}</div>
+        <div class="mat">{{ row.inscription.eleve.matricule }}</div>
+      </td>
+
+      {% for note_data in row.notes %}
+        {% if note_data %}
+          {% if note_data.observation == 'ABS' %}
+            <td class="note-abs">ABS</td>
+          {% elif note_data.sur_20 is not None %}
+            {% if note_data.sur_20 >= 10 %}
+              <td class="note-ok">{{ note_data.valeur|floatformat:"-2" }}</td>
+            {% else %}
+              <td class="note-low">{{ note_data.valeur|floatformat:"-2" }}</td>
+            {% endif %}
+          {% else %}
+            <td class="note-vide">{{ note_data.valeur|floatformat:"-2" }}</td>
+          {% endif %}
+        {% else %}
+          <td class="note-vide">—</td>
+        {% endif %}
+      {% endfor %}
+
+      {% if row.resultat and row.resultat.moyenne_sur_20 is not None %}
+        {% if row.resultat.moyenne_sur_20 >= 10 %}
+          <td class="td-moy moy-ok">{{ row.resultat.moyenne_sur_20|floatformat:2 }}</td>
+        {% else %}
+          <td class="td-moy moy-low">{{ row.resultat.moyenne_sur_20|floatformat:2 }}</td>
+        {% endif %}
+      {% elif row.moyenne_locale is not None %}
+        <td class="td-moy moy-est">~{{ row.moyenne_locale }}</td>
+      {% else %}
+        <td class="td-moy moy-nd">—</td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
+
+  {% if ev_stats %}
+  <tfoot>
+    <tr class="tf-avg">
+      <td colspan="2" class="tf-label">Moy. classe</td>
+      {% for stat in ev_stats %}
+        {% if stat.avg != None %}
+          {% if stat.avg >= 10 %}<td class="tf-ok">{{ stat.avg|floatformat:2 }}</td>
+          {% else %}<td class="tf-low">{{ stat.avg|floatformat:2 }}</td>{% endif %}
+        {% else %}<td style="color:#94a3b8;">—</td>{% endif %}
+      {% endfor %}
+      <td class="tf-moy-col" style="color:#94a3b8;">—</td>
+    </tr>
+    <tr class="tf-count">
+      <td colspan="2" class="tf-label">Saisies</td>
+      {% for stat in ev_stats %}
+        <td>{{ stat.count }}/{{ table|length }}</td>
+      {% endfor %}
+      <td class="tf-moy-col"></td>
+    </tr>
+  </tfoot>
+  {% endif %}
+</table>
+
+<!-- ══ Récapitulatif moyennes ══ -->
+{% if moy_max or moy_min or moy_classe %}
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6pt; margin-top:8pt;">
+
+  <div style="border:1pt solid #bbf7d0; border-radius:3pt; background:#f0fdf4; padding:6pt 10pt; text-align:center;">
+    <div style="font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:.4pt; color:#15803d; margin-bottom:3pt;">
+      Meilleure moyenne
+    </div>
+    {% if moy_max %}
+    <div style="font-size:14pt; font-weight:bold; color:#15803d;">{{ moy_max.moy }}<span style="font-size:8pt; font-weight:normal;">/20</span></div>
+    <div style="font-size:7.5pt; color:#166534; margin-top:2pt;">
+      {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }}
+    </div>
+    {% else %}<div style="color:#94a3b8;">—</div>{% endif %}
+  </div>
+
+  <div style="border:1pt solid #e2e8f0; border-radius:3pt; background:#f8fafc; padding:6pt 10pt; text-align:center;">
+    <div style="font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:.4pt; color:#475569; margin-bottom:3pt;">
+      Moyenne de la classe
+    </div>
+    {% if moy_classe %}
+    <div style="font-size:14pt; font-weight:bold; color:{% if moy_classe >= 10 %}#15803d{% else %}#dc2626{% endif %};">
+      {{ moy_classe }}<span style="font-size:8pt; font-weight:normal;">/20</span>
+    </div>
+    <div style="font-size:7.5pt; color:#475569; margin-top:2pt;">{{ table|length }} élève{{ table|length|pluralize }}</div>
+    {% else %}<div style="color:#94a3b8;">—</div>{% endif %}
+  </div>
+
+  <div style="border:1pt solid #fecaca; border-radius:3pt; background:#fff1f2; padding:6pt 10pt; text-align:center;">
+    <div style="font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:.4pt; color:#dc2626; margin-bottom:3pt;">
+      Moyenne la plus faible
+    </div>
+    {% if moy_min %}
+    <div style="font-size:14pt; font-weight:bold; color:#dc2626;">{{ moy_min.moy }}<span style="font-size:8pt; font-weight:normal;">/20</span></div>
+    <div style="font-size:7.5pt; color:#991b1b; margin-top:2pt;">
+      {{ moy_min.inscription.eleve.nom|upper }} {{ moy_min.inscription.eleve.prenom }}
+    </div>
+    {% else %}<div style="color:#94a3b8;">—</div>{% endif %}
+  </div>
+
+</div>
+{% endif %}
+
+<div class="legende">
+  <div class="leg-item"><span class="leg-dot leg-ok"></span> &ge; 10/20</div>
+  <div class="leg-item"><span class="leg-dot leg-low"></span> &lt; 10/20</div>
+  <div class="leg-item"><span class="leg-dot leg-est"></span> Moyenne estimée (non validée)</div>
+  <span style="margin-left:auto; font-size:6pt; color:#94a3b8;">
+    Coloration calculée sur l'équivalent /20 de chaque note (note &divide; barème &times; 20).
+  </span>
+</div>
+
+{% else %}
+<div style="text-align:center; color:#94a3b8; padding:30pt; border:1pt dashed #e2e8f0; border-radius:4pt; margin-top:10pt;">
+  Aucune donnée à afficher. Vérifiez les filtres sélectionnés.
+</div>
+{% endif %}
+
+<!-- ══ Signataire ══ -->
+{% signataire_auto "RELEVE_NOTES" %}
+
+</body>
+</html>

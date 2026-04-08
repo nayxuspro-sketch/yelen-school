@@ -10,34 +10,70 @@
     <h1 class="page-title">Gestion des Élèves</h1>
     <p class="page-subtitle">Consultez la liste des élèves et gérez les inscriptions.</p>
   </div>
-  <a href="{% url 'inscriptions:eleve_create' %}" class="btn-primary">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-    </svg>
-    Nouvel élève
-  </a>
+  <div style="display:flex; gap:var(--space-2); align-items:center;">
+    <a href="{% url 'inscriptions:eleve_list_csv' %}?{{ request.GET.urlencode }}"
+       class="btn-secondary" title="Exporter CSV (compatible Excel)">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      CSV
+    </a>
+    <a href="{% url 'inscriptions:eleve_list_pdf' %}?{{ request.GET.urlencode }}"
+       class="btn-secondary" title="Exporter PDF">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+      </svg>
+      PDF
+    </a>
+    <a href="{% url 'inscriptions:eleve_create' %}" class="btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+      </svg>
+      Nouvel élève
+    </a>
+  </div>
 </div>
 
 {# ── Filtres & Recherche ── #}
-<div class="card mb-4" style="padding: var(--space-4);">
-  <div class="search-wrapper">
+<form id="filters-form"
+      hx-get="{% url 'inscriptions:eleve_list' %}"
+      hx-trigger="keyup changed delay:500ms from:input[name='q'], change from:select"
+      hx-target="#eleve-table"
+      hx-push-url="true"
+      class="card mb-4"
+      style="padding:var(--space-4); display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center;">
+
+  <div class="search-wrapper" style="flex:1; min-width:220px;">
     <span class="search-icon">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
       </svg>
     </span>
-    <input type="text"
-           name="q"
-           class="input search-input"
-           placeholder="Rechercher par nom, matricule…"
-           value="{{ query }}"
-           hx-get="{% url 'inscriptions:eleve_list' %}"
-           hx-trigger="keyup changed delay:500ms"
-           hx-target="#eleve-table">
+    <input type="text" name="q" class="input search-input"
+           placeholder="Rechercher par nom, matricule…" value="{{ query }}">
   </div>
-</div>
+
+  <select name="classe" class="input select" style="min-width:180px;">
+    <option value="">Toutes les classes</option>
+    {% for cls in classes %}
+    <option value="{{ cls.pk }}" {% if classe_id == cls.pk|stringformat:"s" %}selected{% endif %}>
+      {{ cls.nom }}{% if cls.cycle %} — {{ cls.cycle.nom }}{% endif %}
+    </option>
+    {% endfor %}
+  </select>
+
+  <select name="statut" class="input select" style="min-width:170px;">
+    <option value="">Tous les statuts</option>
+    <option value="inscrit"     {% if statut_filter == "inscrit"     %}selected{% endif %}>Inscrits</option>
+    <option value="abandon"     {% if statut_filter == "abandon"     %}selected{% endif %}>Abandon</option>
+    <option value="non_inscrit" {% if statut_filter == "non_inscrit" %}selected{% endif %}>Non inscrits</option>
+  </select>
+
+</form>
 
 {# ── Tableau ── #}
 <div id="eleve-table" class="table-wrapper">

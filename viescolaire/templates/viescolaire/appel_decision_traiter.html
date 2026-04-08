@@ -1,0 +1,188 @@
+{% extends "core/base.html" %}
+{% block title %}Instruire l'appel — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'viescolaire:appel_decision_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{% if appel.est_traite %}Appel traité{% else %}Instruire l'appel{% endif %}</h1>
+      <p class="page-subtitle">
+        {{ appel.decision_conseil.inscription.eleve.get_nom_complet }} —
+        {{ appel.decision_conseil.get_decision_display }}
+      </p>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:680px; margin:0 auto; display:flex; flex-direction:column; gap:1.25rem;">
+
+  <!-- Décision initiale -->
+  <div class="card animate-fade-up delay-1" style="padding:var(--space-5);">
+    <div style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; color:var(--color-text-muted); font-weight:600; margin-bottom:.75rem;">Décision contestée</div>
+    <div class="d-flex align-center gap-4 flex-wrap">
+      <div>
+        <div class="fw-semibold">{{ appel.decision_conseil.inscription.eleve.get_nom_complet }}</div>
+        <div style="font-size:.82rem; color:var(--color-text-muted);">
+          {{ appel.decision_conseil.conseil.classe.nom }} · {{ appel.decision_conseil.conseil.trimestre.nom }}
+        </div>
+      </div>
+      <span style="padding:.25rem .75rem; border-radius:8px; font-weight:700; font-size:.85rem;
+        {% if appel.decision_conseil.decision == 'REDOUBLEMENT' %}background:#fef2f2; color:#b91c1c;
+        {% elif appel.decision_conseil.decision == 'EXCLUSION' %}background:#fff1f0; color:#c0392b;
+        {% elif appel.decision_conseil.decision == 'ORIENTATION' %}background:#fffbeb; color:#92400e;
+        {% else %}background:#f0fdf4; color:#166534;{% endif %}">
+        {{ appel.decision_conseil.get_decision_display }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Motif de la contestation -->
+  <div class="card animate-fade-up delay-1" style="padding:var(--space-5);">
+    <div style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; color:var(--color-text-muted); font-weight:600; margin-bottom:.5rem;">
+      Motif — déposé le {{ appel.date_depot|date:"d/m/Y" }}
+      {% if appel.depose_par %}<span style="font-weight:400;">par {{ appel.depose_par.get_full_name }}</span>{% endif %}
+    </div>
+    <p style="margin:0; font-size:.9rem; line-height:1.6; white-space:pre-wrap;">{{ appel.motif }}</p>
+  </div>
+
+  <!-- Formulaire d'instruction -->
+  <div class="card animate-fade-up delay-2">
+    <div class="card-header">
+      <span class="card-title">{% if appel.est_traite %}Résultat de l'instruction{% else %}Instruction de la commission{% endif %}</span>
+    </div>
+    <form method="post" style="padding:var(--space-6); display:flex; flex-direction:column; gap:1.2rem;">
+      {% csrf_token %}
+
+      {% if messages %}
+      {% for msg in messages %}
+      <div style="padding:.75rem 1rem; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; font-size:.875rem; color:#b91c1c;">{{ msg }}</div>
+      {% endfor %}
+      {% endif %}
+
+      <!-- Statut -->
+      <div>
+        <label class="input-label">Statut de l'instruction</label>
+        <div style="display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.4rem;">
+          {% for val, lib in statut_choices %}
+          <label style="display:flex; align-items:center; gap:.4rem; padding:.5rem .9rem;
+                        border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer;
+                        font-size:.85rem; font-weight:600; transition:all .15s;"
+                 class="statut-option" data-val="{{ val }}">
+            <input type="radio" name="statut" value="{{ val }}" style="display:none;"
+                   {% if appel.statut == val %}checked{% endif %}
+                   {% if appel.est_traite %}disabled{% endif %}>
+            {{ lib }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Issue -->
+      <div id="issue-bloc">
+        <label class="input-label">Issue <span style="color:var(--color-danger);">*</span></label>
+        <div style="display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.4rem;">
+          {% for val, lib in issue_choices %}
+          <label style="display:flex; align-items:center; gap:.4rem; padding:.5rem .9rem;
+                        border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer;
+                        font-size:.85rem; font-weight:600; transition:all .15s;"
+                 class="issue-option" data-val="{{ val }}">
+            <input type="radio" name="issue" value="{{ val }}" style="display:none;"
+                   {% if appel.issue == val %}checked{% endif %}
+                   {% if appel.est_traite %}disabled{% endif %}
+                   onchange="toggleNouvelleDecision()">
+            {% if val == 'MAINTENU' %}🔒 {{ lib }}
+            {% elif val == 'MODIFIE' %}✏️ {{ lib }}
+            {% else %}✗ {{ lib }}{% endif %}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Nouvelle décision (si MODIFIE) -->
+      <div id="nouvelle-decision-bloc" style="display:{% if appel.issue == 'MODIFIE' %}block{% else %}none{% endif %};">
+        <label class="input-label" for="nouvelle_decision">Nouvelle décision</label>
+        <select id="nouvelle_decision" name="nouvelle_decision" class="input select"
+                style="max-width:280px;"
+                {% if appel.est_traite %}disabled{% endif %}>
+          <option value="">— Choisir —</option>
+          {% for val, lib in decision_choices %}
+          <option value="{{ val }}" {% if appel.nouvelle_decision == val %}selected{% endif %}>{{ lib }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Observations -->
+      <div>
+        <label class="input-label" for="observations_commission">Observations de la commission</label>
+        <textarea id="observations_commission" name="observations_commission"
+                  class="input" rows="4" style="resize:vertical; min-height:90px;"
+                  placeholder="Motivations de la décision de la commission…"
+                  {% if appel.est_traite %}disabled{% endif %}>{{ appel.observations_commission }}</textarea>
+      </div>
+
+      {% if appel.est_traite %}
+      <div style="padding:.75rem 1rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-size:.85rem; color:#166534;">
+        ✓ Traité le {{ appel.date_traitement|date:"d/m/Y" }}
+        {% if appel.traite_par %}par {{ appel.traite_par.get_full_name }}{% endif %}
+      </div>
+      {% else %}
+      <div class="d-flex gap-3 justify-end" style="margin-top:.5rem;">
+        <a href="{% url 'viescolaire:appel_decision_list' %}" class="btn-secondary">Annuler</a>
+        <button type="submit" name="statut" value="{{ appel.statut }}" class="btn-secondary"
+                formnovalidate style="color:var(--color-primary); border-color:var(--color-primary);">
+          Sauvegarder (en cours)
+        </button>
+        <button type="submit" name="statut" value="TRAITE" class="btn-primary">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          Clôturer l'appel
+        </button>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+</div>
+
+<style>
+.statut-option:has(input:checked), .issue-option:has(input:checked) {
+  border-color: var(--color-primary) !important;
+  background: rgba(0,168,107,.07);
+  color: var(--color-primary);
+}
+.statut-option.selected, .issue-option.selected {
+  border-color: var(--color-primary) !important;
+  background: rgba(0,168,107,.07);
+  color: var(--color-primary);
+}
+</style>
+
+<script>
+function toggleNouvelleDecision() {
+  const checked = document.querySelector('input[name="issue"]:checked');
+  document.getElementById('nouvelle-decision-bloc').style.display =
+    (checked && checked.value === 'MODIFIE') ? 'block' : 'none';
+}
+
+// Sélection visuelle statut/issue
+['statut-option', 'issue-option'].forEach(cls => {
+  document.querySelectorAll('.' + cls).forEach(el => {
+    el.addEventListener('click', () => {
+      el.querySelector('input').checked = true;
+      document.querySelectorAll('.' + cls).forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      if (cls === 'issue-option') toggleNouvelleDecision();
+    });
+  });
+  document.querySelectorAll('.' + cls + ' input:checked').forEach(inp => {
+    inp.closest('.' + cls).classList.add('selected');
+  });
+});
+</script>
+{% endblock %}

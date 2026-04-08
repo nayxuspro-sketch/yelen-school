@@ -1,0 +1,171 @@
+{% extends "core/base.html" %}
+{% block title %}Historique des relances — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div style="max-width:72rem; margin:0 auto;">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Historique des relances</h1>
+      <p class="page-subtitle">Toutes les relances PDF et SMS envoyées aux familles</p>
+    </div>
+    <a href="{% url 'finances:relance_paiement' %}" class="btn-primary">
+      Nouvelle relance
+    </a>
+  </div>
+
+  <!-- Filtres -->
+  <div class="card mb-5" style="padding:var(--space-5);">
+    <form method="get" class="d-flex gap-3" style="flex-wrap:wrap; align-items:flex-end;">
+
+      <div style="flex:1; min-width:160px;">
+        <label class="form-label" style="font-size:.8rem;">Recherche élève</label>
+        <input type="text" name="q" value="{{ f_q }}" placeholder="Nom, prénom, matricule…" class="input" style="height:36px; font-size:.85rem;">
+      </div>
+
+      <div style="min-width:160px;">
+        <label class="form-label" style="font-size:.8rem;">Année scolaire</label>
+        <select name="annee" class="input select" style="height:36px; font-size:.85rem;">
+          <option value="">Toutes</option>
+          {% for a in annees %}
+          <option value="{{ a.pk }}" {% if f_annee == a.pk|stringformat:"s" %}selected{% endif %}>{{ a.libelle }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="min-width:140px;">
+        <label class="form-label" style="font-size:.8rem;">Classe</label>
+        <select name="classe" class="input select" style="height:36px; font-size:.85rem;">
+          <option value="">Toutes</option>
+          {% for c in classes %}
+          <option value="{{ c.pk }}" {% if f_classe == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="min-width:150px;">
+        <label class="form-label" style="font-size:.8rem;">Rubrique</label>
+        <select name="rubrique" class="input select" style="height:36px; font-size:.85rem;">
+          <option value="">Toutes</option>
+          {% for r in rubriques %}
+          <option value="{{ r.pk }}" {% if f_rubrique == r.pk|stringformat:"s" %}selected{% endif %}>{{ r.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="min-width:110px;">
+        <label class="form-label" style="font-size:.8rem;">Canal</label>
+        <select name="canal" class="input select" style="height:36px; font-size:.85rem;">
+          <option value="">Tous</option>
+          <option value="PDF" {% if f_canal == "PDF" %}selected{% endif %}>PDF</option>
+          <option value="SMS" {% if f_canal == "SMS" %}selected{% endif %}>SMS</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label" style="font-size:.8rem;">Du</label>
+        <input type="date" name="date_debut" value="{{ f_date_debut }}" class="input" style="height:36px; font-size:.85rem; width:140px;">
+      </div>
+
+      <div>
+        <label class="form-label" style="font-size:.8rem;">Au</label>
+        <input type="date" name="date_fin" value="{{ f_date_fin }}" class="input" style="height:36px; font-size:.85rem; width:140px;">
+      </div>
+
+      <div style="display:flex; gap:.5rem; align-items:flex-end;">
+        <button type="submit" class="btn-primary" style="height:36px; padding:0 1rem; font-size:.85rem;">Filtrer</button>
+        <a href="{% url 'finances:historique_relances' %}" class="btn-secondary" style="height:36px; padding:0 1rem; font-size:.85rem; display:flex; align-items:center;">Effacer</a>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Compteurs -->
+  <div class="d-flex gap-4 mb-5" style="flex-wrap:wrap;">
+    <div class="card" style="flex:1; min-width:160px; padding:var(--space-4); text-align:center;">
+      <div style="font-size:1.6rem; font-weight:700; color:var(--color-primary);">{{ nb_relances }}</div>
+      <div style="font-size:.8rem; color:var(--color-text-muted);">relance(s) trouvée(s)</div>
+    </div>
+    <div class="card" style="flex:1; min-width:160px; padding:var(--space-4); text-align:center;">
+      <div style="font-size:1.6rem; font-weight:700; color:var(--color-warning);">{{ total_reclame|floatformat:0 }} FCFA</div>
+      <div style="font-size:.8rem; color:var(--color-text-muted);">montant total réclamé</div>
+    </div>
+  </div>
+
+  {% if relances %}
+  <div class="card">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Élève</th>
+            <th>Classe</th>
+            <th>Rubrique</th>
+            <th>Canal</th>
+            <th style="text-align:right;">Montant réclamé</th>
+            <th>Envoyé par</th>
+            <th>Détail</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rel in relances %}
+          <tr>
+            <td class="text-mono" style="white-space:nowrap;">{{ rel.date_relance|date:"d/m/Y" }}</td>
+            <td>
+              <a href="{% url 'finances:situation_eleve' rel.inscription.pk %}"
+                 style="font-weight:500; color:var(--color-primary); text-decoration:none;">
+                {{ rel.inscription.eleve.nom }} {{ rel.inscription.eleve.prenom }}
+              </a>
+              <div style="font-size:.75rem; color:var(--color-text-muted);">{{ rel.inscription.eleve.matricule }}</div>
+            </td>
+            <td style="font-size:.85rem;">{{ rel.inscription.classe.nom }}</td>
+            <td style="font-size:.85rem;">{{ rel.rubrique.nom|default:"—" }}</td>
+            <td>
+              {% if rel.canal == 'SMS' %}
+              <span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;color:#15803d;background:#f0fdf4;padding:.15rem .5rem;border-radius:99px;white-space:nowrap;">
+                <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                SMS
+              </span>
+              {% else %}
+              <span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;color:#1d4ed8;background:#eff6ff;padding:.15rem .5rem;border-radius:99px;white-space:nowrap;">
+                <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                PDF
+              </span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;" class="text-mono fw-bold">
+              {{ rel.montant_reclame|floatformat:0 }} <span class="text-muted">FCFA</span>
+            </td>
+            <td style="font-size:.8rem; color:var(--color-text-muted);">{{ rel.envoye_par.get_full_name|default:"—" }}</td>
+            <td style="font-size:.75rem; color:var(--color-text-muted); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ rel.detail }}">
+              {{ rel.detail|default:"—" }}
+            </td>
+            <td>
+              <a href="{% url 'finances:situation_eleve' rel.inscription.pk %}"
+                 class="btn-icon" title="Voir la situation de l'élève" style="color:var(--color-primary);">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="card" style="padding:var(--space-8); text-align:center;">
+    <svg width="40" height="40" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24" style="margin:0 auto var(--space-3);">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+    </svg>
+    <p style="color:var(--color-text-muted); margin:0;">Aucune relance trouvée pour ces critères.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

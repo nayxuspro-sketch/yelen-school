@@ -16,7 +16,7 @@ car tous les autres modules en dépendent.
 6. StatutEleve - Statuts des élèves (Affecté, Boursier, etc.)
 7. RubriquePaiement - Types de frais (Scolarité, Inscription, etc.)
 8. TarifScolarite - Matrice tarifaire (classe × statut × rubrique)
-9. AppreciationConduite - Grille d'appréciation comportementale
+9. AppreciationMoyenneSecondaire - Grille d'appréciation des moyennes pour le secondaire
 10. AnneeScolaire - Gestion des années scolaires
 11. Discipline - Matières par cycle avec coefficients
 12. PeriodeEvaluation - Trimestres ou semestres
@@ -215,7 +215,6 @@ class IdentiteEtablissement(BaseModel):
 # ═══════════════════════════════════════════════════════════════════
 # 2. CYCLE SCOLAIRE
 # ═══════════════════════════════════════════════════════════════════
-from django.utils.translation import gettext_lazy as _
 
 class Cycle(BaseModel):
     """
@@ -231,11 +230,11 @@ class Cycle(BaseModel):
     ]
     
     etablissement = models.ForeignKey(
-    'etablissements.Etablissement',
-    on_delete=models.CASCADE,
-    related_name='cycles_parametres',  # <-- nom unique qui n'existe pas encore
-    verbose_name=_("Établissement")
-)
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='cycles_parametres',
+        verbose_name=_("Établissement")
+    )
     
     nom = models.CharField(
         max_length=50,
@@ -585,7 +584,7 @@ class RubriquePaiement(BaseModel):
     )
     
     nom = models.CharField(
-        max_length=100,
+        max_length=200,
         verbose_name=_("Nom de la rubrique"),
         help_text=_("Ex: Scolarité, Inscription, Cantine, etc.")
     )
@@ -618,6 +617,15 @@ class RubriquePaiement(BaseModel):
         verbose_name=_("Rubrique active")
     )
     
+    montant = models.DecimalField(
+        max_digits=10,
+        decimal_places=0,
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name=_("Montant (FCFA)"),
+        help_text=_("Montant par défaut en Francs CFA")
+    )
+    
     class Meta:
         verbose_name = _("Rubrique de Paiement")
         verbose_name_plural = _("Rubriques de Paiement")
@@ -646,6 +654,16 @@ class TarifScolarite(BaseModel):
         on_delete=models.CASCADE,
         related_name='tarifs',
         verbose_name=_("Établissement")
+    )
+    
+    cycle = models.ForeignKey(
+        Cycle,
+        on_delete=models.CASCADE,
+        related_name='tarifs',
+        verbose_name=_("Cycle"),
+        null=True,
+        blank=True,
+        help_text=_("Laisser vide pour appliquer à tous les cycles")
     )
     
     classe = models.ForeignKey(
@@ -707,7 +725,7 @@ class TarifScolarite(BaseModel):
 # 9. APPRÉCIATION CONDUITE
 # ═══════════════════════════════════════════════════════════════════
 
-class AppreciationConduite(BaseModel):
+class AppreciationMoyenneSecondaire(BaseModel):
     """
     Grille d'appréciation comportementale pour les bulletins.
     
@@ -727,22 +745,22 @@ class AppreciationConduite(BaseModel):
         help_text=_("Ex: Excellent, Bien, Passable, etc.")
     )
     
-    note_min = models.DecimalField(
+    moy_min = models.DecimalField(
         max_digits=4,
         decimal_places=2,
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(20)],
-        verbose_name=_("Note minimale"),
-        help_text=_("Note minimale pour cette appréciation sur 20")
+        verbose_name=_("Moyenne minimale"),
+        help_text=_("Moyenne minimale pour cette appréciation sur 20")
     )
     
-    note_max = models.DecimalField(
+    moy_max = models.DecimalField(
         max_digits=4,
         decimal_places=2,
         default=20,
         validators=[MinValueValidator(0), MaxValueValidator(20)],
-        verbose_name=_("Note maximale"),
-        help_text=_("Note maximale pour cette appréciation sur 20")
+        verbose_name=_("Moyenne maximale"),
+        help_text=_("Moyenne maximale pour cette appréciation sur 20")
     )
     
     couleur = models.CharField(
@@ -763,12 +781,80 @@ class AppreciationConduite(BaseModel):
     )
     
     class Meta:
-        verbose_name = _("Appréciation Conduite")
-        verbose_name_plural = _("Appréciations Conduite")
-        ordering = ['-note_min']
+        verbose_name = _("Appréciation Moyenne Secondaire")
+        verbose_name_plural = _("Appréciations Moyenne Secondaire")
+        ordering = ['-moy_min']
     
     def __str__(self):
-        return f"{self.libelle} ({self.note_min}-{self.note_max})"
+        return f"{self.libelle} ({self.moy_min}-{self.moy_max})"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 9b. APPRÉCIATION MOYENNE PRIMAIRE
+# ═══════════════════════════════════════════════════════════════════
+
+class AppreciationMoyennePrimaire(BaseModel):
+    """
+    Grille d'appréciation des moyennes pour le cycle Primaire.
+    
+    Ex: Excellent, Bien, Passable, Insuffisant, Médiocre
+    """
+    
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='appreciations_moyenne_primaire',
+        verbose_name=_("Établissement")
+    )
+    
+    libelle = models.CharField(
+        max_length=50,
+        verbose_name=_("Libellé"),
+        help_text=_("Ex: Excellent, Bien, Passable, etc.")
+    )
+    
+    moy_min = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+        verbose_name=_("Moyenne minimale"),
+        help_text=_("Moyenne minimale pour cette appréciation sur 10")
+    )
+    
+    moy_max = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=10,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+        verbose_name=_("Moyenne maximale"),
+        help_text=_("Moyenne maximale pour cette appréciation sur 10")
+    )
+    
+    couleur = models.CharField(
+        max_length=7,
+        default='#00A86B',
+        verbose_name=_("Couleur"),
+        help_text=_("Code couleur hexadécimal")
+    )
+    
+    ordre = models.IntegerField(
+        default=1,
+        verbose_name=_("Ordre d'affichage")
+    )
+    
+    actif = models.BooleanField(
+        default=True,
+        verbose_name=_("Appréciation active")
+    )
+    
+    class Meta:
+        verbose_name = _("Appréciation Moyenne Primaire")
+        verbose_name_plural = _("Appréciations Moyenne Primaire")
+        ordering = ['-moy_min']
+    
+    def __str__(self):
+        return f"{self.libelle} ({self.moy_min}-{self.moy_max})"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -854,6 +940,59 @@ class AnneeScolaire(BaseModel):
 
 
 # ═══════════════════════════════════════════════════════════════════
+# 11. CATÉGORIE DISCIPLINE
+# ═══════════════════════════════════════════════════════════════════
+
+class CategorieDiscipline(BaseModel):
+    """Catégories de disciplines (ex: Langues, Sciences, Sciences Humaines)"""
+    
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='categorie_disciplines',
+        verbose_name=_("Établissement")
+    )
+    
+    nom = models.CharField(
+        max_length=100,
+        verbose_name=_("Nom de la catégorie"),
+        help_text=_("Ex: Langues, Sciences, Sciences Humaines, etc.")
+    )
+    
+    code = models.CharField(
+        max_length=20,
+        verbose_name=_("Code"),
+        help_text=_("Code court unique, ex: LNG, SCI, SH")
+    )
+    
+    couleur = models.CharField(
+        max_length=7,
+        default='#6366F1',
+        verbose_name=_("Couleur"),
+        help_text=_("Code couleur pour affichage")
+    )
+    
+    ordre = models.IntegerField(
+        default=1,
+        verbose_name=_("Ordre d'affichage")
+    )
+    
+    actif = models.BooleanField(
+        default=True,
+        verbose_name=_("Catégorie active")
+    )
+    
+    class Meta:
+        verbose_name = _("Catégorie de discipline")
+        verbose_name_plural = _("Catégories de disciplines")
+        ordering = ['etablissement', 'ordre', 'nom']
+        unique_together = [['etablissement', 'code']]
+    
+    def __str__(self):
+        return self.nom
+
+
+# ═══════════════════════════════════════════════════════════════════
 # 11. DISCIPLINE (Matières)
 # ═══════════════════════════════════════════════════════════════════
 
@@ -861,8 +1000,8 @@ class Discipline(BaseModel):
     """
     Matières enseignées par cycle.
     
-    Chaque matière a un coefficient qui varie selon le cycle.
-    Ex: Mathématiques coeff 4 en Terminale C, coeff 2 en Terminale A.
+    Chaque matière appartient à une catégorie paramétrable.
+    Ex: Mathématiques en Sciences, Français en Langues.
     """
     
     etablissement = models.ForeignKey(
@@ -891,11 +1030,13 @@ class Discipline(BaseModel):
         verbose_name=_("Cycle")
     )
     
-    coefficient = models.IntegerField(
-        default=1,
-        validators=[MinValueValidator(1), MaxValueValidator(10)],
-        verbose_name=_("Coefficient"),
-        help_text=_("Coefficient officiel MENA")
+    categorie = models.ForeignKey(
+        CategorieDiscipline,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='disciplines',
+        verbose_name=_("Catégorie")
     )
     
     est_evaluee = models.BooleanField(
@@ -928,7 +1069,7 @@ class Discipline(BaseModel):
         unique_together = [['etablissement', 'code', 'cycle']]
     
     def __str__(self):
-        return f"{self.nom} ({self.cycle.nom}) - Coeff. {self.coefficient}"
+        return f"{self.nom} ({self.cycle.nom})"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1018,17 +1159,25 @@ class TypeDocument(BaseModel):
     """
     Types de documents pouvant porter une signature.
     
-    9 types prédéfinis (fixtures) :
-    - CERT_SCOL : Certificat de Scolarité
-    - BULLETIN : Bulletin de Notes
-    - RECU_PAIEMENT : Reçu de Paiement
-    - AUTORISATION : Autorisation d'Absence
-    - ATTESTATION : Attestation de Non-Redevabilité
-    - CURSUS : Cursus Scolaire Complet
-    - CARTE_ID : Carte d'Identité Scolaire
-    - LISTE_CLASSE : Liste Alphabétique de Classe
-    - LISTE_PERSONNEL : Liste du Personnel
+    10 types prédéfinis (fixtures) :
+    - CERT_SCOL        : Certificat de Scolarité
+    - BULLETIN         : Bulletin de Notes
+    - RECU_PAIEMENT    : Reçu de Paiement
+    - AUTORISATION     : Autorisation d'Absence
+    - ATTESTATION      : Attestation de Non-Redevabilité
+    - CURSUS           : Cursus Scolaire Complet
+    - CARTE_ID         : Carte d'Identité Scolaire
+    - LISTE_CLASSE     : Liste Alphabétique de Classe
+    - LISTE_PERSONNEL  : Liste du Personnel
+    - LISTE_REDEVABLES : Liste des Redevables
     """
+    
+    class CategorieChoices(models.TextChoices):
+        SCOLARITE = 'SCOLARITE', _('Scolarité')
+        FINANCE = 'FINANCE', _('Finance')
+        ADMINISTRATIF = 'ADMINISTRATIF', _('Administratif')
+        PEDAGOGIE = 'PEDAGOGIE', _('Pédagogie')
+        PERSONNEL = 'PERSONNEL', _('Personnel')
     
     code = models.CharField(
         max_length=20,
@@ -1041,6 +1190,22 @@ class TypeDocument(BaseModel):
         max_length=100,
         verbose_name=_("Libellé"),
         help_text=_("Ex: Certificat de Scolarité")
+    )
+    
+    categorie = models.CharField(
+        max_length=20,
+        choices=CategorieChoices.choices,
+        default=CategorieChoices.SCOLARITE,
+        verbose_name=_("Catégorie")
+    )
+    
+    cycle = models.ForeignKey(
+        'parametres.Cycle',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Cycle"),
+        help_text=_("Laisser vide pour applies à tous les cycles")
     )
     
     description = models.TextField(
@@ -1064,36 +1229,123 @@ class TypeDocument(BaseModel):
 
 
 # ═══════════════════════════════════════════════════════════════════
-# 14. SIGNATAIRE DOCUMENT (v3.4)
+# 14. TYPE SANCTION
+# ═══════════════════════════════════════════════════════════════════
+
+class TypeSanction(BaseModel):
+    """
+    Types de sanctions disciplinaires configurables.
+    
+    Ex: AVERTISSEMENT, BLAME, EXCLUSION_TEMP, etc.
+    """
+    
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name=_("Code"),
+        help_text=_("Ex: AVERTISSEMENT, BLAME, EXCLUSION_TEMP")
+    )
+    
+    libelle = models.CharField(
+        max_length=100,
+        verbose_name=_("Libellé"),
+        help_text=_("Ex: Avertissement, Blâme, Exclusion temporaire")
+    )
+    
+    description = models.TextField(
+        blank=True,
+        verbose_name=_("Description")
+    )
+    
+    actif = models.BooleanField(
+        default=True,
+        verbose_name=_("Type actif")
+    )
+
+    points_defaut = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        verbose_name=_("Points par défaut"),
+        help_text=_("Valeur pré-remplie lors de la création d'une sanction (négatif = pénalité).")
+    )
+
+    class Meta:
+        verbose_name = _("Type de Sanction")
+        verbose_name_plural = _("Types de Sanctions")
+        ordering = ['libelle']
+
+    def __str__(self):
+        return f"{self.libelle} ({self.code})"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 15. SIGNATAIRE DOCUMENT (v3.4)
 # ═══════════════════════════════════════════════════════════════════
 
 class SignataireDocumentManager(models.Manager):
     """Manager pour les signataires."""
-    
-    @classmethod
+
     def get_signataire(
-        cls,
+        self,
         cycle,
         type_document,
         annee_scolaire
     ) -> Optional['SignataireDocument']:
         """
         Récupère le signataire pour un cycle × document × année.
-        
+
+        Stratégie de recherche avec repli progressif :
+        1. Correspondance exacte (cycle + document + année)
+        2. Repli : même cycle + même document, n'importe quelle année → prend le plus récent
+        3. Repli : même document, n'importe quel cycle/année → prend le plus récent
+
         Args:
             cycle: Instance de Cycle
             type_document: Instance de TypeDocument
             annee_scolaire: Instance d'AnneeScolaire
-            
+
         Returns:
             SignataireDocument ou None si non trouvé
         """
-        return cls.objects.filter(
-            cycle=cycle,
-            type_document=type_document,
-            annee_scolaire=annee_scolaire,
-            actif=True
-        ).first()
+        if type_document is not None:
+            # 1. Correspondance exacte
+            sig = self.filter(
+                cycle=cycle,
+                type_document=type_document,
+                annee_scolaire=annee_scolaire,
+                actif=True
+            ).first()
+            if sig:
+                return sig
+
+            # 2. Même cycle + même document, toute année
+            if cycle is not None:
+                sig = self.filter(
+                    cycle=cycle,
+                    type_document=type_document,
+                    actif=True
+                ).order_by('-updated_at').first()
+                if sig:
+                    return sig
+
+            # 3. Même document, tout cycle
+            sig = self.filter(
+                type_document=type_document,
+                actif=True
+            ).order_by('-updated_at').first()
+            if sig:
+                return sig
+
+        # 4. Même cycle, tout document
+        if cycle is not None:
+            sig = self.filter(
+                cycle=cycle,
+                actif=True
+            ).order_by('-updated_at').first()
+            if sig:
+                return sig
+
+        # 5. Tout signataire actif (dernier recours absolu)
+        return self.filter(actif=True).order_by('-updated_at').first()
 
 
 class SignataireDocument(BaseModel):
@@ -1121,20 +1373,68 @@ class SignataireDocument(BaseModel):
         verbose_name=_("Type de Document")
     )
     
-    # FK vers le module personnel (à créer plus tard)
-    membre_personnel = models.ForeignKey(
-        'personnel.MembrePersonnel',
-        on_delete=models.CASCADE,
-        related_name='signatures_documents',
-        verbose_name=_("Membre du Personnel Signataire")
+    # FK vers le module personnel (sera migré après personnel)
+    # Temporairement en CharField
+    membre_personnel_id = models.UUIDField(
+        null=True,
+        blank=True,
+        verbose_name=_("ID Membre du Personnel Signataire")
     )
     
+    @property
+    def membre_personnel(self):
+        """Retourne le membre du personnel (après migration FK)."""
+        if hasattr(self, '_membre_personnel_cache'):
+            return self._membre_personnel_cache
+        return None
+    
+    def get_membre_personnel(self):
+        """Récupère le membre du personnel depuis la base."""
+        from personnel.models import MembrePersonnel
+        if self.membre_personnel_id:
+            try:
+                return MembrePersonnel.objects.get(id=self.membre_personnel_id)
+            except MembrePersonnel.DoesNotExist:
+                return None
+        return None
+    
+    def set_membre_personnel(self, personnel):
+        """Définit le membre du personnel."""
+        self.membre_personnel_id = personnel.id if personnel else None
+        self._membre_personnel_cache = personnel
+    
+    titre = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name=_("Titre / Fonction (ancien)"),
+        help_text=_("Champ hérité — utiliser 'fonction' à la place")
+    )
+
     titre_honorifique = models.CharField(
         max_length=50,
         blank=True,
         default='',
-        verbose_name=_("Titre Honorifique"),
-        help_text=_("Ex: M., Mme, Dr, Prof., M. le Directeur")
+        verbose_name=_("Titre Honorifique (ancien)"),
+        help_text=_("Champ hérité — utiliser 'titres_honorifiques' à la place")
+    )
+
+    fonction = models.CharField(
+        max_length=150,
+        blank=True,
+        default='Le Directeur',
+        verbose_name=_("Fonction"),
+        help_text=_("Fonction affichée entre la date et le nom, "
+                    "ex: 'Directeur des Études', 'Le Proviseur', 'La Directrice'")
+    )
+
+    titres_honorifiques = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Titres Honorifiques"),
+        help_text=_("Liste ordonnée de titres honorifiques affichés sous le nom, "
+                    "ex: [\"Chevalier de l'Ordre du Mérite\", "
+                    "\"Chevalier des Palmes Académiques\"]")
     )
     
     annee_scolaire = models.ForeignKey(
@@ -1159,18 +1459,332 @@ class SignataireDocument(BaseModel):
         unique_together = [['cycle', 'type_document', 'annee_scolaire']]
     
     def __str__(self):
+        personnel = self.get_membre_personnel()
+        personnel_str = str(personnel) if personnel else "Aucun"
         return (
             f"{self.cycle.nom} - {self.type_document.libelle} - "
-            f"{self.membre_personnel}"
+            f"{personnel_str}"
         )
     
     def get_nom_complet_avec_titre(self) -> str:
         """
         Retourne le nom complet du signataire avec titre.
-        
+
         Returns:
             str: "M. le Directeur Jean OUÉDRAOGO"
         """
+        personnel = self.get_membre_personnel()
+        if not personnel:
+            return self.titre_honorifique or ""
+
         if self.titre_honorifique:
-            return f"{self.titre_honorifique} {self.membre_personnel.get_nom_complet()}"
-        return self.membre_personnel.get_nom_complet()
+            return f"{self.titre_honorifique} {personnel.get_nom_complet()}"
+        return personnel.get_nom_complet()
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 15b. CO-SIGNATAIRES
+# ═══════════════════════════════════════════════════════════════════
+
+class CoSignataire(BaseModel):
+    """
+    Signataire(s) supplémentaire(s) pour un document.
+
+    Lié au SignataireDocument principal (le 1er signataire).
+    Permet d'avoir, ex. : Directeur (principal) + Censeur (co).
+
+    Le rendu PDF aligne tous les signataires côte à côte.
+    """
+
+    signataire_principal = models.ForeignKey(
+        SignataireDocument,
+        on_delete=models.CASCADE,
+        related_name='co_signataires',
+        verbose_name=_("Signataire principal")
+    )
+
+    membre_personnel_id = models.UUIDField(
+        null=True,
+        blank=True,
+        verbose_name=_("ID Membre du Personnel")
+    )
+
+    fonction = models.CharField(
+        max_length=150,
+        default='',
+        blank=True,
+        verbose_name=_("Fonction"),
+        help_text=_("Ex : 'Le Censeur', 'La Directrice des Études'")
+    )
+
+    titres_honorifiques = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Titres honorifiques")
+    )
+
+    ordre = models.PositiveSmallIntegerField(
+        default=2,
+        verbose_name=_("Ordre d'affichage"),
+        help_text=_("1 = premier à gauche ; le signataire principal est toujours en position 1")
+    )
+
+    actif = models.BooleanField(default=True, verbose_name=_("Actif"))
+
+    class Meta:
+        verbose_name = _("Co-Signataire")
+        verbose_name_plural = _("Co-Signataires")
+        ordering = ['ordre']
+
+    def __str__(self):
+        m = self.get_membre_personnel()
+        nom = str(m) if m else "—"
+        return f"{self.fonction or 'Co-signataire'} : {nom}"
+
+    def get_membre_personnel(self):
+        """Récupère le membre du personnel depuis la base."""
+        from personnel.models import MembrePersonnel
+        if self.membre_personnel_id:
+            try:
+                return MembrePersonnel.objects.get(id=self.membre_personnel_id)
+            except MembrePersonnel.DoesNotExist:
+                return None
+        return None
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 16. TITRE FONCTION PERSONNEL
+# ═══════════════════════════════════════════════════════════════════
+
+class TitreFonction(BaseModel):
+    """
+    Liste configurable des titres/fonctions du personnel.
+
+    Ex: Directeur, Censeur, Professeur principal, Secrétaire, etc.
+    Ces valeurs alimentent le champ « Titre » dans la fiche personnel.
+    """
+
+    nom = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name=_("Titre / Fonction"),
+        help_text=_("Ex: Directeur, Censeur, Professeur Principal")
+    )
+
+    actif = models.BooleanField(
+        default=True,
+        verbose_name=_("Actif")
+    )
+
+    class Meta:
+        verbose_name = _("Titre Fonction")
+        verbose_name_plural = _("Titres Fonctions")
+        ordering = ['nom']
+
+    def __str__(self):
+        return self.nom
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 17. TITRE HONORIFIQUE PERSONNEL
+# ═══════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════
+# CALENDRIER SCOLAIRE
+# ═══════════════════════════════════════════════════════════════════
+
+class EvenementCalendrier(BaseModel):
+    """
+    Événements du calendrier scolaire : congés, jours fériés,
+    examens nationaux, réunions pédagogiques, fermetures exceptionnelles.
+
+    Rattaché à une AnneeScolaire pour filtrage et affichage mensuel.
+    """
+
+    class TypeChoices(models.TextChoices):
+        CONGE          = 'CONGE',          'Congé scolaire'
+        JOUR_FERIE     = 'JOUR_FERIE',     'Jour férié'
+        EXAMEN         = 'EXAMEN',         'Examen / Évaluation'
+        REUNION        = 'REUNION',        'Réunion pédagogique'
+        FERMETURE      = 'FERMETURE',      'Fermeture exceptionnelle'
+        AUTRE          = 'AUTRE',          'Autre événement'
+
+    # Couleur CSS par type — utilisée dans le calendrier
+    COULEUR_PAR_TYPE = {
+        'CONGE':      '#3b82f6',   # bleu
+        'JOUR_FERIE': '#f59e0b',   # ambre
+        'EXAMEN':     '#ef4444',   # rouge
+        'REUNION':    '#8b5cf6',   # violet
+        'FERMETURE':  '#6b7280',   # gris
+        'AUTRE':      '#10b981',   # vert
+    }
+
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='evenements_calendrier',
+        verbose_name=_("Établissement"),
+    )
+    annee_scolaire = models.ForeignKey(
+        AnneeScolaire,
+        on_delete=models.CASCADE,
+        related_name='evenements',
+        verbose_name=_("Année scolaire"),
+    )
+    titre = models.CharField(
+        max_length=150,
+        verbose_name=_("Titre"),
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=TypeChoices.choices,
+        default=TypeChoices.AUTRE,
+        verbose_name=_("Type"),
+    )
+    date_debut = models.DateField(verbose_name=_("Date de début"))
+    date_fin = models.DateField(verbose_name=_("Date de fin"))
+    description = models.TextField(
+        blank=True,
+        default='',
+        verbose_name=_("Description"),
+    )
+    journee_complete = models.BooleanField(
+        default=True,
+        verbose_name=_("Journée complète"),
+    )
+
+    class Meta:
+        verbose_name = _("Événement calendrier")
+        verbose_name_plural = _("Événements calendrier")
+        ordering = ['date_debut']
+        indexes = [
+            models.Index(fields=['etablissement', 'annee_scolaire', 'date_debut']),
+        ]
+
+    def __str__(self):
+        return f"{self.titre} ({self.date_debut})"
+
+    @property
+    def couleur(self):
+        return self.COULEUR_PAR_TYPE.get(self.type, '#10b981')
+
+    @property
+    def nb_jours(self):
+        return (self.date_fin - self.date_debut).days + 1
+
+
+class ModeleMessage(BaseModel):
+    """
+    Modèles de messages personnalisables pour les notifications SMS/email.
+
+    Variables disponibles selon le type :
+      BULLETIN  : {nom_eleve}, {classe}, {trimestre}, {etablissement}
+      ABSENCE   : {nom_eleve}, {date}, {matiere}, {etablissement}
+      RETARD    : {nom_eleve}, {date}, {matiere}, {etablissement}
+      PAIEMENT  : {nom_eleve}, {montant}, {rubrique}, {etablissement}
+      REUNION   : {date}, {heure}, {lieu}, {objet}, {etablissement}
+    """
+
+    class TypeChoices(models.TextChoices):
+        BULLETIN = 'BULLETIN', 'Disponibilité du bulletin'
+        ABSENCE  = 'ABSENCE',  'Absence élève'
+        RETARD   = 'RETARD',   'Retard élève'
+        PAIEMENT = 'PAIEMENT', 'Relance paiement'
+        REUNION  = 'REUNION',  'Réunion parents d\'élèves'
+
+    DEFAUTS = {
+        'BULLETIN': (
+            "Bonjour, le bulletin de {nom_eleve} ({classe}) pour le {trimestre} "
+            "est disponible. Contactez {etablissement} pour le consulter."
+        ),
+        'ABSENCE': (
+            "Bonjour, votre enfant {nom_eleve} a été absent(e) le {date}"
+            "{matiere}. Contactez {etablissement} pour régularisation."
+        ),
+        'RETARD': (
+            "Bonjour, votre enfant {nom_eleve} est arrivé(e) en retard le {date}"
+            "{matiere}. — {etablissement}"
+        ),
+        'PAIEMENT': (
+            "Bonjour, un rappel de paiement : {rubrique} de {montant} FCFA "
+            "pour {nom_eleve} est en attente. Contactez {etablissement}."
+        ),
+        'REUNION': (
+            "Bonjour, une réunion parents-élèves est prévue le {date} à {heure} "
+            "({lieu}). Objet : {objet}. — {etablissement}"
+        ),
+    }
+
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='modeles_messages',
+        verbose_name=_("Établissement"),
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=TypeChoices.choices,
+        verbose_name=_("Type de message"),
+    )
+    contenu_sms = models.TextField(
+        verbose_name=_("Contenu SMS"),
+        help_text=_("Max 160 caractères pour un SMS simple. Variables : {nom_eleve}, {classe}, etc."),
+    )
+    actif = models.BooleanField(
+        default=True,
+        verbose_name=_("Actif"),
+    )
+
+    class Meta:
+        verbose_name = _("Modèle de message")
+        verbose_name_plural = _("Modèles de messages")
+        ordering = ['type']
+        unique_together = [['etablissement', 'type']]
+
+    def __str__(self):
+        return f"{self.get_type_display()} — {self.etablissement}"
+
+    @classmethod
+    def get_contenu(cls, etablissement, type_msg, variables):
+        """
+        Retourne le contenu SMS personnalisé pour ce type,
+        ou le message par défaut si aucun modèle n'est configuré.
+        """
+        try:
+            modele = cls.objects.get(etablissement=etablissement, type=type_msg, actif=True)
+            contenu = modele.contenu_sms
+        except cls.DoesNotExist:
+            contenu = cls.DEFAUTS.get(type_msg, '')
+        try:
+            return contenu.format(**variables)
+        except KeyError:
+            return contenu
+
+
+class TitreHonorifiquePersonnel(BaseModel):
+    """
+    Liste configurable des titres honorifiques du personnel.
+
+    Ex: M. le Directeur, Chevalier de l'Ordre des Palmes académiques, Dr., etc.
+    Ces valeurs alimentent le champ « Titre honorifique » dans la fiche personnel.
+    """
+
+    nom = models.CharField(
+        max_length=150,
+        unique=True,
+        verbose_name=_("Titre honorifique"),
+        help_text=_("Ex: M. le Directeur, Chevalier de l'Ordre des Palmes académiques")
+    )
+
+    actif = models.BooleanField(
+        default=True,
+        verbose_name=_("Actif")
+    )
+
+    class Meta:
+        verbose_name = _("Titre Honorifique")
+        verbose_name_plural = _("Titres Honorifiques")
+        ordering = ['nom']
+
+    def __str__(self):
+        return self.nom

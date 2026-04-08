@@ -1,4 +1,28 @@
-﻿services:
+services:
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx_certs:/etc/nginx/certs
+    depends_on:
+      - web
+    entrypoint: >
+      sh -c "
+        if [ ! -f /etc/nginx/certs/yelen.crt ]; then
+          apk add --no-cache openssl &&
+          openssl req -x509 -nodes -days 3650 -newkey rsa:2048
+            -keyout /etc/nginx/certs/yelen.key
+            -out    /etc/nginx/certs/yelen.crt
+            -subj '/CN=yelen-school-dev/O=YELEN SCHOOL/C=BF'
+            -addext 'subjectAltName=IP:127.0.0.1,DNS:localhost';
+        fi &&
+        nginx -g 'daemon off;'
+      "
+
   web:
     build: .
     volumes:
@@ -6,18 +30,34 @@
     ports:
       - "8000:8000"
     env_file: .env
+    environment:
+      DB_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    # devices:  # Décommenter quand le modem GSM est branché
+      # - /dev/ttyUSB0:/dev/ttyUSB0   # Modem GSM USB (Huawei, ZTE…)
+      # - /dev/ttyACM0:/dev/ttyACM0   # Alternative selon le modèle
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   db:
     image: postgres:15
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: yelen_school_db
       POSTGRES_USER: yelen_user
       POSTGRES_PASSWORD: yelen_password_dev
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yelen_user -d yelen_school_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -39,3 +79,4 @@
 
 volumes:
   postgres_data:
+  nginx_certs:

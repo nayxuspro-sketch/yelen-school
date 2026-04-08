@@ -7,3 +7,6 @@ class ViescolaireConfig(AppConfig):
     name = 'viescolaire'
     verbose_name = 'Vie Scolaire'
     path = os.path.dirname(__file__)
+
+    def ready(self):
+        import viescolaire.signals  # noqa: F401

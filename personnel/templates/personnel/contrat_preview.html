@@ -1,0 +1,209 @@
+{% extends "core/base.html" %}
+
+{% block title %}Contrat de travail — {{ membre.get_nom_complet }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'personnel:detail' membre.pk %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Contrat de Travail</h1>
+      <p class="page-subtitle">{{ membre.nom }} {{ membre.prenom }} · {{ membre.matricule }}</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'personnel:contrat' membre.pk %}?format=pdf" target="_blank" class="btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+      </svg>
+      Télécharger PDF
+    </a>
+  </div>
+</div>
+
+<div class="animate-fade-up delay-1" style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
+
+  <!-- Aperçu document -->
+  <div style="flex:1; min-width:320px;">
+    <p class="text-muted text-sm" style="margin-bottom:0.75rem;">Aperçu du contrat (format A4)</p>
+
+    <div style="
+      background:#fff;
+      border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);
+      padding:2rem;
+      font-family:Georgia, serif;
+      font-size:0.875rem;
+      line-height:1.7;
+      box-shadow:0 4px 24px rgba(0,0,0,0.08);
+      max-width:600px;
+    ">
+
+      <!-- En-tête -->
+      <div style="border-bottom:2px solid #0A1628; padding-bottom:1rem; margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem;">
+        <div style="width:52px; height:52px; flex-shrink:0; background:#0A1628; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+          {% if logo_url %}
+            <img src="{{ logo_url }}" alt="Logo" style="width:44px; height:44px; object-fit:contain;">
+          {% elif etab_logo_url %}
+            <img src="{{ etab_logo_url }}" alt="Logo" style="width:44px; height:44px; object-fit:contain;">
+          {% else %}
+            <svg width="28" height="28" fill="white" viewBox="0 0 20 20">
+              <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+            </svg>
+          {% endif %}
+        </div>
+        <div>
+          <div style="font-size:1rem; font-weight:700; color:#0A1628; text-transform:uppercase; letter-spacing:0.5px;">
+            {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ membre.etablissement }}{% endif %}
+          </div>
+          <div style="font-size:0.75rem; color:#00A86B; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px;">
+            {% if identite %}{{ identite.get_type_etablissement_display }}{% else %}Établissement scolaire{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Titre -->
+      <div style="text-align:center; margin-bottom:1.5rem;">
+        <div style="font-size:1.1rem; font-weight:700; color:#0A1628; text-transform:uppercase; letter-spacing:1px; border-bottom:2px solid #00A86B; display:inline-block; padding-bottom:4px;">
+          Contrat de Travail
+        </div>
+        <div style="font-size:0.75rem; color:#94A3B8; margin-top:6px;">
+          Réf. CT-{{ membre.matricule }}-{% if annee %}{{ annee.libelle }}{% else %}{{ today|date:"Y" }}{% endif %}
+          · Établi le {{ today|date:"d F Y" }}
+        </div>
+      </div>
+
+      <!-- Parties -->
+      <div style="margin-bottom:1rem;">
+        <div style="font-weight:700; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; color:#0A1628; border-left:3px solid #00A86B; padding-left:8px; margin-bottom:0.5rem;">Entre les soussignés</div>
+        <p style="margin-bottom:0.5rem;">
+          <strong>L'Employeur :</strong>
+          {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ membre.etablissement }}{% endif %}
+        </p>
+        <p>
+          <strong>L'Agent :</strong>
+          {{ membre.nom|upper }} {{ membre.prenom }},
+          né(e) le {{ membre.date_naissance|date:"d/m/Y" }},
+          CNI N° {{ membre.numero_cni|default:"—" }}
+        </p>
+      </div>
+
+      <!-- Clauses résumées -->
+      {% for titre, texte in clauses %}
+      <div style="margin-bottom:0.75rem;">
+        <div style="font-weight:700; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; color:#0A1628; border-left:3px solid #00A86B; padding-left:8px; margin-bottom:0.4rem;">{{ titre }}</div>
+        <p style="color:#334155; font-size:0.85rem;">{{ texte }}</p>
+      </div>
+      {% endfor %}
+
+      <!-- Résumé contrat -->
+      <div style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:6px; padding:0.75rem 1rem; margin:1rem 0; font-size:0.85rem;">
+        <strong>Fonction :</strong> {{ membre.fonction }}
+        {% if inscription and inscription.poste %} — <strong>Poste :</strong> {{ inscription.poste.nom }}{% endif %}<br>
+        {% if inscription and inscription.cycle %}<strong>Cycle :</strong> {{ inscription.cycle.nom }}<br>{% endif %}
+        <strong>Type :</strong> {% if membre.est_contractuel %}CDD (Contractuel){% elif membre.est_vacataire %}Vacation{% else %}CDI (Permanent){% endif %}
+        {% if annee %}<br><strong>Année scolaire :</strong> {{ annee.libelle }}{% endif %}
+      </div>
+
+      <!-- Zone signature -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-top:1.5rem; padding-top:1rem; border-top:1px solid #E2E8F0;">
+        <div style="text-align:center;">
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:#0A1628; margin-bottom:4px;">L'Établissement</div>
+          <div style="height:40px; border-bottom:1px solid #1E293B; margin-bottom:4px;"></div>
+          <div style="font-size:0.7rem; color:#94A3B8; font-style:italic;">Signature et cachet</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:#0A1628; margin-bottom:4px;">L'Agent</div>
+          <div style="height:40px; border-bottom:1px solid #1E293B; margin-bottom:4px;"></div>
+          <div style="font-size:0.7rem; color:#94A3B8; font-style:italic;">Lu et approuvé</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fiche récapitulative -->
+  <div class="card animate-fade-up delay-2" style="flex:0 0 320px;">
+    <div class="card-header">
+      <h2 class="card-title">Informations du contrat</h2>
+    </div>
+    <div class="card-body">
+      <dl style="display:grid; grid-template-columns:130px 1fr; gap:0.5rem 1rem; font-size:0.875rem;">
+        <dt class="text-muted">Agent</dt>
+        <dd class="fw-medium">{{ membre.nom }} {{ membre.prenom }}</dd>
+
+        <dt class="text-muted">Matricule</dt>
+        <dd style="font-family:monospace;">{{ membre.matricule }}</dd>
+
+        <dt class="text-muted">Fonction</dt>
+        <dd>{{ membre.fonction }}</dd>
+
+        {% if inscription and inscription.poste %}
+        <dt class="text-muted">Poste</dt>
+        <dd>{{ inscription.poste.nom }}</dd>
+        {% endif %}
+
+        {% if inscription and inscription.cycle %}
+        <dt class="text-muted">Cycle</dt>
+        <dd>{{ inscription.cycle.nom }}</dd>
+        {% endif %}
+
+        <dt class="text-muted">Type de contrat</dt>
+        <dd>
+          {% if membre.est_contractuel %}
+            <span class="badge badge-warning">CDD</span>
+          {% elif membre.est_vacataire %}
+            <span class="badge badge-info">Vacation</span>
+          {% else %}
+            <span class="badge badge-success">CDI</span>
+          {% endif %}
+        </dd>
+
+        {% if annee %}
+        <dt class="text-muted">Année scolaire</dt>
+        <dd>{{ annee.libelle }}</dd>
+        {% endif %}
+
+        <dt class="text-muted">Date d'embauche</dt>
+        <dd>{{ membre.date_embauche|date:"d/m/Y" }}</dd>
+
+        {% if inscription and inscription.date_debut %}
+        <dt class="text-muted">Début de fonction</dt>
+        <dd>{{ inscription.date_debut|date:"d/m/Y" }}</dd>
+        {% endif %}
+
+        {% if inscription and inscription.date_fin %}
+        <dt class="text-muted">Fin prévue</dt>
+        <dd>{{ inscription.date_fin|date:"d/m/Y" }}</dd>
+        {% endif %}
+
+        <dt class="text-muted">Établi le</dt>
+        <dd>{{ today|date:"d/m/Y" }}</dd>
+      </dl>
+
+      <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--color-border);">
+        <a href="{% url 'personnel:contrat' membre.pk %}?format=pdf" target="_blank"
+           class="btn-primary" style="width:100%; justify-content:center;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Télécharger le contrat PDF
+        </a>
+      </div>
+
+      <div style="margin-top:0.75rem;">
+        <a href="{% url 'personnel:update' membre.pk %}"
+           class="btn-secondary" style="width:100%; justify-content:center; font-size:0.8rem;">
+          Modifier le profil de l'agent
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

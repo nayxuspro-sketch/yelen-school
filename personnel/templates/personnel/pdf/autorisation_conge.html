@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 10mm 15mm 12mm 15mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-size: 10pt;
+    color: #1a1a1a;
+    line-height: 1.45;
+  }
+
+  /* ── En-tête ── */
+  .entete-wrapper { margin-bottom: 3mm; }
+  .entete-wrapper table { width: 100%; border-collapse: collapse; }
+  .entete-wrapper td { padding: 0 3mm; vertical-align: middle; }
+  .entete-wrapper td:first-child { width: 68px; text-align: center; }
+  .entete-wrapper td:first-child img { width: 60px; height: 60px; object-fit: contain; }
+  .entete-wrapper td:nth-child(2) { text-align: center; }
+  .entete-wrapper td:nth-child(2) .etab-nom {
+    font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .entete-wrapper td:nth-child(2) .etab-sous { font-size: 8pt; color: #555; margin-top: 1mm; }
+  .entete-wrapper td:last-child { width: 65px; text-align: center; }
+  .entete-wrapper td:last-child img { width: 58px; height: 58px; object-fit: contain; }
+
+  .sep      { border: none; border-top: 2px solid #1a1a1a; margin: 2.5mm 0 1.5mm; }
+  .sep-thin { border: none; border-top: 1px solid #bbb;    margin: 2mm 0; }
+
+  /* ── République ── */
+  .republique {
+    text-align: center; font-size: 8.5pt; color: #555;
+    margin-bottom: 2.5mm; line-height: 1.3;
+  }
+
+  /* ── Titre ── */
+  .titre-doc { text-align: center; margin: 3mm 0 2mm; }
+  .titre-doc h1 {
+    font-size: 13pt; font-weight: bold;
+    text-transform: uppercase; letter-spacing: .07em;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .titre-doc .ref { font-size: 8.5pt; color: #555; margin-top: 1.5mm; }
+
+  /* ── Intro ── */
+  .intro {
+    font-size: 9.5pt; color: #333; margin: 2.5mm 0;
+    line-height: 1.5; text-align: justify;
+  }
+  .intro span { font-style: italic; font-weight: bold; }
+
+  /* ── Bloc bénéficiaire ── */
+  .bloc-beneficiaire {
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-left: 4px solid #1a1a1a;
+    border-radius: 2px;
+    padding: 2.5mm 4mm;
+    margin: 2.5mm 0;
+  }
+  .bloc-beneficiaire table { width: 100%; border-collapse: collapse; }
+  .bloc-beneficiaire td { padding: 0.8mm 2mm; font-size: 9.5pt; }
+  .bloc-beneficiaire td.label { color: #555; width: 28%; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .02em; }
+  .bloc-beneficiaire td.valeur { font-weight: bold; }
+
+  /* ── Bloc congé ── */
+  .bloc-conge {
+    border: 1.5px solid #1a1a1a;
+    border-radius: 2px;
+    padding: 2.5mm 4mm;
+    margin: 2.5mm 0;
+  }
+  .bloc-conge table { width: 100%; border-collapse: collapse; }
+  .bloc-conge td { padding: 1mm 2mm; font-size: 9.5pt; }
+  .bloc-conge td.label { color: #555; width: 38%; }
+  .bloc-conge td.valeur { font-weight: bold; }
+  .net-row td {
+    background: #1a1a1a; color: #fff;
+    font-weight: bold; font-size: 10pt;
+    padding: 1.5mm 2mm;
+  }
+
+  /* ── Mention légale ── */
+  .mention-legale {
+    font-size: 8pt; color: #555; font-style: italic;
+    margin: 2.5mm 0; padding: 2mm 3mm;
+    border: 1px dashed #ccc; border-radius: 2px;
+    line-height: 1.4;
+  }
+
+  /* ── Motif ── */
+  .motif { font-size: 9.5pt; margin: 2mm 0; }
+
+  .ampliation { font-size: 8.5pt; color: #333; line-height: 1.6; }
+  .ampliation strong { font-size: 9pt; }
+
+  .bloc-signature .lieu-date { font-size: 9pt; margin-bottom: 1.5mm; }
+  .bloc-signature .titre-sig { font-size: 9pt; font-weight: bold; text-transform: uppercase; letter-spacing: .03em; }
+  .signature-zone { position: relative; min-height: 22mm; margin-top: 1.5mm; }
+  .signature-zone img.signature {
+    display: block; margin: 1mm 0 0.5mm auto;
+    height: 14mm; max-width: 50mm; object-fit: contain;
+  }
+  .signature-zone img.cachet {
+    position: absolute; bottom: 0; left: 0;
+    width: 22mm; height: 22mm; object-fit: contain; opacity: 0.85;
+  }
+  .nom-signataire { font-size: 9pt; font-weight: bold; text-align: right; margin-top: 20mm; }
+
+  /* ── Pied ── */
+  .pied-page {
+    position: fixed; bottom: 5mm; left: 0; right: 0;
+    text-align: center; font-size: 7.5pt; color: #bbb;
+    border-top: 1px solid #e0e0e0; padding-top: 1.5mm;
+  }
+</style>
+</head>
+<body>
+
+{% load static %}
+
+{# ── En-tête ── #}
+<div class="entete-wrapper">
+  <table><tr>
+    <td>{% if logo_url %}<img src="{{ logo_url }}" alt="Logo">{% endif %}</td>
+    <td>
+      <div class="etab-nom">{{ identite.nom_etablissement|default:etablissement }}</div>
+      {% if identite.adresse %}<div class="etab-sous">{{ identite.adresse }}</div>{% endif %}
+      {% if identite.telephone %}<div class="etab-sous">Tél. : {{ identite.telephone }}{% if identite.email %} — {{ identite.email }}{% endif %}</div>{% endif %}
+    </td>
+    <td>{% if etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Cachet">{% endif %}</td>
+  </tr></table>
+</div>
+<hr class="sep">
+
+{# ── République ── #}
+<div class="republique">Burkina Faso &nbsp;—&nbsp; <em>Unité — Progrès — Justice</em></div>
+
+{# ── Titre ── #}
+<div class="titre-doc">
+  <h1>Autorisation de Jouissance de Congé</h1>
+  <div class="ref">N° _____ / {{ today.year }} / {% if identite %}{{ identite.sigle|default:identite.nom_etablissement|truncatechars:12 }}{% endif %}</div>
+</div>
+<hr class="sep-thin">
+
+{# ── Intro ── #}
+<p class="intro">
+  Nous, <span>{% if identite %}{{ identite.nom_directeur }}{% else %}Le(La) Directeur(trice){% endif %}</span>,
+  Directeur(trice) de <span>{{ identite.nom_etablissement|default:etablissement }}</span>,
+  autorisons par la présente le membre du personnel ci-dessous désigné à jouir de son congé dans les conditions suivantes :
+</p>
+
+{# ── Bénéficiaire ── #}
+<div class="bloc-beneficiaire">
+  <table>
+    <tr>
+      <td class="label">Nom et Prénom(s)</td>
+      <td class="valeur">{{ conge.personnel.get_nom_complet }}</td>
+      <td class="label">Matricule</td>
+      <td class="valeur">{{ conge.personnel.matricule }}</td>
+    </tr>
+    <tr>
+      <td class="label">Fonction / Poste</td>
+      <td class="valeur">{{ conge.personnel.fonction }}</td>
+      <td class="label">Date d'embauche</td>
+      <td class="valeur">{{ conge.personnel.date_embauche|date:"d/m/Y" }}</td>
+    </tr>
+  </table>
+</div>
+
+{# ── Détails congé ── #}
+<div class="bloc-conge">
+  <table>
+    <tr>
+      <td class="label">Nature du congé</td>
+      <td class="valeur">{{ conge.get_type_conge_display }}</td>
+      <td class="label">Date de départ</td>
+      <td class="valeur">{{ conge.date_debut|date:"d/m/Y" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Date de retour prévue</td>
+      <td class="valeur">{{ conge.date_fin|date:"d/m/Y" }}</td>
+      <td class="label">Reprise effective</td>
+      <td class="valeur">Le lendemain de la date de retour</td>
+    </tr>
+    <tr class="net-row">
+      <td colspan="2">Durée totale (jours ouvrables)</td>
+      <td colspan="2" style="font-size:11pt;">{{ conge.nombre_jours }} jour{% if conge.nombre_jours > 1 %}s{% endif %}</td>
+    </tr>
+  </table>
+</div>
+
+{% if conge.motif %}
+<p class="motif"><strong>Motif :</strong> {{ conge.motif }}</p>
+{% endif %}
+
+<div class="mention-legale">
+  Le bénéficiaire est tenu de reprendre ses fonctions à la date indiquée. Tout dépassement non autorisé sera considéré
+  comme une absence injustifiée et fera l'objet de mesures disciplinaires. La présente autorisation est délivrée pour valoir ce que de droit.
+</div>
+
+{# ── Signature + Ampliation côte à côte ── #}
+<table style="width:100%; border-collapse:collapse; margin-top:5mm;">
+  <tr>
+    <td style="vertical-align:top; width:45%;">
+      <p class="ampliation"><strong>Ampliation :</strong><br>— Intéressé(e)<br>— Archives</p>
+    </td>
+    <td style="vertical-align:top; text-align:right;">
+      <div class="bloc-signature">
+        <div class="lieu-date">
+          {% if identite.adresse %}{{ identite.adresse }}{% else %}Ouagadougou{% endif %}, le {{ today|date:"d F Y" }}
+        </div>
+        <div class="titre-sig">
+          {% if signataire %}{{ signataire.fonction|default:"Le(La) Directeur(trice)" }}{% else %}Le(La) Directeur(trice){% endif %}
+        </div>
+        <div class="signature-zone">
+          <div class="nom-signataire">
+            {% if sig_membre %}
+              {{ sig_membre.get_nom_complet }}
+            {% elif identite.nom_directeur %}
+              {{ identite.nom_directeur }}
+            {% else %}
+              &nbsp;
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </td>
+  </tr>
+</table>
+
+{# ── Pied ── #}
+<div class="pied-page">Document généré par YELEN SCHOOL — {{ identite.nom_etablissement|default:etablissement }}</div>
+
+</body>
+</html>

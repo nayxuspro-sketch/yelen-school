@@ -1,0 +1,87 @@
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title">
+                {% if evt %}Modifier l'événement{% else %}Nouvel événement{% endif %}
+            </span>
+            <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="param-form"
+              hx-post="{% if evt %}{% url 'parametres:evenement_edit' evt.pk %}{% else %}{% url 'parametres:evenement_create' %}{% endif %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#modal-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+
+                <div class="form-group">
+                    <label class="input-label">Titre <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="titre" value="{{ evt.titre|default:'' }}"
+                           placeholder="Ex: Vacances de Toussaint, Fête de l'indépendance…"
+                           required class="input">
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="input-label">Type <span style="color:#FF6B7A;">*</span></label>
+                        <select name="type" required class="input">
+                            {% for val, label in types %}
+                            <option value="{{ val }}" {% if evt.type == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Année scolaire <span style="color:#FF6B7A;">*</span></label>
+                        <select name="annee_scolaire" required class="input">
+                            {% for a in annees %}
+                            <option value="{{ a.pk }}"
+                                {% if evt and evt.annee_scolaire_id == a.pk %}selected
+                                {% elif not evt and a.est_courante %}selected{% endif %}>
+                                {{ a.libelle }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="input-label">Date de début <span style="color:#FF6B7A;">*</span></label>
+                        <input type="date" name="date_debut" value="{{ evt.date_debut|date:'Y-m-d'|default:'' }}"
+                               required class="input">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Date de fin <span style="color:#FF6B7A;">*</span></label>
+                        <input type="date" name="date_fin" value="{{ evt.date_fin|date:'Y-m-d'|default:'' }}"
+                               required class="input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label">Description</label>
+                    <textarea name="description" rows="3" class="input" style="resize:vertical;"
+                              placeholder="Détails optionnels…">{{ evt.description|default:'' }}</textarea>
+                </div>
+
+                <label class="d-flex align-center gap-3" style="cursor:pointer;">
+                    <input type="checkbox" name="journee_complete"
+                           {% if evt.journee_complete or not evt %}checked{% endif %}
+                           style="width:1rem; height:1rem; accent-color:var(--color-primary);">
+                    <span class="text-sm text-secondary">Journée complète</span>
+                </label>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="document.getElementById('modal-overlay').remove()"
+                            class="btn-secondary">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

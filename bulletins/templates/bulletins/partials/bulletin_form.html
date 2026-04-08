@@ -1,0 +1,75 @@
+<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:var(--space-4);">
+  <div>
+    <h3 style="font-size:1rem; font-weight:600; margin:0;">Saisie bulletin</h3>
+    <p style="font-size:0.8rem; color:var(--color-text-muted); margin:var(--space-1) 0 0;">
+      {{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }} — {{ trimestre.nom }}
+    </p>
+  </div>
+  <button onclick="document.getElementById('bulletin-modal').style.display='none'"
+          style="background:none; border:none; cursor:pointer; color:var(--color-text-muted); font-size:1.2rem; line-height:1; padding:2px 6px;">✕</button>
+</div>
+
+{% if error %}
+<div class="alert alert-danger" style="margin-bottom:var(--space-4); font-size:0.85rem;">{{ error }}</div>
+{% endif %}
+
+{% if mg %}
+<div class="stat-card" style="margin-bottom:var(--space-4); padding:var(--space-3) var(--space-4);">
+  <div style="font-size:0.8rem; color:var(--color-text-muted);">Moyenne calculée</div>
+  <div class="fw-bold" style="font-size:1.1rem; color:{% if mg.moyenne and mg.moyenne >= 10 %}var(--color-primary){% else %}var(--color-danger, #e53e3e){% endif %};">
+    {% if mg.moyenne %}{{ mg.moyenne|floatformat:2 }}{% else %}—{% endif %}
+    {% if mg.rang %}<span style="font-size:0.8rem; color:var(--color-text-muted); font-weight:400;"> · {{ mg.rang }}e rang</span>{% endif %}
+  </div>
+</div>
+{% else %}
+<div style="font-size:0.8rem; color:var(--color-text-muted); margin-bottom:var(--space-4); font-style:italic;">
+  Aucune moyenne calculée pour ce trimestre.
+</div>
+{% endif %}
+
+<form hx-post="{% url 'bulletins:bulletin_saisir' inscription_id=inscription.pk trimestre_id=trimestre.pk %}"
+      hx-target="#modal-content"
+      hx-swap="innerHTML"
+      hx-on::after-request="if(event.detail.successful && event.detail.xhr.status===204){ document.getElementById('bulletin-modal').style.display='none'; htmx.trigger(document.body,'bulletinUpdated'); }">
+  {% csrf_token %}
+
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--space-3); margin-bottom:var(--space-4);">
+    <div>
+      <label class="form-label">Abs. justifiées (h)</label>
+      <input type="number" name="absences_justifiees" min="0"
+             value="{{ bulletin.absences_justifiees|default:0 }}"
+             class="form-input" style="text-align:center;">
+    </div>
+    <div>
+      <label class="form-label">Abs. non justifiées (h)</label>
+      <input type="number" name="absences_non_justifiees" min="0"
+             value="{{ bulletin.absences_non_justifiees|default:0 }}"
+             class="form-input" style="text-align:center;">
+    </div>
+    <div>
+      <label class="form-label">Retards</label>
+      <input type="number" name="retards" min="0"
+             value="{{ bulletin.retards|default:0 }}"
+             class="form-input" style="text-align:center;">
+    </div>
+  </div>
+
+  <div style="margin-bottom:var(--space-5);">
+    <label class="form-label">Appréciation du conseil de classe</label>
+    <textarea name="appreciation_conseil" rows="3"
+              class="form-input"
+              placeholder="Ex: Bon trimestre, continue tes efforts…"
+              style="resize:vertical;">{{ bulletin.appreciation_conseil|default:'' }}</textarea>
+  </div>
+
+  <div style="display:flex; gap:var(--space-3); justify-content:flex-end;">
+    <button type="button"
+            onclick="document.getElementById('bulletin-modal').style.display='none'"
+            class="btn btn-outline">
+      Annuler
+    </button>
+    <button type="submit" class="btn btn-primary">
+      Enregistrer
+    </button>
+  </div>
+</form>

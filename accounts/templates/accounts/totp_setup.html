@@ -1,0 +1,108 @@
+{% extends "core/base.html" %}
+
+{% block title %}Activer la 2FA — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Double authentification (2FA)</h1>
+    <p class="page-subtitle">Renforcez la sécurité de votre compte avec une application TOTP.</p>
+  </div>
+</div>
+
+<div class="animate-fade-up delay-1" style="max-width:560px;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Configuration de l'application d'authentification</span>
+    </div>
+    <div style="padding:var(--space-6);">
+
+      {% if messages %}
+      <div style="margin-bottom:var(--space-5);">
+        {% for message in messages %}
+        <div style="background:#fee2e2; border:1px solid #ef4444; border-radius:6px;
+                    padding:0.65rem 1rem; color:#991b1b; font-size:0.875rem; font-weight:500;">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Étape 1 -->
+      <div style="display:flex; gap:var(--space-3); margin-bottom:var(--space-4);">
+        <div style="flex-shrink:0; width:1.75rem; height:1.75rem; border-radius:50%;
+                    background:var(--color-primary); color:#fff; display:flex;
+                    align-items:center; justify-content:center; font-size:0.8rem; font-weight:700;">1</div>
+        <div>
+          <p class="fw-medium" style="margin:0 0 2px;">Installez une application d'authentification</p>
+          <p class="text-muted" style="font-size:0.85rem; margin:0;">
+            Google Authenticator, Authy, Microsoft Authenticator ou tout autre client TOTP.
+          </p>
+        </div>
+      </div>
+
+      <!-- Étape 2 : QR Code -->
+      <div style="display:flex; gap:var(--space-3); margin-bottom:var(--space-4);">
+        <div style="flex-shrink:0; width:1.75rem; height:1.75rem; border-radius:50%;
+                    background:var(--color-primary); color:#fff; display:flex;
+                    align-items:center; justify-content:center; font-size:0.8rem; font-weight:700;">2</div>
+        <div style="width:100%;">
+          <p class="fw-medium" style="margin:0 0 var(--space-3);">Scannez le QR code avec votre application</p>
+          <div style="text-align:center; margin-bottom:var(--space-3);">
+            <img src="data:image/png;base64,{{ qr_b64 }}"
+                 alt="QR code 2FA"
+                 style="width:180px; height:180px; border:1px solid var(--color-border); border-radius:8px; padding:6px; background:#fff;">
+          </div>
+          <div style="background:var(--color-bg-subtle); border:1px solid var(--color-border);
+                      border-radius:6px; padding:var(--space-3); text-align:center;">
+            <p class="text-muted" style="font-size:0.78rem; margin:0 0 4px;">
+              Ou saisissez ce code manuellement dans l'application :
+            </p>
+            <code style="font-size:0.9rem; font-weight:700; letter-spacing:.15em; color:var(--color-primary);">
+              {{ secret }}
+            </code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Étape 3 : Vérification -->
+      <div style="display:flex; gap:var(--space-3);">
+        <div style="flex-shrink:0; width:1.75rem; height:1.75rem; border-radius:50%;
+                    background:var(--color-primary); color:#fff; display:flex;
+                    align-items:center; justify-content:center; font-size:0.8rem; font-weight:700;">3</div>
+        <div style="width:100%;">
+          <p class="fw-medium" style="margin:0 0 var(--space-3);">Confirmez avec le code généré</p>
+          <form method="post" novalidate autocomplete="off">
+            {% csrf_token %}
+            <input type="hidden" name="secret" value="{{ secret }}">
+
+            <div class="form-group">
+              <label for="code" class="input-label">Code à 6 chiffres</label>
+              <input
+                type="text"
+                id="code"
+                name="code"
+                required
+                autofocus
+                maxlength="6"
+                pattern="[0-9]{6}"
+                inputmode="numeric"
+                class="input w-full"
+                placeholder="000000"
+                style="font-size:1.4rem; letter-spacing:.4em; text-align:center;">
+            </div>
+
+            <div style="display:flex; gap:var(--space-3); margin-top:var(--space-4);">
+              <a href="{% url 'accounts:profile' %}" class="btn-secondary" style="flex:1; text-align:center;">Annuler</a>
+              <button type="submit" class="btn-primary" style="flex:1; justify-content:center;">Activer la 2FA</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

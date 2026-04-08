@@ -4,11 +4,19 @@
 
 {% block content %}
 
-{# ── En-tête ── #}
+{# En-tête #}
 <div class="page-header animate-fade-up">
   <div>
-    <h1 class="page-title">Tableau de bord</h1>
-    <p class="page-subtitle">Aperçu global de l'établissement</p>
+    <h1 class="page-title">
+      {% if role == 'DIRECTEUR' or role == 'CENSEUR' %}Tableau de bord direction
+      {% elif role == 'ENSEIGNANT' %}Tableau de bord enseignant
+      {% elif role == 'COMPTABLE' %}Tableau de bord comptable
+      {% elif role == 'SECRETAIRE' %}Tableau de bord secrétariat
+      {% elif role == 'AVS' %}Tableau de bord vie scolaire
+      {% else %}Tableau de bord
+      {% endif %}
+    </h1>
+    <p class="page-subtitle">Bonjour, {{ request.user.get_full_name }}</p>
   </div>
   {% if annee_courante %}
   <span class="badge badge-success" style="font-size:var(--text-xs); padding:6px 14px;">
@@ -20,98 +28,73 @@
   {% endif %}
 </div>
 
-{# ── Stats principales ── #}
-<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); margin-bottom:var(--space-6);">
-
-  <div class="stat-card">
-    <div class="stat-icon stat-icon-blue">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-      </svg>
-    </div>
-    <div>
-      <div class="stat-value">{{ total_eleves }}</div>
-      <div class="stat-label">Élèves</div>
-    </div>
+{# Alertes configuration #}
+{% if not annee_courante %}
+<div class="alert animate-fade-up" style="display:flex; align-items:flex-start; gap:0.75rem; background:var(--color-warning-bg,#fffbeb); border:1px solid #d97706; border-radius:10px; padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5);">
+  <svg width="20" height="20" fill="none" stroke="#d97706" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+  </svg>
+  <div>
+    <div style="font-weight:600; color:#d97706; margin-bottom:2px;">Aucune année scolaire courante</div>
+    <div style="font-size:0.875rem; color:var(--color-text-secondary);">Définissez une année scolaire active dans les paramètres.</div>
+    <a href="{% url 'parametres:index' %}" class="btn-primary" style="margin-top:var(--space-3); display:inline-block; font-size:0.8rem; padding:6px 14px;">Configurer</a>
   </div>
-
-  <div class="stat-card">
-    <div class="stat-icon stat-icon-green">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-      </svg>
-    </div>
-    <div>
-      <div class="stat-value">{{ inscriptions_annee }}</div>
-      <div class="stat-label">Inscrits{% if annee_courante %} {{ annee_courante.libelle }}{% endif %}</div>
-    </div>
+</div>
+{% endif %}
+{% if not request.user.etablissement %}
+<div class="alert animate-fade-up" style="display:flex; align-items:flex-start; gap:0.75rem; background:#fef2f2; border:1px solid #dc2626; border-radius:10px; padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5);">
+  <svg width="20" height="20" fill="none" stroke="#dc2626" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+  </svg>
+  <div>
+    <div style="font-weight:600; color:#dc2626; margin-bottom:2px;">Compte non rattaché à un établissement</div>
+    <div style="font-size:0.875rem; color:var(--color-text-secondary);">Contactez un administrateur.</div>
   </div>
+</div>
+{% endif %}
 
+
+{# Directeur / Censeur / Super Admin #}
+{% if role == 'DIRECTEUR' or role == 'CENSEUR' or role == 'SUPER_ADMIN' %}
+
+<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
   <div class="stat-card">
-    <div class="stat-icon stat-icon-purple">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-      </svg>
-    </div>
-    <div>
-      <div class="stat-value">{{ total_personnel }}</div>
-      <div class="stat-label">Personnel</div>
-    </div>
+    <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
+    <div><div class="stat-value">{{ total_eleves }}</div><div class="stat-label">Élèves inscrits</div></div>
   </div>
-
   <div class="stat-card">
-    <div class="stat-icon stat-icon-gold">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-      </svg>
-    </div>
-    <div>
-      <div class="stat-value">{{ nb_classes }}</div>
-      <div class="stat-label">Classes actives</div>
-    </div>
+    <div class="stat-icon stat-icon-purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+    <div><div class="stat-value">{{ total_personnel }}</div><div class="stat-label">Personnel</div></div>
   </div>
-
   <div class="stat-card">
-    <div class="stat-icon stat-icon-green">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-    </div>
-    <div>
-      <div class="stat-value" style="font-size:1rem;">{{ encaissements_annee|floatformat:0 }} <span style="font-size:0.65rem; color:var(--color-text-muted);">FCFA</span></div>
-      <div class="stat-label">Encaissements</div>
-    </div>
+    <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
+    <div><div class="stat-value">{{ nb_classes }}</div><div class="stat-label">Classes actives</div></div>
   </div>
-
   <div class="stat-card">
-    <div class="stat-icon stat-icon-blue">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
-      </svg>
-    </div>
-    <div>
-      <div class="stat-value">{{ nb_paiements }}</div>
-      <div class="stat-label">Paiements</div>
-    </div>
+    <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value" style="font-size:1rem;">{{ encaissements_annee|floatformat:0 }} <span style="font-size:0.65rem;color:var(--color-text-muted);">FCFA</span></div><div class="stat-label">Encaissements</div></div>
   </div>
-
+  <a href="{% url 'presences:appel_list' %}" class="stat-card" style="text-decoration:none;">
+    <div class="stat-icon" style="background:rgba(239,68,68,0.12);"><svg fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+    <div><div class="stat-value" style="color:#ef4444;">{{ nb_absences_aujourd_hui }}</div><div class="stat-label">Absences aujourd'hui</div></div>
+  </a>
+  <a href="{% url 'presences:justification_list' %}?statut=EN_ATTENTE" class="stat-card" style="text-decoration:none;">
+    <div class="stat-icon" style="background:rgba(245,158,11,0.12);"><svg fill="none" stroke="#f59e0b" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value" style="color:#f59e0b;">{{ nb_justifications_attente }}</div><div class="stat-label">Justif. en attente</div></div>
+  </a>
+  <a href="{% url 'viescolaire:sanction_list' %}" class="stat-card" style="text-decoration:none;">
+    <div class="stat-icon" style="background:rgba(139,92,246,0.12);"><svg fill="none" stroke="#8b5cf6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+    <div><div class="stat-value" style="color:#8b5cf6;">{{ nb_sanctions_recentes }}</div><div class="stat-label">Sanctions (7 jours)</div></div>
+  </a>
 </div>
 
-{# ── Répartition par cycle ── #}
 {% if repartition_cycles %}
-<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-6); padding:var(--space-5) var(--space-6);">
-  <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:var(--space-4);">
-    <div style="width:30px; height:30px; border-radius:8px; background:rgba(0,168,107,0.13); display:flex; align-items:center; justify-content:center;">
-      <svg width="15" height="15" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-      </svg>
-    </div>
-    <span class="fw-semibold" style="font-size:0.9rem;">Répartition par cycle</span>
-  </div>
-  <div style="display:flex; gap:var(--space-4); flex-wrap:wrap;">
+<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5); padding:var(--space-4) var(--space-5);">
+  <div style="font-weight:600; font-size:0.85rem; margin-bottom:var(--space-3); color:var(--color-text-secondary);">Répartition par cycle</div>
+  <div style="display:flex; gap:var(--space-3); flex-wrap:wrap;">
     {% for item in repartition_cycles %}
-    <div style="flex:1; min-width:120px; background:var(--color-bg-input); border-radius:10px; padding:var(--space-3) var(--space-4); text-align:center;">
-      <div class="fw-bold" style="font-size:1.4rem; color:var(--color-primary);">{{ item.nb }}</div>
+    <div style="flex:1; min-width:110px; background:var(--color-bg-input); border-radius:8px; padding:var(--space-3) var(--space-4); text-align:center;">
+      <div style="font-size:1.5rem; font-weight:700; color:var(--color-primary);">{{ item.nb }}</div>
       <div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">{{ item.cycle.nom }}</div>
     </div>
     {% endfor %}
@@ -119,131 +102,228 @@
 </div>
 {% endif %}
 
-{# ── Accès rapides modules ── #}
 <div class="animate-fade-up delay-2" style="margin-bottom:var(--space-3);">
-  <span class="fw-semibold" style="font-size:0.8rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.08em;">Modules</span>
+  <span style="font-size:0.8rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.08em; font-weight:600;">Accès rapides</span>
 </div>
+<div class="modules-grid animate-fade-up delay-2">
+  <a href="{% url 'inscriptions:eleve_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Inscriptions</h2><p class="module-description">Élèves et réinscriptions.</p></a>
+  <a href="{% url 'pedagogie:matiere_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Pédagogie</h2><p class="module-description">Notes et bulletins.</p></a>
+  <a href="{% url 'finances:paiement_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Finances</h2><p class="module-description">Paiements et redevables.</p></a>
+  <a href="{% url 'personnel:personnel_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Personnel</h2><p class="module-description">Membres et affectations.</p></a>
+  <a href="{% url 'presences:bilan_annuel' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Présences</h2><p class="module-description">Appels et bilan annuel.</p></a>
+  <a href="{% url 'viescolaire:conseil_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Vie scolaire</h2><p class="module-description">Conseils et sanctions.</p></a>
+  <a href="{% url 'documents:document_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Documents</h2><p class="module-description">Certificats et listes PDF.</p></a>
+  <a href="{% url 'parametres:index' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Paramètres</h2><p class="module-description">Configuration établissement.</p></a>
+</div>
+
+
+{# Enseignant #}
+{% elif role == 'ENSEIGNANT' %}
+
+<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
+    <div><div class="stat-value">{{ nb_classes }}</div><div class="stat-label">Classes actives</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+    <div><div class="stat-value">{{ nb_enseignements }}</div><div class="stat-label">Enseignements</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+    <div><div class="stat-value">{{ nb_evaluations_annee }}</div><div class="stat-label">Évaluations</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(239,68,68,0.12);"><svg fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+    <div><div class="stat-value" style="color:#ef4444;">{{ nb_eleves_sans_notes }}</div><div class="stat-label">Élèves sans notes</div></div>
+  </div>
+</div>
+
+{% if evaluations_recentes %}
+<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
+  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">Évaluations récentes</div>
+  <div class="table-scroll">
+    <table class="data-table" style="margin:0;">
+      <thead><tr><th>Classe</th><th>Matière</th><th>Date</th><th>Statut</th></tr></thead>
+      <tbody>
+        {% for ev in evaluations_recentes %}
+        <tr>
+          <td>{{ ev.classe.nom }}</td>
+          <td>{{ ev.matiere.nom }}</td>
+          <td>{{ ev.date_evaluation|date:"d/m/Y" }}</td>
+          <td><span class="badge badge-{% if ev.statut == 'PUBLIEE' %}success{% elif ev.statut == 'BROUILLON' %}warning{% else %}info{% endif %}">{{ ev.get_statut_display }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
 
 <div class="modules-grid animate-fade-up delay-2">
-
-  <a href="{% url 'inscriptions:eleve_list' %}" class="module-card">
-    <div class="module-card-header">
-      <div class="module-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-        </svg>
-      </div>
-      <div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
-    </div>
-    <h2 class="module-title">Inscriptions</h2>
-    <p class="module-description">Élèves, dossiers et réinscriptions annuelles.</p>
-  </a>
-
-  <a href="{% url 'personnel:personnel_list' %}" class="module-card">
-    <div class="module-card-header">
-      <div class="module-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-        </svg>
-      </div>
-      <div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
-    </div>
-    <h2 class="module-title">Personnel</h2>
-    <p class="module-description">Membres du personnel et affectations.</p>
-  </a>
-
-  <a href="{% url 'pedagogie:matiere_list' %}" class="module-card">
-    <div class="module-card-header">
-      <div class="module-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-        </svg>
-      </div>
-      <div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
-    </div>
-    <h2 class="module-title">Pédagogie</h2>
-    <p class="module-description">Matières, notes et bulletins scolaires.</p>
-  </a>
-
-  <a href="{% url 'finances:paiement_list' %}" class="module-card">
-    <div class="module-card-header">
-      <div class="module-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-      </div>
-      <div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
-    </div>
-    <h2 class="module-title">Finances</h2>
-    <p class="module-description">Paiements, reçus et situation des redevables.</p>
-  </a>
-
-  <a href="{% url 'presences:appel_list' %}" class="module-card">
-    <div class="module-card-header">
-      <div class="module-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-        </svg>
-      </div>
-      <div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
-    </div>
-    <h2 class="module-title">Présences</h2>
-    <p class="module-description">Appels, absences et justificatifs.</p>
-  </a>
-
-  <a href="{% url 'examens:session_list' %}" class="module-card">
-    <div class="module-card-header">
-      <div class="module-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-        </svg>
-      </div>
-      <div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
-    </div>
-    <h2 class="module-title">Examens</h2>
-    <p class="module-description">CEP, BEPC, BAC — sessions et résultats.</p>
-  </a>
-
-  <a href="{% url 'viescolaire:conseil_list' %}" class="module-card">
-    <div class="module-card-header">
-      <div class="module-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-      </div>
-      <div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
-    </div>
-    <h2 class="module-title">Vie scolaire</h2>
-    <p class="module-description">Conseils de classe, sanctions et activités.</p>
-  </a>
-
-  <a href="{% url 'documents:document_list' %}" class="module-card">
-    <div class="module-card-header">
-      <div class="module-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-        </svg>
-      </div>
-      <div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
-    </div>
-    <h2 class="module-title">Documents</h2>
-    <p class="module-description">Certificats, listes et attestations PDF.</p>
-  </a>
-
-  <a href="{% url 'parametres:index' %}" class="module-card">
-    <div class="module-card-header">
-      <div class="module-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-      </div>
-      <div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div>
-    </div>
-    <h2 class="module-title">Paramètres</h2>
-    <p class="module-description">Configuration de l'établissement.</p>
-  </a>
-
+  <a href="{% url 'pedagogie:evaluation_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Évaluations</h2><p class="module-description">Gérer les évaluations et composer les notes.</p></a>
+  <a href="{% url 'pedagogie:classe_result_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Résultats</h2><p class="module-description">Consulter les résultats et moyennes par classe.</p></a>
+  <a href="{% url 'presences:appel_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Appels</h2><p class="module-description">Faire l'appel et saisir les présences.</p></a>
+  <a href="{% url 'viescolaire:emploi_du_temps_index' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Emploi du temps</h2><p class="module-description">Consulter les créneaux et salles.</p></a>
 </div>
+
+
+{# Comptable #}
+{% elif role == 'COMPTABLE' %}
+
+<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value" style="font-size:0.9rem;">{{ total_aujourd_hui|floatformat:0 }} <span style="font-size:0.6rem;color:var(--color-text-muted);">CFA</span></div><div class="stat-label">Encaissé aujourd'hui</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+    <div><div class="stat-value" style="font-size:0.9rem;">{{ total_mois|floatformat:0 }} <span style="font-size:0.6rem;color:var(--color-text-muted);">CFA</span></div><div class="stat-label">Encaissé ce mois</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg></div>
+    <div><div class="stat-value" style="font-size:0.9rem;">{{ encaissements_annee|floatformat:0 }} <span style="font-size:0.6rem;color:var(--color-text-muted);">CFA</span></div><div class="stat-label">Total annuel</div></div>
+  </div>
+  <a href="{% url 'finances:liste_redevables' %}" class="stat-card" style="text-decoration:none;">
+    <div class="stat-icon" style="background:rgba(239,68,68,0.12);"><svg fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value" style="color:#ef4444;">{{ nb_redevables }}</div><div class="stat-label">Redevables</div></div>
+  </a>
+</div>
+
+{% if paiements_aujourd_hui %}
+<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
+  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">Paiements d'aujourd'hui</div>
+  <div class="table-scroll">
+    <table class="data-table" style="margin:0;">
+      <thead><tr><th>Élève</th><th>Rubrique</th><th style="text-align:right;">Montant</th><th>Reçu</th></tr></thead>
+      <tbody>
+        {% for p in paiements_aujourd_hui %}
+        <tr>
+          <td>{{ p.inscription.eleve.get_nom_complet }}</td>
+          <td>{{ p.rubrique.nom|default:"—" }}</td>
+          <td style="text-align:right; font-family:var(--font-mono);">{{ p.montant|floatformat:0 }} CFA</td>
+          <td style="font-size:0.8rem; color:var(--color-text-muted);">{{ p.numero_recu|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="modules-grid animate-fade-up delay-2">
+  <a href="{% url 'finances:paiement_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Paiements</h2><p class="module-description">Enregistrer et consulter les paiements.</p></a>
+  <a href="{% url 'finances:liste_redevables' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Redevables</h2><p class="module-description">Liste des élèves avec solde impayé.</p></a>
+  <a href="{% url 'finances:bilan_encaissements' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Bilan encaissements</h2><p class="module-description">Synthèse financière par rubrique.</p></a>
+  <a href="{% url 'parametres:tarif_simulation' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Simulation tarifaire</h2><p class="module-description">Calculer les frais selon classe et statut.</p></a>
+</div>
+
+
+{# Secrétaire #}
+{% elif role == 'SECRETAIRE' %}
+
+<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
+    <div><div class="stat-value">{{ total_eleves }}</div><div class="stat-label">Élèves</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+    <div><div class="stat-value">{{ inscriptions_annee }}</div><div class="stat-label">Inscrits cette année</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></div>
+    <div><div class="stat-value">{{ nb_docs_semaine }}</div><div class="stat-label">Documents (7 jours)</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
+    <div><div class="stat-value">{{ nb_classes }}</div><div class="stat-label">Classes</div></div>
+  </div>
+</div>
+
+{% if inscriptions_recentes %}
+<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
+  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); display:flex; justify-content:space-between; align-items:center;">
+    <span style="font-weight:600;">Inscriptions récentes</span>
+    <a href="{% url 'inscriptions:eleve_list' %}" style="font-size:0.8rem; color:var(--color-primary);">Voir tout →</a>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table" style="margin:0;">
+      <thead><tr><th>Élève</th><th>Classe</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for ins in inscriptions_recentes %}
+        <tr>
+          <td>{{ ins.eleve.get_nom_complet }}</td>
+          <td>{{ ins.classe.nom }}</td>
+          <td style="font-size:0.82rem; color:var(--color-text-muted);">{{ ins.created_at|date:"d/m/Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="modules-grid animate-fade-up delay-2">
+  <a href="{% url 'inscriptions:eleve_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Inscriptions</h2><p class="module-description">Gérer les dossiers élèves.</p></a>
+  <a href="{% url 'documents:document_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Documents</h2><p class="module-description">Certificats et listes de classes.</p></a>
+  <a href="{% url 'documents:liste_classes_selector' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Listes de classes</h2><p class="module-description">Générer les listes PDF par classe.</p></a>
+  <a href="{% url 'personnel:personnel_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Personnel</h2><p class="module-description">Consulter les membres du personnel.</p></a>
+</div>
+
+
+{# AVS #}
+{% elif role == 'AVS' %}
+
+<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(239,68,68,0.12);"><svg fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></div>
+    <div><div class="stat-value" style="color:#ef4444;">{{ nb_absences_aujourd_hui }}</div><div class="stat-label">Absences aujourd'hui</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(245,158,11,0.12);"><svg fill="none" stroke="#f59e0b" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value" style="color:#f59e0b;">{{ nb_retards_aujourd_hui }}</div><div class="stat-label">Retards aujourd'hui</div></div>
+  </div>
+  <a href="{% url 'presences:appel_list' %}" class="stat-card" style="text-decoration:none;">
+    <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+    <div><div class="stat-value">{{ nb_appels_aujourd_hui }}</div><div class="stat-label">Appels effectués</div></div>
+  </a>
+  <a href="{% url 'presences:justification_list' %}?statut=EN_ATTENTE" class="stat-card" style="text-decoration:none;">
+    <div class="stat-icon" style="background:rgba(139,92,246,0.12);"><svg fill="none" stroke="#8b5cf6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+    <div><div class="stat-value" style="color:#8b5cf6;">{{ nb_justifications_attente }}</div><div class="stat-label">Justif. en attente</div></div>
+  </a>
+</div>
+
+{% if sanctions_recentes %}
+<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
+  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); display:flex; justify-content:space-between; align-items:center;">
+    <span style="font-weight:600;">Sanctions récentes</span>
+    <a href="{% url 'viescolaire:sanction_list' %}" style="font-size:0.8rem; color:var(--color-primary);">Voir tout →</a>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table" style="margin:0;">
+      <thead><tr><th>Élève</th><th>Type</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for s in sanctions_recentes %}
+        <tr>
+          <td>{{ s.inscription.eleve.get_nom_complet }}</td>
+          <td>{{ s.type_sanction.nom }}</td>
+          <td style="font-size:0.82rem; color:var(--color-text-muted);">{{ s.date_sanction|date:"d/m/Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="modules-grid animate-fade-up delay-2">
+  <a href="{% url 'presences:appel_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Appels</h2><p class="module-description">Suivre les appels et présences.</p></a>
+  <a href="{% url 'presences:justification_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Justifications</h2><p class="module-description">Traiter les justificatifs en attente.</p></a>
+  <a href="{% url 'viescolaire:sanction_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Sanctions</h2><p class="module-description">Gérer les sanctions disciplinaires.</p></a>
+  <a href="{% url 'presences:bilan_annuel' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Bilan présences</h2><p class="module-description">Synthèse annuelle des absences.</p></a>
+</div>
+
+{% endif %}
 
 {% endblock %}

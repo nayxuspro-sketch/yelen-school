@@ -116,12 +116,16 @@ class InscriptionForm(forms.ModelForm):
         self.fields['statut_eleve'].widget.attrs.update({'class': 'input select', 'onchange': 'updateCodePaiement(this)'})
         
         # Pre-fill niveau, cycle and code_paiement from existing inscription
-        if self.instance and self.instance.pk and self.instance.classe:
-            self.initial['niveau'] = self.instance.classe.niveau
-            if self.instance.classe.cycle:
-                self.initial['cycle'] = self.instance.classe.cycle.nom
-            if self.instance.statut_eleve:
-                self.initial['code_paiement'] = f"{self.instance.classe.niveau}-{self.instance.statut_eleve.nom}"
+        if self.instance and self.instance.pk:
+            try:
+                if self.instance.classe:
+                    self.initial['niveau'] = self.instance.classe.niveau
+                    if self.instance.classe.cycle:
+                        self.initial['cycle'] = self.instance.classe.cycle.nom
+                    if self.instance.statut_eleve:
+                        self.initial['code_paiement'] = f"{self.instance.classe.niveau}-{self.instance.statut_eleve.nom}"
+            except AttributeError:
+                pass
         
         _apply_yelen_classes(self.fields)
 
@@ -143,3 +147,33 @@ class InscriptionForm(forms.ModelForm):
             self.add_error('classe', "Cette classe n'appartient pas à votre établissement.")
 
         return cleaned_data
+
+
+class TransfertClasseForm(forms.Form):
+    """Formulaire de transfert d'un élève vers une autre classe (même année scolaire)."""
+    classe = forms.ModelChoiceField(
+        queryset=Classe.objects.none(),
+        label="Nouvelle classe",
+        widget=forms.Select(attrs={'class': 'input select'}),
+    )
+    motif = forms.CharField(
+        label="Motif du transfert",
+        required=False,
+        max_length=255,
+        widget=forms.TextInput(attrs={'class': 'input', 'placeholder': 'ex: Sureffectif, demande parentale…'}),
+    )
+
+    def __init__(self, *args, inscription=None, etablissement=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._inscription = inscription
+        if etablissement:
+            qs = Classe.objects.filter(etablissement=etablissement, actif=True).order_by('cycle__ordre', 'nom')
+            if inscription:
+                qs = qs.exclude(pk=inscription.classe_id)
+            self.fields['classe'].queryset = qs
+
+    def clean_classe(self):
+        nouvelle_classe = self.cleaned_data['classe']
+        if self._inscription and nouvelle_classe.pk == self._inscription.classe_id:
+            raise forms.ValidationError("L'élève est déjà dans cette classe.")
+        return nouvelle_classe

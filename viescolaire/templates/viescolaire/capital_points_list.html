@@ -1,0 +1,196 @@
+{% extends "core/base.html" %}
+
+{% block title %}Capital points discipline — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Capital points discipline</h1>
+    <p class="page-subtitle">Solde de points de conduite par élève — année {{ annee_sel }}</p>
+  </div>
+  <a href="{% url 'viescolaire:config_discipline' %}" class="btn-secondary">
+    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+    Configurer les seuils
+  </a>
+</div>
+
+<!-- Stats rapides -->
+{% if nb_exclusion or nb_conseil or nb_alerte %}
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.25rem;">
+
+  {% if nb_exclusion %}
+  <div class="card animate-fade-up delay-1" style="padding:1rem 1.25rem;
+       border-left:4px solid #991b1b;">
+    <div style="font-size:.75rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.05em;">
+      Exclusion imminente
+    </div>
+    <div style="font-size:1.75rem; font-weight:700; color:#991b1b;">{{ nb_exclusion }}</div>
+    <div style="font-size:.78rem; color:var(--color-text-muted);">élève{{ nb_exclusion|pluralize }}</div>
+  </div>
+  {% endif %}
+
+  {% if nb_conseil %}
+  <div class="card animate-fade-up delay-1" style="padding:1rem 1.25rem;
+       border-left:4px solid var(--color-danger);">
+    <div style="font-size:.75rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.05em;">
+      Conseil disciplinaire
+    </div>
+    <div style="font-size:1.75rem; font-weight:700; color:var(--color-danger);">{{ nb_conseil }}</div>
+    <div style="font-size:.78rem; color:var(--color-text-muted);">élève{{ nb_conseil|pluralize }}</div>
+  </div>
+  {% endif %}
+
+  {% if nb_alerte %}
+  <div class="card animate-fade-up delay-1" style="padding:1rem 1.25rem;
+       border-left:4px solid var(--color-warning);">
+    <div style="font-size:.75rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.05em;">
+      En alerte
+    </div>
+    <div style="font-size:1.75rem; font-weight:700; color:var(--color-warning);">{{ nb_alerte }}</div>
+    <div style="font-size:.78rem; color:var(--color-text-muted);">élève{{ nb_alerte|pluralize }}</div>
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+
+<!-- Filtres -->
+<div class="card animate-fade-up delay-1" style="margin-bottom:1.25rem;">
+  <form method="get" style="padding:1.25rem; display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+
+    <div style="flex:1; min-width:160px;">
+      <label class="input-label">Année scolaire</label>
+      <select name="annee" class="input select" onchange="this.form.submit()">
+        {% for a in annees %}
+        <option value="{{ a.id }}" {% if a == annee_sel %}selected{% endif %}>{{ a.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex:1; min-width:160px;">
+      <label class="input-label">Classe</label>
+      <select name="classe" class="input select" onchange="this.form.submit()">
+        <option value="">Toutes les classes</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {% if c.id|stringformat:"s" == classe_id %}selected{% endif %}>{{ c.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if classe_id %}
+    <a href="{% url 'viescolaire:capital_points_list' %}{% if annee_sel %}?annee={{ annee_sel.id }}{% endif %}"
+       class="btn-secondary" style="height:38px; padding:0 1rem;">
+      Effacer filtre
+    </a>
+    {% endif %}
+
+  </form>
+</div>
+
+<!-- Tableau -->
+<div class="card animate-fade-up delay-2">
+  <div class="card-header">
+    <span class="card-title">{{ lignes|length }} élève{{ lignes|length|pluralize }}</span>
+    {% if config %}
+    <span style="font-size:.78rem; color:var(--color-text-muted);">
+      Capital de départ : <strong>{{ config.points_depart }} pts</strong>
+    </span>
+    {% endif %}
+  </div>
+
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Classe</th>
+          <th style="text-align:center;">Solde</th>
+          <th style="text-align:center;">Sanctions</th>
+          <th>Statut</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in lignes %}
+        {% with inscr=l.inscription %}
+        <tr style="cursor:pointer;" onclick="location.href='{% url 'viescolaire:fiche_suivi_eleve' inscr.id %}#sanctions'">
+          <td>
+            <div class="d-flex align-center gap-3">
+              <div style="width:32px; height:32px; border-radius:50%;
+                          background:{% if l.statut == 'EXCLUSION' %}rgba(153,27,27,.2)
+                          {% elif l.statut == 'CONSEIL' %}rgba(239,68,68,.15)
+                          {% elif l.statut == 'ALERTE' %}rgba(234,179,8,.15)
+                          {% else %}rgba(0,168,107,.15){% endif %};
+                          display:flex; align-items:center; justify-content:center;
+                          font-size:.8rem; font-weight:700;
+                          color:{% if l.statut == 'EXCLUSION' %}#991b1b
+                          {% elif l.statut == 'CONSEIL' %}var(--color-danger)
+                          {% elif l.statut == 'ALERTE' %}var(--color-warning)
+                          {% else %}var(--color-primary){% endif %};
+                          flex-shrink:0;">
+                {{ inscr.eleve.prenom|first|upper }}
+              </div>
+              <span class="fw-medium">{{ inscr.eleve.nom|upper }} {{ inscr.eleve.prenom }}</span>
+            </div>
+          </td>
+          <td style="color:var(--color-text-muted); font-size:.85rem;">{{ inscr.classe.nom }}</td>
+          <td style="text-align:center;">
+            <span style="font-size:1.1rem; font-weight:700;
+                         color:{% if l.statut == 'EXCLUSION' %}#991b1b
+                         {% elif l.statut == 'CONSEIL' %}var(--color-danger)
+                         {% elif l.statut == 'ALERTE' %}var(--color-warning)
+                         {% else %}var(--color-primary){% endif %};">
+              {{ l.solde }}
+            </span>
+          </td>
+          <td style="text-align:center; font-size:.85rem; color:var(--color-text-muted);">
+            {% if l.total_sanctions != 0 %}
+              <span style="color:{% if l.total_sanctions < 0 %}var(--color-danger){% else %}var(--color-primary){% endif %};">
+                {% if l.total_sanctions > 0 %}+{% endif %}{{ l.total_sanctions }}
+              </span>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            {% if l.statut == 'EXCLUSION' %}
+            <span class="badge" style="background:rgba(153,27,27,.15); color:#991b1b; font-size:.72rem;">
+              Exclusion imminente
+            </span>
+            {% elif l.statut == 'CONSEIL' %}
+            <span class="badge badge-danger" style="font-size:.72rem;">Conseil disciplinaire</span>
+            {% elif l.statut == 'ALERTE' %}
+            <span class="badge badge-warning" style="font-size:.72rem;">Alerte</span>
+            {% else %}
+            <span class="badge badge-success" style="font-size:.72rem;">Normal</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'viescolaire:fiche_suivi_eleve' inscr.id %}#sanctions"
+               class="btn-secondary btn-sm" onclick="event.stopPropagation()">
+              Fiche
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left:4px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </td>
+        </tr>
+        {% endwith %}
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center; padding:3rem; color:var(--color-text-muted);">
+            Aucune inscription active pour cette sélection.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

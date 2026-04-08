@@ -1,0 +1,68 @@
+{% comment %}
+Ligne de configuration matière × cycle.
+Variables : matiere, cycle, config (MatiereCycle|None), form (MatiereCycleForm)
+{% endcomment %}
+<tr id="cycle-row-{{ cycle.pk }}" class="cycle-config-row">
+  <td class="fw-semibold">
+    <span class="badge badge-neutral" style="font-size:.75rem;">{{ cycle.nom }}</span>
+  </td>
+
+  <form hx-post="{% url 'pedagogie:matiere_cycle_save' matiere.pk cycle.pk %}"
+        hx-target="#cycle-row-{{ cycle.pk }}"
+        hx-swap="outerHTML"
+        style="display:contents;">
+    {% csrf_token %}
+
+    <td>
+      <input type="number" name="coefficient" step="0.01" min="0" max="9.99"
+             value="{{ config.coefficient|default:'' }}"
+             placeholder="{{ matiere.coefficient }}"
+             class="input" style="width:5rem; text-align:center;"
+             title="Laisser vide pour utiliser le défaut ({{ matiere.coefficient }})">
+      {% if form.coefficient.errors %}
+        <p class="input-error">{{ form.coefficient.errors.0 }}</p>
+      {% endif %}
+    </td>
+
+    <td>
+      <div class="d-flex align-center gap-1">
+        <input type="number" name="moy_min" step="0.01" min="0"
+               value="{{ config.moy_min|default:'0' }}"
+               class="input" style="width:4.5rem; text-align:center;">
+        <span class="text-muted">→</span>
+        <input type="number" name="moy_max" step="0.01" min="1"
+               value="{{ config.moy_max|default:'20' }}"
+               class="input" style="width:4.5rem; text-align:center;">
+      </div>
+    </td>
+
+    <td>
+      <input type="number" name="heures_hebdomadaires" step="0.5" min="0"
+             value="{{ config.heures_hebdomadaires|default:'0' }}"
+             class="input" style="width:4rem; text-align:center;">
+    </td>
+
+    <td style="text-align:center;">
+      <input type="checkbox" name="est_obligatoire"
+             {% if config == None or config.est_obligatoire %}checked{% endif %}>
+    </td>
+
+    <td style="text-align:right;">
+      <div class="d-flex justify-end gap-2">
+        <button type="submit" class="btn-primary btn-sm" title="Enregistrer">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+        </button>
+        {% if config %}
+        <button type="submit" name="coefficient" value=""
+                class="btn-secondary btn-sm" title="Supprimer la configuration">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+        </button>
+        {% endif %}
+      </div>
+    </td>
+  </form>
+</tr>

@@ -19,6 +19,15 @@
       </p>
     </div>
   </div>
+  <div class="header-actions">
+    <a href="{% url 'viescolaire:conseil_pv_pdf' conseil.pk %}" target="_blank" class="btn btn-outline">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      PV en PDF
+    </a>
+  </div>
 </div>
 
 <div class="mb-4 animate-fade-up delay-1">
@@ -48,6 +57,7 @@
             <th>Décision</th>
             <th>Appréciation</th>
             <th>Distinctions</th>
+            <th style="width:40px;"></th>
           </tr>
         </thead>
         <tbody>
@@ -77,6 +87,22 @@
                   Encouragements
                 </label>
               </div>
+            </td>
+            <td style="text-align:center;">
+              {% if d.decision == 'REDOUBLEMENT' or d.decision == 'ORIENTATION' or d.decision == 'EXCLUSION' %}
+                {% if d.appel %}
+                <span title="Appel déposé" style="font-size:.75rem; color:var(--color-warning); font-weight:600;">⚑ Contesté</span>
+                {% else %}
+                <a href="{% url 'viescolaire:appel_decision_create' d.pk %}"
+                   class="btn-icon" title="Contester cette décision"
+                   style="color:var(--color-danger);">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  </svg>
+                </a>
+                {% endif %}
+              {% endif %}
             </td>
           </tr>
           {% endfor %}

@@ -1,0 +1,284 @@
+{% extends "core/base.html" %}
+
+{% block title %}Outils de licence — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Outils de licence</h1>
+    <p class="page-subtitle">Génération et vérification de clés HMAC-SHA256 — usage superadmin uniquement</p>
+  </div>
+  <a href="{% url 'licences:gestion' %}" class="btn-secondary">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Retour aux licences
+  </a>
+</div>
+
+{% if erreur %}
+<div style="display:flex;align-items:center;gap:10px;padding:var(--space-4) var(--space-5);background:rgba(220,53,69,0.08);border:1px solid rgba(220,53,69,0.25);border-radius:10px;margin-bottom:var(--space-5);" class="animate-fade-up">
+  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;color:var(--color-danger);">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  <span style="font-size:0.875rem;color:var(--color-danger);">{{ erreur }}</span>
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);">
+
+{# ════ FORMULAIRE 1 : Génération de clé ════ #}
+<div class="card animate-fade-up delay-1">
+  <div class="card-header">
+    <span class="card-title">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:6px;opacity:.7;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+      </svg>
+      Générer une clé
+    </span>
+  </div>
+  <div style="padding:var(--space-5);">
+    <p class="text-muted" style="font-size:0.82rem;margin-bottom:var(--space-4);">
+      Génère une clé <code style="background:rgba(0,168,107,0.10);color:var(--color-primary);padding:1px 6px;border-radius:4px;">YELEN-XXXX-XXXX-XXXX</code> offline par HMAC-SHA256
+      à partir du type et de l'identifiant d'établissement.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="generer">
+      <div class="form-group">
+        <label class="input-label">Type de licence <span style="color:var(--color-danger);">*</span></label>
+        <select name="type_licence" class="input select" required>
+          <option value="">— Sélectionner —</option>
+          {% for val, label in types %}
+          <option value="{{ val }}"
+            {% if action == 'generer' and resultat.type_licence == val %}selected{% endif %}>
+            {{ label }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="input-label">Établissement <span style="color:var(--color-danger);">*</span></label>
+        <select name="etablissement_id" class="input select" required>
+          <option value="">— Sélectionner —</option>
+          {% for etab in etablissements %}
+          <option value="{{ etab.pk }}"
+            {% if action == 'generer' and resultat.etab_id == etab.pk|stringformat:"s" %}selected{% endif %}>
+            {{ etab.nom }}
+          </option>
+          {% endfor %}
+        </select>
+        <div style="font-size:0.75rem;color:var(--color-text-muted);margin-top:4px;">
+          L'UUID de l'établissement est utilisé dans le HMAC.
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Générer la clé
+      </button>
+    </form>
+
+    {# ── Résultat génération ── #}
+    {% if action == 'generer' and resultat %}
+    <div style="margin-top:var(--space-5);padding:var(--space-4);background:rgba(0,168,107,0.06);border:1px solid rgba(0,168,107,0.20);border-radius:8px;">
+      <div class="input-label" style="margin-bottom:var(--space-3);">Résultat</div>
+
+      <div style="margin-bottom:var(--space-3);">
+        <div style="font-size:0.75rem;color:var(--color-text-muted);margin-bottom:4px;">Clé générée</div>
+        <div style="display:flex;align-items:center;gap:var(--space-2);">
+          <code id="cle-generee" style="background:rgba(0,168,107,0.12);color:var(--color-primary);padding:6px 14px;border-radius:6px;font-size:1rem;font-weight:700;letter-spacing:.06em;flex:1;">
+            {{ resultat.cle }}
+          </code>
+          <button type="button" onclick="copyText('cle-generee', this)"
+                  style="background:none;border:1px solid var(--color-border);color:var(--color-text-secondary);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;white-space:nowrap;">
+            Copier
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:var(--space-3);">
+        <div style="font-size:0.75rem;color:var(--color-text-muted);margin-bottom:4px;">Signature HMAC (expiration +1 an : {{ resultat.date_exp_defaut }})</div>
+        <code id="sig-generee" style="display:block;background:rgba(255,255,255,0.04);border:1px solid var(--color-border);color:var(--color-text-secondary);padding:8px 12px;border-radius:6px;font-size:0.72rem;word-break:break-all;line-height:1.6;">
+          {{ resultat.signature_hmac }}
+        </code>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);font-size:0.8rem;">
+        <div>
+          <span style="color:var(--color-text-muted);">Plan :</span>
+          <span class="fw-semibold" style="margin-left:4px;">{{ resultat.type_display }}</span>
+        </div>
+        <div>
+          <span style="color:var(--color-text-muted);">Généré le :</span>
+          <span style="margin-left:4px;">{% now "d/m/Y H:i" %}</span>
+        </div>
+      </div>
+
+      <div style="margin-top:var(--space-3);padding:var(--space-3);background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.78rem;color:var(--color-gold);">
+        La clé est non-déterministe (horodatage inclus). Notez-la immédiatement — elle ne peut pas être régénérée à l'identique.
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ════ FORMULAIRE 2 : Vérification de signature ════ #}
+<div class="card animate-fade-up delay-1">
+  <div class="card-header">
+    <span class="card-title">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:6px;opacity:.7;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+      </svg>
+      Vérifier une signature
+    </span>
+  </div>
+  <div style="padding:var(--space-5);">
+    <p class="text-muted" style="font-size:0.82rem;margin-bottom:var(--space-4);">
+      Recalcule et compare le HMAC-SHA256 d'une licence à partir de sa clé, son type et sa date d'expiration.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="verifier">
+      <div class="form-group">
+        <label class="input-label">Clé de licence <span style="color:var(--color-danger);">*</span></label>
+        <input type="text" name="cle_licence" class="input" required
+               placeholder="YELEN-XXXX-XXXX-XXXX"
+               value="{% if action == 'verifier' and resultat %}{{ resultat.cle }}{% endif %}"
+               style="font-family:monospace;letter-spacing:.04em;text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label class="input-label">Type de licence <span style="color:var(--color-danger);">*</span></label>
+        <select name="type_licence_v" class="input select" required>
+          <option value="">— Sélectionner —</option>
+          {% for val, label in types %}
+          <option value="{{ val }}"
+            {% if action == 'verifier' and resultat.type_licence == val %}selected{% endif %}>
+            {{ label }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="input-label">Date d'expiration <span style="color:var(--color-danger);">*</span></label>
+        <input type="date" name="date_expiration" class="input" required
+               value="{% if action == 'verifier' and resultat %}{{ licence.date_expiration|date:'Y-m-d' }}{% endif %}">
+        <div style="font-size:0.75rem;color:var(--color-text-muted);margin-top:4px;">
+          Format ISO : AAAA-MM-JJ
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Vérifier la signature
+      </button>
+    </form>
+
+    {# ── Résultat vérification ── #}
+    {% if action == 'verifier' and resultat %}
+    <div style="margin-top:var(--space-5);">
+
+      {# Résultat global #}
+      {% if resultat.en_base %}
+        {% if resultat.valide_db %}
+        <div style="display:flex;align-items:center;gap:10px;padding:var(--space-4);background:rgba(0,168,107,0.08);border:1px solid rgba(0,168,107,0.25);border-radius:8px;margin-bottom:var(--space-4);">
+          <svg width="20" height="20" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24" style="flex-shrink:0;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+          <div>
+            <div class="fw-bold" style="color:var(--color-primary);">Signature valide</div>
+            <div style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:2px;">Le HMAC calculé correspond à la signature stockée en base.</div>
+          </div>
+        </div>
+        {% else %}
+        <div style="display:flex;align-items:center;gap:10px;padding:var(--space-4);background:rgba(220,53,69,0.08);border:1px solid rgba(220,53,69,0.25);border-radius:8px;margin-bottom:var(--space-4);">
+          <svg width="20" height="20" fill="none" stroke="var(--color-danger)" viewBox="0 0 24 24" style="flex-shrink:0;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <div>
+            <div class="fw-bold" style="color:var(--color-danger);">Signature invalide</div>
+            <div style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:2px;">Le HMAC calculé ne correspond pas à la signature stockée. La licence est peut-être falsifiée ou les paramètres sont incorrects.</div>
+          </div>
+        </div>
+        {% endif %}
+      {% else %}
+        <div style="display:flex;align-items:center;gap:10px;padding:var(--space-4);background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.25);border-radius:8px;margin-bottom:var(--space-4);">
+          <svg width="20" height="20" fill="none" stroke="var(--color-gold)" viewBox="0 0 24 24" style="flex-shrink:0;">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>
+            <div class="fw-bold" style="color:var(--color-gold);">Clé absente de la base</div>
+            <div style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:2px;">La clé <code style="font-size:0.78rem;">{{ resultat.cle }}</code> n'existe pas en base. Signature calculée ci-dessous à titre indicatif.</div>
+          </div>
+        </div>
+      {% endif %}
+
+      {# Détails techniques #}
+      <div style="padding:var(--space-4);background:rgba(255,255,255,0.03);border:1px solid var(--color-border);border-radius:8px;">
+        <div class="input-label" style="margin-bottom:var(--space-3);">Détails techniques</div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+          <tr style="border-bottom:1px solid var(--color-border);">
+            <td style="padding:7px 0;color:var(--color-text-muted);width:40%;">Clé</td>
+            <td style="padding:7px 0;font-family:monospace;font-weight:600;">{{ resultat.cle }}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--color-border);">
+            <td style="padding:7px 0;color:var(--color-text-muted);">Type</td>
+            <td style="padding:7px 0;">{{ resultat.type_display }}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--color-border);">
+            <td style="padding:7px 0;color:var(--color-text-muted);">Expiration</td>
+            <td style="padding:7px 0;">{{ resultat.date_exp }}</td>
+          </tr>
+          {% if resultat.en_base and resultat.lic_db %}
+          <tr style="border-bottom:1px solid var(--color-border);">
+            <td style="padding:7px 0;color:var(--color-text-muted);">Statut en base</td>
+            <td style="padding:7px 0;">{{ resultat.lic_db.get_statut_display }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td style="padding:7px 0;color:var(--color-text-muted);vertical-align:top;">HMAC calculé</td>
+            <td style="padding:7px 0;">
+              <code style="display:block;font-size:0.7rem;color:var(--color-text-secondary);word-break:break-all;line-height:1.6;">{{ resultat.signature_calculee }}</code>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+</div>{# /grid #}
+
+{# ── Note sécurité ── #}
+<div class="animate-fade-up delay-2" style="margin-top:var(--space-5);padding:var(--space-4) var(--space-5);background:rgba(255,255,255,0.02);border:1px solid var(--color-border);border-radius:10px;display:flex;gap:var(--space-3);align-items:flex-start;">
+  <svg width="16" height="16" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:2px;">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+  </svg>
+  <div style="font-size:0.8rem;color:var(--color-text-muted);">
+    <strong style="color:var(--color-text-secondary);">Sécurité :</strong>
+    Les clés sont générées par HMAC-SHA256 signé avec <code style="font-size:0.75rem;">SECRET_KEY</code>.
+    La signature d'intégrité lie la clé au type de licence et à la date d'expiration —
+    toute modification de ces champs invalide la signature et bloque l'accès.
+    Ces outils sont réservés aux superadministrateurs.
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_head %}
+<script>
+function copyText(elemId, btn) {
+  var text = document.getElementById(elemId).textContent.trim();
+  navigator.clipboard.writeText(text).then(function () {
+    var orig = btn.textContent;
+    btn.textContent = 'Copié !';
+    btn.style.color = 'var(--color-primary)';
+    setTimeout(function () { btn.textContent = orig; btn.style.color = ''; }, 1500);
+  });
+}
+</script>
+{% endblock %}

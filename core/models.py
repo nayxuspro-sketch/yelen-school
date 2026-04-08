@@ -73,9 +73,25 @@ class BaseModel(models.Model):
         auto_now_add=True,
         verbose_name='Date de création',
     )
+    created_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='%(class)s_created',
+        verbose_name='Créé par',
+    )
     updated_at = models.DateTimeField(
         auto_now=True,
         verbose_name='Dernière modification',
+    )
+    updated_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='%(class)s_updated',
+        verbose_name='Modifié par',
     )
     is_active = models.BooleanField(
         default=True,
@@ -86,3 +102,111 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
         ordering = ['-created_at']
+
+
+# ──────────────────────────────────────────────
+# Modèle d'Audit Trail
+# ──────────────────────────────────────────────
+
+class AuditLog(models.Model):
+    """Journal d'audit pour tracer toutes les modifications."""
+
+    class ActionChoices(models.TextChoices):
+        CREATE = 'CREATE', 'Création'
+        UPDATE = 'UPDATE', 'Modification'
+        DELETE = 'DELETE', 'Suppression'
+
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Date/Heure',
+    )
+    user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='audit_logs',
+        verbose_name='Utilisateur',
+    )
+    action = models.CharField(
+        max_length=10,
+        choices=ActionChoices.choices,
+        verbose_name='Action',
+    )
+    app_label = models.CharField(
+        max_length=50,
+        verbose_name='Application',
+    )
+    model_name = models.CharField(
+        max_length=100,
+        verbose_name='Modèle',
+    )
+    object_id = models.UUIDField(
+        verbose_name='ID de l\'objet',
+    )
+    object_repr = models.CharField(
+        max_length=200,
+        verbose_name='Objet',
+    )
+    changes = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Modifications',
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Adresse IP',
+    )
+
+    class Meta:
+        verbose_name = 'Journal d\'audit'
+        verbose_name_plural = 'Journaux d\'audit'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['-timestamp']),
+            models.Index(fields=['app_label', 'model_name']),
+            models.Index(fields=['user', '-timestamp']),
+        ]
+
+    def __str__(self):
+        return f"{self.action} - {self.object_repr} - {self.user} - {self.timestamp}"
+
+
+class Notification(models.Model):
+    """Notification in-app envoyée à un utilisateur."""
+
+    class TypeChoices(models.TextChoices):
+        BULLETIN   = 'BULLETIN',   'Bulletin publié'
+        ABSENCE    = 'ABSENCE',    'Absence signalée'
+        SANCTION   = 'SANCTION',   'Sanction disciplinaire'
+        GENERAL    = 'GENERAL',    'Information générale'
+
+    destinataire = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        verbose_name='Destinataire',
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=TypeChoices.choices,
+        default=TypeChoices.GENERAL,
+    )
+    titre = models.CharField(max_length=200)
+    message = models.TextField()
+    lien = models.CharField(max_length=500, blank=True, default='')
+    lu = models.BooleanField(default=False)
+    email_envoye = models.BooleanField(default=False)
+    sms_envoye = models.BooleanField(default=False, verbose_name='SMS envoyé')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['destinataire', 'lu', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.destinataire} — {self.titre}"

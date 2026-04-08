@@ -1,0 +1,196 @@
+{% extends "core/base.html" %}
+
+{% block title %}Placement — {{ salle.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'examens:session_detail' session.pk %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Placement — {{ salle.nom }}</h1>
+      <p class="page-subtitle">{{ salle.centre.nom }} · {{ session.libelle }}</p>
+    </div>
+  </div>
+</div>
+
+{# ── Jauge de capacité ── #}
+<div class="stats-grid mb-6 animate-fade-up delay-1" style="grid-template-columns:repeat(3,1fr);">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ salle.capacite }}</div>
+      <div class="stat-label">Capacité totale</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_places }}</div>
+      <div class="stat-label">Placés</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon {% if places_restantes == 0 %}stat-icon-gold{% else %}stat-icon-blue{% endif %}">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ places_restantes }}</div>
+      <div class="stat-label">Places restantes</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-5); align-items:start;">
+
+  {# ── Candidats placés ── #}
+  <div class="card animate-fade-up delay-1">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <span class="card-title">Candidats placés ({{ nb_places }})</span>
+      {% if places_restantes > 0 and non_places %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="auto">
+        <button type="submit" class="btn-secondary btn-sm"
+                onclick="return confirm('Remplir automatiquement avec {{ places_restantes }} candidat(s) disponible(s) ?')">
+          Remplissage auto
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    <div style="padding:var(--space-3) var(--space-4);">
+      {% if placements %}
+      <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--color-border);">
+            <th style="padding:6px 4px; text-align:left; font-weight:600; color:var(--color-text-secondary); font-size:0.75rem; text-transform:uppercase; letter-spacing:.05em;">N° Table</th>
+            <th style="padding:6px 4px; text-align:left; font-weight:600; color:var(--color-text-secondary); font-size:0.75rem; text-transform:uppercase; letter-spacing:.05em;">Candidat</th>
+            <th style="padding:6px 4px; text-align:left; font-weight:600; color:var(--color-text-secondary); font-size:0.75rem; text-transform:uppercase; letter-spacing:.05em;">Place</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pl in placements %}
+          <tr style="border-bottom:1px solid var(--color-border-light, rgba(255,255,255,0.05));">
+            <td style="padding:7px 4px; color:var(--color-text-secondary);">
+              {{ pl.candidat.numero_table|default:"—" }}
+            </td>
+            <td style="padding:7px 4px; font-weight:500;">
+              {{ pl.candidat.inscription.eleve.get_nom_complet }}
+            </td>
+            <td style="padding:7px 4px; color:var(--color-text-secondary);">
+              {{ pl.numero_place|default:"—" }}
+            </td>
+            <td style="padding:7px 4px; text-align:right;">
+              <form method="post" action="{% url 'examens:placement_delete' pl.pk %}" style="display:inline;"
+                    data-confirm="Retirer ce candidat de la salle ?">
+                {% csrf_token %}
+                <button type="submit" title="Retirer de la salle"
+                        style="background:none; border:none; cursor:pointer; color:var(--color-danger); padding:2px 4px; line-height:0;">
+                  <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted" style="font-size:0.85rem; text-align:center; padding:var(--space-4) 0;">
+        Aucun candidat placé dans cette salle.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Candidats disponibles ── #}
+  <div class="card animate-fade-up delay-2">
+    <div class="card-header">
+      <span class="card-title">Candidats disponibles — {{ salle.centre.nom }} ({{ non_places|length }})</span>
+    </div>
+    <div style="padding:var(--space-3) var(--space-4);">
+      {% if non_places %}
+      {% if places_restantes == 0 %}
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:var(--space-3); padding:var(--space-2) var(--space-3); background:rgba(245,166,35,0.08); border:1px solid rgba(245,166,35,0.25); border-radius:6px; font-size:0.82rem; color:var(--color-gold,#F5A623);">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Salle complète — capacité maximale atteinte.
+      </div>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="placer">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--color-border);">
+              <th style="padding:6px 4px; width:28px;">
+                {% if places_restantes > 0 %}
+                <input type="checkbox" id="select-all" title="Tout sélectionner" style="cursor:pointer;">
+                {% endif %}
+              </th>
+              <th style="padding:6px 4px; text-align:left; font-weight:600; color:var(--color-text-secondary); font-size:0.75rem; text-transform:uppercase; letter-spacing:.05em;">N° Table</th>
+              <th style="padding:6px 4px; text-align:left; font-weight:600; color:var(--color-text-secondary); font-size:0.75rem; text-transform:uppercase; letter-spacing:.05em;">Candidat</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in non_places %}
+            <tr style="border-bottom:1px solid var(--color-border-light, rgba(255,255,255,0.05));">
+              <td style="padding:7px 4px;">
+                {% if places_restantes > 0 %}
+                <input type="checkbox" name="candidat_ids" value="{{ c.pk }}" class="candidat-cb" style="cursor:pointer;">
+                {% endif %}
+              </td>
+              <td style="padding:7px 4px; color:var(--color-text-secondary);">{{ c.numero_table|default:"—" }}</td>
+              <td style="padding:7px 4px; font-weight:500;">{{ c.inscription.eleve.get_nom_complet }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if places_restantes > 0 %}
+        <div style="margin-top:var(--space-3); text-align:right;">
+          <button type="submit" class="btn-primary">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Placer la sélection
+          </button>
+        </div>
+        {% endif %}
+      </form>
+      {% else %}
+      <p class="text-muted" style="font-size:0.85rem; text-align:center; padding:var(--space-4) 0;">
+        Tous les candidats de ce centre sont déjà placés.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const selectAll = document.getElementById('select-all');
+  if (selectAll) {
+    selectAll.addEventListener('change', function () {
+      document.querySelectorAll('.candidat-cb').forEach(cb => cb.checked = this.checked);
+    });
+  }
+</script>
+
+{% endblock %}

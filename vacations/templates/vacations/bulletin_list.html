@@ -9,7 +9,57 @@
     <h1 class="page-title">Bulletins de Vacation</h1>
     {% if annee_courante %}<p class="page-subtitle">{{ annee_courante }}</p>{% endif %}
   </div>
-  <a href="{% url 'vacations:contrat_list' %}" class="btn-secondary">Contrats</a>
+  <div class="d-flex gap-2">
+    <form method="get" action="{% url 'vacations:generer_tous_bulletins' %}" style="display:flex; gap:8px; align-items:center;">
+      <select name="mois" class="input select" style="color: #fff; background: #080F1C; min-height:36px;">
+        {% for val, label in mois_choices %}
+        <option value="{{ val }}" {% if val == current_month %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="annee" class="input select" style="color: #fff; background: #080F1C; min-height:36px;">
+        {% for a in annees_scolaires %}
+        <option value="{{ a.date_debut.year }}" {% if a.date_debut.year == current_year %}selected{% endif %}>{{ a.libelle }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn-primary">Générer</button>
+    </form>
+    <a href="{% url 'vacations:contrat_list' %}" class="btn-secondary">Contrats</a>
+  </div>
+</div>
+
+{# Filtres #}
+<div class="card mb-4 animate-fade-up" style="padding:var(--space-4);">
+  <form method="get" class="d-flex gap-3" style="align-items:flex-end;">
+    <div class="form-group" style="margin:0; min-width:150px;">
+      <label class="input-label" style="font-size:0.75rem;">Mois</label>
+      <select name="mois" class="input select" style="color: #fff; background: #080F1C;">
+        <option value="">Tous</option>
+        {% for val, label in mois_choices %}
+        <option value="{{ val }}" {% if request.GET.mois == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0; min-width:120px;">
+      <label class="input-label" style="font-size:0.75rem;">Année scolaire</label>
+      <select name="annee" class="input select" style="color: #fff; background: #080F1C;">
+        <option value="">Toutes</option>
+        {% for a in annees_scolaires %}
+        <option value="{{ a.date_debut.year }}" {% if request.GET.annee == a.date_debut.year|stringformat:"s" %}selected{% endif %}>{{ a.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0; min-width:150px;">
+      <label class="input-label" style="font-size:0.75rem;">Statut</label>
+      <select name="statut" class="input select" style="color: #fff; background: #080F1C;">
+        <option value="">Tous</option>
+        <option value="BROUILLON" {% if request.GET.statut == 'BROUILLON' %}selected{% endif %}>Brouillon</option>
+        <option value="VALIDE" {% if request.GET.statut == 'VALIDE' %}selected{% endif %}>Validé</option>
+        <option value="PAYE" {% if request.GET.statut == 'PAYE' %}selected{% endif %}>Payé</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-secondary btn-sm">Filtrer</button>
+    <a href="{% url 'vacations:bulletin_list' %}" class="btn-secondary btn-sm">Réinitialiser</a>
+  </form>
 </div>
 
 <div class="table-wrapper animate-fade-up delay-1">
@@ -23,6 +73,7 @@
           <th>Montant</th>
           <th>Statut</th>
           <th>Paiement</th>
+          <th style="text-align:right;">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -42,10 +93,35 @@
             {% endif %}
           </td>
           <td class="text-muted" style="font-size:0.8rem;">{{ b.date_paiement|date:"d/m/Y"|default:"—" }}</td>
+          <td style="text-align:right;">
+            <div class="d-flex justify-end gap-2">
+              {% if b.statut == 'BROUILLON' %}
+              <a href="{% url 'vacations:valider_bulletin' b.pk %}" class="btn-icon" title="Valider" style="color: var(--color-success);">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </a>
+              {% endif %}
+              {% if b.statut == 'VALIDE' %}
+              <a href="{% url 'vacations:payer_bulletin' b.pk %}" class="btn-icon" title="Marquer payé" style="color: var(--color-primary);">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+              </a>
+              {% endif %}
+              <a href="{% url 'vacations:bulletin_vacation_pdf' b.pk %}" target="_blank"
+                 class="btn-icon" title="Télécharger PDF" style="color: var(--color-info);">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+              </a>
+            </div>
+          </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="6">
+          <td colspan="7">
             <div class="empty-state">
               <div class="empty-state-icon">
                 <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,5 +137,19 @@
     </table>
   </div>
 </div>
+
+{% if page_obj.has_other_pages %}
+<div style="display:flex; justify-content:center; align-items:center; gap:var(--space-2); margin-top:var(--space-4);">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">← Précédent</a>
+  {% endif %}
+  <span style="font-size:0.85rem; color:var(--color-text-muted);">
+    Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Suivant →</a>
+  {% endif %}
+</div>
+{% endif %}
 
 {% endblock %}

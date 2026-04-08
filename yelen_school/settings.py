@@ -22,12 +22,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^pf+t^!ga^spvouqcrrjwb=heij^inpi)#w2)0erzwh4b8r-b%'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-^pf+t^!ga^spvouqcrrjwb=heij^inpi)#w2)0erzwh4b8r-b%')
+
+# Clé API Anthropic — nécessite une connexion Internet (fonctionnalités IA)
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+# Autorise les requêtes POST/CSRF depuis HTTPS local (Nginx dev)
+CSRF_TRUSTED_ORIGINS = [
+    'https://localhost',
+    'https://127.0.0.1',
+    'https://192.168.11.101',
+    # Ajoutez votre IP locale si besoin, ex: 'https://192.168.1.42'
+]
+
+# Indique à Django qu'il est derrière un proxy HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -39,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     # Apps YELEN SCHOOL
     'core',
     'personnel',
@@ -46,8 +61,36 @@ INSTALLED_APPS = [
     'accounts',
     'licences',
     'etablissements',
-    
+    'inscriptions',
+    'pedagogie',
+    'finances',
+    'presences',
+    'documents',
+    'examens',
+    'vacations',
+    'viescolaire',
+    'bulletins',
+    # API REST
+    'rest_framework',
+    'rest_framework.authtoken',
+    'api',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S',
+    'DATE_FORMAT': '%Y-%m-%d',
+}
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -59,6 +102,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'yelen_school.audit_middleware.AuditRequestMiddleware',
     'licences.middleware.LicenceCheckMiddleware',
     'licences.middleware.LicenceLimitsMiddleware',
     'licences.middleware.LicenceContextMiddleware',
@@ -69,7 +113,7 @@ ROOT_URLCONF = 'yelen_school.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -98,6 +142,7 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -122,7 +167,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'fr-fr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Ouagadougou'
 
 USE_I18N = True
 
@@ -133,8 +178,36 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Authentification
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# ── SMS ────────────────────────────────────────────────────────────────────
+# SMS_BACKEND = 'http'   → passerelle WiFi locale (app Android "SMS Gateway")
+# SMS_BACKEND = 'serial' → modem GSM USB ou Bluetooth SPP (AT commands)
+SMS_ENABLED = os.environ.get('SMS_ENABLED', 'False').lower() == 'true'
+SMS_BACKEND = os.environ.get('SMS_BACKEND', 'http')  # 'http' | 'serial'
+
+# Backend HTTP (recommandé — téléphone Android sur le même réseau WiFi)
+# App : https://github.com/capcom6/android-sms-gateway
+SMS_HTTP_URL = os.environ.get('SMS_HTTP_URL', 'http://192.168.1.100:8080/message')
+SMS_HTTP_USER = os.environ.get('SMS_HTTP_USER', 'admin')
+SMS_HTTP_PASSWORD = os.environ.get('SMS_HTTP_PASSWORD', '')
+SMS_HTTP_TIMEOUT = int(os.environ.get('SMS_HTTP_TIMEOUT', '10'))
+
+# Backend série (modem USB Huawei/ZTE ou Android Bluetooth SPP)
+SMS_MODEM_PORT = os.environ.get('SMS_MODEM_PORT', 'COM3')  # ex: /dev/ttyUSB0
+SMS_MODEM_BAUD = int(os.environ.get('SMS_MODEM_BAUD', '9600'))
+SMS_MODEM_TIMEOUT = int(os.environ.get('SMS_MODEM_TIMEOUT', '10'))

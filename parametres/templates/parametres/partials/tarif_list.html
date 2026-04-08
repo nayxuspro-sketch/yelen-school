@@ -97,5 +97,25 @@
 </div>
 {% endfor %}
 
+{% if page_obj.has_other_pages %}
+<div class="pagination" style="display:flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-4) 0;">
+  {% if page_obj.has_previous %}
+  <a hx-get="{% url 'parametres:tarif_list' %}?page={{ page_obj.previous_page_number }}{% if selected_annee %}&annee={{ selected_annee }}{% endif %}{% if selected_niveau %}&niveau={{ selected_niveau }}{% endif %}"
+     hx-target="#liste-container" hx-swap="outerHTML" class="btn-icon" title="Précédent">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+  </a>
+  {% endif %}
+  <span class="text-secondary" style="font-size:.875rem;">
+    Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+  <a hx-get="{% url 'parametres:tarif_list' %}?page={{ page_obj.next_page_number }}{% if selected_annee %}&annee={{ selected_annee }}{% endif %}{% if selected_niveau %}&niveau={{ selected_niveau }}{% endif %}"
+     hx-target="#liste-container" hx-swap="outerHTML" class="btn-icon" title="Suivant">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
 {% endif %}
 </div>

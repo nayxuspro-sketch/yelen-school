@@ -388,25 +388,83 @@ class LicenceLimitsMiddleware:
     
     def _check_limits(self, request: HttpRequest, licence: Licence) -> None:
         """
-        Vérifie les limites de la licence.
-        
+        Vérifie les limites de la licence et avertit si elles sont dépassées.
+
         Args:
             request: Requête HTTP
             licence: Instance de Licence
         """
         from .models import LIMITES_LICENCES
-        
-        limites = LIMITES_LICENCES[licence.type_licence]
-        
-        # Ces vérifications seront complétées quand les modules seront créés
-        # Pour l'instant, on définit juste la structure
-        
-        # Exemple de vérification future :
-        # nombre_eleves = Eleve.objects.filter(etablissement=etablissement).count()
-        # if nombre_eleves > limites['max_eleves']:
-        #     messages.warning(...)
-        
-        pass
+
+        limites = LIMITES_LICENCES.get(licence.type_licence, {})
+        etab = licence.etablissement
+
+        # ── Élèves (inscriptions actives de l'année courante) ──────────
+        try:
+            from inscriptions.models import Inscription
+            nb_eleves = (
+                Inscription.objects
+                .filter(
+                    classe__etablissement=etab,
+                    annee_scolaire__est_courante=True,
+                )
+                .values('eleve_id')
+                .distinct()
+                .count()
+            )
+            max_eleves = limites.get('max_eleves', 0)
+            if max_eleves and nb_eleves > max_eleves:
+                messages.warning(
+                    request,
+                    _(
+                        "Limite de licence depassee : %(nb)d eleves inscrits "
+                        "pour un maximum de %(max)d (licence %(type)s)."
+                    ) % {'nb': nb_eleves, 'max': max_eleves, 'type': licence.get_type_licence_display()},
+                )
+        except ImportError:
+            pass
+
+        # ── Enseignants (personnel actif, catégorie Enseignement) ──────
+        try:
+            from personnel.models import InscriptionPersonnel
+            nb_enseignants = (
+                InscriptionPersonnel.objects
+                .filter(
+                    etablissement=etab,
+                    is_active=True,
+                    poste__categorie='ENSEIGNEMENT',
+                )
+                .values('membre_id')
+                .distinct()
+                .count()
+            )
+            max_enseignants = limites.get('max_enseignants', 0)
+            if max_enseignants and nb_enseignants > max_enseignants:
+                messages.warning(
+                    request,
+                    _(
+                        "Limite de licence depassee : %(nb)d enseignants actifs "
+                        "pour un maximum de %(max)d (licence %(type)s)."
+                    ) % {'nb': nb_enseignants, 'max': max_enseignants, 'type': licence.get_type_licence_display()},
+                )
+        except ImportError:
+            pass
+
+        # ── Classes ────────────────────────────────────────────────────
+        try:
+            from parametres.models import Classe
+            nb_classes = Classe.objects.filter(etablissement=etab, is_active=True).count()
+            max_classes = limites.get('max_classes', 0)
+            if max_classes and nb_classes > max_classes:
+                messages.warning(
+                    request,
+                    _(
+                        "Limite de licence dépassée : %(nb)d classes actives "
+                        "pour un maximum de %(max)d (licence %(type)s)."
+                    ) % {'nb': nb_classes, 'max': max_classes, 'type': licence.get_type_licence_display()},
+                )
+        except ImportError:
+            pass
 
 
 # ═══════════════════════════════════════════════════════════════════

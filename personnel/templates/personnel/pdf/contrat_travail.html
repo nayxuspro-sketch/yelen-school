@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 20mm 18mm;
+    @bottom-center {
+      content: "Page " counter(page) " / " counter(pages);
+      font-size: 8pt;
+      color: #94A3B8;
+      font-family: 'DejaVu Sans', Arial, sans-serif;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-size: 10.5pt;
+    color: #1E293B;
+    line-height: 1.6;
+  }
+
+  /* ── En-tête établissement ── */
+  .entete {
+    display: flex;
+    align-items: center;
+    gap: 12mm;
+    border-bottom: 0.5mm solid #0A1628;
+    padding-bottom: 5mm;
+    margin-bottom: 6mm;
+  }
+  .entete-logo {
+    width: 22mm;
+    height: 22mm;
+    flex-shrink: 0;
+  }
+  .entete-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .entete-logo-placeholder {
+    width: 22mm;
+    height: 22mm;
+    background: #0A1628;
+    border-radius: 3mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .entete-info {
+    flex: 1;
+  }
+  .entete-nom {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #0A1628;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+  }
+  .entete-type {
+    font-size: 9pt;
+    color: #00A86B;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    margin-top: 1mm;
+  }
+  .entete-contact {
+    font-size: 8pt;
+    color: #64748B;
+    margin-top: 2mm;
+  }
+
+  /* ── Titre du contrat ── */
+  .contrat-titre {
+    text-align: center;
+    margin: 6mm 0 5mm;
+  }
+  .contrat-titre h1 {
+    font-size: 15pt;
+    font-weight: bold;
+    color: #0A1628;
+    text-transform: uppercase;
+    letter-spacing: 1pt;
+    border-bottom: 0.8mm solid #00A86B;
+    display: inline-block;
+    padding-bottom: 2mm;
+  }
+  .contrat-titre .ref {
+    font-size: 8.5pt;
+    color: #64748B;
+    margin-top: 2mm;
+  }
+
+  /* ── Sections ── */
+  .section {
+    margin-bottom: 5mm;
+  }
+  .section-titre {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #0A1628;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    border-left: 1.5mm solid #00A86B;
+    padding-left: 3mm;
+    margin-bottom: 3mm;
+  }
+  .section p {
+    margin-bottom: 2mm;
+    text-align: justify;
+  }
+
+  /* ── Tableau identité ── */
+  .id-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    margin-bottom: 3mm;
+  }
+  .id-table td {
+    padding: 1.5mm 2mm;
+    border-bottom: 0.2mm solid #E2E8F0;
+  }
+  .id-table td:first-child {
+    color: #64748B;
+    width: 45mm;
+    white-space: nowrap;
+  }
+  .id-table td:last-child {
+    font-weight: 600;
+    color: #0A1628;
+  }
+
+  /* ── Clauses numérotées ── */
+  .clause {
+    margin-bottom: 4mm;
+    counter-increment: clause;
+  }
+  .clause-num {
+    font-weight: bold;
+    color: #0A1628;
+  }
+
+  /* ── Zone de signatures ── */
+  .signatures {
+    margin-top: 10mm;
+    display: flex;
+    justify-content: space-between;
+    gap: 10mm;
+    page-break-inside: avoid;
+  }
+  .signature-bloc {
+    flex: 1;
+    text-align: center;
+  }
+  .signature-titre {
+    font-size: 9pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #0A1628;
+    margin-bottom: 2mm;
+    letter-spacing: 0.3pt;
+  }
+  .signature-nom {
+    font-size: 9pt;
+    color: #334155;
+    margin-bottom: 1mm;
+  }
+  .signature-date {
+    font-size: 8.5pt;
+    color: #64748B;
+    margin-bottom: 8mm;
+  }
+  .signature-ligne {
+    border-bottom: 0.3mm solid #1E293B;
+    height: 15mm;
+    margin: 0 5mm;
+  }
+  .signature-label {
+    font-size: 8pt;
+    color: #94A3B8;
+    margin-top: 2mm;
+    font-style: italic;
+  }
+
+  /* ── Pied de page ── */
+  .mention-legale {
+    margin-top: 8mm;
+    padding-top: 4mm;
+    border-top: 0.3mm solid #E2E8F0;
+    font-size: 7.5pt;
+    color: #94A3B8;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .highlight-box {
+    background: #F0FDF4;
+    border: 0.3mm solid #86EFAC;
+    border-radius: 2mm;
+    padding: 3mm 4mm;
+    margin: 3mm 0;
+    font-size: 9.5pt;
+  }
+</style>
+</head>
+<body>
+
+<!-- En-tête établissement -->
+<div class="entete">
+  <div class="entete-logo">
+    {% if logo_url %}
+      <img src="{{ logo_url }}" alt="Logo">
+    {% elif etab_logo_url %}
+      <img src="{{ etab_logo_url }}" alt="Logo">
+    {% else %}
+      <div class="entete-logo-placeholder">
+        <svg width="14mm" height="14mm" fill="white" viewBox="0 0 20 20">
+          <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+        </svg>
+      </div>
+    {% endif %}
+  </div>
+  <div class="entete-info">
+    <div class="entete-nom">
+      {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ membre.etablissement }}{% endif %}
+    </div>
+    <div class="entete-type">
+      {% if identite %}{{ identite.get_type_etablissement_display }}{% else %}Établissement scolaire{% endif %}
+    </div>
+    <div class="entete-contact">
+      {% if identite %}
+        {% if identite.adresse %}{{ identite.adresse }}{% endif %}
+        {% if identite.telephone %} · Tél. : {{ identite.telephone }}{% endif %}
+        {% if identite.email %} · {{ identite.email }}{% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Titre -->
+<div class="contrat-titre">
+  <h1>Contrat de Travail</h1>
+  <div class="ref">
+    Réf. : CT-{{ membre.matricule }}-{% if annee %}{{ annee.libelle }}{% else %}{{ today|date:"Y" }}{% endif %}
+    &nbsp;·&nbsp; Établi le {{ today|date:"d F Y" }}
+  </div>
+</div>
+
+<!-- ENTRE LES SOUSSIGNÉS -->
+<div class="section">
+  <div class="section-titre">Entre les soussignés</div>
+
+  <p>
+    <strong>L'Employeur :</strong>
+    {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ membre.etablissement }}{% endif %},
+    {% if identite and identite.get_type_etablissement_display %}établissement {{ identite.get_type_etablissement_display|lower }}{% else %}établissement scolaire{% endif %}
+    {% if identite and identite.adresse %}, sis à {{ identite.adresse }}{% endif %},
+    ci-après désigné « l'Établissement » ;
+  </p>
+
+  <p style="margin-top:2mm;">
+    <strong>L'Employé :</strong>
+    <strong>{{ membre.nom|upper }} {{ membre.prenom }}</strong>,
+    né(e) le {{ membre.date_naissance|date:"d F Y" }} à {{ membre.lieu_naissance }},
+    de nationalité {{ membre.nationalite }},
+    titulaire de la CNI / pièce d'identité N° <strong>{{ membre.numero_cni|default:"—" }}</strong>,
+    ci-après désigné « l'Agent » ;
+  </p>
+
+  <p style="margin-top:2mm;">Il a été convenu et arrêté ce qui suit :</p>
+</div>
+
+<!-- ARTICLE 1 — ENGAGEMENT -->
+<div class="section">
+  <div class="section-titre">Article 1 — Engagement et Fonction</div>
+  <p>
+    L'Établissement engage l'Agent en qualité de <strong>{{ membre.fonction }}</strong>
+    {% if inscription and inscription.poste %}, au poste de <strong>{{ inscription.poste.nom }}</strong>{% endif %}
+    {% if inscription and inscription.cycle %}, affecté(e) au cycle <strong>{{ inscription.cycle.nom }}</strong>{% endif %}.
+  </p>
+  {% if membre.est_contractuel %}
+  <p>Le présent contrat est un contrat à durée déterminée (CDD).</p>
+  {% elif membre.est_vacataire %}
+  <p>Le présent contrat est un contrat de vacation à temps partiel.</p>
+  {% else %}
+  <p>Le présent contrat est établi dans le cadre d'un engagement à durée indéterminée (CDI).</p>
+  {% endif %}
+</div>
+
+<!-- ARTICLE 2 — DURÉE -->
+<div class="section">
+  <div class="section-titre">Article 2 — Durée et Prise de Fonction</div>
+  {% if inscription and inscription.date_debut %}
+  <div class="highlight-box">
+    Date de prise de fonction : <strong>{{ inscription.date_debut|date:"d F Y" }}</strong>
+    {% if inscription.date_fin %}
+    — Date de fin prévue : <strong>{{ inscription.date_fin|date:"d F Y" }}</strong>
+    {% endif %}
+  </div>
+  {% else %}
+  <p>
+    La date de prise de fonction est fixée à compter de la signature du présent contrat,
+    soit le {{ today|date:"d F Y" }}.
+  </p>
+  {% endif %}
+  {% if annee %}
+  <p>Le présent contrat porte sur l'année scolaire <strong>{{ annee.libelle }}</strong>.</p>
+  {% endif %}
+</div>
+
+<!-- ARTICLE 3 — RÉMUNÉRATION -->
+<div class="section">
+  <div class="section-titre">Article 3 — Rémunération</div>
+  {% if membre.est_vacataire and inscription and inscription.heures_hebdomadaires %}
+  <p>
+    L'Agent percevra une rémunération calculée sur la base de
+    <strong>{{ inscription.heures_hebdomadaires }} heure(s) hebdomadaire(s)</strong>
+    de vacation, selon le tarif en vigueur au sein de l'Établissement.
+  </p>
+  {% else %}
+  <p>
+    L'Agent percevra une rémunération mensuelle brute fixée selon la grille salariale
+    interne de l'Établissement, conformément aux dispositions légales en vigueur.
+    Les modalités détaillées de rémunération sont précisées dans l'annexe jointe au présent contrat.
+  </p>
+  {% endif %}
+</div>
+
+<!-- ARTICLE 4 — OBLIGATIONS -->
+<div class="section">
+  <div class="section-titre">Article 4 — Obligations de l'Agent</div>
+  <p>L'Agent s'engage à :</p>
+  <p>— Exercer ses fonctions avec diligence, probité et dans le respect de l'éthique professionnelle ;</p>
+  <p>— Observer le règlement intérieur de l'Établissement et les instructions de la hiérarchie ;</p>
+  <p>— Assurer la confidentialité des informations relatives aux élèves, familles et à l'institution ;</p>
+  <p>— Participer aux activités pédagogiques et aux réunions institutionnelles.</p>
+</div>
+
+<!-- ARTICLE 5 — RÉSILIATION -->
+<div class="section">
+  <div class="section-titre">Article 5 — Résiliation</div>
+  <p>
+    Le présent contrat peut être résilié par l'une ou l'autre des parties, sous réserve du respect
+    d'un préavis d'un (01) mois, sauf faute grave ou lourde dûment constatée.
+    Toute rupture anticipée devra faire l'objet d'une notification écrite.
+  </p>
+</div>
+
+<!-- ARTICLE 6 — JURIDICTION -->
+<div class="section">
+  <div class="section-titre">Article 6 — Droit Applicable et Juridiction</div>
+  <p>
+    Le présent contrat est régi par la législation du travail en vigueur et notamment par le
+    Code du Travail applicable. Tout litige relatif à son exécution ou à sa résiliation sera
+    soumis aux juridictions compétentes.
+  </p>
+</div>
+
+<!-- SIGNATURES -->
+<div class="signatures">
+  <div class="signature-bloc">
+    <div class="signature-titre">Le Représentant de l'Établissement</div>
+    <div class="signature-nom">
+      {% if identite and identite.nom_directeur %}
+        {{ identite.nom_directeur }}
+      {% else %}
+        Le Directeur / La Directrice
+      {% endif %}
+    </div>
+    <div class="signature-date">Fait à ________________, le {{ today|date:"d F Y" }}</div>
+    <div class="signature-ligne"></div>
+    <div class="signature-label">Signature et cachet</div>
+  </div>
+
+  <div class="signature-bloc">
+    <div class="signature-titre">L'Agent</div>
+    <div class="signature-nom">{{ membre.nom|upper }} {{ membre.prenom }}</div>
+    <div class="signature-date">Lu et approuvé</div>
+    <div class="signature-ligne"></div>
+    <div class="signature-label">Signature précédée de la mention manuscrite</div>
+  </div>
+</div>
+
+<div class="mention-legale">
+  Document établi en deux (02) exemplaires originaux, dont un remis à chaque partie.
+  — YELEN SCHOOL · Système de gestion scolaire
+</div>
+
+</body>
+</html>

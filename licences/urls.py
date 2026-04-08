@@ -13,5 +13,8 @@ urlpatterns = [
     # Pages informatives (redirections middleware)
     path('activer/', views.activer, name='activer'),
     path('support/', views.support, name='support'),
+    path('guide/', views.guide, name='guide'),
     path('renouveler/', views.renouveler, name='renouveler'),
+    path('mon-abonnement/', views.statut_licence, name='statut'),
+    path('outils/', views.outils_licence, name='outils'),
 ]

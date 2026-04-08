@@ -46,7 +46,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for result, appr in resultats_annotes %}
+        {% for result in resultats_annotes %}
         <tr{% if result.dispense %} style="opacity:.65;"{% endif %}>
             <td><strong>{{ result.enseignement.matiere.nom }}</strong></td>
             <td style="text-align:center;">{{ result.coefficient_utilise|floatformat:0 }}</td>
@@ -60,8 +60,8 @@
                 {% else %}-{% endif %}
             </td>
             <td style="font-size:7.5pt; font-style:italic;
-                       color:{% if appr and not result.dispense %}{{ appr.couleur }}{% else %}#000000{% endif %};">
-                {% if result.dispense %}Dispensé{% elif appr %}{{ appr.libelle }}{% else %}-{% endif %}
+                       color:{% if result.appreciation and not result.dispense %}{{ result.appreciation.couleur }}{% else %}#000000{% endif %};">
+                {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle }}{% else %}-{% endif %}
             </td>
             <td style="font-size:7.5pt; vertical-align:middle;">
                 <div style="display:flex; align-items:flex-end; gap:4pt;">

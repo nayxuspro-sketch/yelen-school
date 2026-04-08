@@ -9,7 +9,10 @@
     <h1 class="page-title">Contrats de Vacation</h1>
     {% if annee_courante %}<p class="page-subtitle">{{ annee_courante }}</p>{% endif %}
   </div>
-  <a href="{% url 'vacations:bulletin_list' %}" class="btn-secondary">Bulletins du mois</a>
+  <div class="d-flex gap-2">
+    <a href="{% url 'vacations:contrat_create' %}" class="btn-primary">Nouveau contrat</a>
+    <a href="{% url 'vacations:bulletin_list' %}" class="btn-secondary">Bulletins du mois</a>
+  </div>
 </div>
 
 <div class="table-wrapper animate-fade-up delay-1">
@@ -30,7 +33,7 @@
           <td class="fw-medium">{{ contrat.personnel.get_nom_complet }}</td>
           <td class="text-secondary">
             {% if contrat.enseignement %}
-              {{ contrat.enseignement.matiere.nom }} — {{ contrat.enseignement.classe.nom }}
+              {{ contrat.enseignement.matiere.nom }} · {{ contrat.enseignement.classe.nom }}
             {% else %}—{% endif %}
           </td>
           <td class="fw-semibold text-warning">{{ contrat.taux_horaire|floatformat:0 }} FCFA</td>

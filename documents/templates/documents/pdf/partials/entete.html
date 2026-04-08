@@ -1,14 +1,3 @@
-{# ─────────────────────────────────────────────────────────────────
-   En-tête commun — tous documents PDF YELEN SCHOOL
-   Contexte : identite (IdentiteEtablissement, peut être None)
-             etablissement (Etablissement, peut être None)
-             annee_scolaire (AnneeScolaire)
-             logo_url (URL absolue du logo de identite)
-             etab_logo_url (URL absolue du logo de etablissement)
-   Priorité : identite > etablissement > annee_scolaire.etablissement
-   ───────────────────────────────────────────────────────────────── #}
-
-{# Champs resolus selon la source disponible #}
 {% if identite %}
   {% with nom=identite.nom_etablissement adresse=identite.adresse_complete ville=identite.ville tel=identite.telephone cachet_obj=identite.cachet_etablissement %}
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:4px;">

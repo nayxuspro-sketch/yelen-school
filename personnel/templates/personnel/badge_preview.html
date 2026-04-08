@@ -1,0 +1,218 @@
+{% extends "core/base.html" %}
+
+{% block title %}Badge — {{ membre.nom }} {{ membre.prenom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'personnel:detail' membre.pk %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Badge Personnel</h1>
+      <p class="page-subtitle">{{ membre.nom }} {{ membre.prenom }} · {{ membre.matricule }}</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'personnel:badge' membre.pk %}?format=pdf" target="_blank" class="btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+      </svg>
+      Télécharger PDF
+    </a>
+  </div>
+</div>
+
+<!-- Aperçu du badge -->
+<div class="animate-fade-up delay-1" style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
+
+  <!-- Badge visuel -->
+  <div>
+    <p class="text-muted text-sm" style="margin-bottom:0.75rem;">Aperçu (format carte bancaire 85,6 × 54 mm)</p>
+
+    <div style="
+      width: 342px;
+      height: 216px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      display: flex;
+      flex-direction: column;
+      font-family: 'Segoe UI', Ubuntu, system-ui, sans-serif;
+      position: relative;
+    ">
+      <!-- Accent gauche -->
+      <div style="
+        position:absolute; left:0; top:0; bottom:0; width:5px;
+        background: linear-gradient(to bottom, #00A86B, #0A1628);
+        z-index:2;
+      "></div>
+
+      <!-- Header -->
+      <div style="
+        background:#0A1628;
+        padding:10px 12px 8px;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        flex-shrink:0;
+      ">
+        <div style="
+          width:36px; height:36px; flex-shrink:0;
+          border-radius:8px;
+          overflow:hidden;
+          display:flex; align-items:center; justify-content:center;
+        ">
+          {% if logo_url %}
+            <img src="{{ logo_url }}" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+          {% elif etab_logo_url %}
+            <img src="{{ etab_logo_url }}" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+          {% else %}
+            <div style="background:#00A86B; width:100%; height:100%; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+              <svg width="20" height="20" fill="white" viewBox="0 0 20 20">
+                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+              </svg>
+            </div>
+          {% endif %}
+        </div>
+        <div>
+          <div style="font-size:0.75rem; font-weight:700; color:#E8EDF5; text-transform:uppercase; letter-spacing:0.3px; line-height:1.2;">
+            {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ membre.etablissement }}{% endif %}
+          </div>
+          <div style="font-size:0.55rem; color:#00A86B; margin-top:1px; letter-spacing:0.5px; text-transform:uppercase;">
+            {% if identite %}{{ identite.get_type_etablissement_display }}{% else %}Établissement scolaire{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Corps -->
+      <div style="flex:1; display:flex; padding:10px 12px; gap:12px; background:#fff;">
+
+        <!-- Photo -->
+        <div style="flex-shrink:0;">
+          {% if membre.photo %}
+            <img src="{{ membre.photo.url }}" alt="Photo"
+                 style="width:72px; height:88px; object-fit:cover; border-radius:6px; border:1px solid #E2E8F0;">
+          {% else %}
+            <div style="
+              width:72px; height:88px;
+              background:linear-gradient(135deg, #F1F5F9, #E2E8F0);
+              border-radius:6px; border:1px solid #E2E8F0;
+              display:flex; align-items:center; justify-content:center;
+              font-size:1.5rem; font-weight:700; color:#94A3B8;
+            ">
+              {{ membre.prenom|first|upper }}{{ membre.nom|first|upper }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Infos -->
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:6px;">
+          <div>
+            <div style="font-size:0.875rem; font-weight:700; color:#0A1628; text-transform:uppercase; letter-spacing:0.3px; line-height:1.2;">
+              {{ membre.nom|upper }}
+            </div>
+            <div style="font-size:0.75rem; color:#334155; line-height:1.2; margin-top:2px;">
+              {{ membre.prenom }}
+            </div>
+          </div>
+          <div style="
+            font-size:0.6rem; color:#00A86B; font-weight:700;
+            text-transform:uppercase; letter-spacing:0.5px;
+            padding:3px 8px;
+            background:rgba(0,168,107,0.10);
+            border-left:3px solid #00A86B;
+            border-radius:0 4px 4px 0;
+            display:inline-block;
+          ">
+            {{ membre.fonction }}
+          </div>
+          {% if inscription and inscription.poste %}
+          <div style="font-size:0.6rem; color:#64748B;">
+            {{ inscription.poste.nom }}
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div style="
+        background:#F8FAFC;
+        border-top:1px solid #E2E8F0;
+        padding:5px 12px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        flex-shrink:0;
+      ">
+        <div>
+          <div style="font-size:0.5rem; color:#94A3B8; text-transform:uppercase; letter-spacing:0.5px;">Matricule</div>
+          <div style="font-size:0.6rem; color:#64748B; font-family:monospace; letter-spacing:0.3px;">{{ membre.matricule }}</div>
+        </div>
+        <div style="font-size:0.55rem; color:#94A3B8; text-align:right;">
+          {% if annee %}{{ annee.libelle }}{% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Fiche récapitulative -->
+  <div class="card animate-fade-up delay-2" style="flex:1; min-width:280px; max-width:420px;">
+    <div class="card-header">
+      <h2 class="card-title">Informations sur le badge</h2>
+    </div>
+    <div class="card-body">
+      <dl style="display:grid; grid-template-columns:130px 1fr; gap:0.5rem 1rem; font-size:0.875rem;">
+        <dt class="text-muted">Nom complet</dt>
+        <dd class="fw-medium">{{ membre.nom }} {{ membre.prenom }}</dd>
+        <dt class="text-muted">Fonction</dt>
+        <dd>{{ membre.fonction }}</dd>
+        {% if inscription and inscription.poste %}
+        <dt class="text-muted">Poste</dt>
+        <dd>{{ inscription.poste.nom }}</dd>
+        {% endif %}
+        <dt class="text-muted">Matricule</dt>
+        <dd style="font-family:monospace;">{{ membre.matricule }}</dd>
+        {% if annee %}
+        <dt class="text-muted">Année scolaire</dt>
+        <dd>{{ annee.libelle }}</dd>
+        {% endif %}
+        <dt class="text-muted">Photo</dt>
+        <dd>
+          {% if membre.photo %}
+            <span class="badge badge-success">Disponible</span>
+          {% else %}
+            <span class="badge badge-warning">Initiales utilisées</span>
+          {% endif %}
+        </dd>
+      </dl>
+
+      {% if not membre.photo %}
+      <div style="margin-top:1rem; padding:0.75rem; background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.3); border-radius:var(--radius); font-size:0.8rem; color:var(--color-text-secondary);">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="vertical-align:middle; margin-right:4px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Aucune photo — les initiales seront affichées. Ajoutez une photo depuis
+        <a href="{% url 'personnel:update' membre.pk %}" class="text-primary">le profil</a>.
+      </div>
+      {% endif %}
+
+      <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--color-border);">
+        <a href="{% url 'personnel:badge' membre.pk %}?format=pdf" target="_blank" class="btn-primary" style="width:100%; justify-content:center;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Télécharger le badge PDF
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

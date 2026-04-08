@@ -22,8 +22,8 @@ class TestEtablissementModel(TestCase):
 
     def test_tous_les_champs(self):
         """Vérifie tous les champs spécifiques au modèle Etablissement."""
-        cycles_str = f"{CycleChoices.PRIMAIRE},{CycleChoices.POST_PRIMAIRE},{CycleChoices.SECONDAIRE}"
-        
+        cycles_list = [CycleChoices.PRIMAIRE, CycleChoices.POST_PRIMAIRE, CycleChoices.SECONDAIRE]
+
         etab = baker.make(
             Etablissement,
             nom="Complexe Scolaire La Joie",
@@ -31,11 +31,11 @@ class TestEtablissementModel(TestCase):
             adresse="Secteur 22, Bobo-Dioulasso",
             telephone="+226 70 10 20 30",
             email="contact@cs-joie.bf",
-            cycles=cycles_str,
+            cycles=cycles_list,
             ville="Bobo-Dioulasso",
             pays="Burkina Faso"
         )
-        
+
         # Vérification des valeurs assignées
         assert etab.nom == "Complexe Scolaire La Joie"
         assert etab.code == "CS-JOIE"
@@ -44,7 +44,7 @@ class TestEtablissementModel(TestCase):
         assert etab.email == "contact@cs-joie.bf"
         assert etab.ville == "Bobo-Dioulasso"
         assert etab.pays == "Burkina Faso"
-        assert etab.cycles == "PRIMAIRE,POST_PRIMAIRE,SECONDAIRE"
+        assert etab.cycles == ['PRIMAIRE', 'POST_PRIMAIRE', 'SECONDAIRE']
         # Validation d'un champ vide par défaut pour le logo (non fourni via baker)
         assert not etab.logo
 
@@ -76,18 +76,18 @@ class TestEtablissementModel(TestCase):
         assert etab_default.pays == "Burkina Faso"
 
     def test_cycle_peut_contenir_plusieurs_choix(self):
-        """Vérifie que le champ cycles peut contenir plusieurs CycleChoices séparés par des virgules."""
+        """Vérifie que le champ cycles peut contenir plusieurs CycleChoices sous forme de liste."""
         etab = Etablissement.objects.create(
             nom="Groupe Scolaire",
             code="GRP-SCOL",
             ville="Koudougou",
-            cycles=f"{CycleChoices.PRESCOLAIRE},{CycleChoices.PRIMAIRE},{CycleChoices.POST_PRIMAIRE}"
+            cycles=[CycleChoices.PRESCOLAIRE, CycleChoices.PRIMAIRE, CycleChoices.POST_PRIMAIRE],
         )
-        
+
         # Rechargement depuis la base
         etab.refresh_from_db()
-        
-        assert isinstance(etab.cycles, str)
-        assert "PRESCOLAIRE" in etab.cycles
-        assert "PRIMAIRE" in etab.cycles
-        assert "POST_PRIMAIRE" in etab.cycles
+
+        assert isinstance(etab.cycles, list)
+        assert CycleChoices.PRESCOLAIRE in etab.cycles
+        assert CycleChoices.PRIMAIRE in etab.cycles
+        assert CycleChoices.POST_PRIMAIRE in etab.cycles

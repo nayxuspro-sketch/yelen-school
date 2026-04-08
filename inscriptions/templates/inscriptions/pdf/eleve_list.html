@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm 12mm;
+    @top-center {
+      content: "{{ etab_nom }} — Liste des élèves {{ annee_libelle }}";
+      font-size: 8pt;
+      color: #6b7280;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " / " counter(pages);
+      font-size: 7.5pt;
+      color: #9ca3af;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #111827; background: #fff; }
+
+  /* ── En-tête ── */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #00A86B;
+  }
+  .header-logo img { width: 44px; height: 44px; object-fit: contain; }
+  .header-text { flex: 1; }
+  .header-etab {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #111827;
+    margin-bottom: 2px;
+  }
+  .header-sub { font-size: 8pt; color: #6b7280; }
+  .header-right {
+    text-align: right;
+    font-size: 8pt;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  /* ── Titre du document ── */
+  .doc-title {
+    font-size: 11pt;
+    font-weight: bold;
+    text-align: center;
+    margin: 8px 0 4px;
+    color: #111827;
+  }
+  .doc-subtitle {
+    font-size: 8pt;
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 10px;
+  }
+
+  /* ── Tableau ── */
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background-color: #00A86B; color: #fff; }
+  thead th {
+    padding: 5px 6px;
+    font-size: 8pt;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+  tbody tr:nth-child(even) { background-color: #f9fafb; }
+  tbody tr { border-bottom: 1px solid #e5e7eb; }
+  tbody td { padding: 4px 6px; font-size: 8pt; vertical-align: middle; }
+
+  .col-num { width: 5%; text-align: center; color: #9ca3af; }
+  .col-mat { width: 14%; font-family: monospace; font-size: 7.5pt; }
+  .col-nom { width: 22%; font-weight: 600; }
+  .col-prenom { width: 20%; }
+  .col-naissance { width: 11%; }
+  .col-genre { width: 6%; text-align: center; }
+  .col-classe { width: 14%; }
+  .col-statut { width: 8%; }
+
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 7pt;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-active { background: #d1fae5; color: #065f46; }
+  .badge-abandon { background: #fee2e2; color: #991b1b; }
+
+  /* ── Pied de page ── */
+  .footer {
+    margin-top: 12px;
+    font-size: 7.5pt;
+    color: #9ca3af;
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<!-- En-tête -->
+<div class="header">
+  <div class="header-text">
+    {% if identite %}
+    <div class="header-sub">{{ identite.ministere }}</div>
+    <div class="header-sub">{{ identite.direction }}</div>
+    {% endif %}
+    <div class="header-etab">{{ etab_nom }}</div>
+  </div>
+  <div class="header-right">
+    YELEN SCHOOL<br>
+    Année scolaire : {{ annee_libelle }}
+  </div>
+</div>
+
+<div class="doc-title">Liste des élèves</div>
+<div class="doc-subtitle">
+  {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
+  {% if filtre_classe %} — Classe : {{ filtre_classe }}{% endif %}
+  {% if filtre_statut %} — Statut : {{ filtre_statut }}{% endif %}
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th class="col-num">N°</th>
+      <th class="col-mat">Matricule</th>
+      <th class="col-nom">Nom</th>
+      <th class="col-prenom">Prénom</th>
+      <th class="col-naissance">Naissance</th>
+      <th class="col-genre">Sexe</th>
+      <th class="col-classe">Classe</th>
+      <th class="col-statut">Statut</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td class="col-num">{{ forloop.counter }}</td>
+      <td class="col-mat">{{ row.matricule }}</td>
+      <td class="col-nom">{{ row.nom }}</td>
+      <td class="col-prenom">{{ row.prenom }}</td>
+      <td class="col-naissance">{{ row.date_naissance }}</td>
+      <td class="col-genre">{{ row.genre }}</td>
+      <td class="col-classe">{{ row.classe }}</td>
+      <td class="col-statut">
+        {% if row.statut_inscription == 'ABANDON' %}
+          <span class="badge badge-abandon">Abandon</span>
+        {% elif row.statut_inscription %}
+          <span class="badge badge-active">Inscrit</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="footer">
+  <span>Édité le {{ date_edition }}</span>
+  <span>{{ nb_eleves }} élève{{ nb_eleves|pluralize }} — {{ annee_libelle }}</span>
+</div>
+
+</body>
+</html>

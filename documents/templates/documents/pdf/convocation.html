@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  /* ── Base ────────────────────────────────────────────────────────────────── */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DejaVu Serif', 'Times New Roman', serif;
+    font-size: 10.5pt;
+    color: #1a1a1a;
+    line-height: 1.55;
+    background: #fff;
+  }
+
+  /* ── Lettre (page break entre convocations) ──────────────────────────────── */
+  .lettre { page-break-after: always; }
+  .lettre:last-child { page-break-after: avoid; }
+
+  /* ── Bande de couleur supérieure ─────────────────────────────────────────── */
+  .top-stripe {
+    height: 6pt;
+    background: #1c3557;
+    width: 100%;
+  }
+
+  /* ── Zone de contenu principal ───────────────────────────────────────────── */
+  .page-inner {
+    padding: 1.4cm 2cm 1.6cm 2cm;
+  }
+
+  /* ── En-tête établissement ───────────────────────────────────────────────── */
+  .entete-wrapper {
+    padding-bottom: 10pt;
+    margin-bottom: 6pt;
+  }
+  .entete-sep {
+    height: 0;
+    border: none;
+    border-top: 2.5pt solid #1c3557;
+    margin-bottom: 2pt;
+  }
+  .entete-sep-thin {
+    height: 0;
+    border: none;
+    border-top: 0.75pt solid #8ea8c5;
+    margin-bottom: 10pt;
+  }
+
+  /* Agrandir le logo et le cachet dans le contexte convocation */
+  .entete-wrapper table { border-collapse: collapse; }
+  .entete-wrapper table tr td:first-child { width: 110px; }
+  .entete-wrapper table tr td:first-child img {
+    width: 100px;
+    height: 100px;
+    display: block;
+    object-fit: contain;
+  }
+  .entete-wrapper table tr td:last-child { width: 100px; }
+  .entete-wrapper table tr td:last-child img {
+    width: 90px;
+    height: 90px;
+    display: block;
+    object-fit: contain;
+    margin-left: auto;
+  }
+  /* Nom de l'établissement plus grand */
+  .entete-wrapper table tr td:nth-child(2) p:first-child {
+    font-size: 15pt;
+  }
+
+  /* ── Titre du document ───────────────────────────────────────────────────── */
+  .doc-title-zone {
+    margin: 14pt 0 10pt 0;
+    text-align: center;
+  }
+  .doc-title-label {
+    display: inline-block;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: #1c3557;
+    font-weight: bold;
+    margin-bottom: 4pt;
+  }
+  .doc-title-main {
+    font-size: 16pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: #1a1a1a;
+    line-height: 1;
+  }
+  .doc-title-sub {
+    font-size: 9.5pt;
+    color: #4a5e72;
+    font-style: italic;
+    margin-top: 4pt;
+    letter-spacing: .5px;
+  }
+  .doc-title-accent {
+    display: block;
+    width: 48pt;
+    height: 2.5pt;
+    background: #1c3557;
+    margin: 6pt auto 0;
+    border-radius: 2pt;
+  }
+
+  /* ── Ligne référence + lieu/date ─────────────────────────────────────────── */
+  .meta-line {
+    display: table;
+    width: 100%;
+    margin: 10pt 0 14pt 0;
+    font-size: 9pt;
+  }
+  .meta-ref {
+    display: table-cell;
+    vertical-align: middle;
+    width: 50%;
+    color: #666;
+  }
+  .meta-ref strong { color: #1c3557; }
+  .meta-date {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+    width: 50%;
+    color: #333;
+    font-size: 9.5pt;
+  }
+
+  /* ── Bloc destinataire ───────────────────────────────────────────────────── */
+  .dest-layout {
+    display: table;
+    width: 100%;
+    margin-bottom: 16pt;
+  }
+  .dest-left {
+    display: table-cell;
+    vertical-align: top;
+    width: 52%;
+    padding-top: 4pt;
+    font-size: 9pt;
+    color: #555;
+    line-height: 1.65;
+  }
+  .dest-right {
+    display: table-cell;
+    vertical-align: top;
+    width: 48%;
+    padding-left: 1cm;
+  }
+  .dest-card {
+    border: 1pt solid #c8d8e8;
+    border-top: 3pt solid #1c3557;
+    padding: 9pt 11pt;
+    background: #fafcff;
+  }
+  .dest-card-label {
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #1c3557;
+    font-weight: bold;
+    margin-bottom: 6pt;
+  }
+  .dest-card-parent {
+    font-size: 9pt;
+    color: #555;
+    font-style: italic;
+    margin-bottom: 2pt;
+  }
+  .dest-card-nom {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #1a1a1a;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .dest-card-classe {
+    font-size: 8.5pt;
+    color: #4a5e72;
+    margin-top: 5pt;
+    padding-top: 5pt;
+    border-top: .5pt solid #dde8f0;
+  }
+
+  /* ── Ligne objet ─────────────────────────────────────────────────────────── */
+  .objet-line {
+    border-left: 3pt solid #1c3557;
+    padding: 5pt 0 5pt 9pt;
+    margin-bottom: 14pt;
+    background: #f5f8fc;
+  }
+  .objet-lbl {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #1c3557;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 1pt;
+  }
+  .objet-val {
+    font-size: 10.5pt;
+    font-weight: bold;
+    color: #1a1a1a;
+  }
+
+  /* ── Corps du texte ──────────────────────────────────────────────────────── */
+  .corps {
+    font-size: 10.5pt;
+    line-height: 1.8;
+    text-align: justify;
+  }
+  .corps p { margin-bottom: 7pt; }
+  .corps .soulig { font-weight: bold; text-decoration: underline; }
+
+  /* ── Encart informations pratiques ───────────────────────────────────────── */
+  .encart {
+    margin: 12pt 0;
+    border: .75pt solid #c8d8e8;
+  }
+  .encart-header {
+    background: #1c3557;
+    color: #fff;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-weight: bold;
+    padding: 5pt 11pt;
+  }
+  .encart-body {
+    background: #fafcff;
+    padding: 4pt 11pt;
+  }
+  .encart-row {
+    display: table;
+    width: 100%;
+    border-bottom: .5pt solid #e5eef5;
+    padding: 4pt 0;
+  }
+  .encart-row:last-child { border-bottom: none; }
+  .encart-lbl {
+    display: table-cell;
+    width: 3cm;
+    font-size: 8.5pt;
+    font-weight: bold;
+    color: #1c3557;
+    vertical-align: top;
+    white-space: nowrap;
+    padding-right: 6pt;
+  }
+  .encart-val {
+    display: table-cell;
+    font-size: 9.5pt;
+    color: #1a1a1a;
+    vertical-align: top;
+  }
+
+  /* ── Note obligatoire ────────────────────────────────────────────────────── */
+  .note-obligatoire {
+    background: #fef9ec;
+    border: .75pt solid #f5c842;
+    padding: 5pt 9pt;
+    font-size: 8.5pt;
+    color: #7c5e0a;
+    margin: 10pt 0 8pt 0;
+  }
+
+  /* ── Signature ───────────────────────────────────────────────────────────── */
+  .sig-zone {
+    margin-top: 22pt;
+    text-align: right;
+    page-break-inside: avoid;
+  }
+  .sig-lieu-date { font-size: 9.5pt; color: #444; }
+  .sig-fonction { font-size: 10pt; color: #1c3557; font-weight: bold; margin-top: 9pt; }
+  .sig-nom {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #1a1a1a;
+    margin-top: 1.5cm;
+    letter-spacing: .3px;
+  }
+  .sig-titres { font-size: 8pt; color: #666; font-style: italic; margin-top: 2pt; }
+
+  /* ── Pied de document ────────────────────────────────────────────────────── */
+  .doc-footer {
+    display: table;
+    width: 100%;
+    margin-top: 10pt;
+    padding-top: 6pt;
+    border-top: .5pt solid #dde8f0;
+  }
+  .doc-footer-left {
+    display: table-cell;
+    vertical-align: middle;
+    font-size: 7pt;
+    color: #bbb;
+    font-style: italic;
+  }
+  .doc-footer-right {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+    font-size: 7pt;
+    color: #bbb;
+  }
+
+  /* ── Récépissé détachable ────────────────────────────────────────────────── */
+  .recepisse-wrapper { margin-top: 18pt; }
+  .recepisse-sep-line {
+    border: none;
+    border-top: 1pt dashed #aaa;
+    margin-bottom: 5pt;
+  }
+  .recepisse-cut-label {
+    text-align: center;
+    font-size: 7.5pt;
+    color: #aaa;
+    letter-spacing: .06em;
+    margin-bottom: 7pt;
+  }
+  .recepisse-body {
+    display: table;
+    width: 100%;
+  }
+  .recepisse-text {
+    display: table-cell;
+    width: 62%;
+    font-size: 8.5pt;
+    color: #555;
+    line-height: 1.65;
+    vertical-align: top;
+    padding-right: 12pt;
+  }
+  .recepisse-sig {
+    display: table-cell;
+    width: 38%;
+    vertical-align: bottom;
+    text-align: center;
+    padding-top: 16pt;
+  }
+  .recepisse-sig-line {
+    border-bottom: 1pt solid #888;
+    margin: 0 auto;
+    width: 5cm;
+    padding-top: 16pt;
+  }
+  .recepisse-sig-label {
+    font-size: 7.5pt;
+    color: #777;
+    text-align: center;
+    margin-top: 3pt;
+  }
+</style>
+</head>
+<body>
+
+<div class="lettre">
+
+  <!-- Bande couleur supérieure -->
+  <div class="top-stripe"></div>
+
+  <div class="page-inner">
+
+    <!-- En-tête établissement -->
+    <div class="entete-wrapper">
+      {% include "documents/pdf/partials/entete.html" %}
+    </div>
+
+    <!-- Titre du document -->
+    <div class="doc-title-zone">
+      <div class="doc-title-label">Document officiel</div>
+      <div class="doc-title-main">Convocation</div>
+      {% if type_label %}
+      <div class="doc-title-sub">{{ type_label }}</div>
+      {% endif %}
+      <span class="doc-title-accent"></span>
+    </div>
+
+    <!-- Référence + lieu/date -->
+    <div class="meta-line">
+      <div class="meta-ref">
+        {% if document %}
+        Réf.&ensp;<strong>{{ document.numero_document }}</strong>
+        {% endif %}
+      </div>
+      <div class="meta-date">
+        {% if identite and identite.ville %}{{ identite.ville }},{% endif %}
+        le {% now "d F Y" %}
+      </div>
+    </div>
+
+    <!-- Bloc destinataire -->
+    <div class="dest-layout">
+      <div class="dest-left">
+        {% if identite %}
+        <div>{{ identite.nom_etablissement }}</div>
+        {% if identite.adresse %}
+        <div>{{ identite.adresse }}</div>
+        {% endif %}
+        {% if identite.ville %}
+        <div><strong>{{ identite.ville }}</strong></div>
+        {% endif %}
+        {% if identite.telephone %}
+        <div>Tél&nbsp;: {{ identite.telephone }}</div>
+        {% endif %}
+        {% endif %}
+      </div>
+      <div class="dest-right">
+        <div class="dest-card">
+          <div class="dest-card-label">À l'attention de</div>
+          <div class="dest-card-parent">Parent ou tuteur(trice) de</div>
+          <div class="dest-card-nom">{{ eleve.nom|upper }} {{ eleve.prenom }}</div>
+          <div class="dest-card-classe">
+            Classe&nbsp;: {{ classe.nom }}{% if classe.cycle %}&ensp;·&ensp;{{ classe.cycle.nom }}{% endif %}<br>
+            {{ annee_scolaire }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Objet -->
+    {% if objet %}
+    <div class="objet-line">
+      <span class="objet-lbl">Objet</span>
+      <span class="objet-val">{{ objet }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Corps -->
+    <div class="corps">
+
+      <p>Madame, Monsieur,</p>
+
+      <p>
+        Nous avons l'honneur de vous convoquer, vous et/ou votre enfant
+        <span class="soulig">{{ eleve.nom|upper }} {{ eleve.prenom }}</span>,
+        {% if objet %}pour <em>{{ objet|lower }}</em>{% else %}pour une réunion concernant votre enfant{% endif %}.
+      </p>
+
+      <!-- Encart détails -->
+      <div class="encart">
+        <div class="encart-header">Informations pratiques</div>
+        <div class="encart-body">
+          {% if date_conv %}
+          <div class="encart-row">
+            <div class="encart-lbl">Date</div>
+            <div class="encart-val">{{ date_conv }}</div>
+          </div>
+          {% endif %}
+          {% if heure_conv %}
+          <div class="encart-row">
+            <div class="encart-lbl">Heure</div>
+            <div class="encart-val">{{ heure_conv }}</div>
+          </div>
+          {% endif %}
+          {% if lieu %}
+          <div class="encart-row">
+            <div class="encart-lbl">Lieu</div>
+            <div class="encart-val">{{ lieu }}</div>
+          </div>
+          {% endif %}
+          <div class="encart-row">
+            <div class="encart-lbl">Motif</div>
+            <div class="encart-val">{{ type_label }}{% if objet %}&ensp;—&ensp;{{ objet }}{% endif %}</div>
+          </div>
+        </div>
+      </div>
+
+      {% if corps %}
+      <p>{{ corps|linebreaksbr }}</p>
+      {% endif %}
+
+      <div class="note-obligatoire">
+        Votre présence est <strong>requise et obligatoire</strong>.
+        En cas d'empêchement majeur, nous vous prions de bien vouloir nous en informer dans les meilleurs délais.
+      </div>
+
+      <p>
+        Nous vous prions d'agréer, Madame, Monsieur,
+        l'expression de nos salutations distinguées.
+      </p>
+
+    </div>
+
+    <!-- Signature -->
+    {% if sig_membre %}
+    <div class="sig-zone">
+      <div class="sig-lieu-date">
+        {% if identite and identite.ville %}{{ identite.ville }},{% endif %}
+        le {% now "d F Y" %}
+      </div>
+      <div class="sig-fonction">
+        {{ signataire.fonction|default:signataire.titre|default:"Le Directeur" }}
+      </div>
+      <div class="sig-nom">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</div>
+      {% if signataire.titres_honorifiques %}
+      <div class="sig-titres">
+        {% for t in signataire.titres_honorifiques %}{{ t }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+      </div>
+      {% elif signataire.titre_honorifique %}
+      <div class="sig-titres">{{ signataire.titre_honorifique }}</div>
+      {% endif %}
+    </div>
+    {% else %}
+    {% include "documents/pdf/partials/signataire_bloc.html" %}
+    {% endif %}
+
+    <!-- Pied de page -->
+    <div class="doc-footer">
+      <div class="doc-footer-left">Document officiel — confidentiel</div>
+      {% if document %}
+      <div class="doc-footer-right">{{ document.numero_document }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Récépissé détachable -->
+    <div class="recepisse-wrapper">
+      <hr class="recepisse-sep-line">
+      <div class="recepisse-cut-label">✂&ensp;À détacher et à remettre à l'établissement&ensp;✂</div>
+      <div class="recepisse-body">
+        <div class="recepisse-text">
+          Je soussigné(e), parent / tuteur(trice) de
+          <strong>{{ eleve.nom|upper }} {{ eleve.prenom }}</strong>
+          ({{ classe.nom }}), atteste avoir pris connaissance de la convocation
+          {% if objet %}pour <em>{{ objet }}</em>{% endif %}
+          {% if date_conv %}prévue le <strong>{{ date_conv }}</strong>{% endif %}{% if heure_conv %} à <strong>{{ heure_conv }}</strong>{% endif %}.
+        </div>
+        <div class="recepisse-sig">
+          <div class="recepisse-sig-line"></div>
+          <div class="recepisse-sig-label">Signature du parent / tuteur</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-inner -->
+
+</div><!-- /lettre -->
+
+</body>
+</html>

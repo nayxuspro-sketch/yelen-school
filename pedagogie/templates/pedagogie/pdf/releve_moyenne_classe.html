@@ -1,0 +1,49 @@
+{% extends "pedagogie/pdf/bulletin_base.html" %}
+
+{% block pdf_content %}
+
+<div class="document-title">
+    <h2 style="text-transform:uppercase; letter-spacing:.5pt;">
+        RELEVÉ DE MOYENNES PAR ORDRE DE MÉRITE
+    </h2>
+    <p style="font-size:9pt; color:#475569;">
+        Classe : <strong>{{ classe.nom }}</strong>
+        &nbsp;|&nbsp; {{ trimestre.nom }}
+        &nbsp;|&nbsp; Année scolaire : <strong>{{ annee.libelle }}</strong>
+    </p>
+</div>
+
+{% if eleves %}
+<table>
+    <thead>
+        <tr>
+            <th style="text-align:center; width:12%;">Rang</th>
+            <th style="text-align:left;   width:64%;">Nom et Prénom</th>
+            <th style="text-align:center; width:24%;">Moyenne /20</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in eleves %}
+        <tr style="{% cycle '' 'background:#f8fafc;' %}">
+            <td style="text-align:center; font-weight:700;">{{ e.rang }}</td>
+            <td>{{ e.eleve.nom|upper }} {{ e.eleve.prenom }}</td>
+            <td style="text-align:center; font-weight:700;
+                       color:{% if e.admis %}#166534{% else %}#991b1b{% endif %};">
+                {% if e.moyenne is not None %}{{ e.moyenne }}{% else %}—{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="text-align:center; color:#94a3b8; font-style:italic; margin-top:20pt;">
+    Aucune moyenne calculée pour cette classe et cette période.
+</p>
+{% endif %}
+
+{% load signataire_tags %}
+<div style="margin-top:24pt;">
+    {% signataire_auto "BULLETIN" %}
+</div>
+
+{% endblock %}

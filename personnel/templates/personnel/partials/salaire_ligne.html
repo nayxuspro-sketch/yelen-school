@@ -1,0 +1,7 @@
+{% if montant %}
+<div class="d-flex justify-between" style="padding:var(--space-1) 0; font-size:0.9rem;
+     {% if danger %}color:var(--color-danger,#e53e3e);{% endif %}">
+  <span class="text-muted" style="{% if danger %}color:inherit;{% endif %}">{{ label }}</span>
+  <span class="text-mono">{% if danger %}- {% endif %}{{ montant|floatformat:"0" }} FCFA</span>
+</div>
+{% endif %}

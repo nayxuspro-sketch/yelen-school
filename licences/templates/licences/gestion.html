@@ -1,0 +1,162 @@
+{% extends "core/base.html" %}
+
+{% block title %}Gestion des Licences — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Licences</h1>
+    <p class="page-subtitle">
+      {% if is_superuser %}Gestion de toutes les licences{% else %}Informations sur votre licence{% endif %}
+    </p>
+  </div>
+  {% if is_superuser %}
+  <a href="{% url 'licences:outils' %}" class="btn-secondary">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+    </svg>
+    Outils cryptographiques
+  </a>
+  {% endif %}
+</div>
+
+{% if not licences %}
+<div class="card animate-fade-up" style="padding:var(--space-8); text-align:center;">
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+      </svg>
+    </div>
+    <p class="empty-state-text">Aucune licence trouvée.</p>
+    {% if is_superuser %}
+    <a href="/licences/nouvelle/" class="btn-primary" style="margin-top:var(--space-4);">Créer une licence</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% for item in licences %}
+{% with lic=item.obj %}
+<div class="card mb-4 animate-fade-up" style="overflow:visible;">
+
+  {# ── En-tête ── #}
+  <div class="card-header" style="padding:var(--space-4) var(--space-6); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--space-3);">
+    <div style="display:flex; align-items:center; gap:var(--space-3);">
+      <code style="background:#1a2a42; color:#00A86B; padding:5px 12px; border-radius:6px; font-weight:700; font-size:0.85rem; letter-spacing:.04em;">
+        {{ lic.cle_licence }}
+      </code>
+      {# Badge type #}
+      {% if lic.type_licence == 'STARTER' %}
+        <span class="badge" style="background:#fef3c7; color:#d97706;">Starter</span>
+      {% elif lic.type_licence == 'STANDARD' %}
+        <span class="badge" style="background:#d1fae5; color:#065f46;">Standard</span>
+      {% elif lic.type_licence == 'PREMIUM' %}
+        <span class="badge" style="background:#ede9fe; color:#5b21b6;">Premium</span>
+      {% else %}
+        <span class="badge" style="background:#dbeafe; color:#1d4ed8;">Réseau</span>
+      {% endif %}
+      {# Badge statut #}
+      {% if lic.statut == 'ACTIVE' %}
+        <span class="badge badge-success">Active</span>
+      {% elif lic.statut == 'EXPIREE' %}
+        <span class="badge badge-danger">Expirée</span>
+      {% elif lic.statut == 'REVOQUEE' %}
+        <span class="badge" style="background:#f3f4f6; color:#6b7280;">Révoquée</span>
+      {% else %}
+        <span class="badge badge-warning">En attente</span>
+      {% endif %}
+      {# Signature #}
+      {% if not item.signature_valide %}
+        <span class="badge badge-danger">Signature invalide</span>
+      {% endif %}
+    </div>
+    <div class="text-muted" style="font-size:0.78rem;">{{ lic.etablissement.nom }}</div>
+  </div>
+
+  {# ── Corps ── #}
+  <div style="padding:var(--space-4) var(--space-6); display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:var(--space-4);">
+
+    <div>
+      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Activation</div>
+      <div class="fw-medium" style="font-size:0.85rem;">
+        {% if lic.date_activation %}{{ lic.date_activation|date:"d/m/Y" }}{% else %}—{% endif %}
+      </div>
+    </div>
+
+    <div>
+      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Expiration</div>
+      <div class="fw-medium" style="font-size:0.85rem;
+        {% if item.jours_restants < 0 %}color:var(--color-danger);
+        {% elif item.jours_restants <= 30 %}color:var(--color-warning);
+        {% else %}color:var(--color-success);{% endif %}">
+        {{ lic.date_expiration|date:"d/m/Y" }}
+      </div>
+    </div>
+
+    <div>
+      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Jours restants</div>
+      <div class="fw-bold" style="font-size:0.95rem;
+        {% if item.jours_restants < 0 %}color:var(--color-danger);
+        {% elif item.jours_restants <= 7 %}color:var(--color-danger);
+        {% elif item.jours_restants <= 30 %}color:var(--color-warning);
+        {% else %}color:var(--color-success);{% endif %}">
+        {% if item.jours_restants < 0 %}Expirée depuis {{ item.jours_restants|cut:"-" }}j{% else %}{{ item.jours_restants }} jour{{ item.jours_restants|pluralize }}{% endif %}
+      </div>
+    </div>
+
+    {% if item.limites %}
+    <div>
+      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Limites</div>
+      <div style="font-size:0.8rem; color:var(--color-text-secondary);">
+        {{ item.limites.max_eleves }} élèves · {{ item.limites.max_classes }} classes
+      </div>
+    </div>
+    {% endif %}
+
+    <div>
+      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Vérification</div>
+      <div style="font-size:0.8rem;">
+        {% if lic.derniere_verification %}{{ lic.derniere_verification|date:"d/m/Y H:i" }}{% else %}—{% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  {# ── Actions (superuser seulement) ── #}
+  {% if is_superuser %}
+  <div style="padding:var(--space-3) var(--space-6) var(--space-4); border-top:1px solid var(--color-border); display:flex; gap:var(--space-2); flex-wrap:wrap; align-items:center;">
+    <span class="text-muted" style="font-size:0.75rem; margin-right:var(--space-2);">Actions :</span>
+
+    {% if lic.statut == 'EN_ATTENTE' %}
+    <a href="{% url 'licences:licence_activer' lic.pk %}" class="btn-primary" style="font-size:0.78rem; padding:5px 14px;">Activer</a>
+    {% endif %}
+
+    {% if lic.statut != 'REVOQUEE' %}
+    <a href="{% url 'licences:licence_renouveler' lic.pk %}" class="btn-secondary" style="font-size:0.78rem; padding:5px 14px;">Renouveler</a>
+    {% endif %}
+
+    <a href="{% url 'licences:licence_edit' lic.pk %}" class="btn-secondary" style="font-size:0.78rem; padding:5px 14px;">Modifier</a>
+
+    {% if lic.statut != 'REVOQUEE' %}
+    <a href="{% url 'licences:licence_revoquer' lic.pk %}"
+       style="background:none; border:1px solid var(--color-danger); color:var(--color-danger); padding:5px 14px; border-radius:6px; font-size:0.78rem; text-decoration:none;">
+      Révoquer
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endwith %}
+{% endfor %}
+
+{% if is_superuser %}
+<div class="animate-fade-up delay-2" style="margin-top:var(--space-4);">
+  <a href="{% url 'licences:licence_create' %}" class="btn-secondary">+ Nouvelle licence</a>
+</div>
+{% endif %}
+
+{% endblock %}

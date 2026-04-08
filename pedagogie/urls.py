@@ -39,6 +39,10 @@ urlpatterns = [
 
     # Exports PDF bulletins
     path(
+        'resultats/inscription/<uuid:inscription_id>/trimestre/<uuid:trimestre_id>/bulletin/apercu/',
+        views.bulletin_apercu, name='bulletin_apercu',
+    ),
+    path(
         'resultats/inscription/<uuid:inscription_id>/trimestre/<uuid:trimestre_id>/bulletin/pdf/',
         views.bulletin_pdf, name='bulletin_pdf',
     ),
@@ -54,4 +58,7 @@ urlpatterns = [
     # Moyennes par discipline
     path('resultats/moyennes-disciplines/', views.moyennes_disciplines, name='moyennes_disciplines'),
     path('resultats/moyennes-disciplines/pdf/', views.moyennes_disciplines_pdf, name='moyennes_disciplines_pdf'),
+
+    # Risque de décrochage
+    path('risque-decrochage/', views.risque_decrochage, name='risque_decrochage'),
 ]

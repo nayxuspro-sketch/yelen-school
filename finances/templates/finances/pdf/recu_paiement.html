@@ -141,7 +141,7 @@
     <div class="header-right">
         <div class="doc-badge"><h2>Reçu de Paiement</h2></div>
         <div class="doc-meta">
-            Réf. : <strong>{{ paiement.id }}</strong><br>
+            Reçu N° : <strong>{{ paiement.numero_recu|default:paiement.id }}</strong><br>
             {% if paiement.reference %}Tx Réf. : {{ paiement.reference }}<br>{% endif %}
             Imprimé le {{ now|date:"d/m/Y à H:i" }}
         </div>

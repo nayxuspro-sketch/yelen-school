@@ -46,10 +46,16 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
                 </a>
-                <a href="{% url 'finances:bilan_encaissements_pdf' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}" 
+                <a href="{% url 'finances:bilan_encaissements_pdf' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
                    target="_blank" class="btn-secondary" title="Imprimer PDF">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                </a>
+                <a href="{% url 'finances:bilan_encaissements_csv' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
+                   class="btn-secondary" title="Exporter CSV (Excel)">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                     </svg>
                 </a>
             </div>
@@ -66,7 +72,7 @@
             </div>
             <div>
                 <div class="stat-label">Total Encaissé</div>
-                <div class="stat-value" style="color:var(--color-success);">{{ total_encaissement|floatformat:0 }} FCFA</div>
+                <div class="stat-value" style="color:var(--color-success);">{{ total_encaissement|floatformat:0 }} FCAF</div>
             </div>
         </div>
         <div class="stat-card">
@@ -82,13 +88,31 @@
         </div>
     </div>
 
+    <!-- Graphiques CSS (hors ligne) -->
+    {% with max_mode=par_mode.items|dictsort:'total'|last %}
+    {% with max_jour=par_jour.items|dictsort:'total'|last %}
     <div class="form-grid-2 mb-6">
-        <!-- Par mode de paiement -->
+        <!-- Graphique par mode de paiement -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">Par Mode de Paiement</span>
+                <span class="card-title">Répartition par Mode de Paiement</span>
             </div>
-            <table class="data-table">
+            <div class="graph-card">
+                <div class="barh-container">
+                    {% for mode, data in par_mode.items %}
+                    <div class="barh-item">
+                        <span class="barh-label">{{ mode }}</span>
+                        <div class="barh-track">
+                            <div class="barh-fill" style="width:{% widthratio data.total max_mode.1.total 100 %}%; background:{% cycle '#00A86B' '#3B82F6' '#F59E0B' '#EF4444' '#8B5CF6' '#EC4899' '#14B8A6' '#F97316' %};"></div>
+                        </div>
+                        <span class="barh-value">{{ data.total|floatformat:0 }}</span>
+                    </div>
+                    {% empty %}
+                    <p class="graph-subtitle">Aucune donnée</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <table class="data-table mt-3">
                 <thead>
                     <tr>
                         <th>Mode</th>
@@ -101,7 +125,7 @@
                     <tr>
                         <td>{{ mode }}</td>
                         <td style="text-align:right;">{{ data.count }}</td>
-                        <td style="text-align:right;" class="fw-bold">{{ data.total|floatformat:0 }} FCFA</td>
+                        <td style="text-align:right;" class="fw-bold">{{ data.total|floatformat:0 }} FCAF</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -112,12 +136,27 @@
             </table>
         </div>
 
-        <!-- Par jour -->
+        <!-- Graphique évolution temporelle -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">Par Jour</span>
+                <span class="card-title">Évolution des Encaissements</span>
             </div>
-            <table class="data-table">
+            <div class="graph-card">
+                <div class="barh-container">
+                    {% for jour, data in par_jour.items|slice:":10" %}
+                    <div class="barh-item">
+                        <span class="barh-label">{{ jour }}</span>
+                        <div class="barh-track">
+                            <div class="barh-fill" style="width:{% widthratio data.total max_jour.1.total 100 %}%; background:linear-gradient(90deg, #00A86B, #007A4D);"></div>
+                        </div>
+                        <span class="barh-value">{{ data.total|floatformat:0 }}</span>
+                    </div>
+                    {% empty %}
+                    <p class="graph-subtitle">Aucune donnée</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <table class="data-table mt-3">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -130,7 +169,7 @@
                     <tr>
                         <td>{{ jour }}</td>
                         <td style="text-align:right;">{{ data.count }}</td>
-                        <td style="text-align:right;" class="fw-bold">{{ data.total|floatformat:0 }} FCFA</td>
+                        <td style="text-align:right;" class="fw-bold">{{ data.total|floatformat:0 }} FCAF</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -141,6 +180,34 @@
             </table>
         </div>
     </div>
+    {% endwith %}
+    {% endwith %}
+
+    <!-- Graphique par cycle -->
+    {% if cycles_list %}
+    {% with max_cycle=cycles_list|dictsort:'total'|last %}
+    <div class="card mb-6">
+        <div class="card-header">
+            <span class="card-title">Encaissements par Cycle</span>
+        </div>
+        <div class="graph-card">
+            <div class="barh-container">
+                {% for c in cycles_list %}
+                <div class="barh-item">
+                    <span class="barh-label">{{ c.cycle.nom }}</span>
+                    <div class="barh-track">
+                        <div class="barh-fill" style="width:{% widthratio c.total max_cycle.total 100 %}%; background:{% cycle '#00A86B' '#3B82F6' '#F59E0B' '#EF4444' %};"></div>
+                    </div>
+                    <span class="barh-value">{{ c.total|floatformat:0 }}</span>
+                </div>
+                {% empty %}
+                <p class="graph-subtitle">Aucune donnée</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+    {% endif %}
 
     <!-- Liste des paiements par cycle et classe -->
     {% for cycle_data in cycles_list %}
@@ -194,4 +261,18 @@
     </div>
     {% endfor %}
 </div>
+
+<style>
+.graph-card { padding: var(--space-4); }
+.graph-title { font-size: 0.85rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-3); }
+.graph-subtitle { font-size: 0.75rem; color: var(--color-text-muted); text-align: center; margin-top: var(--space-2); }
+
+/* Barres horizontales */
+.barh-container { display: flex; flex-direction: column; gap: var(--space-3); }
+.barh-item { display: flex; align-items: center; gap: var(--space-3); }
+.barh-label { min-width: 100px; font-size: 0.8rem; color: var(--color-text-secondary); }
+.barh-track { flex: 1; height: 24px; background: var(--color-bg-subtle); border-radius: var(--radius); overflow: hidden; }
+.barh-fill { height: 100%; border-radius: var(--radius); transition: width 0.3s; }
+.barh-value { min-width: 80px; text-align: right; font-size: 0.8rem; font-weight: 600; color: var(--color-text-primary); }
+</style>
 {% endblock %}

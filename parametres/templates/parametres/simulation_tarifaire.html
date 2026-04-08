@@ -1,0 +1,147 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Simulation tarifaire — Paramètres{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+      <span class="text-muted"> / </span>
+      <a href="{% url 'parametres:tarif_list' %}" class="text-secondary">Tarifs</a>
+      <span class="text-muted"> / </span>
+      Simulation
+    </p>
+    <h1 class="page-title">Simulation tarifaire</h1>
+    <p class="page-subtitle">Sélectionnez une classe et un statut élève pour voir le total des frais dus.</p>
+  </div>
+  <a href="{% url 'parametres:tarif_list' %}" class="btn-secondary">Retour aux tarifs</a>
+</div>
+
+<div style="display:grid; grid-template-columns:340px 1fr; gap:var(--space-6); align-items:start;">
+
+  {# ── Sélecteurs ── #}
+  <div class="card animate-fade-up delay-1" style="position:sticky; top:var(--space-4);">
+    <div style="padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--color-border); display:flex; align-items:center; gap:var(--space-3);">
+      <div style="width:30px; height:30px; border-radius:var(--radius-md); background:var(--color-primary-ambient,rgba(0,168,107,0.12)); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <svg width="15" height="15" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <span style="font-weight:600; font-size:0.88rem;">Paramètres de simulation</span>
+    </div>
+    <div style="padding:var(--space-5);">
+
+      <div class="form-group">
+        <label class="input-label">Année scolaire</label>
+        <select id="sim-annee" name="annee" class="input select w-full">
+          <option value="">— Choisir —</option>
+          {% for a in annees %}
+          <option value="{{ a.pk }}" {% if a == annee_courante %}selected{% endif %}>{{ a.libelle }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Classe</label>
+        <select id="sim-classe" name="classe" class="input select w-full">
+          <option value="">— Choisir —</option>
+          {% regroup classes by cycle as classes_par_cycle %}
+          {% for groupe in classes_par_cycle %}
+          <optgroup label="{{ groupe.grouper.nom }}">
+            {% for c in groupe.list %}
+            <option value="{{ c.pk }}">{{ c.nom }}</option>
+            {% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="input-label">Statut de l'élève</label>
+        <select id="sim-statut" name="statut" class="input select w-full">
+          <option value="">— Choisir —</option>
+          {% for s in statuts %}
+          <option value="{{ s.pk }}">{{ s.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Zone résultat ── #}
+  <div id="simulation-result" class="animate-fade-up delay-2">
+    <div class="card" style="padding:var(--space-8); text-align:center;">
+      <div style="width:56px; height:56px; border-radius:50%; background:var(--color-primary-ambient,rgba(0,168,107,0.1)); display:flex; align-items:center; justify-content:center; margin:0 auto var(--space-4);">
+        <svg width="26" height="26" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <p style="color:var(--color-text-muted); font-size:0.9rem;">
+        Sélectionnez une année, une classe et un statut<br>pour afficher la simulation des frais.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const anneeSelect = document.getElementById('sim-annee');
+  const classeSelect = document.getElementById('sim-classe');
+  const statutSelect = document.getElementById('sim-statut');
+  
+  function updateResult() {
+    const annee = anneeSelect.value;
+    const classe = classeSelect.value;
+    const statut = statutSelect.value;
+    const target = document.getElementById('simulation-result');
+    
+    if (!annee || !classe || !statut) {
+      target.innerHTML = `<div class="card" style="padding:var(--space-8); text-align:center;">
+        <p style="color:var(--color-text-muted); font-size:0.9rem;">Sélectionnez une année, une classe et un statut<br>pour afficher la simulation des frais.</p>
+      </div>`;
+      return;
+    }
+    
+    // Afficher indicateur de chargement
+    target.innerHTML = `<div class="card" style="padding:var(--space-8); text-align:center;">
+      <div style="width:40px; height:40px; border:3px solid var(--color-border); border-top-color:var(--color-primary); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto;"></div>
+      <p style="color:var(--color-text-muted); margin-top:var(--space-3);">Chargement...</p>
+    </div>`;
+    
+      // Requête vers la vue
+    const url = "{% url 'parametres:tarif_simulation_resultat' %}?annee=" + annee + "&classe=" + classe + "&statut=" + statut;
+    
+    // Récupérer le token CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    
+    fetch(url, {
+      headers: {
+        'X-CSRFToken': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(response => response.text())
+      .then(html => {
+        target.innerHTML = html;
+      })
+      .catch(function(err) {
+        target.innerHTML = '<div class="alert alert-danger" style="margin:var(--space-4);"><span>Erreur: ' + err.message + '</span></div>';
+      });
+  }
+  
+  // Déclencher la mise à jour quand une sélection change
+  anneeSelect.addEventListener('change', updateResult);
+  classeSelect.addEventListener('change', updateResult);
+  statutSelect.addEventListener('change', updateResult);
+});
+</script>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+{% endblock %}

@@ -16,8 +16,28 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
+    path('', include('core.urls')),
     path('admin/', admin.site.urls),
     path('parametres/', include('parametres.urls')),
+    path('accounts/', include('accounts.urls')),
+    path('licences/', include('licences.urls')),
+    path('personnel/', include('personnel.urls')),
+    path('inscriptions/', include('inscriptions.urls')),
+    path('pedagogie/', include('pedagogie.urls')),
+    path('finances/', include('finances.urls')),
+    path('presences/', include('presences.urls')),
+    path('documents/', include('documents.urls')),
+    path('examens/', include('examens.urls')),
+    path('vacations/', include('vacations.urls')),
+    path('etablissements/', include('etablissements.urls')),
+    path('viescolaire/', include('viescolaire.urls')),
+    path('bulletins/', include('bulletins.urls')),
+    path('api/', include('api.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

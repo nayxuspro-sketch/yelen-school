@@ -45,8 +45,14 @@ class ConseilClasse(BaseModel):
         ORIENTATION = 'ORIENTATION', _('Réorientation')
         EXCLUSION = 'EXCLUSION', _('Exclusion définitive')
 
-    classe = models.ForeignKey(Classe, on_delete=models.CASCADE, related_name='conseils_classe', verbose_name=_("Classe"))
-    trimestre = models.ForeignKey(Trimestre, on_delete=models.CASCADE, related_name='conseils_classe', verbose_name=_("Trimestre"))
+    classe = models.ForeignKey(
+        Classe, on_delete=models.CASCADE,
+        related_name='conseils_classe', verbose_name=_("Classe")
+    )
+    trimestre = models.ForeignKey(
+        Trimestre, on_delete=models.CASCADE,
+        related_name='conseils_classe', verbose_name=_("Trimestre")
+    )
     date_conseil = models.DateField(verbose_name=_("Date du conseil"))
     president = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -77,9 +83,18 @@ class DecisionConseil(BaseModel):
         EXCLUSION = 'EXCLUSION', _('Exclusion')
         RACHAT = 'RACHAT', _('Rachat accordé')
 
-    conseil = models.ForeignKey(ConseilClasse, on_delete=models.CASCADE, related_name='decisions', verbose_name=_("Conseil"))
-    inscription = models.ForeignKey(Inscription, on_delete=models.CASCADE, related_name='decisions_conseil', verbose_name=_("Inscription"))
-    decision = models.CharField(max_length=20, choices=DecisionChoices.choices, default=DecisionChoices.PASSAGE, verbose_name=_("Décision"))
+    conseil = models.ForeignKey(
+        ConseilClasse, on_delete=models.CASCADE,
+        related_name='decisions', verbose_name=_("Conseil")
+    )
+    inscription = models.ForeignKey(
+        Inscription, on_delete=models.CASCADE,
+        related_name='decisions_conseil', verbose_name=_("Inscription")
+    )
+    decision = models.CharField(
+        max_length=20, choices=DecisionChoices.choices,
+        default=DecisionChoices.PASSAGE, verbose_name=_("Décision")
+    )
     appreciation = models.TextField(blank=True, verbose_name=_("Appréciation"))
     mention_honneur = models.BooleanField(default=False, verbose_name=_("Mention d'honneur"))
     encouragements = models.BooleanField(default=False, verbose_name=_("Encouragements"))
@@ -103,7 +118,10 @@ class SanctionDisciplinaire(BaseModel):
         ANNULE = 'ANNULE', _('Annulée')
         LEVEE = 'LEVEE', _('Levée')
 
-    inscription = models.ForeignKey(Inscription, on_delete=models.CASCADE, related_name='sanctions', verbose_name=_("Élève"))
+    inscription = models.ForeignKey(
+        Inscription, on_delete=models.CASCADE,
+        related_name='sanctions', verbose_name=_("Élève")
+    )
     type_sanction = models.ForeignKey(
         'parametres.TypeSanction',
         on_delete=models.PROTECT,
@@ -112,7 +130,10 @@ class SanctionDisciplinaire(BaseModel):
     )
     date_sanction = models.DateField(verbose_name=_("Date de la sanction"))
     motif = models.TextField(verbose_name=_("Motif"))
-    duree_jours = models.PositiveIntegerField(default=0, verbose_name=_("Durée (jours)"), help_text=_("Pour les exclusions temporaires"))
+    duree_jours = models.PositiveIntegerField(
+        default=0, verbose_name=_("Durée (jours)"),
+        help_text=_("Pour les exclusions temporaires")
+    )
     date_retour = models.DateField(null=True, blank=True, verbose_name=_("Date de retour prévue"))
     prononcee_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -120,7 +141,10 @@ class SanctionDisciplinaire(BaseModel):
         related_name='sanctions_prononcees',
         verbose_name=_("Prononcée par")
     )
-    statut = models.CharField(max_length=20, choices=StatutChoices.choices, default=StatutChoices.EN_COURS, verbose_name=_("Statut"))
+    statut = models.CharField(
+        max_length=20, choices=StatutChoices.choices,
+        default=StatutChoices.EN_COURS, verbose_name=_("Statut")
+    )
     observations = models.TextField(blank=True, verbose_name=_("Observations"))
     parents_convoques = models.BooleanField(default=False, verbose_name=_("Parents convoqués"))
     date_convocation = models.DateField(null=True, blank=True, verbose_name=_("Date convocation parents"))
@@ -167,9 +191,15 @@ class ActiviteParascolaire(BaseModel):
         ACADEMIQUE = 'ACADEMIQUE', _('Académique')
         AUTRE = 'AUTRE', _('Autre')
 
-    annee_scolaire = models.ForeignKey(AnneeScolaire, on_delete=models.CASCADE, related_name='activites_parascolaires', verbose_name=_("Année scolaire"))
+    annee_scolaire = models.ForeignKey(
+        AnneeScolaire, on_delete=models.CASCADE,
+        related_name='activites_parascolaires', verbose_name=_("Année scolaire")
+    )
     nom = models.CharField(max_length=100, verbose_name=_("Nom de l'activité"))
-    type_activite = models.CharField(max_length=20, choices=TypeActiviteChoices.choices, default=TypeActiviteChoices.CLUB, verbose_name=_("Type"))
+    type_activite = models.CharField(
+        max_length=20, choices=TypeActiviteChoices.choices,
+        default=TypeActiviteChoices.CLUB, verbose_name=_("Type")
+    )
     description = models.TextField(blank=True, verbose_name=_("Description"))
     responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -178,7 +208,10 @@ class ActiviteParascolaire(BaseModel):
         verbose_name=_("Responsable")
     )
     capacite_max = models.PositiveIntegerField(default=30, verbose_name=_("Capacité max"))
-    jour_reunion = models.IntegerField(choices=JourSemaine.choices, null=True, blank=True, verbose_name=_("Jour de réunion"))
+    jour_reunion = models.IntegerField(
+        choices=JourSemaine.choices, null=True, blank=True,
+        verbose_name=_("Jour de réunion")
+    )
     heure_debut = models.TimeField(null=True, blank=True, verbose_name=_("Heure de début"))
 
     class Meta:
@@ -195,10 +228,162 @@ class ActiviteParascolaire(BaseModel):
         return self.participations.filter(is_active=True).count()
 
 
+class ConfigDiscipline(BaseModel):
+    """
+    Configuration du système de points de discipline par établissement.
+    Un seul enregistrement par établissement (singleton logique).
+    """
+
+    etablissement = models.OneToOneField(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='config_discipline',
+        verbose_name=_("Établissement"),
+    )
+    points_depart = models.PositiveIntegerField(
+        default=20,
+        verbose_name=_("Capital de départ"),
+        help_text=_("Nombre de points attribués à chaque élève en début d'année."),
+    )
+    seuil_alerte = models.IntegerField(
+        default=5,
+        verbose_name=_("Seuil d'alerte"),
+        help_text=_("En-dessous de ce solde, l'élève est signalé en jaune."),
+    )
+    seuil_conseil = models.IntegerField(
+        default=2,
+        verbose_name=_("Seuil conseil disciplinaire"),
+        help_text=_("En-dessous de ce solde, l'élève doit passer devant un conseil."),
+    )
+    seuil_exclusion = models.IntegerField(
+        default=0,
+        verbose_name=_("Seuil d'exclusion"),
+        help_text=_("Au-dessous ou égal à ce solde, l'exclusion est déclenchée."),
+    )
+    message_alerte = models.CharField(
+        max_length=200, blank=True,
+        default="L'élève est proche du seuil d'exclusion disciplinaire.",
+        verbose_name=_("Message d'alerte"),
+    )
+
+    class Meta:
+        verbose_name = _("Configuration discipline")
+        verbose_name_plural = _("Configurations discipline")
+
+    def __str__(self):
+        return f"Config discipline — {self.etablissement}"
+
+    @classmethod
+    def get_or_default(cls, etablissement):
+        """Retourne la config existante ou un objet en mémoire avec les valeurs par défaut."""
+        obj, _ = cls.objects.get_or_create(etablissement=etablissement)
+        return obj
+
+    def statut_solde(self, solde):
+        """Retourne le niveau d'alerte pour un solde donné."""
+        if solde <= self.seuil_exclusion:
+            return 'EXCLUSION'
+        if solde <= self.seuil_conseil:
+            return 'CONSEIL'
+        if solde <= self.seuil_alerte:
+            return 'ALERTE'
+        return 'NORMAL'
+
+
+class AppelDecision(BaseModel):
+    """
+    Contestation d'une décision de conseil de classe par la famille ou l'élève.
+
+    La commission d'appel rend un avis :
+    - MAINTENU  : décision initiale confirmée
+    - MODIFIE   : décision changée (nouvelle_decision indique laquelle)
+    - ANNULE    : décision annulée sans remplacement
+    """
+
+    class StatutChoices(models.TextChoices):
+        EN_ATTENTE     = 'EN_ATTENTE',     _('En attente')
+        EN_INSTRUCTION = 'EN_INSTRUCTION', _('En instruction')
+        TRAITE         = 'TRAITE',         _('Traité')
+
+    class IssueChoices(models.TextChoices):
+        MAINTENU = 'MAINTENU', _('Décision maintenue')
+        MODIFIE  = 'MODIFIE',  _('Décision modifiée')
+        ANNULE   = 'ANNULE',   _('Décision annulée')
+
+    decision_conseil = models.OneToOneField(
+        DecisionConseil,
+        on_delete=models.CASCADE,
+        related_name='appel',
+        verbose_name=_("Décision contestée"),
+    )
+    motif = models.TextField(verbose_name=_("Motif de la contestation"))
+    date_depot = models.DateField(
+        default=__import__('datetime').date.today,
+        verbose_name=_("Date de dépôt"),
+    )
+    statut = models.CharField(
+        max_length=20, choices=StatutChoices.choices,
+        default=StatutChoices.EN_ATTENTE,
+        verbose_name=_("Statut"),
+    )
+    depose_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='appels_deposes',
+        verbose_name=_("Déposé par"),
+    )
+    issue = models.CharField(
+        max_length=15, choices=IssueChoices.choices,
+        null=True, blank=True,
+        verbose_name=_("Issue"),
+    )
+    nouvelle_decision = models.CharField(
+        max_length=20,
+        choices=DecisionConseil.DecisionChoices.choices,
+        null=True, blank=True,
+        verbose_name=_("Nouvelle décision (si modifiée)"),
+    )
+    observations_commission = models.TextField(
+        blank=True,
+        verbose_name=_("Observations de la commission"),
+    )
+    traite_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='appels_traites',
+        verbose_name=_("Traité par"),
+    )
+    date_traitement = models.DateField(
+        null=True, blank=True,
+        verbose_name=_("Date de traitement"),
+    )
+
+    class Meta:
+        verbose_name = _("Appel de décision")
+        verbose_name_plural = _("Appels de décision")
+        ordering = ['-date_depot']
+
+    def __str__(self):
+        return (
+            f"Appel — {self.decision_conseil.inscription.eleve} "
+            f"({self.get_statut_display()})"
+        )
+
+    @property
+    def est_traite(self):
+        return self.statut == self.StatutChoices.TRAITE
+
+
 class ParticipationActivite(BaseModel):
     """Participation d'un élève à une activité parascolaire."""
-    activite = models.ForeignKey(ActiviteParascolaire, on_delete=models.CASCADE, related_name='participations', verbose_name=_("Activité"))
-    inscription = models.ForeignKey(Inscription, on_delete=models.CASCADE, related_name='activites', verbose_name=_("Élève"))
+    activite = models.ForeignKey(
+        ActiviteParascolaire, on_delete=models.CASCADE,
+        related_name='participations', verbose_name=_("Activité")
+    )
+    inscription = models.ForeignKey(
+        Inscription, on_delete=models.CASCADE,
+        related_name='activites', verbose_name=_("Élève")
+    )
     date_inscription = models.DateField(auto_now_add=True, verbose_name=_("Date d'inscription"))
     observations = models.CharField(max_length=200, blank=True, verbose_name=_("Observations"))
 

@@ -1,0 +1,168 @@
+{% extends "core/base.html" %}
+{% block title %}Élèves exonérés — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Élèves exonérés de paiement</h1>
+    <p class="page-subtitle">Élèves dispensés de frais scolaires, regroupés par classe</p>
+  </div>
+  {% if annee %}
+  <a href="{% url 'finances:liste_exoneres_pdf' %}?annee={{ annee.pk }}"
+     target="_blank" class="btn-primary" style="display:inline-flex;align-items:center;gap:.4rem;">
+    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+    </svg>
+    Imprimer PDF
+  </a>
+  {% endif %}
+</div>
+
+<!-- Filtres -->
+<div class="card mb-6" style="padding:var(--space-5);">
+  <form method="get" class="d-flex gap-4 flex-wrap align-end">
+    <div class="form-group" style="min-width:200px; flex:1;">
+      <label class="input-label">Année scolaire</label>
+      <select name="annee" class="input select" onchange="this.form.submit()">
+        {% for a in annees %}
+        <option value="{{ a.pk }}" {% if annee and annee.pk == a.pk %}selected{% endif %}>
+          {{ a.libelle }}{% if a.est_courante %} ✓{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="min-width:220px; flex:2;">
+      <label class="input-label">Rechercher un élève</label>
+      <input type="text" name="q" value="{{ query }}" placeholder="Nom, prénom, matricule…" class="input">
+      {% if annee %}<input type="hidden" name="annee" value="{{ annee.pk }}">{% endif %}
+    </div>
+    <div class="form-group" style="padding-bottom:0;">
+      <button type="submit" class="btn-primary">Rechercher</button>
+      {% if query %}
+      <a href="?{% if annee %}annee={{ annee.pk }}{% endif %}" class="btn-secondary ms-2">Réinitialiser</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Stats -->
+<div class="d-flex gap-4 mb-6 flex-wrap">
+  <div class="card" style="padding:var(--space-4) var(--space-5); flex:1; min-width:160px; text-align:center;">
+    <div style="font-size:2rem; font-weight:700; color:var(--color-primary);">{{ total }}</div>
+    <div style="font-size:.8rem; color:var(--color-text-muted); margin-top:.25rem;">
+      élève{% if total > 1 %}s{% endif %} exonéré{% if total > 1 %}s{% endif %}
+    </div>
+  </div>
+  <div class="card" style="padding:var(--space-4) var(--space-5); flex:1; min-width:160px; text-align:center;">
+    <div style="font-size:2rem; font-weight:700; color:var(--color-text-secondary);">{{ groupes|length }}</div>
+    <div style="font-size:.8rem; color:var(--color-text-muted); margin-top:.25rem;">
+      classe{% if groupes|length > 1 %}s{% endif %} concernée{% if groupes|length > 1 %}s{% endif %}
+    </div>
+  </div>
+  {% if annee %}
+  <div class="card" style="padding:var(--space-4) var(--space-5); flex:1; min-width:160px; text-align:center;">
+    <div style="font-size:1.1rem; font-weight:700; color:var(--color-text);">{{ annee.libelle }}</div>
+    <div style="font-size:.8rem; color:var(--color-text-muted); margin-top:.25rem;">Année scolaire</div>
+  </div>
+  {% endif %}
+</div>
+
+{% if groupes %}
+  {% for groupe in groupes %}
+  <div class="card mb-5" style="overflow:hidden;">
+
+    <!-- En-tête classe -->
+    <div style="padding:var(--space-3) var(--space-5); background:var(--color-surface-2);
+                border-bottom:1px solid var(--color-border);
+                display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:var(--space-3);">
+        <span style="font-weight:700; font-size:1rem;">{{ groupe.classe.nom }}</span>
+        {% if groupe.cycle %}
+        <span style="font-size:.75rem; color:var(--color-text-muted); background:var(--color-surface-3);
+                     padding:.15rem .6rem; border-radius:999px;">{{ groupe.cycle.nom }}</span>
+        {% endif %}
+      </div>
+      <span style="font-size:.8rem; font-weight:600; color:var(--color-primary);">
+        {{ groupe.eleves|length }} élève{% if groupe.eleves|length > 1 %}s{% endif %}
+      </span>
+    </div>
+
+    <!-- Tableau -->
+    <table style="width:100%; border-collapse:collapse; font-size:.875rem;">
+      <thead>
+        <tr style="background:var(--color-surface-2); border-bottom:1px solid var(--color-border);">
+          <th style="padding:.5rem .75rem; text-align:left; font-weight:600; width:2rem;">N°</th>
+          <th style="padding:.5rem .75rem; text-align:left; font-weight:600;">Nom &amp; Prénom</th>
+          <th style="padding:.5rem .75rem; text-align:left; font-weight:600; width:120px;">Matricule</th>
+          <th style="padding:.5rem .75rem; text-align:left; font-weight:600; width:120px;">Date inscription</th>
+          <th style="padding:.5rem .75rem; text-align:left; font-weight:600;">Raison d'exonération</th>
+          <th style="padding:.5rem .75rem; text-align:center; font-weight:600; width:80px;">Dossier</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inscr in groupe.eleves %}
+        <tr style="border-bottom:1px solid var(--color-border);"
+            onmouseover="this.style.background='var(--color-surface-2)'"
+            onmouseout="this.style.background=''">
+          <td style="padding:.5rem .75rem; color:var(--color-text-muted); font-size:.75rem;">
+            {{ forloop.counter }}
+          </td>
+          <td style="padding:.5rem .75rem; font-weight:500;">
+            {{ inscr.eleve.nom }} {{ inscr.eleve.prenom }}
+          </td>
+          <td style="padding:.5rem .75rem; font-family:monospace; font-size:.8rem; color:var(--color-text-secondary);">
+            {{ inscr.eleve.matricule|default:"—" }}
+          </td>
+          <td style="padding:.5rem .75rem; color:var(--color-text-secondary); font-size:.8rem;">
+            {{ inscr.date_inscription|date:"d/m/Y" }}
+          </td>
+          <td style="padding:.5rem .75rem; color:var(--color-text-secondary); font-style:{% if inscr.raison_exoneration %}normal{% else %}italic{% endif %};">
+            {% if inscr.raison_exoneration %}
+              {{ inscr.raison_exoneration }}
+            {% else %}
+              <span style="color:var(--color-text-muted);">Non précisée</span>
+            {% endif %}
+          </td>
+          <td style="padding:.5rem .75rem; text-align:center;">
+            <a href="{% url 'inscriptions:eleve_detail' inscr.eleve.pk %}"
+               title="Voir le dossier"
+               style="display:inline-flex; align-items:center; justify-content:center;
+                      width:28px; height:28px; border-radius:var(--radius-md);
+                      background:var(--color-surface-3); color:var(--color-text-secondary);
+                      text-decoration:none; transition:all .15s;">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
+                         -1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+
+{% elif annee %}
+<div class="card" style="padding:var(--space-10); text-align:center; color:var(--color-text-muted);">
+  <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+       style="margin:0 auto var(--space-4); display:block; opacity:.35;">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>
+  <p style="font-size:1rem; font-weight:500; margin-bottom:.5rem;">Aucun élève exonéré</p>
+  <p style="font-size:.875rem;">
+    {% if query %}
+      Aucun résultat pour « {{ query }} » en {{ annee.libelle }}.
+    {% else %}
+      Tous les élèves inscrits en {{ annee.libelle }} sont soumis aux frais scolaires.
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -260,6 +260,79 @@
     background: rgba(255,255,255,0.04);
     margin: 0.5rem 1rem 0;
   }
+
+  /* ── Recherche globale ── */
+  .sb-search-wrap {
+    position: relative;
+    padding: 0.625rem 0.875rem 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .sb-search-box {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 0.375rem 0.625rem;
+    transition: border-color 0.15s;
+  }
+  .sb-search-box:focus-within {
+    border-color: rgba(0,168,107,0.50);
+    background: rgba(0,168,107,0.06);
+  }
+  .sb-search-icon { color: #4A6880; flex-shrink: 0; }
+  .sb-search-input {
+    background: none;
+    border: none;
+    outline: none;
+    color: #E8EDF5;
+    font-size: 0.8125rem;
+    font-family: 'Outfit', system-ui, sans-serif;
+    width: 100%;
+  }
+  .sb-search-input::placeholder { color: #3A5870; }
+  .sb-search-input::-webkit-search-cancel-button { cursor: pointer; }
+  .sb-search-drop {
+    position: absolute;
+    left: 0.875rem;
+    right: 0.875rem;
+    top: calc(100% - 0.5rem);
+    z-index: 100;
+    background: #0D1A2D;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+    overflow: hidden;
+  }
+  .sb-search-drop:empty { display: none; }
+  .sb-search-group { padding: 0.375rem 0; }
+  .sb-search-group + .sb-search-group { border-top: 1px solid rgba(255,255,255,0.05); }
+  .sb-search-cat {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3A5870;
+    padding: 0.375rem 0.875rem 0.25rem;
+  }
+  .sb-search-item {
+    display: flex;
+    flex-direction: column;
+    padding: 0.4rem 0.875rem;
+    text-decoration: none;
+    transition: background 0.1s;
+    cursor: pointer;
+  }
+  .sb-search-item:hover { background: rgba(0,168,107,0.10); }
+  .sb-search-label { font-size: 0.8rem; font-weight: 500; color: #C8D8E8; }
+  .sb-search-sub   { font-size: 0.7rem; color: #4A6880; margin-top: 1px; }
+  .sb-search-empty {
+    padding: 0.875rem;
+    font-size: 0.8rem;
+    color: #4A6880;
+    text-align: center;
+  }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -299,8 +372,73 @@
     </div>
     {% endif %}
 
+    {# ── Recherche globale ── #}
+    {% if user.is_authenticated %}
+    <div class="sb-search-wrap" id="sb-search-wrap">
+      <div class="sb-search-box">
+        <svg class="sb-search-icon" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+        </svg>
+        <input id="sb-search-input" type="search" placeholder="Rechercher…" autocomplete="off"
+               class="sb-search-input"
+               hx-get="{% url 'core:recherche' %}"
+               hx-trigger="keyup changed delay:300ms, search"
+               hx-target="#sb-search-drop"
+               hx-include="[name='q']"
+               name="q"
+               aria-label="Recherche globale">
+      </div>
+      <div id="sb-search-drop" class="sb-search-drop" role="region" aria-live="polite"></div>
+    </div>
+    {% endif %}
+
     {# ── Navigation ── #}
     <nav class="sb-nav" aria-label="Navigation principale">
+
+      {# ══ PORTAIL PARENT ══ #}
+      {% if user.role == 'PARENT' %}
+      <a href="{% url 'core:portail_parent' %}" class="menu-item" data-url="/portail/parent/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        Mon espace famille
+      </a>
+      <div class="sb-sep"></div>
+      <span class="sb-label">Mes enfants</span>
+      {% for eleve in user.eleves_lies.all %}
+      <div class="menu-item" style="cursor:default; opacity:0.75;">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+        {{ eleve.get_nom_complet }}
+      </div>
+      {% empty %}
+      <div class="menu-item" style="cursor:default; opacity:0.5; font-size:0.8rem;">
+        Aucun élève associé
+      </div>
+      {% endfor %}
+
+      {# ══ PORTAIL ÉLÈVE ══ #}
+      {% elif user.role == 'ELEVE' %}
+      <a href="{% url 'core:portail_eleve' %}" class="menu-item" data-url="/portail/eleve/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        Mon espace élève
+      </a>
+      {% with eleve=user.eleves_lies.first %}
+      {% if eleve %}
+      <div class="sb-sep"></div>
+      <span class="sb-label">Ma scolarité</span>
+      <div class="menu-item" style="cursor:default; opacity:0.75; flex-direction:column; align-items:flex-start; gap:2px;">
+        <span style="font-weight:600; font-size:0.85rem;">{{ eleve.get_nom_complet }}</span>
+        <span style="font-size:0.75rem; opacity:0.6;">{{ eleve.matricule|default:"" }}</span>
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      {# ══ NAVIGATION STANDARD (tous les autres rôles) ══ #}
+      {% else %}
 
       {# Accueil #}
       <a href="/" class="menu-item" data-url="/">
@@ -314,13 +452,22 @@
       <div class="sb-sep"></div>
       <span class="sb-label">Scolarité</span>
 
-      {# Élèves #}
-      <a href="{% url 'inscriptions:eleve_list' %}" class="menu-item" data-url="/inscriptions/">
-        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+      {# Inscriptions #}
+      <button class="menu-item accordion-toggle" id="inscriptions-toggle" data-submenu="inscriptions-submenu" data-chevron="inscriptions-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+          </svg>
+          Inscriptions
+        </span>
+        <svg id="inscriptions-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
-        Élèves
-      </a>
+      </button>
+      <div id="inscriptions-submenu" class="sidebar-submenu">
+        <a href="{% url 'inscriptions:eleve_list' %}" class="menu-item menu-item-sub" data-url="/inscriptions/">Élèves</a>
+        <a href="{% url 'inscriptions:reinscription_list' %}" class="menu-item menu-item-sub" data-url="/inscriptions/reinscription/">Réinscription</a>
+      </div>
 
       {# Pédagogie #}
       <button class="menu-item accordion-toggle" id="pedagogie-toggle" data-submenu="pedagogie-submenu" data-chevron="pedagogie-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
@@ -342,6 +489,14 @@
         <a href="{% url 'pedagogie:classe_result_list' %}"    class="menu-item menu-item-sub" data-url="/pedagogie/resultats/">Résultats</a>
         <a href="{% url 'pedagogie:moyennes_disciplines' %}"  class="menu-item menu-item-sub" data-url="/pedagogie/resultats/moyennes-disciplines/">Moyennes par discipline</a>
       </div>
+
+      {# Bulletins #}
+      <a href="{% url 'bulletins:index' %}" class="menu-item" data-url="/bulletins/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Bulletins
+      </a>
 
       {# Présences #}
       <button class="menu-item accordion-toggle" id="presences-toggle" data-submenu="presences-submenu" data-chevron="presences-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
@@ -389,9 +544,13 @@
         </svg>
       </button>
       <div id="viescolaire-submenu" class="sidebar-submenu">
-        <a href="{% url 'viescolaire:conseil_list' %}"  class="menu-item menu-item-sub" data-url="/viescolaire/conseils/">Conseils de classe</a>
-        <a href="{% url 'viescolaire:sanction_list' %}" class="menu-item menu-item-sub" data-url="/viescolaire/sanctions/">Sanctions disciplinaires</a>
-        <a href="{% url 'viescolaire:activite_list' %}" class="menu-item menu-item-sub" data-url="/viescolaire/activites/">Activités parascolaires</a>
+        <a href="{% url 'viescolaire:fiches_suivi_list' %}"     class="menu-item menu-item-sub" data-url="/viescolaire/fiches-suivi/">Fiches de suivi</a>
+        <a href="{% url 'viescolaire:emploi_du_temps_index' %}" class="menu-item menu-item-sub" data-url="/viescolaire/emploi-du-temps/">Emploi du temps</a>
+        <a href="{% url 'viescolaire:conseil_list' %}"          class="menu-item menu-item-sub" data-url="/viescolaire/conseils/">Conseils de classe</a>
+        <a href="{% url 'viescolaire:appel_decision_list' %}"  class="menu-item menu-item-sub" data-url="/viescolaire/appels-decision/">Appels de décision</a>
+        <a href="{% url 'viescolaire:sanction_list' %}"         class="menu-item menu-item-sub" data-url="/viescolaire/sanctions/">Sanctions disciplinaires</a>
+        <a href="{% url 'viescolaire:activite_list' %}"         class="menu-item menu-item-sub" data-url="/viescolaire/activites/">Activités parascolaires</a>
+        <a href="{% url 'viescolaire:capital_points_list' %}"   class="menu-item menu-item-sub" data-url="/viescolaire/discipline/capital/">Capital points discipline</a>
       </div>
 
       {# ── ADMINISTRATION ── #}
@@ -399,12 +558,22 @@
       <span class="sb-label">Administration</span>
 
       {# Personnel #}
-      <a href="{% url 'personnel:personnel_list' %}" class="menu-item" data-url="/personnel/">
-        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      <button class="menu-item accordion-toggle" id="personnel-toggle" data-submenu="personnel-submenu" data-chevron="personnel-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:var(--space-3);">
+          <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          Personnel
+        </span>
+        <svg id="personnel-chevron" class="sb-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
-        Personnel
-      </a>
+      </button>
+      <div id="personnel-submenu" class="sidebar-submenu">
+        <a href="{% url 'personnel:personnel_list' %}" class="menu-item menu-item-sub" data-url="/personnel/">Liste du personnel</a>
+        <a href="{% url 'personnel:salaire_list' %}"   class="menu-item menu-item-sub" data-url="/personnel/salaires/">Salaires</a>
+        <a href="{% url 'personnel:conge_list' %}"     class="menu-item menu-item-sub" data-url="/personnel/conges/">Congés</a>
+      </div>
 
       {# Finances #}
       <button class="menu-item accordion-toggle" id="finances-toggle" data-submenu="finances-submenu" data-chevron="finances-chevron" style="background:none;border:none;width:100%;text-align:left;justify-content:space-between;cursor:pointer;">
@@ -422,7 +591,9 @@
         <a href="{% url 'finances:paiement_list' %}"       class="menu-item menu-item-sub" data-url="/finances/paiements/">Paiements</a>
         <a href="{% url 'finances:liste_redevables' %}"    class="menu-item menu-item-sub" data-url="/finances/redevables/">Redevables</a>
         <a href="{% url 'finances:liste_exoneres' %}"      class="menu-item menu-item-sub" data-url="/finances/exoneres/">Exonérés</a>
-        <a href="{% url 'finances:relance_paiement' %}"    class="menu-item menu-item-sub" data-url="/finances/relances/">Relances</a>
+        <a href="{% url 'finances:boursiers_list' %}"       class="menu-item menu-item-sub" data-url="/finances/bourses/">Bourses &amp; Aides</a>
+        <a href="{% url 'finances:relance_paiement' %}"       class="menu-item menu-item-sub" data-url="/finances/relances/">Relances</a>
+        <a href="{% url 'finances:historique_relances' %}"   class="menu-item menu-item-sub" data-url="/finances/relances/historique/">Historique relances</a>
         <a href="{% url 'finances:bilan_encaissements' %}" class="menu-item menu-item-sub" data-url="/finances/bilan/encaissements/">Bilan encaissements</a>
       </div>
 
@@ -458,6 +629,8 @@
       <div id="documents-submenu" class="sidebar-submenu">
         <a href="{% url 'documents:liste_classes_selector' %}"   class="menu-item menu-item-sub" data-url="/documents/listes/">Listes de classes</a>
         <a href="{% url 'documents:liste_personnel_selector' %}" class="menu-item menu-item-sub" data-url="/documents/personnel/">Liste du personnel</a>
+        <a href="{% url 'documents:convocation_form' %}"         class="menu-item menu-item-sub" data-url="/documents/convocations/">Convocations</a>
+        <a href="{% url 'documents:circulaire_form' %}"          class="menu-item menu-item-sub" data-url="/documents/circulaires/">Circulaires</a>
         <a href="{% url 'parametres:signataire_formulaire' %}"   class="menu-item menu-item-sub" data-url="/parametres/signataires/formulaire/">Signataires</a>
       </div>
 
@@ -481,6 +654,8 @@
         <a href="{% url 'parametres:etablissement' %}"              class="menu-item menu-item-sub" data-url="/parametres/etablissement/">Établissement</a>
         <a href="{% url 'parametres:identite_etablissement' %}"     class="menu-item menu-item-sub" data-url="/parametres/identite-etablissement/">Identité établissement</a>
         <a href="{% url 'parametres:annee_list' %}"                 class="menu-item menu-item-sub" data-url="/parametres/annees/">Années scolaires</a>
+        <a href="{% url 'parametres:calendrier' %}"               class="menu-item menu-item-sub" data-url="/parametres/calendrier/">Calendrier scolaire</a>
+        <a href="{% url 'parametres:modeles_messages' %}"         class="menu-item menu-item-sub" data-url="/parametres/modeles-messages/">Modèles de messages</a>
         <a href="{% url 'parametres:cycle_list' %}"                 class="menu-item menu-item-sub" data-url="/parametres/cycles/">Cycles</a>
         <a href="{% url 'parametres:classe_list' %}"                class="menu-item menu-item-sub" data-url="/parametres/classes/">Classes</a>
         <a href="{% url 'parametres:poste_list' %}"                 class="menu-item menu-item-sub" data-url="/parametres/postes/">Postes</a>
@@ -502,9 +677,51 @@
         <a href="{% url 'parametres:titre_honorifique_list' %}"     class="menu-item menu-item-sub" data-url="/parametres/titres-honorifiques/">Titres Honorifiques</a>
       </div>
 
-      {# Licences (superuser uniquement) #}
-      {% if user.is_superuser %}
+      {# Utilisateurs (admin uniquement) #}
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' or user.role == 'CENSEUR' %}
+      <span class="sb-label" style="margin-top:var(--space-3);">Administration</span>
+      <a href="{% url 'core:audit_log_list' %}" class="menu-item" data-url="/core/audit/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Journal d'audit
+      </a>
+      {% endif %}
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' %}
+      <a href="{% url 'accounts:user_list' %}" class="menu-item" data-url="/accounts/utilisateurs/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        Utilisateurs
+      </a>
+      <a href="{% url 'core:sms_configuration' %}" class="menu-item" data-url="/sms/configuration/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+        </svg>
+        Configuration SMS
+      </a>
+      <a href="{% url 'core:reunion_parents' %}" class="menu-item" data-url="/reunion-parents/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Réunion parents
+      </a>
+      {% endif %}
+
+      {# Licences #}
       <span class="sb-label" style="margin-top:var(--space-3);">Système</span>
+      <a href="{% url 'licences:statut' %}" class="menu-item" data-url="/licences/mon-abonnement/">
+        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        Mon abonnement
+      </a>
+      {% if user.is_superuser %}
       <a href="/licences/" class="menu-item" data-url="/licences/">
         <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -514,12 +731,32 @@
       </a>
       {% endif %}
 
+      {% endif %}{# fin bloc role PARENT / ELEVE / autre #}
+
     </nav>
 
     {# ── Pied de sidebar ── #}
     <div class="sb-footer">
       <span class="sb-version">YELEN SCHOOL v3.4</span>
+      <a href="{% url 'licences:guide' %}" class="sb-logout" title="Guide d'utilisation">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.02 2.788-1.12.143-2.15.672-2.838 1.56-.46.594-.722 1.315-.722 2.152 0 1.65 1.35 3 3 3 1.5 0 2.77-.98 3.06-2.28"/>
+        </svg>
+        Aide
+      </a>
       {% if user.is_authenticated %}
+      <a href="{% url 'core:notifications_list' %}" class="sb-logout" title="Notifications"
+         style="position:relative;"
+         hx-get="{% url 'core:notifications_badge' %}"
+         hx-trigger="load, every 60s"
+         hx-target="#notif-badge-wrap"
+         hx-swap="innerHTML">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        <span id="notif-badge-wrap" style="position:relative;"></span>
+        Notifications
+      </a>
       <a href="/accounts/logout/" class="sb-logout" title="Déconnexion">
         <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -548,16 +785,41 @@
       <div style="width:32px;"></div>
     </header>
 
-    {# ── Messages Django ── #}
+    {# ── Messages Django (toast) ── #}
     {% if messages %}
-    <div id="django-messages" style="padding:var(--space-4) var(--space-6) 0;">
+    <div id="django-messages" style="
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: 400px;
+      ">
       {% for message in messages %}
-      <div class="alert alert-{{ message.tags|default:'info' }} animate-fade-up" role="alert">
+      <div class="alert alert-{{ message.tags|default:'info' }} animate-fade-up shadow-lg"
+           role="alert"
+           style="
+             background: {% if message.tags == 'success' %}#dcfce7{% elif message.tags == 'error' or message.tags == 'danger' %}#fee2e2{% elif message.tags == 'warning' %}#fef9c3{% else %}#e0f2fe{% endif %};
+             border: 1px solid {% if message.tags == 'success' %}#22c55e{% elif message.tags == 'error' or message.tags == 'danger' %}#ef4444{% elif message.tags == 'warning' %}#eab308{% else %}#3b82f6{% endif %};
+             border-radius: 8px;
+             padding: 1rem 1.25rem;
+             color: #1f2937;
+             font-weight: 500;
+           ">
         {{ message }}
       </div>
       {% endfor %}
     </div>
     {% endif %}
+
+    {# ── Toasts HTMX ── #}
+    <div id="toast-container" style="
+        position:fixed; top:1rem; right:1rem; z-index:10000;
+        display:flex; flex-direction:column; gap:0.5rem;
+        max-width:380px; pointer-events:none;
+    "></div>
 
     {# ── Contenu principal ── #}
     <main class="content" id="main-content">
@@ -622,14 +884,16 @@
 
     // Préfixes associés à chaque accordéon
     var accordionPrefixes = {
-      'pedagogie-toggle':   '/pedagogie/',
-      'presences-toggle':   '/presences/',
-      'examens-toggle':     '/examens/',
-      'viescolaire-toggle': '/viescolaire/',
-      'finances-toggle':    '/finances/',
-      'vacations-toggle':   '/vacations/',
-      'documents-toggle':   '/documents/',
-      'params-toggle':      '/parametres/',
+      'inscriptions-toggle': '/inscriptions/',
+      'pedagogie-toggle':    '/pedagogie/',
+      'presences-toggle':    '/presences/',
+      'examens-toggle':      '/examens/',
+      'viescolaire-toggle':  '/viescolaire/',
+      'personnel-toggle':    '/personnel/',
+      'finances-toggle':     '/finances/',
+      'vacations-toggle':    '/vacations/',
+      'documents-toggle':    '/documents/',
+      'params-toggle':       '/parametres/',
     };
 
     document.querySelectorAll('.accordion-toggle').forEach(function (toggle) {
@@ -697,7 +961,21 @@
       }, 5000);
     }
 
-    // ── 5. Events HTMX custom (modals) ────────────────────────────────────
+    // ── 5. Recherche globale — fermer au clic extérieur ──────────────────
+    var searchInput = document.getElementById('sb-search-input');
+    var searchDrop  = document.getElementById('sb-search-drop');
+    if (searchInput && searchDrop) {
+      document.addEventListener('click', function (e) {
+        if (!document.getElementById('sb-search-wrap').contains(e.target)) {
+          searchDrop.innerHTML = '';
+        }
+      });
+      searchInput.addEventListener('search', function () {
+        if (!this.value) { searchDrop.innerHTML = ''; }
+      });
+    }
+
+    // ── 6. Events HTMX custom (modals) ────────────────────────────────────
     ['parametreUpdated', 'signataireUpdated'].forEach(function (evt) {
       document.body.addEventListener(evt, function () {
         var m = document.getElementById('modal-overlay');
@@ -705,8 +983,132 @@
       });
     });
 
+    // ── 7. Modal de confirmation global ──────────────────────────────────
+    // Styles du modal
+    var confirmStyle = document.createElement('style');
+    confirmStyle.textContent = [
+      '#confirm-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;}',
+      '#confirm-box{background:#1a2236;border:1px solid #2a3a5c;border-radius:12px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);}',
+      '#confirm-box h3{margin:0 0 10px;font-size:1rem;color:#f0f4ff;font-weight:600;}',
+      '#confirm-box p{margin:0 0 22px;font-size:0.875rem;color:#94a3b8;line-height:1.5;}',
+      '#confirm-box .confirm-actions{display:flex;justify-content:flex-end;gap:10px;}',
+      '#confirm-btn-cancel{background:transparent;border:1px solid #2a3a5c;color:#94a3b8;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;}',
+      '#confirm-btn-cancel:hover{border-color:#4a5a7c;color:#cbd5e1;}',
+      '#confirm-btn-ok{background:#dc2626;border:none;color:#fff;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;}',
+      '#confirm-btn-ok:hover{background:#b91c1c;}',
+    ].join('');
+    document.head.appendChild(confirmStyle);
+
+    function showConfirmModal(message, onConfirm) {
+      var overlay = document.createElement('div');
+      overlay.id = 'confirm-overlay';
+      overlay.innerHTML = '<div id="confirm-box">' +
+        '<h3>Confirmation</h3>' +
+        '<p>' + message + '</p>' +
+        '<div class="confirm-actions">' +
+          '<button id="confirm-btn-cancel">Annuler</button>' +
+          '<button id="confirm-btn-ok">Confirmer</button>' +
+        '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+
+      function close() { overlay.remove(); }
+
+      document.getElementById('confirm-btn-cancel').addEventListener('click', close);
+      document.getElementById('confirm-btn-ok').addEventListener('click', function () {
+        close();
+        onConfirm();
+      });
+      overlay.addEventListener('click', function (e) { if (e.target === overlay) { close(); } });
+      document.addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+      });
+    }
+
+    // Intercepter les formulaires avec data-confirm
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      var msg = form.dataset.confirm;
+      if (!msg) { return; }
+      e.preventDefault();
+      showConfirmModal(msg, function () { form.dataset.confirm = ''; form.submit(); });
+    }, true);
+
+    // Intercepter les confirmations HTMX (hx-confirm)
+    document.body.addEventListener('htmx:confirm', function (e) {
+      if (!e.detail.question) { return; }
+      e.preventDefault();
+      showConfirmModal(e.detail.question, function () { e.detail.issueRequest(true); });
+    });
+
+    // Ajouter * aux champs obligatoires (required)
+    document.querySelectorAll('.input-label').forEach(function(label) {
+      // Ne pas ajouter si le label contient "optionnel" ou "optionnelle"
+      var text = label.textContent.toLowerCase();
+      if (text.includes('optionnel') || text.includes('optionnelle')) {
+        return;
+      }
+      // Chercher l'input associé
+      var formGroup = label.closest('.form-group');
+      if (!formGroup) return;
+      var input = formGroup.querySelector('input[required], select[required], textarea[required]');
+      if (input && !label.querySelector('.required-star')) {
+        var star = document.createElement('span');
+        star.className = 'required-star';
+        star.textContent = ' *';
+        label.appendChild(star);
+      }
+    });
+
+    // ── Toast global ─────────────────────────────────────────────────
+    window.showToast = function(message, type) {
+      var colors = {
+        success: { bg: '#dcfce7', border: '#22c55e', icon: '✓' },
+        error:   { bg: '#fee2e2', border: '#ef4444', icon: '✕' },
+        warning: { bg: '#fef9c3', border: '#eab308', icon: '⚠' },
+        info:    { bg: '#e0f2fe', border: '#3b82f6', icon: 'ℹ' },
+      };
+      var c = colors[type] || colors.info;
+      var el = document.createElement('div');
+      el.style.cssText = [
+        'background:' + c.bg,
+        'border:1px solid ' + c.border,
+        'border-radius:8px',
+        'padding:0.85rem 1.1rem',
+        'color:#1f2937',
+        'font-weight:500',
+        'font-size:0.88rem',
+        'pointer-events:auto',
+        'display:flex',
+        'align-items:center',
+        'gap:0.6rem',
+        'box-shadow:0 4px 12px rgba(0,0,0,0.12)',
+        'animation:fadeInRight 0.2s ease',
+        'max-width:380px',
+      ].join(';');
+      el.innerHTML = '<span style="font-size:1rem;line-height:1;">' + c.icon + '</span><span>' + message + '</span>';
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(function() {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.3s';
+        setTimeout(function() { el.remove(); }, 320);
+      }, 4000);
+    };
+
+    // Écouter les événements HX-Trigger contenant showToast
+    document.body.addEventListener('showToast', function(e) {
+      var d = e.detail;
+      showToast(d.message || '', d.type || 'info');
+    });
+
   })();
   </script>
+  <style>
+    @keyframes fadeInRight {
+      from { opacity:0; transform:translateX(20px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+  </style>
 
   {% block extra_js %}{% endblock %}
 </body>

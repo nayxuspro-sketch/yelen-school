@@ -129,12 +129,16 @@
                 <label class="input-label">Logo de l'établissement</label>
                 <div class="d-flex align-center gap-4 mt-2">
                     {% if identite.logo %}
-                    <div style="flex-shrink:0;">
-                        <img src="{{ identite.logo.url }}" alt="Logo" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    <div id="logo-preview-container" style="flex-shrink:0;">
+                        <img id="logo-preview" src="{{ identite.logo.url }}" alt="Logo" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    </div>
+                    {% else %}
+                    <div id="logo-preview-container" style="flex-shrink:0; display:none;">
+                        <img id="logo-preview" src="" alt="Logo" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
                     </div>
                     {% endif %}
                     <div class="flex-1">
-                        <input type="file" name="logo" accept="image/*" class="input">
+                        <input type="file" name="logo" accept="image/*" class="input" onchange="previewImage(this, 'logo-preview', 'logo-preview-container')">
                         <p class="text-xs text-muted" style="margin-top:0.25rem;">Formats: PNG, JPG. 300×300px minimum</p>
                     </div>
                 </div>
@@ -144,12 +148,16 @@
                 <label class="input-label">Signature du Directeur</label>
                 <div class="d-flex align-center gap-4 mt-2">
                     {% if identite.signature_directeur %}
-                    <div style="flex-shrink:0;">
-                        <img src="{{ identite.signature_directeur.url }}" alt="Signature" style="height:3rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    <div id="signature-preview-container" style="flex-shrink:0;">
+                        <img id="signature-preview" src="{{ identite.signature_directeur.url }}" alt="Signature" style="height:3rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    </div>
+                    {% else %}
+                    <div id="signature-preview-container" style="flex-shrink:0; display:none;">
+                        <img id="signature-preview" src="" alt="Signature" style="height:3rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
                     </div>
                     {% endif %}
                     <div class="flex-1">
-                        <input type="file" name="signature_directeur" accept="image/*" class="input">
+                        <input type="file" name="signature_directeur" accept="image/*" class="input" onchange="previewImage(this, 'signature-preview', 'signature-preview-container')">
                         <p class="text-xs text-muted" style="margin-top:0.25rem;">Image PNG transparente</p>
                     </div>
                 </div>
@@ -159,12 +167,16 @@
                 <label class="input-label">Cachet officiel</label>
                 <div class="d-flex align-center gap-4 mt-2">
                     {% if identite.cachet_etablissement %}
-                    <div style="flex-shrink:0;">
-                        <img src="{{ identite.cachet_etablissement.url }}" alt="Cachet" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    <div id="cachet-preview-container" style="flex-shrink:0;">
+                        <img id="cachet-preview" src="{{ identite.cachet_etablissement.url }}" alt="Cachet" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    </div>
+                    {% else %}
+                    <div id="cachet-preview-container" style="flex-shrink:0; display:none;">
+                        <img id="cachet-preview" src="" alt="Cachet" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
                     </div>
                     {% endif %}
                     <div class="flex-1">
-                        <input type="file" name="cachet_etablissement" accept="image/*" class="input">
+                        <input type="file" name="cachet_etablissement" accept="image/*" class="input" onchange="previewImage(this, 'cachet-preview', 'cachet-preview-container')">
                         <p class="text-xs text-muted" style="margin-top:0.25rem;">Image PNG transparente (cachet rond)</p>
                     </div>
                 </div>
@@ -186,4 +198,19 @@
         </div>
     </form>
 </div>
+
+<script>
+function previewImage(input, imgId, containerId) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = document.getElementById(imgId);
+            var container = document.getElementById(containerId);
+            img.src = e.target.result;
+            container.style.display = 'flex';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 {% endblock %}

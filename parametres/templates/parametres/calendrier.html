@@ -1,0 +1,205 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Calendrier scolaire — Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+            <span class="text-muted"> / </span>
+            <span>Calendrier scolaire</span>
+        </p>
+        <h1 class="page-title">Calendrier scolaire</h1>
+    </div>
+    <button
+        hx-get="{% url 'parametres:evenement_create' %}{% if annee %}?annee={{ annee.pk }}{% endif %}"
+        hx-target="#modal-container"
+        hx-swap="innerHTML"
+        class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Nouvel événement
+    </button>
+</div>
+
+<div id="modal-container"></div>
+
+{# Barre de filtres : sélecteur d'année + navigation mois #}
+<div class="card animate-fade-up" style="margin-bottom:var(--space-5); padding:var(--space-4) var(--space-5);">
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-4);">
+
+        {# Sélecteur d'année scolaire #}
+        <form method="get" style="display:flex; align-items:center; gap:var(--space-3);">
+            <input type="hidden" name="mois" value="{{ mois }}">
+            <input type="hidden" name="annee_cal" value="{{ annee_cal }}">
+            <label style="font-size:0.85rem; color:var(--color-text-secondary);">Année scolaire</label>
+            <select name="annee" onchange="this.form.submit()" class="input"
+                style="padding:var(--space-2) var(--space-3); min-width:160px;">
+                {% for a in annees %}
+                <option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>
+                    {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+
+        {# Navigation mois #}
+        <div style="display:flex; align-items:center; gap:var(--space-2); margin-left:auto;">
+            <a href="?annee={{ annee.pk }}&mois={{ mois_prec }}&annee_cal={{ annee_prec }}"
+               class="btn-icon" title="Mois précédent">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <span style="font-size:1rem; font-weight:600; min-width:140px; text-align:center; text-transform:capitalize;">
+                {{ mois_nom }}
+            </span>
+            <a href="?annee={{ annee.pk }}&mois={{ mois_suiv }}&annee_cal={{ annee_suiv }}"
+               class="btn-icon" title="Mois suivant">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 280px; gap:var(--space-5); align-items:start;">
+
+    {# ── GRILLE CALENDRIER ── #}
+    <div class="card animate-fade-up delay-1">
+
+        {# En-têtes jours #}
+        <div style="display:grid; grid-template-columns:repeat(7,1fr); border-bottom:1px solid var(--color-border);">
+            {% for libelle in jours_semaine %}
+            <div style="padding:var(--space-3); text-align:center; font-size:0.75rem; font-weight:600;
+                        color:{% if forloop.counter >= 6 %}#ef4444{% else %}var(--color-text-muted){% endif %};
+                        text-transform:uppercase; letter-spacing:.05em;">
+                {{ libelle }}
+            </div>
+            {% endfor %}
+        </div>
+
+        {# Cellules jours #}
+        <div style="display:grid; grid-template-columns:repeat(7,1fr);">
+            {% for semaine in semaines %}
+            {% for cellule in semaine %}
+            <div style="min-height:90px; padding:var(--space-2); border-right:1px solid var(--color-border);
+                        border-bottom:1px solid var(--color-border);
+                        {% if cellule.hors_mois %}background:var(--color-bg);{% endif %}
+                        {% if cellule.date.isoformat == today_iso %}background:rgba(var(--color-primary-rgb),0.04);{% endif %}">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-1);">
+                    <span style="font-size:0.82rem; font-weight:{% if not cellule.hors_mois %}600{% else %}400{% endif %};
+                                 color:{% if cellule.hors_mois %}var(--color-text-muted){% elif cellule.date.weekday >= 5 %}#ef4444{% else %}var(--color-text){% endif %};">
+                        {{ cellule.date.day }}
+                    </span>
+                </div>
+                {% for evt in cellule.evenements %}
+                <div style="margin-bottom:2px; padding:2px 5px; border-radius:3px; font-size:0.7rem;
+                             background:{{ evt.couleur }}22; color:{{ evt.couleur }};
+                             border-left:3px solid {{ evt.couleur }};
+                             white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                             cursor:pointer;"
+                     title="{{ evt.titre }}"
+                     hx-get="{% url 'parametres:evenement_edit' evt.pk %}"
+                     hx-target="#modal-container"
+                     hx-swap="innerHTML">
+                    {{ evt.titre }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {# ── LISTE LATÉRALE ── #}
+    <div style="display:flex; flex-direction:column; gap:var(--space-4);">
+
+        {# Légende types #}
+        <div class="card animate-fade-up delay-2" style="padding:var(--space-4) var(--space-5);">
+            <h3 style="font-size:0.82rem; font-weight:600; color:var(--color-text-muted); text-transform:uppercase;
+                       letter-spacing:.05em; margin:0 0 var(--space-3);">Types d'événements</h3>
+            <div style="display:flex; flex-direction:column; gap:var(--space-2);">
+                {% for val, label in types %}
+                <div style="display:flex; align-items:center; gap:var(--space-2); font-size:0.83rem;">
+                    <span style="width:10px; height:10px; border-radius:50%; flex-shrink:0;
+                                 background:{% if val == 'CONGE' %}#3b82f6{% elif val == 'JOUR_FERIE' %}#f59e0b{% elif val == 'EXAMEN' %}#ef4444{% elif val == 'REUNION' %}#8b5cf6{% elif val == 'FERMETURE' %}#6b7280{% else %}#10b981{% endif %};"></span>
+                    {{ label }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Tous les événements de l'année #}
+        <div class="card animate-fade-up delay-3" style="padding:var(--space-4) var(--space-5);">
+            <h3 style="font-size:0.82rem; font-weight:600; color:var(--color-text-muted); text-transform:uppercase;
+                       letter-spacing:.05em; margin:0 0 var(--space-3);">
+                Événements {{ annee.libelle }}
+                <span style="font-weight:400; color:var(--color-text-muted);">({{ tous_evenements|length }})</span>
+            </h3>
+            {% if tous_evenements %}
+            <div style="display:flex; flex-direction:column; gap:var(--space-2); max-height:420px; overflow-y:auto;">
+                {% for evt in tous_evenements %}
+                <div style="display:flex; align-items:flex-start; gap:var(--space-3); padding:var(--space-3);
+                             border-radius:var(--radius-md); background:var(--color-bg);
+                             border-left:3px solid {{ evt.couleur }};">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.83rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            {{ evt.titre }}
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--color-text-muted); margin-top:2px;">
+                            {{ evt.date_debut|date:"d/m" }}{% if evt.date_debut != evt.date_fin %} → {{ evt.date_fin|date:"d/m" }}{% endif %}
+                            · {{ evt.nb_jours }} j.
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:var(--space-1); flex-shrink:0;">
+                        <button class="btn-icon btn-icon-sm"
+                                hx-get="{% url 'parametres:evenement_edit' evt.pk %}"
+                                hx-target="#modal-container"
+                                hx-swap="innerHTML"
+                                title="Modifier">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </button>
+                        <button class="btn-icon btn-icon-sm btn-icon-danger"
+                                hx-post="{% url 'parametres:evenement_delete' evt.pk %}"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-confirm="Supprimer « {{ evt.titre }} » ?"
+                                title="Supprimer">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="font-size:0.85rem; color:var(--color-text-muted); margin:0;">
+                Aucun événement pour cette année scolaire.
+            </p>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+<script>
+// Passe la date du jour au template pour mettre en évidence la cellule courante
+document.addEventListener('DOMContentLoaded', function() {
+    var today = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('[data-date]').forEach(function(el) {
+        if (el.dataset.date === today) {
+            el.style.background = 'rgba(var(--color-primary-rgb), 0.08)';
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "core/base.html" %}
+
+{% block title %}Bourses et Aides Scolaires — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Bourses &amp; Aides Scolaires</h1>
+    <p class="page-subtitle">Suivi des réductions et allocations accordées aux élèves</p>
+  </div>
+  <div class="d-flex gap-3">
+    <a href="{% url 'finances:boursiers_pdf' %}?{{ request.GET.urlencode }}" target="_blank" class="btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+      </svg>
+      Exporter PDF
+    </a>
+    <a href="{% url 'finances:type_bourse_list' %}" class="btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+      </svg>
+      Types de bourses
+    </a>
+  </div>
+</div>
+
+<!-- Filtres -->
+<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-6);">
+  <form method="get" class="d-flex gap-4 flex-wrap" style="padding:var(--space-4); align-items:flex-end;">
+    <div style="min-width:180px; flex:1;">
+      <label class="input-label">Année scolaire</label>
+      <select name="annee" class="input select" onchange="this.form.submit()">
+        {% for a in annees %}
+        <option value="{{ a.id }}" {% if a == annee_sel %}selected{% endif %}>{{ a.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="min-width:160px; flex:1;">
+      <label class="input-label">Classe</label>
+      <select name="classe" class="input select" onchange="this.form.submit()">
+        <option value="">Toutes les classes</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {% if c.id|stringformat:"s" == classe_id %}selected{% endif %}>{{ c.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="min-width:160px; flex:1;">
+      <label class="input-label">Source</label>
+      <select name="source" class="input select" onchange="this.form.submit()">
+        <option value="">Toutes sources</option>
+        {% for val, lib in source_choices %}
+        <option value="{{ val }}" {% if val == source_sel %}selected{% endif %}>{{ lib }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid animate-fade-up delay-2" style="margin-bottom:var(--space-6);">
+  <div class="stat-card">
+    <div class="stat-card-value">{{ bourses|length }}</div>
+    <div class="stat-card-label">Bénéficiaires</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-value">{{ total_reduction|floatformat:0 }}</div>
+    <div class="stat-card-label">Total réductions (FCFA)</div>
+  </div>
+</div>
+
+<!-- Tableau -->
+<div class="card animate-fade-up delay-3">
+  <div class="card-header">
+    <span class="card-title">Liste des bénéficiaires</span>
+  </div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Classe</th>
+          <th>Type de bourse</th>
+          <th>Source</th>
+          <th>Rubrique</th>
+          <th>Montant accordé</th>
+          <th>Date</th>
+          <th>Référence</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bourses %}
+        <tr>
+          <td class="fw-medium">
+            <a href="{% url 'finances:situation_eleve' b.inscription.id %}" class="text-primary">
+              {{ b.inscription.eleve.nom|upper }} {{ b.inscription.eleve.prenom }}
+            </a>
+          </td>
+          <td>{{ b.inscription.classe.nom }}</td>
+          <td>
+            <span class="badge badge-secondary">{{ b.type_bourse.nom }}</span>
+          </td>
+          <td class="text-secondary text-sm">{{ b.type_bourse.get_source_display }}</td>
+          <td class="text-secondary text-sm">{{ b.rubrique.nom|default:"Globale" }}</td>
+          <td class="fw-semibold text-success">{{ b.montant_accorde|floatformat:0 }} <small class="text-muted">FCFA</small></td>
+          <td class="text-secondary text-sm">{{ b.date_attribution|date:"d/m/Y" }}</td>
+          <td class="text-secondary text-sm">{{ b.reference_document|default:"—" }}</td>
+          <td>
+            <div class="d-flex gap-2">
+              <a href="{% url 'finances:bourse_edit' b.id %}" class="btn-icon" title="Modifier">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </a>
+              <form method="post" action="{% url 'finances:bourse_delete' b.id %}" onsubmit="return confirm('Supprimer cette bourse ?')">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon text-danger" title="Supprimer">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-6">Aucune bourse ou aide attribuée pour cette sélection.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if bourses %}
+      <tfoot>
+        <tr style="background:var(--color-bg-subtle);">
+          <td colspan="5" class="fw-semibold text-right">Total réductions :</td>
+          <td class="fw-bold text-success">{{ total_reduction|floatformat:0 }} FCFA</td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,425 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guide d'utilisation — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+  <style>
+    :root {
+      --color-primary: #00a86b;
+      --color-bg: #f8fafc;
+      --color-text: #1e293b;
+      --color-text-muted: #64748b;
+      --color-border: #e2e8f0;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    .guide-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .guide-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid var(--color-border);
+    }
+    .guide-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 0.5rem;
+    }
+    .guide-header p {
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+    .toc {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .toc h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 1rem;
+      color: #0f172a;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+    .toc-link {
+      display: block;
+      padding: 0.5rem 0.75rem;
+      background: #f1f5f9;
+      border-radius: 6px;
+      text-decoration: none;
+      color: var(--color-text);
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    .toc-link:hover {
+      background: var(--color-primary);
+      color: #fff;
+    }
+    .section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .section h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: 0 0 1rem;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section h2 .icon {
+      width: 24px;
+      height: 24px;
+      background: var(--color-primary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.75rem;
+    }
+    .section h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 1.25rem 0 0.5rem;
+      color: #334155;
+    }
+    .section p, .section li {
+      font-size: 0.875rem;
+      color: #475569;
+    }
+    .section ul {
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+    .section li {
+      margin-bottom: 0.375rem;
+    }
+    .tip-box {
+      background: #f0fdf4;
+      border-left: 3px solid var(--color-primary);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin: 0.75rem 0;
+      font-size: 0.8rem;
+      color: #166534;
+    }
+    .warning-box {
+      background: #fef3c7;
+      border-left: 3px solid #f59e0b;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin: 0.75rem 0;
+      font-size: 0.8rem;
+      color: #92400e;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--color-primary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="guide-container">
+    <a href="/" class="back-link">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Retour à l'accueil
+    </a>
+
+    <div class="guide-header">
+      <h1>Guide d'utilisation — YELEN SCHOOL</h1>
+      <p>Illuminer chaque parcours scolaire</p>
+    </div>
+
+    <nav class="toc">
+      <h2>Table des matières</h2>
+      <div class="toc-grid">
+        <a href="#inscriptions" class="toc-link">📝 Inscriptions</a>
+        <a href="#pedagogie" class="toc-link">📚 Pédagogie</a>
+        <a href="#presences" class="toc-link">✅ Présences</a>
+        <a href="#examens" class="toc-link">📋 Examens</a>
+        <a href="#finances" class="toc-link">💰 Finances</a>
+        <a href="#personnel" class="toc-link">👥 Personnel</a>
+        <a href="#viescolaire" class="toc-link">🏫 Vie scolaire</a>
+        <a href="#documents" class="toc-link">📄 Documents</a>
+        <a href="#parametres" class="toc-link">⚙️ Paramètres</a>
+      </div>
+    </nav>
+
+    <section id="inscriptions" class="section">
+      <h2><span class="icon">1</span> Inscriptions</h2>
+      <p>Le module Inscriptions permet de gérer l'enregistrement et l'inscription des élèves.</p>
+      
+      <h3>Enregistrer un nouvel élève</h3>
+      <ul>
+        <li>Aller dans <strong>Inscriptions → Élèves</strong></li>
+        <li>Cliquer sur <strong>"Nouvel élève"</strong></li>
+        <li>Remplir les informations : nom, prénom, date de naissance, sexe, pièce d'identité</li>
+        <li>Enregistrer — l'élève est créé avec un matricule automatique</li>
+      </ul>
+
+      <h3>Inscrire un élève à une classe</h3>
+      <ul>
+        <li>Aller dans <strong>Inscriptions → Inscriptions</strong></li>
+        <li>Sélectionner l'année scolaire et la classe cible</li>
+        <li>Cocher les élèves à inscrire</li>
+        <li>Confirmer l'inscription</li>
+      </ul>
+
+      <h3>Réinscription massive</h3>
+      <ul>
+        <li>Aller dans <strong>Inscriptions → Réinscription</strong></li>
+        <li>Sélectionner la classe source et la classe cible</li>
+        <li>Cocher les élèves à réinscrire</li>
+        <li>Valider</li>
+      </ul>
+
+      <div class="tip-box">
+        💡 <strong>Astuce :</strong> Utilisez les filtres pour rechercher rapidement un élève par nom ou matricule.
+      </div>
+    </section>
+
+    <section id="pedagogie" class="section">
+      <h2><span class="icon">2</span> Pédagogie</h2>
+      <p>Ce module gère les notes, évaluations et bulletins.</p>
+      
+      <h3>Configurer les matières</h3>
+      <ul>
+        <li>Aller dans <strong>Pédagogie → Matières</strong></li>
+        <li>Créer une matière avec son coefficient</li>
+        <li>Associer la matière aux classes via <strong>Enseignements</strong></li>
+      </ul>
+
+      <h3>Saisir les notes</h3>
+      <ul>
+        <li>Aller dans <strong>Pédagogie → Saisie de notes</strong></li>
+        <li>Sélectionner la classe, la matière et le type d'évaluation</li>
+        <li>Saisir les notes — les champs invalides sont marqués en rouge</li>
+        <li>Enregistrer</li>
+      </ul>
+
+      <h3>Générer les bulletins</h3>
+      <ul>
+        <li>Aller dans <strong>Pédagogie → Bulletins</strong></li>
+        <li>Sélectionner la classe et le trimestre</li>
+        <li>Générer les bulletins PDF par élève ou par classe</li>
+      </ul>
+
+      <div class="warning-box">
+        ⚠️ <strong>Attention :</strong> Vérifiez les appréciations dans Paramètres avant de générer les bulletins.
+      </div>
+    </section>
+
+    <section id="presences" class="section">
+      <h2><span class="icon">3</span> Présences</h2>
+      <p>Gérez les appels quotidiens et les absences.</p>
+      
+      <h3>Faire l'appel</h3>
+      <ul>
+        <li>Aller dans <strong>Présences → Appels</strong></li>
+        <li>Sélectionner la classe et la date</li>
+        <li>Marquer les élèves absents (A) ou retards (R)</li>
+        <li>Enregistrer</li>
+      </ul>
+
+      <h3>Justifier une absence</h3>
+      <ul>
+        <li>Aller dans <strong>Présences → Justifications</strong></li>
+        <li>Cliquer sur l'absence à justifier</li>
+        <li>Sélectionner le motif et ajouter une remarque si nécessaire</li>
+        <li>Valider</li>
+      </ul>
+
+      <div class="tip-box">
+        💡 Les parents peuvent justifier les absences via le portail parent (si activé).
+      </div>
+    </section>
+
+    <section id="examens" class="section">
+      <h2><span class="icon">4</span> Examens</h2>
+      <p>Planifiez les sessions d'examens et gérez les candidats.</p>
+      
+      <h3>Créer une session</h3>
+      <ul>
+        <li>Aller dans <strong>Examens → Sessions</strong></li>
+        <li>Créer une nouvelle session avec dates et capacité</li>
+        <li>Définir les centres d'examen</li>
+      </ul>
+
+      <h3>Inscrire des candidats</h3>
+      <ul>
+        <li>Ouvrir la session d'examen</li>
+        <li>Aller dans <strong>Inscrire par classe</strong></li>
+        <li>Sélectionner les élèves et le centre</li>
+        <li>Valider</li>
+      </ul>
+
+      <h3>Imprimer les listes</h3>
+      <ul>
+        <li>Dans la session, cliquer sur <strong>Liste candidats PDF</strong></li>
+        <li>Filtrer par centre si nécessaire</li>
+        <li>Télécharger le PDF</li>
+      </ul>
+    </section>
+
+    <section id="finances" class="section">
+      <h2><span class="icon">5</span> Finances</h2>
+      <p>Gérez les paiements de scolarité et suivez les encaissements.</p>
+      
+      <h3>Enregistrer un paiement</h3>
+      <ul>
+        <li>Aller dans <strong>Finances → Paiements</strong></li>
+        <li>Sélectionner l'élève</li>
+        <li>Indiquer le montant et le mode de paiement</li>
+        <li>Un reçu PDF est généré automatiquement</li>
+      </ul>
+
+      <h3>Créer un échéancier</h3>
+      <ul>
+        <li>Aller dans <strong>Finances → Échéancier</strong></li>
+        <li>Sélectionner l'élève et les rubriques</li>
+        <li>Définir les dates d'échéance</li>
+        <li>Enregistrer</li>
+      </ul>
+
+      <h3>Suivre les encaissements</h3>
+      <ul>
+        <li>Aller dans <strong>Finances → Bilan encaissements</strong></li>
+        <li>Sélectionner la période</li>
+        <li>Visualiser les graphiques et statistiques</li>
+      </ul>
+
+      <div class="tip-box">
+        💡 Les reçus sont numérotés automatiquement (REC-2026-00001).
+      </div>
+    </section>
+
+    <section id="personnel" class="section">
+      <h2><span class="icon">6</span> Personnel</h2>
+      <p>Gérez les employés de l'établissement.</p>
+      
+      <h3>Ajouter un membre du personnel</h3>
+      <ul>
+        <li>Aller dans <strong>Personnel → Liste</strong></li>
+        <li>Cliquer sur <strong>"Nouveau membre"</strong></li>
+        <li>Remplir les informations : nom, prénom, poste, date d'embauche</li>
+        <li>Enregistrer</li>
+      </ul>
+
+      <h3>Désactiver un membre</h3>
+      <ul>
+        <li>Dans la liste, cliquer sur le bouton <strong>⚡</strong> (toggle)</li>
+        <li>Confirmer — le membre est marqué comme inactif</li>
+      </ul>
+
+      <div class="warning-box">
+        ⚠️ Les membres désactivés n'apparaissent plus dans les listes mais leurs données sont conservées.
+      </div>
+    </section>
+
+    <section id="viescolaire" class="section">
+      <h2><span class="icon">7</span> Vie scolaire</h2>
+      <p>Emplois du temps, sanctions, activités parascolaires.</p>
+      
+      <h3>Créer un emploi du temps</h3>
+      <ul>
+        <li>Aller dans <strong>Vie scolaire → Emploi du temps</strong></li>
+        <li>Sélectionner la classe</li>
+        <li>Ajouter les cours par créneau</li>
+        <li>Enregistrer</li>
+      </ul>
+
+      <h3>Enregistrer une sanction</h3>
+      <ul>
+        <li>Aller dans <strong>Vie scolaire → Sanctions</strong></li>
+        <li>Sélectionner l'élève, le type et la gravité</li>
+        <li>Ajouter une description</li>
+        <li>Enregistrer</li>
+      </ul>
+    </section>
+
+    <section id="documents" class="section">
+      <h2><span class="icon">8</span> Documents</h2>
+      <p>Générez les documents administratifs.</p>
+      
+      <h3>Générer une liste de classe</h3>
+      <ul>
+        <li>Aller dans <strong>Documents → Listes de classes</strong></li>
+        <li>Sélectionner la classe et le format</li>
+        <li>Télécharger le PDF</li>
+      </ul>
+
+      <h3>Cartes scolaires</h3>
+      <ul>
+        <li>Aller dans <strong>Documents → Cartes scolaires</strong></li>
+        <li>Sélectionner la classe</li>
+        <li>Générer les cartes pour tous les élèves</li>
+      </ul>
+    </section>
+
+    <section id="parametres" class="section">
+      <h2><span class="icon">9</span> Paramètres</h2>
+      <p>Configurez l'établissement et les règles métier.</p>
+      
+      <h3>Identité de l'établissement</h3>
+      <ul>
+        <li>Aller dans <strong>Paramètres → Identité établissement</strong></li>
+        <li>Télécharger le logo, la signature et le cachet</li>
+        <li>Ces éléments apparaissent sur les PDF</li>
+      </ul>
+
+      <h3>Configurer les signataires</h3>
+      <ul>
+        <li>Aller dans <strong>Paramètres → Signataires</strong></li>
+        <li>Ajouter les personnes habilitées à signer les documents</li>
+        <li>Définir leur fonction et ordre de signature</li>
+      </ul>
+
+      <h3>Cycles et Classes</h3>
+      <ul>
+        <li>Aller dans <strong>Paramètres → Cycles</strong></li>
+        <li>Créer les cycles (Primaire, Collège, Lycée)</li>
+        <li>Ajouter les classes et les associer à un cycle</li>
+      </ul>
+    </section>
+
+    <p style="text-align: center; color: var(--color-text-muted); font-size: 0.8rem; margin-top: 2rem;">
+      © 2026 YELEN SCHOOL — Burkina Faso
+    </p>
+  </div>
+</body>
+</html>

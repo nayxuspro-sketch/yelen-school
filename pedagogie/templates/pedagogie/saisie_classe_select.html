@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+
+{% block title %}Saisie des notes — Choisir une classe{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Saisie des notes</h1>
+    <p class="page-subtitle">Sélectionnez une classe pour accéder à ses évaluations.</p>
+  </div>
+  <a href="{% url 'pedagogie:evaluation_list' %}" class="btn-secondary">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Toutes les évaluations
+  </a>
+</div>
+
+<div class="modules-grid animate-fade-up delay-1">
+  {% for classe in classes %}
+  <a href="{% url 'pedagogie:saisie_rapide_classe' classe.id %}" class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+        </svg>
+      </div>
+      <span class="module-arrow">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </span>
+    </div>
+    <div class="module-title">{{ classe.nom }}</div>
+    <div class="module-description">{{ classe.get_cycle_display }}</div>
+  </a>
+  {% empty %}
+  <div style="grid-column:1/-1;">
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/>
+        </svg>
+      </div>
+      <p class="empty-state-text">Aucune classe configurée.</p>
+      <a href="{% url 'parametres:classes' %}" class="btn-secondary" style="margin-top:var(--space-4);">
+        Configurer les classes
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

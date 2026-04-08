@@ -1,0 +1,67 @@
+{% extends "pedagogie/pdf/bulletin_base.html" %}
+
+{% block pdf_content %}
+
+<div class="document-title">
+    <h2 style="text-transform:uppercase; letter-spacing:.5pt;">Journal d'audit</h2>
+    <p style="font-size:9pt; color:#475569;">
+        Généré le {{ now|date:"d/m/Y à H:i" }}
+        {% if date_from or date_to or app_filter or action_filter or query %}
+        &nbsp;|&nbsp;
+        {% if date_from %}Du {{ date_from }}{% endif %}
+        {% if date_to %} au {{ date_to }}{% endif %}
+        {% if app_filter %} &nbsp;·&nbsp; App : {{ app_filter }}{% endif %}
+        {% if action_filter %} &nbsp;·&nbsp; Action : {{ action_filter }}{% endif %}
+        {% if query %} &nbsp;·&nbsp; Recherche : « {{ query }} »{% endif %}
+        {% endif %}
+    </p>
+</div>
+
+<table style="width:100%; border-collapse:collapse; font-size:8pt; margin-top:8pt;">
+    <thead>
+        <tr style="background:#00A86B; color:#fff;">
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Date / Heure</th>
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Utilisateur</th>
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Action</th>
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Objet</th>
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Application</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr style="background:{% cycle '#ffffff' '#f8fafc' %}; border-bottom:0.5pt solid #e2e8f0;">
+            <td style="padding:4pt 6pt; white-space:nowrap; color:#475569; font-size:7.5pt;">
+                {{ log.timestamp|date:"d/m/Y H:i" }}
+            </td>
+            <td style="padding:4pt 6pt;">
+                {% if log.user %}{{ log.user.get_full_name }}{% else %}—{% endif %}
+            </td>
+            <td style="padding:4pt 6pt;">
+                {% if log.action == 'CREATE' %}
+                <span style="background:#d4edda; color:#155724; padding:1pt 5pt; border-radius:3pt; font-size:7pt; font-weight:600;">Création</span>
+                {% elif log.action == 'UPDATE' %}
+                <span style="background:#fff3cd; color:#856404; padding:1pt 5pt; border-radius:3pt; font-size:7pt; font-weight:600;">Modification</span>
+                {% elif log.action == 'DELETE' %}
+                <span style="background:#f8d7da; color:#721c24; padding:1pt 5pt; border-radius:3pt; font-size:7pt; font-weight:600;">Suppression</span>
+                {% else %}
+                <span style="background:#e2e8f0; color:#475569; padding:1pt 5pt; border-radius:3pt; font-size:7pt;">{{ log.action }}</span>
+                {% endif %}
+            </td>
+            <td style="padding:4pt 6pt; font-size:7.5pt;">{{ log.object_repr }}</td>
+            <td style="padding:4pt 6pt; font-size:7.5pt; color:#64748b;">{{ log.app_label }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5" style="padding:12pt; text-align:center; color:#94a3b8; font-style:italic;">
+                Aucune entrée trouvée.
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div style="margin-top:12pt; text-align:center; font-size:7.5pt; color:#94a3b8; border-top:0.5pt solid #e2e8f0; padding-top:6pt;">
+    {{ logs|length }} entrée(s) — YELEN SCHOOL · Journal d'audit
+</div>
+
+{% endblock %}

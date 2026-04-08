@@ -1,0 +1,126 @@
+{% extends "core/base.html" %}
+{% block title %}Cartes QR — {{ classe.nom }}{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+  <div class="d-flex align-center gap-3">
+    <a href="{% url 'presences:classe_select' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Cartes QR — {{ classe.nom }}</h1>
+      <p class="page-subtitle">{{ inscriptions|length }} élève{{ inscriptions|length|pluralize }} · {{ annee.libelle }}</p>
+    </div>
+  </div>
+  <button onclick="window.print()" class="btn-primary">
+    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+    </svg>
+    Imprimer les cartes
+  </button>
+</div>
+
+<p class="no-print" style="font-size:.85rem; color:var(--color-text-muted); margin-bottom:1.5rem;">
+  Chaque carte contient le QR code encodant le matricule de l'élève.
+  Découpez et distribuez les cartes aux élèves. Le scan se fait depuis
+  <strong>Présences → Appel → Scanner QR</strong>.
+</p>
+
+<!-- Grille des cartes -->
+<div class="cartes-grid">
+  {% for inscr in inscriptions %}
+  <div class="carte-qr">
+    <div class="carte-entete">
+      <div class="carte-etablissement">{{ inscr.classe.etablissement.nom }}</div>
+      <div class="carte-annee">{{ annee.libelle }}</div>
+    </div>
+    <img src="{% url 'presences:qr_eleve_image' inscr.pk %}"
+         alt="QR {{ inscr.eleve.matricule }}"
+         class="carte-qr-img">
+    <div class="carte-nom">{{ inscr.eleve.nom|upper }} {{ inscr.eleve.prenom }}</div>
+    <div class="carte-meta">
+      <span class="carte-matricule">{{ inscr.eleve.matricule }}</span>
+      <span class="carte-classe">{{ inscr.classe.nom }}</span>
+    </div>
+  </div>
+  {% empty %}
+  <p style="color:var(--color-text-muted);">Aucun élève inscrit dans cette classe.</p>
+  {% endfor %}
+</div>
+
+<style>
+.cartes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.carte-qr {
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  padding: .6rem;
+  background: #fff;
+  text-align: center;
+  font-family: sans-serif;
+  break-inside: avoid;
+}
+
+.carte-entete {
+  display: flex;
+  justify-content: space-between;
+  font-size: .6rem;
+  color: #6b7280;
+  margin-bottom: .4rem;
+  line-height: 1.2;
+}
+.carte-etablissement { text-align: left; font-weight: 600; max-width: 70%; }
+.carte-annee         { text-align: right; }
+
+.carte-qr-img {
+  width: 120px;
+  height: 120px;
+  display: block;
+  margin: 0 auto .4rem;
+}
+
+.carte-nom {
+  font-size: .72rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+  margin-bottom: .25rem;
+}
+
+.carte-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: .6rem;
+  color: #6b7280;
+}
+.carte-matricule { font-family: monospace; font-weight: 600; }
+
+/* ── Impression ── */
+@media print {
+  .no-print { display: none !important; }
+
+  body { background: #fff !important; }
+
+  .cartes-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6mm;
+  }
+
+  .carte-qr {
+    border: 1px solid #000;
+    border-radius: 4mm;
+    padding: 3mm;
+    page-break-inside: avoid;
+  }
+
+  .carte-qr-img { width: 28mm; height: 28mm; }
+}
+</style>
+{% endblock %}

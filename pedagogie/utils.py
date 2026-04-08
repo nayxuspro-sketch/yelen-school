@@ -117,6 +117,11 @@ class CalculateurMoyenne:
         try:
             from viescolaire.models import SanctionDisciplinaire
             from django.db.models import Sum as _Sum
+        except ImportError:
+            SanctionDisciplinaire = None
+            _Sum = None
+
+        if SanctionDisciplinaire is not None:
             points_sanctions = (
                 SanctionDisciplinaire.objects
                 .filter(
@@ -127,7 +132,7 @@ class CalculateurMoyenne:
                 )
                 .aggregate(total=_Sum('points'))['total']
             ) or Decimal('0')
-        except Exception:
+        else:
             points_sanctions = Decimal('0')
 
         total_points_final = total_points + points_sanctions

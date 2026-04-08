@@ -1,0 +1,131 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'core:home' %}" class="text-secondary">Accueil</a>
+      <span class="text-muted"> / </span>
+      <a href="{% url 'accounts:user_list' %}" class="text-secondary">Utilisateurs</a>
+      <span class="text-muted"> / </span>
+      <span>{{ title }}</span>
+    </p>
+    <h1 class="page-title">{{ title }}</h1>
+  </div>
+</div>
+
+<div style="max-width:640px;" class="animate-fade-up delay-1">
+  <form method="post" class="card" style="padding:var(--space-6);">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div style="background:rgba(220,38,38,.1); border:1px solid var(--color-danger,#dc2626); border-radius:8px; padding:var(--space-3) var(--space-4); margin-bottom:var(--space-5); font-size:.875rem; color:var(--color-danger,#dc2626);">
+      {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+
+    {# ── Identité ── #}
+    <div style="margin-bottom:var(--space-5);">
+      <div class="fw-semibold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:var(--space-4);">Identité</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+
+        <div class="form-group">
+          <label class="form-label">{{ form.last_name.label }} <span style="color:var(--color-danger);">*</span></label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.last_name.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ form.first_name.label }} <span style="color:var(--color-danger);">*</span></label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.first_name.errors.0 }}</p>{% endif %}
+        </div>
+
+      </div>
+    </div>
+
+    {# ── Contact ── #}
+    <div style="margin-bottom:var(--space-5);">
+      <div class="fw-semibold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:var(--space-4);">Contact</div>
+
+      <div class="form-group" style="margin-bottom:var(--space-4);">
+        <label class="form-label">{{ form.email.label }} <span style="color:var(--color-danger);">*</span></label>
+        {{ form.email }}
+        {% if form.email.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.email.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.telephone.label }}</label>
+        {{ form.telephone }}
+        {% if form.telephone.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.telephone.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+
+    {# ── Rôle & Établissement ── #}
+    <div style="margin-bottom:var(--space-5);">
+      <div class="fw-semibold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:var(--space-4);">Accès</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+
+        <div class="form-group">
+          <label class="form-label">{{ form.role.label }} <span style="color:var(--color-danger);">*</span></label>
+          {{ form.role }}
+          {% if form.role.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.role.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ form.etablissement.label }}</label>
+          {{ form.etablissement }}
+          {% if form.etablissement.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.etablissement.errors.0 }}</p>{% endif %}
+        </div>
+
+      </div>
+    </div>
+
+    {# ── Mot de passe (création uniquement) ── #}
+    {% if form.password1 %}
+    <div style="margin-bottom:var(--space-5);">
+      <div class="fw-semibold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:var(--space-4);">Mot de passe</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+
+        <div class="form-group">
+          <label class="form-label">{{ form.password1.label }} <span style="color:var(--color-danger);">*</span></label>
+          {{ form.password1 }}
+          {% if form.password1.help_text %}<p class="text-muted" style="font-size:.75rem;margin-top:4px;">{{ form.password1.help_text }}</p>{% endif %}
+          {% if form.password1.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.password1.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ form.password2.label }} <span style="color:var(--color-danger);">*</span></label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.password2.errors.0 }}</p>{% endif %}
+        </div>
+
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── Statut actif (modification uniquement) ── #}
+    {% if form.is_active %}
+    <div style="margin-bottom:var(--space-5); display:flex; align-items:center; gap:var(--space-3);">
+      {{ form.is_active }}
+      <label for="{{ form.is_active.id_for_label }}" class="form-label" style="margin:0; cursor:pointer;">
+        Compte actif
+      </label>
+    </div>
+    {% endif %}
+
+    {# ── Actions ── #}
+    <div class="d-flex gap-3" style="padding-top:var(--space-4); border-top:1px solid var(--color-border);">
+      <button type="submit" class="btn-primary">
+        {% if edited_user %}Enregistrer{% else %}Créer l'utilisateur{% endif %}
+      </button>
+      <a href="{% url 'accounts:user_list' %}" class="btn-secondary">Annuler</a>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

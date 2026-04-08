@@ -1,0 +1,121 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Détail Audit — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'core:home' %}" class="text-secondary">Accueil</a>
+      <span class="text-muted"> / </span>
+      <a href="{% url 'core:audit_log_list' %}" class="text-secondary">Journal d'Audit</a>
+      <span class="text-muted"> / </span>
+      <span>Détail</span>
+    </p>
+    <h1 class="page-title">Détails de l'action</h1>
+  </div>
+  <a href="{% url 'core:audit_log_list' %}" class="btn-secondary">Retour au journal</a>
+</div>
+
+<div class="grid-2" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:var(--space-6);">
+  {# ── Informations principales ── #}
+  <div class="card animate-fade-up delay-1">
+    <h3 style="font-size:1rem; margin-bottom:var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+      Informations
+    </h3>
+    
+    <div class="form-group">
+      <label class="input-label">Date/Heure</label>
+      <div class="input" style="background:var(--color-bg-subtle);">{{ log.timestamp|date:"d/m/Y H:i:s" }}</div>
+    </div>
+    
+    <div class="form-group">
+      <label class="input-label">Utilisateur</label>
+      <div class="input" style="background:var(--color-bg-subtle);">
+        {% if log.user %}
+          {{ log.user.get_full_name|default:log.user.email }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label class="input-label">Adresse IP</label>
+      <div class="input" style="background:var(--color-bg-subtle);">{{ log.ip_address|default:"—" }}</div>
+    </div>
+    
+    <div class="form-group">
+      <label class="input-label">Action</label>
+      <div>
+        {% if log.action == 'CREATE' %}
+        <span class="badge badge-success">Création</span>
+        {% elif log.action == 'UPDATE' %}
+        <span class="badge badge-warning">Modification</span>
+        {% elif log.action == 'DELETE' %}
+        <span class="badge badge-danger">Suppression</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ── Objet modifié ── #}
+  <div class="card animate-fade-up delay-2">
+    <h3 style="font-size:1rem; margin-bottom:var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+      Objet
+    </h3>
+    
+    <div class="form-group">
+      <label class="input-label">Application</label>
+      <div class="input" style="background:var(--color-bg-subtle);">{{ log.app_label }}</div>
+    </div>
+    
+    <div class="form-group">
+      <label class="input-label">Modèle</label>
+      <div class="input" style="background:var(--color-bg-subtle); font-family:var(--font-mono);">{{ log.model_name }}</div>
+    </div>
+    
+    <div class="form-group">
+      <label class="input-label">ID de l'objet</label>
+      <div class="input" style="background:var(--color-bg-subtle); font-family:var(--font-mono);">{{ log.object_id }}</div>
+    </div>
+    
+    <div class="form-group">
+      <label class="input-label">Nom de l'objet</label>
+      <div class="input" style="background:var(--color-bg-subtle); font-weight:500;">{{ log.object_repr }}</div>
+    </div>
+  </div>
+</div>
+
+{# ── Modifications (pour UPDATE) ── #}
+{% if log.changes %}
+<div class="card animate-fade-up delay-3" style="margin-top:var(--space-6);">
+  <h3 style="font-size:1rem; margin-bottom:var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+    Modifications apportées
+  </h3>
+  
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Champ</th>
+          <th>Valeur précédente</th>
+          <th>Nouvelle valeur</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for field, change in log.changes.items %}
+        <tr>
+          <td style="font-weight:500;">{{ field }}</td>
+          <td class="text-muted">{{ change.old|default:"—" }}</td>
+          <td>{{ change.new|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

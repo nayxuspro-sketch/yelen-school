@@ -1,0 +1,141 @@
+{% extends "core/base.html" %}
+
+{% block title %}Fiches de suivi — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Fiches de suivi</h1>
+    <p class="page-subtitle">Recherchez un élève pour accéder à sa fiche individuelle complète</p>
+  </div>
+</div>
+
+<!-- Filtres -->
+<div class="card animate-fade-up delay-1" style="margin-bottom:1.25rem;">
+  <form method="get" style="padding:1.25rem; display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+
+    <div style="flex:2; min-width:220px;">
+      <label class="input-label">Rechercher un élève</label>
+      <div style="position:relative;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+             style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--color-text-muted); pointer-events:none;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" name="q" class="input" value="{{ q }}"
+               placeholder="Nom, prénom ou matricule…"
+               style="padding-left:2.2rem;" autofocus>
+      </div>
+    </div>
+
+    <div style="flex:1; min-width:160px;">
+      <label class="input-label">Année scolaire</label>
+      <select name="annee" class="input select" onchange="this.form.submit()">
+        {% for a in annees %}
+        <option value="{{ a.id }}" {% if a == annee_sel %}selected{% endif %}>{{ a.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex:1; min-width:150px;">
+      <label class="input-label">Classe</label>
+      <select name="classe" class="input select" onchange="this.form.submit()">
+        <option value="">Toutes</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {% if c.id|stringformat:"s" == classe_id %}selected{% endif %}>{{ c.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" class="btn-primary" style="height:38px; padding:0 1.25rem; white-space:nowrap;">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      Rechercher
+    </button>
+
+    {% if q or classe_id %}
+    <a href="{% url 'viescolaire:fiches_suivi_list' %}{% if annee_sel %}?annee={{ annee_sel.id }}{% endif %}"
+       class="btn-secondary" style="height:38px; padding:0 1rem;">
+      Effacer
+    </a>
+    {% endif %}
+
+  </form>
+</div>
+
+<!-- Résultats -->
+<div class="card animate-fade-up delay-2">
+  <div class="card-header">
+    <span class="card-title">
+      {% if inscriptions %}
+        {{ inscriptions|length }} élève{{ inscriptions|length|pluralize }}
+        {% if q %}pour « {{ q }} »{% endif %}
+      {% else %}
+        Aucun résultat
+      {% endif %}
+    </span>
+  </div>
+
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Matricule</th>
+          <th>Classe</th>
+          <th>Statut</th>
+          <th>Profil tarifaire</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inscr in inscriptions %}
+        <tr style="cursor:pointer;" onclick="location.href='{% url 'viescolaire:fiche_suivi_eleve' inscr.id %}'">
+          <td>
+            <div class="d-flex align-center gap-3">
+              <div style="width:32px; height:32px; border-radius:50%; background:rgba(0,168,107,.15);
+                          display:flex; align-items:center; justify-content:center;
+                          font-size:.8rem; font-weight:700; color:var(--color-primary); flex-shrink:0;">
+                {{ inscr.eleve.prenom|first|upper }}
+              </div>
+              <span class="fw-medium">{{ inscr.eleve.nom|upper }} {{ inscr.eleve.prenom }}</span>
+            </div>
+          </td>
+          <td><code style="font-size:.78rem;">{{ inscr.eleve.matricule|default:"—" }}</code></td>
+          <td>{{ inscr.classe.nom }}</td>
+          <td>
+            <span class="badge badge-{% if inscr.statut == 'AFFECTE' %}success{% elif inscr.statut == 'BOURSIER' %}gold{% elif inscr.statut == 'EXONERE' %}blue{% else %}secondary{% endif %}"
+                  style="font-size:.72rem;">
+              {{ inscr.get_statut_display }}
+            </span>
+          </td>
+          <td class="text-secondary" style="font-size:.82rem;">{{ inscr.statut_eleve.nom|default:"—" }}</td>
+          <td>
+            <a href="{% url 'viescolaire:fiche_suivi_eleve' inscr.id %}"
+               class="btn-secondary btn-sm"
+               onclick="event.stopPropagation()">
+              Voir la fiche
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left:4px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center; padding:3rem; color:var(--color-text-muted);">
+            {% if q %}
+              Aucun élève trouvé pour « <strong>{{ q }}</strong> ».
+            {% else %}
+              Aucune inscription active pour cette sélection.
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

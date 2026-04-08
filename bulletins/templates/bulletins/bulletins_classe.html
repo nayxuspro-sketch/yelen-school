@@ -1,0 +1,84 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Bulletins {{ classe.nom }} — {{ trimestre.nom }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'bulletins:index' %}" style="font-size:0.8rem; color:var(--color-text-muted); text-decoration:none; display:flex; align-items:center; gap:4px; margin-bottom:var(--space-1);">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Bulletins
+    </a>
+    <h1 class="page-title">{{ classe.nom }} — {{ trimestre.nom }}</h1>
+    <p class="page-subtitle">{{ trimestre.annee_scolaire.libelle }} &bull; {{ classe.cycle.nom }}</p>
+  </div>
+  <div style="display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap;">
+    {# Imprimer tous les bulletins #}
+    <a href="{% url 'pedagogie:bulletin_classe_batch_pdf' class_id=classe.pk trimestre_id=trimestre.pk %}"
+       target="_blank" class="btn btn-outline" style="font-size:0.85rem;">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Imprimer tous
+    </a>
+    {# Publier tous #}
+    <form method="post" action="{% url 'bulletins:bulletins_classe_publier' class_id=classe.pk trimestre_id=trimestre.pk %}"
+          onsubmit="return confirm('Publier tous les bulletins avec moyenne calculée ?')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary" style="font-size:0.85rem;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Publier tous
+      </button>
+    </form>
+  </div>
+</div>
+
+{# ── Stats rapides ── #}
+<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(3,1fr); margin-bottom:var(--space-5);">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+      </svg>
+    </div>
+    <div><div class="stat-value">{{ nb_total }}</div><div class="stat-label">Élèves</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+    </div>
+    <div><div class="stat-value">{{ nb_moyennes }}</div><div class="stat-label">Moyennes calculées</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-gold">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <div><div class="stat-value">{{ nb_publies }}</div><div class="stat-label">Publiés</div></div>
+  </div>
+</div>
+
+{# ── Messages ── #}
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags }}" style="margin-bottom:var(--space-4);">{{ msg }}</div>
+{% endfor %}
+{% endif %}
+
+{# ── Tableau ── #}
+<div class="card animate-fade-up"
+     id="bulletins-table"
+     hx-trigger="bulletinUpdated from:body"
+     hx-get="{% url 'bulletins:bulletins_classe' class_id=classe.pk trimestre_id=trimestre.pk %}"
+     hx-target="#bulletins-table"
+     hx-swap="innerHTML">
+  {% include 'bulletins/partials/bulletins_classe_table.html' %}
+</div>
+
+{% endblock %}

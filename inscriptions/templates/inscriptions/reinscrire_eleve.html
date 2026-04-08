@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+
+{% block title %}Réinscription {{ eleve.get_nom_complet }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'inscriptions:reinscription_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Réinscrire {{ eleve.get_nom_complet }}</h1>
+      <p class="page-subtitle">Année scolaire {{ annee.libelle }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="card animate-fade-up" style="max-width: 600px;">
+  <div class="card-header">
+    <span class="card-title">Sélectionner la nouvelle classe</span>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label class="input-label">Élève</label>
+        <input type="text" value="{{ eleve.get_nom_complet }}" class="input" readonly>
+      </div>
+      
+      <div class="form-group">
+        <label class="input-label">Nouvelle classe <span class="text-danger">*</span></label>
+        <select name="classe" class="input select" required>
+          <option value="">Sélectionner une classe</option>
+          {% for classe in classes %}
+          <option value="{{ classe.pk }}">{{ classe.cycle.nom }} - {{ classe.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="d-flex gap-3" style="margin-top: var(--space-5);">
+        <button type="submit" class="btn-primary">Réinscrire</button>
+        <a href="{% url 'inscriptions:reinscription_list' %}" class="btn-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

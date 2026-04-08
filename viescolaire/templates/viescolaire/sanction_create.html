@@ -55,7 +55,7 @@
           </div>
           <div class="form-group">
             <label class="input-label">Type de sanction <span style="color:var(--color-danger);">*</span></label>
-            <select name="type_sanction" required class="input select w-full">
+            <select name="type_sanction" id="id_type_sanction" required class="input select w-full">
               <option value="">— Choisir —</option>
               {% for ts in types_sanction %}
               <option value="{{ ts.pk }}">{{ ts.libelle }}</option>
@@ -170,11 +170,45 @@
       </div>
     </div>
 
+    {% if config_disc %}
+    <div id="seuil-warning" style="display:none; margin-bottom:1rem; padding:.75rem 1rem;
+         background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.4); border-radius:8px;
+         font-size:.83rem; color:var(--color-warning);">
+      <strong>Attention :</strong> une valeur négative retirera des points du capital discipline de l'élève.
+      Seuil d'alerte à {{ config_disc.seuil_alerte }} pts, conseil à {{ config_disc.seuil_conseil }} pts.
+    </div>
+    {% endif %}
     <div class="d-flex justify-end gap-3">
       <a href="{% url 'viescolaire:sanction_list' %}" class="btn-secondary">Annuler</a>
       <button type="submit" class="btn-primary">Enregistrer la sanction</button>
     </div>
   </form>
 </div>
+
+<script>
+(function () {
+  var pointsMap = {{ types_sanction_json|safe }};
+  var sel = document.getElementById('id_type_sanction');
+  var inp = document.querySelector('input[name="points"]');
+  var warnBox = document.getElementById('seuil-warning');
+
+  if (!sel || !inp) return;
+
+  function checkWarn() {
+    if (!warnBox) return;
+    warnBox.style.display = (parseFloat(inp.value) || 0) < 0 ? 'block' : 'none';
+  }
+
+  sel.addEventListener('change', function () {
+    var pk = this.value;
+    if (pk && pointsMap[pk] !== undefined) {
+      inp.value = pointsMap[pk];
+      checkWarn();
+    }
+  });
+
+  inp.addEventListener('input', checkWarn);
+}());
+</script>
 
 {% endblock %}

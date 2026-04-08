@@ -9,7 +9,15 @@
     <h1 class="page-title">Activités Parascolaires</h1>
     {% if annee_courante %}<p class="page-subtitle">{{ annee_courante }}</p>{% endif %}
   </div>
-  <a href="{% url 'viescolaire:conseil_list' %}" class="btn-secondary">Vie Scolaire</a>
+  <div class="header-actions">
+    <a href="{% url 'viescolaire:conseil_list' %}" class="btn-secondary">Vie Scolaire</a>
+    <a href="{% url 'viescolaire:activite_create' %}" class="btn btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nouvelle activité
+    </a>
+  </div>
 </div>
 
 <div class="modules-grid animate-fade-up delay-1">

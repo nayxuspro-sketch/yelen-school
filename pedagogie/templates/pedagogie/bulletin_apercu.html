@@ -1,0 +1,188 @@
+{% extends "core/base.html" %}
+
+{% block title %}Aperçu bulletin — {{ inscription.eleve.get_nom_complet }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="javascript:history.back()" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Aperçu du bulletin</h1>
+      <p class="page-subtitle">
+        {{ inscription.eleve.get_nom_complet }} ·
+        <span class="text-primary">{{ inscription.classe.nom }}</span> ·
+        {{ trimestre.nom }}
+      </p>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ pdf_url }}" target="_blank" class="btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Générer le PDF
+    </a>
+  </div>
+</div>
+
+{# ── Corps du bulletin rendu directement (même données que le PDF) ── #}
+<div class="animate-fade-up delay-1" style="max-width:900px; margin:0 auto;">
+  <div class="card" style="padding:0; overflow:hidden;">
+
+    {# Bandeau en-tête établissement #}
+    <div style="background:var(--color-bg-hover); padding:var(--space-4) var(--space-6); border-bottom:1px solid var(--color-border); display:flex; align-items:center; justify-content:space-between; gap:var(--space-4);">
+      <div class="d-flex align-center gap-4">
+        {% if identite and identite.logo %}
+        <img src="{{ etab_logo_url }}" alt="Logo" style="height:52px; width:auto; object-fit:contain;">
+        {% endif %}
+        <div>
+          {% if identite %}
+          <div class="fw-bold" style="font-size:1.05rem; text-transform:uppercase;">{{ identite.nom_etablissement }}</div>
+          <div class="text-muted" style="font-size:0.8rem;">{{ identite.ville|default:"" }}{% if identite.telephone %} · {{ identite.telephone }}{% endif %}</div>
+          {% endif %}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div class="fw-semibold" style="font-size:0.85rem;">BULLETIN DE NOTES</div>
+        <div class="text-muted" style="font-size:0.78rem;">{{ trimestre.nom }} · {{ trimestre.annee_scolaire.libelle }}</div>
+      </div>
+    </div>
+
+    {# Infos élève #}
+    <div style="padding:var(--space-4) var(--space-6); border-bottom:1px solid var(--color-border); display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--space-4);">
+      <div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px;">Élève</div>
+        <div class="fw-semibold">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</div>
+        <div class="text-mono text-muted" style="font-size:0.75rem;">{{ inscription.eleve.matricule }}</div>
+      </div>
+      <div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px;">Classe</div>
+        <div class="fw-semibold">{{ inscription.classe.nom }}</div>
+        <div class="text-muted" style="font-size:0.78rem;">{{ inscription.classe.cycle.nom }}</div>
+      </div>
+      <div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px;">Effectif / Rang</div>
+        <div class="fw-semibold">{{ nb_eleves }} élèves{% if mg.rang %} · {{ mg.rang }}{% if mg.rang == 1 %}er{% else %}ème{% endif %}{% endif %}</div>
+        <div class="text-muted" style="font-size:0.78rem;">Moy. classe : {{ moy_avg_classe|floatformat:2|default:"—" }}</div>
+      </div>
+    </div>
+
+    {# Résumé moyennes #}
+    <div style="padding:var(--space-3) var(--space-6); background:rgba(0,168,107,0.06); border-bottom:1px solid var(--color-border); display:flex; align-items:center; gap:var(--space-8);">
+      <div>
+        <span class="text-muted" style="font-size:0.75rem;">Moyenne générale</span>
+        <div class="fw-bold" style="font-size:1.5rem; color:var(--color-primary);">{{ mg.moyenne|floatformat:2 }} / 20</div>
+      </div>
+      <div>
+        <span class="text-muted" style="font-size:0.75rem;">Points obtenus</span>
+        <div class="fw-semibold" style="font-size:1.1rem;">{{ mg.total_points|floatformat:2 }} / {{ total_points_max|floatformat:2 }}</div>
+      </div>
+      <div>
+        <span class="text-muted" style="font-size:0.75rem;">Moy. max / min</span>
+        <div class="fw-semibold" style="font-size:1.1rem;">
+          <span style="color:var(--color-primary);">{{ moy_max_classe|floatformat:2 }}</span>
+          <span class="text-muted"> / </span>
+          <span style="color:var(--color-danger);">{{ moy_min_classe|floatformat:2 }}</span>
+        </div>
+      </div>
+      {% if appreciation_generale %}
+      <div style="flex:1; text-align:right;">
+        <span class="text-muted" style="font-size:0.75rem;">Appréciation</span>
+        <div class="fw-semibold" style="font-size:0.9rem; color:var(--color-primary);">{{ appreciation_generale }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {# Tableau des matières #}
+    <div class="table-scroll">
+      <table class="data-table" style="font-size:0.85rem;">
+        <thead>
+          <tr>
+            <th>Matière</th>
+            <th style="text-align:center; width:60px;">Coeff.</th>
+            <th style="text-align:center; width:80px;">Moy. / 20</th>
+            <th style="text-align:center; width:80px;">Points</th>
+            <th style="text-align:center; width:80px;">Moy. classe</th>
+            <th>Appréciation</th>
+            <th>Enseignant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in resultats_annotes %}
+          <tr {% if r.dispense %}style="opacity:0.5; font-style:italic;"{% endif %}>
+            <td class="fw-medium">{{ r.enseignement.matiere.nom }}</td>
+            <td style="text-align:center;">{{ r.coefficient_utilise|floatformat:2 }}</td>
+            <td style="text-align:center;" class="fw-bold
+              {% if r.moyenne >= 10 %}text-success{% elif r.moyenne is not None %}text-danger{% endif %}">
+              {% if r.dispense %}—{% elif r.moyenne is not None %}{{ r.moyenne|floatformat:2 }}{% else %}—{% endif %}
+            </td>
+            <td style="text-align:center;" class="text-secondary">
+              {% if not r.dispense and r.total_points is not None %}{{ r.total_points|floatformat:2 }}{% else %}—{% endif %}
+            </td>
+            <td style="text-align:center;" class="text-muted">
+              {{ r.moy_classe|floatformat:2|default:"—" }}
+            </td>
+            <td class="text-secondary" style="font-size:0.8rem;">{{ r.appreciation.libelle|default:"—" }}</td>
+            <td class="text-muted" style="font-size:0.78rem;">
+              {% if r.enseignement.personnel %}{{ r.enseignement.personnel.get_nom_complet }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center text-muted" style="padding:var(--space-6);">Aucun résultat enregistré.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# Commentaire élève + sanctions #}
+    {% if commentaire_eleve or sanctions_conduite %}
+    <div style="padding:var(--space-4) var(--space-6); border-top:1px solid var(--color-border); display:grid; grid-template-columns:1fr{% if sanctions_conduite %} 1fr{% endif %}; gap:var(--space-6);">
+      {% if commentaire_eleve %}
+      <div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:var(--space-2);">Commentaire conseil</div>
+        <p style="font-size:0.875rem; font-style:italic; line-height:1.6;">{{ commentaire_eleve }}</p>
+      </div>
+      {% endif %}
+      {% if sanctions_conduite %}
+      <div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:var(--space-2);">Sanctions disciplinaires</div>
+        {% for s in sanctions_conduite %}
+        <div style="font-size:0.82rem; padding:2px 0; color:var(--color-danger);">{{ s.type_sanction.nom }} — {{ s.date_sanction|date:"d/m/Y" }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# Signataire #}
+    {% if signataire_membre %}
+    <div style="padding:var(--space-4) var(--space-6); border-top:1px solid var(--color-border); text-align:right;">
+      <div class="text-muted" style="font-size:0.75rem;">{{ signataire.fonction|default:"" }}</div>
+      <div class="fw-semibold" style="font-size:0.9rem;">{{ signataire_membre.nom|upper }} {{ signataire_membre.prenom }}</div>
+      <div class="text-muted" style="font-size:0.75rem;">{{ date_lieu }}</div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# Bouton PDF en bas #}
+  <div class="d-flex justify-end gap-3" style="margin-top:var(--space-4);">
+    <a href="javascript:history.back()" class="btn-secondary">Retour</a>
+    <a href="{{ pdf_url }}" target="_blank" class="btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Télécharger le PDF
+    </a>
+  </div>
+
+</div>
+
+{% endblock %}

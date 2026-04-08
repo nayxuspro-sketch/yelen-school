@@ -1,0 +1,126 @@
+{% extends "core/base.html" %}
+
+{% block title %}Saisie des notes — {{ classe.nom }}{% endblock %}
+
+{% block content %}
+
+<!-- ── En-tête ── -->
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Pédagogie</span>
+      <span>›</span>
+      <span>Saisie des notes</span>
+    </div>
+    <h1 class="page-title">{{ classe.nom }}</h1>
+    <div class="d-flex align-center gap-4 flex-wrap" style="margin-top:.5rem;">
+      {% if annee_courante %}
+      <span class="text-muted" style="font-size:.85rem;">{{ annee_courante.libelle }}</span>
+      {% endif %}
+      <span class="badge badge-neutral">{{ nb_eleves }} élève{{ nb_eleves|pluralize }}</span>
+    </div>
+  </div>
+  <a href="{% url 'pedagogie:evaluation_list' %}" class="btn-secondary">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Évaluations
+  </a>
+</div>
+
+{% if par_matiere %}
+  {% for matiere, evals in par_matiere.items %}
+  <!-- ── Bloc matière ── -->
+  <div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-4); padding:0; overflow:hidden;">
+    <!-- En-tête matière -->
+    <div style="padding:.875rem 1.25rem; border-bottom:1px solid var(--color-border); background:var(--color-surface-raised);">
+      <div class="d-flex align-center gap-3">
+        <span class="text-mono fw-bold" style="font-size:.75rem; color:var(--color-primary);">{{ matiere.code }}</span>
+        <span class="fw-semibold">{{ matiere.nom }}</span>
+        {% if matiere.nom_complet %}
+        <span class="text-muted" style="font-size:.8rem; font-style:italic;">{{ matiere.nom_complet }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Table des évaluations -->
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Évaluation</th>
+            <th>Type</th>
+            <th>Trimestre</th>
+            <th>Date</th>
+            <th>Barème</th>
+            <th style="text-align:center;">Progression</th>
+            <th style="text-align:right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in evals %}
+          {% with pct=ev.nb_notes|default:0 %}
+          <tr>
+            <td>
+              <div class="fw-semibold">{{ ev.titre }}</div>
+              {% if ev.statut == 'TERMINEE' %}
+              <span class="badge badge-success" style="font-size:.65rem; margin-top:.2rem;">Terminée</span>
+              {% elif ev.statut == 'EN_COURS' %}
+              <span class="badge badge-warning" style="font-size:.65rem; margin-top:.2rem;">En cours</span>
+              {% else %}
+              <span class="badge badge-neutral" style="font-size:.65rem; margin-top:.2rem;">Planifiée</span>
+              {% endif %}
+            </td>
+            <td class="text-muted" style="font-size:.85rem;">{{ ev.type_evaluation.nom }}</td>
+            <td class="text-muted" style="font-size:.85rem;">{{ ev.trimestre.nom }}</td>
+            <td class="text-mono text-muted" style="font-size:.8rem;">{{ ev.date_planifiee|date:"d/m/Y" }}</td>
+            <td class="text-mono" style="font-size:.85rem;">/{{ ev.bareme|floatformat:0 }}</td>
+            <td style="text-align:center; min-width:140px;">
+              {% if nb_eleves > 0 %}
+              <div class="d-flex align-center gap-2" style="justify-content:center;">
+                <div style="flex:1; max-width:80px; height:6px; background:var(--color-border); border-radius:3px; overflow:hidden;">
+                  <div style="height:100%; width:{% widthratio ev.nb_notes nb_eleves 100 %}%; background:var(--color-primary); border-radius:3px; transition:width .3s;"></div>
+                </div>
+                <span class="text-mono" style="font-size:.75rem; color:{% if ev.nb_notes == nb_eleves %}var(--color-success){% else %}var(--color-text-secondary){% endif %}; white-space:nowrap;">
+                  {{ ev.nb_notes }}/{{ nb_eleves }}
+                </span>
+              </div>
+              {% else %}
+              <span class="text-muted" style="font-size:.8rem;">—</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              <a href="{% url 'pedagogie:evaluation_saisie' ev.pk %}" class="btn-primary btn-sm">
+                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Saisir
+              </a>
+            </td>
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+
+{% else %}
+<!-- État vide -->
+<div class="card animate-fade-up delay-1">
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
+    </div>
+    <p class="empty-state-text">Aucune évaluation planifiée pour cette classe.</p>
+    <a href="{% url 'pedagogie:evaluation_create' %}" class="btn-primary" style="margin-top:var(--space-4);">
+      Créer une évaluation
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,267 @@
+{% load signataire_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @font-face {
+    font-family: 'Outfit';
+    src: url('{{ logo_url|default:"" }}');
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 1cm 1.2cm;
+    @bottom-right {
+      content: "Page " counter(page) " sur " counter(pages);
+      font-size: 7pt; color: #64748b;
+    }
+    @bottom-left {
+      content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }} — Imprimé le {{ date_impression }}";
+      font-size: 7pt; color: #64748b;
+    }
+  }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8.5pt;
+    color: #1e293b;
+    margin: 0; padding: 0;
+    background: white;
+  }
+
+  /* ── En-tête ── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2pt solid #00A86B;
+    padding-bottom: 5pt;
+    margin-bottom: 8pt;
+  }
+  .school-name {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #00A86B;
+    text-transform: uppercase;
+    letter-spacing: .5pt;
+  }
+  .school-sub { font-size: 7.5pt; color: #475569; margin-top: 1pt; }
+  .logo-box { width: 50pt; text-align: center; }
+  .logo-box img { max-height: 40pt; max-width: 50pt; }
+
+  /* ── Titre ── */
+  .doc-title {
+    text-align: center;
+    background: #f8fafc;
+    border: 1pt solid #e2e8f0;
+    padding: 4pt 8pt;
+    margin-bottom: 8pt;
+    border-radius: 2pt;
+  }
+  .doc-title h2 {
+    margin: 0;
+    font-size: 10.5pt;
+    text-transform: uppercase;
+    letter-spacing: .6pt;
+    color: #0f172a;
+  }
+  .doc-title p { margin: 2pt 0 0; font-size: 7.5pt; color: #475569; }
+
+  /* ── Tableau ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7.5pt;
+  }
+  thead tr { background: #0f172a; color: white; }
+  thead th {
+    padding: 4pt 3pt;
+    text-align: center;
+    border: .5pt solid #334155;
+    font-weight: 600;
+  }
+  thead th.col-nom {
+    text-align: left;
+    min-width: 80pt;
+    max-width: 110pt;
+  }
+  thead th.col-matiere {
+    min-width: 28pt;
+    vertical-align: bottom;
+  }
+  .th-matiere-inner {
+    writing-mode: vertical-lr;
+    white-space: nowrap;
+    max-height: 65pt;
+    overflow: hidden;
+    font-size: 6.5pt;
+    font-weight: 600;
+  }
+  .th-coef {
+    display: block;
+    font-size: 5.5pt;
+    font-weight: 400;
+    color: #94a3b8;
+    margin-top: 2pt;
+    writing-mode: horizontal-tb;
+  }
+
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:hover { background: #f0fdf4; }
+
+  td {
+    padding: 3pt 4pt;
+    border: .5pt solid #e2e8f0;
+    text-align: center;
+    vertical-align: middle;
+  }
+  td.col-num  { color: #94a3b8; font-size: 7pt; width: 14pt; }
+  td.col-nom  { text-align: left; font-weight: 500; white-space: nowrap; }
+
+  /* Code couleur moyennes */
+  .moy-rouge  { background: #fee2e2; color: #dc2626; font-weight: 700; }
+  .moy-orange { background: #fef9c3; color: #92400e; font-weight: 700; }
+  .moy-vert   { background: #dcfce7; color: #15803d; font-weight: 700; }
+  .moy-vide   { color: #cbd5e1; }
+
+  /* Colonne Moy. Générale */
+  td.col-mg {
+    font-weight: 700;
+    border-left: 1.5pt solid #334155;
+    min-width: 28pt;
+  }
+  thead th.col-mg {
+    border-left: 1.5pt solid #64748b;
+    color: #86efac;
+  }
+  td.col-rang { color: #475569; font-size: 7pt; }
+
+  /* ── Légende ── */
+  .legende {
+    display: flex;
+    gap: 14pt;
+    margin-top: 8pt;
+    font-size: 6.5pt;
+    color: #475569;
+  }
+  .leg-item { display: flex; align-items: center; gap: 3pt; }
+  .leg-color {
+    width: 9pt; height: 9pt;
+    border-radius: 2pt;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── En-tête ── -->
+<div class="header">
+  <div>
+    <div class="school-name">{{ identite.nom_etablissement|default:"YELEN SCHOOL" }}</div>
+    <div class="school-sub">
+      {% if identite.ville %}{{ identite.ville }}{% if identite.pays %}, {{ identite.pays }}{% endif %} — {% endif %}
+      {{ identite.telephone|default:"" }}
+    </div>
+  </div>
+  <div class="logo-box">
+    {% if logo_url %}<img src="{{ logo_url }}" alt="Logo">{% endif %}
+  </div>
+</div>
+
+<!-- ── Titre ── -->
+<div class="doc-title">
+  <h2>Tableau des moyennes par discipline</h2>
+  <p>
+    Classe : <strong>{{ classe.nom }}</strong>
+    &nbsp;|&nbsp; {{ trimestre.nom }}
+    &nbsp;|&nbsp; Année scolaire : <strong>{{ annee.libelle }}</strong>
+    &nbsp;|&nbsp; {{ lignes|length }} élève{% if lignes|length > 1 %}s{% endif %}
+    &nbsp;·&nbsp; {{ enseignements|length }} matière{% if enseignements|length > 1 %}s{% endif %}
+  </p>
+</div>
+
+{% if lignes %}
+<table>
+  <thead>
+    <tr>
+      <th style="width:14pt;">#</th>
+      <th class="col-nom">Nom &amp; Prénom</th>
+      {% for ens in enseignements %}
+      <th class="col-matiere">
+        <div class="th-matiere-inner">{{ ens.matiere.nom }}</div>
+        <span class="th-coef">c.{{ ens.get_coefficient }}</span>
+      </th>
+      {% endfor %}
+      <th class="col-mg">Moy.<br>Gén.</th>
+      <th style="min-width:20pt;">Rang</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ligne in lignes %}
+    {% with mg=ligne.mg %}
+    <tr>
+      <td class="col-num">{{ forloop.counter }}</td>
+      <td class="col-nom">{{ ligne.eleve.nom|upper }} {{ ligne.eleve.prenom }}</td>
+
+      {% for r in ligne.resultats %}
+      <td
+        {% if r and not r.dispense and r.moyenne is not None %}
+          {% if r.moyenne < 10 %}class="moy-rouge"
+          {% elif r.moyenne < 14 %}class="moy-orange"
+          {% else %}class="moy-vert"{% endif %}
+        {% else %}class="moy-vide"{% endif %}
+      >
+        {% if r %}
+          {% if r.dispense %}D
+          {% elif r.moyenne is not None %}{{ r.moyenne|floatformat:2 }}
+          {% else %}—{% endif %}
+        {% else %}—{% endif %}
+      </td>
+      {% endfor %}
+
+      <!-- Moyenne générale -->
+      <td class="col-mg
+        {% if mg and mg.moyenne is not None %}
+          {% if mg.moyenne < 10 %}moy-rouge
+          {% elif mg.moyenne < 14 %}moy-orange
+          {% else %}moy-vert{% endif %}
+        {% endif %}
+      ">
+        {% if mg and mg.moyenne is not None %}{{ mg.moyenne|floatformat:2 }}{% else %}—{% endif %}
+      </td>
+
+      <!-- Rang -->
+      <td class="col-rang">
+        {% if mg and mg.rang %}{{ mg.rang }}e{% else %}—{% endif %}
+      </td>
+    </tr>
+    {% endwith %}
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Légende -->
+<div class="legende">
+  <div class="leg-item">
+    <span class="leg-color" style="background:#fee2e2;border:1pt solid #fca5a5;"></span> Moyenne &lt; 10
+  </div>
+  <div class="leg-item">
+    <span class="leg-color" style="background:#fef9c3;border:1pt solid #fde047;"></span> 10 ≤ Moy. &lt; 14
+  </div>
+  <div class="leg-item">
+    <span class="leg-color" style="background:#dcfce7;border:1pt solid #86efac;"></span> Moy. ≥ 14
+  </div>
+  <div class="leg-item">D = Dispensé</div>
+</div>
+
+{% else %}
+<p style="text-align:center;color:#94a3b8;font-style:italic;margin-top:20pt;">
+  Aucune moyenne calculée pour cette classe et cette période.
+</p>
+{% endif %}
+
+{% signataire_auto "BULLETIN" %}
+
+</body>
+</html>

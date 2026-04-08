@@ -1,0 +1,6 @@
+<option value="">— Choisir —</option>
+{% for t in trimestres %}
+<option value="{{ t.pk }}" {% if trimestre and trimestre.pk == t.pk %}selected{% endif %}>
+  {{ t.nom }}
+</option>
+{% endfor %}

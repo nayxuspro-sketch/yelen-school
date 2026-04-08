@@ -1,0 +1,424 @@
+{% extends "core/base.html" %}
+
+{% block title %}Relevé de notes{% endblock %}
+
+{% block content %}
+
+<!-- ── En-tête page ── -->
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Relevé de notes</h1>
+    <p class="text-muted" style="margin-top:.25rem;">Tableau des notes par classe et par discipline</p>
+  </div>
+  {% if enseignement and table %}
+  <div>
+    <a href="{% url 'pedagogie:releve_notes_pdf' %}?{{ request.GET.urlencode }}"
+       target="_blank"
+       class="btn btn-primary"
+       style="display:inline-flex; align-items:center; gap:.5rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a1 1 0 001-1v-4a1 1 0 00-1-1H9a1 1 0 00-1 1v4a1 1 0 001 1zm1-9V5a1 1 0 00-1-1H9a1 1 0 00-1 1v3"/>
+      </svg>
+      Imprimer PDF
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Formulaire de filtres en étapes ── -->
+<div class="card animate-fade-up" style="margin-bottom:1.5rem;">
+  <div style="padding:1.25rem 1.5rem 1rem;">
+
+    <div style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--color-text-muted); margin-bottom:1.1rem; display:flex; align-items:center; gap:.5rem;">
+      <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+      </svg>
+      Filtres du relevé
+    </div>
+
+    <form method="get" id="filter-form">
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:1rem; align-items:start;">
+
+        <!-- Étape 1 : Année -->
+        <div class="filter-step {% if annee %}step-done{% endif %}">
+          <label class="input-label step-label">
+            <span class="step-num">1</span>
+            Année scolaire
+          </label>
+          <select name="annee" class="input select" onchange="this.form.submit()">
+            <option value="">— Choisir —</option>
+            {% for a in annees %}
+              <option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>
+                {{ a.libelle }}{% if a.est_courante %} ★{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Étape 2 : Classe -->
+        <div class="filter-step {% if classe %}step-done{% elif annee %}step-active{% endif %}">
+          <label class="input-label step-label">
+            <span class="step-num">2</span>
+            Classe
+            {% if not annee %}<span class="step-hint-inline">— choisir l'année d'abord</span>{% endif %}
+          </label>
+          <select name="classe" class="input select" onchange="this.form.submit()"
+                  {% if not annee %}disabled{% endif %}>
+            <option value="">— Choisir —</option>
+            {% for cl in classes %}
+              <option value="{{ cl.pk }}" {% if classe and cl.pk == classe.pk %}selected{% endif %}>{{ cl.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Étape 3 : Discipline -->
+        <div class="filter-step {% if enseignement %}step-done{% elif classe %}step-active{% endif %}">
+          <label class="input-label step-label">
+            <span class="step-num">3</span>
+            Discipline
+            {% if not classe %}<span class="step-hint-inline">— choisir la classe d'abord</span>{% endif %}
+          </label>
+          <select name="enseignement" class="input select" onchange="this.form.submit()"
+                  {% if not classe %}disabled{% endif %}>
+            <option value="">— Choisir —</option>
+            {% for ens in enseignements %}
+              <option value="{{ ens.pk }}" {% if enseignement and ens.pk == enseignement.pk %}selected{% endif %}>
+                {{ ens.matiere.nom }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Étape 4 : Période (optionnelle) -->
+        <div class="filter-step {% if periode %}step-done{% elif enseignement %}step-active{% endif %}">
+          <label class="input-label step-label">
+            <span class="step-num step-num-opt">4</span>
+            Période
+            <span style="font-weight:400; font-style:italic; font-size:.73rem; color:var(--color-text-muted);">(optionnel)</span>
+          </label>
+          <select name="periode" class="input select" onchange="this.form.submit()"
+                  {% if not enseignement %}disabled{% endif %}>
+            <option value="">Toutes les périodes</option>
+            {% for p in periodes %}
+              <option value="{{ p.pk }}" {% if periode and p.pk == periode.pk %}selected{% endif %}>{{ p.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Bouton reset si filtre actif -->
+      {% if enseignement or classe or annee %}
+      <div style="margin-top:.9rem; display:flex; justify-content:flex-end;">
+        <a href="{% url 'pedagogie:releve_notes' %}" class="btn btn-sm btn-outline"
+           style="font-size:.8rem; display:inline-flex; align-items:center; gap:.35rem;">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Réinitialiser
+        </a>
+      </div>
+      {% endif %}
+
+    </form>
+  </div>
+</div>
+
+{% if not enseignement %}
+
+  <!-- ── Placeholder ── -->
+  <div class="card animate-fade-up" style="text-align:center; padding:3.5rem 2rem;">
+    <div style="width:64px; height:64px; background:var(--bg-subtle); border-radius:50%; margin:0 auto 1.25rem; display:flex; align-items:center; justify-content:center; opacity:.5;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+      </svg>
+    </div>
+    <p style="font-weight:600; margin:0 0 .4rem; color:var(--text-primary);">Aucun relevé sélectionné</p>
+    <p class="text-muted" style="font-size:.88rem; max-width:360px; margin:0 auto;">
+      Complétez les étapes ci-dessus : <strong>Année → Classe → Discipline</strong><br>
+      puis filtrez par trimestre si besoin.
+    </p>
+  </div>
+
+{% elif table is not None %}
+
+  <!-- ── Bandeau discipline ── -->
+  <div class="card animate-fade-up" style="margin-bottom:1rem; background:linear-gradient(135deg, var(--bg-card) 0%, var(--bg-subtle) 100%); border-left:4px solid var(--color-primary);">
+    <div class="card-body" style="padding:.9rem 1.25rem;">
+      <div class="d-flex justify-between align-center flex-wrap gap-3">
+        <div>
+          <div style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--color-primary); margin-bottom:.2rem;">
+            Relevé de notes
+          </div>
+          <div style="font-size:1.1rem; font-weight:700; color:var(--text-primary);">
+            {{ enseignement.matiere.nom }}
+            <span style="color:var(--text-muted); font-weight:400; font-size:.95rem;">— {{ enseignement.classe.nom }}</span>
+          </div>
+          <div class="text-muted" style="font-size:.8rem; margin-top:.2rem;">
+            {{ annee.libelle }}
+            {% if periode %}
+              &nbsp;·&nbsp; {{ periode.nom }}
+            {% else %}
+              &nbsp;·&nbsp; Toutes périodes
+            {% endif %}
+          </div>
+        </div>
+        <div class="d-flex gap-3 flex-wrap">
+          <div style="text-align:center; min-width:56px;">
+            <div style="font-size:1.5rem; font-weight:800; color:var(--text-primary); line-height:1;">{{ table|length }}</div>
+            <div style="font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted);">Élève{{ table|length|pluralize }}</div>
+          </div>
+          <div style="width:1px; background:var(--border-color);"></div>
+          <div style="text-align:center; min-width:56px;">
+            <div style="font-size:1.5rem; font-weight:800; color:var(--text-primary); line-height:1;">{{ evaluations_cols|length }}</div>
+            <div style="font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted);">Éval{{ evaluations_cols|length|pluralize }}.</div>
+          </div>
+          <div style="width:1px; background:var(--border-color);"></div>
+          <div style="text-align:center; min-width:56px;">
+            <div id="stat-saisies" style="font-size:1.5rem; font-weight:800; color:var(--color-primary); line-height:1;">—</div>
+            <div style="font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted);">Saisies</div>
+          </div>
+          <div style="width:1px; background:var(--border-color);"></div>
+          <div style="text-align:center; min-width:56px;">
+            <div id="stat-moy" style="font-size:1.5rem; font-weight:800; line-height:1; color:var(--text-muted);">—</div>
+            <div style="font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted);">Moy. /20</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tableau ── -->
+  <div class="card animate-fade-up" style="overflow-x:auto;">
+    <table class="table" style="min-width:600px; font-size:.875rem; border-collapse:collapse;">
+
+      <thead>
+        <tr>
+          <th style="width:36px; text-align:center; color:var(--text-muted); font-weight:500;">#</th>
+          <th style="min-width:200px; text-align:left;">Élève</th>
+          {% for ev in evaluations_cols %}
+            <th style="text-align:center; min-width:80px; padding:.6rem .4rem; cursor:default;"
+                title="{{ ev.titre }} — {{ ev.date_planifiee|date:'d/m/Y' }} — Barème : /{{ ev.bareme }}">
+              <div style="font-size:.68rem; font-weight:600; color:var(--text-muted); margin-bottom:.15rem;">
+                {{ ev.trimestre.nom|truncatechars:6 }}
+              </div>
+              <div style="font-size:.78rem; font-weight:700; white-space:nowrap;">
+                {{ ev.type_evaluation.nom|truncatechars:12 }}
+              </div>
+              <div style="font-size:.68rem; color:var(--text-muted); margin-top:.1rem;">
+                {{ ev.date_planifiee|date:"d/m" }} &nbsp;·&nbsp; /{{ ev.bareme }}
+              </div>
+            </th>
+          {% endfor %}
+          <th style="text-align:center; min-width:75px; border-left:2px solid var(--color-primary); background:color-mix(in srgb, var(--color-primary) 6%, transparent); color:var(--color-primary);">
+            Moy /20
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in table %}
+        <tr style="transition:background .1s;" onmouseover="this.style.background='var(--bg-hover,rgba(0,168,107,.04))'" onmouseout="this.style.background=''">
+
+          <td style="text-align:center; color:var(--text-muted); font-size:.75rem;">{{ forloop.counter }}</td>
+
+          <td style="padding:.55rem .75rem;">
+            <div style="font-weight:600; font-size:.9rem;">{{ row.inscription.eleve.nom|upper }} {{ row.inscription.eleve.prenom }}</div>
+            <div style="font-size:.72rem; color:var(--text-muted); font-family:monospace; margin-top:.1rem;">{{ row.inscription.eleve.matricule }}</div>
+          </td>
+
+          {% for note_data in row.notes %}
+            {% if note_data %}
+              {% if note_data.observation == 'ABS' %}
+                <td style="text-align:center; background:rgba(231,76,60,.07);">
+                  <span style="color:#e74c3c; font-weight:700; font-size:.78rem; letter-spacing:.03em;">ABS</span>
+                </td>
+              {% else %}
+                {% with sv=note_data.sur_20|default:0 %}
+                <td style="text-align:center; background:{% if note_data.sur_20 >= 10 %}rgba(39,174,96,.07){% else %}rgba(231,76,60,.07){% endif %};">
+                  <span style="font-weight:700; color:{% if note_data.sur_20 >= 10 %}#27ae60{% else %}#e74c3c{% endif %}; font-size:.9rem;">
+                    {{ note_data.valeur|floatformat:"-2" }}
+                  </span>
+                  {% if note_data.sur_20 %}
+                  <div style="font-size:.65rem; color:var(--text-muted); margin-top:.05rem;">
+                    {{ note_data.sur_20|floatformat:1 }}/20
+                  </div>
+                  {% endif %}
+                </td>
+                {% endwith %}
+              {% endif %}
+            {% else %}
+              <td style="text-align:center;">
+                <span style="color:var(--text-muted); opacity:.35; font-size:.85rem;">—</span>
+              </td>
+            {% endif %}
+          {% endfor %}
+
+          <td style="text-align:center; border-left:2px solid var(--color-primary); font-weight:700; font-size:.95rem; padding:.55rem .5rem;">
+            {% if row.resultat and row.resultat.moyenne_sur_20 is not None %}
+              <span style="color:{% if row.resultat.moyenne_sur_20 >= 10 %}#27ae60{% else %}#e74c3c{% endif %};">
+                {{ row.resultat.moyenne_sur_20|floatformat:2 }}
+              </span>
+            {% elif row.moyenne_locale is not None %}
+              <span style="color:var(--text-muted);" title="Estimation locale — calculer les moyennes pour valider">
+                ~{{ row.moyenne_locale|floatformat:2 }}
+              </span>
+            {% else %}
+              <span style="opacity:.25;">—</span>
+            {% endif %}
+          </td>
+
+        </tr>
+        {% empty %}
+          <tr>
+            <td colspan="{{ evaluations_cols|length|add:3 }}" style="text-align:center; color:var(--text-muted); padding:2.5rem;">
+              Aucun élève inscrit dans cette classe pour cette année.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+
+      <!-- ── Pied : stats colonnes (rempli par JS) ── -->
+      {% if evaluations_cols and table %}
+      <tfoot>
+        <tr id="tfoot-avg" style="border-top:2px solid var(--border-color); background:var(--bg-subtle);">
+          <td colspan="2" style="padding:.45rem .75rem; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);">
+            Moy. classe
+          </td>
+          {% for ev in evaluations_cols %}
+            <td style="text-align:center; font-size:.8rem; font-weight:700; color:var(--text-primary);" id="col-avg-{{ forloop.counter0 }}">—</td>
+          {% endfor %}
+          <td style="border-left:2px solid var(--color-primary);"></td>
+        </tr>
+        <tr id="tfoot-count" style="background:var(--bg-subtle);">
+          <td colspan="2" style="padding:.35rem .75rem .5rem; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);">
+            Notes saisies
+          </td>
+          {% for ev in evaluations_cols %}
+            <td style="text-align:center; font-size:.75rem; color:var(--text-muted);" id="col-count-{{ forloop.counter0 }}">—</td>
+          {% endfor %}
+          <td style="border-left:2px solid var(--color-primary);"></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+
+    </table>
+  </div>
+
+  <!-- ── Légende ── -->
+  <div class="d-flex gap-3 flex-wrap" style="margin-top:.75rem; font-size:.78rem; color:var(--text-muted);">
+    <span style="display:inline-flex; align-items:center; gap:.35rem;">
+      <span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:rgba(39,174,96,.2);"></span> ≥ moyenne
+    </span>
+    <span style="display:inline-flex; align-items:center; gap:.35rem;">
+      <span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:rgba(231,76,60,.2);"></span> &lt; moyenne
+    </span>
+    <span style="display:inline-flex; align-items:center; gap:.35rem;">
+      <span style="color:#e74c3c; font-weight:700; font-size:.7rem;">ABS</span> Absent
+    </span>
+    <span style="display:inline-flex; align-items:center; gap:.35rem;">
+      <span style="color:var(--text-muted);">~</span> Moyenne estimée (non encore calculée)
+    </span>
+  </div>
+
+{% endif %}
+
+<!-- ── Styles ── -->
+<style>
+  /* ── Filtres en étapes ── */
+  .filter-step { display:flex; flex-direction:column; }
+
+  .step-num {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--color-primary); color:#fff;
+    font-size:.6rem; font-weight:800;
+    margin-right:.4rem; flex-shrink:0;
+    vertical-align:middle;
+  }
+  .filter-step:not(.step-done):not(.step-active) .step-num {
+    background:var(--color-bg-input, #1e2d3d);
+    color:var(--color-text-muted);
+    border:1.5px solid var(--color-border, rgba(255,255,255,.1));
+  }
+  .step-active .step-num {
+    background:transparent;
+    color:var(--color-primary);
+    border:1.5px solid var(--color-primary);
+  }
+  .step-done .step-num { background:var(--color-primary); color:#fff; border:none; }
+
+  .step-label {
+    font-size:.8rem; font-weight:600;
+    display:flex; align-items:center;
+    margin-bottom:.4rem; color:var(--color-text-secondary);
+    gap:0;
+  }
+  .step-done .step-label { color:var(--color-text-primary); }
+  .step-active .step-label { color:var(--color-text-primary); }
+
+  .step-hint-inline {
+    font-size:.68rem; color:var(--color-text-muted);
+    font-style:italic; font-weight:400; margin-left:.3rem;
+  }
+
+  .step-num-opt {
+    background:var(--color-bg-input, #1e2d3d) !important;
+    color:var(--color-text-muted) !important;
+    border:1.5px solid var(--color-border, rgba(255,255,255,.1)) !important;
+  }
+  .step-done .step-num-opt { background:var(--color-primary) !important; color:#fff !important; border:none !important; }
+
+  .filter-step .input.select:disabled {
+    opacity:.4; cursor:not-allowed; pointer-events:none;
+  }
+</style>
+
+<!-- ── JS stats ── -->
+{% if evaluations_cols and table %}
+<script>
+(function() {
+  const rows = document.querySelectorAll('tbody tr');
+  const nbCols = {{ evaluations_cols|length }};
+  const nbEleves = {{ table|length }};
+  let totalSaisies = 0, totalVals = [];
+
+  for (let c = 0; c < nbCols; c++) {
+    const vals = []; let count = 0;
+    rows.forEach(row => {
+      const cell = row.cells[c + 2];
+      if (!cell) return;
+      const txt = cell.textContent.trim();
+      const num = parseFloat(txt);
+      if (!isNaN(num)) { vals.push(num); count++; totalVals.push(num); }
+      else if (txt.includes('ABS')) count++;
+    });
+    totalSaisies += count;
+
+    const avgEl = document.getElementById('col-avg-' + c);
+    const cntEl = document.getElementById('col-count-' + c);
+    if (avgEl) {
+      if (vals.length) {
+        const avg = (vals.reduce((a,b) => a+b,0)/vals.length).toFixed(2);
+        avgEl.textContent = avg;
+        avgEl.style.color = parseFloat(avg) >= 10 ? '#27ae60' : '#e74c3c';
+      } else { avgEl.textContent = '—'; }
+    }
+    if (cntEl) cntEl.textContent = count + '/' + nbEleves;
+  }
+
+  // Stat globales dans le bandeau
+  const statSaisies = document.getElementById('stat-saisies');
+  const statMoy = document.getElementById('stat-moy');
+  const maxSaisies = nbEleves * nbCols;
+  if (statSaisies) statSaisies.textContent = totalSaisies + '/' + maxSaisies;
+  if (statMoy && totalVals.length) {
+    const moy = (totalVals.reduce((a,b)=>a+b,0)/totalVals.length).toFixed(2);
+    statMoy.textContent = moy;
+    statMoy.style.color = parseFloat(moy) >= 10 ? '#27ae60' : '#e74c3c';
+  }
+})();
+</script>
+{% endif %}
+
+{% endblock %}

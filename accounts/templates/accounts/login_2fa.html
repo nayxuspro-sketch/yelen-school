@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vérification 2FA — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+</head>
+<body style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--color-bg-app);">
+
+<div style="width:100%; max-width:420px; padding:var(--space-6);">
+
+  <!-- Logo -->
+  <div style="text-align:center; margin-bottom:var(--space-8);">
+    <h1 class="logo-font" style="font-size:1.8rem; color:var(--color-primary); letter-spacing:.04em;">YELEN SCHOOL</h1>
+    <p class="text-muted" style="margin-top:4px; font-size:0.875rem;">Système de Gestion Scolaire</p>
+  </div>
+
+  <!-- Card -->
+  <div class="card">
+    <div style="padding:var(--space-6);">
+
+      <!-- Icône + titre -->
+      <div style="text-align:center; margin-bottom:var(--space-5);">
+        <div style="display:inline-flex; align-items:center; justify-content:center;
+                    width:3rem; height:3rem; border-radius:50%;
+                    background:var(--color-primary-subtle); margin-bottom:var(--space-3);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="11" width="14" height="10" rx="2"/>
+            <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+          </svg>
+        </div>
+        <h2 class="fw-semibold" style="font-size:1.1rem; margin:0;">Double authentification</h2>
+        <p class="text-muted" style="font-size:0.85rem; margin-top:4px;">
+          Entrez le code à 6 chiffres de votre application d'authentification<br>
+          pour le compte <strong>{{ email }}</strong>
+        </p>
+      </div>
+
+      {% if messages %}
+      <div style="margin-bottom:var(--space-4);">
+        {% for message in messages %}
+        <div style="background:#fee2e2; border:1px solid #ef4444; border-radius:6px;
+                    padding:0.6rem 0.9rem; color:#991b1b; font-size:0.875rem; font-weight:500;">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="post" novalidate autocomplete="off">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label for="code" class="input-label">Code de vérification</label>
+          <input
+            type="text"
+            id="code"
+            name="code"
+            required
+            autofocus
+            maxlength="6"
+            pattern="[0-9]{6}"
+            inputmode="numeric"
+            class="input w-full"
+            placeholder="000000"
+            style="font-size:1.5rem; letter-spacing:.4em; text-align:center;">
+          <p class="form-hint" style="margin-top:6px;">Code valable 30 secondes — valeurs sans espaces.</p>
+        </div>
+
+        <button type="submit" class="btn-primary w-full" style="margin-top:var(--space-4); justify-content:center;">
+          Vérifier
+        </button>
+      </form>
+
+      <div style="text-align:center; margin-top:var(--space-5);">
+        <a href="{% url 'accounts:login' %}" class="text-muted" style="font-size:0.85rem;">
+          ← Revenir à la connexion
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <p style="text-align:center; font-size:0.75rem; margin-top:var(--space-6); color:var(--color-text-muted);">
+    &copy; 2026 YELEN SCHOOL — Burkina Faso
+  </p>
+
+</div>
+
+</body>
+</html>

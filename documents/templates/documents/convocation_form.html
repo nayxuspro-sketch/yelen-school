@@ -1,0 +1,153 @@
+{% extends "core/base.html" %}
+
+{% block title %}Convocation — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Convocation</h1>
+    <p class="page-subtitle">Générer une lettre de convocation officielle</p>
+  </div>
+  <a href="{% url 'documents:document_list' %}" class="btn-secondary">
+    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Archives
+  </a>
+</div>
+
+<!-- Sélection de la classe (GET) -->
+<div class="card animate-fade-up delay-1" style="margin-bottom:1.25rem;">
+  <div style="padding:1.25rem 1.5rem;">
+    <label class="input-label">Filtrer par classe</label>
+    <div style="display:flex; gap:.75rem; margin-top:.5rem; flex-wrap:wrap;">
+      <select onchange="location.href='?classe='+this.value" class="input select" style="max-width:280px;">
+        <option value="">— Toutes les classes —</option>
+        {% for cl in classes %}
+        <option value="{{ cl.pk }}" {% if cl.pk|stringformat:"s" == classe_id %}selected{% endif %}>{{ cl.nom }}</option>
+        {% endfor %}
+      </select>
+      {% if classe_id %}
+      <a href="{% url 'documents:convocation_form' %}" class="btn-secondary" style="height:38px; padding:0 .9rem;">Effacer</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="classe" value="{{ classe_id }}">
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem;">
+
+    <!-- Colonne gauche : élèves + type -->
+    <div style="display:flex; flex-direction:column; gap:1.25rem;">
+
+      <!-- Sélection des élèves -->
+      <div class="card animate-fade-up delay-1" style="padding:1.5rem;">
+        <h3 style="font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+                   color:var(--color-text-muted); margin-bottom:1rem;">Élève(s) convoqué(s)</h3>
+
+        {% if inscriptions %}
+        <div style="display:flex; gap:.5rem; margin-bottom:.75rem;">
+          <button type="button" onclick="toggleAll(true)" class="btn-secondary btn-sm">Tout cocher</button>
+          <button type="button" onclick="toggleAll(false)" class="btn-secondary btn-sm">Tout décocher</button>
+        </div>
+        <div style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:.4rem;">
+          {% for ins in inscriptions %}
+          <label style="display:flex; align-items:center; gap:.6rem; padding:.4rem .5rem; border-radius:6px;
+                        cursor:pointer; font-size:.88rem; transition:background .1s;"
+                 onmouseover="this.style.background='var(--color-bg-hover)'"
+                 onmouseout="this.style.background=''">
+            <input type="checkbox" name="inscriptions" value="{{ ins.pk }}" class="eleve-cb">
+            <span>{{ ins.eleve.nom|upper }} {{ ins.eleve.prenom }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--color-text-muted); font-size:.85rem; margin:0;">
+          Sélectionnez une classe ci-dessus pour afficher les élèves.
+        </p>
+        {% endif %}
+      </div>
+
+      <!-- Type de convocation -->
+      <div class="card animate-fade-up delay-2" style="padding:1.5rem;">
+        <h3 style="font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+                   color:var(--color-text-muted); margin-bottom:1rem;">Type de convocation</h3>
+        <div style="display:flex; flex-direction:column; gap:.5rem;">
+          {% for val, label in types_convocation %}
+          <label style="display:flex; align-items:center; gap:.6rem; cursor:pointer; font-size:.9rem;">
+            <input type="radio" name="type_convocation" value="{{ val }}"
+                   {% if forloop.first %}checked{% endif %}>
+            {{ label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Colonne droite : détails de la réunion -->
+    <div class="card animate-fade-up delay-2" style="padding:1.5rem;">
+      <h3 style="font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+                 color:var(--color-text-muted); margin-bottom:1.25rem;">Détails de la convocation</h3>
+
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+
+        <div>
+          <label class="input-label">Objet <span style="color:var(--color-danger);">*</span></label>
+          <input type="text" name="objet" class="input" required
+                 placeholder="Ex : Conseil de classe du 1er trimestre">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem;">
+          <div>
+            <label class="input-label">Date de réunion</label>
+            <input type="date" name="date_convocation" class="input">
+          </div>
+          <div>
+            <label class="input-label">Heure</label>
+            <input type="time" name="heure_convocation" class="input">
+          </div>
+        </div>
+
+        <div>
+          <label class="input-label">Lieu</label>
+          <input type="text" name="lieu" class="input"
+                 placeholder="Ex : Salle de conférence, Direction...">
+        </div>
+
+        <div>
+          <label class="input-label">Corps du message</label>
+          <textarea name="corps" rows="5" class="input" style="resize:vertical;"
+                    placeholder="Texte complémentaire (optionnel)…"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display:flex; gap:.75rem; margin-top:1.25rem; justify-content:flex-end;">
+    <button type="submit" name="format" value="apercu" class="btn-secondary">
+      Aperçu
+    </button>
+    <button type="submit" name="format" value="pdf" class="btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+      </svg>
+      Générer PDF
+    </button>
+  </div>
+</form>
+
+<script>
+function toggleAll(checked) {
+  document.querySelectorAll('.eleve-cb').forEach(cb => cb.checked = checked);
+}
+</script>
+
+{% endblock %}

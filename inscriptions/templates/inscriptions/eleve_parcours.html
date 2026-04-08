@@ -1,0 +1,295 @@
+{% extends "core/base.html" %}
+
+{% block title %}Parcours — {{ eleve.get_nom_complet }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Parcours scolaire</h1>
+    <p class="page-subtitle">
+      {{ eleve.get_nom_complet }} &mdash; {{ eleve.matricule }}
+    </p>
+  </div>
+  <div style="display:flex; gap:var(--space-2);">
+    <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="btn btn-outline">
+      ← Fiche élève
+    </a>
+  </div>
+</div>
+
+{# ── Statistiques rapides ─────────────────────────────────────────────────── #}
+<div style="display:flex; gap:var(--space-3); flex-wrap:wrap; margin-bottom:var(--space-4);" class="animate-fade-up">
+
+  <div class="card" style="flex:1; min-width:120px; padding:var(--space-3) var(--space-4); text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:var(--color-primary);">{{ nb_annees }}</div>
+    <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:2px;">Année{{ nb_annees|pluralize }} scol.</div>
+  </div>
+
+  <div class="card" style="flex:1; min-width:120px; padding:var(--space-3) var(--space-4); text-align:center;">
+    <div style="font-size:1.6rem; font-weight:800; color:#d97706;">{{ nb_redoublements }}</div>
+    <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:2px;">Redoublement{{ nb_redoublements|pluralize }}</div>
+  </div>
+
+  {% if eleve.etablissement_origine %}
+  <div class="card" style="flex:2; min-width:200px; padding:var(--space-3) var(--space-4);">
+    <div style="font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--color-text-muted);">Établissement d'origine</div>
+    <div style="font-weight:600; margin-top:3px;">{{ eleve.etablissement_origine }}</div>
+  </div>
+  {% endif %}
+
+</div>
+
+{# ── Timeline ─────────────────────────────────────────────────────────────── #}
+{% if timeline %}
+<div class="card animate-fade-up delay-1" style="padding:var(--space-4) var(--space-5);">
+
+  <div style="position:relative; padding-left:2.8rem;">
+
+    {# Ligne verticale de la timeline #}
+    <div style="position:absolute; left:1rem; top:.6rem; bottom:.6rem;
+                width:2px; background:var(--color-border);
+                border-radius:1px;"></div>
+
+    {% for entry in timeline %}
+    {% with insc=entry.inscription %}
+
+    {# ── Nœud de la timeline ─────────────────────────────────────────────── #}
+    <div style="position:relative; margin-bottom:{% if not entry.est_derniere %}0{% else %}0{% endif %};">
+
+      {# Point central #}
+      <div style="position:absolute; left:-2.05rem; top:.55rem;
+                  width:1.1rem; height:1.1rem; border-radius:50%;
+                  background:{% if entry.transition == 'REDOUBLEMENT' %}#d97706{% elif entry.transition == 'ABANDON' %}#dc2626{% elif entry.transition == 'DIPLOME' %}#0891b2{% elif entry.est_derniere %}var(--color-primary){% else %}#94a3b8{% endif %};
+                  border:2.5px solid #fff;
+                  box-shadow:0 0 0 2px {% if entry.est_derniere %}var(--color-primary){% else %}#cbd5e1{% endif %};
+                  z-index:1;"></div>
+
+      {# Carte de l'inscription #}
+      <div style="background:var(--color-surface); border:1px solid var(--color-border);
+                  border-radius:var(--radius-md); padding:var(--space-3) var(--space-4);
+                  margin-bottom:var(--space-2);
+                  {% if entry.est_derniere %}border-color:var(--color-primary); border-width:1.5px;{% endif %}">
+
+        {# En-tête : année + classe #}
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:var(--space-2);">
+          <div>
+            <div style="font-size:.72rem; text-transform:uppercase; letter-spacing:.07em;
+                        color:var(--color-text-muted); font-weight:600; margin-bottom:2px;">
+              {{ insc.annee_scolaire }}
+            </div>
+            <div style="font-size:1.05rem; font-weight:700; color:var(--color-text);">
+              {{ insc.classe.nom }}
+              {% if insc.classe.cycle %}
+              <span style="font-size:.75rem; font-weight:400; color:var(--color-text-muted);">
+                &mdash; {{ insc.classe.cycle.nom }}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+
+          {# Badges de statut #}
+          <div style="display:flex; gap:var(--space-1); flex-wrap:wrap; align-items:flex-start;">
+            {% for badge in entry.badges %}
+            <span style="font-size:.7rem; font-weight:700; padding:2px 8px; border-radius:20px;
+                         background:{{ badge.color }}20; color:{{ badge.color }};
+                         border:1px solid {{ badge.color }}40;">
+              {{ badge.label }}
+            </span>
+            {% endfor %}
+            {% if entry.est_derniere %}
+            <span style="font-size:.7rem; font-weight:700; padding:2px 8px; border-radius:20px;
+                         background:var(--color-primary-light, #dcfce7); color:var(--color-primary);
+                         border:1px solid var(--color-primary)40;">
+              En cours
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        {# Infos secondaires #}
+        <div style="margin-top:var(--space-2); display:flex; gap:var(--space-3); flex-wrap:wrap;
+                    font-size:.8rem; color:var(--color-text-muted);">
+          <span>Inscrit le {{ insc.date_inscription|date:"d/m/Y" }}</span>
+          {% if insc.statut_eleve %}
+          <span>· {{ insc.statut_eleve }}</span>
+          {% endif %}
+          {% if insc.est_redoublant and insc.classe_redoublee %}
+          <span style="color:#d97706;">· Redoublait : {{ insc.classe_redoublee }}</span>
+          {% endif %}
+          {% if insc.observations %}
+          <span style="font-style:italic;">· {{ insc.observations|truncatechars:60 }}</span>
+          {% endif %}
+        </div>
+
+        {# Événements manuels de cette année #}
+        {% for ev in entry.evenements %}
+        <div style="margin-top:var(--space-2); padding:var(--space-2) var(--space-3);
+                    background:#f8fafc; border-radius:var(--radius-sm);
+                    border-left:3px solid {{ ev.get_type_evenement_display|yesno:'#2563eb,#6b7280' }};
+                    display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-2);">
+          <div>
+            <span style="font-size:.72rem; font-weight:700; text-transform:uppercase;
+                         letter-spacing:.05em; color:#4a5568;">
+              {{ ev.get_type_evenement_display }}
+            </span>
+            {% if ev.etablissement_transfert %}
+            <span style="font-size:.8rem; color:var(--color-text-muted);"> — {{ ev.etablissement_transfert }}</span>
+            {% endif %}
+            {% if ev.motif %}
+            <div style="font-size:.8rem; color:var(--color-text-muted); margin-top:2px; font-style:italic;">
+              {{ ev.motif|truncatechars:120 }}
+            </div>
+            {% endif %}
+            {% if ev.enregistre_par %}
+            <div style="font-size:.72rem; color:var(--color-text-muted); margin-top:2px;">
+              Enregistré par {{ ev.enregistre_par.get_full_name|default:ev.enregistre_par }} — {{ ev.date_evenement|date:"d/m/Y" }}
+            </div>
+            {% endif %}
+          </div>
+          <form method="post" action="{% url 'inscriptions:evenement_supprimer' ev.pk %}"
+                onsubmit="return confirm('Supprimer cet événement ?');"
+                style="flex-shrink:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn-icon" title="Supprimer"
+                    style="color:var(--color-danger); font-size:.9rem;">✕</button>
+          </form>
+        </div>
+        {% endfor %}
+
+      </div>{# /carte inscription #}
+
+      {# ── Flèche de transition ──────────────────────────────────────────── #}
+      {% if not entry.est_derniere %}
+      <div style="display:flex; align-items:center; gap:var(--space-2);
+                  padding:var(--space-1) 0 var(--space-1) var(--space-2);
+                  margin-bottom:var(--space-2);">
+        {% if entry.transition_meta %}
+        <span style="font-size:1rem; color:{{ entry.transition_meta.color }}; font-weight:700;">
+          {{ entry.transition_meta.icon }}
+        </span>
+        <span style="font-size:.78rem; font-weight:600; color:{{ entry.transition_meta.color }};
+                     background:{{ entry.transition_meta.color }}18; padding:2px 10px;
+                     border-radius:20px; border:1px solid {{ entry.transition_meta.color }}35;">
+          {{ entry.transition_meta.label }}
+          {% if entry.ev_transition and entry.ev_transition.motif %}
+          &mdash; {{ entry.ev_transition.motif|truncatechars:50 }}
+          {% endif %}
+        </span>
+        {% else %}
+        <span style="font-size:.78rem; color:var(--color-text-muted); font-style:italic;">
+          — suite du parcours
+        </span>
+        {% endif %}
+      </div>
+      {% else %}
+        {# Fin de timeline : statut final #}
+        {% if entry.transition == 'ABANDON' %}
+        <div style="margin-top:var(--space-2); padding:var(--space-2) var(--space-3);
+                    background:#fef2f2; border-radius:var(--radius-sm);
+                    border-left:3px solid #dc2626; font-size:.8rem; color:#dc2626; font-weight:600;">
+          Scolarité interrompue (Abandon)
+        </div>
+        {% elif entry.transition == 'DIPLOME' %}
+        <div style="margin-top:var(--space-2); padding:var(--space-2) var(--space-3);
+                    background:#f0f9ff; border-radius:var(--radius-sm);
+                    border-left:3px solid #0891b2; font-size:.8rem; color:#0891b2; font-weight:600;">
+          ✓ Diplôme obtenu{% if entry.ev_transition and entry.ev_transition.motif %} — {{ entry.ev_transition.motif }}{% endif %}
+        </div>
+        {% elif entry.transition == 'TRANSFERT_SORTANT' %}
+        <div style="margin-top:var(--space-2); padding:var(--space-2) var(--space-3);
+                    background:#f5f3ff; border-radius:var(--radius-sm);
+                    border-left:3px solid #7c3aed; font-size:.8rem; color:#7c3aed; font-weight:600;">
+          → Transféré{% if entry.ev_transition and entry.ev_transition.etablissement_transfert %} vers {{ entry.ev_transition.etablissement_transfert }}{% endif %}
+        </div>
+        {% endif %}
+      {% endif %}
+
+    </div>{# /nœud timeline #}
+
+    {% endwith %}
+    {% endfor %}
+
+  </div>{# /timeline relative #}
+</div>
+
+{% else %}
+<div class="card animate-fade-up">
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
+    </div>
+    <p class="empty-state-text">Aucune inscription enregistrée pour cet élève.</p>
+    <a href="{% url 'inscriptions:inscription_create' eleve.pk %}" class="btn btn-primary" style="margin-top:var(--space-3);">
+      Créer une inscription
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{# ── Formulaire d'ajout d'événement manuel ────────────────────────────────── #}
+<div class="card animate-fade-up delay-2" style="margin-top:var(--space-4);">
+  <div style="padding:var(--space-3) var(--space-4) var(--space-2);">
+    <h3 style="font-size:.9rem; font-weight:700; color:var(--color-text); margin:0;">
+      Ajouter un événement
+    </h3>
+    <p style="font-size:.78rem; color:var(--color-text-muted); margin:4px 0 0;">
+      Transfert, diplôme, motif de redoublement, etc.
+    </p>
+  </div>
+
+  <form method="post"
+        style="padding:0 var(--space-4) var(--space-4);
+               display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:var(--space-3);">
+    {% csrf_token %}
+
+    <div>
+      <label class="input-label">Type d'événement <span style="color:var(--color-danger);">*</span></label>
+      <select name="type_evenement" class="input select" required>
+        <option value="">— Choisir —</option>
+        {% for val, label in types_evenement %}
+        <option value="{{ val }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="input-label">Année scolaire <span style="color:var(--color-danger);">*</span></label>
+      <select name="annee_scolaire" class="input select" required>
+        <option value="">— Choisir —</option>
+        {% for annee in annees %}
+        <option value="{{ annee.pk }}">{{ annee }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="input-label">Date</label>
+      <input type="date" name="date_evenement" class="input"
+             value="{% now 'Y-m-d' %}">
+    </div>
+
+    <div>
+      <label class="input-label">Établissement (transfert)</label>
+      <input type="text" name="etablissement_transfert" class="input"
+             placeholder="Nom de l'établissement…">
+    </div>
+
+    <div style="grid-column:1 / -1;">
+      <label class="input-label">Motif / Observations</label>
+      <textarea name="motif" class="input" rows="2"
+                placeholder="Raison du redoublement, nom du diplôme obtenu…"
+                style="resize:vertical;"></textarea>
+    </div>
+
+    <div style="grid-column:1 / -1; display:flex; justify-content:flex-end;">
+      <button type="submit" class="btn btn-primary">Enregistrer l'événement</button>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

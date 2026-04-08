@@ -1,0 +1,38 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">Espace personnel</p>
+    <h1 class="page-title">Notifications
+      {% if nb_non_lues %}<span class="badge badge-danger" style="font-size:0.75rem; margin-left:8px;">{{ nb_non_lues }}</span>{% endif %}
+    </h1>
+  </div>
+  {% if nb_non_lues %}
+  <a href="{% url 'core:notifications_tout_lu' %}" class="btn-outline">
+    Tout marquer comme lu
+  </a>
+  {% endif %}
+</div>
+
+<div class="card animate-fade-up" style="overflow:hidden;">
+  {% if notifications %}
+  <div id="notifications-liste">
+    {% for notif in notifications %}
+    {% include 'core/partials/notification_item.html' %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="padding:var(--space-10); text-align:center;">
+    <div style="width:52px; height:52px; border-radius:50%; background:var(--color-primary-ambient); display:flex; align-items:center; justify-content:center; margin:0 auto var(--space-4);">
+      <svg width="24" height="24" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+      </svg>
+    </div>
+    <p style="color:var(--color-text-muted); font-size:0.9rem;">Aucune notification pour le moment.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -7,32 +7,148 @@
 <div class="page-header animate-fade-up">
   <div>
     <h1 class="page-title">Mon Profil</h1>
-    <p class="page-subtitle">Informations de votre compte.</p>
+    <p class="page-subtitle">Gérez vos informations personnelles et votre mot de passe.</p>
   </div>
 </div>
 
-<div style="max-width:560px;" class="animate-fade-up delay-1">
+<div class="animate-fade-up delay-1" style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-6); align-items:start; max-width:900px; margin-bottom:var(--space-6);">
+
+  {# ── Card 1 : Informations personnelles ── #}
   <div class="card">
-    <div style="padding:var(--space-6);">
-      <div class="d-flex justify-between align-center" style="padding:var(--space-3) 0; font-size:0.9rem; border-bottom:1px solid var(--color-border);">
-        <span class="text-muted">Email</span>
-        <span class="fw-medium">{{ user.email }}</span>
-      </div>
-      <div class="d-flex justify-between align-center" style="padding:var(--space-3) 0; font-size:0.9rem; border-bottom:1px solid var(--color-border);">
-        <span class="text-muted">Nom complet</span>
-        <span class="fw-medium">{{ user.get_full_name|default:"—" }}</span>
-      </div>
-      <div class="d-flex justify-between align-center" style="padding:var(--space-3) 0; font-size:0.9rem; border-bottom:1px solid var(--color-border);">
-        <span class="text-muted">Rôle</span>
-        <span class="fw-medium">{{ user.get_role_display }}</span>
-      </div>
-      {% if user.etablissement %}
-      <div class="d-flex justify-between align-center" style="padding:var(--space-3) 0; font-size:0.9rem;">
-        <span class="text-muted">Établissement</span>
-        <span class="fw-medium">{{ user.etablissement }}</span>
-      </div>
-      {% endif %}
+    <div class="card-header">
+      <span class="card-title">Informations personnelles</span>
     </div>
+    <form method="post" action="{% url 'accounts:profile' %}" style="padding:var(--space-5);">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label">Nom</label>
+        {{ form.last_name }}
+        {% if form.last_name.errors %}<p class="form-error">{{ form.last_name.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Prénom(s)</label>
+        {{ form.first_name }}
+        {% if form.first_name.errors %}<p class="form-error">{{ form.first_name.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Adresse email</label>
+        {{ form.email }}
+        {% if form.email.errors %}<p class="form-error">{{ form.email.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Téléphone <span class="text-muted" style="font-weight:400;">(optionnel)</span></label>
+        {{ form.telephone }}
+        {% if form.telephone.errors %}<p class="form-error">{{ form.telephone.errors.0 }}</p>{% endif %}
+      </div>
+
+      {# Infos non modifiables #}
+      <div style="margin-top:var(--space-4); padding-top:var(--space-4); border-top:1px solid var(--color-border);">
+        <div class="d-flex justify-between" style="font-size:0.85rem; padding:var(--space-2) 0;">
+          <span class="text-muted">Rôle</span>
+          <span class="fw-medium">{{ request.user.get_role_display }}</span>
+        </div>
+        {% if request.user.etablissement %}
+        <div class="d-flex justify-between" style="font-size:0.85rem; padding:var(--space-2) 0;">
+          <span class="text-muted">Établissement</span>
+          <span class="fw-medium">{{ request.user.etablissement }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div style="margin-top:var(--space-5);">
+        <button type="submit" class="btn-primary" style="width:100%;">Enregistrer les modifications</button>
+      </div>
+    </form>
+  </div>
+
+  {# ── Card 2 : Changer le mot de passe ── #}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Changer le mot de passe</span>
+    </div>
+    <form method="post" action="{% url 'accounts:profile_change_password' %}" style="padding:var(--space-5);">
+      {% csrf_token %}
+
+      {% if pw_form.non_field_errors %}
+      <div class="alert alert-danger mb-4">{{ pw_form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label">Mot de passe actuel</label>
+        {{ pw_form.old_password }}
+        {% if pw_form.old_password.errors %}<p class="form-error">{{ pw_form.old_password.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nouveau mot de passe</label>
+        {{ pw_form.password1 }}
+        {% if pw_form.password1.errors %}<p class="form-error">{{ pw_form.password1.errors.0 }}</p>{% endif %}
+        <p class="form-hint">Au moins 8 caractères.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Confirmer le nouveau mot de passe</label>
+        {{ pw_form.password2 }}
+        {% if pw_form.password2.errors %}<p class="form-error">{{ pw_form.password2.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div style="margin-top:var(--space-5);">
+        <button type="submit" class="btn-secondary" style="width:100%;">Modifier le mot de passe</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+{# ── Card 3 : Double authentification ── #}
+<div class="card animate-fade-up delay-2" style="max-width:900px; margin-top:var(--space-6);">
+  <div class="card-header" style="display:flex; align-items:center; justify-content:space-between;">
+    <span class="card-title">Double authentification (2FA)</span>
+    {% if request.user.totp_enabled %}
+    <span style="background:#dcfce7; color:#166534; font-size:0.75rem; font-weight:600;
+                 padding:2px 10px; border-radius:20px;">Activée</span>
+    {% else %}
+    <span style="background:#f1f5f9; color:#64748b; font-size:0.75rem; font-weight:600;
+                 padding:2px 10px; border-radius:20px;">Désactivée</span>
+    {% endif %}
+  </div>
+  <div style="padding:var(--space-5);">
+    {% if request.user.totp_enabled %}
+    <p style="font-size:0.9rem; color:var(--color-text-muted); margin-bottom:var(--space-4);">
+      Votre compte est protégé par une application d'authentification TOTP.
+      Un code à 6 chiffres vous sera demandé à chaque connexion.
+    </p>
+    <form method="post" action="{% url 'accounts:totp_disable' %}"
+          style="display:flex; align-items:flex-end; gap:var(--space-3);">
+      {% csrf_token %}
+      <div class="form-group" style="margin:0; flex:1;">
+        <label class="input-label">Code de confirmation (pour désactiver)</label>
+        <input type="text" name="code" required maxlength="6" pattern="[0-9]{6}"
+               inputmode="numeric" class="input w-full" placeholder="000000"
+               style="letter-spacing:.3em; text-align:center;">
+      </div>
+      <button type="submit" class="btn-secondary"
+              style="color:#dc2626; border-color:#fca5a5;"
+              onclick="return confirm('Désactiver la double authentification ?')">
+        Désactiver
+      </button>
+    </form>
+    {% else %}
+    <p style="font-size:0.9rem; color:var(--color-text-muted); margin-bottom:var(--space-4);">
+      La double authentification ajoute une couche de sécurité supplémentaire.
+      À chaque connexion, un code temporaire généré par votre application vous sera demandé
+      en plus de votre mot de passe.
+    </p>
+    <a href="{% url 'accounts:totp_setup' %}" class="btn-primary">Activer la 2FA</a>
+    {% endif %}
   </div>
 </div>
 

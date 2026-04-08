@@ -1,0 +1,109 @@
+{% extends "core/base.html" %}
+
+{% block title %}Circulaire — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Circulaire</h1>
+    <p class="page-subtitle">Rédiger et diffuser une communication officielle</p>
+  </div>
+  <a href="{% url 'documents:document_list' %}" class="btn-secondary">Archives</a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+
+  <div style="display:grid; grid-template-columns:1fr 320px; gap:1.25rem; align-items:start;">
+
+    <!-- Corps de la circulaire -->
+    <div style="display:flex; flex-direction:column; gap:1.25rem;">
+
+      <div class="card animate-fade-up delay-1" style="padding:1.5rem;">
+        <h3 style="font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+                   color:var(--color-text-muted); margin-bottom:1.25rem;">Contenu de la circulaire</h3>
+
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+
+          <div>
+            <label class="input-label">Titre / Numéro <span style="color:var(--color-danger);">*</span></label>
+            <input type="text" name="titre" class="input" required
+                   placeholder="Ex : Circulaire n° 01/2026 — Rentrée scolaire">
+          </div>
+
+          <div>
+            <label class="input-label">Objet</label>
+            <input type="text" name="objet" class="input"
+                   placeholder="Ex : Modalités de la rentrée scolaire 2025-2026">
+          </div>
+
+          <div>
+            <label class="input-label">Date de la circulaire</label>
+            <input type="date" name="date_circulaire" class="input">
+          </div>
+
+          <div>
+            <label class="input-label">Corps du texte <span style="color:var(--color-danger);">*</span></label>
+            <textarea name="corps" rows="12" class="input" style="resize:vertical; font-family:inherit;"
+                      required placeholder="Rédigez ici le contenu de la circulaire…"></textarea>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Destinataires -->
+    <div class="card animate-fade-up delay-1" style="padding:1.5rem; position:sticky; top:1rem;">
+      <h3 style="font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+                 color:var(--color-text-muted); margin-bottom:1rem;">Destinataires</h3>
+
+      <div style="display:flex; gap:.5rem; margin-bottom:.75rem;">
+        <button type="button" onclick="toggleClasses(true)" class="btn-secondary btn-sm">Toutes</button>
+        <button type="button" onclick="toggleClasses(false)" class="btn-secondary btn-sm">Aucune</button>
+      </div>
+
+      <div style="max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:.3rem;">
+        {% for cl in classes %}
+        <label style="display:flex; align-items:center; gap:.6rem; padding:.35rem .5rem; border-radius:6px;
+                      cursor:pointer; font-size:.87rem;"
+               onmouseover="this.style.background='var(--color-bg-hover)'"
+               onmouseout="this.style.background=''">
+          <input type="checkbox" name="classes" value="{{ cl.pk }}" class="classe-cb" checked>
+          <span>{{ cl.nom }}</span>
+          <span style="font-size:.75rem; color:var(--color-text-muted); margin-left:auto;">{{ cl.cycle.nom }}</span>
+        </label>
+        {% empty %}
+        <p style="color:var(--color-text-muted); font-size:.83rem; margin:0;">
+          Aucune classe active trouvée.
+        </p>
+        {% endfor %}
+      </div>
+
+      <p style="font-size:.75rem; color:var(--color-text-muted); margin-top:.75rem; margin-bottom:0;">
+        Si aucune classe n'est cochée, la circulaire sera adressée à l'ensemble de l'établissement.
+      </p>
+    </div>
+
+  </div>
+
+  <div style="display:flex; gap:.75rem; margin-top:1.25rem; justify-content:flex-end;">
+    <button type="submit" name="format" value="apercu" class="btn-secondary">Aperçu</button>
+    <button type="submit" name="format" value="pdf" class="btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+      </svg>
+      Générer PDF
+    </button>
+  </div>
+</form>
+
+<script>
+function toggleClasses(checked) {
+  document.querySelectorAll('.classe-cb').forEach(cb => cb.checked = checked);
+}
+</script>
+
+{% endblock %}

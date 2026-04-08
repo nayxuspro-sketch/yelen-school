@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('etablissements', '0001_initial'),
-        ('personnel', '0001_initial'),
     ]
 
     operations = [
@@ -251,7 +250,7 @@ class Migration(migrations.Migration):
                 ('actif', models.BooleanField(default=True, verbose_name='Signataire actif')),
                 ('annee_scolaire', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='signataires_documents', to='parametres.anneescolaire', verbose_name='Année Scolaire')),
                 ('cycle', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='signataires', to='parametres.cycle', verbose_name='Cycle')),
-                ('membre_personnel', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='signatures_documents', to='personnel.membrepersonnel', verbose_name='Membre du Personnel Signataire')),
+                ('membre_personnel_id', models.UUIDField(blank=True, null=True, verbose_name='ID Membre du Personnel Signataire')),
                 ('type_document', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='signataires', to='parametres.typedocument', verbose_name='Type de Document')),
             ],
             options={

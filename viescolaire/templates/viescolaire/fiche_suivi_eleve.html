@@ -1,0 +1,511 @@
+{% extends "core/base.html" %}
+
+{% block title %}Fiche de suivi — {{ inscription.eleve.nom }} {{ inscription.eleve.prenom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<!-- ── En-tête ──────────────────────────────────────────────────────────── -->
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="javascript:history.back()" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</h1>
+      <p class="page-subtitle">
+        Fiche de suivi individuelle ·
+        <strong>{{ inscription.classe.nom }}</strong> ·
+        {{ inscription.annee_scolaire.libelle }}
+      </p>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'finances:situation_eleve' inscription.id %}" class="btn-secondary">
+      Situation financière
+    </a>
+    <a href="{% url 'viescolaire:sanction_create' %}?inscription={{ inscription.id }}" class="btn-secondary">
+      + Sanction
+    </a>
+  </div>
+</div>
+
+<!-- ── Carte élève + stats ────────────────────────────────────────────── -->
+<div style="display:grid; grid-template-columns:280px 1fr; gap:1.25rem; align-items:start; margin-bottom:1.5rem;">
+
+  <!-- Profil élève -->
+  <div class="card animate-fade-up delay-1" style="padding:1.5rem; display:flex; flex-direction:column; gap:.75rem;">
+    <div style="display:flex; align-items:center; gap:1rem;">
+      {% if inscription.eleve.photo %}
+      <img src="{{ inscription.eleve.photo.url }}" alt="photo"
+           style="width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid var(--color-primary);">
+      {% else %}
+      <div style="width:56px; height:56px; border-radius:50%; background:rgba(0,168,107,0.15);
+                  display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:700;
+                  color:var(--color-primary); flex-shrink:0;">
+        {{ inscription.eleve.prenom|first|upper }}
+      </div>
+      {% endif %}
+      <div>
+        <div style="font-weight:700; font-size:.95rem; line-height:1.3;">
+          {{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}
+        </div>
+        <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:2px;">
+          {{ inscription.eleve.matricule|default:"—" }}
+        </div>
+      </div>
+    </div>
+
+    {% for row in profile_rows %}{% endfor %}
+    <div style="display:flex; flex-direction:column; gap:.4rem; font-size:.82rem; border-top:1px solid var(--color-border); padding-top:.75rem;">
+      <div class="d-flex justify-between">
+        <span style="color:var(--color-text-muted);">Classe</span>
+        <span class="fw-medium">{{ inscription.classe.nom }}</span>
+      </div>
+      <div class="d-flex justify-between">
+        <span style="color:var(--color-text-muted);">Cycle</span>
+        <span>{{ inscription.classe.get_cycle_display|default:"—" }}</span>
+      </div>
+      <div class="d-flex justify-between">
+        <span style="color:var(--color-text-muted);">Statut</span>
+        <span class="badge badge-{% if inscription.statut == 'AFFECTE' %}success{% else %}secondary{% endif %}" style="font-size:.75rem;">
+          {{ inscription.get_statut_display }}
+        </span>
+      </div>
+      {% if inscription.statut_eleve %}
+      <div class="d-flex justify-between">
+        <span style="color:var(--color-text-muted);">Profil tarifaire</span>
+        <span>{{ inscription.statut_eleve.nom }}</span>
+      </div>
+      {% endif %}
+      {% if inscription.eleve.date_naissance %}
+      <div class="d-flex justify-between">
+        <span style="color:var(--color-text-muted);">Naissance</span>
+        <span>{{ inscription.eleve.date_naissance|date:"d/m/Y" }}</span>
+      </div>
+      {% endif %}
+      {% if inscription.eleve.telephone_parent %}
+      <div class="d-flex justify-between">
+        <span style="color:var(--color-text-muted);">Tél. parent</span>
+        <span>{{ inscription.eleve.telephone_parent }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Widget capital discipline -->
+    {% if capital %}
+    <div style="border-top:1px solid var(--color-border); padding-top:.75rem;">
+      <div style="font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+                  color:var(--color-text-muted); margin-bottom:.5rem;">Capital discipline</div>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div>
+          <span style="font-size:1.6rem; font-weight:800;
+                       color:{% if capital.statut == 'EXCLUSION' %}#991b1b
+                       {% elif capital.statut == 'CONSEIL' %}var(--color-danger)
+                       {% elif capital.statut == 'ALERTE' %}var(--color-warning)
+                       {% else %}var(--color-primary){% endif %};">
+            {{ capital.solde }}
+          </span>
+          <span style="font-size:.75rem; color:var(--color-text-muted); margin-left:4px;">/ {{ capital.points_depart }}</span>
+        </div>
+        {% if capital.statut == 'EXCLUSION' %}
+        <span class="badge" style="background:rgba(153,27,27,.15); color:#991b1b; font-size:.7rem;">Exclusion</span>
+        {% elif capital.statut == 'CONSEIL' %}
+        <span class="badge badge-danger" style="font-size:.7rem;">Conseil</span>
+        {% elif capital.statut == 'ALERTE' %}
+        <span class="badge badge-warning" style="font-size:.7rem;">Alerte</span>
+        {% else %}
+        <span class="badge badge-success" style="font-size:.7rem;">Normal</span>
+        {% endif %}
+      </div>
+      {% if capital.total_sanctions != 0 %}
+      <div style="font-size:.75rem; color:var(--color-text-muted); margin-top:.25rem;">
+        Sanctions :
+        <span style="color:{% if capital.total_sanctions < 0 %}var(--color-danger){% else %}var(--color-primary){% endif %}; font-weight:600;">
+          {% if capital.total_sanctions > 0 %}+{% endif %}{{ capital.total_sanctions }} pts
+        </span>
+      </div>
+      {% endif %}
+      {% if config_disc and capital.statut != 'NORMAL' %}
+      <p style="font-size:.75rem; color:var(--color-text-muted); margin-top:.4rem; margin-bottom:0;">
+        {{ config_disc.message_alerte }}
+      </p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+
+
+  <!-- Stats en grille -->
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:auto auto; gap:.9rem;">
+
+    <!-- Absences -->
+    <div class="card animate-fade-up delay-1" style="padding:1.25rem; text-align:center;">
+      <div style="font-size:2rem; font-weight:800;
+                  color:{% if nb_absences > 5 %}var(--color-danger){% elif nb_absences > 2 %}var(--color-warning,#F5A623){% else %}var(--color-text){% endif %};">
+        {{ nb_absences }}
+      </div>
+      <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:3px;">Absence{{ nb_absences|pluralize }}</div>
+      {% if nb_excuses %}
+      <div style="font-size:.72rem; color:var(--color-text-muted); margin-top:2px;">dont {{ nb_excuses }} excusée{{ nb_excuses|pluralize }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Retards -->
+    <div class="card animate-fade-up delay-1" style="padding:1.25rem; text-align:center;">
+      <div style="font-size:2rem; font-weight:800;
+                  color:{% if nb_retards > 5 %}var(--color-warning,#F5A623){% else %}var(--color-text){% endif %};">
+        {{ nb_retards }}
+      </div>
+      <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:3px;">Retard{{ nb_retards|pluralize }}</div>
+    </div>
+
+    <!-- Sanctions -->
+    <div class="card animate-fade-up delay-1" style="padding:1.25rem; text-align:center;">
+      <div style="font-size:2rem; font-weight:800;
+                  color:{% if nb_sanctions_actives > 0 %}var(--color-danger){% else %}var(--color-text){% endif %};">
+        {{ nb_sanctions_actives }}
+      </div>
+      <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:3px;">Sanction{{ nb_sanctions_actives|pluralize }}</div>
+    </div>
+
+    <!-- Moyennes par trimestre -->
+    {% for p in periodes %}
+    <div class="card animate-fade-up delay-2" style="padding:1.1rem 1.25rem;">
+      <div style="font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+                  color:var(--color-text-muted); margin-bottom:.3rem;">
+        {{ p.trimestre.nom }}
+      </div>
+      {% if p.moyenne %}
+      <div style="font-size:1.6rem; font-weight:800;
+                  color:{% if p.moyenne.moyenne >= 10 %}var(--color-primary){% else %}var(--color-danger){% endif %};">
+        {{ p.moyenne.moyenne|floatformat:2 }}
+      </div>
+      <div style="font-size:.72rem; color:var(--color-text-muted);">
+        Rang : {% if p.moyenne.rang %}{{ p.moyenne.rang }}e{% else %}—{% endif %}
+      </div>
+      {% else %}
+      <div style="font-size:1.2rem; font-weight:600; color:var(--color-text-muted);">—</div>
+      <div style="font-size:.72rem; color:var(--color-text-muted);">Pas encore calculée</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% if not periodes %}
+    <div class="card animate-fade-up delay-2" style="padding:1.1rem 1.25rem; grid-column:span 3;">
+      <p style="color:var(--color-text-muted); font-size:.85rem; margin:0;">Aucune période évaluative configurée.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ── Onglets ────────────────────────────────────────────────────────────── -->
+<div class="animate-fade-up delay-2">
+
+  <!-- Navigation onglets -->
+  <div style="display:flex; gap:0; border-bottom:2px solid var(--color-border); margin-bottom:1.5rem; overflow-x:auto;">
+    {% for tab_id, tab_label, tab_count in tabs_def %}
+    <button onclick="afficherOnglet('{{ tab_id }}')" id="tab-btn-{{ tab_id }}"
+            style="padding:.65rem 1.15rem; border:none; background:none; cursor:pointer;
+                   font-size:.85rem; font-weight:500; white-space:nowrap;
+                   border-bottom:2px solid transparent; margin-bottom:-2px;
+                   color:var(--color-text-muted); transition:all .15s;"
+            class="tab-btn">
+      {{ tab_label }}{% if tab_count %} <span style="background:var(--color-primary); color:#fff; border-radius:10px; padding:1px 6px; font-size:.7rem; margin-left:4px;">{{ tab_count }}</span>{% endif %}
+    </button>
+    {% endfor %}
+  </div>
+
+  <!-- ── Onglet : Présences / Absences ── -->
+  <div id="tab-presences" class="tab-content">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem;">
+
+      <!-- Absences -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Absences</span>
+          <span style="font-size:.8rem; color:var(--color-text-muted);">{{ nb_absences }} au total</span>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Matière</th><th>Statut</th></tr></thead>
+            <tbody>
+              {% for p in absences %}
+              <tr>
+                <td style="white-space:nowrap;">{{ p.appel.date|date:"d/m/Y" }}</td>
+                <td>{{ p.appel.matiere.nom|default:"—" }}</td>
+                <td>
+                  <span class="badge badge-{% if p.statut == 'EXCUSE' %}secondary{% else %}danger{% endif %}" style="font-size:.72rem;">
+                    {{ p.get_statut_display }}
+                  </span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="text-center text-muted py-4">Aucune absence enregistrée.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Retards -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Retards</span>
+          <span style="font-size:.8rem; color:var(--color-text-muted);">{{ nb_retards }} au total</span>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Matière</th><th>Durée (min)</th></tr></thead>
+            <tbody>
+              {% for p in retards %}
+              <tr>
+                <td style="white-space:nowrap;">{{ p.appel.date|date:"d/m/Y" }}</td>
+                <td>{{ p.appel.matiere.nom|default:"—" }}</td>
+                <td class="text-center">{{ p.minutes_retard|default:"—" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="text-center text-muted py-4">Aucun retard enregistré.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Onglet : Notes ── -->
+  <div id="tab-notes" class="tab-content" style="display:none;">
+    {% for p in periodes %}
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <div style="display:flex; align-items:center; gap:.75rem;">
+          <span class="card-title">{{ p.trimestre.nom }}</span>
+          {% if p.moyenne %}
+          <span style="padding:3px 10px; border-radius:6px; font-size:.82rem; font-weight:700;
+                        background:{% if p.moyenne.moyenne >= 10 %}rgba(0,168,107,.15){% else %}rgba(239,68,68,.12){% endif %};
+                        color:{% if p.moyenne.moyenne >= 10 %}var(--color-primary){% else %}var(--color-danger){% endif %};">
+            Moy. {{ p.moyenne.moyenne|floatformat:2 }} / 20 · Rang {{ p.moyenne.rang|default:"—" }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Matière</th>
+              <th class="text-center">Coeff.</th>
+              <th class="text-center">Moyenne</th>
+              <th class="text-center">Rang</th>
+              <th class="text-center">Notes saisies</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in p.resultats %}
+            <tr {% if r.dispense %}style="opacity:.55;"{% endif %}>
+              <td class="fw-medium">{{ r.enseignement.matiere.nom }}</td>
+              <td class="text-center">{{ r.coefficient_utilise|default:"—" }}</td>
+              <td class="text-center fw-semibold">
+                {% if r.dispense %}
+                  <span class="text-muted" style="font-size:.8rem;">Dispensé</span>
+                {% elif r.moyenne is not None %}
+                  <span style="color:{% if r.moyenne >= 10 %}var(--color-primary){% else %}var(--color-danger){% endif %};">
+                    {{ r.moyenne|floatformat:2 }}
+                  </span>
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-center">{{ r.rang|default:"—" }}</td>
+              <td class="text-center">{{ r.nb_notes }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4">Aucun résultat pour cette période.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% empty %}
+    <div class="card" style="padding:2rem; text-align:center; color:var(--color-text-muted);">
+      Aucune période évaluative configurée pour cette année scolaire.
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Onglet : Sanctions ── -->
+  <div id="tab-sanctions" class="tab-content" style="display:none;">
+    <div class="card">
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Motif</th>
+              <th>Durée</th>
+              <th>Statut</th>
+              <th>Points</th>
+              <th>Parents convoqués</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in sanctions %}
+            <tr>
+              <td style="white-space:nowrap;">{{ s.date_sanction|date:"d/m/Y" }}</td>
+              <td class="fw-medium">{{ s.type_sanction.libelle }}</td>
+              <td style="max-width:280px;">{{ s.motif }}</td>
+              <td class="text-center">{% if s.duree_jours %}{{ s.duree_jours }} j{% else %}—{% endif %}</td>
+              <td>
+                <span class="badge badge-{% if s.statut == 'CONFIRME' %}danger{% elif s.statut == 'ANNULE' %}secondary{% elif s.statut == 'LEVEE' %}success{% else %}gold{% endif %}"
+                      style="font-size:.72rem;">
+                  {{ s.get_statut_display }}
+                </span>
+              </td>
+              <td class="text-center fw-semibold"
+                  style="color:{% if s.points > 0 %}var(--color-primary){% elif s.points < 0 %}var(--color-danger){% else %}var(--color-text-muted){% endif %};">
+                {% if s.points > 0 %}+{% endif %}{{ s.points|floatformat:2|default:"0" }}
+              </td>
+              <td class="text-center">
+                {% if s.parents_convoques %}
+                  <svg width="14" height="14" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                  </svg>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-6">Aucune sanction enregistrée.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Onglet : Conseil de classe ── -->
+  <div id="tab-conseil" class="tab-content" style="display:none;">
+    <div class="card">
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Période</th>
+              <th>Décision</th>
+              <th>Mentions</th>
+              <th>Appréciation du conseil</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in decisions %}
+            <tr>
+              <td style="white-space:nowrap;">{{ d.conseil.trimestre.nom }}</td>
+              <td>
+                <span class="badge badge-{% if d.decision == 'PASSAGE' %}success{% elif d.decision == 'REDOUBLEMENT' %}danger{% elif d.decision == 'EXCLUSION' %}danger{% else %}secondary{% endif %}"
+                      style="font-size:.75rem;">
+                  {{ d.get_decision_display }}
+                </span>
+              </td>
+              <td>
+                <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                  {% if d.felicitations %}
+                  <span class="badge badge-gold" style="font-size:.7rem;">Félicitations</span>
+                  {% endif %}
+                  {% if d.encouragements %}
+                  <span class="badge badge-blue" style="font-size:.7rem;">Encouragements</span>
+                  {% endif %}
+                  {% if d.mention_honneur %}
+                  <span class="badge badge-green" style="font-size:.7rem;">Mention d'honneur</span>
+                  {% endif %}
+                  {% if not d.felicitations and not d.encouragements and not d.mention_honneur %}—{% endif %}
+                </div>
+              </td>
+              <td style="max-width:300px; font-size:.85rem;">{{ d.appreciation|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-6">Aucune décision de conseil enregistrée.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Onglet : Activités parascolaires ── -->
+  <div id="tab-activites" class="tab-content" style="display:none;">
+    {% if participations %}
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:1rem;">
+      {% for pa in participations %}
+      <div class="card" style="padding:1.25rem;">
+        <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.6rem;">
+          <div style="width:36px; height:36px; border-radius:8px; background:rgba(0,168,107,.12);
+                      display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">
+            {% if pa.activite.type_activite == 'SPORT' %}⚽
+            {% elif pa.activite.type_activite == 'CLUB' %}🎭
+            {% elif pa.activite.type_activite == 'ART' %}🎨
+            {% elif pa.activite.type_activite == 'ACADEMIQUE' %}📚
+            {% else %}✨{% endif %}
+          </div>
+          <div>
+            <div class="fw-semibold" style="font-size:.88rem; line-height:1.3;">{{ pa.activite.nom }}</div>
+            <div style="font-size:.75rem; color:var(--color-text-muted);">{{ pa.activite.get_type_activite_display }}</div>
+          </div>
+        </div>
+        {% if pa.activite.jour_reunion and pa.activite.heure_debut %}
+        <div style="font-size:.78rem; color:var(--color-text-muted);">
+          {{ pa.activite.get_jour_reunion_display }} à {{ pa.activite.heure_debut|time:"H\hi" }}
+        </div>
+        {% endif %}
+        {% if pa.observations %}
+        <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:.4rem; font-style:italic;">
+          {{ pa.observations }}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="padding:3rem; text-align:center; color:var(--color-text-muted);">
+      <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin:0 auto .75rem; opacity:.4; display:block;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      Cet élève ne participe à aucune activité parascolaire.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+const TABS = ['presences', 'notes', 'sanctions', 'conseil', 'activites'];
+
+function afficherOnglet(id) {
+  TABS.forEach(t => {
+    const content = document.getElementById('tab-' + t);
+    const btn     = document.getElementById('tab-btn-' + t);
+    if (!content || !btn) return;
+    const actif = (t === id);
+    content.style.display = actif ? 'block' : 'none';
+    btn.style.color        = actif ? 'var(--color-primary)' : 'var(--color-text-muted)';
+    btn.style.borderBottomColor = actif ? 'var(--color-primary)' : 'transparent';
+    btn.style.fontWeight   = actif ? '600' : '500';
+  });
+  // Sauvegarder l'onglet actif dans l'URL (hash)
+  history.replaceState(null, '', '#' + id);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const hash = location.hash.replace('#', '') || 'presences';
+  afficherOnglet(TABS.includes(hash) ? hash : 'presences');
+});
+</script>
+
+{% comment %}
+  tabs_def doit etre injecte par la vue. On le simule ici en dur
+  (le template Django ne peut pas construire de tuples en contexte inline).
+  La vue injecte: tabs_def = [('presences','Présences',nb), ...]
+{% endcomment %}
+
+{% endblock %}

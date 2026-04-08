@@ -1,0 +1,79 @@
+{% extends "pedagogie/pdf/bulletin_base.html" %}
+
+{% block pdf_content %}
+
+<div class="document-title">
+    <h2 style="text-transform:uppercase; letter-spacing:.5pt;">
+        LISTE OFFICIELLE DES CANDIDATS
+    </h2>
+    <p style="font-size:9pt; color:#475569;">
+        {{ session.libelle }}
+        &nbsp;|&nbsp; {{ session.get_type_examen_display }}
+        &nbsp;|&nbsp; Année scolaire : <strong>{{ session.annee_scolaire.libelle }}</strong>
+        {% if centre_selectionne %}
+        &nbsp;|&nbsp; Centre : <strong>{{ centre_selectionne.code_centre }} — {{ centre_selectionne.nom }}</strong>
+        {% endif %}
+    </p>
+    <p style="font-size:8pt; color:#94a3b8;">
+        Du {{ session.date_debut|date:"d/m/Y" }} au {{ session.date_fin|date:"d/m/Y" }}
+    </p>
+</div>
+
+{% if candidats %}
+<table>
+    <thead>
+        <tr>
+            <th style="text-align:center; width:8%;">N° Table</th>
+            <th style="text-align:left; width:30%;">Nom et Prénom</th>
+            <th style="text-align:center; width:12%;">Matricule</th>
+            <th style="text-align:center; width:12%;">Classe</th>
+            <th style="text-align:left; width:22%;">Centre</th>
+            <th style="text-align:center; width:10%;">Statut</th>
+            <th style="text-align:center; width:6%;">Moy.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in candidats %}
+        <tr style="{% cycle '' 'background:#f8fafc;' %}">
+            <td style="text-align:center; font-weight:700; font-family:monospace;">
+                {{ c.numero_table|default:"—" }}
+            </td>
+            <td style="font-weight:600;">
+                {{ c.inscription.eleve.nom|upper }} {{ c.inscription.eleve.prenom }}
+            </td>
+            <td style="text-align:center; font-family:monospace; font-size:7.5pt; color:#64748b;">
+                {{ c.inscription.eleve.matricule|default:"—" }}
+            </td>
+            <td style="text-align:center;">
+                {{ c.inscription.classe.nom|default:"—" }}
+            </td>
+            <td style="font-size:7.5pt; color:#334155;">
+                {% if c.centre %}{{ c.centre.code_centre }} — {{ c.centre.nom }}{% else %}—{% endif %}
+            </td>
+            <td style="text-align:center; font-size:7pt;
+                {% if c.statut == 'ADMIS' %}color:#166534; font-weight:700;
+                {% elif c.statut == 'AJOURNE' %}color:#92400e; font-weight:700;
+                {% elif c.statut == 'ABSENT' or c.statut == 'EXCLU' %}color:#991b1b;
+                {% else %}color:#475569;{% endif %}">
+                {{ c.get_statut_display }}
+            </td>
+            <td style="text-align:center; font-weight:700;
+                {% if c.moyenne_examen %}{% if c.moyenne_examen >= 10 %}color:#166534;{% else %}color:#991b1b;{% endif %}{% endif %}">
+                {% if c.moyenne_examen is not None %}{{ c.moyenne_examen|floatformat:2 }}{% else %}—{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p style="font-size:7.5pt; color:#64748b; margin-top:6pt; text-align:right;">
+    Total : {{ candidats|length }} candidat{{ candidats|length|pluralize }}
+</p>
+
+{% else %}
+<p style="text-align:center; color:#94a3b8; font-style:italic; margin-top:20pt;">
+    Aucun candidat inscrit pour cette session.
+</p>
+{% endif %}
+
+{% endblock %}

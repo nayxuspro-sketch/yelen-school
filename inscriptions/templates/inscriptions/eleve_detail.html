@@ -17,27 +17,61 @@
     </div>
   </div>
   <div class="d-flex gap-2">
+    <form method="post" action="{% url 'inscriptions:eleve_delete' eleve.pk %}" style="display:inline;"
+          data-confirm="Désactiver {{ eleve.get_nom_complet }} ? Cette action peut être annulée par un administrateur.">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary" style="color:var(--color-danger);">
+        Désactiver
+      </button>
+    </form>
+    <a href="{% url 'inscriptions:eleve_parcours' eleve.pk %}" class="btn-secondary">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:4px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      Parcours
+    </a>
     <a href="{% url 'inscriptions:eleve_update' eleve.pk %}" class="btn-secondary">Modifier le profil</a>
     <a href="{% url 'inscriptions:inscription_create' eleve.pk %}" class="btn-primary">Inscrire cette année</a>
   </div>
 </div>
 
-<!-- Info rapide -->
-<div class="card mb-6 animate-fade-up delay-1" style="padding:var(--space-4);">
-  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-4);">
-    <div>
-      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Dernière Classe</div>
-      <div class="fw-medium">{{ eleve.last_classe|default:"Non renseignée" }}</div>
-    </div>
-    <div>
-      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Téléphone Parents</div>
-      <div class="fw-medium">{{ eleve.telephone_parent|default:"-" }}</div>
-    </div>
-    <div>
-      <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Lieu de Naissance</div>
-      <div class="fw-medium">{{ eleve.lieu_naissance }}</div>
+<!-- Info rapide + raccourci parcours -->
+<div style="display:grid; grid-template-columns:1fr auto; gap:var(--space-3); margin-bottom:var(--space-4);" class="animate-fade-up delay-1">
+
+  <div class="card" style="padding:var(--space-4);">
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-4);">
+      <div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Dernière Classe</div>
+        <div class="fw-medium">{{ eleve.last_classe|default:"Non renseignée" }}</div>
+      </div>
+      <div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Téléphone Parents</div>
+        <div class="fw-medium">{{ eleve.telephone_parent|default:"-" }}</div>
+      </div>
+      <div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Lieu de Naissance</div>
+        <div class="fw-medium">{{ eleve.lieu_naissance }}</div>
+      </div>
     </div>
   </div>
+
+  <a href="{% url 'inscriptions:eleve_parcours' eleve.pk %}"
+     class="card"
+     style="padding:var(--space-4) var(--space-5); display:flex; flex-direction:column;
+            align-items:center; justify-content:center; gap:var(--space-2);
+            text-decoration:none; min-width:130px;
+            border:1.5px solid var(--color-border);
+            transition:border-color .15s, box-shadow .15s;"
+     onmouseover="this.style.borderColor='var(--color-primary)'; this.style.boxShadow='0 0 0 3px var(--color-primary-light,#dcfce7)';"
+     onmouseout="this.style.borderColor='var(--color-border)'; this.style.boxShadow='';">
+    <svg width="28" height="28" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+    </svg>
+    <span style="font-size:.8rem; font-weight:700; color:var(--color-primary); white-space:nowrap;">Parcours scolaire</span>
+    <span style="font-size:.72rem; color:var(--color-text-muted);">{{ inscriptions|length }} année{{ inscriptions|length|pluralize }}</span>
+  </a>
+
 </div>
 
 <div style="display:grid; grid-template-columns:280px 1fr; gap:var(--space-6); align-items:start;" class="animate-fade-up delay-2">
@@ -116,12 +150,14 @@
               <td>
                 {% if inscr.statut == 'ABANDON' %}
                   <span class="badge badge-danger">Abandon</span>
-                {% elif inscr.statut == 'EXONERE' or inscr.est_exonere %}
+                {% elif inscr.est_exonere %}
                   <span class="badge badge-secondary">Exonéré</span>
                 {% elif inscr.statut == 'BOURSIER' %}
                   <span class="badge badge-info">Boursier</span>
                 {% elif inscr.statut == 'NON_AFFECTE' %}
                   <span class="badge badge-warning">Non affecté</span>
+                {% elif inscr.statut == 'EXONERE' %}
+                  <span class="badge badge-secondary">Exonéré</span>
                 {% else %}
                   <span class="badge badge-success">Affecté</span>
                 {% endif %}
@@ -146,6 +182,14 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                   </a>
+                  {% if inscr.statut != 'ABANDON' %}
+                  <a href="{% url 'inscriptions:transfert_classe' inscr.pk %}"
+                     class="btn-icon" title="Transférer dans une autre classe" style="color:var(--color-primary);">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                    </svg>
+                  </a>
+                  {% endif %}
                   <form method="post" action="{% url 'inscriptions:marquer_abandon' inscr.pk %}" style="display:inline;">
                     {% csrf_token %}
                     {% if inscr.statut == 'ABANDON' %}
@@ -187,7 +231,8 @@
 
     <!-- Documents -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
-      <div class="card" style="padding:var(--space-4); cursor:pointer;">
+      {% if last_inscription %}
+      <a href="{% url 'documents:certificat_scolarite' last_inscription.pk %}" class="card" style="padding:var(--space-4); cursor:pointer; text-decoration:none; color:inherit; display:block;">
         <div class="d-flex align-center gap-3">
           <div class="stat-icon stat-icon-green" style="width:40px; height:40px; flex-shrink:0;">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,7 +244,22 @@
             <p class="text-muted" style="font-size:0.75rem;">Générer le PDF officiel</p>
           </div>
         </div>
+      </a>
+      {% else %}
+      <div class="card" style="padding:var(--space-4); opacity:0.5;">
+        <div class="d-flex align-center gap-3">
+          <div class="stat-icon stat-icon-green" style="width:40px; height:40px; flex-shrink:0;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="fw-bold">Certificat de Scolarité</div>
+            <p class="text-muted" style="font-size:0.75rem;">Aucune inscription active</p>
+          </div>
+        </div>
       </div>
+      {% endif %}
       <a href="{% url 'inscriptions:eleve_carte' eleve.pk %}" class="card" style="padding:var(--space-4); cursor:pointer; text-decoration:none; color:inherit; display:block;">
         <div class="d-flex align-center gap-3">
           <div class="stat-icon stat-icon-blue" style="width:40px; height:40px; flex-shrink:0;">

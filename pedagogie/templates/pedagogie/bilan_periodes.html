@@ -1,0 +1,312 @@
+{% extends "core/base.html" %}
+
+{% block title %}Bilan des périodes — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Bilan des périodes d'évaluation</h1>
+    {% if annee %}<p class="page-subtitle">Année scolaire {{ annee }}</p>{% endif %}
+  </div>
+  <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
+    <a href="{% url 'pedagogie:classe_result_list' %}" class="btn-secondary">
+      Résultats par classe
+    </a>
+  </div>
+</div>
+
+<!-- ── Sélecteur d'année ── -->
+<form method="get" id="form-annee" class="d-flex align-center gap-3 mb-4 animate-fade-up delay-1">
+  <label class="input-label" style="margin:0; white-space:nowrap;">Année scolaire</label>
+  <select name="annee" onchange="this.form.submit()" class="input select" style="max-width:220px;">
+    {% for a in annees %}
+    <option value="{{ a.pk }}" {% if a.pk == annee.pk %}selected{% endif %}>
+      {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
+    </option>
+    {% endfor %}
+  </select>
+</form>
+
+{% if not periodes_data %}
+<div class="card animate-fade-up delay-2">
+  <div class="empty-state" style="padding:2rem;">
+    <p class="empty-state-text">Aucun résultat calculé pour cette année scolaire.</p>
+  </div>
+</div>
+
+{% else %}
+
+<!-- ── Barre d'actions ── -->
+<div class="animate-fade-up delay-2"
+     style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;
+            margin-bottom:1.25rem; padding:.75rem 1rem;
+            background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+
+  <!-- Bouton Imprimer (offline) -->
+  <form method="post" action="{% url 'pedagogie:bilan_pdf' %}" target="_blank" id="form-pdf">
+    {% csrf_token %}
+    <input type="hidden" name="annee" value="{{ annee.pk }}">
+    <input type="hidden" name="commentaires" id="input-commentaires" value="{}">
+    <button type="submit" class="btn-primary"
+            style="gap:.6rem; display:flex; align-items:center; padding:.55rem 1.2rem; font-size:.92rem; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,.15);">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Imprimer le bilan
+    </button>
+  </form>
+
+  <!-- Séparateur vertical -->
+  <div style="width:1px; height:28px; background:#e2e8f0; display:none;" id="sep-ia"></div>
+
+  <!-- Bouton Analyse IA -->
+  <button type="button" id="btn-ia"
+          onclick="genererAnalyseIA()"
+          class="btn-primary"
+          style="gap:.5rem; display:flex; align-items:center;"
+          title="Nécessite une connexion Internet">
+    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+    </svg>
+    <span id="btn-ia-label">Analyser avec l'IA</span>
+  </button>
+
+  <!-- Indicateur offline -->
+  <span id="badge-offline"
+        style="display:none; font-size:.78rem; color:#d97706; align-items:center; gap:.35rem;">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M3 3l18 18M10.584 10.584a3 3 0 004.243 4.243"/>
+    </svg>
+    Connexion Internet requise pour l'analyse IA
+  </span>
+
+  <!-- Zone de message d'erreur IA -->
+  <span id="ia-erreur" style="display:none; font-size:.78rem; color:#dc2626;"></span>
+</div>
+
+<!-- Données JSON pour l'IA — sérialisées côté serveur (caractères spéciaux protégés) -->
+<script id="stats-json" type="application/json">{{ stats_ia_json|safe }}</script>
+
+<!-- ══════════════════════════════════════════════════
+     SECTIONS PAR PÉRIODE
+══════════════════════════════════════════════════ -->
+{% for periode in periodes_data %}
+<div class="animate-fade-up delay-2" style="margin-bottom:2rem;" id="periode-{{ periode.trimestre.pk }}">
+
+  <!-- En-tête de la période -->
+  <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem;">
+    <div style="background:var(--color-primary,#059669); color:#fff;
+                border-radius:6px; padding:6px 16px; font-weight:700;
+                font-size:.95rem; letter-spacing:.03em; white-space:nowrap;">
+      {{ periode.trimestre.nom }}
+    </div>
+    <div style="flex:1; height:2px;
+                background:linear-gradient(90deg,var(--color-primary,#059669)20%,#e2e8f0);
+                border-radius:2px;"></div>
+  </div>
+
+  <!-- Tableau statistiques -->
+  <div class="table-wrapper">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="min-width:140px;">Classe</th>
+            <th style="text-align:center; white-space:nowrap;">Élèves</th>
+            <th style="text-align:center; white-space:nowrap;">Moy. classe</th>
+            <th style="text-align:center; white-space:nowrap; color:#16a34a;">Plus haute</th>
+            <th style="text-align:center; white-space:nowrap; color:#dc2626;">Plus faible</th>
+            <th style="text-align:center; white-space:nowrap;">Taux de réussite</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ligne in periode.lignes %}
+          <tr>
+            <td style="white-space:nowrap;">
+              <a href="{% url 'pedagogie:resultat_classe' ligne.classe.pk %}"
+                 style="font-weight:600; text-decoration:none; color:var(--color-primary,#059669);">
+                {{ ligne.classe.nom }}
+              </a>
+              <div style="font-size:.72rem; color:var(--color-text-secondary);">
+                {{ ligne.classe.cycle.nom }}
+              </div>
+              <div style="margin-top:.25rem;">
+                <a href="{% url 'pedagogie:releve_moyenne_classe_pdf' %}?classe={{ ligne.classe.pk }}&trimestre={{ periode.trimestre.pk }}"
+                   target="_blank"
+                   title="Relevé de moyennes par ordre de mérite"
+                   style="display:inline-flex; align-items:center; gap:.3rem;
+                          font-size:.7rem; color:#64748b; text-decoration:none;
+                          padding:.15rem .45rem; border:1px solid #e2e8f0;
+                          border-radius:4px; background:#f8fafc;">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                  </svg>
+                  Relevé PDF
+                </a>
+              </div>
+            </td>
+            <td style="text-align:center; font-size:.85rem;">{{ ligne.stats.nb_eleves }}</td>
+            <td style="text-align:center; font-weight:700; font-size:.9rem;
+                       color:{% if ligne.stats.moy_classe and ligne.stats.moy_classe >= 10 %}#16a34a{% elif ligne.stats.moy_classe %}#dc2626{% else %}#94a3b8{% endif %};">
+              {% if ligne.stats.moy_classe %}{{ ligne.stats.moy_classe }}{% else %}—{% endif %}
+            </td>
+            <td style="text-align:center; font-size:.85rem; color:#16a34a; font-weight:600;">
+              {% if ligne.stats.moy_max %}{{ ligne.stats.moy_max }}{% else %}—{% endif %}
+            </td>
+            <td style="text-align:center; font-size:.85rem; color:#dc2626; font-weight:600;">
+              {% if ligne.stats.moy_min %}{{ ligne.stats.moy_min }}{% else %}—{% endif %}
+            </td>
+            <td style="text-align:center; font-size:.85rem;">
+              {% if ligne.stats.taux is not None %}
+              <span style="font-weight:600;
+                           color:{% if ligne.stats.taux >= 75 %}#16a34a{% elif ligne.stats.taux >= 50 %}#d97706{% else %}#dc2626{% endif %};">
+                {{ ligne.stats.taux }}%
+              </span>
+              <div style="font-size:.7rem; color:var(--color-text-secondary);">
+                {{ ligne.stats.nb_admis }}/{{ ligne.stats.nb_eleves }}
+              </div>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Zone analyses IA (remplie dynamiquement par JS) -->
+  {% for ligne in periode.lignes %}
+  <div id="ia-{{ ligne.classe.pk }}_{{ periode.trimestre.pk }}"
+       style="display:none; margin-top:.5rem; margin-bottom:.5rem;"></div>
+  {% endfor %}
+
+</div>
+{% endfor %}
+
+<!-- Légende -->
+<div class="d-flex gap-4 mt-3 animate-fade-up"
+     style="font-size:.78rem; color:var(--color-text-secondary); flex-wrap:wrap;">
+  <span><span style="color:#16a34a; font-weight:700;">■</span> Moy. ≥ 10 / Taux ≥ 75%</span>
+  <span><span style="color:#d97706; font-weight:700;">■</span> Taux 50–74%</span>
+  <span><span style="color:#dc2626; font-weight:700;">■</span> Moy. &lt; 10 / Taux &lt; 50%</span>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Détection offline ─────────────────────────────────────────────────────────
+function majEtatConnexion() {
+  const online = navigator.onLine;
+  const btn    = document.getElementById('btn-ia');
+  const badge  = document.getElementById('badge-offline');
+  if (!btn) return;
+  btn.disabled = !online;
+  btn.style.opacity = online ? '1' : '.45';
+  btn.style.cursor  = online ? 'pointer' : 'not-allowed';
+  badge.style.display = online ? 'none' : 'flex';
+}
+window.addEventListener('online',  majEtatConnexion);
+window.addEventListener('offline', majEtatConnexion);
+document.addEventListener('DOMContentLoaded', majEtatConnexion);
+
+// ── Rendu d'un bloc d'analyse IA ─────────────────────────────────────────────
+function rendreAnalyseIA(cle, analyse) {
+  const zone = document.getElementById('ia-' + cle);
+  if (!zone) return;
+
+  const recos = (analyse.recommandations || [])
+    .map(r => `<li style="margin-bottom:.2rem;">${r}</li>`)
+    .join('');
+
+  zone.innerHTML = `
+    <div style="padding:.75rem 1rem; border-left:3px solid var(--color-primary,#059669);
+                background:#f0fdf4; border-radius:0 6px 6px 0; font-size:.85rem;">
+      <div style="font-weight:700; color:var(--color-primary,#059669);
+                  font-size:.72rem; text-transform:uppercase; letter-spacing:.04em;
+                  margin-bottom:.4rem;">Analyse IA</div>
+      <p style="margin:0 0 .5rem; color:#1e293b; line-height:1.5;">
+        ${analyse.commentaire || ''}
+      </p>
+      ${recos ? `<div style="color:#374151;"><strong>Recommandations :</strong>
+        <ul style="margin:.3rem 0 0 1.2rem; padding:0; line-height:1.6;">${recos}</ul></div>` : ''}
+    </div>`;
+  zone.style.display = 'block';
+}
+
+// ── Génération de l'analyse IA ───────────────────────────────────────────────
+let commentairesGeneres = {};
+
+async function genererAnalyseIA() {
+  const btn    = document.getElementById('btn-ia');
+  const label  = document.getElementById('btn-ia-label');
+  const errDiv = document.getElementById('ia-erreur');
+  errDiv.style.display = 'none';
+
+  // Stats JSON embarqué dans la page
+  let stats = [];
+  try {
+    stats = JSON.parse(document.getElementById('stats-json').textContent);
+  } catch(e) {
+    errDiv.textContent = 'Impossible de lire les données du bilan.';
+    errDiv.style.display = 'inline';
+    return;
+  }
+
+  btn.disabled = true;
+  label.textContent = 'Génération en cours…';
+
+  const csrfToken = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrftoken='))
+    ?.split('=')[1] || '';
+
+  try {
+    const resp = await fetch('{% url "pedagogie:generer_commentaires_bilan" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken,
+      },
+      body: JSON.stringify({ stats }),
+    });
+
+    const json = await resp.json();
+
+    if (!resp.ok || json.erreur) {
+      throw new Error(json.erreur || `Erreur HTTP ${resp.status}`);
+    }
+
+    commentairesGeneres = json.commentaires || {};
+
+    // Afficher chaque analyse sous la ligne concernée
+    for (const [cle, analyse] of Object.entries(commentairesGeneres)) {
+      rendreAnalyseIA(cle, analyse);
+    }
+
+    // Mettre à jour le champ caché du formulaire PDF
+    document.getElementById('input-commentaires').value =
+      JSON.stringify(commentairesGeneres);
+
+    label.textContent = 'Analyse générée ✓';
+    btn.disabled = false;
+
+    // Petit badge de succès
+    document.getElementById('sep-ia').style.display = 'block';
+
+  } catch(e) {
+    errDiv.textContent = 'Erreur IA : ' + (e.message || e);
+    errDiv.style.display = 'inline';
+    label.textContent = 'Analyser avec l\'IA';
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

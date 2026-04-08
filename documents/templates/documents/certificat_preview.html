@@ -1,70 +1,187 @@
 {% extends "core/base.html" %}
+{% load signataire_tags %}
 
-{% block title %}Certificat de scolarité — {{ eleve.get_nom_complet }} — YELEN SCHOOL{% endblock %}
+{% block title %}Aperçu — Certificat de scolarité — {{ eleve.get_nom_complet }} — YELEN SCHOOL{% endblock %}
 
 {% block content %}
 
 <div class="page-header animate-fade-up">
-  <div>
-    <h1 class="page-title">Certificat de Scolarité</h1>
-    <p class="page-subtitle">{{ eleve.get_nom_complet }} · {{ classe.nom }} · {{ annee_scolaire }}</p>
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'documents:document_list' %}" class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Aperçu — Certificat de scolarité</h1>
+      <p class="page-subtitle">{{ eleve.get_nom_complet }} · {{ classe.nom }} · {{ annee_scolaire }}</p>
+    </div>
   </div>
-  <a href="?format=pdf" class="btn-primary">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-    </svg>
-    Télécharger PDF
-  </a>
+  <div class="d-flex gap-2 align-center">
+    {% if not signataire %}
+    <span style="font-size:0.8rem; color:var(--color-warning,#d97706); font-weight:600;">
+      ⚠ Signataire manquant
+    </span>
+    {% endif %}
+    <a href="?format=pdf" target="_blank" class="btn btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Générer le PDF
+    </a>
+  </div>
 </div>
 
-<div style="max-width:640px;" class="animate-fade-up delay-1">
-  <div class="card">
-    <div style="padding:var(--space-6);">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
-        <div>
-          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Élève</div>
-          <div class="fw-semibold">{{ eleve.get_nom_complet }}</div>
+{% if not signataire %}
+<div class="animate-fade-up" style="margin-bottom:var(--space-4); padding:var(--space-3) var(--space-5); background:rgba(217,119,6,0.08); border:1px solid rgba(217,119,6,0.3); border-left:4px solid var(--color-warning,#d97706); border-radius:var(--radius-md);">
+  <span style="font-size:0.88rem; color:var(--color-warning,#d97706); font-weight:600;">
+    Aucun signataire configuré pour le cycle {{ classe.cycle.nom }}.
+  </span>
+  <a href="{% url 'parametres:signataires_list' %}" style="color:var(--color-warning,#d97706); text-decoration:underline; margin-left:var(--space-2); font-size:0.88rem;">
+    Configurer →
+  </a>
+</div>
+{% endif %}
+
+{# ── Aperçu document (rendu fidèle au PDF) ── #}
+<div class="animate-fade-up delay-1" style="max-width:700px;">
+
+  {# Indication aperçu #}
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-3);">
+    <span style="font-size:0.78rem; color:var(--color-text-muted); display:flex; align-items:center; gap:6px;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+      </svg>
+      Aperçu du document — le PDF sera identique
+    </span>
+    <span style="font-size:0.75rem; color:var(--color-text-muted);">Format A4</span>
+  </div>
+
+  {# Carte document #}
+  <div style="background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-lg); box-shadow:var(--shadow-md,0 4px 16px rgba(0,0,0,.08)); overflow:hidden;">
+
+    {# Barre de couleur supérieure #}
+    <div style="height:4px; background:var(--color-primary);"></div>
+
+    <div style="padding:2rem 2.5rem;">
+
+      {# En-tête établissement #}
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.2rem; padding-bottom:1rem; border-bottom:2px solid #1a1a1a;">
+        <div style="width:72px; height:72px; background:var(--color-primary-ambient,#e8f8f0); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          {% if logo_url %}
+          <img src="{{ logo_url }}" alt="Logo" style="width:64px; height:64px; object-fit:contain;">
+          {% elif etab_logo_url %}
+          <img src="{{ etab_logo_url }}" alt="Logo" style="width:64px; height:64px; object-fit:contain;">
+          {% else %}
+          <svg width="28" height="28" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+          {% endif %}
         </div>
-        <div>
-          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Matricule</div>
-          <div class="text-mono">{{ eleve.matricule }}</div>
+
+        <div style="text-align:center; flex:1; padding:0 1rem;">
+          <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:1.5px; color:#555; margin-bottom:3px;">Burkina Faso</div>
+          <div style="font-size:1rem; font-weight:700; text-transform:uppercase; line-height:1.2;">
+            {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement }}{% endif %}
+          </div>
+          {% if identite and identite.numero_agrement_mena %}
+          <div style="font-size:0.72rem; color:#666; font-style:italic; margin-top:2px;">
+            N° Agrément MENA : {{ identite.numero_agrement_mena }}
+          </div>
+          {% endif %}
+          {% if identite %}
+          <div style="font-size:0.72rem; color:#555; margin-top:1px;">{{ identite.get_type_etablissement_display }}</div>
+          {% endif %}
         </div>
-        <div>
-          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Né(e) le</div>
-          <div>{{ eleve.date_naissance|date:"d F Y" }}</div>
-        </div>
-        <div>
-          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Lieu de naissance</div>
-          <div>{{ eleve.lieu_naissance }}</div>
-        </div>
-        <div>
-          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Classe</div>
-          <div>{{ classe.nom }}</div>
-        </div>
-        <div>
-          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Cycle</div>
-          <div>{{ classe.cycle.nom }}</div>
-        </div>
-        <div>
-          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Année scolaire</div>
-          <div>{{ annee_scolaire }}</div>
-        </div>
-        <div>
-          <div class="text-muted" style="font-size:0.8rem; margin-bottom:4px;">Signataire</div>
-          <div>{% if signataire %}{{ signataire.get_nom_complet_avec_titre }}{% else %}<span class="text-warning">Non configuré</span>{% endif %}</div>
+
+        <div style="width:72px; height:72px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          {% if identite and identite.cachet_etablissement %}
+          <img src="{{ identite.cachet_etablissement.url }}" alt="Cachet" style="width:64px; height:64px; object-fit:contain;">
+          {% else %}
+          <div style="width:60px; height:60px; border-radius:50%; border:2px dashed var(--color-border); display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:0.6rem; color:var(--color-text-muted); text-align:center; line-height:1.2;">Cachet</span>
+          </div>
+          {% endif %}
         </div>
       </div>
+
+      {# Titre du document #}
+      <div style="text-align:center; margin:1.5rem 0;">
+        <h2 style="font-size:1.15rem; font-weight:700; text-transform:uppercase; letter-spacing:3px; border-bottom:2px solid #1a1a1a; display:inline-block; padding-bottom:5px; margin:0;">
+          Certificat de Scolarité
+        </h2>
+        <p style="font-size:0.78rem; color:#555; margin-top:6px;">Année scolaire {{ annee_scolaire }}</p>
+      </div>
+
+      {# Corps du certificat #}
+      <div style="line-height:2; font-size:0.92rem; margin:1.2rem 0; color:#1a1a1a;">
+        <p style="margin:0.4rem 0;">
+          Le soussigné,
+          {% if sig_membre %}
+            {% if signataire.titre_honorifique %}{{ signataire.titre_honorifique }},{% endif %}
+            <strong style="text-decoration:underline;">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</strong>,
+            {{ signataire.fonction|default:"Directeur/Proviseur" }}{% if identite %} de <strong style="text-decoration:underline;">{{ identite.nom_etablissement }}</strong>{% endif %},
+          {% elif identite and identite.nom_directeur %}
+            <strong style="text-decoration:underline;">{{ identite.nom_directeur }}</strong>,
+            Directeur/Proviseur de <strong style="text-decoration:underline;">{{ identite.nom_etablissement }}</strong>,
+          {% else %}
+            <em style="color:var(--color-warning,#d97706);">[Signataire non configuré]</em>,
+          {% endif %}
+          certifie que :
+        </p>
+
+        <p style="margin:0.4rem 0;">
+          <strong style="text-decoration:underline;">{{ eleve.get_nom_complet }}</strong>,
+          né(e) le <strong style="text-decoration:underline;">{{ eleve.date_naissance|date:"d F Y" }}</strong>
+          à <strong style="text-decoration:underline;">{{ eleve.lieu_naissance }}</strong>,
+          de nationalité <strong style="text-decoration:underline;">{{ eleve.nationalite }}</strong>,
+        </p>
+
+        <p style="margin:0.4rem 0;">
+          est régulièrement inscrit(e) dans cet établissement pour l'année scolaire
+          <strong style="text-decoration:underline;">{{ annee_scolaire }}</strong>,
+          en classe de <strong style="text-decoration:underline;">{{ classe.nom }}</strong> ({{ classe.cycle.nom }}).
+        </p>
+
+        <p style="margin:0.4rem 0;">Ce certificat est délivré à l'intéressé(e) pour servir et valoir ce que de droit.</p>
+      </div>
+
+      {# Signature #}
+      <div style="margin-top:2rem; text-align:right;">
+        {% if identite and identite.ville %}
+        <p style="font-size:0.85rem; color:#555; margin-bottom:6px;">
+          {{ identite.ville }}, le {% now "d F Y" %}
+        </p>
+        {% endif %}
+        <p style="font-size:0.82rem; margin-bottom:0.8rem; color:#333;">
+          {% if sig_membre %}
+            {{ signataire.titre_honorifique|default:"" }} {{ signataire.fonction|default:"Le Directeur / La Directrice" }}
+          {% else %}
+            Le Directeur / La Directrice
+          {% endif %}
+        </p>
+        <div style="width:110px; height:55px; margin-left:auto; display:flex; align-items:center; justify-content:center; border-bottom:1px solid #1a1a1a;">
+          {% if sig_membre and sig_membre.photo %}
+          {# espace signature #}
+          {% endif %}
+        </div>
+        <p style="font-size:0.82rem; font-weight:700; margin-top:4px;">
+          {% if sig_membre %}{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}{% endif %}
+        </p>
+      </div>
+
+      {# Pied : numéro #}
+      <div style="margin-top:1.5rem; padding-top:0.8rem; border-top:1px solid #e5e7eb; text-align:center;">
+        <span style="font-size:0.7rem; color:#9ca3af; font-style:italic;">
+          N° [sera attribué à la génération du PDF] · {{ eleve.matricule }}
+        </span>
+      </div>
+
     </div>
   </div>
 
-  {% if not signataire %}
-  <div class="card mt-4" style="border-color:var(--color-warning); padding:var(--space-4);">
-    <p class="text-warning" style="font-size:0.875rem;">
-      Aucun signataire configuré pour le cycle {{ classe.cycle.nom }}. Configurez-le dans
-      <a href="{% url 'parametres:signataires_list' %}" style="color:var(--color-warning); text-decoration:underline;">Paramètres → Signataires</a>.
-    </p>
-  </div>
-  {% endif %}
 </div>
 
 {% endblock %}

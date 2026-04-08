@@ -1,0 +1,155 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ titre }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% if activite %}{% url 'viescolaire:activite_detail' activite.pk %}{% else %}{% url 'viescolaire:activite_list' %}{% endif %}"
+       class="btn-icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">{{ titre }}</h1>
+      {% if annee_courante %}
+      <p class="page-subtitle">{{ annee_courante.libelle }}</p>
+      {% elif activite %}
+      <p class="page-subtitle">{{ activite.annee_scolaire.libelle }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags }}" style="margin-bottom:var(--space-4);">{{ msg }}</div>
+{% endfor %}
+{% endif %}
+
+<div style="max-width:640px;" class="animate-fade-up delay-1">
+  <form method="post">
+    {% csrf_token %}
+
+    {# ── Section 1 : Identification ── #}
+    <div class="card" style="margin-bottom:var(--space-4);">
+      <div style="padding:var(--space-4) var(--space-6); border-bottom:1px solid var(--color-border); display:flex; align-items:center; gap:var(--space-3);">
+        <div style="width:32px; height:32px; border-radius:var(--radius-md); background:var(--color-primary-ambient,rgba(0,168,107,0.12)); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="16" height="16" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+          </svg>
+        </div>
+        <span style="font-weight:600; font-size:0.9rem;">Identification</span>
+      </div>
+      <div style="padding:var(--space-5) var(--space-6);">
+
+        <div class="form-group">
+          <label class="input-label">
+            Nom de l'activité
+            <span style="color:var(--color-danger,#e53e3e); margin-left:2px;">*</span>
+          </label>
+          <input type="text" name="nom" required class="input w-full"
+                 value="{{ activite.nom|default:'' }}"
+                 placeholder="Ex : Club de football, Chorale, Atelier dessin…"
+                 autofocus>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label">Type d'activité</label>
+            <select name="type_activite" class="input select w-full">
+              {% for val, label in type_choices %}
+              <option value="{{ val }}"
+                {% if activite and activite.type_activite == val %}selected
+                {% elif not activite and val == 'CLUB' %}selected{% endif %}>
+                {{ label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label">Capacité maximale</label>
+            <input type="number" name="capacite_max" min="1" max="500" class="input w-full"
+                   value="{{ activite.capacite_max|default:30 }}">
+            <p class="text-muted mt-1" style="font-size:0.75rem;">Nombre de places disponibles</p>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="input-label">Description <span class="text-muted" style="font-weight:400;">(optionnelle)</span></label>
+          <textarea name="description" rows="3" class="input w-full"
+                    placeholder="Objectifs, public cible, modalités de participation…"
+                    style="resize:vertical; min-height:80px;">{{ activite.description|default:'' }}</textarea>
+        </div>
+
+      </div>
+    </div>
+
+    {# ── Section 2 : Organisation ── #}
+    <div class="card" style="margin-bottom:var(--space-5);">
+      <div style="padding:var(--space-4) var(--space-6); border-bottom:1px solid var(--color-border); display:flex; align-items:center; gap:var(--space-3);">
+        <div style="width:32px; height:32px; border-radius:var(--radius-md); background:rgba(59,130,246,0.1); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="16" height="16" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <span style="font-weight:600; font-size:0.9rem;">Organisation</span>
+      </div>
+      <div style="padding:var(--space-5) var(--space-6);">
+
+        <div class="form-group">
+          <label class="input-label">Responsable <span class="text-muted" style="font-weight:400;">(optionnel)</span></label>
+          <select name="responsable" class="input select w-full">
+            <option value="">— Aucun responsable assigné —</option>
+            {% for u in responsables %}
+            <option value="{{ u.pk }}"
+              {% if activite and activite.responsable_id == u.pk %}selected{% endif %}>
+              {{ u.get_full_name|default:u.username }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-grid-2" style="margin-bottom:0;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="input-label">Jour de réunion</label>
+            <select name="jour_reunion" class="input select w-full">
+              <option value="">— Non défini —</option>
+              {% for val, label in jour_choices %}
+              <option value="{{ val }}"
+                {% if activite and activite.jour_reunion == val %}selected{% endif %}>
+                {{ label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="input-label">Heure de début</label>
+            <input type="time" name="heure_debut" class="input w-full"
+                   value="{% if activite and activite.heure_debut %}{{ activite.heure_debut|time:'H:i' }}{% endif %}">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    {# ── Actions ── #}
+    <div style="display:flex; gap:var(--space-3); justify-content:flex-end;">
+      <a href="{% if activite %}{% url 'viescolaire:activite_detail' activite.pk %}{% else %}{% url 'viescolaire:activite_list' %}{% endif %}"
+         class="btn btn-outline">Annuler</a>
+      <button type="submit" class="btn btn-primary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        {{ submit_label }}
+      </button>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

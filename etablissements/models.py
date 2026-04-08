@@ -4,7 +4,7 @@ Géré par: YELEN SCHOOL
 """
 
 from django.db import models
-
+from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 
 from core.models import BaseModel, CycleChoices
@@ -44,12 +44,11 @@ class Etablissement(BaseModel):
         null=True,
         verbose_name=_("Logo de l'établissement")
     )
-    cycles = models.CharField(
-        max_length=200,
+    cycles = ArrayField(
+        base_field=models.CharField(max_length=20, choices=CycleChoices.choices),
         blank=True,
-        default='',
+        default=list,
         verbose_name=_("Cycles proposés"),
-        help_text=_("Cycles séparés par des virgules : PRIMAIRE,SECONDAIRE")
     )
     ville = models.CharField(
         max_length=100,

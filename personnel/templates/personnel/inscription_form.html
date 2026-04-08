@@ -10,8 +10,8 @@
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 Retour au profil
             </a>
-            <h1 class="page-title">Inscription Annuelle</h1>
-            <p class="page-subtitle">Enregistrer l'affectation de {{ membre.get_nom_complet }} pour une nouvelle année scolaire.</p>
+            <h1 class="page-title">{{ titre|default:"Inscription Annuelle" }}</h1>
+            <p class="page-subtitle">Affectation de {{ membre.get_nom_complet }} — cycle / poste / année scolaire.</p>
         </div>
     </div>
 
@@ -28,35 +28,34 @@
             </div>
             <div>
                 <div class="fw-semibold" style="color:var(--color-text-primary);">{{ membre.get_nom_complet }}</div>
-                <div class="text-xs text-mono" style="color:var(--color-text-muted);">Matricule: {{ membre.matricule_personnel }}</div>
+                <div class="text-xs text-mono" style="color:var(--color-text-muted);">Matricule: {{ membre.matricule }}</div>
             </div>
         </div>
 
         {% for field in form %}
-            {% if field.name != 'personnel' %}
-            <div class="{% if field.field.widget.input_type == 'checkbox' %}d-flex align-center gap-3{% else %}form-group{% endif %}" style="{% if field.field.widget.input_type == 'checkbox' %}padding:0.5rem 0;{% endif %}">
-                {% if field.field.widget.input_type == 'checkbox' %}
-                    {{ field }}
-                    <label for="{{ field.id_for_label }}" class="input-label" style="margin-bottom:0;">{{ field.label }}</label>
-                {% else %}
-                    <label for="{{ field.id_for_label }}" class="input-label">
-                        {{ field.label }}
-                        {% if field.field.required %}<span style="color:#FF6B7A;">*</span>{% endif %}
-                    </label>
-                    {{ field }}
-                {% endif %}
-
-                {% if field.help_text %}
-                    <p class="text-xs" style="color:var(--color-text-muted); font-style:italic;">{{ field.help_text }}</p>
-                {% endif %}
-
-                {% if field.errors %}
-                    <p class="input-error">{{ field.errors.0 }}</p>
-                {% endif %}
-            </div>
+        {% if field.name == 'personnel' %}
+        {# Champ personnel masqué — fixé automatiquement par la vue #}
+        {% else %}
+        <div class="{% if field.field.widget.input_type == 'checkbox' %}d-flex align-center gap-3{% else %}form-group{% endif %}"
+             style="{% if field.field.widget.input_type == 'checkbox' %}padding:0.5rem 0;{% endif %}">
+            {% if field.field.widget.input_type == 'checkbox' %}
+                {{ field }}
+                <label for="{{ field.id_for_label }}" class="input-label" style="margin-bottom:0;">{{ field.label }}</label>
             {% else %}
-                <input type="hidden" name="{{ field.name }}" value="{{ membre.pk }}">
+                <label for="{{ field.id_for_label }}" class="input-label">
+                    {{ field.label }}
+                    {% if field.field.required %}<span style="color:#FF6B7A;">*</span>{% endif %}
+                </label>
+                {{ field }}
             {% endif %}
+            {% if field.help_text %}
+            <p class="text-xs" style="color:var(--color-text-muted); font-style:italic;">{{ field.help_text }}</p>
+            {% endif %}
+            {% if field.errors %}
+            <p class="input-error">{{ field.errors.0 }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
         {% endfor %}
 
         <div class="d-flex justify-end gap-4" style="padding:1.5rem; background:var(--color-bg-card); border-top:1px solid var(--color-border);">

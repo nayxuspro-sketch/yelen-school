@@ -1,0 +1,62 @@
+{# ── Barre d'actions groupées (affichée si au moins 1 sélectionné) ── #}
+<div id="bulk-actions-bar" class="card" style="display:none; margin-bottom:var(--space-4); padding:var(--space-3) var(--space-4); background:linear-gradient(135deg, var(--color-primary) 0%, #00875a 100%); color:white;">
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div style="display:flex; align-items:center; gap:var(--space-3);">
+      <span id="bulk-count" style="font-weight:600;">0 élément(s) sélectionné(s)</span>
+      <button type="button" onclick="bulkSelectAll()" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:4px 12px; border-radius:var(--radius); font-size:0.8rem; cursor:pointer;">
+        Tout sélectionner
+      </button>
+      <button type="button" onclick="bulkDeselectAll()" style="background:transparent; border:1px solid rgba(255,255,255,0.5); color:white; padding:4px 12px; border-radius:var(--radius); font-size:0.8rem; cursor:pointer;">
+        Tout désélectionner
+      </button>
+    </div>
+    <div style="display:flex; gap:var(--space-2);">
+      {% if export_url %}
+      <button type="button" id="bulk-export-btn" onclick="exportSelected()" class="btn" style="background:white; color:var(--color-primary); font-weight:600; padding:6px 16px; border-radius:var(--radius); border:none; cursor:pointer; display:flex; align-items:center; gap:var(--space-2);">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Exporter
+      </button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleBulkBar() {
+  const checked = document.querySelectorAll('.bulk-checkbox:checked');
+  const bar = document.getElementById('bulk-actions-bar');
+  const count = document.getElementById('bulk-count');
+  
+  if (checked.length > 0) {
+    bar.style.display = 'flex';
+    count.textContent = checked.length + ' élément(s) sélectionné(s)';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function bulkSelectAll() {
+  document.querySelectorAll('.bulk-checkbox').forEach(cb => cb.checked = true);
+  toggleBulkBar();
+}
+
+function bulkDeselectAll() {
+  document.querySelectorAll('.bulk-checkbox').forEach(cb => cb.checked = false);
+  toggleBulkBar();
+}
+
+{% if export_url %}
+function exportSelected() {
+  const checked = document.querySelectorAll('.bulk-checkbox:checked');
+  const ids = Array.from(checked).map(c => c.value).join(',');
+  const url = '{{ export_url }}' + '?ids=' + ids;
+  window.location.href = url;
+}
+{% endif %}
+
+document.addEventListener('DOMContentLoaded', function() {
+  toggleBulkBar();
+});
+</script>

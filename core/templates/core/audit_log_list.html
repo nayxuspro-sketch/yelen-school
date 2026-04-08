@@ -1,0 +1,159 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Journal d'Audit — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'core:home' %}" class="text-secondary">Accueil</a>
+      <span class="text-muted"> / </span>
+      <span>Journal d'Audit</span>
+    </p>
+    <h1 class="page-title">Journal d'Audit</h1>
+    <p class="page-subtitle">Historique des modifications apportées au système</p>
+  </div>
+  <a href="/audit/pdf/?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if app_filter %}app={{ app_filter }}&{% endif %}{% if action_filter %}action={{ action_filter }}&{% endif %}{% if query %}q={{ query }}{% endif %}" target="_blank" class="btn-primary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+    </svg>
+    Exporter PDF
+  </a>
+</div>
+
+{# ── Filtres ── #}
+<form method="get" class="card mb-4" style="padding:var(--space-4); display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:end;">
+  <div class="search-wrapper" style="flex:1; min-width:180px;">
+    <span class="search-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    </span>
+    <input type="text" name="q" class="input search-input" placeholder="Rechercher…" value="{{ query }}">
+  </div>
+  
+  <div class="form-group" style="margin:0; min-width:130px;">
+    <label class="input-label" style="font-size:0.75rem;">Du</label>
+    <input type="date" name="date_from" class="input" value="{{ date_from }}">
+  </div>
+  
+  <div class="form-group" style="margin:0; min-width:130px;">
+    <label class="input-label" style="font-size:0.75rem;">Au</label>
+    <input type="date" name="date_to" class="input" value="{{ date_to }}">
+  </div>
+  
+  <select name="app" class="input select" style="min-width:140px;">
+    <option value="">Toutes les apps</option>
+    {% for app in apps %}
+    <option value="{{ app }}" {% if app_filter == app %}selected{% endif %}>{{ app }}</option>
+    {% endfor %}
+  </select>
+  <select name="action" class="input select" style="min-width:130px;">
+    <option value="">Toutes actions</option>
+    <option value="CREATE" {% if action_filter == 'CREATE' %}selected{% endif %}>Création</option>
+    <option value="UPDATE" {% if action_filter == 'UPDATE' %}selected{% endif %}>Modification</option>
+    <option value="DELETE" {% if action_filter == 'DELETE' %}selected{% endif %}>Suppression</option>
+  </select>
+  <button type="submit" class="btn-secondary">Filtrer</button>
+  {% if query or app_filter or action_filter or date_from or date_to %}
+  <a href="{% url 'core:audit_log_list' %}" class="btn-icon" title="Effacer" style="color:var(--color-danger);">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+  </a>
+  {% endif %}
+</form>
+
+{# ── Tableau ── #}
+<div class="table-wrapper animate-fade-up delay-1">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:150px;">Date/Heure</th>
+          <th>Utilisateur</th>
+          <th style="width:100px;">Action</th>
+          <th>Objet</th>
+          <th style="width:120px;">Application</th>
+          <th style="text-align:right;">Détails</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-mono text-muted" style="font-size:0.8rem;">
+            {{ log.timestamp|date:"d/m/Y H:i" }}
+          </td>
+          <td>
+            {% if log.user %}
+            <div class="d-flex align-center gap-2">
+              <span class="avatar-initials" style="width:28px; height:28px; font-size:0.7rem;">
+                {{ log.user.last_name|slice:":1" }}{{ log.user.first_name|slice:":1" }}
+              </span>
+              <span>{{ log.user.get_full_name|default:log.user.email }}</span>
+            </div>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if log.action == 'CREATE' %}
+            <span class="badge badge-success">Création</span>
+            {% elif log.action == 'UPDATE' %}
+            <span class="badge badge-warning">Modification</span>
+            {% elif log.action == 'DELETE' %}
+            <span class="badge badge-danger">Suppression</span>
+            {% else %}
+            <span class="badge badge-neutral">{{ log.action }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-weight:500;">{{ log.object_repr }}</span>
+            <span class="text-muted text-mono" style="font-size:0.75rem; display:block;">{{ log.model_name }}</span>
+          </td>
+          <td>
+            <span class="badge badge-neutral">{{ log.app_label }}</span>
+          </td>
+          <td style="text-align:right;">
+            <a href="{% url 'core:audit_log_detail' log.pk %}" class="btn-icon" title="Voir détails">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <p class="empty-state-text">Aucune entrée d'audit trouvée.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="pagination" style="display:flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-4) 0;">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&app={{ app_filter }}&action={{ action_filter }}" class="btn-icon" title="Précédent">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    {% endif %}
+    <span class="text-secondary" style="font-size:.875rem;">
+      Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ query }}&app={{ app_filter }}&action={{ action_filter }}" class="btn-icon" title="Suivant">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

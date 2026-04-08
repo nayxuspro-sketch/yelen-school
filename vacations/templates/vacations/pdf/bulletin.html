@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 18mm 20mm 18mm;
+    @bottom-center {
+      content: "Page " counter(page) " / " counter(pages);
+      font-size: 8pt;
+      color: #94A3B8;
+      font-family: 'DejaVu Sans', Arial, sans-serif;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-size: 10.5pt;
+    color: #1E293B;
+    line-height: 1.5;
+  }
+
+  /* ── En-tête établissement ── */
+  .entete {
+    display: flex;
+    align-items: center;
+    gap: 10mm;
+    border-bottom: 0.5mm solid #0A1628;
+    padding-bottom: 4mm;
+    margin-bottom: 6mm;
+  }
+  .entete-logo img {
+    width: 20mm;
+    height: 20mm;
+    object-fit: contain;
+  }
+  .entete-info { flex: 1; }
+  .entete-info .pays { font-size: 8pt; color: #64748B; }
+  .entete-info .nom  { font-size: 12pt; font-weight: bold; color: #0A1628; }
+  .entete-info .ville { font-size: 9pt; color: #475569; }
+
+  /* ── Titre ── */
+  .titre-bloc {
+    text-align: center;
+    margin: 6mm 0 8mm;
+    padding: 4mm;
+    background: #F1F5F9;
+    border-radius: 2mm;
+  }
+  .titre-bloc h1 { font-size: 14pt; font-weight: bold; color: #0A1628; letter-spacing: 0.5pt; }
+  .titre-bloc .periode { font-size: 11pt; color: #475569; margin-top: 2mm; }
+
+  /* ── Infos vacataire ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3mm 8mm;
+    margin-bottom: 7mm;
+    font-size: 10pt;
+  }
+  .info-grid .label { color: #64748B; font-size: 9pt; }
+  .info-grid .value { font-weight: 600; }
+
+  /* ── Tableau détail ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin-bottom: 6mm;
+  }
+  thead tr { background: #0A1628; color: #fff; }
+  thead th { padding: 2.5mm 3mm; text-align: left; font-weight: 600; }
+  thead th.right { text-align: right; }
+  tbody tr:nth-child(even) { background: #F8FAFC; }
+  tbody td { padding: 2mm 3mm; border-bottom: 0.2mm solid #E2E8F0; }
+  tbody td.right { text-align: right; }
+
+  /* ── Ligne total ── */
+  .total-row td {
+    font-weight: bold;
+    background: #EFF6FF;
+    border-top: 0.5mm solid #0A1628;
+    padding: 2.5mm 3mm;
+  }
+  .total-row td.right { text-align: right; }
+
+  /* ── Montant mis en évidence ── */
+  .montant-bloc {
+    text-align: right;
+    margin-bottom: 8mm;
+    font-size: 12pt;
+  }
+  .montant-bloc .label { color: #64748B; font-size: 9pt; }
+  .montant-bloc .valeur { font-size: 16pt; font-weight: bold; color: #0A1628; }
+
+  /* ── Statut ── */
+  .statut-ligne {
+    display: flex;
+    gap: 8mm;
+    font-size: 9.5pt;
+    margin-bottom: 10mm;
+    color: #475569;
+  }
+  .statut-ligne .badge {
+    display: inline-block;
+    padding: 1mm 3mm;
+    border-radius: 2mm;
+    font-weight: 600;
+    font-size: 9pt;
+  }
+  .badge-paye    { background: #DCFCE7; color: #166534; }
+  .badge-valide  { background: #FEF9C3; color: #854D0E; }
+  .badge-brouillon { background: #F1F5F9; color: #475569; }
+
+  /* ── Signatures ── */
+  .signatures {
+    margin-top: 14mm;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5pt;
+  }
+  .sig-bloc { text-align: center; width: 55mm; }
+  .sig-bloc .sig-titre { font-weight: 600; margin-bottom: 15mm; }
+  .sig-bloc .sig-ligne { border-top: 0.3mm solid #0A1628; padding-top: 2mm; color: #64748B; }
+</style>
+</head>
+<body>
+
+<!-- En-tête établissement -->
+<div class="entete">
+  {% if logo_url %}
+  <div class="entete-logo"><img src="{{ logo_url }}" alt="Logo"></div>
+  {% endif %}
+  <div class="entete-info">
+    {% if identite %}
+      <div class="pays">{{ identite.pays|default:"Burkina Faso" }}</div>
+      <div class="nom">{{ identite.nom }}</div>
+      <div class="ville">{{ identite.ville }}{% if identite.telephone %} · Tél. {{ identite.telephone }}{% endif %}</div>
+    {% else %}
+      <div class="nom">Établissement</div>
+    {% endif %}
+  </div>
+  <div style="text-align:right; font-size:8.5pt; color:#64748B;">
+    <div>{{ bulletin.annee_scolaire }}</div>
+  </div>
+</div>
+
+<!-- Titre -->
+<div class="titre-bloc">
+  <h1>BULLETIN DE VACATION</h1>
+  <div class="periode">{{ bulletin.get_mois_display|upper }} {{ bulletin.annee }}</div>
+</div>
+
+<!-- Infos vacataire -->
+<div class="info-grid">
+  <div>
+    <div class="label">Vacataire</div>
+    <div class="value">{{ bulletin.personnel.get_nom_complet }}</div>
+  </div>
+  <div>
+    <div class="label">Fonction</div>
+    <div class="value">{{ bulletin.personnel.fonction|default:"Enseignant vacataire" }}</div>
+  </div>
+  <div>
+    <div class="label">Période</div>
+    <div class="value">{{ bulletin.get_mois_display }} {{ bulletin.annee }}</div>
+  </div>
+  <div>
+    <div class="label">Statut</div>
+    <div class="value">
+      {% if bulletin.statut == 'PAYE' %}
+        <span class="badge badge-paye">Payé</span>
+        {% if bulletin.date_paiement %} le {{ bulletin.date_paiement|date:"d/m/Y" }}{% endif %}
+      {% elif bulletin.statut == 'VALIDE' %}
+        <span class="badge badge-valide">Validé</span>
+      {% else %}
+        <span class="badge badge-brouillon">Brouillon</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Détail des heures par matière/classe -->
+{% if heures %}
+<table>
+  <thead>
+    <tr>
+      <th>Matière</th>
+      <th>Classe</th>
+      <th class="right">H. effectuées</th>
+      <th class="right">H. annulées</th>
+      <th class="right">H. nettes</th>
+      <th class="right">Taux (FCFA/h)</th>
+      <th class="right">Montant (FCFA)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for h in heures %}
+    <tr>
+      <td>{{ h.contrat.enseignement.matiere.nom|default:"—" }}</td>
+      <td>{{ h.contrat.enseignement.classe.nom|default:"—" }}</td>
+      <td class="right">{{ h.heures_effectuees }}</td>
+      <td class="right">{{ h.heures_annulees }}</td>
+      <td class="right">{{ h.heures_nettes }}</td>
+      <td class="right">{{ h.contrat.taux_horaire|floatformat:0 }}</td>
+      <td class="right">{{ h.montant_du|floatformat:0 }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="total-row">
+      <td colspan="4">TOTAL</td>
+      <td class="right">{{ bulletin.total_heures }}</td>
+      <td class="right">—</td>
+      <td class="right">{{ bulletin.montant_total|floatformat:0 }}</td>
+    </tr>
+  </tbody>
+</table>
+{% endif %}
+
+<!-- Montant net à payer -->
+<div class="montant-bloc">
+  <div class="label">MONTANT NET À PAYER</div>
+  <div class="valeur">{{ bulletin.montant_total|floatformat:0 }} FCFA</div>
+</div>
+
+{% if bulletin.reference_paiement %}
+<div class="statut-ligne">
+  <span>Référence paiement :</span>
+  <strong>{{ bulletin.reference_paiement }}</strong>
+</div>
+{% endif %}
+
+<!-- Signatures -->
+<div class="signatures">
+  <div class="sig-bloc">
+    <div class="sig-titre">Le Vacataire</div>
+    <div class="sig-ligne">{{ bulletin.personnel.get_nom_complet }}</div>
+  </div>
+  <div class="sig-bloc">
+    <div class="sig-titre">Le Directeur</div>
+    <div class="sig-ligne">Signature et cachet</div>
+  </div>
+</div>
+
+</body>
+</html>

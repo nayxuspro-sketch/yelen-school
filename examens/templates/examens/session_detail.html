@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load examens_tags %}
 
 {% block title %}{{ session.libelle }} — YELEN SCHOOL{% endblock %}
 
@@ -18,6 +19,18 @@
   </div>
   <div class="d-flex gap-2">
     <a href="{% url 'examens:session_edit' session.pk %}" class="btn-secondary">Modifier</a>
+    <a href="{% url 'examens:candidats_session' session.pk %}" class="btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:4px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      Liste candidats
+    </a>
+    <a href="{% url 'examens:session_resultats_csv' session.pk %}" class="btn-secondary" title="Exporter les resultats CSV">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      </svg>
+      CSV
+    </a>
     <a href="{% url 'examens:saisie_resultats' session.pk %}" class="btn-primary">Saisir résultats</a>
   </div>
 </div>
@@ -97,7 +110,15 @@
     <div class="d-flex justify-between align-center mb-3">
       <div>
         <div class="fw-semibold">{{ centre.nom }}</div>
-        <div class="text-muted" style="font-size:0.75rem;">Code : {{ centre.code_centre }} · {{ centre.candidats.count }} candidat{{ centre.candidats.count|pluralize }}</div>
+        <div class="text-muted" style="font-size:0.75rem;">
+          Code : {{ centre.code_centre }} · 
+          {{ centre.candidats.count }} candidat{{ centre.candidats.count|pluralize }} ·
+          {% total_capacite centre as cap %}{{ cap }} places ·
+          {% capacite_restante centre as reste %}
+          <span class="{% if reste > 0 %}text-success{% else %}text-danger{% endif %}" style="font-weight:600;">
+            {{ reste }} restante{{ reste|pluralize }}
+          </span>
+        </div>
       </div>
       <div class="d-flex gap-2">
         <a href="{% url 'examens:centre_edit' centre.pk %}" class="btn-icon" title="Modifier">
@@ -127,14 +148,20 @@
 
       {% for salle in centre.salles.all %}
       <div class="d-flex justify-between align-center" style="padding:4px 0; font-size:0.82rem; border-bottom:1px solid var(--color-border-light,#f0f0f0);">
-        <span>{{ salle.nom }} <span class="text-muted">({{ salle.capacite }} places)</span></span>
+        <span>{{ salle.nom }} 
+          <span class="text-muted">({{ salle.capacite }} places)</span>
+          {% if salle.places_restantes > 0 %}
+            · <span class="text-success" style="font-size:0.7rem;">{{ salle.places_restantes }} dispo</span>
+          {% else %}
+            · <span class="text-danger" style="font-size:0.7rem;">Plein</span>
+          {% endif %}
+        </span>
         <div class="d-flex gap-2">
+          <a href="{% url 'examens:placement_salle' salle.pk %}" class="text-primary" style="font-size:0.75rem; text-decoration:none; font-weight:600;">Placer</a>
           <a href="{% url 'examens:salle_edit' salle.pk %}" class="text-secondary" style="font-size:0.75rem; text-decoration:none;">Modifier</a>
           <a href="{% url 'examens:salle_delete' salle.pk %}" class="text-danger" style="font-size:0.75rem; text-decoration:none;">Suppr.</a>
         </div>
       </div>
-      {% empty %}
-      <p class="text-muted" style="font-size:0.8rem; font-style:italic;">Aucune salle configurée.</p>
       {% endfor %}
     </div>
 

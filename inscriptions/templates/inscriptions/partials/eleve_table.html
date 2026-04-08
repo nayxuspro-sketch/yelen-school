@@ -1,8 +1,12 @@
 {% load inscriptions_extras %}
+{% include 'partials/bulk_actions.html' with export_url='/inscriptions/csv/' %}
 <div class="table-scroll">
   <table class="data-table">
     <thead>
       <tr>
+        <th style="width:40px;">
+          <input type="checkbox" class="bulk-checkbox" onchange="toggleBulkBar()">
+        </th>
         <th>Élève</th>
         <th>Matricule</th>
         <th>Âge</th>
@@ -14,6 +18,9 @@
       {% for eleve in eleve_list %}
       {% with inscription=inscriptions_courantes|get_item:eleve.pk %}
       <tr {% if inscription.statut == 'ABANDON' %}style="opacity:0.55;"{% endif %}>
+        <td>
+          <input type="checkbox" class="bulk-checkbox" value="{{ eleve.pk }}" onchange="toggleBulkBar()">
+        </td>
         <td>
           <div class="d-flex align-center gap-3">
             <span class="avatar-initials">{{ eleve.nom|slice:":1" }}{{ eleve.prenom|slice:":1" }}</span>
@@ -82,7 +89,7 @@
       {% endwith %}
       {% empty %}
       <tr>
-        <td colspan="5">
+        <td colspan="6">
           <div class="empty-state">
             <div class="empty-state-icon">
               <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,7 +108,7 @@
 {% if page_obj.has_other_pages %}
 <div class="pagination" style="display:flex; align-items:center; justify-content:center; gap:var(--space-2); padding:var(--space-4) 0;">
   {% if page_obj.has_previous %}
-  <a hx-get="{% url 'inscriptions:eleve_list' %}?page={{ page_obj.previous_page_number }}&q={{ query }}"
+  <a hx-get="{% url 'inscriptions:eleve_list' %}?page={{ page_obj.previous_page_number }}&q={{ query }}&classe={{ classe_id }}&statut={{ statut_filter }}"
      hx-target="#eleve-table"
      hx-push-url="true"
      class="btn-icon" title="Page précédente">
@@ -115,7 +122,7 @@
     &nbsp;&mdash;&nbsp;{{ page_obj.paginator.count }} élève{{ page_obj.paginator.count|pluralize }}
   </span>
   {% if page_obj.has_next %}
-  <a hx-get="{% url 'inscriptions:eleve_list' %}?page={{ page_obj.next_page_number }}&q={{ query }}"
+  <a hx-get="{% url 'inscriptions:eleve_list' %}?page={{ page_obj.next_page_number }}&q={{ query }}&classe={{ classe_id }}&statut={{ statut_filter }}"
      hx-target="#eleve-table"
      hx-push-url="true"
      class="btn-icon" title="Page suivante">

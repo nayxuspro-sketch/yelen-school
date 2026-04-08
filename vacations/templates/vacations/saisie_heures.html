@@ -3,6 +3,16 @@
 {% block title %}Heures — {{ contrat.personnel.get_nom_complet }} — YELEN SCHOOL{% endblock %}
 
 {% block content %}
+<style>
+  #mois-select, #annee-select {
+    color: #E8EDF5 !important;
+    background-color: #080F1C !important;
+  }
+  #mois-select option, #annee-select option {
+    color: #E8EDF5 !important;
+    background-color: #080F1C !important;
+  }
+</style>
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
@@ -13,7 +23,7 @@
     </a>
     <div>
       <h1 class="page-title">Saisie des heures</h1>
-      <p class="page-subtitle">{{ contrat.personnel.get_nom_complet }}{% if contrat.enseignement %} · {{ contrat.enseignement.matiere.nom }}{% endif %} · {{ contrat.taux_horaire|floatformat:0 }} FCFA/h</p>
+      <p class="page-subtitle">{{ contrat.personnel.get_nom_complet }} · {{ contrat.annee_scolaire.libelle }} · {{ contrat.taux_horaire|floatformat:0 }} FCFA/h</p>
     </div>
   </div>
 </div>
@@ -26,19 +36,27 @@
       <div class="form-grid-3 mb-4">
         <div class="form-group">
           <label class="input-label">Mois</label>
-          <select name="mois" class="input select">
+          <select name="mois" id="mois-select" class="input select">
             {% for val, label in mois_choices %}
             <option value="{{ val }}">{{ label }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="form-group">
-          <label class="input-label">Année</label>
-          <select name="annee" class="input select">
-            {% for a in annees %}
-            <option value="{{ a }}" {% if a == annee_courante %}selected{% endif %}>{{ a }}</option>
-            {% endfor %}
+          <label class="input-label">Année scolaire</label>
+          <select name="annee" id="annee-select" class="input select">
+            {% if annees_list %}
+              {% for year, libelle in annees_list %}
+              <option value="{{ year }}" {% if forloop.first %}selected{% endif %}>{{ libelle }}</option>
+              {% endfor %}
+            {% else %}
+              <option value="{{ contrat.annee_scolaire.date_debut.year }}">{{ contrat.annee_scolaire.libelle }}</option>
+            {% endif %}
           </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Heures prévues (semaine)</label>
+          <input type="text" value="{{ contrat.heures_hebdo_prevues }}h" class="input" readonly style="background: var(--color-bg-input); opacity: 0.7;">
         </div>
         <div class="form-group">
           <label class="input-label">Heures effectuées</label>
@@ -66,16 +84,17 @@
   </div>
   <div class="table-scroll">
     <table class="data-table">
-      <thead>
-        <tr>
-          <th>Période</th>
-          <th>Effectuées</th>
-          <th>Annulées</th>
-          <th>Nettes</th>
-          <th>Montant</th>
-          <th>Validé</th>
-        </tr>
-      </thead>
+        <thead>
+          <tr>
+            <th>Période</th>
+            <th>Effectuées</th>
+            <th>Annulées</th>
+            <th>Nettes</th>
+            <th>Montant</th>
+            <th>Validé</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
       <tbody>
         {% for h in heures_list %}
         <tr>
@@ -91,10 +110,25 @@
               <span class="badge badge-neutral">En attente</span>
             {% endif %}
           </td>
+          <td>
+            {% if h.est_valide %}
+              <a href="{% url 'vacations:invalider_heure' h.pk %}" class="btn-icon" title="Invalider" style="color: var(--color-danger);">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                </svg>
+              </a>
+            {% else %}
+              <a href="{% url 'vacations:valider_heure' h.pk %}" class="btn-icon" title="Valider" style="color: var(--color-success);">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </a>
+            {% endif %}
+          </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="6">
+          <td colspan="7">
             <div class="empty-state">
               <p class="empty-state-text">Aucune saisie.</p>
             </div>
