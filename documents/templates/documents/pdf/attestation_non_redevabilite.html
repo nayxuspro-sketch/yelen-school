@@ -233,7 +233,7 @@
   <!-- Corps -->
   <div class="corps">
     <p>
-      Le soussigné,
+      Je soussigné(e),
       {% if sig_membre %}
         {% if signataire.titre_honorifique %}{{ signataire.titre_honorifique }},{% endif %}
         <span class="eleve-nom">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</span>,
@@ -242,7 +242,7 @@
         <span class="eleve-nom">{{ identite.nom_directeur }}</span>,
         Directeur/Proviseur de <strong>{{ identite.nom_etablissement }}</strong>,
       {% else %}
-        Directeur de l'établissement,
+        Directeur/Directrice de l'établissement,
       {% endif %}
       certifie que :
     </p>
