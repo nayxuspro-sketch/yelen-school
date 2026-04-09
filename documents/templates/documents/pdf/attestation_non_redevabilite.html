@@ -53,6 +53,12 @@
     margin-top: 5px; 
     font-weight: 500;
   }
+  .doc-numero {
+    font-size: 9pt;
+    color: #003366;
+    font-weight: bold;
+    margin-top: 4px;
+  }
 
   /* Corps du document */
   .corps { 
@@ -219,6 +225,9 @@
   <div class="titre-doc">
     <h1>Attestation de Non-Redevabilité</h1>
     <div class="annee">Année scolaire {{ annee_scolaire }}</div>
+    {% if document %}
+    <div class="doc-numero">N° {{ document.numero_document }}</div>
+    {% endif %}
   </div>
 
   <!-- Corps -->
