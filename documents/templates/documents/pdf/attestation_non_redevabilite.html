@@ -4,39 +4,225 @@
 <head>
 <meta charset="UTF-8">
 <style>
-  body    { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 11pt; color: #1a1a1a; margin: 0; padding: 0; }
-  .page   { padding: 2cm; }
-
-  .titre-doc { text-align: center; margin: 0.9cm 0 0.6cm; }
-  .titre-doc h1 {
-    font-size: 14pt; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;
-    border-bottom: 2px solid #1a1a1a; display: inline-block; padding-bottom: 4px;
+  @page { margin: 0; size: A4; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 11pt; color: #1a1a1a; margin: 0; padding: 0; }
+  
+  .page {
+    padding: 2.5cm 2.8cm;
+    min-height: 100%;
+    position: relative;
+    box-sizing: border-box;
   }
-  .titre-doc .annee { font-size: 9pt; color: #555; margin-top: 5px; }
 
-  .corps { line-height: 2; font-size: 11pt; margin: 0.7cm 0; }
-  .corps p { margin: 0.3cm 0; }
-  .corps strong { font-weight: bold; text-decoration: underline; }
+  /* En-tête avec logo */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5cm;
+    padding-bottom: 0.8cm;
+    border-bottom: 2px solid #003366;
+  }
+  .header-left { flex: 1; text-align: left; }
+  .header-center { flex: 2; text-align: center; }
+  .header-right { flex: 1; text-align: right; }
+  
+  .logo-img { max-height: 60px; max-width: 120px; }
+  .etab-nom { font-size: 14pt; font-weight: bold; color: #003366; }
+  .etab-info { font-size: 9pt; color: #666; }
 
+  /* Titre principal */
+  .titre-doc {
+    text-align: center;
+    margin: 1cm 0 1.2cm;
+  }
+  .titre-doc h1 {
+    font-size: 18pt;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: bold;
+    color: #003366;
+    margin: 0;
+    padding: 8px 20px;
+    border: 2px solid #003366;
+    display: inline-block;
+  }
+  .annee { 
+    font-size: 11pt; 
+    color: #555; 
+    margin-top: 8px; 
+    font-weight: 500;
+  }
+
+  /* Corps du document */
+  .corps { 
+    line-height: 1.9; 
+    font-size: 11pt; 
+    margin: 0.8cm 0;
+    text-align: justify;
+  }
+  .corps p { margin: 0.4cm 0; }
+  
+  .eleve-nom {
+    font-weight: bold;
+    font-size: 12pt;
+    color: #003366;
+  }
+  
+  .classe-info {
+    font-weight: bold;
+    color: #1a1a1a;
+  }
+
+  /* Tableau financier */
   .recap {
-    border: 1px solid #ccc; border-radius: 3px; padding: 0.4cm 0.75cm;
-    margin: 0.6cm 0; font-size: 10pt; line-height: 1.8; background: #fafafa;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 0.6cm 0.8cm;
+    margin: 0.8cm 0;
+    background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+  }
+  .recap-title {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #003366;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
   .recap table { width: 100%; border-collapse: collapse; }
-  .recap td { padding: 2px 4px; }
-  .recap .lbl { color: #555; }
+  .recap td { padding: 6px 8px; font-size: 10.5pt; }
+  .recap .lbl { color: #555; text-align: left; }
   .recap .val { text-align: right; font-weight: bold; }
-  .recap .total-row td { border-top: 1px solid #ccc; padding-top: 5px; font-size: 11pt; }
-  .recap .solde-ok  { color: #007a45; }
-  .recap .solde-nok { color: #c0392b; }
+  .recap .total-row td { 
+    border-top: 2px solid #003366; 
+    padding-top: 10px; 
+    font-size: 12pt;
+  }
+  .recap .solde-ok { color: #007a45; font-size: 13pt; }
+  .recap .solde-nok { color: #c0392b; font-size: 13pt; }
+  .recap .negative { color: #007a45; }
 
-  .numero { font-size: 8pt; color: #aaa; text-align: center; margin-top: 0.8cm; }
+  /* Message de confirmation */
+  .confirmation-box {
+    background: linear-gradient(to right, #e8f5e9, #c8e6c9);
+    border-left: 4px solid #007a45;
+    padding: 15px 20px;
+    margin: 0.8cm 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .confirmation-box p {
+    margin: 0;
+    font-weight: 500;
+    color: #007a45;
+  }
+
+  /* Message d'alerte */
+  .alerte-box {
+    background: linear-gradient(to right, #ffebee, #ffcdd2);
+    border-left: 4px solid #c0392b;
+    padding: 15px 20px;
+    margin: 0.8cm 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .alerte-box p {
+    margin: 0;
+    font-weight: 500;
+    color: #c0392b;
+  }
+
+  /* Attestation footer */
+  .attestation-footer {
+    margin-top: 1.2cm;
+    text-align: justify;
+    font-style: italic;
+    color: #555;
+  }
+
+  /* Signature */
+  .signature-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5cm;
+    padding-top: 0.8cm;
+  }
+  .signature-block {
+    text-align: center;
+    width: 45%;
+  }
+  .signature-line {
+    border-top: 1px solid #333;
+    margin-bottom: 8px;
+    padding-top: 5px;
+  }
+  .signature-name {
+    font-weight: bold;
+    font-size: 11pt;
+  }
+  .signature-func {
+    font-size: 10pt;
+    color: #666;
+  }
+  
+  /* Cachet */
+  .cachet {
+    width: 80px;
+    height: 80px;
+    border: 2px solid #003366;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8pt;
+    color: #003366;
+    text-align: center;
+    margin: 0 auto 10px;
+    opacity: 0.7;
+  }
+
+  /* Numéro document */
+  .numero { 
+    font-size: 9pt; 
+    color: #888; 
+    text-align: center; 
+    margin-top: 1cm;
+    padding-top: 0.5cm;
+    border-top: 1px solid #eee;
+  }
+
+  /* Footer */
+  .footer {
+    position: absolute;
+    bottom: 1cm;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 8pt;
+    color: #999;
+  }
 </style>
 </head>
 <body>
 <div class="page">
 
-  {% include "documents/pdf/partials/entete.html" %}
+  <!-- En-tête avec logo -->
+  <div class="header">
+    <div class="header-left">
+      {% if logo_url %}
+      <img src="{{ logo_url }}" alt="Logo" class="logo-img">
+      {% endif %}
+    </div>
+    <div class="header-center">
+      {% if identite %}
+      <div class="etab-nom">{{ identite.nom_etablissement }}</div>
+      <div class="etab-info">
+        {% if identite.adresse %}{{ identite.adresse }}{% endif %}
+        {% if identite.telephone %} — Tél: {{ identite.telephone }}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="header-right"></div>
+  </div>
 
   <!-- Titre -->
   <div class="titre-doc">
@@ -50,10 +236,10 @@
       Le soussigné,
       {% if sig_membre %}
         {% if signataire.titre_honorifique %}{{ signataire.titre_honorifique }},{% endif %}
-        <strong>{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</strong>,
+        <span class="eleve-nom">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</span>,
         {{ signataire.fonction|default:"Directeur/Proviseur" }}{% if identite %} de <strong>{{ identite.nom_etablissement }}</strong>{% endif %},
       {% elif identite and identite.nom_directeur %}
-        <strong>{{ identite.nom_directeur }}</strong>,
+        <span class="eleve-nom">{{ identite.nom_directeur }}</span>,
         Directeur/Proviseur de <strong>{{ identite.nom_etablissement }}</strong>,
       {% else %}
         Directeur de l'établissement,
@@ -62,62 +248,71 @@
     </p>
 
     <p>
-      <strong>{{ eleve.nom|upper }} {{ eleve.prenom }}</strong>,
-      inscrit(e) en classe de <strong>{{ classe.nom }}</strong>
+      <span class="eleve-nom">{{ eleve.nom|upper }} {{ eleve.prenom }}</span>,
+      inscrit(e) en classe de <span class="classe-info">{{ classe.nom }}</span>
       ({{ classe.cycle.nom }}) pour l'année scolaire <strong>{{ annee_scolaire }}</strong>,
+      {% if inscription and inscription.statut_eleve %}
+      sous le statut <strong>{{ inscription.statut_eleve.nom }}</strong>,
+      {% endif %}
+      a acquitté ses frais scolaires comme suit :
     </p>
 
     <!-- Récapitulatif financier -->
     <div class="recap">
+      <div class="recap-title">État financier</div>
       <table>
         <tr>
           <td class="lbl">Total des frais de scolarité :</td>
-          <td class="val">{{ situation.total_du|floatformat:0 }} FCFA</td>
+          <td class="val">{{ situation.total_du|floatformat:0 }} Fcfa</td>
         </tr>
         {% if situation.total_reduction %}
         <tr>
-          <td class="lbl">Réductions / Bourses :</td>
-          <td class="val">- {{ situation.total_reduction|floatformat:0 }} FCFA</td>
+          <td class="lbl">Réductions / Bourses accordées :</td>
+          <td class="val" style="color: #007a45;">- {{ situation.total_reduction|floatformat:0 }} Fcfa</td>
         </tr>
         {% endif %}
         <tr>
-          <td class="lbl">Total payé :</td>
-          <td class="val">{{ situation.total_paye|floatformat:0 }} FCFA</td>
+          <td class="lbl">Montant total payé :</td>
+          <td class="val">{{ situation.total_paye|floatformat:0 }} Fcfa</td>
         </tr>
         <tr class="total-row">
           <td class="lbl"><strong>Reste à payer :</strong></td>
-          <td class="val {% if solde %}solde-ok{% else %}solde-nok{% endif %}">
-            <strong>{{ reste|floatformat:0 }} FCFA</strong>
+          <td class="val {% if reste > 0 %}solde-nok{% else %}solde-ok negative{% endif %}">
+            <strong>{{ reste|floatformat:0 }} Fcfa</strong>
           </td>
         </tr>
       </table>
     </div>
 
-    {% if solde %}
-    <p>
-      <strong>a réglé la totalité de ses frais scolaires</strong>
-      et n'est redevable d'aucune somme envers l'établissement au titre de l'année scolaire
-      {{ annee_scolaire }}.
-    </p>
+    {% if reste <= 0 %}
+    <div class="confirmation-box">
+      <p>✓ Cet(te) élève a <strong>réglé la totalité</strong> de ses frais scolaires et ne doit aucune somme à l'établissement au titre de l'année scolaire {{ annee_scolaire }}.</p>
+    </div>
     {% else %}
-    <p>
-      présente un solde restant dû de
-      <strong>{{ reste|floatformat:0 }} FCFA</strong>
-      au titre de l'année scolaire {{ annee_scolaire }}.
-    </p>
+    <div class="alerte-box">
+      <p>⚠ Attention : Cet(te) élève présente un <strong>solde restant dû de {{ reste|floatformat:0 }} Fcfa</strong> au titre de l'année scolaire {{ annee_scolaire }}.</p>
+    </div>
     {% endif %}
 
-    <p>
-      En foi de quoi, la présente attestation est délivrée à l'intéressé(e)
-      pour servir et valoir ce que de droit.
+    <p class="attestation-footer">
+      En foi de quoi, la présente attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.
     </p>
   </div>
 
   <!-- Signature -->
-  {% include "documents/pdf/partials/signataire_bloc.html" %}
+  <div class="signature-section">
+    <div class="signature-block">
+      <div class="cachet">CACHET</div>
+      <div class="signature-line"></div>
+      <div class="signature-name">
+        {% if sig_membre %}{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}{% elif identite and identite.nom_directeur %}{{ identite.nom_directeur }}{% endif %}
+      </div>
+      <div class="signature-func">{{ signataire.fonction|default:"Directeur/Proviseur" }}</div>
+    </div>
+  </div>
 
   {% if document %}
-  <div class="numero">N° {{ document.numero_document }}</div>
+  <div class="numero">Document n° {{ document.numero_document }}</div>
   {% endif %}
 
 </div>
