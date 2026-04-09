@@ -235,7 +235,6 @@
     <p>
       Je soussigné(e),
       {% if sig_membre %}
-        {% if signataire.titre_honorifique %}{{ signataire.titre_honorifique }},{% endif %}
         <span class="eleve-nom">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</span>,
         {{ signataire.fonction|default:"Directeur/Proviseur" }}{% if identite %} de <strong>{{ identite.nom_etablissement }}</strong>{% endif %},
       {% elif identite and identite.nom_directeur %}
