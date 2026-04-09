@@ -122,7 +122,7 @@ def bilan_periodes(request):
 @require_POST
 def generer_commentaires_bilan(request):
     """
-    Génère des commentaires IA pour le bilan (nécessite Internet + ANTHROPIC_API_KEY).
+    Génère des commentaires pour le bilan pédagogique (mode hors ligne).
     Reçoit un JSON body : {"stats": [{cle, classe_nom, cycle_nom, ...}, ...]}
     Retourne : {"commentaires": {cle: {commentaire, recommandations}, ...}}
     """
