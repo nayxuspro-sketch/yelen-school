@@ -88,9 +88,15 @@ def session_edit(request, session_id):
 
 @login_required
 def session_detail(request, session_id):
+    etab = getattr(request.user, 'etablissement', None)
     session = get_object_or_404(
         SessionExamen.objects.select_related('annee_scolaire'), pk=session_id
     )
+    
+    if etab and session.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('examens:session_list')
+    
     salles_qs = SalleExamen.objects.annotate(nb_places_prises=Count('placements'))
     centres = session.centres.prefetch_related(
         Prefetch('salles', queryset=salles_qs),
@@ -168,7 +174,13 @@ def inscrire_classe(request, session_id, classe_id):
 
 @login_required
 def saisie_resultats(request, session_id):
+    etab = getattr(request.user, 'etablissement', None)
     session = get_object_or_404(SessionExamen, pk=session_id)
+    
+    if etab and session.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('examens:session_list')
+    
     candidats = session.inscriptions_examen.select_related(
         'inscription__eleve', 'centre'
     ).order_by('numero_table', 'inscription__eleve__nom')
@@ -448,8 +460,14 @@ def _candidats_qs(session, centre_id=None):
 @login_required
 def candidats_session(request, session_id):
     """Liste des candidats inscrits à une session, filtrable par centre."""
+    etab = getattr(request.user, 'etablissement', None)
     session = get_object_or_404(
         SessionExamen.objects.select_related('annee_scolaire'), pk=session_id
+    )
+    
+    if etab and session.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('examens:session_list')
     )
     centres = session.centres.order_by('code_centre')
     centre_id = request.GET.get('centre', '')

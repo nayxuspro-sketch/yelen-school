@@ -319,6 +319,11 @@ def paiement_create(request):
 def situation_eleve(request, inscription_id):
     """Vue détaillée de la situation financière d'un élève."""
     inscription = get_object_or_404(Inscription, pk=inscription_id)
+    etab = getattr(request.user, 'etablissement', None)
+    
+    if etab and inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé. Cette inscription n'appartient pas à votre établissement.")
+        return redirect('finances:paiement_list')
 
     sit = _calcul_situation_financiere(inscription)
 

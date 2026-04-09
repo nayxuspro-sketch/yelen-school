@@ -123,7 +123,13 @@ def personnel_list_csv(request):
 @login_required
 def personnel_detail(request, pk):
     """Détails d'un membre du personnel."""
+    etab = getattr(request.user, 'etablissement', None)
     membre = get_object_or_404(MembrePersonnel, pk=pk)
+    
+    if etab and membre.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé. Ce membre n'appartient pas à votre établissement.")
+        return redirect('personnel:personnel_list')
+    
     inscriptions = membre.inscriptions.all()
 
     from core.utils import get_etablissement_context
@@ -155,7 +161,13 @@ def personnel_create(request):
 @login_required
 def personnel_update(request, pk):
     """Modification d'un membre du personnel."""
+    etab = getattr(request.user, 'etablissement', None)
     membre = get_object_or_404(MembrePersonnel, pk=pk)
+    
+    if etab and membre.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé. Ce membre n'appartient pas à votre établissement.")
+        return redirect('personnel:personnel_list')
+    
     if request.method == 'POST':
         form = MembrePersonnelForm(request.POST, request.FILES, instance=membre)
         if form.is_valid():
@@ -173,7 +185,13 @@ def toggle_active(request, pk):
     if request.method != 'POST':
         return redirect('personnel:detail', pk=pk)
 
+    etab = getattr(request.user, 'etablissement', None)
     membre = get_object_or_404(MembrePersonnel, pk=pk)
+    
+    if etab and membre.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('personnel:personnel_list')
+    
     membre.is_active = not membre.is_active
     membre.save(update_fields=['is_active'])
 
@@ -185,7 +203,13 @@ def toggle_active(request, pk):
 @login_required
 def inscription_create(request, pk):
     """Inscription annuelle d'un membre du personnel."""
+    etab = getattr(request.user, 'etablissement', None)
     membre = get_object_or_404(MembrePersonnel, pk=pk)
+    
+    if etab and membre.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('personnel:personnel_list')
+    
     if request.method == 'POST':
         form = InscriptionPersonnelForm(request.POST)
         if form.is_valid():
@@ -211,10 +235,17 @@ def inscription_create(request, pk):
 @login_required
 def inscription_edit(request, inscription_id):
     """Modification d'une inscription annuelle du personnel."""
+    etab = getattr(request.user, 'etablissement', None)
     inscription = get_object_or_404(
         InscriptionPersonnel.objects.select_related('personnel'), pk=inscription_id
     )
+    
+    if etab and inscription.personnel.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('personnel:personnel_list')
+    
     membre = inscription.personnel
+    
     if request.method == 'POST':
         form = InscriptionPersonnelForm(request.POST, instance=inscription)
         if form.is_valid():

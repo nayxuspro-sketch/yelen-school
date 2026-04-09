@@ -56,12 +56,17 @@ def contrat_create(request):
 @login_required
 def saisie_heures(request, contrat_id):
     """Saisie mensuelle des heures pour un contrat."""
+    etab = getattr(request.user, 'etablissement', None)
     contrat = get_object_or_404(
         ContratVacation.objects.select_related(
             'personnel', 'annee_scolaire'
         ),
         pk=contrat_id
     )
+    
+    if etab and contrat.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('vacations:contrat_list')
 
     # Récupérer ou créer les enregistrements pour les mois de l'année scolaire
     heures_list = HeureVacation.objects.filter(
@@ -116,7 +121,13 @@ def saisie_heures(request, contrat_id):
 @login_required
 def valider_heure(request, heure_id):
     """Valider une saisie d'heures."""
+    etab = getattr(request.user, 'etablissement', None)
     heure = get_object_or_404(HeureVacation, pk=heure_id)
+    
+    if etab and heure.contrat.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('vacations:contrat_list')
+    
     heure.est_valide = True
     heure.save(update_fields=['est_valide'])
     messages.success(request, f"Heures de {heure.get_mois_display()} {heure.annee} validées.")
@@ -126,7 +137,12 @@ def valider_heure(request, heure_id):
 @login_required
 def invalider_heure(request, heure_id):
     """Invalider une saisie d'heures."""
+    etab = getattr(request.user, 'etablissement', None)
     heure = get_object_or_404(HeureVacation, pk=heure_id)
+    
+    if etab and heure.contrat.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('vacations:contrat_list')
     heure.est_valide = False
     heure.save(update_fields=['est_valide'])
     messages.warning(request, f"Heures de {heure.get_mois_display()} {heure.annee} invalidées.")
@@ -260,7 +276,13 @@ def generer_tous_bulletins(request):
 @login_required
 def valider_bulletin(request, bulletin_id):
     """Valider un bulletin de vacation."""
+    etab = getattr(request.user, 'etablissement', None)
     bulletin = get_object_or_404(BulletinVacation, pk=bulletin_id)
+    
+    if etab and bulletin.contrat.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('vacations:bulletin_list')
+    
     bulletin.statut = BulletinVacation.StatutChoices.VALIDE
     bulletin.save(update_fields=['statut'])
     messages.success(request, f"Bulletin de {bulletin.get_mois_display()} {bulletin.annee} validé.")
@@ -269,8 +291,14 @@ def valider_bulletin(request, bulletin_id):
 
 @login_required
 def payer_bulletin(request, bulletin_id):
-    """Marquer un bulletin comme payé."""
+    etab = getattr(request.user, 'etablissement', None)
     bulletin = get_object_or_404(BulletinVacation, pk=bulletin_id)
+    
+    if etab and bulletin.contrat.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('vacations:bulletin_list')
+    
+    """Marquer un bulletin comme payé."""
     bulletin.statut = BulletinVacation.StatutChoices.PAYE
     from django.utils import timezone
     bulletin.date_paiement = timezone.now().date()

@@ -72,9 +72,8 @@ def login_view(request):
             messages.error(request, "Veuillez fournir votre email et mot de passe.")
             return render(request, 'accounts/login.html')
 
-        # Vérifier si le compte est verrouillé
-        try:
-            user = User.objects.get(email__iexact=email)
+        user = authenticate(request, username=email, password=password)
+        if user is not None:
             if user.locked_until and user.locked_until > timezone.now():
                 remaining_seconds = (user.locked_until - timezone.now()).seconds
                 remaining_minutes = remaining_seconds // 60 + 1
@@ -83,26 +82,21 @@ def login_view(request):
                     f"Compte temporairement verrouillé. Réessayez dans {remaining_minutes} minute(s)."
                 )
                 return render(request, 'accounts/login.html')
-        except User.DoesNotExist:
-            pass
 
-        user = authenticate(request, username=email, password=password)
-        if user is not None:
-            # Réinitialiser les tentatives échouées après succès
             if user.failed_login_attempts > 0 or user.locked_until:
                 user.failed_login_attempts = 0
                 user.locked_until = None
                 user.save(update_fields=['failed_login_attempts', 'locked_until'])
 
             if user.totp_enabled and user.totp_secret:
-                # Stocker l'ID en session et passer à l'étape 2FA
                 request.session['_2fa_user_pk'] = str(user.pk)
                 request.session['_2fa_next'] = request.GET.get('next', '')
                 return redirect('accounts:login_2fa')
             login(request, user)
             return _redirect_after_login(request, user, request.GET.get('next', ''))
         else:
-            # Incrémenter les tentatives échouées
+            messages.error(request, "Email ou mot de passe incorrect.")
+            
             try:
                 user = User.objects.get(email__iexact=email)
                 user.failed_login_attempts += 1
@@ -122,7 +116,7 @@ def login_view(request):
                         f"Email ou mot de passe incorrect. Il vous reste {remaining} tentative(s)."
                     )
             except User.DoesNotExist:
-                messages.error(request, "Email ou mot de passe incorrect.")
+                pass
 
     return render(request, 'accounts/login.html')
 
@@ -162,15 +156,24 @@ def logout_view(request):
 def totp_setup(request):
     """Activation de la 2FA : affiche le QR code et valide le premier code."""
     import pyotp, qrcode, io, base64
+    from django.core.signing import Signer
 
     user = request.user
 
     if request.method == 'POST':
         code = request.POST.get('code', '').strip().replace(' ', '')
-        secret = request.POST.get('secret', '').strip()
-        if not secret:
+        signed_secret = request.POST.get('signed_secret', '').strip()
+        if not signed_secret:
             messages.error(request, "Session expirée. Recommencez.")
             return redirect('accounts:totp_setup')
+        
+        try:
+            signer = Signer()
+            secret = signer.unsign(signed_secret)
+        except Exception:
+            messages.error(request, "Session expirée. Recommencez.")
+            return redirect('accounts:totp_setup')
+        
         totp = pyotp.TOTP(secret)
         if totp.verify(code, valid_window=1):
             user.totp_secret = secret
@@ -179,8 +182,8 @@ def totp_setup(request):
             messages.success(request, "Double authentification activée avec succès.")
             return redirect('accounts:profile')
         messages.error(request, "Code incorrect. Vérifiez votre application et réessayez.")
-        # Réafficher avec le même secret pour ne pas regénérer
-        new_secret = secret
+        
+        new_secret = pyotp.random_base32()
     else:
         new_secret = pyotp.random_base32()
 
@@ -189,8 +192,11 @@ def totp_setup(request):
     qrcode.make(uri).save(buf, format='PNG')
     qr_b64 = base64.b64encode(buf.getvalue()).decode()
 
+    signer = Signer()
+    signed_secret = signer.sign(new_secret)
+
     return render(request, 'accounts/totp_setup.html', {
-        'secret': new_secret,
+        'signed_secret': signed_secret,
         'qr_b64': qr_b64,
     })
 

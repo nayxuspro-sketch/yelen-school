@@ -1,7 +1,12 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import FileExtensionValidator
 from .models import Eleve, Inscription, StatutInscriptionChoices
 from parametres.models import Classe, AnneeScolaire, StatutEleve
+
+ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+MAX_IMAGE_SIZE_MB = 5
 
 
 def _apply_yelen_classes(fields):
@@ -35,11 +40,32 @@ class EleveForm(forms.ModelForm):
         widgets = {
             'date_naissance': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'tuteur_adresse': forms.Textarea(attrs={'rows': 2}),
+            'photo': forms.FileInput(attrs={
+                'accept': 'image/jpeg,image/png,image/gif,image/webp',
+                'class': 'input',
+            }),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        photo_field = self.fields['photo']
+        photo_field.validators.append(
+            FileExtensionValidator(allowed_extensions=ALLOWED_IMAGE_EXTENSIONS)
+        )
         _apply_yelen_classes(self.fields)
+
+    def clean_photo(self):
+        photo = self.cleaned_data.get('photo')
+        if photo:
+            if photo.size > MAX_IMAGE_SIZE_MB * 1024 * 1024:
+                raise forms.ValidationError(
+                    f"La photo ne doit pas dépasser {MAX_IMAGE_SIZE_MB} Mo."
+                )
+            if hasattr(photo, 'content_type') and photo.content_type not in ALLOWED_MIME_TYPES:
+                raise forms.ValidationError(
+                    "Format d'image non autorisé. Utilisez JPG, PNG, GIF ou WebP."
+                )
+        return photo
 
 
 class InscriptionForm(forms.ModelForm):

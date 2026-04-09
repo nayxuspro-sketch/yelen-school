@@ -234,7 +234,12 @@ def liste_classes_selector(request):
 @login_required
 def liste_classe_pdf(request, classe_id):
     """Liste alphabétique d'une classe — prévisualisation HTML et export PDF."""
+    etab = getattr(request.user, 'etablissement', None)
     classe = get_object_or_404(Classe.objects.select_related('cycle'), pk=classe_id)
+    
+    if etab and classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé. Cette classe n'appartient pas à votre établissement.")
+        return redirect('documents:document_list')
 
     # Année : priorité au paramètre GET, sinon année courante
     annee_id = request.GET.get('annee_id')
@@ -418,7 +423,12 @@ def liste_personnel_pdf(request, cycle_id):
     """Liste alphabétique du personnel d'un cycle — prévisualisation HTML et export PDF."""
     from personnel.models import MembrePersonnel
 
+    etab = getattr(request.user, 'etablissement', None)
     cycle = get_object_or_404(Cycle, pk=cycle_id)
+    
+    if etab and cycle.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé. Ce cycle n'appartient pas à votre établissement.")
+        return redirect('documents:document_list')
 
     annee_id = request.GET.get('annee_id')
     if annee_id:

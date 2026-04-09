@@ -24,10 +24,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
-    # Mode développement uniquement - NEVER utiliser en production!
-    SECRET_KEY = 'django-insecure-dev-only-change-in-production-2026'
-    import warnings
-    warnings.warn("SECRET_KEY non définie - utilisant clé de développement!")
+    if DEBUG:
+        import secrets
+        SECRET_KEY = secrets.token_hex(64)
+        import warnings
+        warnings.warn("SECRET_KEY non définie - génération automatique pour le développement.")
+    else:
+        raise ValueError(
+            "SECRET_KEY est obligatoire en production! "
+            "Définissez la variable d'environnement SECRET_KEY."
+        )
 
 # Clé API Anthropic — nécessite une connexion Internet (fonctionnalités IA)
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
@@ -59,6 +65,16 @@ if not DEBUG:
     
     # Referrer Policy
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+    
+    # Content Security Policy
+    SECURE_CSP_DEFAULT_SRC = ("'self'",)
+    SECURE_CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
+    SECURE_CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+    SECURE_CSP_IMG_SRC = ("'self'", "data:", "blob:")
+    SECURE_CSP_FONT_SRC = ("'self'",)
+    SECURE_CSP_CONNECT_SRC = ("'self'",)
+    SECURE_CSP_FRAME_ANCESTORS = ("'none'",)
+    SECURE_CSP_BASE_URI = ("'self'",)
 
 # Autorise les requêtes POST/CSRF depuis HTTPS local (Nginx dev)
 CSRF_TRUSTED_ORIGINS = [

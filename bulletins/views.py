@@ -16,7 +16,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -140,10 +140,17 @@ def bulletin_saisir(request, inscription_id, trimestre_id):
     Crée le Bulletin s'il n'existe pas encore.
     Compatible HTMX : retourne uniquement le fragment de ligne.
     """
+    etab = getattr(request.user, 'etablissement', None)
     inscription = get_object_or_404(
         Inscription.objects.select_related('eleve', 'classe'),
         pk=inscription_id,
     )
+    
+    if etab and inscription.classe.etablissement_id != etab.pk:
+        from django.contrib import messages
+        messages.error(request, "Accès refusé. Cette inscription n'appartient pas à votre établissement.")
+        return redirect('bulletins:bulletin_list')
+    
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
     bulletin, _ = Bulletin.objects.get_or_create(
         inscription=inscription,
@@ -190,7 +197,14 @@ def bulletin_publier(request, inscription_id, trimestre_id):
     Toggle publication d'un bulletin individuel.
     Crée le Bulletin si nécessaire.
     """
+    etab = getattr(request.user, 'etablissement', None)
     inscription = get_object_or_404(Inscription, pk=inscription_id)
+    
+    if etab and inscription.classe.etablissement_id != etab.pk:
+        from django.contrib import messages
+        messages.error(request, "Accès refusé.")
+        return JsonResponse({'error': 'Accès refusé'}, status=403)
+    
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
     bulletin, _ = Bulletin.objects.get_or_create(
         inscription=inscription,
@@ -248,7 +262,14 @@ def bulletin_publier(request, inscription_id, trimestre_id):
 @require_POST
 def bulletins_classe_publier(request, class_id, trimestre_id):
     """Publie tous les bulletins (avec moyenne calculée) d'une classe en une action."""
+    etab = getattr(request.user, 'etablissement', None)
     classe = get_object_or_404(Classe, pk=class_id)
+    
+    if etab and classe.etablissement_id != etab.pk:
+        from django.contrib import messages
+        messages.error(request, "Accès refusé.")
+        return JsonResponse({'error': 'Accès refusé'}, status=403)
+    
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
 
     inscriptions = (

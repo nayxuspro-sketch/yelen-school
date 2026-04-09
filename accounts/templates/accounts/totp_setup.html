@@ -57,11 +57,8 @@
           <div style="background:var(--color-bg-subtle); border:1px solid var(--color-border);
                       border-radius:6px; padding:var(--space-3); text-align:center;">
             <p class="text-muted" style="font-size:0.78rem; margin:0 0 4px;">
-              Ou saisissez ce code manuellement dans l'application :
+              Scannez le code ci-dessus ou ouvrez l'application pour saisir manuellement le code affiché.
             </p>
-            <code style="font-size:0.9rem; font-weight:700; letter-spacing:.15em; color:var(--color-primary);">
-              {{ secret }}
-            </code>
           </div>
         </div>
       </div>
@@ -75,7 +72,7 @@
           <p class="fw-medium" style="margin:0 0 var(--space-3);">Confirmez avec le code généré</p>
           <form method="post" novalidate autocomplete="off">
             {% csrf_token %}
-            <input type="hidden" name="secret" value="{{ secret }}">
+            <input type="hidden" name="signed_secret" value="{{ signed_secret }}">
 
             <div class="form-group">
               <label for="code" class="input-label">Code à 6 chiffres</label>

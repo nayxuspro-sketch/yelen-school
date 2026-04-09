@@ -389,10 +389,15 @@ def justification_list(request):
 @login_required
 def justification_create(request, inscription_id):
     """Créer une justification d'absence pour un élève."""
+    etab = getattr(request.user, 'etablissement', None)
     inscription = get_object_or_404(
         Inscription.objects.select_related('eleve', 'classe'),
         pk=inscription_id
     )
+    
+    if etab and inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé. Cette inscription n'appartient pas à votre établissement.")
+        return redirect('presences:appel_list')
 
     if request.method == 'POST':
         date_debut = request.POST.get('date_debut')

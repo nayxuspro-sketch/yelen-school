@@ -321,9 +321,14 @@ def eleve_list_pdf(request):
 def eleve_detail(request, pk):
     """Détails d'un élève."""
     eleve = get_object_or_404(Eleve, pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+    
+    if etab and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+        messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
+    
     inscriptions = eleve.inscriptions.all().order_by('-annee_scolaire__date_debut')
     
-    # Dernière inscription active pour le certificat
     last_inscription = eleve.inscriptions.exclude(
         statut='ABANDON'
     ).order_by('-annee_scolaire__date_debut').first()
@@ -356,6 +361,12 @@ def eleve_create(request):
 def eleve_update(request, pk):
     """Modification d'un élève."""
     eleve = get_object_or_404(Eleve, pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+    
+    if etab and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+        messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
+    
     if request.method == 'POST':
         form = EleveForm(request.POST, request.FILES, instance=eleve)
         if form.is_valid():
@@ -375,9 +386,14 @@ def eleve_update(request, pk):
 def inscription_create(request, pk):
     """Réinscription ou nouvelle inscription annuelle d'un élève."""
     eleve = get_object_or_404(Eleve, pk=pk)
-    etablissement = getattr(request.user, 'etablissement', None)
+    etab = getattr(request.user, 'etablissement', None)
+    
+    if etab and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+        messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
+    
     if request.method == 'POST':
-        form = InscriptionForm(request.POST, etablissement=etablissement)
+        form = InscriptionForm(request.POST, etablissement=etab)
         if form.is_valid():
             inscription = form.save(commit=False)
             inscription.eleve = eleve
@@ -388,7 +404,7 @@ def inscription_create(request, pk):
         annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
         form = InscriptionForm(
             initial={'eleve': eleve, 'annee_scolaire': annee_courante, 'statut_eleve': 'AFFECTE'},
-            etablissement=etablissement,
+            etablissement=etab,
         )
 
     return render(request, 'inscriptions/inscription_form.html', {
@@ -401,16 +417,20 @@ def inscription_update(request, pk):
     """Modifier une inscription existante."""
     inscription = get_object_or_404(Inscription, pk=pk)
     eleve = inscription.eleve
-    etablissement = getattr(request.user, 'etablissement', None)
+    etab = getattr(request.user, 'etablissement', None)
+    
+    if etab and inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé. Cette inscription n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
     
     if request.method == 'POST':
-        form = InscriptionForm(request.POST, instance=inscription, etablissement=etablissement)
+        form = InscriptionForm(request.POST, instance=inscription, etablissement=etab)
         if form.is_valid():
             form.save()
             messages.success(request, f"Inscription de {eleve.get_nom_complet()} mise à jour.")
             return redirect('inscriptions:eleve_detail', pk=eleve.pk)
     else:
-        form = InscriptionForm(instance=inscription, etablissement=etablissement)
+        form = InscriptionForm(instance=inscription, etablissement=etab)
 
     return render(request, 'inscriptions/inscription_form.html', {
         'form': form,
@@ -481,6 +501,12 @@ def _get_inscription_courante(eleve):
 def marquer_abandon(request, pk):
     """Marque une inscription comme Abandon (ou annule l'abandon)."""
     inscription = get_object_or_404(Inscription, pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+    
+    if etab and inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé. Cette inscription n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
+    
     if request.method == 'POST':
         if inscription.statut == 'ABANDON':
             inscription.statut = 'AFFECTE'
@@ -499,14 +525,18 @@ def transfert_classe(request, pk):
         Inscription.objects.select_related('eleve', 'classe', 'annee_scolaire'),
         pk=pk,
     )
+    etab = getattr(request.user, 'etablissement', None)
+    
+    if etab and inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé. Cette inscription n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
+    
     if inscription.statut == 'ABANDON':
         messages.error(request, "Impossible de transférer une inscription marquée Abandon.")
         return redirect('inscriptions:eleve_detail', pk=inscription.eleve.pk)
 
-    etablissement = getattr(request.user, 'etablissement', None)
-
     if request.method == 'POST':
-        form = TransfertClasseForm(request.POST, inscription=inscription, etablissement=etablissement)
+        form = TransfertClasseForm(request.POST, inscription=inscription, etablissement=etab)
         if form.is_valid():
             ancienne_classe = inscription.classe
             inscription.classe = form.cleaned_data['classe']
@@ -518,7 +548,7 @@ def transfert_classe(request, pk):
             )
             return redirect('inscriptions:eleve_detail', pk=inscription.eleve.pk)
     else:
-        form = TransfertClasseForm(inscription=inscription, etablissement=etablissement)
+        form = TransfertClasseForm(inscription=inscription, etablissement=etab)
 
     return render(request, 'inscriptions/transfert_classe.html', {
         'form': form,

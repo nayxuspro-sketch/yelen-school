@@ -634,6 +634,14 @@ def evaluation_create(request):
 def evaluation_update(request, pk):
     """Modification d'une évaluation."""
     evaluation = get_object_or_404(Evaluation, pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+    
+    if etab and evaluation.classe.etablissement_id != etab.pk:
+        from django.contrib import messages
+        messages.error(request, "Accès refusé. Cette évaluation n'appartient pas à votre établissement.")
+        from django.shortcuts import redirect
+        return redirect('pedagogie:evaluation_list')
+    
     if request.method == 'POST':
         form = EvaluationForm(request.POST, instance=evaluation)
         if form.is_valid():
