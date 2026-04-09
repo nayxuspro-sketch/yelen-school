@@ -136,6 +136,18 @@ class User(AbstractUser, BaseModel):
         help_text='Authentification à deux facteurs via application TOTP.',
     )
 
+    # ── Verrouillage de compte (brute force protection) ──
+    failed_login_attempts = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Tentatives de connexion échouées',
+    )
+    locked_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Compte verrouillé jusqu\'à',
+        help_text='Date de fin du verrouillage temporaire.',
+    )
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 

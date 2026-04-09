@@ -258,8 +258,23 @@ def sanction_list(request):
 @login_required
 def sanction_create(request):
     """Enregistrer une nouvelle sanction disciplinaire."""
+    # Vérification de rôle - seul le personnel autorisé peut créer des sanctions
+    from core.models import RoleChoices
+    if request.user.role not in (
+        RoleChoices.DIRECTEUR, RoleChoices.CENSEUR, RoleChoices.AVS, RoleChoices.SECRETAIRE
+    ):
+        messages.error(request, "Vous n'êtes pas autorisé à enregistrer des sanctions.")
+        return redirect('viescolaire:sanction_list')
+    
     annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-    classes = Classe.objects.select_related('cycle').order_by('cycle__ordre', 'nom')
+    
+    # Filtrer les classes par établissement de l'utilisateur
+    etab = request.user.etablissement
+    if etab:
+        classes = Classe.objects.filter(etablissement=etab).select_related('cycle').order_by('cycle__ordre', 'nom')
+    else:
+        classes = Classe.objects.select_related('cycle').order_by('cycle__ordre', 'nom')
+        
     trimestres = Trimestre.objects.filter(
         annee_scolaire=annee_courante
     ).order_by('numero') if annee_courante else []
@@ -267,6 +282,12 @@ def sanction_create(request):
     if request.method == 'POST':
         inscription_id = request.POST.get('inscription')
         inscription = get_object_or_404(Inscription, pk=inscription_id)
+        
+        # IDOR - Vérifier que l'inscription appartient à l'établissement de l'utilisateur
+        if etab and inscription.classe.etablissement != etab:
+            messages.error(request, "Vous n'avez pas accès à cet élève.")
+            return redirect('viescolaire:sanction_create')
+        
         trimestre_id = request.POST.get('trimestre') or None
         trimestre = Trimestre.objects.filter(pk=trimestre_id).first() if trimestre_id else None
         points_raw = request.POST.get('points', '0').strip() or '0'

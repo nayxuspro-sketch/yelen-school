@@ -483,11 +483,11 @@
       </button>
       <div id="pedagogie-submenu" class="sidebar-submenu">
         <a href="{% url 'pedagogie:matiere_list' %}"       class="menu-item menu-item-sub" data-url="/pedagogie/matieres/">Matières</a>
-        <a href="{% url 'pedagogie:enseignement_list' %}"  class="menu-item menu-item-sub" data-url="/pedagogie/enseignements/">Enseignements</a>
         <a href="{% url 'pedagogie:evaluation_list' %}"    class="menu-item menu-item-sub" data-url="/pedagogie/evaluations/">Évaluations</a>
         <a href="{% url 'pedagogie:releve_notes' %}"           class="menu-item menu-item-sub" data-url="/pedagogie/releve-notes/">Relevé de notes</a>
         <a href="{% url 'pedagogie:classe_result_list' %}"    class="menu-item menu-item-sub" data-url="/pedagogie/resultats/">Résultats</a>
         <a href="{% url 'pedagogie:moyennes_disciplines' %}"  class="menu-item menu-item-sub" data-url="/pedagogie/resultats/moyennes-disciplines/">Moyennes par discipline</a>
+        <a href="{% url 'pedagogie:risque_decrochage' %}"      class="menu-item menu-item-sub" data-url="/pedagogie/risque-decrochage/">🔮 Risque de décrochage</a>
       </div>
 
       {# Bulletins #}
@@ -635,6 +635,7 @@
       </div>
 
       {# ── CONFIGURATION ── #}
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' or user.role == 'CENSEUR' %}
       <div class="sb-sep"></div>
       <span class="sb-label">Configuration</span>
 
@@ -675,7 +676,9 @@
         <a href="{% url 'parametres:type_sanction_list' %}"         class="menu-item menu-item-sub" data-url="/parametres/types-sanctions/">Types Sanctions</a>
         <a href="{% url 'parametres:titre_fonction_list' %}"        class="menu-item menu-item-sub" data-url="/parametres/titres-fonctions/">Titres Fonctions</a>
         <a href="{% url 'parametres:titre_honorifique_list' %}"     class="menu-item menu-item-sub" data-url="/parametres/titres-honorifiques/">Titres Honorifiques</a>
+        <a href="{% url 'parametres:type_evaluation_list' %}"       class="menu-item menu-item-sub" data-url="/parametres/types-evaluations/">Types d'évaluation</a>
       </div>
+      {% endif %}
 
       {# Utilisateurs (admin uniquement) #}
       {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' or user.role == 'CENSEUR' %}

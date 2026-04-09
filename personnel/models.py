@@ -20,6 +20,13 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+# Import pour le chiffrement des données sensibles
+try:
+    from core.encryption import encrypt_sensitive_data, decrypt_sensitive_data, mask_cni
+except ImportError:
+    encrypt_sensitive_data = decrypt_sensitive_data = lambda x: x
+    def mask_cni(x): return x if x else ''
+
 
 # Importer BaseModel depuis core
 try:
@@ -132,13 +139,33 @@ class MembrePersonnel(BaseModel):
         verbose_name=_("Adresse complète")
     )
     
-    # Pièce d'identité
-    numero_cni = models.CharField(
-        max_length=50,
+    # Pièce d'identité (chiffré)
+    _numero_cni_encrypted = models.CharField(
+        max_length=100,
         blank=True,
         default='',
-        verbose_name=_("Numéro CNI / Passport / N° Extrait")
+        verbose_name=_("Numéro CNI (chiffré)"),
+        db_column='numero_cni_encrypted',
     )
+    
+    @property
+    def numero_cni(self):
+        """Retourne le numéro CNI déchiffré."""
+        if self._numero_cni_encrypted:
+            return decrypt_sensitive_data(self._numero_cni_encrypted)
+        return ''
+    
+    @numero_cni.setter
+    def numero_cni(self, value):
+        """Définit le numéro CNI en le chiffrant."""
+        if value:
+            self._numero_cni_encrypted = encrypt_sensitive_data(value)
+        else:
+            self._numero_cni_encrypted = ''
+    
+    def get_numero_cni_masked(self):
+        """Retourne le numéro CNI masqué pour l'affichage."""
+        return mask_cni(self.numero_cni)
     
     # Informations professionnelles
     fonction = models.CharField(

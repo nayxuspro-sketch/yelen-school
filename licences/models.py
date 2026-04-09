@@ -661,24 +661,29 @@ class LicenceAuditLog(BaseModel):
     
     def save(self, *args, **kwargs):
         """Override save pour générer le hash avec chaînage."""
-        # Récupérer le hash de la dernière entrée
-        derniere_entree = LicenceAuditLog.objects.filter(
-            licence=self.licence
-        ).order_by('-created_at').first()
-        
-        if derniere_entree:
-            self.hash_precedent = derniere_entree.hash_actuel
-        
-        # Générer le hash de cette entrée
-        self._generer_hash()
-        
         # Première sauvegarde uniquement (append-only)
         if self.pk is not None:
             raise ValidationError(
                 _("Les entrées d'audit ne peuvent pas être modifiées après création.")
             )
         
+        # Sauvegarder d'abord pour obtenir created_at
         super().save(*args, **kwargs)
+        
+        # Maintenant, récupérer le hash de la dernière entrée et générer le hash
+        # Exclure l'instance actuelle de la recherche
+        derniere_entree = LicenceAuditLog.objects.filter(
+            licence=self.licence
+        ).exclude(pk=self.pk).order_by('-created_at').first()
+        
+        if derniere_entree:
+            self.hash_precedent = derniere_entree.hash_actuel
+        
+        # Générer le hash de cette entrée (maintenant created_at est disponible)
+        self._generer_hash()
+        
+        # Sauvegarder à nouveau avec le hash généré
+        super().save(update_fields=['hash_precedent', 'hash_actuel'])
     
     def _generer_hash(self) -> None:
         """Génère le hash SHA-256 de cette entrée."""

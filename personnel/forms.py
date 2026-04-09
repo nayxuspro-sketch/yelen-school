@@ -2,6 +2,13 @@ from django import forms
 from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel
 from parametres.models import Cycle, TitreFonction, TitreHonorifiquePersonnel
 
+# Import pour le chiffrement
+try:
+    from core.encryption import mask_cni
+except ImportError:
+    def mask_cni(x): return x
+
+
 def _apply_yelen_classes(fields):
     """Apply yelen.css input/select classes to all form fields."""
     for name, field in fields.items():
@@ -16,8 +23,16 @@ def _apply_yelen_classes(fields):
             existing = w.attrs.get('class', '')
             w.attrs['class'] = ('input ' + existing).strip()
 
+
 class MembrePersonnelForm(forms.ModelForm):
     """Formulaire pour la création et modification d'un membre du personnel."""
+    
+    numero_cni = forms.CharField(
+        label="Numéro CNI / Passport / N° Extrait",
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'input', 'placeholder': 'Numéro CNI'}),
+        help_text="Ce champ sera chiffré pour protection"
+    )
 
     class Meta:
         model = MembrePersonnel
@@ -38,6 +53,12 @@ class MembrePersonnelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # Pré-remplir le champ numero_cni avec la valeur déchiffrée (masquée)
+        if self.instance and self.instance.pk:
+            cni = self.instance.numero_cni
+            if cni:
+                self.initial['numero_cni'] = mask_cni(cni)
         # Alimenter fonction depuis TitreFonction (paramètres)
         fonctions = list(TitreFonction.objects.filter(actif=True).values_list('nom', flat=True))
         if fonctions:

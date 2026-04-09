@@ -132,6 +132,13 @@ def notifier_absence(presence):
             f"{eleve.get_nom_complet()} a été absent(e) le {date_appel}"
             + (f" en {matiere}" if matiere else "") + "."
         )
+        
+        # Créer les notifications in-app pour les parents (utilisateurs liés avec role PARENT)
+        parents = eleve.utilisateurs_lies.filter(role='PARENT', is_active=True)
+        for parent in parents:
+            creer_notification(parent, 'ABSENCE', titre, message_inapp, lien='')
+        
+        # Envoyer le SMS
         sms_message = _get_sms_message(etab, 'ABSENCE', {
             'nom_eleve': eleve.get_nom_complet(),
             'date': date_appel,
@@ -164,6 +171,13 @@ def notifier_retard(presence):
             f"{eleve.get_nom_complet()} est arrivé(e) en retard le {date_appel}"
             + (f" en {matiere}" if matiere else "") + "."
         )
+        
+        # Créer les notifications in-app pour les parents
+        parents = eleve.utilisateurs_lies.filter(role='PARENT', is_active=True)
+        for parent in parents:
+            creer_notification(parent, 'ABSENCE', titre, message_inapp, lien='')
+        
+        # Envoyer le SMS
         sms_message = _get_sms_message(etab, 'RETARD', {
             'nom_eleve': eleve.get_nom_complet(),
             'date': date_appel,

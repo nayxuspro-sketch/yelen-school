@@ -102,6 +102,27 @@
 </div>
 {% endif %}
 
+{# Calendrier scolaire - visible pour tous les rôles #}
+{% if evenements_calendrier %}
+<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
+  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); display:flex; justify-content:space-between; align-items:center;">
+    <span style="font-weight:600;">Calendrier scolaire</span>
+    <a href="{% url 'parametres:calendrier' %}" style="font-size:0.8rem; color:var(--color-primary);">Voir tout →</a>
+  </div>
+  <div style="padding:var(--space-3) var(--space-5);">
+    <div style="display:flex; gap:var(--space-2); flex-wrap:wrap;">
+      {% for evt in evenements_calendrier %}
+      <div style="display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); background:var(--color-bg-input); border-radius:6px; font-size:0.8rem;">
+        <span style="width:8px; height:8px; border-radius:50%; background:{{ evt.COULEUR_PAR_TYPE|default:'#10b981' }};"></span>
+        <span style="font-weight:500;">{{ evt.titre }}</span>
+        <span style="color:var(--color-text-muted);">{{ evt.date_debut|date:"d/m" }}{% if evt.date_fin and evt.date_fin != evt.date_debut %} - {{ evt.date_fin|date:"d/m" }}{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="animate-fade-up delay-2" style="margin-bottom:var(--space-3);">
   <span style="font-size:0.8rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.08em; font-weight:600;">Accès rapides</span>
 </div>

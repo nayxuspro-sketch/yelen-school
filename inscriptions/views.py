@@ -99,6 +99,18 @@ def eleve_list(request):
 def eleve_list_csv(request):
     """Export CSV de la liste des eleves (memes filtres qu'eleve_list)."""
     import csv
+    from core.models import AuditLog
+    from django.utils import timezone
+    
+    # Vérification de rôle - seuls certains rôles peuvent exporter
+    from core.models import RoleChoices
+    if request.user.role not in (
+        RoleChoices.SUPER_ADMIN, RoleChoices.DIRECTEUR, RoleChoices.CENSEUR,
+        RoleChoices.SECRETAIRE, RoleChoices.COMPTABLE
+    ):
+        messages.error(request, "Vous n'êtes pas autorisé à exporter la liste des élèves.")
+        return redirect('inscriptions:eleve_list')
+    
     query = request.GET.get('q', '')
     classe_id = request.GET.get('classe', '')
     statut_filter = request.GET.get('statut', '')
@@ -123,6 +135,21 @@ def eleve_list_csv(request):
             Q(prenom__icontains=query) |
             Q(matricule__icontains=query)
         )
+    
+    # Journaliser l'export CSV
+    try:
+        AuditLog.objects.create(
+            user=request.user,
+            action='EXPORT',
+            app_label='inscriptions',
+            model_name='eleve',
+            object_id=None,
+            object_repr=f"Export CSV - {eleves.count()} élèves",
+            changes={'type': 'csv', 'filtres': query or 'aucun'},
+            ip_address=request.META.get('REMOTE_ADDR'),
+        )
+    except Exception:
+        pass  # Ne pas bloquer l'export si l'audit échoue
 
     if annee_courante:
         if classe_id:

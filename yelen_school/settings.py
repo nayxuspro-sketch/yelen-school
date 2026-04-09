@@ -22,21 +22,49 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-^pf+t^!ga^spvouqcrrjwb=heij^inpi)#w2)0erzwh4b8r-b%')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    # Mode développement uniquement - NEVER utiliser en production!
+    SECRET_KEY = 'django-insecure-dev-only-change-in-production-2026'
+    import warnings
+    warnings.warn("SECRET_KEY non définie - utilisant clé de développement!")
 
 # Clé API Anthropic — nécessite une connexion Internet (fonctionnalités IA)
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Mode debug - désactiver en production!
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+# Hôtes autorisés - définir en production via ALLOWED_HOSTS env var
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
+
+# ── SÉCURITÉ HTTP (Production) ────────────────────────────────────────────────
+if not DEBUG:
+    # HSTS - Force HTTPS pendant 1 an
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # HTTPS obligatoire
+    SECURE_SSL_REDIRECT = True
+    SECURE_FORCE_HTTPS = True
+    
+    # Cookie sécurisé
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Prévention XSS
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    
+    # Referrer Policy
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Autorise les requêtes POST/CSRF depuis HTTPS local (Nginx dev)
 CSRF_TRUSTED_ORIGINS = [
     'https://localhost',
     'https://127.0.0.1',
-    'https://192.168.11.101',
+    'https://192.168.11.112',
     # Ajoutez votre IP locale si besoin, ex: 'https://192.168.1.42'
 ]
 
@@ -90,6 +118,12 @@ REST_FRAMEWORK = {
     ],
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S',
     'DATE_FORMAT': '%Y-%m-%d',
+    # Rate limiting - 100 requêtes/minute par utilisateur
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/min',
+        'user': '100/min',
+        'login': '5/min',  # Limite login pour éviter brute force
+    },
 }
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -211,3 +245,42 @@ SMS_HTTP_TIMEOUT = int(os.environ.get('SMS_HTTP_TIMEOUT', '10'))
 SMS_MODEM_PORT = os.environ.get('SMS_MODEM_PORT', 'COM3')  # ex: /dev/ttyUSB0
 SMS_MODEM_BAUD = int(os.environ.get('SMS_MODEM_BAUD', '9600'))
 SMS_MODEM_TIMEOUT = int(os.environ.get('SMS_MODEM_TIMEOUT', '10'))
+
+# ── SÉCURITÉ RENFORCÉE ─────────────────────────────────────────────────────────
+
+# Politique de mot de passe renforcée (12 caractères minimum)
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 12},  # 12 caractères minimum
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+# Session - sécurité production
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_TIMEOUT = 3600  # 1 heure de timeout
+
+# CSRF
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Cache - sécurité
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'yelen-cache',
+    }
+}

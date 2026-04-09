@@ -1,0 +1,234 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Risque de décrochage — {{ annee.libelle|default:"Année scolaire" }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1.5cm;
+      @bottom-center {
+        content: "Page " counter(page) " / " counter(pages);
+        font-size: 10px;
+        color: #666;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DejaVu Sans', Arial, sans-serif;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #1a1a1a;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #00A86B;
+    }
+    .header-left h1 {
+      font-size: 18px;
+      color: #00A86B;
+      margin-bottom: 4px;
+    }
+    .header-left p {
+      color: #666;
+      font-size: 11px;
+    }
+    .header-right {
+      text-align: right;
+      font-size: 10px;
+      color: #666;
+    }
+    .stats-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      flex: 1;
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+      border: 1px solid #eee;
+    }
+    .stat-box.total { background: #f8f9fa; }
+    .stat-box.critique { background: #fff5f5; border-color: #DC3545; }
+    .stat-box.eleve { background: #fff8f0; border-color: #E67E22; }
+    .stat-box.modere { background: #fffbf0; border-color: #F5A623; }
+    .stat-box .value {
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .stat-box.critique .value { color: #DC3545; }
+    .stat-box.eleve .value { color: #E67E22; }
+    .stat-box.modere .value { color: #F5A623; }
+    .stat-box .label {
+      font-size: 9px;
+      color: #666;
+      text-transform: uppercase;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+    th, td {
+      padding: 10px 8px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: bold;
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #666;
+    }
+    .score-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .score-bar {
+      width: 60px;
+      height: 8px;
+      background: #eee;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-inner {
+      height: 100%;
+      border-radius: 4px;
+    }
+    .score-value {
+      font-weight: bold;
+      min-width: 28px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 9px;
+      font-weight: bold;
+    }
+    .badge-critique { background: #DC3545; color: white; }
+    .badge-eleve { background: #E67E22; color: white; }
+    .badge-modere { background: #F5A623; color: white; }
+    .badge-faible { background: #00A86B; color: white; }
+    .facteurs {
+      font-size: 9px;
+      color: #666;
+      max-width: 200px;
+    }
+    .footer {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+      font-size: 9px;
+      color: #999;
+      text-align: center;
+    }
+    .legend {
+      margin-top: 15px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-size: 9px;
+    }
+    .legend-item {
+      display: inline-block;
+      margin-right: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <h1>🔮 Rapport de risque de décrochage scolaire</h1>
+      <p>{% if annee %}{{ annee.libelle }}{% else %}Année en cours{% endif %}</p>
+    </div>
+    <div class="header-right">
+      <p>Généré le {% now "d/m/Y à H:i" %}</p>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box total">
+      <div class="value">{{ stats.total }}</div>
+      <div class="label">Élèves analysés</div>
+    </div>
+    <div class="stat-box critique">
+      <div class="value">{{ stats.CRITIQUE }}</div>
+      <div class="label">Critique (76-100)</div>
+    </div>
+    <div class="stat-box eleve">
+      <div class="value">{{ stats.ELEVE }}</div>
+      <div class="label">Élevé (51-75)</div>
+    </div>
+    <div class="stat-box modere">
+      <div class="value">{{ stats.MODERE }}</div>
+      <div class="label">Modéré (26-50)</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Élève</th>
+        <th>Classe</th>
+        <th>Score</th>
+        <th>Niveau</th>
+        <th>Facteurs</th>
+        <th>Date calcul</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in risques %}
+      <tr>
+        <td>
+          <strong>{{ r.eleve.nom }} {{ r.eleve.prenom }}</strong>
+          {% if r.eleve.matricule %}<br><small style="color:#999;">{{ r.eleve.matricule }}</small>{% endif %}
+        </td>
+        <td>{{ r.classe.nom }}</td>
+        <td>
+          <div class="score-cell">
+            <div class="score-bar">
+              <div class="score-bar-inner" style="width: {{ r.score }}%; background: {{ r.couleur_css }};"></div>
+            </div>
+            <span class="score-value" style="color: {{ r.couleur_css }};">{{ r.score }}</span>
+          </div>
+        </td>
+        <td>
+          {% if r.niveau == 'CRITIQUE' %}<span class="badge badge-critique">CRITIQUE</span>
+          {% elif r.niveau == 'ELEVE' %}<span class="badge badge-eleve">ÉLEVÉ</span>
+          {% elif r.niveau == 'MODERE' %}<span class="badge badge-modere">MODÉRÉ</span>
+          {% else %}<span class="badge badge-faible">FAIBLE</span>{% endif %}
+        </td>
+        <td class="facteurs">
+          {% for f in r.facteurs %}{{ f.libelle }} (+{{ f.points }}){% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+        </td>
+        <td>{{ r.date_calcul|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center; padding: 30px; color: #999;">Aucun élève à risque trouvé.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="legend">
+    <strong>Légende :</strong>
+    <span class="legend-item">● Critique (76-100): Intervention urgente</span>
+    <span class="legend-item">● Élevé (51-75): Entretien parents recommandé</span>
+    <span class="legend-item">● Modéré (26-50): Surveillance renforcée</span>
+    <span class="legend-item">● Faible (0-25): Aucune action immédiate</span>
+  </div>
+
+  <div class="footer">
+    <p>YELEN SCHOOL — Logiciel de gestion scolaire —.yelengroup.com</p>
+  </div>
+</body>
+</html>

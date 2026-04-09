@@ -1,16 +1,16 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 4.1
-version_guide: 2.4
-date_mise_a_jour: 07/04/2026
-modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel]
+version_logiciel: 4.2
+version_guide: 2.5
+date_mise_a_jour: 08/04/2026
+modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent]
 modules_en_attente: [portail_parent, transferts, api_rest]
 redige_par: Agent IA — Développement YELEN SCHOOL
 ---
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 4.1 — Avril 2026 (Guide v2.4)
+### Version 4.2 — Avril 2026 (Guide v2.5)
 
 ---
 
@@ -18,10 +18,12 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 - [0. Introduction](#0-introduction)
 - [1. Connexion et Tableau de Bord](#1-connexion-et-tableau-de-bord)
-  - [1.6 Double Authentification (2FA) — Activer la Sécurité Renforcée](#16-double-authentification-2fa--activer-la-sécurité-renforcée)
-  - [1.7 Se Connecter avec la 2FA Activée](#17-se-connecter-avec-la-2fa-activée)
-  - [1.8 Désactiver la 2FA](#18-désactiver-la-2fa)
+  - [1.6 Gestion des Comptes Utilisateurs](#16-gestion-des-comptes-utilisateurs)
+  - [1.7 Double Authentification (2FA) — Activer la Sécurité Renforcée](#17-double-authentification-2fa--activer-la-sécurité-renforcée)
+  - [1.8 Se Connecter avec la 2FA Activée](#18-se-connecter-avec-la-2fa-activée)
+  - [1.9 Désactiver la 2FA](#19-désactiver-la-2fa)
 - [2. Paramètres de l'Établissement](#2-paramètres-de-létablissement)
+  - [2.17 Configuration SMS](#217-configuration-sms)
   - [2.7 Appréciations et Moyennes (Secondaire)](#27-appréciations-et-moyennes)
   - [2.10 Signataires des Documents PDF](#210-signataires-des-documents-pdf)
   - [2.11 Appréciations — Cycle Primaire](#211-appréciations-de-moyenne--cycle-primaire)
@@ -285,9 +287,58 @@ Clique sur ton **nom** en haut à droite, puis sur **Se déconnecter**.
 
 > **Attention :** Déconnecte-toi toujours avant de quitter ton poste, surtout sur un ordinateur partagé.
 
+### 1.6 Gestion des Comptes Utilisateurs
+
+#### Créer un Compte Parent
+
+**À quoi ça sert :** Crée un compte pour un parent ou tuteur d'élève. Ce compte permet au parent de recevoir les notifications d'absence, de bulletin, et d'accéder au portail parent.
+
+**Qui peut accéder :** Super Admin, Directeur
+
+**Accès :** `Menu → Utilisateurs → Compte parent`
+
+**Étapes :**
+
+1. Clique sur **Utilisateurs** dans le menu
+2. Clique sur le bouton **Compte parent** (à côté de "Nouvel utilisateur")
+3. Remplis le formulaire :
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  👤 Créer un compte parent                                    │
+├──────────────────────────────────────────────────────────────┤
+│  Nom *                 : [TRAORÉ_________________________]  │
+│  Prénom *              : [Aïcha____________________________] │
+│  Email *               : [aicha.traore@email.bf___________] │
+│  Téléphone              : [+226 70 XX XX XX________________] │
+│                                                              │
+│  ───────────────────── Mot de passe ─────────────────────    │
+│  Mot de passe *        : [••••••••••••••••••••••••]          │
+│  Confirmer *           : [••••••••••••••••••••••••]          │
+│                                                              │
+│  ─────────────────── Élèves liés ────────────────────       │
+│  Cochez les enfants de ce parent :                           │
+│  ☑ SAWADOGO Aminata — Terminale A                           │
+│  ☐ OUÉDRAOGO Boureima — Terminale C                         │
+│                                                              │
+│          [ Annuler ]    [ Créer le compte parent ]           │
+└──────────────────────────────────────────────────────────────┘
+```
+
+4. Clique sur **Créer le compte parent**
+
+**Important :** Pour que le parent reçoive les notifications d'absence, cochez impérativement ses enfants dans la section "Élèves liés". Sans cette liaison, les notifications ne seront pas envoyées.
+
+#### Gérer les Utilisateurs
+
+1. Liste des utilisateurs : `Menu → Utilisateurs`
+2. Filtrer par rôle (Directeur, Enseignant, Parent, etc.)
+3. Modifier un utilisateur : cliquer sur son nom
+4. Désactiver/Activer : icône à côté du nom
+
 ---
 
-### 1.6 Double Authentification (2FA) — Activer la Sécurité Renforcée
+### 1.7 Double Authentification (2FA) — Activer la Sécurité Renforcée
 
 **À quoi ça sert :** La double authentification ajoute une deuxième vérification à la connexion. En plus de ton mot de passe, le système te demande un code à 6 chiffres généré par une application sur ton téléphone. Même si quelqu'un connaît ton mot de passe, il ne peut pas accéder à ton compte sans ton téléphone.
 
@@ -1135,6 +1186,60 @@ Les tarifs sont définis par **niveau** (5ème, 6ème…) et par **statut d'él�
 Une fois créé, le modèle est disponible lors des actions nécessitant un SMS (relances de paiement, notifications d'absence). Sélectionne le modèle dans la liste déroulante et personnalise-le si besoin avant envoi.
 
 > **Astuce :** Crée des modèles pour chaque situation courante. Le temps de rédaction est réduit et la communication devient plus professionnelle et cohérente.
+
+### 2.17 Configuration SMS
+
+**À quoi ça sert :** Configure la connexion à la passerelle SMS pour envoyer des notifications par SMS aux parents (absences, bulletins, relances de paiement).
+
+**Qui peut accéder :** Super Admin, Directeur
+
+**Accès :** `Menu → Configuration SMS`
+
+#### Configurer la Connexion
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  📱 Configuration SMS                                        │
+├──────────────────────────────────────────────────────────────┤
+│  Activer les SMS :    [▼ Oui — Activé / Non — Désactivé]    │
+│  Backend :           [▼ HTTP — Passerelle WiFi / Série]      │
+│                                                              │
+│  [Configuration HTTP — Passerelle WiFi]                     │
+│  URL de la passerelle : [http://192.168.1.100:8080/message] │
+│  Utilisateur :         [admin______________________________]  │
+│  Mot de passe :       [•••••••••••••••••••••••••]          │
+│  Timeout :            [10] secondes                         │
+│                                                              │
+│            [ Enregistrer la configuration ]                 │
+└──────────────────────────────────────────────────────────────┘
+```
+
+#### Choix du Backend
+
+- **HTTP (WiFi)** : Utilise l'application Android "SMS Gateway" sur un téléphone连接到 le réseau WiFi local. Le téléphone doit avoir une carte SIM avec des crédits SMS.
+- **Série** : Utilise un modem GSM USB连接到 le serveur.
+
+#### Installer SMS Gateway (Android)
+
+1. Télécharge l'application "SMS Gateway" sur un téléphone Android
+2. Lance l'application — elle doit rester démarrée
+3. Note l'adresse IP affichée dans Settings → Server → IP Address
+4. Saisie cette IP dans le champ "URL de la passerelle" ci-dessus
+
+#### Tester la Connexion
+
+1. Après enregistrement, clique sur **Tester la connexion**
+2. Le résultat affiche si la passerelle est joignable
+
+#### Envoyer un SMS de Test
+
+1. Saisie un numéro de téléphone (format : +22670123456 ou 70123456)
+2. Clique sur **Envoyer**
+3. Le parent reçoit un SMS de test
+
+> **Important :** Après modification de la configuration, redémarre le serveur pour appliquer les changements.
+
+> **Note :** Les SMS utilisent les crédits de la carte SIM du téléphone Android ou du modem GSM. Aucun frais supplémentaire n'est facturé par YELEN SCHOOL.
 
 ---
 
@@ -5071,11 +5176,20 @@ python manage.py runserver
 
 ### 18.5 Système de Notifications
 
-**À quoi ça sert :** YELEN SCHOOL envoie des notifications dans l'application pour informer les utilisateurs des événements importants qui les concernent : nouvelle sanction enregistrée, paiement reçu, bulletin publié, document généré…
+**À quoi ça sert :** YELEN SCHOOL envoie des notifications dans l'application pour informer les utilisateurs des événements importants qui les concernent : absence signalée, bulletin publié, paiement reçu, sanction disciplinaire…
 
 **Qui peut accéder :** Tous les profils (chaque utilisateur voit ses propres notifications)
 
 **Accès :** Cloche 🔔 en haut à droite de l'écran, ou `Menu → Notifications`
+
+#### Types de Notifications
+
+| Type | Déclencheur |
+|------|-------------|
+| ABSENCE | Enregistrement d'une absence (appel) |
+| BULLETIN | Publication d'un bulletin trimestriel |
+| SANCTION | Enregistrement d'une sanction disciplinaire |
+| GENERAL | Relance de paiement, convocation,等信息 |
 
 #### Consulter les Notifications
 
@@ -5083,26 +5197,35 @@ python manage.py runserver
 ╔══════════════════════════════════════════════════════════════╗
 ║  🔔  Notifications (3)                                       ║
 ╠══════════════════════════════════════════════════════════════╣
-║  🔵 Bulletin de SAWADOGO Aminata publié     il y a 5 min    ║
-║  🔵 Paiement de 25 000 F reçu — KONÉ Issa  il y a 1h       ║
-║  🔵 Sanction confirmée — OUÉD. Boureima     il y a 2h       ║
-║  ─────────────────────────────────────────────────────────  ║
-║  ○  Connexion depuis un nouvel appareil     hier             ║
-║  ○  Convocation générée (3 élèves)          il y a 3j       ║
+║  🔴 Absence signalée — 08/04/2026            il y a 10 min   ║
+║     SAWADOGO Aminata était absente en Mathématiques.         ║
+║  🔵 Bulletin de KONÉ Issa publié            il y a 1h        ║
+║  ○ Paiement de 25 000 F reçu — OUÉDRAOGO   il y a 3h         ║
 ║                                                              ║
-║  [ Tout marquer comme lu ]   [ Voir toutes les notifications ]
+║  [ Tout marquer comme lu ]                                   ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
-- **Point bleu 🔵** = notification non lue
+- **Point rouge 🔴** = notification non lue (ABSENCE)
+- **Point bleu 🔵** = notification non lue (autres)
 - **Point vide ○** = notification déjà lue
 
 #### Marquer comme Lu
 
-- Clique sur une notification pour la lire et l'ouvrir directement dans le module concerné
+- Clique sur le bouton ✅ pour marquer une notification comme lue
 - Clique sur **Tout marquer comme lu** pour effacer le compteur du badge
 
 > **Badge numérique :** Le chiffre rouge sur la cloche indique le nombre de notifications non lues. Il disparaît quand toutes les notifications ont été consultées.
+
+#### Notifications des Absences aux Parents
+
+Pour que les parents reçoivent les notifications d'absence :
+
+1. **Créer un compte parent** : Menu → Utilisateurs → Compte parent
+2. **Lier le parent à l'élève** : Cocher les enfants du parent lors de la création
+3. **Numéro de téléphone** : Le SMS est envoyé au numéro enregistré (téléphone_parent, tuteur_telephone, ou telephone_urgence)
+
+> **Important :** Sans compte parent lié, les notifications d'absence sont envoyées par SMS uniquement (si configuré).
 
 ---
 

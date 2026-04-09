@@ -10,6 +10,12 @@
     {% if annee %}<p class="page-subtitle">{{ annee.libelle }}</p>{% endif %}
   </div>
   <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
+    <a href="{% url 'pedagogie:risque_decrochage_pdf' %}?{% if niveau_filtre %}niveau={{ niveau_filtre }}{% endif %}{% if classe_id %}&classe={{ classe_id }}{% endif %}" class="btn-secondary" target="_blank">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      PDF
+    </a>
     <a href="{% url 'pedagogie:classe_result_list' %}" class="btn-secondary">Résultats</a>
   </div>
 </div>

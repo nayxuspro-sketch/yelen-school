@@ -171,6 +171,46 @@ class IdentiteEtablissementForm(forms.ModelForm):
             'devise': forms.Textarea(attrs={'rows': 2}),
         }
 
+    def clean_logo(self):
+        image = self.cleaned_data.get('logo')
+        if image:
+            _validate_image(image, 'logo', max_size=2 * 1024 * 1024)  # 2MB
+        return image
+
+    def clean_signature_directeur(self):
+        image = self.cleaned_data.get('signature_directeur')
+        if image:
+            _validate_image(image, 'signature_directeur', max_size=512 * 1024)  # 512KB
+        return image
+
+    def clean_cachet_etablissement(self):
+        image = self.cleaned_data.get('cachet_etablissement')
+        if image:
+            _validate_image(image, 'cachet_etablissement', max_size=512 * 1024)  # 512KB
+        return image
+
+
+def _validate_image(image, field_name, max_size):
+    """Valide le type MIME et la taille d'une image."""
+    from django.core.exceptions import ValidationError
+    
+    # Liste des types MIME autorisés
+    allowed_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+    
+    # Vérifier le type MIME
+    if hasattr(image, 'content_type'):
+        if image.content_type not in allowed_types:
+            raise ValidationError(
+                f"Le fichier {field_name} doit être au format PNG, JPEG ou WebP."
+            )
+    
+    # Vérifier la taille
+    if image.size > max_size:
+        max_mb = max_size / (1024 * 1024)
+        raise ValidationError(
+            f"La taille du fichier {field_name} ne doit pas dépasser {max_mb}MB."
+        )
+
 
 class TypeEvaluationForm(forms.ModelForm):
     class Meta:

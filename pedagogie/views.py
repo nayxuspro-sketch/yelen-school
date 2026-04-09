@@ -659,21 +659,32 @@ def evaluation_saisie(request, pk):
 
     evaluation = get_object_or_404(
         Evaluation.objects.select_related(
-            'enseignement__classe__cycle',
-            'enseignement__matiere',
-            'enseignement__annee_scolaire',
+            'encephal__classe__cycle',
+            'encephal__matiere',
+            'encephal__annee_scolaire',
             'type_evaluation',
             'trimestre',
         ),
         pk=pk,
     )
-    classe = evaluation.enseignement.classe
-    enseignement = evaluation.enseignement
+    classe = evaluation.encephal.classe
+    enseignement = evaluation.encephal
     trimestre = evaluation.trimestre
+    
+    # Vérification de sécurité - vérifier que l'enseignant enseigne cette matière
+    if request.user.role == 'ENSEIGNANT':
+        from pedagogie.models import Enseignement
+        authorized = Enseignement.objects.filter(
+            id=encephal.pk,
+            personnel=request.user
+        ).exists()
+        if not authorized and classe.professeur_principal_id != request.user.id:
+            messages.error(request, "Vous n'êtes pas autorisé à saisir les notes de cette évaluation.")
+            return redirect('pedagogie:evaluation_list')
 
     inscriptions = Inscription.objects.filter(
         classe=classe,
-        annee_scolaire=enseignement.annee_scolaire,
+        annee_scolaire=encephal.annee_scolaire,
     ).exclude(statut='ABANDON').select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
 
     if request.method == 'POST':
@@ -1781,3 +1792,69 @@ def risque_decrochage(request):
         'stats': stats,
         'niveaux': RisqueDecrochage.NiveauChoices.choices,
     })
+
+
+# ─── PDF RISQUE DE DÉCROCHAGE ───────────────────────────────────────────
+
+def risque_decrochage_pdf(request):
+    """Génère un PDF de la liste des élèves à risque de décrochage."""
+    try:
+        from weasyprint import HTML
+    except ImportError:
+        messages.error(request, "WeasyPrint n'est pas installé sur le serveur.")
+        return redirect('pedagogie:risque_decrochage')
+
+    etab = getattr(request.user, 'etablissement', None)
+    annee = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else AnneeScolaire.objects.filter(est_courante=True).first()
+
+    niveau_filtre = request.GET.get('niveau')
+    classe_id = request.GET.get('classe')
+
+    risques_qs = RisqueDecrochage.objects.filter(
+        inscription__annee_scolaire=annee,
+        inscription__classe__etablissement=etab,
+    ).exclude(inscription__statut='ABANDON').select_related(
+        'inscription__eleve', 'inscription__classe'
+    ).order_by('-score')
+
+    if niveau_filtre:
+        risques_qs = risques_qs.filter(niveau=niveau_filtre)
+    if classe_id:
+        risques_qs = risques_qs.filter(inscription__classe_id=classe_id)
+
+    tous = RisqueDecrochage.objects.filter(
+        inscription__annee_scolaire=annee,
+        inscription__classe__etablissement=etab,
+    ).exclude(inscription__statut='ABANDON')
+
+    stats = {n: tous.filter(niveau=n).count() for n in RisqueDecrochage.NiveauChoices.values}
+    stats['total'] = tous.count()
+
+    risques = []
+    for r in risques_qs:
+        risque_dict = {
+            'eleve': r.inscription.eleve,
+            'classe': r.inscription.classe,
+            'score': r.score,
+            'niveau': r.get_niveau_display(),
+            'couleur_css': r.couleur_css,
+            'facteurs': r.facteurs or [],
+            'date_calcul': r.date_calcul,
+        }
+        risques.append(risque_dict)
+
+    html_content = render_to_string('pedagogie/pdf/risque_decrochage.html', {
+        'risques': risques,
+        'annee': annee,
+        'stats': stats,
+        'niveau_filtre': niveau_filtre,
+        'classe_id': classe_id,
+    })
+
+    pdf_file = HTML(string=html_content).write_pdf()
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    filename = f"risque_decrochage_{annee.libelle.replace(' ', '_') if annee else 'actuel'}.pdf"
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response

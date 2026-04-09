@@ -21,6 +21,18 @@ from inscriptions.models import Inscription
 
 from .models import Document
 from core.utils import get_etablissement_context
+from core.models import RoleChoices
+
+
+def _can_generate_document(user):
+    """Vérifie si l'utilisateur peut générer des documents officiels."""
+    if user.role in (RoleChoices.SUPER_ADMIN, RoleChoices.DIRECTEUR, RoleChoices.CENSEUR):
+        return True
+    if user.role == RoleChoices.SECRETAIRE:
+        return True
+    if user.role == RoleChoices.COMPTABLE:
+        return True
+    return False
 
 
 @login_required
@@ -82,12 +94,24 @@ def document_list(request):
 @login_required
 def certificat_scolarite(request, inscription_id):
     """Génère un certificat de scolarité pour un élève."""
+    # Vérification du rôle - seul le personnel autorisé peut générer des documents
+    if not _can_generate_document(request.user):
+        messages.error(request, "Vous n'êtes pas autorisé à générer des documents officiels.")
+        return redirect('documents:document_list')
+    
+    # Vérification que l'inscription appartient à l'établissement de l'utilisateur
+    etab_user = request.user.etablissement
     inscription = get_object_or_404(
         Inscription.objects.select_related(
             'eleve', 'classe__cycle', 'annee_scolaire'
         ),
         pk=inscription_id
     )
+    
+    # IDOR - Vérification que l'élève appartient à l'établissement de l'utilisateur
+    if etab_user and inscription.annee_scolaire.etablissement != etab_user:
+        messages.error(request, "Vous n'avez pas accès à ce document.")
+        return redirect('documents:document_list')
 
     type_doc, _ = TypeDocument.objects.get_or_create(
         code='CERT_SCOL',
@@ -751,10 +775,22 @@ def attestation_non_redevabilite(request, inscription_id):
     """
     Attestation certifiant qu'un élève a soldé la totalité de ses frais scolaires.
     """
+    # Vérification du rôle
+    if not _can_generate_document(request.user):
+        messages.error(request, "Vous n'êtes pas autorisé à générer des documents officiels.")
+        return redirect('documents:document_list')
+    
+    # Vérification que l'inscription appartient à l'établissement de l'utilisateur
+    etab_user = request.user.etablissement
     inscription = get_object_or_404(
         Inscription.objects.select_related('eleve', 'classe__cycle', 'annee_scolaire'),
         pk=inscription_id,
     )
+    
+    # IDOR - Vérification que l'élève appartient à l'établissement de l'utilisateur
+    if etab_user and inscription.annee_scolaire.etablissement != etab_user:
+        messages.error(request, "Vous n'avez pas accès à ce document.")
+        return redirect('documents:document_list')
 
     from finances.views import _calcul_situation_financiere
     situation = _calcul_situation_financiere(inscription)

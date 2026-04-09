@@ -61,4 +61,5 @@ urlpatterns = [
 
     # Risque de décrochage
     path('risque-decrochage/', views.risque_decrochage, name='risque_decrochage'),
+    path('risque-decrochage/pdf/', views.risque_decrochage_pdf, name='risque_decrochage_pdf'),
 ]

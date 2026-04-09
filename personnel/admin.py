@@ -77,7 +77,7 @@ class MembrePersonnelAdmin(admin.ModelAdmin):
         }),
         (_('Pièce d\'identité'), {
             'fields': (
-                'numero_cni',
+                '_numero_cni_encrypted',
             )
         }),
         (_('Informations professionnelles'), {

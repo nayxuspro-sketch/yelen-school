@@ -1,0 +1,126 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'core:home' %}" class="text-secondary">Accueil</a>
+      <span class="text-muted"> / </span>
+      <a href="{% url 'accounts:user_list' %}" class="text-secondary">Utilisateurs</a>
+      <span class="text-muted"> / </span>
+      <span>{{ title }}</span>
+    </p>
+    <h1 class="page-title">{{ title }}</h1>
+  </div>
+</div>
+
+<div style="max-width:800px;" class="animate-fade-up delay-1">
+  <form method="post" class="card" style="padding:var(--space-6);">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div style="background:rgba(220,38,38,.1); border:1px solid var(--color-danger,#dc2626); border-radius:8px; padding:var(--space-3) var(--space-4); margin-bottom:var(--space-5); font-size:.875rem; color:var(--color-danger,#dc2626);">
+      {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+
+    {# ── Identité ── #}
+    <div style="margin-bottom:var(--space-5);">
+      <div class="fw-semibold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:var(--space-4);">Identité du parent</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+
+        <div class="form-group">
+          <label class="form-label">{{ form.last_name.label }} <span style="color:var(--color-danger);">*</span></label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.last_name.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ form.first_name.label }} <span style="color:var(--color-danger);">*</span></label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.first_name.errors.0 }}</p>{% endif %}
+        </div>
+
+      </div>
+    </div>
+
+    {# ── Contact ── #}
+    <div style="margin-bottom:var(--space-5);">
+      <div class="fw-semibold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:var(--space-4);">Contact</div>
+
+      <div class="form-group" style="margin-bottom:var(--space-4);">
+        <label class="form-label">{{ form.email.label }} <span style="color:var(--color-danger);">*</span></label>
+        {{ form.email }}
+        <p class="text-muted" style="font-size:.75rem;margin-top:4px;">Cet email sera l'identifiant de connexion</p>
+        {% if form.email.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.email.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.telephone.label }}</label>
+        {{ form.telephone }}
+        {% if form.telephone.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.telephone.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+
+    {# ── Mot de passe ── #}
+    {% if form.password1 %}
+    <div style="margin-bottom:var(--space-5);">
+      <div class="fw-semibold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:var(--space-4);">Mot de passe</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+
+        <div class="form-group">
+          <label class="form-label">{{ form.password1.label }} <span style="color:var(--color-danger);">*</span></label>
+          {{ form.password1 }}
+          {% if form.password1.help_text %}<p class="text-muted" style="font-size:.75rem;margin-top:4px;">{{ form.password1.help_text }}</p>{% endif %}
+          {% if form.password1.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.password1.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ form.password2.label }} <span style="color:var(--color-danger);">*</span></label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}<p style="color:var(--color-danger);font-size:.8rem;margin-top:4px;">{{ form.password2.errors.0 }}</p>{% endif %}
+        </div>
+
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── Élèves liés ── #}
+    {% if form.eleves %}
+    <div style="margin-bottom:var(--space-5);">
+      <div class="fw-semibold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:var(--space-4);">Élèves liés à ce compte</div>
+      <p class="text-muted" style="font-size:.85rem; margin-bottom:var(--space-3);">Cochez les enfants de ce parent pour qu'il puisse recevoir les notifications (absences, bulletins, etc.)</p>
+      
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:var(--space-3);">
+        {% for eleve in form.eleves %}
+        <label style="display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); background:var(--color-surface); border:1px solid var(--color-border); border-radius:8px; cursor:pointer;">
+          {{ eleve }}
+          <span style="font-size:.9rem;">{{ eleve.choice_label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      
+      {% if not form.eleves %}
+      <p class="text-muted" style="font-size:.85rem;">Aucun élève trouvé pour cet établissement. Veuillez d'abord enregistrer des élèves.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# ── Actions ── #}
+    <div class="d-flex gap-3" style="padding-top:var(--space-4); border-top:1px solid var(--color-border);">
+      <button type="submit" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Créer le compte parent
+      </button>
+      <a href="{% url 'accounts:user_list' %}" class="btn-secondary">Annuler</a>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

@@ -37,11 +37,22 @@ def home(request):
     )
     nb_classes = Classe.objects.filter(etablissement=etab, actif=True).count() if etab else 0
 
+    # ── Calendrier scolaire ─────────────────────────────────────────────
+    from parametres.models import EvenementCalendrier
+    if annee_courante and etab:
+        evenements_calendrier = EvenementCalendrier.objects.filter(
+            annee_scolaire=annee_courante,
+            etablissement=etab,
+        ).order_by('date_debut')[:10]
+    else:
+        evenements_calendrier = []
+    
     context = {
         'annee_courante': annee_courante,
         'inscriptions_annee': inscriptions_annee,
         'nb_classes': nb_classes,
         'role': role,
+        'evenements_calendrier': evenements_calendrier,
     }
 
     # ── DIRECTEUR / CENSEUR / SUPER_ADMIN ─────────────────────────────
@@ -407,7 +418,22 @@ def notification_marquer_lu(request, pk):
     """Marque une notification comme lue (HTMX)."""
     from core.models import Notification
     from django.shortcuts import get_object_or_404
-    notif = get_object_or_404(Notification, pk=pk, destinataire=request.user)
+    from uuid import UUID
+    
+    try:
+        if isinstance(pk, UUID):
+            pk_uuid = pk
+        else:
+            pk_uuid = UUID(str(pk))
+        notif = get_object_or_404(Notification, pk=pk_uuid, destinataire=request.user)
+    except (ValueError, TypeError):
+        try:
+            pk_int = int(pk)
+            notif = get_object_or_404(Notification, pk=pk_int, destinataire=request.user)
+        except (ValueError, TypeError):
+            from django.http import Http404
+            raise Http404("Notification non trouvée")
+    
     notif.lu = True
     notif.save(update_fields=['lu'])
     return render(request, 'core/partials/notification_item.html', {'notif': notif})
@@ -581,6 +607,11 @@ def sms_configuration(request):
 
     from django.conf import settings
     from core.sms import tester_modem
+    import os
+    from pathlib import Path
+
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    env_file = BASE_DIR / '.env'
 
     backend = getattr(settings, 'SMS_BACKEND', 'http')
     config = {
@@ -588,28 +619,74 @@ def sms_configuration(request):
         'SMS_BACKEND':        backend,
         'SMS_HTTP_URL':       getattr(settings, 'SMS_HTTP_URL',       ''),
         'SMS_HTTP_USER':      getattr(settings, 'SMS_HTTP_USER',      'admin'),
+        'SMS_HTTP_PASSWORD':  getattr(settings, 'SMS_HTTP_PASSWORD', ''),
         'SMS_HTTP_TIMEOUT':   getattr(settings, 'SMS_HTTP_TIMEOUT',   10),
         'SMS_MODEM_PORT':     getattr(settings, 'SMS_MODEM_PORT',     'COM3'),
-        'SMS_MODEM_BAUD':     getattr(settings, 'SMS_MODEM_BAUD',     9600),
+        'SMS_MODEM_BAUD':     getattr(settings, 'SMS_MODEM_BAUD',    9600),
         'SMS_MODEM_TIMEOUT':  getattr(settings, 'SMS_MODEM_TIMEOUT',  10),
     }
 
     test_result = None
-    if request.method == 'POST' and 'tester' in request.POST:
-        test_result = tester_modem()
 
-    elif request.method == 'POST' and 'envoyer_test' in request.POST:
-        numero = request.POST.get('numero_test', '').strip()
-        if numero:
-            from core.sms import envoyer_sms
-            succes, motif = envoyer_sms(numero, "Test YELEN SCHOOL — message de vérification modem.")
-            if succes:
-                messages.success(request, f"SMS de test envoyé à {numero}.")
+    if request.method == 'POST':
+        if 'sauvegarder' in request.POST:
+            sms_enabled = request.POST.get('SMS_ENABLED', 'False')
+            sms_backend = request.POST.get('SMS_BACKEND', 'http')
+            sms_http_url = request.POST.get('SMS_HTTP_URL', '').strip()
+            sms_http_user = request.POST.get('SMS_HTTP_USER', 'admin')
+            sms_http_password = request.POST.get('SMS_HTTP_PASSWORD', '')
+            sms_http_timeout = request.POST.get('SMS_HTTP_TIMEOUT', '10')
+            sms_modem_port = request.POST.get('SMS_MODEM_PORT', 'COM3')
+            sms_modem_baud = request.POST.get('SMS_MODEM_BAUD', '9600')
+            sms_modem_timeout = request.POST.get('SMS_MODEM_TIMEOUT', '10')
+
+            try:
+                env_content = env_file.read_text(encoding='utf-8')
+                lines = env_content.split('\n')
+                new_lines = []
+                for line in lines:
+                    if line.startswith('SMS_ENABLED='):
+                        new_lines.append(f'SMS_ENABLED={sms_enabled}')
+                    elif line.startswith('SMS_BACKEND='):
+                        new_lines.append(f'SMS_BACKEND={sms_backend}')
+                    elif line.startswith('SMS_HTTP_URL='):
+                        new_lines.append(f'SMS_HTTP_URL={sms_http_url}')
+                    elif line.startswith('SMS_HTTP_USER='):
+                        new_lines.append(f'SMS_HTTP_USER={sms_http_user}')
+                    elif line.startswith('SMS_HTTP_PASSWORD='):
+                        new_lines.append(f'SMS_HTTP_PASSWORD={sms_http_password}')
+                    elif line.startswith('SMS_HTTP_TIMEOUT='):
+                        new_lines.append(f'SMS_HTTP_TIMEOUT={sms_http_timeout}')
+                    elif line.startswith('SMS_MODEM_PORT='):
+                        new_lines.append(f'SMS_MODEM_PORT={sms_modem_port}')
+                    elif line.startswith('SMS_MODEM_BAUD='):
+                        new_lines.append(f'SMS_MODEM_BAUD={sms_modem_baud}')
+                    elif line.startswith('SMS_MODEM_TIMEOUT='):
+                        new_lines.append(f'SMS_MODEM_TIMEOUT={sms_modem_timeout}')
+                    elif line.strip():
+                        new_lines.append(line)
+
+                env_file.write_text('\n'.join(new_lines), encoding='utf-8')
+                messages.success(request, "Configuration SMS enregistrée. Veuillez redémarrer le serveur pour appliquer les changements.")
+                return redirect('core:sms_configuration')
+            except Exception as e:
+                messages.error(request, f"Erreur lors de l'enregistrement : {e}")
+
+        elif 'tester' in request.POST:
+            test_result = tester_modem()
+
+        elif 'envoyer_test' in request.POST:
+            numero = request.POST.get('numero_test', '').strip()
+            if numero:
+                from core.sms import envoyer_sms
+                succes, motif = envoyer_sms(numero, "Test YELEN SCHOOL — message de vérification modem.")
+                if succes:
+                    messages.success(request, f"SMS de test envoyé à {numero}.")
+                else:
+                    messages.error(request, f"Échec de l'envoi du SMS à {numero} — {motif}")
             else:
-                messages.error(request, f"Échec de l'envoi du SMS à {numero} — {motif}")
-        else:
-            messages.warning(request, "Veuillez saisir un numéro de téléphone.")
-        return redirect('core:sms_configuration')
+                messages.warning(request, "Veuillez saisir un numéro de téléphone.")
+            return redirect('core:sms_configuration')
 
     return render(request, 'core/sms_configuration.html', {
         'config': config,

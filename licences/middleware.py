@@ -430,11 +430,11 @@ class LicenceLimitsMiddleware:
             nb_enseignants = (
                 InscriptionPersonnel.objects
                 .filter(
-                    etablissement=etab,
+                    cycle__etablissement=etab,
                     is_active=True,
                     poste__categorie='ENSEIGNEMENT',
                 )
-                .values('membre_id')
+                .values('personnel_id')
                 .distinct()
                 .count()
             )

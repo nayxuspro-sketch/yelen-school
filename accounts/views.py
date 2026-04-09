@@ -14,6 +14,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils import timezone
 
 from core.models import RoleChoices
 from .forms import UserCreateForm, UserUpdateForm, SetPasswordForm, ProfileUpdateForm, ChangeOwnPasswordForm
@@ -21,6 +22,9 @@ from .models import User
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_DURATION_MINUTES = 15
 
 def _admin_required(view_func):
     """Décorateur : réservé aux SUPER_ADMIN et DIRECTEUR."""
@@ -62,10 +66,34 @@ def login_view(request):
 
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
-        password = request.POST.get('password', '')
+        password = request.POST.get('password', '').strip()
+
+        if not email or not password:
+            messages.error(request, "Veuillez fournir votre email et mot de passe.")
+            return render(request, 'accounts/login.html')
+
+        # Vérifier si le compte est verrouillé
+        try:
+            user = User.objects.get(email__iexact=email)
+            if user.locked_until and user.locked_until > timezone.now():
+                remaining_seconds = (user.locked_until - timezone.now()).seconds
+                remaining_minutes = remaining_seconds // 60 + 1
+                messages.error(
+                    request, 
+                    f"Compte temporairement verrouillé. Réessayez dans {remaining_minutes} minute(s)."
+                )
+                return render(request, 'accounts/login.html')
+        except User.DoesNotExist:
+            pass
 
         user = authenticate(request, username=email, password=password)
         if user is not None:
+            # Réinitialiser les tentatives échouées après succès
+            if user.failed_login_attempts > 0 or user.locked_until:
+                user.failed_login_attempts = 0
+                user.locked_until = None
+                user.save(update_fields=['failed_login_attempts', 'locked_until'])
+
             if user.totp_enabled and user.totp_secret:
                 # Stocker l'ID en session et passer à l'étape 2FA
                 request.session['_2fa_user_pk'] = str(user.pk)
@@ -74,7 +102,27 @@ def login_view(request):
             login(request, user)
             return _redirect_after_login(request, user, request.GET.get('next', ''))
         else:
-            messages.error(request, "Adresse email ou mot de passe incorrect.")
+            # Incrémenter les tentatives échouées
+            try:
+                user = User.objects.get(email__iexact=email)
+                user.failed_login_attempts += 1
+                
+                if user.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
+                    user.locked_until = timezone.now() + timezone.timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+                    user.save(update_fields=['failed_login_attempts', 'locked_until'])
+                    messages.error(
+                        request, 
+                        f"Compte verrouillé après {MAX_LOGIN_ATTEMPTS} tentatives échouées. "
+                        f"Réessayez dans {LOCKOUT_DURATION_MINUTES} minutes."
+                    )
+                else:
+                    remaining = MAX_LOGIN_ATTEMPTS - user.failed_login_attempts
+                    messages.error(
+                        request, 
+                        f"Email ou mot de passe incorrect. Il vous reste {remaining} tentative(s)."
+                    )
+            except User.DoesNotExist:
+                messages.error(request, "Email ou mot de passe incorrect.")
 
     return render(request, 'accounts/login.html')
 
@@ -256,6 +304,28 @@ def user_create(request):
     return render(request, 'accounts/user_form.html', {
         'form': form,
         'title': "Créer un utilisateur",
+    })
+
+
+@_admin_required
+def parent_create(request):
+    """Création d'un compte parent avec liaison aux élèves."""
+    from .forms import ParentCreateForm
+    
+    etab = request.user.etablissement
+    
+    if request.method == 'POST':
+        form = ParentCreateForm(request.POST, etablissement=etab)
+        if form.is_valid():
+            parent = form.save()
+            messages.success(request, f"Compte parent créé pour {parent.get_full_name()}. Élèves liés : {parent.eleves_lies.count()}")
+            return redirect('accounts:user_list')
+    else:
+        form = ParentCreateForm(etablissement=etab)
+
+    return render(request, 'accounts/parent_form.html', {
+        'form': form,
+        'title': "Créer un compte parent",
     })
 
 
