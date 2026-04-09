@@ -470,11 +470,14 @@
   function remplirSelect(sel, selectedId) {
     sel.innerHTML = '<option value="">— Choisir une rubrique —</option>';
     rubriquesData.forEach(function (r) {
+      var reste = parseFloat(r.reste || r.montant - r.total_verse);
+      if (reste <= 0) return;
       var opt = document.createElement('option');
       opt.value            = r.id;
       opt.dataset.montant  = r.montant;
       opt.dataset.dejaVerse = r.total_verse;
-      opt.textContent = r.nom + ' — ' + parseInt(r.montant).toLocaleString('fr-FR') + ' FCFA';
+      opt.dataset.reste    = reste;
+      opt.textContent = r.nom + ' — ' + parseInt(r.montant).toLocaleString('fr-FR') + ' (' + reste.toLocaleString('fr-FR') + ' restant)';
       if (selectedId && opt.value === selectedId) opt.selected = true;
       sel.appendChild(opt);
     });

@@ -531,7 +531,10 @@ def api_rubriques_inscription(request, inscription_id):
         rid = str(t.rubrique.pk)
         if rid not in seen:
             seen.add(rid)
-            rubriques_data.append((rid, t.rubrique.nom, t.rubrique.code, t.montant))
+            total_verse = Decimal(totaux_map.get(rid) or 0)
+            reste = t.montant - total_verse
+            if reste > 0:
+                rubriques_data.append((rid, t.rubrique.nom, t.rubrique.code, t.montant, total_verse, reste))
 
     rubriques = [
         {
@@ -539,9 +542,10 @@ def api_rubriques_inscription(request, inscription_id):
             'nom': nom,
             'code': code,
             'montant': str(montant),
-            'total_verse': str(totaux_map.get(rid) or 0),
+            'total_verse': str(total_verse),
+            'reste': str(reste),
         }
-        for rid, nom, code, montant in rubriques_data
+        for rid, nom, code, montant, total_verse, reste in rubriques_data
     ]
 
     statut = inscription.statut_eleve
