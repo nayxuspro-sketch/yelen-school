@@ -184,15 +184,12 @@
     border-top: 1px solid #eee;
   }
 
-  /* Footer */
-  .footer {
-    position: absolute;
-    bottom: 1cm;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 8pt;
-    color: #999;
+  /* Date et lieu */
+  .date-lieu {
+    text-align: right;
+    font-size: 10pt;
+    margin-top: 0.4cm;
+    color: #333;
   }
 </style>
 </head>
@@ -290,6 +287,12 @@
     <p class="attestation-footer">
       En foi de quoi, la présente attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.
     </p>
+  </div>
+
+  <!-- Date et lieu -->
+  <div class="date-lieu">
+    {% now "d/m/Y" as today %}
+    {% if identite and identite.ville %}{{ identite.ville }}{% else %}Ouagadougou{% endif %}, le {{ today }}
   </div>
 
   <!-- Signature -->
