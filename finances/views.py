@@ -274,7 +274,7 @@ def paiement_create(request):
             for rubriq, montant, echeance in lignes:
                 paiement = Paiement.objects.create(
                     inscription=inscription,
-                    rubriqu=rubriq,
+                    rubrique=rubriq,
                     montant=montant,
                     date_paiement=date_paiement or date.today(),
                     mode_paiement=mode_paiement,
