@@ -146,31 +146,32 @@
   .signature-section {
     display: flex;
     justify-content: center;
-    margin-top: 1.2cm;
+    margin-top: 1.5cm;
     padding-top: 0.5cm;
   }
   .signature-block {
     text-align: center;
     width: 40%;
   }
-  .signature-line {
-    border-top: 1px solid #333;
-    margin-bottom: 8px;
-    padding-top: 3px;
-  }
-  .signature-title {
+  .signature-func {
     font-size: 9pt;
     color: #666;
     margin-bottom: 1.8cm;
-    font-style: italic;
+  }
+  .signature-line {
+    border-top: 1px solid #333;
+    margin-bottom: 4px;
+    padding-top: 3px;
   }
   .signature-name {
     font-weight: bold;
     font-size: 10pt;
   }
-  .signature-func {
+  .signature-titre {
     font-size: 9pt;
-    color: #666;
+    color: #555;
+    margin-top: 4px;
+    font-style: italic;
   }
 
   /* Numéro document */
@@ -294,14 +295,14 @@
   <!-- Signature -->
   <div class="signature-section">
     <div class="signature-block">
-      {% if signataire.titre_honorifique %}
-      <div class="signature-title">{{ signataire.titre_honorifique }}</div>
-      {% endif %}
+      <div class="signature-func">{{ signataire.fonction|default:"Directeur/Proviseur" }}</div>
       <div class="signature-line"></div>
       <div class="signature-name">
         {% if sig_membre %}{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}{% elif identite and identite.nom_directeur %}{{ identite.nom_directeur }}{% endif %}
       </div>
-      <div class="signature-func">{{ signataire.fonction|default:"Directeur/Proviseur" }}</div>
+      {% if signataire.titre_honorifique %}
+      <div class="signature-titre">{{ signataire.titre_honorifique }}</div>
+      {% endif %}
     </div>
   </div>
 
