@@ -287,8 +287,8 @@ def paiement_create(request):
                 paiement_ids.append(paiement.pk)
             
             total = sum(m for _, m, _e in lignes)
-            request.session['paiement_ids'] = paiement_ids
-            request.session['paiement_inscription_id'] = inscription.pk
+            request.session['paiement_ids'] = [str(pk) for pk in paiement_ids]
+            request.session['paiement_inscription_id'] = str(inscription.pk)
             messages.success(
                 request,
                 f"{len(lignes)} paiement(s) enregistré(s) pour {inscription.eleve} — Total : {total:,.0f} FCFA"
@@ -588,10 +588,15 @@ def paiement_confirmation(request):
         messages.error(request, "Aucune donnée de paiement trouvée.")
         return redirect('finances:paiement_list')
     
+    try:
+        inscription = Inscription.objects.get(pk=inscription_id)
+    except (Inscription.DoesNotExist, ValueError):
+        messages.error(request, "Inscription introuvable.")
+        return redirect('finances:paiement_list')
+    
     paiements = Paiement.objects.filter(pk__in=paiement_ids).select_related(
         'inscription__eleve', 'rubrique', 'encaisse_par'
     )
-    inscription = get_object_or_404(Inscription, pk=inscription_id)
     etab = inscription.classe.etablissement
     
     etab_context = get_etablissement_context(etab, request)
