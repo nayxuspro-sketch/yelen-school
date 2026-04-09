@@ -6,7 +6,6 @@ app_name = 'finances'
 urlpatterns = [
     path('paiements/', views.paiement_list, name='paiement_list'),
     path('paiements/nouveau/', views.paiement_create, name='paiement_create'),
-    path('paiements/confirmation/', views.paiement_confirmation, name='paiement_confirmation'),
     path('paiements/<uuid:paiement_id>/recu/pdf/', views.recu_pdf, name='recu_pdf'),
     path('paiements/<uuid:paiement_id>/rembourser/', views.remboursement_create, name='remboursement_create'),
     path('remboursements/<uuid:remboursement_id>/annuler/', views.remboursement_delete, name='remboursement_delete'),
