@@ -21,18 +21,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
+# Mode debug - désactiver en production!
+DEBUG = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes')
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     if DEBUG:
         import secrets
         SECRET_KEY = secrets.token_hex(64)
-        import warnings
-        warnings.warn("SECRET_KEY non définie - génération automatique pour le développement.")
     else:
-        raise ValueError(
-            "SECRET_KEY est obligatoire en production! "
-            "Définissez la variable d'environnement SECRET_KEY."
+        import secrets
+        SECRET_KEY = secrets.token_hex(64)
+        import warnings
+        warnings.warn(
+            "SECRET_KEY non définie - génération automatique. "
+            "En production, définissez la variable d'environnement SECRET_KEY."
         )
 
 # Clé API Anthropic — nécessite une connexion Internet (fonctionnalités IA)

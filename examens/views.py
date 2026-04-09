@@ -468,7 +468,7 @@ def candidats_session(request, session_id):
     if etab and session.annee_scolaire.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé.")
         return redirect('examens:session_list')
-    )
+    
     centres = session.centres.order_by('code_centre')
     centre_id = request.GET.get('centre', '')
     centre_selectionne = None
