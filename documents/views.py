@@ -834,7 +834,16 @@ def attestation_non_redevabilite(request, inscription_id):
         'etablissement': etab,
         'signataire': sig,
         'sig_membre': sig_membre,
+        'type_doc': type_doc,
     }
+
+    doc = Document(
+        type_document=type_doc,
+        annee_scolaire=annee,
+        inscription=inscription,
+    )
+    doc._generate_numero()
+    context['document'] = doc
 
     if request.GET.get('format') == 'pdf':
         from weasyprint import HTML
@@ -842,13 +851,15 @@ def attestation_non_redevabilite(request, inscription_id):
 
         from django.core.files.base import ContentFile
 
-        doc = Document.objects.create(
+        doc = Document(
             type_document=type_doc,
             annee_scolaire=annee,
             inscription=inscription,
             genere_par=request.user,
             signataire_nom=f"{sig_membre.nom} {sig_membre.prenom}" if sig_membre else '',
         )
+        doc._generate_numero()
+        doc.save()
         context['document'] = doc
 
         html_string = render_to_string(
