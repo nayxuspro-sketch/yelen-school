@@ -263,7 +263,6 @@ class InscriptionModelTest(TestCase):
             eleve=self.eleve,
             annee_scolaire=annee,
             classe=classe,
-            montant_paye=50000,
             statut=StatutInscriptionChoices.AFFECTE
         )
         
