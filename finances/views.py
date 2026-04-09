@@ -274,7 +274,7 @@ def paiement_create(request):
             for rubriq, montant, echeance in lignes:
                 paiement = Paiement.objects.create(
                     inscription=inscription,
-                    rubrique=rubriq,
+                    rubriq=rubriq,
                     montant=montant,
                     date_paiement=date_paiement or date.today(),
                     mode_paiement=mode_paiement,
@@ -291,7 +291,7 @@ def paiement_create(request):
             request.session['paiement_inscription_id'] = str(inscription.pk)
             messages.success(
                 request,
-                f"{len(lignes)} paiement(s) enregistré(s) pour {inscription.eleve} — Total : {total:,.0f} FCFA"
+                f"{len(lignes)} paiement(s) enregistré(s) pour {inscription.eleve} — Total : {total:,.0f} FCAF"
             )
             return redirect('finances:paiement_confirmation')
 
@@ -536,10 +536,7 @@ def api_rubriques_inscription(request, inscription_id):
         rid = str(t.rubrique.pk)
         if rid not in seen:
             seen.add(rid)
-            total_verse = Decimal(totaux_map.get(rid) or 0)
-            reste = t.montant - total_verse
-            if reste > 0:
-                rubriques_data.append((rid, t.rubrique.nom, t.rubrique.code, t.montant, total_verse, reste))
+            rubriques_data.append((rid, t.rubrique.nom, t.rubrique.code, t.montant))
 
     rubriques = [
         {
@@ -547,10 +544,9 @@ def api_rubriques_inscription(request, inscription_id):
             'nom': nom,
             'code': code,
             'montant': str(montant),
-            'total_verse': str(total_verse),
-            'reste': str(reste),
+            'total_verse': str(totaux_map.get(rid) or 0),
         }
-        for rid, nom, code, montant, total_verse, reste in rubriques_data
+        for rid, nom, code, montant in rubriques_data
     ]
 
     statut = inscription.statut_eleve
@@ -576,38 +572,6 @@ def recu_pdf(request, paiement_id):
     etablissement = inscription.classe.etablissement
     
     etab_context = get_etablissement_context(etablissement, request)
-
-
-@login_required
-def paiement_confirmation(request):
-    """Page de confirmation après un paiement avec option d'impression du reçu."""
-    paiement_ids = request.session.get('paiement_ids', [])
-    inscription_id = request.session.get('paiement_inscription_id')
-    
-    if not paiement_ids or not inscription_id:
-        messages.error(request, "Aucune donnée de paiement trouvée.")
-        return redirect('finances:paiement_list')
-    
-    try:
-        inscription = Inscription.objects.get(pk=inscription_id)
-    except (Inscription.DoesNotExist, ValueError):
-        messages.error(request, "Inscription introuvable.")
-        return redirect('finances:paiement_list')
-    
-    paiements = Paiement.objects.filter(pk__in=paiement_ids).select_related(
-        'inscription__eleve', 'rubrique', 'encaisse_par'
-    )
-    etab = inscription.classe.etablissement
-    
-    etab_context = get_etablissement_context(etab, request)
-    
-    return render(request, 'finances/paiement_confirmation.html', {
-        'paiements': paiements,
-        'inscription': inscription,
-        'total': sum(p.montant for p in paiements),
-        'identite': etab_context.get('identite'),
-        'logo_url': etab_context.get('logo_url'),
-    })
 
     # Tous les paiements de l'inscription
     tous_paiements = list(
@@ -742,6 +706,38 @@ def historique_pdf(request, inscription_id):
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{nom}"'
     return response
+
+
+@login_required
+def paiement_confirmation(request):
+    """Page de confirmation après un paiement avec option d'impression du reçu."""
+    paiement_ids = request.session.get('paiement_ids', [])
+    inscription_id = request.session.get('paiement_inscription_id')
+    
+    if not paiement_ids or not inscription_id:
+        messages.error(request, "Aucune donnée de paiement trouvée.")
+        return redirect('finances:paiement_list')
+    
+    try:
+        inscription = Inscription.objects.get(pk=inscription_id)
+    except (Inscription.DoesNotExist, ValueError):
+        messages.error(request, "Inscription introuvable.")
+        return redirect('finances:paiement_list')
+    
+    paiements = Paiement.objects.filter(pk__in=paiement_ids).select_related(
+        'inscription__eleve', 'rubrique', 'encaisse_par'
+    )
+    etab = inscription.classe.etablissement
+    
+    etab_context = get_etablissement_context(etab, request)
+    
+    return render(request, 'finances/paiement_confirmation.html', {
+        'paiements': paiements,
+        'inscription': inscription,
+        'total': sum(p.montant for p in paiements),
+        'identite': etab_context.get('identite'),
+        'logo_url': etab_context.get('logo_url'),
+    })
 
 
 @login_required
