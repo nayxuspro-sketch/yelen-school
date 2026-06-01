@@ -9,7 +9,7 @@
                 <th>Type de Document</th>
                 <th>Signataire Actuel</th>
                 <th>Titre Honorifique</th>
-                <th style="text-align:right;">Actions</th>
+                <th class="td-right">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -20,12 +20,12 @@
                     {% if doc.signataire %}
                         {% with personnel=doc.signataire.get_membre_personnel %}
                         <div class="d-flex align-center gap-2">
-                            <span style="display:inline-block; width:0.5rem; height:0.5rem; border-radius:50%; background:var(--color-success);"></span>
+                            <span class="status-dot status-dot-success"></span>
                             {{ personnel }}
                         </div>
                         {% endwith %}
                     {% else %}
-                        <span class="text-muted" style="font-style:italic;">Non défini (Directeur par défaut)</span>
+                        <span class="text-muted italic">Non défini (Directeur par défaut)</span>
                     {% endif %}
                 </td>
                 <td>
@@ -35,13 +35,21 @@
                         <span class="text-muted">-</span>
                     {% endif %}
                 </td>
-                <td style="text-align:right;">
+                <td class="td-right">
                     <div class="d-flex justify-end gap-2">
                         <button class="btn-secondary btn-sm"
                                 hx-get="{% url 'parametres:signataire_edit' cycle.id doc.type.id %}"
                                 hx-target="#modal-content">
                             {% if doc.signataire %}Modifier{% else %}Configurer{% endif %}
                         </button>
+                        {% if doc.signataire %}
+                        <button class="btn-secondary btn-sm" title="Gérer les co-signataires"
+                                hx-get="{% url 'parametres:cosignataire_list' doc.signataire.pk %}"
+                                hx-target="#modal-content"
+                                hx-swap="innerHTML">
+                            Co-sign.
+                        </button>
+                        {% endif %}
                     </div>
                 </td>
             </tr>
@@ -51,3 +59,5 @@
         </tbody>
     </table>
 </div>
+
+<div id="modal-container-cosig"></div>

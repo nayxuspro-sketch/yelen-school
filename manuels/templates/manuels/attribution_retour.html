@@ -1,0 +1,81 @@
+{% extends "core/base.html" %}
+
+{% block title %}Retour de manuel — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">Retour de manuel</h1>
+      <p class="page-subtitle">
+        {{ attribution.exemplaire.manuel.titre }} —
+        {{ attribution.inscription.eleve.nom }} {{ attribution.inscription.eleve.prenom }}
+      </p>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'manuels:attributions_list' %}" class="btn-secondary btn-sm">← Attributions</a>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="alert-error animate-fade-up mb-4">{{ error }}</div>
+  {% endif %}
+
+  <!-- Récapitulatif attribution -->
+  <div class="card mb-4 animate-fade-up delay-1">
+    <div class="card-body">
+      <div class="form-grid-2">
+        <div>
+          <p class="text-muted text-sm">Exemplaire</p>
+          <p class="fw-600 font-mono">{{ attribution.exemplaire.code_exemplaire }}</p>
+        </div>
+        <div>
+          <p class="text-muted text-sm">Date d'attribution</p>
+          <p class="fw-600">{{ attribution.date_attribution }}</p>
+        </div>
+        <div>
+          <p class="text-muted text-sm">État à la sortie</p>
+          <p><span class="badge badge-outline">{{ attribution.get_etat_sortie_display }}</span></p>
+        </div>
+        <div>
+          <p class="text-muted text-sm">Classe</p>
+          <p>{{ attribution.inscription.classe.nom }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" class="animate-fade-up delay-2">
+    {% csrf_token %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">Constats au retour</span></div>
+      <div class="card-body">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label required">Date de retour</label>
+            <input type="date" name="date_retour" value="{{ today }}" class="input" required>
+          </div>
+          <div class="form-group">
+            <label class="input-label required">État au retour</label>
+            <select name="etat_retour" class="input select" required>
+              {% for val, lbl in etats %}
+              <option value="{{ val }}" {% if val == 'BON' %}selected{% endif %}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Observation</label>
+          <textarea name="observation" rows="3" class="input textarea">{{ attribution.observation }}</textarea>
+        </div>
+      </div>
+      <div class="card-footer d-flex justify-end gap-3">
+        <a href="{% url 'manuels:attributions_list' %}" class="btn-ghost">Annuler</a>
+        <button type="submit" class="btn-primary">Enregistrer le retour</button>
+      </div>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

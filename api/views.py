@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.throttling import UserRateThrottle
+from .authentication import ExpiringTokenAuthentication
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
@@ -88,7 +88,7 @@ class ObtenirTokenView(APIView):
 
 class RevoquerTokenView(APIView):
     """DELETE /api/auth/token/ — Révoquer le token courant."""
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
@@ -101,7 +101,7 @@ class RevoquerTokenView(APIView):
 class AnneesListView(APIView):
     """GET /api/annees/ — Liste des années scolaires."""
     permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request):
         etab = _get_user_etablissement(request.user)
@@ -116,7 +116,7 @@ class AnneesListView(APIView):
 class AnneePeriodesView(APIView):
     """GET /api/annees/<annee_id>/periodes/ — Périodes d'une année scolaire."""
     permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, annee_id):
         etab = _get_user_etablissement(request.user)
@@ -134,7 +134,7 @@ class AnneePeriodesView(APIView):
 class ElevesListView(APIView):
     """GET /api/eleves/ — Liste des élèves (filtrables par matricule, nom)."""
     permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request):
         qs = Eleve.objects.all().order_by('nom', 'prenom')
@@ -158,7 +158,7 @@ class ElevesListView(APIView):
 class EleveDetailView(APIView):
     """GET /api/eleves/<pk>/ — Détail d'un élève."""
     permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
         etab = _get_user_etablissement(request.user)
@@ -175,7 +175,7 @@ class EleveDetailView(APIView):
 class EleveInscriptionsView(APIView):
     """GET /api/eleves/<pk>/inscriptions/ — Inscriptions d'un élève."""
     permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
         etab = _get_user_etablissement(request.user)
@@ -196,7 +196,7 @@ class EleveInscriptionsView(APIView):
 class EleveBulletinsView(APIView):
     """GET /api/eleves/<pk>/bulletins/ — Bulletins publiés d'un élève."""
     permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
         etab = _get_user_etablissement(request.user)
@@ -218,7 +218,7 @@ class EleveBulletinsView(APIView):
 class EleveMoyennesView(APIView):
     """GET /api/eleves/<pk>/moyennes/ — Moyennes générales d'un élève."""
     permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
         etab = _get_user_etablissement(request.user)
@@ -242,7 +242,7 @@ class EleveMoyennesView(APIView):
 class ElevePaiementsView(APIView):
     """GET /api/eleves/<pk>/paiements/ — Paiements d'un élève."""
     permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
         etab = _get_user_etablissement(request.user)
@@ -266,7 +266,7 @@ class ElevePaiementsView(APIView):
 class ElevePresencesView(APIView):
     """GET /api/eleves/<pk>/presences/ — Présences/absences d'un élève."""
     permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
         etab = _get_user_etablissement(request.user)

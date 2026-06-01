@@ -1,0 +1,113 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if instance %}Modifier le manuel{% else %}Nouveau manuel{% endif %} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">{% if instance %}Modifier — {{ instance.titre }}{% else %}Nouveau manuel{% endif %}</h1>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'manuels:catalogue' %}" class="btn-secondary btn-sm">← Catalogue</a>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="alert-error animate-fade-up mb-4">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" class="animate-fade-up delay-1">
+    {% csrf_token %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">Informations du manuel</span></div>
+      <div class="card-body">
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label required">Titre</label>
+            <input type="text" name="titre" value="{{ instance.titre|default:'' }}" class="input" required>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Auteur</label>
+            <input type="text" name="auteur" value="{{ instance.auteur|default:'' }}" class="input">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Éditeur</label>
+            <input type="text" name="editeur" value="{{ instance.editeur|default:'' }}" class="input">
+          </div>
+          <div class="form-group">
+            <label class="input-label">ISBN</label>
+            <input type="text" name="isbn" value="{{ instance.isbn|default:'' }}" class="input">
+          </div>
+        </div>
+
+        <div class="form-divider"></div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label required">Cycle</label>
+            <select name="cycle" class="input select" required>
+              <option value="">-- Choisir --</option>
+              {% for val, lbl in cycles %}
+              <option value="{{ val }}" {% if instance and instance.cycle == val %}selected{% endif %}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Classe (facultatif)</label>
+            <select name="classe" class="input select">
+              <option value="">Toutes les classes du cycle</option>
+              {% for c in classes %}
+              <option value="{{ c.pk }}" {% if instance and instance.classe_id == c.pk %}selected{% endif %}>{{ c.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Matière</label>
+            <select name="matiere" class="input select">
+              <option value="">—</option>
+              {% for m in matieres %}
+              <option value="{{ m.pk }}" {% if instance and instance.matiere_id == m.pk %}selected{% endif %}>{{ m.code }} — {{ m.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Année d'édition</label>
+            <input type="number" name="annee_edition" min="1900" max="2100"
+                   value="{{ instance.annee_edition|default:'' }}" class="input">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Prix de remplacement (FCFA)</label>
+            <input type="number" name="prix_remplacement" min="0" step="100"
+                   value="{{ instance.prix_remplacement|default:'0' }}" class="input">
+            <p class="input-hint">Facturé à l'élève si le manuel n'est pas rendu.</p>
+          </div>
+        </div>
+
+      </div>
+      <div class="card-footer d-flex justify-end gap-3">
+        <a href="{% url 'manuels:catalogue' %}" class="btn-ghost">Annuler</a>
+        <button type="submit" class="btn-primary">
+          {% if instance %}Enregistrer les modifications{% else %}Ajouter au catalogue{% endif %}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  {% if instance %}
+  <div class="card mt-4 animate-fade-up delay-3">
+    <div class="card-body d-flex justify-between align-center">
+      <span class="text-muted">Zone de danger</span>
+      <form method="post" action="{% url 'manuels:manuel_delete' pk=instance.pk %}"
+            onsubmit="return confirm('Retirer ce manuel du catalogue ?')">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger btn-sm">Retirer du catalogue</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

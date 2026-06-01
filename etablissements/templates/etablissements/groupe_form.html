@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if groupe %}Modifier{% else %}Nouveau{% endif %} groupe{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'etablissements:groupe_list' %}"
+       style="font-size:0.8rem; color:var(--color-text-muted); text-decoration:none; display:flex; align-items:center; gap:4px; margin-bottom:var(--space-1);">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Groupes
+    </a>
+    <h1 class="page-title">{% if groupe %}Modifier {{ groupe.nom }}{% else %}Nouveau groupe d'établissements{% endif %}</h1>
+  </div>
+</div>
+
+<div class="card animate-fade-up" style="max-width:520px; padding:var(--space-6);">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group" style="margin-bottom:var(--space-4);">
+      <label class="input-label">Nom du groupe <span style="color:#ef4444;">*</span></label>
+      <input type="text" name="nom" value="{{ groupe.nom|default:'' }}" class="input" required style="width:100%;" placeholder="Ex: Groupe Scolaire YELEN">
+    </div>
+    <div class="form-group" style="margin-bottom:var(--space-4);">
+      <label class="input-label">Code <span style="color:#ef4444;">*</span></label>
+      <input type="text" name="code" value="{{ groupe.code|default:'' }}" class="input" required style="width:100%;" placeholder="Ex: YELEN-GRP" maxlength="50">
+    </div>
+    <div class="form-group" style="margin-bottom:var(--space-5);">
+      <label class="input-label">Description</label>
+      <textarea name="description" class="input" rows="3" style="width:100%; resize:vertical;">{{ groupe.description|default:'' }}</textarea>
+    </div>
+    <div class="d-flex gap-3">
+      <button type="submit" class="btn-primary">{% if groupe %}Enregistrer{% else %}Créer{% endif %}</button>
+      <a href="{% url 'etablissements:groupe_list' %}" class="btn-secondary">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

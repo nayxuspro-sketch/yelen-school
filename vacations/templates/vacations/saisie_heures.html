@@ -3,16 +3,6 @@
 {% block title %}Heures — {{ contrat.personnel.get_nom_complet }} — YELEN SCHOOL{% endblock %}
 
 {% block content %}
-<style>
-  #mois-select, #annee-select {
-    color: #E8EDF5 !important;
-    background-color: #080F1C !important;
-  }
-  #mois-select option, #annee-select option {
-    color: #E8EDF5 !important;
-    background-color: #080F1C !important;
-  }
-</style>
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
@@ -29,12 +19,14 @@
 </div>
 
 <div class="card mb-6 animate-fade-up delay-1">
-  <div class="card-header"><span class="card-title">Nouvelle saisie</span></div>
-  <div style="padding:var(--space-4);">
+  <div class="card-header">
+    <span class="card-title">Nouvelle saisie</span>
+  </div>
+  <div class="card-body p-4">
     <form method="post">
       {% csrf_token %}
-      <div class="form-grid-3 mb-4">
-        <div class="form-group">
+      <div class="form-grid-2 mb-4">
+        <div class="form-group mb-0">
           <label class="input-label">Mois</label>
           <select name="mois" id="mois-select" class="input select">
             {% for val, label in mois_choices %}
@@ -42,7 +34,7 @@
             {% endfor %}
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group mb-0">
           <label class="input-label">Année scolaire</label>
           <select name="annee" id="annee-select" class="input select">
             {% if annees_list %}
@@ -54,23 +46,28 @@
             {% endif %}
           </select>
         </div>
-        <div class="form-group">
+      </div>
+
+      <div class="form-grid-3 mb-4">
+        <div class="form-group mb-0">
           <label class="input-label">Heures prévues (semaine)</label>
-          <input type="text" value="{{ contrat.heures_hebdo_prevues }}h" class="input" readonly style="background: var(--color-bg-input); opacity: 0.7;">
+          <input type="text" value="{{ contrat.heures_hebdo_prevues }}h" class="input input-readonly" readonly>
         </div>
-        <div class="form-group">
+        <div class="form-group mb-0">
           <label class="input-label">Heures effectuées</label>
           <input type="number" name="heures_effectuees" step="0.5" min="0" value="0" class="input">
         </div>
-        <div class="form-group">
+        <div class="form-group mb-0">
           <label class="input-label">Heures annulées</label>
           <input type="number" name="heures_annulees" step="0.5" min="0" value="0" class="input">
         </div>
-        <div class="form-group" style="grid-column:span 2;">
-          <label class="input-label">Observations</label>
-          <input type="text" name="observations" placeholder="Optionnel" class="input w-full">
-        </div>
       </div>
+
+      <div class="form-group mb-4">
+        <label class="input-label">Observations</label>
+        <input type="text" name="observations" placeholder="Optionnel" class="input w-full">
+      </div>
+
       <div class="d-flex justify-end">
         <button type="submit" class="btn-primary">Enregistrer</button>
       </div>
@@ -79,22 +76,22 @@
 </div>
 
 <div class="table-wrapper animate-fade-up delay-2">
-  <div class="card-header" style="padding:var(--space-4) var(--space-6);">
+  <div class="card-header p-4">
     <span class="card-title">Historique des heures</span>
   </div>
   <div class="table-scroll">
     <table class="data-table">
-        <thead>
-          <tr>
-            <th>Période</th>
-            <th>Effectuées</th>
-            <th>Annulées</th>
-            <th>Nettes</th>
-            <th>Montant</th>
-            <th>Validé</th>
-            <th style="text-align:right;">Actions</th>
-          </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th>Période</th>
+          <th>Effectuées</th>
+          <th>Annulées</th>
+          <th>Nettes</th>
+          <th>Montant</th>
+          <th>Validé</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
       <tbody>
         {% for h in heures_list %}
         <tr>
@@ -110,15 +107,15 @@
               <span class="badge badge-neutral">En attente</span>
             {% endif %}
           </td>
-          <td>
+          <td class="text-right">
             {% if h.est_valide %}
-              <a href="{% url 'vacations:invalider_heure' h.pk %}" class="btn-icon" title="Invalider" style="color: var(--color-danger);">
+              <a href="{% url 'vacations:invalider_heure' h.pk %}" class="btn-icon btn-icon-danger" title="Invalider">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                 </svg>
               </a>
             {% else %}
-              <a href="{% url 'vacations:valider_heure' h.pk %}" class="btn-icon" title="Valider" style="color: var(--color-success);">
+              <a href="{% url 'vacations:valider_heure' h.pk %}" class="btn-icon" title="Valider">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>

@@ -1,6 +1,7 @@
 from django import forms
 
 from core.models import CycleChoices
+from core.validators import validate_image_upload
 
 from .models import Etablissement
 
@@ -25,3 +26,9 @@ class EtablissementForm(forms.ModelForm):
         # ArrayField stores a list — initialise the MultipleChoiceField from it
         if self.instance and self.instance.pk:
             self.initial['cycles'] = self.instance.cycles or []
+
+    def clean_logo(self):
+        logo = self.cleaned_data.get('logo')
+        if logo and hasattr(logo, 'size'):
+            validate_image_upload(logo)
+        return logo

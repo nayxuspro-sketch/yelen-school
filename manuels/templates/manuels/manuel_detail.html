@@ -1,0 +1,107 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ manuel.titre }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">{{ manuel.titre }}</h1>
+      <p class="page-subtitle">
+        {{ manuel.get_cycle_display }}
+        {% if manuel.matiere %} · {{ manuel.matiere.nom }}{% endif %}
+        {% if manuel.classe %} · {{ manuel.classe.nom }}{% endif %}
+      </p>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'manuels:catalogue' %}" class="btn-secondary btn-sm">← Catalogue</a>
+      <a href="{% url 'manuels:manuel_edit' pk=manuel.pk %}" class="btn-secondary btn-sm">Modifier</a>
+      <a href="{% url 'manuels:exemplaire_create' manuel_pk=manuel.pk %}" class="btn-primary btn-sm">+ Exemplaire</a>
+    </div>
+  </div>
+
+  <!-- Infos -->
+  <div class="stats-row animate-fade-up delay-1 mb-5">
+    <div class="stat-card">
+      <div><p class="stat-label">Exemplaires actifs</p><p class="stat-value">{{ manuel.nb_exemplaires }}</p></div>
+    </div>
+    <div class="stat-card">
+      <div><p class="stat-label">Disponibles</p>
+        <p class="stat-value {% if manuel.nb_disponibles == 0 %}text-danger{% endif %}">{{ manuel.nb_disponibles }}</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div><p class="stat-label">Attribués</p>
+        <p class="stat-value">{{ manuel.nb_attribues }}</p>
+      </div>
+    </div>
+    {% if manuel.prix_remplacement %}
+    <div class="stat-card">
+      <div><p class="stat-label">Prix remplacement</p><p class="stat-value">{{ manuel.prix_remplacement|floatformat:0 }} FCFA</p></div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Liste exemplaires -->
+  <div class="card animate-fade-up delay-2">
+    <div class="card-header">
+      <span class="card-title">Inventaire des exemplaires</span>
+    </div>
+    <div class="card-body p-0">
+      {% if exemplaires %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>État</th>
+            <th>Acquisition</th>
+            <th>Statut</th>
+            <th>Élève attribué</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ex in exemplaires %}
+          {% with attr=ex.attribution_courante %}
+          <tr>
+            <td class="fw-600 font-mono">{{ ex.code_exemplaire }}</td>
+            <td><span class="badge badge-outline">{{ ex.get_etat_display }}</span></td>
+            <td>{{ ex.annee_acquisition|default:"—" }}</td>
+            <td>
+              {% if attr %}
+              <span class="badge badge-warning">Attribué</span>
+              {% else %}
+              <span class="badge badge-success">Disponible</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if attr %}
+              {{ attr.inscription.eleve.nom }} {{ attr.inscription.eleve.prenom }}
+              <br><span class="text-muted text-sm">{{ attr.inscription.classe.nom }} · depuis {{ attr.date_attribution }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="text-right">
+              {% if attr %}
+              <a href="{% url 'manuels:attribution_retour' pk=attr.pk %}" class="btn-ghost btn-xs">Retour</a>
+              {% else %}
+              <a href="{% url 'manuels:attribution_depuis_exemplaire' exemplaire_pk=ex.pk %}" class="btn-ghost btn-xs">Attribuer</a>
+              {% endif %}
+              <a href="{% url 'manuels:exemplaire_edit' manuel_pk=manuel.pk pk=ex.pk %}" class="btn-ghost btn-xs">Modifier</a>
+            </td>
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <p>Aucun exemplaire pour ce manuel.</p>
+        <a href="{% url 'manuels:exemplaire_create' manuel_pk=manuel.pk %}" class="btn-primary btn-sm">Ajouter un exemplaire</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

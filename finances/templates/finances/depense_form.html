@@ -1,0 +1,124 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if instance %}Modifier{% else %}Nouvelle{% endif %} dépense — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-form">
+
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-4">
+      <a href="{% url 'finances:depense_list' %}" class="btn-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="page-title">{% if instance %}Modifier la dépense{% else %}Nouvelle dépense{% endif %}</h1>
+        {% if instance %}<p class="page-subtitle">{{ instance.numero_depense }} — {{ instance.libelle }}</p>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="alert-error animate-fade-up mb-4">{{ error }}</div>
+  {% endif %}
+
+  <div class="card animate-fade-up delay-1">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="form-grid-2">
+
+          <div class="form-group col-span-2">
+            <label class="input-label required">Libellé</label>
+            <input type="text" name="libelle" value="{{ instance.libelle|default:'' }}"
+                   class="input" placeholder="Ex : Achat fournitures bureau" required autofocus>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label required">Catégorie</label>
+            <select name="categorie" class="input select" required>
+              <option value="">— Choisir —</option>
+              {% for cat in categories %}
+              <option value="{{ cat.pk }}"
+                {% if instance and instance.categorie_id == cat.pk %}selected
+                {% elif request.GET.categorie == cat.pk|stringformat:"s" %}selected{% endif %}>
+                {{ cat.nom }} ({{ cat.get_type_depense_display }})
+              </option>
+              {% endfor %}
+            </select>
+            <p class="input-hint">
+              <a href="{% url 'finances:categorie_depense_create' %}" target="_blank">+ Créer une catégorie</a>
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label required">Année scolaire</label>
+            <select name="annee_scolaire" class="input select" required>
+              {% for a in annees %}
+              <option value="{{ a.pk }}"
+                {% if instance and instance.annee_scolaire_id == a.pk %}selected
+                {% elif annee_courante and annee_courante.pk == a.pk %}selected{% endif %}>
+                {{ a.libelle }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label required">Montant (FCFA)</label>
+            <input type="number" name="montant" min="1" step="1"
+                   value="{{ instance.montant|floatformat:0|default:'' }}"
+                   class="input" placeholder="Ex : 150000" required>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label required">Date de la dépense</label>
+            <input type="date" name="date_depense"
+                   value="{{ instance.date_depense|date:'Y-m-d'|default:today }}"
+                   class="input" required>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label">Mode de paiement</label>
+            <select name="mode_paiement" class="input select">
+              {% for val, label in modes %}
+              <option value="{{ val }}" {% if instance.mode_paiement == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label">Bénéficiaire</label>
+            <input type="text" name="beneficiaire" value="{{ instance.beneficiaire|default:'' }}"
+                   class="input" placeholder="Fournisseur, prestataire…">
+          </div>
+
+          <div class="form-group">
+            <label class="input-label">Référence / N° pièce</label>
+            <input type="text" name="reference" value="{{ instance.reference|default:'' }}"
+                   class="input" placeholder="N° facture, reçu…">
+          </div>
+
+          <div class="form-group col-span-2">
+            <label class="input-label">Observation</label>
+            <textarea name="observation" rows="3" class="input textarea"
+                      placeholder="Détails complémentaires…">{{ instance.observation|default:'' }}</textarea>
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+          <a href="{% url 'finances:depense_list' %}" class="btn-secondary">Annuler</a>
+          <button type="submit" class="btn-primary">
+            {% if instance %}Enregistrer les modifications{% else %}Créer la dépense{% endif %}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

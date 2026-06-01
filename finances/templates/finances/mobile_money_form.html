@@ -1,0 +1,117 @@
+{% extends "core/base.html" %}
+
+{% block title %}Nouvelle demande Mobile Money — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Nouvelle demande Mobile Money</h1>
+    <p class="page-subtitle">
+      {% if inscription %}
+        {{ inscription.eleve.nom }} {{ inscription.eleve.prenom }} — {{ inscription.classe.nom }}
+      {% else %}
+        Paiement Orange Money
+      {% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    {% if inscription %}
+    <a href="{% url 'finances:situation_eleve' inscription.pk %}" class="btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </a>
+    {% else %}
+    <a href="{% url 'finances:mobile_money_list' %}" class="btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Info Orange Money -->
+<div class="card mb-4 animate-fade-up delay-1"
+     style="border-left: 3px solid #F5A623;">
+  <div class="card-body">
+    <div class="d-flex align-start gap-3">
+      <svg width="20" height="20" fill="none" stroke="#F5A623" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+      </svg>
+      <div>
+        <div class="fw-semibold mb-1" style="color:#F5A623;">Comment ça fonctionne ?</div>
+        <p class="text-sm text-muted">
+          Un SMS sera envoyé au numéro Orange du parent avec les instructions de paiement via
+          <strong>*144#</strong>. Une fois le paiement effectué, le comptable confirme
+          la transaction depuis le tableau de bord Mobile Money.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-2">
+  <div class="card-header">
+    <span class="card-title">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+      </svg>
+      Détails de la demande
+    </span>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      {% if inscription %}
+      <input type="hidden" name="inscription" value="{{ inscription.pk }}">
+      {% endif %}
+
+      <!-- Rubrique -->
+      {% if rubriques %}
+      <div class="form-group mb-4">
+        <label class="input-label">Rubrique de paiement</label>
+        <select name="rubrique" class="input select">
+          <option value="">— Sélectionner une rubrique (optionnel) —</option>
+          {% for r in rubriques %}
+          <option value="{{ r.pk }}">{{ r.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <!-- Montant + Téléphone -->
+      <div class="form-grid-2 mb-4">
+        <div class="form-group">
+          <label class="input-label">Montant (FCFA) <span style="color:var(--color-danger);">*</span></label>
+          <input type="number" name="montant" class="input" required min="1"
+                 placeholder="Ex: 25000">
+        </div>
+        <div class="form-group">
+          <label class="input-label">Numéro Orange Money <span style="color:var(--color-danger);">*</span></label>
+          <input type="tel" name="telephone" class="input" required
+                 placeholder="Ex: 70123456 ou +22670123456">
+        </div>
+      </div>
+
+      <div class="d-flex gap-3 justify-end">
+        {% if inscription %}
+        <a href="{% url 'finances:situation_eleve' inscription.pk %}" class="btn-secondary">Annuler</a>
+        {% else %}
+        <a href="{% url 'finances:mobile_money_list' %}" class="btn-secondary">Annuler</a>
+        {% endif %}
+        <button type="submit" class="btn-primary">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Créer la demande &amp; envoyer SMS
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

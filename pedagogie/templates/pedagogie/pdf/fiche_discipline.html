@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+@page {
+    size: A4 landscape;
+    margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+    @bottom-center {
+        content: "Page " counter(page) " / " counter(pages);
+        font-size: 7pt;
+        color: #000;
+    }
+    @bottom-right {
+        content: "{{ annee.libelle }} — {{ enseignement.matiere.nom }}";
+        font-size: 7pt;
+        color: #000;
+    }
+    @bottom-left {
+        content: "{% if identite %}{{ identite.nom_etablissement }}{% else %}YELEN SCHOOL{% endif %} — Fiche officielle";
+        font-size: 7pt;
+        color: #000;
+    }
+}
+* { box-sizing: border-box; }
+body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #000;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+}
+
+/* ══ EN-TÊTE ══ */
+.hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2.5pt solid #111;
+    padding-bottom: 7pt;
+    margin-bottom: 9pt;
+}
+.hdr-school {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.6pt;
+}
+.hdr-meta { font-size: 8pt; color: #555; margin-top: 2pt; line-height: 1.5; }
+.hdr-right img { max-height: 44pt; max-width: 75pt; filter: grayscale(100%); }
+
+/* ══ BANDEAU TITRE ══ */
+.banner {
+    background: #111;
+    color: #fff;
+    padding: 7pt 14pt;
+    margin-bottom: 8pt;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.banner-title { font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1pt; margin: 0; }
+.banner-sub { font-size: 9pt; color: rgba(255,255,255,0.85); margin-top: 3pt; }
+.banner-badge {
+    background: #fff;
+    color: #111;
+    padding: 4pt 12pt;
+    font-size: 9pt;
+    font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1pt solid #fff;
+}
+
+/* ══ BARRE D'INFOS ══ */
+.info-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5pt; margin-bottom: 8pt; }
+.ic { border: 1pt solid #ccc; padding: 5pt 8pt; background: #f5f5f5; }
+.ic label { display: block; font-size: 7pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4pt; color: #555; margin-bottom: 2pt; }
+.ic span { font-size: 9pt; font-weight: bold; color: #000; }
+.ic .sub { font-size: 8pt; color: #555; font-weight: normal; }
+.ic-prof { border-color: #111; border-left: 3pt solid #111; background: #ebebeb; }
+.ic-prof label { color: #111; }
+
+/* ══ TABLEAU DES NOTES ══ */
+table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+
+thead th {
+    background: #111;
+    color: #fff;
+    padding: 5pt 3pt;
+    text-align: center;
+    font-size: 8pt;
+    font-weight: bold;
+    vertical-align: bottom;
+}
+thead th.th-n   { width: 16pt; color: #ccc; }
+thead th.th-eleve { text-align: left; min-width: 130pt; padding-left: 7pt; }
+thead th.th-note  { min-width: 34pt; }
+thead th.th-moy {
+    background: #555;
+    min-width: 42pt;
+    border-left: 2pt solid #333;
+}
+.ev-label  { font-size: 8pt; font-weight: bold; }
+.ev-date   { font-size: 7pt; opacity: 0.85; margin-top: 1pt; }
+.ev-bareme { font-size: 7pt; opacity: 0.8; font-style: italic; }
+
+tbody tr:nth-child(even) { background: #f5f5f5; }
+tbody tr:nth-child(odd)  { background: #fff; }
+td { padding: 3pt 3pt; border-bottom: 0.5pt solid #ccc; vertical-align: middle; }
+td.td-n { text-align: center; color: #555; font-size: 8pt; border-right: 0.5pt solid #ccc; }
+td.td-eleve { padding-left: 7pt; }
+.elv-nom { font-weight: bold; font-size: 9pt; }
+.elv-mat { font-size: 7pt; color: #555; }
+
+td.note-ok  { text-align: center; font-weight: bold; color: #000; background: #f5f5f5; }
+td.note-low { text-align: center; font-weight: bold; color: #000; background: #ddd; font-style: italic; }
+td.note-abs { text-align: center; font-weight: bold; color: #000; font-size: 8pt; background: #ddd; }
+td.note-nd  { text-align: center; color: #ccc; }
+
+td.td-moy { text-align: center; font-weight: bold; font-size: 11pt; border-left: 2pt solid #555; }
+td.td-moy.mok  { color: #000; background: #f5f5f5; font-weight: bold; }
+td.td-moy.mlow { color: #000; background: #ddd; font-style: italic; }
+td.td-moy.mest { color: #555; background: #ebebeb; }
+td.td-moy.mnd  { color: #ccc; }
+
+/* ══ PIED DE TABLEAU ══ */
+tfoot tr.tf-avg td {
+    border-top: 2pt solid #111;
+    background: #ebebeb;
+    font-size: 8pt;
+    font-weight: bold;
+    color: #000;
+    padding: 3pt;
+    text-align: center;
+    border-bottom: 0.5pt solid #ccc;
+}
+tfoot tr.tf-count td {
+    background: #f5f5f5;
+    font-size: 8pt;
+    color: #000;
+    padding: 2pt 3pt;
+    text-align: center;
+    border-bottom: 1pt solid #ccc;
+}
+tfoot td.tf-lbl {
+    text-align: left;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 7pt;
+    letter-spacing: 0.4pt;
+    padding-left: 7pt;
+    color: #000;
+}
+tfoot td.tf-moy { border-left: 2pt solid #555; }
+tfoot td.tf-ok  { color: #000; font-weight: bold; }
+tfoot td.tf-low { color: #000; font-style: italic; }
+
+/* ══ STATISTIQUES ══ */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6pt;
+    margin-top: 8pt;
+    margin-bottom: 6pt;
+}
+.stat-box { padding: 6pt 10pt; text-align: center; }
+.stat-box-ok  { border: 1pt solid #ccc; background: #f5f5f5; border-left: 3pt solid #111; }
+.stat-box-neu { border: 1pt solid #ccc; background: #fff; border-left: 3pt solid #555; }
+.stat-box-low { border: 1pt solid #ccc; background: #ebebeb; border-left: 3pt solid #333; }
+.stat-lbl { font-size: 7pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4pt; margin-bottom: 3pt; color: #555; }
+.stat-val     { font-size: 14pt; font-weight: bold; color: #111; }
+.stat-val-unit { font-size: 9pt; font-weight: normal; }
+.stat-sub { font-size: 8pt; color: #555; margin-top: 2pt; }
+
+/* ══ LÉGENDE ══ */
+.legende { display: flex; gap: 10pt; font-size: 8pt; color: #555; align-items: center; }
+.leg-dot  { width: 7pt; height: 7pt; border: 1pt solid #555; display: inline-block; margin-right: 2pt; vertical-align: middle; }
+.leg-ok   { background: #f5f5f5; }
+.leg-low  { background: #ddd; }
+.leg-est  { background: #ebebeb; }
+
+/* ══ ZONE CERTIFICATION + SIGNATURE ══ */
+.cert-zone {
+    margin-top: 10pt;
+    border: 1pt solid #ccc;
+    border-top: 2pt solid #111;
+    padding: 8pt 14pt;
+    background: #f5f5f5;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+.cert-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 20pt; align-items: end; }
+.cert-legend-col { }
+.cert-legend-title { font-size: 7.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4pt; color: #555; margin-bottom: 5pt; }
+.cert-text { font-size: 8pt; color: #555; font-style: italic; line-height: 1.5; margin-top: 5pt; }
+.cert-sig-col { text-align: right; }
+.sig-date     { font-size: 9pt; color: #555; margin: 0; }
+.sig-fonction { font-size: 10pt; font-weight: bold; color: #111; margin: 16pt 0 0; text-transform: uppercase; letter-spacing: 0.3pt; }
+.sig-name     { font-size: 12pt; font-weight: bold; color: #000; margin: 40pt 0 0; text-transform: uppercase; letter-spacing: 0.4pt; }
+.sig-mat      { font-family: 'DejaVu Sans Mono', monospace; font-size: 8pt; color: #555; margin: 3pt 0 0; }
+.sig-none     { font-size: 10pt; color: #555; font-style: italic; margin: 16pt 0 0; }
+</style>
+</head>
+<body>
+
+<!-- ══ EN-TÊTE ÉTABLISSEMENT ══ -->
+<div class="hdr">
+  <div>
+    <div class="hdr-school">
+      {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}
+    </div>
+    <div class="hdr-meta">
+      {% if identite %}
+        {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
+        {% if identite.telephone %} &nbsp;&middot;&nbsp; Tél : {{ identite.telephone }}{% endif %}
+        {% if identite.email %} &nbsp;&middot;&nbsp; {{ identite.email }}{% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="hdr-right">
+    {% if logo_url %}<img src="{{ logo_url }}" alt="Logo">
+    {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo">{% endif %}
+  </div>
+</div>
+
+<!-- ══ BANDEAU TITRE ══ -->
+<div class="banner">
+  <div>
+    <div class="banner-title">Fiche de Relevé de Notes &mdash; {{ enseignement.matiere.nom }}</div>
+    <div class="banner-sub">
+      Classe&nbsp;: <strong>{{ enseignement.classe.nom }}</strong>
+      &nbsp;&middot;&nbsp; Année&nbsp;: <strong>{{ annee.libelle }}</strong>
+      {% if periode %}&nbsp;&middot;&nbsp; Période&nbsp;: <strong>{{ periode.nom }}</strong>{% else %}&nbsp;&middot;&nbsp; <em>Toutes périodes</em>{% endif %}
+    </div>
+  </div>
+  <div class="banner-badge">
+    {{ table|length }} élève{{ table|length|pluralize }}
+    &nbsp;&middot;&nbsp;
+    {{ evaluations_cols|length }} éval{{ evaluations_cols|length|pluralize }}.
+  </div>
+</div>
+
+<!-- ══ BARRE D'INFOS ══ -->
+<div class="info-bar">
+  <div class="ic">
+    <label>Classe</label>
+    <span>{{ enseignement.classe.nom }}</span>
+    {% if enseignement.classe.cycle %}<div class="sub">{{ enseignement.classe.cycle.nom }}</div>{% endif %}
+  </div>
+  <div class="ic">
+    <label>Discipline</label>
+    <span>{{ enseignement.matiere.nom }}</span>
+    {% if enseignement.coefficient %}<div class="sub">Coeff.&nbsp;{{ enseignement.coefficient }}</div>{% endif %}
+  </div>
+  <div class="ic ic-prof">
+    <label>Enseignant(e)</label>
+    {% if professeur %}
+      <span>{{ professeur.prenom }} {{ professeur.nom|upper }}</span>
+      <div class="sub">{{ professeur.matricule }}</div>
+    {% else %}
+      <span class="sub">Non assigné</span>
+    {% endif %}
+  </div>
+  <div class="ic">
+    <label>Période</label>
+    <span>{% if periode %}{{ periode.nom }}{% else %}Toutes{% endif %}</span>
+  </div>
+  <div class="ic">
+    <label>Année scolaire</label>
+    <span>{{ annee.libelle }}</span>
+  </div>
+</div>
+
+<!-- ══ TABLEAU DES NOTES ══ -->
+{% if table %}
+<table>
+  <thead>
+    <tr>
+      <th class="th-n">#</th>
+      <th class="th-eleve">Élève</th>
+      {% for ev in evaluations_cols %}
+      <th class="th-note">
+        <div class="ev-label">{{ ev.type_evaluation.nom|truncatechars:10 }}</div>
+        <div class="ev-date">{{ ev.date_planifiee|date:"d/m/Y" }}</div>
+        <div class="ev-bareme">/{{ ev.bareme }}</div>
+      </th>
+      {% endfor %}
+      <th class="th-moy">Moy /20</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for row in table %}
+    <tr>
+      <td class="td-n">{{ forloop.counter }}</td>
+      <td class="td-eleve">
+        <div class="elv-nom">{{ row.inscription.eleve.nom|upper }} {{ row.inscription.eleve.prenom }}</div>
+        <div class="elv-mat">{{ row.inscription.eleve.matricule }}</div>
+      </td>
+
+      {% for note_data in row.notes %}
+        {% if note_data %}
+          {% if note_data.observation == 'ABS' %}
+            <td class="note-abs">ABS</td>
+          {% elif note_data.sur_20 is not None %}
+            {% if note_data.sur_20 >= 10 %}
+              <td class="note-ok">{{ note_data.valeur|floatformat:"-2" }}</td>
+            {% else %}
+              <td class="note-low">{{ note_data.valeur|floatformat:"-2" }}</td>
+            {% endif %}
+          {% else %}
+            <td class="note-nd">{{ note_data.valeur|floatformat:"-2" }}</td>
+          {% endif %}
+        {% else %}
+          <td class="note-nd">—</td>
+        {% endif %}
+      {% endfor %}
+
+      {% if row.resultat and row.resultat.moyenne_sur_20 is not None %}
+        {% if row.resultat.moyenne_sur_20 >= 10 %}
+          <td class="td-moy mok">{{ row.resultat.moyenne_sur_20|floatformat:2 }}</td>
+        {% else %}
+          <td class="td-moy mlow">{{ row.resultat.moyenne_sur_20|floatformat:2 }}</td>
+        {% endif %}
+      {% elif row.moyenne_locale is not None %}
+        <td class="td-moy mest">~{{ row.moyenne_locale }}</td>
+      {% else %}
+        <td class="td-moy mnd">—</td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
+
+  {% if ev_stats %}
+  <tfoot>
+    <tr class="tf-avg">
+      <td colspan="2" class="tf-lbl">Moy. classe</td>
+      {% for stat in ev_stats %}
+        {% if stat.avg != None %}
+          {% if stat.avg >= 10 %}<td class="tf-ok">{{ stat.avg|floatformat:2 }}</td>
+          {% else %}<td class="tf-low">{{ stat.avg|floatformat:2 }}</td>{% endif %}
+        {% else %}<td>—</td>{% endif %}
+      {% endfor %}
+      <td class="tf-moy">—</td>
+    </tr>
+    <tr class="tf-count">
+      <td colspan="2" class="tf-lbl">Saisies</td>
+      {% for stat in ev_stats %}<td>{{ stat.count }}/{{ table|length }}</td>{% endfor %}
+      <td class="tf-moy"></td>
+    </tr>
+  </tfoot>
+  {% endif %}
+</table>
+
+<!-- ══ STATISTIQUES ══ -->
+{% if moy_max or moy_min or moy_classe %}
+<div class="stats-row">
+  <div class="stat-box stat-box-ok">
+    <div class="stat-lbl">Meilleure moyenne</div>
+    {% if moy_max %}
+    <div class="stat-val">{{ moy_max.moy }}<span class="stat-val-unit">/20</span></div>
+    <div class="stat-sub">{{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }}</div>
+    {% else %}<div class="stat-val">—</div>{% endif %}
+  </div>
+  <div class="stat-box stat-box-neu">
+    <div class="stat-lbl">Moyenne de la classe</div>
+    {% if moy_classe %}
+    <div class="stat-val">
+      {{ moy_classe }}<span class="stat-val-unit">/20</span>
+    </div>
+    <div class="stat-sub">{{ table|length }} élève{{ table|length|pluralize }}</div>
+    {% else %}<div class="stat-val">—</div>{% endif %}
+  </div>
+  <div class="stat-box stat-box-low">
+    <div class="stat-lbl">Moyenne la plus faible</div>
+    {% if moy_min %}
+    <div class="stat-val">{{ moy_min.moy }}<span class="stat-val-unit">/20</span></div>
+    <div class="stat-sub">{{ moy_min.inscription.eleve.nom|upper }} {{ moy_min.inscription.eleve.prenom }}</div>
+    {% else %}<div class="stat-val">—</div>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div style="text-align:center; color:#555; padding:30pt; border:1pt dashed #ccc; margin-top:10pt;">
+  Aucune donnée à afficher. Vérifiez les filtres sélectionnés.
+</div>
+{% endif %}
+
+<!-- ══ ZONE CERTIFICATION ET SIGNATURE DE L'ENSEIGNANT ══ -->
+<div class="cert-zone">
+  <div class="cert-inner">
+    <div class="cert-legend-col">
+      <div class="cert-legend-title">Légende</div>
+      <div class="legende">
+        <span><span class="leg-dot leg-ok"></span> &ge; 10/20 &mdash; admis</span>
+        <span><span class="leg-dot leg-low"></span> &lt; 10/20 &mdash; insuffisant</span>
+        <span><span class="leg-dot leg-est"></span> ~ Estimation</span>
+      </div>
+      <div class="cert-text">
+        Je soussigné(e) certifie l'exactitude des notes figurant sur la présente fiche
+        de relevé, établie conformément aux évaluations conduites au cours de la période
+        indiquée dans ma classe.
+      </div>
+    </div>
+    <div class="cert-sig-col">
+      <p class="sig-date">
+        {% if identite.ville %}{{ identite.ville }}, le {% else %}Le {% endif %}{{ today|date:"d/m/Y" }}
+      </p>
+      <p class="sig-fonction">L'Enseignant(e) de {{ enseignement.matiere.nom }}</p>
+      {% if professeur %}
+        <p class="sig-name">{{ professeur.nom|upper }} {{ professeur.prenom }}</p>
+        <p class="sig-mat">{{ professeur.matricule }}</p>
+      {% else %}
+        <p class="sig-none">(Aucun enseignant assigné à cette discipline)</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

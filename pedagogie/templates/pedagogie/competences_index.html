@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+
+{% block title %}Bulletins de compétences — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Bulletins de compétences</h1>
+    <p class="page-subtitle">Évaluation par compétences pour les cycles Préscolaire et Primaire</p>
+  </div>
+</div>
+
+{% if cycles %}
+<div class="modules-grid animate-fade-up delay-1">
+  {% for cycle in cycles %}
+  <div class="module-card-group">
+    <div class="module-card" style="cursor:default;">
+      <div class="module-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="module-label">{{ cycle.nom }}</div>
+      <div class="module-sub">{{ cycle.get_code_display }}</div>
+    </div>
+    <div class="d-flex gap-2 mt-2 flex-wrap">
+      <a href="{% url 'pedagogie:competences_referentiel' cycle.pk %}" class="btn-secondary" style="flex:1; text-align:center;">
+        Référentiel
+      </a>
+    </div>
+    <!-- Classes du cycle pour la saisie -->
+    {% with classes_cycle=cycle.classes.filter %}
+    <div class="mt-2">
+      <div class="text-xs text-muted mb-1">Saisie par classe :</div>
+      {% for classe in cycle.classes.all %}
+      <a href="{% url 'pedagogie:competences_saisie' classe.pk %}" class="sb-item-submodern d-block mb-1">
+        <span class="sub-item-dot"></span>{{ classe.nom }}
+      </a>
+      {% empty %}
+      <span class="text-xs text-muted">Aucune classe dans ce cycle</span>
+      {% endfor %}
+    </div>
+    {% endwith %}
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card animate-fade-up">
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+      </svg>
+    </div>
+    <h3 class="fw-semibold mb-2">Aucun cycle configuré</h3>
+    <p class="empty-state-text">Configurez des cycles Préscolaire ou Primaire dans Paramètres → Cycles.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

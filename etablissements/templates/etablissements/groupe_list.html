@@ -1,0 +1,84 @@
+{% extends "core/base.html" %}
+
+{% block title %}Groupes d'établissements{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'etablissements:reseau_dashboard' %}"
+       style="font-size:0.8rem; color:var(--color-text-muted); text-decoration:none; display:flex; align-items:center; gap:4px; margin-bottom:var(--space-1);">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Dashboard réseau
+    </a>
+    <h1 class="page-title">Groupes d'établissements</h1>
+    <p class="page-subtitle">Gestion des réseaux — Licence RESEAU</p>
+  </div>
+  <a href="{% url 'etablissements:groupe_create' %}" class="btn-primary">
+    + Nouveau groupe
+  </a>
+</div>
+
+{% if groupes %}
+<div class="card animate-fade-up" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Groupe</th>
+          <th>Code</th>
+          <th style="text-align:right;">Établissements</th>
+          <th>Établissements membres</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in groupes %}
+        <tr>
+          <td class="fw-semibold">{{ g.nom }}</td>
+          <td class="text-secondary">{{ g.code }}</td>
+          <td style="text-align:right;">{{ g.nb_etablissements }}</td>
+          <td>
+            {% for etab in g.etablissements.all %}
+            <span class="badge badge-neutral" style="margin:1px 2px; font-size:0.7rem;">{{ etab.nom }}</span>
+            {% empty %}
+            <span class="text-muted" style="font-size:0.8rem;">—</span>
+            {% endfor %}
+          </td>
+          <td style="text-align:right;">
+            <a href="{% url 'etablissements:groupe_edit' pk=g.pk %}" class="btn-secondary btn-sm">Modifier</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Affecter un établissement #}
+<div class="card animate-fade-up delay-1" style="padding:var(--space-5); margin-top:var(--space-5);">
+  <div class="card-header" style="margin-bottom:var(--space-4);">
+    <span class="card-title">Rattacher un établissement à un groupe</span>
+  </div>
+  {% for g in groupes %}
+  <form method="post" action="{% url 'etablissements:groupe_affecter_etab' groupe_pk=g.pk %}"
+        style="display:flex; align-items:center; gap:var(--space-3); margin-bottom:var(--space-3); flex-wrap:wrap;">
+    {% csrf_token %}
+    <span style="font-weight:600; min-width:160px;">{{ g.nom }}</span>
+    <select name="etablissement_pk" class="input select" style="min-width:220px;" required>
+      <option value="">— Choisir un établissement —</option>
+      {% for etab in etablissements_sans_groupe %}
+      <option value="{{ etab.pk }}">{{ etab.nom }} ({{ etab.code }})</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn-primary">Rattacher</button>
+  </form>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card animate-fade-up" style="padding:3rem; text-align:center;">
+  <p class="text-muted">Aucun groupe créé.</p>
+  <a href="{% url 'etablissements:groupe_create' %}" class="btn-primary" style="margin-top:var(--space-3);">Créer le premier groupe →</a>
+</div>
+{% endif %}
+{% endblock %}

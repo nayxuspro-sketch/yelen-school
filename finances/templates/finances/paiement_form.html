@@ -3,95 +3,135 @@
 {% block title %}Encaisser un paiement — YELEN SCHOOL{% endblock %}
 
 {% block content %}
-<div style="max-width:68rem; margin:0 auto;">
+<div class="pai-wrapper">
 
-  {# ── En-tête ── #}
+  {# ── En-tête ──────────────────────────────────────────────────────────────── #}
   <div class="page-header animate-fade-up">
     <div class="d-flex align-center gap-4">
-      <a href="{% url 'finances:paiement_list' %}" class="btn-icon">
+      <a href="{% url 'finances:paiement_list' %}" class="btn-icon" title="Retour à la liste">
         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
         </svg>
       </a>
       <div>
         <h1 class="page-title">Encaisser un paiement</h1>
-        <p class="page-subtitle">Renseignez les informations de la transaction puis les rubriques à régler</p>
+        <p class="page-subtitle">Sélectionnez un élève puis les rubriques à régler</p>
       </div>
     </div>
   </div>
 
-  {# ── Erreurs de validation ── #}
+  {# ── Erreurs serveur ───────────────────────────────────────────────────────── #}
   {% if errors %}
-  <div style="background:rgba(220,53,69,0.10); border:1px solid rgba(220,53,69,0.35); border-radius:10px; padding:0.9rem 1.25rem; margin-bottom:1.25rem; display:flex; gap:0.75rem; align-items:flex-start;" class="animate-fade-up">
-    <svg style="flex-shrink:0; margin-top:1px;" width="18" height="18" fill="none" stroke="#F87171" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+  <div class="pai-alert-danger animate-fade-up">
+    <svg width="18" height="18" fill="none" stroke="#F87171" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
     </svg>
-    <div>
-      {% for error in errors %}
-      <p style="color:#F87171; font-size:0.875rem; margin:0 0 2px;">{{ error }}</p>
-      {% endfor %}
-    </div>
+    <div>{% for error in errors %}<p>{{ error }}</p>{% endfor %}</div>
   </div>
   {% endif %}
 
   <form method="post" id="paiement-form">
     {% csrf_token %}
 
-    {# ══════════════════════════════════════════════════════════════ #}
-    {# SECTION 1 — Informations de la transaction                    #}
-    {# ══════════════════════════════════════════════════════════════ #}
-    <div class="card animate-fade-up" style="margin-bottom:1.25rem;">
-      <div class="card-header">
-        <div style="display:flex; align-items:center; gap:0.75rem;">
-          <div style="width:34px; height:34px; border-radius:9px; background:rgba(0,168,107,0.13); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <svg width="17" height="17" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    {# ══ SECTION 1 — Élève & Transaction ═════════════════════════════════════ #}
+    <div class="card animate-fade-up mb-4">
+      <div class="pai-sec-hd">
+        <div class="pai-sec-hd-left">
+          <div class="pai-sec-icon">
+            <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
           </div>
           <div>
-            <span class="card-title">Informations de la transaction</span>
-            <p style="font-size:0.78rem; color:var(--color-text-muted); margin:1px 0 0;">Élève, mode de règlement et références</p>
+            <span class="pai-sec-title">Élève &amp; Transaction</span>
+            <p class="pai-sec-sub">Identification et mode de règlement</p>
           </div>
         </div>
       </div>
 
-      <div style="padding:1.5rem; display:flex; flex-direction:column; gap:1.2rem;">
+      <div class="pai-body">
 
         {# Date de transaction #}
-        <div class="form-group" style="margin:0;">
+        <div class="form-group">
           <label for="id_date_paiement" class="input-label">
-            Date de transaction <span style="color:var(--color-danger);">*</span>
+            Date de transaction <span class="required-star">*</span>
           </label>
           <input type="date" name="date_paiement" id="id_date_paiement" class="input"
                  value="{{ post_data.date_paiement|default:'' }}" required>
         </div>
 
-        {# Inscription #}
-        <div class="form-group" style="margin:0;">
-          <label for="id_inscription" class="input-label">
-            Inscription <span style="color:var(--color-danger);">*</span>
+        {# Inscription — recherche + select + carte élève #}
+        <div class="form-group">
+          <label class="input-label">
+            Inscription <span class="required-star">*</span>
           </label>
+          <div class="pai-search-wrap">
+            <svg class="pai-search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+            </svg>
+            <input type="text" id="insc-search" class="pai-search-input"
+                   placeholder="Filtrer par nom, prénom ou classe…" autocomplete="off">
+          </div>
           <select name="inscription" id="id_inscription" class="input select" required>
             <option value="">— Sélectionnez un élève —</option>
             {% for insc in inscriptions %}
             <option value="{{ insc.pk }}"
+              data-nom="{{ insc.eleve.nom }}"
+              data-prenom="{{ insc.eleve.prenom }}"
+              data-classe="{{ insc.classe.nom }}"
+              data-matricule="{{ insc.eleve.matricule|default:'' }}"
+              data-statut="{{ insc.statut_eleve.nom|default:'' }}"
+              data-statut-couleur="{{ insc.statut_eleve.couleur|default:'' }}"
               {% if post_data.inscription == insc.pk|stringformat:"s" or selected_inscription_id == insc.pk|stringformat:"s" %}selected{% endif %}>
               {{ insc.eleve.nom|upper }} {{ insc.eleve.prenom }} — {{ insc.classe.nom }}{% if insc.statut_eleve %} · {{ insc.statut_eleve.nom }}{% endif %}
             </option>
             {% endfor %}
           </select>
-          {# Badge statut élève — affiché dynamiquement après sélection #}
-          <div id="statut-eleve-badge" style="display:none; margin-top:0.5rem;">
-            <span style="font-size:0.75rem; color:var(--color-text-muted); margin-right:0.4rem;">Statut tarifaire :</span>
-            <span id="statut-eleve-nom" style="display:inline-block; padding:2px 10px; border-radius:5px; font-size:0.78rem; font-weight:600; color:#fff;"></span>
+
+          {# ── Carte élève (peuplée par JS) ── #}
+          <div id="pai-eleve-card" class="pai-eleve-card">
+            <div id="pai-eleve-avatar" class="pai-eleve-avatar">??</div>
+            <div class="pai-eleve-body">
+              <div id="pai-eleve-name" class="pai-eleve-name">—</div>
+              <div id="pai-eleve-meta" class="pai-eleve-meta">—</div>
+              <div class="pai-sit-row">
+                <div class="pai-sit-item">
+                  <span class="pai-sit-lbl">Total dû</span>
+                  <span id="pai-sit-du" class="pai-sit-val">—</span>
+                </div>
+                <div class="pai-sit-item">
+                  <span class="pai-sit-lbl">Déjà payé</span>
+                  <span id="pai-sit-paye" class="pai-sit-val pai-sit-val-green">—</span>
+                </div>
+                <div class="pai-sit-item">
+                  <span class="pai-sit-lbl">Reste à payer</span>
+                  <span id="pai-sit-reste" class="pai-sit-val pai-sit-val-red">—</span>
+                </div>
+                <div class="pai-sit-item pai-hidden" id="pai-statut-item">
+                  <span class="pai-sit-lbl">Statut tarifaire</span>
+                  <span id="statut-eleve-nom" class="pai-statut-badge"></span>
+                </div>
+              </div>
+              <div class="pai-progress pai-hidden" id="pai-progress">
+                <div class="pai-progress-track">
+                  <div class="pai-progress-fill" id="pai-progress-fill" style="width:0%"></div>
+                </div>
+                <div class="pai-progress-meta">
+                  <span class="pai-progress-pct" id="pai-progress-pct">0% payé</span>
+                  <span class="pai-progress-reste" id="pai-progress-reste"></span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {# Mode + Référence #}
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem;">
-          <div class="form-group" style="margin:0;">
+        <div class="form-grid-2">
+          <div class="form-group">
             <label for="id_mode_paiement" class="input-label">
-              Mode de paiement <span style="color:var(--color-danger);">*</span>
+              Mode de paiement <span class="required-star">*</span>
             </label>
             <select name="mode_paiement" id="id_mode_paiement" class="input select" required>
               {% for value, label in mode_choices %}
@@ -99,550 +139,619 @@
               {% endfor %}
             </select>
           </div>
-          <div class="form-group" style="margin:0;">
+          <div class="form-group">
             <label for="id_reference" class="input-label" id="ref-label">Référence transaction</label>
             <input type="text" name="reference" id="id_reference" class="input"
-                   placeholder="N° chèque, transaction mobile..."
+                   placeholder="N° chèque, transaction mobile…"
                    value="{{ post_data.reference|default:'' }}">
-            <p id="ref-error" class="input-error" style="display:none;">La référence est obligatoire pour ce mode de paiement.</p>
+            <p id="ref-error" class="input-error pai-hidden">La référence est obligatoire pour ce mode de paiement.</p>
           </div>
         </div>
 
         {# Observation #}
-        <div class="form-group" style="margin:0;">
+        <div class="form-group">
           <label for="id_observation" class="input-label">Observation</label>
           <textarea name="observation" id="id_observation" class="input" rows="2"
-                    placeholder="Notes complémentaires...">{{ post_data.observation|default:'' }}</textarea>
+                    placeholder="Notes complémentaires…">{{ post_data.observation|default:'' }}</textarea>
         </div>
 
       </div>
     </div>
 
-    {# ══════════════════════════════════════════════════════════════ #}
-    {# SECTION 2 — Rubriques à payer                                 #}
-    {# ══════════════════════════════════════════════════════════════ #}
-    <div class="card animate-fade-up delay-1" style="margin-bottom:1.25rem;">
-      <div class="card-header" style="display:flex; align-items:center; justify-content:space-between;">
-        <div style="display:flex; align-items:center; gap:0.75rem;">
-          <div style="width:34px; height:34px; border-radius:9px; background:rgba(0,168,107,0.13); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <svg width="17" height="17" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+    {# ══ SECTION 2 — Rubriques ════════════════════════════════════════════ #}
+    <div id="rub-section" class="card animate-fade-up delay-1 mb-4">
+      <div class="pai-sec-hd">
+        <div class="pai-sec-hd-left">
+          <div class="pai-sec-icon">
+            <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
             </svg>
           </div>
           <div>
-            <span class="card-title">Rubriques à payer</span>
-            <p style="font-size:0.78rem; color:var(--color-text-muted); margin:1px 0 0;">Vous pouvez saisir plusieurs rubriques en une seule transaction</p>
+            <span class="pai-sec-title">Rubriques à régler</span>
+            <p class="pai-sec-sub">
+              Cliquez sur une rubrique pour la sélectionner
+              <span class="pai-rubriques-count pai-hidden" id="pai-rubriques-count"></span>
+            </p>
           </div>
         </div>
-        <button type="button" id="btn-ajouter" disabled
-          style="display:flex; align-items:center; gap:6px; padding:0.45rem 1rem; border-radius:7px; border:1px solid var(--color-primary); color:var(--color-primary); background:rgba(0,168,107,0.08); font-size:0.82rem; font-weight:600; cursor:not-allowed; transition:all 0.15s; opacity:0.45; letter-spacing:0.02em;">
-          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-          </svg>
-          Ajouter une rubrique
-        </button>
+        <div class="pai-sec-hd-actions">
+          <button type="button" id="btn-solde" class="pai-btn-solde"
+                  title="Sélectionner toutes les rubriques en attente avec leur solde">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            Tout régler
+          </button>
+        </div>
       </div>
 
-      {# Alerte dépassement #}
-      <div id="alerte-surpaye" style="display:none; margin:0 1.5rem; padding:0.75rem 1rem; background:rgba(220,53,69,0.10); border:1px solid rgba(220,53,69,0.35); border-radius:8px; display:none; align-items:center; gap:0.6rem;">
-        <svg style="flex-shrink:0;" width="16" height="16" fill="none" stroke="#F87171" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      {# Alerte sélection vide / montant invalide #}
+      <div id="alerte-form" class="pai-alert-surpaye">
+        <svg width="16" height="16" fill="none" stroke="#F87171" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
         </svg>
-        <span style="color:#F87171; font-size:0.845rem; font-weight:500;">Veuillez corriger les montants en rouge : montant nul ou dépassant le reste à payer.</span>
+        <span id="alerte-form-txt">Sélectionnez au moins une rubrique à régler.</span>
       </div>
 
-      <div style="padding:1.5rem;">
+      <div class="pai-body">
 
-        {# État : aucune inscription #}
-        <div id="state-no-inscription" style="text-align:center; padding:2.5rem 1rem;">
-          <div style="width:52px; height:52px; border-radius:14px; background:rgba(74,104,128,0.12); display:flex; align-items:center; justify-content:center; margin:0 auto 0.9rem;">
+        {# État : aucune inscription sélectionnée #}
+        <div id="state-no-inscription" class="pai-state">
+          <div class="pai-state-icon">
             <svg width="26" height="26" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
           </div>
-          <p style="color:var(--color-text-muted); font-size:0.875rem;">Sélectionnez d'abord une inscription pour accéder aux rubriques de paiement</p>
+          <p class="pai-state-text">Sélectionnez d'abord un élève pour voir les rubriques disponibles</p>
         </div>
 
         {# État : chargement #}
-        <div id="state-loading" style="display:none; text-align:center; padding:2.5rem 1rem;">
-          <div style="width:28px; height:28px; border:2px solid rgba(0,168,107,0.3); border-top-color:var(--color-primary); border-radius:50%; animation:spin 0.7s linear infinite; margin:0 auto 0.75rem;"></div>
-          <p style="color:var(--color-text-muted); font-size:0.875rem;">Chargement des rubriques...</p>
+        <div id="state-loading" class="pai-state pai-hidden">
+          <div class="pai-spinner"></div>
+          <p class="pai-state-text">Chargement des rubriques…</p>
         </div>
 
-        {# État : aucune rubrique #}
-        <div id="state-no-rubriques" style="display:none; text-align:center; padding:2.5rem 1rem;">
-          <div style="width:52px; height:52px; border-radius:14px; background:rgba(251,191,36,0.12); display:flex; align-items:center; justify-content:center; margin:0 auto 0.9rem;">
-            <svg width="26" height="26" fill="none" stroke="#FBBF24" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        {# État : erreur API #}
+        <div id="state-api-error" class="pai-state-error pai-hidden">
+          <div class="pai-state-error-icon">
+            <svg width="24" height="24" fill="none" stroke="#F87171" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
             </svg>
           </div>
-          <p style="color:var(--color-text-muted); font-size:0.875rem; margin-bottom:0.6rem;">Aucune rubrique de paiement configurée pour cet établissement.</p>
-          <a href="{% url 'parametres:rubrique_create' %}" style="font-size:0.82rem; color:var(--color-primary); text-decoration:underline;">
-            Configurer les rubriques →
-          </a>
+          <div class="pai-state-error-title">Configuration manquante</div>
+          <p id="api-error-msg" class="pai-state-error-msg">—</p>
+          <a href="{% url 'parametres:tarif_list' %}" class="pai-state-error-link">Configurer les tarifs →</a>
         </div>
 
-        {# Table des rubriques #}
-        <div id="rubriques-wrapper" style="display:none;">
-          {# En-tête colonnes #}
-          <div id="table-header" style="display:grid; grid-template-columns:2fr 0.9fr 1fr 0.9fr 0.9fr 1.1fr 44px; gap:0.5rem; padding:0.55rem 0.9rem; background:rgba(0,168,107,0.07); border:1px solid var(--color-border); border-radius:10px 10px 0 0;">
-            <span style="font-size:0.72rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.06em;">Rubrique</span>
-            <span style="font-size:0.72rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.06em; text-align:right;">Montant Dû</span>
-            <span style="font-size:0.72rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.06em; text-align:right;">Montant Versé</span>
-            <span style="font-size:0.72rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.06em; text-align:right;">Déjà versé</span>
-            <span style="font-size:0.72rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.06em; text-align:right;">Reste</span>
-            <span style="font-size:0.72rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.06em;">Échéance</span>
-            <span></span>
+        {# État : aucune rubrique configurée #}
+        <div id="state-no-rubriques" class="pai-state pai-hidden">
+          <div class="pai-state-icon pai-state-icon-warn">
+            <svg width="26" height="26" fill="none" stroke="#FBBF24" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
           </div>
-          {# Lignes dynamiques #}
-          <div id="rubriques-lignes" style="border:1px solid var(--color-border); border-top:none; border-radius:0 0 10px 10px; overflow:hidden;"></div>
+          <p class="pai-state-text">Aucune rubrique de paiement configurée pour cet établissement.</p>
+          <a href="{% url 'parametres:rubrique_create' %}" class="pai-state-link">Configurer les rubriques →</a>
         </div>
+
+        {# ── Liste des cartes rubrique (rendue par JS) ── #}
+        <div id="rub-list" class="pai-rub-list pai-hidden"></div>
 
       </div>
     </div>
 
-    {# ══════════════════════════════════════════════════════════════ #}
-    {# SECTION 3 — Résumé & Actions                                  #}
-    {# ══════════════════════════════════════════════════════════════ #}
+    {# ══ SECTION 3 — Total & Envoi ════════════════════════════════════════ #}
     <div class="card animate-fade-up delay-2">
-      <div style="padding:1.1rem 1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
-
-        {# Total #}
-        <div style="display:flex; align-items:center; gap:1.75rem;">
+      <div class="pai-footer">
+        <div class="pai-total-left">
           <div>
-            <div style="font-size:0.72rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:3px;">Total versé cette transaction</div>
-            <div style="display:flex; align-items:baseline; gap:0.35rem;">
-              <span id="total-global" style="font-size:1.9rem; font-weight:700; color:var(--color-text-muted); transition:color 0.2s;">0</span>
-              <span style="font-size:0.82rem; color:var(--color-text-muted); font-weight:500;">FCFA</span>
+            <div class="pai-total-lbl">Total versé cette transaction</div>
+            <div class="pai-total-num">
+              <span id="total-global" class="pai-total-val">0</span>
+              <span class="pai-total-unit">FCFA</span>
             </div>
           </div>
-          <div style="width:1px; height:44px; background:var(--color-border);"></div>
-          <div style="font-size:0.85rem; color:var(--color-text-muted);">
-            <span id="nb-rubriques" style="font-weight:700; color:var(--color-text-secondary);">0</span> rubrique(s)
+          <div class="pai-total-sep"></div>
+          <div class="pai-total-count">
+            <strong id="nb-rubriques">0</strong> rubrique(s) sélectionnée(s)
           </div>
         </div>
-
-        {# Boutons #}
-        <div style="display:flex; align-items:center; gap:0.75rem;">
+        <div class="pai-footer-actions">
           <a href="{% url 'finances:paiement_list' %}" class="btn-secondary">Annuler</a>
-          <button type="submit" id="btn-submit" class="btn-primary">
+          <button type="submit" id="btn-submit" class="btn-primary" disabled>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             Enregistrer le paiement
           </button>
         </div>
-
       </div>
     </div>
 
   </form>
 </div>
 
-{# Template HTML d'une ligne rubrique (cloné en JS) #}
-<template id="ligne-template">
-  <div class="rubrique-ligne" style="display:grid; grid-template-columns:2fr 0.9fr 1fr 0.9fr 0.9fr 1.1fr 44px; gap:0.5rem; padding:0.6rem 0.9rem; align-items:center; border-top:1px solid var(--color-border); background:var(--color-bg-card); transition:background 0.12s;">
-    <select name="rubrique_ids[]" class="input select" style="font-size:0.84rem; padding-top:0.4rem; padding-bottom:0.4rem;">
-      <option value="">— Choisir —</option>
-    </select>
-    <input type="text" class="input" readonly data-type="montant-du"
-           style="background:rgba(0,0,0,0.35); color:var(--color-text-secondary); cursor:not-allowed; font-size:0.84rem; text-align:right; padding-top:0.4rem; padding-bottom:0.4rem;"
-           placeholder="—">
-    <input type="text" inputmode="decimal" name="montants[]" class="input" data-type="montant-verse"
-           style="font-size:0.84rem; text-align:right; padding-top:0.4rem; padding-bottom:0.4rem;"
-           placeholder="0">
-    <input type="text" class="input" readonly data-type="deja-verse"
-           style="background:rgba(0,60,35,0.35); color:#6ee7b7; cursor:not-allowed; font-size:0.84rem; text-align:right; padding-top:0.4rem; padding-bottom:0.4rem;"
-           placeholder="—">
-    <input type="text" class="input" readonly data-type="reste"
-           style="background:rgba(100,10,10,0.30); color:#fca5a5; cursor:not-allowed; font-size:0.84rem; text-align:right; padding-top:0.4rem; padding-bottom:0.4rem;"
-           placeholder="—">
-    <input type="date" name="echeances[]" class="input" data-type="echeance"
-           style="font-size:0.82rem; padding-top:0.4rem; padding-bottom:0.4rem;"
-           placeholder="jj/mm/aaaa">
-    <button type="button" class="btn-supprimer" title="Supprimer"
-            style="width:34px; height:34px; border-radius:7px; border:1px solid rgba(220,53,69,0.25); background:rgba(220,53,69,0.07); color:#F87171; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s; padding:0; flex-shrink:0; margin:0 auto;">
-      <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-      </svg>
-    </button>
-  </div>
-</template>
-
-{# Données pré-remplies (re-soumission avec erreurs) #}
-{{ submitted_lines|default:'[]'|json_script:"submitted-lines-data" }}
+{{ submitted_lines|json_script:"submitted-lines-data" }}
 {% endblock %}
 
 
 {% block extra_js %}
-<style>
-@keyframes spin { to { transform: rotate(360deg); } }
-</style>
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (function () {
   'use strict';
 
-  /* ── Références DOM ── */
-  var inscriptionSelect   = document.getElementById('id_inscription');
-  var modeSelect          = document.getElementById('id_mode_paiement');
-  var referenceInput      = document.getElementById('id_reference');
-  var refError            = document.getElementById('ref-error');
-  var refLabel            = document.getElementById('ref-label');
-  var btnAjouter          = document.getElementById('btn-ajouter');
-  var rubriquesLignes     = document.getElementById('rubriques-lignes');
-  var totalGlobalEl       = document.getElementById('total-global');
-  var nbRubriquesEl       = document.getElementById('nb-rubriques');
-  var btnSubmit           = document.getElementById('btn-submit');
-  var ligneTemplate       = document.getElementById('ligne-template');
-  var stateNoInscription  = document.getElementById('state-no-inscription');
-  var stateLoading        = document.getElementById('state-loading');
-  var stateNoRubriques    = document.getElementById('state-no-rubriques');
-  var rubriquesWrapper    = document.getElementById('rubriques-wrapper');
+  /* ── Références DOM ──────────────────────────────────────────────────────── */
+  var inscSelect   = document.getElementById('id_inscription');
+  var modeSelect   = document.getElementById('id_mode_paiement');
+  var refInput     = document.getElementById('id_reference');
+  var refError     = document.getElementById('ref-error');
+  var refLabel     = document.getElementById('ref-label');
+  var btnSolde     = document.getElementById('btn-solde');
+  var btnSubmit    = document.getElementById('btn-submit');
+  var rubList      = document.getElementById('rub-list');
+  var totalGlobalEl = document.getElementById('total-global');
+  var nbRubriquesEl = document.getElementById('nb-rubriques');
+  var inscSearch   = document.getElementById('insc-search');
+  var alerteEl     = document.getElementById('alerte-form');
+  var alerteTxt    = document.getElementById('alerte-form-txt');
 
-  /* ── Date du jour par défaut si le champ est vide ── */
+  var eleveCard    = document.getElementById('pai-eleve-card');
+  var eleveAvatar  = document.getElementById('pai-eleve-avatar');
+  var eleveName    = document.getElementById('pai-eleve-name');
+  var eleveMeta    = document.getElementById('pai-eleve-meta');
+  var sitDu        = document.getElementById('pai-sit-du');
+  var sitPaye      = document.getElementById('pai-sit-paye');
+  var sitReste     = document.getElementById('pai-sit-reste');
+  var progressEl   = document.getElementById('pai-progress');
+  var progressFill = document.getElementById('pai-progress-fill');
+  var progressPct  = document.getElementById('pai-progress-pct');
+  var progressRest = document.getElementById('pai-progress-reste');
+  var statutItem   = document.getElementById('pai-statut-item');
+  var statutNomEl  = document.getElementById('statut-eleve-nom');
+  var rubCount     = document.getElementById('pai-rubriques-count');
+
+  var stateNoInsc  = document.getElementById('state-no-inscription');
+  var stateLoading = document.getElementById('state-loading');
+  var stateNoRub   = document.getElementById('state-no-rubriques');
+  var stateApiErr  = document.getElementById('state-api-error');
+  var apiErrMsg    = document.getElementById('api-error-msg');
+
+  /* ── Helpers ─────────────────────────────────────────────────────────────── */
+  function hide(el) { el.classList.add('pai-hidden'); }
+  function show(el) { el.classList.remove('pai-hidden'); }
+  function fmt(n)   { return Number(n).toLocaleString('fr-FR'); }
+
+  /* ── Date du jour par défaut ─────────────────────────────────────────────── */
   var dateInput = document.getElementById('id_date_paiement');
   if (dateInput && !dateInput.value) {
-    var auj = new Date();
-    var mm = String(auj.getMonth() + 1).padStart(2, '0');
-    var jj = String(auj.getDate()).padStart(2, '0');
-    dateInput.value = auj.getFullYear() + '-' + mm + '-' + jj;
+    var now = new Date();
+    dateInput.value = now.getFullYear() + '-'
+      + String(now.getMonth() + 1).padStart(2, '0') + '-'
+      + String(now.getDate()).padStart(2, '0');
   }
 
-  /* ── URL de base de l'API ── */
+  /* ── URL API ─────────────────────────────────────────────────────────────── */
   var apiBase = '{% url "finances:api_rubriques" "00000000-0000-0000-0000-000000000000" %}'
                   .replace('/00000000-0000-0000-0000-000000000000/', '/');
 
-  /* ── Données rubriques (chargées depuis l'API) ── */
   var rubriquesData = [];
-  var statutBadge    = document.getElementById('statut-eleve-badge');
-  var statutNomEl    = document.getElementById('statut-eleve-nom');
 
-  /* ── Gestion des états d'affichage ── */
-  function afficherEtat(etat) {
-    stateNoInscription.style.display = etat === 'no-inscription' ? '' : 'none';
-    stateLoading.style.display       = etat === 'loading'        ? '' : 'none';
-    stateNoRubriques.style.display   = etat === 'no-rubriques'   ? '' : 'none';
-    rubriquesWrapper.style.display   = etat === 'table'          ? '' : 'none';
-    if (etat === 'table') {
-      /* Activer immédiatement si des rubriques existent (avant l'ajout auto de la 1ère ligne) */
-      mettreAJourBoutonAjouter();
+  /* ── Filtre de recherche ─────────────────────────────────────────────────── */
+  inscSearch.addEventListener('input', function () {
+    var q = this.value.toLowerCase().trim();
+    Array.from(inscSelect.options).forEach(function (opt) {
+      if (!opt.value) return;
+      var match = !q || opt.text.toLowerCase().indexOf(q) !== -1;
+      opt.style.display = match ? '' : 'none';
+    });
+    if (inscSelect.value) {
+      var sel = inscSelect.options[inscSelect.selectedIndex];
+      if (sel && sel.style.display === 'none') {
+        inscSelect.value = '';
+        chargerRubriques('');
+      }
+    }
+  });
+
+  /* ── Affichage des états ─────────────────────────────────────────────────── */
+  function afficherEtat(etat, msg) {
+    stateNoInsc.classList.toggle('pai-hidden', etat !== 'no-inscription');
+    stateLoading.classList.toggle('pai-hidden', etat !== 'loading');
+    stateNoRub.classList.toggle('pai-hidden', etat !== 'no-rubriques');
+    stateApiErr.classList.toggle('pai-hidden', etat !== 'api-error');
+    rubList.classList.toggle('pai-hidden', etat !== 'rubriques');
+    if (etat === 'api-error' && msg) apiErrMsg.textContent = msg;
+
+    var hasPending = rubriquesData.some(function (r) { return parseFloat(r.reste) > 0; });
+    btnSolde.classList.toggle('pai-btn-solde-on', etat === 'rubriques' && hasPending);
+  }
+
+  /* ── Carte élève ─────────────────────────────────────────────────────────── */
+  function afficherCarteEleve(data) {
+    if (!data.eleve) { eleveCard.style.display = 'none'; return; }
+    var e = data.eleve;
+    var initiales = ((e.nom || '')[0] || '') + ((e.prenom || '')[0] || '');
+    eleveAvatar.textContent = initiales.toUpperCase();
+    eleveName.textContent   = e.nom.toUpperCase() + ' ' + e.prenom;
+    eleveMeta.textContent   = e.classe + (e.matricule ? ' · ' + e.matricule : '');
+
+    if (data.situation) {
+      var s = data.situation;
+      var du    = parseFloat(s.total_du)   || 0;
+      var paye  = parseFloat(s.total_paye) || 0;
+      var reste = parseFloat(s.reste)      || 0;
+      sitDu.textContent    = fmt(du)    + ' FCFA';
+      sitPaye.textContent  = fmt(paye)  + ' FCFA';
+      sitReste.textContent = fmt(reste) + ' FCFA';
+      if (du > 0) {
+        var pct = Math.min(Math.round(paye / du * 100), 100);
+        progressFill.style.width = pct + '%';
+        progressPct.textContent  = pct + '% payé';
+        progressRest.textContent = fmt(reste) + ' FCFA restants';
+        show(progressEl);
+      } else {
+        hide(progressEl);
+      }
+    }
+
+    var se = data.statut_eleve;
+    if (se && se.nom) {
+      statutNomEl.textContent      = se.nom;
+      statutNomEl.style.background = se.couleur || '#64748B';
+      statutItem.classList.remove('pai-hidden');
+      statutItem.style.display = 'flex';
     } else {
-      btnAjouter.disabled      = true;
-      btnAjouter.style.opacity = '0.45';
-      btnAjouter.style.cursor  = 'not-allowed';
+      hide(statutItem);
     }
+    eleveCard.style.display = 'flex';
   }
 
-  /* ── Chargement des rubriques depuis l'API ── */
-  function chargerRubriques(inscriptionId, callback) {
-    if (!inscriptionId) {
-      rubriquesData = [];
-      viderLignes();
-      afficherEtat('no-inscription');
-      statutBadge.style.display = 'none';
-      return;
+  /* ── Carte élève depuis option (immédiat, sans API) ─────────────────────── */
+  function afficherCarteEleveDepuisOption(opt) {
+    if (!opt || !opt.value) { eleveCard.style.display = 'none'; return; }
+    var nom     = opt.dataset.nom       || '';
+    var prenom  = opt.dataset.prenom    || '';
+    var classe  = opt.dataset.classe    || '';
+    var mat     = opt.dataset.matricule || '';
+    var statut  = opt.dataset.statut    || '';
+    var couleur = opt.dataset.statutCouleur || '';
+
+    var initiales = (nom[0] || '') + (prenom[0] || '');
+    eleveAvatar.textContent  = initiales.toUpperCase() || '??';
+    eleveName.textContent    = nom.toUpperCase() + ' ' + prenom;
+    eleveMeta.textContent    = classe + (mat ? ' · ' + mat : '');
+    sitDu.textContent        = '…';
+    sitPaye.textContent      = '…';
+    sitReste.textContent     = '…';
+    hide(progressEl);
+
+    if (statut) {
+      statutNomEl.textContent      = statut;
+      statutNomEl.style.background = couleur || '#64748B';
+      show(statutItem);
+    } else {
+      hide(statutItem);
     }
-    afficherEtat('loading');
-    fetch(apiBase + inscriptionId + '/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (data) {
-        rubriquesData = data.rubriques || [];
-        /* ── Badge statut élève ── */
-        var se = data.statut_eleve;
-        if (se && se.nom) {
-          statutNomEl.textContent          = se.nom;
-          statutNomEl.style.background     = se.couleur || '#64748B';
-          statutBadge.style.display        = '';
-        } else {
-          statutBadge.style.display        = 'none';
+    eleveCard.style.display = 'flex';
+  }
+
+  /* ── Compteur de rubriques ───────────────────────────────────────────────── */
+  function mettreAJourCompteur() {
+    var pending = rubriquesData.filter(function (r) { return parseFloat(r.reste) > 0; }).length;
+    var soldees = rubriquesData.length - pending;
+    rubCount.textContent = pending + ' en attente' + (soldees > 0 ? ' · ' + soldees + ' soldée(s)' : '');
+    rubCount.classList.toggle('has-pending', pending > 0);
+    if (pending > 0) show(rubCount); else hide(rubCount);
+  }
+
+  /* ── Bouton "Tout régler" ────────────────────────────────────────────────── */
+  function mettreAJourBoutonSolde() {
+    var hasUnselected = rubList.querySelector('.pai-rub-card:not(.is-soldee):not(.is-selected)');
+    btnSolde.classList.toggle('pai-btn-solde-on', !!hasUnselected);
+  }
+
+  /* ── Rendu des cartes rubrique ───────────────────────────────────────────── */
+  function renderRubriques(rubriques) {
+    rubList.innerHTML = '';
+    rubriques.forEach(function (r) {
+      var du    = parseFloat(r.montant)     || 0;
+      var verse = parseFloat(r.total_verse) || 0;
+      var reste = parseFloat(r.reste)       || 0;
+      var soldee = reste <= 0;
+      var pct   = du > 0 ? Math.min(Math.round(verse / du * 100), 100) : 100;
+
+      var card = document.createElement('div');
+      card.className   = 'pai-rub-card' + (soldee ? ' is-soldee' : '');
+      card.dataset.id   = r.id;
+      card.dataset.reste = reste;
+
+      var hdHtml =
+        '<input type="hidden" name="rubrique_ids[]" value="' + r.id + '" disabled>' +
+        '<div class="pai-rub-hd">' +
+          '<div class="pai-rub-cb">' +
+            '<svg width="11" height="11" viewBox="0 0 12 12" fill="none">' +
+              '<polyline points="1.5,6.5 4.5,9.5 10.5,2.5" stroke="white" stroke-width="2.2"' +
+                       ' stroke-linecap="round" stroke-linejoin="round"/>' +
+            '</svg>' +
+          '</div>' +
+          '<div class="pai-rub-infos">' +
+            '<span class="pai-rub-nom">' + r.nom + '</span>' +
+            '<span class="pai-rub-sub">' + fmt(du) + ' FCFA dû · ' + fmt(verse) + ' FCFA versé</span>' +
+          '</div>' +
+          '<div class="pai-rub-right">' +
+            (soldee
+              ? '<span class="pai-rub-tag pai-rub-tag-soldee">✓ Soldée</span>'
+              : '<span class="pai-rub-reste-val">' + fmt(reste) + ' <span class="pai-rub-fcfa">FCFA</span></span>') +
+          '</div>' +
+        '</div>' +
+        '<div class="pai-rub-prog-row">' +
+          '<div class="pai-rub-prog"><div class="pai-rub-prog-fill" style="width:' + pct + '%"></div></div>' +
+          '<span class="pai-rub-pct">' + pct + '% payé</span>' +
+        '</div>';
+
+      var fieldsHtml = !soldee
+        ? '<div class="pai-rub-fields pai-hidden">' +
+            '<div class="pai-rub-field-group">' +
+              '<label class="pai-rub-field-lbl">Montant versé <span class="required-star">*</span></label>' +
+              '<div class="pai-rub-amount-wrap">' +
+                '<input type="number" name="montants[]" class="input pai-rub-amount"' +
+                       ' min="1" step="1" value="' + reste + '" placeholder="0" disabled' +
+                       ' data-reste="' + reste + '">' +
+                '<span class="pai-rub-amount-suffix">FCFA</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="pai-rub-field-group">' +
+              '<label class="pai-rub-field-lbl">Échéance</label>' +
+              '<input type="date" name="echeances[]" class="input" disabled>' +
+            '</div>' +
+            '<div class="pai-rub-err pai-hidden">' +
+              '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
+                      ' d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>' +
+              '</svg>' +
+              '<span class="pai-rub-err-txt"></span>' +
+            '</div>' +
+          '</div>'
+        : '';
+
+      card.innerHTML = hdHtml + fieldsHtml;
+
+      /* Clic sur la carte (pas dans les champs) → toggle */
+      if (!soldee) {
+        card.addEventListener('click', function (ev) {
+          if (ev.target.closest('.pai-rub-fields')) return;
+          toggleCard(card);
+        });
+
+        /* Events sur l'input montant */
+        var amtInp = card.querySelector('.pai-rub-amount');
+        if (amtInp) {
+          amtInp.addEventListener('click', function (ev) { ev.stopPropagation(); });
+          amtInp.addEventListener('input', function () { recalcTotal(); });
         }
-        viderLignes();
-        if (rubriquesData.length === 0) {
-          afficherEtat('no-rubriques');
-        } else {
-          afficherEtat('table');
-          if (callback) {
-            callback();
-          } else {
-            /* Pré-charger une ligne par rubrique du statut de l'élève */
-            rubriquesData.forEach(function (r) { ajouterLigne(r.id); });
-          }
+        /* Events sur l'échéance */
+        var echInp = card.querySelector('input[name="echeances[]"]');
+        if (echInp) {
+          echInp.addEventListener('click', function (ev) { ev.stopPropagation(); });
         }
-      })
-      .catch(function (err) {
-        console.error('Erreur API rubriques :', err);
-        rubriquesData = [];
-        viderLignes();
-        afficherEtat('no-rubriques');
-      });
-  }
+      }
 
-  /* ── Vider toutes les lignes ── */
-  function viderLignes() {
-    rubriquesLignes.innerHTML = '';
-    recalculerTotal();
-  }
-
-  /* ── IDs déjà sélectionnés dans les autres lignes ── */
-  function getIdsAutres(ligneCourante) {
-    var ids = [];
-    rubriquesLignes.querySelectorAll('.rubrique-ligne').forEach(function (l) {
-      if (l === ligneCourante) return;
-      var s = l.querySelector('select[name="rubrique_ids[]"]');
-      if (s && s.value) ids.push(s.value);
+      rubList.appendChild(card);
     });
-    return ids;
+
+    mettreAJourCompteur();
   }
 
-  /* ── Mettre à jour les options désactivées (doublons) ── */
-  function mettreAJourOptionsDisabled() {
-    rubriquesLignes.querySelectorAll('.rubrique-ligne').forEach(function (ligne) {
-      var sel = ligne.querySelector('select[name="rubrique_ids[]"]');
-      if (!sel) return;
-      var autres = getIdsAutres(ligne);
-      Array.from(sel.options).forEach(function (opt) {
-        if (!opt.value) return;
-        opt.disabled = autres.indexOf(opt.value) !== -1;
-      });
+  /* ── Sélection / désélection d'une carte ─────────────────────────────────── */
+  function selectCard(card) {
+    card.classList.add('is-selected');
+    var fields = card.querySelector('.pai-rub-fields');
+    if (fields) show(fields);
+    card.querySelectorAll('input[name]').forEach(function (inp) { inp.disabled = false; });
+  }
+
+  function deselectCard(card) {
+    card.classList.remove('is-selected');
+    var fields = card.querySelector('.pai-rub-fields');
+    if (fields) hide(fields);
+    card.querySelectorAll('input[name]').forEach(function (inp) { inp.disabled = true; });
+    var err = card.querySelector('.pai-rub-err');
+    if (err) hide(err);
+    var amt = card.querySelector('.pai-rub-amount');
+    if (amt) { amt.classList.remove('input-error'); amt.style.borderColor = ''; }
+  }
+
+  function toggleCard(card) {
+    if (card.classList.contains('is-selected')) deselectCard(card);
+    else selectCard(card);
+    recalcTotal();
+    mettreAJourBoutonSolde();
+  }
+
+  /* ── Tout régler ─────────────────────────────────────────────────────────── */
+  function touterRegler() {
+    rubList.querySelectorAll('.pai-rub-card:not(.is-soldee)').forEach(function (card) {
+      if (!card.classList.contains('is-selected')) selectCard(card);
     });
+    recalcTotal();
+    mettreAJourBoutonSolde();
   }
 
-  var alerteSurpaye = document.getElementById('alerte-surpaye');
+  btnSolde.addEventListener('click', function () {
+    if (this.classList.contains('pai-btn-solde-on')) touterRegler();
+  });
 
-  /* ── Vérifier s'il existe des lignes en erreur et afficher/cacher l'alerte ── */
-  function verifierErreurs() {
-    var enErreur = rubriquesLignes.querySelector('.rubrique-ligne[data-surpaye="1"]');
-    alerteSurpaye.style.display = enErreur ? 'flex' : 'none';
-  }
+  /* ── Recalcul du total ───────────────────────────────────────────────────── */
+  function recalcTotal() {
+    var total = 0, nb = 0, hasErr = false;
 
-  /* ── Recalculer les champs d'une ligne ── */
-  function recalculerLigne(ligne) {
-    var sel      = ligne.querySelector('select[name="rubrique_ids[]"]');
-    var inpDu    = ligne.querySelector('[data-type="montant-du"]');
-    var inpVerse = ligne.querySelector('[data-type="montant-verse"]');
-    var inpDeja  = ligne.querySelector('[data-type="deja-verse"]');
-    var inpReste = ligne.querySelector('[data-type="reste"]');
-    var inpEch   = ligne.querySelector('[data-type="echeance"]');
-    var opt = sel && sel.selectedIndex > 0 ? sel.options[sel.selectedIndex] : null;
-    var du        = opt && opt.dataset.montant   ? parseFloat(opt.dataset.montant)   : 0;
-    var deja      = opt && opt.dataset.dejaVerse ? parseFloat(opt.dataset.dejaVerse) : 0;
-    var versement = parseFloat(inpVerse.value) || 0;
-    var resteAvant = du > 0 ? du - deja : 0;
-    var reste      = du > 0 ? resteAvant - versement : 0;
-    inpDu.value    = du   > 0 ? du.toLocaleString('fr-FR')   + ' FCFA' : '';
-    inpDeja.value  = du   > 0 ? deja.toLocaleString('fr-FR') + ' FCFA' : '';
-    inpReste.value = du   > 0 ? reste.toLocaleString('fr-FR') + ' FCFA' : '';
-    /* Dépassement : montant versé > reste avant versement */
-    var surpaye     = du > 0 && versement > resteAvant;
-    var rubriqueSel = opt !== null;
-    var montantNul  = rubriqueSel && !(versement > 0);
-    var enErreur    = surpaye || montantNul;
-    ligne.dataset.surpaye = enErreur ? '1' : '0';
-    inpVerse.style.borderColor = enErreur ? '#F87171' : '';
-    inpVerse.style.background  = enErreur ? 'rgba(220,53,69,0.08)' : '';
-    inpVerse.title = surpaye
-      ? 'Montant trop élevé — reste à payer : ' + resteAvant.toLocaleString('fr-FR') + ' FCFA'
-      : montantNul ? 'Le montant doit être supérieur à 0'
-      : '';
-    /* Griser Échéance si reste ≤ 0 */
-    var solde = reste <= 0 && du > 0 && !surpaye;
-    inpEch.disabled = solde;
-    inpEch.style.opacity    = solde ? '0.3'        : '1';
-    inpEch.style.cursor     = solde ? 'not-allowed' : '';
-    inpEch.style.background = solde ? 'rgba(0,0,0,0.25)' : '';
-    if (solde) inpEch.value = '';
-    verifierErreurs();
-  }
+    rubList.querySelectorAll('.pai-rub-card.is-selected').forEach(function (card) {
+      var amt    = card.querySelector('.pai-rub-amount');
+      var err    = card.querySelector('.pai-rub-err');
+      var errTxt = card.querySelector('.pai-rub-err-txt');
+      var reste  = parseFloat(card.dataset.reste) || 0;
+      var val    = parseFloat(amt ? amt.value : 0) || 0;
+      var invalid = !amt || val <= 0 || val > reste;
 
-  /* ── Recalculer le total global ── */
-  function recalculerTotal() {
-    var total = 0;
-    var nb = rubriquesLignes.querySelectorAll('.rubrique-ligne').length;
-    rubriquesLignes.querySelectorAll('input[name="montants[]"]').forEach(function (inp) {
-      total += parseFloat(inp.value) || 0;
+      if (err) err.classList.toggle('pai-hidden', !invalid);
+      if (errTxt && invalid) {
+        errTxt.textContent = val <= 0
+          ? 'Le montant doit être supérieur à 0'
+          : 'Maximum autorisé : ' + fmt(reste) + ' FCFA';
+      }
+      if (amt) {
+        amt.classList.toggle('input-error', invalid);
+        amt.style.borderColor = '';
+      }
+
+      if (invalid) hasErr = true;
+      else { total += val; nb++; }
     });
-    totalGlobalEl.textContent = total.toLocaleString('fr-FR');
+
+    totalGlobalEl.textContent = fmt(total);
     totalGlobalEl.style.color = total > 0 ? 'var(--color-primary)' : 'var(--color-text-muted)';
     nbRubriquesEl.textContent = nb;
+    btnSubmit.disabled = nb === 0 || hasErr;
+
+    alerteEl.style.display = (nb === 0 && rubList.querySelectorAll('.pai-rub-card').length > 0)
+      ? 'flex' : 'none';
   }
 
-  /* ── Remplir le <select> d'une ligne avec les rubriques disponibles ── */
-  function remplirSelect(sel, selectedId) {
-    sel.innerHTML = '<option value="">— Choisir une rubrique —</option>';
-    rubriquesData.forEach(function (r) {
-      var reste = parseFloat(r.reste || r.montant - r.total_verse);
-      if (reste <= 0) return;
-      var opt = document.createElement('option');
-      opt.value            = r.id;
-      opt.dataset.montant  = r.montant;
-      opt.dataset.dejaVerse = r.total_verse;
-      opt.dataset.reste    = reste;
-      opt.textContent = r.nom + ' — ' + parseInt(r.montant).toLocaleString('fr-FR') + ' (' + reste.toLocaleString('fr-FR') + ' restant)';
-      if (selectedId && opt.value === selectedId) opt.selected = true;
-      sel.appendChild(opt);
-    });
+  /* ── Chargement des rubriques ────────────────────────────────────────────── */
+  function chargerRubriques(inscId, preselect) {
+    if (!inscId) eleveCard.style.display = 'none';
+    hide(progressEl);
+    hide(rubCount);
+    rubList.innerHTML = '';
+    rubriquesData = [];
+    btnSolde.classList.remove('pai-btn-solde-on');
+    recalcTotal();
+
+    if (!inscId) {
+      afficherEtat('no-inscription');
+      return;
+    }
+
+    afficherEtat('loading');
+
+    fetch(apiBase + inscId + '/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        afficherCarteEleve(data);
+
+        if (data.error) {
+          rubriquesData = [];
+          afficherEtat('api-error', data.error);
+          return;
+        }
+
+        rubriquesData = data.rubriques || [];
+
+        if (!rubriquesData.length) {
+          afficherEtat('no-rubriques');
+          return;
+        }
+
+        renderRubriques(rubriquesData);
+        afficherEtat('rubriques');
+
+        /* Présélection */
+        if (preselect === 'all') {
+          touterRegler();
+        } else if (Array.isArray(preselect) && preselect.length) {
+          /* Repopulation après erreur POST */
+          preselect.forEach(function (line) {
+            var card = rubList.querySelector('.pai-rub-card[data-id="' + line.id + '"]');
+            if (!card) return;
+            selectCard(card);
+            var inp = card.querySelector('.pai-rub-amount');
+            if (inp) inp.value = line.montant;
+            var ech = card.querySelector('input[name="echeances[]"]');
+            if (ech && line.echeance) ech.value = line.echeance;
+          });
+          recalcTotal();
+          mettreAJourBoutonSolde();
+        }
+      })
+      .catch(function () {
+        rubriquesData = [];
+        afficherEtat('api-error', 'Impossible de charger les rubriques. Vérifiez votre connexion.');
+      });
   }
 
-  /* ── Mettre à jour l'apparence du bouton Supprimer ── */
-  function mettreAJourBoutonsSup() {
-    var lignes = rubriquesLignes.querySelectorAll('.rubrique-ligne');
-    var seul = lignes.length === 1;
-    lignes.forEach(function (l) {
-      var btn = l.querySelector('.btn-supprimer');
-      if (!btn) return;
-      btn.style.opacity = seul ? '0.28' : '1';
-      btn.style.cursor  = seul ? 'not-allowed' : 'pointer';
-    });
-  }
+  var rubSection = document.getElementById('rub-section');
 
-  /* ── Mettre à jour l'état du bouton Ajouter ── */
-  function mettreAJourBoutonAjouter() {
-    var nbLignes = rubriquesLignes.querySelectorAll('.rubrique-ligne').length;
-    var peutAjouter = rubriquesData.length > 0 && nbLignes < rubriquesData.length;
-    btnAjouter.disabled      = !peutAjouter;
-    btnAjouter.style.opacity = peutAjouter ? '1' : '0.45';
-    btnAjouter.style.cursor  = peutAjouter ? 'pointer' : 'not-allowed';
-    btnAjouter.title = peutAjouter
-      ? 'Ajouter une autre rubrique'
-      : (rubriquesData.length === 0 ? 'Aucune rubrique disponible' : 'Toutes les rubriques ont été ajoutées');
-  }
-
-  /* ── Ajouter une ligne de rubrique ── */
-  function ajouterLigne(selectedId, montantVal, echeanceVal) {
-    var clone = ligneTemplate.content.cloneNode(true);
-    var ligne = clone.querySelector('.rubrique-ligne');
-    var sel       = ligne.querySelector('select[name="rubrique_ids[]"]');
-    var inpVerse  = ligne.querySelector('[data-type="montant-verse"]');
-    var inpEch    = ligne.querySelector('[data-type="echeance"]');
-
-    remplirSelect(sel, selectedId || null);
-    if (montantVal)  inpVerse.value = montantVal;
-    if (echeanceVal) inpEch.value   = echeanceVal;
-
-    /* Hover visuel */
-    ligne.addEventListener('mouseenter', function () { this.style.background = 'var(--color-bg-hover)'; });
-    ligne.addEventListener('mouseleave', function () { this.style.background = 'var(--color-bg-card)'; });
-
-    /* Changement de rubrique */
-    sel.addEventListener('change', function () {
-      recalculerLigne(ligne);
-      mettreAJourOptionsDisabled();
-      recalculerTotal();
-    });
-
-    /* Saisie montant */
-    inpVerse.addEventListener('input', function () {
-      recalculerLigne(ligne);
-      recalculerTotal();
-    });
-
-    /* Hover bouton supprimer */
-    var btnSup = ligne.querySelector('.btn-supprimer');
-    btnSup.addEventListener('mouseenter', function () { this.style.background = 'rgba(220,53,69,0.18)'; });
-    btnSup.addEventListener('mouseleave', function () { this.style.background = 'rgba(220,53,69,0.07)'; });
-
-    /* Supprimer la ligne */
-    btnSup.addEventListener('click', function () {
-      if (rubriquesLignes.querySelectorAll('.rubrique-ligne').length <= 1) return;
-      ligne.remove();
-      mettreAJourOptionsDisabled();
-      mettreAJourBoutonsSup();
-      mettreAJourBoutonAjouter();
-      recalculerTotal();
-      verifierErreurs();
-    });
-
-    rubriquesLignes.appendChild(clone);
-
-    if (selectedId) recalculerLigne(ligne);
-    mettreAJourOptionsDisabled();
-    mettreAJourBoutonsSup();
-    mettreAJourBoutonAjouter();
-    recalculerTotal();
-  }
-
-  /* ── Changement d'inscription ── */
-  inscriptionSelect.addEventListener('change', function () {
-    chargerRubriques(this.value, null);
-  });
-
-  /* ── Bouton Ajouter une rubrique ── */
-  btnAjouter.addEventListener('click', function () {
-    if (this.disabled) return;
-    ajouterLigne();
-  });
-
-  /* ── Bloquer la soumission si dépassement ── */
-  document.getElementById('paiement-form').addEventListener('submit', function (e) {
-    var enErreur = rubriquesLignes.querySelector('.rubrique-ligne[data-surpaye="1"]');
-    if (enErreur) {
-      e.preventDefault();
-      alerteSurpaye.style.display = 'flex';
-      alerteSurpaye.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  inscSelect.addEventListener('change', function () {
+    var val = this.value;
+    afficherCarteEleveDepuisOption(val ? this.options[this.selectedIndex] : null);
+    chargerRubriques(val, null);
+    if (val && rubSection) {
+      setTimeout(function () {
+        rubSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
     }
   });
 
-  /* ── Validation : référence obligatoire si mode ≠ Espèces ── */
+  /* ── Validation de la référence ──────────────────────────────────────────── */
   function validerReference() {
     var modeEspeces = !modeSelect.value || modeSelect.value === 'ESPECES';
-    var refVide = !referenceInput.value.trim();
+    var refVide = !refInput.value.trim();
     var reqSpan = refLabel.querySelector('.ref-req');
+
     if (!modeEspeces) {
-      referenceInput.setAttribute('required', 'required');
+      refInput.setAttribute('required', 'required');
       if (!reqSpan) {
         var s = document.createElement('span');
-        s.className = 'ref-req';
-        s.style.color = 'var(--color-danger)';
+        s.className = 'ref-req required-star';
         s.textContent = ' *';
         refLabel.appendChild(s);
       }
-      if (refVide) {
-        refError.style.display = '';
-        btnSubmit.disabled = true;
-        btnSubmit.style.opacity = '0.5';
-        btnSubmit.style.cursor = 'not-allowed';
-      } else {
-        refError.style.display = 'none';
-        btnSubmit.disabled = false;
-        btnSubmit.style.opacity = '';
-        btnSubmit.style.cursor = '';
-      }
+      if (refVide) show(refError); else hide(refError);
     } else {
-      referenceInput.removeAttribute('required');
+      refInput.removeAttribute('required');
       if (reqSpan) reqSpan.remove();
-      refError.style.display = 'none';
-      btnSubmit.disabled = false;
-      btnSubmit.style.opacity = '';
-      btnSubmit.style.cursor = '';
+      hide(refError);
     }
   }
   modeSelect.addEventListener('change', validerReference);
-  referenceInput.addEventListener('input', validerReference);
+  refInput.addEventListener('input', validerReference);
   validerReference();
 
-  /* ── Initialisation ── */
-  var submittedLines = JSON.parse(document.getElementById('submitted-lines-data').textContent || '[]');
+  /* ── Soumission ──────────────────────────────────────────────────────────── */
+  document.getElementById('paiement-form').addEventListener('submit', function (ev) {
+    var nb = rubList.querySelectorAll('.pai-rub-card.is-selected').length;
+    if (nb === 0) {
+      ev.preventDefault();
+      alerteTxt.textContent = 'Sélectionnez au moins une rubrique à régler.';
+      alerteEl.style.display = 'flex';
+      alerteEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
 
-  /* ID pré-sélectionné depuis l'URL (?inscription=...) passé par le serveur */
+  /* ── Initialisation ──────────────────────────────────────────────────────── */
+  var submittedLines = JSON.parse(
+    document.getElementById('submitted-lines-data').textContent || '[]'
+  );
   var preselectedId = '{{ selected_inscription_id|default:"" }}';
 
-  /* Si une inscription est pré-sélectionnée depuis l'extérieur (ex: bouton depuis la liste élèves),
-     forcer la valeur du select même si le navigateur ne l'a pas détectée, puis charger les rubriques. */
-  if (preselectedId && !inscriptionSelect.value) {
-    inscriptionSelect.value = preselectedId;
-  }
-
-  var idACharger = inscriptionSelect.value || preselectedId;
+  if (preselectedId && !inscSelect.value) inscSelect.value = preselectedId;
+  var idACharger = inscSelect.value || preselectedId;
 
   if (idACharger) {
-    var initCallback = function () {
-      if (submittedLines.length > 0) {
-        submittedLines.forEach(function (line) { ajouterLigne(line.id, line.montant, line.echeance); });
-      } else {
-        ajouterLigne();
-      }
-    };
-    chargerRubriques(idACharger, initCallback);
+    var selOpt = inscSelect.options[inscSelect.selectedIndex];
+    afficherCarteEleveDepuisOption(selOpt);
+    var mode = submittedLines.length ? submittedLines : (preselectedId ? 'all' : null);
+    chargerRubriques(idACharger, mode);
   } else {
     afficherEtat('no-inscription');
   }

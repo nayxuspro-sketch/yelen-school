@@ -6,175 +6,164 @@
 
 <div class="page-header animate-fade-up">
   <div>
-    <h1 class="page-title">Risque de décrochage scolaire</h1>
-    {% if annee %}<p class="page-subtitle">{{ annee.libelle }}</p>{% endif %}
+    <h1 class="page-title">Tableau de bord du risque de décrochage</h1>
+    <p class="page-subtitle">Année scolaire {{ annee.libelle }}</p>
   </div>
-  <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
-    <a href="{% url 'pedagogie:risque_decrochage_pdf' %}?{% if niveau_filtre %}niveau={{ niveau_filtre }}{% endif %}{% if classe_id %}&classe={{ classe_id }}{% endif %}" class="btn-secondary" target="_blank">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+  <div class="d-flex gap-3" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <button class="btn-primary"
+            hx-post="{% url 'pedagogie:risque_decrochage' %}"
+            hx-vals='{"recalculer_tout": "1"}'
+            hx-confirm="Voulez-vous vraiment relancer l'analyse pour tous les élèves ? Cela peut prendre quelques secondes."
+            hx-target="body"
+            hx-indicator="#global-indicator">
+      <svg id="global-indicator" class="htmx-indicator icon-mr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
       </svg>
-      PDF
+      <svg class="normal-icon icon-mr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"/>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+      </svg>
+      Lancer l'analyse globale
+    </button>
+
+    {% if stats.total > 0 %}
+    <a href="{% url 'pedagogie:risque_decrochage_pdf' %}?{% if niveau_filtre %}niveau={{ niveau_filtre }}{% endif %}{% if classe_id %}&classe={{ classe_id }}{% endif %}"
+       target="_blank" class="btn-secondary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6,9 6,2 18,2 18,9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Exporter PDF
     </a>
-    <a href="{% url 'pedagogie:classe_result_list' %}" class="btn-secondary">Résultats</a>
+    {% endif %}
   </div>
 </div>
 
-{% if messages %}
-  {% for m in messages %}
-  <div class="alert alert-{{ m.tags }} animate-fade-up" style="margin-bottom:1rem;">{{ m }}</div>
-  {% endfor %}
-{% endif %}
-
-<!-- ── Sélecteur d'année ── -->
-<form method="get" class="d-flex align-center gap-3 mb-4 animate-fade-up delay-1" id="form-filtres">
-  <select name="annee" onchange="this.form.submit()" class="input select" style="max-width:220px;">
-    {% for a in annees %}
-    <option value="{{ a.pk }}" {% if a.pk == annee.pk %}selected{% endif %}>
-      {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
-    </option>
-    {% endfor %}
-  </select>
-  <select name="niveau" onchange="this.form.submit()" class="input select" style="max-width:180px;">
-    <option value="">Tous les niveaux</option>
-    {% for val, label in niveaux %}
-    <option value="{{ val }}" {% if val == niveau_filtre %}selected{% endif %}>{{ label }}</option>
-    {% endfor %}
-  </select>
-  <select name="classe" onchange="this.form.submit()" class="input select" style="max-width:220px;">
-    <option value="">Toutes les classes</option>
-    {% for c in classes %}
-    <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == classe_id %}selected{% endif %}>{{ c.nom }}</option>
-    {% endfor %}
-  </select>
-  {% if annee %}<input type="hidden" name="annee" value="{{ annee.pk }}">{% endif %}
-</form>
-
-<!-- ── Stat-cards ── -->
-<div class="stats-grid animate-fade-up delay-1" style="margin-bottom:2rem;">
-  <div class="stat-card">
-    <div class="stat-value">{{ stats.total }}</div>
-    <div class="stat-label">Élèves analysés</div>
-  </div>
-  <div class="stat-card" style="--accent:#DC3545;">
-    <div class="stat-value" style="color:#DC3545;">{{ stats.CRITIQUE }}</div>
-    <div class="stat-label">Risque critique</div>
-  </div>
-  <div class="stat-card" style="--accent:#E67E22;">
-    <div class="stat-value" style="color:#E67E22;">{{ stats.ELEVE }}</div>
-    <div class="stat-label">Risque élevé</div>
-  </div>
-  <div class="stat-card" style="--accent:#F5A623;">
-    <div class="stat-value" style="color:#F5A623;">{{ stats.MODERE }}</div>
-    <div class="stat-label">Risque modéré</div>
-  </div>
+<div class="card mb-6 animate-fade-up delay-1">
+  <form method="get" class="d-flex gap-4 align-end flex-wrap p-4">
+    <div class="form-group mb-0" style="flex:1; min-width:140px;">
+      <label class="input-label">Année</label>
+      <select name="annee" class="input select" style="width:100%;">
+        {% for a in annees %}
+        <option value="{{ a.pk }}" {% if a.pk == annee.pk %}selected{% endif %}>
+          {{ a.libelle }}{% if a.est_courante %} ★{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group mb-0" style="flex:1; min-width:140px;">
+      <label class="input-label">Niveau</label>
+      <select name="niveau" class="input select" style="width:100%;">
+        <option value="">Tous</option>
+        {% for val, label in niveaux %}
+        <option value="{{ val }}" {% if val == niveau_filtre %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group mb-0" style="flex:1; min-width:140px;">
+      <label class="input-label">Classe</label>
+      <select name="classe" class="input select" style="width:100%;">
+        <option value="">Toutes</option>
+        {% for c in classes %}
+        <option value="{{ c.pk }}" {% if classe_id and c.pk|slugify == classe_id %}selected{% endif %}>{{ c.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group mb-0 d-flex gap-2 align-end">
+      <div>
+        <label class="input-label">&nbsp;</label>
+        <button type="submit" class="btn-primary">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Filtrer
+        </button>
+      </div>
+      {% if niveau_filtre or classe_id %}
+      <div>
+        <label class="input-label">&nbsp;</label>
+        <a href="{% url 'pedagogie:risque_decrochage' %}" class="btn-secondary">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Réinitialiser
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </form>
 </div>
 
-<!-- ── Note d'information si aucun calcul ── -->
 {% if stats.total == 0 %}
-<div class="card animate-fade-up" style="padding:2rem; text-align:center; color:var(--text-muted);">
-  <p style="font-size:1.1rem; margin-bottom:.5rem;">Aucun score calculé pour cette année.</p>
-  <p>Lance le calcul depuis le terminal :</p>
-  <code style="display:inline-block; margin-top:.5rem; padding:.5rem 1rem;
-               background:rgba(255,255,255,.05); border-radius:.5rem; font-size:.9rem;">
-    python manage.py calculer_risques
-  </code>
+<div class="empty-state animate-fade-up">
+  <div class="empty-state-icon">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+    </svg>
+  </div>
+  <h3 class="fw-semibold mb-2">Aucune analyse disponible</h3>
+  <p class="empty-state-text mb-4">Lancez l'analyse pour détecter les élèves présentant un risque de décrochage.</p>
 </div>
 {% else %}
 
-<!-- ── Tableau ── -->
-<div class="card animate-fade-up delay-2" style="overflow-x:auto;">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Élève</th>
-        <th>Classe</th>
-        <th>Score</th>
-        <th>Niveau</th>
-        <th>Facteurs principaux</th>
-        <th>Calculé le</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in risques %}
-      <tr>
-        <td>
-          <strong>{{ r.inscription.eleve.nom }} {{ r.inscription.eleve.prenom }}</strong>
-          {% if r.inscription.eleve.matricule %}
-          <br><small style="color:var(--text-muted);">{{ r.inscription.eleve.matricule }}</small>
-          {% endif %}
-        </td>
-        <td>{{ r.inscription.classe.nom }}</td>
-        <td>
-          <!-- Barre de score -->
-          <div style="display:flex; align-items:center; gap:.5rem; min-width:100px;">
-            <div style="flex:1; background:rgba(255,255,255,.08); border-radius:4px; height:8px; overflow:hidden;">
-              <div style="width:{{ r.score }}%; height:100%; background:{{ r.couleur_css }};
-                          border-radius:4px; transition:width .4s;"></div>
-            </div>
-            <span style="font-weight:700; color:{{ r.couleur_css }}; min-width:36px; text-align:right;">
-              {{ r.score }}
-            </span>
-          </div>
-        </td>
-        <td>
-          <span class="badge" style="background:{{ r.couleur_css }}20;
-                color:{{ r.couleur_css }}; border:1px solid {{ r.couleur_css }}40;
-                padding:.25rem .75rem; border-radius:999px; font-size:.8rem; font-weight:600;">
-            {{ r.get_niveau_display }}
-          </span>
-        </td>
-        <td style="font-size:.85rem; color:var(--text-muted); max-width:260px;">
-          {% for f in r.facteurs %}
-            <div style="display:flex; justify-content:space-between; gap:.5rem;">
-              <span>{{ f.libelle }}</span>
-              <span style="font-weight:600; color:var(--text-primary);">+{{ f.points }}</span>
-            </div>
-          {% empty %}
-            <span style="color:var(--text-muted);">—</span>
-          {% endfor %}
-        </td>
-        <td style="font-size:.8rem; color:var(--text-muted); white-space:nowrap;">
-          {{ r.date_calcul|date:"d/m/Y H:i" }}
-        </td>
-        <td>
-          <form method="post" action="{% url 'pedagogie:risque_decrochage' %}" style="display:inline;">
-            {% csrf_token %}
-            <input type="hidden" name="inscription_id" value="{{ r.inscription.pk }}">
-            <button type="submit" class="btn-secondary" style="padding:.25rem .75rem; font-size:.8rem;"
-                    title="Recalculer">↺</button>
-          </form>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">
-          Aucun élève à risque pour les filtres sélectionnés.
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="d-flex gap-4 mb-6 animate-fade-up delay-2">
+  <div class="card" style="flex:1; text-align:center; padding:20px;">
+    <div class="text-muted text-sm mb-1">Total analysés</div>
+    <div class="fw-bold" style="font-size:1.5rem;">{{ stats.total }}</div>
+  </div>
+  <div class="card" style="flex:1; text-align:center; padding:20px; border-color:var(--color-success);">
+    <div class="text-success text-sm mb-1">Faible</div>
+    <div class="fw-bold text-success" style="font-size:1.5rem;">{{ stats.FAIBLE }}</div>
+  </div>
+  <div class="card" style="flex:1; text-align:center; padding:20px; border-color:var(--color-gold);">
+    <div class="text-warning text-sm mb-1">Modéré</div>
+    <div class="fw-bold text-warning" style="font-size:1.5rem;">{{ stats.MODERE }}</div>
+  </div>
+  <div class="card" style="flex:1; text-align:center; padding:20px; border-color:var(--color-danger);">
+    <div class="text-danger text-sm mb-1">Élevé</div>
+    <div class="fw-bold text-danger" style="font-size:1.5rem;">{{ stats.ELEVE }}</div>
+  </div>
+  <div class="card" style="flex:1; text-align:center; padding:20px; border-color:rgba(220,53,69,0.5);">
+    <div class="text-danger text-sm mb-1">Critique</div>
+    <div class="fw-bold text-danger" style="font-size:1.5rem;">{{ stats.CRITIQUE }}</div>
+  </div>
 </div>
 
-<!-- ── Légende ── -->
-<div class="card animate-fade-up delay-3" style="margin-top:1.5rem; padding:1.25rem;">
-  <h3 style="font-size:.9rem; color:var(--text-muted); margin-bottom:.75rem; text-transform:uppercase; letter-spacing:.05em;">
-    Légende des niveaux de risque
-  </h3>
-  <div style="display:flex; flex-wrap:wrap; gap:1.5rem;">
-    <div><span style="color:#00A86B; font-weight:700;">● Faible (0–25)</span> — Aucune action immédiate</div>
-    <div><span style="color:#F5A623; font-weight:700;">● Modéré (26–50)</span> — Surveillance renforcée</div>
-    <div><span style="color:#E67E22; font-weight:700;">● Élevé (51–75)</span> — Entretien parents recommandé</div>
-    <div><span style="color:#DC3545; font-weight:700;">● Critique (76–100)</span> — Intervention urgente</div>
+<div class="card animate-fade-up delay-3">
+  <div class="card-header">
+    <h2 class="card-title">Élèves à risque</h2>
+    <span class="badge">{{ risques|length }} élèves</span>
   </div>
-  <p style="margin-top:.75rem; font-size:.8rem; color:var(--text-muted);">
-    Score calculé sur 5 signaux : absences injustifiées (35 pts), tendance des moyennes (30 pts),
-    matières sous 8/20 (20 pts), sanctions disciplinaires (10 pts), retards de paiement (5 pts).
-    Recalculer quotidiennement via : <code>python manage.py calculer_risques</code>
-  </p>
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Classe</th>
+          <th>Score</th>
+          <th>Niveau</th>
+          <th>Facteur principal</th>
+          <th>Date calcul</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+        {% for r in risques %}
+          {% include "pedagogie/partials/risque_row.html" %}
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center; padding:40px; color:var(--color-text-muted);">
+              Aucun élève ne correspond à vos critères.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+
 {% endif %}
 
 {% endblock %}

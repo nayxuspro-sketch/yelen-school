@@ -42,7 +42,18 @@ def _build_appel_groupes(qs):
         groupes_classes = []
         for classe, appels_classe in groupby(appels_date, key=lambda a: a.classe_id):
             appels_classe = list(appels_classe)
-            groupes_classes.append({'classe': appels_classe[0].classe, 'appels': appels_classe})
+            total_presents = sum(a.nb_presents for a in appels_classe)
+            total_absents  = sum(a.nb_absents  for a in appels_classe)
+            total_retards  = sum(a.nb_retards  for a in appels_classe)
+            total_all = total_presents + total_absents + total_retards
+            groupes_classes.append({
+                'classe': appels_classe[0].classe,
+                'appels': appels_classe,
+                'total_presents': total_presents,
+                'total_absents':  total_absents,
+                'total_retards':  total_retards,
+                'pct_presence': round(total_presents * 100 / total_all) if total_all else 0,
+            })
         groupes_dates.append({'date': date_val, 'groupes_classes': groupes_classes})
     return groupes_dates
 
@@ -163,7 +174,7 @@ def appel_print(request):
 
     qs = Appel.objects.select_related(
         'classe', 'classe__cycle', 'matiere', 'effectue_par'
-    )
+    ).prefetch_related('presences')
     if annee:
         qs = qs.filter(annee_scolaire=annee)
     if date_debut:
@@ -173,11 +184,35 @@ def appel_print(request):
     if classe_id:
         qs = qs.filter(classe_id=classe_id)
 
+    qs = qs.order_by('date', 'classe__nom')
+    groupes_dates = _build_appel_groupes(qs)
+
+    grand_appels = grand_presents = grand_absents = grand_retards = 0
+    for gd in groupes_dates:
+        for gc in gd['groupes_classes']:
+            grand_appels   += len(gc['appels'])
+            grand_presents += gc['total_presents']
+            grand_absents  += gc['total_absents']
+            grand_retards  += gc['total_retards']
+
+    classe_filtre = None
+    if classe_id:
+        try:
+            classe_filtre = Classe.objects.select_related('cycle').get(pk=classe_id)
+        except Classe.DoesNotExist:
+            pass
+
     return render(request, 'presences/appel_print.html', {
-        'groupes_dates': _build_appel_groupes(qs),
+        'groupes_dates': groupes_dates,
         'annee': annee,
         'date_debut': date_debut,
         'date_fin': date_fin,
+        'etablissement': etab,
+        'classe_filtre': classe_filtre,
+        'grand_appels': grand_appels,
+        'grand_presents': grand_presents,
+        'grand_absents': grand_absents,
+        'grand_retards': grand_retards,
     })
 
 
@@ -685,7 +720,6 @@ def qr_scanner(request, appel_id):
     })
 
 
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST as _require_POST
 import json as _json
 

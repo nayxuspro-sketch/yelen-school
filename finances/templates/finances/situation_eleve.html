@@ -3,477 +3,516 @@
 {% block title %}Situation financière — {{ inscription.eleve.nom }} — YELEN SCHOOL{% endblock %}
 
 {% block content %}
+<div class="sit-wrapper">
 
-<div class="page-header animate-fade-up">
-  <div class="d-flex align-center gap-4">
-    <a href="{% url 'finances:paiement_list' %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-      </svg>
-    </a>
-    <div>
-      <h1 class="page-title">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</h1>
-      <p class="page-subtitle">Classe : <strong class="text-primary">{{ inscription.classe.nom }}</strong> · {{ inscription.classe.get_cycle_display }}</p>
+  {# ── En-tête ── #}
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-3">
+      <a href="{% url 'finances:paiement_list' %}" class="btn-icon" title="Retour">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="page-title">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</h1>
+        <p class="page-subtitle">
+          Classe : <strong class="color-primary">{{ inscription.classe.nom }}</strong>
+          &nbsp;·&nbsp; {{ inscription.classe.get_cycle_display }}
+        </p>
+      </div>
+    </div>
+    <div class="d-flex align-center gap-2">
+      <a href="{% url 'finances:paiement_create' %}?inscription={{ inscription.id }}" class="btn-primary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Nouvel encaissement
+      </a>
+      <a href="{% url 'finances:mobile_money_create' %}?inscription={{ inscription.id }}" class="btn-secondary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+        </svg>
+        Mobile Money
+      </a>
+      <a href="{% url 'viescolaire:fiche_suivi_eleve' inscription.id %}" class="btn-secondary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Fiche suivi
+      </a>
+      <a href="{% url 'documents:attestation_non_redevabilite' inscription.id %}" class="btn-secondary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Attestation
+      </a>
     </div>
   </div>
-  <a href="{% url 'finances:paiement_create' %}?inscription={{ inscription.id %}" class="btn-primary">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-    </svg>
-    Nouvel Encaissement
-  </a>
-  <a href="{% url 'viescolaire:fiche_suivi_eleve' inscription.id %}" class="btn-secondary">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-    </svg>
-    Fiche de suivi
-  </a>
-  <a href="{% url 'documents:attestation_non_redevabilite' inscription.id %}" class="btn-secondary">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-    </svg>
-    Attestation non-redevabilité
-  </a>
-</div>
 
-<div class="grid-layout animate-fade-up delay-1" style="display:grid; grid-template-columns:300px 1fr; gap:var(--space-6); align-items:start;">
+  <div class="sit-layout animate-fade-up delay-1">
 
-  <!-- Sidebar -->
-  <div class="sidebar-content" style="display:flex; flex-direction:column; gap:var(--space-4);">
-    
-    <!-- Résumé Financier -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Résumé Financier</span>
-      </div>
-      <div style="padding:var(--space-4);">
-        {% if total_du_brut and total_du_brut != total_du %}
-        <div class="stat-item mb-2">
-          <span class="stat-label text-muted" style="font-size:0.8rem;">Frais bruts</span>
-          <span class="stat-value text-muted" style="font-size:0.9rem; text-decoration:line-through;">{{ total_du_brut|default:0 }}</span>
-        </div>
-        <div class="stat-item mb-3">
-          <span class="stat-label" style="color:var(--color-success);">Réductions bourses</span>
-          <span class="stat-value" style="color:var(--color-success);">− {{ total_reduction|default:0 }} <small>FCFA</small></span>
-        </div>
-        {% endif %}
-        <div class="stat-item mb-3">
-          <span class="stat-label">Total Dû</span>
-          <span class="stat-value">{{ total_du|default:0 }} <small>FCFA</small></span>
-        </div>
-        <div class="stat-item mb-3">
-          <span class="stat-label text-success">Total Versé</span>
-          <span class="stat-value text-success">{{ total_paye|default:0 }} <small>FCFA</small></span>
-        </div>
-        {% if total_rembourse > 0 %}
-        <div class="stat-item mb-3">
-          <span class="stat-label" style="color:var(--color-danger);">Remboursé</span>
-          <span class="stat-value" style="color:var(--color-danger);">− {{ total_rembourse|default:0 }} <small>FCFA</small></span>
-        </div>
-        {% endif %}
-        
-        {% if total_du > 0 %}
-        <div class="progress-bar mb-2" style="height:8px; background:var(--color-border); border-radius:4px; overflow:hidden;">
-          <div class="progress-fill" style="height:100%; width:{{ pourcentage_paye }}%; background:var(--color-primary); border-radius:4px; transition:width 0.3s ease;"></div>
-        </div>
-        <p class="text-muted" style="font-size:0.75rem; text-align:right;">
-          {{ pourcentage_paye }}% payé
-        </p>
-        {% endif %}
-        
-        <div class="divider my-4"></div>
-        
-        <div class="stat-item">
-          <span class="stat-label fw-semibold">Reste à Payer</span>
-          <span class="stat-value fw-bold" style="font-size:1.5rem; color:{% if reste_a_payer > 0 %}var(--color-danger){% else %}var(--color-primary){% endif %};">
-            {{ reste_a_payer|default:0 }} <small>FCFA</small>
-          </span>
-        </div>
-      </div>
-    </div>
+    {# ────────────────── SIDEBAR ────────────────── #}
+    <div class="sit-sidebar">
 
-    <!-- Rubriques de Paiement -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Rubriques à Payer</span>
-      </div>
-      <div style="padding:var(--space-4);">
-        {% for f in frais_details %}
-        <div class="d-flex justify-between align-center" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
-          <span class="text-secondary text-truncate" style="max-width:150px;">{{ f.rubrique.nom }}</span>
-          <span class="fw-semibold">{{ f.montant }} <small class="text-muted">FCFA</small></span>
-        </div>
-        {% empty %}
-        <p class="text-muted text-center py-4" style="font-size:0.85rem;">Aucun tarif configuré pour ce profil.</p>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- Bourses & Aides -->
-    <div class="card">
-      <div class="card-header" style="display:flex; align-items:center; justify-content:space-between;">
-        <span class="card-title">Bourses &amp; Aides</span>
-        <a href="{% url 'finances:bourse_create' inscription.id %}?total_du={{ total_du_brut|default:total_du }}" class="btn-icon" title="Attribuer une bourse">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-        </a>
-      </div>
-      <div style="padding:var(--space-3) var(--space-4);">
-        {% for b in bourses %}
-        <div style="padding:var(--space-2) 0; font-size:0.82rem; border-bottom:1px solid var(--color-border);">
-          <div class="d-flex justify-between align-center">
-            <span class="fw-medium text-truncate" style="max-width:130px;" title="{{ b.type_bourse.nom }}">{{ b.type_bourse.nom }}</span>
-            <span class="fw-semibold text-success">− {{ b.montant_accorde|floatformat:0 }} <small class="text-muted">F</small></span>
+      {# Résumé Financier #}
+      <div class="card mb-4">
+        <div class="pai-sec-hd">
+          <div class="pai-sec-hd-left">
+            <div class="pai-sec-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <span class="pai-sec-title">Résumé Financier</span>
           </div>
-          <div class="d-flex justify-between align-center" style="margin-top:1px;">
-            <span class="text-muted" style="font-size:0.76rem;">{{ b.rubrique.nom|default:"Globale" }}</span>
-            <div class="d-flex gap-1">
-              <a href="{% url 'finances:bourse_edit' b.id %}" class="btn-icon" style="padding:1px;" title="Modifier">
+        </div>
+        <div class="sit-body">
+
+          {% if total_du_brut and total_du_brut != total_du %}
+          <div class="sit-stat-row">
+            <span class="sit-stat-lbl">Frais bruts</span>
+            <span class="sit-stat-val sit-stat-val-muted">{{ total_du_brut|default:0 }} FCFA</span>
+          </div>
+          <div class="sit-stat-row">
+            <span class="sit-stat-lbl">Réductions bourses</span>
+            <span class="sit-stat-val sit-stat-val-green">− {{ total_reduction|default:0 }} FCFA</span>
+          </div>
+          {% endif %}
+
+          <div class="sit-stat-row">
+            <span class="sit-stat-lbl">Total Dû</span>
+            <span class="sit-stat-val">{{ total_du|default:0 }} FCFA</span>
+          </div>
+          <div class="sit-stat-row">
+            <span class="sit-stat-lbl">Total Versé</span>
+            <span class="sit-stat-val sit-stat-val-green">{{ total_paye|default:0 }} FCFA</span>
+          </div>
+          {% if total_rembourse > 0 %}
+          <div class="sit-stat-row">
+            <span class="sit-stat-lbl">Remboursé</span>
+            <span class="sit-stat-val sit-stat-val-red">− {{ total_rembourse|default:0 }} FCFA</span>
+          </div>
+          {% endif %}
+
+          {% if total_du > 0 %}
+          <div class="sit-progress">
+            <div class="sit-progress-fill" style="--pct: {{ pourcentage_paye }}%"></div>
+          </div>
+          <p class="sit-pct">{{ pourcentage_paye }}% payé</p>
+          {% endif %}
+
+          <div class="sit-total">
+            <span class="sit-total-lbl">Reste à Payer</span>
+            <span class="sit-total-val {% if reste_a_payer > 0 %}sit-total-val-red{% else %}sit-total-val-green{% endif %}">
+              {{ reste_a_payer|default:0 }} <small class="text-muted text-sm">FCFA</small>
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      {# Rubriques à Payer #}
+      <div class="card mb-4">
+        <div class="pai-sec-hd">
+          <div class="pai-sec-hd-left">
+            <div class="pai-sec-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h7"/>
+              </svg>
+            </div>
+            <span class="pai-sec-title">Rubriques à Payer</span>
+          </div>
+        </div>
+        <div class="sit-body">
+          {% for f in frais_details %}
+          <div class="sit-row">
+            <span class="sit-row-lbl" title="{{ f.rubrique.nom }}">{{ f.rubrique.nom }}</span>
+            <span class="sit-row-val">{{ f.montant }} <small class="text-muted">FCFA</small></span>
+          </div>
+          {% empty %}
+          <p class="text-muted text-center text-sm">Aucun tarif configuré pour ce profil.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# Bourses & Aides #}
+      <div class="card mb-4">
+        <div class="pai-sec-hd">
+          <div class="pai-sec-hd-left">
+            <div class="pai-sec-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+              </svg>
+            </div>
+            <span class="pai-sec-title">Bourses &amp; Aides</span>
+          </div>
+          <a href="{% url 'finances:bourse_create' inscription.id %}?total_du={{ total_du_brut|default:total_du }}" class="btn-icon" title="Attribuer une bourse">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </a>
+        </div>
+        <div class="sit-body">
+          {% for b in bourses %}
+          <div class="sit-row">
+            <div class="min-w-0 flex-1">
+              <div class="sit-row-lbl fw-medium" title="{{ b.type_bourse.nom }}">{{ b.type_bourse.nom }}</div>
+              <div class="sit-row-sub">{{ b.rubrique.nom|default:"Globale" }}</div>
+            </div>
+            <div class="sit-row-actions">
+              <span class="sit-row-val sit-row-val-green">− {{ b.montant_accorde|floatformat:0 }} F</span>
+              <a href="{% url 'finances:bourse_edit' b.id %}" class="btn-icon" title="Modifier">
                 <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                 </svg>
               </a>
-              <form method="post" action="{% url 'finances:bourse_delete' b.id %}" onsubmit="return confirm('Supprimer cette bourse ?')" style="display:inline;">
+              <form method="post" action="{% url 'finances:bourse_delete' b.id %}" onsubmit="return confirm('Supprimer cette bourse ?')" class="d-inline">
                 {% csrf_token %}
-                <button type="submit" class="btn-icon text-danger" style="padding:1px;" title="Supprimer">
+                <button type="submit" class="btn-icon text-danger" title="Supprimer">
                   <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                   </svg>
                 </button>
               </form>
             </div>
           </div>
+          {% empty %}
+          <p class="text-muted text-center text-sm">
+            Aucune bourse attribuée.
+            <a href="{% url 'finances:bourse_create' inscription.id %}" class="color-primary">+ Ajouter</a>
+          </p>
+          {% endfor %}
+          {% if bourses %}
+          <div class="sit-reduction-total">
+            <span class="text-secondary">Total réductions</span>
+            <span class="color-primary">− {{ total_reduction|floatformat:0 }} FCFA</span>
+          </div>
+          {% endif %}
         </div>
-        {% empty %}
-        <p class="text-muted text-center py-3" style="font-size:0.82rem;">Aucune bourse attribuée.
-          <a href="{% url 'finances:bourse_create' inscription.id %}" class="text-primary">+ Ajouter</a>
-        </p>
-        {% endfor %}
-        {% if bourses %}
-        <div class="d-flex justify-between align-center" style="padding-top:var(--space-2); font-size:0.82rem; font-weight:600;">
-          <span>Total réductions</span>
-          <span class="text-success">− {{ total_reduction|floatformat:0 }} FCFA</span>
-        </div>
-        {% endif %}
       </div>
+
+      {# Informations Élève #}
+      <div class="card">
+        <div class="pai-sec-hd">
+          <div class="pai-sec-hd-left">
+            <div class="pai-sec-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              </svg>
+            </div>
+            <span class="pai-sec-title">Informations</span>
+          </div>
+        </div>
+        <div class="sit-body">
+          <div class="sit-info-row">
+            <span class="text-muted">Matricule</span>
+            <span class="fw-medium text-mono text-xs">{{ inscription.eleve.matricule|default:"—" }}</span>
+          </div>
+          <div class="sit-info-row">
+            <span class="text-muted">Année scolaire</span>
+            <span class="fw-medium">{{ inscription.annee_scolaire.libelle|default:"—" }}</span>
+          </div>
+          <div class="sit-info-row">
+            <span class="text-muted">Statut inscription</span>
+            <span class="badge badge-{% if inscription.statut == 'AFFECTE' %}success{% else %}neutral{% endif %}">{{ inscription.get_statut_display }}</span>
+          </div>
+          <div class="sit-info-row">
+            <span class="text-muted">Statut élève</span>
+            <span class="fw-medium">{{ inscription.statut_eleve.nom|default:"—" }}</span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Infos Élève -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Informations</span>
-      </div>
-      <div style="padding:var(--space-4); font-size:0.85rem;">
-        <div class="d-flex justify-between mb-2">
-          <span class="text-muted">Matricule</span>
-          <span class="fw-medium">{{ inscription.eleve.matricule|default:"—" }}</span>
-        </div>
-        <div class="d-flex justify-between mb-2">
-          <span class="text-muted">Année</span>
-          <span class="fw-medium">{{ inscription.annee_scolaire.libelle|default:"—" }}</span>
-        </div>
-        <div class="d-flex justify-between mb-2">
-          <span class="text-muted">Statut inscription</span>
-          <span class="badge badge-{% if inscription.statut == 'AFFECTE' %}success{% else %}secondary{% endif %}">{{ inscription.get_statut_display }}</span>
-        </div>
-        <div class="d-flex justify-between">
-          <span class="text-muted">Statut élève</span>
-          <span class="fw-medium">{{ inscription.statut_eleve.nom|default:"—" }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
+    {# ────────────────── MAIN ────────────────── #}
+    <div class="sit-main">
 
-  <!-- Main Content -->
-  <div class="main-content" style="display:flex; flex-direction:column; gap:var(--space-6);">
-    
-    <!-- Échéancier -->
-    <div class="card">
-      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
-        <div class="d-flex align-center justify-between" style="width:100%;">
+      {# Échéancier de Paiement #}
+      <div class="card mb-4">
+        <div class="card-header">
           <div class="d-flex align-center gap-3">
-            <div class="icon-box" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:var(--color-primary-light); border-radius:8px;">
-              <svg width="18" height="18" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            <div class="sit-icon sit-icon-primary">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
             </div>
             <span class="card-title">Échéancier de Paiement</span>
           </div>
           <a href="{% url 'finances:echeancier_create' inscription.id %}" class="btn-primary btn-sm">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             Ajouter
           </a>
         </div>
-      </div>
-      
-      {% if echeancier_list %}
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Libellé</th>
-              <th>Date limite</th>
-              <th style="text-align:right">Montant</th>
-              <th>Statut</th>
-              <th style="text-align:right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for echeance in echeancier_list %}
-            <tr>
-              <td class="fw-medium">{{ echeance.libelle }}</td>
-              <td>
-                <span class="{% if echeance.date_limite|default:''|date:'Y-m-d' < today %}text-danger{% endif %}">
-                  {{ echeance.date_limite|date:"d M Y" }}
-                </span>
-              </td>
-              <td style="text-align:right;" class="fw-semibold">{{ echeance.montant_du|default:0 }} <span class="text-muted">FCFA</span></td>
-              <td>
-                {% if echeance.paye %}
-                <span class="badge badge-success">Payé</span>
-                {% else %}
-                <span class="badge badge-warning">En attente</span>
-                {% endif %}
-              </td>
-              <td style="text-align:right;">
-                <div class="d-flex gap-1 justify-end">
-                  <a href="{% url 'finances:echeancier_edit' echeance.id %}" class="btn-icon btn-sm" title="Modifier">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                    </svg>
-                  </a>
-                  <a href="{% url 'finances:echeancier_delete' echeance.id %}" class="btn-icon btn-sm text-danger" title="Supprimer">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                  </a>
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot>
-            <tr style="background:var(--color-bg-hover);">
-              <td colspan="2" class="fw-bold">Total échéancier</td>
-              <td style="text-align:right;" class="fw-bold">{{ echeancier_total|default:0 }} <span class="text-muted">FCFA</span></td>
-              <td></td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      {% else %}
-      <div class="empty-state" style="padding:var(--space-8);">
-        <div class="empty-state-icon">
-          <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-        </div>
-        <p class="empty-state-text">Aucun échéancier défini</p>
-        <a href="{% url 'finances:echeancier_create' inscription.id %}" class="btn-primary mt-2">Créer un échéancier</a>
-      </div>
-      {% endif %}
-    </div>
 
-    <!-- Historique des versements -->
-    <div class="card">
-      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
-        <div class="d-flex align-center justify-between" style="width:100%;">
+        {% if echeancier_list %}
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Libellé</th>
+                <th>Date limite</th>
+                <th class="td-right">Montant</th>
+                <th>Statut</th>
+                <th class="td-narrow"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for echeance in echeancier_list %}
+              <tr>
+                <td class="fw-medium">{{ echeance.libelle }}</td>
+                <td>
+                  <span class="{% if echeance.date_limite|default:''|date:'Y-m-d' < today %}text-danger{% endif %}">
+                    {{ echeance.date_limite|date:"d M Y" }}
+                  </span>
+                </td>
+                <td class="td-right fw-semibold">{{ echeance.montant_du|default:0 }} <span class="text-muted">FCFA</span></td>
+                <td>
+                  {% if echeance.paye %}
+                  <span class="badge badge-success">Payé</span>
+                  {% else %}
+                  <span class="badge badge-warning">En attente</span>
+                  {% endif %}
+                </td>
+                <td class="td-narrow">
+                  <div class="d-flex gap-1">
+                    <a href="{% url 'finances:echeancier_edit' echeance.id %}" class="btn-icon" title="Modifier">
+                      <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                      </svg>
+                    </a>
+                    <a href="{% url 'finances:echeancier_delete' echeance.id %}" class="btn-icon text-danger" title="Supprimer">
+                      <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="tfoot-total">
+                <td colspan="2" class="fw-bold">Total échéancier</td>
+                <td class="td-right fw-bold">{{ echeancier_total|default:0 }} <span class="text-muted">FCFA</span></td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <p class="empty-state-text">Aucun échéancier défini</p>
+          <a href="{% url 'finances:echeancier_create' inscription.id %}" class="btn-primary btn-sm mt-2">Créer un échéancier</a>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Historique des Versements #}
+      <div class="card mb-4">
+        <div class="card-header">
           <div class="d-flex align-center gap-3">
-            <div class="icon-box" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:var(--color-primary-ambient); border-radius:8px;">
-              <svg width="18" height="18" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <div class="sit-icon sit-icon-success">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
             </div>
             <span class="card-title">Historique des Versements</span>
           </div>
           <a href="{% url 'finances:historique_pdf' inscription.id %}" target="_blank" class="btn-secondary btn-sm">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
             </svg>
             PDF
           </a>
         </div>
-      </div>
-      
-      {% if paiements %}
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Rubrique</th>
-              <th>Mode</th>
-              <th>Référence</th>
-              <th style="text-align:right">Montant</th>
-              <th style="width:40px;"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in paiements %}
-            <tr>
-              <td>{{ p.date_paiement|date:"d M Y" }}</td>
-              <td>{{ p.rubrique.nom|default:"—" }}</td>
-              <td class="text-secondary">{{ p.get_mode_paiement_display }}</td>
-              <td class="text-muted font-mono" style="font-size:0.8rem;">{{ p.reference|default:"-" }}</td>
-              <td style="text-align:right;" class="fw-bold text-success">{{ p.montant }} <span class="text-muted">FCFA</span></td>
-              <td>
-                <a href="{% url 'finances:remboursement_create' p.pk %}"
-                   class="btn-icon" title="Rembourser ce versement"
-                   style="color:var(--color-danger);">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                  </svg>
-                </a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot>
-            <tr style="background:var(--color-bg-hover);">
-              <td colspan="4" class="fw-bold">Total versé</td>
-              <td style="text-align:right;" class="fw-bold text-success">{{ total_paye|default:0 }} <span class="text-muted">FCFA</span></td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      {% else %}
-      <div class="empty-state" style="padding:var(--space-8);">
-        <div class="empty-state-icon">
-          <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
+
+        {% if paiements %}
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Rubrique</th>
+                <th>Mode</th>
+                <th>Référence</th>
+                <th class="td-right">Montant</th>
+                <th class="td-narrow"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in paiements %}
+              <tr>
+                <td class="text-secondary">{{ p.date_paiement|date:"d M Y" }}</td>
+                <td class="fw-medium">{{ p.rubrique.nom|default:"—" }}</td>
+                <td class="text-secondary">{{ p.get_mode_paiement_display }}</td>
+                <td class="text-mono text-xs text-muted">{{ p.reference|default:"—" }}</td>
+                <td class="td-right fw-bold color-success">{{ p.montant }} <span class="text-muted">FCFA</span></td>
+                <td class="td-narrow">
+                  <a href="{% url 'finances:remboursement_create' p.pk %}" class="btn-icon text-danger" title="Rembourser ce versement">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                    </svg>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="tfoot-total">
+                <td colspan="4" class="fw-bold">Total versé</td>
+                <td class="td-right fw-bold color-success">{{ total_paye|default:0 }} <span class="text-muted">FCFA</span></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-        <p class="empty-state-text">Aucun versement effectué</p>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <p class="empty-state-text">Aucun versement effectué</p>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Remboursements #}
+      {% if remboursements %}
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="d-flex align-center gap-3">
+            <div class="sit-icon sit-icon-danger">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+              </svg>
+            </div>
+            <span class="card-title">Remboursements</span>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Paiement d'origine</th>
+                <th>Motif</th>
+                <th>Par</th>
+                <th class="td-right">Montant</th>
+                <th class="td-narrow"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for remb in remboursements %}
+              <tr>
+                <td class="text-secondary">{{ remb.date_remboursement|date:"d M Y" }}</td>
+                <td>
+                  <span class="text-secondary">{{ remb.paiement.rubrique.nom|default:"—" }}</span>
+                  <span class="text-muted text-xs"> ({{ remb.paiement.date_paiement|date:"d/m/Y" }})</span>
+                </td>
+                <td class="text-muted text-sm">{{ remb.motif|default:"—" }}</td>
+                <td class="text-muted text-xs">{{ remb.rembourse_par.get_full_name|default:"—" }}</td>
+                <td class="td-right fw-bold color-danger">
+                  − {{ remb.montant|floatformat:0 }} <span class="text-muted">FCFA</span>
+                </td>
+                <td class="td-narrow">
+                  <form method="post" action="{% url 'finances:remboursement_delete' remb.pk %}" class="d-inline"
+                        onsubmit="return confirm('Annuler ce remboursement de {{ remb.montant|floatformat:0 }} FCFA ?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-icon text-danger" title="Annuler ce remboursement">
+                      <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="tfoot-total">
+                <td colspan="4" class="fw-bold">Total remboursé</td>
+                <td class="td-right fw-bold color-danger">
+                  − {{ total_rembourse|default:0 }} <span class="text-muted">FCFA</span>
+                </td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
       {% endif %}
-    </div>
 
-    {# ── Remboursements ── #}
-    {% if remboursements %}
-    <div class="card">
-      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
-        <div class="d-flex align-center gap-3">
-          <div class="icon-box" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:rgba(220,53,69,0.12); border-radius:8px;">
-            <svg width="18" height="18" fill="none" stroke="var(--color-danger)" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-            </svg>
+      {# Historique des Relances #}
+      {% if relances_eleve %}
+      <div class="card">
+        <div class="card-header">
+          <div class="d-flex align-center gap-3">
+            <div class="sit-icon sit-icon-warning">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              </svg>
+            </div>
+            <span class="card-title">Historique des Relances</span>
           </div>
-          <span class="card-title">Remboursements</span>
         </div>
-      </div>
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Paiement d'origine</th>
-              <th>Motif</th>
-              <th>Par</th>
-              <th style="text-align:right">Montant</th>
-              <th style="width:40px;"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for remb in remboursements %}
-            <tr>
-              <td>{{ remb.date_remboursement|date:"d M Y" }}</td>
-              <td class="text-secondary" style="font-size:0.85rem;">
-                {{ remb.paiement.rubrique.nom|default:"—" }}
-                <span class="text-muted">({{ remb.paiement.date_paiement|date:"d/m/Y" }})</span>
-              </td>
-              <td class="text-muted" style="font-size:0.85rem;">{{ remb.motif|default:"—" }}</td>
-              <td class="text-muted" style="font-size:0.8rem;">{{ remb.rembourse_par.get_full_name|default:"—" }}</td>
-              <td style="text-align:right;" class="fw-bold" style="color:var(--color-danger);">
-                − {{ remb.montant|floatformat:0 }} <span class="text-muted">FCFA</span>
-              </td>
-              <td>
-                <form method="post" action="{% url 'finances:remboursement_delete' remb.pk %}" style="display:inline;"
-                      onsubmit="return confirm('Annuler ce remboursement de {{ remb.montant|floatformat:0 }} FCFA ?')">
-                  {% csrf_token %}
-                  <button type="submit" class="btn-icon" title="Annuler ce remboursement"
-                          style="color:var(--color-danger);">
-                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Canal</th>
+                <th>Rubrique</th>
+                <th class="td-right">Montant réclamé</th>
+                <th>Envoyé par</th>
+                <th>Détail</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rel in relances_eleve %}
+              <tr>
+                <td class="text-secondary">{{ rel.date_relance|date:"d M Y" }}</td>
+                <td>
+                  {% if rel.canal == 'SMS' %}
+                  <span class="badge badge-success">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                     </svg>
-                  </button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot>
-            <tr style="background:var(--color-bg-hover);">
-              <td colspan="4" class="fw-bold">Total remboursé</td>
-              <td style="text-align:right;" class="fw-bold" style="color:var(--color-danger);">
-                − {{ total_rembourse|default:0 }} <span class="text-muted">FCFA</span>
-              </td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-
-    {% if relances_eleve %}
-    <div class="card">
-      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
-        <div class="d-flex align-center gap-3">
-          <div class="icon-box" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(234,179,8,0.12);border-radius:8px;">
-            <svg width="18" height="18" fill="none" stroke="#b45309" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-            </svg>
-          </div>
-          <span class="card-title">Historique des relances</span>
+                    SMS
+                  </span>
+                  {% else %}
+                  <span class="badge badge-info">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                    </svg>
+                    PDF
+                  </span>
+                  {% endif %}
+                </td>
+                <td>{{ rel.rubrique.nom|default:"—" }}</td>
+                <td class="td-right fw-bold">{{ rel.montant_reclame|floatformat:0 }} <span class="text-muted">FCFA</span></td>
+                <td class="text-muted text-sm">{{ rel.envoye_par.get_full_name|default:"—" }}</td>
+                <td class="text-muted text-xs">{{ rel.detail|default:"—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </div>
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Canal</th>
-              <th>Rubrique</th>
-              <th style="text-align:right">Montant réclamé</th>
-              <th>Envoyé par</th>
-              <th>Détail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for rel in relances_eleve %}
-            <tr>
-              <td>{{ rel.date_relance|date:"d M Y" }}</td>
-              <td>
-                {% if rel.canal == 'SMS' %}
-                <span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;color:#15803d;background:#f0fdf4;padding:.15rem .5rem;border-radius:99px;">
-                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                  SMS
-                </span>
-                {% else %}
-                <span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;color:#1d4ed8;background:#eff6ff;padding:.15rem .5rem;border-radius:99px;">
-                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                  PDF
-                </span>
-                {% endif %}
-              </td>
-              <td>{{ rel.rubrique.nom|default:"—" }}</td>
-              <td style="text-align:right;" class="fw-bold">{{ rel.montant_reclame|floatformat:0 }} <span class="text-muted">FCFA</span></td>
-              <td class="text-muted" style="font-size:.85rem;">{{ rel.envoye_par.get_full_name|default:"—" }}</td>
-              <td class="text-muted" style="font-size:.8rem;">{{ rel.detail|default:"—" }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+      {% endif %}
+
     </div>
-    {% endif %}
-
   </div>
-</div>
 
+</div>
 {% endblock %}

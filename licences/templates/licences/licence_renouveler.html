@@ -1,68 +1,91 @@
 {% extends "core/base.html" %}
 
-{% block title %}Renouveler la licence — YELEN SCHOOL{% endblock %}
+{% block title %}Extension de Licence — YELEN SCHOOL{% endblock %}
 
 {% block content %}
 
-<div class="page-header animate-fade-up">
-  <div class="d-flex align-center gap-4">
-    <a href="/licences/" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+{# ── En-tête ── #}
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <a href="/licences/" class="btn-icon" title="Retour à la gestion">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
-    <h1 class="page-title">Renouveler la licence</h1>
+    <div>
+      <h1>Extension de Licence</h1>
+      <p>Renouvellement des services pour l'établissement partenaire</p>
+    </div>
   </div>
 </div>
 
-<div class="card animate-fade-up delay-1" style="max-width:480px;">
-  <div class="card-header">
-    <span class="card-title">{{ licence.etablissement.nom }}</span>
-    <code style="font-size:0.8rem; color:var(--color-text-muted);">{{ licence.cle_licence }}</code>
-  </div>
-  <div style="padding:var(--space-6);">
+{# ── Carte principale ── #}
+<div class="dash-card dash-card-narrow animate-fade-up">
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4); margin-bottom:var(--space-6);">
-      <div>
-        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Type</div>
-        <div class="fw-medium">{{ licence.get_type_licence_display }}</div>
+  {# ── Identité de la licence ── #}
+  <div class="dash-card-header">
+    <h3>{{ licence.etablissement.nom }}</h3>
+    <code>{{ licence.cle_licence }}</code>
+  </div>
+
+  {# ── Info actuelle ── #}
+  <div class="renew-info-grid">
+    <div>
+      <span class="renew-info-label">Type actuel</span>
+      <span class="renew-info-value">{{ licence.get_type_licence_display }}</span>
+    </div>
+    <div>
+      <span class="renew-info-label">Échéance</span>
+      <span class="renew-info-value {% if licence.jours_restants < 0 %}renew-info-value-danger{% endif %}">
+        {{ licence.date_expiration|date:"d/m/Y" }}
+        {% if licence.jours_restants < 0 %}
+          <span class="badge badge-danger">Expirée</span>
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  {# ── Formulaire ── #}
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="dash-form-group">
+      <label class="dash-form-label">
+        {{ form.duree_jours.label }}
+        <span class="required-star">*</span>
+      </label>
+
+      <div class="renew-options">
+        {% for choice in form.duree_jours %}
+        <label class="renew-option{% if forloop.counter == 2 %} renew-option-featured{% endif %}">
+          {{ choice.tag }}
+          <span class="renew-option-dot"></span>
+          <div class="renew-option-content">
+            <span class="renew-option-label">{{ choice.choice_label }}</span>
+            {% if forloop.counter == 2 %}
+              <span class="renew-option-badge">Recommandé</span>
+            {% endif %}
+          </div>
+        </label>
+        {% endfor %}
       </div>
-      <div>
-        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Expiration actuelle</div>
-        <div class="fw-medium" style="{% if licence.jours_restants < 0 %}color:var(--color-danger);{% endif %}">
-          {{ licence.date_expiration|date:"d/m/Y" }}
-          {% if licence.jours_restants < 0 %}<span style="font-size:0.75rem;">(expirée)</span>{% endif %}
-        </div>
-      </div>
+
+      {% if form.duree_jours.errors %}
+        <p class="input-error">{{ form.duree_jours.errors.0 }}</p>
+      {% endif %}
     </div>
 
-    <form method="post" novalidate>
-      {% csrf_token %}
+    <div class="renew-form-footer">
+      <button type="submit" class="dash-btn">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Valider l'extension
+      </button>
+      <a href="/licences/" class="dash-btn dash-btn-secondary">Annuler</a>
+    </div>
+  </form>
 
-      <div class="form-group" style="margin-bottom:var(--space-6);">
-        <label class="form-label">{{ form.duree_jours.label }} <span style="color:var(--color-danger);">*</span></label>
-        <div style="display:flex; flex-direction:column; gap:var(--space-3); margin-top:var(--space-2);">
-          {% for choice in form.duree_jours %}
-          <label style="display:flex; align-items:center; gap:var(--space-3); padding:12px 16px; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; transition:border-color .15s;"
-                 onmouseover="this.style.borderColor='var(--color-primary)'"
-                 onmouseout="this.style.borderColor='var(--color-border)'">
-            {{ choice.tag }}
-            <span style="font-size:0.9rem; font-weight:500;">{{ choice.choice_label }}</span>
-          </label>
-          {% endfor %}
-        </div>
-        {% if form.duree_jours.errors %}
-          <div style="color:var(--color-danger); font-size:0.78rem; margin-top:4px;">{{ form.duree_jours.errors.0 }}</div>
-        {% endif %}
-      </div>
-
-      <div class="d-flex gap-3">
-        <button type="submit" class="btn-primary">Renouveler</button>
-        <a href="/licences/" class="btn-secondary">Annuler</a>
-      </div>
-    </form>
-
-  </div>
 </div>
 
 {% endblock %}

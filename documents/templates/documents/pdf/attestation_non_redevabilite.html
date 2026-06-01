@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <style>
   @page { margin: 0; size: A4; }
-  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 10pt; color: #1a1a1a; margin: 0; padding: 0; }
-  
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; margin: 0; padding: 0; }
+
   .page {
     padding: 1.5cm 2cm;
     min-height: 100%;
@@ -21,15 +21,15 @@
     justify-content: center;
     margin-bottom: 0.8cm;
     padding-bottom: 0.5cm;
-    border-bottom: 2px solid #003366;
+    border-bottom: 2.5px solid #111;
   }
   .header-left { flex: 1; text-align: left; }
   .header-center { flex: 2; text-align: center; }
   .header-right { flex: 1; text-align: right; }
-  
-  .logo-img { max-height: 45px; max-width: 80px; }
-  .etab-nom { font-size: 12pt; font-weight: bold; color: #003366; }
-  .etab-info { font-size: 8pt; color: #666; }
+
+  .logo-img { max-height: 45px; max-width: 80px; filter: grayscale(100%); }
+  .etab-nom { font-size: 13pt; font-weight: bold; color: #111; }
+  .etab-info { font-size: 9pt; color: #444; }
 
   /* Titre principal */
   .titre-doc {
@@ -41,102 +41,100 @@
     text-transform: uppercase;
     letter-spacing: 2px;
     font-weight: bold;
-    color: #003366;
+    color: #111;
     margin: 0;
     padding: 5px 15px;
-    border: 1.5px solid #003366;
+    border: 2px solid #111;
     display: inline-block;
   }
-  .annee { 
-    font-size: 10pt; 
-    color: #555; 
-    margin-top: 5px; 
+  .annee {
+    font-size: 10pt;
+    color: #333;
+    margin-top: 5px;
     font-weight: 500;
   }
   .doc-numero {
     font-size: 9pt;
-    color: #003366;
+    color: #111;
     font-weight: bold;
     margin-top: 4px;
   }
 
   /* Corps du document */
-  .corps { 
-    line-height: 1.5; 
-    font-size: 10pt; 
+  .corps {
+    line-height: 1.5;
+    font-size: 11pt;
     margin: 0.4cm 0;
     text-align: justify;
   }
   .corps p { margin: 0.25cm 0; }
-  
+
   .eleve-nom {
     font-weight: bold;
     font-size: 12pt;
-    color: #003366;
+    color: #111;
   }
-  
+
   .classe-info {
     font-weight: bold;
-    color: #1a1a1a;
+    color: #111;
   }
 
   /* Tableau financier */
   .recap {
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    border: 1px solid #aaa;
     padding: 0.4cm 0.5cm;
     margin: 0.5cm 0;
-    background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+    background: #f5f5f5;
   }
   .recap-title {
     font-size: 9pt;
     font-weight: bold;
-    color: #003366;
+    color: #111;
     margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
   .recap table { width: 100%; border-collapse: collapse; }
   .recap td { padding: 4px 6px; font-size: 9.5pt; }
-  .recap .lbl { color: #555; text-align: left; }
-  .recap .val { text-align: right; font-weight: bold; }
-  .recap .total-row td { 
-    border-top: 1.5px solid #003366; 
-    padding-top: 6px; 
+  .recap .lbl { color: #333; text-align: left; }
+  .recap .val { text-align: right; font-weight: bold; color: #111; }
+  .recap .total-row td {
+    border-top: 2px solid #111;
+    padding-top: 6px;
     font-size: 10pt;
   }
-  .recap .solde-ok { color: #007a45; font-size: 11pt; }
-  .recap .solde-nok { color: #c0392b; font-size: 11pt; }
-  .recap .negative { color: #007a45; }
+  .recap .solde-ok { color: #111; font-size: 11pt; }
+  .recap .solde-nok { color: #111; font-size: 11pt; font-style: italic; }
+  .recap .negative { color: #111; }
 
   /* Message de confirmation */
   .confirmation-box {
-    background: linear-gradient(to right, #e8f5e9, #c8e6c9);
-    border-left: 3px solid #007a45;
+    background: #f0f0f0;
+    border: 2px solid #111;
     padding: 8px 12px;
     margin: 0.4cm 0;
-    border-radius: 0 4px 4px 0;
   }
   .confirmation-box p {
     margin: 0;
     font-weight: 500;
-    color: #007a45;
+    color: #111;
     font-size: 9.5pt;
   }
 
   /* Message d'alerte */
   .alerte-box {
-    background: linear-gradient(to right, #ffebee, #ffcdd2);
-    border-left: 3px solid #c0392b;
+    background: #ddd;
+    border: 2px solid #111;
     padding: 8px 12px;
     margin: 0.4cm 0;
-    border-radius: 0 4px 4px 0;
   }
   .alerte-box p {
     margin: 0;
-    font-weight: 500;
-    color: #c0392b;
+    font-weight: bold;
+    color: #111;
     font-size: 9.5pt;
+    font-style: italic;
   }
 
   /* Attestation footer */
@@ -144,7 +142,7 @@
     margin-top: 0.6cm;
     text-align: justify;
     font-style: italic;
-    color: #555;
+    color: #333;
     font-size: 9.5pt;
   }
 
@@ -161,33 +159,34 @@
   }
   .signature-func {
     font-size: 9pt;
-    color: #666;
+    color: #333;
     margin-bottom: 1.8cm;
   }
   .signature-line {
-    border-top: 1px solid #333;
+    border-top: 1px solid #111;
     margin-bottom: 4px;
     padding-top: 3px;
   }
   .signature-name {
     font-weight: bold;
     font-size: 10pt;
+    color: #111;
   }
   .signature-titre {
     font-size: 9pt;
-    color: #555;
+    color: #333;
     margin-top: 4px;
     font-style: italic;
   }
 
   /* Numéro document */
-  .numero { 
-    font-size: 8pt; 
-    color: #888; 
-    text-align: center; 
+  .numero {
+    font-size: 8pt;
+    color: #555;
+    text-align: center;
     margin-top: 0.6cm;
     padding-top: 0.3cm;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #ccc;
   }
 
   /* Date et lieu */
@@ -195,7 +194,7 @@
     text-align: right;
     font-size: 10pt;
     margin-top: 0.4cm;
-    color: #333;
+    color: #111;
   }
 </style>
 </head>
@@ -267,7 +266,7 @@
         {% if situation.total_reduction %}
         <tr>
           <td class="lbl">Réductions / Bourses accordées :</td>
-          <td class="val" style="color: #007a45;">- {{ situation.total_reduction|floatformat:0 }} Fcfa</td>
+          <td class="val">- {{ situation.total_reduction|floatformat:0 }} Fcfa</td>
         </tr>
         {% endif %}
         <tr>
@@ -285,11 +284,11 @@
 
     {% if reste <= 0 %}
     <div class="confirmation-box">
-      <p>✓ Cet(te) élève a <strong>réglé la totalité</strong> de ses frais scolaires et ne doit aucune somme à l'établissement au titre de l'année scolaire {{ annee_scolaire }}.</p>
+      <p>&#10003; Cet(te) élève a <strong>réglé la totalité</strong> de ses frais scolaires et ne doit aucune somme à l'établissement au titre de l'année scolaire {{ annee_scolaire }}.</p>
     </div>
     {% else %}
     <div class="alerte-box">
-      <p>⚠ Attention : Cet(te) élève présente un <strong>solde restant dû de {{ reste|floatformat:0 }} Fcfa</strong> au titre de l'année scolaire {{ annee_scolaire }}.</p>
+      <p>&#9888; Attention : Cet(te) élève présente un <strong>solde restant dû de {{ reste|floatformat:0 }} Fcfa</strong> au titre de l'année scolaire {{ annee_scolaire }}.</p>
     </div>
     {% endif %}
 

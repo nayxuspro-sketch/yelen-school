@@ -533,3 +533,91 @@ class EvenementParcours(BaseModel):
 
     def __str__(self):
         return f"{self.get_type_evenement_display()} — {self.eleve} — {self.annee_scolaire}"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 4. TRANSFERT INTER-ÉTABLISSEMENTS
+# ═══════════════════════════════════════════════════════════════════
+
+class TransfertEleve(BaseModel):
+    """
+    Demande de transfert d'un élève vers un autre établissement.
+
+    Workflow :
+      EN_ATTENTE → APPROUVE (inscription marquée ABANDON + EvenementParcours)
+                 → REFUSE   (inscription inchangée)
+    Un transfert APPROUVE génère le dossier PDF téléchargeable.
+    """
+
+    class StatutChoices(models.TextChoices):
+        EN_ATTENTE = 'EN_ATTENTE', _('En attente')
+        APPROUVE   = 'APPROUVE',   _('Approuvé')
+        REFUSE     = 'REFUSE',     _('Refusé')
+
+    inscription = models.ForeignKey(
+        Inscription,
+        on_delete=models.CASCADE,
+        related_name='transferts',
+        verbose_name=_("Inscription concernée"),
+    )
+
+    etablissement_destination = models.CharField(
+        max_length=250,
+        verbose_name=_("Établissement de destination"),
+    )
+
+    motif = models.TextField(
+        blank=True,
+        default='',
+        verbose_name=_("Motif du transfert"),
+    )
+
+    statut = models.CharField(
+        max_length=20,
+        choices=StatutChoices.choices,
+        default=StatutChoices.EN_ATTENTE,
+        verbose_name=_("Statut"),
+    )
+
+    date_demande = models.DateField(
+        default=date.today,
+        verbose_name=_("Date de la demande"),
+    )
+
+    date_traitement = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("Date de traitement"),
+    )
+
+    demandeur = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transferts_demandes',
+        verbose_name=_("Demandé par"),
+    )
+
+    traite_par = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transferts_traites',
+        verbose_name=_("Traité par"),
+    )
+
+    notes_admin = models.TextField(
+        blank=True,
+        default='',
+        verbose_name=_("Notes administratives"),
+    )
+
+    class Meta:
+        verbose_name = _("Transfert inter-établissements")
+        verbose_name_plural = _("Transferts inter-établissements")
+        ordering = ['-date_demande']
+
+    def __str__(self):
+        return f"Transfert {self.inscription.eleve} → {self.etablissement_destination} ({self.get_statut_display()})"

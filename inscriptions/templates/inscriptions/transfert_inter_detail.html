@@ -1,0 +1,187 @@
+{% extends "core/base.html" %}
+{% load humanize %}
+
+{% block title %}Transfert — {{ transfert.inscription.eleve.get_nom_complet }}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'inscriptions:transfert_inter_list' %}"
+       style="font-size:0.8rem; color:var(--color-text-muted); text-decoration:none; display:flex; align-items:center; gap:4px; margin-bottom:var(--space-1);">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Retour liste
+    </a>
+    <h1 class="page-title">Dossier de transfert</h1>
+    <p class="page-subtitle">
+      {{ transfert.inscription.eleve.nom }} {{ transfert.inscription.eleve.prenom }}
+      — {{ transfert.inscription.classe.nom }}
+      — {{ transfert.inscription.annee_scolaire.libelle }}
+    </p>
+  </div>
+  {% if transfert.statut == 'APPROUVE' %}
+  <a href="{% url 'inscriptions:transfert_inter_dossier_pdf' pk=transfert.pk %}"
+     target="_blank" class="btn-primary">
+    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px; vertical-align:middle;">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+    </svg>
+    Dossier PDF
+  </a>
+  {% endif %}
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-5); margin-bottom:var(--space-5);">
+
+  {# Infos transfert #}
+  <div class="card animate-fade-up" style="padding:var(--space-5);">
+    <div class="card-header" style="margin-bottom:var(--space-4);">
+      <span class="card-title">Informations du transfert</span>
+    </div>
+    <dl style="display:grid; grid-template-columns:auto 1fr; gap:var(--space-2) var(--space-4); font-size:0.875rem;">
+      <dt style="color:var(--color-text-muted);">Statut</dt>
+      <dd>
+        {% if transfert.statut == 'EN_ATTENTE' %}
+          <span class="badge badge-warning">En attente</span>
+        {% elif transfert.statut == 'APPROUVE' %}
+          <span class="badge badge-success">Approuvé</span>
+        {% else %}
+          <span class="badge badge-danger">Refusé</span>
+        {% endif %}
+      </dd>
+      <dt style="color:var(--color-text-muted);">Destination</dt>
+      <dd class="fw-semibold">{{ transfert.etablissement_destination }}</dd>
+      <dt style="color:var(--color-text-muted);">Motif</dt>
+      <dd>{{ transfert.motif|default:"—" }}</dd>
+      <dt style="color:var(--color-text-muted);">Date demande</dt>
+      <dd>{{ transfert.date_demande|date:"d/m/Y" }}</dd>
+      <dt style="color:var(--color-text-muted);">Demandé par</dt>
+      <dd>{{ transfert.demandeur.get_full_name|default:transfert.demandeur.username|default:"—" }}</dd>
+      {% if transfert.date_traitement %}
+      <dt style="color:var(--color-text-muted);">Traité le</dt>
+      <dd>{{ transfert.date_traitement|date:"d/m/Y" }}</dd>
+      <dt style="color:var(--color-text-muted);">Traité par</dt>
+      <dd>{{ transfert.traite_par.get_full_name|default:"—" }}</dd>
+      {% endif %}
+      {% if transfert.notes_admin %}
+      <dt style="color:var(--color-text-muted);">Notes</dt>
+      <dd>{{ transfert.notes_admin }}</dd>
+      {% endif %}
+    </dl>
+  </div>
+
+  {# Situation financière #}
+  <div class="card animate-fade-up delay-1" style="padding:var(--space-5);">
+    <div class="card-header" style="margin-bottom:var(--space-4);">
+      <span class="card-title">Situation financière</span>
+    </div>
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr; margin-bottom:var(--space-4);">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-green">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <div class="stat-value" style="color:#10b981; font-size:0.9rem;">{{ total_paye|floatformat:0 }}</div>
+          <div class="stat-label">Payé (FCFA)</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(239,68,68,0.12);">
+          <svg fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <div class="stat-value" style="color:#ef4444; font-size:0.9rem;">{{ total_du|floatformat:0 }}</div>
+          <div class="stat-label">Restant dû (FCFA)</div>
+        </div>
+      </div>
+    </div>
+    {% if total_du > 0 %}
+    <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:var(--space-3); font-size:0.8rem; color:#991b1b;">
+      Solde impayé de {{ total_du|floatformat:0 }} FCFA. Régularisation recommandée avant le transfert.
+    </div>
+    {% else %}
+    <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:var(--space-3); font-size:0.8rem; color:#166534;">
+      Aucun solde impayé. Situation financière régulière.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{# Historique inscriptions #}
+<div class="card animate-fade-up delay-2" style="margin-bottom:var(--space-5);">
+  <div class="card-header" style="padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--color-border);">
+    <span class="card-title">Cursus scolaire</span>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Année scolaire</th>
+          <th>Classe</th>
+          <th>Cycle</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ins in inscriptions_historique %}
+        <tr {% if ins.pk == transfert.inscription.pk %}style="background:rgba(43,93,227,0.06);"{% endif %}>
+          <td>{{ ins.annee_scolaire.libelle }}</td>
+          <td class="fw-semibold">{{ ins.classe.nom }}</td>
+          <td class="text-secondary">{{ ins.classe.cycle.nom|default:"—" }}</td>
+          <td>
+            {% if ins.statut == 'ABANDON' %}
+              <span class="badge badge-danger">{{ ins.get_statut_display }}</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ ins.get_statut_display }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-muted" style="text-align:center;">Aucun historique.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Actions (Directeur / Super Admin seulement, si EN_ATTENTE) #}
+{% if can_approve and transfert.statut == 'EN_ATTENTE' %}
+<div class="card animate-fade-up delay-3" style="padding:var(--space-5);">
+  <div class="card-header" style="margin-bottom:var(--space-4);">
+    <span class="card-title">Décision</span>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+    <form method="post" action="{% url 'inscriptions:transfert_inter_approuver' pk=transfert.pk %}"
+          onsubmit="return confirm('Approuver ce transfert ? L\'élève sera marqué(e) Abandon.')">
+      {% csrf_token %}
+      <div class="form-group" style="margin-bottom:var(--space-3);">
+        <label class="input-label">Notes administratives (optionnel)</label>
+        <textarea name="notes_admin" class="input" rows="2" style="width:100%; resize:vertical;"></textarea>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px; vertical-align:middle;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Approuver le transfert
+      </button>
+    </form>
+    <form method="post" action="{% url 'inscriptions:transfert_inter_refuser' pk=transfert.pk %}"
+          onsubmit="return confirm('Refuser ce transfert ?')">
+      {% csrf_token %}
+      <div class="form-group" style="margin-bottom:var(--space-3);">
+        <label class="input-label">Motif du refus</label>
+        <textarea name="notes_admin" class="input" rows="2" style="width:100%; resize:vertical;" placeholder="Raison du refus…"></textarea>
+      </div>
+      <button type="submit" class="btn-secondary" style="width:100%; color:#ef4444; border-color:#ef4444;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px; vertical-align:middle;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Refuser le transfert
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

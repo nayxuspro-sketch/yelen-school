@@ -1,12 +1,44 @@
 {% extends "pedagogie/pdf/bulletin_base.html" %}
 {% load signataire_tags %}
 
+{% block extra_styles %}
+<style>
+    @page {
+        size: A4;
+        margin: 1cm 1.5cm;
+        @bottom-right { content: "Page " counter(page) " sur " counter(pages); font-size: 6pt; color: #555; }
+        @bottom-left { content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }} — Système de Gestion Scolaire"; font-size: 6pt; color: #555; }
+    }
+    body { font-size: 9pt; line-height: 1.15; }
+    .header { padding-bottom: 3pt; margin-bottom: 5pt; }
+    .school-info h1 { font-size: 13pt; }
+    .school-info p { font-size: 7pt; margin: 0; }
+    .document-title { padding: 3pt 8pt; margin-bottom: 5pt; }
+    .document-title h2 { font-size: 10pt; }
+    .document-title p { font-size: 8pt; margin: 1pt 0 0; }
+    .student-box { margin-bottom: 5pt; padding: 3pt 8pt; gap: 6pt; }
+    .info-label { font-size: 7pt; }
+    .info-value { font-size: 9pt; }
+    .info-group { margin-bottom: 1pt; }
+    table { margin-bottom: 4pt; }
+    th { padding: 3pt 5pt; font-size: 7pt; }
+    td { padding: 2pt 5pt; font-size: 8pt; }
+    .recap-batch { margin-top: 5pt !important; padding: 5pt 8pt !important; }
+    .recap-batch .info-label { font-size: 7pt; }
+    .recap-batch .info-value { font-size: 9pt !important; font-weight: bold; }
+    .recap-batch td { padding: 2pt 4pt !important; border: none; }
+    .commentaire-block { margin-top: 3pt !important; margin-bottom: 3pt !important; padding: 3pt 8pt !important; }
+    .footer-sig { margin-top: 5pt; }
+    .sig-title { margin-bottom: 18pt; }
+</style>
+{% endblock %}
+
 {% block pdf_content %}
     {% for data in students_data %}
         <div class="bulletin-page" style="{% if not forloop.last %}page-break-after: always;{% endif %}">
             <div class="document-title">
                 <h2>BULLETIN DE NOTES - {{ trimestre.nom }}</h2>
-                <p style="margin-top: 5pt; font-size: 9pt; color: #000000;">Année Scolaire : {{ trimestre.annee_scolaire.libelle }}</p>
+                <p>Année Scolaire : {{ trimestre.annee_scolaire.libelle }}</p>
             </div>
 
             <div class="student-box">
@@ -35,61 +67,55 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 30%;">Matières</th>
-                        <th style="text-align: center; width: 8%;">Coef</th>
-                        <th style="text-align: center; width: 13%;">Moyenne /20</th>
-                        <th style="text-align: center; width: 8%;">Rang</th>
-                        <th style="width: 20%;">Appréciation</th>
-                        <th style="width: 21%;">Professeur</th>
+                        <th style="width:30%;">Matières</th>
+                        <th style="text-align:center; width:7%;">Coef</th>
+                        <th style="text-align:center; width:12%;">Moy./20</th>
+                        <th style="text-align:center; width:8%;">Rang</th>
+                        <th style="width:20%;">Appréciation</th>
+                        <th style="width:23%;">Professeur</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for result in data.resultats_annotes %}
                     <tr{% if result.dispense %} style="opacity:.65;"{% endif %}>
                         <td><strong>{{ result.enseignement.matiere.nom }}</strong></td>
-                        <td style="text-align: center;">{{ result.coefficient_utilise|floatformat:0 }}</td>
+                        <td style="text-align:center;">{{ result.coefficient_utilise|floatformat:0 }}</td>
                         <td class="moyenne-col">
-                            {% if result.dispense %}<em style="color:#000000; font-size:8pt;">Dispensé</em>{% else %}{{ result.moyenne }}{% endif %}
+                            {% if result.dispense %}<em style="color:#555;">Dispensé</em>{% else %}{{ result.moyenne }}{% endif %}
                         </td>
-                        <td style="text-align: center;">{% if result.dispense %}-{% elif result.rang %}{{ result.rang }}{% if result.rang == 1 %}er{% else %}e{% endif %}/{{ data.nb_eleves }}{% else %}-{% endif %}</td>
-                        <td style="font-size: 8pt; font-style: italic; color:{% if result.appreciation and not result.dispense %}{{ result.appreciation.couleur }}{% else %}#000000{% endif %};">
+                        <td style="text-align:center;">{% if result.dispense %}-{% elif result.rang %}{{ result.rang }}{% if result.rang == 1 %}er{% else %}e{% endif %}/{{ data.nb_eleves }}{% else %}-{% endif %}</td>
+                        <td style="font-style:italic; color:#555;">
                             {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle }}{% else %}-{% endif %}
                         </td>
-                        <td style="font-size: 8pt;">
-                            {% if result.enseignement.personnel %}
-                                {{ result.enseignement.personnel.nom|upper }} {{ result.enseignement.personnel.prenom }}
-                            {% else %}-{% endif %}
+                        <td>
+                            {% if result.enseignement.personnel %}{{ result.enseignement.personnel.nom|upper }} {{ result.enseignement.personnel.prenom }}{% else %}-{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
 
                     {% if data.sanctions_conduite %}
-                    <!-- ── Conduite ── -->
                     <tr>
-                        <td colspan="6" style="padding:0; border-top:1pt solid #cbd5e1;">
-                            <table style="margin:0; border:none; width:100%; font-size:7.5pt;">
-                                <tr style="background:#f8fafc;">
-                                    <td colspan="4" style="padding:2pt 6pt; font-weight:700; font-size:7pt;
-                                                           text-transform:uppercase; letter-spacing:.06em; color:#000000;
-                                                           border-bottom:0.5pt solid #e2e8f0;">
+                        <td colspan="6" style="padding:0; border-top:1pt solid #ccc;">
+                            <table style="margin:0; border:none; width:100%; font-size:7pt;">
+                                <tr style="background:#ebebeb;">
+                                    <td colspan="4" style="padding:2pt 6pt; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#111; border-bottom:0.5pt solid #ccc;">
                                         Conduite
                                     </td>
                                 </tr>
-                                <tr style="background:#f8fafc; font-size:6.5pt; color:#000000;">
-                                    <th style="width:25%; text-align:left; padding:1.5pt 6pt; font-weight:600; border-bottom:0.5pt solid #e2e8f0;">Type</th>
-                                    <th style="width:14%; text-align:center; padding:1.5pt 6pt; font-weight:600; border-bottom:0.5pt solid #e2e8f0;">Date</th>
-                                    <th style="width:11%; text-align:center; padding:1.5pt 6pt; font-weight:600; border-bottom:0.5pt solid #e2e8f0;">Points</th>
-                                    <th style="width:50%; text-align:left; padding:1.5pt 6pt; font-weight:600; border-bottom:0.5pt solid #e2e8f0;">Appréciation</th>
+                                <tr style="background:#ebebeb;">
+                                    <th style="width:25%; text-align:left; padding:1pt 5pt; border-bottom:0.5pt solid #ccc;">Type</th>
+                                    <th style="width:14%; text-align:center; padding:1pt 5pt; border-bottom:0.5pt solid #ccc;">Date</th>
+                                    <th style="width:11%; text-align:center; padding:1pt 5pt; border-bottom:0.5pt solid #ccc;">Points</th>
+                                    <th style="width:50%; text-align:left; padding:1pt 5pt; border-bottom:0.5pt solid #ccc;">Appréciation</th>
                                 </tr>
                                 {% for s in data.sanctions_conduite %}
                                 <tr>
-                                    <td style="padding:2pt 6pt; border-bottom:0.5pt solid #f1f5f9;">{{ s.type_sanction.libelle }}</td>
-                                    <td style="text-align:center; padding:2pt 6pt; border-bottom:0.5pt solid #f1f5f9; color:#000000;">{{ s.date_sanction|date:"d/m/Y" }}</td>
-                                    <td style="text-align:center; padding:2pt 6pt; border-bottom:0.5pt solid #f1f5f9; font-weight:700;
-                                               color:{% if s.points > 0 %}#16a34a{% elif s.points < 0 %}#dc2626{% else %}#000000{% endif %};">
+                                    <td style="padding:1pt 5pt; border-bottom:0.5pt solid #ccc;">{{ s.type_sanction.libelle }}</td>
+                                    <td style="text-align:center; padding:1pt 5pt; border-bottom:0.5pt solid #ccc; color:#555;">{{ s.date_sanction|date:"d/m/Y" }}</td>
+                                    <td style="text-align:center; padding:1pt 5pt; border-bottom:0.5pt solid #ccc; font-weight:700;">
                                         {% if s.points != 0 %}{% if s.points > 0 %}+{% endif %}{{ s.points }}{% else %}—{% endif %}
                                     </td>
-                                    <td style="padding:2pt 6pt; border-bottom:0.5pt solid #f1f5f9; font-style:italic; color:#374151;">
+                                    <td style="padding:1pt 5pt; border-bottom:0.5pt solid #ccc; font-style:italic; color:#555;">
                                         {{ s.appreciation_conduite|default:"—" }}
                                     </td>
                                 </tr>
@@ -101,66 +127,54 @@
                 </tbody>
             </table>
 
-            <div style="margin-top: 20pt; border: 1.5pt solid #00A86B; border-radius: 4pt; padding: 10pt; background: #f0fdf4;">
+            <div class="recap-batch" style="border:1.5pt solid #111; background:#f5f5f5;">
                 <table style="width:100%; border-collapse:collapse; margin-bottom:0;">
                     <tr>
-                        <td style="text-align:center; padding:4pt; border:none; width:{% if data.appreciation_generale %}25%{% else %}33%{% endif %};">
+                        <td style="text-align:center; width:{% if data.appreciation_generale %}25%{% else %}33%{% endif %};">
                             <div class="info-label">Total Points</div>
                             <div class="info-value"><strong>{{ data.mg.total_points }}</strong> / {{ data.mg.total_coefficients }}</div>
                         </td>
-                        <td style="text-align:center; padding:4pt; border:none; width:{% if data.appreciation_generale %}25%{% else %}34%{% endif %};">
+                        <td style="text-align:center; width:{% if data.appreciation_generale %}25%{% else %}34%{% endif %};">
                             <div class="info-label">Moyenne Générale</div>
-                            <div class="info-value" style="color:#00A86B; font-size:14pt;"><strong>{{ data.mg.moyenne }} / 20</strong></div>
+                            <div class="info-value"><strong>{{ data.mg.moyenne }} / 20</strong></div>
                         </td>
-                        <td style="text-align:center; padding:4pt; border:none; width:{% if data.appreciation_generale %}25%{% else %}33%{% endif %};">
+                        <td style="text-align:center; width:{% if data.appreciation_generale %}25%{% else %}33%{% endif %};">
                             <div class="info-label">Rang</div>
                             <div class="info-value"><strong>{{ data.mg.rang }}{% if data.mg.rang == 1 %}er{% else %}e{% endif %}</strong> sur {{ nb_eleves }}</div>
                         </td>
                         {% if data.appreciation_generale %}
-                        <td style="text-align:center; padding:4pt; border:none; width:25%;">
+                        <td style="text-align:center; width:25%;">
                             <div class="info-label">Appréciation</div>
-                            <div class="info-value" style="color:{{ data.appreciation_generale.couleur }}; font-weight:bold;">
-                                {{ data.appreciation_generale.libelle }}
-                            </div>
+                            <div class="info-value" style="font-weight:bold; color:#111;">{{ data.appreciation_generale.libelle }}</div>
                         </td>
                         {% endif %}
                     </tr>
                     {% if moy_max_classe or moy_min_classe %}
-                    <tr style="border-top:1pt solid #e2e8f0;">
-                        <td style="text-align:center; padding:3pt 6pt; border:none;">
-                            <div class="info-label">Plus forte moyenne</div>
-                            <div class="info-value" style="color:#16a34a;">
-                                <strong>{{ moy_max_classe|floatformat:2 }}</strong>
-                            </div>
+                    <tr style="border-top:1pt solid #ccc;">
+                        <td style="text-align:center;">
+                            <div class="info-label">Plus forte moy.</div>
+                            <div class="info-value"><strong>{{ moy_max_classe|floatformat:2 }}</strong></div>
                         </td>
-                        <td style="text-align:center; padding:3pt 6pt; border:none;">
-                            <div class="info-label">Moyenne de la classe</div>
-                            <div class="info-value" style="color:#2563eb;">
-                                <strong>{{ moy_avg_classe|floatformat:2 }}</strong>
-                            </div>
+                        <td style="text-align:center;">
+                            <div class="info-label">Moy. de la classe</div>
+                            <div class="info-value"><strong>{{ moy_avg_classe|floatformat:2 }}</strong></div>
                         </td>
-                        <td style="text-align:center; padding:3pt 6pt; border:none;">
-                            <div class="info-label">Plus faible moyenne</div>
-                            <div class="info-value" style="color:#dc2626;">
-                                <strong>{{ moy_min_classe|floatformat:2 }}</strong>
-                            </div>
+                        <td style="text-align:center;">
+                            <div class="info-label">Plus faible moy.</div>
+                            <div class="info-value"><strong>{{ moy_min_classe|floatformat:2 }}</strong></div>
                         </td>
-                        {% if data.appreciation_generale %}<td style="border:none;"></td>{% endif %}
+                        {% if data.appreciation_generale %}<td></td>{% endif %}
                     </tr>
                     {% endif %}
                 </table>
             </div>
 
             {% if data.commentaire_eleve %}
-            <div style="margin-bottom:8pt; padding:6pt 10pt;
-                        border:1pt solid #e2e8f0; border-left:3pt solid #00A86B;
-                        border-radius:3pt; background:#f8fafc;">
-                <div style="font-size:7pt; font-weight:700; text-transform:uppercase;
-                            letter-spacing:.05em; color:#00A86B; margin-bottom:3pt;">
+            <div class="commentaire-block" style="border:1pt solid #ccc; border-left:3pt solid #111; background:#f5f5f5;">
+                <div style="font-size:7pt; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#111; margin-bottom:2pt;">
                     Appréciation du Conseil des Professeurs
                 </div>
-                <p style="margin:0; font-size:8.5pt; color:#1e293b; line-height:1.55;
-                          font-style:italic;">{{ data.commentaire_eleve }}</p>
+                <p style="margin:0; font-size:8pt; color:#000; line-height:1.4; font-style:italic;">{{ data.commentaire_eleve }}</p>
             </div>
             {% endif %}
 

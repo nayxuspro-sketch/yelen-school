@@ -2,139 +2,30 @@
 
 {% block title %}Emploi du temps — {{ classe.nom }} — YELEN SCHOOL{% endblock %}
 
-{% block extra_head %}
-<style>
-  .seance-card:hover .seance-delete-btn { opacity: 1 !important; }
-  .print-only { display: none; }
-
-  @media print {
-    @page { size: A4 landscape; margin: 8mm 8mm; }
-
-    /* Réduire la base rem pour tout compresser proportionnellement */
-    html { font-size: 8px !important; }
-
-    /* Masquer les éléments de navigation et de saisie */
-    .sidebar,
-    .page-header,
-    .no-print,
-    .seance-delete-btn            { display: none !important; }
-
-    /* Mise à plat du layout */
-    .app-layout  { display: block !important; }
-    .content     { padding: 0 !important; margin: 0 !important;
-                   overflow: visible !important; width: 100% !important; }
-    body         { background: #fff !important; color: #000 !important; }
-
-    /* Entête compact */
-    .print-only  { display: block !important; margin-bottom: 4mm; padding-bottom: 3mm;
-                   border-bottom: 1.5px solid #00A86B; }
-    .print-only div { font-size: 9px !important; }
-    .print-only .print-title { font-size: 11px !important; font-weight: 700; }
-
-    /* Forcer la visibilité de la grille */
-    #grille-edt,
-    #grille-edt .card             { display: block !important; opacity: 1 !important;
-                                    transform: none !important; }
-
-    /* Grille : 6 colonnes, sans marges */
-    #grille-edt > div {
-      display: grid !important;
-      grid-template-columns: repeat(6, 1fr) !important;
-      gap: 3px !important;
-      margin-bottom: 0 !important;
-    }
-
-    /* Cards jours : zeroing du padding natif (1.5rem → 0) */
-    #grille-edt .card {
-      padding: 0 !important;
-      min-height: 0 !important;
-      border: 1px solid #bbb !important;
-      background: #fff !important;
-      box-shadow: none !important;
-      border-radius: 3px !important;
-    }
-
-    /* En-tête du jour */
-    #grille-edt .card-header {
-      padding: 3px 5px !important;
-      margin-bottom: 0 !important;
-      padding-bottom: 0 !important;
-      border-bottom: 1px solid #ddd !important;
-      background: #f2f2f2 !important;
-    }
-    #grille-edt .card-header .card-title {
-      font-size: 9px !important;
-      font-weight: 700 !important;
-      color: #000 !important;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    /* Zone des séances */
-    #grille-edt .card > div { padding: 3px !important; }
-
-    /* Cards séances */
-    .seance-card {
-      display: block !important;
-      background: #f7f7f7 !important;
-      border-left: 2px solid #00A86B !important;
-      border-radius: 2px !important;
-      padding: 3px 4px !important;
-      margin-bottom: 2px !important;
-      overflow: hidden !important;
-    }
-
-    /* Matière */
-    .seance-card .fw-semibold {
-      font-size: 8px !important;
-      color: #000 !important;
-      margin-bottom: 1px !important;
-    }
-
-    /* Heure */
-    .seance-heure {
-      font-size: 8px !important;
-      font-weight: 700 !important;
-      color: #007A4D !important;
-      margin-bottom: 1px !important;
-    }
-    .seance-heure svg { display: none !important; }
-
-    /* Salle + Enseignant */
-    .seance-meta {
-      font-size: 7px !important;
-      color: #555 !important;
-      margin-bottom: 0 !important;
-    }
-    .seance-meta svg { display: none !important; }
-
-    /* Jour vide */
-    #grille-edt .text-muted { font-size: 8px !important; color: #aaa !important; }
-  }
-</style>
-{% endblock %}
-
 {% block content %}
 
-<div class="page-header animate-fade-up">
-  <div class="d-flex align-center gap-4">
-    <a href="{% url 'viescolaire:conseil_list' %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+{# ── En-tête ── #}
+<div class="dash-section-header animate-fade-up no-print">
+  <div class="dash-section-title">
+    <a href="{% url 'viescolaire:emploi_du_temps_index' %}" class="btn-icon" title="Retour">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+    </div>
     <div>
-      <h1 class="page-title">Emploi du temps — {{ classe.nom }}</h1>
-      <p class="page-subtitle">
-        {% if annee %}{{ annee.libelle }}{% else %}Aucune année scolaire active{% endif %}
-      </p>
+      <h1>Emploi du temps</h1>
+      <p>{% if annee %}{{ classe.nom }} · {{ annee.libelle }}{% else %}Aucune année scolaire active{% endif %}</p>
     </div>
   </div>
-
-  <div class="d-flex gap-2 align-center">
+  <div class="dash-section-actions">
     {% if annees %}
-    <form method="get" class="no-print">
-      <select name="annee" class="form-control" style="width:auto;" onchange="this.form.submit()">
+    <form method="get" class="edt-toolbar">
+      <select name="annee" class="dash-input" onchange="this.form.submit()">
         {% for a in annees %}
         <option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>{{ a.libelle }}</option>
         {% endfor %}
@@ -142,183 +33,193 @@
     </form>
     {% endif %}
     {% if annee %}
-    <a href="{% url 'viescolaire:emploi_du_temps_pdf' classe.pk %}{% if annee %}?annee={{ annee.pk }}{% endif %}"
-       class="btn-secondary" target="_blank" style="display:flex; align-items:center; gap:0.4rem;">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/>
+    <button type="button" class="dash-btn dash-btn-secondary"
+            hx-get="{% url 'viescolaire:edt_generer' classe.pk %}?annee={{ annee.pk }}"
+            hx-target="#edt-gen-container"
+            hx-swap="innerHTML">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
       </svg>
-      Télécharger PDF
+      Générer automatiquement
+    </button>
+    <a href="{% url 'viescolaire:emploi_du_temps_pdf' classe.pk %}?annee={{ annee.pk }}"
+       class="dash-btn dash-btn-secondary" target="_blank">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <polyline stroke-linecap="round" stroke-linejoin="round" points="6,9 6,2 18,2 18,9"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      PDF
     </a>
     {% endif %}
   </div>
 </div>
 
-{% if not annee %}
-<div class="card animate-fade-up" style="padding:var(--space-6); text-align:center;">
-  <p class="text-muted">Aucune année scolaire active. Configurez-en une dans les paramètres.</p>
+<div id="edt-gen-container"></div>
+
+{# ── En-tête impression seulement ── #}
+<div class="edt-print-header">
+  <div>
+    <strong>YELEN SCHOOL</strong>
+    <div>Emploi du temps</div>
+  </div>
+  <div>
+    <strong>{{ classe.nom }}</strong>
+    {% if annee %}<div>{{ annee.libelle }}</div>{% endif %}
+  </div>
 </div>
+
+{# ── État : pas d'année ── #}
+{% if not annee %}
+<div class="dash-card animate-fade-up">
+  <div class="dash-empty-state">
+    <div class="dash-empty-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+    </div>
+    <h3 class="dash-empty-title">Aucune année scolaire active</h3>
+    <p class="dash-empty-text">Configurez une année scolaire dans les paramètres.</p>
+  </div>
+</div>
+
 {% else %}
 
-<!-- Entête visible uniquement à l'impression -->
-<div class="print-only">
-  <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-    <div>
-      <div class="print-title">YELEN SCHOOL</div>
-      <div>Emploi du temps</div>
-    </div>
-    <div style="text-align:right;">
-      <div class="print-title">{{ classe.nom }}</div>
-      <div>Année scolaire : {{ annee.libelle }}</div>
-    </div>
+{# ── Légende matières ── #}
+{% if grille_creneaux %}
+<div class="edt-legend animate-fade-up no-print">
+  {% for ens, color_idx in enseignements_avec_couleur %}
+  <div class="edt-legend-item">
+    <div class="edt-legend-dot edt-legend-dot-{{ color_idx }}"></div>
+    <span>{{ ens.matiere.nom }}{% if ens.personnel %} — {{ ens.personnel.get_nom_complet }}{% endif %}</span>
   </div>
+  {% endfor %}
 </div>
+{% endif %}
 
-<!-- Grille emploi du temps -->
-<div id="grille-edt" class="animate-fade-up delay-1">
-  <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:var(--space-3); margin-bottom:var(--space-6);">
-    {% for jour in grille %}
-    <div class="card" style="min-height:160px;">
-      <div class="card-header" style="background:var(--color-primary-ambient);">
-        <span class="card-title" style="font-size:0.8rem; text-transform:uppercase; letter-spacing:.06em;">
-          {{ jour.jour_label }}
-        </span>
-      </div>
-      <div style="padding:var(--space-2);">
-        {% for seance in jour.seances %}
-        <div class="seance-card" style="background:var(--color-bg-hover); border-left:3px solid var(--color-primary); border-radius:6px; padding:var(--space-2) var(--space-3); margin-bottom:var(--space-2); position:relative; overflow:hidden;">
-
-          <!-- Matière -->
-          <div class="fw-semibold" style="font-size:0.84rem; color:var(--color-text-primary); margin-bottom:5px; padding-right:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            {{ seance.enseignement.matiere.nom }}
-          </div>
-
-          <!-- Horaire — couleur primaire + gras -->
-          <div class="seance-heure" style="display:flex; align-items:center; gap:0.35rem; font-size:0.78rem; font-weight:600; color:var(--color-primary); margin-bottom:4px;">
-            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;">
-              <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 6v6l4 2"/>
-            </svg>
-            <span>{{ seance.heure_debut|time:"H\hi" }} – {{ seance.heure_fin|time:"H\hi" }}</span>
-          </div>
-
-          <!-- Salle — couleur secondaire lisible -->
-          {% if seance.salle %}
-          <div class="seance-meta" style="display:flex; align-items:center; gap:0.35rem; font-size:0.74rem; color:var(--color-text-secondary); margin-bottom:2px;">
-            <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path stroke-linecap="round" stroke-width="2" d="M9 21V12h6v9"/>
-            </svg>
-            <span>{{ seance.salle }}</span>
-          </div>
-          {% endif %}
-
-          <!-- Enseignant — secondaire, italique -->
-          {% if seance.enseignement.personnel %}
-          <div class="seance-meta" style="display:flex; align-items:center; gap:0.35rem; font-size:0.72rem; color:var(--color-text-secondary); overflow:hidden;">
-            <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-            </svg>
-            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:italic;">{{ seance.enseignement.personnel.get_full_name }}</span>
-          </div>
-          {% endif %}
-
-          <!-- Supprimer (visible au survol) -->
-          <form method="post" action="{% url 'viescolaire:seance_delete' seance.pk %}"
-                class="seance-delete-btn" style="position:absolute; top:5px; right:5px; opacity:0; transition:opacity .15s;">
-            {% csrf_token %}
-            <button type="submit" title="Supprimer"
-                    style="background:none; border:none; cursor:pointer; color:var(--color-danger); padding:2px; line-height:0;"
-                    onclick="return confirm('Supprimer cette séance ?')">
-              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </form>
-        </div>
-        {% empty %}
-        <p class="text-muted" style="font-size:0.75rem; text-align:center; padding:var(--space-3) 0;">—</p>
+{# ── Grille horaire ── #}
+{% if grille_creneaux %}
+<div class="edt-card animate-fade-up delay-1">
+  <div class="edt-scroll">
+    <table class="edt-table">
+      <thead>
+        <tr>
+          <th>Horaire</th>
+          {% for jour_label in jours_labels %}
+          <th>{{ jour_label }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in grille_creneaux %}
+        <tr>
+          <td>
+            <div class="edt-time">
+              <span class="edt-time-start">{{ ligne.heure_debut|time:"H:i" }}</span>
+              <span class="edt-time-end">{{ ligne.heure_fin|time:"H:i" }}</span>
+            </div>
+          </td>
+          {% for jour_data in ligne.jours %}
+          <td class="edt-cell">
+            {% if jour_data.seance %}
+            <div class="edt-course edt-course-{{ jour_data.color_idx }}">
+              <div class="edt-course-name">{{ jour_data.seance.enseignement.matiere.nom }}</div>
+              {% if jour_data.seance.enseignement.personnel %}
+              <span class="edt-course-meta">{{ jour_data.seance.enseignement.personnel.get_nom_complet }}</span>
+              {% endif %}
+              {% if jour_data.seance.salle %}
+              <span class="edt-course-meta">Salle {{ jour_data.seance.salle }}</span>
+              {% endif %}
+            </div>
+            {% else %}
+            <div class="edt-empty-cell">—</div>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
         {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 
-<!-- Formulaire d'ajout de séance -->
-{% if enseignements %}
-<div class="card animate-fade-up delay-2 no-print">
-  <div class="card-header">
-    <span class="card-title">Ajouter une séance</span>
+{% else %}
+<div class="dash-card animate-fade-up">
+  <div class="dash-empty-state">
+    <div class="dash-empty-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+    </div>
+    <h3 class="dash-empty-title">Aucun cours programmé</h3>
+    <p class="dash-empty-text">Ajoutez des séances ci-dessous pour voir l'emploi du temps.</p>
   </div>
-  <div style="padding:var(--space-5);">
+</div>
+{% endif %}
+
+{# ── Formulaire ajout séance ── #}
+{% if enseignements %}
+<div class="dash-card animate-fade-up delay-2 no-print">
+  <div class="edt-form-header">
+    <div class="edt-form-icon">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+      </svg>
+    </div>
+    <span class="edt-form-title">Ajouter une séance</span>
+  </div>
+  <div class="edt-form-body">
     <form method="post" action="{% url 'viescolaire:seance_create' classe.pk %}">
       {% csrf_token %}
       <input type="hidden" name="annee" value="{{ annee.pk }}">
 
-      <!-- Ligne 1 : Matière + Jour -->
-      <div class="form-grid-2" style="margin-bottom:var(--space-4);">
-        <div class="form-group">
-          <label class="input-label">
-            Matière / Enseignant <span style="color:var(--color-danger);">*</span>
-          </label>
-          <select name="enseignement" class="input select" required>
+      <div class="edt-form-grid">
+        <div class="dash-form-group">
+          <label class="dash-label">Matière / Enseignant <span class="required-star">*</span></label>
+          <select name="enseignement" class="dash-input" required>
             <option value="">— Sélectionner —</option>
             {% for e in enseignements %}
             <option value="{{ e.pk }}">{{ e.matiere.nom }}{% if e.personnel %} — {{ e.personnel.get_nom_complet }}{% endif %}</option>
             {% endfor %}
           </select>
         </div>
-        <div class="form-group">
-          <label class="input-label">
-            Jour <span style="color:var(--color-danger);">*</span>
-          </label>
-          <select name="jour" class="input select" required>
+        <div class="dash-form-group">
+          <label class="dash-label">Jour <span class="required-star">*</span></label>
+          <select name="jour" class="dash-input" required>
             <option value="">— Sélectionner —</option>
             {% for val, label in jours_choices %}
-            {% if val <= 6 %}
-            <option value="{{ val }}">{{ label }}</option>
-            {% endif %}
+            {% if val <= 6 %}<option value="{{ val }}">{{ label }}</option>{% endif %}
             {% endfor %}
           </select>
         </div>
+        <div class="dash-form-group">
+          <label class="dash-label">Heure début <span class="required-star">*</span></label>
+          <input type="time" name="heure_debut" class="dash-input" required>
+        </div>
+        <div class="dash-form-group">
+          <label class="dash-label">Heure fin <span class="required-star">*</span></label>
+          <input type="time" name="heure_fin" class="dash-input" required>
+        </div>
       </div>
 
-      <!-- Ligne 2 : Horaires + Salle + Bouton -->
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:var(--space-4); align-items:end;">
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="input-label">
-            Heure de début <span style="color:var(--color-danger);">*</span>
-          </label>
-          <input type="time" name="heure_debut" class="input" required>
+      <div class="edt-form-footer">
+        <div class="dash-form-group">
+          <label class="dash-label">Salle <span class="edt-optional">(optionnel)</span></label>
+          <input type="text" name="salle" class="dash-input" placeholder="ex : A12" maxlength="50">
         </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="input-label">
-            Heure de fin <span style="color:var(--color-danger);">*</span>
-          </label>
-          <input type="time" name="heure_fin" class="input" required>
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="input-label">
-            Salle <span style="color:var(--color-text-muted); font-weight:400; text-transform:none; letter-spacing:0;">(optionnel)</span>
-          </label>
-          <input type="text" name="salle" class="input" placeholder="ex : A12" maxlength="50">
-        </div>
-        <div>
-          <button type="submit" class="btn-primary">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Ajouter
-          </button>
-        </div>
+        <button type="submit" class="dash-btn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+          </svg>
+          Ajouter
+        </button>
       </div>
 
       {% if messages %}
       {% for msg in messages %}
       {% if msg.tags == 'error' %}
-      <div style="display:flex; align-items:center; gap:6px; margin-top:var(--space-3); padding:var(--space-3) var(--space-4); background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:8px; color:var(--color-danger,#f87171); font-size:0.82rem;">
-        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        {{ msg }}
+      <div class="dash-alert dash-alert-danger edt-msg-error">
+        <strong>{{ msg }}</strong>
       </div>
       {% endif %}
       {% endfor %}
@@ -326,11 +227,11 @@
     </form>
   </div>
 </div>
+
 {% else %}
-<div class="card animate-fade-up delay-2" style="padding:var(--space-4);">
-  <p class="text-muted" style="font-size:0.85rem;">
-    Aucun enseignement configuré pour cette classe et cette année scolaire.
-    Configurez-les d'abord dans la section <strong>Pédagogie</strong>.
+<div class="dash-card animate-fade-up delay-2 no-print">
+  <p class="dash-empty-text">
+    Aucun enseignement configuré pour cette classe. Configurez-les d'abord dans <strong>Pédagogie</strong>.
   </p>
 </div>
 {% endif %}

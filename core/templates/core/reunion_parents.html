@@ -3,6 +3,7 @@
 {% block title %}Convocation réunion parents{% endblock %}
 
 {% block content %}
+
 <div class="page-header animate-fade-up">
   <div>
     <p class="page-subtitle">Communication</p>
@@ -11,67 +12,123 @@
 </div>
 
 {% if messages %}
-{% for msg in messages %}
-<div class="alert alert-{{ msg.tags }} animate-fade-up" style="margin-bottom:var(--space-4);">{{ msg }}</div>
-{% endfor %}
+<div class="mb-4 animate-fade-up">
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+</div>
 {% endif %}
 
-<div class="card animate-fade-up" style="max-width:600px;">
-  <div style="padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--color-border);">
-    <h2 style="font-size:1rem; font-weight:600; margin:0;">Envoyer les convocations SMS</h2>
-  </div>
-  <div style="padding:var(--space-5) var(--space-6);">
-    <form method="post">
-      {% csrf_token %}
+<div class="ev-wrapper animate-fade-up">
+  <div class="ev-layout">
 
-      <div class="form-group" style="margin-bottom:var(--space-4);">
-        <label class="input-label">Date de la réunion *</label>
-        <input type="date" name="date" class="input" required>
+    <!-- Formulaire principal -->
+    <div class="bul-table-wrapper">
+      <div class="pai-sec-hd">
+        <div class="d-flex align-center gap-3">
+          <div class="pai-sec-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+          </div>
+          <span class="fw-semibold">Envoyer les convocations SMS</span>
+        </div>
       </div>
 
-      <div class="form-group" style="margin-bottom:var(--space-4);">
-        <label class="input-label">Heure *</label>
-        <input type="time" name="heure" class="input" required>
-      </div>
+      <form method="post">
+        {% csrf_token %}
 
-      <div class="form-group" style="margin-bottom:var(--space-4);">
-        <label class="input-label">Lieu *</label>
-        <input type="text" name="lieu" class="input" placeholder="ex: Salle de conférence, Cour principale…" required>
-      </div>
+        <!-- Date & Heure -->
+        <div class="ev-sec-body">
+          <div class="form-grid-2">
+            <div class="form-group mb-0">
+              <label class="input-label">Date de la réunion <span class="required-star">*</span></label>
+              <input type="date" name="date" class="input w-full" required>
+            </div>
+            <div class="form-group mb-0">
+              <label class="input-label">Heure <span class="required-star">*</span></label>
+              <input type="time" name="heure" class="input w-full" required>
+            </div>
+          </div>
+        </div>
 
-      <div class="form-group" style="margin-bottom:var(--space-4);">
-        <label class="input-label">Objet de la réunion *</label>
-        <input type="text" name="objet" class="input" placeholder="ex: Résultats du 1er trimestre, Discipline…" required>
-      </div>
+        <!-- Lieu & Objet -->
+        <div class="ev-sec-body">
+          <div class="form-grid-2">
+            <div class="form-group mb-0">
+              <label class="input-label">Lieu <span class="required-star">*</span></label>
+              <input type="text" name="lieu" class="input w-full"
+                     placeholder="Salle de conférence, Cour principale…" required>
+            </div>
+            <div class="form-group mb-0">
+              <label class="input-label">Objet <span class="required-star">*</span></label>
+              <input type="text" name="objet" class="input w-full"
+                     placeholder="Résultats du 1er trimestre, Discipline…" required>
+            </div>
+          </div>
+        </div>
 
-      <div class="form-group" style="margin-bottom:var(--space-5);">
-        <label class="input-label">Destinataires</label>
-        <select name="cibles" class="input">
-          <option value="tous">Tous les parents</option>
-          {% for c in classes %}
-          <option value="{{ c.pk }}">Classe {{ c.nom }}</option>
-          {% endfor %}
-        </select>
-      </div>
+        <!-- Destinataires -->
+        <div class="ev-sec-body ev-sec-body-last">
+          <div class="form-group mb-0">
+            <label class="input-label">Destinataires</label>
+            <select name="cibles" class="input w-full">
+              <option value="tous">Tous les parents</option>
+              {% for c in classes %}
+              <option value="{{ c.pk }}">Classe {{ c.nom }}</option>
+              {% endfor %}
+            </select>
+            <span class="form-hint">SMS envoyés aux numéros des parents/tuteurs enregistrés.</span>
+          </div>
+        </div>
 
-      <div style="display:flex; gap:var(--space-3);">
-        <button type="submit" class="btn-primary">
-          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-          </svg>
-          Envoyer les convocations
-        </button>
+        <!-- Pied -->
+        <div class="ev-form-footer">
+          <button type="submit" class="btn btn-primary">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+            Envoyer les convocations
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="bul-table-wrapper">
+      <div class="pai-sec-hd">
+        <span class="fw-semibold">Aide</span>
       </div>
-    </form>
+      <div class="ev-tip-row">
+        <span class="ev-tip-key">Date & Heure</span>
+        <span class="ev-tip-val">Indiquez la date et l'heure exactes de la réunion.</span>
+      </div>
+      <div class="ev-tip-row">
+        <span class="ev-tip-key">Lieu</span>
+        <span class="ev-tip-val">Nom de la salle ou de l'espace — inclus tel quel dans le SMS.</span>
+      </div>
+      <div class="ev-tip-row">
+        <span class="ev-tip-key">Objet</span>
+        <span class="ev-tip-val">Thème principal de la réunion (résultats, discipline, projet…).</span>
+      </div>
+      <div class="ev-tip-row">
+        <span class="ev-tip-key">Destinataires</span>
+        <span class="ev-tip-val">Tous les parents ou ceux d'une classe spécifique de l'année en cours.</span>
+      </div>
+      <div class="ev-tip-row">
+        <span class="ev-tip-key">Modèle SMS</span>
+        <span class="ev-tip-val">
+          Personnalisable dans
+          <a href="{% url 'parametres:modeles_messages' %}" class="color-primary">Paramètres → Modèles de messages</a>
+          (type : Réunion parents d'élèves).
+        </span>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<div class="card animate-fade-up" style="max-width:600px; margin-top:var(--space-5); padding:var(--space-4) var(--space-5); background:rgba(99,102,241,0.04); border-color:rgba(99,102,241,0.2);">
-  <p style="margin:0; font-size:0.82rem; color:var(--color-text-secondary);">
-    Le contenu du message SMS peut être personnalisé dans
-    <a href="{% url 'parametres:modeles_messages' %}" style="color:var(--color-primary);">Paramètres → Modèles de messages</a>
-    (type : <strong>Réunion parents d'élèves</strong>).
-  </p>
-</div>
 {% endblock %}

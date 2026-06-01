@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+/* ── Page ── */
+@page {
+  size: A4;
+  margin: 0;
+}
+body {
+  margin: 0; padding: 0;
+  width: 21cm; min-height: 29.7cm;
+  font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif;
+  font-size: 10pt;
+  color: #111;
+  background: #fff;
+}
+
+/* ── Barres encadrement ── */
+.barre-top    { height: 5pt; background: #111; }
+.barre-bottom { height: 4pt; background: #111; margin-top: 0.3cm; }
+
+/* ── Zone contenu ── */
+.page { padding: 0.5cm 1.8cm 0.4cm; }
+
+/* ── En-tête établissement ── */
+.entete {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  border-bottom: 1.5pt solid #111;
+  padding-bottom: 0.3cm;
+  margin-bottom: 0.35cm;
+}
+.entete-col        { display: table-cell; vertical-align: middle; }
+.entete-col-logo   { width: 2cm; }
+.entete-col-centre { text-align: center; padding: 0 0.4cm; }
+.entete-col-logo img { width: 1.6cm; height: 1.6cm; object-fit: contain;
+                       filter: grayscale(100%); }
+
+.entete-pays {
+  font-size: 7pt;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #555;
+  margin-bottom: 2pt;
+}
+.entete-nom {
+  font-size: 11.5pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.entete-agrement {
+  font-size: 7.5pt;
+  color: #444;
+  font-style: italic;
+  margin-top: 2pt;
+}
+.entete-type { font-size: 7.5pt; color: #444; margin-top: 1pt; }
+
+/* ── Titre document ── */
+.doc-titre {
+  text-align: center;
+  margin: 0.25cm 0 0.3cm;
+}
+.doc-titre h1 {
+  font-size: 13pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #111;
+  border-top: 1.5pt solid #111;
+  border-bottom: 1.5pt solid #111;
+  padding: 4pt 1cm;
+  display: inline-block;
+  margin: 0;
+}
+.doc-titre .annee {
+  font-size: 8.5pt;
+  color: #333;
+  font-weight: bold;
+  margin-top: 4pt;
+  letter-spacing: 0.3px;
+}
+
+/* ── Stats ── */
+.stats-bar {
+  display: table;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 8pt 0;
+  margin: 0.3cm 0 0.4cm;
+}
+.stat-cell {
+  display: table-cell;
+  background: #fff;
+  border: 1pt solid #555;
+  border-left: 3pt solid #111;
+  border-radius: 2pt;
+  padding: 5pt 8pt;
+  font-size: 8.5pt;
+  color: #111;
+  vertical-align: middle;
+  width: 33%;
+}
+.stat-cell.rouge {
+  background: #fff;
+  border-color: #555;
+  border-left-color: #111;
+}
+.stat-cell .stat-val {
+  font-size: 15pt;
+  font-weight: bold;
+  display: block;
+  line-height: 1.1;
+  color: #111;
+}
+.stat-cell.rouge .stat-val { color: #111; }
+.stat-cell .stat-lbl { font-size: 7.5pt; color: #333; }
+
+/* ── Table ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+  margin-top: 0.1cm;
+}
+thead th {
+  background: #1a1a1a;
+  color: #fff;
+  padding: 5pt 7pt;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 8pt;
+  font-weight: 600;
+}
+thead th.text-right { text-align: right; }
+tbody td {
+  padding: 4.5pt 7pt;
+  border-bottom: 0.5pt solid #ccc;
+  vertical-align: middle;
+}
+tbody tr:nth-child(even) td { background: #f2f2f2; }
+
+/* ── Ligne séparateur de classe ── */
+.tr-classe td {
+  background: #ddd;
+  border-top: 1pt solid #999;
+  border-bottom: 1pt solid #999;
+  color: #111;
+  font-weight: bold;
+  font-size: 8pt;
+  padding: 3.5pt 7pt;
+}
+
+/* ── Ligne total général ── */
+.tr-total td {
+  background: #fff;
+  font-weight: bold;
+  font-size: 9pt;
+  border-top: 2pt solid #111;
+  border-bottom: 2pt solid #111;
+  padding: 5pt 7pt;
+}
+
+/* ── Badges ── */
+.badge {
+  display: inline-block;
+  padding: 1pt 5pt;
+  border-radius: 2pt;
+  font-size: 7.5pt;
+  font-weight: 600;
+  border: 1pt solid #111;
+  color: #111;
+  background: #fff;
+}
+.badge-ok   { background: #fff; }
+.badge-warn { background: #eee; }
+
+/* ── Code exemplaire ── */
+.mono {
+  font-family: 'DejaVu Sans Mono', monospace;
+  font-size: 7.5pt;
+  background: #eeeeee;
+  padding: 1pt 4pt;
+  border-radius: 2pt;
+}
+
+.text-right { text-align: right; }
+.fw-bold { font-weight: bold; }
+
+/* ── Pied de page ── */
+.footer {
+  margin-top: 0.4cm;
+  display: table;
+  width: 100%;
+  border-top: 0.5pt solid #999;
+  padding-top: 4pt;
+  font-size: 7.5pt;
+  color: #666;
+}
+.footer-left  { display: table-cell; text-align: left; }
+.footer-right { display: table-cell; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="barre-top"></div>
+
+<div class="page">
+
+  <!-- En-tête établissement -->
+  <div class="entete">
+    <div class="entete-col entete-col-logo">
+      {% if logo_url %}
+      <img src="{{ logo_url }}" alt="Logo">
+      {% endif %}
+    </div>
+    <div class="entete-col entete-col-centre">
+      <div class="entete-pays">Burkina Faso</div>
+      <div class="entete-nom">
+        {% if identite %}{{ identite.nom_etablissement }}{% elif etab %}{{ etab.nom }}{% endif %}
+      </div>
+      {% if identite and identite.numero_agrement_mena %}
+      <div class="entete-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</div>
+      {% endif %}
+      {% if identite %}
+      <div class="entete-type">{{ identite.get_type_etablissement_display }}</div>
+      {% endif %}
+    </div>
+    <div class="entete-col" style="width:2cm; text-align:right; font-size:7pt; color:#555;">
+      Imprimé le<br>{{ today }}
+    </div>
+  </div>
+
+  <!-- Titre -->
+  <div class="doc-titre">
+    <h1>Manuels non rendus</h1>
+    <div class="annee">Année scolaire {{ annee }}</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-cell">
+      <span class="stat-val">{{ attributions|length }}</span>
+      <span class="stat-lbl">Manuel{% if attributions|length > 1 %}s{% endif %} non rendu{% if attributions|length > 1 %}s{% endif %}</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-val">{{ nb_factures }}</span>
+      <span class="stat-lbl">Déjà facturé{% if nb_factures > 1 %}s{% endif %}</span>
+    </div>
+    <div class="stat-cell rouge">
+      <span class="stat-val">{{ total_du|floatformat:0 }} FCFA</span>
+      <span class="stat-lbl">Total dû (prix de remplacement)</span>
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  {% if attributions %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Élève</th>
+        <th>Manuel</th>
+        <th>Code exemplaire</th>
+        <th>Attribution</th>
+        <th class="text-right">Prix remplact.</th>
+        <th>Facturé</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% regroup attributions by inscription.classe.nom as par_classe %}
+      {% for groupe in par_classe %}
+
+      <!-- Séparateur classe -->
+      <tr class="tr-classe">
+        <td colspan="7">
+          Classe : {{ groupe.grouper }}
+          &nbsp;—&nbsp;
+          {{ groupe.list|length }} non rendu{% if groupe.list|length > 1 %}s{% endif %}
+        </td>
+      </tr>
+
+      {% for a in groupe.list %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td class="fw-bold">{{ a.inscription.eleve.nom }} {{ a.inscription.eleve.prenom }}</td>
+        <td>{{ a.exemplaire.manuel.titre }}</td>
+        <td><span class="mono">{{ a.exemplaire.code_exemplaire }}</span></td>
+        <td>{{ a.date_attribution }}</td>
+        <td class="text-right">
+          {% if a.exemplaire.manuel.prix_remplacement %}
+          {{ a.exemplaire.manuel.prix_remplacement|floatformat:0 }} FCFA
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if a.facture_genere %}
+          <span class="badge badge-ok">Oui</span>
+          {% else %}
+          <span class="badge badge-warn">Non</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+
+      {% endfor %}
+
+      <!-- Total général -->
+      <tr class="tr-total">
+        <td colspan="5">
+          Total général — {{ attributions|length }} manuel{% if attributions|length > 1 %}s{% endif %} non rendu{% if attributions|length > 1 %}s{% endif %}
+          &nbsp;|&nbsp; {{ nb_factures }} facturé{% if nb_factures > 1 %}s{% endif %}
+        </td>
+        <td class="text-right">{{ total_du|floatformat:0 }} FCFA</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  {% else %}
+  <p style="margin-top:1cm; text-align:center; color:#555; font-style:italic;">
+    Aucun manuel non rendu pour cette année scolaire.
+  </p>
+  {% endif %}
+
+  <!-- Pied de page -->
+  <div class="footer">
+    <div class="footer-left">
+      {% if identite and identite.ville %}{{ identite.ville }}{% elif etab and etab.ville %}{{ etab.ville }}{% endif %}
+      {% if identite and identite.telephone %}&nbsp;|&nbsp; Tél. {{ identite.telephone }}{% elif etab and etab.telephone %}&nbsp;|&nbsp; Tél. {{ etab.telephone }}{% endif %}
+    </div>
+    <div class="footer-right">YELEN SCHOOL — Document généré automatiquement</div>
+  </div>
+
+</div>
+
+<div class="barre-bottom"></div>
+
+</body>
+</html>

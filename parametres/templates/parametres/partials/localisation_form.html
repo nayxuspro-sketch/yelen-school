@@ -1,0 +1,73 @@
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">
+        {% if localisation %}Modifier la localisation{% else %}Nouvelle localisation{% endif %}
+      </span>
+      <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <form hx-post="{% if localisation %}{% url 'parametres:localisation_edit' localisation.pk %}{% else %}{% url 'parametres:localisation_create' %}{% endif %}"
+          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+          hx-target="#modal-container"
+          hx-swap="innerHTML">
+      {% csrf_token %}
+      <div class="modal-body">
+        {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+
+        <div class="form-group">
+          <label class="input-label">Nom <span style="color:#FF6B7A;">*</span></label>
+          <input type="text" name="nom" value="{{ localisation.nom|default:'' }}"
+                 placeholder="Ex: Bureau du directeur, Salle des professeurs"
+                 required class="input">
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label">Type</label>
+            <select name="type_localisation" class="input select">
+              {% for val, label in type_choices %}
+              <option value="{{ val }}" {% if localisation.type_localisation == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Bâtiment</label>
+            <input type="text" name="batiment" value="{{ localisation.batiment|default:'' }}"
+                   placeholder="Ex: Bloc administratif" class="input">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label">Étage <small class="text-muted">(0 = RDC)</small></label>
+            <input type="number" name="etage" value="{{ localisation.etage|default:0 }}"
+                   min="0" max="20" class="input">
+          </div>
+          <div class="form-group">
+            <label class="input-label">Numéro</label>
+            <input type="text" name="numero" value="{{ localisation.numero|default:'' }}"
+                   placeholder="Ex: 101, A3" class="input">
+          </div>
+        </div>
+
+        {% if localisation %}
+        <label class="d-flex align-center gap-3" style="cursor:pointer;">
+          <input type="checkbox" name="actif" {% if localisation.actif %}checked{% endif %}
+                 style="width:1rem; height:1rem; accent-color:var(--color-primary);">
+          <span class="text-sm text-secondary">Localisation active</span>
+        </label>
+        {% endif %}
+
+        <div class="modal-footer">
+          <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-secondary">Annuler</button>
+          <button type="submit" class="btn-primary">Enregistrer</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

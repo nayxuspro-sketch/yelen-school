@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Communication — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Communication bidirectionnelle</h1>
+    <p class="page-subtitle">Messages envoyés aux parents et leurs réponses</p>
+  </div>
+  <button hx-get="{% url 'communication:message_create' %}"
+          hx-target="#modal-container"
+          hx-swap="innerHTML"
+          class="btn-primary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+    Nouveau message
+  </button>
+</div>
+
+<div id="modal-container"></div>
+
+{# Statistiques #}
+<div class="stats-grid animate-fade-up delay-1">
+  <div class="stat-card">
+    <p class="stat-label">Total envoyés</p>
+    <p class="stat-value">{{ nb_total }}</p>
+  </div>
+  <div class="stat-card">
+    <p class="stat-label">En attente de réponse</p>
+    <p class="stat-value stat-value-warning">{{ nb_en_attente }}</p>
+  </div>
+  <div class="stat-card">
+    <p class="stat-label">Répondus</p>
+    <p class="stat-value stat-value-success">{{ nb_repondu }}</p>
+  </div>
+</div>
+
+{# Filtres #}
+<form hx-get="{% url 'communication:message_list' %}"
+      hx-target="#comm-list-container"
+      hx-swap="outerHTML"
+      hx-trigger="change, submit"
+      class="filter-bar animate-fade-up delay-2">
+  <input type="text" name="q" value="{{ q }}" placeholder="Rechercher un élève, un objet…" class="input filter-search">
+  <select name="type" class="input select filter-select">
+    <option value="">Tous les types</option>
+    {% for val, label in type_choices %}
+    <option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="statut" class="input select filter-select">
+    <option value="">Tous les statuts</option>
+    {% for val, label in statut_choices %}
+    <option value="{{ val }}" {% if statut_filter == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+{% include 'communication/partials/message_list.html' %}
+{% endblock %}

@@ -45,8 +45,22 @@
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
       </svg>
-      Tous les bulletins
+      Bulletins T.
     </a>
+    {% if annee_courante %}
+    <a href="{% url 'pedagogie:bulletin_annuel_classe_batch_pdf' classe.id %}?annee={{ annee_courante.id }}" target="_blank" class="btn-secondary" style="border-color:var(--color-gold); color:var(--color-gold);">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      Bulletin Annuel
+    </a>
+    <a href="{% url 'pedagogie:palmares_annuel' classe.id %}?annee={{ annee_courante.id }}" class="btn-secondary" style="border-color:var(--color-primary); color:var(--color-primary);">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+      </svg>
+      Palmarès
+    </a>
+    {% endif %}
     {% endif %}
   </div>
 </div>
@@ -108,12 +122,22 @@
           <td style="text-align:right;">
             <div class="d-flex justify-end gap-2">
               {% if mg %}
-              <a href="{% url 'pedagogie:bulletin_pdf' ins.id trimestre.id %}" target="_blank" class="btn-icon" title="Télécharger le bulletin" style="color:var(--color-primary);">
+              <a href="{% url 'pedagogie:bulletin_pdf' ins.id trimestre.id %}" target="_blank" class="btn-icon" title="Bulletin trimestriel" style="color:var(--color-primary);">
                 <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                 </svg>
               </a>
+              <a href="{% url 'pedagogie:bulletin_duplicata_pdf' ins.id trimestre.id %}" target="_blank" class="btn-icon" title="Duplicata du bulletin trimestriel" style="color:var(--color-gold);">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                </svg>
+              </a>
               {% endif %}
+              <a href="{% url 'pedagogie:bulletin_annuel_pdf' ins.id %}?annee={{ annee_courante.id }}" target="_blank" class="btn-icon" title="Bulletin annuel" style="color:var(--color-gold);">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </a>
             </div>
           </td>
         </tr>

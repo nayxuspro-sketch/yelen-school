@@ -19,119 +19,125 @@
   </div>
 </div>
 
-<div class="animate-fade-up delay-1" style="max-width:760px;">
-  <form method="post">
-    {% csrf_token %}
+<div class="form-page-wrap">
 
-    {% if form.non_field_errors %}
-      <div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>
-    {% endif %}
+<form method="post">
+  {% csrf_token %}
 
-    {# ── Identification ── #}
-    <div class="card mb-4">
-      <div class="card-header"><span class="card-title">Identification</span></div>
-      <div style="padding:var(--space-5); display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--space-4);">
-        <div class="form-group" style="grid-column:1/3;">
-          <label class="form-label">Membre du personnel *</label>
-          {{ form.personnel }}
-          {% if form.personnel.errors %}<p class="form-error">{{ form.personnel.errors.0 }}</p>{% endif %}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Année scolaire</label>
-          {{ form.annee_scolaire }}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Mois *</label>
-          {{ form.mois }}
-          {% if form.mois.errors %}<p class="form-error">{{ form.mois.errors.0 }}</p>{% endif %}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Année *</label>
-          {{ form.annee }}
-          {% if form.annee.errors %}<p class="form-error">{{ form.annee.errors.0 }}</p>{% endif %}
-        </div>
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="card mb-4 animate-fade-up delay-1">
+    <div class="card-header">
+      <span class="card-title">Identification</span>
+    </div>
+    <div class="form-grid-3">
+      <div class="form-group form-grid-2-full">
+        <label class="input-label">Membre du personnel *</label>
+        {{ form.personnel }}
+        {% if form.personnel.errors %}<p class="input-error">{{ form.personnel.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="input-label">Année scolaire</label>
+        {{ form.annee_scolaire }}
+      </div>
+      <div class="form-group">
+        <label class="input-label">Mois *</label>
+        {{ form.mois }}
+        {% if form.mois.errors %}<p class="input-error">{{ form.mois.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="input-label">Année *</label>
+        {{ form.annee }}
+        {% if form.annee.errors %}<p class="input-error">{{ form.annee.errors.0 }}</p>{% endif %}
       </div>
     </div>
+  </div>
 
-    {# ── Éléments de rémunération ── #}
-    <div class="card mb-4">
-      <div class="card-header"><span class="card-title">Éléments de rémunération</span></div>
-      <div style="padding:var(--space-5); display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
-        <div class="form-group">
-          <label class="form-label">Salaire de base (FCFA) *</label>
-          {{ form.salaire_base }}
-          {% if form.salaire_base.errors %}<p class="form-error">{{ form.salaire_base.errors.0 }}</p>{% endif %}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Prime d'ancienneté (FCFA)</label>
-          {{ form.prime_anciennete }}
-          <p class="form-hint">Calculée auto. selon l'ancienneté — modifiable.</p>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Indemnité de transport (FCFA)</label>
-          {{ form.indemnite_transport }}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Indemnité de logement (FCFA)</label>
-          {{ form.indemnite_logement }}
-        </div>
-        <div class="form-group" style="grid-column:1/3;">
-          <label class="form-label">Autres primes / avantages (FCFA)</label>
-          {{ form.autres_primes }}
-        </div>
+  <div class="card mb-4 animate-fade-up delay-1">
+    <div class="card-header">
+      <span class="card-title">Éléments de rémunération</span>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="input-label">Salaire de base (FCFA) *</label>
+        {{ form.salaire_base }}
+        {% if form.salaire_base.errors %}<p class="input-error">{{ form.salaire_base.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="input-label">Prime d'ancienneté (FCFA)</label>
+        {{ form.prime_anciennete }}
+        <span class="form-hint">Calculée auto. selon l'ancienneté — modifiable.</span>
+      </div>
+      <div class="form-group">
+        <label class="input-label">Indemnité de transport (FCFA)</label>
+        {{ form.indemnite_transport }}
+      </div>
+      <div class="form-group">
+        <label class="input-label">Indemnité de logement (FCFA)</label>
+        {{ form.indemnite_logement }}
+      </div>
+      <div class="form-group form-grid-2-full">
+        <label class="input-label">Autres primes / avantages (FCFA)</label>
+        {{ form.autres_primes }}
       </div>
     </div>
+  </div>
 
-    {# ── Retenues ── #}
-    <div class="card mb-4">
-      <div class="card-header"><span class="card-title">Retenues</span></div>
-      <div style="padding:var(--space-5); display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--space-4);">
-        <div class="form-group">
-          <label class="form-label">Retenue CNSS (FCFA)</label>
-          {{ form.retenue_cnss }}
-          <p class="form-hint">Cotisation salariale CNSS</p>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Retenue IUTS (FCFA)</label>
-          {{ form.retenue_iuts }}
-          <p class="form-hint">Impôt sur traitements et salaires</p>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Autres retenues (FCFA)</label>
-          {{ form.autres_retenues }}
-        </div>
+  <div class="card mb-4 animate-fade-up delay-2">
+    <div class="card-header">
+      <span class="card-title">Retenues</span>
+    </div>
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label class="input-label">Retenue CNSS (FCFA)</label>
+        {{ form.retenue_cnss }}
+        <span class="form-hint">Cotisation salariale CNSS</span>
+      </div>
+      <div class="form-group">
+        <label class="input-label">Retenue IUTS (FCFA)</label>
+        {{ form.retenue_iuts }}
+        <span class="form-hint">Impôt sur traitements et salaires</span>
+      </div>
+      <div class="form-group">
+        <label class="input-label">Autres retenues (FCFA)</label>
+        {{ form.autres_retenues }}
       </div>
     </div>
+  </div>
 
-    {# ── Paiement ── #}
-    <div class="card mb-4">
-      <div class="card-header"><span class="card-title">Paiement</span></div>
-      <div style="padding:var(--space-5); display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--space-4);">
-        <div class="form-group">
-          <label class="form-label">Statut</label>
-          {{ form.statut }}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Date de paiement</label>
-          {{ form.date_paiement }}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Référence paiement</label>
-          {{ form.reference_paiement }}
-        </div>
-        <div class="form-group" style="grid-column:1/4;">
-          <label class="form-label">Observations</label>
-          {{ form.observations }}
-        </div>
+  <div class="card mb-4 animate-fade-up delay-2">
+    <div class="card-header">
+      <span class="card-title">Paiement</span>
+    </div>
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label class="input-label">Statut</label>
+        {{ form.statut }}
+      </div>
+      <div class="form-group">
+        <label class="input-label">Date de paiement</label>
+        {{ form.date_paiement }}
+      </div>
+      <div class="form-group">
+        <label class="input-label">Référence paiement</label>
+        {{ form.reference_paiement }}
+      </div>
+      <div class="form-group form-grid-2-full">
+        <label class="input-label">Observations</label>
+        {{ form.observations }}
       </div>
     </div>
+  </div>
 
-    <div class="d-flex gap-3">
-      <a href="{% if membre %}{% url 'personnel:detail' membre.pk %}{% else %}{% url 'personnel:salaire_list' %}{% endif %}"
-         class="btn-secondary">Annuler</a>
-      <button type="submit" class="btn-primary">Enregistrer</button>
-    </div>
-  </form>
+  <div class="d-flex gap-3 animate-fade-up delay-2">
+    <a href="{% if membre %}{% url 'personnel:detail' membre.pk %}{% else %}{% url 'personnel:salaire_list' %}{% endif %}"
+       class="btn-secondary">Annuler</a>
+    <button type="submit" class="btn-primary">Enregistrer</button>
+  </div>
+</form>
+
 </div>
 
 {% endblock %}

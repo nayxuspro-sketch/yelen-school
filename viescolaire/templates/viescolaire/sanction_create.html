@@ -3,131 +3,136 @@
 {% block title %}Nouvelle Sanction — YELEN SCHOOL{% endblock %}
 
 {% block content %}
-
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'viescolaire:sanction_list' %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'viescolaire:sanction_list' %}" class="dash-btn-icon" title="Retour">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
     <div>
       <h1 class="page-title">Enregistrer une sanction</h1>
-      {% if annee_courante %}<p class="page-subtitle">{{ annee_courante }}</p>{% endif %}
+      {% if annee_courante %}<p class="page-subtitle text-primary">{{ annee_courante }}</p>{% endif %}
     </div>
   </div>
 </div>
 
-<div style="max-width:700px;" class="animate-fade-up delay-1">
-
+<div class="dash-form-container animate-fade-up delay-1">
   <!-- Sélection de la classe -->
-  <div class="card mb-4">
-    <div style="padding:var(--space-4) var(--space-6);">
-      <label class="input-label">Sélectionner la classe de l'élève</label>
-      <select onchange="location.href='?classe='+this.value" class="input select mt-2" style="max-width:340px;">
-        <option value="">— Toutes les classes —</option>
-        {% for cl in classes %}
-        <option value="{{ cl.pk }}" {% if cl.pk|stringformat:"s" == classe_id %}selected{% endif %}>{{ cl.nom }}</option>
-        {% endfor %}
-      </select>
+  <div class="dash-card mb-6">
+    <div class="dash-card-body">
+      <div class="form-group mb-0">
+        <label class="dash-label">Sélectionner la classe de l'élève</label>
+        <div class="dash-select-wrapper max-w-sm">
+          <select onchange="location.href='?classe='+this.value" class="dash-input">
+            <option value="">— Toutes les classes —</option>
+            {% for cl in classes %}
+            <option value="{{ cl.pk }}" {% if cl.pk|stringformat:"s" == classe_id %}selected{% endif %}>{{ cl.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 
-  <form method="post">
+  <form method="post" class="dash-form">
     {% csrf_token %}
 
     <!-- ── Identification ─────────────────────────────────────────────────── -->
-    <div class="card mb-4">
-      <div style="padding:var(--space-4) var(--space-6); border-bottom:1px solid var(--color-border);">
-        <h3 style="font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--color-text-secondary); margin:0;">Identification</h3>
+    <div class="dash-card mb-6">
+      <div class="dash-card-header">
+        <h3 class="dash-card-title">Identification</h3>
       </div>
-      <div style="padding:var(--space-6);">
-        <div class="form-grid-2">
-          <div class="form-group" style="grid-column:span 2;">
-            <label class="input-label">Élève <span style="color:var(--color-danger);">*</span></label>
-            <select name="inscription" required class="input select w-full">
+      <div class="dash-card-body">
+        <div class="dash-form-grid">
+          <div class="form-group col-span-2">
+            <label class="dash-label">Élève <span class="text-danger">*</span></label>
+            <select name="inscription" required class="dash-input">
               <option value="">— Choisir un élève —</option>
               {% for ins in inscriptions %}
               <option value="{{ ins.pk }}">{{ ins.eleve.get_nom_complet }}</option>
               {% endfor %}
             </select>
-            {% if not inscriptions %}<p style="font-size:.78rem; color:var(--color-text-secondary); margin-top:.25rem;">Sélectionnez d'abord une classe ci-dessus.</p>{% endif %}
+            {% if not inscriptions %}
+              <p class="dash-help-text mt-1">Sélectionnez d'abord une classe ci-dessus.</p>
+            {% endif %}
           </div>
+          
           <div class="form-group">
-            <label class="input-label">Type de sanction <span style="color:var(--color-danger);">*</span></label>
-            <select name="type_sanction" id="id_type_sanction" required class="input select w-full">
+            <label class="dash-label">Type de sanction <span class="text-danger">*</span></label>
+            <select name="type_sanction" id="id_type_sanction" required class="dash-input">
               <option value="">— Choisir —</option>
               {% for ts in types_sanction %}
               <option value="{{ ts.pk }}">{{ ts.libelle }}</option>
               {% endfor %}
             </select>
             {% if not types_sanction %}
-            <p style="font-size:.78rem; color:var(--color-warning,#f59e0b); margin-top:.25rem;">
-              Aucun type configuré — ajoutez-en dans Paramètres → Types de sanctions.
-            </p>
+              <p class="dash-help-text text-warning mt-1">
+                Aucun type configuré — ajoutez-en dans Paramètres.
+              </p>
             {% endif %}
           </div>
+
           <div class="form-group">
-            <label class="input-label">Statut</label>
-            <select name="statut" class="input select w-full">
+            <label class="dash-label">Statut</label>
+            <select name="statut" class="dash-input">
               {% for val, label in statut_choices %}
               <option value="{{ val }}">{{ label }}</option>
               {% endfor %}
             </select>
           </div>
+
           <div class="form-group">
-            <label class="input-label">Date de la sanction <span style="color:var(--color-danger);">*</span></label>
-            <input type="date" name="date_sanction" required class="input w-full">
+            <label class="dash-label">Date de la sanction <span class="text-danger">*</span></label>
+            <input type="date" name="date_sanction" required class="dash-input">
           </div>
+
           <div class="form-group">
-            <label class="input-label">Durée (jours) — exclusions temporaires</label>
-            <input type="number" name="duree_jours" min="0" value="0" class="input w-full">
+            <label class="dash-label">Durée (jours)</label>
+            <input type="number" name="duree_jours" min="0" value="0" class="dash-input">
           </div>
-          <div class="form-group" style="grid-column:span 2;">
-            <label class="input-label">Motif <span style="color:var(--color-danger);">*</span></label>
-            <textarea name="motif" rows="3" required class="input w-full" style="resize:vertical;"></textarea>
+
+          <div class="form-group col-span-2">
+            <label class="dash-label">Motif <span class="text-danger">*</span></label>
+            <textarea name="motif" rows="3" required class="dash-input" placeholder="Détaillez le motif de la sanction..."></textarea>
           </div>
         </div>
       </div>
     </div>
 
     <!-- ── Impact sur la moyenne trimestrielle ────────────────────────────── -->
-    <div class="card mb-4" style="border-left:3px solid var(--color-warning, #f59e0b);">
-      <div style="padding:var(--space-4) var(--space-6); border-bottom:1px solid var(--color-border);">
-        <h3 style="font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--color-text-secondary); margin:0;">
-          Impact sur la moyenne trimestrielle
-        </h3>
-        <p style="font-size:.78rem; color:var(--color-text-secondary); margin:.3rem 0 0;">
-          Optionnel. Les points s'appliquent sur le total des points en fin de trimestre,
-          uniquement si la sanction est <strong>Confirmée</strong>.
+    <div class="dash-card mb-6 border-l-warn">
+      <div class="dash-card-header">
+        <h3 class="dash-card-title">Impact sur la moyenne trimestrielle</h3>
+        <p class="dash-card-subtitle">
+          Les points s'appliquent sur le total trimestriel (si sanction confirmée).
         </p>
       </div>
-      <div style="padding:var(--space-6);">
-        <div class="form-grid-2">
+      <div class="dash-card-body">
+        <div class="dash-form-grid">
           <div class="form-group">
-            <label class="input-label">Trimestre concerné</label>
-            <select name="trimestre" class="input select w-full">
-              <option value="">— Aucun impact sur la moyenne —</option>
+            <label class="dash-label">Trimestre concerné</label>
+            <select name="trimestre" class="dash-input">
+              <option value="">— Aucun impact —</option>
               {% for t in trimestres %}
               <option value="{{ t.pk }}">{{ t }}</option>
               {% endfor %}
             </select>
           </div>
+          
           <div class="form-group">
-            <label class="input-label">Points (− retrait &nbsp;/&nbsp; + ajout)</label>
-            <input type="number" name="points" step="0.25" value="0"
-                   class="input w-full"
-                   style="font-weight:700; font-size:1.1rem; text-align:center;">
-            <p style="font-size:.75rem; color:var(--color-text-secondary); margin-top:.3rem;">
-              <code>-2</code> → retire 2 pts du total &nbsp;·&nbsp; <code>+1.5</code> → ajoute 1,5 pt
+            <label class="dash-label">Points (− retrait / + ajout)</label>
+            <div class="dash-input-group">
+              <input type="number" name="points" step="0.25" value="0" class="dash-input dash-input-center dash-font-bold dash-text-lg">
+            </div>
+            <p class="dash-help-text mt-1">
+              Ex: <code>-2</code> pour retirer, <code>+1</code> pour ajouter.
             </p>
           </div>
-          <div class="form-group" style="grid-column:span 2;">
-            <label class="input-label">Appréciation de la conduite</label>
-            <input type="text" name="appreciation_conduite"
-                   list="conduites-list"
-                   class="input w-full"
-                   placeholder="Ex : Conduite à améliorer, Très bonne conduite…">
+
+          <div class="form-group col-span-2">
+            <label class="dash-label">Appréciation de la conduite</label>
+            <input type="text" name="appreciation_conduite" list="conduites-list" class="dash-input" placeholder="Ex: Conduite à améliorer...">
             <datalist id="conduites-list">
               <option value="Très bonne conduite">
               <option value="Bonne conduite">
@@ -142,28 +147,28 @@
     </div>
 
     <!-- ── Informations complémentaires ──────────────────────────────────── -->
-    <div class="card mb-4">
-      <div style="padding:var(--space-4) var(--space-6); border-bottom:1px solid var(--color-border);">
-        <h3 style="font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--color-text-secondary); margin:0;">Informations complémentaires</h3>
+    <div class="dash-card mb-6">
+      <div class="dash-card-header">
+        <h3 class="dash-card-title">Informations complémentaires</h3>
       </div>
-      <div style="padding:var(--space-6);">
-        <div class="form-grid-2">
+      <div class="dash-card-body">
+        <div class="dash-form-grid">
           <div class="form-group">
-            <label class="input-label">Date de retour</label>
-            <input type="date" name="date_retour" class="input w-full">
+            <label class="dash-label">Date de retour</label>
+            <input type="date" name="date_retour" class="dash-input">
           </div>
           <div class="form-group">
-            <label class="input-label">Date convocation parents</label>
-            <input type="date" name="date_convocation" class="input w-full">
+            <label class="dash-label">Convocation parents</label>
+            <input type="date" name="date_convocation" class="dash-input">
           </div>
-          <div class="form-group" style="grid-column:span 2;">
-            <label class="input-label">Observations</label>
-            <input type="text" name="observations" class="input w-full">
+          <div class="form-group col-span-2">
+            <label class="dash-label">Observations</label>
+            <input type="text" name="observations" class="dash-input">
           </div>
-          <div style="grid-column:span 2;">
-            <label class="d-flex align-center gap-2" style="cursor:pointer; font-size:.9rem; color:var(--color-text-secondary);">
-              <input type="checkbox" name="parents_convoques">
-              Parents convoqués
+          <div class="form-group col-span-2">
+            <label class="dash-checkbox-label">
+              <input type="checkbox" name="parents_convoques" class="dash-checkbox">
+              <span>Parents convoqués physiquement</span>
             </label>
           </div>
         </div>
@@ -171,14 +176,18 @@
     </div>
 
     {% if config_disc %}
-    <div id="seuil-warning" style="display:none; margin-bottom:1rem; padding:.75rem 1rem;
-         background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.4); border-radius:8px;
-         font-size:.83rem; color:var(--color-warning);">
-      <strong>Attention :</strong> une valeur négative retirera des points du capital discipline de l'élève.
-      Seuil d'alerte à {{ config_disc.seuil_alerte }} pts, conseil à {{ config_disc.seuil_conseil }} pts.
+    <div id="seuil-warning" class="dash-alert dash-alert-warning mb-6">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="mt-0.5">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <div>
+        <strong>Attention :</strong> une valeur négative retirera des points du capital discipline.
+        Seuil alerte : {{ config_disc.seuil_alerte }} pts | Conseil : {{ config_disc.seuil_conseil }} pts.
+      </div>
     </div>
     {% endif %}
-    <div class="d-flex justify-end gap-3">
+
+    <div class="dash-form-actions">
       <a href="{% url 'viescolaire:sanction_list' %}" class="btn-secondary">Annuler</a>
       <button type="submit" class="btn-primary">Enregistrer la sanction</button>
     </div>
@@ -196,7 +205,7 @@
 
   function checkWarn() {
     if (!warnBox) return;
-    warnBox.style.display = (parseFloat(inp.value) || 0) < 0 ? 'block' : 'none';
+    warnBox.style.display = (parseFloat(inp.value) || 0) < 0 ? 'flex' : 'none';
   }
 
   sel.addEventListener('change', function () {
@@ -208,7 +217,7 @@
   });
 
   inp.addEventListener('input', checkWarn);
+  checkWarn();
 }());
 </script>
-
 {% endblock %}

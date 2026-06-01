@@ -22,6 +22,7 @@ import uuid
 from decimal import Decimal
 from typing import Optional
 
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -482,3 +483,290 @@ class RisqueDecrochage(BaseModel):
         if score <= 75:
             return RisqueDecrochage.NiveauChoices.ELEVE
         return RisqueDecrochage.NiveauChoices.CRITIQUE
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 10. CAHIER DE TEXTES
+# ═══════════════════════════════════════════════════════════════════
+
+class CahierTextes(BaseModel):
+    """
+    Entrée du cahier de textes numérique.
+
+    L'enseignant renseigne après chaque cours : le contenu traité,
+    les devoirs donnés et leur date de remise. Le directeur dispose
+    d'une vue consolidée de l'avancement des programmes.
+    """
+
+    enseignement = models.ForeignKey(
+        Enseignement,
+        on_delete=models.CASCADE,
+        related_name='entrees_cahier',
+        verbose_name=_("Enseignement"),
+    )
+    date = models.DateField(verbose_name=_("Date du cours"))
+    heure_debut = models.TimeField(null=True, blank=True, verbose_name=_("Heure de début"))
+    heure_fin = models.TimeField(null=True, blank=True, verbose_name=_("Heure de fin"))
+    contenu = models.TextField(verbose_name=_("Contenu du cours"))
+    devoirs = models.TextField(blank=True, default='', verbose_name=_("Devoirs donnés"))
+    date_remise_devoirs = models.DateField(
+        null=True, blank=True, verbose_name=_("Date de remise des devoirs")
+    )
+    redige_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='entrees_cahier',
+        verbose_name=_("Rédigé par"),
+    )
+
+    class Meta:
+        verbose_name = _("Entrée du cahier de textes")
+        verbose_name_plural = _("Cahier de textes")
+        ordering = ['-date', '-created_at']
+
+    def __str__(self):
+        return (
+            f"{self.enseignement.matiere.nom} — "
+            f"{self.enseignement.classe.nom} — "
+            f"{self.date.strftime('%d/%m/%Y')}"
+        )
+
+    @property
+    def a_des_devoirs(self):
+        return bool(self.devoirs.strip())
+
+    @property
+    def devoirs_en_retard(self):
+        from django.utils import timezone
+        return (
+            self.a_des_devoirs
+            and self.date_remise_devoirs
+            and self.date_remise_devoirs < timezone.now().date()
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 11. PRÉDICTION DE RÉUSSITE AUX EXAMENS OFFICIELS
+# ═══════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════
+# 10. BULLETINS DE COMPÉTENCES (Préscolaire / Primaire)
+# ═══════════════════════════════════════════════════════════════════
+
+class Competence(BaseModel):
+    """
+    Compétence du référentiel pédagogique pour les cycles Préscolaire et Primaire.
+    Ex : "Reconnaît et écrit les chiffres de 0 à 9" (Mathématiques, Primaire).
+    """
+
+    cycle = models.ForeignKey(
+        'parametres.Cycle',
+        on_delete=models.CASCADE,
+        related_name='competences',
+        verbose_name=_("Cycle"),
+    )
+    matiere = models.ForeignKey(
+        Matiere,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='competences',
+        verbose_name=_("Matière"),
+    )
+    libelle = models.CharField(
+        max_length=300,
+        verbose_name=_("Libellé de la compétence"),
+    )
+    description = models.TextField(
+        blank=True, default='',
+        verbose_name=_("Description / indicateurs"),
+    )
+    ordre = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name=_("Ordre d'affichage"),
+    )
+    actif = models.BooleanField(default=True, verbose_name=_("Actif"))
+
+    class Meta:
+        verbose_name = _("Compétence")
+        verbose_name_plural = _("Compétences")
+        ordering = ['cycle', 'matiere__code', 'ordre', 'libelle']
+
+    def __str__(self):
+        mat = self.matiere.code if self.matiere else "—"
+        return f"[{mat}] {self.libelle}"
+
+
+class EvaluationCompetence(BaseModel):
+    """
+    Niveau d'acquisition d'une compétence pour un élève à un trimestre donné.
+    """
+
+    class NiveauChoices(models.TextChoices):
+        ACQUIS     = 'ACQUIS',     _('Acquis')
+        EN_COURS   = 'EN_COURS',   _("En cours d'acquisition")
+        NON_ACQUIS = 'NON_ACQUIS', _('Non acquis')
+        NON_EVALUE = 'NON_EVALUE', _('Non évalué')
+
+    inscription = models.ForeignKey(
+        'inscriptions.Inscription',
+        on_delete=models.CASCADE,
+        related_name='evaluations_competences',
+        verbose_name=_("Inscription"),
+    )
+    competence = models.ForeignKey(
+        Competence,
+        on_delete=models.CASCADE,
+        related_name='evaluations',
+        verbose_name=_("Compétence"),
+    )
+    trimestre = models.ForeignKey(
+        Trimestre,
+        on_delete=models.CASCADE,
+        related_name='evaluations_competences',
+        verbose_name=_("Trimestre"),
+    )
+    niveau = models.CharField(
+        max_length=12,
+        choices=NiveauChoices.choices,
+        default=NiveauChoices.NON_EVALUE,
+        verbose_name=_("Niveau d'acquisition"),
+    )
+    observation = models.CharField(
+        max_length=200, blank=True, default='',
+        verbose_name=_("Observation"),
+    )
+
+    class Meta:
+        verbose_name = _("Évaluation de compétence")
+        verbose_name_plural = _("Évaluations de compétences")
+        unique_together = [('inscription', 'competence', 'trimestre')]
+        ordering = ['competence__ordre']
+
+    def __str__(self):
+        return f"{self.inscription.eleve} — {self.competence} — {self.niveau}"
+
+    @property
+    def pictogramme(self):
+        return {
+            self.NiveauChoices.ACQUIS:     '✅',
+            self.NiveauChoices.EN_COURS:   '🔄',
+            self.NiveauChoices.NON_ACQUIS: '❌',
+            self.NiveauChoices.NON_EVALUE: '—',
+        }.get(self.niveau, '—')
+
+    @property
+    def badge_class(self):
+        return {
+            self.NiveauChoices.ACQUIS:     'badge-success',
+            self.NiveauChoices.EN_COURS:   'badge-warning',
+            self.NiveauChoices.NON_ACQUIS: 'badge-danger',
+            self.NiveauChoices.NON_EVALUE: 'badge-neutral',
+        }.get(self.niveau, 'badge-neutral')
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 11. PRÉDICTION DE RÉUSSITE AUX EXAMENS OFFICIELS
+# ═══════════════════════════════════════════════════════════════════
+
+class PredictionReussiteExamen(BaseModel):
+    """
+    Score de probabilité de réussite à l'examen officiel de fin d'année
+    (BEPC pour le post-primaire, BAC pour le secondaire).
+
+    Calculé à partir de :
+    - La dernière moyenne générale (pondération 70%)
+    - La tendance inter-trimestrielle (bonus/malus jusqu'à ±10 pts)
+    - Le taux d'assiduité / absences non justifiées (malus jusqu'à -15 pts)
+    """
+
+    class PronosticChoices(models.TextChoices):
+        BON       = 'BON',      _('Bon pronostic')
+        MOYEN     = 'MOYEN',    _('Pronostic moyen')
+        RISQUE    = 'RISQUE',   _('Risqué')
+        CRITIQUE  = 'CRITIQUE', _('Très risqué')
+
+    class ExamenChoices(models.TextChoices):
+        BEPC  = 'BEPC',  'BEPC'
+        BAC   = 'BAC',   'BAC'
+        CEP   = 'CEP',   'CEP'
+        AUTRE = 'AUTRE', _('Autre')
+
+    inscription = models.OneToOneField(
+        'inscriptions.Inscription',
+        on_delete=models.CASCADE,
+        related_name='prediction_examen',
+        verbose_name=_("Inscription"),
+    )
+    examen_cible = models.CharField(
+        max_length=10,
+        choices=ExamenChoices.choices,
+        default=ExamenChoices.AUTRE,
+        verbose_name=_("Examen officiel ciblé"),
+    )
+    score = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name=_("Score de probabilité (0–100 %)"),
+    )
+    pronostic = models.CharField(
+        max_length=10,
+        choices=PronosticChoices.choices,
+        default=PronosticChoices.MOYEN,
+        verbose_name=_("Pronostic"),
+    )
+    mg_actuelle = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name=_("Dernière moyenne générale (/20)"),
+    )
+    tendance = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name=_("Tendance (écart entre les 2 derniers trimestres)"),
+    )
+    nb_absences_nj = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("Absences non justifiées (heures)"),
+    )
+    facteurs = models.JSONField(
+        default=list,
+        verbose_name=_("Détail des facteurs"),
+    )
+    date_calcul = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("Calculé le"),
+    )
+
+    class Meta:
+        verbose_name = _("Prédiction réussite examen")
+        verbose_name_plural = _("Prédictions réussite examen")
+        ordering = ['-score']
+
+    def __str__(self):
+        return f"{self.inscription.eleve} — {self.examen_cible} {self.score}%"
+
+    @property
+    def couleur_css(self):
+        return {
+            self.PronosticChoices.BON:      '#00A86B',
+            self.PronosticChoices.MOYEN:    '#F5A623',
+            self.PronosticChoices.RISQUE:   '#E67E22',
+            self.PronosticChoices.CRITIQUE: '#DC3545',
+        }.get(self.pronostic, '#888')
+
+    @property
+    def badge_class(self):
+        return {
+            self.PronosticChoices.BON:      'badge-success',
+            self.PronosticChoices.MOYEN:    'badge-warning',
+            self.PronosticChoices.RISQUE:   'badge-danger',
+            self.PronosticChoices.CRITIQUE: 'badge-danger',
+        }.get(self.pronostic, 'badge-neutral')
+
+    @staticmethod
+    def pronostic_pour_score(score):
+        if score >= 70:
+            return PredictionReussiteExamen.PronosticChoices.BON
+        if score >= 50:
+            return PredictionReussiteExamen.PronosticChoices.MOYEN
+        if score >= 30:
+            return PredictionReussiteExamen.PronosticChoices.RISQUE
+        return PredictionReussiteExamen.PronosticChoices.CRITIQUE

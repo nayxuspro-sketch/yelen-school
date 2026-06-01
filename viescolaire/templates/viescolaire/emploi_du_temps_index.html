@@ -1,37 +1,79 @@
 {% extends "core/base.html" %}
 
-{% block title %}Emploi du temps — YELEN SCHOOL{% endblock %}
+{% block title %}Emplois du temps — YELEN SCHOOL{% endblock %}
 
 {% block content %}
-
 <div class="page-header animate-fade-up">
   <div>
-    <h1 class="page-title">Emploi du temps</h1>
-    <p class="page-subtitle">Sélectionnez une classe</p>
+    <h1 class="page-title">Emplois du temps</h1>
+    <p class="page-subtitle">Sélectionnez une classe pour consulter ou modifier son emploi du temps</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'viescolaire:emploi_du_temps_prof_index' %}" class="btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+      </svg>
+      Vue par professeur
+    </a>
   </div>
 </div>
 
-{% if cycles %}
-  {% for item in cycles %}
-  <div class="animate-fade-up delay-1" style="margin-bottom:var(--space-6);">
-    <h2 style="font-size:0.75rem; text-transform:uppercase; letter-spacing:.08em; color:var(--color-text-muted); margin-bottom:var(--space-3);">
-      {{ item.cycle.nom }}
-    </h2>
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:var(--space-3);">
-      {% for classe in item.classes %}
-      <a href="{% url 'viescolaire:emploi_du_temps' classe.pk %}"
-         class="card" style="padding:var(--space-4); text-decoration:none; color:inherit; display:block;">
-        <div class="fw-bold">{{ classe.nom }}</div>
-        <div class="text-muted" style="font-size:0.75rem;">{{ item.cycle.nom }}</div>
-      </a>
-      {% endfor %}
+{% if not cycles %}
+<div class="card animate-fade-up">
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
     </div>
+    <h3 class="fw-semibold mb-2">Aucune classe configurée</h3>
+    <p class="empty-state-text">Créez d'abord des classes dans <strong>Paramètres → Classes</strong>.</p>
   </div>
-  {% endfor %}
-{% else %}
-<div class="card animate-fade-up" style="padding:var(--space-6); text-align:center;">
-  <p class="text-muted">Aucune classe active. Configurez-les dans les paramètres.</p>
 </div>
-{% endif %}
+{% else %}
 
+{% for cycle_data in cycles %}
+<div class="animate-fade-up mb-6">
+
+  <!-- Séparateur de section cycle -->
+  <div class="d-flex align-center gap-3 mb-4">
+    <span class="badge {% cycle 'badge-success' 'badge-info' 'badge-warning' 'badge-purple' %}">
+      {{ cycle_data.cycle.nom }}
+    </span>
+    <div class="flex-1" style="height:1px; background:var(--color-border);"></div>
+    <span class="text-xs text-muted">
+      {{ cycle_data.classes|length }} classe{{ cycle_data.classes|length|pluralize }}
+    </span>
+  </div>
+
+  <!-- Grille de classes -->
+  <div class="modules-grid">
+    {% for classe in cycle_data.classes %}
+    <a href="{% url 'viescolaire:emploi_du_temps' classe.pk %}" class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div class="module-arrow">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </div>
+      </div>
+      <h3 class="module-title">{{ classe.nom }}</h3>
+      <p class="module-description">{{ cycle_data.cycle.nom }} · Emploi du temps hebdomadaire</p>
+    </a>
+    {% endfor %}
+  </div>
+
+</div>
+{% endfor %}
+
+{% endif %}
 {% endblock %}

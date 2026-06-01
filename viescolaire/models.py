@@ -301,14 +301,14 @@ class AppelDecision(BaseModel):
     """
 
     class StatutChoices(models.TextChoices):
-        EN_ATTENTE     = 'EN_ATTENTE',     _('En attente')
+        EN_ATTENTE = 'EN_ATTENTE', _('En attente')
         EN_INSTRUCTION = 'EN_INSTRUCTION', _('En instruction')
-        TRAITE         = 'TRAITE',         _('Traité')
+        TRAITE = 'TRAITE', _('Traité')
 
     class IssueChoices(models.TextChoices):
         MAINTENU = 'MAINTENU', _('Décision maintenue')
-        MODIFIE  = 'MODIFIE',  _('Décision modifiée')
-        ANNULE   = 'ANNULE',   _('Décision annulée')
+        MODIFIE = 'MODIFIE', _('Décision modifiée')
+        ANNULE = 'ANNULE', _('Décision annulée')
 
     decision_conseil = models.OneToOneField(
         DecisionConseil,
@@ -372,6 +372,80 @@ class AppelDecision(BaseModel):
     @property
     def est_traite(self):
         return self.statut == self.StatutChoices.TRAITE
+
+
+class ConfigEDT(BaseModel):
+    """Configuration des créneaux horaires pour la génération automatique d'EDT."""
+    etablissement = models.OneToOneField(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='config_edt',
+        verbose_name=_("Établissement"),
+    )
+    heure_debut_matin = models.TimeField(
+        default=__import__('datetime').time(7, 30),
+        verbose_name=_("Début matin"),
+    )
+    heure_fin_matin = models.TimeField(
+        default=__import__('datetime').time(12, 0),
+        verbose_name=_("Fin matin"),
+    )
+    heure_debut_aprem = models.TimeField(
+        default=__import__('datetime').time(14, 0),
+        verbose_name=_("Début après-midi"),
+    )
+    heure_fin_aprem = models.TimeField(
+        default=__import__('datetime').time(17, 20),
+        verbose_name=_("Fin après-midi"),
+    )
+    duree_seance = models.PositiveIntegerField(
+        default=50,
+        verbose_name=_("Durée séance (min)"),
+        help_text=_("Durée d'une séance en minutes (ex : 50, 55, 60)"),
+    )
+    jours_actifs = models.JSONField(
+        default=list,
+        verbose_name=_("Jours actifs"),
+        help_text=_("Liste des numéros de jours (1=Lun, 2=Mar, …, 6=Sam)"),
+    )
+
+    class Meta:
+        verbose_name = _("Configuration EDT")
+        verbose_name_plural = _("Configurations EDT")
+
+    def __str__(self):
+        return f"Config EDT — {self.etablissement}"
+
+    def get_jours_actifs(self):
+        return self.jours_actifs if self.jours_actifs else [1, 2, 3, 4, 5, 6]
+
+
+class DisponibiliteEnseignant(BaseModel):
+    """Créneau où un enseignant N'EST PAS disponible."""
+    personnel = models.ForeignKey(
+        'personnel.MembrePersonnel',
+        on_delete=models.CASCADE,
+        related_name='indisponibilites',
+        verbose_name=_("Enseignant"),
+    )
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='indisponibilites_enseignants',
+        verbose_name=_("Établissement"),
+    )
+    jour = models.IntegerField(choices=JourSemaine.choices, verbose_name=_("Jour"))
+    heure_debut = models.TimeField(verbose_name=_("Heure début"))
+    heure_fin = models.TimeField(verbose_name=_("Heure fin"))
+
+    class Meta:
+        verbose_name = _("Indisponibilité enseignant")
+        verbose_name_plural = _("Indisponibilités enseignants")
+        unique_together = [['personnel', 'jour', 'heure_debut']]
+        ordering = ['jour', 'heure_debut']
+
+    def __str__(self):
+        return f"{self.personnel} — {self.get_jour_display()} {self.heure_debut}–{self.heure_fin}"
 
 
 class ParticipationActivite(BaseModel):

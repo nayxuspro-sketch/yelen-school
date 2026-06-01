@@ -3,68 +3,95 @@
 {% block title %}Paiement enregistré — YELEN SCHOOL{% endblock %}
 
 {% block content %}
+<div class="pai-wrapper">
 
-<div class="page-header animate-fade-up">
-  <div>
-    <h1 class="page-title">Paiement enregistré</h1>
-    <p class="page-subtitle">{{ inscription.eleve.get_nom_complet }} — {{ inscription.classe.nom }}</p>
-  </div>
-</div>
-
-<div class="animate-fade-up delay-1" style="max-width:800px;">
-  
-  <div class="card" style="margin-bottom:var(--space-4);">
-    <div class="card-header">
-      <span class="card-title">Détail du paiement</span>
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-4">
+      <div>
+        <h1 class="page-title">Paiement enregistré</h1>
+        <p class="page-subtitle">{{ inscription.eleve.get_nom_complet }} — {{ inscription.classe.nom }}</p>
+      </div>
     </div>
-    <div style="padding:var(--space-4);">
-      <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+  </div>
+
+  {# Récapitulatif #}
+  <div class="card animate-fade-up delay-1 mb-4">
+    <div class="pai-sec-hd">
+      <div class="pai-sec-hd-left">
+        <div class="pai-sec-icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <span class="pai-sec-title">Détail de la transaction</span>
+          <p class="pai-sec-sub">{{ paiements|length }} rubrique{{ paiements|length|pluralize }} enregistrée{{ paiements|length|pluralize }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table class="data-table">
         <thead>
-          <tr style="border-bottom:1px solid var(--color-border);">
-            <th style="text-align:left; padding:8px;">Rubrique</th>
-            <th style="text-align:right; padding:8px;">Montant</th>
+          <tr>
+            <th>Rubrique</th>
+            <th>N° Reçu</th>
+            <th class="td-right">Montant</th>
+            <th class="td-right">Reçu PDF</th>
           </tr>
         </thead>
         <tbody>
           {% for p in paiements %}
-          <tr style="border-bottom:1px solid var(--color-border);">
-            <td style="padding:8px;">{{ p.rubrique.nom|default:"—" }}</td>
-            <td style="text-align:right; padding:8px; font-weight:600;">{{ p.montant|floatformat:"0" }} F</td>
+          <tr>
+            <td class="fw-medium">{{ p.rubrique.nom|default:"—" }}</td>
+            <td><span class="text-mono text-accent">{{ p.numero_recu|default:"—" }}</span></td>
+            <td class="td-right fw-bold">{{ p.montant|floatformat:"0" }} FCFA</td>
+            <td class="td-right">
+              <a href="{% url 'finances:recu_pdf' p.pk %}" class="btn-icon btn-icon-primary" target="_blank" title="Imprimer le reçu N°{{ p.numero_recu }}">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+                  <rect x="6" y="14" width="12" height="8" rx="1"/>
+                </svg>
+              </a>
+            </td>
           </tr>
           {% endfor %}
-          <tr style="font-weight:700; background:var(--color-bg-subtle);">
-            <td style="padding:12px 8px;">TOTAL</td>
-            <td style="text-align:right; padding:12px 8px; font-size:1.1rem;">{{ total|floatformat:"0" }} F</td>
-          </tr>
         </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" class="fw-bold">TOTAL</td>
+            <td class="td-right fw-bold text-accent" colspan="2">{{ total|floatformat:"0" }} FCFA</td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   </div>
 
-  <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
-    {% for p in paiements %}
-    <a href="{% url 'finances:recu_pdf' p.pk %}" class="btn-primary" target="_blank" style="display:inline-flex; align-items:center; gap:8px;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-        <rect x="6" y="14" width="12" height="8"/>
-      </svg>
-      Reçu N°{{ p.numero_recu }}
-    </a>
-    {% endfor %}
-  </div>
-
-  <div style="text-align:center; margin-top:var(--space-6);">
-    <a href="{% url 'finances:situation_eleve' inscription.pk %}" class="btn-secondary">
-      Voir la situation financière
-    </a>
-  </div>
-
-  <div style="text-align:center; margin-top:var(--space-3);">
-    <a href="{% url 'finances:paiement_create' %}" class="text-primary" style="font-size:0.9rem;">
-      Encaisser un autre paiement
-    </a>
+  {# Actions #}
+  <div class="card animate-fade-up delay-2">
+    <div class="pai-footer">
+      <a href="{% url 'finances:situation_eleve' inscription.pk %}" class="dash-btn-secondary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Situation financière
+      </a>
+      <div class="pai-footer-actions">
+        <a href="{% url 'finances:paiement_create' %}" class="btn-secondary">
+          Encaisser un autre paiement
+        </a>
+        {% for p in paiements %}
+        <a href="{% url 'finances:recu_pdf' p.pk %}" class="btn-primary" target="_blank">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8" rx="1"/>
+          </svg>
+          {% if paiements|length == 1 %}Imprimer le reçu{% else %}Reçu {{ p.numero_recu }}{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 
 </div>
-
 {% endblock %}

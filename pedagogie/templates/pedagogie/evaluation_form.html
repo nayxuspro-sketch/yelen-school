@@ -3,47 +3,337 @@
 {% block title %}{{ title }} — Pédagogie{% endblock %}
 
 {% block content %}
+<div class="ev-wrapper">
 
-<div class="page-header animate-fade-up">
-  <div>
-    <a href="{% url 'pedagogie:evaluation_list' %}" class="btn-secondary btn-sm" style="margin-bottom:var(--space-3); display:inline-flex;">
-      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-      </svg>
-      Retour aux évaluations
-    </a>
-    <h1 class="page-title">{{ title }}</h1>
-    <p class="page-subtitle">Définissez les paramètres du devoir ou de la composition.</p>
-  </div>
-</div>
-
-<div class="card animate-fade-up delay-1" style="max-width:720px;">
-  <form method="post">
-    {% csrf_token %}
-    <div class="form-grid-2">
-      {% for field in form %}
-      <div class="form-group"
-           {% if field.name == 'titre' or field.name == 'description' %}style="grid-column:1/-1;"{% endif %}>
-        <label for="{{ field.id_for_label }}" class="input-label">
-          {{ field.label }}{% if field.field.required %} <span style="color:#FF6B7A;">*</span>{% endif %}
-        </label>
-        {{ field }}
-        {% if field.errors %}<p class="input-error">{{ field.errors.0 }}</p>{% endif %}
-      </div>
-      {% endfor %}
-    </div>
-
-    <div class="divider" style="margin-top:var(--space-6);"></div>
-    <div class="d-flex justify-end gap-3" style="padding-top:var(--space-4);">
-      <a href="{% url 'pedagogie:evaluation_list' %}" class="btn-secondary">Annuler</a>
-      <button type="submit" class="btn-primary">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+  {# ── En-tête ── #}
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-3">
+      <a href="{% url 'pedagogie:evaluation_list' %}" class="btn-icon" title="Retour à la liste">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
         </svg>
-        Enregistrer l'évaluation
-      </button>
+      </a>
+      <div>
+        <h1 class="page-title">{{ title }}</h1>
+        <p class="page-subtitle">Définissez les paramètres du devoir ou de la composition.</p>
+      </div>
     </div>
-  </form>
-</div>
+  </div>
 
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger animate-fade-up mb-4">
+    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+    </svg>
+    <span>{% for error in form.non_field_errors %}{{ error }}{% endfor %}</span>
+  </div>
+  {% endif %}
+
+  {# ── Layout deux colonnes ── #}
+  <div class="ev-layout animate-fade-up delay-1">
+
+    {# ── Colonne principale : formulaire ── #}
+    <div>
+      <div class="card">
+
+        {# Info contextuelle en mode édition #}
+        {% if evaluation %}
+        <div class="ev-info-bar">
+          <div class="ev-info-cell">
+            <span class="ev-info-lbl">Classe</span>
+            <span class="ev-info-val">{{ evaluation.enseignement.classe.nom }}</span>
+          </div>
+          <div class="ev-info-cell">
+            <span class="ev-info-lbl">Matière</span>
+            <span class="ev-info-val">{{ evaluation.enseignement.matiere.nom }}</span>
+          </div>
+          <div class="ev-info-cell">
+            <span class="ev-info-lbl">Statut</span>
+            <span class="ev-info-val ev-info-val-green">{{ evaluation.get_statut_display }}</span>
+          </div>
+        </div>
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+
+          {# ── Section 1 : Contexte ── #}
+          <div class="pai-sec-hd">
+            <div class="pai-sec-hd-left">
+              <div class="pai-sec-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                </svg>
+              </div>
+              <span class="pai-sec-title">Contexte</span>
+            </div>
+          </div>
+          <div class="ev-sec-body">
+            <div class="form-group">
+              <label for="{{ form.enseignement.id_for_label }}" class="input-label">
+                {{ form.enseignement.label }}{% if form.enseignement.field.required %} <span class="required-star">*</span>{% endif %}
+              </label>
+              {{ form.enseignement }}
+              {% if form.enseignement.errors %}<p class="input-error">{{ form.enseignement.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="{{ form.type_evaluation.id_for_label }}" class="input-label">
+                  {{ form.type_evaluation.label }}{% if form.type_evaluation.field.required %} <span class="required-star">*</span>{% endif %}
+                </label>
+                {{ form.type_evaluation }}
+                {% if form.type_evaluation.errors %}<p class="input-error">{{ form.type_evaluation.errors.0 }}</p>{% endif %}
+              </div>
+              <div class="form-group">
+                <label for="{{ form.periode.id_for_label }}" class="input-label">
+                  {{ form.periode.label }}{% if form.periode.field.required %} <span class="required-star">*</span>{% endif %}
+                </label>
+                {{ form.periode }}
+                {% if form.periode.errors %}<p class="input-error">{{ form.periode.errors.0 }}</p>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          {# ── Section 2 : Contenu ── #}
+          <div class="pai-sec-hd">
+            <div class="pai-sec-hd-left">
+              <div class="pai-sec-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </div>
+              <span class="pai-sec-title">Contenu</span>
+            </div>
+          </div>
+          <div class="ev-sec-body">
+            <div class="form-group">
+              <label for="{{ form.titre.id_for_label }}" class="input-label">
+                {{ form.titre.label }}{% if form.titre.field.required %} <span class="required-star">*</span>{% endif %}
+              </label>
+              {{ form.titre }}
+              {% if form.titre.errors %}<p class="input-error">{{ form.titre.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.description.id_for_label }}" class="input-label">
+                {{ form.description.label }}
+              </label>
+              {{ form.description }}
+              {% if form.description.errors %}<p class="input-error">{{ form.description.errors.0 }}</p>{% endif %}
+            </div>
+          </div>
+
+          {# ── Section 3 : Paramètres ── #}
+          <div class="pai-sec-hd">
+            <div class="pai-sec-hd-left">
+              <div class="pai-sec-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </div>
+              <span class="pai-sec-title">Paramètres</span>
+            </div>
+          </div>
+          <div class="ev-sec-body">
+
+            {# Dates #}
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="{{ form.date_planifiee.id_for_label }}" class="input-label">
+                  {{ form.date_planifiee.label }}{% if form.date_planifiee.field.required %} <span class="required-star">*</span>{% endif %}
+                </label>
+                {{ form.date_planifiee }}
+                {% if form.date_planifiee.errors %}<p class="input-error">{{ form.date_planifiee.errors.0 }}</p>{% endif %}
+              </div>
+              <div class="form-group">
+                <label for="{{ form.date_effectuee.id_for_label }}" class="input-label">
+                  {{ form.date_effectuee.label }}
+                </label>
+                {{ form.date_effectuee }}
+                <p class="form-hint">Laisser vide si non encore effectuée.</p>
+                {% if form.date_effectuee.errors %}<p class="input-error">{{ form.date_effectuee.errors.0 }}</p>{% endif %}
+              </div>
+            </div>
+
+            {# Barème + Durée + Coefficient #}
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="{{ form.bareme.id_for_label }}" class="input-label">
+                  {{ form.bareme.label }}{% if form.bareme.field.required %} <span class="required-star">*</span>{% endif %}
+                </label>
+                {{ form.bareme }}
+                <p class="form-hint">En points (ex : 20).</p>
+                {% if form.bareme.errors %}<p class="input-error">{{ form.bareme.errors.0 }}</p>{% endif %}
+              </div>
+              <div class="form-group">
+                <label for="{{ form.duree_minutes.id_for_label }}" class="input-label">
+                  {{ form.duree_minutes.label }}
+                </label>
+                {{ form.duree_minutes }}
+                {% if form.duree_minutes.errors %}<p class="input-error">{{ form.duree_minutes.errors.0 }}</p>{% endif %}
+              </div>
+              <div class="form-group">
+                <label for="{{ form.coefficient.id_for_label }}" class="input-label">
+                  {{ form.coefficient.label }}
+                </label>
+                {{ form.coefficient }}
+                <p class="form-hint">Hérite de la matière si vide.</p>
+                {% if form.coefficient.errors %}<p class="input-error">{{ form.coefficient.errors.0 }}</p>{% endif %}
+              </div>
+            </div>
+
+            {# Statut — sélecteur visuel #}
+            <div class="form-group">
+              <span class="input-label">Statut</span>
+              {% if form.statut.errors %}<p class="input-error">{{ form.statut.errors.0 }}</p>{% endif %}
+              <div class="ev-statut-grid mt-2">
+
+                {% with cv=form.statut.value %}
+
+                <label class="ev-statut-item ev-statut-planifiee">
+                  <input type="radio" name="{{ form.statut.html_name }}" value="PLANIFIEE"
+                         {% if cv == "PLANIFIEE" or not cv %}checked{% endif %}>
+                  <span class="ev-statut-card">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Planifiée
+                  </span>
+                </label>
+
+                <label class="ev-statut-item ev-statut-en_cours">
+                  <input type="radio" name="{{ form.statut.html_name }}" value="EN_COURS"
+                         {% if cv == "EN_COURS" %}checked{% endif %}>
+                  <span class="ev-statut-card">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    En cours
+                  </span>
+                </label>
+
+                <label class="ev-statut-item ev-statut-terminee">
+                  <input type="radio" name="{{ form.statut.html_name }}" value="TERMINEE"
+                         {% if cv == "TERMINEE" %}checked{% endif %}>
+                  <span class="ev-statut-card">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Terminée
+                  </span>
+                </label>
+
+                <label class="ev-statut-item ev-statut-annulee">
+                  <input type="radio" name="{{ form.statut.html_name }}" value="ANNULEE"
+                         {% if cv == "ANNULEE" %}checked{% endif %}>
+                  <span class="ev-statut-card">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Annulée
+                  </span>
+                </label>
+
+                {% endwith %}
+              </div>
+            </div>
+
+          </div>
+
+          {# ── Section 4 : Observations ── #}
+          <div class="pai-sec-hd">
+            <div class="pai-sec-hd-left">
+              <div class="pai-sec-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                </svg>
+              </div>
+              <span class="pai-sec-title">Observations</span>
+            </div>
+          </div>
+          <div class="ev-sec-body ev-sec-body-last">
+            <div class="form-group">
+              <label for="{{ form.observations.id_for_label }}" class="input-label">
+                {{ form.observations.label }}
+              </label>
+              {{ form.observations }}
+              {% if form.observations.errors %}<p class="input-error">{{ form.observations.errors.0 }}</p>{% endif %}
+            </div>
+          </div>
+
+          {# ── Actions ── #}
+          <div class="ev-form-footer">
+            <a href="{% url 'pedagogie:evaluation_list' %}" class="btn-secondary">Annuler</a>
+            <button type="submit" class="btn-primary">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Enregistrer l'évaluation
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    {# ── Sidebar : aide contextuelle ── #}
+    <div>
+      <div class="card">
+        <div class="pai-sec-hd">
+          <div class="pai-sec-hd-left">
+            <div class="pai-sec-icon">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <span class="pai-sec-title">Référence</span>
+          </div>
+        </div>
+
+        <div class="ev-tip-row">
+          <span class="ev-tip-key">Barème standard</span>
+          <span class="ev-tip-val">20 points (règle BF — jamais sur 100)</span>
+        </div>
+        <div class="ev-tip-row">
+          <span class="ev-tip-key">Coefficient</span>
+          <span class="ev-tip-val">Hérité de la matière si laissé vide</span>
+        </div>
+        <div class="ev-tip-row">
+          <span class="ev-tip-key">Date effective</span>
+          <span class="ev-tip-val">Laisser vide tant que l'évaluation n'a pas eu lieu</span>
+        </div>
+        <div class="ev-tip-row">
+          <span class="ev-tip-key">Saisie des notes</span>
+          <span class="ev-tip-val">Disponible après enregistrement, depuis la liste des évaluations</span>
+        </div>
+
+        <div class="ev-tip-row">
+          <span class="ev-tip-key">Statuts</span>
+          <div class="d-flex flex-col gap-1 mt-2">
+            <div class="d-flex align-center gap-2">
+              <span class="badge badge-neutral">Planifiée</span>
+              <span class="ev-tip-val">Pas encore passée</span>
+            </div>
+            <div class="d-flex align-center gap-2">
+              <span class="badge badge-info">En cours</span>
+              <span class="ev-tip-val">En déroulement</span>
+            </div>
+            <div class="d-flex align-center gap-2">
+              <span class="badge badge-success">Terminée</span>
+              <span class="ev-tip-val">Notes à saisir</span>
+            </div>
+            <div class="d-flex align-center gap-2">
+              <span class="badge badge-danger">Annulée</span>
+              <span class="ev-tip-val">Non comptabilisée</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>{# /ev-layout #}
+
+</div>{# /ev-wrapper #}
 {% endblock %}

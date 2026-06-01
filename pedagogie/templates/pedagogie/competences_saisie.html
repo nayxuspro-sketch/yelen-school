@@ -1,0 +1,192 @@
+{% extends "core/base.html" %}
+
+{% block title %}Saisie compétences — {{ classe.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Compétences — {{ classe.nom }}</h1>
+    <p class="page-subtitle">
+      Saisie des niveaux d'acquisition
+      {% if annee %}· {{ annee.libelle }}{% endif %}
+      {% if trimestre %}· Trimestre {{ trimestre.numero }}{% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'pedagogie:competences_index' %}" class="btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </a>
+  </div>
+</div>
+
+<!-- Sélecteur de trimestre -->
+{% if trimestres %}
+<div class="card animate-fade-up delay-1">
+  <div class="card-body">
+    <div class="d-flex align-center gap-3 flex-wrap">
+      <span class="text-sm fw-semibold">Trimestre :</span>
+      {% for t in trimestres %}
+      <a href="?trimestre={{ t.pk }}"
+         class="{% if trimestre and trimestre.pk == t.pk %}btn-primary{% else %}btn-secondary{% endif %}">
+        Trimestre {{ t.numero }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if not competences %}
+<div class="card animate-fade-up delay-2">
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+      </svg>
+    </div>
+    <h3 class="fw-semibold mb-2">Aucune compétence configurée</h3>
+    <p class="empty-state-text">
+      Configurez d'abord le référentiel pour le cycle <strong>{{ classe.cycle.nom }}</strong>.
+    </p>
+    {% if classe.cycle_id %}
+    <a href="{% url 'pedagogie:competences_referentiel' classe.cycle_id %}" class="btn-primary mt-3">
+      Configurer le référentiel
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{% elif not inscriptions %}
+<div class="card animate-fade-up delay-2">
+  <div class="card-body">
+    <p class="text-muted">Aucun élève inscrit dans cette classe pour l'année en cours.</p>
+  </div>
+</div>
+
+{% else %}
+<form method="post" action="?trimestre={{ trimestre.pk }}">
+  {% csrf_token %}
+  <input type="hidden" name="trimestre" value="{{ trimestre.pk }}">
+
+  <div class="card animate-fade-up delay-2">
+    <div class="card-header">
+      <span class="card-title">Grille d'évaluation</span>
+      <span class="badge badge-neutral">{{ inscriptions|length }} élève{{ inscriptions|length|pluralize }}</span>
+    </div>
+    <div class="card-body pb-0">
+      <div class="d-flex gap-3 mb-3 flex-wrap text-sm">
+        <span class="badge badge-success">✅ Acquis</span>
+        <span class="badge badge-warning">🔄 En cours</span>
+        <span class="badge badge-danger">❌ Non acquis</span>
+        <span class="badge badge-neutral">— Non évalué</span>
+      </div>
+    </div>
+
+    <div class="table-wrapper" style="overflow-x:auto;">
+      <table class="table" style="min-width:700px;">
+        <thead>
+          <tr>
+            <th style="min-width:170px; position:sticky; left:0; background:#0A1628; z-index:2;">Élève</th>
+            {% for comp in competences %}
+            <th class="text-center" style="min-width:130px; font-size:0.7rem;">
+              {% if comp.matiere %}
+              <span class="badge badge-info" style="font-size:0.6rem; margin-bottom:3px;">{{ comp.matiere.code }}</span><br>
+              {% endif %}
+              <span title="{{ comp.libelle }}">{{ comp.libelle|truncatechars:35 }}</span>
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for ins in inscriptions %}
+          <tr>
+            <td style="position:sticky; left:0; background:#111E35; z-index:1;">
+              <span class="fw-semibold">{{ ins.eleve.nom|upper }} {{ ins.eleve.prenom }}</span>
+            </td>
+            {% for comp in competences %}
+            <td class="text-center" style="padding:4px 6px;">
+              <select name="niveau_{{ ins.pk }}_{{ comp.pk }}"
+                      class="form-control comp-select"
+                      data-ins="{{ ins.pk }}"
+                      data-comp="{{ comp.pk }}"
+                      style="padding:3px 6px; font-size:0.78rem;">
+                <option value="NON_EVALUE">— Non évalué</option>
+                <option value="ACQUIS">✅ Acquis</option>
+                <option value="EN_COURS">🔄 En cours</option>
+                <option value="NON_ACQUIS">❌ Non acquis</option>
+              </select>
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-flex justify-end mt-3 mb-4 animate-fade-up delay-3">
+    <button type="submit" class="btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+      Enregistrer les évaluations
+    </button>
+  </div>
+</form>
+
+<!-- Bulletins PDF par élève -->
+<div class="card animate-fade-up delay-3">
+  <div class="card-header">
+    <span class="card-title">Bulletins individuels PDF</span>
+  </div>
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th class="text-center">Bulletin de compétences</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ins in inscriptions %}
+        <tr>
+          <td class="fw-semibold">{{ ins.eleve.nom|upper }} {{ ins.eleve.prenom }}</td>
+          <td class="text-center">
+            {% if trimestre %}
+            <a href="{% url 'pedagogie:competences_bulletin_pdf' ins.pk trimestre.pk %}"
+               class="btn-secondary" target="_blank" style="padding:4px 12px; font-size:0.78rem;">
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:4px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+              PDF
+            </a>
+            {% else %}
+            <span class="text-muted text-xs">Sélectionner un trimestre</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<script>
+(function() {
+  var grille = {{ grille_json|safe }};
+  document.querySelectorAll('.comp-select').forEach(function(sel) {
+    var insId = sel.dataset.ins;
+    var compId = sel.dataset.comp;
+    if (grille[insId] && grille[insId][compId]) {
+      sel.value = grille[insId][compId];
+    }
+  });
+})();
+</script>
+{% endblock %}

@@ -8,7 +8,7 @@
                     <th>Capacité</th>
                     <th>Examen</th>
                     <th>Statut</th>
-                    <th style="text-align:right;">Actions</th>
+                    <th class="td-right">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -31,7 +31,7 @@
                         <span class="badge badge-neutral">Inactif</span>
                         {% endif %}
                     </td>
-                    <td style="text-align:right;">
+                    <td class="td-right">
                         <div class="d-flex justify-end gap-2">
                             <button hx-get="{% url 'parametres:classe_edit' c.pk %}" hx-target="#modal-container" hx-swap="innerHTML"
                                 class="btn-icon" title="Modifier">
@@ -40,7 +40,7 @@
                             <button hx-post="{% url 'parametres:classe_delete' c.pk %}"
                                 hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                                 hx-confirm="Supprimer cette classe ?"
-                                class="btn-icon" title="Supprimer" style="color:var(--color-danger);">
+                                class="btn-icon color-danger" title="Supprimer">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                         </div>
@@ -54,14 +54,14 @@
     </div>
 
 {% if page_obj.has_other_pages %}
-<div class="pagination" style="display:flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-4) 0;">
+<div class="pagination">
   {% if page_obj.has_previous %}
   <a hx-get="{% url 'parametres:classe_list' %}?page={{ page_obj.previous_page_number }}&q={{ query }}"
      hx-target="#classe-list-container" hx-push-url="true" class="btn-icon" title="Précédent">
     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
   </a>
   {% endif %}
-  <span class="text-secondary" style="font-size:.875rem;">
+  <span class="text-secondary text-sm">
     Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
     &nbsp;&mdash;&nbsp;{{ page_obj.paginator.count }} classe{{ page_obj.paginator.count|pluralize }}
   </span>

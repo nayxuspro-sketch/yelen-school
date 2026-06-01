@@ -18,25 +18,27 @@
   </div>
 </div>
 
-<div class="card animate-fade-up" style="max-width:640px;">
+<div class="card animate-fade-up">
   <div class="card-body">
     <form method="post" novalidate>
       {% csrf_token %}
 
-      <div class="form-group">
-        <label class="input-label" for="id_personnel">Vacataire <span class="text-danger">*</span></label>
-        {{ form.personnel }}
-        {% if form.personnel.errors %}
-        <div class="input-error">{{ form.personnel.errors.0 }}</div>
-        {% endif %}
-      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="input-label" for="id_personnel">Vacataire <span class="text-danger">*</span></label>
+          {{ form.personnel }}
+          {% if form.personnel.errors %}
+          <div class="input-error">{{ form.personnel.errors.0 }}</div>
+          {% endif %}
+        </div>
 
-      <div class="form-group">
-        <label class="input-label" for="id_annee_scolaire">Année scolaire <span class="text-danger">*</span></label>
-        {{ form.annee_scolaire }}
-        {% if form.annee_scolaire.errors %}
-        <div class="input-error">{{ form.annee_scolaire.errors.0 }}</div>
-        {% endif %}
+        <div class="form-group">
+          <label class="input-label" for="id_annee_scolaire">Année scolaire <span class="text-danger">*</span></label>
+          {{ form.annee_scolaire }}
+          {% if form.annee_scolaire.errors %}
+          <div class="input-error">{{ form.annee_scolaire.errors.0 }}</div>
+          {% endif %}
+        </div>
       </div>
 
       <div class="form-group">
@@ -47,7 +49,7 @@
         {% endif %}
       </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+      <div class="form-grid-2">
         <div class="form-group">
           <label class="input-label" for="id_taux_horaire">Taux horaire (FCFA) <span class="text-danger">*</span></label>
           {{ form.taux_horaire }}
@@ -65,7 +67,7 @@
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+      <div class="form-grid-2">
         <div class="form-group">
           <label class="input-label" for="id_date_debut">Date de début <span class="text-danger">*</span></label>
           {{ form.date_debut }}
@@ -93,7 +95,7 @@
         {% endif %}
       </div>
 
-      <div class="d-flex gap-3" style="margin-top:var(--space-5);">
+      <div class="d-flex gap-3 mt-4">
         <button type="submit" class="btn-primary">Créer le contrat</button>
         <a href="{% url 'vacations:contrat_list' %}" class="btn-secondary">Annuler</a>
       </div>

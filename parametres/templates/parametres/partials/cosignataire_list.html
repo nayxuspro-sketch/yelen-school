@@ -1,0 +1,89 @@
+<div style="padding:0;">
+  <div class="modal-header" style="border-bottom:1px solid var(--color-border); padding:1rem 1.5rem;">
+    <span class="modal-title">Co-signataires — {{ signataire.cycle.nom }} · {{ signataire.type_document.libelle }}</span>
+    <div class="d-flex gap-2 align-center">
+      <button hx-get="{% url 'parametres:cosignataire_create' signataire.pk %}"
+              hx-target="#modal-content"
+              hx-swap="innerHTML"
+              class="btn-primary btn-sm">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Ajouter
+      </button>
+      <button onclick="document.getElementById('modal-container').style.display='none'; document.getElementById('modal-content').innerHTML='';"
+              class="btn-icon" aria-label="Fermer">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div style="padding:1rem 1.5rem;">
+    {% if cosigs %}
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Ordre</th>
+            <th>Membre du personnel</th>
+            <th>Fonction</th>
+            <th>Statut</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cosig in cosigs %}
+          <tr>
+            <td class="text-secondary text-center" style="width:60px;">{{ cosig.ordre }}</td>
+            <td class="fw-semibold">
+              {% if cosig.membre_personnel %}
+                {{ cosig.membre_personnel.nom }} {{ cosig.membre_personnel.prenom }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-secondary">{{ cosig.fonction|default:"—" }}</td>
+            <td>
+              {% if cosig.actif %}
+                <span class="badge badge-success">Actif</span>
+              {% else %}
+                <span class="badge badge-neutral">Inactif</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              <div class="d-flex justify-end gap-2">
+                <button class="btn-icon" title="Modifier"
+                        hx-get="{% url 'parametres:cosignataire_edit' signataire.pk cosig.pk %}"
+                        hx-target="#modal-content"
+                        hx-swap="innerHTML">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </button>
+                <button class="btn-icon" title="Supprimer" style="color:var(--color-danger);"
+                        hx-post="{% url 'parametres:cosignataire_delete' cosig.pk %}"
+                        hx-confirm="Supprimer ce co-signataire ?"
+                        hx-target="#modal-content"
+                        hx-swap="innerHTML">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:2rem; text-align:center;">
+      <p class="text-muted">Aucun co-signataire. Cliquez « Ajouter » pour en créer un.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>

@@ -9,12 +9,12 @@
                     <th>Obligatoire</th>
                     <th>Ordre</th>
                     <th>Statut</th>
-                    <th style="text-align:right;">Actions</th>
+                    <th class="td-right">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in rubriques %}
-                <tr {% if not r.actif %}style="opacity:0.55;"{% endif %}>
+                <tr {% if not r.actif %}class="opacity-50"{% endif %}>
                     <td class="fw-medium">{{ r.nom }}</td>
                     <td><span class="badge badge-neutral text-mono">{{ r.code }}</span></td>
                     <td class="fw-semibold text-warning">{{ r.montant|default:0|floatformat:0 }} FCFA</td>
@@ -33,7 +33,7 @@
                         <span class="badge badge-neutral">Inactive</span>
                         {% endif %}
                     </td>
-                    <td style="text-align:right;">
+                    <td class="td-right">
                         <div class="d-flex justify-end gap-2">
                             <button hx-post="{% url 'parametres:rubrique_toggle' r.pk %}"
                                     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
@@ -53,7 +53,7 @@
                             <button hx-post="{% url 'parametres:rubrique_delete' r.pk %}"
                                 hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                                 hx-confirm="Supprimer cette rubrique ?"
-                                class="btn-icon" title="Supprimer" style="color:var(--color-danger);">
+                                class="btn-icon color-danger" title="Supprimer">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                         </div>

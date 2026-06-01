@@ -1,0 +1,255 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulletin Annuel — {{ eleve.nom|upper }} {{ eleve.prenom }} — {{ annee.libelle }}</title>
+  <link rel="stylesheet" href="{% static 'css/bulletin_annuel_pdf.css' %}">
+</head>
+<body>
+
+<div class="bulletin-page">
+
+  <!-- ═══════════════════════════════════════════════
+       EN-TÊTE ÉTABLISSEMENT
+  ══════════════════════════════════════════════════ -->
+  <div class="entete">
+    <div class="entete-logo">
+      {% if classe.etablissement.logo %}
+        <img src="{{ classe.etablissement.logo.url }}" alt="Logo établissement" class="logo-img">
+      {% else %}
+        <div class="logo-placeholder">
+          <span class="logo-initiales">
+            {{ classe.etablissement.nom|slice:":2"|upper }}
+          </span>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="entete-centre">
+      <div class="entete-pays">BURKINA FASO</div>
+      <div class="entete-devise">Unité — Progrès — Justice</div>
+      <div class="entete-ministere">MINISTÈRE DE L'ÉDUCATION NATIONALE</div>
+      <div class="entete-separateur"></div>
+      <div class="etab-nom">{{ classe.etablissement.nom|upper }}</div>
+      {% if classe.etablissement.devise %}
+      <div class="etab-devise">« {{ classe.etablissement.devise }} »</div>
+      {% endif %}
+      <div class="etab-contacts">
+        {% if classe.etablissement.telephone %}Tél. : {{ classe.etablissement.telephone }}{% endif %}
+        {% if classe.etablissement.email %} · {{ classe.etablissement.email }}{% endif %}
+      </div>
+      {% if classe.etablissement.ville %}
+      <div class="etab-adresse">{{ classe.etablissement.ville }}</div>
+      {% endif %}
+    </div>
+
+    <div class="entete-droite">
+      <div class="etab-ref">Réf. BF/MEN/{{ annee.libelle }}</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       TITRE DU DOCUMENT
+  ══════════════════════════════════════════════════ -->
+  <div class="titre-section">
+    <div class="titre-ligne"></div>
+    <h1 class="titre-principal">BULLETIN DE FIN D'ANNÉE SCOLAIRE</h1>
+    <div class="titre-annee">{{ annee.libelle }}</div>
+    <div class="titre-ligne"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       INFORMATIONS ÉLÈVE
+  ══════════════════════════════════════════════════ -->
+  <div class="info-eleve-bloc">
+    <table class="table-info-eleve">
+      <tr>
+        <td class="info-label">Matricule</td>
+        <td class="info-valeur info-matricule">{{ eleve.matricule }}</td>
+        <td class="info-label">Date de naissance</td>
+        <td class="info-valeur">{{ eleve.date_naissance|date:"d/m/Y" }}</td>
+      </tr>
+      <tr>
+        <td class="info-label">Nom &amp; Prénom</td>
+        <td class="info-valeur info-nom" colspan="3">{{ eleve.nom|upper }} {{ eleve.prenom }}</td>
+      </tr>
+      <tr>
+        <td class="info-label">Sexe</td>
+        <td class="info-valeur">{{ eleve.get_genre_display|default:eleve.genre }}</td>
+        <td class="info-label">Classe redoublée</td>
+        <td class="info-valeur">
+          {% if bulletin.a_redouble %}<span class="badge-oui">Oui</span>{% else %}<span class="badge-non">Non</span>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td class="info-label">Classe</td>
+        <td class="info-valeur"><strong>{{ classe.nom }}</strong></td>
+        <td class="info-label">Effectif</td>
+        <td class="info-valeur">
+          {% if bulletin.effectif_classe %}{{ bulletin.effectif_classe }} élève{{ bulletin.effectif_classe|pluralize }}{% else %}—{% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       TABLEAU DES ÉVALUATIONS PAR PÉRIODE
+  ══════════════════════════════════════════════════ -->
+  <div class="section-evaluations">
+
+    {% for periode in bulletin.donnees_json.periodes %}
+    <div class="periode-bloc">
+      <table class="table-periode">
+        <thead>
+          <tr>
+            <th class="col-matiere">Matière</th>
+            <th class="col-coeff">Coeff.</th>
+            <th class="col-note">Note /20</th>
+            <th class="col-points">Points</th>
+            <th class="col-periode-moy" rowspan="{{ periode.matieres|length|add:2 }}">
+              <div class="moyenne-periode-container">
+                <div class="periode-titre">{{ periode.nom|upper }}</div>
+                <div class="periode-moy-label">Moyenne</div>
+                <div class="periode-moy-valeur {% if periode.moyenne_periode >= 10 %}note-ok{% else %}note-ko{% endif %}">
+                  {{ periode.moyenne_periode|floatformat:2 }}<span class="note-base">/20</span>
+                </div>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for matiere in periode.matieres %}
+          <tr class="matiere-ligne">
+            <td class="col-matiere">{{ matiere.nom }}</td>
+            <td class="col-coeff">{{ matiere.coefficient }}</td>
+            <td class="col-note {% if matiere.note >= 10 %}note-ok{% else %}note-ko{% endif %}">
+              {{ matiere.note|floatformat:2 }}
+            </td>
+            <td class="col-points">{{ matiere.note_ponderee|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="vide-message">Aucune note saisie pour cette période</td>
+          </tr>
+          {% endfor %}
+          <tr class="ligne-total">
+            <td colspan="2" class="total-label">TOTAUX</td>
+            <td class="total-coeff">Σ coeff. : {{ periode.total_coefficients }}</td>
+            <td class="total-points">Σ pts : {{ periode.total_points|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% empty %}
+    <div class="no-data-message">
+      Aucune période d'évaluation disponible pour cette année scolaire.
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       BILAN ANNUEL
+  ══════════════════════════════════════════════════ -->
+  <div class="bilan-annuel">
+    <table class="table-bilan">
+      <tr>
+        <td class="bilan-label">Moyenne annuelle /20</td>
+        <td class="bilan-valeur {% if bulletin.est_admis %}note-ok-large{% else %}note-ko-large{% endif %}">
+          {{ bulletin.moyenne_annuelle|floatformat:2 }}
+        </td>
+        <td class="bilan-label">Rang</td>
+        <td class="bilan-valeur">
+          {% if bulletin.rang_annuel %}
+            {{ bulletin.rang_annuel }}<sup>e</sup>
+            {% if bulletin.effectif_classe %} / {{ bulletin.effectif_classe }}{% endif %}
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td class="bilan-label">Plus forte moy. de la classe</td>
+        <td class="bilan-valeur">
+          {% if bulletin.moyenne_max_classe %}{{ bulletin.moyenne_max_classe|floatformat:2 }}{% else %}—{% endif %}
+        </td>
+        <td class="bilan-label">Plus faible moy. de la classe</td>
+        <td class="bilan-valeur">
+          {% if bulletin.moyenne_min_classe %}{{ bulletin.moyenne_min_classe|floatformat:2 }}{% else %}—{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td class="bilan-label">Moyenne de la classe</td>
+        <td class="bilan-valeur">
+          {% if bulletin.moyenne_classe %}{{ bulletin.moyenne_classe|floatformat:2 }}{% else %}—{% endif %}
+        </td>
+        <td class="bilan-label">Nombre de périodes</td>
+        <td class="bilan-valeur">{{ bulletin.donnees_json.nombre_periodes }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       DÉCISION DU CONSEIL
+  ══════════════════════════════════════════════════ -->
+  <div class="decision-section">
+    <div class="decision-titre">DÉCISION DU CONSEIL DE CLASSE</div>
+    <div class="decision-valeur {% if bulletin.est_admis %}decision-admis{% else %}decision-redouble{% endif %}">
+      {{ bulletin.decision|upper }}
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       APPRÉCIATION
+  ══════════════════════════════════════════════════ -->
+  {% if bulletin.appreciation_conseil %}
+  <div class="appreciation-section">
+    <div class="appreciation-titre">APPRÉCIATION DU CONSEIL</div>
+    <div class="appreciation-texte">{{ bulletin.appreciation_conseil }}</div>
+  </div>
+  {% else %}
+  <div class="appreciation-section">
+    <div class="appreciation-titre">APPRÉCIATION DU CONSEIL</div>
+    <div class="appreciation-vide">________________________________________________________________________________________________________</div>
+  </div>
+  {% endif %}
+
+  <!-- ═══════════════════════════════════════════════
+       SIGNATURES
+  ══════════════════════════════════════════════════ -->
+  <div class="signatures-section">
+    <div class="signature-gauche">
+      <div class="signature-titre">Le Parent / Tuteur</div>
+      <div class="signature-espace"></div>
+      <div class="signature-ligne"></div>
+    </div>
+
+    <div class="signature-centre">
+      <div class="signature-lieu-date">
+        Fait à {{ bulletin.lieu_signature|default:classe.etablissement.ville|default:"Ouagadougou" }},
+        le {% if bulletin.date_signature %}{{ bulletin.date_signature|date:"d/m/Y" }}{% else %}____/____/________{% endif %}
+      </div>
+    </div>
+
+    <div class="signature-droite">
+      <div class="signature-titre">Le Directeur des Études</div>
+      <div class="signature-espace"></div>
+      {% if directeur %}
+      <div class="signature-nom">{{ directeur.prenom }} {{ directeur.nom|upper }}</div>
+      {% else %}
+      <div class="signature-ligne"></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PIED DE PAGE
+  ══════════════════════════════════════════════════ -->
+  <div class="pied-page">
+    <span>YELEN SCHOOL — Système de Gestion Scolaire</span>
+    <span>Généré le {% now "d/m/Y à H:i" %}</span>
+  </div>
+
+</div><!-- /.bulletin-page -->
+
+</body>
+</html>

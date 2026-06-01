@@ -12,7 +12,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import Eleve, Inscription
+from .models import Eleve, Inscription, TransfertEleve
 
 
 @admin.register(Eleve)
@@ -183,3 +183,11 @@ class InscriptionAdmin(admin.ModelAdmin):
     ordering = ['-annee_scolaire', 'eleve__nom', 'eleve__prenom']
     
     date_hierarchy = 'date_inscription'
+
+
+@admin.register(TransfertEleve)
+class TransfertEleveAdmin(admin.ModelAdmin):
+    list_display = ['inscription', 'etablissement_destination', 'statut', 'date_demande', 'traite_par']
+    list_filter = ['statut']
+    search_fields = ['inscription__eleve__nom', 'inscription__eleve__prenom', 'etablissement_destination']
+    readonly_fields = ['created_at', 'updated_at']

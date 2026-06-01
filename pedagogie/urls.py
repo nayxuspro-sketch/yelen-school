@@ -47,13 +47,26 @@ urlpatterns = [
         views.bulletin_pdf, name='bulletin_pdf',
     ),
     path(
+        'resultats/inscription/<uuid:inscription_id>/trimestre/<uuid:trimestre_id>/bulletin/duplicata/',
+        views.bulletin_duplicata_pdf, name='bulletin_duplicata_pdf',
+    ),
+    path(
         'resultats/classe/<uuid:class_id>/trimestre/<uuid:trimestre_id>/bulletins/batch/pdf/',
         views.bulletin_classe_batch_pdf, name='bulletin_classe_batch_pdf',
     ),
+    path(
+        'resultats/classe/<uuid:class_id>/trimestre/<uuid:trimestre_id>/bulletins/batch/zip/',
+        views.bulletin_classe_batch_pdf, name='bulletin_classe_zip',
+    ),
+    # path(
+    #     'resultats/trimestre/<uuid:trimestre_id>/bulletins/etab/zip/',
+    #     views.bulletins_etab_zip, name='bulletins_etab_zip',
+    # ),
 
     # Relevé de notes
     path('releve-notes/', views.releve_notes, name='releve_notes'),
     path('releve-notes/pdf/', views.releve_notes_pdf, name='releve_notes_pdf'),
+    path('releve-notes/fiche-discipline/pdf/', views.fiche_discipline_pdf, name='fiche_discipline_pdf'),
 
     # Moyennes par discipline
     path('resultats/moyennes-disciplines/', views.moyennes_disciplines, name='moyennes_disciplines'),
@@ -62,4 +75,48 @@ urlpatterns = [
     # Risque de décrochage
     path('risque-decrochage/', views.risque_decrochage, name='risque_decrochage'),
     path('risque-decrochage/pdf/', views.risque_decrochage_pdf, name='risque_decrochage_pdf'),
+
+    # Bulletins annuels
+    path(
+        'resultats/inscription/<uuid:inscription_id>/bulletin/annuel/apercu/',
+        views.bulletin_annuel_apercu, name='bulletin_annuel_apercu',
+    ),
+    path(
+        'resultats/inscription/<uuid:inscription_id>/bulletin/annuel/pdf/',
+        views.bulletin_annuel_pdf, name='bulletin_annuel_pdf',
+    ),
+    path(
+        'resultats/classe/<uuid:class_id>/bulletin/annuel/batch/pdf/',
+        views.bulletin_annuel_classe_batch_pdf, name='bulletin_annuel_classe_batch_pdf',
+    ),
+
+    # Palmarès annuel
+    path(
+        'resultats/classe/<uuid:class_id>/palmares/annuel/',
+        views.palmares_annuel, name='palmares_annuel',
+    ),
+    path(
+        'resultats/classe/<uuid:class_id>/palmares/annuel/pdf/',
+        views.palmares_annuel_pdf, name='palmares_annuel_pdf',
+    ),
+
+    # Prédiction réussite examens
+    path('predictions/', views.prediction_index, name='prediction_index'),
+    path('predictions/classe/<uuid:class_id>/', views.prediction_classe, name='prediction_classe'),
+    path('predictions/classe/<uuid:class_id>/calculer/', views.prediction_calculer, name='prediction_calculer'),
+    path('predictions/classe/<uuid:class_id>/pdf/', views.prediction_classe_pdf, name='prediction_classe_pdf'),
+
+    # Bulletins de compétences
+    path('competences/', views.competences_index, name='competences_index'),
+    path('competences/cycle/<uuid:cycle_id>/referentiel/', views.competences_referentiel, name='competences_referentiel'),
+    path('competences/competence/<uuid:pk>/supprimer/', views.competence_supprimer, name='competence_supprimer'),
+    path('competences/classe/<uuid:classe_id>/saisie/', views.competences_saisie, name='competences_saisie'),
+    path('competences/bulletin/<uuid:inscription_id>/trimestre/<uuid:trimestre_id>/pdf/', views.competences_bulletin_pdf, name='competences_bulletin_pdf'),
+
+    # Cahier de textes
+    path('cahier-textes/', views.cahier_textes_index, name='cahier_textes_index'),
+    path('cahier-textes/classe/<uuid:classe_id>/', views.cahier_textes_classe, name='cahier_textes_classe'),
+    path('cahier-textes/ajouter/', views.cahier_textes_create, name='cahier_textes_create'),
+    path('cahier-textes/<uuid:pk>/modifier/', views.cahier_textes_update, name='cahier_textes_update'),
+    path('cahier-textes/<uuid:pk>/supprimer/', views.cahier_textes_delete, name='cahier_textes_delete'),
 ]

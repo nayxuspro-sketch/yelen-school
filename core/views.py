@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db.models import Sum, Count, Q
 from django.views.decorators.http import require_POST
 
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 
 from personnel.models import MembrePersonnel
 from inscriptions.models import Eleve, Inscription
@@ -100,30 +100,76 @@ def home(request):
             {'cycle': c, 'nb': nb_par_cycle.get(c.pk, 0)} for c in cycles
         ]
 
+        # ── Widget IA décrochage ──────────────────────────────────────
+        from pedagogie.models import RisqueDecrochage
+        if annee_courante:
+            risques_qs = RisqueDecrochage.objects.filter(
+                inscription__annee_scolaire=annee_courante,
+            ).select_related('inscription__eleve', 'inscription__classe')
+
+            context['risques_critiques'] = list(
+                risques_qs.filter(niveau=RisqueDecrochage.NiveauChoices.CRITIQUE)
+                .order_by('-score')[:8]
+            )
+            context['risques_eleves'] = list(
+                risques_qs.filter(niveau=RisqueDecrochage.NiveauChoices.ELEVE)
+                .order_by('-score')[:8]
+            )
+            context['nb_risques_critiques'] = risques_qs.filter(
+                niveau=RisqueDecrochage.NiveauChoices.CRITIQUE
+            ).count()
+            context['nb_risques_eleves'] = risques_qs.filter(
+                niveau=RisqueDecrochage.NiveauChoices.ELEVE
+            ).count()
+            context['nb_risques_moderes'] = risques_qs.filter(
+                niveau=RisqueDecrochage.NiveauChoices.MODERE
+            ).count()
+        else:
+            context['risques_critiques'] = []
+            context['risques_eleves'] = []
+            context['nb_risques_critiques'] = 0
+            context['nb_risques_eleves'] = 0
+            context['nb_risques_moderes'] = 0
+
     # ── ENSEIGNANT ────────────────────────────────────────────────────
     elif role == 'ENSEIGNANT':
         from pedagogie.models import Enseignement, Evaluation, Resultat
 
-        context['nb_enseignements'] = Enseignement.objects.filter(
+        context['nb_issements'] = Enseignement.objects.filter(
             annee_scolaire=annee_courante, est_actif=True
         ).count() if annee_courante else 0
 
-        evaluations_recentes = (
-            Evaluation.objects
-            .filter(annee_scolaire=annee_courante)
-            .select_related('classe', 'matiere')
-            .order_by('-date_evaluation')[:5]
-        ) if annee_courante else []
+        evaluations_recentes = []
+        if annee_courante:
+            try:
+                evaluations_recentes = (
+                    Evaluation.objects
+                    .filter(trimestre__annee_scolaire=annee_courante)
+                    .select_related('trimestre', 'type_evaluation')
+                    .order_by('-date_planifiee')[:5]
+                )
+            except Exception:
+                pass
         context['evaluations_recentes'] = evaluations_recentes
 
-        context['nb_evaluations_annee'] = Evaluation.objects.filter(
-            annee_scolaire=annee_courante
-        ).count() if annee_courante else 0
+        context['nb_evaluations_annee'] = 0
+        if annee_courante:
+            try:
+                context['nb_evaluations_annee'] = Evaluation.objects.filter(
+                    trimestre__annee_scolaire=annee_courante
+                ).count()
+            except Exception:
+                pass
 
-        context['nb_eleves_sans_notes'] = Resultat.objects.filter(
-            trimestre__annee_scolaire=annee_courante,
-            note_1__isnull=True, note_2__isnull=True,
-        ).values('inscription').distinct().count() if annee_courante else 0
+        context['nb_eleves_sans_notes'] = 0
+        if annee_courante:
+            try:
+                context['nb_eleves_sans_notes'] = Resultat.objects.filter(
+                    trimestre__annee_scolaire=annee_courante,
+                    moyenne__isnull=True,
+                ).values('inscription').distinct().count()
+            except Exception:
+                pass
 
     # ── COMPTABLE ─────────────────────────────────────────────────────
     elif role == 'COMPTABLE':
@@ -460,15 +506,16 @@ def notifications_badge(request):
 
 @login_required
 def portail_parent(request):
-    """Tableau de bord pour le rôle PARENT."""
+    """Tableau de bord pour le rôle PARENT (PWA-ready)."""
     if request.user.role != 'PARENT':
         return HttpResponseForbidden("Accès réservé aux parents.")
 
     from presences.models import Presence
-    from pedagogie.models import MoyenneGenerale
+    from pedagogie.models import MoyenneGenerale, CahierTextes
     from finances.models import Paiement
     from django.utils import timezone
 
+    today = timezone.now().date()
     annee = AnneeScolaire.objects.filter(
         etablissement=request.user.etablissement, est_courante=True
     ).first()
@@ -484,7 +531,6 @@ def portail_parent(request):
             .first()
         ) if annee else None
 
-        # Dernière moyenne générale
         derniere_mg = None
         if inscription and annee:
             derniere_mg = (
@@ -495,22 +541,32 @@ def portail_parent(request):
                 .first()
             )
 
-        # Absences récentes (30 derniers jours)
         nb_absences_recentes = 0
         if inscription:
-            depuis = timezone.now().date() - timezone.timedelta(days=30)
+            depuis = today - timezone.timedelta(days=30)
             nb_absences_recentes = Presence.objects.filter(
                 inscription=inscription,
                 statut='ABSENT',
                 appel__date__gte=depuis,
             ).count()
 
-        # Solde financier
         total_paye = (
-            Paiement.objects
-            .filter(inscription=inscription)
+            Paiement.objects.filter(inscription=inscription)
             .aggregate(total=Sum('montant'))['total'] or 0
         ) if inscription else 0
+
+        # Devoirs à venir (de la classe de l'élève, non encore échus)
+        devoirs_a_venir = []
+        if inscription:
+            devoirs_a_venir = list(
+                CahierTextes.objects.filter(
+                    enseignement__classe=inscription.classe,
+                    enseignement__annee_scolaire=annee,
+                    date_remise_devoirs__gte=today,
+                    devoirs__gt='',
+                ).select_related('enseignement__matiere')
+                .order_by('date_remise_devoirs')[:5]
+            )
 
         enfants.append({
             'eleve': eleve,
@@ -518,11 +574,87 @@ def portail_parent(request):
             'derniere_mg': derniere_mg,
             'nb_absences_recentes': nb_absences_recentes,
             'total_paye': total_paye,
+            'devoirs_a_venir': devoirs_a_venir,
         })
 
     return render(request, 'core/portail_parent.html', {
         'enfants': enfants,
         'annee': annee,
+    })
+
+
+@login_required
+def portail_parent_bulletins(request):
+    """Page bulletins PWA pour les parents."""
+    if request.user.role != 'PARENT':
+        return HttpResponseForbidden("Accès réservé aux parents.")
+
+    from bulletins.models import Bulletin
+    from pedagogie.models import MoyenneGenerale
+
+    annee = AnneeScolaire.objects.filter(
+        etablissement=request.user.etablissement, est_courante=True
+    ).first()
+
+    eleves = request.user.eleves_lies.all().select_related()
+
+    enfants = []
+    for eleve in eleves:
+        inscription = (
+            Inscription.objects
+            .filter(eleve=eleve, annee_scolaire=annee)
+            .select_related('classe')
+            .first()
+        ) if annee else None
+
+        bulletins = []
+        if inscription:
+            bulletins_qs = (
+                Bulletin.objects
+                .filter(inscription=inscription, est_publie=True)
+                .select_related('trimestre')
+                .order_by('-trimestre__numero')
+            )
+            for b in bulletins_qs:
+                mg = MoyenneGenerale.objects.filter(
+                    inscription=inscription,
+                    trimestre=b.trimestre,
+                ).first()
+                bulletins.append({'bulletin': b, 'mg': mg})
+
+        if inscription or bulletins:
+            enfants.append({
+                'eleve': eleve,
+                'inscription': inscription,
+                'bulletins': bulletins,
+            })
+
+    return render(request, 'core/portail_parent_bulletins.html', {
+        'enfants': enfants,
+        'annee': annee,
+    })
+
+
+@login_required
+def portail_parent_notifications(request):
+    """Page notifications PWA pour les parents."""
+    if request.user.role != 'PARENT':
+        return HttpResponseForbidden("Accès réservé aux parents.")
+
+    from core.models import Notification
+
+    if request.method == 'POST' and request.POST.get('action') == 'tout_lu':
+        Notification.objects.filter(destinataire=request.user, lu=False).update(lu=True)
+        return redirect('core:portail_parent_notifications')
+
+    qs = Notification.objects.filter(destinataire=request.user)
+    nb_non_lues = qs.filter(lu=False).count()
+    qs.filter(lu=False).update(lu=True)
+    notifications = qs.order_by('-created_at')[:50]
+
+    return render(request, 'core/portail_parent_notifications.html', {
+        'notifications': notifications,
+        'nb_non_lues': nb_non_lues,
     })
 
 
@@ -772,4 +904,257 @@ def reunion_parents(request):
 
     return render(request, 'core/reunion_parents.html', {
         'classes': classes,
+    })
+
+
+@login_required
+@require_POST
+def risque_recalculer(request):
+    """Déclenche le recalcul des scores de décrochage pour l'année courante."""
+    if request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR'):
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden()
+
+    etab = getattr(request.user, 'etablissement', None)
+    annee = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else None
+
+    if not annee:
+        messages.warning(request, "Aucune année scolaire courante — recalcul impossible.")
+        return redirect('core:home')
+
+    from inscriptions.models import Inscription
+    from pedagogie.models import RisqueDecrochage
+    from pedagogie.utils_ia import calculer_score_risque
+
+    qs = (
+        Inscription.objects
+        .filter(annee_scolaire=annee)
+        .exclude(statut='ABANDON')
+        .select_related('eleve', 'classe')
+    )
+
+    created = updated = erreurs = 0
+    for inscription in qs.iterator(chunk_size=100):
+        try:
+            score, facteurs = calculer_score_risque(inscription, annee)
+            niveau = RisqueDecrochage.niveau_pour_score(score)
+            _, is_new = RisqueDecrochage.objects.update_or_create(
+                inscription=inscription,
+                defaults={'score': score, 'niveau': niveau, 'facteurs': facteurs},
+            )
+            if is_new:
+                created += 1
+            else:
+                updated += 1
+        except Exception:
+            erreurs += 1
+
+    total = created + updated
+    if erreurs:
+        messages.warning(
+            request,
+            f"Recalcul terminé : {total} élève(s) traité(s), {erreurs} erreur(s)."
+        )
+    else:
+        messages.success(
+            request,
+            f"Recalcul terminé : {total} score(s) mis à jour."
+        )
+    return redirect('core:home')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PWA — Progressive Web App (Portail Parent)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def app_manifest(request):
+    """Web App Manifest pour l'application principale YELEN SCHOOL (staff)."""
+    manifest = {
+        "name": "YELEN SCHOOL",
+        "short_name": "YELEN",
+        "description": "Système de gestion scolaire — Burkina Faso",
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "orientation": "any",
+        "background_color": "#0A1628",
+        "theme_color": "#00A86B",
+        "lang": "fr",
+        "icons": [
+            {"src": "/pwa/icon/192/", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable"},
+            {"src": "/pwa/icon/512/", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable"},
+        ],
+        "categories": ["education", "productivity"],
+    }
+    return JsonResponse(manifest)
+
+
+def app_service_worker(request):
+    """Service Worker de l'application principale — cache les assets, page offline en fallback."""
+    sw = """
+const APP_CACHE = 'yelen-app-v1';
+const PRECACHE = [
+  '/offline/',
+  '/static/css/yelen.css',
+  '/static/js/htmx.min.js',
+];
+const STATIC_ORIGIN = self.location.origin;
+const BYPASS = ['/accounts/', '/admin/', '/api/', '/sw.js'];
+
+// ── Install : pré-cache les assets critiques ──
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(APP_CACHE)
+      .then(c => c.addAll(PRECACHE))
+      .then(() => self.skipWaiting())
+  );
+});
+
+// ── Activate : purge les anciens caches ──
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== APP_CACHE).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+// ── Fetch ──
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  if (url.origin !== STATIC_ORIGIN) return;
+  if (BYPASS.some(p => url.pathname.startsWith(p))) return;
+
+  // Assets statiques : Cache First
+  if (url.pathname.startsWith('/static/') || url.pathname.startsWith('/media/')) {
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        const network = fetch(e.request).then(r => {
+          if (r.ok) caches.open(APP_CACHE).then(c => c.put(e.request, r.clone()));
+          return r;
+        });
+        return cached || network;
+      })
+    );
+    return;
+  }
+
+  // Pages : Network First, fallback cache, fallback /offline/
+  e.respondWith(
+    fetch(e.request)
+      .then(r => {
+        if (r.ok) caches.open(APP_CACHE).then(c => c.put(e.request, r.clone()));
+        return r;
+      })
+      .catch(() =>
+        caches.match(e.request)
+          .then(cached => cached || caches.match('/offline/'))
+      )
+  );
+});
+"""
+    return HttpResponse(sw.strip(), content_type='application/javascript')
+
+
+def offline_page(request):
+    """Page affichée par le Service Worker quand le serveur est inaccessible."""
+    return render(request, 'core/offline.html')
+
+
+def pwa_manifest(request):
+    """Web App Manifest pour le portail parent (installable sur Android)."""
+    manifest = {
+        "name": "YELEN SCHOOL — Portail Parent",
+        "short_name": "YELEN Parent",
+        "description": "Suivez la scolarité de vos enfants en temps réel",
+        "start_url": "/portail/parent/",
+        "scope": "/portail/parent/",
+        "display": "standalone",
+        "orientation": "portrait",
+        "background_color": "#0A1628",
+        "theme_color": "#00A86B",
+        "lang": "fr",
+        "icons": [
+            {"src": "/pwa/icon/192/", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any"},
+            {"src": "/pwa/icon/512/", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any"},
+        ],
+    }
+    return JsonResponse(manifest)
+
+
+def pwa_icon(request, size):
+    """Icône SVG de l'application PWA."""
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}" '
+        f'width="{size}" height="{size}">'
+        f'<rect width="{size}" height="{size}" rx="{size // 5}" fill="#0A1628"/>'
+        f'<text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" '
+        f'font-family="Outfit,Arial,sans-serif" font-weight="700" '
+        f'font-size="{size // 2}" fill="#00A86B">Y</text>'
+        f'</svg>'
+    )
+    return HttpResponse(svg, content_type='image/svg+xml')
+
+
+def pwa_service_worker(request):
+    """Service Worker — cache le portail parent pour un accès hors ligne."""
+    sw = (
+        "const CACHE='yelen-parent-v2';\n"
+        "const PRECACHE=['/portail/parent/','/static/css/yelen.css','/static/js/pwa.js'];\n"
+        "self.addEventListener('install',e=>{"
+        "e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting()));});\n"
+        "self.addEventListener('activate',e=>{"
+        "e.waitUntil(caches.keys()"
+        ".then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))"
+        ".then(()=>self.clients.claim()));});\n"
+        "self.addEventListener('fetch',e=>{"
+        "if(e.request.method!=='GET')return;"
+        "const u=new URL(e.request.url);"
+        "if(u.pathname.startsWith('/accounts/')||u.pathname.startsWith('/api/'))return;"
+        "e.respondWith(fetch(e.request).then(r=>{"
+        "if(r.ok){const c=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,c));}"
+        "return r;}).catch(()=>caches.match(e.request)"
+        ".then(cached=>cached||caches.match('/portail/parent/'))));});\n"
+    )
+    return HttpResponse(sw, content_type='application/javascript')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Assistant IA Chatbot Directeur
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def chatbot(request):
+    """Interface de l'assistant IA — moteur de requêtes local, sans API externe."""
+    session_key = 'chatbot_display'
+    display_history = request.session.get(session_key, [])
+
+    if request.method == 'POST':
+        if request.POST.get('action') == 'clear':
+            request.session.pop(session_key, None)
+            return redirect('core:chatbot')
+
+        user_message = request.POST.get('message', '').strip()
+        if not user_message:
+            return redirect('core:chatbot')
+
+        from core.chatbot import chat
+        response_text, display_history = chat(display_history, user_message)
+
+        request.session[session_key] = display_history
+        request.session.modified = True
+
+        if request.headers.get('HX-Request'):
+            return render(request, 'core/partials/chatbot_messages.html', {
+                'display_history': display_history,
+            })
+        return redirect('core:chatbot')
+
+    return render(request, 'core/chatbot.html', {
+        'display_history': display_history,
     })

@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 
+{% block nav_bulletins %}active{% endblock %}
 {% block title %}Bulletins — YELEN SCHOOL{% endblock %}
 
 {% block content %}
@@ -10,21 +11,20 @@
     <p class="page-subtitle">Gestion et publication des bulletins trimestriels</p>
   </div>
   {% if annee %}
-  <span class="badge badge-success" style="font-size:var(--text-xs); padding:6px 14px;">
-    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:4px;">
+  <div class="bul-idx-annee-badge">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
     </svg>
     {{ annee.libelle }}
-  </span>
+  </div>
   {% endif %}
 </div>
 
-{# ── Filtre année ── #}
 {% if annees %}
-<div class="card animate-fade-up" style="margin-bottom:var(--space-5); padding:var(--space-4) var(--space-5);">
-  <form method="get" style="display:flex; align-items:center; gap:var(--space-3); flex-wrap:wrap;">
-    <label style="font-size:0.85rem; font-weight:500; color:var(--color-text-secondary);">Année scolaire :</label>
-    <select name="annee" class="form-input" style="width:auto; min-width:160px;" onchange="this.form.submit()">
+<div class="bul-idx-filter-bar animate-fade-up delay-1">
+  <form method="get" class="d-flex align-center gap-2">
+    <label class="dash-form-label mb-0">Année scolaire</label>
+    <select name="annee" class="input bul-idx-year-select" onchange="this.form.submit()">
       {% for a in annees %}
       <option value="{{ a.pk }}" {% if a == annee %}selected{% endif %}>{{ a.libelle }}</option>
       {% endfor %}
@@ -33,88 +33,154 @@
 </div>
 {% endif %}
 
-{# ── Trimestres disponibles ── #}
 {% if trimestres %}
-<div class="animate-fade-up" style="margin-bottom:var(--space-3);">
-  <span class="fw-semibold" style="font-size:0.8rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.08em;">Périodes</span>
-</div>
-<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); margin-bottom:var(--space-6);">
-  {% for row in trimestres_avec_stats %}
-  {% with t=row.trimestre %}
-  <div class="card" style="padding:var(--space-4) var(--space-5);">
-    <div style="font-size:0.95rem; font-weight:600; margin-bottom:var(--space-2);">{{ t.nom }}</div>
-    <div style="font-size:0.8rem; color:var(--color-text-muted); margin-bottom:var(--space-3);">
-      {{ t.date_debut|date:"d/m/Y" }} – {{ t.date_fin|date:"d/m/Y" }}
-    </div>
-    <div style="font-size:0.85rem; color:var(--color-text-secondary); margin-bottom:var(--space-3);">
-      {% if row.total %}
-      <span style="color:var(--color-primary); font-weight:600;">{{ row.publies }}</span>
-      <span style="color:var(--color-text-muted);">/{{ row.total }} publié{{ row.publies|pluralize }}</span>
-      {% else %}
-      <span style="color:var(--color-text-muted);">Aucun bulletin</span>
-      {% endif %}
-    </div>
-    {% if row.publies and row.publies == row.total %}
-    <span style="display:inline-block;background:rgba(0,168,107,0.12);color:#00a86b;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;">Tous publiés</span>
-    {% elif row.publies %}
-    <span style="display:inline-block;background:rgba(245,166,35,0.12);color:#F5A623;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;">En cours</span>
-    {% else %}
-    <span style="display:inline-block;background:rgba(100,116,139,0.12);color:#94a3b8;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;">Non publié</span>
-    {% endif %}
+<div class="bul-idx-sec animate-fade-up delay-2">
+  <div class="pai-sec-hd">
+    <span class="fw-semibold">Périodes d'évaluation</span>
+    <span class="badge badge-neutral">{{ trimestres_avec_stats|length }}</span>
   </div>
-  {% endwith %}
-  {% endfor %}
+  <div class="bul-idx-periode-cards">
+    {% for row in trimestres_avec_stats %}
+    {% with t=row.trimestre %}
+    {% if row.total and row.publies == row.total %}
+      {% with status="complete" %}
+      <div class="bul-idx-periode-card" data-status="{{ status }}">
+        <div class="bul-idx-periode-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div class="bul-idx-periode-body">
+          <div class="bul-idx-periode-title">{{ t.nom }}</div>
+          <div class="bul-idx-periode-dates">{{ t.date_debut|date:"d/m/Y" }} — {{ t.date_fin|date:"d/m/Y" }}</div>
+          <div class="bul-idx-periode-bar">
+            <div class="bul-idx-periode-bar-fill" style="--pct: {% widthratio row.publies row.total 100 %}%"></div>
+          </div>
+        </div>
+        <div class="bul-idx-periode-stat">
+          <div class="bul-idx-periode-count">{{ row.publies }}</div>
+          <span class="bul-idx-periode-count-total">/ {{ row.total }}</span>
+          <div class="mt-2"><span class="badge badge-success">Terminé</span></div>
+        </div>
+      </div>
+      {% endwith %}
+    {% elif row.publies %}
+      {% with status="pending" %}
+      <div class="bul-idx-periode-card" data-status="{{ status }}">
+        <div class="bul-idx-periode-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div class="bul-idx-periode-body">
+          <div class="bul-idx-periode-title">{{ t.nom }}</div>
+          <div class="bul-idx-periode-dates">{{ t.date_debut|date:"d/m/Y" }} — {{ t.date_fin|date:"d/m/Y" }}</div>
+          <div class="bul-idx-periode-bar">
+            <div class="bul-idx-periode-bar-fill" style="--pct: {% widthratio row.publies row.total 100 %}%"></div>
+          </div>
+        </div>
+        <div class="bul-idx-periode-stat">
+          <div class="bul-idx-periode-count">{{ row.publies }}</div>
+          <span class="bul-idx-periode-count-total">/ {{ row.total }}</span>
+          <div class="mt-2"><span class="badge badge-warning">En cours</span></div>
+        </div>
+      </div>
+      {% endwith %}
+    {% else %}
+      {% with status="empty" %}
+      <div class="bul-idx-periode-card" data-status="{{ status }}">
+        <div class="bul-idx-periode-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+          </svg>
+        </div>
+        <div class="bul-idx-periode-body">
+          <div class="bul-idx-periode-title">{{ t.nom }}</div>
+          <div class="bul-idx-periode-dates">{{ t.date_debut|date:"d/m/Y" }} — {{ t.date_fin|date:"d/m/Y" }}</div>
+          <div class="bul-idx-periode-bar">
+            <div class="bul-idx-periode-bar-fill"></div>
+          </div>
+        </div>
+        <div class="bul-idx-periode-stat">
+          <div class="bul-idx-periode-empty">—</div>
+          <div class="mt-2"><span class="badge badge-neutral">En attente</span></div>
+        </div>
+      </div>
+      {% endwith %}
+    {% endif %}
+    {% endwith %}
+    {% endfor %}
+  </div>
 </div>
 {% endif %}
 
-{# ── Accès par classe ── #}
 {% if classes %}
-<div class="animate-fade-up" style="margin-bottom:var(--space-3);">
-  <span class="fw-semibold" style="font-size:0.8rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.08em;">Accès par classe</span>
+<div class="bul-idx-sec animate-fade-up delay-3">
+  <div class="pai-sec-hd">
+    <span class="fw-semibold">Accès par classe</span>
+    <span class="badge badge-neutral">{{ classes|length }}</span>
+  </div>
+
+  {% if trimestres %}
+  <div class="table-scroll">
+    <table class="data-table bul-idx-table">
+      <colgroup>
+        <col class="bul-idx-col-classe">
+        <col class="bul-idx-col-cycle">
+        {% for t in trimestres %}<col class="bul-idx-col-trim">{% endfor %}
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Classe</th>
+          <th>Cycle</th>
+          {% for t in trimestres %}
+          <th class="text-center">{{ t.nom }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for classe in classes %}
+        <tr>
+          <td class="fw-semibold">{{ classe.nom }}</td>
+          <td class="text-muted">{{ classe.cycle.nom }}</td>
+          {% for t in trimestres %}
+          <td class="text-center">
+            <a href="{% url 'bulletins:bulletins_classe' class_id=classe.pk trimestre_id=t.pk %}"
+               class="btn btn-secondary btn-sm">
+              Gérer
+            </a>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="dash-empty-state">
+    <div class="dash-empty-icon">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+    </div>
+    <p class="dash-empty-title">Aucun trimestre configuré</p>
+    <p class="dash-empty-text">Configurez les périodes d'évaluation pour cette année scolaire.</p>
+    <a href="{% url 'parametres:periode_list' %}" class="dash-btn dash-btn-primary">
+      Configurer les périodes
+    </a>
+  </div>
+  {% endif %}
 </div>
 
-{% if trimestres %}
-<div class="card animate-fade-up" style="overflow:auto;">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Classe</th>
-        <th>Cycle</th>
-        {% for t in trimestres %}
-        <th style="text-align:center;">{{ t.nom }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for classe in classes %}
-      <tr>
-        <td class="fw-semibold">{{ classe.nom }}</td>
-        <td style="color:var(--color-text-muted);">{{ classe.cycle.nom }}</td>
-        {% for t in trimestres %}
-        <td style="text-align:center;">
-          <a href="{% url 'bulletins:bulletins_classe' class_id=classe.pk trimestre_id=t.pk %}"
-             class="btn btn-sm btn-outline" style="font-size:0.75rem; padding:4px 10px;">
-            Gérer
-          </a>
-        </td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
 {% else %}
-<div class="empty-state" style="padding:var(--space-8);">
-  <p style="color:var(--color-text-muted);">Aucun trimestre configuré pour cette année scolaire.</p>
-  <a href="{% url 'parametres:periode_list' %}" class="btn btn-primary" style="margin-top:var(--space-3);">
-    Configurer les périodes
-  </a>
-</div>
-{% endif %}
-
-{% else %}
-<div class="empty-state" style="padding:var(--space-8); text-align:center;">
-  <p style="color:var(--color-text-muted);">Aucune classe active pour cet établissement.</p>
+<div class="dash-empty-state animate-fade-up delay-3">
+  <div class="dash-empty-icon">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+    </svg>
+  </div>
+  <p class="dash-empty-title">Aucune classe active</p>
+  <p class="dash-empty-text">Aucune classe active pour cet établissement.</p>
 </div>
 {% endif %}
 

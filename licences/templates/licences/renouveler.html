@@ -1,94 +1,79 @@
-{% load static %}
+{% load static static_v %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Renouvellement de licence — YELEN SCHOOL</title>
-  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
-  <style>
-    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--color-bg, #f8fafc); }
-    .licence-card { max-width:560px; width:100%; background:#fff; border-radius:16px; box-shadow:0 4px 32px rgba(0,0,0,.10); padding:48px 40px; text-align:center; }
-    .licence-icon { font-size:52px; margin-bottom:16px; }
-    .licence-title { font-size:1.5rem; font-weight:700; color:#1a2a42; margin-bottom:8px; }
-    .licence-subtitle { color:#64748b; font-size:0.9rem; margin-bottom:28px; }
-    .badge-expired { display:inline-block; background:#fee2e2; color:#dc2626; padding:6px 18px; border-radius:20px; font-weight:700; font-size:0.85rem; margin-bottom:20px; }
-    .badge-warning { display:inline-block; background:#fef3c7; color:#d97706; padding:6px 18px; border-radius:20px; font-weight:700; font-size:0.85rem; margin-bottom:20px; }
-    .info-box { background:#f1f5f9; border-radius:10px; padding:20px 24px; text-align:left; margin-bottom:24px; }
-    .info-box p { margin:0 0 6px; font-size:0.85rem; color:#374151; }
-    .info-box p:last-child { margin-bottom:0; }
-    .info-label { font-weight:600; color:#1a2a42; }
-    .info-expired { color:#dc2626; font-weight:600; }
-    .steps { text-align:left; margin:24px 0; }
-    .step { display:flex; gap:14px; align-items:flex-start; margin-bottom:14px; }
-    .step-num { flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#1a2a42; color:#fff; font-weight:700; font-size:0.8rem; display:flex; align-items:center; justify-content:center; }
-    .step-text { font-size:0.85rem; color:#374151; padding-top:4px; }
-    .btn-admin { display:inline-block; background:#1a2a42; color:#fff; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.9rem; }
-    .contact-line { font-size:0.82rem; color:#64748b; margin-top:20px; }
-    .divider { border:none; border-top:1px solid #e2e8f0; margin:24px 0; }
-  </style>
+  <title>Renouvellement — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static_v 'css/yelen.css' %}">
 </head>
-<body>
-<div class="licence-card">
+<body class="yk-body">
 
-  <div class="licence-icon">🔄</div>
-  <div class="licence-title">Renouvellement de licence</div>
+<div class="yk-card animate-fade-up">
 
-  {% if est_expiree %}
-    <div class="badge-expired">Licence expirée</div>
-  {% elif jours_restants is not None and jours_restants <= 30 %}
-    <div class="badge-warning">Expire dans {{ jours_restants }} jour{{ jours_restants|pluralize }}</div>
-  {% endif %}
-
-  {% if licence %}
-    <div class="info-box">
-      <p><span class="info-label">Établissement :</span> {{ etab.nom }}</p>
-      <p><span class="info-label">Clé :</span> <code>{{ licence.cle_licence }}</code></p>
-      <p><span class="info-label">Type :</span> {{ licence.get_type_licence_display }}</p>
-      <p>
-        <span class="info-label">Expiration :</span>
-        <span {% if est_expiree %}class="info-expired"{% endif %}>{{ licence.date_expiration|date:"d/m/Y" }}</span>
-      </p>
-      {% if limites %}
-      <p><span class="info-label">Limites :</span> {{ limites.max_eleves }} élèves · {{ limites.max_classes }} classes</p>
-      {% endif %}
+  {# ── Hero ── #}
+  <div class="yk-card-hero">
+    <div class="yk-hero-icon yk-hero-icon-green">
+      <svg width="28" height="28" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
     </div>
-  {% endif %}
-
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-text">Notez votre clé de licence et votre type de plan ci-dessus.</div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-text">Contactez l'équipe YELEN SCHOOL par email ou téléphone en indiquant votre clé de licence.</div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-text">Effectuez le paiement selon les instructions reçues.</div>
-    </div>
-    <div class="step">
-      <div class="step-num">4</div>
-      <div class="step-text">Votre accès sera restauré dans les 24 heures suivant la confirmation du paiement.</div>
-    </div>
+    <h1 class="yk-hero-title">Prolonger l'Abonnement</h1>
+    <p class="yk-hero-sub">Maintenez vos services actifs</p>
   </div>
 
-  <hr class="divider">
+  {# ── Corps ── #}
+  <div class="yk-card-body">
 
-  <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-    {% if is_superuser %}
-    <a href="/licences/" class="btn-admin">Gérer les licences</a>
+    {# Alerte statut #}
+    {% if est_expiree %}
+    <div class="dash-alert dash-alert-danger yk-alert-sm">
+      Expiré depuis le {{ licence.date_expiration|date:"d/m/Y" }}
+    </div>
+    {% elif jours_restants is not None and jours_restants <= 30 %}
+    <div class="dash-alert dash-alert-warning yk-alert-sm">
+      {{ jours_restants }} jours restants
+    </div>
     {% endif %}
-    <a href="mailto:support@yelengroup.com" class="btn-admin" style="background:var(--color-primary,#00a86b);">Contacter le support</a>
-    <a href="{% url 'accounts:logout' %}" class="btn-admin" style="background:#64748b;">Se déconnecter</a>
+
+    {# Info licence #}
+    {% if licence %}
+    <div class="yk-info-box">
+      <div class="yk-info-row yk-info-row-sep">
+        <span class="yk-info-label">Licence</span>
+        <code class="yk-info-code">{{ licence.cle_licence|truncatechars:10 }}</code>
+      </div>
+      <div class="yk-info-row">
+        <span class="yk-info-label">Plan</span>
+        <span class="yk-info-badge">{{ licence.get_type_licence_display }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Étapes #}
+    <div class="yk-steps">
+      <div class="yk-step">
+        <span class="yk-step-num">1</span>
+        <span class="yk-step-text">Contacter le support</span>
+      </div>
+      <div class="yk-step">
+        <span class="yk-step-num">2</span>
+        <span class="yk-step-text">Effectuer le paiement</span>
+      </div>
+      <div class="yk-step">
+        <span class="yk-step-num">3</span>
+        <span class="yk-step-text">Activation automatique</span>
+      </div>
+    </div>
+
+    {# Actions #}
+    <div class="yk-actions">
+      <a href="/" class="dash-btn dash-btn-secondary">Retour</a>
+      <a href="mailto:support@yelengroup.com" class="dash-btn">Contacter</a>
+    </div>
+
   </div>
-
-  <p class="contact-line">
-    <strong>Email :</strong> support@yelengroup.com<br>
-    <strong>Tél :</strong> +226 XX XX XX XX
-  </p>
-
 </div>
+
 </body>
 </html>

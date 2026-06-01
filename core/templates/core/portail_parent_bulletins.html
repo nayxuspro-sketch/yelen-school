@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#06101E">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Bulletins — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+</head>
+
+<body class="pp-app">
+
+  <!-- Topbar -->
+  <header class="pp-topbar">
+    <a href="{% url 'core:portail_parent' %}" class="pp-topbar-back">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div class="pp-topbar-logo">Bulletins</div>
+    <div></div>
+  </header>
+
+  <!-- Contenu -->
+  <main class="pp-content">
+
+    {% if not enfants %}
+    <div class="pp-empty animate-fade-up">
+      <div class="pp-empty-icon">
+        <svg width="52" height="52" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <h3 class="pp-empty-title">Aucun bulletin disponible</h3>
+      <p class="pp-empty-text">Les bulletins apparaîtront ici après leur publication par l'administration.</p>
+    </div>
+    {% else %}
+
+    {% for enfant in enfants %}
+    <div class="animate-fade-up">
+
+      <!-- En-tête enfant -->
+      <div class="pp-bul-enfant-header">
+        <div class="pp-avatar pp-avatar--sm">{{ enfant.eleve.prenom|first|upper }}</div>
+        <div>
+          <div class="pp-nom">{{ enfant.eleve.get_nom_complet }}</div>
+          {% if enfant.inscription %}
+          <div class="pp-classe">{{ enfant.inscription.classe.nom }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if not enfant.bulletins %}
+      <div class="pp-bul-empty">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Aucun bulletin publié pour cette année
+      </div>
+      {% else %}
+
+      {% for item in enfant.bulletins %}
+      {% with b=item.bulletin mg=item.mg %}
+      <div class="pp-bul-card">
+
+        <!-- Trimestre + statut signature -->
+        <div class="pp-bul-card-header">
+          <div class="pp-bul-trimestre">{{ b.trimestre.nom }}</div>
+          {% if b.signe_le %}
+          <span class="badge badge-success">Signé</span>
+          {% elif b.token_signature and b.token_valide %}
+          <span class="badge badge-warning">À signer</span>
+          {% else %}
+          <span class="badge badge-neutral">Publié</span>
+          {% endif %}
+        </div>
+
+        <!-- Stats -->
+        <div class="pp-bul-stats">
+          <div class="pp-bul-stat">
+            <div class="pp-val {% if mg and mg.valeur >= 10 %}pp-val--success{% elif mg %}pp-val--danger{% else %}pp-val--empty{% endif %}">
+              {% if mg %}{{ mg.valeur|floatformat:2 }}{% else %}—{% endif %}
+            </div>
+            <div class="pp-stat-label">Moyenne /20</div>
+          </div>
+          <div class="pp-bul-stat">
+            <div class="pp-val {% if mg and mg.rang %}pp-val--warning{% else %}pp-val--empty{% endif %}">
+              {% if mg and mg.rang %}{{ mg.rang }}{% else %}—{% endif %}
+            </div>
+            <div class="pp-stat-label">Rang</div>
+          </div>
+          <div class="pp-bul-stat">
+            <div class="pp-val {% if b.absences_non_justifiees > 0 %}pp-val--danger{% endif %}">
+              {{ b.absences_non_justifiees }}
+            </div>
+            <div class="pp-stat-label">Abs. NJ (h)</div>
+          </div>
+        </div>
+
+        <!-- Appréciation -->
+        {% if b.appreciation_conseil %}
+        <div class="pp-bul-appreciation">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+          </svg>
+          <span>{{ b.appreciation_conseil }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="pp-bul-actions">
+          {% if b.token_signature %}
+          <a href="{% url 'bulletins:bulletin_parent_consulter' token=b.token_signature %}"
+             class="btn-primary btn-sm">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            {% if b.signe_le %}Consulter{% else %}Consulter & Signer{% endif %}
+          </a>
+          {% endif %}
+          {% if b.date_publication %}
+          <div class="pp-bul-date">Publié le {{ b.date_publication|date:"d/m/Y" }}</div>
+          {% endif %}
+        </div>
+
+      </div>
+      {% endwith %}
+      {% endfor %}
+
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    {% endif %}
+
+  </main>
+
+  <!-- Navigation Basse PWA -->
+  <nav class="pp-nav">
+    <a href="{% url 'core:portail_parent' %}" class="pp-nav-item">
+      <span class="pp-nav-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+      </span>
+      Accueil
+    </a>
+    <a href="{% url 'core:portail_parent_notifications' %}" class="pp-nav-item">
+      <span class="pp-nav-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+      </span>
+      Notifs
+    </a>
+    <a href="{% url 'core:portail_parent_bulletins' %}" class="pp-nav-item pp-nav-item--active">
+      <span class="pp-nav-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </span>
+      Bulletins
+    </a>
+    <a href="{% url 'accounts:logout' %}" class="pp-nav-item pp-nav-item--danger">
+      <span class="pp-nav-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </span>
+      Quitter
+    </a>
+  </nav>
+
+</body>
+</html>

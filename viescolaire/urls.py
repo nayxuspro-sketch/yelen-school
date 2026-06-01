@@ -41,4 +41,15 @@ urlpatterns = [
     path('classe/<uuid:classe_id>/emploi-du-temps/pdf/', views.emploi_du_temps_pdf, name='emploi_du_temps_pdf'),
     path('classe/<uuid:classe_id>/seance/ajouter/', views.seance_create, name='seance_create'),
     path('seance/<uuid:seance_id>/supprimer/', views.seance_delete, name='seance_delete'),
+
+    path('classe/<uuid:classe_id>/emploi-du-temps/generer/', views.edt_generer, name='edt_generer'),
+
+    # Emploi du temps par professeur
+    path('emploi-du-temps/professeur/', views.emploi_du_temps_prof_index, name='emploi_du_temps_prof_index'),
+    path('emploi-du-temps/professeur/<uuid:personnel_id>/', views.emploi_du_temps_prof, name='emploi_du_temps_prof'),
+    path(
+        'emploi-du-temps/professeur/<uuid:personnel_id>/pdf/',
+        views.emploi_du_temps_prof_pdf,
+        name='emploi_du_temps_prof_pdf',
+    ),
 ]

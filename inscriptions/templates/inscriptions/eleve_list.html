@@ -10,14 +10,22 @@
     <h1 class="page-title">Gestion des Élèves</h1>
     <p class="page-subtitle">Consultez la liste des élèves et gérez les inscriptions.</p>
   </div>
-  <div style="display:flex; gap:var(--space-2); align-items:center;">
+  <div class="page-actions">
     <a href="{% url 'inscriptions:eleve_list_csv' %}?{{ request.GET.urlencode }}"
-       class="btn-secondary" title="Exporter CSV (compatible Excel)">
+       class="btn-secondary" title="Exporter CSV">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
       CSV
+    </a>
+    <a href="{% url 'inscriptions:eleve_list_xlsx' %}?{{ request.GET.urlencode }}"
+       class="btn-secondary btn-excel" title="Exporter Excel (.xlsx)">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Excel
     </a>
     <a href="{% url 'inscriptions:eleve_list_pdf' %}?{{ request.GET.urlencode }}"
        class="btn-secondary" title="Exporter PDF">
@@ -43,10 +51,9 @@
       hx-trigger="keyup changed delay:500ms from:input[name='q'], change from:select"
       hx-target="#eleve-table"
       hx-push-url="true"
-      class="card mb-4"
-      style="padding:var(--space-4); display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center;">
+      class="filter-bar mb-4">
 
-  <div class="search-wrapper" style="flex:1; min-width:220px;">
+  <div class="search-wrapper">
     <span class="search-icon">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -57,7 +64,7 @@
            placeholder="Rechercher par nom, matricule…" value="{{ query }}">
   </div>
 
-  <select name="classe" class="input select" style="min-width:180px;">
+  <select name="classe" class="input select">
     <option value="">Toutes les classes</option>
     {% for cls in classes %}
     <option value="{{ cls.pk }}" {% if classe_id == cls.pk|stringformat:"s" %}selected{% endif %}>
@@ -66,7 +73,7 @@
     {% endfor %}
   </select>
 
-  <select name="statut" class="input select" style="min-width:170px;">
+  <select name="statut" class="input select">
     <option value="">Tous les statuts</option>
     <option value="inscrit"     {% if statut_filter == "inscrit"     %}selected{% endif %}>Inscrits</option>
     <option value="abandon"     {% if statut_filter == "abandon"     %}selected{% endif %}>Abandon</option>

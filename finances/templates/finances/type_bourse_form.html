@@ -3,7 +3,7 @@
 {% block title %}{% if instance %}Modifier{% else %}Nouveau{% endif %} type de bourse — YELEN SCHOOL{% endblock %}
 
 {% block content %}
-<div style="max-width:700px; margin:0 auto;">
+<div class="form-page-wrap">
 
   <!-- En-tête -->
   <div class="page-header animate-fade-up">
@@ -23,56 +23,51 @@
   <form method="post" id="form-type-bourse">
     {% csrf_token %}
 
-    <!-- ── Bloc 1 : Identité ─────────────────────────────────────── -->
-    <div class="card animate-fade-up delay-1" style="margin-bottom:1.25rem;">
+    <!-- ── Bloc 1 : Identité ──────────────────────────────── -->
+    <div class="card animate-fade-up delay-1 mb-5">
       <div class="card-header">
-        <div style="display:flex; align-items:center; gap:0.75rem;">
-          <div style="width:34px; height:34px; border-radius:9px; background:rgba(0,168,107,0.13); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <div class="d-flex align-center gap-3">
+          <div class="card-header-icon">
             <svg width="17" height="17" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
             </svg>
           </div>
           <div>
             <span class="card-title">Identité</span>
-            <p style="font-size:0.78rem; color:var(--color-text-muted); margin:1px 0 0;">Nom, code et source de la bourse</p>
+            <p class="card-header-sub">Nom, code et source de la bourse</p>
           </div>
         </div>
       </div>
 
-      <div style="padding:1.5rem; display:flex; flex-direction:column; gap:1.2rem;">
+      <div class="form-body">
 
         <!-- Nom + Code -->
-        <div style="display:grid; grid-template-columns:2fr 1fr; gap:1.2rem;">
-          <div>
-            <label for="nom" class="input-label">Nom <span style="color:var(--color-danger);">*</span></label>
+        <div class="form-grid-2-1 mb-4">
+          <div class="form-group">
+            <label for="nom" class="input-label">Nom <span class="required-star">*</span></label>
             <input type="text" id="nom" name="nom" class="input" required autofocus
                    value="{{ instance.nom|default:'' }}"
                    placeholder="Ex : Bourse nationale d'excellence">
           </div>
-          <div>
-            <label for="code" class="input-label">Code <span style="color:var(--color-danger);">*</span></label>
-            <input type="text" id="code" name="code" class="input" required
+          <div class="form-group">
+            <label for="code" class="input-label">Code <span class="required-star">*</span></label>
+            <input type="text" id="code" name="code" class="input input-code" required
                    value="{{ instance.code|default:'' }}"
                    placeholder="Ex : BNE"
-                   style="text-transform:uppercase; letter-spacing:0.05em;"
                    oninput="this.value=this.value.toUpperCase()">
-            <p style="font-size:0.74rem; color:var(--color-text-muted); margin-top:4px;">Identifiant court unique</p>
+            <p class="input-hint">Identifiant court unique</p>
           </div>
         </div>
 
         <!-- Source -->
-        <div>
-          <label class="input-label">Source <span style="color:var(--color-danger);">*</span></label>
-          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.6rem; margin-top:0.5rem;" id="source-grid">
+        <div class="form-group mb-4">
+          <label class="input-label">Source <span class="required-star">*</span></label>
+          <div class="source-grid" id="source-grid">
             {% for val, lib in source_choices %}
-            <label style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:0.75rem 0.5rem;
-                          border:1.5px solid var(--color-border); border-radius:10px; cursor:pointer;
-                          transition:all 0.15s; font-size:0.8rem; text-align:center; line-height:1.3;"
-                   class="source-option"
-                   data-val="{{ val }}">
-              <input type="radio" name="source" value="{{ val }}" style="display:none;"
+            <label class="choice-card source-option" data-val="{{ val }}">
+              <input type="radio" name="source" value="{{ val }}"
                      {% if instance and instance.source == val %}checked{% elif not instance and val == 'ETABLISSEMENT' %}checked{% endif %}>
-              <span style="font-size:1.25rem;">
+              <span class="choice-card-emoji">
                 {% if val == 'ETAT' %}🏛{% elif val == 'ONG' %}🌍{% elif val == 'ETABLISSEMENT' %}🏫{% else %}🤝{% endif %}
               </span>
               <span>{{ lib }}</span>
@@ -82,54 +77,52 @@
         </div>
 
         <!-- Description -->
-        <div>
-          <label for="description" class="input-label">Description <span style="color:var(--color-text-muted); font-weight:400;">(optionnel)</span></label>
-          <textarea id="description" name="description" class="input" rows="2"
+        <div class="form-group">
+          <label for="description" class="input-label">
+            Description
+            <span class="input-label-opt">(optionnel)</span>
+          </label>
+          <textarea id="description" name="description" class="input input-textarea" rows="2"
                     placeholder="Conditions d'attribution, public cible...">{{ instance.description|default:'' }}</textarea>
         </div>
 
       </div>
     </div>
 
-    <!-- ── Bloc 2 : Réduction ─────────────────────────────────────── -->
-    <div class="card animate-fade-up delay-2" style="margin-bottom:1.25rem;">
+    <!-- ── Bloc 2 : Réduction ─────────────────────────────── -->
+    <div class="card animate-fade-up delay-2 mb-5">
       <div class="card-header">
-        <div style="display:flex; align-items:center; gap:0.75rem;">
-          <div style="width:34px; height:34px; border-radius:9px; background:rgba(245,166,35,0.13); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <svg width="17" height="17" fill="none" stroke="var(--color-warning, #F5A623)" viewBox="0 0 24 24">
+        <div class="d-flex align-center gap-3">
+          <div class="card-header-icon card-header-icon-gold">
+            <svg width="17" height="17" fill="none" stroke="var(--color-gold)" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
           <div>
             <span class="card-title">Calcul de la réduction</span>
-            <p style="font-size:0.78rem; color:var(--color-text-muted); margin:1px 0 0;">Mode de calcul et montant de l'aide</p>
+            <p class="card-header-sub">Mode de calcul et montant de l'aide</p>
           </div>
         </div>
       </div>
 
-      <div style="padding:1.5rem; display:flex; flex-direction:column; gap:1.2rem;">
+      <div class="form-body">
 
-        <!-- Type réduction : toggle visuel -->
-        <div>
-          <label class="input-label">Type de réduction <span style="color:var(--color-danger);">*</span></label>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:0.5rem;">
+        <!-- Type réduction -->
+        <div class="form-group mb-4">
+          <label class="input-label">Type de réduction <span class="required-star">*</span></label>
+          <div class="form-grid-2 mt-2">
             {% for val, lib in type_reduction_choices %}
-            <label style="display:flex; align-items:center; gap:0.75rem; padding:0.9rem 1rem;
-                          border:1.5px solid var(--color-border); border-radius:10px; cursor:pointer;
-                          transition:all 0.15s;"
-                   class="type-red-option" data-val="{{ val }}">
-              <input type="radio" name="type_reduction" value="{{ val }}" style="display:none;"
+            <label class="choice-card-h type-red-option" data-val="{{ val }}">
+              <input type="radio" name="type_reduction" value="{{ val }}"
                      {% if instance and instance.type_reduction == val %}checked
                      {% elif not instance and val == 'POURCENTAGE' %}checked{% endif %}
                      onchange="majValeur()">
-              <div style="width:38px; height:38px; border-radius:8px; flex-shrink:0;
-                          background:rgba(0,168,107,0.1); display:flex; align-items:center;
-                          justify-content:center; font-size:1.2rem;">
+              <div class="choice-card-h-icon">
                 {% if val == 'POURCENTAGE' %}%{% else %}₣{% endif %}
               </div>
               <div>
-                <div style="font-weight:600; font-size:0.875rem;">{{ lib }}</div>
-                <div style="font-size:0.75rem; color:var(--color-text-muted);">
+                <div class="choice-card-title">{{ lib }}</div>
+                <div class="choice-card-sub">
                   {% if val == 'POURCENTAGE' %}Ex : 50% du total dû{% else %}Ex : 25 000 FCFA fixe{% endif %}
                 </div>
               </div>
@@ -138,42 +131,43 @@
           </div>
         </div>
 
-        <!-- Valeur + aperçu dynamique -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; align-items:start;">
-          <div>
+        <!-- Valeur + Aperçu -->
+        <div class="form-grid-2 mb-4">
+          <div class="form-group">
             <label for="valeur_reduction" class="input-label">
-              Valeur <span style="color:var(--color-danger);">*</span>
-              <span id="valeur-unite" style="color:var(--color-text-muted); font-weight:400; margin-left:4px;"></span>
+              Valeur <span class="required-star">*</span>
+              <span id="valeur-unite" class="input-label-opt"></span>
             </label>
-            <input type="number" id="valeur_reduction" name="valeur_reduction" class="input" required
+            <input type="number" id="valeur_reduction" name="valeur_reduction" class="input input-valeur" required
                    min="0.01" step="0.01"
                    value="{{ instance.valeur_reduction|default:'' }}"
-                   oninput="majApercu()" style="font-size:1.1rem; font-weight:600;">
-            <p id="valeur-hint" style="font-size:0.74rem; color:var(--color-text-muted); margin-top:4px;"></p>
+                   oninput="majApercu()">
+            <p id="valeur-hint" class="input-hint"></p>
           </div>
+
           <!-- Aperçu calcul -->
-          <div id="apercu-bloc" style="background:var(--color-bg-subtle,rgba(0,0,0,0.06)); border-radius:10px;
-               padding:0.9rem 1rem; display:none;">
-            <p style="font-size:0.74rem; color:var(--color-text-muted); margin:0 0 6px;">Aperçu sur un montant de référence</p>
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <span style="font-size:0.82rem;">Frais de <input id="ex-montant" type="number" value="50000"
-                    style="width:90px; border:none; background:transparent; font-size:0.82rem;
-                           font-weight:600; text-align:right; color:inherit; padding:0;"
-                    oninput="majApercu()"> FCFA</span>
+          <div id="apercu-bloc" class="apercu-bloc hidden">
+            <p class="apercu-hint">Aperçu sur un montant de référence</p>
+            <div class="apercu-row apercu-label">
+              Frais de
+              <input id="ex-montant" type="number" value="50000"
+                     class="apercu-input"
+                     oninput="majApercu()"> FCFA
             </div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
-              <span style="font-size:0.82rem; color:var(--color-text-muted);">Réduction :</span>
-              <span id="ex-reduction" style="font-weight:700; font-size:1rem; color:var(--color-success,#00A86B);"></span>
+            <hr class="apercu-divider">
+            <div class="apercu-row">
+              <span class="apercu-label">Réduction :</span>
+              <span id="ex-reduction" class="apercu-val"></span>
             </div>
-            <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--color-border); margin-top:6px; padding-top:6px;">
-              <span style="font-size:0.82rem; font-weight:600;">Reste dû :</span>
-              <span id="ex-reste" style="font-weight:700; font-size:1rem;"></span>
+            <div class="apercu-row mt-2">
+              <span class="apercu-label">Reste dû :</span>
+              <span id="ex-reste" class="apercu-reste"></span>
             </div>
           </div>
         </div>
 
         <!-- Rubrique ciblée -->
-        <div>
+        <div class="form-group">
           <label for="rubrique" class="input-label">Rubrique ciblée</label>
           <select id="rubrique" name="rubrique" class="input select">
             <option value="">— Globale (toutes rubriques confondues) —</option>
@@ -183,22 +177,22 @@
             </option>
             {% endfor %}
           </select>
-          <div style="display:flex; align-items:center; gap:6px; margin-top:5px; font-size:0.78rem; color:var(--color-text-muted);">
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <p class="input-hint">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="hint-icon">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             Laisser vide pour appliquer la réduction sur le total toutes rubriques.
-          </div>
+          </p>
         </div>
 
       </div>
     </div>
 
-    <!-- ── Bloc 3 : Options ──────────────────────────────────────── -->
-    <div class="card animate-fade-up delay-3" style="margin-bottom:1.5rem;">
+    <!-- ── Bloc 3 : Options ───────────────────────────────── -->
+    <div class="card animate-fade-up delay-3 mb-5">
       <div class="card-header">
-        <div style="display:flex; align-items:center; gap:0.75rem;">
-          <div style="width:34px; height:34px; border-radius:9px; background:rgba(99,102,241,0.13); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <div class="d-flex align-center gap-3">
+          <div class="card-header-icon card-header-icon-purple">
             <svg width="17" height="17" fill="none" stroke="#818CF8" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -208,26 +202,21 @@
         </div>
       </div>
 
-      <div style="padding:1.25rem 1.5rem;">
-        <label style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; width:fit-content;">
-          <input type="checkbox" name="actif" id="actif"
-                 {% if not instance or instance.actif %}checked{% endif %}
-                 style="width:18px; height:18px;">
-          <div>
-            <span style="font-weight:600; font-size:0.9rem;">Type actif</span>
-            <p style="font-size:0.78rem; color:var(--color-text-muted); margin:1px 0 0;">
-              Seuls les types actifs apparaissent lors de l'attribution d'une bourse.
-            </p>
-          </div>
-        </label>
-      </div>
+      <label class="checkbox-block" for="actif">
+        <input type="checkbox" name="actif" id="actif" class="checkbox-block-input"
+               {% if not instance or instance.actif %}checked{% endif %}>
+        <div>
+          <div class="checkbox-block-title">Type actif</div>
+          <p class="checkbox-block-sub">Seuls les types actifs apparaissent lors de l'attribution d'une bourse.</p>
+        </div>
+      </label>
     </div>
 
     <!-- Actions -->
-    <div class="d-flex gap-3 justify-end animate-fade-up delay-3">
+    <div class="form-actions animate-fade-up delay-3">
       <a href="{% url 'finances:type_bourse_list' %}" class="btn-secondary">Annuler</a>
-      <button type="submit" class="btn-primary" style="min-width:130px;">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
+      <button type="submit" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
         {% if instance %}Enregistrer{% else %}Créer le type{% endif %}
@@ -237,26 +226,8 @@
 
 </div>
 
-<style>
-/* Cartes-options sources */
-.source-option:has(input:checked),
-.type-red-option:has(input:checked) {
-  border-color: var(--color-primary) !important;
-  background: rgba(0,168,107,0.06);
-}
-.source-option:hover, .type-red-option:hover {
-  border-color: var(--color-primary);
-  opacity: 0.9;
-}
-/* Fallback navigateurs sans :has() */
-.source-option.selected, .type-red-option.selected {
-  border-color: var(--color-primary) !important;
-  background: rgba(0,168,107,0.06);
-}
-</style>
-
 <script>
-// ── Sélection visuelle sources ───────────────────────────────────────────
+// ── Sélection visuelle sources ──────────────────────────────────────────
 document.querySelectorAll('.source-option').forEach(el => {
   el.addEventListener('click', () => {
     el.querySelector('input[type=radio]').checked = true;
@@ -273,7 +244,7 @@ document.querySelectorAll('.type-red-option').forEach(el => {
   });
 });
 
-// ── Initialisation classes "selected" ───────────────────────────────────
+// ── Initialisation classes "selected" ──────────────────────────────────
 function initSelected() {
   document.querySelectorAll('.source-option input:checked').forEach(inp => {
     inp.closest('.source-option').classList.add('selected');
@@ -283,9 +254,9 @@ function initSelected() {
   });
 }
 
-// ── Mise à jour affichage valeur selon type réduction ───────────────────
+// ── Mise à jour affichage valeur selon type réduction ──────────────────
 function majValeur() {
-  const type = document.querySelector('input[name=type_reduction]:checked')?.value || 'POURCENTAGE';
+  const type  = document.querySelector('input[name=type_reduction]:checked')?.value || 'POURCENTAGE';
   const unite = document.getElementById('valeur-unite');
   const hint  = document.getElementById('valeur-hint');
   const champ = document.getElementById('valeur_reduction');
@@ -312,7 +283,7 @@ function majApercu() {
   const elRed   = document.getElementById('ex-reduction');
   const elReste = document.getElementById('ex-reste');
 
-  if (!valeur || !exMont) { bloc.style.display = 'none'; return; }
+  if (!valeur || !exMont) { bloc.classList.add('hidden'); return; }
 
   let reduction;
   if (type === 'POURCENTAGE') {
@@ -324,7 +295,7 @@ function majApercu() {
 
   elRed.textContent   = '−' + Math.round(reduction).toLocaleString('fr-FR') + ' FCFA';
   elReste.textContent = Math.round(reste).toLocaleString('fr-FR') + ' FCFA';
-  bloc.style.display  = 'block';
+  bloc.classList.remove('hidden');
 }
 
 document.addEventListener('DOMContentLoaded', () => {

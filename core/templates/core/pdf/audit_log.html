@@ -2,9 +2,70 @@
 
 {% block pdf_content %}
 
+<style>
+  /* ── Badges action N&B ── */
+  .badge-creation {
+    background: #fff;
+    border: 1pt solid #555;
+    color: #111;
+    padding: 1pt 5pt;
+    border-radius: 3pt;
+    font-size: 7pt;
+    font-weight: 600;
+  }
+  .badge-modification {
+    background: #ebebeb;
+    border: 1pt solid #555;
+    color: #111;
+    padding: 1pt 5pt;
+    border-radius: 3pt;
+    font-size: 7pt;
+    font-weight: 600;
+  }
+  .badge-suppression {
+    background: #555;
+    color: #fff;
+    padding: 1pt 5pt;
+    border-radius: 3pt;
+    font-size: 7pt;
+    font-weight: 600;
+  }
+  .badge-autre {
+    background: #f5f5f5;
+    border: 1pt solid #bbb;
+    color: #333;
+    padding: 1pt 5pt;
+    border-radius: 3pt;
+    font-size: 7pt;
+  }
+
+  /* Lignes */
+  .row-blanc { background: #fff; }
+  .row-gris  { background: #f5f5f5; }
+
+  /* Horodatage */
+  .timestamp { color: #333; font-size: 7.5pt; white-space: nowrap; }
+
+  /* Objet / App */
+  .obj-txt { font-size: 7.5pt; color: #111; }
+  .app-txt { font-size: 7.5pt; color: #444; }
+
+  /* Vide */
+  .msg-vide { padding: 12pt; text-align: center; color: #555; font-style: italic; }
+
+  /* Pied */
+  .pied-audit {
+    margin-top: 12pt; text-align: center; font-size: 7.5pt; color: #555;
+    border-top: 1pt solid #bbb; padding-top: 6pt;
+  }
+
+  /* Meta filtres */
+  .meta-filtres { font-size: 9pt; color: #333; }
+</style>
+
 <div class="document-title">
     <h2 style="text-transform:uppercase; letter-spacing:.5pt;">Journal d'audit</h2>
-    <p style="font-size:9pt; color:#475569;">
+    <p class="meta-filtres">
         Généré le {{ now|date:"d/m/Y à H:i" }}
         {% if date_from or date_to or app_filter or action_filter or query %}
         &nbsp;|&nbsp;
@@ -19,40 +80,40 @@
 
 <table style="width:100%; border-collapse:collapse; font-size:8pt; margin-top:8pt;">
     <thead>
-        <tr style="background:#00A86B; color:#fff;">
-            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Date / Heure</th>
-            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Utilisateur</th>
-            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Action</th>
-            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Objet</th>
-            <th style="padding:5pt 6pt; text-align:left; font-weight:600;">Application</th>
+        <tr>
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600; background:#111; color:#fff; border:1pt solid #111;">Date / Heure</th>
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600; background:#111; color:#fff; border:1pt solid #111;">Utilisateur</th>
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600; background:#111; color:#fff; border:1pt solid #111;">Action</th>
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600; background:#111; color:#fff; border:1pt solid #111;">Objet</th>
+            <th style="padding:5pt 6pt; text-align:left; font-weight:600; background:#111; color:#fff; border:1pt solid #111;">Application</th>
         </tr>
     </thead>
     <tbody>
         {% for log in logs %}
-        <tr style="background:{% cycle '#ffffff' '#f8fafc' %}; border-bottom:0.5pt solid #e2e8f0;">
-            <td style="padding:4pt 6pt; white-space:nowrap; color:#475569; font-size:7.5pt;">
+        <tr class="{% cycle 'row-blanc' 'row-gris' %}" style="border-bottom:0.5pt solid #ddd;">
+            <td style="padding:4pt 6pt;" class="timestamp">
                 {{ log.timestamp|date:"d/m/Y H:i" }}
             </td>
-            <td style="padding:4pt 6pt;">
+            <td style="padding:4pt 6pt; color:#111;">
                 {% if log.user %}{{ log.user.get_full_name }}{% else %}—{% endif %}
             </td>
             <td style="padding:4pt 6pt;">
                 {% if log.action == 'CREATE' %}
-                <span style="background:#d4edda; color:#155724; padding:1pt 5pt; border-radius:3pt; font-size:7pt; font-weight:600;">Création</span>
+                <span class="badge-creation">Création</span>
                 {% elif log.action == 'UPDATE' %}
-                <span style="background:#fff3cd; color:#856404; padding:1pt 5pt; border-radius:3pt; font-size:7pt; font-weight:600;">Modification</span>
+                <span class="badge-modification">Modification</span>
                 {% elif log.action == 'DELETE' %}
-                <span style="background:#f8d7da; color:#721c24; padding:1pt 5pt; border-radius:3pt; font-size:7pt; font-weight:600;">Suppression</span>
+                <span class="badge-suppression">Suppression</span>
                 {% else %}
-                <span style="background:#e2e8f0; color:#475569; padding:1pt 5pt; border-radius:3pt; font-size:7pt;">{{ log.action }}</span>
+                <span class="badge-autre">{{ log.action }}</span>
                 {% endif %}
             </td>
-            <td style="padding:4pt 6pt; font-size:7.5pt;">{{ log.object_repr }}</td>
-            <td style="padding:4pt 6pt; font-size:7.5pt; color:#64748b;">{{ log.app_label }}</td>
+            <td style="padding:4pt 6pt;" class="obj-txt">{{ log.object_repr }}</td>
+            <td style="padding:4pt 6pt;" class="app-txt">{{ log.app_label }}</td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="5" style="padding:12pt; text-align:center; color:#94a3b8; font-style:italic;">
+            <td colspan="5" class="msg-vide">
                 Aucune entrée trouvée.
             </td>
         </tr>
@@ -60,7 +121,7 @@
     </tbody>
 </table>
 
-<div style="margin-top:12pt; text-align:center; font-size:7.5pt; color:#94a3b8; border-top:0.5pt solid #e2e8f0; padding-top:6pt;">
+<div class="pied-audit">
     {{ logs|length }} entrée(s) — YELEN SCHOOL · Journal d'audit
 </div>
 

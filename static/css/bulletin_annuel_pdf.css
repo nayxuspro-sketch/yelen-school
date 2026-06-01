@@ -1,0 +1,629 @@
+/*
+ * ════════════════════════════════════════════════════════════════
+ *  YELEN SCHOOL — bulletin_annuel_pdf.css
+ *  Feuille de style dédiée au bulletin annuel de notes
+ *  Optimisée pour WeasyPrint (A4 portrait) et affichage navigateur
+ * ════════════════════════════════════════════════════════════════
+ *
+ * Règles de base :
+ *  - Fond blanc / bordures noires (impression)
+ *  - Notes < 10 : rouge   #C0392B
+ *  - Notes ≥ 10 : vert    #1A7A4E
+ *  - Police : DejaVu Sans / Georgia / serif (fallback PDF-safe)
+ *  - Taille minimum : 10pt (WeasyPrint)
+ *  - Zéro CSS inline, toutes les règles ici
+ */
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  0. RESET & PAGE                                                */
+/* ─────────────────────────────────────────────────────────────── */
+
+@page {
+  size: A4 portrait;
+  margin: 10mm 12mm 12mm 12mm;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: 'DejaVu Sans', 'Liberation Sans', Arial, sans-serif;
+  font-size: 9.5pt;
+  color: #1a1a1a;
+  background: #ffffff;
+  line-height: 1.25;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  1. CONTENEUR PRINCIPAL                                         */
+/* ─────────────────────────────────────────────────────────────── */
+
+.bulletin-page {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  2. EN-TÊTE ÉTABLISSEMENT                                       */
+/* ─────────────────────────────────────────────────────────────── */
+
+.entete {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #1a1a1a;
+  margin-bottom: 6px;
+}
+
+.entete-logo {
+  flex-shrink: 0;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-img {
+  max-width: 80px;
+  max-height: 80px;
+  object-fit: contain;
+}
+
+.logo-placeholder {
+  width: 56px;
+  height: 56px;
+  border: 1.5px solid #1a1a1a;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-initiales {
+  font-size: 16pt;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: 0.04em;
+}
+
+.entete-centre {
+  flex: 1;
+  text-align: center;
+}
+
+.entete-pays {
+  font-size: 9pt;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.entete-devise {
+  font-size: 8pt;
+  color: #444;
+  font-style: italic;
+  margin-bottom: 2px;
+}
+
+.entete-ministere {
+  font-size: 8.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 3px;
+}
+
+.entete-separateur {
+  height: 1px;
+  background: #1a1a1a;
+  margin: 3px auto;
+  width: 60%;
+}
+
+.etab-nom {
+  font-size: 11pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 1px;
+}
+
+.etab-devise {
+  font-size: 8pt;
+  font-style: italic;
+  color: #333;
+  margin-top: 1px;
+}
+
+.etab-contacts {
+  font-size: 8pt;
+  color: #444;
+  margin-top: 1px;
+}
+
+.etab-adresse {
+  font-size: 8pt;
+  color: #444;
+}
+
+.entete-droite {
+  flex-shrink: 0;
+  width: 70px;
+  text-align: right;
+}
+
+.etab-ref {
+  font-size: 7.5pt;
+  color: #666;
+  margin-top: 3px;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  3. TITRE DU DOCUMENT                                           */
+/* ─────────────────────────────────────────────────────────────── */
+
+.titre-section {
+  text-align: center;
+  margin: 5px 0;
+}
+
+.titre-ligne {
+  height: 1px;
+  background: #1a1a1a;
+  margin: 3px 0;
+}
+
+.titre-principal {
+  font-size: 12pt;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+}
+
+.titre-annee {
+  font-size: 10pt;
+  font-weight: 600;
+  color: #2c5f3e;
+  margin-top: 1px;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  4. INFORMATIONS ÉLÈVE                                          */
+/* ─────────────────────────────────────────────────────────────── */
+
+.info-eleve-bloc {
+  border: 1px solid #1a1a1a;
+  border-radius: 3px;
+  margin: 5px 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-info-eleve {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-info-eleve td {
+  padding: 3px 7px;
+  font-size: 9pt;
+  border: 1px solid #ccc;
+}
+
+.info-label {
+  font-weight: 600;
+  background: #f0f4f0;
+  color: #1a1a1a;
+  width: 20%;
+  text-transform: uppercase;
+  font-size: 8pt;
+  letter-spacing: 0.03em;
+}
+
+.info-valeur {
+  color: #1a1a1a;
+  width: 30%;
+}
+
+.info-matricule {
+  font-family: 'DejaVu Sans Mono', 'Courier New', monospace;
+  font-size: 9pt;
+  font-weight: 700;
+  color: #1A7A4E;
+  letter-spacing: 0.06em;
+}
+
+.info-nom {
+  font-weight: 700;
+  font-size: 10pt;
+  letter-spacing: 0.02em;
+}
+
+.badge-oui {
+  background: #fde8e8;
+  color: #c0392b;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 9.5pt;
+  border: 1px solid #c0392b;
+}
+
+.badge-non {
+  background: #e8f5ec;
+  color: #1a7a4e;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 9.5pt;
+  border: 1px solid #1a7a4e;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  5. ÉVALUATIONS PAR PÉRIODE                                     */
+/* ─────────────────────────────────────────────────────────────── */
+
+.section-evaluations {
+  margin: 5px 0;
+}
+
+.periode-bloc {
+  margin-bottom: 4px;
+}
+
+.table-periode {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #1a1a1a;
+  font-size: 8.5pt;
+}
+
+.table-periode thead tr {
+  background: #1a3a28;
+  color: #ffffff;
+}
+
+.table-periode thead th {
+  padding: 3px 5px;
+  text-align: left;
+  font-size: 8pt;
+  font-weight: 600;
+  border: 1px solid #2c5f3e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.table-periode thead .col-periode-moy {
+  background: #0f2a1c;
+  text-align: center;
+  vertical-align: middle;
+  width: 100px;
+  border-left: 1.5px solid #ffffff;
+}
+
+.col-matiere { width: auto; }
+.col-coeff   { width: 60px; text-align: center; }
+.col-note    { width: 80px; text-align: center; }
+.col-points  { width: 80px; text-align: center; }
+
+/* Colonne période (verticale droite) */
+.moyenne-periode-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 3px;
+}
+
+.periode-titre {
+  font-size: 7pt;
+  font-weight: 700;
+  color: #b0d4be;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.periode-moy-label {
+  font-size: 7pt;
+  color: #ccc;
+  text-transform: uppercase;
+}
+
+.periode-moy-valeur {
+  font-size: 14pt;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.note-base {
+  font-size: 8pt;
+  font-weight: 400;
+  color: #aaa;
+}
+
+/* Lignes de matières */
+.matiere-ligne td {
+  padding: 2.5px 5px;
+  border: 1px solid #d0d0d0;
+  vertical-align: middle;
+}
+
+.matiere-ligne:nth-child(even) {
+  background: #f9fbf9;
+}
+
+.col-coeff, .col-note, .col-points {
+  text-align: center;
+  font-size: 9pt;
+}
+
+/* Couleurs notes */
+.note-ok {
+  color: #1A7A4E;
+  font-weight: 700;
+}
+
+.note-ko {
+  color: #C0392B;
+  font-weight: 700;
+}
+
+/* Ligne totaux */
+.ligne-total td {
+  padding: 2.5px 5px;
+  font-size: 8.5pt;
+  font-weight: 600;
+  background: #eef3ee;
+  border: 1px solid #c0c0c0;
+  text-align: center;
+}
+
+.total-label {
+  text-align: left !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Message aucune note */
+.vide-message {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 8px;
+}
+
+.no-data-message {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 16px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  6. BILAN ANNUEL                                                */
+/* ─────────────────────────────────────────────────────────────── */
+
+.bilan-annuel {
+  border: 1.5px solid #1a1a1a;
+  border-radius: 3px;
+  margin: 5px 0;
+  background: #f0f4f0;
+  overflow: hidden;
+}
+
+.table-bilan {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-bilan td {
+  padding: 3px 7px;
+  border: 1px solid #c0c0c0;
+  font-size: 9pt;
+}
+
+.bilan-label {
+  font-weight: 600;
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #e0ecdf;
+  width: 30%;
+}
+
+.bilan-valeur {
+  font-size: 9.5pt;
+  font-weight: 600;
+  width: 20%;
+  text-align: center;
+}
+
+/* Moyenne annuelle colorée */
+.note-ok-large {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #1A7A4E;
+}
+
+.note-ko-large {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #C0392B;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  7. DÉCISION DU CONSEIL                                         */
+/* ─────────────────────────────────────────────────────────────── */
+
+.decision-section {
+  margin: 5px 0;
+  text-align: center;
+  border: 1.5px solid #1a1a1a;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.decision-titre {
+  background: #1a3a28;
+  color: #ffffff;
+  font-size: 8.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 3px 10px;
+}
+
+.decision-valeur {
+  padding: 6px 10px;
+  font-size: 12pt;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.decision-admis {
+  color: #1A7A4E;
+  background: #e8f5ec;
+}
+
+.decision-redouble {
+  color: #C0392B;
+  background: #fde8e8;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  8. APPRÉCIATION                                                */
+/* ─────────────────────────────────────────────────────────────── */
+
+.appreciation-section {
+  border: 1px solid #1a1a1a;
+  border-radius: 3px;
+  margin: 5px 0;
+  overflow: hidden;
+}
+
+.appreciation-titre {
+  background: #1a3a28;
+  color: #ffffff;
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 3px 8px;
+}
+
+.appreciation-texte {
+  padding: 4px 8px;
+  font-size: 9pt;
+  font-style: italic;
+  color: #1a1a1a;
+  min-height: 22px;
+}
+
+.appreciation-vide {
+  padding: 4px 8px;
+  font-size: 8.5pt;
+  color: #ccc;
+  min-height: 22px;
+  letter-spacing: 0.04em;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  9. SIGNATURES                                                  */
+/* ─────────────────────────────────────────────────────────────── */
+
+.signatures-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin: 6px 0 4px;
+  gap: 12px;
+}
+
+.signature-gauche,
+.signature-droite {
+  flex: 1;
+  text-align: center;
+}
+
+.signature-centre {
+  flex: 1.2;
+  text-align: center;
+}
+
+.signature-titre {
+  font-size: 8.5pt;
+  font-weight: 600;
+  text-decoration: underline;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.signature-espace {
+  height: 26px;
+}
+
+.signature-ligne {
+  border-top: 1px solid #1a1a1a;
+  margin: 0 8px;
+}
+
+.signature-lieu-date {
+  font-size: 9pt;
+  font-weight: 500;
+  padding-top: 18px;
+}
+
+.signature-nom {
+  font-size: 9pt;
+  font-weight: 700;
+  padding-top: 3px;
+  text-decoration: underline;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  10. PIED DE PAGE                                               */
+/* ─────────────────────────────────────────────────────────────── */
+
+.pied-page {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 7pt;
+  color: #888;
+  border-top: 1px solid #ccc;
+  padding-top: 3px;
+  margin-top: 4px;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  11. UTILITAIRES D'IMPRESSION                                   */
+/* ─────────────────────────────────────────────────────────────── */
+
+@media print {
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .bulletin-page {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .pied-page {
+    position: running(footer);
+  }
+}

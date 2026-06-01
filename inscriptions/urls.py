@@ -6,6 +6,7 @@ app_name = 'inscriptions'
 urlpatterns = [
     path('', views.eleve_list, name='eleve_list'),
     path('csv/', views.eleve_list_csv, name='eleve_list_csv'),
+    path('xlsx/', views.eleve_list_xlsx, name='eleve_list_xlsx'),
     path('pdf/', views.eleve_list_pdf, name='eleve_list_pdf'),
     path('eleve/nouveau/', views.eleve_create, name='eleve_create'),
     path('eleve/<uuid:pk>/', views.eleve_detail, name='eleve_detail'),
@@ -27,4 +28,11 @@ urlpatterns = [
     # Parcours scolaire
     path('eleve/<uuid:pk>/parcours/', views.eleve_parcours, name='eleve_parcours'),
     path('evenement/<uuid:pk>/supprimer/', views.evenement_parcours_supprimer, name='evenement_supprimer'),
+    # Transferts inter-établissements
+    path('transferts/', views.transfert_inter_list, name='transfert_inter_list'),
+    path('inscription/<uuid:inscription_id>/transfert-inter/', views.transfert_inter_demander, name='transfert_inter_demander'),
+    path('transferts/<uuid:pk>/', views.transfert_inter_detail, name='transfert_inter_detail'),
+    path('transferts/<uuid:pk>/approuver/', views.transfert_inter_approuver, name='transfert_inter_approuver'),
+    path('transferts/<uuid:pk>/refuser/', views.transfert_inter_refuser, name='transfert_inter_refuser'),
+    path('transferts/<uuid:pk>/dossier/pdf/', views.transfert_inter_dossier_pdf, name='transfert_inter_dossier_pdf'),
 ]

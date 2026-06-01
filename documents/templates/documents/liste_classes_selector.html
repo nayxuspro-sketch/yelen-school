@@ -4,73 +4,90 @@
 
 {% block content %}
 
-<div class="page-header animate-fade-up">
-  <div>
-    <h1 class="page-title">Listes Alphabétiques de Classe</h1>
-    <p class="page-subtitle">Sélectionne une classe pour afficher et imprimer la liste de ses élèves.</p>
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Listes Alphabétiques de Classe</h1>
+      <p>
+        {% if annee_selectionnee %}
+          {{ annee_selectionnee.libelle }} · {{ cycles_dict|length }} cycle{{ cycles_dict|length|pluralize }}
+        {% else %}
+          Sélectionnez une année scolaire
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  <div class="dash-section-actions">
+    {% if annees %}
+    <form method="get" class="edt-toolbar">
+      <select name="annee_id" class="dash-input" onchange="this.form.submit()">
+        <option value="">— Année —</option>
+        {% for a in annees %}
+        <option value="{{ a.pk }}" {% if annee_selectionnee and a.pk == annee_selectionnee.pk %}selected{% endif %}>
+          {{ a.libelle }}{% if a.est_courante %} ★{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+    {% endif %}
   </div>
 </div>
 
-<!-- Sélecteur d'année scolaire -->
-<div class="card mb-6 animate-fade-up delay-1" style="padding:var(--space-4);">
-  <form method="get" style="display:flex; align-items:center; gap:var(--space-4); flex-wrap:wrap;">
-    <label class="text-secondary" style="font-size:0.875rem; white-space:nowrap;">
-      Année scolaire :
-    </label>
-    <select name="annee_id" class="input" style="min-width:180px;"
-            onchange="this.form.submit()">
-      {% for a in annees %}
-      <option value="{{ a.pk }}"
-        {% if annee_selectionnee and a.pk == annee_selectionnee.pk %}selected{% endif %}>
-        {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
-      </option>
-      {% endfor %}
-    </select>
-    <span class="text-muted" style="font-size:0.8rem;">
-      {{ cycles_dict|length }} cycle(s) actif(s) cette année
-    </span>
-  </form>
+{% if not cycles_dict %}
+<div class="dash-card animate-fade-up">
+  <div class="dash-empty-state">
+    <div class="dash-empty-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/>
+      </svg>
+    </div>
+    <h3 class="dash-empty-title">Aucune classe avec des élèves inscrits</h3>
+    <p class="dash-empty-text">
+      Commencez par inscrire des élèves dans le
+      <a href="{% url 'inscriptions:eleve_list' %}">module Inscriptions</a>.
+    </p>
+  </div>
 </div>
 
-<!-- Grille des classes par cycle -->
-{% if cycles_dict %}
+{% else %}
   {% for cycle_nom, classes in cycles_dict.items %}
-  <div class="animate-fade-up delay-2" style="margin-bottom:var(--space-8);">
-    <h2 style="font-size:1rem; font-weight:600; color:var(--color-text-secondary);
-               text-transform:uppercase; letter-spacing:.08em;
-               margin-bottom:var(--space-4); padding-bottom:var(--space-2);
-               border-bottom:1px solid var(--color-border);">
-      {{ cycle_nom }}
-    </h2>
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:var(--space-4);">
+  <div class="doc-cls-section animate-fade-up delay-1">
+    <div class="doc-cls-section-title">{{ cycle_nom }}</div>
+    <div class="doc-cls-grid">
       {% for classe in classes %}
-      <div class="card" style="padding:var(--space-4); display:flex; flex-direction:column; gap:var(--space-3);">
-        <!-- Nom classe -->
-        <div style="display:flex; align-items:center; gap:var(--space-3);">
-          <div style="width:40px; height:40px; border-radius:10px;
-                      background:var(--color-primary-ambient);
-                      border:1px solid var(--color-border-active);
-                      display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <svg width="18" height="18" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-          </div>
-          <div>
-            <div class="fw-semibold" style="font-size:1rem;">{{ classe.nom }}</div>
-            <div class="text-muted" style="font-size:0.75rem;">{{ classe.get_cycle_display }}</div>
-          </div>
+      <div class="doc-cls-card">
+
+        <div class="doc-cls-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
         </div>
 
-        <!-- Actions -->
-        <div style="display:flex; gap:var(--space-2); margin-top:auto;">
+        <div class="doc-cls-name">{{ classe.nom }}</div>
+        <div class="doc-cls-sub">{{ classe.cycle.nom|default:"—" }}</div>
+
+        <div class="doc-cls-actions">
           <a href="{% url 'documents:liste_classe_pdf' classe.pk %}{% if annee_selectionnee %}?annee_id={{ annee_selectionnee.pk }}{% endif %}"
-             class="btn-secondary btn-sm" style="flex:1; text-align:center;">
-            Prévisualiser
+             class="btn-secondary btn-sm">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            Aperçu
           </a>
           <a href="{% url 'documents:liste_classe_pdf' classe.pk %}?format=pdf{% if annee_selectionnee %}&annee_id={{ annee_selectionnee.pk }}{% endif %}"
              target="_blank"
-             class="btn-primary btn-sm" style="display:flex; align-items:center; gap:4px; white-space:nowrap;">
+             class="btn-primary btn-sm">
             <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -78,28 +95,12 @@
             PDF
           </a>
         </div>
+
       </div>
       {% endfor %}
     </div>
   </div>
   {% endfor %}
-
-{% else %}
-<div class="card animate-fade-up delay-2">
-  <div class="empty-state" style="padding:var(--space-12);">
-    <div class="empty-state-icon">
-      <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-      </svg>
-    </div>
-    <p class="empty-state-text">Aucune classe avec des élèves inscrits pour cette année scolaire.</p>
-    <p class="text-muted" style="font-size:0.85rem; margin-top:var(--space-2);">
-      Commence par inscrire des élèves dans
-      <a href="{% url 'inscriptions:eleve_list' %}" style="color:var(--color-primary);">le module Inscriptions</a>.
-    </p>
-  </div>
-</div>
 {% endif %}
 
 {% endblock %}

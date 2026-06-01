@@ -1,0 +1,106 @@
+{% extends "core/base.html" %}
+{% load humanize %}
+
+{% block title %}Transferts inter-établissements{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Transferts inter-établissements</h1>
+    <p class="page-subtitle">Gestion des demandes de transfert vers d'autres établissements</p>
+  </div>
+</div>
+
+{# Alerte en attente #}
+{% if nb_en_attente > 0 %}
+<div class="alert animate-fade-up" style="display:flex; align-items:center; gap:0.75rem; background:#fff7ed; border:1px solid #f97316; border-radius:10px; padding:var(--space-3) var(--space-5); margin-bottom:var(--space-4);">
+  <svg width="18" height="18" fill="none" stroke="#f97316" viewBox="0 0 24 24" style="flex-shrink:0;">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+  </svg>
+  <span style="font-size:0.875rem; color:#92400e;">
+    <strong>{{ nb_en_attente }} demande{{ nb_en_attente|pluralize }}</strong> en attente de traitement.
+  </span>
+</div>
+{% endif %}
+
+{# Filtres #}
+<div class="card animate-fade-up delay-1" style="padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5);">
+  <form method="get" class="d-flex gap-3 flex-wrap align-center">
+    <select name="statut" class="input select" style="min-width:160px;" onchange="this.form.submit()">
+      <option value="">— Tous les statuts —</option>
+      {% for val, label in statut_choices %}
+      <option value="{{ val }}" {% if statut == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <input type="search" name="q" value="{{ q }}" placeholder="Nom, matricule, établissement…" class="input" style="min-width:220px;">
+    <button type="submit" class="btn-primary">Filtrer</button>
+    {% if statut or q %}
+    <a href="?" class="btn-secondary">Réinitialiser</a>
+    {% endif %}
+  </form>
+</div>
+
+{# Tableau #}
+<div class="card animate-fade-up delay-2" style="padding:0; overflow:hidden;">
+  {% if page_obj.object_list %}
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Classe / Année</th>
+          <th>Destination</th>
+          <th>Date demande</th>
+          <th>Statut</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in page_obj %}
+        <tr>
+          <td>
+            <div class="fw-semibold">{{ t.inscription.eleve.nom }} {{ t.inscription.eleve.prenom }}</div>
+            <div class="text-muted" style="font-size:0.75rem;">{{ t.inscription.eleve.matricule|default:"" }}</div>
+          </td>
+          <td class="text-secondary">
+            {{ t.inscription.classe.nom }}<br>
+            <span style="font-size:0.75rem;">{{ t.inscription.annee_scolaire.libelle }}</span>
+          </td>
+          <td>{{ t.etablissement_destination }}</td>
+          <td>{{ t.date_demande|date:"d/m/Y" }}</td>
+          <td>
+            {% if t.statut == 'EN_ATTENTE' %}
+              <span class="badge badge-warning">En attente</span>
+            {% elif t.statut == 'APPROUVE' %}
+              <span class="badge badge-success">Approuvé</span>
+            {% else %}
+              <span class="badge badge-danger">Refusé</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            <a href="{% url 'inscriptions:transfert_inter_detail' pk=t.pk %}" class="btn-secondary btn-sm">Détail →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {# Pagination #}
+  {% if page_obj.has_other_pages %}
+  <div style="padding:var(--space-3) var(--space-5); border-top:1px solid var(--color-border); display:flex; justify-content:center; gap:var(--space-2);">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&statut={{ statut }}&q={{ q }}" class="btn-secondary btn-sm">← Préc.</a>
+    {% endif %}
+    <span style="padding:4px 12px; font-size:0.85rem; color:var(--color-text-muted);">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&statut={{ statut }}&q={{ q }}" class="btn-secondary btn-sm">Suiv. →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty-state" style="padding:3rem; text-align:center;">
+    <p class="text-muted">Aucun transfert trouvé.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

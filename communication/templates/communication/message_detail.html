@@ -1,0 +1,316 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Détail message — Communication{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'communication:message_list' %}" class="text-secondary">Communication</a>
+      <span class="text-muted"> / </span>
+      <span>Détail</span>
+    </p>
+    <h1 class="page-title">{{ msg.get_type_display }}</h1>
+  </div>
+  <a href="{% url 'communication:message_list' %}" class="btn-secondary btn-sm">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Retour
+  </a>
+</div>
+
+{# Bannière de statut #}
+{% if msg.statut == 'REPONDU' %}
+<div class="comm-status-banner comm-status-banner-success animate-fade-up delay-1">
+  <div class="comm-status-banner-icon">
+    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+  </div>
+  <div>
+    <p class="comm-status-banner-title">Le parent a répondu</p>
+    <p class="comm-status-banner-sub">Réponse reçue le {{ msg.reponse.created_at|date:"d/m/Y à H:i" }}</p>
+  </div>
+</div>
+{% elif msg.statut == 'LU' %}
+<div class="comm-status-banner comm-status-banner-info animate-fade-up delay-1">
+  <div class="comm-status-banner-icon">
+    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+    </svg>
+  </div>
+  <div>
+    <p class="comm-status-banner-title">Lu par le parent</p>
+    <p class="comm-status-banner-sub">En attente de réponse</p>
+  </div>
+</div>
+{% else %}
+<div class="comm-status-banner comm-status-banner-warning animate-fade-up delay-1">
+  <div class="comm-status-banner-icon">
+    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+  </div>
+  <div>
+    <p class="comm-status-banner-title">En attente de lecture</p>
+    <p class="comm-status-banner-sub">Envoyé le {{ msg.created_at|date:"d/m/Y à H:i" }}</p>
+  </div>
+</div>
+{% endif %}
+
+<div class="comm-detail-layout animate-fade-up delay-2">
+
+  {# ── Colonne gauche : contenu du message ── #}
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        {# Icône par type #}
+        {% if msg.type == 'CONVOCATION' %}
+        <span style="color:#17A2B8;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </span>
+        {% elif msg.type == 'AVERTISSEMENT' %}
+        <span style="color:#F5A623;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </span>
+        {% elif msg.type == 'JUSTIFICATIF' %}
+        <span style="color:#A259FF;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </span>
+        {% else %}
+        <span style="color:#DC3545;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </span>
+        {% endif %}
+        Message envoyé
+      </h2>
+      {% if msg.statut == 'REPONDU' %}
+        <span class="badge badge-success">Répondu</span>
+      {% elif msg.statut == 'LU' %}
+        <span class="badge badge-info">Lu</span>
+      {% else %}
+        <span class="badge badge-warning">En attente</span>
+      {% endif %}
+    </div>
+
+    <div class="card-body">
+
+      {# En-tête objet + type #}
+      <div class="comm-msg-header">
+        <div class="comm-msg-type-icon
+          {% if msg.type == 'CONVOCATION' %}
+            " style="background:rgba(23,162,184,0.12); color:#17A2B8;"
+          {% elif msg.type == 'AVERTISSEMENT' %}
+            " style="background:rgba(245,166,35,0.12); color:#F5A623;"
+          {% elif msg.type == 'JUSTIFICATIF' %}
+            " style="background:rgba(162,89,255,0.12); color:#A259FF;"
+          {% else %}
+            " style="background:rgba(220,53,69,0.12); color:#DC3545;"
+          {% endif %}>
+          {% if msg.type == 'CONVOCATION' %}
+          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          {% elif msg.type == 'AVERTISSEMENT' %}
+          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          {% elif msg.type == 'JUSTIFICATIF' %}
+          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          {% else %}
+          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          {% endif %}
+        </div>
+        <div>
+          <p class="comm-msg-objet">{{ msg.objet }}</p>
+          <span class="badge
+            {% if msg.type == 'CONVOCATION' %}badge-info
+            {% elif msg.type == 'AVERTISSEMENT' %}badge-warning
+            {% elif msg.type == 'JUSTIFICATIF' %}badge-purple
+            {% else %}badge-danger{% endif %}">
+            {{ msg.get_type_display }}
+          </span>
+        </div>
+      </div>
+
+      {# Élève #}
+      <div class="comm-eleve-hero">
+        <div class="comm-eleve-avatar">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="comm-eleve-name">{{ msg.eleve.prenom }} {{ msg.eleve.nom }}</p>
+          <p class="comm-eleve-matricule">{{ msg.eleve.matricule }}</p>
+        </div>
+      </div>
+
+      {# Contenu #}
+      <p class="comm-msg-contenu">{{ msg.contenu }}</p>
+
+      {# Créneaux proposés #}
+      {% if msg.creneaux_proposes %}
+      <p class="comm-meta-label">Créneaux proposés</p>
+      <div class="comm-creneaux-list">
+        {% for c in msg.creneaux_proposes %}
+        <div class="comm-creneau-chip{% if reponse and reponse.creneau_choisi == c %} comm-creneau-chip-selected{% endif %}">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          {{ c }}
+          {% if reponse and reponse.creneau_choisi == c %}
+          <span class="badge badge-success" style="margin-left:auto;">Choisi</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# Méta-données #}
+      <div class="section-divider"></div>
+      <div class="comm-meta-grid">
+        <div class="comm-meta-item">
+          <span class="comm-meta-label">Envoyé par</span>
+          <span class="comm-meta-value">{{ msg.envoye_par.get_full_name|default:msg.envoye_par }}</span>
+        </div>
+        <div class="comm-meta-item">
+          <span class="comm-meta-label">Date d'envoi</span>
+          <span class="comm-meta-value text-secondary">{{ msg.created_at|date:"d/m/Y à H:i" }}</span>
+        </div>
+        <div class="comm-meta-item">
+          <span class="comm-meta-label">Téléphone</span>
+          <span class="comm-meta-value text-mono">{{ msg.telephone_utilise|default:"—" }}</span>
+        </div>
+        <div class="comm-meta-item">
+          <span class="comm-meta-label">SMS</span>
+          <span class="comm-meta-value">
+            {% if msg.sms_envoye %}
+              <span class="badge badge-success">Envoyé {{ msg.date_envoi_sms|date:"d/m/Y" }}</span>
+            {% else %}
+              <span class="badge badge-neutral">Non envoyé</span>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Colonne droite : lien + réponse parent ── #}
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+        </svg>
+        Réponse du parent
+      </h2>
+    </div>
+    <div class="card-body">
+
+      {# Lien de réponse #}
+      <div class="comm-link-block">
+        <p class="comm-link-label">Lien de réponse</p>
+        <p class="comm-link-url" id="lien-url">{{ lien_reponse }}</p>
+        <button type="button" class="btn-secondary btn-sm"
+                onclick="navigator.clipboard.writeText(document.getElementById('lien-url').textContent.trim()).then(()=>{this.textContent='Copié ✓';setTimeout(()=>{this.textContent='Copier le lien'},1500)})">
+          Copier le lien
+        </button>
+      </div>
+
+      {# Réponse parent #}
+      {% if reponse %}
+      <div class="comm-response-block">
+
+        <div class="comm-response-item">
+          <span class="comm-response-label">Date de réponse</span>
+          <span class="comm-response-value text-secondary">{{ reponse.created_at|date:"d/m/Y à H:i" }}</span>
+        </div>
+
+        {% if reponse.creneau_choisi %}
+        <div class="comm-response-item">
+          <span class="comm-response-label">Créneau choisi</span>
+          <div class="comm-response-creneau">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:6px;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ reponse.creneau_choisi }}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if msg.type == 'AVERTISSEMENT' %}
+        <div class="comm-response-item">
+          <span class="comm-response-label">Accusé de réception</span>
+          <span class="comm-response-value">
+            {% if reponse.accuse_reception %}
+              <span class="badge badge-success">Confirmé</span>
+            {% else %}
+              <span class="badge badge-neutral">Non confirmé</span>
+            {% endif %}
+          </span>
+        </div>
+        {% endif %}
+
+        {% if reponse.date_reglement_prevue %}
+        <div class="comm-response-item">
+          <span class="comm-response-label">Date de règlement prévue</span>
+          <span class="comm-response-value">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:4px;color:var(--color-gold);">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            {{ reponse.date_reglement_prevue|date:"d/m/Y" }}
+          </span>
+        </div>
+        {% endif %}
+
+        {% if reponse.justificatif %}
+        <div class="comm-response-item">
+          <span class="comm-response-label">Justificatif déposé</span>
+          <a href="{{ reponse.justificatif.url }}" target="_blank" class="btn-secondary btn-sm">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Télécharger
+          </a>
+        </div>
+        {% endif %}
+
+        {% if reponse.commentaire %}
+        <div class="comm-response-item">
+          <span class="comm-response-label">Commentaire</span>
+          <p class="comm-msg-contenu" style="margin-bottom:0;">{{ reponse.commentaire }}</p>
+        </div>
+        {% endif %}
+
+      </div>
+
+      {% else %}
+      <div class="empty-state">
+        <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="empty-state-icon">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="empty-state-text">En attente de réponse du parent.</p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

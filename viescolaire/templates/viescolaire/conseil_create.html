@@ -4,51 +4,62 @@
 
 {% block content %}
 
-<div class="page-header animate-fade-up">
-  <div class="d-flex align-center gap-4">
-    <a href="{% url 'viescolaire:conseil_list' %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
       </svg>
-    </a>
-    <div>
-      <h1 class="page-title">Créer un conseil de classe</h1>
     </div>
+    <div>
+      <h1>Créer un conseil de classe</h1>
+    </div>
+  </div>
+  <div class="dash-section-actions">
+    <a href="{% url 'viescolaire:conseil_list' %}" class="dash-btn dash-btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Retour
+    </a>
   </div>
 </div>
 
-<div style="max-width:520px;" class="animate-fade-up delay-1">
-  <div class="card">
-    <form method="post" style="padding:var(--space-6);">
-      {% csrf_token %}
-      <div class="form-group">
-        <label class="input-label">Classe</label>
-        <select name="classe" required class="input select w-full">
+<div class="dash-card dash-card-form animate-fade-up" style="max-width: 640px;">
+  <form method="post">
+    {% csrf_token %}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="dash-form-group">
+        <label class="dash-label">Classe</label>
+        <select name="classe" required class="dash-input" style="width: 100%;">
           <option value="">— Choisir une classe —</option>
           {% for cl in classes %}
           <option value="{{ cl.pk }}">{{ cl.nom }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="form-group">
-        <label class="input-label">Trimestre</label>
-        <select name="trimestre" required class="input select w-full">
+      <div class="dash-form-group">
+        <label class="dash-label">Trimestre</label>
+        <select name="trimestre" required class="dash-input" style="width: 100%;">
           <option value="">— Choisir un trimestre —</option>
           {% for t in trimestres %}
           <option value="{{ t.pk }}">{{ t.nom }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="form-group">
-        <label class="input-label">Date du conseil</label>
-        <input type="date" name="date_conseil" required class="input w-full">
+      <div class="dash-form-group" style="grid-column: 1 / -1;">
+        <label class="dash-label">Date du conseil</label>
+        <input type="date" name="date_conseil" required class="dash-input" style="width: 100%;">
       </div>
-      <div class="d-flex justify-end mt-4">
-        <button type="submit" class="btn-primary">Créer le conseil et générer les décisions</button>
-      </div>
-    </form>
-  </div>
-  <p class="text-muted mt-4" style="font-size:0.8rem;">
+    </div>
+    <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+      <button type="submit" class="dash-btn dash-btn-primary">
+        Créer le conseil et générer les décisions
+      </button>
+    </div>
+  </form>
+  <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 1rem;">
     Les décisions individuelles seront générées automatiquement pour tous les élèves de la classe.
   </p>
 </div>

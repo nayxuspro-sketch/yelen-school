@@ -2,11 +2,62 @@
 
 {% block pdf_content %}
 
+<style>
+  .doc-meta { font-size: 9pt; color: #555; }
+  .doc-dates { font-size: 8pt; color: #333; }
+
+  /* Statut badges N&B */
+  .badge-admis {
+    background: #fff;
+    border: 1pt solid #111;
+    font-weight: bold;
+    padding: 1pt 4pt;
+    font-size: 7pt;
+  }
+  .badge-ajourne {
+    background: #ddd;
+    border: 1pt solid #111;
+    font-style: italic;
+    padding: 1pt 4pt;
+    font-size: 7pt;
+  }
+  .badge-absent {
+    background: #555;
+    color: #fff;
+    padding: 1pt 4pt;
+    font-size: 7pt;
+  }
+  .badge-defaut {
+    color: #333;
+    font-size: 7pt;
+  }
+
+  /* Moyenne N&B */
+  .moy-ok   { font-weight: bold; color: #111; }
+  .moy-fail { font-weight: bold; font-style: italic; color: #333; }
+
+  /* Matricule */
+  .mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 7.5pt; color: #333; }
+
+  /* Centre */
+  .centre-txt { font-size: 7.5pt; color: #222; }
+
+  /* Ligne paire */
+  .row-pair { background: #f5f5f5; }
+  .row-impair { background: #fff; }
+
+  /* Pied */
+  .total-note { font-size: 7.5pt; color: #333; margin-top: 6pt; text-align: right; }
+
+  /* Message vide */
+  .msg-vide { text-align: center; color: #555; font-style: italic; margin-top: 20pt; }
+</style>
+
 <div class="document-title">
     <h2 style="text-transform:uppercase; letter-spacing:.5pt;">
         LISTE OFFICIELLE DES CANDIDATS
     </h2>
-    <p style="font-size:9pt; color:#475569;">
+    <p class="doc-meta">
         {{ session.libelle }}
         &nbsp;|&nbsp; {{ session.get_type_examen_display }}
         &nbsp;|&nbsp; Année scolaire : <strong>{{ session.annee_scolaire.libelle }}</strong>
@@ -14,7 +65,7 @@
         &nbsp;|&nbsp; Centre : <strong>{{ centre_selectionne.code_centre }} — {{ centre_selectionne.nom }}</strong>
         {% endif %}
     </p>
-    <p style="font-size:8pt; color:#94a3b8;">
+    <p class="doc-dates">
         Du {{ session.date_debut|date:"d/m/Y" }} au {{ session.date_fin|date:"d/m/Y" }}
     </p>
 </div>
@@ -34,44 +85,51 @@
     </thead>
     <tbody>
         {% for c in candidats %}
-        <tr style="{% cycle '' 'background:#f8fafc;' %}">
-            <td style="text-align:center; font-weight:700; font-family:monospace;">
+        <tr class="{% cycle 'row-impair' 'row-pair' %}">
+            <td style="text-align:center; font-weight:700;" class="mono">
                 {{ c.numero_table|default:"—" }}
             </td>
             <td style="font-weight:600;">
                 {{ c.inscription.eleve.nom|upper }} {{ c.inscription.eleve.prenom }}
             </td>
-            <td style="text-align:center; font-family:monospace; font-size:7.5pt; color:#64748b;">
+            <td style="text-align:center;" class="mono">
                 {{ c.inscription.eleve.matricule|default:"—" }}
             </td>
             <td style="text-align:center;">
                 {{ c.inscription.classe.nom|default:"—" }}
             </td>
-            <td style="font-size:7.5pt; color:#334155;">
+            <td class="centre-txt">
                 {% if c.centre %}{{ c.centre.code_centre }} — {{ c.centre.nom }}{% else %}—{% endif %}
             </td>
-            <td style="text-align:center; font-size:7pt;
-                {% if c.statut == 'ADMIS' %}color:#166534; font-weight:700;
-                {% elif c.statut == 'AJOURNE' %}color:#92400e; font-weight:700;
-                {% elif c.statut == 'ABSENT' or c.statut == 'EXCLU' %}color:#991b1b;
-                {% else %}color:#475569;{% endif %}">
-                {{ c.get_statut_display }}
+            <td style="text-align:center;">
+                {% if c.statut == 'ADMIS' %}
+                <span class="badge-admis">{{ c.get_statut_display }}</span>
+                {% elif c.statut == 'AJOURNE' %}
+                <span class="badge-ajourne">{{ c.get_statut_display }}</span>
+                {% elif c.statut == 'ABSENT' or c.statut == 'EXCLU' %}
+                <span class="badge-absent">{{ c.get_statut_display }}</span>
+                {% else %}
+                <span class="badge-defaut">{{ c.get_statut_display }}</span>
+                {% endif %}
             </td>
-            <td style="text-align:center; font-weight:700;
-                {% if c.moyenne_examen %}{% if c.moyenne_examen >= 10 %}color:#166534;{% else %}color:#991b1b;{% endif %}{% endif %}">
-                {% if c.moyenne_examen is not None %}{{ c.moyenne_examen|floatformat:2 }}{% else %}—{% endif %}
+            <td style="text-align:center;">
+                {% if c.moyenne_examen is not None %}
+                <span class="{% if c.moyenne_examen >= 10 %}moy-ok{% else %}moy-fail{% endif %}">
+                    {{ c.moyenne_examen|floatformat:2 }}
+                </span>
+                {% else %}—{% endif %}
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
-<p style="font-size:7.5pt; color:#64748b; margin-top:6pt; text-align:right;">
+<p class="total-note">
     Total : {{ candidats|length }} candidat{{ candidats|length|pluralize }}
 </p>
 
 {% else %}
-<p style="text-align:center; color:#94a3b8; font-style:italic; margin-top:20pt;">
+<p class="msg-vide">
     Aucun candidat inscrit pour cette session.
 </p>
 {% endif %}

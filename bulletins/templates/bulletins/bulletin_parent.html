@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#00A86B">
+  <title>Bulletin scolaire — YELEN SCHOOL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #0A1628;
+      color: #E2E8F0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1.5rem 1rem 3rem;
+    }
+    .container { max-width: 480px; width: 100%; }
+    .logo { text-align: center; margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700; color: #00A86B; }
+
+    .card { background: #111E35; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 1rem; }
+    .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .card-body { padding: 1.25rem; }
+
+    .eleve-header {
+      background: linear-gradient(135deg, #00A86B 0%, #008f5a 100%);
+      padding: 1.25rem;
+      display: flex; align-items: center; gap: 0.875rem;
+    }
+    .eleve-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .eleve-name { font-weight: 700; font-size: 1.05rem; color: #fff; }
+    .eleve-meta { font-size: 0.8rem; color: rgba(255,255,255,0.82); margin-top: 2px; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .stat { padding: 0.875rem 0.5rem; text-align: center; border-right: 1px solid rgba(255,255,255,0.06); }
+    .stat:last-child { border-right: none; }
+    .stat-val { font-size: 1.4rem; font-weight: 700; }
+    .stat-val.success { color: #00A86B; }
+    .stat-val.danger { color: #ef4444; }
+    .stat-val.muted { color: #64748B; }
+    .stat-lbl { font-size: 0.68rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.875rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #64748B; }
+    .info-value { font-weight: 500; text-align: right; }
+
+    .appreciation { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 0.875rem 1rem; font-size: 0.875rem; color: #CBD5E1; line-height: 1.6; font-style: italic; }
+
+    .sign-box {
+      background: rgba(0,168,107,0.08);
+      border: 1px solid rgba(0,168,107,0.2);
+      border-radius: 10px; padding: 1.25rem;
+    }
+    .sign-title { font-weight: 600; font-size: 0.9rem; color: #00A86B; margin-bottom: 0.75rem; }
+    .sign-desc { font-size: 0.82rem; color: #94A3B8; margin-bottom: 1rem; line-height: 1.5; }
+
+    .input {
+      width: 100%; padding: 0.625rem 0.875rem;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; color: #E2E8F0; font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem; outline: none; margin-bottom: 0.875rem;
+      transition: border-color 0.15s;
+    }
+    .input:focus { border-color: #00A86B; }
+
+    .btn-sign {
+      width: 100%; padding: 0.75rem;
+      background: #00A86B; color: #fff; border: none; border-radius: 8px;
+      font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      transition: background 0.15s;
+    }
+    .btn-sign:hover { background: #008f5a; }
+
+    .signed-box {
+      background: rgba(0,168,107,0.12);
+      border: 1px solid rgba(0,168,107,0.3);
+      border-radius: 10px; padding: 1.25rem; text-align: center;
+    }
+    .signed-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .signed-title { font-size: 1rem; font-weight: 700; color: #00A86B; margin-bottom: 0.25rem; }
+    .signed-meta { font-size: 0.8rem; color: #64748B; }
+
+    .expired-box {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 10px; padding: 1.25rem; text-align: center;
+    }
+    .expired-title { color: #ef4444; font-weight: 600; margin-bottom: 0.25rem; }
+    .expired-desc { font-size: 0.82rem; color: #94A3B8; }
+
+    .erreur-box { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 1.5rem; text-align: center; }
+    .erreur-title { color: #ef4444; font-weight: 600; font-size: 1rem; }
+
+    .footer { text-align: center; font-size: 0.72rem; color: #475569; margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="logo">YELEN SCHOOL</div>
+
+  {% if erreur %}
+  <div class="erreur-box">
+    <div class="erreur-title">{{ erreur }}</div>
+  </div>
+
+  {% else %}
+
+  <!-- En-tête élève -->
+  <div class="card">
+    <div class="eleve-header">
+      <div class="eleve-avatar">{{ eleve.prenom|first|upper }}</div>
+      <div>
+        <div class="eleve-name">{{ eleve.nom|upper }} {{ eleve.prenom }}</div>
+        <div class="eleve-meta">{{ classe.nom }} · {{ trimestre.nom }}</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat">
+        {% if mg and mg.moyenne is not None %}
+          <div class="stat-val {% if mg.moyenne >= 10 %}success{% else %}danger{% endif %}">{{ mg.moyenne|floatformat:2 }}</div>
+        {% else %}
+          <div class="stat-val muted">—</div>
+        {% endif %}
+        <div class="stat-lbl">Moyenne /20</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val {% if mg and mg.rang %}{% else %}muted{% endif %}">
+          {% if mg and mg.rang %}{{ mg.rang }}{% else %}—{% endif %}
+        </div>
+        <div class="stat-lbl">Rang</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val muted">{{ bulletin.total_absences }}</div>
+        <div class="stat-lbl">Absences (h)</div>
+      </div>
+    </div>
+
+    <!-- Détails -->
+    <div class="card-body">
+      <div class="info-row">
+        <span class="info-label">Abs. justifiées</span>
+        <span class="info-value">{{ bulletin.absences_justifiees }} h</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Abs. non justifiées</span>
+        <span class="info-value">{{ bulletin.absences_non_justifiees }} h</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Retards</span>
+        <span class="info-value">{{ bulletin.retards }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Publié le</span>
+        <span class="info-value">{{ bulletin.date_publication|date:"d/m/Y" }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appréciation -->
+  {% if bulletin.appreciation_conseil %}
+  <div class="card">
+    <div class="card-header" style="font-size:0.75rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.06em;">
+      Appréciation du conseil de classe
+    </div>
+    <div class="card-body">
+      <div class="appreciation">{{ bulletin.appreciation_conseil }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Signature -->
+  {% if bulletin.est_signe %}
+  <div class="signed-box">
+    <div class="signed-icon">✅</div>
+    <div class="signed-title">Bulletin signé</div>
+    <div class="signed-meta">
+      Par {{ bulletin.signe_par_nom }}<br>
+      le {{ bulletin.signe_le|date:"d/m/Y à H\hi" }}
+    </div>
+  </div>
+
+  {% elif token_valide %}
+  <div class="sign-box">
+    <div class="sign-title">Accusé de réception</div>
+    <div class="sign-desc">
+      En cliquant sur <strong>Lu et signé</strong>, vous confirmez avoir pris connaissance
+      du bulletin scolaire de <strong>{{ eleve.prenom }}</strong> pour le {{ trimestre.nom }}.
+      Cette action est horodatée et conservée par l'établissement.
+    </div>
+    <form method="post" action="{% url 'bulletins:bulletin_parent_signer' token=token %}">
+      {% csrf_token %}
+      <input type="text" name="nom_signataire" class="input"
+             placeholder="Votre nom (optionnel)" maxlength="100" autocomplete="name">
+      <button type="submit" class="btn-sign">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Lu et signé
+      </button>
+    </form>
+  </div>
+
+  {% else %}
+  <div class="expired-box">
+    <div class="expired-title">Lien expiré</div>
+    <div class="expired-desc">Ce lien de signature n'est plus valide (durée de validité : 15 jours). Contactez l'administration pour obtenir un nouveau lien.</div>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
+  <div class="footer">YELEN SCHOOL — Ce lien est personnel et confidentiel.</div>
+</div>
+</body>
+</html>

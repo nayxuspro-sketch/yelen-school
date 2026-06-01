@@ -4,213 +4,186 @@
 
 {% block content %}
 
+{# ── En-tête ───────────────────────────────────────────────────────────────── #}
 <div class="page-header animate-fade-up">
   <div>
     <h1 class="page-title">Parcours scolaire</h1>
-    <p class="page-subtitle">
-      {{ eleve.get_nom_complet }} &mdash; {{ eleve.matricule }}
-    </p>
+    <p class="page-subtitle">{{ eleve.get_nom_complet }} &mdash; {{ eleve.matricule }}</p>
   </div>
-  <div style="display:flex; gap:var(--space-2);">
-    <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="btn btn-outline">
-      ← Fiche élève
-    </a>
-  </div>
+  <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="btn btn-outline">
+    ← Fiche élève
+  </a>
 </div>
 
-{# ── Statistiques rapides ─────────────────────────────────────────────────── #}
-<div style="display:flex; gap:var(--space-3); flex-wrap:wrap; margin-bottom:var(--space-4);" class="animate-fade-up">
+{# ── Statistiques rapides ──────────────────────────────────────────────────── #}
+<div class="stats-grid animate-fade-up">
 
-  <div class="card" style="flex:1; min-width:120px; padding:var(--space-3) var(--space-4); text-align:center;">
-    <div style="font-size:1.6rem; font-weight:800; color:var(--color-primary);">{{ nb_annees }}</div>
-    <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:2px;">Année{{ nb_annees|pluralize }} scol.</div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_annees }}</div>
+      <div class="stat-label">Année{{ nb_annees|pluralize }} scolaire{{ nb_annees|pluralize }}</div>
+    </div>
   </div>
 
-  <div class="card" style="flex:1; min-width:120px; padding:var(--space-3) var(--space-4); text-align:center;">
-    <div style="font-size:1.6rem; font-weight:800; color:#d97706;">{{ nb_redoublements }}</div>
-    <div style="font-size:.78rem; color:var(--color-text-muted); margin-top:2px;">Redoublement{{ nb_redoublements|pluralize }}</div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-gold">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_redoublements }}</div>
+      <div class="stat-label">Redoublement{{ nb_redoublements|pluralize }}</div>
+    </div>
   </div>
 
   {% if eleve.etablissement_origine %}
-  <div class="card" style="flex:2; min-width:200px; padding:var(--space-3) var(--space-4);">
-    <div style="font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--color-text-muted);">Établissement d'origine</div>
-    <div style="font-weight:600; margin-top:3px;">{{ eleve.etablissement_origine }}</div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="tl-stat-origine">{{ eleve.etablissement_origine }}</div>
+      <div class="stat-label">Établissement d'origine</div>
+    </div>
   </div>
   {% endif %}
 
 </div>
 
-{# ── Timeline ─────────────────────────────────────────────────────────────── #}
+{# ── Timeline ──────────────────────────────────────────────────────────────── #}
 {% if timeline %}
-<div class="card animate-fade-up delay-1" style="padding:var(--space-4) var(--space-5);">
+<div class="card animate-fade-up delay-1">
 
-  <div style="position:relative; padding-left:2.8rem;">
+  <div class="card-header">
+    <h3 class="card-title">Historique scolaire</h3>
+    <span class="badge badge-neutral">{{ nb_annees }} année{{ nb_annees|pluralize }}</span>
+  </div>
 
-    {# Ligne verticale de la timeline #}
-    <div style="position:absolute; left:1rem; top:.6rem; bottom:.6rem;
-                width:2px; background:var(--color-border);
-                border-radius:1px;"></div>
+  <div class="tl-container">
+    <div class="tl-line"></div>
 
     {% for entry in timeline %}
     {% with insc=entry.inscription %}
 
-    {# ── Nœud de la timeline ─────────────────────────────────────────────── #}
-    <div style="position:relative; margin-bottom:{% if not entry.est_derniere %}0{% else %}0{% endif %};">
+    <div class="tl-node">
 
-      {# Point central #}
-      <div style="position:absolute; left:-2.05rem; top:.55rem;
-                  width:1.1rem; height:1.1rem; border-radius:50%;
-                  background:{% if entry.transition == 'REDOUBLEMENT' %}#d97706{% elif entry.transition == 'ABANDON' %}#dc2626{% elif entry.transition == 'DIPLOME' %}#0891b2{% elif entry.est_derniere %}var(--color-primary){% else %}#94a3b8{% endif %};
-                  border:2.5px solid #fff;
-                  box-shadow:0 0 0 2px {% if entry.est_derniere %}var(--color-primary){% else %}#cbd5e1{% endif %};
-                  z-index:1;"></div>
+      {# Pastille de couleur #}
+      <div class="tl-dot {% if entry.transition == 'REDOUBLEMENT' %}tl-dot-redoublement{% elif entry.transition == 'ABANDON' %}tl-dot-abandon{% elif entry.transition == 'DIPLOME' %}tl-dot-diplome{% elif entry.est_derniere %}tl-dot-active{% else %}tl-dot-default{% endif %}"></div>
 
       {# Carte de l'inscription #}
-      <div style="background:var(--color-surface); border:1px solid var(--color-border);
-                  border-radius:var(--radius-md); padding:var(--space-3) var(--space-4);
-                  margin-bottom:var(--space-2);
-                  {% if entry.est_derniere %}border-color:var(--color-primary); border-width:1.5px;{% endif %}">
+      <div class="tl-card{% if entry.est_derniere %} tl-card-active{% endif %}">
 
-        {# En-tête : année + classe #}
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:var(--space-2);">
+        {# En-tête : année + classe + badges #}
+        <div class="tl-card-header">
           <div>
-            <div style="font-size:.72rem; text-transform:uppercase; letter-spacing:.07em;
-                        color:var(--color-text-muted); font-weight:600; margin-bottom:2px;">
-              {{ insc.annee_scolaire }}
-            </div>
-            <div style="font-size:1.05rem; font-weight:700; color:var(--color-text);">
+            <div class="tl-year">{{ insc.annee_scolaire }}</div>
+            <div class="tl-class">
               {{ insc.classe.nom }}
               {% if insc.classe.cycle %}
-              <span style="font-size:.75rem; font-weight:400; color:var(--color-text-muted);">
-                &mdash; {{ insc.classe.cycle.nom }}
-              </span>
+              <span class="tl-class-cycle">&mdash; {{ insc.classe.cycle.nom }}</span>
               {% endif %}
             </div>
           </div>
 
-          {# Badges de statut #}
-          <div style="display:flex; gap:var(--space-1); flex-wrap:wrap; align-items:flex-start;">
+          <div class="tl-badges">
             {% for badge in entry.badges %}
-            <span style="font-size:.7rem; font-weight:700; padding:2px 8px; border-radius:20px;
-                         background:{{ badge.color }}20; color:{{ badge.color }};
-                         border:1px solid {{ badge.color }}40;">
-              {{ badge.label }}
-            </span>
+            <span class="badge {{ badge.badge_class }}">{{ badge.label }}</span>
             {% endfor %}
             {% if entry.est_derniere %}
-            <span style="font-size:.7rem; font-weight:700; padding:2px 8px; border-radius:20px;
-                         background:var(--color-primary-light, #dcfce7); color:var(--color-primary);
-                         border:1px solid var(--color-primary)40;">
-              En cours
-            </span>
+            <span class="badge badge-success">En cours</span>
             {% endif %}
           </div>
         </div>
 
         {# Infos secondaires #}
-        <div style="margin-top:var(--space-2); display:flex; gap:var(--space-3); flex-wrap:wrap;
-                    font-size:.8rem; color:var(--color-text-muted);">
+        <div class="tl-meta">
           <span>Inscrit le {{ insc.date_inscription|date:"d/m/Y" }}</span>
           {% if insc.statut_eleve %}
           <span>· {{ insc.statut_eleve }}</span>
           {% endif %}
           {% if insc.est_redoublant and insc.classe_redoublee %}
-          <span style="color:#d97706;">· Redoublait : {{ insc.classe_redoublee }}</span>
+          <span class="tl-meta-warn">· Redoublait&nbsp;: {{ insc.classe_redoublee }}</span>
           {% endif %}
           {% if insc.observations %}
-          <span style="font-style:italic;">· {{ insc.observations|truncatechars:60 }}</span>
+          <span class="tl-meta-italic">· {{ insc.observations|truncatechars:60 }}</span>
           {% endif %}
         </div>
 
         {# Événements manuels de cette année #}
         {% for ev in entry.evenements %}
-        <div style="margin-top:var(--space-2); padding:var(--space-2) var(--space-3);
-                    background:#f8fafc; border-radius:var(--radius-sm);
-                    border-left:3px solid {{ ev.get_type_evenement_display|yesno:'#2563eb,#6b7280' }};
-                    display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-2);">
+        <div class="tl-event tl-event-{{ ev.type_evenement|lower }}">
           <div>
-            <span style="font-size:.72rem; font-weight:700; text-transform:uppercase;
-                         letter-spacing:.05em; color:#4a5568;">
-              {{ ev.get_type_evenement_display }}
-            </span>
+            <span class="tl-event-label">{{ ev.get_type_evenement_display }}</span>
             {% if ev.etablissement_transfert %}
-            <span style="font-size:.8rem; color:var(--color-text-muted);"> — {{ ev.etablissement_transfert }}</span>
+            <span class="tl-event-detail"> &mdash; {{ ev.etablissement_transfert }}</span>
             {% endif %}
             {% if ev.motif %}
-            <div style="font-size:.8rem; color:var(--color-text-muted); margin-top:2px; font-style:italic;">
-              {{ ev.motif|truncatechars:120 }}
-            </div>
+            <div class="tl-event-note">{{ ev.motif|truncatechars:120 }}</div>
             {% endif %}
             {% if ev.enregistre_par %}
-            <div style="font-size:.72rem; color:var(--color-text-muted); margin-top:2px;">
-              Enregistré par {{ ev.enregistre_par.get_full_name|default:ev.enregistre_par }} — {{ ev.date_evenement|date:"d/m/Y" }}
+            <div class="tl-event-by">
+              Enregistré par {{ ev.enregistre_par.get_full_name|default:ev.enregistre_par }}
+              &mdash; {{ ev.date_evenement|date:"d/m/Y" }}
             </div>
             {% endif %}
           </div>
           <form method="post" action="{% url 'inscriptions:evenement_supprimer' ev.pk %}"
-                onsubmit="return confirm('Supprimer cet événement ?');"
-                style="flex-shrink:0;">
+                onsubmit="return confirm('Supprimer cet événement ?');">
             {% csrf_token %}
-            <button type="submit" class="btn-icon" title="Supprimer"
-                    style="color:var(--color-danger); font-size:.9rem;">✕</button>
+            <button type="submit" class="btn-icon btn-icon-danger" title="Supprimer">✕</button>
           </form>
         </div>
         {% endfor %}
 
-      </div>{# /carte inscription #}
+      </div>{# /tl-card #}
 
-      {# ── Flèche de transition ──────────────────────────────────────────── #}
+      {# Connecteur de transition ou statut final #}
       {% if not entry.est_derniere %}
-      <div style="display:flex; align-items:center; gap:var(--space-2);
-                  padding:var(--space-1) 0 var(--space-1) var(--space-2);
-                  margin-bottom:var(--space-2);">
+      <div class="tl-connector">
         {% if entry.transition_meta %}
-        <span style="font-size:1rem; color:{{ entry.transition_meta.color }}; font-weight:700;">
-          {{ entry.transition_meta.icon }}
-        </span>
-        <span style="font-size:.78rem; font-weight:600; color:{{ entry.transition_meta.color }};
-                     background:{{ entry.transition_meta.color }}18; padding:2px 10px;
-                     border-radius:20px; border:1px solid {{ entry.transition_meta.color }}35;">
+        <span class="tl-connector-icon">{{ entry.transition_meta.icon }}</span>
+        <span class="badge {{ entry.transition_meta.badge_class }}">
           {{ entry.transition_meta.label }}
           {% if entry.ev_transition and entry.ev_transition.motif %}
           &mdash; {{ entry.ev_transition.motif|truncatechars:50 }}
           {% endif %}
         </span>
         {% else %}
-        <span style="font-size:.78rem; color:var(--color-text-muted); font-style:italic;">
-          — suite du parcours
-        </span>
+        <span class="tl-connector-null">— suite du parcours</span>
         {% endif %}
       </div>
+
       {% else %}
-        {# Fin de timeline : statut final #}
         {% if entry.transition == 'ABANDON' %}
-        <div style="margin-top:var(--space-2); padding:var(--space-2) var(--space-3);
-                    background:#fef2f2; border-radius:var(--radius-sm);
-                    border-left:3px solid #dc2626; font-size:.8rem; color:#dc2626; font-weight:600;">
-          Scolarité interrompue (Abandon)
-        </div>
+        <div class="tl-final tl-final-abandon">Scolarité interrompue (Abandon)</div>
         {% elif entry.transition == 'DIPLOME' %}
-        <div style="margin-top:var(--space-2); padding:var(--space-2) var(--space-3);
-                    background:#f0f9ff; border-radius:var(--radius-sm);
-                    border-left:3px solid #0891b2; font-size:.8rem; color:#0891b2; font-weight:600;">
-          ✓ Diplôme obtenu{% if entry.ev_transition and entry.ev_transition.motif %} — {{ entry.ev_transition.motif }}{% endif %}
+        <div class="tl-final tl-final-diplome">
+          ✓ Diplôme obtenu{% if entry.ev_transition and entry.ev_transition.motif %} &mdash; {{ entry.ev_transition.motif }}{% endif %}
         </div>
         {% elif entry.transition == 'TRANSFERT_SORTANT' %}
-        <div style="margin-top:var(--space-2); padding:var(--space-2) var(--space-3);
-                    background:#f5f3ff; border-radius:var(--radius-sm);
-                    border-left:3px solid #7c3aed; font-size:.8rem; color:#7c3aed; font-weight:600;">
+        <div class="tl-final tl-final-transfert">
           → Transféré{% if entry.ev_transition and entry.ev_transition.etablissement_transfert %} vers {{ entry.ev_transition.etablissement_transfert }}{% endif %}
         </div>
         {% endif %}
       {% endif %}
 
-    </div>{# /nœud timeline #}
+    </div>{# /tl-node #}
 
     {% endwith %}
     {% endfor %}
 
-  </div>{# /timeline relative #}
+  </div>{# /tl-container #}
 </div>
 
 {% else %}
@@ -219,11 +192,12 @@
     <div class="empty-state-icon">
       <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2
+                 M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
       </svg>
     </div>
     <p class="empty-state-text">Aucune inscription enregistrée pour cet élève.</p>
-    <a href="{% url 'inscriptions:inscription_create' eleve.pk %}" class="btn btn-primary" style="margin-top:var(--space-3);">
+    <a href="{% url 'inscriptions:inscription_create' eleve.pk %}" class="btn btn-primary">
       Créer une inscription
     </a>
   </div>
@@ -231,64 +205,60 @@
 {% endif %}
 
 {# ── Formulaire d'ajout d'événement manuel ────────────────────────────────── #}
-<div class="card animate-fade-up delay-2" style="margin-top:var(--space-4);">
-  <div style="padding:var(--space-3) var(--space-4) var(--space-2);">
-    <h3 style="font-size:.9rem; font-weight:700; color:var(--color-text); margin:0;">
-      Ajouter un événement
-    </h3>
-    <p style="font-size:.78rem; color:var(--color-text-muted); margin:4px 0 0;">
-      Transfert, diplôme, motif de redoublement, etc.
-    </p>
+<div class="card animate-fade-up delay-2">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Ajouter un événement</h3>
+      <p class="tl-form-subtitle">Transfert, diplôme, motif de redoublement, etc.</p>
+    </div>
   </div>
 
-  <form method="post"
-        style="padding:0 var(--space-4) var(--space-4);
-               display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:var(--space-3);">
+  <form method="post" class="tl-form">
     {% csrf_token %}
+    <div class="tl-form-grid">
 
-    <div>
-      <label class="input-label">Type d'événement <span style="color:var(--color-danger);">*</span></label>
-      <select name="type_evenement" class="input select" required>
-        <option value="">— Choisir —</option>
-        {% for val, label in types_evenement %}
-        <option value="{{ val }}">{{ label }}</option>
-        {% endfor %}
-      </select>
+      <div>
+        <label class="input-label">Type d'événement <span class="required-star">*</span></label>
+        <select name="type_evenement" class="input select" required>
+          <option value="">— Choisir —</option>
+          {% for val, label in types_evenement %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="input-label">Année scolaire <span class="required-star">*</span></label>
+        <select name="annee_scolaire" class="input select" required>
+          <option value="">— Choisir —</option>
+          {% for annee in annees %}
+          <option value="{{ annee.pk }}">{{ annee }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="input-label">Date</label>
+        <input type="date" name="date_evenement" class="input" value="{% now 'Y-m-d' %}">
+      </div>
+
+      <div>
+        <label class="input-label">Établissement (transfert)</label>
+        <input type="text" name="etablissement_transfert" class="input"
+               placeholder="Nom de l'établissement…">
+      </div>
+
+      <div class="tl-form-full">
+        <label class="input-label">Motif / Observations</label>
+        <textarea name="motif" class="input" rows="2"
+                  placeholder="Raison du redoublement, nom du diplôme obtenu…"></textarea>
+      </div>
+
+      <div class="tl-form-full tl-form-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer l'événement</button>
+      </div>
+
     </div>
-
-    <div>
-      <label class="input-label">Année scolaire <span style="color:var(--color-danger);">*</span></label>
-      <select name="annee_scolaire" class="input select" required>
-        <option value="">— Choisir —</option>
-        {% for annee in annees %}
-        <option value="{{ annee.pk }}">{{ annee }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div>
-      <label class="input-label">Date</label>
-      <input type="date" name="date_evenement" class="input"
-             value="{% now 'Y-m-d' %}">
-    </div>
-
-    <div>
-      <label class="input-label">Établissement (transfert)</label>
-      <input type="text" name="etablissement_transfert" class="input"
-             placeholder="Nom de l'établissement…">
-    </div>
-
-    <div style="grid-column:1 / -1;">
-      <label class="input-label">Motif / Observations</label>
-      <textarea name="motif" class="input" rows="2"
-                placeholder="Raison du redoublement, nom du diplôme obtenu…"
-                style="resize:vertical;"></textarea>
-    </div>
-
-    <div style="grid-column:1 / -1; display:flex; justify-content:flex-end;">
-      <button type="submit" class="btn btn-primary">Enregistrer l'événement</button>
-    </div>
-
   </form>
 </div>
 

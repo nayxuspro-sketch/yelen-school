@@ -1,16 +1,16 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 4.2
-version_guide: 2.5
-date_mise_a_jour: 08/04/2026
-modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent]
+version_guide: 2.15
+date_mise_a_jour: 13/05/2026 (v2.15)
+modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail]
 modules_en_attente: [portail_parent, transferts, api_rest]
 redige_par: Agent IA — Développement YELEN SCHOOL
 ---
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 4.2 — Avril 2026 (Guide v2.5)
+### Version 4.2 — Avril 2026 (Guide v2.6)
 
 ---
 
@@ -30,22 +30,28 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [2.14 Types d'Évaluation](#214-types-dévaluation)
   - [2.15 Calendrier Scolaire](#215-calendrier-scolaire)
   - [2.16 Modèles de Messages SMS](#216-modèles-de-messages-sms)
+  - [2.18 Localisations des Postes](#29-localisations-des-postes)
 - [3. Enregistrement des Élèves](#3-enregistrement-des-élèves)
+  - [3.8 Page Profil Élève — Vue d'ensemble](#38-page-profil-élève--vue-densemble)
 - [4. Inscription et Réinscription](#4-inscription-et-réinscription)
   - [4.5 Carte Scolaire de l'Élève](#45-carte-scolaire-de-lélève)
   - [4.7 Marquer Abandon / Annuler l'Abandon](#47-marquer-abandon--annuler-labandon)
 - [5. Gestion du Personnel](#5-gestion-du-personnel)
-  - [5.5 Désactiver / Réactiver un membre](#55-désactiver--réactiver-un-membre-du-personnel)
-  - [5.7 Badge Personnel](#57-badge-personnel)
-  - [5.9 Gestion des Salaires du Personnel](#59-gestion-des-salaires-du-personnel)
+  - [5.1 Profil du Personnel (Page de Détail)](#51-profil-du-personnel-page-de-détail)
   - [5.10 Gestion des Congés du Personnel](#510-gestion-des-congés-du-personnel)
-    - [Autorisation de Jouissance de Congé PDF](#autorisation-de-jouissance-de-congé-pdf)
-  - [5.8 Contrat de Travail](#58-contrat-de-travail)
+    - [Design du formulaire (Design System v4)](#design-du-formulaire-conge_formhtml--design-system-v4)
+  - [5.11 Gestion des Salaires du Personnel](#511-gestion-des-salaires-du-personnel)
+    - [Design du formulaire (Design System v4)](#design-du-formulaire-salaire_formhtml--design-system-v4)
 - [6. Scolarité et Notes](#6-scolarité-et-notes)
   - [6.1 Matières et Enseignements (regroupés par classe)](#61-configurer-les-matières-et-enseignements)
   - [6.6 Conseil de Classe](#66-conseil-de-classe)
   - [6.7 Bulletins Trimestriels PDF](#67-bulletins-trimestriels-pdf)
+  - [6.7.0 Duplicata du Bulletin Trimestriel](#670-duplicata-du-bulletin-trimestriel)
+  - [6.7.1 Bulletin Annuel](#671-bulletin-annuel)
+  - [6.7.2 Palmarès Annuel](#672-palmarès-annuel)
   - [6.8 Moyennes par Discipline](#68-moyennes-par-discipline)
+  - [6.9 Relevé de Notes par Discipline](#69-relevé-de-notes-par-discipline)
+  - [6.10 Analyse du Risque de Décrochage (IA)](#610-analyse-du-risque-de-décrochage-ia)
 - [7. Présences et Absences](#7-présences-et-absences)
   - [7.3 Justifications d'absences](#73-justifications-dabsences)
   - [7.4 Bilan des présences par élève](#74-bilan-des-présences-par-élève)
@@ -67,7 +73,10 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [9.11 Relances de Paiement PDF](#911-relances-de-paiement-pdf)
   - [9.12 Élèves Exonérés de Paiement](#912-élèves-exonérés-de-paiement)
   - [9.13 Bourses et Aides Financières](#913-bourses-et-aides-financières)
+  - [9.14 Paiements Mobile Money](#914-paiements-mobile-money-orange-money)
 - [10. Examens](#10-examens)
+- [20. Portail Parent PWA](#20-portail-parent-pwa)
+- [21. Signature Électronique des Bulletins](#21-signature-électronique-des-bulletins)
   - [10.5 Liste des Candidats — Filtre par Centre](#105-liste-des-candidats--filtre-par-centre)
 - [11. Vacations](#11-vacations)
   - [11.3 Générer un Bulletin de Vacation](#113-générer-un-bulletin-de-vacation)
@@ -88,6 +97,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 - [13. Gestion des Licences](#13-gestion-des-licences-super-admin-uniquement)
 - [14. Statistiques et Rapports](#14-statistiques-et-rapports)
   - [14.4 Emploi du Temps](#144-emploi-du-temps)
+    - [14.4.1 Emploi du Temps par Professeur](#1441-emploi-du-temps-par-professeur)
 - [15. Fonctionnalités à Venir](#15-fonctionnalités-à-venir-)
 - [16. Questions Fréquentes (FAQ)](#16-questions-fréquentes-faq)
 - [17. Glossaire](#17-glossaire)
@@ -98,7 +108,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [18.4 Guide Administrateur Technique](#184-guide-administrateur-technique)
   - [18.5 Système de Notifications](#185-système-de-notifications)
   - [18.6 Journal d'Audit (Traçabilité)](#186-journal-daudit-traçabilité)
-  - [18.7 Réunion de Parents](#187-réunion-de-parents)
+  - [18.7 Réunion de Parents](#187-réunion-de-parents-reunion-parents)
 
 ---
 
@@ -206,29 +216,73 @@ YELEN SCHOOL fonctionne dans ton navigateur web. L'adresse dépend de ton instal
 Ouvre ton navigateur et saisis l'adresse du logiciel. Tu arrives sur la page de connexion :
 
 ```
-╔══════════════════════════════════════════════════════════╗
-║                                                          ║
-║              🎓  YELEN SCHOOL                            ║
-║         "Illuminer chaque parcours scolaire"             ║
-║                                                          ║
-╠══════════════════════════════════════════════════════════╣
-║                                                          ║
-║   Nom d'utilisateur  : [koné.directeur______________]   ║
-║                                                          ║
-║   Mot de passe       : [••••••••••••••••••••••••••••]   ║
-║                                                          ║
-║              [ 🔐  Se connecter ]                        ║
-║                                                          ║
-║         Mot de passe oublié ? Contacte l'admin           ║
-║                                                          ║
-╚══════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════════════════╗
+║  ┌──────────────────────────────────────────────────────────────────┐ ║
+║  │  🎓  YELEN SCHOOL                                               │ ║
+║  │                                                                  │ ║
+║  │  Gérez votre établissement                                       │ ║
+║  │  en toute simplicité                                            │ ║
+║  │                                                                  │ ║
+║  │  ✓ Notes & Bulletins    ✓ Paiements & Finances                 │ ║
+║  │  ✓ Présences & Discipline ✓ Documents & Certificats              │ ║
+║  │                                                                  │ ║
+║  │  ──────── Cycles ──────── Profils ──────── Hors ligne ───────   │ ║
+║  │       4                 9                100%                   │ ║
+║  └──────────────────────────────────────────────────────────────────┘ ║
+║                                                                        ║
+║                        Bon retour                                      ║
+║              Entrez vos identifiants pour continuer                    ║
+║                                                                        ║
+║    ┌────────────────────────────────────────────────────────────┐     ║
+║    │  📧  exemple@ecole.bf                                     │     ║
+║    └────────────────────────────────────────────────────────────┘     ║
+║                                                                        ║
+║    ┌────────────────────────────────────────────────────────────┐     ║
+║    │  🔒  ••••••••••                                   👁       │     ║
+║    └────────────────────────────────────────────────────────────┘     ║
+║                                                                        ║
+║    □ Se souvenir de moi          Mot de passe oublié ?                 ║
+║                                                                        ║
+║    ┌────────────────────────────────────────────────────────────┐     ║
+║    │              Se connecter                          →        │     ║
+║    └────────────────────────────────────────────────────────────┘     ║
+║                                                                        ║
+║              ───────── Accès rapide ─────────                         ║
+║    ┌──────────┐  ┌──────────┐  ┌──────────┐                          ║
+║    │ 👤       │  │ 📄       │  │ 🎓       │                          ║
+║    │Directeur │  │Secrétaire│  │Enseignant│                          ║
+║    └──────────┘  └──────────┘  └──────────┘                          ║
+║                                                                        ║
+║                    Burkina Faso · v4.2                                 ║
+╚════════════════════════════════════════════════════════════════════════╝
 ```
+
+**Design Premium (v4.2+) :**
+- Layout deux panneaux : branding à gauche (masqué en mobile), formulaire à droite
+- Palette professionnelle : fond profond `#06101E`, accent vert `#00A86B`
+- Panneau branding : lueurs vertes ambiantes, logo Playfair Display, fonctionnalités, statistiques
+- Panneau formulaire : glassmorphism subtil, backdrop-filter blur
+- Champs avec icônes SVG intégrées et anneau vert au focus
+- Bouton dégradé vert avec élévation au survol (`translateY(-2px)`)
+- Toggle mot de passe : bouton indépendant (hors shadow DOM) utilisant `inp.type` (propriété directe, `'password'` / `'text'`) avec état suivi via `data-pw-visible` ; icônes SVG œil ouvert/fermé commutées par `style.display`, protégées des clics intempestifs par `pointer-events: none` en CSS (`.login-clean-pw-toggle svg`)
+- Spinner de chargement animé pendant la soumission
+- Accès rapides pour tester les différents profils
+- Responsive : panneau branding masqué sous 960 px
 
 **Étapes :**
 
-1. Saisis ton **nom d'utilisateur** (fourni par l'administrateur)
+1. Saisis ton **adresse e-mail** (fournie par l'administrateur)
 2. Saisis ton **mot de passe**
 3. Clique sur **Se connecter**
+4. Option : utilise les **accès rapides** en bas pour tester
+
+**Mot de passe oublié :**
+
+YELEN SCHOOL fonctionne **hors ligne** — la réinitialisation par e-mail n'est pas disponible. Clique sur le lien **"Mot de passe oublié ?"** pour afficher un panneau d'information qui t'indique la marche à suivre :
+
+> Contactez votre administrateur : *Administration → Utilisateurs → [votre compte] → Changer le mot de passe*
+
+L'administrateur (SUPER\_ADMIN ou DIRECTEUR) peut modifier le mot de passe depuis la fiche utilisateur sans avoir besoin de connaître l'ancien.
 
 ---
 
@@ -269,2330 +323,389 @@ Une fois connecté, le tableau de bord s'adapte à ton rôle :
 
 ---
 
-### 1.4 Changer de Mot de Passe
-
-1. Clique sur ton **nom** en haut à droite du tableau de bord
-2. Sélectionne **Mon Profil**
-3. Clique sur **Changer le mot de passe**
-4. Saisis ton ancien mot de passe, puis le nouveau (deux fois)
-5. Clique sur **Enregistrer**
-
-> **Règle de sécurité :** Choisis un mot de passe d'au moins 8 caractères mélangeant lettres et chiffres. Ne le communique à personne.
-
----
-
-### 1.5 Se Déconnecter
-
-Clique sur ton **nom** en haut à droite, puis sur **Se déconnecter**.
-
-> **Attention :** Déconnecte-toi toujours avant de quitter ton poste, surtout sur un ordinateur partagé.
-
 ### 1.6 Gestion des Comptes Utilisateurs
 
-#### Créer un Compte Parent
-
-**À quoi ça sert :** Crée un compte pour un parent ou tuteur d'élève. Ce compte permet au parent de recevoir les notifications d'absence, de bulletin, et d'accéder au portail parent.
+**À quoi ça sert :** Permet aux administrateurs (SUPER_ADMIN, DIRECTEUR) de créer, modifier et désactiver les comptes des membres du personnel qui utilisent YELEN SCHOOL.
 
 **Qui peut accéder :** Super Admin, Directeur
 
-**Accès :** `Menu → Utilisateurs → Compte parent`
+**Accès :** `Utilisateurs → Nouvel utilisateur`
 
-**Étapes :**
+**Formulaire de création (`/accounts/utilisateurs/creer/`) :**
 
-1. Clique sur **Utilisateurs** dans le menu
-2. Clique sur le bouton **Compte parent** (à côté de "Nouvel utilisateur")
-3. Remplis le formulaire :
+Le formulaire est organisé en 4 sections à **2 colonnes côte à côte** :
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  👤 Créer un compte parent                                    │
-├──────────────────────────────────────────────────────────────┤
-│  Nom *                 : [TRAORÉ_________________________]  │
-│  Prénom *              : [Aïcha____________________________] │
-│  Email *               : [aicha.traore@email.bf___________] │
-│  Téléphone              : [+226 70 XX XX XX________________] │
-│                                                              │
-│  ───────────────────── Mot de passe ─────────────────────    │
-│  Mot de passe *        : [••••••••••••••••••••••••]          │
-│  Confirmer *           : [••••••••••••••••••••••••]          │
-│                                                              │
-│  ─────────────────── Élèves liés ────────────────────       │
-│  Cochez les enfants de ce parent :                           │
-│  ☑ SAWADOGO Aminata — Terminale A                           │
-│  ☐ OUÉDRAOGO Boureima — Terminale C                         │
-│                                                              │
-│          [ Annuler ]    [ Créer le compte parent ]           │
-└──────────────────────────────────────────────────────────────┘
-```
+| Section | Colonne gauche | Colonne droite |
+|---|---|---|
+| **Identité** | Nom ★ | Prénom ★ |
+| **Contact** | Email ★ | Téléphone |
+| **Accès** | Rôle ★ | Établissement |
+| **Mot de passe** | Mot de passe ★ | Confirmer ★ |
 
-4. Clique sur **Créer le compte parent**
+En mode **modification**, la section mot de passe est remplacée par une case à cocher **Compte actif** (pour activer / désactiver un compte sans le supprimer).
 
-**Important :** Pour que le parent reçoive les notifications d'absence, cochez impérativement ses enfants dans la section "Élèves liés". Sans cette liaison, les notifications ne seront pas envoyées.
+**Rôles disponibles :**
 
-#### Gérer les Utilisateurs
-
-1. Liste des utilisateurs : `Menu → Utilisateurs`
-2. Filtrer par rôle (Directeur, Enseignant, Parent, etc.)
-3. Modifier un utilisateur : cliquer sur son nom
-4. Désactiver/Activer : icône à côté du nom
-
----
-
-### 1.7 Double Authentification (2FA) — Activer la Sécurité Renforcée
-
-**À quoi ça sert :** La double authentification ajoute une deuxième vérification à la connexion. En plus de ton mot de passe, le système te demande un code à 6 chiffres généré par une application sur ton téléphone. Même si quelqu'un connaît ton mot de passe, il ne peut pas accéder à ton compte sans ton téléphone.
-
-**Qui peut l'utiliser :** Tous les profils
-
-**Accès :** `Mon Profil → Double authentification (2FA)`
-
-#### Étape 1 — Installer une application d'authentification
-
-Installe l'une de ces applications sur ton téléphone (disponibles gratuitement) :
-- **Google Authenticator** (Android / iPhone)
-- **Authy** (Android / iPhone)
-- **Microsoft Authenticator** (Android / iPhone)
-
-#### Étape 2 — Activer la 2FA depuis ton profil
-
-1. Connecte-toi à YELEN SCHOOL normalement
-2. Clique sur ton **nom** en haut à droite → **Mon Profil**
-3. Fais défiler jusqu'à la section **Double authentification (2FA)**
-4. Clique sur **Activer la 2FA**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🔐 Double authentification (2FA)              [Désactivée]  │
-├──────────────────────────────────────────────────────────────┤
-│  La double authentification ajoute une couche de sécurité.  │
-│  Un code temporaire te sera demandé à chaque connexion.      │
-│                                                              │
-│                   [ Activer la 2FA ]                         │
-└──────────────────────────────────────────────────────────────┘
-```
-
-5. La page **Configuration 2FA** s'ouvre avec un QR code
-
-#### Étape 3 — Scanner le QR code
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  Configuration de l'application d'authentification           │
-├──────────────────────────────────────────────────────────────┤
-│  ① Installe Google Authenticator ou Authy                    │
-│                                                              │
-│  ② Scanne ce QR code avec ton application :                  │
-│                                                              │
-│              ┌─────────────────────┐                         │
-│              │  ▓▓▓ ░░ ▓▓▓ ░ ▓▓▓  │                         │
-│              │  ▓ ░ ▓░░░░▓▓░▓▓ ░  │                         │
-│              │  ▓▓▓ ░ ▓░░░▓ ░░ ▓  │  ← QR code              │
-│              │  ░ ▓░▓▓▓░░▓░▓▓▓▓▓  │                         │
-│              │  ▓▓▓ ░ ░▓▓▓░░ ▓▓▓  │                         │
-│              └─────────────────────┘                         │
-│                                                              │
-│  Ou saisis ce code manuellement :  JBSWY3DPEHPK3PXP          │
-│                                                              │
-│  ③ Saisis le code à 6 chiffres affiché par l'application :   │
-│  Code *  : [______]                                          │
-│                                                              │
-│         [ Annuler ]    [ ✅ Activer la 2FA ]                  │
-└──────────────────────────────────────────────────────────────┘
-```
-
-6. Ouvre ton application d'authentification
-7. Appuie sur **+** ou **Scanner un QR code**
-8. Pointe l'appareil photo sur le QR code affiché
-9. L'application ajoute un compte **YELEN SCHOOL** et affiche un code à 6 chiffres renouvelé toutes les 30 secondes
-10. Saisis ce code dans le champ **Code à 6 chiffres**
-11. Clique sur **Activer la 2FA**
-
-**Message succès :**
-```
-╔══════════════════════════════════════════════════╗
-║  ✅ Double authentification activée avec succès  ║
-║  Ta connexion est désormais protégée par 2FA.    ║
-╚══════════════════════════════════════════════════╝
-```
-
-> **Important :** Note ou photographie le code manuel (`JBSWY3D...`) affiché lors de la configuration. Si tu perds ton téléphone, c'est le seul moyen de reconfigurer l'accès. Conserve-le dans un endroit sûr.
-
----
-
-### 1.7 Se Connecter avec la 2FA Activée
-
-Une fois la 2FA activée, chaque connexion se déroule en deux étapes :
-
-**Étape 1 — Email et mot de passe (inchangé)**
-
-```
-╔══════════════════════════════════════════════════════╗
-║              🎓  YELEN SCHOOL                        ║
-╠══════════════════════════════════════════════════════╣
-║  Adresse email  : [directeur@lyceezinda.bf________]  ║
-║  Mot de passe   : [••••••••••••••••••••••]            ║
-║           [ 🔐  Se connecter ]                       ║
-╚══════════════════════════════════════════════════════╝
-```
-
-**Étape 2 — Code de vérification**
-
-Après validation de l'email et du mot de passe, tu arrives sur un deuxième écran :
-
-```
-╔══════════════════════════════════════════════════════╗
-║              🎓  YELEN SCHOOL                        ║
-╠══════════════════════════════════════════════════════╣
-║          🔒  Double authentification                 ║
-║                                                      ║
-║  Ouvre ton application (Google Authenticator…)       ║
-║  et saisis le code affiché pour YELEN SCHOOL :       ║
-║                                                      ║
-║  Code de vérification *  : [______]                  ║
-║                    (code valable 30 secondes)        ║
-║                                                      ║
-║              [ ✅ Vérifier ]                          ║
-║                                                      ║
-║              ← Revenir à la connexion                ║
-╚══════════════════════════════════════════════════════╝
-```
-
-1. Ouvre **Google Authenticator** (ou Authy) sur ton téléphone
-2. Trouve le compte **YELEN SCHOOL**
-3. Saisis les **6 chiffres** affichés (exemple : `482 917`)
-4. Clique sur **Vérifier**
-
-> **Délai :** Le code change toutes les 30 secondes. Si le code expire pendant ta saisie, attends le prochain code.
-
-**En cas d'erreur :**
-```
-╔══════════════════════════════════════════════════════╗
-║  ❌ Erreur                                           ║
-║  Code incorrect ou expiré. Réessayez.                ║
-╚══════════════════════════════════════════════════════╝
-```
-
----
-
-### 1.8 Désactiver la 2FA
-
-Si tu n'utilises plus la double authentification (ex : changement de téléphone) :
-
-1. Connecte-toi à YELEN SCHOOL (avec la 2FA si elle est active)
-2. Va dans **Mon Profil → Double authentification (2FA)**
-3. La section indique **[Activée]** avec un badge vert
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🔐 Double authentification (2FA)              [Activée ✓]   │
-├──────────────────────────────────────────────────────────────┤
-│  Ton compte est protégé par une application TOTP.            │
-│  Un code à 6 chiffres est demandé à chaque connexion.        │
-│                                                              │
-│  Code de confirmation  : [______]  [ Désactiver ]            │
-└──────────────────────────────────────────────────────────────┘
-```
-
-4. Saisis le code actuel de ton application dans le champ
-5. Clique sur **Désactiver**
-6. Confirme dans la boîte de dialogue
-
-> **Attention :** Après désactivation, seul ton mot de passe protège ton compte. Réactive la 2FA dès que possible si tu changes de téléphone.
-
----
-
-## 2. PARAMÈTRES DE L'ÉTABLISSEMENT
-
-> **Qui peut accéder :** Directeur, Proviseur, Super Admin
->
-> **Accès menu :** `Menu principal → Paramètres`
->
-> **À configurer en premier**, avant tout autre module. Tous les autres modules dépendent de ces paramètres.
-
----
-
-### 2.1 Identité de l'Établissement
-
-**À quoi ça sert :** Enregistre les informations officielles de ton école (nom, adresse, logo, signature du directeur). Ces informations apparaissent sur tous les documents officiels générés.
-
-**Accès :** `Paramètres → Identité de l'établissement`
-
-**Étapes :**
-
-1. Clique sur **Paramètres** dans le menu principal
-2. Clique sur **Identité de l'établissement**
-3. Remplis le formulaire :
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🏫 Identité de l'Établissement                              │
-├──────────────────────────────────────────────────────────────┤
-│  Nom officiel *        : [Lycée Zinda__________________]     │
-│  Sigle                 : [LZ_____________________________]   │
-│  Type d'établissement  : [▼ Lycée d'Enseignement Général]    │
-│  Région *              : [▼ Centre________________________]  │
-│  Province              : [Kadiogo________________________]   │
-│  Ville *               : [Ouagadougou___________________]    │
-│  Quartier              : [Zogona_________________________]   │
-│  Boîte postale         : [BP 1234________________________]   │
-│  Téléphone *           : [+226 25 XX XX XX_______________]   │
-│  Email                 : [contact@lyceezinda.bf__________]   │
-│  Ministère de tutelle  : [▼ MENA_________________________]   │
-│                                                              │
-│  Nom du directeur *    : [KONÉ Seydou_____________________]  │
-│  Logo (image)          : [📎 Choisir un fichier]             │
-│  Signature directeur   : [📎 Choisir un fichier]             │
-│  Cachet officiel       : [📎 Choisir un fichier]             │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-  * Champ obligatoire
-```
-
-4. Clique sur **Enregistrer**
-
-**Cas concret :** Le Lycée Zinda de Ouagadougou saisit son nom complet « Lycée Zinda », sa ville « Ouagadougou », son directeur « M. KONÉ Seydou » et importe son logo en format PNG.
-
-**Message succès :**
-```
-╔══════════════════════════════════════════════════════╗
-║  ✅ Identité de l'établissement enregistrée          ║
-║  Lycée Zinda — Ouagadougou                           ║
-║  Ces informations apparaîtront sur vos documents.    ║
-╚══════════════════════════════════════════════════════╝
-```
-
----
-
-### 2.2 Gestion des Cycles et Classes
-
-**À quoi ça sert :** Définit les cycles et les classes de ton établissement.
-
-**Accès :** `Paramètres → Cycles et Classes`
-
-#### Créer un Cycle
-
-1. Clique sur **Paramètres → Cycles**
-2. Clique sur **+ Nouveau cycle**
-3. Choisis dans la liste : Préscolaire, Primaire, Post-primaire ou Secondaire
-4. Indique si ce cycle est **actif** dans ton établissement
-5. Clique sur **Enregistrer**
-
-#### Créer une Classe
-
-1. Clique sur **Paramètres → Classes**
-2. Clique sur **+ Nouvelle classe**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📚 Nouvelle Classe                                          │
-├──────────────────────────────────────────────────────────────┤
-│  Nom de la classe *     : [Terminale A_____________________] │
-│  Cycle *                : [▼ Secondaire____________________] │
-│  Capacité maximale      : [60______________________________] │
-│  Classe d'examen ?      : (●) Oui — BAC  ( ) Non            │
-│  Actif                  : (●) Oui  ( ) Non                   │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-3. Clique sur **Enregistrer**
-
-**Exemples de classes à créer :**
-
-| Cycle | Classes |
-|-------|---------|
-| Primaire | CP1, CP2, CE1, CE2, CM1, CM2 |
-| Post-primaire | 6ème A, 6ème B, 5ème A, 4ème A, 3ème A |
-| Secondaire | 2nde A, 2nde B, 1ère A, 1ère C, Tle A, Tle C |
-
----
-
-### 2.3 Postes et Fonctions
-
-**À quoi ça sert :** Liste les postes occupés par le personnel de l'établissement (Directeur, Censeur, Enseignant, AVS, Comptable…).
-
-**Accès :** `Paramètres → Postes`
-
-**Étapes :**
-
-1. Clique sur **+ Nouveau poste**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  👔 Nouveau Poste                                            │
-├──────────────────────────────────────────────────────────────┤
-│  Intitulé du poste *    : [Censeur_________________________] │
-│  Catégorie              : [▼ Administration________________]  │
-│  Description            : [Chargé de la discipline...____]   │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-2. Clique sur **Enregistrer**
-
-**Postes à créer pour un lycée type :**
-- Proviseur, Censeur, Directeur des études
-- Enseignant, Professeur principal
-- Secrétaire principal, Comptable
-- Agent de Vie Scolaire (AVS), Surveillant
-- Bibliothécaire, Infirmier
-
----
-
-### 2.4 Statuts des Élèves
-
-**À quoi ça sert :** Définit les différents statuts qu'un élève peut avoir (Affecté, Non affecté, Boursier, Exonéré, Redoublant, Nouveau…). Ces statuts déterminent les tarifs de scolarité applicables.
-
-**Accès :** `Paramètres → Statuts des élèves`
-
-**Étapes :**
-
-1. Clique sur **+ Nouveau statut**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🏷️ Nouveau Statut Élève                                     │
-├──────────────────────────────────────────────────────────────┤
-│  Libellé *              : [Boursier_______________________]  │
-│  Code                   : [BOURSIER_______________________]  │
-│  Description            : [Élève bénéficiant d'une bourse]   │
-│  Actif                  : (●) Oui  ( ) Non                   │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-2. Clique sur **Enregistrer**
-
-**Statuts standards :**
-- Nouveau élève
-- Redoublant
-- Affecté (par le MENA)
-- Non affecté
-- Boursier
-- Exonéré
-
----
-
-### 2.5 Rubriques et Tarifs de Scolarité (FCFA)
-
-**À quoi ça sert :** Définit les types de frais perçus par l'établissement et leurs montants selon la classe et le statut de l'élève. Tous les montants sont en **FCFA**.
-
-**Accès :** `Paramètres → Rubriques et Tarifs`
-
-#### Créer une Rubrique de Paiement
-
-1. Clique sur **+ Nouvelle rubrique**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  💰 Nouvelle Rubrique de Paiement                            │
-├──────────────────────────────────────────────────────────────┤
-│  Libellé *              : [Frais de scolarité______________] │
-│  Code                   : [SCOLARITE______________________]  │
-│  Obligatoire            : (●) Oui  ( ) Non                   │
-│  Description            : [Frais annuels de scolarité____]   │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Rubriques courantes :**
-- Frais de scolarité (SCOLARITE)
-- Frais d'inscription (INSCRIPTION)
-- Frais de cantine (CANTINE)
-- Frais de transport (TRANSPORT)
-- Association des parents (APE)
-- Frais d'examen (EXAMEN)
-
-#### Définir un Tarif
-
-Les tarifs sont définis par **niveau** (5ème, 6ème…) et par **statut d'élève**. Un tarif configuré pour le niveau « 5ème » s'applique automatiquement à **toutes les classes de ce niveau** (5ème A, 5ème B, etc.).
-
-1. Clique sur **Tarifs de scolarité**
-2. Clique sur **+ Nouveau tarif**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  💵 Nouveau Tarif                                            │
-├──────────────────────────────────────────────────────────────┤
-│  Année scolaire *       : [▼ 2025-2026____________________] │
-│  Cycle                 : [▼ Post-primaire__________________]  │
-│  Niveau *              : [▼ 5ème__________________________]  │
-│  Statut élève *        : [▼ Non affecté__________________]   │
-│  Rubrique *            : [▼ Frais de scolarité___________]   │
-│  Montant (FCFA) *      : [45 000_________________________]  │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Points clés :**
-
-- **Par niveau** : Le tarif s'applique à toutes les classes du même niveau (5ème A, 5ème B → même tarif « 5ème »)
-- **Par statut** : Affecté, Non affecté, Boursier, Exonéré peuvent avoir des montants différents
-- **La liste des tarifs est regroupée par niveau** pour faciliter la lecture
-- **Montant à saisir manuellement** : Le champ Montant est vide à la création — saisis la valeur en FCFA. Il n'est pas pré-rempli automatiquement depuis la rubrique.
-
-**Cas concret — Lycée Zinda :**
-
-| Cycle | Niveau | Statut | Rubrique | Montant |
-|-------|--------|--------|----------|---------|
-| Post-primaire | 6ème | Non affecté | Scolarité | 40 000 FCFA |
-| Post-primaire | 6ème | Affecté | Scolarité | 25 000 FCFA |
-| Post-primaire | 5ème | Non affecté | Scolarité | 45 000 FCFA |
-| Secondaire | Terminale | Non affecté | Scolarité | 75 000 FCFA |
-| Secondaire | Terminale | Boursier | Scolarité | 0 FCFA |
-
----
-
-### 2.6 Année Scolaire (Ouverture / Fermeture)
-
-**À quoi ça sert :** Gère l'année scolaire en cours et les périodes d'évaluation associées.
-
-**Accès :** `Paramètres → Année scolaire`
-
-#### Ouvrir une Nouvelle Année Scolaire
-
-1. Clique sur **+ Nouvelle année scolaire**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📅 Nouvelle Année Scolaire                                  │
-├──────────────────────────────────────────────────────────────┤
-│  Libellé *              : [2025-2026______________________]  │
-│  Date de début *        : [01/10/2025]                       │
-│  Date de fin prévue *   : [30/06/2026]                       │
-│  Statut                 : (●) En cours  ( ) Fermée           │
-│                                                              │
-│          [ Annuler ]    [ ✅ Ouvrir l'année ]                │
-└──────────────────────────────────────────────────────────────┘
-```
-
-> **Attention :** Une seule année scolaire peut être **En cours** à la fois. Avant d'ouvrir une nouvelle année, assure-toi de clore l'année précédente.
-
-#### Fermer une Année Scolaire
-
-1. Clique sur l'année en cours
-2. Clique sur **Fermer l'année scolaire**
-3. Confirme la fermeture
-
-```
-╔══════════════════════════════════════════════════════════╗
-║  ⚠️  Confirmation de Fermeture                           ║
-║  Tu vas fermer l'année scolaire 2024-2025.               ║
-║  Cette action est irréversible.                          ║
-║                                                          ║
-║       [ Annuler ]    [ ✅ Confirmer la fermeture ]       ║
-╚══════════════════════════════════════════════════════════╝
-```
-
----
-
-### 2.7 Appréciations et Moyennes
-
-**À quoi ça sert :** Configure les grilles d'appréciations (Excellent, Très Bien, Bien, Assez Bien, Passable, Insuffisant) associées aux intervalles de moyennes. Ces appréciations s'affichent sur les bulletins.
-
-**Accès :** `Paramètres → Appréciations`
-
-**Étapes :**
-
-1. Clique sur **+ Nouvelle appréciation**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🌟 Nouvelle Appréciation                                    │
-├──────────────────────────────────────────────────────────────┤
-│  Libellé *              : [Excellent______________________]  │
-│  Moyenne minimale *     : [16.00]                            │
-│  Moyenne maximale *     : [20.00]                            │
-│  Cycle *                : [▼ Secondaire____________________] │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Grille d'appréciations standard (Secondaire) :**
-
-| Intervalle | Appréciation |
-|-----------|--------------|
-| 16 – 20 | Excellent |
-| 14 – 15.99 | Très Bien |
-| 12 – 13.99 | Bien |
-| 10 – 11.99 | Assez Bien |
-| 8 – 9.99 | Passable |
-| 0 – 7.99 | Insuffisant |
-
----
-
-### 2.8 Types de Documents Officiels
-
-**À quoi ça sert :** Configure les types de documents que l'établissement peut générer. Chaque type est identifié par un code.
-
-**Accès :** `Paramètres → Types de documents`
-
-**Documents pré-configurés dans YELEN SCHOOL :**
-
-| Code | Document |
-|------|----------|
-| CERT_SCOL | Certificat de Scolarité |
-| BULLETIN | Bulletin de Notes Trimestriel |
-| RECU_PAIEMENT | Reçu de Paiement |
-| AUTORISATION | Autorisation d'Absence |
-| ATTESTATION | Attestation de Fréquentation |
-| CURSUS | Cursus Scolaire Complet |
-| CARTE_ID | Carte d'Identité Scolaire |
-| LISTE_CLASSE | Liste Alphabétique de Classe |
-| LISTE_PERSONNEL | Liste du Personnel |
-
-> Ces codes sont pré-configurés. Tu peux en ajouter de nouveaux si ton établissement a des besoins spécifiques.
-
----
-
-### 2.9 Types de Sanctions Disciplinaires
-
-**À quoi ça sert :** Définit les sanctions pouvant être appliquées à un élève (Avertissement, Blâme, Exclusion temporaire, Exclusion définitive…).
-
-**Accès :** `Paramètres → Types de sanctions`
-
-**Étapes :**
-
-1. Clique sur **+ Nouveau type de sanction**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  ⚠️ Nouveau Type de Sanction                                 │
-├──────────────────────────────────────────────────────────────┤
-│  Libellé *              : [Exclusion temporaire____________] │
-│  Gravité                : [▼ Grave_______________________]   │
-│  Durée maximale (jours) : [8]                                │
-│  Nécessite convocation  : (●) Oui  ( ) Non                   │
-│  Description            : [Exclusion du 1 à 8 jours______]   │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Sanctions courantes au Burkina Faso :**
-- Avertissement (Mineur)
-- Blâme (Mineur)
-- Convocation des parents (Modéré)
-- Travaux d'intérêt général (Modéré)
-- Exclusion temporaire — 1 à 3 jours (Grave)
-- Exclusion temporaire — 4 à 8 jours (Grave)
-- Exclusion définitive (Très grave)
-
----
-
-### 2.10 Signataires des Documents PDF
-
-**À quoi ça sert :** Configure, pour chaque cycle et chaque type de document, quel membre du personnel signe les documents officiels. Dans un établissement multi-cycles, le Directeur du primaire signe les certificats du primaire, et le Proviseur signe ceux du secondaire.
-
-**Accès :** `Paramètres → Signataires des documents`
-
-**L'interface est organisée en onglets par cycle :**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📝 Signataires des Documents                                │
-├───────────────┬─────────────┬────────────────┬──────────────┤
-│  [Préscolaire]│   [Primaire]│[Post-primaire] │[Secondaire ✓]│
-├───────────────┴─────────────┴────────────────┴──────────────┤
-│  Type de Document        │ Signataire          │ Titre       │
-├──────────────────────────┼─────────────────────┼────────────┤
-│  Certificat de Scolarité │ [▼ KONÉ Seydou    ] │ [M. le Pro]│
-│  Bulletin de Notes       │ [▼ KONÉ Seydou    ] │ [M. le Pro]│
-│  Reçu de Paiement        │ [▼ OUÉDRAOGO Aïcha] │ [Mme la Co]│
-│  Autorisation d'Absence  │ [▼ TRAORÉ Moumouni] │ [M. le Cen]│
-│  Attestation             │ [▼ KONÉ Seydou    ] │ [M. le Pro]│
-│  Cursus Scolaire         │ [▼ KONÉ Seydou    ] │ [M. le Pro]│
-│  Carte d'Identité Scol.  │ [▼ KONÉ Seydou    ] │ [M. le Pro]│
-├──────────────────────────┴─────────────────────┴────────────┤
-│                      [ ✅ Enregistrer les signataires ]      │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Étapes :**
-
-1. Clique sur l'onglet du cycle à configurer (ex : **Secondaire**)
-2. Pour chaque type de document, sélectionne le **signataire** dans la liste déroulante
-   - La liste affiche uniquement le personnel inscrit dans ce cycle pour l'année en cours
-3. Remplis le **titre honorifique** (ex : M. le Proviseur, Mme la Directrice, M. le Censeur)
-4. Clique sur **Enregistrer les signataires**
-
-> **Important :** Le signataire apparaît **automatiquement sur tous les PDFs** (bulletins, certificats, listes, reçus, relances…) dès qu'il est configuré — aucune action supplémentaire n'est requise à la génération. Si aucun signataire n'est configuré pour un type de document et un cycle donnés, le bloc de signature est simplement omis du PDF.
-
-**Rendu sur les documents PDF :**
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│   Ouagadougou, le 10 Mars 2026                          │
-│                                                         │
-│   M. le Proviseur KONÉ Seydou                           │
-│   Proviseur                                             │
-│                                                         │
-│   _____________________                                 │
-│   (Signature et Cachet)                                 │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
-
----
-
-### 2.11 Appréciations de Moyenne — Cycle Primaire
-
-**À quoi ça sert :** Configure les appréciations textuelles affichées sur les bulletins du cycle Primaire (Préscolaire, Primaire), distinctes de celles du secondaire. Ex : *Excellent*, *Bien*, *Assez Bien*, *Passable*, *Insuffisant*.
-
-**Accès :** `Paramètres → Appréciations primaire`
-
-> **Différence avec les appréciations secondaire :** Les barèmes et libellés peuvent être différents selon le cycle. Les bulletins du primaire utilisent automatiquement ces appréciations si le cycle de la classe est Préscolaire ou Primaire.
-
-**Champs du formulaire :**
-
-| Champ | Description | Exemple |
-|-------|-------------|---------|
-| Libellé | Texte affiché sur le bulletin | Excellent |
-| Moyenne min | Note minimale (sur 20) | 16.00 |
-| Moyenne max | Note maximale (sur 20) | 20.00 |
-| Couleur | Couleur d'affichage (hex) | #00C07A (vert) |
-| Ordre | Position dans la liste | 1 |
-
-**Barème recommandé pour le Primaire :**
-
-| Appréciation | Moy. min | Moy. max |
-|-------------|---------|----------|
-| Excellent | 16.00 | 20.00 |
-| Très Bien | 14.00 | 15.99 |
-| Bien | 12.00 | 13.99 |
-| Assez Bien | 10.00 | 11.99 |
-| Passable | 8.00 | 9.99 |
-| Insuffisant | 0.00 | 7.99 |
-
----
-
-### 2.12 Catégories de Disciplines et Disciplines
-
-#### 2.12.1 Catégories de Disciplines
-
-**À quoi ça sert :** Regroupe les manquements disciplinaires par catégorie (Ex : Comportement, Assiduité, Tenue, Incivilité). Ces catégories sont utilisées dans le module Vie Scolaire lors de la saisie d'une sanction.
-
-**Accès :** `Paramètres → Catégories de disciplines`
-
-**Champs du formulaire :**
-
-| Champ | Description |
-|-------|-------------|
-| Nom | Nom de la catégorie (ex : Comportement) |
-| Code | Code court (ex : COMP) |
-| Couleur | Couleur d'affichage hex pour l'interface |
-| Ordre | Ordre d'affichage |
-
-#### 2.12.2 Disciplines (Fautes Disciplinaires)
-
-**À quoi ça sert :** Liste les fautes spécifiques pouvant être sanctionnées (Ex : Retard répété, Insolence, Fraude aux examens, Port de téléphone portable). Chaque discipline est liée à un **cycle** et une **catégorie**.
-
-**Accès :** `Paramètres → Disciplines`
-
-**Champs du formulaire :**
-
-| Champ | Description |
-|-------|-------------|
-| Nom | Libellé de la faute (ex : Retard répété) |
-| Code | Code court (ex : RETARD) |
-| Cycle | Cycle concerné (Primaire, Secondaire…) |
-| Catégorie | Catégorie de discipline parente |
-| Est évaluée | Si coché, la discipline peut générer une note de conduite |
-| Couleur | Couleur d'affichage |
-
-> **Exemple de configuration :**
->
-> | Code | Faute | Cycle | Catégorie |
-> |------|-------|-------|-----------|
-> | RETARD | Retard répété (≥ 3 fois) | Secondaire | Assiduité |
-> | TEL | Port de téléphone en classe | Secondaire | Comportement |
-> | FRAUDE | Tentative de fraude | Primaire + Secondaire | Incivilité |
-> | INSOLENCE | Insolence envers un enseignant | Secondaire | Comportement |
-
----
-
-### 2.13 Périodes d'Évaluation (Trimestres / Semestres)
-
-**À quoi ça sert :** Configure le découpage de l'année scolaire en périodes d'évaluation (trimestres ou semestres). Ces périodes sont utilisées dans le module Pédagogie pour la saisie des notes et la génération des bulletins.
-
-**Accès :** `Paramètres → Périodes d'évaluation`
-
-**Champs du formulaire :**
-
-| Champ | Description | Exemple |
-|-------|-------------|---------|
-| Nom | Libellé de la période | 1er Trimestre |
-| Type de période | Trimestre ou Semestre | Trimestre |
-| Numéro | Position dans l'année (1, 2, 3) | 1 |
-| Année scolaire | Année scolaire concernée | 2025-2026 |
-| Date de début | Début de la période | 15/09/2025 |
-| Date de fin | Fin de la période | 20/12/2025 |
-| Est en cours | Indique la période active | ✅ Coché |
-
-> **Important :** La période marquée *Est en cours* est automatiquement sélectionnée lors de la saisie des notes. Il ne peut y avoir qu'une seule période en cours à la fois par année scolaire.
-
-**Configuration typique pour un lycée burkinabè :**
-
-| Période | Début | Fin |
-|---------|-------|-----|
-| 1er Trimestre | 15 Sept. | 20 Déc. |
-| 2ème Trimestre | 05 Jan. | 28 Mars |
-| 3ème Trimestre | 07 Avr. | 30 Juin |
-
----
-
-### 2.14 Types d'Évaluation
-
-**À quoi ça sert :** Définit les types de contrôles pratiqués dans l'établissement (Devoir sur table, Interrogation, Devoir maison, Composition trimestrielle…). Ces types sont ensuite sélectionnables lors de la planification d'une évaluation.
-
-**Accès :** `Paramètres → Types d'évaluation`
-
-#### Créer un Type d'Évaluation
-
-1. Clique sur **+ Nouveau type**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📝 Nouveau Type d'Évaluation                                │
-├──────────────────────────────────────────────────────────────┤
-│  Nom *                  : [Devoir sur table_______________]  │
-│  Code                   : [DST__________________________]    │
-│  Coefficient            : [1.00________________________]     │
-│  Pondération            : [100%_________________________]    │
-│  Ordre d'affichage      : [1____________________________]    │
-│  Nb meilleures notes    : [— (toutes)__________________]    │
-│  Visible dans bulletin  : (●) Oui  ( ) Non                   │
-│  Description            : [___________________________]      │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Types courants :**
-
-| Code | Nom | Usage |
-|------|-----|-------|
-| DST | Devoir sur table | Devoir surveillé en classe |
-| INTERRO | Interrogation orale | Interrogation rapide |
-| DM | Devoir maison | Travail à la maison |
-| COMPO | Composition | Épreuve trimestrielle |
-| TP | Travaux pratiques | Séances de laboratoire |
-
-> **Lien avec Pédagogie :** Les types configurés ici sont disponibles dans le menu déroulant lors de la **planification d'une évaluation** (`Pédagogie → Planifier une évaluation → Type d'évaluation`).
-
----
-
-### 2.15 Calendrier Scolaire
-
-**À quoi ça sert :** Enregistre les événements officiels de l'année scolaire (rentrée, vacances, examens, jours fériés, réunions). Ces événements sont visibles sur le tableau de bord et permettent d'organiser l'agenda de l'établissement.
-
-**Qui peut accéder :** Directeur, Proviseur, Secrétaire
-
-**Accès :** `Paramètres → Calendrier scolaire`
-
-#### Ajouter un Événement
-
-1. Clique sur **Paramètres → Calendrier scolaire**
-2. Clique sur **+ Nouvel événement** ou clique directement sur une date dans le calendrier
-3. Remplis le formulaire :
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📅 Nouvel Événement Scolaire                                │
-├──────────────────────────────────────────────────────────────┤
-│  Titre *             : [Rentrée scolaire 2025-2026_________] │
-│  Type *              : [▼ Événement institutionnel_________] │
-│  Date de début *     : [01/10/2025]                          │
-│  Date de fin         : [01/10/2025]                          │
-│  Toute la journée    : (●) Oui  ( ) Non                      │
-│  Description         : [Rentrée officielle des classes_____] │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-4. Clique sur **Enregistrer**
-
-**Types d'événements :**
-
-| Type | Exemples |
-|------|----------|
-| Institutionnel | Rentrée scolaire, Fête de l'indépendance |
-| Vacances | Vacances de Noël, Vacances de Pâques |
-| Examen | Début des compositions, Baccalauréat |
-| Réunion | Conseil de classe, Réunion de parents |
-| Autre | Sortie scolaire, Compétition sportive |
-
-#### Modifier ou Supprimer un Événement
-
-1. Clique sur l'événement dans le calendrier
-2. Clique sur **Modifier** ou **Supprimer**
-3. Confirme la suppression si demandé
-
-**Cas concret :** En début d'année, la secrétaire du Lycée Zinda saisit toutes les dates importantes : rentrée (1er octobre), vacances de Noël (22 décembre au 5 janvier), compositions du 1er trimestre (15-20 janvier). Ces dates sont ensuite visibles par tous les utilisateurs connectés.
-
----
-
-### 2.16 Modèles de Messages SMS
-
-**À quoi ça sert :** Crée et gère des modèles de messages SMS réutilisables. Ces modèles servent à envoyer rapidement des messages standardisés aux parents (absence de l'enfant, retard de paiement, convocation…) sans avoir à rédiger chaque fois le texte depuis zéro.
-
-**Qui peut accéder :** Directeur, Proviseur, Secrétaire
-
-**Accès :** `Paramètres → Modèles de messages`
-
-#### Créer un Modèle
-
-1. Clique sur **Paramètres → Modèles de messages**
-2. Clique sur **+ Nouveau modèle**
-3. Remplis le formulaire :
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📱 Nouveau Modèle de Message                                │
-├──────────────────────────────────────────────────────────────┤
-│  Nom du modèle *      : [Absence non justifiée_____________] │
-│  Type *               : [▼ Absence_______________________]   │
-│  Contenu *            :                                      │
-│  [Votre enfant {prenom_eleve} {nom_eleve} était absent(e)   ]│
-│  [le {date_absence} au {nom_etablissement}. Veuillez vous   ]│
-│  [rapprocher de l'établissement. Tél: {telephone_etab}      ]│
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Variables disponibles dans les modèles :**
-
-| Variable | Contenu inséré |
-|----------|----------------|
-| `{nom_eleve}` | Nom de l'élève |
-| `{prenom_eleve}` | Prénom de l'élève |
-| `{nom_etablissement}` | Nom de ton école |
-| `{telephone_etab}` | Téléphone de l'établissement |
-| `{date_absence}` | Date de l'absence |
-| `{montant_du}` | Montant restant à payer |
-
-#### Utiliser un Modèle
-
-Une fois créé, le modèle est disponible lors des actions nécessitant un SMS (relances de paiement, notifications d'absence). Sélectionne le modèle dans la liste déroulante et personnalise-le si besoin avant envoi.
-
-> **Astuce :** Crée des modèles pour chaque situation courante. Le temps de rédaction est réduit et la communication devient plus professionnelle et cohérente.
-
-### 2.17 Configuration SMS
-
-**À quoi ça sert :** Configure la connexion à la passerelle SMS pour envoyer des notifications par SMS aux parents (absences, bulletins, relances de paiement).
-
-**Qui peut accéder :** Super Admin, Directeur
-
-**Accès :** `Menu → Configuration SMS`
-
-#### Configurer la Connexion
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📱 Configuration SMS                                        │
-├──────────────────────────────────────────────────────────────┤
-│  Activer les SMS :    [▼ Oui — Activé / Non — Désactivé]    │
-│  Backend :           [▼ HTTP — Passerelle WiFi / Série]      │
-│                                                              │
-│  [Configuration HTTP — Passerelle WiFi]                     │
-│  URL de la passerelle : [http://192.168.1.100:8080/message] │
-│  Utilisateur :         [admin______________________________]  │
-│  Mot de passe :       [•••••••••••••••••••••••••]          │
-│  Timeout :            [10] secondes                         │
-│                                                              │
-│            [ Enregistrer la configuration ]                 │
-└──────────────────────────────────────────────────────────────┘
-```
-
-#### Choix du Backend
-
-- **HTTP (WiFi)** : Utilise l'application Android "SMS Gateway" sur un téléphone连接到 le réseau WiFi local. Le téléphone doit avoir une carte SIM avec des crédits SMS.
-- **Série** : Utilise un modem GSM USB连接到 le serveur.
-
-#### Installer SMS Gateway (Android)
-
-1. Télécharge l'application "SMS Gateway" sur un téléphone Android
-2. Lance l'application — elle doit rester démarrée
-3. Note l'adresse IP affichée dans Settings → Server → IP Address
-4. Saisie cette IP dans le champ "URL de la passerelle" ci-dessus
-
-#### Tester la Connexion
-
-1. Après enregistrement, clique sur **Tester la connexion**
-2. Le résultat affiche si la passerelle est joignable
-
-#### Envoyer un SMS de Test
-
-1. Saisie un numéro de téléphone (format : +22670123456 ou 70123456)
-2. Clique sur **Envoyer**
-3. Le parent reçoit un SMS de test
-
-> **Important :** Après modification de la configuration, redémarre le serveur pour appliquer les changements.
-
-> **Note :** Les SMS utilisent les crédits de la carte SIM du téléphone Android ou du modem GSM. Aucun frais supplémentaire n'est facturé par YELEN SCHOOL.
-
----
-
-## 3. ENREGISTREMENT DES ÉLÈVES
-
-> **Qui peut accéder :** Directeur, Proviseur, Secrétaire
->
-> **Accès menu :** `Menu principal → Élèves → Enregistrement`
-
----
-
-### 3.1 Créer le Dossier d'un Nouvel Élève
-
-**À quoi ça sert :** Enregistre un élève dans le système pour la première fois. Un matricule unique lui est attribué automatiquement.
-
-**Accès :** `Élèves → + Nouvel élève`
-
-**Étapes :**
-
-1. Clique sur **Élèves** dans le menu principal
-2. Clique sur **+ Nouvel élève**
-3. Remplis le formulaire d'enregistrement :
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📋 Enregistrement d'un Nouvel Élève                         │
-├──────────────────────────────────────────────────────────────┤
-│  NOM (en majuscules) *  : [SAWADOGO_______________________]  │
-│  Prénom *               : [Aminata_______________________]   │
-│  Date de naissance *    : [12/03/2012]   Âge : [14 ans]      │
-│  Lieu de naissance *    : [Ouagadougou___________________]   │
-│  Sexe *                 : (●) Féminin   ( ) Masculin         │
-│                                                              │
-│  ─── Informations Famille ───────────────────────────────   │
-│  Nom du père            : [SAWADOGO Oumarou______________]   │
-│  Profession du père     : [Commerçant____________________]   │
-│  Téléphone père         : [+226 70 XX XX XX_______________]  │
-│  Nom de la mère         : [SAWADOGO/KABORÉ Mariam________]   │
-│  Profession de la mère  : [Ménagère______________________]   │
-│  Téléphone mère         : [+226 76 XX XX XX_______________]  │
-│                                                              │
-│  ─── Adresse ────────────────────────────────────────────   │
-│  Ville / Village *      : [Ouagadougou___________________]   │
-│  Quartier               : [Pissy__________________________]  │
-│  Région                 : [▼ Centre_____________________]    │
-│                                                              │
-│  ─── Documents ──────────────────────────────────────────   │
-│  Acte de naissance      : (●) Fourni   ( ) Non fourni        │
-│  Certificat médical     : ( ) Fourni   (●) Non fourni        │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-  * Champ obligatoire
-```
-
-4. Clique sur **Enregistrer**
-
-**Message succès :**
-```
-╔══════════════════════════════════════════════════════╗
-║  ✅ Élève enregistré avec succès                     ║
-║  Matricule attribué : BF-CEN-2526-0047               ║
-║  SAWADOGO Aminata — née le 12/03/2012 (14 ans)       ║
-║  Lycée Zinda, Ouagadougou                            ║
-╚══════════════════════════════════════════════════════╝
-```
-
----
-
-### 3.2 Comprendre le Matricule Élève
-
-Le matricule est attribué **automatiquement** par le système. Il est unique pour chaque élève.
-
-**Format : `BF-{REGION}-{ANNEE}-{SEQ}`**
-
-| Partie | Signification | Exemple |
-|--------|---------------|---------|
-| `BF` | Burkina Faso | BF |
-| `{REGION}` | Code de la région | CEN (Centre), BOB (Bobo), KDG (Koudougou), FAD (Fada) |
-| `{ANNEE}` | Année scolaire sur 4 chiffres | 2526 (pour 2025-2026) |
-| `{SEQ}` | Numéro séquentiel | 0001, 0002, ..., 9999 |
-
-**Exemples :**
-
-| Matricule | Interprétation |
-|-----------|----------------|
-| `BF-CEN-2526-0001` | 1er élève enregistré, région Centre, année 2025-2026 |
-| `BF-BOB-2526-0234` | 234ème élève, région Hauts-Bassins (Bobo), 2025-2026 |
-| `BF-FAD-2526-0012` | 12ème élève, région Est (Fada N'Gourma), 2025-2026 |
-
-> **Note :** Le matricule est définitif. Il ne change pas si l'élève change de classe ou d'établissement.
-
----
-
-### 3.3 Calcul Automatique de l'Âge
-
-Quand tu saisis la date de naissance d'un élève, le système calcule et affiche **automatiquement** son âge actuel.
-
-**Exemple :** SAWADOGO Aminata, née le 12/03/2012 → Le système affiche « **14 ans** » en temps réel.
-
----
-
-### 3.4 Documents à Fournir
-
-Selon les établissements, les documents suivants peuvent être demandés :
-
-| Document | Primaire | Post-primaire | Secondaire |
-|----------|----------|---------------|------------|
-| Acte de naissance | Obligatoire | Obligatoire | Obligatoire |
-| Certificat médical | Recommandé | Recommandé | Non requis |
-| Photo d'identité | Recommandé | Obligatoire | Obligatoire |
-| Certificat de scolarité précédent | — | Obligatoire | Obligatoire |
-| Bulletins de l'année précédente | — | Recommandé | Recommandé |
-
----
-
-### 3.5 Rechercher un Élève Existant
-
-1. Clique sur **Élèves** dans le menu
-2. Dans la barre de recherche, tape :
-   - Le **matricule** (ex : `BF-CEN-2526-0047`)
-   - Le **nom** (ex : `SAWADOGO`)
-   - Le **prénom** (ex : `Aminata`)
-3. Appuie sur **Entrée** ou clique sur la **loupe**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🔍 Rechercher un élève                                      │
-├──────────────────────────────────────────────────────────────┤
-│  [SAWADOGO________________________________] [ 🔍 Rechercher ] │
-├──────────────────────────────────────────────────────────────┤
-│  Résultats (3 élèves trouvés) :                              │
-│                                                              │
-│  BF-CEN-2526-0047  SAWADOGO Aminata    Tle A   F  14 ans     │
-│  BF-CEN-2526-0103  SAWADOGO Moussa     3ème B  M  16 ans     │
-│  BF-CEN-2425-0892  SAWADOGO Fatoumata  CM2     F  12 ans     │
-│                                                              │
-│  [ Voir le dossier ] [ Inscrire ] pour chaque élève          │
-└──────────────────────────────────────────────────────────────┘
-```
-
----
-
-### 3.6 Modifier le Dossier d'un Élève
-
-1. Recherche l'élève (voir section 3.5)
-2. Clique sur **Voir le dossier**
-3. Clique sur **Modifier**
-4. Effectue les corrections nécessaires
-5. Clique sur **Enregistrer les modifications**
-
-> **Note :** Le matricule ne peut **jamais** être modifié. Les autres champs sont modifiables par le Directeur ou la Secrétaire. La **date de naissance** est pré-remplie avec la valeur enregistrée — tu n'as pas besoin de la ressaisir sauf en cas de correction. Si tu laisses le champ tel quel, la date d'origine est conservée.
-
----
-
-### 3.7 Transférer un Élève
-
-*Interface en cours de développement.* La fonctionnalité est disponible via l'administration.
-
----
-
-## 4. INSCRIPTION ET RÉINSCRIPTION
-
-> **Qui peut accéder :** Directeur, Proviseur, Secrétaire
->
-> **Accès menu :** `Menu principal → Inscriptions`
-
----
-
-### 4.1 Inscrire un Élève par Matricule
-
-**À quoi ça sert :** Rattache un élève à une classe pour l'année scolaire en cours. Le code paiement est généré automatiquement.
-
-**Accès :** `Inscriptions → + Nouvelle inscription` (ou "Finaliser l'Inscription")
-
-**Étapes :**
-
-1. Clique sur **Inscriptions** dans le menu
-2. Clique sur **+ Nouvelle inscription** (ou "Finaliser l'Inscription")
-3. Saisis le **matricule** de l'élève :
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📝 Finaliser l'Inscription                                   │
-├──────────────────────────────────────────────────────────────┤
-│  Matricule élève *      : [BF-CEN-2526-0047_____________]    │
-│                  → SAWADOGO Aminata — née le 12/03/2012       │
-│                    Âge : 14 ans                               │
-│                                                              │
-│  Année scolaire *       : [▼ 2025-2026____________________] │
-│  Classe *               : [▼ Terminale A__________________] │
-│  Niveau                 : Terminale A    (auto)              │
-│  Cycle                  : Secondaire     (auto)               │
-│  Statut élève *        : [▼ Non affecté__________________] │
-│  Code paiement          : Terminale A-Non affecté-Secondaire (auto) │
-│  Redoublant(e) ?        : ( ) Oui  (●) Non                   │
-│  Classe redoublée       : [________________________________] │
-│                                                              │
-│  Date de naissance      : 12/03/2012  (lecture seule)        │
-│  Âge calculé            : 14 ans     (lecture seule)         │
-│                                                              │
-│          [ Annuler ]    [ ✅ Confirmer l'Inscription ]          │
-└──────────────────────────────────────────────────────────────┘
-```
-
-4. Clique sur **Confirmer l'Inscription**
-
-> **Fonctionnement du Code Paiement :** Le code est généré automatiquement lors de la sélection de la classe et du statut élève. Il suit le format : **Niveau-Statut_eleve-Cycle** (ex : "6eme-Non affecté-Secondaire"). Ce code permet d'identifier rapidement le tarif applicable.
-
-> **Astuce :** Après avoir saisi le matricule, le système affiche automatiquement le nom, prénom, date de naissance et âge de l'élève. Après avoir sélectionné la classe, les champs Niveau et Cycle se remplissent automatiquement.
-
-**Message succès :**
-```
-╔══════════════════════════════════════════════════════════════╗
-║  ✅ Inscription enregistrée                          ║
-║  SAWADOGO Aminata → Terminale A                      ║
-║  Année 2025-2026 · Statut : Non affecté              ║
-║  Code paiement : Terminale A-Non affecté-Secondaire  ║
-╚══════════════════════════════════════════════════════════════╝
-```
-
-**Message erreur — matricule invalide :**
-```
-╔══════════════════════════════════════════════════════════════╗
-║  ❌ Élève introuvable                                ║
-║  Le matricule BF-CEN-2526-9999 n'existe pas.         ║
-║  Vérifie le matricule ou enregistre d'abord l'élève. ║
-╚══════════════════════════════════════════════════════════════╝
-```
-
----
-
-### 4.2 Réinscrire un Élève pour la Nouvelle Année
-
-**À quoi ça sert :** Reconduit un élève déjà connu dans le système pour une nouvelle année scolaire.
-
-**Étapes :**
-
-1. Recherche l'élève par matricule ou nom
-2. Dans son dossier, clique sur **Réinscrire**
-3. Sélectionne la **nouvelle année scolaire**
-4. Sélectionne la **nouvelle classe** (ou la même en cas de redoublement)
-5. Indique si l'élève **redouble** et quelle classe il redouble
-6. Clique sur **Réinscrire**
-
-> **Important :** La réinscription crée un nouveau dossier d'inscription lié à l'élève existant. L'historique complet est conservé.
-
----
-
-### 4.3 Affecter à une Classe
-
-Cette étape est incluse dans le formulaire d'inscription (champ **Classe**). Il suffit de sélectionner la classe dans la liste déroulante.
-
----
-
-### 4.4 Consulter la Liste des Inscrits par Classe
-
-1. Clique sur **Inscriptions** dans le menu
-2. Clique sur **Liste par classe**
-3. Sélectionne la **classe** et l'**année scolaire**
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  📋 Liste des Élèves — Terminale A — Lycée Zinda — 2025-2026             │
-├──────────────────────────────────────────────────────────────────────────┤
-│  N°  │ Matricule          │ NOM Prénom          │ Sexe │ Âge │ Statut   │
-├──────┼────────────────────┼─────────────────────┼──────┼─────┼──────────┤
-│   1  │ BF-CEN-2526-0047   │ SAWADOGO Aminata    │  F   │ 14  │ Non aff. │
-│   2  │ BF-CEN-2526-0048   │ OUÉDRAOGO Boureima  │  M   │ 17  │ Affecté  │
-│   3  │ BF-CEN-2425-0892   │ TRAORÉ Fatoumata    │  F   │ 16  │ Boursier │
-│  ... │ ...                │ ...                 │  ... │ ... │ ...      │
-├──────────────────────────────────────────────────────────────────────────┤
-│  Total : 58 élèves · 29 Filles · 29 Garçons                              │
-│  [ 📄 Exporter PDF ]  [ 📊 Statistiques ]                                │
-└──────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### 4.5 Carte Scolaire de l'Élève
-
-**À quoi ça sert :** Génère la carte scolaire individuelle d'un élève (format carte), imprimable et plastifiable. La carte affiche le nom, le matricule, la classe, l'établissement et un QR code d'authenticité.
-
-**Accès :** `Inscriptions → [fiche de l'élève] → Carte scolaire`
-
-**Étapes :**
-
-1. Clique sur **Inscriptions** dans le menu
-2. Recherche l'élève par nom ou matricule
-3. Clique sur son nom pour ouvrir sa fiche
-4. Clique sur **Carte scolaire** (ou icône carte en haut de la fiche)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Aperçu de la carte scolaire                                    │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ LYCÉE ZINDA — OUAGADOUGOU                                 │  │
-│  ├───────────────────────────────────────────────────────────┤  │
-│  │ [Photo]  SAWADOGO Aminata                                 │  │
-│  │          Matricule : BF-CEN-2526-0047                     │  │
-│  │          Classe    : Terminale A                          │  │
-│  │          Année     : 2025-2026                            │  │
-│  │                                     [QR]                 │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  [ ⬇ Télécharger PDF ]                                         │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-4. Clique sur **Télécharger PDF** pour générer la carte
-5. Imprime sur papier cartonné et plastifie
-
-**Générer les cartes de toute une classe :**
-
-**Accès :** `Inscriptions → [fiche d'une classe] → Cartes PDF`
-
-Pour imprimer toutes les cartes d'une classe en un seul fichier :
-
-1. Clique sur la classe dans la liste des classes inscrites
-2. Clique sur **Cartes PDF**
-3. Le système génère un PDF avec toutes les cartes, prêt à imprimer et découper
-
-**Points d'attention :**
-
-- Si l'élève n'a pas de photo, ses initiales s'affichent à la place
-- Le QR code embarqué permet de vérifier l'authenticité sans connexion internet
-
----
-
-### 4.7 Marquer Abandon / Annuler l'Abandon
-
-**À quoi ça sert :** Signale qu'un élève a abandonné l'établissement en cours d'année, ou annule cet abandon si l'élève reprend sa scolarité. Une inscription en « Abandon » est exclue de toutes les listes de classe (notes, présences, examens) mais reste visible dans la liste des élèves.
-
-**Qui peut accéder :** Directeur, Proviseur, Secrétaire
-
-**Accès :** Via la fiche de l'élève ou directement depuis la liste des élèves
-
----
-
-#### Marquer un élève en Abandon
-
-**Depuis la liste des élèves :**
-
-1. Clique sur **Inscriptions** dans le menu
-2. Recherche l'élève
-3. Dans la colonne Actions, clique sur le bouton rouge ⛔ « Marquer Abandon »
-
-**Depuis la fiche de l'élève :**
-
-1. Ouvre la fiche de l'élève
-2. Dans le tableau des inscriptions, repère la ligne de l'année en cours
-3. Clique sur le bouton ⛔ (Marquer Abandon) en bout de ligne
-4. Confirme l'action dans la boîte de dialogue
-
-```
-╔══════════════════════════════════════════════════════╗
-║  ⚠️ Marquer Abandon                                   ║
-║  TRAORÉ Moussa — Abandon pour 2025-2026               ║
-║  Cet élève sera retiré de toutes les listes classe.  ║
-╚══════════════════════════════════════════════════════╝
-```
-
-**Effet dans la liste des élèves :**
-
-```
-┌────┬────────────────────┬──────────┬────────────────┬──────────────────────┐
-│ N° │ Nom & Prénom       │Matricule │ Dernière Classe│ Actions              │
-├────┼────────────────────┼──────────┼────────────────┼──────────────────────┤
-│  1 │ TRAORÉ Moussa      │BF-BK-... │ 🔴 Abandon     │ [👁] [✅]            │
-│  2 │ SAWADOGO Aminata   │BF-BK-... │ Terminale A    │ [👁] [📋] [✏] [💰]  │
-└────┴────────────────────┴──────────┴────────────────┴──────────────────────┘
-```
-
-- La ligne de l'élève est **grisée** (opacité réduite)
-- La colonne classe affiche le badge rouge **Abandon**
-- Seul le bouton ✅ « Annuler l'abandon » est disponible (pas de paiement ni de modification)
-
----
-
-#### Annuler l'Abandon (reprendre la scolarité)
-
-**Depuis la liste des élèves :**
-
-1. Repère l'élève (ligne grisée avec badge rouge « Abandon »)
-2. Clique sur le bouton ✅ dans la colonne Actions
-3. L'élève est immédiatement réactivé
-
-**Depuis la fiche de l'élève :**
-
-1. Ouvre la fiche de l'élève
-2. Dans le tableau des inscriptions, la ligne ABANDON est affichée en opacité réduite
-3. Clique sur le bouton ✅ « Annuler l'abandon »
-
-```
-╔══════════════════════════════════════════════════════╗
-║  ✅ Abandon annulé                                   ║
-║  TRAORÉ Moussa — Statut remis à Affecté              ║
-║  L'élève est de nouveau visible dans les listes.     ║
-╚══════════════════════════════════════════════════════╝
-```
-
-**Après annulation :**
-- La ligne redevient normale dans la liste
-- L'élève réapparaît dans les listes de classe (notes, présences, examens)
-- Les boutons d'action habituels (Modifier, Payer, Bilan présences) sont restaurés
-
-**Points d'attention :**
-
-- L'annulation remet le statut à **Affecté** — modifie l'inscription si un statut différent est nécessaire (Boursier, Non affecté…)
-- Les notes et données déjà saisies avant l'abandon sont **conservées**
-- Un élève en Abandon n'apparaît pas dans les relances de paiement ni dans les redevables
-
----
-
-### 4.6 Statistiques d'Inscription
-
-1. Clique sur **Inscriptions → Statistiques**
-2. Sélectionne l'année scolaire
-3. Consulte les statistiques automatiques :
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📊 Statistiques d'Inscription — 2025-2026                   │
-├──────────────────────────────────────────────────────────────┤
-│  BLOC 1 — Genre                                              │
-│  ████████████████ 421 Garçons (49.7%)                        │
-│  ████████████████ 426 Filles  (50.3%)                        │
-│  Total : 847 élèves                                          │
-├──────────────────────────────────────────────────────────────┤
-│  BLOC 2 — Tranches d'âge                                     │
-│  6-10 ans   : 187 élèves (Primaire)                          │
-│  11-15 ans  : 312 élèves (Post-primaire)                     │
-│  16-20 ans  : 298 élèves (Secondaire)                        │
-│  21 ans +   :  50 élèves                                     │
-├──────────────────────────────────────────────────────────────┤
-│  BLOC 3 — Redoublants                                        │
-│  Redoublants : 94 élèves (11.1%)                             │
-│  Nouveaux    : 753 élèves (88.9%)                            │
-└──────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 5. GESTION DU PERSONNEL
-
-> **Qui peut accéder :** Directeur, Proviseur, Super Admin
->
-> **Accès menu :** `Menu principal → Personnel`
-
----
-
-### 5.1 Enregistrer un Membre du Personnel
-
-**À quoi ça sert :** Enregistre un enseignant, un administratif ou tout autre agent de l'établissement.
-
-**Accès :** `Personnel → + Nouveau membre`
-
-**Étapes :**
-
-1. Clique sur **Personnel** dans le menu
-2. Clique sur **+ Nouveau membre**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  👤 Enregistrement d'un Membre du Personnel                  │
-├──────────────────────────────────────────────────────────────┤
-│  NOM (en majuscules) *  : [OUÉDRAOGO______________________]  │
-│  Prénom *               : [Boureima_______________________]  │
-│  Date de naissance      : [15/07/1980]   Âge : [46 ans]      │
-│  Sexe *                 : (●) Masculin   ( ) Féminin         │
-│                                                              │
-│  Téléphone *            : [+226 70 XX XX XX_______________]  │
-│  Email                  : [b.ouedraogo@lyceezinda.bf______]  │
-│  Diplôme principal      : [▼ CAPES / Licence + DU________]   │
-│  Spécialité             : [Mathématiques__________________]  │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-3. Clique sur **Enregistrer**
-
-**Message succès :**
-```
-╔══════════════════════════════════════════════════════╗
-║  ✅ Membre du personnel enregistré                   ║
-║  Matricule attribué : PERS-LYCB-2526-0012            ║
-║  OUÉDRAOGO Boureima — Enseignant de Mathématiques    ║
-╚══════════════════════════════════════════════════════╝
-```
-
----
-
-### 5.2 Comprendre le Matricule Personnel
-
-**Format : `PERS-{ETAB}-{ANNEE}-{SEQ}`**
-
-| Partie | Signification | Exemple |
-|--------|---------------|---------|
-| `PERS` | Personnel | PERS |
-| `{ETAB}` | Code de l'établissement | LYCB (Lycée Zinda Bobo), COLK (Collège Koudougou) |
-| `{ANNEE}` | Année d'embauche | 2526 |
-| `{SEQ}` | Numéro séquentiel | 0001, ..., 9999 |
-
-**Exemples :**
-
-| Matricule | Interprétation |
-|-----------|----------------|
-| `PERS-LYCB-2526-0012` | 12ème agent enregistré au Lycée Bobo, 2025-2026 |
-| `PERS-COLZ-2425-0003` | 3ème agent au Collège de Zogona, 2024-2025 |
-
----
-
-### 5.3 Inscription Annuelle du Personnel
-
-Chaque année, les membres du personnel doivent être réaffectés à leur poste pour l'année scolaire en cours.
-
-**Accès :** `Personnel → Inscriptions annuelles → + Nouvelle inscription`
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📋 Inscription Annuelle du Personnel                        │
-├──────────────────────────────────────────────────────────────┤
-│  Membre du personnel *  : [▼ OUÉDRAOGO Boureima — PERS-...] │
-│  Année scolaire *       : [▼ 2025-2026____________________]  │
-│  Poste *                : [▼ Enseignant___________________]  │
-│  Cycle(s) concerné(s)   : [▼ Secondaire____________________] │
-│  Type de contrat        : [▼ Fonctionnaire________________]  │
-│  Actif                  : (●) Oui  ( ) Non                   │
-│                                                              │
-│          [ Annuler ]    [ ✅ Inscrire ]                      │
-└──────────────────────────────────────────────────────────────┘
-```
-
----
-
-### 5.4 Liste du Personnel
-
-**Accès :** `Personnel → Liste du personnel`
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  👥 Personnel — Lycée Zinda — 2025-2026                                  │
-├───────┬──────────────────────┬────────────────────┬──────┬───────────────┤
-│  N°   │ Matricule            │ NOM Prénom         │ Sexe │ Poste         │
-├───────┼──────────────────────┼────────────────────┼──────┼───────────────┤
-│   1   │ PERS-LYCZ-2122-0001  │ KONÉ Seydou        │  M   │ Proviseur     │
-│   2   │ PERS-LYCZ-2324-0005  │ TRAORÉ Ibrahim     │  M   │ Enseignant    │
-│   3   │ PERS-LYCZ-2526-0012  │ OUÉDRAOGO Boureima │  M   │ Enseignant    │
-│   4   │ PERS-LYCZ-2425-0008  │ SAWADOGO/KABORÉ A. │  F   │ Secrétaire    │
-│  ...  │ ...                  │ ...                │ ...  │ ...           │
-├──────────────────────────────────────────────────────────────────────────┤
-│  Total : 42 agents · 28 Hommes · 14 Femmes                               │
-│  [ ⊘ Désactiver ]  [ 📄 Exporter PDF ]  [ Ajouter ]                     │
-└──────────────────────────────────────────────────────────────────────────┘
-```
-
-> **Membres inactifs :** par défaut, seuls les membres actifs s'affichent. Clique sur **Voir les membres inactifs** pour les inclure dans la liste.
-
-#### Export PDF par cycle
-
-**Accès :** `Documents → Liste du personnel → Sélectionner un cycle`
-
-1. Clique sur **Documents → Liste du personnel**
-2. Sélectionne le cycle souhaité (Primaire, Post-primaire, Secondaire…)
-3. Clique sur **Générer PDF**
-
-Le PDF contient la liste alphabétique du personnel du cycle, le récapitulatif Hommes/Femmes/Total, et un **QR code de l'établissement** en bas de page (lisible sans connexion internet).
-
----
-
-### 5.5 Désactiver / Réactiver un Membre du Personnel
-
-**À quoi ça sert :** Un agent qui quitte l'établissement ou prend un congé long terme peut être **désactivé**. Il n'apparaît plus dans aucune liste de sélection du système (inscriptions, matières, présences…) mais son dossier est conservé.
-
-**Accès :** `Personnel → [nom de l'agent] → Désactiver`
-
-**Étapes :**
-
-1. Clique sur le nom de l'agent dans la liste
-2. Clique sur le bouton **Désactiver** (icône cercle barré)
-3. Confirme l'action
-
-**Message :**
-
-```
-╔══════════════════════════════════════════════════════╗
-║  ✅ OUÉDRAOGO Boureima a été désactivé.              ║
-║  Il n'est plus disponible dans le système.           ║
-╚══════════════════════════════════════════════════════╝
-```
-
-Pour **réactiver** un agent, accède à sa fiche et clique sur **Réactiver** (icône cercle coché).
-
-> **Bon à savoir :** Les données historiques (notes, présences, paiements) liées à un agent désactivé sont conservées intactes.
-
----
-
-### 5.6 Modifier le Dossier d'un Agent
-
-1. Recherche l'agent dans la liste
-2. Clique sur son nom
-3. Clique sur **Modifier**
-4. Effectue les corrections
-5. Clique sur **Enregistrer**
-
----
-
-### 5.7 Badge Personnel
-
-> **Qui peut accéder :** Directeur, Proviseur, Secrétaire
->
-> **Accès :** `Personnel → [nom de l'agent] → Badge Personnel`
-
-**À quoi ça sert :** Génère un badge d'identification au format carte bancaire (85,6 × 54 mm) pour chaque membre du personnel. Le badge peut être imprimé et plastifié.
-
-**Étapes :**
-
-1. Clique sur le nom de l'agent dans la liste du personnel
-2. Sur la fiche de l'agent, clique sur la carte **Badge Personnel**
-3. Une page d'aperçu s'affiche avec le badge en taille réelle
-
-```
-┌─────────────────────────────────────────────────┐
-│  Aperçu du badge (85,6 × 54 mm)                │
-│                                                 │
-│  ┌───────────────────────────────────────────┐  │
-│  │ █ LYCÉE ZINDA — OUAGADOUGOU               │  │
-│  │   ÉTABLISSEMENT SECONDAIRE PRIVÉ          │  │
-│  ├───────────────────────────────────────────┤  │
-│  │ [Photo] OUÉDRAOGO                         │  │
-│  │         Boureima                          │  │
-│  │ ▌ ENSEIGNANT DE MATHÉMATIQUES             │  │
-│  │         Poste : Titulaire                 │  │
-│  ├───────────────────────────────────────────┤  │
-│  │ Matricule : PERS-LYCZ-2526-0012 2025-2026 │  │
-│  └───────────────────────────────────────────┘  │
-│                                                 │
-│  [ ⬇ Télécharger PDF ]                         │
-└─────────────────────────────────────────────────┘
-```
-
-4. Clique sur **Télécharger PDF** pour générer le badge en PDF
-5. Imprime le PDF (de préférence sur papier cartonné, format carte)
-
-**Points d'attention :**
-
-- Si l'agent n'a pas de **photo**, ses initiales s'affichent à la place — ajoute une photo depuis **Modifier le profil** pour un badge plus professionnel
-- Le badge affiche la **fonction principale** de l'agent et son **poste de l'année en cours** (si une inscription annuelle existe)
-- Le badge porte le **logo de l'établissement** si celui-ci est configuré dans Paramètres → Identité
-
-**Messages système :**
-
-```
-╔═══════════════════════════════════════════════╗
-║  ℹ️ Aucune photo — les initiales seront       ║
-║  affichées. Ajoute une photo depuis           ║
-║  le profil pour un badge plus complet.        ║
-╚═══════════════════════════════════════════════╝
-```
-
-**Cas concret :** Le censeur du Lycée Zinda veut équiper tous les nouveaux enseignants de badges avant la rentrée. Il accède à la fiche de chaque agent, clique sur **Badge Personnel**, télécharge le PDF, et envoie le fichier à l'imprimeur.
-
----
-
-### 5.8 Contrat de Travail
-
-> **Qui peut accéder :** Directeur, Proviseur
->
-> **Disponibilité :** Uniquement pour les établissements **privés** et **confessionnels** — non disponible pour les établissements publics
->
-> **Accès :** `Personnel → [nom de l'agent] → Contrat de travail`
-
-**À quoi ça sert :** Génère un contrat de travail officiel en PDF pour un membre du personnel, pré-rempli avec ses informations personnelles et son poste. Le contrat comporte 6 articles et une zone de signature pour les deux parties.
-
-**Étapes :**
-
-1. Clique sur le nom de l'agent dans la liste du personnel
-2. Sur la fiche de l'agent, clique sur la carte **Contrat de travail**
-
-> Si l'établissement est **public**, cette carte est grisée et non cliquable avec la mention *"Non disponible (établissement public)"*.
-
-3. La page d'aperçu s'affiche avec un résumé du contrat :
-
-```
-┌────────────────────────────────────────────────────┐
-│  📄 Contrat de Travail                             │
-│  Réf. : CT-PERS-LYCZ-2526-0012-2025-2026          │
-│  Établi le 20/03/2026                              │
-├────────────────────────────────────────────────────┤
-│  Entre les soussignés :                            │
-│  • L'Employeur : Lycée Zinda — Ouagadougou         │
-│  • L'Agent : OUÉDRAOGO Boureima, né le 15/07/1980  │
-│    CNI N° BF-123456789                             │
-│                                                    │
-│  Article 1 — Engagement et Fonction                │
-│    Enseignant de Mathématiques · Titulaire         │
-│  Article 2 — Durée                                 │
-│    CDI · Prise de fonction : 01/10/2025            │
-│  Article 3 — Rémunération                         │
-│    Selon grille salariale interne                  │
-│  Article 4 — Obligations de l'Agent               │
-│  Article 5 — Résiliation (préavis 1 mois)         │
-│  Article 6 — Droit applicable                     │
-│                                                    │
-│  ─────────────────────────────────────────────     │
-│  Signature Établissement   |   Signature Agent     │
-│  [              ]          |   [             ]     │
-├────────────────────────────────────────────────────┤
-│  [ ⬇ Télécharger le contrat PDF ]                 │
-└────────────────────────────────────────────────────┘
-```
-
-4. Vérifie les informations dans la fiche récapitulative à droite
-5. Clique sur **Télécharger le contrat PDF**
-6. Imprime le PDF en **deux exemplaires** — un pour l'établissement, un pour l'agent
-7. Fais signer les deux parties dans les zones prévues
-
-**Contenu du contrat PDF :**
-
-| Article | Contenu |
-|---------|---------|
-| Article 1 | Engagement, fonction et poste de l'agent |
-| Article 2 | Durée du contrat (CDI, CDD ou Vacation) et dates |
-| Article 3 | Rémunération (mensuelle ou à l'heure pour les vacataires) |
-| Article 4 | Obligations de l'agent envers l'établissement |
-| Article 5 | Modalités de résiliation (préavis d'1 mois) |
-| Article 6 | Droit applicable et juridiction compétente |
-
-**Points d'attention :**
-
-- Le contrat se génère automatiquement comme **CDI** si l'agent n'est ni contractuel ni vacataire
-- Si l'agent est **vacataire**, le contrat mentionne le nombre d'heures hebdomadaires prévu
-- La **référence du contrat** est unique : `CT-{matricule}-{année scolaire}`
-- Le document est établi en deux exemplaires — précise-le lors de l'impression
-
-**Cas concret :** La directrice du Collège Sainte-Famille recrute une nouvelle secrétaire. Elle crée le dossier de l'agent dans Personnel, puis génère le contrat de travail depuis sa fiche. Elle imprime 2 copies, les signe avec la nouvelle recrue, et classe l'original au secrétariat.
-
----
-
-### 5.9 Gestion des Salaires du Personnel
-
-**Rôle(s) concerné(s) :** Directeur, Comptable  
-**Accès :** `Personnel → [nom de l'agent] → Nouveau bulletin de salaire`  
-ou `Personnel → Salaires` pour la vue globale
-
-**Description :** Ce module permet de saisir et de suivre les bulletins de salaire mensuels de chaque membre du personnel permanent ou contractuel. Chaque bulletin détaille les éléments de rémunération (salaire de base, primes, indemnités) et les retenues (CNSS, IUTS), et calcule automatiquement le net à payer. Un PDF imprimable est disponible pour chaque bulletin.
-
-#### Composition du salaire
-
-| Élément | Description |
+| Rôle | Accès |
 |---|---|
-| Salaire de base | Montant fixe défini dans le contrat |
-| Prime d'ancienneté | Calculée automatiquement selon l'ancienneté (voir tableau ci-dessous) |
-| Indemnité de transport | Compensation pour les frais de déplacement |
-| Indemnité de logement | Avantage logement éventuel |
-| Autres primes | Primes exceptionnelles ou avantages divers |
-| **TOTAL BRUT** | Somme de tous les éléments |
-| − Retenue CNSS | Cotisation salariale sécurité sociale |
-| − Retenue IUTS | Impôt Unique sur les Traitements et Salaires |
-| − Autres retenues | Avances, acomptes, etc. |
-| **= NET À PAYER** | Montant versé à l'agent |
+| SUPER_ADMIN | Toutes les fonctionnalités, tous les établissements |
+| DIRECTEUR | Toutes les fonctionnalités de son établissement |
+| PROVISEUR | Pédagogie, présences, bulletins |
+| CENSEUR | Présences, discipline |
+| SECRÉTAIRE | Documents, inscriptions |
+| COMPTABLE | Finances |
+| ENSEIGNANT | Notes, présences de ses classes |
 
-#### Tableau de la prime d'ancienneté (calculée automatiquement)
-
-| Ancienneté | Taux appliqué |
-|---|---|
-| 0 à 2 ans | 0 % |
-| 2 à 5 ans | 5 % du salaire de base |
-| 5 à 10 ans | 10 % du salaire de base |
-| 10 à 15 ans | 15 % du salaire de base |
-| 15 à 20 ans | 20 % du salaire de base |
-| 20 ans et plus | 25 % du salaire de base |
-
-#### Créer un bulletin de salaire
-
-1. Ouvre la fiche du membre du personnel
-2. Clique sur **Nouveau bulletin de salaire** (icône jaune)
-3. Remplis le formulaire :
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  💰 Bulletin de Salaire Mensuel                          │
-├─────────────────────────────────────────────────────────┤
-│  Membre du personnel *  : [▼ SAWADOGO Moussa        ]   │
-│  Mois *                 : [▼ Avril              ]       │
-│  Année *                : [2026]                        │
-│                                                         │
-│  ── Rémunération ──                                     │
-│  Salaire de base *      : [85 000]  FCFA                │
-│  Prime d'ancienneté     : [4 250]   FCFA  (calculée)    │
-│  Indemnité de transport : [10 000]  FCFA                │
-│  Indemnité de logement  : [0]       FCFA                │
-│  Autres primes          : [0]       FCFA                │
-│                                                         │
-│  ── Retenues ──                                         │
-│  Retenue CNSS           : [2 975]   FCFA  (3,5 % brut)  │
-│  Retenue IUTS           : [1 800]   FCFA                │
-│  Autres retenues        : [0]       FCFA                │
-│                                                         │
-│  Statut : [▼ Brouillon ]                                │
-│                                                         │
-│         [ Annuler ]    [ ✅ Enregistrer ]               │
-└─────────────────────────────────────────────────────────┘
-```
-
-4. Clique sur **Enregistrer**
-5. Le bulletin est créé en statut **Brouillon**
-
-#### Cycle de vie d'un bulletin
-
-```
-Brouillon  →  [Valider]  →  Validé  →  [Marquer payé]  →  Payé
-```
-
-- **Brouillon** : modifiable et supprimable
-- **Validé** : verrouillé, prêt pour le paiement
-- **Payé** : archivé avec date et référence de paiement
-
-#### Imprimer le bulletin de salaire (PDF)
-
-Depuis la page de détail du bulletin, clique sur **Imprimer PDF**. Le document généré comprend :
-- En-tête de l'établissement (logo, nom, ville)
-- Identité du salarié (nom, matricule, fonction, date d'embauche)
-- Tableau des éléments de rémunération et du brut
-- Tableau des retenues et du net à payer
-- Zones de signature employeur / salarié
-
-```
-╔══════════════════════════════════════════════════════╗
-║  ✅ Bulletin généré                                  ║
-║  Net à payer : 94 475 FCFA                           ║
-║  Mois : Avril 2026 — SAWADOGO Moussa                 ║
-╚══════════════════════════════════════════════════════╝
-```
-
-**Cas concret :** La comptable du Lycée Zinda prépare les salaires du mois d'avril. Elle ouvre chaque fiche de personnel, clique sur **Nouveau bulletin**, vérifie les montants pré-remplis (le système recopie les valeurs du mois précédent), ajuste si nécessaire, puis valide. Une fois tous les bulletins validés, elle marque chacun comme « Payé » après virement bancaire.
-
-**Points d'attention :**
-- Un seul bulletin par agent et par mois est autorisé
-- La prime d'ancienneté est calculée automatiquement mais reste modifiable
-- Seuls les bulletins en **Brouillon** peuvent être modifiés ou supprimés
-- Le CNSS employé est habituellement 3,5 % du salaire brut — l'application ne le calcule pas automatiquement, saisis le montant manuellement
+> **Règle de sécurité :** Un DIRECTEUR ne peut pas créer un compte SUPER_ADMIN. L'établissement d'un Directeur est pré-sélectionné et non modifiable.
 
 ---
 
-### 5.10 Gestion des Congés du Personnel
+### 6.0 Cahier de textes numérique
 
-**Rôle(s) concerné(s) :** Directeur, Secrétaire  
-**Accès :** `Personnel → [nom de l'agent] → Demande de congé`  
-ou `Personnel → Congés` pour la vue globale
+**À quoi ça sert :** Permet à chaque enseignant de renseigner après chaque cours le contenu traité et les devoirs donnés. Le directeur dispose d'une vue consolidée de l'avancement des programmes par classe.
 
-**Description :** Ce module permet d'enregistrer et de suivre les demandes de congé du personnel. Le directeur peut approuver ou refuser une demande directement depuis l'interface. Le solde de congés annuels est suivi automatiquement.
+**Accès :** `Pédagogie → Cahier de textes`
 
-#### Droits à congé (norme Burkina Faso)
+**Qui peut accéder :**
 
-> **30 jours ouvrables** par année de service (2,5 jours par mois travaillé).
-> Les dimanches ne sont pas comptés. Les samedis sont comptés comme jours ouvrables.
+- **Directeur / Proviseur / Censeur** : toutes les classes et matières
+- **Enseignant** : uniquement les classes et matières qu'il enseigne
 
-#### Types de congés
+**Fonctionnalités :**
 
-| Type | Description |
-|---|---|
-| Congé annuel | Congé payé légal (30 j/an) |
-| Congé maladie | Sur présentation d'un certificat médical |
-| Congé de maternité | 14 semaines légales (loi burkinabè) |
-| Congé de paternité | Naissance d'un enfant |
-| Événement familial | Mariage, décès d'un proche, naissance |
-| Congé sans solde | Sur accord de la direction |
+- **Page d'index** : sélecteur de classe par cycle (même design que l'emploi du temps)
+- **Vue classe** : liste chronologique des entrées, regroupées par date, filtrables par année scolaire et par matière
+- **Nouvelle entrée** : formulaire avec matière, date, heures de début/fin, contenu du cours (obligatoire), devoirs (optionnel) et date de remise
+- **Modification** : édition complète de toutes les informations sauf la matière
+- **Suppression** : avec confirmation, accessible depuis la liste
 
-#### Enregistrer une demande de congé
+**Structure d'une entrée :**
 
-1. Ouvre la fiche du membre du personnel
-2. Clique sur **Demande de congé** (icône violette)
-3. Remplis le formulaire :
+| Champ | Obligatoire | Description |
+|---|---|---|
+| Matière | Oui | Liste des enseignements actifs de la classe |
+| Date | Oui | Date du cours (pré-remplie à aujourd'hui) |
+| Heure début / fin | Non | Créneau horaire du cours |
+| Contenu | Oui | Notions abordées, leçons, activités |
+| Devoirs | Non | Travail à faire à la maison |
+| Date de remise | Non | Échéance des devoirs |
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  📅 Demande de Congé                                     │
-├─────────────────────────────────────────────────────────┤
-│  Membre du personnel *  : [▼ KABORE Aminata         ]   │
-│  Type de congé *        : [▼ Congé annuel           ]   │
-│  Date de début *        : [14/04/2026]                  │
-│  Date de fin *          : [25/04/2026]                  │
-│  Motif                  : [Vacances familiales]          │
-│                                                         │
-│  ┌──────────────────────────────────────┐               │
-│  │  Solde congés 2026                   │               │
-│  │  Droits annuels : 30 j.              │               │
-│  │  Jours pris     : 5 j.               │               │
-│  │  Solde restant  : 25 j.              │               │
-│  └──────────────────────────────────────┘               │
-│                                                         │
-│         [ Annuler ]    [ ✅ Enregistrer ]               │
-└─────────────────────────────────────────────────────────┘
-```
+**Affichage des devoirs :** Les entrées avec devoirs sont mises en évidence par un encadré doré avec l'icône et la date de remise.
 
-4. Le nombre de jours ouvrables est calculé automatiquement
-5. La demande est créée avec le statut **En attente**
+**URLs :**
+- Index : `/pedagogie/cahier-textes/`
+- Vue classe : `/pedagogie/cahier-textes/classe/<uuid>/`
+- Nouvelle entrée : `/pedagogie/cahier-textes/ajouter/?classe=<uuid>`
+- Modifier : `/pedagogie/cahier-textes/<uuid>/modifier/`
+- Supprimer : `/pedagogie/cahier-textes/<uuid>/supprimer/` (POST)
 
-#### Approuver ou refuser une demande
-
-Depuis la fiche du personnel ou la liste des congés, clique sur **Approuver** ou **Refuser** :
-
-```
-╔══════════════════════════════════════════════════════╗
-║  ✅ Congé approuvé                                   ║
-║  KABORE Aminata — 10 jours ouvrables                 ║
-║  Du 14/04/2026 au 25/04/2026                         ║
-╚══════════════════════════════════════════════════════╝
-```
-
-#### Statuts d'une demande de congé
-
-| Statut | Signification |
-|---|---|
-| En attente | Demande soumise, en attente de décision |
-| Approuvé | Congé accordé par la direction |
-| Refusé | Congé refusé (motif dans les observations) |
-| Annulé | Demande annulée par l'agent |
-
-**Points d'attention :**
-- Le solde affiché ne prend en compte que les congés **annuels approuvés**
-- Les congés maladie, maternité, etc. ne déduisent pas du solde annuel
-- Seuls les dimanches sont exclus du calcul — les samedis comptent
-
-**Cas concret :** En fin mars, Mme KABORE dépose une demande de congé annuel du 14 au 25 avril. La directrice consulte la liste des congés en attente, vérifie le solde (25 jours restants), et clique **Approuver**. Le système décompte automatiquement 10 jours ouvrables du solde.
-
-#### Autorisation de Jouissance de Congé (PDF)
-
-Une fois un congé **approuvé**, un document officiel peut être généré et imprimé depuis la liste des congés.
-
-**Accès :** `Personnel → Congés` → colonne Actions → **Autorisation PDF**
-
-Le document généré comprend :
-- En-tête de l'établissement (logo, nom, adresse, téléphone)
-- Mention de la République du Burkina Faso
-- Identité du bénéficiaire (nom, matricule, fonction, date d'embauche)
-- Détails du congé (type, dates de départ et de retour, durée en jours ouvrables)
-- Motif du congé (si renseigné)
-- Mention légale sur l'obligation de reprise
-- Ampliation (Intéressé(e) + Archives)
-- Bloc de signature du directeur / signataire configuré : fonction, espace de **2 cm** pour la signature manuscrite, nom imprimé
-
-```
-╔══════════════════════════════════════════════════════╗
-║  📄 Autorisation de Jouissance de Congé              ║
-║  N° ___ / 2026 / LYCÉE ZINDA                         ║
-║  KABORE Aminata — 10 jours ouvrables                 ║
-║  Du 14/04/2026 au 25/04/2026                         ║
-╚══════════════════════════════════════════════════════╝
-```
-
-> **Signataire configurable :** Le nom et la fonction du signataire sont issus de `Paramètres → Signataires des documents`, type de document **CONGE_PERSONNEL**. Si aucun signataire n'est configuré pour ce type, le nom du directeur renseigné dans l'identité de l'établissement est utilisé en repli.  
-> Le document ne contient aucune signature numérique — un espace blanc de 2 cm est réservé entre le titre de fonction et le nom imprimé pour permettre la signature manuscrite.
-
+**Impression :** La vue classe dispose d'un bouton **Imprimer** (dans `page-actions`, classe `.no-print`) qui déclenche `window.print()`. À l'impression :
+- La barre latérale (`.sb-modern`), l'en-tête de page (`.page-header`), les filtres, les actions par entrée (modifier/supprimer) et le compteur d'entrées sont masqués par la classe `.no-print`.
+- Un titre `.cahier-print-header` (caché par défaut, `display: none`) s'affiche centré en noir (`.cahier-print-header { display: block !important; }`).
+- Les cartes passent en fond blanc avec bordures grises (`#ccc`), sans ombre ni arrondi.
+- Les badges reçoivent une bordure et fond gris clair.
+- Le corps utilise `@page { size: A4 landscape; margin: 10mm; }` pour un format paysage.
+- Toutes les couleurs sont converties en noir/gris pour une impression N&B lisible.
 ---
 
-## 6. SCOLARITÉ ET NOTES
+### 6.1 Référentiel des Matières
 
-> **Qui peut accéder :** Directeur, Proviseur, Enseignant (pour ses matières)
->
-> **Accès menu :** `Menu principal → Pédagogie`
-
----
-
-### 6.1 Configurer les Matières et Enseignements
-
-**À quoi ça sert :** Crée les matières enseignées et les assigne aux enseignants par classe.
+**À quoi ça sert :** Gérer la liste des matières enseignées dans l'établissement : code, nom, catégorie, coefficient par défaut, barème, et surcharges par cycle.
 
 **Accès :** `Pédagogie → Matières`
 
-**Étapes — Créer une matière :**
-
-1. Clique sur **Pédagogie → Matières**
-2. Clique sur **+ Nouvelle matière**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📚 Nouvelle Matière                                         │
-├──────────────────────────────────────────────────────────────┤
-│  Libellé *              : [Mathématiques__________________]  │
-│  Code                   : [MATH___________________________]  │
-│  Cycle *                : [▼ Secondaire____________________] │
-│  Coefficient            : [5]                                │
-│  Évaluée (notes) ?      : (●) Oui  ( ) Non                   │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Étapes — Créer un enseignement (assigner la matière à un cours) :**
-
-1. Clique sur **Pédagogie → Enseignements**
-2. Clique sur **+ Nouvel enseignement**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🎓 Nouvel Enseignement                                      │
-├──────────────────────────────────────────────────────────────┤
-│  Matière *              : [▼ Mathématiques________________]  │
-│  Classe *               : [▼ Terminale A__________________]  │
-│  Enseignant *           : [▼ OUÉDRAOGO Boureima___________]  │
-│  Année scolaire *       : [▼ 2025-2026____________________]  │
-│  Volume horaire/semaine : [6 heures]                         │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Consulter la liste des enseignements :**
-
-**Accès :** `Pédagogie → Enseignements`
-
-La liste des enseignements est **regroupée par classe**. Pour chaque classe, tu vois toutes les matières affectées avec l'enseignant responsable. Le nombre de matières est affiché en bas de chaque groupe de classe.
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  🎓 Enseignements — Lycée Zinda — 2025-2026                              │
-├──────────────────────────────────────────────────────────────────────────┤
-│  ▼ Terminale A                                                           │
-│    Mathématiques      · Coeff 5 · OUÉDRAOGO Boureima                     │
-│    Sciences Physiques · Coeff 4 · TRAORÉ Ibrahim                         │
-│    Français           · Coeff 4 · KABORÉ Aïssata                         │
-│    …                                                                     │
-│    ── 6 matières affectées ──                                            │
-├──────────────────────────────────────────────────────────────────────────┤
-│  ▼ 1ère C                                                                │
-│    …                                                                     │
-└──────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### 6.2 Planifier une Évaluation
-
-**À quoi ça sert :** Crée le calendrier des devoirs et épreuves pour chaque classe. Chaque évaluation est ensuite liée à une saisie de notes.
-
-**Accès :** `Pédagogie → Évaluations → Planifier une évaluation`
-
-**Étapes :**
-
-1. Clique sur **+ Planifier une évaluation**
-2. Remplis le formulaire :
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📅 Planifier une Évaluation                                 │
-├──────────────────────────────────────────────────────────────┤
-│  Enseignement *         : [▼ Mathématiques — 5ème A_______]  │
-│  Type d'évaluation *    : [▼ Devoir sur table n°1_________]  │
-│  Trimestre / Période *  : [▼ 1er Trimestre — 2025-2026____]  │
-│  Date planifiée         : [15/10/2025]                       │
-│  Coefficient            : [1.00]                             │
-│  Barème                 : [20.00]                            │
-│  Description            : [Chapitres 1 à 3_______________]   │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-> **Note :** Le champ **Type d'évaluation** est alimenté par les types configurés dans `Paramètres → Types d'évaluation`. Le champ **Trimestre** est alimenté par les périodes configurées dans `Paramètres → Périodes d'évaluation`.
-
----
-
-### 6.3 Saisir les Notes
-
-**À quoi ça sert :** Enregistre les notes des élèves pour chaque évaluation.
-
-**Accès :** `Pédagogie → Évaluations → (cliquer sur l'évaluation) → Saisir les notes`
-
-**Étapes :**
-
-1. Dans la liste des évaluations, clique sur **Saisir les notes** pour l'évaluation concernée
-2. Le tableau de saisie s'affiche avec tous les élèves de la classe :
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│  📝 Saisie — Mathématiques — 5ème A — DS N°1 — 1er Trimestre 2025-2026          │
-├──────┬────────────────────────┬────────────┬──────┬───────────┬──────────────────┤
-│  N°  │ NOM Prénom             │ Note /20   │ ABS  │ Dispensé  │ Observation      │
-├──────┼────────────────────────┼────────────┼──────┼───────────┼──────────────────┤
-│   1  │ SAWADOGO Aminata       │ [14.50]    │ [ ]  │ [ ]       │ [______________] │
-│   2  │ OUÉDRAOGO Boureima     │ [09.75]    │ [ ]  │ [ ]       │ [______________] │
-│   3  │ TRAORÉ Fatoumata       │ [  — ]     │ [✓]  │ [ ]       │ [ABS___________] │
-│   4  │ KABORÉ Ibrahim         │ [  — ]     │ [ ]  │ [✓]       │ [______________] │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│   Saisies : 2/4  ·  Moy. : 12.13  ·  Min : 9.75  ·  Max : 14.50               │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│                              [ Annuler ]   [ ✅ Enregistrer les notes ]          │
-└──────────────────────────────────────────────────────────────────────────────────┘
-```
-
-**Les cases spéciales :**
-
-| Case | Effet |
-|------|-------|
-| **ABS** | Marque l'élève absent. La zone note est grisée. L'observation se remplit automatiquement avec « ABS ». |
-| **Dispensé** | Utilisé pour les élèves dispensés d'une matière (ex : EPS). La zone note est **grisée** (saisie impossible). La matière est **exclue du calcul de la moyenne générale** de cet élève. |
-
-> **Règle absolue :** Les notes sont saisies selon le barème défini pour l'évaluation. Une note ne peut pas être négative ni dépasser le barème.
-
-**Barre de statistiques en temps réel :**
-Le pied de page affiche en direct le nombre de notes saisies, la moyenne, la note minimale et maximale de la classe.
-
----
-
-### 6.4 Consulter les Résultats d'un Élève
-
-**Accès :** `Pédagogie → Résultats élèves`
-
-1. Recherche l'élève par matricule ou nom
-2. Sélectionne l'année scolaire et la période
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  📊 Résultats — SAWADOGO Aminata — Terminale A — 1er Trimestre 2025-2026 │
-├──────────────────────┬──────────┬────────────┬──────────────────────────┤
-│  Matière             │ Coeff.   │ Moyenne    │ Appréciation             │
-├──────────────────────┼──────────┼────────────┼──────────────────────────┤
-│  Mathématiques       │   5      │ 14.25/20   │ Bien                     │
-│  Sciences Physiques  │   4      │ 12.50/20   │ Assez Bien               │
-│  Français            │   4      │ 15.00/20   │ Très Bien                │
-│  Histoire-Géo        │   3      │ 13.75/20   │ Bien                     │
-│  Anglais             │   3      │ 11.25/20   │ Assez Bien               │
-│  SVT                 │   3      │ 16.00/20   │ Excellent                │
-├──────────────────────┼──────────┼────────────┼──────────────────────────┤
-│  MOYENNE GÉNÉRALE    │          │ 14.02/20   │ Bien                     │
-│  RANG                │          │ 3ème /58   │                          │
-└──────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### 6.5 Calculer et Consulter les Moyennes
-
-**Accès :** `Pédagogie → Résultats`
-
-#### Calculer les moyennes d'une classe
-
-1. Sélectionne la **classe** dans la liste
-2. Sélectionne le **trimestre**
-3. Clique sur **Calculer les moyennes**
-
-Le système calcule pour chaque élève :
-- La **moyenne par matière** (pondérée par les coefficients)
-- La **moyenne générale** (somme des notes × coeff / total coefficients)
-- Le **rang** dans la classe
-- Les élèves **dispensés** d'une matière sont automatiquement exclus du calcul de leur moyenne générale pour cette matière
-
-#### Consulter le relevé de notes par discipline
-
-**Accès :** `Pédagogie → Relevé de notes`
-
-Permet d'afficher un tableau croisé de toutes les notes d'une matière par élève et par évaluation.
-
-1. Sélectionne l'**année scolaire**
-2. Sélectionne la **classe**
-3. Sélectionne l'**enseignement** (matière)
-4. Sélectionne le **trimestre**
-5. Le tableau s'affiche avec les notes de chaque élève pour chaque évaluation
-
-**Impression PDF :** Clique sur **Imprimer le relevé** pour générer un PDF paysage avec le tableau et les statistiques de la matière.
-
-#### Bilan des périodes
-
-**Accès :** `Pédagogie → Bilan des périodes`
-
-Affiche un tableau récapitulatif des moyennes par classe et par trimestre. Bouton **Analyser avec l'IA** disponible pour générer automatiquement des commentaires pédagogiques.
-
----
-
-### 6.6 Conseil de Classe
-
-**À quoi ça sert :** Organise et documente le conseil de classe trimestriel. Permet de saisir les décisions individuelles (passage, redoublement, réorientation, exclusion) et les mentions collectives (Félicitations, Encouragements, Mention d'honneur) pour chaque élève.
-
-**Qui peut accéder :** Directeur, Proviseur, Censeur
-
-**Accès :** `Pédagogie → Conseils de classe`
-
----
-
-#### Créer un Conseil de Classe
-
-1. Clique sur **Pédagogie → Conseils de classe**
-2. Clique sur **+ Nouveau conseil**
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📋 Nouveau Conseil de Classe                                │
-├──────────────────────────────────────────────────────────────┤
-│  Classe *               : [▼ Terminale A__________________]  │
-│  Trimestre *            : [▼ 1er Trimestre________________]  │
-│  Année scolaire *       : [▼ 2025-2026____________________]  │
-│  Date du conseil *      : [14/12/2025]                       │
-│  Président du conseil   : [▼ KONÉ Seydou — Proviseur______]  │
-│                                                              │
-│          [ Annuler ]    [ ✅ Créer le conseil ]              │
-└──────────────────────────────────────────────────────────────┘
-```
-
-1. Clique sur **Créer le conseil**
-
----
-
-#### Saisir les Décisions Individuelles
-
-Après avoir créé le conseil, tu accèdes au tableau de saisie pour chaque élève de la classe :
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│  📋 Conseil de Classe — Terminale A — 1er Trimestre — 14/12/2025                         │
-├──────────────────────────┬────────────┬────────────────────────┬────────────────────────┤
-│  Élève                   │ Moyenne    │ Décision               │ Mentions               │
-├──────────────────────────┼────────────┼────────────────────────┼────────────────────────┤
-│  SAWADOGO Aminata        │ 14.02/20   │ [▼ Passage]            │ [x] Encouragements     │
-│  OUÉDRAOGO Boureima      │  8.75/20   │ [▼ Redoublement]       │ [ ] Félicitations      │
-│  TRAORÉ Fatoumata        │ 16.50/20   │ [▼ Passage]            │ [x] Félicitations      │
-│  KABORÉ Ibrahim          │  5.20/20   │ [▼ Réorientation]      │ [ ] Mention d'honneur  │
-│  …                       │ …          │ …                      │ …                      │
-├──────────────────────────┴────────────┴────────────────────────┴────────────────────────┤
-│  [ Appréciation générale de la classe : [Classe sérieuse avec des résultats encourageants] ]│
-│                                        [ ✅ Enregistrer les décisions ]                  │
-└──────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-**Décisions disponibles :**
-
-- **Passage** — L'élève passe dans la classe supérieure
-- **Redoublement** — L'élève refait l'année
-- **Réorientation** — L'élève est orienté vers une autre filière
-- **Exclusion** — L'élève est exclu de l'établissement
-
-**Mentions disponibles :**
-
-- **Félicitations** — Résultats excellents
-- **Encouragements** — Résultats satisfaisants, progrès notable
-- **Mention d'honneur** — Distinction particulière
-
-**Appréciation générale :** Un commentaire collectif sur la classe peut être saisi et apparaîtra sur le procès-verbal.
-
----
-
-#### Consulter un Conseil Existant
-
-1. Clique sur **Pédagogie → Conseils de classe**
-2. Filtre par classe, trimestre ou année
-3. Clique sur le conseil pour voir le détail
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📋 Conseils de Classe — Terminale A — 2025-2026             │
-├──────────────────────────────────────────────────────────────┤
-│  1er Trimestre  │ 14/12/2025 │ 58 élèves │ Pres. : KONÉ S.  │
-│  2ème Trimestre │ 21/03/2026 │ 57 élèves │ Pres. : KONÉ S.  │
-│  3ème Trimestre │ —          │ —         │ À planifier       │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Cas concret :** Après les compositions de décembre, le Proviseur du Lycée Zinda crée les conseils de classe pour toutes les classes du secondaire. Pour chaque élève, la décision de passage ou de redoublement est enregistrée. Les félicitations pour TRAORÉ Fatoumata (16.50/20) apparaîtront automatiquement sur son bulletin.
-
-> **À venir :** L'export PDF du procès-verbal du conseil de classe (compte-rendu officiel) sera disponible dans une prochaine mise à jour.
+**Interface (Design System v4.0) :**
+
+- En-tête avec bouton **Nouvelle matière** dans `page-actions`
+- Barre de recherche en temps réel (HTMX) dans une `card` avec `card-body`
+- Table avec `card-header` affichant le compteur de matières (se met à jour lors de la recherche)
+
+**Colonnes du tableau :**
+
+| Colonne | Description |
+|---|---|
+| **Code** | Code court en police mono (ex. `MATH`, `FR`) |
+| **Nom** | Nom court + nom complet en sous-titre grisé |
+| **Catégorie** | Badge neutre (ex. Enseignement Général) |
+| **Coeff.** | Coefficient par défaut |
+| **Barème** | Plage min–max (ex. 0 — 20) |
+| **Cycles configurés** | Badges bleus pour chaque cycle avec surcharge de coefficient (ex. `Secondaire ×3`) ; *Défaut pour tous* si aucune surcharge |
+| **Actions** | Bouton modifier (crayon) |
+
+**Recherche :** Saisir dans le champ déclenche un filtrage HTMX après 500 ms sur le nom ou le code.
 
 ---
 
 ### 6.7 Bulletins Trimestriels PDF
 
-**À quoi ça sert :** Génère le bulletin de notes officiel d'un élève pour un trimestre donné, ou les bulletins de toute une classe en un seul PDF.
+#### 6.7.A Modale de saisie du bulletin (bouton « Saisir »)
 
-**Qui peut accéder :** Directeur, Proviseur, Enseignant (pour ses classes)
+**À quoi ça sert :** Permet de renseigner les absences et l'appréciation du conseil de classe pour un élève donné, depuis la vue liste de la classe.
 
-**Accès :** `Pédagogie → Bulletins`
+**Comment y accéder :** `Bulletins → [Classe] → [Trimestre]` → colonne **Actions** → bouton crayon **Saisir**.
 
-> **Pré-requis :** Les notes de toutes les matières du trimestre doivent être saisies et les moyennes calculées avant de générer les bulletins.
+**Design de la modale (v2.10) :**
+
+```
+╔════════════════════════════════════════════════════════════╗
+║ ┌────────────────────────────────────────────────────── ×┐ ║
+║ │  ✏️  Saisie du bulletin                               │ ║
+║ │  👤 SAWADOGO Aminata · 1er Trimestre                  │ ║
+║ ├────────────────────────────────────────────────────────┤ ║
+║ │                                                        │ ║
+║ │  ┌──────────────────────────────────────────────────┐ │ ║
+║ │  │ 📊  Moyenne du trimestre    13.50 /20   3e rang  │ │ ║
+║ │  └──────────────────────────────────────────────────┘ │ ║
+║ │                                                        │ ║
+║ │  ⏱ ASSIDUITÉ                                          │ ║
+║ │  ┌────────────┐ ┌────────────┐ ┌────────────┐         │ ║
+║ │  │  Abs.J(h)  │ │ Abs.NJ(h) │ │  Retards   │         │ ║
+║ │  │     0      │ │     2      │ │     1      │         │ ║
+║ │  └────────────┘ └────────────┘ └────────────┘         │ ║
+║ │  ─────────────────────────────────────────────        │ ║
+║ │  💬 APPRÉCIATION DU CONSEIL DE CLASSE                 │ ║
+║ │  ┌──────────────────────────────────────────────────┐ │ ║
+║ │  │ Ex : Bon trimestre, continue tes efforts…        │ │ ║
+║ │  └──────────────────────────────────────────────────┘ │ ║
+║ │                                                        │ ║
+║ │  ─────────────────────────────────────────────        │ ║
+║ │                         [Annuler]  [✓ Enregistrer]    │ ║
+║ └────────────────────────────────────────────────────────┘ ║
+╚════════════════════════════════════════════════════════════╝
+```
+
+**Éléments de la modale :**
+
+| Élément | Description |
+|---|---|
+| **En-tête** | Dégradé vert subtil, nom de l'élève et trimestre en sous-titre |
+| **Bouton ×** | Ferme la modale, rouge au survol |
+| **Carte Moyenne** | Affiche la moyenne calculée (verte ≥10 / rouge <10) et le rang |
+| **Grille absences** | 3 champs numériques centrés (Justifiées · Non justifiées · Retards) |
+| **Textarea** | Appréciation du conseil, resize vertical autorisé |
+| **Footer** | Bouton Annuler (premium ghost avec icône ×, devient rouge au survol) + Enregistrer (vert primaire avec icône ✓) |
+
+**Comportement HTMX :** Après soumission réussie (HTTP 204), la modale se ferme automatiquement et l'événement `bulletinUpdated` est déclenché pour rafraîchir la ligne dans le tableau.
 
 ---
 
-#### Générer le Bulletin d'un Élève
 
-1. Clique sur **Pédagogie → Bulletins**
-2. Sélectionne la **classe**, l'**année scolaire** et le **trimestre**
-3. Clique sur le nom de l'élève
-4. Clique sur **Générer le bulletin PDF**
 
-**Contenu du bulletin généré :**
+**À quoi ça sert :** Génère les bulletins de notes au format PDF, soit pour un seul élève (vue individuelle), soit pour toute une classe en un seul fichier (export batch).
+
+**Accès :**
+- Individuel : `Pédagogie → Résultats → [élève] → Bulletin PDF`
+- Classe : `Pédagogie → Résultats → [classe] → Bulletins PDF (batch)`
+
+**Format batch (classe complète) :** Chaque élève occupe exactement **une page A4**. Optimisations appliquées (v2.10) :
+
+| Paramètre | Avant | Après |
+|-----------|-------|-------|
+| Marges `@page` | 1.5 cm | 10 mm haut/bas, 12 mm côtés |
+| Police de base | 11pt / line-height 1.35 | 9.5pt / line-height 1.25 |
+| Padding en-tête | `8pt 12pt` | `4pt 8pt` |
+| Padding cellules tableau | `6pt 10pt` | `3pt 6pt` |
+| Padding entête tableau | `4pt 10pt` | `2pt 6pt` |
+| Margin entre cartes | `7pt` | `3pt` |
+| Badge école | 42 × 42 pt | 30 × 30 pt |
+| Nom école | 15pt | 11pt |
+| Titre bannière | 12pt | 10pt |
+| Statistiques (valeurs) | 13pt | 10pt |
+| Signatures gap | `20pt` | `12pt` |
+| Signatures margin-top | `12pt` | `5pt` |
+
+Ces optimisations garantissent qu'un bulletin avec jusqu'à **15 matières** + conduite tient sur **une seule page A4 imprimée**. La classe `.bulletin-page` dans le template batch est contrainte à `max-height: 267mm` (= 297mm − marges − running footers WeasyPrint).
+
+**Design :** Thème sombre (fond `#0A1628`, cartes `#111E35`, accent vert `#00A86B`). Structure en sections :
+
+- **En-tête** : badge logo circulaire + nom + devise + contact de l'établissement
+- **Titre** : bannière verte avec le nom du trimestre et l'année
+- **Identité de l'élève** : matricule, sexe, nom, classe, date de naissance, effectif, cycle, redoublant
+- **Notes du trimestre** : tableau complet matières / coeff / moyenne / rang / appréciation / professeur
+- **Statistiques de la classe** : plus forte, plus faible, moyenne de classe + rang de l'élève
+- **Conduite** (si sanctions) · **Appréciation du Conseil** (si commentaire) · **Signature**
+
+**Signataire :** Détecté automatiquement selon le cycle de la classe et l'année scolaire (`Paramètres → Signataires des documents`, type `BULLETIN`).
+
+> **Configuration requise :** Créer au moins un signataire pour le type `BULLETIN` via `Paramètres → Signataires → Nouveau signataire`. Le formulaire de création est organisé en 3 sections à 2 colonnes : **Période & Périmètre** (année scolaire + cycle), **Type de document** (catégorie + fonction du signataire), **Signataire** (membre du personnel + titre honorifique). Si aucun signataire cycle-spécifique n'existe, le système utilise le signataire générique.
+
+---
+
+#### 6.7.0 Duplicata du Bulletin Trimestriel
+
+**À quoi ça sert :** Génère une copie officielle (duplicata) du bulletin trimestriel d'un élève, identique à l'original dans son contenu et son signataire, mais distinguée visuellement par des marquages explicites.
+
+##### Différences visuelles avec le bulletin original
+
+| Élément | Bulletin original | Duplicata |
+| ------- | ---------------- | --------- |
+| Couleur du titre | Vert `#00A86B` | Or/ambre `#C27D00` |
+| Sous-titre | — | "Duplicata officiel délivré le JJ/MM/AAAA" |
+| En-tête | — | Tampon "Duplicata" en coin supérieur droit |
+| Bandeau haut | — | Bandeau doré "Duplicata officiel — Ce document est une reproduction du bulletin original" |
+| Filigrane | — | "DUPLICATA" diagonal en transparence sur toute la page |
+| Pied de page | "YELEN SCHOOL — Système de Gestion Scolaire" | "YELEN SCHOOL — Duplicata officiel" |
+| Signataire | Identique (détecté automatiquement) | Identique (détecté automatiquement) |
+| Contenu pédagogique | Identique | Identique |
+| Mise en page | Standard | Compressée (une seule page A4) |
+
+##### Accéder au duplicata
+
+1. Va dans **Scolarité → Résultats → Classe**
+2. Sélectionne le trimestre
+3. Dans la colonne **Actions** de chaque élève, clique sur l'icône **duplicata** (icône double-page, couleur or) à côté du bulletin trimestriel standard
+4. Le PDF s'ouvre dans un nouvel onglet
+
+##### URL
+
+```
+/pedagogie/resultats/inscription/<uuid>/trimestre/<uuid>/bulletin/duplicata/
+```
+
+---
+
+#### 6.7.1 Bulletin Annuel
+
+**À quoi ça sert :** Génère le bulletin annuel de notes agrégé pour l'ensemble de l'année scolaire (tous trimestres confondus), avec la moyenne annuelle de passage, le rang et la décision (PASSE EN CLASSE SUPÉRIEURE ou REDOUBLE LA CLASSE).
+
+Le bulletin annuel contient :
+
+- **Informations élève** : Matricule, nom/prénom, classe, cycle, date de naissance
+- **Récapitulatif des périodes** : Moyenne par trimestre (verte ≥10, rouge <10) + moyenne annuelle agrégée
+- **Statistiques de classe** : Moyenne la plus haute, la plus basse, moyenne de la classe, rang annuel, mention
+- **Décision** : Bannière ADMIS (vert) ou NON ADMIS (rouge) avec seuil affiché
+- **Signature** : Nom et fonction du signataire configuré par cycle
+
+> Le design est en thème sombre (fond `#0A1628`, cartes `#111E35`, accent `#00A86B`) pour les deux versions : individuelle et batch (PDF groupé de toute la classe).
+
+##### Règles de calcul
+
+```
+moyenne_periode  = Σ(note × coefficient) / Σ(coefficient) pour chaque période
+moyenne_annuelle = Σ(moyenne_periode) / nombre_periodes
+est_admis        = moyenne_annuelle >= 10.00
+```
+
+##### Générer le Bulletin Annuel d'un Élève
+
+1. Va dans **Bulletins → Bulletin annuel**
+2. Sélectionne l'**inscription** et l'**année scolaire**
+3. Clique sur **Voir** pour afficher le bulletin
+4. Clique sur **Télécharger PDF** pour générer le document PDF
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║          LYCÉE ZINDA — OUAGADOUGOU                               ║
-║     BULLETIN DE NOTES — 1er TRIMESTRE 2025-2026                  ║
+║  [LOGO]  YELEN SCHOOL                                          ║
+║          Devise · Téléphone · Adresse                          ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  Élève    : SAWADOGO Aminata     Matricule : BF-CEN-2526-0047    ║
-║  Classe   : Terminale A          Rang      : 3ème / 58           ║
-╠═══════════════╦═══════╦════════════╦══════╦══════════════╦═══════╣
-║  Matière      ║ Coeff ║ Moyenne/20 ║ Rang ║ Appréciation ║ Prof. ║
-╠═══════════════╬═══════╬════════════╬══════╬══════════════╬═══════╣
-║  Mathématiq.  ║   5   ║   14.25    ║  3   ║ Bien         ║ KONE  ║
-║  Sciences Ph. ║   4   ║   12.50    ║  7   ║ Assez Bien   ║ OUÉDR ║
-║  Français     ║   4   ║   15.00    ║  2   ║ Très Bien    ║ TRAORÉ║
-║  Histoire-Géo ║   3   ║   13.75    ║  5   ║ Bien         ║ SAWAD ║
-║  EPS          ║   2   ║   Dispensé ║  —   ║ —            ║ KABORÉ║
-╠═══════════════╩═══════╩════════════╩══════╩══════════════╩═══════╣
-║  MOYENNE GÉNÉRALE    :  14.02/20   ·  Rang : 3ème / 58           ║
-║  Plus forte moyenne  :  16.50/20   (TRAORÉ Fatoumata)            ║
-║  Moyenne de la classe:  13.18/20                                 ║
-║  Plus faible moyenne :  09.25/20   (ZONGO Adama)                 ║
-║  Appréciation        :  Bien                                     ║
+║         BULLETIN DE FIN D'ANNÉE  2024-2025                     ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  Ouagadougou, le 15/12/2025                                      ║
-║  M. le Proviseur KONÉ Seydou                                     ║
+║ IDENTITÉ DE L'ÉLÈVE                                            ║
+║  Matricule : BF-2025-00002    Sexe : M    Effectif : 35        ║
+║  Nom & Prénom : TIOTION ABDOUL RAHMAN                          ║
+║  Classe : CM2        Date de naissance : 15/05/2008            ║
+║  Cycle : Primaire    Classe redoublée : Non                     ║
+╠══════════════════════════════════════════════════════════════════╣
+║ RÉCAPITULATIF DES PÉRIODES                                     ║
+║  Trimestre 1              │  9.63  (rouge)                     ║
+║  Trimestre 2              │ 12.50  (vert)                      ║
+║  Trimestre 3              │  9.60  (rouge)                     ║
+║  ─────────────────────────┼──────────────                      ║
+║  Moyenne annuellement     │ 10.58 /20  (vert)                  ║
+╠══════════════════════════════════════════════════════════════════╣
+║ STATISTIQUES DE LA CLASSE                                      ║
+║  Plus forte : 13.74   Plus faible : 7.00   Moy. classe : 10.77 ║
+║  Rang annuel : 12ème / 35 élèves  ·  Mention : Passable        ║
+╠══════════════════════════════════════════════════════════════════╣
+║  ✓ ADMIS — Moyenne annuelle : 10.58/20 (seuil : 10,00/20)     ║
+╠══════════════════════════════════════════════════════════════════╣
+║                               Le Directeur des études          ║
+║                               NOM PRÉNOM DU SIGNATAIRE         ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-**Nouveautés du bulletin :**
+##### URLs
 
-- **Colonne Appréciation** : Appréciation individuelle par matière, issue des grilles configurées dans `Paramètres → Appréciations`
-- **Colonne Professeur** : Nom du professeur responsable de la matière
-- **Dispensé** : Les élèves dispensés d'une matière (ex : EPS) voient « Dispensé » dans la colonne moyenne ; la matière n'est pas comptée dans leur moyenne générale
-- **Récapitulatif** : Plus forte moyenne, moyenne de la classe et plus faible moyenne de la classe s'affichent sous la moyenne générale
+- Vue HTML : `/bulletins/inscription/<uuid:inscription_id>/annee/<uuid:annee_pk>/bulletin-annuel/`
+- PDF : `/bulletins/inscription/<uuid:inscription_id>/annee/<uuid:annee_pk>/bulletin-annuel/pdf/`
+
+##### API Python (service)
+
+```python
+from bulletins.services import calculer_bulletin_annuel
+from inscriptions.models import Inscription
+from parametres.models import AnneeScolaire
+
+inscription = Inscription.objects.get(pk=...)
+annee = AnneeScolaire.objects.get(pk=...)
+bulletin = calculer_bulletin_annuel(inscription, annee)
+
+# Propriétés principales
+print(bulletin.moyenne_annuelle)  # Decimal
+print(bulletin.est_admis)         # Boolean
+print(bulletin.decision)          # "Passe en classe supérieure" ou "Redouble la classe"
+
+# Statistiques
+print(bulletin.rang_annuel)           # Integer ou None
+print(bulletin.effectif_classe)       # Integer
+print(bulletin.moyenne_max_classe)    # Decimal
+print(bulletin.moyenne_min_classe)    # Decimal
+print(bulletin.moyenne_classe)        # Decimal
+
+# Données JSON complètes
+print(bulletin.donnees_json)  # {'periodes': [{'nom': 'Trimestre 1', 'matieres': [...], ...}], ...}
+
+# Générer tous les bulletins d'une classe
+from bulletins.services import generer_bulletins_annuels_classe
+bulletins = generer_bulletins_annuels_classe(classe, annee)
+```
 
 ---
 
-#### Générer les Bulletins de Toute une Classe (Lot)
+#### 6.7.2 Palmarès Annuel
 
-Pour imprimer tous les bulletins d'une classe en un seul fichier PDF :
+**À quoi ça sert :** Génère un tableau récapitulatif de toute la classe classant les élèves par moyenne annuelle décroissante, avec leur rang, matricule et la décision du conseil (Admis(e) en classe supérieure ou Redouble la classe). Disponible en aperçu HTML et en PDF imprimable.
 
-1. Clique sur **Pédagogie → Bulletins**
-2. Sélectionne la **classe** et le **trimestre**
-3. Clique sur **Générer tous les bulletins (PDF)**
+##### Contenu du palmarès
 
-Le système produit un seul fichier PDF contenant les bulletins de tous les élèves de la classe, prêt à imprimer.
+| Colonne | Description |
+|---------|-------------|
+| **Rang** | Classement annuel avec gestion des ex-aequo (même rang si même moyenne) |
+| **Élève** | Nom (majuscules) + Prénom |
+| **Matricule** | Identifiant unique de l'élève (format `BF-AAAA-NNNNN`) |
+| **Moyenne Annuelle** | Agrégation de tous les trimestres, sur 20 — verte ≥10, rouge <10 |
+| **Décision du conseil** | "Admis(e) en classe supérieure" si moyenne ≥ 10, sinon "Redouble la classe" |
 
-> **Astuce :** La génération lot peut prendre quelques secondes selon la taille de la classe. Ne ferme pas la page pendant la génération.
+Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux de réussite, moyenne maximale, minimale et moyenne de classe.
 
-**Messages système :**
+##### Accéder au palmarès
+
+1. Va dans **Scolarité → Résultats → Classe**
+2. Sélectionne l'année scolaire
+3. Clique sur le bouton **Palmarès** (vert, en haut à droite)
+4. Pour générer le PDF : clique sur **Télécharger PDF**
 
 ```
-╔══════════════════════════════════════════════════════╗
-║  ✅ Bulletin généré                                  ║
-║  SAWADOGO Aminata — Terminale A — 1er Trimestre      ║
-║  Rang : 3ème / 58 · Moyenne : 14.02/20               ║
-╚══════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════╗
+║  [LOGO]  YELEN SCHOOL                          Année 2024-2025  ║
+╠══════════════════════════════════════════════════════════════════╣
+║              PALMARÈS ANNUEL — CM2 — Primaire                   ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Élèves : 35  │  Admis : 28  │  Redoublants : 7  │  Réussite : 80%
+║  Max : 17.50  │  Min : 4.30  │  Moy. classe : 11.20
+╠══════════════════════════════════════════════════════════════════╣
+║  Rang │ Élève               │ Matricule      │ Moy. │ Décision  ║
+║  1er  │ KABORE Seydou       │ BF-2025-00012  │ 17.50│ Admis(e) ║
+║  2e   │ OUEDRAOGO Awa       │ BF-2025-00005  │ 16.80│ Admis(e) ║
+║  ...                                                            ║
+║  35e  │ TAPSOBA Hamidou     │ BF-2025-00031  │  4.30│ Redouble ║
+╚══════════════════════════════════════════════════════════════════╝
 ```
 
-```
-╔══════════════════════════════════════════════════════╗
-║  ❌ Bulletins incomplets                             ║
-║  18 élèves ont des notes manquantes en Mathématiques. ║
-║  Saisis toutes les notes avant de générer les        ║
-║  bulletins.                                          ║
-╚══════════════════════════════════════════════════════╝
-```
+##### URLs
+
+- Aperçu HTML : `/pedagogie/resultats/classe/<uuid>/palmares/annuel/?annee=<uuid>`
+- PDF : `/pedagogie/resultats/classe/<uuid>/palmares/annuel/pdf/?annee=<uuid>`
 
 ---
 
@@ -2622,13 +735,17 @@ Le système produit un seul fichier PDF contenant les bulletins de tous les él�
 └──────────────────────────────────────────────────────────────┘
 ```
 
-4. Le tableau s'affiche automatiquement avec code couleur :
-   - **Vert** : Moyenne ≥ 14
-   - **Orange** : Moyenne entre 10 et 13
-   - **Rouge** : Moyenne < 10
+4. Le tableau s'affiche automatiquement avec codage N&B :
+   - **Gras normal** : Moyenne ≥ 14 (Bien)
+   - **Gras italique** : Moyenne entre 10 et 13 (Passable)
+   - **Gras** : Moyenne < 10 (Insuffisant)
    - **D** : Dispensé
 
-5. Clique sur **Imprimer PDF** pour exporter en PDF paysage (A4)
+> **Impression N&B :** Le PDF est optimisé pour imprimante noir et blanc. Les couleurs sont remplacées par des variations typographiques (gras, italique) et des fonds gris légers. Aucune information n'est portée uniquement par la couleur.
+
+5. L'en-tête du tableau reste fixe lors du défilement horizontal
+
+6. Clique sur **Imprimer PDF** pour exporter en PDF paysage (A4)
 
 **Lecture du tableau :**
 
@@ -2646,6 +763,288 @@ Le système produit un seul fichier PDF contenant les bulletins de tous les él�
 
 ---
 
+### 6.9 Relevé de Notes par Discipline
+
+**À quoi ça sert :** Affiche le tableau croisé élèves × évaluations pour une discipline donnée — toutes les notes de chaque évaluation, la moyenne individuelle, le rang et les statistiques de classe (moy. min/max/classe). Permet d'imprimer le relevé en PDF.
+
+**Qui peut accéder :** Directeur, Proviseur, Censeur, Enseignant
+
+**Accès :** `Pédagogie → Relevé de notes`
+
+**Étapes (stepper 4 étapes) :**
+
+1. Choisir l'**année scolaire** (l'année courante est pré-sélectionnée)
+2. Choisir la **classe**
+3. Choisir la **discipline** → le tableau s'affiche automatiquement
+4. Filtrer par **période** (optionnel — toutes les périodes par défaut)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  📋 Relevé de notes                                          │
+├──────────────────────────────────────────────────────────────┤
+│  ① Année    ② Classe    ③ Discipline    ④ Période (opt.)    │
+├──────────────────────────────────────────────────────────────┤
+│  Elève          │ Eval1 /20 │ Eval2 /20 │ Moy /20 │  Rang  │
+│  SAWADOGO A.    │   16.00   │   14.50   │  15.25  │   1er  │
+│  TRAORÉ M.      │    8.00   │   11.00   │   9.50  │  28e   │
+│  ─────────────────────────────────────────────────────────  │
+│  Moy. classe    │   14.20   │   13.10   │         │        │
+│  Notes saisies  │   28/30   │   27/30   │         │        │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Codage N&B des notes (PDF imprimable) :**
+
+- **Gras normal** : note ramenée sur 20 ≥ 10
+- **Gras italique** : note ramenée sur 20 < 10
+- **ABS** : élève absent à l'évaluation (gras)
+- **~** (tilde) : estimation locale, non validée (italique)
+
+> **Impression N&B :** Le relevé de notes PDF est entièrement optimisé pour imprimante sans couleur. En-tête noir (`#111`), lignes paires en gris `#f5f5f5`, colonne Moy. sur fond `#555`, récapitulatif en cartes avec bordure gauche noire. Aucune couleur rouge/verte utilisée.
+
+**Boutons d'impression :** disponibles dès qu'une discipline est sélectionnée et que le tableau contient des données.
+
+| Bouton | Description |
+| --- | --- |
+| **Relevé PDF** | Tableau complet paysage, signataire paramétrique (SignataireDocument `RELEVE_NOTES`) |
+| **Fiche discipline** | Fiche officielle paysage, **signée par l'enseignant de la discipline** |
+
+**Barre de recherche :** filtre les élèves en temps réel par nom/prénom.
+
+> **Prérequis :** Des enseignements doivent être configurés pour la classe (`Pédagogie → Enseignements`). Si le menu "Discipline" est vide, créez d'abord les enseignements.
+
+#### Fiche de Relevé par Discipline (PDF signé par l'enseignant)
+
+**À quoi ça sert :** Génère une fiche officielle A4 paysage du relevé de notes pour une discipline, signée par le professeur qui enseigne cette matière à la classe. Ce document peut servir de pièce justificative dans un dossier de conseil de classe ou de communication avec les parents.
+
+**Contenu de la fiche :**
+- En-tête établissement (logo, nom, coordonnées)
+- Bandeau titre : *"FICHE DE RELEVÉ DE NOTES — [Discipline]"*
+- Barre d'infos : Classe · Discipline · Enseignant(e) · Période · Année scolaire
+- Tableau des notes : #, Élève (nom + matricule), une colonne par évaluation (type, date, barème), Moyenne /20
+- Pied de tableau : Moyenne de classe et nombre de saisies par évaluation
+- Statistiques : meilleure moyenne, moyenne de classe, moyenne la plus faible
+- **Bloc de certification et signature** :
+  - Formule de certification (« Je soussigné(e) certifie l'exactitude des notes… »)
+  - Fonction : *"L'Enseignant(e) de [Discipline]"*
+  - Nom complet de l'enseignant en majuscules
+  - Matricule de l'enseignant
+
+**URL :**
+```
+/pedagogie/releve-notes/fiche-discipline/pdf/?annee=<uuid>&enseignement=<uuid>&periode=<uuid>
+```
+
+**Comportement si aucun enseignant assigné :** La zone de signature affiche *(Aucun enseignant assigné à cette discipline)* en grisé.
+
+### 6.10 Analyse du Risque de Décrochage (IA)
+
+**À quoi ça sert :** Utilise un algorithme d'analyse statistique pour identifier les élèves présentant un risque de décrochage scolaire (abandon, échec massif). Le système calcule un score sur 100 basé sur les notes, l'assiduité et les antécédents.
+
+**Qui peut accéder :** Directeur, Proviseur, Censeur
+
+**Accès :** `Pédagogie → Risque de décrochage`
+
+**Fonctionnalités :**
+
+1. **Calcul Individuel** : Clique sur l'icône de rafraîchissement dans la liste pour recalculer le score d'un élève spécifique.
+2. **Analyse Globale** : Clique sur le bouton **"Lancer l'analyse globale"** en haut de page pour recalculer les scores de TOUS les élèves actifs de l'établissement pour l'année en cours. La page se recharge automatiquement après le traitement et affiche un message de confirmation avec le nombre d'élèves traités.
+3. **Filtres** : Filtre la liste par niveau ou par classe pour cibler les interventions.
+4. **Indicateurs de Risque** :
+   - 🔴 **Élevé** (Score > 70) : Intervention urgente recommandée.
+   - 🟠 **Moyen** (Score 40-70) : Suivi pédagogique nécessaire.
+   - 🟢 **Faible** (Score < 40) : Pas d'alerte particulière.
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  🤖 Risque de Décrochage scolaire IA                         │
+├──────────────────────────────────────────────────────────────┤
+│  [ 🔄 Lancer l'analyse globale ]      [ 🖨 Exporter PDF ]    │
+├──────────────────────────────────────────────────────────────┤
+│  Élève              │ Score │ Niveau   │ Facteurs            │
+│  SAWADOGO A.        │  15   │ Faible   │ Assiduité correcte  │
+│  TRAORÉ M.          │  78   │ Élevé    │ ⚠️ Notes en baisse   │
+└──────────────────────────────────────────────────────────────┘
+```
+
+> **Attention :** L'analyse globale peut prendre plusieurs secondes selon l'effectif total de l'établissement. Un indicateur de chargement s'affiche pendant le traitement.
+
+---
+
+## 2. PARAMÈTRES DE L'ÉTABLISSEMENT
+
+### 2.1 Identité de l'établissement
+
+> **Accès :** `Paramètres → Identité Établissement`
+
+**À quoi ça sert :** Configurer les informations officielles de l'établissement — nom, adresse, contacts, logo, signature et cachet — qui apparaîtront sur tous les documents PDF (certificats, bulletins, attestations).
+
+**Champs principaux :**
+- **Informations officielles** : nom, sigle, type (public/privé/confessionnel), numéro et date d'agrément MENA
+- **Adresse complète** : rue/quartier, ville, province, région
+- **Contact** : téléphone, email, site web, nom du directeur
+- **Éléments graphiques** : logo (PNG/JPG ≥ 300×300px), signature du directeur (PNG transparent), cachet officiel
+- **Devise** : phrase ou valeur éducative de l'établissement
+
+**Design v2.11 :** La page a été modernisée avec des sections séparées (card-header + card-title), des icônes Lucide par section, et une correction de l'affichage des messages de confirmation.
+
+---
+
+### 2.17 Configuration SMS
+
+> **Accès :** `Menu principal → Core → Configuration SMS`
+>
+> **Qui peut accéder :** SUPER_ADMIN, DIRECTEUR
+
+**À quoi ça sert :** Permet de paramétrer la passerelle SMS pour l'envoi de notifications aux parents (absences, relances, convocations, bulletins).
+
+**Interface :** La page se compose de trois cartes :
+
+1. **Paramètres de Backend** — Configuration de la passerelle :
+   - **Activer le service SMS** — Toggle ON/OFF pour activer/désactiver l'envoi SMS
+   - **Type de passerelle** : `Interface WiFi` (App Android SMS Gateway via HTTP) ou `Interface Série` (Clé Modem GSM USB)
+   - **Configuration HTTP** : URL endpoint, timeout, identifiant API, mot de passe
+   - **Configuration Série** : Port COM, baudrate
+
+2. **Test de Connectivité** — Lancer un diagnostic pour vérifier la connexion au modem ou à l'API
+
+3. **Envoi Manuel** — Envoyer un SMS de test vers un numéro pour valider la configuration
+
+**Design :** Page modernisée avec cartes premium, icônes param-icon colorées par section, toggle-switch iOS-style, et classes CSS exclusives du design system (zéro style inline).
+
+---
+
+## 5. GESTION DU PERSONNEL
+
+### 5.1 Profil du Personnel (Page de Détail)
+
+**À quoi ça sert :** Affiche la fiche détaillée d'un membre du personnel : informations personnelles, coordonnées, affectations, inscriptions annuelles, bulletins de salaire récents et congés.
+
+**Qui peut accéder :** Directeur, Proviseur, Secrétaire, Comptable
+
+**Accès :** `Personnel → Liste → [Nom du membre]` ou via le bouton "Voir le profil"
+
+**Template :** `personnel/templates/personnel/personnel_detail.html`
+
+#### Design System v4 — Refactorisation complète
+
+La page de détail du personnel a été intégralement refactorisée pour être en conformité totale avec `DESIGN_SYSTEM_v4.md` :
+
+| Règle | Application |
+|---|---|
+| **Zéro CSS inline** | Toutes les balises `style="..."` supprimées et remplacées par des classes CSS |
+| **Zéro classe CSS créée** | Utilisation exclusive des classes de `yelen.css` |
+| **Icônes Lucide** | Toutes les icônes sont des SVGs Lucide inline (flèche retour, contrat, badge, salaire, congé, document) |
+| **Boutons** | `.btn-danger` (Désactiver), `.btn-primary` (Réactiver, Nouvelle inscription), `.btn-secondary` (Modifier le profil), `.btn-ghost.btn-sm` (actions inline : Supprimer, Approuver, Refuser) |
+| **En-tête de page** | `.page-header` + `.page-title` + `.page-subtitle` |
+| **En-têtes de carte** | `.card-header` + `.card-title` pour chaque section |
+| **Badges statut** | `.badge-success` (Actif / Payé / Approuvé), `.badge-danger` (Inactif / Refusé), `.badge-info` (cycles / Validé), `.badge-neutral` (Terminée / Brouillon / Annulé), `.badge-warning` (En attente) |
+| **Grille d'actions rapides** | `.form-grid-2` pour les 4 cartes d'actions (contrat, badge, salaire, congé) |
+| **Disposition** | `.d-flex.gap-6` pour les deux colonnes principales, `.flex-1.min-w-0` pour chaque colonne |
+| **Affichage inline** | `.d-inline` pour les formulaires d'action dans les tableaux |
+| **Couleurs d'accent** | `.color-primary` (liens Voir tout, Voir, Autorisation PDF), `.color-danger` (Supprimer, Refuser), `.color-success` (Approuver) |
+| **Police mono** | `.font-mono` pour les matricules et montants |
+| **Alignement** | `.text-right` pour les colonnes de montants, `.text-center` pour le nombre de jours |
+| **Espacement** | `.p-4` pour le padding uniforme des rangées et des cartes |
+| **Icônes statistiques** | `.stat-icon-green`, `.stat-icon-blue`, `.stat-icon-gold`, `.stat-icon-purple` pour les cartes d'actions |
+| **Animations** | `.animate-fade-up` + `.delay-1` / `.delay-2` pour l'apparition progressive |
+| **Confirmation** | `data-confirm` remplace les appels `onsubmit`/`confirm()` JavaScript pour les actions destructrices (Désactiver, Supprimer inscription) |
+| **Survol CSS** | `:hover` géré par la classe `.card` (transition border-color et box-shadow) — aucun `onmouseover`/`onmouseout` |
+
+#### Sections de la page
+
+1. **En-tête** : nom complet, fonction, matricule (`.text-mono.color-primary`), badge Inactif si désactivé, boutons d'action (Modifier, Nouvelle inscription, Désactiver/Réactiver)
+2. **Carte d'identité** : téléphone, email, date d'embauche, type de contrat en grille 4 colonnes flex
+3. **Informations personnelles** : date/lieu de naissance, sexe, nationalité, CNI, situation matrimoniale, adresse
+4. **Affectations (Cycles)** : badges pour chaque cycle assigné
+5. **Inscriptions annuelles** : tableau avec année, cycle, poste, statut (Active/Terminée), date d'inscription, actions Modifier/Supprimer
+6. **Actions rapides** : 4 cartes cliquables (Contrat de travail, Badge Personnel, Bulletin de salaire, Demande de congé)
+7. **Derniers bulletins de salaire** : tableau mois, brut, net, statut, lien Voir
+8. **Congés récents** : tableau type, dates, nombre de jours, statut, actions Approuver/Refuser, Autorisation PDF
+
+#### URLs
+
+- Détail : `/personnel/<uuid:pk>/`
+- Modification : `/personnel/<uuid:pk>/modifier/`
+- Activation/désactivation : `/personnel/<uuid:pk>/toggle-active/` (POST)
+
+### 5.10 Gestion des Congés du Personnel
+
+**À quoi ça sert :** Permet d'enregistrer et de suivre les demandes de congé des membres du personnel (annuels, maladie, formation, etc.) avec affichage du solde de jours restants.
+
+**Qui peut accéder :** Directeur, Proviseur, Secrétaire
+
+**Accès :** `Personnel → Congés → Nouvelle demande`
+
+**Design du formulaire (`conge_form.html`) — Design System v4 :**
+
+Le formulaire de demande de congé a été refactorisé pour être en conformité totale avec `DESIGN_SYSTEM_v4.md` :
+
+| Règle | Application |
+|---|---|
+| **Zéro CSS inline** | Aucune balise `style="..."` ni `<style>` dans le template |
+| **Zéro classe CSS créée** | Utilisation exclusive des classes de `yelen.css` |
+| **Icônes Lucide** | Icône de retour (flèche) via SVG inline Lucide |
+| **Boutons** | `.btn-primary` (Enregistrer, vert) + `.btn-secondary` (Annuler, bordure verte) |
+| **En-tête de carte** | `.card-header` + `.card-title` pour chaque section |
+| **Labels** | `.input-label` + `.required-star` pour champs obligatoires |
+| **Erreurs** | `.input-error` pour les messages d'erreur par champ |
+| **Grille formulaire** | `.form-grid-2` pour les champs en 2 colonnes |
+| **Séparateur** | `.divider` entre les lignes du solde congés |
+| **Texte danger** | `.text-danger` pour les jours pris |
+| **Texte accent** | `.color-primary` pour le solde restant (vert) |
+| **Animations** | `.animate-fade-up` sur les cartes, `.delay-1` / `.delay-2` pour le décalage |
+
+**Champs du formulaire :**
+
+| Champ | Type | Obligatoire |
+|---|---|---|
+| Membre du personnel | Select | Oui |
+| Type de congé | Select | Oui |
+| Date de début | Date | Oui |
+| Date de fin | Date | Oui |
+| Motif / Justification | Textarea | Non |
+
+**Carte latérale — Solde des congés :**
+
+Affiche dynamiquement les droits annuels, jours pris et solde restant pour l'année en cours. Apparaît uniquement si `jours_info` est présent dans le contexte. Le design utilise `.stat-value` pour le solde en grand chiffre, `.text-muted` pour les libellés, et `.fw-bold` + `.color-primary` pour la mise en valeur du solde.
+
+### 5.11 Gestion des Salaires du Personnel
+
+**À quoi ça sert :** Permet de créer et de modifier les bulletins de salaire mensuels des membres du personnel (salaire de base, primes, indemnités, retenues CNSS/IUTS, net à payer).
+
+**Qui peut accéder :** Directeur, Proviseur, Comptable, Secrétaire
+
+**Accès :** `Personnel → Salaires → Nouveau bulletin`
+
+**Design du formulaire (`salaire_form.html`) — Design System v4 :**
+
+Le formulaire de bulletin de salaire a été refactorisé pour être en conformité totale avec `DESIGN_SYSTEM_v4.md` :
+
+| Règle | Application |
+|---|---|
+| **Zéro CSS inline** | Aucune balise `style="..."` ni `<style>` dans le template — supprimé les anciens `max-width`, `grid-template-columns`, `grid-column` inline |
+| **Zéro classe CSS créée** | Utilisation exclusive des classes de `yelen.css` |
+| **Icônes Lucide** | Icône de retour (flèche) via SVG inline Lucide |
+| **Boutons** | `.btn-primary` (Enregistrer) + `.btn-secondary` (Annuler) + `.btn-icon` (retour) |
+| **En-tête de carte** | `.card-header` + `.card-title` pour chaque section (Identification, Éléments de rémunération, Retenues, Paiement) |
+| **Conteneur formulaire** | `.form-page-wrap` remplace le `max-width` inline |
+| **Labels** | `.input-label` pour tous les champs |
+| **Erreurs** | `.input-error` pour les messages d'erreur par champ |
+| **Aide** | `.form-hint` pour les textes d'aide (prime ancienneté, CNSS, IUTS) |
+| **Grilles** | `.form-grid-3` pour Identification (4 champs dont 1 full-width), `.form-grid-2` pour Éléments de rémunération (5 champs dont 1 full-width), `.form-grid-3` pour Retenues et Paiement |
+| **Full-width** | `.form-grid-2-full` pour les champs qui doivent occuper toute la largeur dans leur grille |
+| **Animations** | `.animate-fade-up` sur le header et chaque carte, `.delay-1` / `.delay-2` pour le décalage progressif |
+
+**Sections du formulaire :**
+
+1. **Identification** : Membre du personnel (full-width), Année scolaire, Mois, Année (grille 3 colonnes)
+2. **Éléments de rémunération** : Salaire de base (obligatoire), Prime d'ancienneté, Indemnités transport/logement, Autres primes (grille 2 colonnes)
+3. **Retenues** : CNSS, IUTS, Autres retenues (grille 3 colonnes)
+4. **Paiement** : Statut, Date de paiement, Référence paiement, Observations (full-width)
+
+---
+
 ## 7. PRÉSENCES ET ABSENCES
 
 > **Qui peut accéder :** AVS (pour la saisie), Directeur, Proviseur, Censeur (pour la consultation)
@@ -2660,29 +1059,23 @@ Le système produit un seul fichier PDF contenant les bulletins de tous les él�
 
 **Accès :** `Présences → Faire l'appel`
 
-**Étapes :**
+**Interface de saisie (`/presences/appel/<id>/saisie/`) :**
 
-1. Clique sur **Présences → Faire l'appel**
-2. Sélectionne la **classe**, la **date** et l'**heure**
+La page affiche en haut **3 compteurs en temps réel** (Présents / Absents / En retard) mis à jour instantanément sans rechargement.
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  📋 Appel — Terminale A — 14/03/2026 — 08h00                             │
-├──────┬──────────────────────┬──────────────────────────────────────────  ┤
-│  N°  │ NOM Prénom           │ Présence                                   │
-├──────┼──────────────────────┼────────────────────────────────────────────┤
-│   1  │ SAWADOGO Aminata     │ (●) Présent  ( ) Absent  ( ) Retard        │
-│   2  │ OUÉDRAOGO Boureima   │ ( ) Présent  (●) Absent  ( ) Retard        │
-│   3  │ TRAORÉ Fatoumata     │ (●) Présent  ( ) Absent  ( ) Retard        │
-│  ... │ ...                  │ ...                                        │
-├──────────────────────────────────────────────────────────────────────────┤
-│  Présents : 52 · Absents : 5 · Retards : 1                               │
-│                     [ ✅ Valider l'appel ]                               │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+Pour chaque élève, une rangée propose :
 
-3. Coche la présence de chaque élève
-4. Clique sur **Valider l'appel**
+- **3 pills radio** : `Présent` (vert), `Absent` (rouge), `En retard` (orange) — sélectionnables en un clic
+- **Champ retard** : nombre de minutes (0–180)
+
+**Boutons disponibles :**
+
+- **Tout présent** — coche tous les élèves comme présents en un clic
+- **Scanner QR** — active la saisie via QR code
+- **Enregistrer le brouillon** — sauvegarde sans clôturer (modifiable)
+- **Clôturer la séance** — archive définitivement l'appel (irréversible)
+
+> Un appel clôturé passe en lecture seule. La bannière "Séance clôturée" remplace les boutons d'action.
 
 ---
 
@@ -2907,6 +1300,82 @@ Chaque carte contient :
 
 ---
 
+### 7.6 Historique des Appels
+
+**À quoi ça sert :** Affiche l'historique de tous les appels enregistrés, avec filtres par date et par classe. Pour chaque journée, les appels sont regroupés par classe et montrent les statistiques de présence/absence/retard par matière.
+
+**Qui peut accéder :** AVS, Censeur, Directeur, Proviseur
+
+**Accès :** `Présences → Suivi des Appels`
+
+#### Filtrer les appels
+
+La barre de filtres permet de restreindre l'affichage :
+
+- **Du / Au** : plage de dates à consulter
+- **Classe** : filtre par classe (toutes les classes par défaut)
+- **Filtrer** : applique les filtres sélectionnés
+- **×** : réinitialise tous les filtres (visible uniquement si un filtre est actif)
+
+#### Actions disponibles
+
+- **Saisir** : accède à la saisie d'un appel en cours (non clôturé)
+- **Voir** : consultation en lecture seule d'un appel clôturé
+- **Justifications** : accès à la liste des justifications en attente (badge rouge si justifications en attente)
+- **Nouvel appel** : démarre un nouvel appel de présence
+- **Imprimer** : génère la liste des appels filtrés dans un format imprimable (voir section 7.7)
+
+---
+
+### 7.7 Impression de la Liste des Appels
+
+**À quoi ça sert :** Génère une page imprimable de la liste des appels avec les statistiques de présence — nom de l'établissement, récapitulatif global et détail par classe/matière.
+
+**Accès :** Bouton imprimante dans les filtres de `Présences → Suivi des Appels`
+
+La page d'impression s'ouvre dans un nouvel onglet et reprend automatiquement les filtres actifs (dates et classe).
+
+#### Structure de la page
+
+1. **En-tête** : nom de l'établissement, titre, année scolaire, classe filtrée (si applicable), plage de dates et date d'impression
+2. **Récapitulatif global** : 4 compteurs — nombre de séances, total présences, total absences, total retards sur toute la période
+3. **Contenu par date** : pour chaque journée, les classes sont listées avec :
+   - Stats de la classe (présents · absents · retards + % de présence)
+   - Tableau détaillé par matière (horaire, prés./abs./ret., statut Clôturé/En cours)
+
+**Mode écran** :
+
+- Barre d'outils YELEN SCHOOL avec bouton **Imprimer** (vert) et **Retour**
+- Document centré sur fond sombre, présenté comme une carte blanche
+- Chiffres en couleur (vert/rouge/amber)
+
+**Mode impression** :
+
+- Barre d'outils masquée, numéros de page en bas à droite (`Page X / Y`)
+- Couleurs converties en noir, badges en niveaux de gris
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  YELEN SCHOOL — Liste des appels      [Retour]  [Imprimer]   │
+├──────────────────────────────────────────────────────────────┤
+│  LYCÉE ZINDA                                                 │
+│  Liste des Appels                  Du 01/05 au 09/05/2026    │
+│  Année scolaire 2025-2026          Imprimé le 09/05/2026     │
+│  ┌──────────┬──────────────┬──────────────┬──────────────┐  │
+│  │ 12 Séan. │ 310 Présenc. │  18 Absences │   4 Retards  │  │
+│  └──────────┴──────────────┴──────────────┴──────────────┘  │
+│  Vendredi 09 mai 2026                          2 classes     │
+│  ├─ Terminale A (Secondaire)                                 │
+│  │  28 présents · 3 absents · 1 retard    90% de présence   │
+│  │  Maths    08h–10h   28   3   1   Clôturé                 │
+│  │  Français 10h–12h   28   3   1   Clôturé                 │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Cas concret :** Le Censeur veut un rapport hebdomadaire des présences. Il filtre du lundi au vendredi, clique sur l'icône imprimante : la page affiche d'abord le total de la semaine (ex : 312 présences, 21 absences), puis le détail journalier par classe et par matière. Il imprime et archive.
+
+---
+
 ## 8. VIE SCOLAIRE
 
 > **Qui peut accéder :** AVS, Censeur, Directeur, Proviseur
@@ -2915,11 +1384,36 @@ Chaque carte contient :
 
 ---
 
+### 8.0 Fiche de Suivi d'un Élève
+
+**À quoi ça sert :** Centralise toutes les informations de suivi d'un élève pour une année scolaire donnée : présences/retards, résultats par trimestre, sanctions, décisions de conseil et activités parascolaires. Accessible depuis `/viescolaire/eleve/<uuid>/fiche-suivi/`.
+
+**Interface :**
+
+- **En-tête** : nom/prénom de l'élève, classe, année scolaire + boutons Situation financière et + Sanction
+- **Colonne gauche (profil)** : photo/initiales, infos clés (classe, cycle, statut, date de naissance, tél. parent) + bloc Capital discipline (solde coloré selon statut : vert/orange/rouge)
+- **Colonne droite (métriques)** : grille 3 colonnes — Absences, Retards, Sanctions + une carte par trimestre avec la moyenne générale et le rang
+- **Onglets** (navigation JS côté client, hash URL) :
+  - **Présences & Retards** : deux tableaux côte à côte (absences + retards)
+  - **Notes & Résultats** : un tableau par trimestre avec matière, coeff., moyenne, rang, nombre de notes
+  - **Sanctions** : tableau avec type, motif, durée, impact points, statut
+  - **Conseil de classe** : décisions de passage/redoublement + félicitations/encouragements
+  - **Activités parascolaires** : cartes des activités avec type (Sport/Club/Art/Acad.)
+
+---
+
 ### 8.1 Enregistrer une Sanction Disciplinaire
 
 **À quoi ça sert :** Documente officiellement une sanction appliquée à un élève.
 
-**Accès :** `Vie Scolaire → Sanctions → + Nouvelle sanction`
+**Accès :** `Vie Scolaire → Sanctions disciplinaires`
+
+#### Fonctionnalités
+
+- **Statistiques** :Total, Confirmées, En cours, Levées, Avec impact
+- **Filtres avancés** : par type, statut, classe, date, élève (nom/matricule)
+- **Liste regroupée par classe**
+- **Colonnes** : Élève, Type, Date, Motif, Durée, Points, Trimestre, Statut, Appréciation, Parents convoqués
 
 **Étapes :**
 
@@ -2962,28 +1456,26 @@ Chaque carte contient :
 1. Clique sur **Vie Scolaire → Activités**
 2. Clique sur **+ Nouvelle activité**
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🎭 Nouvelle Activité Parascolaire                           │
-├──────────────────────────────────────────────────────────────┤
-│  Nom de l'activité *    : [Club de Mathématiques___________] │
-│  Type *                 : [▼ Académique___________________]  │
-│  Description            : [Préparation aux olympiades_____]  │
-│  Responsable            : [▼ OUÉDRAOGO Boureima___________]  │
-│  Capacité maximale      : [25 élèves]                        │
-│  Année scolaire *       : [▼ 2025-2026____________________]  │
-│  Actif                  : (●) Oui  ( ) Non                   │
-│                                                              │
-│          [ Annuler ]    [ ✅ Créer l'activité ]              │
-└──────────────────────────────────────────────────────────────┘
-```
+Le formulaire est en deux colonnes : **Identification + Organisation** à gauche, **aide contextuelle** à droite.
+
+**Section Identification :**
+
+- **Nom** — nom court affiché sur la fiche de suivi de l'élève
+- **Type** — sélecteur visuel en 4 cartes (Sport · Club · Art & Culture · Académique), chacune colorée selon la catégorie
+- **Capacité maximale** — le système bloque les inscriptions automatiquement une fois la limite atteinte
+- **Description** — optionnelle, objectifs et modalités
+
+**Section Organisation :**
+
+- **Responsable** — membre du personnel encadrant (modifiable à tout moment)
+- **Jour de réunion** et **heure de début** — indicatifs, affichés sur la fiche de l'activité
 
 **Types d'activités disponibles :**
 
-- **Sportif** — Football, Basketball, Athlétisme, Volleyball…
-- **Culturel et Artistique** — Théâtre, Musique, Danse, Arts plastiques…
-- **Académique** — Club de Mathématiques, Concours scientifiques, Débat…
-- **Associatif** — Association des élèves, Comité de santé, Environnement…
+- **Sport** (bleu) — Football, Basketball, Athlétisme, Volleyball…
+- **Club** (vert) — Association des élèves, Comité de santé, Environnement…
+- **Art & Culture** (violet) — Théâtre, Musique, Danse, Arts plastiques…
+- **Académique** (or) — Club de Mathématiques, Concours scientifiques, Débat…
 
 #### Consulter la Liste des Activités
 
@@ -3077,7 +1569,13 @@ Chaque carte contient :
 
 #### Consulter la Fiche d'un Élève
 
-Dans le tableau, clique sur le nom d'un élève pour accéder à sa **fiche de suivi** complète. En bas de la fiche apparaît le widget **Capital Discipline** :
+Dans le tableau, clique sur le nom d'un élève pour accéder à sa **fiche de suivi** complète. La fiche affiche :
+
+- **En-tête élève** : avatar ou initiales, matricule (DejaVu Sans Mono), classe, cycle, statut
+- **Statistiques** : absences, retards, sanctions avec indicateurs colorés selon seuil
+- **Moyennes trimestrielles** : scores sur 20 avec barre de progression visuelle
+- **Capital Discipline** (en bas) : solde de points avec badge de statut
+- **Onglets** : Présences · Notes · Sanctions · Conseil · Activités parascolaires
 
 ```
 ┌─────────────────────────────────────┐
@@ -3236,43 +1734,69 @@ Les points déduits sont définis pour chaque **type de sanction** dans `Paramè
 
 ### 9.1 Enregistrer un Paiement
 
-**À quoi ça sert :** Enregistre le paiement de frais de scolarité d'un élève.
+**À quoi ça sert :** Enregistre un ou plusieurs règlements de frais de scolarité en une seule transaction.
 
-**Accès :** `Finances → + Nouveau paiement`
+**Accès :** `Finances → + Nouveau paiement` ou directement depuis le profil élève (icône `$`)
+
+**Structure de la page (v3 — interface cartes) :**
+
+```text
+┌────────────────────────────────────────────────────────────────┐
+│  ← Encaisser un paiement                                       │
+├──── Section 1 : Élève & Transaction ───────────────────────────┤
+│  Date de transaction *  : [26/04/2026]                         │
+│  Inscription *          : [▼ SAWADOGO Aminata — Tle A · Reg]   │
+│  ┌──[avatar]─ SAWADOGO Aminata · BF-2025-00042 ──────────────┐ │
+│  │  Total dû : 85 000  Déjà payé : 25 000  Reste : 60 000   │ │
+│  │  ████████░░░░░░░░░░░░░  29% payé · 60 000 FCFA restants   │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│  Mode de paiement * : [▼ Espèces]  Référence : [__________]  │
+│  Observation        : [_____________________________________]  │
+├──── Section 2 : Rubriques à régler ─────── [⚡ Tout régler] ───┤
+│  ┌─ ☐ Frais de scolarité ─────────── 50 000 FCFA ───────────┐ │
+│  │  75 000 FCFA dû · 25 000 FCFA versé                       │ │
+│  │  ████████████░░░░░  33% payé                              │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│  ┌─ ☐ Frais d'inscription ─────────── 5 000 FCFA ───────────┐ │
+│  │  5 000 FCFA dû · 0 FCFA versé                             │ │
+│  │  ░░░░░░░░░░░░░░░░░  0% payé                               │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│  ┌─ ✓ Tenue scolaire ─────────────── ✓ Soldée ──────────────┐ │
+│  │  10 000 FCFA dû · 10 000 FCFA versé                       │ │
+│  │  ████████████████████  100% payé                          │ │
+│  └───────────────────────────────────────────────────────────┘ │
+├──── Section 3 : Total & Envoi ─────────────────────────────────┤
+│  Total versé : 55 000 FCFA · 2 rubrique(s)    [Enregistrer]  │
+└────────────────────────────────────────────────────────────────┘
+```
 
 **Étapes :**
 
-1. Clique sur **Finances** dans le menu
-2. Clique sur **+ Nouveau paiement**
+1. La date du jour est pré-remplie automatiquement
+2. Tape dans la **barre de recherche** pour filtrer les élèves par nom, prénom ou classe
+3. Sélectionne l'inscription → la **carte élève** apparaît immédiatement (nom, classe, matricule, statut tarifaire) ; la page défile vers la section rubriques et la situation financière se met à jour dès que l'API répond
+4. Les rubriques se chargent sous forme de **cartes cliquables** :
+   - Rubriques **soldées** : grisées, non sélectionnables (badge "✓ Soldée")
+   - Rubriques **en attente** : cliquables, affichent le reste à payer
+5. **Cliquer sur une carte** la sélectionne (coche verte) et déploie les champs :
+   - **Montant versé** (pré-rempli avec le solde exact, modifiable)
+   - **Échéance** (optionnel)
+6. **Bouton "⚡ Tout régler"** — sélectionne en un clic toutes les rubriques en attente avec leur solde
+7. Clique sur **Enregistrer le paiement** (actif seulement si ≥ 1 rubrique sélectionnée sans erreur de montant)
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  💰 Enregistrement d'un Paiement                             │
-├──────────────────────────────────────────────────────────────┤
-│  Élève (matricule) *    : [BF-CEN-2526-0047_______________]  │
-│                  → SAWADOGO Aminata — Terminale A            │
-│                                                              │
-│  Rubrique *             : [▼ Frais de scolarité___________]  │
-│  Montant dû             : 75 000 FCFA (calculé auto)         │
-│  Montant payé (FCFA) *  : [25 000_________________________]  │
-│  Date du paiement *     : [14/03/2026]                       │
-│  Mode de paiement *     : [▼ Espèces____________________]    │
-│  Référence reçu         : [REC-2526-001247________________]  │
-│  Écheance               : [▼ 1er versement — Octobre_____]   │
-│                                                              │
-│  Solde restant          : 50 000 FCFA (calculé auto)         │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
+**Raccourci depuis un profil élève :** L'URL `?inscription=<id>` pré-sélectionne l'inscription ET active automatiquement toutes les rubriques en attente avec leur solde.
 
-3. Clique sur **Enregistrer le paiement**
-
-> **Validation automatique :** Si le montant saisi dans **Montant Versé** dépasse le **Reste à payer** de la rubrique, une alerte rouge s'affiche et l'enregistrement est bloqué jusqu'à correction.
+> **Sélection par clic :** Cliquer n'importe où sur la carte (hors des champs de saisie) bascule la sélection. Les champs de saisie sont masqués quand la carte est désélectionnée — ils ne sont envoyés au serveur que lorsque la carte est sélectionnée.
 >
-> **Montant zéro accepté :** Il est possible de saisir **0 FCFA** dans le champ Montant Versé (ex : pour enregistrer une promesse de paiement, une exonération partielle ou une trace administrative).
+> **"Tout régler" :** Le bouton ⚡ n'est visible que lorsqu'au moins une rubrique est en attente. Il sélectionne toutes les cartes non soldées avec leur solde exact sans désélectionner les rubriques déjà cochées.
 >
-> **Référence obligatoire :** Pour tout mode autre qu'Espèces (Mobile Money, Chèque, Virement), la référence de transaction est obligatoire.
+> **Compteur de rubriques :** Un badge sous le titre affiche "N en attente · M soldée(s)".
+>
+> **Validation en temps réel :** Si le montant saisi dépasse le reste à payer, la carte affiche une erreur rouge et le bouton "Enregistrer" reste désactivé.
+>
+> **Référence obligatoire :** Pour tout mode autre qu'Espèces (Mobile Money, Chèque, Virement), la référence de transaction est exigée.
+>
+> **Erreur de configuration :** Si aucun statut élève ou aucun tarif n'est configuré, un message explicite s'affiche avec un lien vers les paramètres.
 
 **Message succès :**
 
@@ -3308,27 +1832,33 @@ Clique sur un élève pour accéder à sa **situation financière complète**.
 
 ---
 
-### 9.3 Consulter les Frais d'un Élève
+### 9.3 Consulter les Frais d'un Élève — Situation Financière
 
 **Accès :** `Finances → [nom de l'élève] → Situation financière`
 
-1. Clique sur le nom de l'élève dans la liste
-2. Consulte l'état des frais :
+**Interface (redesignée — v2) :**
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  💵 Situation Financière — SAWADOGO Aminata — BF-CEN-2526-0047           │
-│  Terminale A — Année 2025-2026                                           │
-├──────────────────────┬──────────────────┬───────────────┬───────────────┤
-│  Rubrique            │ Montant Total    │ Versé (FCFA)  │ Reste à payer │
-├──────────────────────┼──────────────────┼───────────────┼───────────────┤
-│  Frais de scolarité  │   75 000 FCFA    │   25 000      │   50 000 FCFA │
-│  Frais d'inscription │   10 000 FCFA    │   10 000      │        0 FCFA │
-│  Association parents │    5 000 FCFA    │        0      │    5 000 FCFA │
-├──────────────────────┼──────────────────┼───────────────┼───────────────┤
-│  TOTAL               │   90 000 FCFA    │   35 000 FCFA │   55 000 FCFA │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+La page utilise une mise en page deux colonnes (`sit-layout`) :
+
+**Colonne gauche (sidebar) — 4 cartes :**
+
+| Carte | Contenu |
+| ----- | ------- |
+| **Résumé Financier** | Frais bruts (si bourse), Réductions, Total Dû, Total Versé, Remboursé, barre de progression, **Reste à Payer** en grand |
+| **Rubriques à Payer** | Liste des rubriques avec montant par ligne |
+| **Bourses & Aides** | Bourses attribuées avec montant réduit, actions Modifier/Supprimer, total réductions |
+| **Informations** | Matricule, Année scolaire, Statut inscription, Statut élève |
+
+**Colonne droite (main) — jusqu'à 4 cartes :**
+
+| Carte | Contenu |
+| ----- | ------- |
+| **Échéancier de Paiement** | Tableau des tranches (libellé, date limite, montant, statut Payé/En attente), actions modifier/supprimer, bouton Ajouter |
+| **Historique des Versements** | Tableau date/rubrique/mode/référence/montant, bouton rembourser, lien PDF |
+| **Remboursements** | Visible seulement s'il y a des remboursements — tableau avec motif, montant, total |
+| **Historique des Relances** | Visible seulement s'il y a des relances — tableau canal SMS/PDF, rubrique, montant réclamé |
+
+**En-tête de page :** Bouton retour + Nom complet de l'élève + Classe, puis 3 boutons d'action alignés à droite (Nouvel encaissement, Fiche suivi, Attestation).
 
 ---
 
@@ -3405,14 +1935,173 @@ Ce champ est visible dans l'historique des versements de l'élève et sur le re�
 
 ---
 
-#### Fonctionnalités d'Échéancier à Venir
+### 14.4 Emploi du Temps
 
-Les fonctionnalités suivantes sont prévues dans une prochaine version :
+**À quoi ça sert :** Permet de créer, consulter et imprimer l'emploi du temps hebdomadaire des classes. La grille est calculée dynamiquement : chaque ligne = un créneau horaire unique, chaque colonne = un jour (Lun–Sam).
 
-- Création d'un plan d'échéancier personnalisé par élève ou par classe
-- Tableau de bord des échéances : qui a payé, qui est en retard
-- Alertes automatiques pour les versements dépassant la date limite
-- Impression du plan d'échéancier individuel
+**Qui peut accéder :** Directeur, Proviseur, Censeur
+
+**Accès :** `Vie Scolaire → Emploi du temps → [Classe]`
+
+**Page d'index (Design System v4.0) :**
+
+- En-tête avec bouton **Vue par professeur** dans `page-actions`
+- Sections par cycle avec badge coloré (vert Préscolaire, bleu Primaire, or Post-primaire, violet Secondaire) + séparateur horizontal + compteur de classes
+- Cartes `module-card` avec icône calendrier, nom de classe, cycle + "Emploi du temps hebdomadaire", flèche animée au survol
+
+#### Consulter l'Emploi du Temps d'une Classe
+
+1. Va dans **Vie Scolaire → Emploi du temps**
+2. Sélectionne la classe souhaitée dans la grille, organisée par cycle
+3. Choisis l'**année scolaire** dans le sélecteur en haut à droite
+4. La grille s'affiche avec les créneaux en lignes et les jours en colonnes
+
+**Interface :**
+
+- Chaque cours est une carte colorée (8 couleurs en rotation par matière)
+- La carte affiche : nom de la matière, enseignant, salle
+- Légende des matières avec point de couleur au-dessus de la grille
+- Colonne horaire : heure de début en vert, heure de fin en gris
+- Cellule vide affichée avec `—` si aucun cours à ce créneau/jour
+
+#### Ajouter une Séance
+
+1. Remplis le formulaire **Ajouter une séance** en bas de page :
+   - **Matière / Enseignant** : sélection parmi les enseignements configurés
+   - **Jour** : lundi au samedi
+   - **Heure début / fin** : créneau horaire
+   - **Salle** : optionnel
+2. Clique sur **Ajouter** pour enregistrer
+
+> Si aucun enseignement n'est configuré pour la classe, le formulaire n'est pas affiché. Configurez d'abord les enseignements dans **Pédagogie**.
+
+#### Imprimer l'Emploi du Temps en PDF (par Classe)
+
+1. Affiche l'emploi du temps de la classe souhaitée
+2. Clique sur **PDF** dans l'en-tête
+3. Le PDF s'ouvre dans un nouvel onglet (format A4 paysage)
+
+---
+
+#### 14.4.1 Emploi du Temps par Professeur
+
+**À quoi ça sert :** Génère l'emploi du temps personnel d'un enseignant sur toute la semaine. Montre toutes ses classes, matières, créneaux et salles regroupés dans une grille hebdomadaire. Le PDF inclut un récapitulatif des enseignements et le total d'heures hebdomadaires.
+
+**Qui peut accéder :** Directeur, Proviseur, Censeur
+
+**Accès :** `Vie Scolaire → Emploi du temps → Par professeur`
+
+##### Consulter la Liste des Professeurs
+
+1. Clique sur **Vie Scolaire → Emploi du temps**
+2. Clique sur le lien **Par professeur** dans l'en-tête
+3. La liste de tous les enseignants actifs cette année s'affiche :
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  👨‍🏫 Emplois du temps par professeur         [2025-2026 ▼]       ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Liste des professeurs                               12 profs    ║
+╠═══════════════╦══════════════════╦══════════════════════════════╣
+║  ┌────────────┐  ┌─────────────────┐  ┌──────────────────────┐  ║
+║  │ 👤         │  │ 👤              │  │ 👤                   │  ║
+║  │ KABORÉ Ali │  │ TRAORÉ Mariam   │  │ OUÉDRAOGO Jean       │  ║
+║  │ 3 matières │  │ 2 matières      │  │ 4 matières           │  ║
+║  │ enseignées │  │ enseignées      │  │ enseignées           │  ║
+║  └────────────┘  └─────────────────┘  └──────────────────────┘  ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+4. Clique sur la **carte d'un professeur** pour voir son emploi du temps
+
+##### Consulter l'Emploi du Temps d'un Professeur
+
+Une fois sur la page du professeur, tu vois :
+
+```
+╔══════════════════════════════════════════════════════════════════════╗
+║  ← Emploi du temps — KABORÉ ALIMATA         [2025-2026 ▼]  [PDF]   ║
+║  Enseignante de Mathématiques                                        ║
+╠════════════╦══════════════╦════════════════════════════════════════╣
+║  3 matières║  12h/semaine ║  Maths — Tle A · Maths — 1ère C · … ║
+╠════════════╩══════════════╩════════════════════════════════════════╣
+║  Lundi         Mardi         Mercredi     Jeudi     Vendredi  Sam   ║
+╠══════════════════════════════════════════════════════════════════════╣
+║  ┌──────────┐               ┌──────────┐                            ║
+║  │ Maths    │               │ Maths    │                            ║
+║  │ 07h00–   │               │ 08h00–   │                            ║
+║  │   09h00  │               │   10h00  │                            ║
+║  │ Tle A    │               │ 1ère C   │                            ║
+║  │ Salle 3  │               │ Salle 5  │                            ║
+║  └──────────┘               └──────────┘                            ║
+╚══════════════════════════════════════════════════════════════════════╝
+```
+
+**Informations affichées par séance :**
+- Nom de la matière
+- Créneau horaire (ex : 07h00 – 09h00)
+- Classe concernée (ex : Terminale A)
+- Salle (si renseignée)
+
+**Statistiques en en-tête :**
+- Nombre de matières enseignées
+- Total d'heures hebdomadaires calculé automatiquement
+- Résumé par matière avec le nombre de séances
+
+##### Imprimer l'Emploi du Temps en PDF
+
+1. Clique sur le bouton **Imprimer PDF** en haut à droite
+2. Le PDF s'ouvre dans un nouvel onglet
+3. Imprime ou enregistre le fichier
+
+**Contenu du PDF :**
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  LYCEE ZINDA          Emploi du temps — Professeur               ║
+║  ─────────────────────  KABORÉ ALIMATA                           ║
+║  Année 2025-2026        Enseignante de Mathématiques             ║
+║ ──────────────────────────────────────────────────────────────── ║
+║  3 matières     12h/sem.     PERS-LZ-2025-0042                   ║
+╠══════════════════════════════════════════════════════════════════╣
+║  LUNDI     MARDI   MERCREDI   JEUDI   VENDREDI   SAMEDI          ║
+╠══════════════════════════════════════════════════════════════════╣
+║  ┌──────┐          ┌───────┐                                     ║
+║  │Maths │          │Maths  │                                     ║
+║  │07h00 │          │08h00  │                                     ║
+║  │ Tle A│          │1ère C │                                     ║
+║  └──────┘          └───────┘                                     ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Récapitulatif des enseignements                                  ║
+║  Matière        Classe   Coeff.  H/sem.                          ║
+║  Mathématiques  Tle A    3,00    3h                              ║
+║  Mathématiques  1ère C   3,00    3h                              ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Ouagadougou, le 21 avril 2026       Le Directeur               ║
+║                                       NOM Prénom                 ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+**Caractéristiques du PDF :**
+- Format **A4 paysage** pour une lecture optimale
+- En-tête avec nom de l'établissement, matricule du professeur et année scolaire
+- Barre de statistiques (nombre de matières, total heures / semaine, matricule)
+- Grille à 6 colonnes (Lundi → Samedi)
+- Tableau récapitulatif des enseignements avec coefficients
+- Signature configurable (selon la configuration Signataires)
+- Pied de page avec date et heure de génération
+
+##### Pré-requis
+
+Pour que l'emploi du temps d'un professeur soit visible :
+
+| Condition | Où configurer |
+|-----------|--------------|
+| Le professeur doit avoir une inscription active pour l'année | `Personnel → Inscriptions` |
+| Des enseignements doivent lui être assignés | `Pédagogie → Enseignements` |
+| Des séances doivent être saisies pour ses enseignements | `Vie Scolaire → Emploi du temps → [Classe]` |
+
+**Cas concret :** En début d'année, le Censeur du Lycée Zinda saisit les séances de cours pour chaque classe. Il imprime ensuite les emplois du temps de toutes les classes et les affiche dans les couloirs. Chaque enseignant reçoit son emploi du temps personnel imprimé et signé par le Directeur.
 
 ---
 
@@ -3434,23 +2123,27 @@ Sélectionne la période pour obtenir le rapport de tous les paiements :
 ├──────────────────────────────────────────────────────────────┤
 │  [ 📄 Exporter PDF ]  [ 📊 Exporter Excel ]                  │
 └──────────────────────────────────────────────────────────────┘
-```
 
 ---
 
 ### 9.6 Imprimer un Reçu de Paiement (PDF)
 
-**À quoi ça sert :** Génère un reçu officiel en PDF récapitulant toutes les rubriques payées pour l'inscription de l'élève.
+**À quoi ça sert :** Génère un reçu officiel en PDF récapitulant toutes les rubriques payées pour l'inscription de l'élève. Optimisé pour l'impression en noir et blanc.
 
 **Accès :** `Finances → [nom de l'élève] → Imprimer le reçu`
 
 Le reçu PDF contient :
-- En-tête de l'établissement (logo, nom, adresse, téléphone)
-- Informations de l'élève (nom, matricule, classe, année scolaire)
-- **QR code de l'élève** dans le bloc d'informations (lisible sans connexion internet) — contient : matricule, nom/prénom, établissement, ville, téléphone, adresse
-- Tableau des rubriques : montant dû, versé, reste par rubrique
-- Résumé financier : Total Dû / Total Versé / Reste à payer
-- Zone de signature du caissier/responsable
+
+- En-tête : logo (converti en niveaux de gris), nom de l'établissement, N° agrément MENA, adresse, téléphone
+- Informations de l'élève : nom, matricule, classe, année scolaire, mode et date de paiement
+- **QR code de l'élève** (lisible sans connexion) — contient : matricule, nom/prénom, établissement, ville, téléphone, adresse
+- Résumé financier en 3 blocs différenciés par épaisseur de bordure gauche :
+  - **Total Dû** — bordure fine
+  - **Total Versé** — bordure épaisse (valeur mise en avant)
+  - **Reste à Payer** — fond grisé
+- Tableau des rubriques : montant dû, versé, reste, statut (✓ Soldé / En cours)
+- Ligne de total avec double bordure noire
+- Zone de signature configurable
 
 ---
 
@@ -3508,40 +2201,49 @@ Le document contient :
 
 ### 9.9 Bilan des Encaissements
 
-**À quoi ça sert :** Tableau de bord complet des paiements reçus, filtrable par année scolaire, période (date début/fin) et rubrique. Présente les statistiques par mode de paiement et par jour.
+**À quoi ça sert :** Tableau de bord complet des paiements reçus, filtrable par année scolaire, période (date début/fin) et rubrique. Présente les statistiques globales, les graphiques par mode de paiement et par jour, et le détail par cycle et classe.
 
 **Accès :** `Finances → Bilan Encaissements`
+
+**Interface (Design System v4.0) :**
+- **En-tête de page** : titre + sous-titre + boutons d'export (PDF, CSV, Excel) dans `page-actions`
+- **Formulaire de filtres** : carte avec `card-header` "Filtres" + bouton Réinitialiser + champs (Année, Rubrique, Date début, Date fin) + bouton **Filtrer**
+- **Stat-cards premium** : Total Encaissé (vert) et Transactions (bleu) avec accent ambiant coloré et icône thématique
+- **Graphiques** : 2 colonnes — "Répartition par Mode de Paiement" et "Évolution des Encaissements" (10 derniers jours)
+- **Graphique par cycle** : barres horizontales colorées si plusieurs cycles
+- **Tableaux détaillés** : section par cycle (badge vert) > par classe (badge orange) > lignes de paiements
 
 **Étapes :**
 
 1. Clique sur **Finances** dans le menu
 2. Clique sur **Bilan Encaissements**
-3. Utilise les filtres :
+3. Utilise les filtres dans la carte **Filtres** :
    - **Année scolaire** : Sélectionne l'année (ou "Toutes")
    - **Rubrique** : Filtre par type de frais (scolarité, inscription...)
    - **Date début / Date fin** : Filtre par période
 4. Clique sur **Filtrer**
+5. Pour exporter : boutons **PDF**, **CSV** ou **Excel** en haut à droite de la page
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  📊 Bilan des Encaissements                                            │
-│  [2025-2026 ▼] [Toutes ▼] [14/01/2026] → [31/03/2026] [Filtrer]     │
-├──────────────────────────────────────────────────────────────────────────┤
-│  Total Encaissé : 8 450 000 FCA │ 247 transactions                   │
-├────────────────────────────┬────────────────────────────┤
-│  Par Mode de Paiement     │  Par Jour                │
-│  Espèces      : 5 200 000│  15/03 : 450 000       │
-│  Mobile Money : 2 150 000 │  14/03 : 380 000       │
-│  Chèque       : 1 100 000│  13/03 : 520 000       │
-├────────────────────────────┴────────────────────────────┤
-│  ▼ Secondaire — 5 200 000 FCA                                      │
-│    ▼ Terminale A — 2 100 000 FCA                                  │
-│      Date       │ Élève         │ Montant                        │
-│      15/03     │ SAWADOGO A.   │ 25 000                         │
-│      14/03     │ OUÉDRAOGO B.  │ 50 000                         │
-├──────────────────────────────────────────────────────────────────────────┤
-│  [ 📄 Imprimer PDF ]                                                │
-└──────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  Bilan des Encaissements                   [PDF] [CSV] [Excel]     │
+│  Statistiques et détail des paiements reçus                        │
+├──────────────────────────────────────────────────────────────────────┤
+│  [Filtres]  Année ▼  Rubrique ▼  Date début  Date fin  [Filtrer]  │
+├──────────────────────────────────────────────────────────────────────┤
+│  ● 8 450 000 FCFA       ● 247                                      │
+│    Total Encaissé         Transactions                              │
+├─────────────────────────┬────────────────────────────────────────────┤
+│  Par Mode de Paiement   │  Évolution des Encaissements             │
+│  Espèces  ████████ 5.2M │  15/03 ████████ 450 000                 │
+│  Mobile   ████ 2.1M     │  14/03 ██████ 380 000                   │
+│  Chèque   ██ 1.1M       │  13/03 █████████ 520 000                │
+├─────────────────────────┴────────────────────────────────────────────┤
+│  Secondaire                                    [5 200 000 FCFA]    │
+│    Terminale A                                 [2 100 000 FCFA]    │
+│      Date     │ Élève         │ Rubrique │ Mode  │ Montant        │
+│      15/03    │ SAWADOGO A.   │ Scolar.  │ Esp.  │ 25 000         │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 **Fonctionnalités :**
@@ -3673,7 +2375,7 @@ Le document contient :
 - **Signataire automatique** : Le nom, la fonction et les titres du signataire sont issus des paramètres (`type = RELANCE`, `cycle = cycle de la classe`)
 - **Date limite obligatoire** : La date limite de paiement est requise pour générer les relances
 
-> **Configurer le signataire des relances :** Va dans `Paramètres → Signataires des documents`, sélectionne le type de document **RELANCE**, le cycle concerné et l'année scolaire, puis associe le membre du personnel signataire.
+> **Configurer le signataire des relances :** Va dans `Paramètres → Signataires des documents`, puis clique **Nouveau signataire**. Le formulaire est organisé en 3 sections à 2 colonnes côte à côte : **Période & Périmètre** (année + cycle), **Type de document** (catégorie + fonction), **Signataire** (nom + titre honorifique). Sélectionne la catégorie **RELANCE** et associe le membre du personnel signataire.
 
 ---
 
@@ -3684,6 +2386,8 @@ Le document contient :
 **Qui peut accéder :** Comptable, Secrétaire, Directeur, Proviseur
 
 **Accès :** `Finances → Exonérés`
+
+**Design v4.3 :** La page a été refondue avec les composants du design system — `.page-header`, `.card`, `.data-table`, `.stat-card` avec icônes colorées par section, `.param-icon` dans les en-têtes de groupe, `.badge` pour les statuts, et classes utilitaires exclusives (zéro style inline, zéro classe `dash-*`).
 
 **Étapes :**
 
@@ -3812,6 +2516,61 @@ Avant d'attribuer une bourse, il faut configurer les types disponibles.
 > **Lien avec la situation financière :** Le montant de la bourse apparaît automatiquement dans la situation financière de l'élève comme une **réduction appliquée**, venant en déduction du montant total dû.
 
 **Cas concret :** La comptable du Lycée Zinda reçoit la liste des 3 boursiers nationaux pour l'année 2025-2026. Elle crée les attributions dans le système. Les familles concernées n'ont plus qu'à payer le solde restant (frais totaux moins la bourse).
+
+---
+
+### 9.14 Paiements Mobile Money (Orange Money)
+
+**À quoi ça sert :** Permet au comptable de créer une demande de paiement à distance pour un parent. Un SMS est envoyé automatiquement avec les instructions de paiement via `*144#` (Orange Money Burkina Faso). Le comptable valide ensuite la transaction manuellement depuis le tableau de bord.
+
+**Qui peut accéder :** Comptable, Directeur, Proviseur
+
+**Accès :** `Finances → Mobile Money`
+
+**Prérequis :** Le module SMS doit être configuré (voir section 2.17). Tout détenteur d'un numéro Orange BF a accès à Orange Money via `*144#`.
+
+**Flux complet :**
+
+1. Depuis la fiche financière de l'élève (`Finances → Paiements → [nom élève]`), clique sur **Mobile Money**
+2. Sélectionne la rubrique (optionnel) et saisit le montant en FCFA
+3. Saisit le numéro Orange du parent (ex: 70123456 ou +22670123456)
+4. Clique **Créer la demande & envoyer SMS** → le système génère une référence `MM-AAAA-NNNNN` et envoie le SMS
+5. Le parent reçoit le SMS et compose `*144#` sur son téléphone Orange
+6. Après paiement, le parent contacte l'école avec sa référence Orange Money
+7. Le comptable va dans `Finances → Mobile Money`, localise la demande (statut **En attente**), clique l'icône ✓ et saisit la référence Orange Money
+8. Le système crée automatiquement un paiement et génère un reçu PDF
+
+**Tableau de bord Mobile Money :**
+
+- **En attente** : demandes envoyées mais pas encore confirmées
+- **Confirmés** : paiements validés par le comptable (reçu PDF disponible)
+- **Annulés** : demandes closes sans paiement
+
+**Page parent (lien SMS) :**
+
+Chaque SMS inclut un lien personnel `https://[école]/finances/payer/[token]/`. Cette page publique (sans connexion) affiche :
+- Le détail de la demande (élève, classe, montant, rubrique)
+- Les instructions étape par étape pour payer via `*144#`
+- Le statut en temps réel (En attente / Confirmé / Annulé)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  PAIEMENTS MOBILE MONEY                                             │
+│                                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                          │
+│  │    3     │  │   12     │  │    1     │                          │
+│  │En attente│  │Confirmés │  │ Annulés  │                          │
+│  └──────────┘  └──────────┘  └──────────┘                          │
+│                                                                     │
+│  [Filtrer par statut ▾]                                             │
+│                                                                     │
+│  Référence    Élève        Montant    Statut      Actions           │
+│  MM-2026-001  Sawadogo K.  15 000 F   En attente  [✓] [✗] [👤]    │
+│  MM-2026-002  Ouedraogo B. 25 000 F   Confirmé    [PDF] [👤]       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+> **Note technique :** Aucun abonnement ni API payante n'est requis. Le flux repose uniquement sur le module SMS interne de YELEN SCHOOL et le service USSD `*144#` disponible gratuitement sur tout numéro Orange Burkina Faso.
 
 ---
 
@@ -4043,6 +2802,63 @@ M. le Proviseur KONÉ Seydou
 
 ---
 
+### 12.0 Impression Noir et Blanc — Règles communes à tous les documents PDF
+
+L'établissement ne dispose pas d'imprimante couleur. Tous les documents PDF générés par YELEN SCHOOL respectent les règles d'impression N&B suivantes :
+
+**Palette de couleurs :**
+
+| Élément | Couleur appliquée |
+|---------|-------------------|
+| Fond de page | `#ffffff` (blanc) |
+| En-tête tableau | `#111` (noir), texte blanc |
+| Lignes paires | `#f5f5f5` (gris très clair) |
+| Bordures | `#111` ou `#aaa` selon l'importance |
+| Texte principal | `#000` ou `#111` |
+| Texte secondaire | `#333` ou `#444` |
+| Fonds de blocs info | `#f5f5f5` ou `#f0f0f0` |
+
+**Documents concernés et règles spécifiques :**
+
+| Document | Règles N&B appliquées |
+|----------|-----------------------|
+| Attestation de Non-Redevabilité | Statut "EN RÈGLE" → fond `#f0f0f0` bordure `#111` ; "RESTE À PAYER" → fond `#ddd` bordure `#111` italique gras |
+| Certificat de Scolarité | Barres d'accent → `#111` ; QR code → `filter: grayscale(100%)` ; logo → `filter: grayscale(100%)` |
+| Convocation | Bannière encart → fond `#111` blanc ; note obligatoire → fond `#f0f0f0` bordure gauche `4pt solid #111` ; carte destinataire → bordure top `3pt solid #111` fond `#f5f5f5` |
+| Liste de classe | En-tête → `#111`/blanc ; lignes paires → `#f5f5f5` ; bordures tableau visibles `1px solid #ccc` |
+| Liste du personnel | Même règles que liste de classe ; ligne total récap → `#111`/blanc |
+| Bulletin trimestriel PDF | En-tête section → fond `#ebebeb` bordure gauche `3pt solid #111` ; tableau notes → en-tête `#111`/blanc ; ligne totale → `border-top/bottom: 2pt solid #111` fond `#ebebeb` ; stat-box → `border-left: 3pt solid #111` ; badge rang → bordure `1pt solid #555` ; titre bannière → `border: 1.5pt solid #111` |
+| Bulletin annuel PDF | Mêmes règles que bulletin trimestriel ; décision ADMIS → fond `#f5f5f5` bordure `2pt solid #111` ; décision NON ADMIS → fond `#ddd` bordure `2pt solid #111` italique |
+| Bulletin batch (impression groupée) | Mêmes règles bulletin trimestriel ; bloc recap → fond `#f5f5f5` bordure `1.5pt solid #111` ; stat-values → gras sans couleur |
+| Bulletin duplicata | Filigrane `rgba(0,0,0,0.08)` ; bandeau DUPLICATA → fond `#ddd` bordure `#555` ; tampon → fond `#ddd` bordure `#111` ; titre → fond `#555` blanc ; stat-box → `border-left: 3pt solid #111` |
+| Bilan des périodes | En-tête période → fond `#111`/blanc ; lignes paires → `#f5f5f5` ; blocs analyse → `border-left: 3pt solid #111` fond `#f5f5f5` ; légende → texte et symboles sans couleur |
+| Fiche relevé de notes (discipline) | En-tête → `border-bottom: 2.5pt solid #111` ; bandeau → fond `#111`/blanc ; colonne moy. → fond `#555`/blanc ; note basse → fond `#ddd` italique ; note ok → fond `#f5f5f5` ; stat-box → `border-left: 3pt solid` |
+| Liste des candidats (examens) | Badge ADMIS → `#fff` bordure `1pt solid #111` gras ; Badge AJOURNÉ → `#ddd` bordure `#111` italique ; Badge ABSENT → `#555`/blanc ; lignes paires → `#f5f5f5` |
+| Cartes scolaires classe | Header carte → `#111`/blanc ; accent → `#111` ; photo → `grayscale(100%)` ; classe-badge → `#ebebeb` bordure gauche `#555` ; footer → `#f5f5f5` |
+| Carte scolaire individuelle (recto) | Mêmes règles cartes classe ; verso → fond `#111`, texte blanc/gris sur fond sombre |
+| Contrat de travail | En-tête → `border-bottom: 2.5px solid #111` ; titre → `border-bottom: 2px solid #111` ; section-titre → `border-left: 2mm solid #111` ; highlight-box → `#f5f5f5` bordure `#bbb` |
+| Badge personnel | Header → fond `#111`/blanc ; accent → `#111` ; photo → `grayscale(100%)` ; badge-fonction → `#ebebeb` bordure gauche `#555` ; footer → `#f5f5f5` |
+| Bulletin de salaire | En-tête sep → `2px solid #111` ; tableau gains/retenues → en-tête `#111`/blanc ; sous-total → `#ebebeb` double-bordure `2px solid #111` ; retenues → gras italique (sans rouge) ; net → fond `#111`/blanc |
+| PV du conseil de classe | PASSAGE → `#fff` bordure `1.5pt solid #111` gras ; REDOUBLEMENT → `#ddd` bordure `#111` italique ; EXCLUSION → `#555`/blanc gras ; Félicitations → `#f5f5f5` bordure `#555` ; décisions individ. → styles typographiques sans couleur |
+| Emploi du temps classe | En-tête jours → `#111`/blanc ; cellules cours → `#fff` bordure `1pt solid #bbb` bordure-gauche `2.5pt solid #111` ; créneaux vides → `#f5f5f5` |
+| Emploi du temps professeur | Mêmes règles EDT classe ; stats-bar → `#f5f5f5` bordure `#bbb` ; récap matières → en-tête `#111`/blanc ; lignes paires → `#f5f5f5` |
+| Inventaire des manuels (classe) | En-tête → `#111`/blanc bordure `#111` ; lignes paires → `#f5f5f5` ; badge état → `#fff` bordure `#555` ; total-row → double-bordure `2px solid #111` fond `#fff` |
+| Journal d'audit | En-tête → `#111`/blanc ; badge Création → `#fff` bordure `#555` ; badge Modification → `#ebebeb` bordure `#555` ; badge Suppression → `#555`/blanc ; lignes alternées blanc/`#f5f5f5` |
+| Bulletin de vacation | En-tête → `border-bottom: 2.5px solid #111` ; titre-bloc → `#f5f5f5` bordure `#bbb` ; table → en-tête `#111`/blanc ; total → double-bordure `2px solid #111` ; badge PAYÉ → `#fff` bordure `#111` gras ; badge VALIDÉ → `#ebebeb` ; montant → texte `#111` sans couleur verte |
+| Reçu de paiement (finances) | Logo → `grayscale(100%)` ; résumé 3 blocs : Total Dû `border-left:2pt/#555`, Total Versé `border-left:3.5pt/#111`, Reste `#ebebeb` ; en-tête tableau `#111`/blanc ; badge Soldé `#fff` bordure `#555` gras ; badge En cours `#ebebeb` italique ; total double-bordure `2px solid #111` |
+| Historique des versements (finances) | Mêmes règles résumé 3 blocs que le reçu ; en-tête tableau `#111`/blanc ; QR code `grayscale(100%)` ; total `border-top/bottom: 2px solid #111` fond `#fff` |
+| Liste des élèves redevables | Cycle-header `#111`/blanc ; classe-header `#ddd` `font-weight:bold` ; en-tête tableau `#eee` `font-weight:bold` ; total-row `#ebebeb` double-bordure ; total-général encadré `border: 2.5px solid #111` |
+| Bilan des encaissements | Stats `border-left:3pt solid #111` fond `#fff` ; section-titre `#111`/blanc ; en-tête tableau `#eee` ; classe-sub-header `#ddd` ; total double-bordure `2px solid #111` fond `#fff` |
+| Certificat de Non-Redevabilité | Statut EN RÈGLE → fond `#f0f0f0` bordure `2px solid #111` ; RESTE À PAYER → fond `#ddd` bordure `#111` italique ; résumé financier → reste-row double-bordure `1px solid #bbb` gras ; logo `grayscale(100%)` |
+| Liste des élèves exonérés | Classe-header `#111`/blanc ; info-box `border-left:3pt solid #111` `#f5f5f5` ; en-tête tableau `#eee` ; total-général `border: 2px solid #111` |
+| Attributions manuels annuelles | En-tête `border: 3pt solid #111` ; stats `border-left:3pt solid #111` fond `#fff` ; en-tête tableau `#111`/blanc ; séparateur cycle `#ddd` italique ; badge état `#fff` bordure `#555` / sortie `#ddd` italique ; total double-bordure `2px solid #111` |
+
+**Police imprimable :** Arial (tous les documents PDF N&B), taille minimale 9pt, marges ≥ 1,5 cm.
+
+> Les logos et images sont automatiquement convertis en niveaux de gris via `filter: grayscale(100%)`. Aucune couleur porteuse d'information n'est utilisée dans les documents PDF.
+
+---
+
 ### 12.1 Certificat de Scolarité
 
 **À quoi ça sert :** Atteste qu'un élève est bien inscrit dans l'établissement pour l'année en cours.
@@ -4053,8 +2869,20 @@ M. le Proviseur KONÉ Seydou
 
 1. Clique sur **Documents → Certificat de scolarité**
 2. Saisis le matricule de l'élève
-3. Vérifie les informations pré-remplies
-4. Clique sur **Générer le certificat**
+3. Vérifie les informations pré-remplies dans l'**aperçu** (page `/documents/certificat/<uuid>/`)
+4. Clique sur **Générer le PDF** pour télécharger le document
+
+**Aperçu du certificat (design v4.2) :**
+- Barre verte en haut de la carte document (couleur primaire `#00A86B`)
+- En-tête : logo établissement | nom centré | cachet
+- Titre « CERTIFICAT DE SCOLARITÉ » en majuscules avec soulignement
+- Corps : texte formel « Le soussigné, NOM PRÉNOM, Directeur des études de ÉTABLISSEMENT, certifie que : »
+  - L'article défini initial du champ **Fonction** (« Le », « La », « L' ») est automatiquement supprimé dans le corps du texte pour éviter la répétition avec « Le soussigné » (filtre `strip_article`)
+  - Dans le bloc de signature (bas de page), la fonction est affichée telle quelle avec l'article
+- Pied de page : numéro de document et matricule élève
+- Badge `badge-warning` affiché si le signataire n'est pas configuré
+
+**Classes CSS :** `doc-cert-card`, `doc-cert-topbar`, `doc-cert-header`, `doc-cert-title`, `doc-cert-text`, `doc-cert-signature`, `doc-cert-footer`, `doc-preview-wrap`, `alert-warning-accent`
 
 Le système génère automatiquement un PDF signé par le responsable configuré pour ce cycle.
 
@@ -4151,14 +2979,17 @@ La carte générée contient : nom, prénom, photo (ou initiales si absente), cl
 
 **À quoi ça sert :** Génère la liste officielle de tous les élèves inscrits dans une classe, triés alphabétiquement. Utilisée pour les appels, les compositions et les remises de bulletin.
 
-**Accès :** `Documents → Listes de classe → Sélectionner une classe`
+**Accès :** `Documents → Listes de classe`
+
+**Interface :** Les classes sont regroupées par cycle (Préscolaire, Primaire, Post-primaire, Secondaire) sous un titre de section. Chaque classe est affichée sous forme de carte dans une grille 4 colonnes (responsive : 3 → 2 → 1). Le sélecteur d'année scolaire se trouve en haut à droite.
 
 **Étapes :**
 
 1. Clique sur **Documents** dans le menu
 2. Clique sur **Listes de classe**
-3. Sélectionne la classe souhaitée dans le sélecteur
-4. Clique sur **Générer PDF**
+3. Sélectionne l'**année scolaire** dans le sélecteur en haut à droite
+4. Repère la classe souhaitée dans la grille (organisée par cycle)
+5. Clique sur **Aperçu** pour consulter en ligne, ou **PDF** pour télécharger
 
 Le document contient : en-tête de l'établissement, numéro d'ordre, matricule, nom et prénom de chaque élève, sexe, date de naissance, statut, un QR code de l'établissement en bas de page.
 
@@ -4166,18 +2997,34 @@ Le document contient : en-tête de l'établissement, numéro d'ordre, matricule,
 
 ### 12.7 Liste du Personnel (PDF)
 
-**À quoi ça sert :** Génère la liste officielle du personnel d'un cycle, triée alphabétiquement. Utilisée pour les états nominatifs transmis au Ministère.
+**À quoi ça sert :** Génère la liste officielle du personnel d'un cycle et d'une année scolaire, triée alphabétiquement, avec ventilation par catégorie professionnelle et par genre. Utilisée pour les états nominatifs transmis au Ministère.
 
-**Accès :** `Documents → Liste du personnel → Sélectionner un cycle`
+**Accès :** `Documents → Liste du personnel`
+
+**Interface :** La page affiche une grille de 4 cartes (responsive : 3 → 2 → 1 selon la largeur d'écran). Chaque carte représente un cycle scolaire avec un badge **Actif** (vert) ou **Inactif** (gris) selon la présence de personnel inscrit pour l'année sélectionnée.
 
 **Étapes :**
 
 1. Clique sur **Documents** dans le menu
 2. Clique sur **Liste du personnel**
-3. Sélectionne le cycle souhaité (Primaire, Post-primaire, Secondaire…)
-4. Clique sur **Générer PDF**
+3. Sélectionne l'**année scolaire** dans le sélecteur en haut à droite (année en cours par défaut)
+4. Clique sur **Aperçu** sur la carte du cycle souhaité pour consulter en ligne
+5. Clique sur **PDF** pour télécharger directement le document
 
-Le document contient : en-tête de l'établissement, numéro d'ordre, matricule, nom et prénom, sexe, poste, récapitulatif Hommes/Femmes/Total, QR code de l'établissement.
+**Colonnes du tableau :**
+
+| Colonne | Description |
+|---------|-------------|
+| N° | Numéro d'ordre |
+| Matricule | Matricule PERS-{ETAB}-{ANNEE}-{SEQ} |
+| Nom et Prénom(s) | Nom complet en majuscules |
+| Genre | H (Homme) ou F (Femme) |
+| Poste / Fonction | Titre du poste occupé cette année |
+| Catégorie | Catégorie professionnelle : Direction, Enseignement, Administration, Vie Scolaire, Personnel Technique |
+
+**Récapitulatif PDF :** tableau de synthèse ventilant chaque catégorie par Hommes / Femmes / Total, plus un sous-total général.
+
+**Contenu du document :** en-tête établissement, année scolaire, tableau alphabétique, récapitulatif par catégorie et genre, signature du directeur, QR code de l'établissement.
 
 ---
 
@@ -4418,6 +3265,37 @@ Le PDF généré certifie que l'élève **ne doit rien** à l'établissement. Si
 >
 > **Accès menu :** `Menu principal → Licences`
 
+### 13.Guide Page Guide d'utilisation (`/licences/guide/`)
+
+Page de documentation intégrée présentant les 9 modules principaux de YELEN SCHOOL.
+
+**Design (v4.2) :**
+
+- Étend `core/base.html` — navigation sidebar et topbar incluses
+- Titre avec typographie Playfair Display + dégradé blanc → vert
+- Table des matières en grille auto-fill avec icônes SVG et survol vert
+- Sections numérotées (01–09) avec barre verte verticale à gauche
+- Numéros de section en badge carré vert (`guide-section-num`)
+- Sous-titres avec marqueur barre verte (`.guide-sub-heading`)
+- Listes avec tiret vert (`guide-list`)
+- Encadrés verts pour les astuces (`guide-tip`) et ambrés pour les avertissements (`guide-warning`)
+- Zéro CSS inline — toutes les classes définies dans `yelen.css` sous le bloc `/* ─── Page Guide ───── */`
+
+**Sections documentées :** Inscriptions · Pédagogie · Présences · Examens · Finances · Personnel · Vie Scolaire · Documents · Paramètres
+
+---
+
+### 13.0 Tableau de Bord des Licences (`/licences/`)
+
+La page d'accueil liste toutes les licences sous forme de cartes. Chaque carte présente :
+
+- **Bordure gauche colorée** selon le statut : vert (Active), or (En attente), rouge (Expirée/Révoquée)
+- **En-tête** : nom de l'établissement + clé de licence (monospace) + alerte "Signature invalide" si nécessaire
+- **Badges** : type de licence (Starter/Standard/Premium/Réseau) + statut
+- **Barre de progression** : temps restant avant expiration (de 0 à 365 jours = 0-100%), colorée selon l'urgence (vert > 60 j, or ≤ 60 j, rouge expiré)
+- **Grille de métriques** : Activation · Élèves max · Enseignants max · Classes max · Dernière vérif. · Type
+- **Actions** (Super Admin) : Activer, Prolonger, Modifier, Révoquer
+
 ---
 
 ### 13.1 Les 4 Niveaux de Licence
@@ -4622,56 +3500,30 @@ Sélectionne la période et obtiens :
 #### Consulter l'Emploi du Temps d'une Classe
 
 1. Clique sur **Vie Scolaire → Emploi du temps**
-2. Sélectionne la **classe** et l'**année scolaire**
-3. L'emploi du temps hebdomadaire s'affiche sous forme de grille
+2. Sélectionne l'**année scolaire** dans le menu déroulant
+3. L'emploi du temps hebdomadaire s'affiche sous forme de grille moderne
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  📅 Emploi du Temps — Terminale A — 2025-2026                            │
-├──────────────┬──────────┬──────────┬──────────┬──────────┬──────────────┤
-│  Horaire     │ Lundi    │ Mardi    │ Mercredi │ Jeudi    │ Vendredi     │
-├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────────┤
-│  07h00-08h00 │ Maths    │ Français │ Anglais  │ SVT      │ Hist-Géo     │
-│              │ M. OUÉ. │ M. TRA.  │ M. KAB.  │ Mme SAW. │ M. KONÉ      │
-│              │ Salle 4  │ Salle 2  │ Salle 1  │ Salle 5  │ Salle 3      │
-├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────────┤
-│  08h00-09h00 │ Phys-Ch. │ Maths    │ Français │ Anglais  │ Maths        │
-│              │ M. BAR.  │ M. OUÉ. │ M. TRA.  │ M. KAB.  │ M. OUÉ.     │
-│              │ Labo     │ Salle 4  │ Salle 2  │ Salle 1  │ Salle 4      │
-├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────────┤
-│  …           │ …        │ …        │ …        │ …        │ …            │
-└──────────────┴──────────┴──────────┴──────────┴──────────┴──────────────┘
-│  [ ✏️ Modifier ]   [ 🖨 Imprimer PDF ]                                   │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+**Interface :**
+- Grille à 6 colonnes (lundi au samedi)
+- Cards jours avec header vert subtil
+- Séances affichées en lignes propres (heure · matière · salle · prof)
+- Design premium et épuré
 
 #### Ajouter une Séance
 
-1. Clique sur **+ Ajouter une séance**
+1. Remplis le formulaire "Ajouter une séance" en bas de page :
+   - **Matière / Enseignant** : sélection parmi les enseignements configurés
+   - **Jour** : lundi au samedi
+   - **Heure début / fin** : créneau horaire
+   - **Salle** : optionnel
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  ➕ Nouvelle Séance de Cours                                  │
-├──────────────────────────────────────────────────────────────┤
-│  Classe *         : [▼ Terminale A____________________]      │
-│  Jour *           : [▼ Lundi__________________________]      │
-│  Heure début *    : [07:00]                                   │
-│  Heure fin *      : [08:00]                                   │
-│  Matière *        : [▼ Mathématiques__________________]      │
-│  Enseignant       : [▼ OUÉDRAOGO Boureima_____________]      │
-│  Salle            : [Salle 4________________________]        │
-│                                                              │
-│          [ Annuler ]    [ ✅ Enregistrer ]                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-2. Remplis les informations et clique sur **Enregistrer**
+2. Clique sur **Ajouter** pour enregistrer
 
 #### Supprimer une Séance
 
-1. Dans la grille, clique sur la séance à supprimer
-2. Clique sur **Supprimer**
-3. La séance est retirée de l'emploi du temps
+1. Survole la séance dans la grille
+2. Clique sur le bouton **×** qui apparaît
+3. Confirme la suppression
 
 #### Imprimer l'Emploi du Temps en PDF
 
@@ -4704,7 +3556,8 @@ Cette section recense honnêtement les fonctionnalités **non encore disponibles
 | **Design System v4 / Aura** (interface premium) | ✅ Fonctionnel | Version actuelle |
 | **Conformité hors ligne complète** (polices locales) | ✅ Fonctionnel | Version actuelle |
 | **Tests automatisés** (coverage ≥ 80 %) | ✅ Fonctionnel | Version actuelle |
-| **Emploi du temps** (interface complète) | ✅ Fonctionnel | Version actuelle |
+| **Emploi du temps par classe** (interface complète) | ✅ Fonctionnel | Version actuelle |
+| **Emploi du temps par professeur** (grille + PDF) | ✅ Fonctionnel | Version actuelle |
 | **Échéanciers** (création, modification, suppression) | ✅ Fonctionnel | Version actuelle |
 | **Transfert inter-établissements** | 🔧 En développement | Version 4.2 |
 | **Procès-verbal du conseil de classe PDF** | ✅ Fonctionnel | Version actuelle |
@@ -4820,7 +3673,43 @@ En complément des exports PDF existants, les exports Excel permettront de :
 
 > **Disponible dans :** Version 4.0
 
-L'interface de gestion des licences (section 13) est actuellement en cours de finalisation. Les fonctionnalités d'activation, de renouvellement et de suivi des alertes seront pleinement opérationnelles dans la version 4.0.
+L'interface de gestion des licences comprend les pages suivantes, toutes accessibles au super-administrateur :
+
+| Page | URL | Description |
+|------|-----|-------------|
+| Registre global | `/licences/` | Liste de toutes les licences avec statut, expiration et actions |
+| Mon abonnement | `/licences/statut/` | Vue établissement : barre de progression, modules inclus |
+| Nouvelle licence | `/licences/nouvelle/` | Formulaire de création (établissement, type, expiration, notes) |
+| Modifier une licence | `/licences/<id>/modifier/` | Modification du type et de la date d'expiration |
+| Extension de licence | `/licences/<id>/renouveler/` | Formulaire de prolongation (3 mois / 1 an / 2 ans) |
+| Outils cryptographiques | `/licences/outils/` | Génération HMAC-SHA256 et audit d'intégrité |
+| Renouvellement | `/licences/renouveler/` | Page standalone pour initier un renouvellement |
+
+#### Créer une Nouvelle Licence (`/licences/nouvelle/`)
+
+1. Clique sur **Nouvelle Licence** depuis le registre global
+2. Sélectionne l'**établissement bénéficiaire** (un seul par établissement)
+3. Choisis le **type de licence** : Standard, Premium ou Réseau
+4. Fixe la **date d'expiration** (doit être dans le futur)
+5. Renseigne des **notes internes** facultatives (usage de l'éditeur)
+6. Clique sur **Créer la licence** — la clé et la signature HMAC sont générées automatiquement
+
+> La licence est créée avec le statut **En attente d'activation**. Il faut ensuite l'activer depuis le registre.
+
+#### Outils Cryptographiques (`/licences/outils/`)
+
+Réservé au super-administrateur, cet espace offre deux fonctions :
+
+**Générateur de Signature**
+1. Sélectionne le plan (Standard, Premium, Réseau…)
+2. Sélectionne l'établissement bénéficiaire
+3. Clique sur **Sceller l'Accès** — la clé licence et sa signature HMAC-SHA256 sont affichées
+4. Clique sur **Copier** pour copier la clé dans le presse-papiers
+
+**Audit d'Intégrité**
+1. Saisis la clé à vérifier (format `YELEN-XXXX-XXXX`)
+2. Indique le type de licence déclaré et la date d'échéance
+3. Clique sur **Exécuter l'Analyse** — le système recalcule la signature et indique **Certification Validée** ou **Échec d'Audit**
 
 ---
 
@@ -5268,75 +4157,1360 @@ Pour que les parents reçoivent les notifications d'absence :
 
 ---
 
-### 18.7 Réunion de Parents
+### 18.7 Réunion de Parents (`/reunion-parents/`)
 
-**À quoi ça sert :** Affiche les informations pratiques relatives à la prochaine réunion de parents organisée par l'établissement (date, heure, lieu, ordre du jour). Cette page est accessible aux enseignants et au personnel pour se rappeler les détails.
+**À quoi ça sert :** Permet d'envoyer des convocations SMS en masse aux parents d'élèves pour une réunion. Le formulaire permet de saisir la date, l'heure, le lieu et l'objet de la réunion, puis de choisir les destinataires (tous les parents ou une classe spécifique). Le message SMS est généré à partir du modèle configuré dans Paramètres → Modèles de messages.
 
-**Qui peut accéder :** Tous les profils connectés
+**Qui peut accéder :** Directeur, Proviseur, Censeur, Secrétaire
 
-**Accès :** `Menu principal → Réunion de parents` ou via le tableau de bord
+**Accès :** `Menu principal → Communication → Réunion de parents`
+
+#### Interface
+
+La page utilise une disposition **deux colonnes** :
+- **Colonne principale (gauche)** : formulaire de convocation
+- **Sidebar (droite)** : aide contextuelle avec description de chaque champ
 
 ```
-╔══════════════════════════════════════════════════════════════╗
-║  👨‍👩‍👧 Réunion de Parents — Lycée Zinda                        ║
-╠══════════════════════════════════════════════════════════════╣
-║                                                              ║
-║  📅 Date    : Vendredi 18 avril 2026                         ║
-║  🕒 Heure   : 15h00 – 18h00                                  ║
-║  📍 Lieu    : Salle de conférences (bâtiment A)               ║
-║                                                              ║
-║  Ordre du jour :                                             ║
-║  1. Résultats du 2ème trimestre                              ║
-║  2. Comportement et assiduité                                ║
-║  3. Préparation des examens de fin d'année                   ║
-║  4. Questions diverses                                       ║
-║                                                              ║
-║  Contact : secrétariat@lyceezinda.bf — +226 25 30 10 10      ║
-╚══════════════════════════════════════════════════════════════╝
+┌─────────────────────────────────────────────┐  ┌──────────────────┐
+│  ✈ Envoyer les convocations SMS              │  │  Aide            │
+├─────────────────────────────────────────────┤  ├──────────────────┤
+│  Date de la réunion *   │  Heure *           │  │  Date & Heure    │
+│  [2026-05-15]           │  [15:00]           │  │  Indiquez la     │
+├─────────────────────────┴────────────────────┤  │  date exacte.    │
+│  Lieu *                 │  Objet *           │  ├──────────────────┤
+│  [Salle de conférence]  │  [Résultats T2]    │  │  Lieu            │
+├─────────────────────────┴────────────────────┤  │  Inclus tel quel │
+│  Destinataires                               │  │  dans le SMS.    │
+│  [▼ Tous les parents / Classe Tle A / …]     │  ├──────────────────┤
+│  SMS envoyés aux numéros des parents/tuteurs │  │  Modèle SMS      │
+├──────────────────────────────────────────────┤  │  → Paramètres    │
+│              [ ✈ Envoyer les convocations ]  │  └──────────────────┘
+└─────────────────────────────────────────────┘
 ```
 
-> **Note :** Cette page est gérée par l'administrateur de l'établissement. Pour mettre à jour les informations de réunion, contacte le Directeur ou le Secrétariat.
+#### Champs du formulaire
+
+| Champ | Type | Description |
+| --- | --- | --- |
+| **Date de la réunion** | Date | Date au format `AAAA-MM-JJ`, obligatoire |
+| **Heure** | Heure | Heure au format `HH:MM`, obligatoire |
+| **Lieu** | Texte | Salle ou espace — reproduit tel quel dans le SMS |
+| **Objet** | Texte | Thème principal de la réunion |
+| **Destinataires** | Sélecteur | « Tous les parents » ou une classe de l'année en cours |
+
+#### Personnaliser le modèle SMS
+
+Le texte du SMS envoyé est défini dans **Paramètres → Modèles de messages** (type : *Réunion parents d'élèves*). Les variables `{date}`, `{heure}`, `{lieu}` et `{objet}` sont remplacées automatiquement à l'envoi.
+
+**Cas concret :** La Secrétaire du Lycée Zinda organise une réunion de bilan du 2ème trimestre. Elle saisit la date (15 mai 2026), l'heure (15h00), le lieu (Salle de conférences) et l'objet (Résultats du 2ème trimestre), sélectionne « Tous les parents » et clique sur **Envoyer les convocations**. Chaque parent dont le numéro est enregistré reçoit un SMS de convocation personnalisé.
 
 ---
 
-### 18.8 Journal des Modifications
+### 18.8 Navigation Moderne — Sidebar v5.0
+
+**À quoi ça sert :** La nouvelle sidebar moderne offre une expérience utilisateur premium avec une navigation simplifiée, une recherche instantanée et des menus accordéon pour regrouper les fonctionnalités par thématique (Scolarité, Pédagogie, Gestion, Système).
+
+**Nouveautés de la v5.0 :**
+- **Recherche Instantanée** : Filtre les menus en temps réel au fur et à mesure de la saisie.
+- **Menus Accordéon Premium** : Organisation élégante avec animations fluides, indicateurs lumineux et effets de survol sophistiqués.
+  - Animation d'ouverture avec transition `scaleY` et `translateY`
+  - Effet de barre lumineuse sur les items actifs
+  - Points lumineux animés sur les items de sous-menu
+  - Stagger animation pour un effet d'entrée élégant
+  - Indicateur de rotation du chevron avec easing cubic-bezier
+- **Design Premium** : Utilisation de la police interface **Outfit**, icônes SVG raffinées et effets de survol dynamiques.
+- **Feedback Actuel** : Le menu s'ouvre automatiquement sur la section active.
+
+```
+╔══════════════════════════════════╗
+║  🎓 YELEN SCHOOL                 ║
+║  Burkina Faso · v4.2             ║
+╠══════════════════════════════════╣
+║  🔍 [ Rechercher...            ] ║
+╠══════════════════════════════════╣
+║  🏠 Tableau de bord              ║
+║                                  ║
+║  SCOLARITÉ                       ║
+║  > 👤 Élèves & Inscriptions      ║
+║    - Liste des élèves            ║
+║    - Nouvelle inscription        ║
+║                                  ║
+║  PÉDAGOGIE                       ║
+║  📄 Notes & Bulletins            ║
+║  > 🛡️ Vie Scolaire               ║
+║                                  ║
+║  GESTION                         ║
+║  > 💼 Finances                   ║
+║    - Paiements / Scolarité       ║
+║    - Échéanciers                 ║
+╚══════════════════════════════════╝
+```
+
+---
+
+### 18.9 Journal des Modifications
 
 > **À qui s'adresse cette section :** Administrateurs techniques et développeurs souhaitant suivre l'évolution du code.
 
 ---
 
-#### Version 4.1 — 07 Avril 2026
+#### Version 4.2 — 14 Avril 2026
 
-**Stabilité serveur — WeasyPrint**
+**Refonte Navigation & Design System**
+- **Sidebar v5.0** : Implémentation d'une sidebar moderne (HTML5/CSS3) avec recherche dynamique et accordéons.
+- **Sidebar Accordéons Premium** : Refonte complète des menus déroulants avec :
+  - Animation d'ouverture fluide avec `scaleY` et `translateY`
+  - Barre lumineuse verticale sur les items actifs avec effet `box-shadow` vert
+  - Points lumineux animés sur les items de sous-menu avec `box-shadow` pulsant
+  - Stagger animation (décalage progressif) sur l'apparition des items
+  - Chevrons avec rotation élégante et easing `cubic-bezier`
+  - Hover effect avec gradient overlay et scale de l'icône
+- **Icônes modernisées** : Remplacement des icônes par des designs SVG Lucide-style plus fins (`stroke-width="1.5"`).
+- **Page Suivi des Appels Premium** : Refonte complète avec :
+  - Header avec icône梯形 et stats cards
+  - Timeline élégante avec regroupement par date
+  - Cards de session avec badge de statut
+  - Tableaux modernes avec indicateurs colorés
+  - États vides élégants
+- **Police Outfit** : Adoption de la police *Outfit* comme standard d'interface (100% offline).
+- **Design Premium** : Ajustement des contrastes (fond `#0A1628`), suppression des bordures rigides au profit de micro-shadows et glassmorphism.
+- **Optimisation JS** : Scripts de navigation natifs (zéro dépendance) avec protection contre la double-soumission et auto-hide des messages.
 
-Toutes les vues générant des PDF (`finances`, `viescolaire`, `examens`, `pedagogie`) sont désormais protégées contre l'absence de WeasyPrint. Si la bibliothèque n'est pas installée sur le serveur, un message d'erreur clair est affiché à l'utilisateur au lieu d'un crash au démarrage. Les imports `try/except ImportError` remplacent les anciens `except Exception` trop larges sur les gardes d'import.
-
-**Performance — Requêtes N+1 corrigées**
-
-| Vue | Avant | Après |
-|-----|-------|-------|
-| `bulletins_index` | 2 requêtes SQL × N trimestres | 1 requête `annotate(total, publies)` |
-| `examens/session_detail` | `salle.placements.count()` × N salles | `Prefetch` avec `annotate(nb_places_prises)` |
-
-**Qualité du code**
-
-- Imports dupliqués supprimés : `redirect` dans `core/views.py` (3 occurrences inline), `csv` dans `presences/views.py`
-- Vues POST brut remplacées par des ModelForms : `EtablissementForm` (`etablissements`), `TypeDocumentForm` + `SignataireForm` (`parametres`)
-- Exceptions trop larges narrowées : `ImportError` pour les gardes WeasyPrint, `ValueError` pour `int(capacite_max)`, `IntegrityError` pour les contraintes unique sur les séances
-- Fichiers orphelins supprimés : répertoire `finance/` (distinct de l'app `finances`) et scripts `debug_appreciation.py`, `debug_sig.py`, `debug_views.py`
-
-**Nouveaux fichiers**
-
-| Fichier | Contenu |
-|---------|---------|
-| `etablissements/forms.py` | `EtablissementForm` (ModelForm avec `MultipleChoiceField` pour les cycles) |
-| `parametres/forms.py` | `TypeDocumentForm`, `SignataireForm`, et toutes les ModelForms des paramètres |
+**Stabilité & Correction**
+- Restauration des fermetures de tags HTML dans `base.html`.
+- Correction de la logique de recherche sidebar pour gérer les remontées de parents d'accordéons.
 
 ---
 
-*Guide d'utilisation YELEN SCHOOL — Version 4.1 (Guide v2.4) — 07 Avril 2026*
+---
+
+## 20. Portail Parent PWA
+
+### 20.1 Installer l'application sur Android
+
+**À quoi ça sert :** Le portail parent de YELEN SCHOOL est une **Progressive Web App (PWA)** — une application web installable sur n'importe quel smartphone Android, sans passer par le Play Store. Une fois installée, elle fonctionne partiellement **hors ligne** et apparaît sur l'écran d'accueil comme une vraie application.
+
+**Qui peut accéder :** Uniquement les comptes ayant le rôle **PARENT** et au moins un élève associé.
+
+**Accès web :** `/portail/parent/`
+
+**Étapes d'installation (Android) :**
+
+1. Ouvrir Chrome sur le téléphone Android
+2. Naviguer vers l'adresse du portail de l'établissement puis `/portail/parent/`
+3. Se connecter avec les identifiants parent
+4. Une bannière **"Installer l'application"** apparaît automatiquement
+5. Appuyer sur **Installer** — Chrome demande confirmation
+6. L'icône **YELEN Parent** apparaît sur l'écran d'accueil
+
+**Fonctionnalités du portail parent :**
+
+- **Moyenne** du dernier trimestre pour chaque enfant (verte si ≥ 10, rouge si < 10)
+- **Absences** des 30 derniers jours
+- **Frais payés** (total des paiements enregistrés pour l'année)
+- **Devoirs à rendre** — liste des 5 prochains devoirs issus du Cahier de textes, avec la date limite
+- **Mode hors ligne** — les données du dernier chargement restent accessibles sans connexion (bandeau rouge en cas de perte de réseau)
+
+```
+┌────────────────────────────────────────────────────────┐
+│  YELEN SCHOOL                    Fatou Traoré · 25-26  │
+├────────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────┐      │
+│  │  ┌───┐  KONÉ Kader                           │      │
+│  │  │ K │  Terminale A · Secondaire             │      │
+│  │  └───┘                                       │      │
+│  │  ┌──────────┬──────────┬──────────┐          │      │
+│  │  │  13.45   │    2     │  75 000  │          │      │
+│  │  │ Moyenne  │ Absences │ FCFA     │          │      │
+│  │  └──────────┴──────────┴──────────┘          │      │
+│  │  📓 DEVOIRS À VENIR                          │      │
+│  │  ┌────┐ Mathématiques                        │      │
+│  │  │ 06 │ Exercices p.42                       │      │
+│  │  └────┘                                      │      │
+│  │  ┌────┐ Français                             │      │
+│  │  │ 08 │ Dissertation                         │      │
+│  │  └────┘                                      │      │
+│  └──────────────────────────────────────────────┘      │
+│                                                        │
+│  🏠 Accueil   🔔 Notifs   📄 Bulletins   🚪 Quitter    │
+└────────────────────────────────────────────────────────┘
+```
+
+**Mode hors ligne :**
+
+Le Service Worker met en cache automatiquement le portail et les ressources statiques (CSS, JS). En cas de coupure réseau (fréquente dans les zones péri-urbaines du Burkina Faso), le parent voit les dernières données chargées avec un bandeau d'information.
+
+**Créer un compte parent :**
+
+URL : `Administration → Utilisateurs → Nouveau compte parent`
+
+Le formulaire est organisé en quatre blocs :
+
+| Bloc | Champs |
+| --- | --- |
+| Identité | Nom, Prénom |
+| Contact | Email (identifiant de connexion), Téléphone |
+| Mot de passe | Mot de passe + Confirmation |
+| Élèves liés | Recherche + sélection multiple des enfants de ce parent |
+
+**Comportement en cas d'erreur de validation :**
+
+- Une bannière rouge s'affiche en haut du formulaire indiquant qu'il faut corriger les erreurs.
+- Chaque champ invalide affiche son message d'erreur en rouge sous le champ.
+- Les champs mot de passe sont vidés pour des raisons de sécurité — il faut les ressaisir.
+- Erreurs fréquentes : email déjà utilisé, mots de passe non identiques, mot de passe trop simple.
+
+**Élèves liés — Recherche intégrée :**
+
+La card "Élèves liés" dispose d'un champ de recherche instantané permettant de retrouver rapidement un élève parmi tous les inscrits de l'année scolaire en cours. Chaque item affiche :
+
+- Le **nom complet** de l'élève
+- La **classe** et le **matricule** (en secondaire, en police monospace)
+
+La recherche fonctionne simultanément sur :
+
+- Le **nom** (ex. : `Ouedraogo`)
+- La **classe** (ex. : `6ème A`, `Terminale`)
+- Le **matricule** (ex. : `BF-2025-`)
+
+Le compteur sous le champ indique en temps réel le nombre d'élèves visibles (ex. : *3 élèves trouvés sur 47*). Les cases déjà cochées restent cochées même lorsque leur item est masqué par le filtre — elles sont incluses dans le POST à la soumission du formulaire.
+
+Le parent reçoit les bulletins, absences et notifications pour chaque élève coché. Cette sélection est optionnelle à la création et peut être modifiée ultérieurement.
+
+> **Note :** Le portail parent dispose de son propre design mobile-first (sans sidebar d'administration), optimisé pour les petits écrans Android.
+
+### 20.2 Design system — classes pp-*
+
+Le portail parent utilise exclusivement des classes préfixées `pp-` définies dans `yelen.css`. Aucun style inline ni bloc `<style>` n'est présent dans le template.
+
+| Zone | Classe principale |
+|------|-------------------|
+| Conteneur app | `pp-app` |
+| Topbar sticky | `pp-topbar`, `pp-topbar-logo`, `pp-user-name`, `pp-user-etab` |
+| Zone de contenu | `pp-content` |
+| Bannières PWA | `pp-banner`, `pp-banner--install`, `pp-banner--offline` |
+| Carte enfant | `pp-card`, `pp-card-header`, `pp-avatar-wrap`, `pp-avatar`, `pp-status` |
+| Infos enfant | `pp-info`, `pp-nom`, `pp-classe`, `pp-classe--danger` |
+| Grille stats | `pp-stats`, `pp-stat`, `pp-glow--primary/danger/gold` |
+| Valeurs stats | `pp-val`, `pp-val--success/danger/warning/empty/sm` |
+| Libellés stats | `pp-stat-label` |
+| Badges | `pp-badges` + classes design system `.badge .badge-success/.badge-warning/.badge-neutral` |
+| Devoirs | `pp-section`, `pp-devoir`, `pp-devoir-date`, `pp-devoir-day`, `pp-devoir-month` |
+| Navigation basse | `pp-nav`, `pp-nav-item`, `pp-nav-icon`, `pp-nav-item--active`, `pp-nav-item--danger` |
+| État vide | `pp-empty`, `pp-empty-icon` (SVG), `pp-empty-title`, `pp-empty-text` |
+| Footer | `pp-footer`, `pp-footer-logo`, `pp-footer-tagline` |
+| Masquage | `pp-hidden` (remplace `style="display:none"`) |
+
+### 20.3 Notifications parent
+
+**URL :** `/portail/parent/notifications/`
+
+Page PWA dédiée accessible via l'onglet "Notifs" de la navigation basse.
+
+**Comportement :**
+- Affiche les 50 dernières notifications du parent connecté (bulletins, absences, sanctions, général)
+- Notifications non lues : point vert + fond teinté vert
+- Ouverture de la page → toutes les notifications passent automatiquement à "lu"
+- Bouton "Tout lire" en topbar si des non-lues existent
+- État vide avec SVG si aucune notification
+
+**Types et icônes :**
+
+| Type | Icône | Couleur fond |
+|------|-------|--------------|
+| `BULLETIN` | Document | Vert |
+| `ABSENCE` | Cercle alerte | Rouge |
+| `SANCTION` | Triangle | Or |
+| `GENERAL` | Info | Gris |
+
+**Conformité design system v4 :**
+- `stroke-width="1.5"` sur tous les SVG
+- Icône état vide : SVG maison (plus d'emoji)
+- Bouton d'installation : `.btn-primary.btn-sm` (classes design system)
+- Variable `--color-primary-border` remplacée par `rgba(0,168,107,0.25)` directement
+- Animations via `.animate-fade-up` (keyframe `fadeUp` partagée dans `yelen.css`)
+
+### 20.4 Bulletins parent
+
+**URL :** `/portail/parent/bulletins/`
+
+Page PWA dédiée accessible via l'onglet "Bulletins" de la navigation basse.
+
+**Comportement :**
+- Affiche les bulletins publiés (`est_publie=True`) pour chaque enfant inscrit cette année
+- Groupés par enfant, triés du trimestre le plus récent au plus ancien
+- Pour chaque bulletin : moyenne /20 (verte ≥ 10, rouge < 10), rang, absences non justifiées, appréciation du conseil de classe
+- Badge statut : **Signé** (vert), **À signer** (or, token valide), **Publié** (neutre)
+- Bouton "Consulter & Signer" redirige vers la page publique de signature (`/bulletins/parent/<token>/`)
+- État vide avec SVG si aucun bulletin n'est encore publié
+
+---
+
+## 21. Signature Électronique des Bulletins
+
+### 21.1 Vue d'ensemble
+
+**À quoi ça sert :** À la publication de chaque bulletin trimestriel, un lien sécurisé à usage unique (valable 15 jours) est envoyé par SMS au parent. Le parent consulte le bulletin sur son téléphone et appose une signature numérique horodatée. L'école dispose ainsi d'une preuve légale de réception, sans cahier de correspondance papier ni retour physique.
+
+**Qui peut signer :** Tout parent ayant reçu le SMS de publication (pas de compte requis).
+
+**Qui voit les signatures :** Directeur, Proviseur, Secrétaire dans le tableau des bulletins de classe.
+
+---
+
+### 21.2 Workflow complet
+
+**Côté établissement :**
+
+1. Le secrétaire ou le directeur publie un bulletin depuis `Bulletins → [Classe] → [Trimestre]`
+2. En cliquant **Publier**, le système génère automatiquement un token UUID unique
+3. Un SMS est envoyé au numéro du parent avec le lien : `https://[école]/bulletins/parent/[token]/`
+4. Le lien est valable **15 jours** à compter de la publication
+5. Dans le tableau de classe, chaque bulletin affiche son statut de signature :
+   - `Publié` + `✓ Signé` — le parent a accusé réception
+   - `Publié` + `Non signé` — le bulletin est publié mais pas encore signé
+
+**Côté parent :**
+
+1. Le parent reçoit un SMS du type :
+   *"Bonjour, le bulletin de Kader KONÉ (1er Trimestre) est disponible. Consultez et signez : https://école/bulletins/parent/abc123..."*
+2. Il ouvre le lien sur son téléphone (aucune installation requise)
+3. Il consulte : moyenne, rang, absences, appréciation du conseil
+4. Il saisit son nom (optionnel) et clique **Lu et signé**
+5. La page affiche immédiatement la confirmation horodatée
+
+---
+
+### 21.3 Page de signature parent
+
+La page est publique (sans compte), mobile-first, en langue française. Elle affiche :
+
+```
+┌──────────────────────────────────────────────────┐
+│  YELEN SCHOOL                                    │
+│                                                  │
+│  ┌──────────────────────────────────────────┐    │
+│  │  K  KONÉ Kader · Terminale A · 1er Trim  │    │
+│  │  ┌────────┬────────┬────────┐             │    │
+│  │  │ 13.45  │   8e   │  4 h   │             │    │
+│  │  │ Moy/20 │  Rang  │  Abs.  │             │    │
+│  │  └────────┴────────┴────────┘             │    │
+│  └──────────────────────────────────────────┘    │
+│                                                  │
+│  Appréciation du conseil :                       │
+│  "Bon trimestre. Peut mieux faire en physique."  │
+│                                                  │
+│  ┌──────────────────────────────────────────┐    │
+│  │  Accusé de réception                     │    │
+│  │  Votre nom (optionnel) : [____________]  │    │
+│  │  [ ✓ Lu et signé                      ]  │    │
+│  └──────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────┘
+```
+
+Après signature, la page affiche :
+
+```
+  ✅ Bulletin signé
+  Par Fatou Traoré
+  le 06/05/2026 à 09h14
+```
+
+---
+
+### 21.4 Cas particuliers
+
+| Situation | Comportement |
+|---|---|
+| Parent clique après 15 jours | Message "Lien expiré — contactez l'administration" |
+| Parent signe deux fois | La deuxième tentative est ignorée (déjà signé) |
+| Bulletin dépublié après signature | La signature est conservée dans la base de données |
+| SMS désactivé | Le token est quand même généré — l'administration peut copier le lien manuellement |
+
+> **Configurer le numéro du parent :** Le SMS est envoyé au champ `telephone_parent` de la fiche élève, ou à défaut `tuteur_telephone` ou `telephone_urgence`. Vérifier que ces champs sont renseignés dans `Élèves → [Élève] → Contacts`.
+
+---
+
+## 22. Prédiction de Réussite aux Examens Officiels
+
+Ce module prédit la probabilité qu'un élève réussisse son examen officiel (BEPC, BAC ou CEP) en s'appuyant sur ses moyennes trimestrielles et son assiduité.
+
+### 22.1 Accès
+
+`Pédagogie → Prédictions examens`
+
+Seules les classes des cycles **Primaire**, **Post-primaire** et **Secondaire** apparaissent (cycles avec examen officiel). Les classes de Préscolaire sont exclues.
+
+### 22.2 Algorithme de calcul
+
+```
+Score final = Score de base ± Bonus tendance ± Malus assiduité
+```
+
+| Composante | Calcul |
+|---|---|
+| **Score de base** | `(Moyenne générale / 20) × 100` |
+| **Bonus tendance** | +10 pts si progression > +2 pts entre les 2 derniers trimestres |
+| | +5 pts si progression > +0,5 pt |
+| | −5 pts si régression > −0,5 pt |
+| | −10 pts si régression > −2 pts |
+| **Malus assiduité** | 0 pt si absences NJ ≤ 10 h |
+| | −5 pts si 10 < absences NJ ≤ 20 h |
+| | −10 pts si 20 < absences NJ ≤ 30 h |
+| | −15 pts si absences NJ > 30 h |
+
+Le score est borné entre **0 et 100**.
+
+### 22.3 Pronostics
+
+| Pronostic | Seuil | Couleur |
+| --- | --- | --- |
+| **Bon** | ≥ 70 % | Vert `#00A86B` |
+| **Moyen** | 50 – 69 % | Jaune `#F5A623` |
+| **Risqué** | 30 – 49 % | Orange `#E67E22` |
+| **Critique** | < 30 % | Rouge `#DC3545` |
+
+### 22.4 Workflow
+
+1. Aller dans **Pédagogie → Prédictions examens**
+2. Cliquer sur une classe
+3. Cliquer sur **Calculer** (ou **Recalculer** si déjà fait)
+4. Le tableau affiche tous les élèves classés par probabilité décroissante, avec :
+   - Moyenne actuelle
+   - Tendance inter-trimestrielle
+   - Nombre d'absences non justifiées
+   - Score et badge de pronostic
+5. Télécharger le **Rapport PDF** pour impression ou archivage
+
+### 22.5 Examen cible détecté automatiquement
+
+| Cycle | Examen |
+|---|---|
+| Secondaire | BAC |
+| Post-primaire | BEPC |
+| Primaire | CEP |
+| Autre | AUTRE |
+
+### 22.6 Widget sur la fiche de suivi élève
+
+Si une prédiction a été calculée, un widget apparaît automatiquement sur la fiche de suivi de l'élève (`Vie Scolaire → [Élève]`) affichant :
+
+- Le score en grand (coloré selon le pronostic)
+- La barre de progression
+- La moyenne actuelle, la tendance, les absences NJ
+- La date du dernier calcul
+
+### 22.7 Notes importantes
+
+- Au minimum les moyennes du **1er trimestre** doivent être saisies pour lancer le calcul
+- Les résultats sont **indicatifs** — ils ne se substituent pas au jugement du conseil de classe
+- Recalculer après chaque saisie de nouvelles moyennes pour avoir les données à jour
+
+---
+
+## 23. Bulletins de Compétences (Préscolaire / Primaire)
+
+Ce module remplace les notes chiffrées sur 20 par une évaluation par compétences pour les cycles Préscolaire et Primaire, plus adaptée au développement du jeune enfant.
+
+### 23.1 Accès
+
+`Pédagogie → Bulletins compétences`
+
+Seuls les cycles **Préscolaire** (code PRES) et **Primaire** (code PRIM) sont affichés.
+
+### 23.2 Étape 1 — Configurer le référentiel
+
+Avant toute saisie, il faut définir les compétences à évaluer :
+
+1. Cliquer sur le cycle (Préscolaire ou Primaire)
+2. Cliquer sur **Référentiel**
+3. Ajouter les compétences une par une :
+   - **Libellé** (obligatoire) : ex. "Reconnaît et écrit les chiffres de 0 à 9"
+   - **Matière** (facultative) : associer la compétence à une matière du cycle
+   - **Ordre** : numéro d'ordre pour organiser l'affichage
+
+Exemples de compétences Primaire :
+
+- `[MATH]` Compte jusqu'à 100 sans erreur
+- `[MATH]` Effectue des additions simples sans retenue
+- `[LANG]` Lit un texte court à voix haute
+- `[LANG]` Écrit son prénom et son nom correctement
+
+### 23.3 Étape 2 — Saisir les évaluations
+
+1. Sur la page d'accueil, cliquer sur le nom de la **classe** sous le cycle
+2. Sélectionner le **trimestre**
+3. La grille affiche : élèves en lignes × compétences en colonnes
+4. Pour chaque cellule, sélectionner le niveau :
+   - **✅ Acquis** — L'élève maîtrise la compétence
+   - **🔄 En cours d'acquisition** — Des progrès visibles mais pas encore maîtrisé
+   - **❌ Non acquis** — Un accompagnement est nécessaire
+   - **— Non évalué** (valeur par défaut)
+5. Cliquer **Enregistrer les évaluations**
+
+La grille mémorise les niveaux déjà saisis — revenir modifier ne repart pas de zéro.
+
+### 23.4 Étape 3 — Générer le bulletin PDF
+
+Depuis la page de saisie, section **Bulletins individuels PDF** :
+
+- Cliquer sur **PDF** en face de l'élève
+- Le bulletin s'ouvre dans un nouvel onglet avec :
+  - En-tête établissement
+  - Identité de l'élève (nom, matricule, classe, trimestre)
+  - Compétences regroupées par matière avec leur niveau
+  - Zone de signatures (enseignant · parent · cachet)
+
+### 23.5 Niveaux d'acquisition
+
+| Niveau | Symbole | Signification |
+| --- | --- | --- |
+| Acquis | ✅ | Compétence maîtrisée |
+| En cours d'acquisition | 🔄 | Progrès en cours |
+| Non acquis | ❌ | Accompagnement nécessaire |
+| Non évalué | — | Pas encore observé |
+
+### 23.6 Compatibilité avec le système de notes
+
+Ce module est une **extension** du système existant — il ne remplace pas les notes chiffrées. Pour les classes Primaire qui utilisent à la fois des notes ET des compétences, les deux évaluations coexistent indépendamment.
+
+---
+
+## 24. Bourses et Aides Financières
+
+### 24.1 Accès au formulaire d'attribution
+
+Depuis la **Situation financière de l'élève** (`/finances/situation/<id>/`), cliquer sur le bouton **Attribuer une bourse / aide**.
+
+URL : `/finances/bourses/eleve/<inscription_id>/attribuer/`
+
+### 24.2 Champs du formulaire
+
+Le formulaire est présenté en **deux colonnes** côte à côte (une seule colonne sur mobile) :
+
+| Colonne gauche | Colonne droite |
+| --- | --- |
+| Montant accordé (FCFA) | Rubrique concernée |
+| Date d'attribution | Date d'expiration |
+| — | Référence / N° décision |
+
+Le **Type de bourse** et l'**Observation** occupent toute la largeur (pleine colonne).
+
+### 24.3 Calcul automatique du montant
+
+Lors de la sélection d'un type de bourse, le montant est calculé automatiquement :
+
+- Type **pourcentage** : `total_du × valeur / 100`
+- Type **montant fixe** : valeur du type directement
+
+Le champ reste modifiable pour saisir un montant différent.
+
+### 24.5 Page Relances de paiement (`/finances/relances/`)
+
+Le formulaire est organisé en **une seule carte** avec deux sections et une disposition **2 colonnes** :
+
+**Section Relances PDF**
+
+| Colonne gauche | Colonne droite |
+| --- | --- |
+| Année scolaire | Classe |
+| Rubrique de paiement | Date limite de paiement |
+
+Un compteur HTMX (pleine largeur) affiche le nombre de redevables avant génération.
+
+**Section SMS** (séparée par un diviseur)
+
+| Colonne gauche | Colonne droite |
+| --- | --- |
+| Année | Classe |
+| Rubrique | Bouton « Envoyer SMS » |
+
+La note d'information utilise le composant `.alert.alert-warning` du design system.
+
+---
+
+### 24.4 Types de bourses
+
+Gérés dans `/finances/bourses/types/`. Le formulaire de création/modification (`/finances/types-bourses/nouveau/`) est organisé en **3 blocs** avec disposition 2 colonnes :
+
+**Bloc Identité**
+- Nom (2/3 de largeur) et Code court (1/3) côte à côte
+- Grille de 4 cartes cliquables pour choisir la Source
+- Description (pleine largeur)
+
+**Bloc Réduction**
+- 2 cartes pour choisir le type : Pourcentage ou Montant fixe
+- Valeur de réduction (col gauche) et Aperçu calculé dynamiquement (col droite)
+- Rubrique ciblée (pleine largeur)
+
+**Bloc Options**
+- Case à cocher « Type actif »
+
+Chaque type définit :
+
+- Source (État, établissement, ONG, partenaire)
+- Mode de réduction (pourcentage ou montant fixe)
+- Valeur de la réduction
+
+---
+
+---
+
+## 25. Assistant IA Conversationnel (Chatbot Directeur)
+
+Ce module répond à deux types de questions en langage naturel :
+
+1. **Questions sur les données** — interroge la base de données en temps réel (effectifs, moyennes, finances, absences, etc.)
+2. **Questions sur le fonctionnement** — répond aux questions « comment faire » grâce à la base de connaissances intégrée du guide d'utilisation
+
+**Aucune API externe, aucun abonnement.** Le moteur est entièrement local : il analyse les mots-clés et interroge directement la base de données Django ou la base de connaissances du guide.
+
+### 25.1 Accès
+
+`Administration → Assistant IA`
+
+Disponible pour les rôles : **Directeur**, **Censeur**, **Super Admin**.
+
+### 25.2 Prérequis
+
+Aucun. Le moteur fonctionne hors ligne, sans clé API, sans configuration supplémentaire.
+
+### 25.3 Exemples de questions sur les données
+
+| Question | Ce que l'assistant fait |
+| --- | --- |
+| "Quels élèves de Terminale A ont une moyenne en baisse ?" | Interroge les moyennes, compare les trimestres, liste les élèves en régression |
+| "Quel est le taux de recouvrement des frais de scolarité ?" | Calcule encaissé / attendu en FCFA et retourne le pourcentage |
+| "Combien d'élèves sont inscrits par classe cette année ?" | Requête les inscriptions de l'année courante, groupe par classe |
+| "Quels sont les 10 élèves les plus absents non justifiés ?" | Agrège les présences, filtre statut=ABSENT et justifié=False |
+| "Cherche l'élève Ouédraogo et donne sa situation" | Recherche par nom, retourne classe, moyenne, montant payé |
+| "Quels élèves ont une moyenne sous 8/20 ce trimestre ?" | Filtre MoyenneGenerale < 8 sur le trimestre le plus récent |
+
+### 25.3b Exemples de questions sur le fonctionnement
+
+| Question | Ce que l'assistant répond |
+| --- | --- |
+| "Comment générer un bulletin ?" | Étapes détaillées : accès, prérequis, individual vs batch, duplicata |
+| "Comment enregistrer un paiement ?" | Flux complet : sélection élève, cartes rubriques, bouton ⚡ Tout régler |
+| "Comment faire l'appel ?" | Interface appel, pills Présent/Absent/Retard, bouton QR, clôturer |
+| "Comment attribuer une bourse ?" | Créer un type de bourse puis attribuer à un élève |
+| "Comment configurer les signataires ?" | Paramètres → Signataires → types de documents et cycles |
+| "Comment utiliser le portail parent ?" | Créer compte parent, fonctionnalités, mode hors ligne |
+| "Comment envoyer des relances ?" | Sélection classe + rubrique + date → générer PDF ou envoyer SMS |
+| "Comment créer un compte utilisateur ?" | Formulaire, rôles disponibles, règles de sécurité |
+
+### 25.4 Base de connaissances intégrée
+
+La base de connaissances couvre **21 sujets** extraits du guide d'utilisation :
+
+| Sujet | Mots-clés déclencheurs |
+| --- | --- |
+| Connexion | connexion, login, mot de passe oublié |
+| Comptes utilisateurs | créer compte, rôle, directeur, enseignant |
+| Inscription élève | inscrire, inscription, matricule, admission |
+| Bulletins | bulletin, générer bulletin, bulletin pdf |
+| Saisie des notes | note, évaluation, devoir, composition |
+| Présences / Appel | appel, présence, absent, retard, qr code |
+| Justifications d'absences | justification, excuser, assiduité |
+| Paiements | paiement, encaisser, frais, rubrique |
+| Relances de paiement | relance, redevable, liste impayés |
+| Mobile Money | orange money, mobile money, *144# |
+| Bourses | bourse, aide financière, réduction frais |
+| Documents administratifs | certificat, attestation, relevé de notes |
+| Examens | examen, bac, bepc, cep, candidat |
+| Discipline | sanction, discipline, vie scolaire |
+| Personnel | personnel, enseignant, vacation, salaire |
+| SMS / Notifications | sms, notification, configuration sms |
+| Portail parent | portail parent, espace parent, pwa |
+| Signataires | signataire, signer, configurer signataire |
+| Année scolaire | année scolaire, trimestre, rubrique |
+| Statistiques | statistique, rapport, bilan, export csv |
+| FAQ | aide, problème, lenteur, sauvegarde |
+
+### 25.5 Interface
+
+- **État vide** : à l'ouverture, un écran d'accueil avec icône et message de bienvenue invite l'utilisateur à poser une question
+- **Chips de suggestion** : des exemples cliquables s'affichent sous la fenêtre de messages tant que la conversation est vide ; ils se masquent automatiquement après le premier échange
+- **Avatars différenciés** : l'assistant IA a un avatar vert, l'utilisateur a un avatar bleu — permettant de distinguer immédiatement les participants
+- **Envoi** : appuyer sur `Entrée` ou cliquer sur le bouton envoyer (Maj+Entrée pour un saut de ligne)
+- **Effacer** : le bouton "Effacer la conversation" réinitialise l'historique ; il n'apparaît que lorsque la conversation n'est pas vide
+- L'historique est conservé dans la session navigateur (perdu à la déconnexion)
+- Le design est entièrement conforme au Design System v4.2 : zéro CSS inline, toutes les classes proviennent de `yelen.css`
+
+### 25.6 Limites
+
+- Les données dépendent de ce qui est saisi dans le logiciel — si les moyennes ne sont pas calculées, l'assistant l'indique
+- L'assistant ne modifie **jamais** les données — il est en lecture seule
+- Les réponses du guide sont extraites de la base de connaissances statique — pour les détails très spécifiques, consulter directement le guide complet
+- Les réponses sont indicatives et doivent être vérifiées pour les décisions importantes
+
+---
+
+---
+
+## 26. Budget & Dépenses
+
+> **Accès menu :** `Finances → Dépenses / Trésorerie / Budget prévisionnel`
+
+Ce module comble le manque majeur du module Finances existant : la gestion des **sorties d'argent** de l'établissement, permettant de produire un véritable tableau de trésorerie Recettes vs Dépenses.
+
+---
+
+### 26.1 Catégories de Dépenses
+
+**Accès :** `Finances → Budget prévisionnel → Gérer les catégories`
+
+Avant d'enregistrer des dépenses, il faut créer les catégories (postes budgétaires) :
+
+| Champ | Description |
+| --- | --- |
+| **Nom** | Libellé de la catégorie (ex : Fournitures de bureau) |
+| **Code** | Identifiant court unique (ex : FOUR01) |
+| **Type** | Famille : Salaires, Fournitures, Maintenance, Utilities, Communication, Transport, Formation, Autre |
+| **Actif** | Masquer une catégorie sans la supprimer |
+
+Les types prédéfinis correspondent aux grands postes de dépense d'un établissement scolaire au Burkina Faso.
+
+---
+
+### 26.2 Enregistrer une Dépense
+
+**Accès :** `Finances → Dépenses → + Nouvelle dépense`
+
+Chaque dépense est créée en **brouillon** puis **validée** par un responsable autorisé (Directeur, Censeur, Comptable).
+
+| Champ | Description |
+| --- | --- |
+| **Libellé** | Description de la dépense |
+| **Catégorie** | Poste budgétaire concerné |
+| **Montant** | En FCFA |
+| **Date** | Date effective de la dépense |
+| **Mode de paiement** | Espèces, Virement, Mobile Money, Chèque |
+| **Bénéficiaire** | Fournisseur ou prestataire |
+| **Référence / N° pièce** | N° de facture ou reçu |
+
+**Workflow de validation :**
+
+1. Le secrétaire ou comptable crée la dépense → statut **Brouillon**
+2. Le directeur ou censeur clique sur **✓ Valider** → statut **Validée**
+3. Seules les dépenses **Validées** sont comptabilisées dans les rapports
+4. Une dépense validée peut être **Annulée** si nécessaire
+
+---
+
+### 26.3 Budget Prévisionnel
+
+**Accès :** `Finances → Budget prévisionnel`
+
+Pour chaque année scolaire, définissez le montant alloué à chaque catégorie de dépense.
+
+- Sélectionnez l'année scolaire en haut
+- Saisissez les montants par catégorie
+- Cliquez sur **Enregistrer le budget**
+
+Le total prévisionnel s'affiche en temps réel.
+
+---
+
+### 26.4 Tableau de Bord Trésorerie
+
+**Accès :** `Finances → Trésorerie`
+
+Vue consolidée pour le directeur :
+
+| Indicateur | Calcul |
+| --- | --- |
+| **Recettes encaissées** | Somme des paiements élèves de l'année |
+| **Dépenses validées** | Somme des dépenses au statut Validée |
+| **Solde net** | Recettes − Dépenses |
+| **Budget prévu** | Total des montants prévisionnels |
+
+**Détail par catégorie :**
+
+- Colonne **Budget prévu** vs **Réel dépensé**
+- **Barre de progression** colorée (verte si dans le budget, rouge si dépassé)
+- Alerte visuelle si une catégorie dépasse son budget
+
+**Export Excel** : bouton `Excel` en haut à droite — génère un fichier `.xlsx` avec toutes les lignes budgétaires.
+
+**Évolution mensuelle** : tableau du montant des dépenses mois par mois sur l'année.
+
+---
+
+### 26.5 Règles métier
+
+- Les dépenses sont **toujours en FCFA**
+- Le numéro de dépense est généré automatiquement (`DEP-AAAA-NNNNN`)
+- Seuls les rôles **Directeur, Censeur, Comptable, Super Admin** peuvent valider
+- Une dépense **Validée** ne peut plus être modifiée (seulement annulée)
+- Le solde net peut être **négatif** (déficit) — affiché en rouge pour alerter le directeur
+
+---
+
+## 27. Gestion des Manuels Scolaires
+
+**Accès :** Menu latéral → **Manuels**
+
+Ce module assure la traçabilité complète des manuels scolaires : du stock jusqu'à l'élève et retour.
+
+---
+
+### 27.1 Catalogue des Manuels
+
+**Accès :** `Manuels → Catalogue`
+
+Le catalogue liste tous les manuels référencés dans l'établissement.
+
+| Colonne | Signification |
+| --- | --- |
+| **Titre** | Nom du manuel (cliquable → fiche détail) |
+| **Cycle** | Préscolaire / Primaire / Post-primaire / Secondaire |
+| **Matière** | Matière associée (optionnel) |
+| **Exemplaires** | Nombre total d'exemplaires actifs |
+| **Disponibles** | Exemplaires non attribués (rouge si 0) |
+| **Prix remplacement** | Montant facturé en cas de non-retour |
+
+**Ajouter un manuel :** bouton `+ Manuel` → remplir le titre, le cycle, la matière et le prix de remplacement.
+
+---
+
+### 27.2 Gestion des Exemplaires
+
+**Accès :** `Manuels → Catalogue → [titre du manuel] → + Exemplaire`
+
+Chaque exemplaire physique reçoit un **code unique** généré automatiquement (format `EX-AAAA-NNNNN`).
+
+**Création en lot :** Lors de la création, le champ **Nombre d'exemplaires** permet de saisir une quantité (1 à 100). Le système génère automatiquement les codes `EX-AAAA-NNNNN` pour chaque exemplaire et affiche un récapitulatif des codes créés.
+
+**États de conservation :**
+
+| État | Signification |
+| --- | --- |
+| **Neuf** | Exemplaire jamais utilisé |
+| **Bon état** | Usure normale |
+| **Usagé** | Marques d'utilisation visibles |
+| **Détérioré** | Endommagé, pages manquantes, etc. |
+
+La fiche détail d'un manuel affiche :
+
+- 4 compteurs : **Exemplaires actifs**, **Disponibles**, **Attribués**, **Prix de remplacement**
+- L'inventaire complet avec le statut de chaque exemplaire (Disponible / Attribué) et l'élève qui le détient
+- Des boutons d'action rapide : **Retour** (si attribué) ou **Attribuer** (si disponible)
+
+---
+
+### 27.3 Attribution Nominative
+
+**Accès :** `Manuels → Attributions → + Attribution`
+
+**Procédure :**
+
+1. Sélectionner le **manuel** → la liste des exemplaires disponibles se met à jour automatiquement (HTMX)
+2. Sélectionner la **classe** → la liste des élèves inscrits s'affiche
+3. Choisir l'**élève** et noter l'**état à la sortie**
+4. Confirmer la date d'attribution
+
+Chaque attribution est nominative et horodatée. Un exemplaire déjà attribué ne peut pas être ré-attribué tant qu'il n'a pas été rendu.
+
+---
+
+### 27.4 Enregistrer un Retour
+
+**Accès :** `Manuels → Attributions → [ligne] → Retour`
+
+ou depuis la fiche détail du manuel : colonne **Retour** de l'exemplaire concerné.
+
+Lors du retour, saisir :
+
+- La **date de retour**
+- L'**état au retour** (peut différer de l'état à la sortie)
+- Une **observation** optionnelle
+
+L'état de l'exemplaire est automatiquement mis à jour après le retour.
+
+---
+
+### 27.5 Manuels Non Rendus — Alerte de Fin d'Année
+
+**Accès :** `Manuels → Non rendus`
+
+Ce tableau liste tous les exemplaires qui n'ont pas été retournés pour l'année sélectionnée. Les lignes non facturées apparaissent en surbrillance.
+
+**Facturation automatique :** bouton `Facturer` → génère automatiquement un paiement dans le module Finances (rubrique *Manuel non rendu*) pour le montant défini comme **Prix de remplacement** du manuel.
+
+---
+
+### 27.6 Export PDF des Attributions Annuelles
+
+**Accès :** `/manuels/attributions/pdf/?annee=<uuid>`
+
+Génère un document PDF en **paysage A4** listant toutes les attributions de manuels de l'année scolaire, regroupées par classe. Optimisé pour l'impression en noir et blanc.
+
+**Contenu du document :**
+
+- En-tête : titre, nom de l'établissement, date d'impression
+- Récapitulatif global : nombre total d'attributions, en cours, rendues
+- Tableau détaillé par classe (séparateur grisé) avec pour chaque attribution : classe, élève, manuel, code exemplaire, état de sortie, dates d'attribution et de retour, état du retour
+- Ligne de total en bas
+
+**Codes visuels à l'impression (niveaux de gris) :**
+
+- Séparateurs de classe : fond gris `#ddd`
+- Badge état sortie : fond blanc + bordure noire
+- Badge "En cours" : fond gris italique
+- Ligne total : double bordure noire
+
+---
+
+### 27.7 Export PDF de l'Inventaire par Classe
+
+**Accès :** depuis la page d'une classe (ou via l'URL `/manuels/inventaire/classe/<id>/pdf/`)
+
+Génère un document PDF listant tous les manuels attribués aux élèves de la classe, avec les codes exemplaires et les états de sortie. Utile pour les contrôles de fin d'année.
+
+---
+
+### 27.7 Règles Métier
+
+- Le code exemplaire est généré automatiquement (`EX-AAAA-NNNNN`) et non modifiable
+- Un exemplaire ne peut être attribué qu'à **un seul élève** à la fois
+- La facturation de non-retour crée un **Paiement** dans le module Finances (rubrique `MNR`)
+- La rubrique `MNR` est créée automatiquement si elle n'existe pas encore
+
+---
+
+---
+
+## 28. Mode Hors Ligne Complet (PWA)
+
+**Accès :** Automatique — aucune configuration requise
+
+YELEN SCHOOL fonctionne nativement sur le réseau local de l'établissement. Le **Mode Hors Ligne Complet** ajoute une couche PWA (Progressive Web App) qui garantit la continuité d'accès même en cas de coupure temporaire du serveur.
+
+---
+
+### 28.1 Bandeau de Connexion Perdue
+
+Dès que le navigateur perd l'accès au serveur (réseau LAN coupé, serveur redémarré…), un **bandeau orange** s'affiche en haut de toutes les pages :
+
+> *Connexion au serveur perdue — vérifiez le réseau local*
+
+Le bandeau disparaît automatiquement dès que la connexion est rétablie.
+
+---
+
+### 28.2 Page Hors Ligne
+
+Si une page demandée n'est pas en cache et que le serveur est inaccessible, le navigateur affiche la **page `/offline/`** :
+
+- Icône WiFi barré
+- Bouton **Réessayer**
+- Indicateur de statut : surveille le réseau et **redirige automatiquement** vers l'accueil dès que le serveur répond
+
+---
+
+### 28.3 Cache des Assets Statiques
+
+Le Service Worker (`/app-sw.js`, portée `/`) met en cache :
+
+| Ressource | Stratégie |
+|---|---|
+| CSS, JS (yelen.css, htmx.min.js) | Cache First — servi instantanément depuis le cache |
+| Images et médias (`/static/`, `/media/`) | Cache First + mise à jour en arrière-plan |
+| Pages HTML | Network First — réseau d'abord, cache en fallback |
+| Authentification (`/accounts/`) | Network Only — jamais mis en cache |
+
+---
+
+### 28.4 Installer l'Application (A2HS)
+
+Sur les navigateurs compatibles (Chrome, Edge, Safari iOS), un bouton **"Installer l'application"** apparaît en bas du menu latéral. Il permet d'ajouter YELEN SCHOOL à l'écran d'accueil ou au bureau :
+
+- Icône native, mode plein écran (sans barre d'adresse)
+- Lance directement sur `/`
+- Fonctionne sur PC, tablette et smartphone
+
+Le bouton n'apparaît que si le navigateur détecte que l'app peut être installée.
+
+---
+
+### 28.5 Architecture PWA
+
+| Élément | URL | Description |
+|---|---|---|
+| Service Worker | `/app-sw.js` | Cache, stratégies fetch, fallback offline |
+| Manifest | `/app-manifest.json` | Métadonnées d'installation |
+| Page offline | `/offline/` | Fallback quand le serveur est inaccessible |
+| Portail parent | `/sw.js` + `/manifest.json` | PWA séparée pour les parents |
+
+---
+
+## 29. Communication Bidirectionnelle Établissement ↔ Parent
+
+**Accès :** Menu latéral → **Communication → Messages parents**
+
+Ce module permet d'envoyer des messages structurés aux parents et de recevoir leurs réponses via un lien sécurisé, sans qu'ils aient besoin d'un compte utilisateur.
+
+---
+
+### 29.1 Types de messages
+
+| Type | Description | Réponse attendue |
+|---|---|---|
+| **Convocation** | Invitation à un entretien avec choix de créneaux | Le parent choisit un créneau parmi ceux proposés |
+| **Avertissement** | Notification de comportement | Le parent accuse réception |
+| **Justificatif** | Demande de pièce justificative d'absence | Le parent dépose un fichier (photo/PDF) |
+| **Relance** | Rappel de paiement en attente | Le parent indique une date de règlement prévisionnelle |
+
+---
+
+### 29.2 Envoyer un message
+
+1. Cliquer sur **Nouveau message**
+2. Remplir le formulaire :
+   - **Élève** — sélectionner dans la liste des élèves de l'année courante
+   - **Type** — choisir parmi les 4 types disponibles
+   - **Objet** — titre court du message
+   - **Contenu** — corps du message
+   - **Créneaux proposés** *(pour Convocation)* — un créneau par ligne, ex: `Lundi 12 mai à 10h00`
+   - **Envoyer un SMS** — si coché, un SMS contenant le lien de réponse est envoyé automatiquement au téléphone du parent
+3. Cliquer **Envoyer**
+
+---
+
+### 29.3 Lien de réponse
+
+Chaque message génère un **lien unique sécurisé** de la forme `/communication/repondre/<token>/`.
+
+Ce lien peut être :
+- Envoyé automatiquement par SMS (option à cocher dans le formulaire)
+- Copié manuellement depuis la page de détail du message
+
+Le lien est accessible **sans connexion** — le parent n'a pas besoin de compte YELEN SCHOOL.
+
+---
+
+### 29.4 Suivi des réponses
+
+La liste des messages affiche :
+- Le **statut** : Envoyé → Lu (ouverture du lien) → Répondu
+- La présence ou non d'un SMS envoyé
+- Un accès rapide au **détail** de chaque message et à la réponse du parent
+
+---
+
+### 29.4.1 Page de détail du message
+
+Accessible depuis l'icône œil de la liste, la page de détail affiche :
+
+**Bannière de statut** (en haut, colorée par état) :
+
+- 🟢 **Répondu** — fond vert, date de réponse affichée
+- 🔵 **Lu** — fond bleu, indication "en attente de réponse"
+- 🟡 **En attente** — fond or, date d'envoi
+
+**Colonne gauche — Contenu du message :**
+
+- En-tête avec icône colorée par type (bleu=Convocation, or=Avertissement, violet=Justificatif, rouge=Relance)
+- Objet du message en titre
+- Bloc Élève avec avatar et matricule en police monospace
+- Corps du message dans un bloc stylé
+- Créneaux proposés sous forme de chips (le créneau choisi par le parent est mis en valeur)
+- Grille méta-données : envoyé par, date, téléphone, statut SMS
+
+**Colonne droite — Réponse parent :**
+
+- Bloc "Lien de réponse" avec bouton **Copier le lien** (presse-papiers)
+- Si réponse reçue : bloc récapitulatif avec créneau choisi, accusé de réception, date de règlement, justificatif
+- Si aucune réponse : état vide avec message d'attente
+
+---
+
+### 29.5 Page de réponse (côté parent)
+
+Quand le parent ouvre le lien SMS, il accède à une page autonome affichant :
+- Le nom de l'établissement
+- Le type et le contenu du message
+- Un formulaire adapté au type :
+  - **Convocation** : boutons radio avec les créneaux proposés
+  - **Avertissement** : case à cocher d'accusé de réception
+  - **Relance** : sélecteur de date de règlement
+  - **Justificatif** : téléversement de fichier (image ou PDF)
+- Un champ de commentaire libre (tous types)
+
+Une fois soumis, le statut passe automatiquement à **Répondu** et la réponse est consultable depuis la page de détail du message.
+
+---
+
+## 30. Génération Automatique d'Emploi du Temps
+
+**Accès :** Menu latéral → **Vie Scolaire → Emploi du temps** → sélectionner une classe → bouton **Générer automatiquement**
+
+Ce module génère un emploi du temps hebdomadaire complet à partir des enseignements configurés pour la classe, en respectant les contraintes de non-chevauchement.
+
+---
+
+### 30.1 Principe de l'algorithme
+
+Le générateur utilise une approche **greedy avec random restarts** (jusqu'à 40 tentatives) :
+
+1. Pour chaque enseignement actif de la classe, calcule le nombre de séances hebdomadaires à partir du champ `heures_hebdomadaires`
+2. Trie les enseignements par nombre de séances décroissant (les plus contraints en premier)
+3. Tente de placer chaque séance dans un créneau libre en respectant 4 contraintes :
+   - La classe n'est pas déjà occupée à ce créneau
+   - L'enseignant n'est pas déjà en cours dans une autre classe
+   - L'enseignant n'est pas marqué indisponible
+   - Maximum 2 séances de la même matière par jour
+4. En cas d'échec, relance avec un ordre aléatoire différent
+
+---
+
+### 30.2 Créneaux horaires utilisés
+
+**Sans configuration** : créneaux par défaut Burkina Faso (séances de 50 min) :
+
+| Session | Horaire |
+|---------|---------|
+| 1 | 7h30–8h20 |
+| 2 | 8h20–9h10 |
+| 3 | 9h10–10h00 |
+| — | *Pause 10h00–10h20* |
+| 4 | 10h20–11h10 |
+| 5 | 11h10–12h00 |
+| — | *Pause déjeuner* |
+| 6 | 14h00–14h50 |
+| 7 | 14h50–15h40 |
+| 8 | 15h40–16h30 |
+| 9 | 16h30–17h20 |
+
+Jours : Lundi à Samedi (6 jours).
+
+**Avec ConfigEDT** : les créneaux sont calculés dynamiquement depuis la configuration (heures de début/fin matin et après-midi, durée de séance personnalisée).
+
+---
+
+### 30.3 Flux d'utilisation
+
+1. Aller sur l'EDT d'une classe (`Vie Scolaire → Emploi du temps → [Classe]`)
+2. Cliquer sur **Générer automatiquement** dans la barre d'actions
+3. Choisir le **mode** :
+   - **Remplacer l'EDT existant** — supprime toutes les séances actuelles avant de générer
+   - **Compléter l'EDT existant** — ajoute uniquement des séances sans toucher aux existantes
+4. Cliquer **Générer l'aperçu**
+5. Vérifier l'aperçu :
+   - Statistiques : séances placées / requises / taux
+   - Avertissements si certaines matières n'ont pas pu être entièrement placées (créneaux insuffisants)
+   - Table complète par jour (heure, matière, enseignant)
+6. Cliquer **Appliquer** pour créer les séances, ou **Annuler** pour ne rien modifier
+
+---
+
+### 30.4 Modèles de données liés
+
+| Modèle | Rôle |
+|--------|------|
+| `ConfigEDT` | Un enregistrement par établissement — définit les plages horaires et la durée des séances |
+| `DisponibiliteEnseignant` | Créneaux où un enseignant N'EST PAS disponible (jour + heure_debut + heure_fin) |
+
+La `ConfigEDT` et les indisponibilités sont administrables via l'interface Django Admin (`/admin/`).
+
+---
+
+### 30.5 Limites et conseils
+
+- Si le taux de placement est inférieur à 100 %, c'est que le nombre de créneaux disponibles est insuffisant par rapport au volume horaire total des enseignements. Réduire les heures hebdomadaires ou ajouter des jours/créneaux dans la ConfigEDT.
+- La génération est **déterministe sur plusieurs tentatives** — chaque clic sur "Générer l'aperçu" peut donner un résultat légèrement différent (algorithme aléatoire). Régénérer si le résultat ne convient pas.
+- Les indisponibilités enseignants se saisissent uniquement via l'Admin Django pour l'instant.
+- L'aperçu généré est conservé en session Django. Cliquer **Appliquer** doit être fait depuis la même fenêtre/onglet pour que la session soit disponible.
+
+---
+
+## 31. Localisations des Postes
+
+**Accès :** `Paramètres → Localisations`
+
+Ce module permet de référencer les emplacements physiques de l'établissement (bureaux, salles, laboratoires) afin de savoir où se trouve chaque poste du personnel.
+
+---
+
+### 31.1 Liste des Localisations
+
+La liste affiche toutes les localisations configurées pour l'établissement, avec les colonnes suivantes :
+
+| Colonne | Signification |
+|---|---|
+| **Nom** | Libellé de l'emplacement (ex : Bureau du directeur) |
+| **Type** | Bureau / Salle de classe / Laboratoire / Autre |
+| **Bâtiment** | Nom du bâtiment ou du bloc (optionnel) |
+| **Étage / N°** | Étage (0 = rez-de-chaussée) et numéro de local |
+| **Statut** | Actif / Inactif |
+
+---
+
+### 31.2 Créer une Localisation
+
+1. Cliquer sur **Nouvelle localisation**
+2. Remplir le formulaire :
+   - **Nom** (obligatoire) — ex : *Salle des professeurs*, *Secrétariat*
+   - **Type** — sélectionner parmi Bureau / Salle de classe / Laboratoire / Autre
+   - **Bâtiment** (optionnel) — ex : *Bloc administratif*, *Bâtiment A*
+   - **Étage** — 0 par défaut (rez-de-chaussée)
+   - **Numéro** (optionnel) — ex : *101*, *A3*
+3. Cliquer **Enregistrer**
+
+---
+
+### 31.3 Modifier / Supprimer
+
+- **Modifier :** icône crayon → modifier les champs → Enregistrer
+- **Supprimer :** icône corbeille → confirmer la suppression
+
+---
+
+
+*Guide d'utilisation YELEN SCHOOL — Version 4.5 (Guide v3.4) — 08 Mai 2026*
 
 *"Illuminer chaque parcours scolaire"*
 
 *Ce document est mis à jour à chaque nouvelle version du logiciel.*
 *Pour toute question, contacte le support technique YELEN SCHOOL.*
+
+---
+
+## 10. COMMUNICATION PARENTS — SMS DIRECT
+
+### 10.1 Présentation de Parent-SMS Direct
+
+Le système **Parent-SMS Direct** permet aux parents et tuteurs d'interroger YELEN SCHOOL par SMS **sans connexion Internet** ni application mobile. Il suffit d'envoyer un SMS à partir du numéro de téléphone enregistré dans la fiche de l'élève.
+
+> **Condition d'accès** : Seuls les numéros enregistrés dans la fiche de l'élève (`Téléphone parent`, `Téléphone tuteur`, `Téléphone d'urgence`) sont autorisés. Tout autre numéro reçoit un message de rejet.
+
+---
+
+### 10.2 Commandes SMS Disponibles
+
+Toutes les commandes sont **insensibles à la casse** (majuscules ou minuscules). Les réponses sont limitées à 160 caractères (1 SMS standard).
+
+#### 📊 NOTE — Consulter la Moyenne
+
+```
+NOTE <matricule> [trimestre]
+```
+
+| Paramètre | Description | Exemple |
+|-----------|-------------|---------|
+| `matricule` | Matricule de l'élève (format `BF-AAAA-NNNNN`) | `BF-2026-00042` |
+| `trimestre` | Facultatif : `T1`, `T2`, `T3` ou un chiffre. Si absent → dernier trimestre. | `T1` |
+
+**Exemples :**
+- `NOTE BF-2026-00042 T1` → Moyenne du 1er trimestre
+- `NOTE BF-2026-00042` → Dernière moyenne disponible
+
+**Réponse type :**
+```
+Yelen - Adama OUEDRAOGO (6ème A) - T1: Moy: 14.50/20, Rang: 3/32.
+```
+
+---
+
+#### 💰 SOLDE — Situation Financière
+
+```
+SOLDE <matricule>
+```
+
+Retourne le montant dû, le total payé et le reste à payer **en FCFA**.
+
+**Exemple :** `SOLDE BF-2026-00042`
+
+**Réponse type :**
+```
+Yelen - Adama OUEDRAOGO (6ème A): Du 150000 FCFA, Paye 75000 FCFA, Reste 75000 FCFA.
+```
+
+---
+
+#### 📅 ABS — Relevé d'Absences
+
+```
+ABS <matricule>
+```
+
+Retourne le nombre d'absences non justifiées et excusées sur l'année en cours.
+
+**Exemple :** `ABS BF-2026-00042`
+
+**Réponse type :**
+```
+Yelen - Adama OUEDRAOGO (6ème A): 2 absence(s) non justifiee(s), 1 excusee(s) cette annee.
+```
+
+---
+
+#### ❓ AIDE — Guide des Commandes
+
+```
+AIDE
+```
+ou
+```
+HELP
+```
+
+Retourne la liste résumée de toutes les commandes disponibles. Accessible depuis **n'importe quel numéro** (pas besoin d'être enregistré).
+
+---
+
+### 10.3 Codes d'Erreur et Situations Spéciales
+
+| Situation | Réponse SMS reçue |
+|-----------|-------------------|
+| Numéro non autorisé | `Yelen - Ce numero de telephone n'est pas autorise a consulter les informations de cet eleve.` |
+| Matricule introuvable | `Yelen - Eleve avec le matricule XXX introuvable.` |
+| Élève sans inscription active | `Yelen - [Prénom] [Nom] n'est inscrit dans aucune classe.` |
+| Aucune moyenne pour la période | `Yelen - Aucune moyenne trouvee pour [Prénom] [Nom] (T1).` |
+| Commande inconnue | `Yelen - Commande invalide. Envoyez AIDE pour obtenir la liste des commandes disponibles.` |
+
+---
+
+### 10.4 Configuration Technique (Administrateur)
+
+#### Passerelle SMS (Android SMS Gateway)
+Le webhook est exposé à l'URL :
+```
+POST /communication/webhook/sms/
+```
+
+Formats supportés :
+- **JSON** (`Content-Type: application/json`) avec les champs `phoneNumber` et `message`
+- **Form-data** (`POST`) avec les champs `phoneNumber`/`phone`/`sender` et `message`/`text`/`msg`
+- **GET** (tests uniquement) avec les mêmes paramètres en query string
+
+#### Numéros Administrateurs Maîtres
+Pour permettre à des numéros d'administration de consulter les données de n'importe quel élève, ajouter dans `settings.py` :
+
+```python
+MASTER_SMS_NUMBERS = [
+    '+22670000001',  # Directeur
+    '+22670000002',  # Secrétariat
+]
+```
+
+---
+
+### 10.5 Journal des SMS (Audit Log)
+
+Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via l'administration Django :
+
+**Admin → Communication → SMS Entrants**
+
+| Colonne | Description |
+|---------|-------------|
+| Numéro émetteur | Numéro du téléphone ayant envoyé le SMS |
+| Commande | Type de commande détectée (`NOTE`, `SOLDE`, `ABS`, `HELP`, `INVALID`) |
+| Élève | Élève ciblé (si identifié) |
+| Autorisé | `Oui` si le numéro était autorisé à consulter les données |
+| Traité | `Oui` si la réponse a été générée avec succès |
+| Date | Horodatage automatique |
+

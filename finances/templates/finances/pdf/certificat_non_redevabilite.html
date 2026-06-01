@@ -5,229 +5,77 @@
     <meta charset="UTF-8">
     <title>Certificat de Non-Redevabilité</title>
     <style>
-        @page {
-            size: A4;
-            margin: 1.5cm 1cm;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            font-size: 10pt;
-            line-height: 1.4;
-            color: #1a1a1a;
-        }
-        
-        .document {
-            width: 100%;
-            max-width: 19cm;
-            margin: 0 auto;
-            padding: 0.3cm;
-        }
-        
+        @page { size: A4; margin: 1.5cm 1cm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #111; }
+
+        .document { width: 100%; max-width: 19cm; margin: 0 auto; padding: 0.3cm; }
+
+        /* En-tête */
         .header {
-            text-align: center;
-            margin-bottom: 0.3cm;
-            padding-bottom: 0.25cm;
-            border-bottom: 2px solid #2c3e50;
+            text-align: center; margin-bottom: 0.3cm;
+            padding-bottom: 0.25cm; border-bottom: 2px solid #111;
         }
-        
-        .header-top {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.4cm;
-            margin-bottom: 0.15cm;
-        }
-        
-        .logo {
-            width: 55px;
-            height: 55px;
-            object-fit: contain;
-        }
-        
-        .header-text {
-            text-align: left;
-        }
-        
-        .etablissement-nom {
-            font-size: 13pt;
-            font-weight: bold;
-            color: #1a1a1a;
-            line-height: 1.2;
-        }
-        
-        .etablissement-type {
-            font-size: 8pt;
-            color: #666;
-        }
-        
-        .header-address {
-            font-size: 8pt;
-            color: #555;
-            margin-top: 0.15cm;
-            line-height: 1.4;
-        }
-        
-        .header-contact {
-            font-size: 8pt;
-            color: #555;
-            margin-top: 0.1cm;
-        }
-        
+        .header-top { display: flex; align-items: center; justify-content: center; gap: 0.4cm; margin-bottom: 0.15cm; }
+        .logo { width: 55px; height: 55px; object-fit: contain; filter: grayscale(100%); }
+        .header-text { text-align: left; }
+        .etablissement-nom { font-size: 13pt; font-weight: bold; color: #111; line-height: 1.2; }
+        .etablissement-type { font-size: 8pt; color: #555; }
+        .header-address { font-size: 8pt; color: #555; margin-top: 0.15cm; line-height: 1.4; }
+        .header-address-italic { font-size: 8pt; color: #555; margin-top: 0.15cm; font-style: italic; }
+        .header-contact { font-size: 8pt; color: #555; margin-top: 0.1cm; }
+
+        /* Titre */
         .doc-title {
-            font-size: 12pt;
-            font-weight: bold;
-            color: #1a1a1a;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 0.3cm 0;
-            text-align: center;
-            padding: 0.2cm;
-            background: #f0f0f0;
-            border-radius: 3px;
-            border: 1px solid #ccc;
+            font-size: 12pt; font-weight: bold; color: #111;
+            text-transform: uppercase; letter-spacing: 1px;
+            margin: 0.3cm 0; text-align: center; padding: 0.2cm;
+            background: #f0f0f0; border: 1px solid #bbb;
         }
-        
-        .top-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 8pt;
-            color: #666;
-            margin-bottom: 0.25cm;
-        }
-        
-        .content {
-            margin-bottom: 0.3cm;
-        }
-        
-        .attestation {
-            text-align: justify;
-            font-size: 9pt;
-            margin-bottom: 0.25cm;
-        }
-        
-        .highlight {
-            font-weight: bold;
-            color: #1a1a1a;
-        }
-        
+        .top-info { display: flex; justify-content: space-between; font-size: 8pt; color: #555; margin-bottom: 0.25cm; }
+
+        /* Bloc élève */
         .eleve-info {
-            padding: 0.3cm;
-            margin: 0.2cm 0;
-            border: 1px solid #ddd;
-            border-left: 3px solid #3498db;
+            padding: 0.3cm; margin: 0.2cm 0;
+            border: 1px solid #ccc; border-left: 3px solid #111;
         }
-        
-        .eleve-info table {
-            width: 100%;
-            font-size: 9pt;
-        }
-        
-        .eleve-info td {
-            padding: 0.1cm 0.2cm;
-        }
-        
-        .eleve-info td:first-child {
-            font-weight: bold;
-            width: 35%;
-            color: #555;
-        }
-        
-        .financial-summary {
-            margin-top: 0.2cm;
-            padding: 0.25cm;
-            border: 1px solid #ddd;
-        }
-        
-        .financial-summary h4 {
-            font-size: 9pt;
-            margin-bottom: 0.15cm;
-            color: #1a1a1a;
-        }
-        
-        .financial-summary table {
-            width: 100%;
-            font-size: 9pt;
-        }
-        
-        .financial-summary td {
-            padding: 0.08cm 0.15cm;
-        }
-        
-        .financial-summary td:last-child {
-            text-align: right;
-            font-weight: bold;
-        }
-        
+        .eleve-info table { width: 100%; font-size: 9pt; }
+        .eleve-info td { padding: 0.1cm 0.2cm; }
+        .eleve-info td:first-child { font-weight: bold; width: 35%; color: #444; }
+
+        /* Résumé financier */
+        .financial-summary { margin-top: 0.2cm; padding: 0.25cm; border: 1px solid #ccc; }
+        .financial-summary h4 { font-size: 9pt; margin-bottom: 0.15cm; color: #111; }
+        .financial-summary table { width: 100%; font-size: 9pt; }
+        .financial-summary td { padding: 0.08cm 0.15cm; }
+        .financial-summary td:last-child { text-align: right; font-weight: bold; }
+        .reste-row td { border-top: 1px solid #bbb; font-weight: bold; }
+
+        /* Statut */
         .status {
-            text-align: center;
-            padding: 0.25cm;
-            margin: 0.25cm 0;
-            font-weight: bold;
-            font-size: 11pt;
-            border-radius: 3px;
+            text-align: center; padding: 0.25cm; margin: 0.25cm 0;
+            font-weight: bold; font-size: 11pt;
         }
-        
-        .status.regular {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #28a745;
-        }
-        
-        .status.irregular {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #dc3545;
-        }
-        
+        .status.regular { background: #f0f0f0; color: #111; border: 2px solid #111; }
+        .status.irregular { background: #ddd; color: #111; border: 2px solid #111; font-style: italic; }
+
+        .attestation { text-align: justify; font-size: 9pt; margin-bottom: 0.25cm; }
+        .attestation-note { font-size: 8pt; color: #555; text-align: justify; margin-bottom: 0.25cm; }
+        .highlight { font-weight: bold; color: #111; }
+
+        /* Pied de page */
         .footer {
-            margin-top: 0.3cm;
-            padding-top: 0.2cm;
-            border-top: 1px solid #ddd;
-            display: flex;
-            justify-content: space-between;
-            font-size: 8pt;
-            color: #888;
-            page-break-inside: avoid;
-            break-inside: avoid;
+            margin-top: 0.3cm; padding-top: 0.2cm; border-top: 1px solid #ccc;
+            display: flex; justify-content: space-between;
+            font-size: 8pt; color: #666;
+            page-break-inside: avoid; break-inside: avoid;
         }
-        
-        .signature-block {
-            text-align: center;
-            width: 40%;
-        }
-
-        .signature-block.sig-right {
-            text-align: right;
-        }
-
-        .sig-right .sig-zone,
-        .sig-right .sig-date,
-        .sig-right .sig-fonction,
-        .sig-right .sig-name,
-        .sig-right .sig-honors {
-            text-align: right !important;
-        }
-        
-        .signature-line {
-            border-top: 1px solid #333;
-            margin-top: 0.8cm;
-            padding-top: 0.1cm;
-            font-size: 8pt;
-        }
-        
-        @media print {
-            body {
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-            }
-        }
+        .signature-block { text-align: center; width: 40%; }
+        .signature-block.sig-right { text-align: right; }
+        .sig-right .sig-zone, .sig-right .sig-date,
+        .sig-right .sig-fonction, .sig-right .sig-name,
+        .sig-right .sig-honors { text-align: right !important; }
+        .signature-line { border-top: 1px solid #333; margin-top: 0.8cm; padding-top: 0.1cm; font-size: 8pt; }
     </style>
 </head>
 <body>
@@ -239,20 +87,18 @@
                 {% elif etab_logo_url %}
                 <img src="{{ etab_logo_url }}" alt="Logo" class="logo">
                 {% endif %}
-            <div class="header-text">
+                <div class="header-text">
                     <div class="etablissement-nom">
                         {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom }}{% endif %}
                     </div>
-                    {% if identite and identite.numero_agrement_mena %}
-                    <div class="header-address" style="font-style:italic;">N° Agrément MENA: {{ identite.numero_agrement_mena }}</div>
-                    {% endif %}
-                </div>
                     {% if identite and identite.sigle %}
                     <div class="etablissement-type">{{ identite.sigle }} · {% if identite.type_etablissement %}{{ identite.get_type_etablissement_display }}{% endif %}</div>
                     {% endif %}
+                    {% if identite and identite.numero_agrement_mena %}
+                    <div class="header-address-italic">N° Agrément MENA : {{ identite.numero_agrement_mena }}</div>
+                    {% endif %}
                 </div>
             </div>
-            
             <div class="header-address">
                 {% if identite %}
                     {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
@@ -263,31 +109,33 @@
                     {% if etablissement.adresse %}{{ etablissement.adresse }}{% endif %}
                 {% endif %}
             </div>
-            
             <div class="header-contact">
                 {% if identite %}
-                    {% if identite.telephone %}Tél: {{ identite.telephone }}{% endif %}
-                    {% if identite.email %} · Email: {{ identite.email }}{% endif %}
-                    {% if identite.site_web %} · Web: {{ identite.site_web }}{% endif %}
+                    {% if identite.telephone %}Tél : {{ identite.telephone }}{% endif %}
+                    {% if identite.email %} · Email : {{ identite.email }}{% endif %}
+                    {% if identite.site_web %} · Web : {{ identite.site_web }}{% endif %}
                 {% else %}
-                    {% if etablissement.telephone %}Tél: {{ etablissement.telephone }}{% endif %}
-                    {% if etablissement.email %} · Email: {{ etablissement.email }}{% endif %}
+                    {% if etablissement.telephone %}Tél : {{ etablissement.telephone }}{% endif %}
+                    {% if etablissement.email %} · Email : {{ etablissement.email }}{% endif %}
                 {% endif %}
             </div>
         </div>
-        
+
         <div class="doc-title">Certificat de Non-Redevabilité</div>
-        
+
         <div class="top-info">
             <span>Année scolaire : {{ annee_scolaire.libelle|default:"—" }}</span>
             <span>Date : {{ date_du_jour }}</span>
         </div>
-        
+
         <div class="content">
             <p class="attestation">
-                Le Directeur de <strong>{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom }}{% endif %}</strong> certifie que l'élève ci-dessous est <span class="highlight">{% if est_regulier %}en règle{% else %}en situation de créance{% endif %}</span> vis-à-vis de ses obligations financières envers l'établissement pour l'année scolaire en cours.
+                Le Directeur de <strong>{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom }}{% endif %}</strong>
+                certifie que l'élève ci-dessous est
+                <span class="highlight">{% if est_regulier %}en règle{% else %}en situation de créance{% endif %}</span>
+                vis-à-vis de ses obligations financières envers l'établissement pour l'année scolaire en cours.
             </p>
-            
+
             <div class="eleve-info">
                 <table>
                     <tr>
@@ -304,40 +152,38 @@
                     </tr>
                 </table>
             </div>
-            
+
             <div class="financial-summary">
                 <h4>Résumé Financier</h4>
                 <table>
                     <tr>
                         <td>Total des frais scolaires</td>
-                        <td>{{ total_du|floatformat:0 }} FCA</td>
+                        <td>{{ total_du|floatformat:0 }} FCFA</td>
                     </tr>
                     <tr>
                         <td>Montant payé</td>
-                        <td>{{ total_paye|floatformat:0 }} FCA</td>
+                        <td>{{ total_paye|floatformat:0 }} FCFA</td>
                     </tr>
-                    <tr style="border-top: 1px solid #aaa;">
-                        <td style="font-weight:bold;">Reste à payer</td>
-                        <td style="font-weight:bold; color:{% if reste_a_payer > 0 %}#dc3545{% else %}#28a745{% endif %};">
-                            {{ reste_a_payer|floatformat:0 }} FCA
-                        </td>
+                    <tr class="reste-row">
+                        <td>Reste à payer</td>
+                        <td>{{ reste_a_payer|floatformat:0 }} FCFA</td>
                     </tr>
                 </table>
             </div>
-            
+
             <div class="status {% if est_regulier %}regular{% else %}irregular{% endif %}">
                 {% if est_regulier %}
                 ✓ CET ÉLÈVE EST EN RÈGLE
                 {% else %}
-                ⚠ RESTE À PAYER : {{ reste_a_payer|floatformat:0 }} FCA
+                ⚠ RESTE À PAYER : {{ reste_a_payer|floatformat:0 }} FCFA
                 {% endif %}
             </div>
-            
-            <p class="attestation" style="font-size: 8pt; color: #666;">
+
+            <p class="attestation-note">
                 Ce certificat est délivré à la demande de l'intéressé(e) pour servir et valoir ce que de droit.
             </p>
         </div>
-        
+
         <div class="footer">
             <div class="signature-block"></div>
             <div class="signature-block sig-right">

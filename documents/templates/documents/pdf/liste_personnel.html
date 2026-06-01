@@ -4,29 +4,73 @@
 <head>
 <meta charset="UTF-8">
 <style>
-    body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 10pt; color: #1a1a1a; margin: 0; padding: 0; }
+    @page { size: A4; margin: 1.5cm 2cm; }
+    body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; margin: 0; padding: 0; }
     .page { padding: 0; }
-    .entete { text-align: center; margin-bottom: 1cm; padding-bottom: 0.3cm; border-bottom: 2px solid #1B5E20; }
+    .entete { text-align: center; margin-bottom: 1cm; padding-bottom: 0.3cm; border-bottom: 2.5px solid #111; }
     .entete-top { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 8px; }
-    .entete-logo img { width: 50px; height: 50px; object-fit: contain; }
-    .entete .etablissement { font-size: 14pt; font-weight: bold; text-transform: uppercase; }
-    .entete .annee { font-size: 10pt; color: #555; margin-top: 5px; }
-    .entete .agrement { font-size: 9pt; color: #666; font-style: italic; margin-top: 3px; }
-    .entete .contact { font-size: 9pt; color: #666; }
+    .entete-logo img { width: 50px; height: 50px; object-fit: contain; filter: grayscale(100%); }
+    .entete .etablissement { font-size: 14pt; font-weight: bold; text-transform: uppercase; color: #111; }
+    .entete .annee { font-size: 10pt; color: #333; margin-top: 5px; }
+    .entete .agrement { font-size: 9pt; color: #444; font-style: italic; margin-top: 3px; }
+    .entete .contact { font-size: 9pt; color: #444; }
     .titre { text-align: center; margin: 0.5cm 0 1cm 0; }
-    .titre .annee { font-size: 11pt; color: #555; margin-bottom: 8px; }
-    .titre h1 { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0; }
-    .titre .cycle { font-size: 11pt; color: #333; margin-top: 8px; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    th { background-color: #1a1a1a; color: white; padding: 6px 8px; text-align: left; font-size: 9pt; }
-    td { padding: 5px 8px; border-bottom: 1px solid #ddd; font-size: 9pt; word-wrap: break-word; }
-    tr:nth-child(even) td { background-color: #f8f8f8; }
-    .num           { width: 28px;  text-align: center; }
-    .col-matricule { width: 118px; }
-    .col-genre     { width: 58px;  text-align: center; }
-    .col-poste     { width: 148px; }
-    /* .col-nom : pas de width → prend tout l'espace restant */
-    .footer { margin-top: 1cm; text-align: right; font-size: 9pt; color: #888; }
+    .titre .annee { font-size: 11pt; color: #333; margin-bottom: 8px; }
+    .titre h1 { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0; color: #111; }
+    .titre .cycle { font-size: 11pt; color: #111; margin-top: 8px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background-color: #111; color: #fff; padding: 6px 8px; text-align: left; font-size: 9pt; border: 1px solid #111; }
+    td { padding: 5px 8px; border-bottom: 1px solid #ccc; font-size: 9pt; white-space: nowrap; border: 1px solid #ccc; }
+    tr:nth-child(even) td { background-color: #f5f5f5; }
+    .num           { width: 30px;  text-align: center; }
+    .col-matricule { width: 95px;  white-space: nowrap; }
+    .col-nom       { white-space: nowrap; }
+    .col-genre     { width: 50px;  text-align: center; }
+    .col-poste     { width: 120px; white-space: nowrap; }
+    .col-categorie { width: 105px; white-space: nowrap; }
+    .footer { margin-top: 1cm; text-align: right; font-size: 9pt; color: #555; }
+
+    /* Tableau récapitulatif par catégorie */
+    .recap { margin-top: 1.2cm; page-break-inside: avoid; }
+    .recap-title {
+        font-size: 9pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #111;
+        margin-bottom: 4px;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 3px;
+    }
+    .recap-table { width: 50%; border-collapse: collapse; margin-top: 4px; }
+    .recap-table th { background-color: #111; color: #fff; font-size: 9pt; padding: 4px 8px; text-align: left; border: 1px solid #111; }
+    .recap-table th.num { text-align: center; width: 40px; }
+    .recap-table th.h,
+    .recap-table th.f,
+    .recap-table th.t { text-align: center; width: 55px; }
+    .recap-table td { padding: 4px 8px; border-bottom: 1px solid #ccc; font-size: 9pt; border: 1px solid #ccc; }
+    .recap-table td.num { text-align: center; color: #555; }
+    .recap-table td.h,
+    .recap-table td.f,
+    .recap-table td.t { text-align: center; }
+    .recap-table tr.subtotal td { background-color: #f0f0f0; font-weight: bold; }
+    .recap-table tr.total-gen td { background-color: #111; color: #fff; font-weight: bold; border: 1px solid #111; }
+
+    /* Récap simple (sans catégories) */
+    .recap-simple-col-genre { text-align: left; }
+    .recap-simple-col-effectif { text-align: center; width: 80px; }
+    .recap-simple-total td { background-color: #111; color: #fff; font-weight: bold; border: 1px solid #111; }
+
+    /* Zone QR bas de page */
+    .qr-zone {
+        margin-top: 1cm;
+        border-top: 1px solid #aaa;
+        padding-top: 0.5cm;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .qr-date { font-size: 8pt; color: #444; }
 </style>
 </head>
 <body>
@@ -68,54 +112,88 @@
             <tr>
                 <th class="num">N°</th>
                 <th class="col-matricule">Matricule</th>
-                <th>Nom et Prénom(s)</th>
+                <th class="col-nom">Nom et Prénom(s)</th>
                 <th class="col-genre">Genre</th>
                 <th class="col-poste">Poste / Fonction</th>
+                <th class="col-categorie">Catégorie</th>
             </tr>
         </thead>
         <tbody>
-            {% for membre in membres %}
+            {% for item in membres %}
             <tr>
                 <td class="num">{{ forloop.counter }}</td>
-                <td class="col-matricule">{{ membre.matricule }}</td>
-                <td><strong>{{ membre.nom|upper }}</strong> {{ membre.prenom }}</td>
-                <td class="col-genre">{{ membre.get_genre_display }}</td>
-                <td class="col-poste">{{ membre.fonction }}</td>
+                <td class="col-matricule">{{ item.personnel.matricule }}</td>
+                <td class="col-nom"><strong>{{ item.personnel.nom|upper }}</strong> {{ item.personnel.prenom }}</td>
+                <td class="col-genre">{{ item.personnel.get_genre_display }}</td>
+                <td class="col-poste">{{ item.poste.titre|default:item.personnel.fonction }}</td>
+                <td class="col-categorie">{{ item.categorie }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <!-- Récapitulatif -->
-    <div style="margin-top: 1.2cm;">
-        <div style="font-size:9pt; font-weight:bold; text-transform:uppercase;
-                    letter-spacing:.05em; color:#555; margin-bottom:4px;
-                    border-bottom:1px solid #ccc; padding-bottom:3px;">
-            Récapitulatif
-        </div>
-        <table style="width:40%; margin-top:4px;">
+    <!-- Récapitulatif par catégorie × genre -->
+    {% if repartition_cycles_data %}
+    <div class="recap">
+        <div class="recap-title">Récapitulatif par catégorie et par genre</div>
+        <table class="recap-table">
             <thead>
                 <tr>
-                    <th style="text-align:left;">Genre</th>
-                    <th style="text-align:center; width:80px;">Effectif</th>
+                    <th class="num">#</th>
+                    <th>Catégorie</th>
+                    <th class="h">Hommes</th>
+                    <th class="f">Femmes</th>
+                    <th class="t">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in repartition_cycles_data %}
+                <tr>
+                    <td class="num">{{ forloop.counter }}</td>
+                    <td>{{ row.categorie }}</td>
+                    <td class="h">{{ row.hommes }}</td>
+                    <td class="f">{{ row.femmes }}</td>
+                    <td class="t">{{ row.total }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="subtotal">
+                    <td class="num">&nbsp;</td>
+                    <td><strong>SOUS-TOTAL</strong></td>
+                    <td class="h"><strong>{{ nb_hommes }}</strong></td>
+                    <td class="f"><strong>{{ nb_femmes }}</strong></td>
+                    <td class="t"><strong>{{ nb_total }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <!-- Récapitulatif simple Hommes/Femmes/Total si aucune catégorie -->
+    <div class="recap">
+        <div class="recap-title">Récapitulatif</div>
+        <table class="recap-table">
+            <thead>
+                <tr>
+                    <th class="recap-simple-col-genre">Genre</th>
+                    <th class="recap-simple-col-effectif">Effectif</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>Hommes</td>
-                    <td style="text-align:center;">{{ nb_hommes }}</td>
+                    <td class="recap-simple-col-effectif">{{ nb_hommes }}</td>
                 </tr>
                 <tr>
                     <td>Femmes</td>
-                    <td style="text-align:center;">{{ nb_femmes }}</td>
+                    <td class="recap-simple-col-effectif">{{ nb_femmes }}</td>
                 </tr>
-                <tr style="background:#1a1a1a; color:white;">
-                    <td style="font-weight:bold; color:white;">TOTAL</td>
-                    <td style="text-align:center; font-weight:bold; color:white;">{{ nb_total }}</td>
+                <tr class="recap-simple-total">
+                    <td>TOTAL</td>
+                    <td class="recap-simple-col-effectif">{{ nb_total }}</td>
                 </tr>
             </tbody>
         </table>
     </div>
+    {% endif %}
 
     <!-- Signataire -->
     {% signataire_auto "LISTE_PERSONNEL" %}
@@ -125,9 +203,9 @@
     {% with adresse=identite.adresse|default:etablissement.adresse %}
     {% with ville=identite.ville|default:etablissement.ville %}
     {% with telephone=identite.telephone|default:etablissement.telephone %}
-    <div style="margin-top:1cm; border-top:1px solid #ccc; padding-top:0.5cm; display:flex; align-items:center; justify-content:space-between;">
+    <div class="qr-zone">
         {% qr_etablissement etab_nom adresse=adresse ville=ville telephone=telephone %}
-        <div style="font-size:8pt; color:#888;">Imprimé le {% now "d/m/Y" %}</div>
+        <div class="qr-date">Imprimé le {% now "d/m/Y" %}</div>
     </div>
     {% endwith %}{% endwith %}{% endwith %}{% endwith %}
 

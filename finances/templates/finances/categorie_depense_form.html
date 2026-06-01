@@ -1,0 +1,72 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if instance %}Modifier{% else %}Nouvelle{% endif %} catégorie — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-form">
+
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-4">
+      <a href="{% url 'finances:categorie_depense_list' %}" class="btn-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <h1 class="page-title">{% if instance %}Modifier{% else %}Nouvelle{% endif %} catégorie de dépense</h1>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="alert-error animate-fade-up mb-4">{{ error }}</div>
+  {% endif %}
+
+  <div class="card animate-fade-up delay-1">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-grid-2">
+
+          <div class="form-group">
+            <label class="input-label required">Nom</label>
+            <input type="text" name="nom" value="{{ instance.nom|default:'' }}"
+                   class="input" placeholder="Ex : Fournitures de bureau" required autofocus>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label required">Code</label>
+            <input type="text" name="code" value="{{ instance.code|default:'' }}"
+                   class="input" placeholder="Ex : FOUR01" maxlength="20" required>
+            <p class="input-hint">Code unique, majuscules, sans espace.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label">Type de dépense</label>
+            <select name="type_depense" class="input select">
+              {% for val, label in types %}
+              <option value="{{ val }}" {% if instance.type_depense == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group d-flex align-center gap-3 pt-5">
+            <label class="toggle-label">
+              <input type="checkbox" name="actif" {% if not instance or instance.actif %}checked{% endif %}>
+              <span class="toggle-track"></span>
+              <span>Catégorie active</span>
+            </label>
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+          <a href="{% url 'finances:categorie_depense_list' %}" class="btn-secondary">Annuler</a>
+          <button type="submit" class="btn-primary">
+            {% if instance %}Enregistrer{% else %}Créer la catégorie{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -6,7 +6,7 @@
     <h2 style="text-transform:uppercase; letter-spacing:.5pt;">
         RELEVÉ DE MOYENNES PAR ORDRE DE MÉRITE
     </h2>
-    <p style="font-size:9pt; color:#475569;">
+    <p style="font-size:9pt; color:#555;">
         Classe : <strong>{{ classe.nom }}</strong>
         &nbsp;|&nbsp; {{ trimestre.nom }}
         &nbsp;|&nbsp; Année scolaire : <strong>{{ annee.libelle }}</strong>
@@ -24,11 +24,10 @@
     </thead>
     <tbody>
         {% for e in eleves %}
-        <tr style="{% cycle '' 'background:#f8fafc;' %}">
+        <tr style="{% cycle '' 'background:#f5f5f5;' %}">
             <td style="text-align:center; font-weight:700;">{{ e.rang }}</td>
             <td>{{ e.eleve.nom|upper }} {{ e.eleve.prenom }}</td>
-            <td style="text-align:center; font-weight:700;
-                       color:{% if e.admis %}#166534{% else %}#991b1b{% endif %};">
+            <td style="text-align:center; font-weight:700;{% if not e.admis %} font-style:italic;{% endif %}">
                 {% if e.moyenne is not None %}{{ e.moyenne }}{% else %}—{% endif %}
             </td>
         </tr>
@@ -36,10 +35,15 @@
     </tbody>
 </table>
 {% else %}
-<p style="text-align:center; color:#94a3b8; font-style:italic; margin-top:20pt;">
+<p style="text-align:center; color:#555; font-style:italic; margin-top:20pt;">
     Aucune moyenne calculée pour cette classe et cette période.
 </p>
 {% endif %}
+
+<!-- Légende -->
+<p style="font-size:7pt; color:#555; margin-top:4pt; border-top:1pt solid #ccc; padding-top:3pt;">
+    Moyenne en gras normal = admis — Gras italique = moyenne insuffisante (&lt; 10/20)
+</p>
 
 {% load signataire_tags %}
 <div style="margin-top:24pt;">

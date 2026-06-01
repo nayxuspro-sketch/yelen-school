@@ -108,6 +108,15 @@ class User(AbstractUser, BaseModel):
         verbose_name='Établissement',
         help_text='Établissement de rattachement. Null pour Super Admin.',
     )
+    groupe = models.ForeignKey(
+        'etablissements.GroupeEtablissements',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='utilisateurs_reseau',
+        verbose_name='Groupe / Réseau',
+        help_text='Groupe géré (pour le rôle Directeur Réseau).',
+    )
     telephone = models.CharField(
         max_length=20,
         blank=True,

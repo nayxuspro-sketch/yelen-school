@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Répondre — {{ msg.etablissement.nom }}</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+</head>
+<body class="login-clean-body">
+
+  <div class="comm-reply-wrapper">
+
+    {# En-tête établissement #}
+    <div class="comm-reply-header">
+      <div class="login-clean-logo-icon">
+        <svg viewBox="0 0 32 32" fill="none">
+          <path d="M16 2L4 8v8c0 7.18 5.12 13.88 12 15.42 6.88-1.54 12-8.24 12-15.42V8L16 2z" fill="currentColor" opacity="0.2"/>
+          <path d="M16 2L4 8v8c0 7.18 5.12 13.88 12 15.42 6.88-1.54 12-8.24 12-15.42V8L16 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <p class="comm-reply-etab">{{ msg.etablissement.nom }}</p>
+        <p class="comm-reply-type">{{ msg.get_type_display }}</p>
+      </div>
+    </div>
+
+    {# Message de l'établissement #}
+    <div class="comm-reply-card">
+      <p class="comm-reply-objet">{{ msg.objet }}</p>
+      <p class="comm-reply-contenu">{{ msg.contenu }}</p>
+      <p class="comm-reply-meta">Concernant : <strong>{{ msg.eleve.prenom }} {{ msg.eleve.nom }}</strong></p>
+    </div>
+
+    {# État : déjà répondu #}
+    {% if deja_repondu %}
+    <div class="comm-reply-card">
+      <div class="login-clean-alert login-clean-alert-info">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Vous avez déjà répondu à ce message. Merci.
+      </div>
+    </div>
+
+    {# État : succès après soumission #}
+    {% elif succes %}
+    <div class="comm-reply-card">
+      <div class="login-clean-alert login-clean-alert-info">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Votre réponse a bien été enregistrée. Merci.
+      </div>
+    </div>
+
+    {# Formulaire de réponse #}
+    {% else %}
+    <form method="post" enctype="multipart/form-data" class="comm-reply-card">
+      {% csrf_token %}
+
+      {% if msg.type == 'CONVOCATION' and msg.creneaux_proposes %}
+      <div class="form-group">
+        <label class="input-label">Choisissez un créneau <span class="text-danger">*</span></label>
+        {% for creneau in msg.creneaux_proposes %}
+        <label class="comm-reply-radio-label">
+          <input type="radio" name="creneau_choisi" value="{{ creneau }}" required class="input-radio">
+          <span>{{ creneau }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if msg.type == 'AVERTISSEMENT' %}
+      <div class="form-group">
+        <label class="comm-reply-radio-label">
+          <input type="checkbox" name="accuse_reception" class="input-checkbox">
+          <span>J'accuse réception de cet avertissement et en prends note.</span>
+        </label>
+      </div>
+      {% endif %}
+
+      {% if msg.type == 'RELANCE' %}
+      <div class="form-group">
+        <label class="input-label">Date de règlement prévisionnelle</label>
+        <input type="date" name="date_reglement_prevue" class="input">
+      </div>
+      {% endif %}
+
+      {% if msg.type == 'JUSTIFICATIF' %}
+      <div class="form-group">
+        <label class="input-label">Justificatif d'absence (photo ou PDF)</label>
+        <input type="file" name="justificatif" accept="image/*,.pdf" class="input">
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="input-label">Commentaire (optionnel)</label>
+        <textarea name="commentaire" rows="3" class="input" placeholder="Votre message…"></textarea>
+      </div>
+
+      <button type="submit" class="btn-primary comm-reply-submit">Envoyer ma réponse</button>
+    </form>
+    {% endif %}
+
+  </div>
+
+</body>
+</html>

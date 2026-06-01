@@ -1,0 +1,7 @@
+<option value="">-- Choisir un exemplaire --</option>
+{% for e in exemplaires %}
+<option value="{{ e.pk }}">{{ e.code_exemplaire }} — {{ e.get_etat_display }}</option>
+{% endfor %}
+{% if not exemplaires %}
+<option value="" disabled>Aucun exemplaire disponible</option>
+{% endif %}

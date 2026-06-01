@@ -19,8 +19,8 @@
     <p class="page-subtitle">Bonjour, {{ request.user.get_full_name }}</p>
   </div>
   {% if annee_courante %}
-  <span class="badge badge-success" style="font-size:var(--text-xs); padding:6px 14px;">
-    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:4px;">
+  <span class="badge badge-success badge-lg">
+    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
     </svg>
     {{ annee_courante.libelle }}
@@ -30,25 +30,25 @@
 
 {# Alertes configuration #}
 {% if not annee_courante %}
-<div class="alert animate-fade-up" style="display:flex; align-items:flex-start; gap:0.75rem; background:var(--color-warning-bg,#fffbeb); border:1px solid #d97706; border-radius:10px; padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5);">
-  <svg width="20" height="20" fill="none" stroke="#d97706" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;">
+<div class="alert alert-warning animate-fade-up mb-5">
+  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="flex-shrink-0" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
   </svg>
   <div>
-    <div style="font-weight:600; color:#d97706; margin-bottom:2px;">Aucune année scolaire courante</div>
-    <div style="font-size:0.875rem; color:var(--color-text-secondary);">Définissez une année scolaire active dans les paramètres.</div>
-    <a href="{% url 'parametres:index' %}" class="btn-primary" style="margin-top:var(--space-3); display:inline-block; font-size:0.8rem; padding:6px 14px;">Configurer</a>
+    <div class="fw-semibold mb-1">Aucune année scolaire courante</div>
+    <div class="text-sm text-secondary">Définissez une année scolaire active dans les paramètres.</div>
+    <a href="{% url 'parametres:index' %}" class="btn-primary btn-sm mt-2 inline-flex">Configurer</a>
   </div>
 </div>
 {% endif %}
 {% if not request.user.etablissement %}
-<div class="alert animate-fade-up" style="display:flex; align-items:flex-start; gap:0.75rem; background:#fef2f2; border:1px solid #dc2626; border-radius:10px; padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5);">
-  <svg width="20" height="20" fill="none" stroke="#dc2626" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;">
+<div class="alert alert-danger animate-fade-up mb-5">
+  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="flex-shrink-0" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
   </svg>
   <div>
-    <div style="font-weight:600; color:#dc2626; margin-bottom:2px;">Compte non rattaché à un établissement</div>
-    <div style="font-size:0.875rem; color:var(--color-text-secondary);">Contactez un administrateur.</div>
+    <div class="fw-semibold mb-1">Compte non rattaché à un établissement</div>
+    <div class="text-sm text-secondary">Contactez un administrateur.</div>
   </div>
 </div>
 {% endif %}
@@ -57,7 +57,7 @@
 {# Directeur / Censeur / Super Admin #}
 {% if role == 'DIRECTEUR' or role == 'CENSEUR' or role == 'SUPER_ADMIN' %}
 
-<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
+<div class="stats-grid stats-grid-sm animate-fade-up mb-5">
   <div class="stat-card">
     <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
     <div><div class="stat-value">{{ total_eleves }}</div><div class="stat-label">Élèves inscrits</div></div>
@@ -72,59 +72,215 @@
   </div>
   <div class="stat-card">
     <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-    <div><div class="stat-value" style="font-size:1rem;">{{ encaissements_annee|floatformat:0 }} <span style="font-size:0.65rem;color:var(--color-text-muted);">FCFA</span></div><div class="stat-label">Encaissements</div></div>
+    <div><div class="stat-value stat-value-compact">{{ encaissements_annee|floatformat:0 }} <span class="stat-unit">FCFA</span></div><div class="stat-label">Encaissements</div></div>
   </div>
-  <a href="{% url 'presences:appel_list' %}" class="stat-card" style="text-decoration:none;">
-    <div class="stat-icon" style="background:rgba(239,68,68,0.12);"><svg fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
-    <div><div class="stat-value" style="color:#ef4444;">{{ nb_absences_aujourd_hui }}</div><div class="stat-label">Absences aujourd'hui</div></div>
+  <a href="{% url 'presences:appel_list' %}" class="stat-card">
+    <div class="stat-icon stat-icon-red"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+    <div><div class="stat-value stat-value-danger">{{ nb_absences_aujourd_hui }}</div><div class="stat-label">Absences aujourd'hui</div></div>
   </a>
-  <a href="{% url 'presences:justification_list' %}?statut=EN_ATTENTE" class="stat-card" style="text-decoration:none;">
-    <div class="stat-icon" style="background:rgba(245,158,11,0.12);"><svg fill="none" stroke="#f59e0b" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-    <div><div class="stat-value" style="color:#f59e0b;">{{ nb_justifications_attente }}</div><div class="stat-label">Justif. en attente</div></div>
+  <a href="{% url 'presences:justification_list' %}?statut=EN_ATTENTE" class="stat-card">
+    <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value stat-value-warning">{{ nb_justifications_attente }}</div><div class="stat-label">Justif. en attente</div></div>
   </a>
-  <a href="{% url 'viescolaire:sanction_list' %}" class="stat-card" style="text-decoration:none;">
-    <div class="stat-icon" style="background:rgba(139,92,246,0.12);"><svg fill="none" stroke="#8b5cf6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
-    <div><div class="stat-value" style="color:#8b5cf6;">{{ nb_sanctions_recentes }}</div><div class="stat-label">Sanctions (7 jours)</div></div>
+  <a href="{% url 'viescolaire:sanction_list' %}" class="stat-card">
+    <div class="stat-icon stat-icon-purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+    <div><div class="stat-value stat-value-purple">{{ nb_sanctions_recentes }}</div><div class="stat-label">Sanctions (7 jours)</div></div>
   </a>
 </div>
 
 {% if repartition_cycles %}
-<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5); padding:var(--space-4) var(--space-5);">
-  <div style="font-weight:600; font-size:0.85rem; margin-bottom:var(--space-3); color:var(--color-text-secondary);">Répartition par cycle</div>
-  <div style="display:flex; gap:var(--space-3); flex-wrap:wrap;">
+<div class="card animate-fade-up delay-1 mb-5">
+  <div class="section-label">Répartition par cycle</div>
+  <div class="d-flex gap-3 flex-wrap">
     {% for item in repartition_cycles %}
-    <div style="flex:1; min-width:110px; background:var(--color-bg-input); border-radius:8px; padding:var(--space-3) var(--space-4); text-align:center;">
-      <div style="font-size:1.5rem; font-weight:700; color:var(--color-primary);">{{ item.nb }}</div>
-      <div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">{{ item.cycle.nom }}</div>
+    <div class="cycle-pill">
+      <div class="cycle-pill-value color-primary">{{ item.nb }}</div>
+      <div class="cycle-pill-label text-secondary">{{ item.cycle.nom }}</div>
     </div>
     {% endfor %}
   </div>
 </div>
 {% endif %}
 
-{# Calendrier scolaire - visible pour tous les rôles #}
+{# Calendrier scolaire #}
 {% if evenements_calendrier %}
-<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
-  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); display:flex; justify-content:space-between; align-items:center;">
-    <span style="font-weight:600;">Calendrier scolaire</span>
-    <a href="{% url 'parametres:calendrier' %}" style="font-size:0.8rem; color:var(--color-primary);">Voir tout →</a>
+<div class="card-flush animate-fade-up delay-1 mb-5">
+  <div class="card-header">
+    <span class="fw-semibold">Calendrier scolaire</span>
+    <a href="{% url 'parametres:calendrier' %}" class="text-xs color-primary">Voir tout →</a>
   </div>
-  <div style="padding:var(--space-3) var(--space-5);">
-    <div style="display:flex; gap:var(--space-2); flex-wrap:wrap;">
-      {% for evt in evenements_calendrier %}
-      <div style="display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); background:var(--color-bg-input); border-radius:6px; font-size:0.8rem;">
-        <span style="width:8px; height:8px; border-radius:50%; background:{{ evt.COULEUR_PAR_TYPE|default:'#10b981' }};"></span>
-        <span style="font-weight:500;">{{ evt.titre }}</span>
-        <span style="color:var(--color-text-muted);">{{ evt.date_debut|date:"d/m" }}{% if evt.date_fin and evt.date_fin != evt.date_debut %} - {{ evt.date_fin|date:"d/m" }}{% endif %}</span>
-      </div>
-      {% endfor %}
+  <div class="p-4 d-flex gap-2 flex-wrap">
+    {% for evt in evenements_calendrier %}
+    <div class="event-chip">
+      <span class="event-dot" style="background:{{ evt.COULEUR_PAR_TYPE|default:'#10b981' }}"></span>
+      <span class="fw-medium">{{ evt.titre }}</span>
+      <span class="color-muted">{{ evt.date_debut|date:"d/m" }}{% if evt.date_fin and evt.date_fin != evt.date_debut %} - {{ evt.date_fin|date:"d/m" }}{% endif %}</span>
     </div>
+    {% endfor %}
   </div>
 </div>
 {% endif %}
 
-<div class="animate-fade-up delay-2" style="margin-bottom:var(--space-3);">
-  <span style="font-size:0.8rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.08em; font-weight:600;">Accès rapides</span>
+{# Widget IA décrochage scolaire #}
+{% if nb_risques_critiques or nb_risques_eleves or nb_risques_moderes %}
+<div class="card animate-fade-up delay-2 mb-5">
+  <div class="card-header">
+    <div class="d-flex align-center gap-3">
+      <div class="stat-icon-wrap" style="background: rgba(220,53,69,0.15); color: #FF6B7A; width: 32px; height: 32px; margin-bottom: 0;">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="d-flex align-center gap-2">
+          <span class="card-title" style="margin-bottom:0;">Risque de décrochage scolaire</span>
+          <span class="badge badge-purple">
+            <svg width="6" height="6" viewBox="0 0 6 6" fill="currentColor" class="mr-1" style="margin-right: 4px;"><circle cx="3" cy="3" r="3"/></svg>
+            IA
+          </span>
+        </div>
+        <div class="text-xs text-muted mt-1">
+          Dernière analyse : {{ risques_critiques.0.updated_at|date:"d/m/Y H:i"|default:"—" }}
+        </div>
+      </div>
+    </div>
+    <form method="post" action="{% url 'core:risque_recalculer' %}" class="d-flex">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary btn-sm" title="Recalculer les scores">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Recalculer
+      </button>
+    </form>
+  </div>
+
+  <div class="card-body">
+    <div class="stats-grid mb-5">
+      <div class="stat-card">
+        <div class="stat-card-accent" style="--accent-color: #DC3545"></div>
+        <div class="stat-value">{{ nb_risques_critiques }}</div>
+        <div class="stat-label">Critique</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-accent" style="--accent-color: #F5A623"></div>
+        <div class="stat-value">{{ nb_risques_eleves }}</div>
+        <div class="stat-label">Élevé</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-accent" style="--accent-color: #17A2B8"></div>
+        <div class="stat-value">{{ nb_risques_moderes }}</div>
+        <div class="stat-label">Modéré</div>
+      </div>
+    </div>
+
+    {% if risques_critiques %}
+    <div class="mb-4">
+      <div class="text-sm fw-semibold mb-3 text-danger">Élèves en situation critique</div>
+      <div class="table-scroll table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Élève</th>
+              <th>Classe</th>
+              <th>Score de risque</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in risques_critiques %}
+            <tr>
+              <td>
+                <div class="d-flex align-center gap-3">
+                  <div class="avatar-initials" style="background: rgba(220,53,69,0.15); color: #FF6B7A;">
+                    {{ r.inscription.eleve.nom|first|upper }}{{ r.inscription.eleve.prenom|first|upper }}
+                  </div>
+                  <a href="/inscriptions/eleve/{{ r.inscription.eleve.pk }}/" class="text-primary fw-medium">
+                    {{ r.inscription.eleve.nom }} {{ r.inscription.eleve.prenom }}
+                  </a>
+                </div>
+              </td>
+              <td class="text-muted">{{ r.inscription.classe.nom }}</td>
+              <td style="width: 40%;">
+                <div class="d-flex align-center gap-3">
+                  <span class="fw-bold text-danger" style="min-width: 45px;">{{ r.score }}<span class="text-xs text-muted">/100</span></span>
+                  <div class="progress-track flex-1">
+                    <div class="progress-bar" style="width: {{ r.score }}%; background: linear-gradient(90deg, #DC3545, #FF6B7A);"></div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if risques_eleves and not risques_critiques %}
+    <div>
+      <div class="text-sm fw-semibold mb-3 text-warning">Élèves à risque élevé</div>
+      <div class="table-scroll table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Élève</th>
+              <th>Classe</th>
+              <th>Score de risque</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in risques_eleves %}
+            <tr>
+              <td>
+                <div class="d-flex align-center gap-3">
+                  <div class="avatar-initials" style="background: rgba(245,166,35,0.15); color: #F5A623;">
+                    {{ r.inscription.eleve.nom|first|upper }}{{ r.inscription.eleve.prenom|first|upper }}
+                  </div>
+                  <a href="/inscriptions/eleve/{{ r.inscription.eleve.pk }}/" class="text-primary fw-medium">
+                    {{ r.inscription.eleve.nom }} {{ r.inscription.eleve.prenom }}
+                  </a>
+                </div>
+              </td>
+              <td class="text-muted">{{ r.inscription.classe.nom }}</td>
+              <td style="width: 40%;">
+                <div class="d-flex align-center gap-3">
+                  <span class="fw-bold text-warning" style="min-width: 45px;">{{ r.score }}<span class="text-xs text-muted">/100</span></span>
+                  <div class="progress-track flex-1">
+                    <div class="progress-bar" style="width: {{ r.score }}%; background: linear-gradient(90deg, #F5A623, #F7C04A);"></div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% elif annee_courante and role in 'DIRECTEUR CENSEUR SUPER_ADMIN' %}
+<div class="card animate-fade-up delay-2 mb-5 d-flex align-center justify-between gap-3 flex-wrap">
+  <div class="d-flex align-center gap-2 text-muted text-sm">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+    </svg>
+    Aucune analyse de décrochage disponible. Lancez le calcul pour détecter les élèves à risque.
+  </div>
+  <form method="post" action="{% url 'core:risque_recalculer' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn-primary btn-sm">
+      <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/>
+      </svg>
+      Analyser les risques
+    </button>
+  </form>
+</div>
+{% endif %}
+
+<div class="animate-fade-up delay-2 mb-3">
+  <span class="section-label">Accès rapides</span>
 </div>
 <div class="modules-grid animate-fade-up delay-2">
   <a href="{% url 'inscriptions:eleve_list' %}" class="module-card"><div class="module-card-header"><div class="module-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div><div class="module-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></div></div><h2 class="module-title">Inscriptions</h2><p class="module-description">Élèves et réinscriptions.</p></a>
@@ -141,7 +297,7 @@
 {# Enseignant #}
 {% elif role == 'ENSEIGNANT' %}
 
-<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
+<div class="stats-grid stats-grid-sm animate-fade-up mb-5">
   <div class="stat-card">
     <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
     <div><div class="stat-value">{{ nb_classes }}</div><div class="stat-label">Classes actives</div></div>
@@ -155,16 +311,18 @@
     <div><div class="stat-value">{{ nb_evaluations_annee }}</div><div class="stat-label">Évaluations</div></div>
   </div>
   <div class="stat-card">
-    <div class="stat-icon" style="background:rgba(239,68,68,0.12);"><svg fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
-    <div><div class="stat-value" style="color:#ef4444;">{{ nb_eleves_sans_notes }}</div><div class="stat-label">Élèves sans notes</div></div>
+    <div class="stat-icon stat-icon-red"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+    <div><div class="stat-value stat-value-danger">{{ nb_eleves_sans_notes }}</div><div class="stat-label">Élèves sans notes</div></div>
   </div>
 </div>
 
 {% if evaluations_recentes %}
-<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
-  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">Évaluations récentes</div>
+<div class="card-flush animate-fade-up delay-1 mb-5">
+  <div class="card-header">
+    <span class="fw-semibold">Évaluations récentes</span>
+  </div>
   <div class="table-scroll">
-    <table class="data-table" style="margin:0;">
+    <table class="data-table">
       <thead><tr><th>Classe</th><th>Matière</th><th>Date</th><th>Statut</th></tr></thead>
       <tbody>
         {% for ev in evaluations_recentes %}
@@ -192,38 +350,40 @@
 {# Comptable #}
 {% elif role == 'COMPTABLE' %}
 
-<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
+<div class="stats-grid stats-grid-sm animate-fade-up mb-5">
   <div class="stat-card">
     <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-    <div><div class="stat-value" style="font-size:0.9rem;">{{ total_aujourd_hui|floatformat:0 }} <span style="font-size:0.6rem;color:var(--color-text-muted);">CFA</span></div><div class="stat-label">Encaissé aujourd'hui</div></div>
+    <div><div class="stat-value stat-value-compact">{{ total_aujourd_hui|floatformat:0 }} <span class="stat-unit">CFA</span></div><div class="stat-label">Encaissé aujourd'hui</div></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
-    <div><div class="stat-value" style="font-size:0.9rem;">{{ total_mois|floatformat:0 }} <span style="font-size:0.6rem;color:var(--color-text-muted);">CFA</span></div><div class="stat-label">Encaissé ce mois</div></div>
+    <div><div class="stat-value stat-value-compact">{{ total_mois|floatformat:0 }} <span class="stat-unit">CFA</span></div><div class="stat-label">Encaissé ce mois</div></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg></div>
-    <div><div class="stat-value" style="font-size:0.9rem;">{{ encaissements_annee|floatformat:0 }} <span style="font-size:0.6rem;color:var(--color-text-muted);">CFA</span></div><div class="stat-label">Total annuel</div></div>
+    <div><div class="stat-value stat-value-compact">{{ encaissements_annee|floatformat:0 }} <span class="stat-unit">CFA</span></div><div class="stat-label">Total annuel</div></div>
   </div>
-  <a href="{% url 'finances:liste_redevables' %}" class="stat-card" style="text-decoration:none;">
-    <div class="stat-icon" style="background:rgba(239,68,68,0.12);"><svg fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-    <div><div class="stat-value" style="color:#ef4444;">{{ nb_redevables }}</div><div class="stat-label">Redevables</div></div>
+  <a href="{% url 'finances:liste_redevables' %}" class="stat-card">
+    <div class="stat-icon stat-icon-red"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value stat-value-danger">{{ nb_redevables }}</div><div class="stat-label">Redevables</div></div>
   </a>
 </div>
 
 {% if paiements_aujourd_hui %}
-<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
-  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">Paiements d'aujourd'hui</div>
+<div class="card-flush animate-fade-up delay-1 mb-5">
+  <div class="card-header">
+    <span class="fw-semibold">Paiements d'aujourd'hui</span>
+  </div>
   <div class="table-scroll">
-    <table class="data-table" style="margin:0;">
-      <thead><tr><th>Élève</th><th>Rubrique</th><th style="text-align:right;">Montant</th><th>Reçu</th></tr></thead>
+    <table class="data-table">
+      <thead><tr><th>Élève</th><th>Rubrique</th><th class="td-right">Montant</th><th>Reçu</th></tr></thead>
       <tbody>
         {% for p in paiements_aujourd_hui %}
         <tr>
           <td>{{ p.inscription.eleve.get_nom_complet }}</td>
           <td>{{ p.rubrique.nom|default:"—" }}</td>
-          <td style="text-align:right; font-family:var(--font-mono);">{{ p.montant|floatformat:0 }} CFA</td>
-          <td style="font-size:0.8rem; color:var(--color-text-muted);">{{ p.numero_recu|default:"—" }}</td>
+          <td class="td-right td-mono">{{ p.montant|floatformat:0 }} CFA</td>
+          <td class="td-muted">{{ p.numero_recu|default:"—" }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -243,7 +403,7 @@
 {# Secrétaire #}
 {% elif role == 'SECRETAIRE' %}
 
-<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
+<div class="stats-grid stats-grid-sm animate-fade-up mb-5">
   <div class="stat-card">
     <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
     <div><div class="stat-value">{{ total_eleves }}</div><div class="stat-label">Élèves</div></div>
@@ -263,20 +423,20 @@
 </div>
 
 {% if inscriptions_recentes %}
-<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
-  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); display:flex; justify-content:space-between; align-items:center;">
-    <span style="font-weight:600;">Inscriptions récentes</span>
-    <a href="{% url 'inscriptions:eleve_list' %}" style="font-size:0.8rem; color:var(--color-primary);">Voir tout →</a>
+<div class="card-flush animate-fade-up delay-1 mb-5">
+  <div class="widget-header">
+    <span class="widget-title">Inscriptions récentes</span>
+    <a href="{% url 'inscriptions:eleve_list' %}" class="widget-link">Voir tout →</a>
   </div>
   <div class="table-scroll">
-    <table class="data-table" style="margin:0;">
+    <table class="data-table">
       <thead><tr><th>Élève</th><th>Classe</th><th>Date</th></tr></thead>
       <tbody>
         {% for ins in inscriptions_recentes %}
         <tr>
           <td>{{ ins.eleve.get_nom_complet }}</td>
           <td>{{ ins.classe.nom }}</td>
-          <td style="font-size:0.82rem; color:var(--color-text-muted);">{{ ins.created_at|date:"d/m/Y" }}</td>
+          <td class="td-small td-muted">{{ ins.created_at|date:"d/m/Y" }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -296,40 +456,40 @@
 {# AVS #}
 {% elif role == 'AVS' %}
 
-<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); margin-bottom:var(--space-5);">
+<div class="stats-grid stats-grid-sm animate-fade-up mb-5">
   <div class="stat-card">
-    <div class="stat-icon" style="background:rgba(239,68,68,0.12);"><svg fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></div>
-    <div><div class="stat-value" style="color:#ef4444;">{{ nb_absences_aujourd_hui }}</div><div class="stat-label">Absences aujourd'hui</div></div>
+    <div class="stat-icon stat-icon-red"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></div>
+    <div><div class="stat-value stat-value-danger">{{ nb_absences_aujourd_hui }}</div><div class="stat-label">Absences aujourd'hui</div></div>
   </div>
   <div class="stat-card">
-    <div class="stat-icon" style="background:rgba(245,158,11,0.12);"><svg fill="none" stroke="#f59e0b" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-    <div><div class="stat-value" style="color:#f59e0b;">{{ nb_retards_aujourd_hui }}</div><div class="stat-label">Retards aujourd'hui</div></div>
+    <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value stat-value-warning">{{ nb_retards_aujourd_hui }}</div><div class="stat-label">Retards aujourd'hui</div></div>
   </div>
-  <a href="{% url 'presences:appel_list' %}" class="stat-card" style="text-decoration:none;">
+  <a href="{% url 'presences:appel_list' %}" class="stat-card">
     <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
     <div><div class="stat-value">{{ nb_appels_aujourd_hui }}</div><div class="stat-label">Appels effectués</div></div>
   </a>
-  <a href="{% url 'presences:justification_list' %}?statut=EN_ATTENTE" class="stat-card" style="text-decoration:none;">
-    <div class="stat-icon" style="background:rgba(139,92,246,0.12);"><svg fill="none" stroke="#8b5cf6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
-    <div><div class="stat-value" style="color:#8b5cf6;">{{ nb_justifications_attente }}</div><div class="stat-label">Justif. en attente</div></div>
+  <a href="{% url 'presences:justification_list' %}?statut=EN_ATTENTE" class="stat-card">
+    <div class="stat-icon stat-icon-purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+    <div><div class="stat-value stat-value-purple">{{ nb_justifications_attente }}</div><div class="stat-label">Justif. en attente</div></div>
   </a>
 </div>
 
 {% if sanctions_recentes %}
-<div class="card animate-fade-up delay-1" style="margin-bottom:var(--space-5);">
-  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); display:flex; justify-content:space-between; align-items:center;">
-    <span style="font-weight:600;">Sanctions récentes</span>
-    <a href="{% url 'viescolaire:sanction_list' %}" style="font-size:0.8rem; color:var(--color-primary);">Voir tout →</a>
+<div class="card-flush animate-fade-up delay-1 mb-5">
+  <div class="widget-header">
+    <span class="widget-title">Sanctions récentes</span>
+    <a href="{% url 'viescolaire:sanction_list' %}" class="widget-link">Voir tout →</a>
   </div>
   <div class="table-scroll">
-    <table class="data-table" style="margin:0;">
+    <table class="data-table">
       <thead><tr><th>Élève</th><th>Type</th><th>Date</th></tr></thead>
       <tbody>
         {% for s in sanctions_recentes %}
         <tr>
           <td>{{ s.inscription.eleve.get_nom_complet }}</td>
           <td>{{ s.type_sanction.nom }}</td>
-          <td style="font-size:0.82rem; color:var(--color-text-muted);">{{ s.date_sanction|date:"d/m/Y" }}</td>
+          <td class="td-small td-muted">{{ s.date_sanction|date:"d/m/Y" }}</td>
         </tr>
         {% endfor %}
       </tbody>

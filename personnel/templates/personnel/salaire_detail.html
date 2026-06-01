@@ -4,136 +4,130 @@
 
 {% block content %}
 
-<div class="page-header animate-fade-up">
-  <div class="d-flex align-center gap-4">
-    <a href="{% url 'personnel:detail' salaire.personnel.pk %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
       </svg>
-    </a>
+    </div>
     <div>
-      <h1 class="page-title">Bulletin de Salaire</h1>
-      <p class="page-subtitle">
-        {{ salaire.personnel.get_nom_complet }} —
-        {{ salaire.get_mois_display }} {{ salaire.annee }}
-      </p>
+      <h1>Bulletin de Salaire</h1>
+      <p>{{ salaire.personnel.get_nom_complet }} — {{ salaire.get_mois_display }} {{ salaire.annee }}</p>
     </div>
   </div>
-  <div class="d-flex gap-2 align-center">
+  <div class="dash-section-actions">
     {% if salaire.statut == 'BROUILLON' %}
-      <span class="badge badge-neutral" style="font-size:0.8rem; padding:4px 10px;">Brouillon</span>
-      <a href="{% url 'personnel:salaire_update' salaire.pk %}" class="btn-secondary">Modifier</a>
+      <span class="dash-badge" style="background: rgba(148,163,184,0.15); color: #64748b;">Brouillon</span>
+      <a href="{% url 'personnel:salaire_update' salaire.pk %}" class="dash-btn dash-btn-secondary">Modifier</a>
       <form method="post" action="{% url 'personnel:salaire_valider' salaire.pk %}" style="display:inline;">
         {% csrf_token %}
-        <button type="submit" class="btn-primary">Valider</button>
+        <button type="submit" class="dash-btn dash-btn-primary">Valider</button>
       </form>
       <form method="post" action="{% url 'personnel:salaire_delete' salaire.pk %}" style="display:inline;"
             onsubmit="return confirm('Supprimer ce bulletin ?')">
         {% csrf_token %}
-        <button type="submit" class="btn-secondary"
-                style="color:var(--color-danger,#e53e3e); border-color:var(--color-danger,#e53e3e);">
-          Supprimer
-        </button>
+        <button type="submit" class="dash-btn dash-btn-danger">Supprimer</button>
       </form>
     {% elif salaire.statut == 'VALIDE' %}
-      <span class="badge badge-info" style="font-size:0.8rem; padding:4px 10px;">Validé</span>
-      <button type="button" class="btn-primary"
+      <span class="dash-badge" style="background: rgba(59,130,246,0.15); color: #3b82f6;">Validé</span>
+      <button type="button" class="dash-btn dash-btn-primary"
               onclick="document.getElementById('modal-paiement').style.display='flex'">
         Marquer payé
       </button>
     {% else %}
-      <span class="badge badge-success" style="font-size:0.8rem; padding:4px 10px;">Payé</span>
+      <span class="dash-badge" style="background: rgba(0,168,107,0.15); color: #16a34a;">Payé</span>
     {% endif %}
-    <a href="?format=pdf" target="_blank" class="btn-secondary">Imprimer PDF</a>
+    <a href="?format=pdf" target="_blank" class="dash-btn dash-btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Imprimer PDF
+    </a>
   </div>
 </div>
 
-{# ── Récapitulatif ── #}
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-6); max-width:860px;" class="animate-fade-up delay-1">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 900px;" class="animate-fade-up">
 
-  {# Gains #}
-  <div class="card">
-    <div class="card-header"><span class="card-title">Éléments de rémunération</span></div>
-    <div style="padding:var(--space-5);">
+  <div class="dash-card">
+    <div class="dash-card-header">
+      <h3 class="dash-card-title">Éléments de rémunération</h3>
+    </div>
+    <div class="dash-card-body">
       {% include "personnel/partials/salaire_ligne.html" with label="Salaire de base" montant=salaire.salaire_base %}
       {% include "personnel/partials/salaire_ligne.html" with label="Prime d'ancienneté" montant=salaire.prime_anciennete %}
       {% include "personnel/partials/salaire_ligne.html" with label="Indemnité de transport" montant=salaire.indemnite_transport %}
       {% include "personnel/partials/salaire_ligne.html" with label="Indemnité de logement" montant=salaire.indemnite_logement %}
       {% include "personnel/partials/salaire_ligne.html" with label="Autres primes" montant=salaire.autres_primes %}
-      <div style="border-top:2px solid var(--color-primary); margin-top:var(--space-3); padding-top:var(--space-3);">
-        <div class="d-flex justify-between fw-bold">
-          <span>TOTAL BRUT</span>
-          <span class="text-mono">{{ salaire.salaire_brut|floatformat:"0" }} FCFA</span>
-        </div>
+      <div style="border-top: 2px solid var(--color-primary); margin-top: 0.75rem; padding-top: 0.75rem; display: flex; justify-content: space-between; font-weight: 700;">
+        <span>TOTAL BRUT</span>
+        <span style="font-family: var(--font-mono); color: var(--color-primary);">{{ salaire.salaire_brut|floatformat:"0" }} F</span>
       </div>
     </div>
   </div>
 
-  {# Retenues + net #}
-  <div class="card">
-    <div class="card-header"><span class="card-title">Retenues</span></div>
-    <div style="padding:var(--space-5);">
+  <div class="dash-card">
+    <div class="dash-card-header">
+      <h3 class="dash-card-title">Retenues</h3>
+    </div>
+    <div class="dash-card-body">
       {% include "personnel/partials/salaire_ligne.html" with label="Retenue CNSS" montant=salaire.retenue_cnss danger=True %}
       {% include "personnel/partials/salaire_ligne.html" with label="Retenue IUTS" montant=salaire.retenue_iuts danger=True %}
       {% include "personnel/partials/salaire_ligne.html" with label="Autres retenues" montant=salaire.autres_retenues danger=True %}
-      <div style="border-top:1px solid var(--color-border); margin-top:var(--space-3); padding-top:var(--space-3);">
-        <div class="d-flex justify-between" style="color:var(--color-danger,#e53e3e);">
-          <span class="fw-medium">Total retenues</span>
-          <span class="text-mono fw-bold">- {{ salaire.total_retenues|floatformat:"0" }} FCFA</span>
-        </div>
+      <div style="border-top: 1px solid var(--color-border); margin-top: 0.75rem; padding-top: 0.75rem; display: flex; justify-content: space-between; color: var(--color-danger); font-weight: 600;">
+        <span>Total retenues</span>
+        <span style="font-family: var(--font-mono);">- {{ salaire.total_retenues|floatformat:"0" }} F</span>
       </div>
-      <div style="border-top:2px solid var(--color-primary); margin-top:var(--space-4); padding-top:var(--space-4);
-                  background:var(--color-primary-subtle); border-radius:6px; padding:var(--space-4); margin-top:var(--space-4);">
-        <div class="d-flex justify-between">
-          <span class="fw-bold" style="font-size:1.05rem;">NET À PAYER</span>
-          <span class="text-mono fw-bold" style="font-size:1.2rem; color:var(--color-primary);">
-            {{ salaire.salaire_net|floatformat:"0" }} FCFA
-          </span>
-        </div>
+      <div style="border-top: 2px solid var(--color-primary); margin-top: 1rem; padding: 1rem; background: var(--color-primary-ambient); border-radius: 8px; display: flex; justify-content: space-between; font-weight: 700;">
+        <span style="font-size: 1.05rem;">NET À PAYER</span>
+        <span style="font-family: var(--font-mono); font-size: 1.2rem; color: var(--color-primary);">
+          {{ salaire.salaire_net|floatformat:"0" }} F
+        </span>
       </div>
     </div>
   </div>
 
 </div>
 
-{# Infos paiement #}
 {% if salaire.date_paiement or salaire.reference_paiement %}
-<div class="card animate-fade-up delay-2" style="max-width:860px; margin-top:var(--space-4);">
-  <div class="card-header"><span class="card-title">Informations de paiement</span></div>
-  <div style="padding:var(--space-4); display:flex; gap:var(--space-8);">
+<div class="dash-card animate-fade-up" style="max-width: 900px; margin-top: 1rem;">
+  <div class="dash-card-header">
+    <h3 class="dash-card-title">Informations de paiement</h3>
+  </div>
+  <div class="dash-card-body" style="display: flex; gap: 2rem;">
     {% if salaire.date_paiement %}
       <div>
-        <div class="text-muted" style="font-size:0.75rem; text-transform:uppercase;">Date</div>
-        <div class="fw-medium">{{ salaire.date_paiement|date:"d/m/Y" }}</div>
+        <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">Date</div>
+        <div style="font-weight: 500;">{{ salaire.date_paiement|date:"d/m/Y" }}</div>
       </div>
     {% endif %}
     {% if salaire.reference_paiement %}
       <div>
-        <div class="text-muted" style="font-size:0.75rem; text-transform:uppercase;">Référence</div>
-        <div class="fw-medium text-mono">{{ salaire.reference_paiement }}</div>
+        <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">Référence</div>
+        <div style="font-weight: 500; font-family: var(--font-mono);">{{ salaire.reference_paiement }}</div>
       </div>
     {% endif %}
   </div>
 </div>
 {% endif %}
 
-{# Modal paiement #}
-<div id="modal-paiement" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
-     align-items:center; justify-content:center; z-index:1000;">
-  <div class="card" style="width:420px; padding:var(--space-6);">
-    <h3 class="fw-bold" style="margin-bottom:var(--space-4);">Confirmer le paiement</h3>
+<div id="modal-paiement" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000;">
+  <div class="dash-card" style="width: 400px; padding: 1.5rem;">
+    <h3 style="font-weight: 700; margin-bottom: 1rem;">Confirmer le paiement</h3>
     <form method="post" action="{% url 'personnel:salaire_payer' salaire.pk %}">
       {% csrf_token %}
-      <div class="form-group">
-        <label class="form-label">Référence de paiement (optionnel)</label>
-        <input type="text" name="reference_paiement" class="input w-full" placeholder="N° virement, caisse, etc.">
+      <div class="dash-form-group">
+        <label class="dash-label">Référence de paiement (optionnel)</label>
+        <input type="text" name="reference_paiement" class="dash-input" placeholder="N° virement, caisse, etc.">
       </div>
-      <div class="d-flex gap-3" style="margin-top:var(--space-4);">
-        <button type="button" class="btn-secondary" style="flex:1;"
+      <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+        <button type="button" class="dash-btn dash-btn-secondary" style="flex: 1;"
                 onclick="document.getElementById('modal-paiement').style.display='none'">
           Annuler
         </button>
-        <button type="submit" class="btn-primary" style="flex:1;">Confirmer le paiement</button>
+        <button type="submit" class="dash-btn dash-btn-primary" style="flex: 1;">Confirmer</button>
       </div>
     </form>
   </div>

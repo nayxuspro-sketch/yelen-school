@@ -1,0 +1,74 @@
+<div id="comm-list-container"
+     hx-get="{% url 'communication:message_list' %}"
+     hx-trigger="messageCreated from:body"
+     hx-target="this"
+     hx-swap="outerHTML"
+     class="table-wrapper">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Type</th>
+          <th>Objet</th>
+          <th>SMS</th>
+          <th>Statut</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in messages %}
+        <tr>
+          <td class="fw-medium">{{ m.eleve.prenom }} {{ m.eleve.nom }}</td>
+          <td>
+            {% if m.type == 'CONVOCATION' %}
+              <span class="badge badge-info">Convocation</span>
+            {% elif m.type == 'AVERTISSEMENT' %}
+              <span class="badge badge-warning">Avertissement</span>
+            {% elif m.type == 'JUSTIFICATIF' %}
+              <span class="badge badge-neutral">Justificatif</span>
+            {% else %}
+              <span class="badge badge-danger">Relance</span>
+            {% endif %}
+          </td>
+          <td class="text-secondary">{{ m.objet|truncatechars:50 }}</td>
+          <td>
+            {% if m.sms_envoye %}
+              <span class="badge badge-success">Envoyé</span>
+            {% else %}
+              <span class="badge badge-neutral">Non</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if m.statut == 'REPONDU' %}
+              <span class="badge badge-success">Répondu</span>
+            {% elif m.statut == 'LU' %}
+              <span class="badge badge-info">Lu</span>
+            {% else %}
+              <span class="badge badge-neutral">Envoyé</span>
+            {% endif %}
+          </td>
+          <td class="text-secondary text-sm">{{ m.created_at|date:"d/m/Y" }}</td>
+          <td>
+            <a href="{% url 'communication:message_detail' m.pk %}" class="btn-icon" title="Voir le détail">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <p class="empty-state-text">Aucun message envoyé pour le moment.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

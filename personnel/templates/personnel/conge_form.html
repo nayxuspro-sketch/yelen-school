@@ -7,7 +7,7 @@
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
     <a href="{% if membre %}{% url 'personnel:detail' membre.pk %}{% else %}{% url 'personnel:conge_list' %}{% endif %}"
-       class="btn-icon">
+       class="btn-icon" aria-label="Retour">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
@@ -19,91 +19,92 @@
   </div>
 </div>
 
-<div style="display:grid; grid-template-columns:1fr {% if jours_info %}280px{% endif %}; gap:var(--space-6); max-width:860px; align-items:start;"
-     class="animate-fade-up delay-1">
+<div class="d-flex gap-6 align-start">
 
-  <form method="post">
-    {% csrf_token %}
+<form method="post" class="card animate-fade-up delay-1" style="flex: 1;">
+  {% csrf_token %}
 
-    {% if form.non_field_errors %}
-      <div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>
-    {% endif %}
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>
+  {% endif %}
 
-    <div class="card">
-      <div class="card-header"><span class="card-title">Détails du congé</span></div>
-      <div style="padding:var(--space-5); display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
+  <div class="card-header">
+    <span class="card-title">Détails du congé</span>
+  </div>
 
-        <div class="form-group" style="grid-column:1/3;">
-          <label class="form-label">Membre du personnel *</label>
-          {{ form.personnel }}
-          {% if form.personnel.errors %}<p class="form-error">{{ form.personnel.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div class="form-group" style="grid-column:1/3;">
-          <label class="form-label">Type de congé *</label>
-          {{ form.type_conge }}
-          {% if form.type_conge.errors %}<p class="form-error">{{ form.type_conge.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Date de début *</label>
-          {{ form.date_debut }}
-          {% if form.date_debut.errors %}<p class="form-error">{{ form.date_debut.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Date de fin *</label>
-          {{ form.date_fin }}
-          {% if form.date_fin.errors %}<p class="form-error">{{ form.date_fin.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div class="form-group" style="grid-column:1/3;">
-          <label class="form-label">Motif / Justification</label>
-          {{ form.motif }}
-        </div>
-
-        <div class="form-group" style="grid-column:1/3;">
-          <label class="form-label">Observations</label>
-          {{ form.observations }}
-        </div>
-
-      </div>
-      <div style="padding:0 var(--space-5) var(--space-5);" class="d-flex gap-3">
-        <a href="{% if membre %}{% url 'personnel:detail' membre.pk %}{% else %}{% url 'personnel:conge_list' %}{% endif %}"
-           class="btn-secondary">Annuler</a>
-        <button type="submit" class="btn-primary">Enregistrer</button>
-      </div>
+  <div class="form-grid-2">
+    <div class="form-group">
+      <label class="input-label" for="{{ form.personnel.id_for_label }}">
+        Membre du personnel <span class="required-star">*</span>
+      </label>
+      {{ form.personnel }}
+      {% if form.personnel.errors %}<p class="input-error">{{ form.personnel.errors.0 }}</p>{% endif %}
     </div>
-  </form>
+
+    <div class="form-group">
+      <label class="input-label" for="{{ form.type_conge.id_for_label }}">
+        Type de congé <span class="required-star">*</span>
+      </label>
+      {{ form.type_conge }}
+      {% if form.type_conge.errors %}<p class="input-error">{{ form.type_conge.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="input-label" for="{{ form.date_debut.id_for_label }}">
+        Date de début <span class="required-star">*</span>
+      </label>
+      {{ form.date_debut }}
+      {% if form.date_debut.errors %}<p class="input-error">{{ form.date_debut.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="input-label" for="{{ form.date_fin.id_for_label }}">
+        Date de fin <span class="required-star">*</span>
+      </label>
+      {{ form.date_fin }}
+      {% if form.date_fin.errors %}<p class="input-error">{{ form.date_fin.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div class="form-group form-grid-2-full">
+      <label class="input-label" for="{{ form.motif.id_for_label }}">
+        Motif / Justification
+      </label>
+      {{ form.motif }}
+    </div>
+  </div>
+
+  <div class="d-flex gap-3 mt-4">
+    <a href="{% if membre %}{% url 'personnel:detail' membre.pk %}{% else %}{% url 'personnel:conge_list' %}{% endif %}"
+       class="btn-secondary">Annuler</a>
+    <button type="submit" class="btn-primary">Enregistrer</button>
+  </div>
+</form>
 
   {% if jours_info %}
-  <div class="card">
-    <div class="card-header"><span class="card-title">Solde congés {{ jours_info.annee }}</span></div>
-    <div style="padding:var(--space-4);">
-      <div style="text-align:center; margin-bottom:var(--space-4);">
-        <div style="font-size:2.2rem; font-weight:bold; color:var(--color-primary);">
-          {{ jours_info.restants }}
-        </div>
-        <div class="text-muted" style="font-size:0.8rem;">jours restants</div>
-      </div>
-      <div style="background:var(--color-bg-subtle); border-radius:8px; padding:var(--space-3);">
-        <div class="d-flex justify-between" style="font-size:0.85rem; padding:4px 0;">
-          <span class="text-muted">Droits annuels</span>
-          <span class="fw-medium">{{ jours_info.droits }} j.</span>
-        </div>
-        <div class="d-flex justify-between" style="font-size:0.85rem; padding:4px 0;">
-          <span class="text-muted">Jours pris</span>
-          <span class="fw-medium" style="color:var(--color-danger,#dc2626);">{{ jours_info.pris }} j.</span>
-        </div>
-        <div class="d-flex justify-between" style="font-size:0.85rem; padding:4px 0; border-top:1px solid var(--color-border); margin-top:4px; padding-top:8px;">
-          <span class="fw-bold">Solde</span>
-          <span class="fw-bold" style="color:var(--color-primary);">{{ jours_info.restants }} j.</span>
-        </div>
-      </div>
-      <p class="text-muted" style="font-size:0.75rem; margin-top:var(--space-3); text-align:center;">
-        Congés annuels approuvés uniquement
-      </p>
+  <div class="card animate-fade-up delay-2">
+    <div class="card-header">
+      <span class="card-title">Solde congés {{ jours_info.annee }}</span>
     </div>
+    <div class="text-center mb-4">
+      <div class="stat-value">{{ jours_info.restants }}</div>
+      <div class="text-muted text-sm">jours restants</div>
+    </div>
+    <div class="mb-3">
+      <div class="d-flex justify-between gap-2 mb-2">
+        <span class="text-muted">Droits annuels</span>
+        <span class="fw-medium">{{ jours_info.droits }} j.</span>
+      </div>
+      <div class="d-flex justify-between gap-2 mb-2">
+        <span class="text-muted">Jours pris</span>
+        <span class="fw-medium text-danger">{{ jours_info.pris }} j.</span>
+      </div>
+      <div class="divider"></div>
+      <div class="d-flex justify-between gap-2 mt-2">
+        <span class="fw-bold">Solde</span>
+        <span class="fw-bold color-primary">{{ jours_info.restants }} j.</span>
+      </div>
+    </div>
+    <p class="text-muted text-xs text-center">Congés annuels approuvés uniquement</p>
   </div>
   {% endif %}
 

@@ -1,0 +1,308 @@
+{% load signataire_tags %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+@page {
+    size: A4;
+    margin: 1cm 1.2cm;
+    @bottom-right {
+        content: "Page " counter(page) " / " counter(pages);
+        font-size: 6.5pt;
+        color: #555;
+    }
+    @bottom-left {
+        content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }} — Système de Gestion Scolaire";
+        font-size: 6.5pt;
+        color: #555;
+    }
+}
+html, body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9pt;
+    color: #111;
+    line-height: 1.35;
+    margin: 0;
+    padding: 0;
+    background: white;
+}
+
+/* ── En-tête ── */
+.bul-header {
+    display: flex;
+    align-items: center;
+    gap: 10pt;
+    background: #f5f5f5;
+    padding: 8pt 12pt;
+    margin-bottom: 7pt;
+    border-bottom: 2.5px solid #111;
+}
+.bul-badge {
+    width: 42pt;
+    height: 42pt;
+    min-width: 42pt;
+    border-radius: 50%;
+    background: white;
+    border: 2pt solid #111;
+    text-align: center;
+    line-height: 38pt;
+    font-family: serif;
+    font-size: 13pt;
+    font-weight: 700;
+    color: #111;
+}
+.bul-badge img { width: 38pt; height: 38pt; border-radius: 50%; vertical-align: middle; filter: grayscale(100%); }
+.bul-school-name {
+    font-family: serif;
+    font-size: 15pt;
+    font-weight: 700;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.4pt;
+    margin: 0 0 2pt;
+}
+.bul-school-sub { font-size: 7.5pt; color: #555; margin: 1pt 0; }
+.bul-annee-lbl { font-size: 7.5pt; color: #555; }
+.bul-annee-val { font-weight: 700; font-size: 9pt; color: #111; }
+
+/* ── Titre ── */
+.pal-title {
+    background: #fff;
+    border: 1.5px solid #111;
+    color: #111;
+    text-align: center;
+    padding: 6pt 12pt;
+    margin-bottom: 7pt;
+    font-size: 11pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8pt;
+}
+.pal-subtitle {
+    font-size: 8pt;
+    color: #555;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    margin-top: 2pt;
+}
+
+/* ── Statistiques ── */
+.pal-stats {
+    display: flex;
+    gap: 6pt;
+    margin-bottom: 9pt;
+}
+.pal-stat {
+    flex: 1;
+    background: #fff;
+    border: 1pt solid #ccc;
+    border-left: 3pt solid #111;
+    padding: 5pt 8pt;
+    text-align: center;
+}
+.pal-stat-val {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #111;
+    line-height: 1.1;
+}
+.pal-stat-val.green { font-weight: 700; }
+.pal-stat-val.red   { font-weight: 700; font-style: italic; }
+.pal-stat-lbl {
+    font-size: 6.5pt;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 1pt;
+}
+
+/* ── Tableau ── */
+.pal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+}
+.pal-table thead tr {
+    background: #111;
+    color: white;
+}
+.pal-table thead th {
+    padding: 5pt 7pt;
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+}
+.pal-table thead th.center { text-align: center; }
+.pal-table tbody tr:nth-child(even) { background: #f5f5f5; }
+.pal-table tbody td {
+    padding: 4pt 7pt;
+    border-bottom: 0.5pt solid #ccc;
+    vertical-align: middle;
+}
+.pal-table tbody td.center { text-align: center; }
+
+/* Rangs — différenciation par épaisseur de bordure gauche */
+.rang-badge {
+    display: inline-block;
+    width: 18pt;
+    height: 18pt;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18pt;
+    font-size: 7.5pt;
+    font-weight: 700;
+    background: #fff;
+    border: 1pt solid #555;
+}
+.rang-top1 { border: 3pt solid #111; font-weight: 700; }
+.rang-top2 { border: 2pt solid #111; }
+.rang-top3 { border: 1.5pt solid #111; }
+
+.eleve-nom  { font-weight: 700; text-transform: uppercase; font-size: 8.5pt; }
+.eleve-prenom { font-size: 7pt; color: #555; }
+.matricule  { font-family: 'DejaVu Sans Mono', monospace; font-size: 7pt; color: #555; }
+
+.moy-val { font-weight: 700; font-size: 10pt; color: #111; }
+.moy-red { font-weight: 700; font-size: 10pt; font-style: italic; color: #111; }
+.moy-base { font-size: 6.5pt; color: #555; }
+
+.decision-admis    { font-weight: 700; font-size: 8pt; color: #111; }
+.decision-redouble { font-weight: 700; font-size: 8pt; font-style: italic; color: #111; }
+
+.vide-cell { color: #aaa; font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- En-tête établissement -->
+<div class="bul-header">
+  <div class="bul-badge">
+    {% if etab_logo_url %}
+      <img src="{{ etab_logo_url }}" alt="Logo">
+    {% else %}
+      Y
+    {% endif %}
+  </div>
+  <div style="flex:1;">
+    <div class="bul-school-name">{{ identite.nom_etablissement|default:"YELEN SCHOOL" }}</div>
+    {% if identite.adresse %}<div class="bul-school-sub">{{ identite.adresse }}</div>{% endif %}
+    {% if identite.telephone %}<div class="bul-school-sub">Tél. {{ identite.telephone }}</div>{% endif %}
+  </div>
+  <div style="text-align:right;">
+    <div class="bul-annee-lbl">Année scolaire</div>
+    <div class="bul-annee-val">{{ annee_scolaire.libelle }}</div>
+  </div>
+</div>
+
+<!-- Titre -->
+<div class="pal-title">
+  Palmarès Annuel
+  <div class="pal-subtitle">{{ classe.nom }} — {{ classe.cycle.nom }}</div>
+</div>
+
+<!-- Statistiques -->
+<div class="pal-stats">
+  <div class="pal-stat">
+    <div class="pal-stat-val">{{ nb_eleves }}</div>
+    <div class="pal-stat-lbl">Élèves</div>
+  </div>
+  <div class="pal-stat">
+    <div class="pal-stat-val green">{{ nb_admis }}</div>
+    <div class="pal-stat-lbl">Admis</div>
+  </div>
+  <div class="pal-stat">
+    <div class="pal-stat-val red">{{ nb_redoublants }}</div>
+    <div class="pal-stat-lbl">Redoublants</div>
+  </div>
+  <div class="pal-stat">
+    <div class="pal-stat-val">{{ taux_reussite }}%</div>
+    <div class="pal-stat-lbl">Taux de réussite</div>
+  </div>
+  {% if moy_max %}
+  <div class="pal-stat">
+    <div class="pal-stat-val green">{{ moy_max }}</div>
+    <div class="pal-stat-lbl">Moy. max</div>
+  </div>
+  {% endif %}
+  {% if moy_min %}
+  <div class="pal-stat">
+    <div class="pal-stat-val red">{{ moy_min }}</div>
+    <div class="pal-stat-lbl">Moy. min</div>
+  </div>
+  {% endif %}
+  {% if moy_avg %}
+  <div class="pal-stat">
+    <div class="pal-stat-val">{{ moy_avg }}</div>
+    <div class="pal-stat-lbl">Moy. classe</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Tableau -->
+<table class="pal-table">
+  <thead>
+    <tr>
+      <th class="center" style="width:28pt;">Rang</th>
+      <th>Matricule</th>
+      <th>Élève</th>
+      <th class="center" style="width:60pt;">Moy. Annuelle</th>
+      <th>Décision du conseil</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in palmares %}
+    <tr>
+      <td class="center">
+        {% if row.rang %}
+          <span class="rang-badge {% if row.rang == 1 %}rang-top1{% elif row.rang == 2 %}rang-top2{% elif row.rang == 3 %}rang-top3{% endif %}">
+            {{ row.rang }}{% if row.rang == 1 %}er{% else %}e{% endif %}
+          </span>
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td class="matricule">{{ row.eleve.matricule }}</td>
+      <td>
+        <div class="eleve-nom">{{ row.eleve.nom }}</div>
+        <div class="eleve-prenom">{{ row.eleve.prenom }}</div>
+      </td>
+      <td class="center">
+        {% if row.moyenne is not None %}
+          {% if row.admis %}
+            <span class="moy-val">{{ row.moyenne }}</span>
+          {% else %}
+            <span class="moy-red">{{ row.moyenne }}</span>
+          {% endif %}
+          <span class="moy-base">/20</span>
+        {% else %}
+          <span class="vide-cell">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if row.moyenne is not None %}
+          {% if row.admis %}
+            <span class="decision-admis">{{ row.decision }}</span>
+          {% else %}
+            <span class="decision-redouble">{{ row.decision }}</span>
+          {% endif %}
+        {% else %}
+          <span class="vide-cell">—</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Légende -->
+<div style="font-size:6.5pt; color:#555; margin-top:6pt; border-top:1pt solid #ccc; padding-top:4pt;">
+  Admis : décision en gras normal — Redoublant : décision en gras italique — Rangs 1/2/3 : bordure épaisse croissante
+</div>
+
+<!-- Signature -->
+{% signataire_auto "BULLETIN" %}
+
+</body>
+</html>

@@ -2,12 +2,98 @@
 
 {% block pdf_content %}
 
+<style>
+  /* ── Statut conseil ── */
+  .statut-tenu   { font-weight: bold; color: #111; }
+  .statut-attente { font-weight: bold; font-style: italic; color: #333; }
+
+  /* ── Info cells ── */
+  .info-cell {
+    padding: 3pt 6pt;
+    border: 0.5pt solid #bbb;
+    background: #f5f5f5;
+  }
+  .info-label {
+    font-size: 7.5pt; color: #444;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+
+  /* ── Observations ── */
+  .obs-bloc {
+    margin-bottom: 8pt;
+    padding: 5pt 8pt;
+    background: #f5f5f5;
+    border-left: 3pt solid #111;
+    border-radius: 0 3pt 3pt 0;
+    font-size: 8.5pt;
+  }
+  .obs-label { font-size: 7.5pt; color: #444; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2pt; }
+
+  /* ── Récap section title ── */
+  .section-head {
+    font-size: 8pt; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #111;
+    margin-bottom: 4pt;
+    border-bottom: 1.5pt solid #111;
+    padding-bottom: 2pt;
+  }
+
+  /* ── Cellules décision stats ── */
+  .stat-cell { text-align: center; padding: 3pt 6pt; border: 0.5pt solid #bbb; }
+  .stat-passage   { background: #fff; border: 1.5pt solid #111; }
+  .stat-redoublement { background: #ddd; border: 1.5pt solid #111; }
+  .stat-exclusion { background: #555; color: #fff; }
+  .stat-felic     { background: #f5f5f5; border: 1pt solid #555; }
+  .stat-encour    { background: #ebebeb; border: 1pt solid #555; }
+  .stat-mention   { background: #ddd; border: 1pt solid #111; }
+  .stat-defaut    { background: #f5f5f5; }
+
+  .stat-count { font-size: 11pt; font-weight: 700; }
+  .stat-label { font-size: 7pt; color: #333; }
+  .stat-count-inv { font-size: 11pt; font-weight: 700; color: #fff; }
+
+  /* ── Décisions individuelles ── */
+  .dec-passage      { font-weight: bold; color: #111; }
+  .dec-redoublement { font-weight: bold; font-style: italic; color: #333; }
+  .dec-rachat       { font-style: italic; color: #333; }
+  .dec-defaut       { color: #444; }
+
+  /* Moyenne */
+  .moy-ok   { font-weight: bold; color: #111; }
+  .moy-fail { font-style: italic; color: #333; }
+
+  /* Rang */
+  .rang-txt { color: #333; }
+
+  /* Appréciation vide */
+  .apprec-vide { color: #888; font-style: italic; }
+
+  /* Distinctions */
+  .dist-f  { font-weight: 700; font-style: italic; }
+  .dist-e  { font-weight: 700; }
+  .dist-mh { font-weight: 700; font-style: italic; text-decoration: underline; }
+
+  /* Lignes paires */
+  .row-pair   { background: #f5f5f5; }
+  .row-impair { background: #fff; }
+
+  /* Signatures */
+  .sig-label { color: #444; margin-bottom: 30pt; }
+  .sig-line { border-top: 0.5pt solid #111; padding-top: 4pt; font-weight: 600; }
+
+  /* Légende */
+  .legende { font-size: 7pt; color: #555; margin-top: 4pt; text-align: right; font-style: italic; }
+
+  /* Vide */
+  .msg-vide { text-align: center; color: #555; font-style: italic; margin-top: 16pt; }
+</style>
+
 {# ── Titre ── #}
 <div class="document-title">
     <h2 style="text-transform:uppercase; letter-spacing:.5pt;">
         PROCÈS-VERBAL DU CONSEIL DE CLASSE
     </h2>
-    <p style="font-size:9pt; color:#475569;">
+    <p style="font-size:9pt; color:#333;">
         Classe : <strong>{{ conseil.classe.nom }}</strong>
         &nbsp;|&nbsp; {{ conseil.trimestre.nom }}
         &nbsp;|&nbsp; Année scolaire : <strong>{{ conseil.trimestre.annee_scolaire.libelle }}</strong>
@@ -17,26 +103,26 @@
 {# ── Informations du conseil ── #}
 <table style="width:100%; border-collapse:collapse; margin-bottom:8pt; font-size:8.5pt;">
     <tr>
-        <td style="width:50%; padding:3pt 6pt; border:0.5pt solid #e2e8f0; background:#f8fafc;">
-            <span style="color:#64748b; font-size:7.5pt; text-transform:uppercase; letter-spacing:.04em;">Date du conseil</span><br>
+        <td class="info-cell" style="width:50%; border-right:none;">
+            <div class="info-label">Date du conseil</div>
             <strong>{{ conseil.date_conseil|date:"l d F Y" }}</strong>
         </td>
-        <td style="width:50%; padding:3pt 6pt; border:0.5pt solid #e2e8f0; border-left:none; background:#f8fafc;">
-            <span style="color:#64748b; font-size:7.5pt; text-transform:uppercase; letter-spacing:.04em;">Président</span><br>
+        <td class="info-cell" style="width:50%;">
+            <div class="info-label">Président</div>
             <strong>{% if conseil.president %}{{ conseil.president.get_full_name }}{% else %}—{% endif %}</strong>
         </td>
     </tr>
     <tr>
-        <td style="padding:3pt 6pt; border:0.5pt solid #e2e8f0; border-top:none;">
-            <span style="color:#64748b; font-size:7.5pt; text-transform:uppercase; letter-spacing:.04em;">Statut</span><br>
+        <td class="info-cell" style="border-right:none; border-top:none;">
+            <div class="info-label">Statut</div>
             {% if conseil.tenu %}
-            <strong style="color:#166534;">&#10003; Conseil tenu</strong>
+            <strong class="statut-tenu">&#10003; Conseil tenu</strong>
             {% else %}
-            <strong style="color:#92400e;">En attente</strong>
+            <strong class="statut-attente">En attente</strong>
             {% endif %}
         </td>
-        <td style="padding:3pt 6pt; border:0.5pt solid #e2e8f0; border-top:none; border-left:none;">
-            <span style="color:#64748b; font-size:7.5pt; text-transform:uppercase; letter-spacing:.04em;">Nombre d'élèves</span><br>
+        <td class="info-cell" style="border-top:none;">
+            <div class="info-label">Nombre d'élèves</div>
             <strong>{{ nb_total }}</strong>
         </td>
     </tr>
@@ -44,47 +130,49 @@
 
 {# ── Observations générales ── #}
 {% if conseil.observations %}
-<div style="margin-bottom:8pt; padding:5pt 8pt; background:#f8fafc; border-left:3pt solid #00A86B; border-radius:0 3pt 3pt 0; font-size:8.5pt;">
-    <div style="font-size:7.5pt; color:#64748b; text-transform:uppercase; letter-spacing:.04em; margin-bottom:2pt;">Observations générales</div>
+<div class="obs-bloc">
+    <div class="obs-label">Observations générales</div>
     {{ conseil.observations }}
 </div>
 {% endif %}
 
 {# ── Statistiques récapitulatives ── #}
 <div style="margin-bottom:8pt;">
-    <div style="font-size:8pt; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#334155; margin-bottom:4pt; border-bottom:0.5pt solid #e2e8f0; padding-bottom:2pt;">
-        Récapitulatif des décisions
-    </div>
+    <div class="section-head">Récapitulatif des décisions</div>
     <table style="width:100%; border-collapse:collapse; font-size:8pt;">
         <tr>
             {% for val, data in stats_decisions.items %}
             {% if data.count > 0 %}
-            <td style="text-align:center; padding:3pt 6pt; border:0.5pt solid #e2e8f0;
-                {% if val == 'PASSAGE' %}background:#f0fdf4;{% elif val == 'REDOUBLEMENT' %}background:#fef2f2;{% elif val == 'EXCLUSION' %}background:#fff1f2;{% else %}background:#f8fafc;{% endif %}">
-                <div style="font-size:11pt; font-weight:700;
-                    {% if val == 'PASSAGE' %}color:#166534;{% elif val == 'REDOUBLEMENT' %}color:#991b1b;{% else %}color:#475569;{% endif %}">
-                    {{ data.count }}
-                </div>
-                <div style="font-size:7pt; color:#64748b;">{{ data.label }}</div>
+            <td class="stat-cell
+                {% if val == 'PASSAGE' %}stat-passage
+                {% elif val == 'REDOUBLEMENT' %}stat-redoublement
+                {% elif val == 'EXCLUSION' %}stat-exclusion
+                {% else %}stat-defaut{% endif %}">
+                {% if val == 'EXCLUSION' %}
+                <div class="stat-count-inv">{{ data.count }}</div>
+                {% else %}
+                <div class="stat-count">{{ data.count }}</div>
+                {% endif %}
+                <div class="stat-label">{{ data.label }}</div>
             </td>
             {% endif %}
             {% endfor %}
             {% if nb_felicitations > 0 %}
-            <td style="text-align:center; padding:3pt 6pt; border:0.5pt solid #e2e8f0; background:#fffbeb;">
-                <div style="font-size:11pt; font-weight:700; color:#92400e;">{{ nb_felicitations }}</div>
-                <div style="font-size:7pt; color:#64748b;">Félicitations</div>
+            <td class="stat-cell stat-felic">
+                <div class="stat-count">{{ nb_felicitations }}</div>
+                <div class="stat-label">Félicitations</div>
             </td>
             {% endif %}
             {% if nb_encouragements > 0 %}
-            <td style="text-align:center; padding:3pt 6pt; border:0.5pt solid #e2e8f0; background:#eff6ff;">
-                <div style="font-size:11pt; font-weight:700; color:#1e40af;">{{ nb_encouragements }}</div>
-                <div style="font-size:7pt; color:#64748b;">Encouragements</div>
+            <td class="stat-cell stat-encour">
+                <div class="stat-count">{{ nb_encouragements }}</div>
+                <div class="stat-label">Encouragements</div>
             </td>
             {% endif %}
             {% if nb_mentions > 0 %}
-            <td style="text-align:center; padding:3pt 6pt; border:0.5pt solid #e2e8f0; background:#fdf4ff;">
-                <div style="font-size:11pt; font-weight:700; color:#7e22ce;">{{ nb_mentions }}</div>
-                <div style="font-size:7pt; color:#64748b;">Mention d'honneur</div>
+            <td class="stat-cell stat-mention">
+                <div class="stat-count">{{ nb_mentions }}</div>
+                <div class="stat-label">Mention d'honneur</div>
             </td>
             {% endif %}
         </tr>
@@ -92,9 +180,7 @@
 </div>
 
 {# ── Tableau des décisions individuelles ── #}
-<div style="font-size:8pt; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#334155; margin-bottom:4pt; border-bottom:0.5pt solid #e2e8f0; padding-bottom:2pt;">
-    Décisions individuelles
-</div>
+<div class="section-head">Décisions individuelles</div>
 
 {% if lignes %}
 <table>
@@ -111,31 +197,36 @@
     <tbody>
         {% for ligne in lignes %}
         {% with d=ligne.decision mg=ligne.mg %}
-        <tr style="{% cycle '' 'background:#f8fafc;' %}">
+        <tr class="{% cycle 'row-impair' 'row-pair' %}">
             <td style="font-weight:600;">
                 {{ d.inscription.eleve.nom|upper }} {{ d.inscription.eleve.prenom }}
             </td>
-            <td style="text-align:center; font-weight:700;
-                {% if mg and mg.moyenne %}{% if mg.moyenne >= 10 %}color:#166534;{% else %}color:#991b1b;{% endif %}{% endif %}">
-                {% if mg and mg.moyenne is not None %}{{ mg.moyenne|floatformat:2 }}{% else %}—{% endif %}
+            <td style="text-align:center;">
+                {% if mg and mg.moyenne is not None %}
+                <span class="{% if mg.moyenne >= 10 %}moy-ok{% else %}moy-fail{% endif %}">
+                    {{ mg.moyenne|floatformat:2 }}
+                </span>
+                {% else %}—{% endif %}
             </td>
-            <td style="text-align:center; color:#64748b;">
+            <td style="text-align:center;" class="rang-txt">
                 {% if mg and mg.rang %}{{ mg.rang }}{% else %}—{% endif %}
             </td>
-            <td style="text-align:center; font-size:7.5pt; font-weight:700;
-                {% if d.decision == 'PASSAGE' %}color:#166534;
-                {% elif d.decision == 'REDOUBLEMENT' %}color:#991b1b;
-                {% elif d.decision == 'RACHAT' %}color:#92400e;
-                {% else %}color:#475569;{% endif %}">
-                {{ d.get_decision_display }}
+            <td style="text-align:center; font-size:7.5pt;">
+                <span class="
+                    {% if d.decision == 'PASSAGE' %}dec-passage
+                    {% elif d.decision == 'REDOUBLEMENT' %}dec-redoublement
+                    {% elif d.decision == 'RACHAT' %}dec-rachat
+                    {% else %}dec-defaut{% endif %}">
+                    {{ d.get_decision_display }}
+                </span>
             </td>
-            <td style="font-size:7.5pt; color:#334155; font-style:{% if d.appreciation %}normal{% else %}italic{% endif %};">
-                {% if d.appreciation %}{{ d.appreciation }}{% else %}<span style="color:#94a3b8;">—</span>{% endif %}
+            <td style="font-size:7.5pt;">
+                {% if d.appreciation %}{{ d.appreciation }}{% else %}<span class="apprec-vide">—</span>{% endif %}
             </td>
             <td style="text-align:center; font-size:7pt;">
-                {% if d.felicitations %}<span style="color:#92400e; font-weight:700;">F </span>{% endif %}
-                {% if d.encouragements %}<span style="color:#1e40af; font-weight:700;">E </span>{% endif %}
-                {% if d.mention_honneur %}<span style="color:#7e22ce; font-weight:700;">MH</span>{% endif %}
+                {% if d.felicitations %}<span class="dist-f">F </span>{% endif %}
+                {% if d.encouragements %}<span class="dist-e">E </span>{% endif %}
+                {% if d.mention_honneur %}<span class="dist-mh">MH</span>{% endif %}
                 {% if not d.felicitations and not d.encouragements and not d.mention_honneur %}—{% endif %}
             </td>
         </tr>
@@ -144,36 +235,34 @@
     </tbody>
 </table>
 
-<p style="font-size:7pt; color:#94a3b8; margin-top:4pt; text-align:right; font-style:italic;">
+<p class="legende">
     F = Félicitations &nbsp;·&nbsp; E = Encouragements &nbsp;·&nbsp; MH = Mention d'honneur
 </p>
 
 {% else %}
-<p style="text-align:center; color:#94a3b8; font-style:italic; margin-top:16pt;">
+<p class="msg-vide">
     Aucune décision enregistrée.
 </p>
 {% endif %}
 
 {# ── Zone de signatures ── #}
 <div style="margin-top:20pt; page-break-inside:avoid;">
-    <div style="font-size:8pt; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#334155; margin-bottom:10pt; border-bottom:0.5pt solid #e2e8f0; padding-bottom:2pt;">
-        Signatures
-    </div>
+    <div class="section-head" style="margin-bottom:10pt;">Signatures</div>
     <table style="width:100%; border-collapse:collapse; font-size:8pt;">
         <tr>
             <td style="width:33%; text-align:center; padding:0 8pt;">
-                <div style="color:#64748b; margin-bottom:30pt;">Le Président du Conseil</div>
-                <div style="border-top:0.5pt solid #334155; padding-top:4pt; font-weight:600;">
+                <div class="sig-label">Le Président du Conseil</div>
+                <div class="sig-line">
                     {% if conseil.president %}{{ conseil.president.get_full_name }}{% else %}___________________{% endif %}
                 </div>
             </td>
             <td style="width:33%; text-align:center; padding:0 8pt;">
-                <div style="color:#64748b; margin-bottom:30pt;">Le Délégué des élèves</div>
-                <div style="border-top:0.5pt solid #334155; padding-top:4pt;">___________________</div>
+                <div class="sig-label">Le Délégué des élèves</div>
+                <div class="sig-line">___________________</div>
             </td>
             <td style="width:33%; text-align:center; padding:0 8pt;">
-                <div style="color:#64748b; margin-bottom:30pt;">Le Directeur / La Directrice</div>
-                <div style="border-top:0.5pt solid #334155; padding-top:4pt;">___________________</div>
+                <div class="sig-label">Le Directeur / La Directrice</div>
+                <div class="sig-line">___________________</div>
             </td>
         </tr>
     </table>

@@ -1,11 +1,11 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import FileExtensionValidator
-from .models import Eleve, Inscription, StatutInscriptionChoices
-from parametres.models import Classe, AnneeScolaire, StatutEleve
+from .models import Eleve, Inscription
+from parametres.models import Classe, StatutEleve
+from core.validators import validate_image_upload
 
 ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
-ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 MAX_IMAGE_SIZE_MB = 5
 
 
@@ -56,15 +56,8 @@ class EleveForm(forms.ModelForm):
 
     def clean_photo(self):
         photo = self.cleaned_data.get('photo')
-        if photo:
-            if photo.size > MAX_IMAGE_SIZE_MB * 1024 * 1024:
-                raise forms.ValidationError(
-                    f"La photo ne doit pas dépasser {MAX_IMAGE_SIZE_MB} Mo."
-                )
-            if hasattr(photo, 'content_type') and photo.content_type not in ALLOWED_MIME_TYPES:
-                raise forms.ValidationError(
-                    "Format d'image non autorisé. Utilisez JPG, PNG, GIF ou WebP."
-                )
+        if photo and hasattr(photo, 'size'):
+            validate_image_upload(photo, max_size_bytes=MAX_IMAGE_SIZE_MB * 1024 * 1024)
         return photo
 
 
@@ -77,30 +70,27 @@ class InscriptionForm(forms.ModelForm):
         widget=forms.TextInput(attrs={
             'readonly': 'readonly',
             'class': 'input input-readonly',
-            'style': 'background:var(--color-bg-input); border-style:dashed; cursor:not-allowed;',
-            'placeholder': 'Sélectionnez une classe'
+            'placeholder': 'Calculé automatiquement',
         })
     )
-    
+
     cycle = forms.CharField(
         label=_("Cycle"),
         required=False,
         widget=forms.TextInput(attrs={
             'readonly': 'readonly',
             'class': 'input input-readonly',
-            'style': 'background:var(--color-bg-input); border-style:dashed; cursor:not-allowed;',
-            'placeholder': 'Cycle'
+            'placeholder': 'Calculé automatiquement',
         })
     )
-    
+
     code_paiement = forms.CharField(
-        label=_("Code Paiement"),
+        label=_("Code paiement"),
         required=False,
         widget=forms.TextInput(attrs={
             'readonly': 'readonly',
             'class': 'input input-readonly',
-            'style': 'background:var(--color-bg-input); border-style:dashed; cursor:not-allowed;',
-            'placeholder': 'Niveau-Statut'
+            'placeholder': 'Calculé automatiquement',
         })
     )
 
@@ -137,11 +127,14 @@ class InscriptionForm(forms.ModelForm):
         else:
             self.fields['classe'].queryset = Classe.objects.none()
             self.fields['statut_eleve'].queryset = StatutEleve.objects.none()
-        
-        self.fields['classe'].widget.attrs.update({'class': 'input select', 'onchange': 'updateNiveauAndCycle(this)'})
-        self.fields['statut_eleve'].widget.attrs.update({'class': 'input select', 'onchange': 'updateCodePaiement(this)'})
-        
-        # Pre-fill niveau, cycle and code_paiement from existing inscription
+
+        self.fields['classe'].widget.attrs.update({
+            'class': 'input select', 'onchange': 'updateNiveauAndCycle(this)',
+        })
+        self.fields['statut_eleve'].widget.attrs.update({
+            'class': 'input select', 'onchange': 'updateCodePaiement(this)',
+        })
+
         if self.instance and self.instance.pk:
             try:
                 if self.instance.classe:
@@ -149,10 +142,12 @@ class InscriptionForm(forms.ModelForm):
                     if self.instance.classe.cycle:
                         self.initial['cycle'] = self.instance.classe.cycle.nom
                     if self.instance.statut_eleve:
-                        self.initial['code_paiement'] = f"{self.instance.classe.niveau}-{self.instance.statut_eleve.nom}"
+                        self.initial['code_paiement'] = (
+                            f"{self.instance.classe.niveau}-{self.instance.statut_eleve.nom}"
+                        )
             except AttributeError:
                 pass
-        
+
         _apply_yelen_classes(self.fields)
 
     def clean(self):

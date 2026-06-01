@@ -6,6 +6,7 @@ app_name = 'personnel'
 urlpatterns = [
     path('', views.personnel_list, name='personnel_list'),
     path('csv/', views.personnel_list_csv, name='personnel_list_csv'),
+    path('xlsx/', views.personnel_list_xlsx, name='personnel_list_xlsx'),
     path('nouveau/', views.personnel_create, name='create'),
     path('<uuid:pk>/', views.personnel_detail, name='detail'),
     path('<uuid:pk>/modifier/', views.personnel_update, name='update'),

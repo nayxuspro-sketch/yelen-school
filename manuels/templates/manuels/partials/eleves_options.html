@@ -1,0 +1,4 @@
+<option value="">-- Choisir un élève --</option>
+{% for i in inscriptions %}
+<option value="{{ i.pk }}">{{ i.eleve.nom }} {{ i.eleve.prenom }}</option>
+{% endfor %}

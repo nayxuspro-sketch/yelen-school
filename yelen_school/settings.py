@@ -47,6 +47,8 @@ DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # Hôtes autorisés - définir en production via ALLOWED_HOSTS env var
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
+if not ALLOWED_HOSTS and DEBUG:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 
 # ── SÉCURITÉ HTTP (Production) ────────────────────────────────────────────────
 if not DEBUG:
@@ -63,22 +65,15 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     
-    # Prévention XSS
+    # Prévention XSS / sniffing
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    
+
     # Referrer Policy
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
-    
-    # Content Security Policy
-    SECURE_CSP_DEFAULT_SRC = ("'self'",)
-    SECURE_CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
-    SECURE_CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-    SECURE_CSP_IMG_SRC = ("'self'", "data:", "blob:")
-    SECURE_CSP_FONT_SRC = ("'self'",)
-    SECURE_CSP_CONNECT_SRC = ("'self'",)
-    SECURE_CSP_FRAME_ANCESTORS = ("'none'",)
-    SECURE_CSP_BASE_URI = ("'self'",)
+
+    # Content-Security-Policy : gérée par CSPNonceMiddleware (csp_middleware.py)
+    # Les anciennes SECURE_CSP_* n'étaient pas lues par Django — supprimées.
 
 # Autorise les requêtes POST/CSRF depuis HTTPS local (Nginx dev)
 CSRF_TRUSTED_ORIGINS = [
@@ -118,6 +113,8 @@ INSTALLED_APPS = [
     'vacations',
     'viescolaire',
     'bulletins',
+    'manuels',
+    'communication',
     # API REST
     'rest_framework',
     'rest_framework.authtoken',
@@ -126,7 +123,7 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'api.authentication.ExpiringTokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -154,12 +151,16 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # CSP nonces — doit être APRÈS AuthenticationMiddleware
+    'yelen_school.csp_middleware.CSPNonceMiddleware',
+    # Restriction rôles PARENT/ÉLÈVE — doit être APRÈS AuthenticationMiddleware
+    'yelen_school.role_middleware.RoleAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'yelen_school.audit_middleware.AuditRequestMiddleware',
-    'licences.middleware.LicenceCheckMiddleware',
-    'licences.middleware.LicenceLimitsMiddleware',
-    'licences.middleware.LicenceContextMiddleware',
+    # 'licences.middleware.LicenceCheckMiddleware',
+    # 'licences.middleware.LicenceLimitsMiddleware',
+    # 'licences.middleware.LicenceContextMiddleware',
 ]
 
 ROOT_URLCONF = 'yelen_school.urls'
@@ -296,6 +297,13 @@ SESSION_TIMEOUT = 3600  # 1 heure de timeout
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Expiration des tokens API — 24 h par défaut (ajustable via variable d'env)
+TOKEN_EXPIRY_HOURS = int(os.environ.get('TOKEN_EXPIRY_HOURS', '24'))
+
+# Limites upload — prévention DoS
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024   # 5 Mo en mémoire
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 Mo max par requête
 
 # Cache - sécurité
 CACHES = {

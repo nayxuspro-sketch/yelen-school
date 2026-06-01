@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4 landscape;
+    margin: 5mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "DejaVu Sans", Arial, sans-serif;
+    font-size: 7.5pt;
+    color: #111;
+    background: #fff;
+    line-height: 1.1;
+  }
+
+  /* ── Header N&B ── */
+  .header {
+    border-bottom: 2pt solid #111;
+    padding-bottom: 1.5mm;
+    margin-bottom: 2mm;
+    display: table;
+    width: 100%;
+  }
+  .header-left  { display: table-cell; vertical-align: bottom; }
+  .header-right { display: table-cell; vertical-align: bottom; text-align: right; }
+
+  .school-name   { font-size: 11pt; font-weight: bold; color: #111; letter-spacing: -0.01em; }
+  .doc-title     { font-size: 7pt; color: #444; text-transform: uppercase;
+                   letter-spacing: 0.1em; font-weight: 600; margin-top: 0.5mm; }
+  .prof-name     { font-size: 10pt; font-weight: 800; color: #111; }
+  .prof-fonction { font-size: 7.5pt; color: #444; margin-top: 0.5mm; }
+  .academic-year { font-size: 7pt; color: #444; margin-top: 0.5mm; }
+
+  /* ── Stats bar N&B ── */
+  .stats-bar {
+    display: table;
+    width: 100%;
+    margin-bottom: 2mm;
+    background: #f5f5f5;
+    border: 1pt solid #bbb;
+    border-radius: 2px;
+    padding: 1.5mm 3mm;
+  }
+  .stat-item {
+    display: table-cell;
+    text-align: center;
+    border-right: 1pt solid #ddd;
+    padding: 0 4mm;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-value { font-size: 9.5pt; font-weight: 800; color: #111; }
+  .stat-label { font-size: 6pt; color: #444; margin-top: 0.5mm; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ── Grid ── */
+  .timetable-grid {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .day-col {
+    vertical-align: top;
+    border: 1pt solid #bbb;
+    width: 16.666%;
+  }
+
+  /* En-tête jours N&B */
+  .day-header {
+    background: #111;
+    color: #fff;
+    border-bottom: 1pt solid #111;
+    padding: 3px 2px;
+    font-size: 7pt;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .day-body {
+    padding: 2px;
+    min-height: 60mm;
+  }
+
+  /* ── Lesson Card N&B ── */
+  .lesson {
+    background: #fff;
+    border: 1pt solid #bbb;
+    border-left: 2pt solid #111;
+    border-radius: 2px;
+    padding: 3px 4px;
+    margin-bottom: 2px;
+    page-break-inside: avoid;
+  }
+  .lesson-subject {
+    font-size: 7pt;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 1px;
+    line-height: 1.1;
+  }
+  .lesson-time {
+    font-size: 6.5pt;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 1px;
+  }
+  .lesson-meta {
+    font-size: 6pt;
+    color: #444;
+    display: block;
+  }
+  .lesson-classe {
+    font-weight: 700;
+    color: #222;
+  }
+
+  /* Créneaux vides N&B */
+  .empty-state {
+    font-size: 6.5pt;
+    color: #888;
+    text-align: center;
+    padding: 8mm 0;
+    font-style: italic;
+    background: #f5f5f5;
+  }
+
+  /* ── Récapitulatif matières N&B ── */
+  .recap-area {
+    margin-top: 3mm;
+  }
+  .recap-title {
+    font-size: 6.5pt;
+    font-weight: 700;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1mm;
+  }
+  .recap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 6.5pt;
+  }
+  .recap-table th {
+    background: #111;
+    color: #fff;
+    border: 1pt solid #111;
+    padding: 2px 4px;
+    text-align: left;
+    font-weight: 700;
+  }
+  .recap-table td {
+    border: 0.5pt solid #bbb;
+    padding: 2px 4px;
+    color: #111;
+  }
+  .recap-table tr:nth-child(even) td { background: #f5f5f5; }
+
+  /* ── Signature ── */
+  .signature-area {
+    margin-top: 3mm;
+    display: table;
+    width: 100%;
+    page-break-inside: avoid;
+  }
+  .signature-box { display: table-cell; width: 100%; text-align: right; }
+  .date-place    { font-size: 7.5pt; color: #333; margin-bottom: 2mm; }
+  .sig-function  { font-size: 8pt; font-weight: 700; color: #111; margin-bottom: 8mm; }
+  .sig-name {
+    font-size: 8pt; font-weight: 800; color: #111;
+    display: inline-block;
+    border-top: 1pt solid #555;
+    padding-top: 1mm;
+    min-width: 50mm;
+    text-align: center;
+  }
+
+  /* ── Footer N&B ── */
+  .footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding-top: 1.5mm;
+    border-top: 0.5pt solid #bbb;
+    font-size: 6pt;
+    color: #555;
+    display: table;
+    width: 100%;
+  }
+  .footer-left  { display: table-cell; text-align: left; }
+  .footer-right { display: table-cell; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="school-name">{% if etab %}{{ etab.nom }}{% else %}YELEN SCHOOL{% endif %}</div>
+    <div class="doc-title">Emploi du temps — Professeur</div>
+  </div>
+  <div class="header-right">
+    <div class="prof-name">{{ personnel.get_nom_complet }}</div>
+    <div class="prof-fonction">{{ personnel.fonction }}</div>
+    {% if annee %}<div class="academic-year">Année scolaire : {{ annee.libelle }}</div>{% endif %}
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-value">{{ enseignements|length }}</div>
+    <div class="stat-label">Matière{% if enseignements|length > 1 %}s{% endif %}</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">{{ total_heures }}h{% if total_minutes_reste %}{{ total_minutes_reste }}{% endif %}</div>
+    <div class="stat-label">/ semaine</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">{% if personnel.matricule %}{{ personnel.matricule }}{% else %}—{% endif %}</div>
+    <div class="stat-label">Matricule</div>
+  </div>
+</div>
+
+<table class="timetable-grid">
+  <thead>
+    <tr>
+      {% for jour in grille %}
+      <th class="day-header">{{ jour.jour_label }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      {% for jour in grille %}
+      <td class="day-col">
+        <div class="day-body">
+          {% for seance in jour.seances %}
+          <div class="lesson">
+            <div class="lesson-subject">{{ seance.enseignement.matiere.nom }}</div>
+            <div class="lesson-time">{{ seance.heure_debut|time:"H\hi" }} – {{ seance.heure_fin|time:"H\hi" }}</div>
+            <span class="lesson-meta lesson-classe">{{ seance.enseignement.classe.nom }}</span>
+            {% if seance.salle %}
+            <span class="lesson-meta">Salle : {{ seance.salle }}</span>
+            {% endif %}
+          </div>
+          {% empty %}
+          <div class="empty-state">—</div>
+          {% endfor %}
+        </div>
+      </td>
+      {% endfor %}
+    </tr>
+  </tbody>
+</table>
+
+<div class="recap-area">
+  {% if enseignements %}
+  <div class="recap-title">Récapitulatif des enseignements</div>
+  <table class="recap-table">
+    <thead>
+      <tr>
+        <th>Matière</th>
+        <th>Classe</th>
+        <th>Coeff.</th>
+        <th>H/semaine</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ens in enseignements %}
+      <tr>
+        <td>{{ ens.matiere.nom }}</td>
+        <td>{{ ens.classe.nom }}</td>
+        <td>{{ ens.get_coefficient }}</td>
+        <td>{% if ens.heures_hebdomadaires %}{{ ens.heures_hebdomadaires }}h{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+{% if signataire %}
+{% with membre=signataire.get_membre_personnel %}
+<div class="signature-area">
+  <div class="signature-box">
+    <div class="date-place">
+      {% if identite and identite.ville %}{{ identite.ville }}, {% endif %}le {% now "d F Y" %}
+    </div>
+    <div class="sig-function">
+      {{ signataire.fonction|default:signataire.titre|default:"Le Directeur" }}
+    </div>
+    <div class="sig-name">{{ membre.nom|upper }} {{ membre.prenom }}</div>
+  </div>
+</div>
+{% endwith %}
+{% endif %}
+
+<div class="footer">
+  <div class="footer-left">
+    Document généré le {% now "d/m/Y à H:i" %}
+  </div>
+  <div class="footer-right">
+    {% if etab %}{{ etab.nom }}{% else %}YELEN SCHOOL{% endif %} — Confidentiel
+  </div>
+</div>
+
+</body>
+</html>

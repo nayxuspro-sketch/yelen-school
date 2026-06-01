@@ -4,144 +4,189 @@
 
 {% block content %}
 
-<div class="page-header animate-fade-up">
-  <div class="d-flex align-center gap-4">
-    <a href="{% url 'presences:appel_list' %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-      </svg>
-    </a>
-    <div>
-      <h1 class="page-title">Appel — {{ appel.classe.nom }}</h1>
-      <p class="page-subtitle">{{ appel.date|date:"l d F Y" }}{% if appel.matiere %} · {{ appel.matiere.nom }}{% endif %}</p>
-    </div>
+{# ── En-tête ── #}
+<div class="dash-appel-header animate-fade-up">
+  <div class="appel-icon">
+    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+    </svg>
+  </div>
+  <div>
+    <h1 class="appel-title">Appel · {{ appel.classe.nom }}</h1>
+    <p class="appel-subtitle">
+      <span class="appel-date">{{ appel.date|date:"l d F Y" }}</span>
+      {% if appel.matiere %} · <span class="appel-matiere">{{ appel.matiere.nom }}</span>{% endif %}
+    </p>
   </div>
   {% if not appel.est_clos %}
-  <div class="d-flex gap-2">
-    <a href="{% url 'presences:qr_scanner' appel.pk %}"
-       class="btn-primary"
-       title="Pointer les élèves par scan QR-code (mobile/tablette)">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 4h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+  <div class="appel-header-actions">
+    <button type="button" class="btn-secondary btn-all-present" onclick="markAllPresent()">
+      Tout présent
+    </button>
+    <a href="{% url 'presences:qr_scanner' appel.pk %}" class="btn-primary">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 4h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
       </svg>
       Scanner QR
-    </a>
-    <a href="{% url 'presences:cartes_qr_classe' appel.classe.pk %}"
-       class="btn-secondary" target="_blank"
-       title="Générer et imprimer les cartes QR de la classe">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-      </svg>
-      Cartes QR
     </a>
   </div>
   {% endif %}
 </div>
 
-<div class="stats-grid mb-4 animate-fade-up delay-1" style="grid-template-columns:repeat(3,1fr);">
-  <div class="stat-card">
-    <div class="stat-icon stat-icon-green">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+{# ── Statistiques ── #}
+<div class="appel-stats animate-fade-up delay-1">
+  <div class="appel-stat-card appel-stat-present">
+    <div class="appel-stat-icon appel-stat-icon-present">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
     </div>
     <div>
-      <div class="stat-value">{{ appel.nb_presents }}</div>
-      <div class="stat-label">Présents</div>
+      <span class="appel-stat-value" id="count-present">{{ appel.nb_presents }}</span>
+      <span class="appel-stat-label">Présents</span>
     </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon stat-icon-red">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+  <div class="appel-stat-card appel-stat-absent">
+    <div class="appel-stat-icon appel-stat-icon-absent">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
       </svg>
     </div>
     <div>
-      <div class="stat-value">{{ appel.nb_absents }}</div>
-      <div class="stat-label">Absents</div>
+      <span class="appel-stat-value" id="count-absent">{{ appel.nb_absents }}</span>
+      <span class="appel-stat-label">Absents</span>
     </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon stat-icon-gold">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+  <div class="appel-stat-card appel-stat-retard">
+    <div class="appel-stat-icon appel-stat-icon-retard">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
     </div>
     <div>
-      <div class="stat-value">{{ appel.nb_retards }}</div>
-      <div class="stat-label">Retards</div>
+      <span class="appel-stat-value" id="count-retard">{{ appel.nb_retards }}</span>
+      <span class="appel-stat-label">En retard</span>
     </div>
   </div>
 </div>
 
-<form method="post">
+{# ── Formulaire ── #}
+<form method="post" id="appel-form">
   {% csrf_token %}
-  <div class="table-wrapper mb-4 animate-fade-up delay-2">
+  <div class="appel-form-card animate-fade-up delay-2">
+
+    {# Tableau #}
     <div class="table-scroll">
-      <table class="data-table">
+      <table class="appel-table">
         <thead>
           <tr>
-            <th>Élève</th>
-            <th>Statut</th>
-            <th>Retard (min)</th>
+            <th class="col-eleve">Élève</th>
+            <th class="col-statut">Pointage de présence</th>
+            <th class="col-retard">Retard</th>
           </tr>
         </thead>
         <tbody>
           {% for presence in presences %}
-          <tr>
-            <td class="fw-medium">
-              <a href="{% url 'presences:bilan_eleve' presence.inscription.pk %}"
-                 style="color:inherit; text-decoration:none;"
-                 title="Voir le bilan de {{ presence.inscription.eleve.get_nom_complet }}">
-                {{ presence.inscription.eleve.get_nom_complet }}
-              </a>
-            </td>
+          <tr class="presence-row">
+
+            {# Colonne élève #}
             <td>
-              <select name="statut_{{ presence.pk }}"
-                      {% if appel.est_clos %}disabled{% endif %}
-                      class="input select" style="min-width:120px;">
-                {% for val, label in statuts %}
-                <option value="{{ val }}" {% if presence.statut == val %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-            </td>
-            <td>
-              <input type="number"
-                     name="retard_{{ presence.pk }}"
-                     value="{{ presence.minutes_retard }}"
-                     min="0" max="120"
-                     {% if appel.est_clos %}disabled{% endif %}
-                     class="input"
-                     style="width:80px;">
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="3">
-              <div class="empty-state">
-                <p class="empty-state-text">Aucun élève inscrit dans cette classe.</p>
+              <div class="appel-eleve-cell">
+                <div class="appel-eleve-avatar">
+                  {{ presence.inscription.eleve.nom|slice:":1" }}{{ presence.inscription.eleve.prenom|slice:":1" }}
+                </div>
+                <div>
+                  <a href="{% url 'presences:bilan_eleve' presence.inscription.pk %}" class="appel-eleve-name">
+                    {{ presence.inscription.eleve.nom|upper }} {{ presence.inscription.eleve.prenom }}
+                  </a>
+                  <span class="appel-eleve-meta">{{ presence.inscription.eleve.matricule }}</span>
+                </div>
               </div>
             </td>
+
+            {# Colonne statut — pills radio #}
+            <td class="col-statut">
+              <div class="status-pills-group">
+                {% for val, label in statuts %}
+                <input type="radio"
+                       name="statut_{{ presence.pk }}"
+                       id="s_{{ presence.pk }}_{{ val }}"
+                       value="{{ val }}"
+                       class="status-pill-radio"
+                       {% if presence.statut == val %}checked{% endif %}
+                       {% if appel.est_clos %}disabled{% endif %}
+                       onchange="updateCounts()">
+                <label for="s_{{ presence.pk }}_{{ val }}" class="status-pill-label">{{ label }}</label>
+                {% endfor %}
+              </div>
+            </td>
+
+            {# Colonne retard #}
+            <td class="col-retard">
+              <div class="retard-input-wrapper">
+                <input type="number"
+                       name="retard_{{ presence.pk }}"
+                       value="{{ presence.minutes_retard }}"
+                       min="0" max="180"
+                       {% if appel.est_clos %}disabled{% endif %}
+                       onchange="updateCounts()">
+                <span class="retard-unit">min</span>
+              </div>
+            </td>
+
+          </tr>
+          {% empty %}
+          <tr class="appel-empty-row">
+            <td colspan="3">Aucun élève inscrit dans cette classe.</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-  </div>
 
-  {% if not appel.est_clos %}
-  <div class="d-flex justify-end gap-2">
-    <button type="submit" class="btn-secondary">Enregistrer</button>
-    <button type="submit" name="clore" value="1" class="btn-primary"
-            onclick="return confirm('Clôturer cet appel ? Cette action est irréversible.')">
-      Clôturer l'appel
-    </button>
+    {# Pied — actions ou bannière clos #}
+    {% if not appel.est_clos %}
+    <div class="appel-form-footer">
+      <p class="appel-form-hint">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        N'oubliez pas d'enregistrer vos modifications.
+      </p>
+      <div class="appel-form-actions">
+        <button type="submit" class="btn-secondary">Enregistrer le brouillon</button>
+        <button type="submit" name="clore" value="1" class="btn-primary"
+                onclick="return confirm('Clôturer cet appel ? Cette action est irréversible.')">
+          Clôturer la séance
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <div class="appel-clos-banner">
+      Séance clôturée — Archivé en lecture seule.
+    </div>
+    {% endif %}
+
   </div>
-  {% else %}
-  <p class="text-muted" style="text-align:center; font-size:0.85rem;">Appel clôturé — lecture seule.</p>
-  {% endif %}
 </form>
+
+<script>
+function markAllPresent() {
+  document.querySelectorAll('.status-pill-radio[value="PRESENT"]').forEach(function(radio) {
+    radio.checked = true;
+  });
+  updateCounts();
+}
+
+function updateCounts() {
+  var counts = { PRESENT: 0, ABSENT: 0, RETARD: 0 };
+  document.querySelectorAll('.status-pill-radio:checked').forEach(function(radio) {
+    counts[radio.value]++;
+  });
+  document.getElementById('count-present').textContent = counts.PRESENT;
+  document.getElementById('count-absent').textContent  = counts.ABSENT;
+  document.getElementById('count-retard').textContent  = counts.RETARD;
+}
+</script>
 
 {% endblock %}

@@ -1,0 +1,203 @@
+{% extends "core/base.html" %}
+
+{% block title %}Prédictions — {{ classe.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Prédictions — {{ classe.nom }}</h1>
+    <p class="page-subtitle">
+      Probabilité de réussite à l'examen officiel
+      {% if annee %}· {{ annee.libelle }}{% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'pedagogie:prediction_index' %}" class="btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Toutes les classes
+    </a>
+    {% if predictions %}
+    <a href="{% url 'pedagogie:prediction_classe_pdf' classe.pk %}" class="btn-secondary" target="_blank">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+      </svg>
+      Rapport PDF
+    </a>
+    {% endif %}
+    <form method="post" action="{% url 'pedagogie:prediction_calculer' classe.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        {% if predictions %}Recalculer{% else %}Calculer{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+{% if not predictions %}
+<div class="card animate-fade-up">
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+    </div>
+    <h3 class="fw-semibold mb-2">Aucune prédiction calculée</h3>
+    <p class="empty-state-text">Cliquez sur <strong>Calculer</strong> pour lancer l'analyse. Les moyennes du 1er trimestre au moins doivent être saisies.</p>
+  </div>
+</div>
+
+{% else %}
+
+<!-- Stat-cards -->
+<div class="stats-grid animate-fade-up delay-1">
+  <div class="stat-card stat-card-accent" style="--accent-color:#00A86B;">
+    <div class="stat-icon-wrap">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_bon }}</div>
+      <div class="stat-label">Bon pronostic ≥ 70%</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card-accent" style="--accent-color:#F5A623;">
+    <div class="stat-icon-wrap">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_moyen }}</div>
+      <div class="stat-label">Pronostic moyen 50–69%</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card-accent" style="--accent-color:#E67E22;">
+    <div class="stat-icon-wrap">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_risque }}</div>
+      <div class="stat-label">Risqué 30–49%</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card-accent" style="--accent-color:#DC3545;">
+    <div class="stat-icon-wrap">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ nb_critique }}</div>
+      <div class="stat-label">Très risqué &lt; 30%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tableau -->
+<div class="card animate-fade-up delay-2">
+  <div class="card-header">
+    <span class="card-title">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      Classement par probabilité — {{ classe.nom }}
+    </span>
+    <span class="badge badge-neutral">{{ nb_total }} élève{{ nb_total|pluralize }}</span>
+  </div>
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Rang</th>
+          <th>Élève</th>
+          <th>Examen</th>
+          <th class="td-right">Moy. actuelle</th>
+          <th class="td-right">Tendance</th>
+          <th class="td-right">Abs. NJ</th>
+          <th class="td-right">Probabilité</th>
+          <th class="text-center">Pronostic</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in predictions %}
+        <tr>
+          <td class="text-muted fw-semibold">{{ forloop.counter }}</td>
+          <td>
+            <span class="fw-semibold">{{ p.inscription.eleve.nom|upper }} {{ p.inscription.eleve.prenom }}</span>
+            <div class="text-xs text-muted">{{ p.inscription.eleve.matricule|default:"" }}</div>
+          </td>
+          <td><span class="badge badge-info">{{ p.examen_cible }}</span></td>
+          <td class="td-right fw-semibold {% if p.mg_actuelle and p.mg_actuelle >= 10 %}color-primary{% elif p.mg_actuelle %}color-danger{% endif %}">
+            {% if p.mg_actuelle %}{{ p.mg_actuelle|floatformat:2 }}/20{% else %}—{% endif %}
+          </td>
+          <td class="td-right">
+            {% if p.tendance is not None %}
+              <span class="{% if p.tendance >= 0 %}color-primary{% else %}color-danger{% endif %}">
+                {{ p.tendance|floatformat:2|stringformat:"+.2f" }}
+              </span>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="td-right text-muted">{{ p.nb_absences_nj }}</td>
+          <td class="td-right">
+            <div class="d-flex align-center justify-end gap-2">
+              <div style="width:70px; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
+                <div style="width:{{ p.score }}%; height:100%; background:{{ p.couleur_css }}; border-radius:3px;"></div>
+              </div>
+              <span class="fw-bold" style="color:{{ p.couleur_css }}; min-width:36px; text-align:right;">{{ p.score }}%</span>
+            </div>
+          </td>
+          <td class="text-center">
+            <span class="badge {{ p.badge_class }}">{{ p.get_pronostic_display }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Légende méthodologie -->
+<div class="card animate-fade-up delay-3">
+  <div class="card-header">
+    <span class="card-title">Méthode de calcul</span>
+  </div>
+  <div class="card-body">
+    <div class="d-flex gap-4 flex-wrap text-sm text-muted">
+      <div>
+        <span class="fw-semibold">Score de base</span> = (Moy. générale / 20) × 100
+      </div>
+      <div>
+        <span class="fw-semibold">Tendance</span> = ±5 à ±10 pts selon progression inter-trimestrielle
+      </div>
+      <div>
+        <span class="fw-semibold">Assiduité</span> = jusqu'à −15 pts si absences NJ &gt; 30h
+      </div>
+    </div>
+    <div class="d-flex gap-3 mt-3 flex-wrap">
+      <span class="badge badge-success">Bon ≥ 70%</span>
+      <span class="badge badge-warning">Moyen 50-69%</span>
+      <span class="badge badge-danger">Risqué 30-49%</span>
+      <span class="badge badge-danger">Critique &lt; 30%</span>
+    </div>
+    <p class="text-xs text-muted mt-3">
+      Calculé le {{ predictions.first.date_calcul|date:"d/m/Y à H\hi" }} · Résultats indicatifs basés sur les données disponibles.
+    </p>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

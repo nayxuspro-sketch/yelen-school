@@ -166,13 +166,20 @@ def certificat_scolarite(request, inscription_id):
             )
             context['document'] = doc
 
+            # Retirer les titres honorifiques du PDF certificat (en mémoire uniquement)
+            if signataire:
+                signataire.titre_honorifique = ''
+                signataire.titres_honorifiques = []
+
             html_string = render_to_string(
                 'documents/pdf/certificat_scolarite.html',
                 context,
                 request=request,
-            )
+            ).strip()
             base_url = request.build_absolute_uri('/')
-            pdf = HTML(string=html_string, base_url=base_url).write_pdf()
+            pdf = HTML(string=html_string, base_url=base_url).write_pdf(
+                presentational_hints=True,
+            )
 
             nom = inscription.eleve.nom.replace(' ', '_')
             doc.fichier.save(
@@ -397,31 +404,52 @@ def liste_classe_pdf(request, classe_id):
 
 @login_required
 def liste_personnel_selector(request):
-    """Sélection du cycle pour la liste du personnel."""
-    from personnel.models import MembrePersonnel
+    """Sélection du cycle pour la liste du personnel avec année scolaire."""
+    from personnel.models import MembrePersonnel, InscriptionPersonnel
+    from parametres.models import AnneeScolaire
 
-    # Cycles ayant au moins un membre du personnel actif (via M2M cycles)
-    cycles_ids = (
-        MembrePersonnel.objects
-        .filter(is_active=True)
-        .values_list('cycles__id', flat=True)
-        .distinct()
-    )
+    etab = getattr(request.user, 'etablissement', None)
+
+    # Gestion de l'année scolaire
+    annee_id = request.GET.get('annee_id')
+    if annee_id:
+        annee = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
+    else:
+        annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+
+    # Annees scolaires disponibles pour le select
+    annees = []
+    if etab:
+        annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
+
     cycles = (
         Cycle.objects
-        .filter(pk__in=cycles_ids)
+        .filter(etablissement=etab)
         .order_by('ordre', 'nom')
-    )
+    ) if etab else Cycle.objects.none()
+
+    cycles_ids = []
+    if annee:
+        cycles_ids = list(
+            InscriptionPersonnel.objects
+            .filter(annee_scolaire=annee, est_actif=True)
+            .values_list('cycle__id', flat=True)
+            .distinct()
+        )
+    cycles_avec_inscriptions = set(cycles_ids)
 
     return render(request, 'documents/liste_personnel_selector.html', {
         'cycles': cycles,
+        'annee_selectionnee': annee,
+        'annees': annees,
+        'cycles_avec_inscriptions': cycles_avec_inscriptions,
     })
 
 
 @login_required
 def liste_personnel_pdf(request, cycle_id):
-    """Liste alphabétique du personnel d'un cycle — prévisualisation HTML et export PDF."""
-    from personnel.models import MembrePersonnel
+    """Liste alphabétique du personnel d'un cycle et année scolaire — prévisualisation HTML et export PDF."""
+    from personnel.models import InscriptionPersonnel
 
     etab = getattr(request.user, 'etablissement', None)
     cycle = get_object_or_404(Cycle, pk=cycle_id)
@@ -434,23 +462,61 @@ def liste_personnel_pdf(request, cycle_id):
     if annee_id:
         annee = get_object_or_404(AnneeScolaire, pk=annee_id)
     else:
-        annee = AnneeScolaire.objects.filter(est_courante=True).first()
+        annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
 
-    membres = (
-        MembrePersonnel.objects
-        .filter(cycles=cycle, is_active=True)
-        .select_related('etablissement')
-        .order_by('nom', 'prenom')
+    inscriptions = (
+        InscriptionPersonnel.objects
+        .filter(cycle=cycle, annee_scolaire=annee, est_actif=True)
+        .select_related('personnel', 'poste')
+        .order_by('personnel__nom', 'personnel__prenom')
     )
 
-    membres_list = list(membres)
+    CAT_LABELS = {
+        'DIRECTION': 'Direction',
+        'ENSEIGNEMENT': 'Enseignement',
+        'ADMINISTRATION': 'Administration',
+        'VIE_SCOLAIRE': 'Vie Scolaire',
+        'TECHNIQUE': 'Personnel Technique',
+    }
+
+    membres_list = []
+    for ins in inscriptions:
+        poste = ins.poste
+        cat_val = getattr(poste, 'categorie', '') if poste else ''
+        cat_label = CAT_LABELS.get(cat_val, cat_val or 'Autre')
+        membres_list.append({
+            'personnel': ins.personnel,
+            'poste': poste,
+            'categorie': cat_label,
+        })
 
     nb_total  = len(membres_list)
-    nb_hommes = sum(1 for m in membres_list if m.genre == 'M')
-    nb_femmes = sum(1 for m in membres_list if m.genre == 'F')
+    nb_hommes = sum(1 for m in membres_list if m['personnel'].genre == 'M')
+    nb_femmes = sum(1 for m in membres_list if m['personnel'].genre == 'F')
+
+    # ── Répartition par catégorie × genre ───────────────────────────────
+    from collections import defaultdict
+    repartition_cat = defaultdict(lambda: {'H': 0, 'F': 0, 'total': 0})
+    for m in membres_list:
+        cat = m['categorie'] or 'Autre'
+        genre = m['personnel'].genre
+        repartition_cat[cat]['total'] += 1
+        if genre == 'M':
+            repartition_cat[cat]['H'] += 1
+        else:
+            repartition_cat[cat]['F'] += 1
+
+    repartition_cycles_data = []
+    for cat, vals in sorted(repartition_cat.items()):
+        if vals['total'] > 0:
+            repartition_cycles_data.append({
+                'categorie': cat,
+                'hommes': vals['H'],
+                'femmes': vals['F'],
+                'total': vals['total'],
+            })
 
     # Signataire — cherche par cycle + code TypeDocument contenant "liste" et "personnel"
-    # Couvre : 'LISTE_PERSONNEL', 'LISTE_PERSONNELPrim', 'liste_personnel_sec', etc.
     signataire_membre = None
     signataire_fonction = None
     sig = (
@@ -467,7 +533,6 @@ def liste_personnel_pdf(request, cycle_id):
         .order_by('-updated_at')
         .first()
     )
-    # Repli : n'importe quel signataire actif pour ce cycle
     if not sig:
         sig = SignataireDocument.objects.filter(
             cycle=cycle, actif=True
@@ -490,6 +555,7 @@ def liste_personnel_pdf(request, cycle_id):
         'nb_total': nb_total,
         'nb_hommes': nb_hommes,
         'nb_femmes': nb_femmes,
+        'repartition_cycles_data': repartition_cycles_data,
         'signataire_membre': signataire_membre,
         'signataire_fonction': signataire_fonction,
     }

@@ -4,18 +4,14 @@ from parametres.models import Classe, AnneeScolaire, PeriodeEvaluation
 from personnel.models import MembrePersonnel
 
 def _apply_yelen_classes(fields):
-    """Apply yelen.css input/select classes to all form fields."""
+    """Apply yelen.css dash-input class to all form fields."""
     for name, field in fields.items():
         w = field.widget
         if isinstance(w, forms.CheckboxInput):
-            w.attrs.setdefault('class', '')
-        elif isinstance(w, (forms.Select, forms.SelectMultiple)):
-            w.attrs['class'] = 'input select'
-        elif isinstance(w, forms.Textarea):
-            w.attrs['class'] = 'input'
+            pass
         else:
-            existing = w.attrs.get('class', '')
-            w.attrs['class'] = ('input ' + existing).strip()
+            existing = w.attrs.get('class', '').replace('input', '').replace('select', '').strip()
+            w.attrs['class'] = ('dash-input ' + existing).strip()
 
 class MatiereCycleForm(forms.ModelForm):
     """Formulaire inline pour configurer une matière dans un cycle."""
@@ -87,7 +83,9 @@ class EvaluationForm(forms.ModelForm):
         exclude = ['trimestre']
         widgets = {
             'date_planifiee': forms.DateInput(attrs={'type': 'date'}),
+            'date_effectuee': forms.DateInput(attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 2}),
+            'observations': forms.Textarea(attrs={'rows': 3}),
         }
 
     def __init__(self, *args, **kwargs):

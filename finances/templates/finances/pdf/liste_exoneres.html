@@ -5,179 +5,62 @@
     <meta charset="UTF-8">
     <style>
         @page {
-            size: A4 portrait;
-            margin: 15mm;
-            @bottom-right {
-                content: "Page " counter(page) " sur " counter(pages);
-                font-size: 9pt;
-                color: #666;
-            }
+            size: A4 portrait; margin: 15mm;
+            @bottom-right { content: "Page " counter(page) " sur " counter(pages); font-size: 9pt; color: #666; }
         }
-        body {
-            font-family: "DejaVu Sans", sans-serif;
-            font-size: 10pt;
-            color: #1A1A1A;
-            margin: 0;
-            padding: 0;
-        }
+        body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #111; margin: 0; padding: 0; }
 
-        /* ── En-tête ── */
         .pdf-entete {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #1B5E20;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2.5px solid #111;
         }
-        .pdf-entete-gauche {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .pdf-logo {
-            width: 55px;
-            height: 55px;
-            object-fit: contain;
-        }
-        .pdf-etab-nom {
-            font-size: 14pt;
-            font-weight: bold;
-            color: #1B5E20;
-            margin: 0 0 3px 0;
-        }
-        .pdf-etab-info {
-            font-size: 8pt;
-            color: #444;
-            margin: 1px 0;
-        }
-        .pdf-entete-droit {
-            text-align: right;
-        }
-        .doc-title {
-            background: #f0f9f4;
-            border: 1px solid #1B5E20;
-            padding: 7px 14px;
-            border-radius: 4px;
-        }
-        .doc-title h2 {
-            margin: 0 0 2px 0;
-            font-size: 11pt;
-            color: #1B5E20;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .doc-title p {
-            margin: 0;
-            font-size: 8.5pt;
-            color: #555;
-        }
+        .pdf-entete-gauche { display: flex; align-items: center; gap: 12px; }
+        .pdf-logo { width: 55px; height: 55px; object-fit: contain; filter: grayscale(100%); }
+        .pdf-etab-nom { font-size: 14pt; font-weight: bold; color: #111; margin: 0 0 3px 0; }
+        .pdf-etab-info { font-size: 8pt; color: #444; margin: 1px 0; }
+        .pdf-entete-droit { text-align: right; }
+        .doc-title { background: #fff; border: 1.5px solid #111; padding: 7px 14px; border-radius: 4px; }
+        .doc-title h2 { margin: 0 0 2px 0; font-size: 11pt; color: #111; text-transform: uppercase; letter-spacing: 1px; }
+        .doc-title p { margin: 0; font-size: 8.5pt; color: #555; }
+        .doc-date { margin: 6px 0 0; font-size: 8pt; color: #777; }
 
-        /* ── Stats ── */
         .info-box {
-            background: #f5f5f5;
-            padding: 8px 12px;
-            border-radius: 4px;
-            margin-bottom: 14px;
-            display: flex;
-            gap: 24px;
-            font-size: 9pt;
+            background: #f5f5f5; padding: 8px 12px; border-left: 3pt solid #111;
+            margin-bottom: 14px; display: flex; gap: 24px; font-size: 9pt;
         }
-        .info-item strong { color: #1B5E20; font-size: 11pt; }
+        .info-box strong { color: #111; font-size: 11pt; }
 
-        /* ── Sections ── */
-        .classe-section {
-            border: 1px solid #ddd;
-            margin-bottom: 18px;
-            page-break-inside: avoid;
-        }
+        .classe-section { border: 1px solid #ccc; margin-bottom: 18px; page-break-inside: avoid; }
         .classe-header {
-            background: #1B5E20;
-            color: white;
-            padding: 7px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            font-size: 10pt;
+            background: #111; color: #fff;
+            padding: 7px 12px; display: flex; justify-content: space-between;
+            align-items: center; font-weight: bold; font-size: 10pt;
         }
-        .classe-header .cycle-label {
-            font-size: 8pt;
-            font-weight: normal;
-            opacity: .85;
-        }
-        .classe-header .nb-eleves {
-            font-size: 9pt;
-            font-weight: bold;
-            background: rgba(255,255,255,.2);
-            padding: 2px 8px;
-            border-radius: 999px;
-        }
+        .cycle-label { font-size: 8pt; font-weight: normal; opacity: .85; }
+        .nb-eleves { font-size: 9pt; font-weight: bold; background: rgba(255,255,255,.2); padding: 2px 8px; border-radius: 999px; }
 
-        /* ── Tableau ── */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 9pt;
-        }
-        th {
-            background: #e8f5e9;
-            padding: 5px 8px;
-            text-align: left;
-            border-bottom: 1px solid #c8e6c9;
-            font-weight: bold;
-            font-size: 8.5pt;
-        }
-        td {
-            padding: 4px 8px;
-            border-bottom: 1px solid #eee;
-            vertical-align: top;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+        th { background: #eee; padding: 5px 8px; text-align: left; border-bottom: 1.5px solid #bbb; font-weight: bold; font-size: 8.5pt; }
+        td { padding: 4px 8px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
         tr:last-child td { border-bottom: none; }
-        .n-col { width: 28px; color: #888; font-size: 8pt; }
-        .mat-col { width: 100px; font-size: 8pt; font-family: monospace; color: #555; }
-        .date-col { width: 80px; font-size: 8pt; color: #555; }
-        .raison-col { color: #444; font-style: italic; }
-        .non-renseigne { color: #aaa; font-style: italic; font-size: 8pt; }
+        tr:nth-child(even) td { background: #f5f5f5; }
+        .n-col { width: 28px; color: #666; font-size: 8pt; }
+        .mat-col { width: 100px; font-size: 8pt; font-family: monospace; color: #444; }
+        .date-col { width: 80px; font-size: 8pt; color: #444; }
+        .raison-col { color: #333; font-style: italic; }
+        .non-renseigne { color: #888; font-style: italic; font-size: 8pt; }
 
-        /* ── Total général ── */
         .total-general {
-            background: #1B5E20;
-            color: white;
-            padding: 10px 14px;
-            border-radius: 4px;
-            margin-top: 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 11pt;
-            font-weight: bold;
+            border: 2px solid #111; padding: 10px 14px; margin-top: 18px;
+            display: flex; justify-content: space-between;
+            align-items: center; font-size: 11pt; font-weight: bold;
         }
 
-        /* ── Pied de page ── */
-        .footer {
-            margin-top: 28px;
-            display: flex;
-            justify-content: flex-end;
-            font-size: 9pt;
-            color: #555;
-        }
-        .sig-block {
-            text-align: right;
-        }
-        .sig-block .sig-lieu-date {
-            margin-bottom: 30px;
-        }
-        .sig-block .sig-ligne {
-            border-top: 1px solid #333;
-            padding-top: 4px;
-            font-weight: bold;
-        }
+        .footer { margin-top: 28px; display: flex; justify-content: flex-end; font-size: 9pt; color: #555; }
     </style>
 </head>
 <body>
 
-<!-- En-tête établissement -->
 <div class="pdf-entete">
     <div class="pdf-entete-gauche">
         {% if logo_url %}
@@ -198,25 +81,21 @@
             <h2>Liste des élèves exonérés</h2>
             <p>Année scolaire : <strong>{{ annee.libelle }}</strong></p>
         </div>
-        <p style="margin:6px 0 0; font-size:8pt; color:#777;">Édité le {{ now|date:"d/m/Y à H:i" }}</p>
+        <p class="doc-date">Édité le {{ now|date:"d/m/Y à H:i" }}</p>
     </div>
 </div>
 
-<!-- Statistiques -->
 <div class="info-box">
     <div><strong>{{ total }}</strong> élève{% if total > 1 %}s{% endif %} exonéré{% if total > 1 %}s{% endif %}</div>
     <div><strong>{{ groupes|length }}</strong> classe{% if groupes|length > 1 %}s{% endif %} concernée{% if groupes|length > 1 %}s{% endif %}</div>
 </div>
 
-<!-- Groupes par classe -->
 {% for groupe in groupes %}
 <div class="classe-section">
     <div class="classe-header">
         <div>
             {{ groupe.classe.nom }}
-            {% if groupe.cycle %}
-            <span class="cycle-label"> — {{ groupe.cycle.nom }}</span>
-            {% endif %}
+            {% if groupe.cycle %}<span class="cycle-label"> — {{ groupe.cycle.nom }}</span>{% endif %}
         </div>
         <span class="nb-eleves">{{ groupe.eleves|length }} élève{% if groupe.eleves|length > 1 %}s{% endif %}</span>
     </div>
@@ -238,11 +117,8 @@
                 <td class="mat-col">{{ inscr.eleve.matricule|default:"—" }}</td>
                 <td class="date-col">{{ inscr.date_inscription|date:"d/m/Y" }}</td>
                 <td class="raison-col">
-                    {% if inscr.raison_exoneration %}
-                        {{ inscr.raison_exoneration }}
-                    {% else %}
-                        <span class="non-renseigne">Non précisée</span>
-                    {% endif %}
+                    {% if inscr.raison_exoneration %}{{ inscr.raison_exoneration }}
+                    {% else %}<span class="non-renseigne">Non précisée</span>{% endif %}
                 </td>
             </tr>
             {% endfor %}
@@ -250,12 +126,11 @@
     </table>
 </div>
 {% empty %}
-<p style="text-align:center; color:#888; padding:20px;">
+<p style="text-align:center; color:#777; padding:20px; font-style:italic;">
     Aucun élève exonéré pour l'année {{ annee.libelle }}.
 </p>
 {% endfor %}
 
-<!-- Total général -->
 {% if total > 0 %}
 <div class="total-general">
     <span>Total élèves exonérés</span>
@@ -263,7 +138,6 @@
 </div>
 {% endif %}
 
-<!-- Signataire -->
 {% signataire_auto "LISTE_REDEVABLES" %}
 
 </body>

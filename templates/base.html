@@ -1,4 +1,4 @@
-{% load static %}
+{% load static static_v %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -7,7 +7,7 @@
   <title>{% block title %}YELEN SCHOOL{% endblock %}</title>
 
   {# ── CSS principal — 100% local, zéro CDN ── #}
-  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+  <link rel="stylesheet" href="{% static_v 'css/yelen.css' %}">
 
   {# ── HTMX — copie locale obligatoire dans static/js/ ── #}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
@@ -34,7 +34,7 @@
 
       {# Accueil #}
       <div class="sidebar-nav-section">
-        <a href="{% url 'dashboard' %}"
+        <a href="{% url 'core:home' %}"
            class="menu-item {% block nav_dashboard %}{% endblock %}">
           <svg class="menu-icon" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -50,7 +50,7 @@
       {# Élèves #}
       <div class="sidebar-nav-section">
         <span class="sidebar-nav-label">Élèves</span>
-        <a href="{% url 'eleves:liste' %}"
+        <a href="{% url 'inscriptions:eleve_list' %}"
            class="menu-item {% block nav_eleves %}{% endblock %}">
           <svg class="menu-icon" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -61,7 +61,7 @@
           </svg>
           Liste des élèves
         </a>
-        <a href="{% url 'eleves:inscription' %}"
+        <a href="{% url 'inscriptions:eleve_create' %}"
            class="menu-item {% block nav_inscription %}{% endblock %}">
           <svg class="menu-icon" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -112,7 +112,7 @@
       {# Notes & résultats #}
       <div class="sidebar-nav-section">
         <span class="sidebar-nav-label">Résultats</span>
-        <a href="{% url 'notes:liste' %}"
+        <a href="{% url 'pedagogie:classe_result_list' %}"
            class="menu-item {% block nav_notes %}{% endblock %}">
           <svg class="menu-icon" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -127,7 +127,7 @@
       {# Paramètres #}
       <div class="sidebar-nav-section">
         <span class="sidebar-nav-label">Administration</span>
-        <a href="{% url 'parametres:signataires' %}"
+        <a href="{% url 'parametres:signataires_list' %}"
            class="menu-item {% block nav_signataires %}{% endblock %}">
           <svg class="menu-icon" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -171,7 +171,7 @@
           </svg>
           Aide
         </a>
-        <a href="{% url 'logout' %}" class="btn-secondary btn-sm"
+        <a href="{% url 'accounts:logout' %}" class="btn-secondary btn-sm"
            style="flex: 1; justify-content: center;">
           Déconnexion
         </a>
@@ -236,6 +236,11 @@
     </main>
 
   </div>{# /main-wrapper #}
+
+  {# ── Footer ── #}
+  <footer class="main-footer">
+    <span>&copy; 2026 YELEN SCHOOL &mdash; Système de Gestion Scolaire (Burkina Faso)</span>
+  </footer>
 
   {# ════════════════════════════════════════════════════════════ #}
   {# SCRIPTS                                                      #}

@@ -6,29 +6,44 @@
 <div class="page-header animate-fade-up">
     <div>
         <p class="page-subtitle">
-            <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
-            <span class="text-muted"> / </span>
-            <span>Identité Établissement</span>
+            <a href="{% url 'parametres:index' %}">Paramètres</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-current">Identité Établissement</span>
         </p>
         <h1 class="page-title">Identité de l'établissement</h1>
     </div>
 </div>
 
-{% if error %}
-<div class="alert alert-danger mb-4">{{ error }}</div>
-{% endif %}
-
-{% if success %}
-<div class="alert alert-success mb-4">{{ success }}</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} mb-4">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
+        {% if message.tags == 'success' %}
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        {% elif message.tags == 'error' %}
+        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        {% else %}
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        {% endif %}
+    </svg>
+    <span>{{ message }}</span>
+</div>
+{% endfor %}
 {% endif %}
 
 <div class="card animate-fade-up delay-1">
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <h3 style="font-size:1rem; margin-bottom:var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
-            Informations officielles
-        </h3>
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11m16-11v11M8 14v.01M12 14v.01M16 14v.01M8 18v.01M12 18v.01M16 18v.01"/>
+                </svg>
+                Informations officielles
+            </div>
+        </div>
+
         <div class="form-grid-2">
             <div class="form-group">
                 <label class="input-label">Nom de l'établissement</label>
@@ -64,9 +79,16 @@
             </div>
         </div>
 
-        <h3 style="font-size:1rem; margin:var(--space-6) 0 var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
-            Adresse complète
-        </h3>
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+                Adresse complète
+            </div>
+        </div>
+
         <div class="form-grid-2">
             <div class="form-group" style="grid-column:1/-1;">
                 <label class="input-label">Adresse complète</label>
@@ -92,9 +114,15 @@
             </div>
         </div>
 
-        <h3 style="font-size:1rem; margin:var(--space-6) 0 var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
-            Contact
-        </h3>
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                Contact
+            </div>
+        </div>
+
         <div class="form-grid-2">
             <div class="form-group">
                 <label class="input-label">Téléphone</label>
@@ -121,25 +149,35 @@
             </div>
         </div>
 
-        <h3 style="font-size:1rem; margin:var(--space-6) 0 var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
-            Éléments graphiques pour documents
-        </h3>
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Éléments graphiques pour documents
+            </div>
+        </div>
+
         <div class="form-grid-2">
             <div class="form-group">
                 <label class="input-label">Logo de l'établissement</label>
                 <div class="d-flex align-center gap-4 mt-2">
                     {% if identite.logo %}
                     <div id="logo-preview-container" style="flex-shrink:0;">
-                        <img id="logo-preview" src="{{ identite.logo.url }}" alt="Logo" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                        <img id="logo-preview" src="{{ identite.logo.url }}" alt="Logo"
+                            style="height:64px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:var(--color-bg-card);">
                     </div>
                     {% else %}
-                    <div id="logo-preview-container" style="flex-shrink:0; display:none;">
-                        <img id="logo-preview" src="" alt="Logo" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    <div id="logo-preview-container" style="flex-shrink:0;display:none;">
+                        <img id="logo-preview" src="" alt="Logo"
+                            style="height:64px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:var(--color-bg-card);">
                     </div>
                     {% endif %}
                     <div class="flex-1">
                         <input type="file" name="logo" accept="image/*" class="input" onchange="previewImage(this, 'logo-preview', 'logo-preview-container')">
-                        <p class="text-xs text-muted" style="margin-top:0.25rem;">Formats: PNG, JPG. 300×300px minimum</p>
+                        <p class="text-xs text-muted mt-2">Formats: PNG, JPG. 300×300px minimum</p>
                     </div>
                 </div>
             </div>
@@ -149,16 +187,18 @@
                 <div class="d-flex align-center gap-4 mt-2">
                     {% if identite.signature_directeur %}
                     <div id="signature-preview-container" style="flex-shrink:0;">
-                        <img id="signature-preview" src="{{ identite.signature_directeur.url }}" alt="Signature" style="height:3rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                        <img id="signature-preview" src="{{ identite.signature_directeur.url }}" alt="Signature"
+                            style="height:48px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:var(--color-bg-card);">
                     </div>
                     {% else %}
-                    <div id="signature-preview-container" style="flex-shrink:0; display:none;">
-                        <img id="signature-preview" src="" alt="Signature" style="height:3rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    <div id="signature-preview-container" style="flex-shrink:0;display:none;">
+                        <img id="signature-preview" src="" alt="Signature"
+                            style="height:48px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:var(--color-bg-card);">
                     </div>
                     {% endif %}
                     <div class="flex-1">
                         <input type="file" name="signature_directeur" accept="image/*" class="input" onchange="previewImage(this, 'signature-preview', 'signature-preview-container')">
-                        <p class="text-xs text-muted" style="margin-top:0.25rem;">Image PNG transparente</p>
+                        <p class="text-xs text-muted mt-2">Image PNG transparente</p>
                     </div>
                 </div>
             </div>
@@ -168,31 +208,47 @@
                 <div class="d-flex align-center gap-4 mt-2">
                     {% if identite.cachet_etablissement %}
                     <div id="cachet-preview-container" style="flex-shrink:0;">
-                        <img id="cachet-preview" src="{{ identite.cachet_etablissement.url }}" alt="Cachet" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                        <img id="cachet-preview" src="{{ identite.cachet_etablissement.url }}" alt="Cachet"
+                            style="height:64px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:var(--color-bg-card);">
                     </div>
                     {% else %}
-                    <div id="cachet-preview-container" style="flex-shrink:0; display:none;">
-                        <img id="cachet-preview" src="" alt="Cachet" style="height:4rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
+                    <div id="cachet-preview-container" style="flex-shrink:0;display:none;">
+                        <img id="cachet-preview" src="" alt="Cachet"
+                            style="height:64px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:var(--color-bg-card);">
                     </div>
                     {% endif %}
                     <div class="flex-1">
                         <input type="file" name="cachet_etablissement" accept="image/*" class="input" onchange="previewImage(this, 'cachet-preview', 'cachet-preview-container')">
-                        <p class="text-xs text-muted" style="margin-top:0.25rem;">Image PNG transparente (cachet rond)</p>
+                        <p class="text-xs text-muted mt-2">Image PNG transparente (cachet rond)</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <h3 style="font-size:1rem; margin:var(--space-6) 0 var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
-            Devise de l'établissement
-        </h3>
-        <div class="form-group">
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+                    <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+                </svg>
+                Devise de l'établissement
+            </div>
+        </div>
+
+        <div class="form-group" style="padding:0 var(--space-6) var(--space-6);">
             <label class="input-label">Devise</label>
             <textarea name="devise" rows="2" class="input" placeholder="Ex: Ensemble pour la réussite de chaque élève">{{ identite.devise|default:'' }}</textarea>
         </div>
 
-        <div class="d-flex justify-end gap-3 mt-6" style="padding-top:2rem; border-top:1px solid var(--color-border);">
+        <div class="divider"></div>
+
+        <div class="d-flex justify-end gap-3" style="padding:var(--space-5) var(--space-6) 0;">
             <button type="submit" class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
                 Enregistrer les modifications
             </button>
         </div>

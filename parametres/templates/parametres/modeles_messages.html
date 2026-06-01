@@ -3,79 +3,89 @@
 {% block title %}Modèles de messages SMS{% endblock %}
 
 {% block content %}
-<div class="page-header animate-fade-up">
-  <div>
-    <p class="page-subtitle">Paramètres</p>
-    <h1 class="page-title">Modèles de messages SMS</h1>
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Modèles de messages SMS</h1>
+      <p>Personnalisez les messages envoyés automatiquement aux parents</p>
+    </div>
   </div>
 </div>
 
 {% if messages %}
 {% for msg in messages %}
-<div class="alert alert-{{ msg.tags }} animate-fade-up" style="margin-bottom:var(--space-4);">{{ msg }}</div>
+<div class="dash-alert dash-alert-{{ msg.tags }} animate-fade-up" style="margin-bottom:var(--space-4);">{{ msg }}</div>
 {% endfor %}
 {% endif %}
 
-<p style="font-size:0.875rem; color:var(--color-text-secondary); margin-bottom:var(--space-5);">
-  Personnalisez les messages envoyés automatiquement par SMS aux parents. Les variables entre accolades sont remplacées automatiquement.
+<p class="dash-form-hint" style="margin-bottom:var(--space-5);">
+  Les variables entre accolades sont remplacées automatiquement par les données de l'élève.
 </p>
 
+<div class="dash-grid" style="display: grid; gap: 1rem;">
 {% for item in items %}
-<div class="card animate-fade-up" style="margin-bottom:var(--space-4);" id="card-{{ item.code }}">
-  <div style="padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--color-border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--space-3);">
-    <div style="display:flex; align-items:center; gap:var(--space-3);">
-      <div style="width:10px; height:10px; border-radius:50%; background:{% if item.modele and item.modele.actif %}#22c55e{% elif item.modele %}#94a3b8{% else %}#f59e0b{% endif %};"></div>
-      <h2 style="font-size:0.95rem; font-weight:600; margin:0;">{{ item.label }}</h2>
-      {% if not item.modele %}
-      <span style="font-size:0.72rem; background:rgba(245,158,11,0.12); color:#d97706; padding:2px 8px; border-radius:20px; font-weight:500;">Par défaut</span>
-      {% elif item.modele.actif %}
-      <span style="font-size:0.72rem; background:rgba(34,197,94,0.12); color:#16a34a; padding:2px 8px; border-radius:20px; font-weight:500;">Personnalisé</span>
-      {% else %}
-      <span style="font-size:0.72rem; background:rgba(148,163,184,0.15); color:#64748b; padding:2px 8px; border-radius:20px; font-weight:500;">Désactivé</span>
-      {% endif %}
-    </div>
-    <div style="display:flex; gap:var(--space-2);">
-      <button
-        hx-get="{% url 'parametres:modele_message_form' type_msg=item.code %}"
-        hx-target="#form-{{ item.code }}"
-        hx-swap="innerHTML"
-        class="btn-outline" style="font-size:0.82rem; padding:6px 14px;">
-        Modifier
-      </button>
-      {% if item.modele %}
-      <form method="post" action="{% url 'parametres:modele_message_reset' type_msg=item.code %}"
-            onsubmit="return confirm('Réinitialiser ce modèle au contenu par défaut ?')">
-        {% csrf_token %}
-        <button type="submit" class="btn-outline" style="font-size:0.82rem; padding:6px 14px; color:var(--color-text-muted);">
-          Réinitialiser
+  <div class="dash-card animate-fade-up" id="card-{{ item.code }}" style="padding: 0; overflow: hidden;">
+    
+    <div class="dash-card-header" style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="width: 10px; height: 10px; border-radius: 50%; background: {% if item.modele and item.modele.actif %}var(--color-primary){% elif item.modele %}var(--color-text-muted){% else %}var(--color-gold){% endif %};"></div>
+        <h3 style="font-size: 1rem; font-weight: 600; margin: 0;">{{ item.label }}</h3>
+        {% if not item.modele %}
+        <span style="font-size: 0.72rem; background: rgba(245,158,11,0.15); color: #d97706; padding: 2px 8px; border-radius: 20px; font-weight: 500;">Par défaut</span>
+        {% elif item.modele.actif %}
+        <span style="font-size: 0.72rem; background: rgba(0,168,107,0.15); color: #16a34a; padding: 2px 8px; border-radius: 20px; font-weight: 500;">Personnalisé</span>
+        {% else %}
+        <span style="font-size: 0.72rem; background: rgba(148,163,184,0.15); color: #64748b; padding: 2px 8px; border-radius: 20px; font-weight: 500;">Désactivé</span>
+        {% endif %}
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <button
+          hx-get="{% url 'parametres:modele_message_form' type_msg=item.code %}"
+          hx-target="#form-{{ item.code }}"
+          hx-swap="innerHTML"
+          class="dash-btn dash-btn-secondary dash-btn-sm">
+          Modifier
         </button>
-      </form>
-      {% endif %}
-    </div>
-  </div>
-
-  {# Aperçu du contenu actuel #}
-  <div style="padding:var(--space-4) var(--space-5);">
-    <p style="font-size:0.82rem; color:var(--color-text-muted); margin-bottom:var(--space-2);">
-      Message actuel :
-    </p>
-    <p style="font-size:0.875rem; font-style:italic; color:var(--color-text-secondary); background:var(--color-surface-raised, rgba(0,0,0,0.03)); padding:var(--space-3) var(--space-4); border-radius:var(--radius-md); border-left:3px solid var(--color-border); margin:0;">
-      {{ item.modele.contenu_sms|default:item.defaut }}
-    </p>
-
-    {# Variables disponibles #}
-    <div style="margin-top:var(--space-3); display:flex; flex-wrap:wrap; gap:var(--space-2); align-items:center;">
-      <span style="font-size:0.75rem; color:var(--color-text-muted);">Variables :</span>
-      {% for v in item.variables %}
-      <code style="font-size:0.72rem; background:rgba(99,102,241,0.08); color:#6366f1; padding:2px 7px; border-radius:4px;">{{ v }}</code>
-      {% endfor %}
+        {% if item.modele %}
+        <form method="post" action="{% url 'parametres:modele_message_reset' type_msg=item.code %}"
+              onsubmit="return confirm('Réinitialiser ce modèle au contenu par défaut ?')">
+          {% csrf_token %}
+          <button type="submit" class="dash-btn dash-btn-ghost dash-btn-sm">
+            Réinitialiser
+          </button>
+        </form>
+        {% endif %}
+      </div>
     </div>
 
-    {# Zone formulaire HTMX #}
-    <div id="form-{{ item.code }}" style="margin-top:var(--space-4);"></div>
+    <div style="padding: 1rem 1.25rem;">
+      <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 0.5rem;">
+        Message actuel :
+      </p>
+      <div style="font-size: 0.875rem; font-style: italic; color: var(--color-text-secondary); background: var(--color-bg-hover); padding: 0.75rem 1rem; border-radius: 8px; border-left: 3px solid var(--color-primary); margin: 0;">
+        {{ item.modele.contenu_sms|default:item.defaut }}
+      </div>
+
+      <div style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+        <span style="font-size: 0.75rem; color: var(--color-text-muted);">Variables :</span>
+        {% for v in item.variables %}
+        <code style="font-size: 0.72rem; background: rgba(99,102,241,0.12); color: #818cf8; padding: 2px 6px; border-radius: 4px;">{{ v }}</code>
+        {% endfor %}
+      </div>
+
+      <div id="form-{{ item.code }}" style="margin-top: 1rem;"></div>
+    </div>
   </div>
-</div>
 {% empty %}
-<p class="text-muted">Aucun type de message disponible.</p>
+<div class="dash-card animate-fade-up" style="padding: 2rem; text-align: center;">
+  <p style="color: var(--color-text-muted);">Aucun type de message disponible.</p>
+</div>
 {% endfor %}
+</div>
 {% endblock %}

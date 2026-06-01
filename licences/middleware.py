@@ -275,31 +275,34 @@ class LicenceCheckMiddleware:
             type_alerte=type_alerte
         )
     
-    def _log_audit(
-        self,
-        licence: Licence,
-        action: str,
-        description: str,
-        request: HttpRequest = None
+def _log_audit(
+            self,
+            licence: Licence,
+            action: str,
+            description: str,
+            request: HttpRequest | None = None,
     ) -> None:
         """
-        Enregistre une entrée dans le journal d'audit.
+        Enregistre une entrée d'audit.
         
         Args:
-            licence: Instance de Licence
+            licence: Licence concernée
             action: Type d'action
             description: Description de l'action
             request: Requête HTTP (optionnel)
         """
-        LicenceAuditLog.objects.create(
-            licence=licence,
-            action=action,
-            description=description,
-            acteur_user=request.user if request and request.user.is_authenticated else None,
-            acteur_systeme=True if request is None else False,
-            ip_address=self._get_client_ip(request) if request else None,
-            user_agent=request.META.get('HTTP_USER_AGENT', '') if request else '',
-        )
+        try:
+            LicenceAuditLog.objects.create(
+                licence=licence,
+                action=action,
+                description=description,
+                acteur_user=request.user if request and request.user.is_authenticated else None,
+                acteur_systeme=True if request is None else False,
+                ip_address=self._get_client_ip(request) if request else None,
+                user_agent=request.META.get('HTTP_USER_AGENT', '') if request else '',
+            )
+        except Exception:
+            pass
     
     def _get_client_ip(self, request: HttpRequest) -> str:
         """

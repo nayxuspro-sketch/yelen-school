@@ -83,7 +83,11 @@ def bulletins_index(request):
 @login_required
 def bulletins_classe(request, class_id, trimestre_id):
     """Liste les bulletins de tous les élèves d'une classe pour un trimestre."""
-    classe = get_object_or_404(Classe, pk=class_id)
+    etab = getattr(request.user, 'etablissement', None)
+    if etab:
+        classe = get_object_or_404(Classe, pk=class_id, etablissement=etab)
+    else:
+        classe = get_object_or_404(Classe, pk=class_id)
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
 
     inscriptions = (
@@ -237,11 +241,13 @@ def bulletin_publier(request, inscription_id, trimestre_id):
                 from core.tasks import envoyer_sms_async
                 nom = eleve.get_nom_complet()
                 etab_nom = getattr(inscription.classe.etablissement, 'nom', 'YELEN SCHOOL')
+                lien = request.build_absolute_uri(
+                    f"/bulletins/parent/{bulletin.token_signature}/"
+                ) if bulletin.token_signature else ''
                 msg = (
-                    f"Bonjour, le bulletin de {nom} "
-                    f"({trimestre.nom}) est disponible. "
-                    f"Contactez l'etablissement pour le consulter. "
-                    f"— {etab_nom}"
+                    f"Bonjour, le bulletin de {nom} ({trimestre.nom}) est disponible."
+                    + (f" Consultez et signez : {lien}" if lien else "")
+                    + f" — {etab_nom}"
                 )
                 envoyer_sms_async(numero, msg)
 
@@ -321,3 +327,213 @@ def bulletins_classe_publier(request, class_id, trimestre_id):
 
     messages.success(request, f"{nb} bulletin(s) publié(s) pour {classe.nom} — {trimestre.nom}.")
     return redirect('bulletins:bulletins_classe', class_id=class_id, trimestre_id=trimestre_id)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# BULLETIN ANNUEL DE NOTES
+# ═══════════════════════════════════════════════════════════════════
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import View
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from weasyprint import HTML
+
+from inscriptions.models import Inscription
+from parametres.models import AnneeScolaire
+
+
+class BulletinAnnuelIndexView(LoginRequiredMixin, View):
+    """Index : sélecteur classe / année / élève pour le bulletin annuel."""
+    
+    template_name = "bulletins/bulletin_annuel_index.html"
+    
+    def get(self, request):
+        etab = getattr(request.user, 'etablissement', None)
+        
+        # Classes de l'établissement
+        from parametres.models import Classe
+        classes = (
+            Classe.objects.filter(etablissement=etab, actif=True)
+            .select_related('cycle')
+            .order_by('cycle__ordre', 'nom')
+            if etab else Classe.objects.none()
+        )
+        
+        # Années scolaires
+        annees = (
+            AnneeScolaire.objects.filter(etablissement=etab)
+            .order_by('-date_debut')
+            if etab else AnneeScolaire.objects.none()
+        )
+        
+        classe_id = request.GET.get('classe')
+        annee_id = request.GET.get('annee')
+        eleve_id = request.GET.get('eleve')
+        
+        classe = None
+        annee = None
+        inscriptions = []
+        eleve = None
+        
+        if classe_id:
+            classe = get_object_or_404(Classe, pk=classe_id)
+        if annee_id:
+            annee = get_object_or_404(AnneeScolaire, pk=annee_id)
+        
+        if classe and annee:
+            inscriptions = (
+                Inscription.objects
+                .filter(classe=classe, annee_scolaire=annee)
+                .exclude(statut='ABANDON')
+                .select_related('eleve')
+                .order_by('eleve__nom', 'eleve__prenom')
+            )
+        
+        if eleve_id:
+            eleve = get_object_or_404(Inscription, pk=eleve_id)
+        
+        return render(request, self.template_name, {
+            'classes': classes,
+            'annees': annees,
+            'classe': classe,
+            'annee': annee,
+            'inscriptions': inscriptions,
+            'eleve': eleve,
+        })
+
+
+class BulletinAnnuelView(LoginRequiredMixin, View):
+    """Affiche le bulletin annuel de notes d'un élève (vue navigateur avec base.html)."""
+
+    template_name = "bulletins/bulletin_annuel_web.html"
+
+    def get(self, request, inscription_id, annee_pk):
+        inscription = get_object_or_404(
+            Inscription.objects.select_related('eleve', 'classe', 'classe__etablissement'),
+            pk=inscription_id,
+        )
+        annee = get_object_or_404(AnneeScolaire, pk=annee_pk)
+
+        from pedagogie.views import _build_bulletin_annuel_context
+        ctx = _build_bulletin_annuel_context(request, inscription, annee)
+        return render(request, self.template_name, ctx)
+
+
+class BulletinAnnuelPDFView(LoginRequiredMixin, View):
+    """Génère le PDF du bulletin annuel de notes."""
+
+    def get(self, request, inscription_id, annee_pk):
+        inscription = get_object_or_404(
+            Inscription.objects.select_related('eleve', 'classe', 'classe__etablissement'),
+            pk=inscription_id,
+        )
+        annee = get_object_or_404(AnneeScolaire, pk=annee_pk)
+
+        from pedagogie.views import _build_bulletin_annuel_context
+        ctx = _build_bulletin_annuel_context(request, inscription, annee)
+
+        html_string = render_to_string('pedagogie/pdf/bulletin_annuel.html', ctx,
+                                       request=request)
+
+        pdf_file = HTML(
+            string=html_string,
+            base_url=request.build_absolute_uri()
+        ).write_pdf()
+
+        filename = f"bulletin_annuel_{inscription.eleve.matricule}_{annee.libelle}.pdf"
+        response = HttpResponse(pdf_file, content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="{filename}"'
+        return response
+
+
+class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
+    """Génère un PDF groupé avec tous les bulletins annuels d'une classe."""
+
+    def get(self, request, class_id, annee_pk):
+        from weasyprint import HTML
+        from django.template.loader import render_to_string
+        from parametres.models import Classe
+        from pedagogie.views import _build_bulletin_annuel_context
+        from core.utils import get_etablissement_context
+
+        classe = get_object_or_404(Classe, pk=class_id)
+        annee = get_object_or_404(AnneeScolaire, pk=annee_pk)
+
+        inscriptions = (
+            Inscription.objects
+            .select_related('eleve', 'classe__cycle')
+            .filter(classe=classe, annee_scolaire=annee)
+            .exclude(statut='ABANDON')
+            .order_by('eleve__nom', 'eleve__prenom')
+        )
+
+        etab = classe.etablissement
+        etab_context = get_etablissement_context(etab, request)
+
+        students_data = [
+            _build_bulletin_annuel_context(request, ins, annee)
+            for ins in inscriptions
+        ]
+
+        html_string = render_to_string('pedagogie/pdf/bulletin_annuel_batch.html', {
+            'classe': classe,
+            'annee_scolaire': annee,
+            'students_data': students_data,
+            'identite': etab_context.get('identite'),
+            'logo_url': etab_context.get('logo_url'),
+            'etab_logo_url': etab_context.get('etab_logo_url'),
+            'etablissement': etab,
+        })
+
+        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+        filename = f"Bulletins_Annuels_{classe.nom}_{annee.libelle.replace(' ', '_')}.pdf"
+        response = HttpResponse(pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Signature électronique parentale (accès public par token)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def bulletin_parent_consulter(request, token):
+    """Page publique permettant au parent de consulter et signer le bulletin."""
+    from django.utils import timezone as tz
+    bulletin = get_object_or_404(Bulletin, token_signature=token)
+
+    if not bulletin.est_publie:
+        return render(request, 'bulletins/bulletin_parent.html', {
+            'erreur': "Ce bulletin n'est pas encore disponible.",
+        })
+
+    mg = MoyenneGenerale.objects.filter(
+        inscription=bulletin.inscription,
+        trimestre=bulletin.trimestre,
+    ).first()
+
+    return render(request, 'bulletins/bulletin_parent.html', {
+        'bulletin': bulletin,
+        'mg': mg,
+        'token': token,
+        'token_valide': bulletin.token_valide,
+        'eleve': bulletin.inscription.eleve,
+        'classe': bulletin.inscription.classe,
+        'trimestre': bulletin.trimestre,
+    })
+
+
+@require_POST
+def bulletin_parent_signer(request, token):
+    """Enregistre la signature parentale (accès public)."""
+    from django.utils import timezone as tz
+    bulletin = get_object_or_404(Bulletin, token_signature=token)
+
+    if bulletin.est_publie and not bulletin.signe_le and bulletin.token_valide:
+        nom = request.POST.get('nom_signataire', '').strip()[:100] or 'Parent'
+        bulletin.signe_le = tz.now()
+        bulletin.signe_par_nom = nom
+        bulletin.save(update_fields=['signe_le', 'signe_par_nom', 'updated_at'])
+
+    return redirect('bulletins:bulletin_parent_consulter', token=token)

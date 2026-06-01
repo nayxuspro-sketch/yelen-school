@@ -10,14 +10,22 @@
     <h1 class="page-title">Gestion du Personnel</h1>
     <p class="page-subtitle">Gérez les enseignants et le personnel administratif.</p>
   </div>
-  <div style="display:flex; gap:var(--space-2); align-items:center;">
+  <div class="page-actions">
     <a href="{% url 'personnel:personnel_list_csv' %}?{{ request.GET.urlencode }}"
-       class="btn-secondary" title="Exporter CSV (Excel)">
+       class="btn-secondary" title="Exporter CSV">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
       </svg>
       CSV
+    </a>
+    <a href="{% url 'personnel:personnel_list_xlsx' %}?{{ request.GET.urlencode }}"
+       class="btn-secondary btn-excel" title="Exporter Excel (.xlsx)">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      </svg>
+      Excel
     </a>
     <a href="{% url 'personnel:create' %}" class="btn-primary">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,8 +36,8 @@
   </div>
 </div>
 
-<div class="card mb-4 animate-fade-up delay-1" style="padding:var(--space-4); display:flex; align-items:center; gap:var(--space-4); flex-wrap:wrap;">
-  <div class="search-wrapper" style="flex:1; min-width:220px;">
+<div class="filter-bar mb-4 animate-fade-up delay-1">
+  <div class="search-wrapper">
     <span class="search-icon">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -49,8 +57,7 @@
       Masquer les inactifs
     </a>
   {% elif nb_inactifs %}
-    <a href="{% url 'personnel:personnel_list' %}?tous=1" class="btn-secondary btn-sm"
-       style="color:var(--color-text-muted);">
+    <a href="{% url 'personnel:personnel_list' %}?tous=1" class="btn-secondary btn-sm color-muted">
       Voir aussi les inactifs ({{ nb_inactifs }})
     </a>
   {% endif %}

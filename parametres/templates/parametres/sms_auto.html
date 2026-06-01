@@ -1,0 +1,72 @@
+{% extends "core/base.html" %}
+
+{% block title %}SMS automatiques — Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'parametres:index' %}"
+       style="font-size:0.8rem; color:var(--color-text-muted); text-decoration:none; display:flex; align-items:center; gap:4px; margin-bottom:var(--space-1);">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Paramètres
+    </a>
+    <h1 class="page-title">SMS automatiques planifiés</h1>
+    <p class="page-subtitle">Configurez les alertes SMS envoyées automatiquement aux parents</p>
+  </div>
+</div>
+
+{# Alerte SMS désactivé #}
+{% if not sms_enabled %}
+<div class="alert animate-fade-up" style="background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5); display:flex; align-items:flex-start; gap:var(--space-3);">
+  <svg width="20" height="20" fill="none" stroke="#f59e0b" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+  </svg>
+  <div>
+    <div style="font-weight:600; color:#92400e;">SMS non activé</div>
+    <div style="font-size:0.875rem; color:var(--color-text-secondary);">
+      Le paramètre <code>SMS_ENABLED = True</code> n'est pas défini dans les settings.
+      Les déclencheurs peuvent être configurés mais aucun SMS ne sera envoyé tant que
+      l'infrastructure SMS n'est pas activée.
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# Explications planification #}
+<div class="card animate-fade-up delay-1" style="padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5); background:var(--color-bg-subtle);">
+  <div style="font-size:0.85rem; color:var(--color-text-secondary); line-height:1.6;">
+    <strong>Planification automatique :</strong> Pour que les SMS soient envoyés chaque jour,
+    configurez une tâche planifiée qui exécute la commande suivante chaque matin (ex. 7h) :
+    <br>
+    <code style="display:inline-block; margin-top:6px; background:#1e293b; color:#e2e8f0; padding:4px 10px; border-radius:4px; font-size:0.8rem;">
+      python manage.py sms_auto
+    </code>
+    <br><br>
+    <strong>Windows Task Scheduler :</strong> Créez une tâche planifiée pointant vers
+    <code>C:\path\to\venv\Scripts\python.exe manage.py sms_auto</code> avec le répertoire de travail du projet.
+  </div>
+</div>
+
+{# Liste des déclencheurs #}
+<div class="animate-fade-up delay-2">
+  <div style="font-size:0.8rem; font-weight:600; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:var(--space-3);">
+    Déclencheurs configurés
+  </div>
+  <div id="sms-declencheurs-list">
+    {% include 'parametres/partials/sms_declencheurs_list.html' %}
+  </div>
+</div>
+
+{# Lien vers modèles de messages #}
+<div class="animate-fade-up delay-3" style="margin-top:var(--space-5);">
+  <a href="{% url 'parametres:modeles_messages' %}" class="btn-secondary">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px; vertical-align:middle;">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+    </svg>
+    Personnaliser les modèles de messages SMS →
+  </a>
+</div>
+
+{% endblock %}

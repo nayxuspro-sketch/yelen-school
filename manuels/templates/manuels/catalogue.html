@@ -1,0 +1,89 @@
+{% extends "core/base.html" %}
+
+{% block title %}Catalogue des manuels — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">Manuels scolaires</h1>
+      <p class="page-subtitle">Catalogue des manuels de l'établissement</p>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'manuels:non_rendus' %}" class="btn-secondary btn-sm">Non rendus</a>
+      <a href="{% url 'manuels:attributions_list' %}" class="btn-secondary btn-sm">Attributions</a>
+      <a href="{% url 'manuels:manuel_create' %}" class="btn-primary btn-sm">+ Manuel</a>
+    </div>
+  </div>
+
+  <!-- Filtre cycle -->
+  <div class="card mb-4 animate-fade-up delay-1">
+    <div class="card-body">
+      <form method="get">
+        <div class="d-flex gap-3 align-end">
+          <div class="form-group flex-1">
+            <label class="input-label">Cycle</label>
+            <select name="cycle" class="input select" onchange="this.form.submit()">
+              <option value="">Tous les cycles</option>
+              {% for val, lbl in cycles %}
+              <option value="{{ val }}" {% if cycle_sel == val %}selected{% endif %}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card animate-fade-up delay-2">
+    <div class="card-body p-0">
+      {% if manuels %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Titre</th>
+            <th>Cycle</th>
+            <th>Matière</th>
+            <th class="text-right">Exemplaires</th>
+            <th class="text-right">Disponibles</th>
+            <th class="text-right">Prix remplacement</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in manuels %}
+          <tr>
+            <td>
+              <a href="{% url 'manuels:manuel_detail' pk=m.pk %}" class="fw-600 link-primary">{{ m.titre }}</a>
+              {% if m.auteur %}<br><span class="text-muted text-sm">{{ m.auteur }}</span>{% endif %}
+            </td>
+            <td><span class="badge badge-outline">{{ m.get_cycle_display }}</span></td>
+            <td>{{ m.matiere|default:"—" }}</td>
+            <td class="text-right fw-500">{{ m.nb_exemplaires }}</td>
+            <td class="text-right">
+              <span class="{% if m.nb_disponibles == 0 %}text-danger fw-600{% else %}text-success{% endif %}">
+                {{ m.nb_disponibles }}
+              </span>
+            </td>
+            <td class="text-right">
+              {% if m.prix_remplacement %}{{ m.prix_remplacement|floatformat:0 }} FCFA{% else %}—{% endif %}
+            </td>
+            <td class="text-right">
+              <a href="{% url 'manuels:manuel_edit' pk=m.pk %}" class="btn-ghost btn-xs">Modifier</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <p>Aucun manuel dans le catalogue.</p>
+        <a href="{% url 'manuels:manuel_create' %}" class="btn-primary btn-sm">Ajouter un manuel</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

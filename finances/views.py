@@ -15,7 +15,11 @@ try:
     from weasyprint import HTML as WeasyHTML
 except ImportError:
     WeasyHTML = None
-from .models import FraisScolarite, Paiement, Echeancier, ModePaiement, Remboursement, BourseEleve, TypeBourse, TypeReduction
+from .models import (
+    FraisScolarite, Paiement, Echeancier, ModePaiement, Remboursement,
+    BourseEleve, TypeBourse, TypeReduction, DemandePaiementMobile,
+    CategorieDepense, BudgetAnnuel, Depense, StatutDepense,
+)
 from .forms import FraisScolariteForm, EcheancierForm
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, TarifScolarite, RubriquePaiement
@@ -172,15 +176,25 @@ def paiement_list(request):
 def paiement_create(request):
     """Enregistrement d'un paiement multi-rubriques."""
     etab = request.user.etablissement
-    annee_courante = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first() if etab else None
-    inscriptions = (
-        Inscription.objects
-        .select_related('eleve', 'classe', 'annee_scolaire', 'statut_eleve')
-        .filter(annee_scolaire=annee_courante, classe__etablissement=etab)
-        .exclude(est_exonere=True)
-        .exclude(statut='ABANDON')
-        .order_by('eleve__nom', 'eleve__prenom')
-    )
+    
+    # Chercher d'abord l'année courante, sinon la plus récente
+    annee_courante = None
+    if etab:
+        annee_courante = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+        if not annee_courante:
+            # Pas d'année courante - prendre la plus récente
+            annee_courante = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut').first()
+    
+    inscriptions = Inscription.objects.none()
+    if etab and annee_courante:
+        inscriptions = (
+            Inscription.objects
+            .select_related('eleve', 'classe', 'annee_scolaire', 'statut_eleve')
+            .filter(annee_scolaire=annee_courante, classe__etablissement=etab)
+            .exclude(est_exonere=True)
+            .exclude(statut='ABANDON')
+            .order_by('eleve__nom', 'eleve__prenom')
+        )
 
     if request.method == 'POST':
         inscription_id = request.POST.get('inscription', '').strip()
@@ -276,7 +290,7 @@ def paiement_create(request):
                     inscription=inscription,
                     rubrique=rubriq,
                     montant=montant,
-                    date_paiement=date_paiement or date.today(),
+                    date_paiement=date_paiement or timezone.now().date(),
                     mode_paiement=mode_paiement,
                     reference=reference,
                     echeance=echeance,
@@ -291,7 +305,7 @@ def paiement_create(request):
             request.session['paiement_inscription_id'] = str(inscription.pk)
             messages.success(
                 request,
-                f"{len(lignes)} paiement(s) enregistré(s) pour {inscription.eleve} — Total : {total:,.0f} FCAF"
+                f"{len(lignes)} paiement(s) enregistré(s) pour {inscription.eleve} — Total : {total:,.0f} FCFA"
             )
             return redirect('finances:paiement_confirmation')
 
@@ -375,6 +389,7 @@ def situation_eleve(request, inscription_id):
         'echeancier_restant': echeancier_total - echeancier_paye,
         'remboursements': remboursements,
         'relances_eleve': relances_eleve,
+        'bourses': sit.get('bourses', []),
     })
 
 @login_required
@@ -479,9 +494,13 @@ def api_rubriques_inscription(request, inscription_id):
     Utilisé par le formulaire de paiement pour le remplissage automatique.
     """
     inscription = get_object_or_404(Inscription, pk=inscription_id)
+    etab = getattr(request.user, 'etablissement', None)
+    if etab and inscription.classe.etablissement_id != etab.pk:
+        from django.http import JsonResponse as _JsonResponse
+        return _JsonResponse({'erreur': 'Accès refusé.'}, status=403)
     etablissement = inscription.classe.etablissement
 
-    # Calcul du total deja verse par rubrique pour cette inscription (doit etre AVANT le return)
+    # Total versé par rubrique
     totaux = (
         Paiement.objects
         .filter(inscription=inscription)
@@ -490,11 +509,29 @@ def api_rubriques_inscription(request, inscription_id):
     )
     totaux_map = {str(t['rubrique_id']): t['total'] for t in totaux}
 
+    # Total remboursé par rubrique (pour calcul du reste réel)
+    totaux_rembourses = (
+        Remboursement.objects
+        .filter(paiement__inscription=inscription)
+        .values('paiement__rubrique_id')
+        .annotate(total=Sum('montant'))
+    )
+    rembourses_map = {str(t['paiement__rubrique_id']): t['total'] for t in totaux_rembourses}
+
+    # Données élève incluses dans toutes les réponses (succès ou erreur)
+    eleve_data = {
+        'nom':      inscription.eleve.nom,
+        'prenom':   inscription.eleve.prenom,
+        'matricule': inscription.eleve.matricule,
+        'classe':   inscription.classe.nom,
+    }
+
     # ── Vérification : le code paiement (statut_eleve) doit être renseigné ──────
     if not inscription.statut_eleve_id:
-        statut = inscription.statut_eleve  # None
         return JsonResponse({
             'rubriques': [],
+            'eleve': eleve_data,
+            'situation': {'total_du': '0', 'total_paye': '0', 'reste': '0'},
             'statut_eleve': {'nom': None, 'code': None, 'couleur': None},
             'error': (
                 "Aucun code paiement (statut élève) n'est configuré pour cette inscription. "
@@ -515,11 +552,18 @@ def api_rubriques_inscription(request, inscription_id):
 
     if not tarifs_qs.exists():
         statut = inscription.statut_eleve
+        sit = _calcul_situation_financiere(inscription)
         return JsonResponse({
             'rubriques': [],
+            'eleve': eleve_data,
+            'situation': {
+                'total_du':   str(sit['total_du']),
+                'total_paye': str(sit['total_paye']),
+                'reste':      str(sit['reste_a_payer']),
+            },
             'statut_eleve': {
-                'nom': statut.nom,
-                'code': statut.code,
+                'nom':    statut.nom,
+                'code':   statut.code,
                 'couleur': statut.couleur,
             },
             'error': (
@@ -538,23 +582,40 @@ def api_rubriques_inscription(request, inscription_id):
             seen.add(rid)
             rubriques_data.append((rid, t.rubrique.nom, t.rubrique.code, t.montant))
 
-    rubriques = [
-        {
-            'id': rid,
-            'nom': nom,
-            'code': code,
-            'montant': str(montant),
-            'total_verse': str(totaux_map.get(rid) or 0),
-        }
-        for rid, nom, code, montant in rubriques_data
-    ]
+    rubriques = []
+    for rid, nom, code, montant in rubriques_data:
+        verse      = Decimal(str(totaux_map.get(rid) or 0))
+        rembourse  = Decimal(str(rembourses_map.get(rid) or 0))
+        reste      = max(montant - verse + rembourse, Decimal('0'))
+        rubriques.append({
+            'id':           rid,
+            'nom':          nom,
+            'code':         code,
+            'montant':      str(montant),
+            'total_verse':  str(verse),
+            'reste':        str(reste),
+        })
+
+    # Situation financière globale de l'inscription
+    sit = _calcul_situation_financiere(inscription)
 
     statut = inscription.statut_eleve
     return JsonResponse({
         'rubriques': rubriques,
+        'eleve': {
+            'nom':      inscription.eleve.nom,
+            'prenom':   inscription.eleve.prenom,
+            'matricule': inscription.eleve.matricule,
+            'classe':   inscription.classe.nom,
+        },
+        'situation': {
+            'total_du':   str(sit['total_du']),
+            'total_paye': str(sit['total_paye']),
+            'reste':      str(sit['reste_a_payer']),
+        },
         'statut_eleve': {
-            'nom': statut.nom if statut else None,
-            'code': statut.code if statut else None,
+            'nom':    statut.nom if statut else None,
+            'code':   statut.code if statut else None,
             'couleur': statut.couleur if statut else None,
         },
     })
@@ -570,7 +631,11 @@ def recu_pdf(request, paiement_id):
     paiement = get_object_or_404(Paiement, pk=paiement_id)
     inscription = paiement.inscription
     etablissement = inscription.classe.etablissement
-    
+    etab = getattr(request.user, 'etablissement', None)
+    if etab and etablissement.pk != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('finances:paiement_list')
+
     etab_context = get_etablissement_context(etablissement, request)
 
     # Tous les paiements de l'inscription
@@ -684,6 +749,10 @@ def historique_pdf(request, inscription_id):
         return redirect('finances:paiement_list')
     inscription = get_object_or_404(Inscription, pk=inscription_id)
     etablissement = inscription.classe.etablissement
+    etab = getattr(request.user, 'etablissement', None)
+    if etab and etablissement.pk != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('finances:paiement_list')
 
     etab_context = get_etablissement_context(etablissement, request)
     sit = _calcul_situation_financiere(inscription)
@@ -1160,6 +1229,55 @@ def bilan_encaissements_csv(request):
         ])
 
     return response
+
+
+@login_required
+def bilan_encaissements_xlsx(request):
+    """Export Excel du bilan des encaissements (mêmes filtres que la vue HTML)."""
+    from core.excel import ExcelExport
+
+    etab = request.user.etablissement
+    if not etab:
+        messages.error(request, "Votre compte n'est pas associé à un établissement.")
+        return redirect('finances:paiement_list')
+
+    annee_id = request.GET.get('annee')
+    date_debut = request.GET.get('date_debut')
+    date_fin = request.GET.get('date_fin')
+    rub_id = request.GET.get('rubrique')
+
+    annee_selected, rub_selected, paiements = _bilan_paiements_qs(
+        etab, annee_id, date_debut, date_fin, rub_id
+    )
+
+    titre = f"Bilan des encaissements{' — ' + annee_selected.libelle if annee_selected else ''}"
+    nom_fichier = f"bilan_encaissements{'_' + annee_selected.libelle if annee_selected else ''}.xlsx".replace(' ', '_')
+
+    wb = ExcelExport("Encaissements")
+    wb.add_title(titre, subtitle=etab.nom)
+    wb.add_header(['Date', 'Élève', 'Matricule', 'Classe', 'Cycle', 'Rubrique', 'Montant (FCFA)', 'Mode de paiement'])
+
+    total = 0
+    for p in paiements:
+        eleve = p.inscription.eleve
+        classe = p.inscription.classe
+        montant = float(p.montant) if p.montant else 0
+        total += montant
+        wb.add_row([
+            p.date_paiement.strftime('%d/%m/%Y') if p.date_paiement else '',
+            f"{eleve.nom} {eleve.prenom}",
+            eleve.matricule or '',
+            classe.nom if classe else '',
+            classe.cycle.nom if classe and classe.cycle else '',
+            p.rubrique.nom if p.rubrique else '',
+            montant,
+            p.mode_paiement or '',
+        ])
+
+    wb.add_separator()
+    wb.add_row(['', '', '', '', '', 'TOTAL', total, ''])
+
+    return wb.response(nom_fichier)
 
 
 @login_required
@@ -1791,12 +1909,16 @@ def relance_sms(request):
             nb_sans_numero += 1
             continue
 
-        sms_msg = ModeleMessage.get_contenu(etab, 'PAIEMENT', {
-            'nom_eleve': eleve.get_nom_complet(),
-            'montant': f"{reste:,.0f}".replace(',', ' '),
-            'rubrique': rubrique.nom,
-            'etablissement': etab.nom,
-        })
+        try:
+            sms_msg = ModeleMessage.get_contenu(etab, 'PAIEMENT', {
+                'nom_eleve': eleve.get_nom_complet(),
+                'montant': f"{reste:,.0f}".replace(',', ' '),
+                'rubrique': racine.nom,
+                'etablissement': etab.nom,
+            })
+        except Exception:
+            sms_msg = f"Bonjour, votre enfant {eleve.nom} {eleve.prenom} a un reste à payer de {reste:,.0f} F pour la rubro {rubrique.nom}. Merci de regler au plus vite. {etab.nom}"
+
         envoyer_sms_async(numero, sms_msg)
         nb_envoyes += 1
 
@@ -2271,3 +2393,782 @@ def api_calculer_bourse(request):
         'valeur': str(tb.valeur_reduction),
         'description': tb.description,
     })
+
+
+# ── Tableau global des échéanciers ────────────────────────────────────────────
+
+@login_required
+def echeancier_global(request):
+    """Vue globale de tous les échéanciers : en retard, à venir, payés."""
+    etab = request.user.etablissement
+    if not etab:
+        messages.error(request, "Votre compte n'est pas associé à un établissement.")
+        return redirect('finances:paiement_list')
+
+    today = timezone.now().date()
+    seuil_alerte = today + timezone.timedelta(days=7)
+
+    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
+    annee_courante = annees.filter(est_courante=True).first()
+    annee_id = request.GET.get('annee', '')
+    annee_sel = annees.filter(pk=annee_id).first() if annee_id else annee_courante
+
+    classe_id = request.GET.get('classe', '')
+    statut = request.GET.get('statut', '')  # 'retard', 'alerte', 'avenir', 'paye'
+    q = request.GET.get('q', '').strip()
+
+    classes = Classe.objects.filter(etablissement=etab, actif=True).order_by('cycle__ordre', 'nom')
+
+    qs = (
+        Echeancier.objects
+        .filter(inscription__annee_scolaire=annee_sel, inscription__classe__etablissement=etab)
+        .select_related('inscription__eleve', 'inscription__classe__cycle')
+        .order_by('date_limite', 'inscription__eleve__nom')
+    ) if annee_sel else Echeancier.objects.none()
+
+    if classe_id:
+        qs = qs.filter(inscription__classe_id=classe_id)
+    if q:
+        qs = qs.filter(
+            Q(inscription__eleve__nom__icontains=q) |
+            Q(inscription__eleve__prenom__icontains=q) |
+            Q(inscription__eleve__matricule__icontains=q) |
+            Q(libelle__icontains=q)
+        )
+
+    # Compteurs globaux (avant filtre statut)
+    nb_retard  = qs.filter(paye=False, date_limite__lt=today).count()
+    nb_alerte  = qs.filter(paye=False, date_limite__gte=today, date_limite__lte=seuil_alerte).count()
+    nb_avenir  = qs.filter(paye=False, date_limite__gt=seuil_alerte).count()
+    nb_paye    = qs.filter(paye=True).count()
+    total_du   = qs.filter(paye=False).aggregate(s=Sum('montant_du'))['s'] or Decimal('0')
+    total_paye = qs.filter(paye=True).aggregate(s=Sum('montant_du'))['s'] or Decimal('0')
+
+    if statut == 'retard':
+        qs = qs.filter(paye=False, date_limite__lt=today)
+    elif statut == 'alerte':
+        qs = qs.filter(paye=False, date_limite__gte=today, date_limite__lte=seuil_alerte)
+    elif statut == 'avenir':
+        qs = qs.filter(paye=False, date_limite__gt=seuil_alerte)
+    elif statut == 'paye':
+        qs = qs.filter(paye=True)
+
+    paginator = Paginator(qs, 50)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'finances/echeancier_global.html', {
+        'annees': annees,
+        'annee_sel': annee_sel,
+        'classes': classes,
+        'page_obj': page_obj,
+        'today': today,
+        'seuil_alerte': seuil_alerte,
+        'nb_retard': nb_retard,
+        'nb_alerte': nb_alerte,
+        'nb_avenir': nb_avenir,
+        'nb_paye': nb_paye,
+        'total_du': total_du,
+        'total_paye': total_paye,
+        'statut': statut,
+        'classe_id': classe_id,
+        'q': q,
+        'annee_id': annee_id,
+    })
+
+
+@login_required
+def echeancier_global_xlsx(request):
+    """Export Excel du tableau global des échéanciers."""
+    from core.excel import ExcelExport
+
+    etab = request.user.etablissement
+    if not etab:
+        messages.error(request, "Votre compte n'est pas associé à un établissement.")
+        return redirect('finances:paiement_list')
+
+    today = timezone.now().date()
+    seuil_alerte = today + timezone.timedelta(days=7)
+
+    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
+    annee_courante = annees.filter(est_courante=True).first()
+    annee_id = request.GET.get('annee', '')
+    annee_sel = annees.filter(pk=annee_id).first() if annee_id else annee_courante
+
+    classe_id = request.GET.get('classe', '')
+    statut = request.GET.get('statut', '')
+    q = request.GET.get('q', '').strip()
+
+    qs = (
+        Echeancier.objects
+        .filter(inscription__annee_scolaire=annee_sel, inscription__classe__etablissement=etab)
+        .select_related('inscription__eleve', 'inscription__classe__cycle')
+        .order_by('date_limite', 'inscription__eleve__nom')
+    ) if annee_sel else Echeancier.objects.none()
+
+    if classe_id:
+        qs = qs.filter(inscription__classe_id=classe_id)
+    if q:
+        qs = qs.filter(
+            Q(inscription__eleve__nom__icontains=q) |
+            Q(inscription__eleve__prenom__icontains=q) |
+            Q(inscription__eleve__matricule__icontains=q) |
+            Q(libelle__icontains=q)
+        )
+    if statut == 'retard':
+        qs = qs.filter(paye=False, date_limite__lt=today)
+    elif statut == 'alerte':
+        qs = qs.filter(paye=False, date_limite__gte=today, date_limite__lte=seuil_alerte)
+    elif statut == 'avenir':
+        qs = qs.filter(paye=False, date_limite__gt=seuil_alerte)
+    elif statut == 'paye':
+        qs = qs.filter(paye=True)
+
+    titre = f"Échéanciers{' — ' + annee_sel.libelle if annee_sel else ''}"
+    nom_fichier = f"echeanciers{'_' + annee_sel.libelle if annee_sel else ''}.xlsx".replace(' ', '_')
+
+    wb = ExcelExport("Échéanciers")
+    wb.add_title(titre, subtitle=etab.nom)
+    wb.add_header(['Élève', 'Matricule', 'Classe', 'Cycle', 'Échéance', 'Date limite', 'Montant dû (FCFA)', 'Statut'])
+
+    ROUGE  = "FECACA"
+    ORANGE = "FED7AA"
+    VERT   = "BBF7D0"
+
+    for ech in qs:
+        eleve  = ech.inscription.eleve
+        classe = ech.inscription.classe
+        if ech.paye:
+            couleur, statut_label = VERT, 'Payé'
+        elif ech.date_limite < today:
+            couleur, statut_label = ROUGE, 'En retard'
+        elif ech.date_limite <= seuil_alerte:
+            couleur, statut_label = ORANGE, 'Échéance proche'
+        else:
+            couleur, statut_label = None, 'À venir'
+
+        wb.add_row([
+            f"{eleve.nom} {eleve.prenom}",
+            eleve.matricule or '',
+            classe.nom if classe else '',
+            classe.cycle.nom if classe and classe.cycle else '',
+            ech.libelle,
+            ech.date_limite.strftime('%d/%m/%Y'),
+            float(ech.montant_du),
+            statut_label,
+        ], highlight_color=couleur)
+
+    return wb.response(nom_fichier)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Mobile Money
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def mobile_money_list(request):
+    """Tableau de bord des demandes Mobile Money."""
+    ctx = {}
+    qs = DemandePaiementMobile.objects.select_related(
+        'inscription__eleve', 'inscription__classe', 'rubrique', 'cree_par', 'confirme_par'
+    )
+    statut = request.GET.get('statut', '')
+    if statut:
+        qs = qs.filter(statut=statut)
+
+    en_attente = DemandePaiementMobile.objects.filter(statut='EN_ATTENTE').count()
+    confirme   = DemandePaiementMobile.objects.filter(statut='CONFIRME').count()
+    annule     = DemandePaiementMobile.objects.filter(statut='ANNULE').count()
+
+    ctx.update({
+        'demandes': qs,
+        'statut_filtre': statut,
+        'en_attente': en_attente,
+        'confirme': confirme,
+        'annule': annule,
+        'StatutChoices': DemandePaiementMobile.StatutChoices,
+    })
+    return render(request, 'finances/mobile_money_list.html', ctx)
+
+
+@login_required
+def mobile_money_create(request):
+    """Créer une demande de paiement Mobile Money pour un élève."""
+    ctx = {}
+    inscription_id = request.GET.get('inscription') or request.POST.get('inscription')
+    inscription = get_object_or_404(Inscription, pk=inscription_id) if inscription_id else None
+
+    rubriques = []
+    if inscription:
+        rubriques = RubriquePaiement.objects.filter(actif=True).order_by('ordre', 'nom')
+
+    if request.method == 'POST':
+        inscription_id = request.POST.get('inscription')
+        rubrique_id    = request.POST.get('rubrique') or None
+        montant_raw    = request.POST.get('montant', '').strip()
+        telephone      = request.POST.get('telephone', '').strip()
+
+        if not inscription_id or not montant_raw or not telephone:
+            messages.error(request, "Tous les champs obligatoires doivent être renseignés.")
+        else:
+            try:
+                montant = Decimal(montant_raw)
+                if montant <= 0:
+                    raise ValueError
+            except (InvalidOperation, ValueError):
+                messages.error(request, "Montant invalide.")
+                montant = None
+
+            if montant:
+                insc = get_object_or_404(Inscription, pk=inscription_id)
+                rubrique = None
+                if rubrique_id:
+                    rubrique = RubriquePaiement.objects.filter(pk=rubrique_id).first()
+
+                demande = DemandePaiementMobile.objects.create(
+                    inscription=insc,
+                    rubrique=rubrique,
+                    montant=montant,
+                    telephone=telephone,
+                    cree_par=request.user,
+                )
+
+                _envoyer_sms_mobile_money(demande, request)
+
+                messages.success(request, f"Demande {demande.reference} créée. SMS envoyé au {telephone}.")
+                return redirect('finances:situation_eleve', inscription_id=insc.pk)
+
+    ctx.update({
+        'inscription': inscription,
+        'rubriques': rubriques,
+    })
+    return render(request, 'finances/mobile_money_form.html', ctx)
+
+
+@login_required
+@require_POST
+def mobile_money_confirmer(request, pk):
+    """Le comptable confirme manuellement la réception du paiement."""
+    demande = get_object_or_404(DemandePaiementMobile, pk=pk)
+    if demande.statut != DemandePaiementMobile.StatutChoices.EN_ATTENTE:
+        messages.warning(request, "Cette demande ne peut plus être confirmée.")
+        return redirect('finances:mobile_money_list')
+
+    reference_transaction = request.POST.get('reference_transaction', '').strip()
+
+    paiement = Paiement.objects.create(
+        inscription=demande.inscription,
+        rubrique=demande.rubrique,
+        montant=demande.montant,
+        mode_paiement=ModePaiement.MOBILE_MONEY,
+        reference=reference_transaction or demande.reference,
+        encaisse_par=request.user,
+    )
+    demande.statut       = DemandePaiementMobile.StatutChoices.CONFIRME
+    demande.confirme_le  = timezone.now()
+    demande.confirme_par = request.user
+    demande.paiement     = paiement
+    demande.save()
+
+    messages.success(request, f"Paiement {demande.reference} confirmé. Reçu généré.")
+    return redirect('finances:situation_eleve', inscription_id=demande.inscription.pk)
+
+
+@login_required
+@require_POST
+def mobile_money_annuler(request, pk):
+    """Annuler une demande Mobile Money en attente."""
+    demande = get_object_or_404(DemandePaiementMobile, pk=pk)
+    if demande.statut != DemandePaiementMobile.StatutChoices.EN_ATTENTE:
+        messages.warning(request, "Seules les demandes en attente peuvent être annulées.")
+        return redirect('finances:mobile_money_list')
+
+    demande.statut = DemandePaiementMobile.StatutChoices.ANNULE
+    demande.observations = request.POST.get('raison', '')
+    demande.save()
+    messages.info(request, f"Demande {demande.reference} annulée.")
+    return redirect('finances:mobile_money_list')
+
+
+def mobile_money_confirmation_parent(request, token):
+    """Page publique accessible par le parent via le lien SMS (sans connexion requise)."""
+    demande = get_object_or_404(DemandePaiementMobile, token=token)
+    ctx = {
+        'demande': demande,
+        'eleve': demande.inscription.eleve,
+        'classe': demande.inscription.classe,
+    }
+    return render(request, 'finances/mobile_money_confirmation_parent.html', ctx)
+
+
+def _envoyer_sms_mobile_money(demande, request):
+    """Compose et envoie le SMS d'instruction Orange Money au parent."""
+    try:
+        from core.sms import envoyer_sms
+        lien = request.build_absolute_uri(f"/finances/payer/{demande.token}/")
+        eleve = demande.inscription.eleve
+        message = (
+            f"YELEN SCHOOL - Paiement {demande.reference}\n"
+            f"Eleve: {eleve.nom} {eleve.prenom}\n"
+            f"Montant: {int(demande.montant)} FCFA\n"
+            f"Composez *144# > Paiement marchand > "
+            f"confirmez ref: {demande.reference}\n"
+            f"Details: {lien}"
+        )
+        ok, _ = envoyer_sms(demande.telephone, message)
+        if ok:
+            demande.sms_envoye = True
+            demande.save(update_fields=['sms_envoye'])
+    except Exception:
+        pass
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  BUDGET & DÉPENSES
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _etab_and_annee(request):
+    """Retourne (etablissement, annee_courante) pour l'utilisateur connecté."""
+    etab = getattr(request.user, 'etablissement', None)
+    annee = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else None
+    return etab, annee
+
+
+def _get_annees(etab):
+    qs = AnneeScolaire.objects.order_by('-libelle')
+    if etab:
+        qs = qs.filter(etablissement=etab)
+    return qs
+
+
+# ── Catégories de dépenses ────────────────────────────────────────────────
+
+@login_required
+def categorie_depense_list(request):
+    etab, _ = _etab_and_annee(request)
+    categories = CategorieDepense.objects.filter(etablissement=etab).order_by('type_depense', 'nom')
+    return render(request, 'finances/categorie_depense_list.html', {
+        'categories': categories,
+    })
+
+
+@login_required
+def categorie_depense_form(request, pk=None):
+    from .models import TypeDepense
+    etab, _ = _etab_and_annee(request)
+    instance = get_object_or_404(CategorieDepense, pk=pk, etablissement=etab) if pk else None
+    error = None
+
+    if request.method == 'POST':
+        nom = request.POST.get('nom', '').strip()
+        code = request.POST.get('code', '').strip().upper()
+        type_depense = request.POST.get('type_depense', TypeDepense.AUTRE)
+        actif = request.POST.get('actif') == 'on'
+
+        if not nom or not code:
+            error = "Le nom et le code sont obligatoires."
+        elif CategorieDepense.objects.filter(
+            etablissement=etab, code=code
+        ).exclude(pk=pk).exists():
+            error = f"Le code « {code} » est déjà utilisé."
+        else:
+            if instance:
+                instance.nom = nom
+                instance.code = code
+                instance.type_depense = type_depense
+                instance.actif = actif
+                instance.save()
+                messages.success(request, f"Catégorie « {nom} » mise à jour.")
+            else:
+                CategorieDepense.objects.create(
+                    etablissement=etab, nom=nom, code=code,
+                    type_depense=type_depense, actif=actif,
+                )
+                messages.success(request, f"Catégorie « {nom} » créée.")
+            return redirect('finances:categorie_depense_list')
+
+    return render(request, 'finances/categorie_depense_form.html', {
+        'instance': instance,
+        'types': TypeDepense.choices,
+        'error': error,
+    })
+
+
+@login_required
+@require_POST
+def categorie_depense_delete(request, pk):
+    etab, _ = _etab_and_annee(request)
+    cat = get_object_or_404(CategorieDepense, pk=pk, etablissement=etab)
+    if cat.depenses.exists():
+        messages.error(request, "Impossible de supprimer : des dépenses utilisent cette catégorie.")
+    else:
+        cat.delete()
+        messages.success(request, "Catégorie supprimée.")
+    return redirect('finances:categorie_depense_list')
+
+
+# ── Dépenses ──────────────────────────────────────────────────────────────
+
+@login_required
+def depense_list(request):
+    etab, annee_courante = _etab_and_annee(request)
+    annees = _get_annees(etab)
+
+    annee_id = request.GET.get('annee')
+    cat_id = request.GET.get('categorie')
+    statut = request.GET.get('statut', '')
+    q = request.GET.get('q', '').strip()
+
+    annee_sel = None
+    if annee_id:
+        annee_sel = annees.filter(pk=annee_id).first()
+    if not annee_sel:
+        annee_sel = annee_courante
+
+    qs = Depense.objects.select_related(
+        'categorie', 'annee_scolaire', 'saisi_par', 'valide_par'
+    ).filter(annee_scolaire__etablissement=etab)
+
+    if annee_sel:
+        qs = qs.filter(annee_scolaire=annee_sel)
+    if cat_id:
+        qs = qs.filter(categorie_id=cat_id)
+    if statut:
+        qs = qs.filter(statut=statut)
+    if q:
+        qs = qs.filter(
+            Q(libelle__icontains=q) | Q(beneficiaire__icontains=q) |
+            Q(numero_depense__icontains=q) | Q(reference__icontains=q)
+        )
+
+    total = qs.filter(statut=StatutDepense.VALIDEE).aggregate(s=Sum('montant'))['s'] or Decimal('0')
+    categories = CategorieDepense.objects.filter(etablissement=etab, actif=True)
+
+    return render(request, 'finances/depense_list.html', {
+        'depenses': qs.order_by('-date_depense'),
+        'annees': annees,
+        'annee_sel': annee_sel,
+        'categories': categories,
+        'cat_id': cat_id or '',
+        'statut': statut,
+        'q': q,
+        'total_valide': total,
+        'statuts': StatutDepense.choices,
+    })
+
+
+@login_required
+def depense_form(request, pk=None):
+    etab, annee_courante = _etab_and_annee(request)
+    instance = get_object_or_404(Depense, pk=pk, annee_scolaire__etablissement=etab) if pk else None
+
+    if instance and instance.statut == StatutDepense.VALIDEE:
+        messages.error(request, "Une dépense validée ne peut pas être modifiée.")
+        return redirect('finances:depense_list')
+
+    categories = CategorieDepense.objects.filter(etablissement=etab, actif=True)
+    annees = _get_annees(etab)
+    error = None
+
+    if request.method == 'POST':
+        libelle     = request.POST.get('libelle', '').strip()
+        montant_str = request.POST.get('montant', '').strip()
+        cat_id      = request.POST.get('categorie')
+        annee_id    = request.POST.get('annee_scolaire')
+        date_dep    = request.POST.get('date_depense')
+        mode        = request.POST.get('mode_paiement', ModePaiement.ESPECES)
+        beneficiaire = request.POST.get('beneficiaire', '').strip()
+        reference   = request.POST.get('reference', '').strip()
+        observation = request.POST.get('observation', '').strip()
+
+        try:
+            montant = Decimal(montant_str.replace(' ', '').replace(',', '.'))
+            if montant <= 0:
+                raise ValueError
+        except (InvalidOperation, ValueError):
+            error = "Montant invalide."
+
+        if not libelle:
+            error = "Le libellé est obligatoire."
+
+        if not error:
+            categorie = get_object_or_404(CategorieDepense, pk=cat_id, etablissement=etab)
+            annee = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
+            if instance:
+                instance.libelle = libelle
+                instance.montant = montant
+                instance.categorie = categorie
+                instance.annee_scolaire = annee
+                instance.date_depense = date_dep
+                instance.mode_paiement = mode
+                instance.beneficiaire = beneficiaire
+                instance.reference = reference
+                instance.observation = observation
+                instance.save()
+                messages.success(request, f"Dépense {instance.numero_depense} mise à jour.")
+            else:
+                dep = Depense.objects.create(
+                    annee_scolaire=annee, categorie=categorie,
+                    libelle=libelle, montant=montant, date_depense=date_dep,
+                    mode_paiement=mode, beneficiaire=beneficiaire,
+                    reference=reference, observation=observation,
+                    statut=StatutDepense.BROUILLON, saisi_par=request.user,
+                )
+                messages.success(request, f"Dépense {dep.numero_depense} créée.")
+            return redirect('finances:depense_list')
+
+    from datetime import date as _date
+    return render(request, 'finances/depense_form.html', {
+        'instance': instance,
+        'categories': categories,
+        'annees': annees,
+        'annee_courante': annee_courante,
+        'modes': ModePaiement.choices,
+        'error': error,
+        'today': _date.today().isoformat(),
+    })
+
+
+@login_required
+@require_POST
+def depense_delete(request, pk):
+    etab, _ = _etab_and_annee(request)
+    dep = get_object_or_404(Depense, pk=pk, annee_scolaire__etablissement=etab)
+    if dep.statut == StatutDepense.VALIDEE:
+        messages.error(request, "Une dépense validée ne peut pas être supprimée.")
+    else:
+        num = dep.numero_depense
+        dep.delete()
+        messages.success(request, f"Dépense {num} supprimée.")
+    return redirect('finances:depense_list')
+
+
+@login_required
+@require_POST
+def depense_valider(request, pk):
+    from django.core.exceptions import PermissionDenied
+    etab, _ = _etab_and_annee(request)
+    if request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR', 'COMPTABLE'):
+        raise PermissionDenied
+    dep = get_object_or_404(Depense, pk=pk, annee_scolaire__etablissement=etab)
+    if dep.statut != StatutDepense.BROUILLON:
+        messages.error(request, "Seule une dépense en brouillon peut être validée.")
+    else:
+        import datetime as _dt
+        dep.statut = StatutDepense.VALIDEE
+        dep.valide_par = request.user
+        dep.date_validation = _dt.date.today()
+        dep.save(update_fields=['statut', 'valide_par', 'date_validation'])
+        messages.success(request, f"Dépense {dep.numero_depense} validée.")
+    return redirect('finances:depense_list')
+
+
+@login_required
+@require_POST
+def depense_annuler(request, pk):
+    etab, _ = _etab_and_annee(request)
+    dep = get_object_or_404(Depense, pk=pk, annee_scolaire__etablissement=etab)
+    if dep.statut == StatutDepense.ANNULEE:
+        messages.error(request, "Cette dépense est déjà annulée.")
+    else:
+        dep.statut = StatutDepense.ANNULEE
+        dep.save(update_fields=['statut'])
+        messages.success(request, f"Dépense {dep.numero_depense} annulée.")
+    return redirect('finances:depense_list')
+
+
+# ── Budget prévisionnel ───────────────────────────────────────────────────
+
+@login_required
+def budget_previsionnel(request):
+    etab, annee_courante = _etab_and_annee(request)
+    annees = _get_annees(etab)
+
+    annee_id = request.GET.get('annee')
+    annee_sel = annees.filter(pk=annee_id).first() if annee_id else annee_courante
+
+    categories = CategorieDepense.objects.filter(etablissement=etab, actif=True)
+
+    if request.method == 'POST' and annee_sel:
+        for cat in categories:
+            val = request.POST.get(f'budget_{cat.pk}', '').strip()
+            try:
+                montant = Decimal(val.replace(' ', '').replace(',', '.'))
+            except (InvalidOperation, ValueError):
+                montant = Decimal('0')
+            BudgetAnnuel.objects.update_or_create(
+                annee_scolaire=annee_sel, categorie=cat,
+                defaults={'montant_prevu': montant},
+            )
+        messages.success(request, "Budget prévisionnel enregistré.")
+        return redirect(f"{request.path}?annee={annee_sel.pk}")
+
+    budgets_map = {}
+    if annee_sel:
+        for b in BudgetAnnuel.objects.filter(annee_scolaire=annee_sel, categorie__etablissement=etab):
+            budgets_map[b.categorie_id] = b.montant_prevu
+
+    lignes_budget = [
+        {'categorie': cat, 'montant': budgets_map.get(cat.pk, Decimal('0'))}
+        for cat in categories
+    ]
+    total_prevu = sum(budgets_map.values(), Decimal('0'))
+
+    return render(request, 'finances/budget_previsionnel.html', {
+        'annees': annees,
+        'annee_sel': annee_sel,
+        'categories': categories,
+        'lignes_budget': lignes_budget,
+        'total_prevu': total_prevu,
+    })
+
+
+# ── Tableau de bord trésorerie ────────────────────────────────────────────
+
+@login_required
+def tableau_bord_budget(request):
+    from django.db.models.functions import TruncMonth
+    etab, annee_courante = _etab_and_annee(request)
+    annees = _get_annees(etab)
+
+    annee_id = request.GET.get('annee')
+    annee_sel = annees.filter(pk=annee_id).first() if annee_id else annee_courante
+
+    categories = CategorieDepense.objects.filter(etablissement=etab, actif=True)
+
+    # Recettes (paiements validés de l'année)
+    recettes_total = Decimal('0')
+    if annee_sel:
+        recettes_total = Paiement.objects.filter(
+            inscription__annee_scolaire=annee_sel
+        ).aggregate(s=Sum('montant'))['s'] or Decimal('0')
+
+    # Dépenses validées par catégorie
+    depenses_qs = Depense.objects.filter(
+        annee_scolaire=annee_sel,
+        statut=StatutDepense.VALIDEE,
+    ) if annee_sel else Depense.objects.none()
+
+    depenses_par_cat = {}
+    for d in depenses_qs.values('categorie_id').annotate(total=Sum('montant')):
+        depenses_par_cat[str(d['categorie_id'])] = d['total']
+
+    budgets_par_cat = {}
+    if annee_sel:
+        for b in BudgetAnnuel.objects.filter(annee_scolaire=annee_sel, categorie__etablissement=etab):
+            budgets_par_cat[str(b.categorie_id)] = b.montant_prevu
+
+    lignes = []
+    for cat in categories:
+        prevu = budgets_par_cat.get(str(cat.pk), Decimal('0'))
+        reel = depenses_par_cat.get(str(cat.pk), Decimal('0'))
+        ecart = prevu - reel
+        pct = int(reel / prevu * 100) if prevu else 0
+        lignes.append({
+            'categorie': cat,
+            'prevu': prevu,
+            'reel': reel,
+            'ecart': ecart,
+            'pct': min(pct, 100),
+            'depasse': reel > prevu and prevu > 0,
+        })
+
+    total_depenses = depenses_qs.aggregate(s=Sum('montant'))['s'] or Decimal('0')
+    total_prevu = sum(budgets_par_cat.values(), Decimal('0'))
+    solde = recettes_total - total_depenses
+
+    # Évolution mensuelle des dépenses
+    evolution = list(
+        depenses_qs.annotate(mois=TruncMonth('date_depense'))
+        .values('mois')
+        .annotate(total=Sum('montant'))
+        .order_by('mois')
+    )
+
+    return render(request, 'finances/tableau_bord_budget.html', {
+        'annees': annees,
+        'annee_sel': annee_sel,
+        'lignes': lignes,
+        'recettes_total': recettes_total,
+        'total_depenses': total_depenses,
+        'total_prevu': total_prevu,
+        'solde': solde,
+        'evolution': evolution,
+    })
+
+
+@login_required
+def tableau_bord_budget_xlsx(request):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, numbers
+    from openpyxl.utils import get_column_letter
+
+    etab, annee_courante = _etab_and_annee(request)
+    annees = _get_annees(etab)
+    annee_id = request.GET.get('annee')
+    annee_sel = annees.filter(pk=annee_id).first() if annee_id else annee_courante
+
+    categories = CategorieDepense.objects.filter(etablissement=etab, actif=True)
+    depenses_qs = Depense.objects.filter(
+        annee_scolaire=annee_sel, statut=StatutDepense.VALIDEE
+    ) if annee_sel else Depense.objects.none()
+
+    depenses_par_cat = {
+        str(d['categorie_id']): d['total']
+        for d in depenses_qs.values('categorie_id').annotate(total=Sum('montant'))
+    }
+    budgets_par_cat = {}
+    if annee_sel:
+        for b in BudgetAnnuel.objects.filter(annee_scolaire=annee_sel, categorie__etablissement=etab):
+            budgets_par_cat[str(b.categorie_id)] = b.montant_prevu
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Trésorerie"
+
+    vert = '006B44'
+    blanc = 'FFFFFF'
+    gris = 'F5F5F5'
+
+    # En-tête
+    ws.merge_cells('A1:E1')
+    ws['A1'] = f"TABLEAU DE BORD TRÉSORERIE — {annee_sel or 'Toutes années'}"
+    ws['A1'].font = Font(bold=True, color=blanc, size=13)
+    ws['A1'].fill = PatternFill('solid', fgColor=vert)
+    ws['A1'].alignment = Alignment(horizontal='center')
+
+    headers = ['Catégorie', 'Type', 'Budget prévu (FCFA)', 'Réel (FCFA)', 'Écart (FCFA)']
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=2, column=col, value=h)
+        cell.font = Font(bold=True, color=blanc)
+        cell.fill = PatternFill('solid', fgColor=vert)
+        cell.alignment = Alignment(horizontal='center')
+
+    fmt_num = '#,##0'
+    for i, cat in enumerate(categories, 3):
+        prevu = budgets_par_cat.get(str(cat.pk), Decimal('0'))
+        reel = depenses_par_cat.get(str(cat.pk), Decimal('0'))
+        fill = PatternFill('solid', fgColor=gris) if i % 2 == 0 else None
+        row = [cat.nom, cat.get_type_depense_display(), float(prevu), float(reel), float(prevu - reel)]
+        for col, val in enumerate(row, 1):
+            cell = ws.cell(row=i, column=col, value=val)
+            if fill:
+                cell.fill = fill
+            if col >= 3:
+                cell.number_format = fmt_num
+
+    # Largeurs colonnes
+    for col, w in enumerate([30, 22, 20, 20, 20], 1):
+        ws.column_dimensions[get_column_letter(col)].width = w
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    label = str(annee_sel).replace('/', '-') if annee_sel else 'bilan'
+    resp = HttpResponse(
+        buf.read(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    resp['Content-Disposition'] = f'attachment; filename="tresorerie_{label}.xlsx"'
+    return resp

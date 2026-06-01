@@ -1,0 +1,197 @@
+{% extends "core/base.html" %}
+
+{% block title %}Dépenses — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">Dépenses</h1>
+      <p class="page-subtitle">Suivi des dépenses de l'établissement</p>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'finances:budget_previsionnel' %}" class="btn-secondary btn-sm">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        Budget prévu
+      </a>
+      <a href="{% url 'finances:tableau_bord_budget' %}" class="btn-secondary btn-sm">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        Trésorerie
+      </a>
+      <a href="{% url 'finances:depense_create' %}" class="btn-primary btn-sm">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>
+        </svg>
+        Nouvelle dépense
+      </a>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="card mb-6 animate-fade-up delay-1">
+    <div class="card-header">
+      <span class="card-title">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+        </svg>
+        Filtres
+      </span>
+      <a href="{% url 'finances:depense_list' %}" class="btn-ghost btn-sm">Réinitialiser</a>
+    </div>
+    <div class="card-body">
+      <form method="get">
+        <div class="d-flex gap-3 align-end flex-wrap">
+          <div class="form-group flex-1 min-w-150">
+            <label class="input-label">Année scolaire</label>
+            <select name="annee" class="input select" onchange="this.form.submit()">
+              {% for a in annees %}
+              <option value="{{ a.pk }}" {% if annee_sel and annee_sel.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group flex-1 min-w-150">
+            <label class="input-label">Catégorie</label>
+            <select name="categorie" class="input select">
+              <option value="">Toutes</option>
+              {% for c in categories %}
+              <option value="{{ c.pk }}" {% if cat_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group w-160">
+            <label class="input-label">Statut</label>
+            <select name="statut" class="input select">
+              <option value="">Tous</option>
+              {% for val, label in statuts %}
+              <option value="{{ val }}" {% if statut == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group flex-1 min-w-200">
+            <label class="input-label">Recherche</label>
+            <input type="text" name="q" value="{{ q }}" placeholder="Libellé, bénéficiaire, N°…" class="input">
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn-primary btn-sm">Filtrer</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Total validé -->
+  <div class="stats-row animate-fade-up delay-1 mb-4">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="stat-label">Total dépensé (validé)</p>
+        <p class="stat-value">{{ total_valide|floatformat:0 }} FCFA</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  <div class="card animate-fade-up delay-2">
+    <div class="card-body p-0">
+      {% if depenses %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>N°</th>
+            <th>Date</th>
+            <th>Libellé</th>
+            <th>Catégorie</th>
+            <th>Bénéficiaire</th>
+            <th class="text-right">Montant</th>
+            <th>Statut</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dep in depenses %}
+          <tr>
+            <td><span class="mono text-muted">{{ dep.numero_depense }}</span></td>
+            <td>{{ dep.date_depense|date:"d/m/Y" }}</td>
+            <td>
+              <span class="fw-500">{{ dep.libelle }}</span>
+              {% if dep.reference %}<br><span class="text-muted text-sm">Réf : {{ dep.reference }}</span>{% endif %}
+            </td>
+            <td>
+              <span class="badge badge-outline">{{ dep.categorie.nom }}</span>
+            </td>
+            <td>{{ dep.beneficiaire|default:"—" }}</td>
+            <td class="text-right fw-600">{{ dep.montant|floatformat:0 }} FCFA</td>
+            <td>
+              {% if dep.statut == 'VALIDEE' %}
+                <span class="badge badge-success">Validée</span>
+              {% elif dep.statut == 'BROUILLON' %}
+                <span class="badge badge-warning">Brouillon</span>
+              {% else %}
+                <span class="badge badge-error">Annulée</span>
+              {% endif %}
+            </td>
+            <td class="text-right">
+              <div class="d-flex gap-1 justify-end">
+                {% if dep.statut == 'BROUILLON' %}
+                <a href="{% url 'finances:depense_edit' dep.pk %}" class="btn-icon" title="Modifier">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </a>
+                <form method="post" action="{% url 'finances:depense_valider' dep.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-icon btn-icon--green" title="Valider">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </button>
+                </form>
+                <form method="post" action="{% url 'finances:depense_delete' dep.pk %}" class="d-inline"
+                      onsubmit="return confirm('Supprimer cette dépense ?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-icon btn-icon--danger" title="Supprimer">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </form>
+                {% elif dep.statut == 'VALIDEE' %}
+                <form method="post" action="{% url 'finances:depense_annuler' dep.pk %}" class="d-inline"
+                      onsubmit="return confirm('Annuler cette dépense validée ?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-icon btn-icon--danger" title="Annuler">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+        </svg>
+        <p>Aucune dépense enregistrée pour les critères sélectionnés.</p>
+        <a href="{% url 'finances:depense_create' %}" class="btn-primary btn-sm">Enregistrer une dépense</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

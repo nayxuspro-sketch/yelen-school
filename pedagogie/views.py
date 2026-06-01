@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
 logger = logging.getLogger(__name__)
-from .models import Matiere, MatiereCycle, Enseignement, Evaluation, Note, Resultat, MoyenneGenerale, Trimestre, RisqueDecrochage
+from .models import Matiere, MatiereCycle, Enseignement, Evaluation, Note, Resultat, MoyenneGenerale, Trimestre, RisqueDecrochage, CahierTextes, PredictionReussiteExamen, Competence, EvaluationCompetence
 from .forms import MatiereForm, MatiereCycleForm, EnseignementForm, EvaluationForm
 from .utils import CalculateurMoyenne
 from parametres.models import AnneeScolaire, Classe, Cycle
@@ -25,12 +25,28 @@ except ImportError:
 @login_required
 def classe_result_list(request):
     """Liste des classes pour accéder aux résultats."""
-    classes = Classe.objects.all().order_by('cycle__ordre', 'nom')
+    from django.db.models import Count, OuterRef, Subquery
     annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-    
+
+    classes = (
+        Classe.objects
+        .select_related('cycle')
+        .order_by('cycle__ordre', 'nom')
+    )
+    if annee_courante:
+        nb_sub = (
+            Inscription.objects
+            .filter(classe=OuterRef('pk'), annee_scolaire=annee_courante)
+            .exclude(statut='ABANDON')
+            .values('classe')
+            .annotate(n=Count('pk'))
+            .values('n')
+        )
+        classes = classes.annotate(nb_eleves=Subquery(nb_sub))
+
     return render(request, 'pedagogie/classe_result_list.html', {
         'classes': classes,
-        'annee_courante': annee_courante
+        'annee_courante': annee_courante,
     })
 
 
@@ -633,13 +649,13 @@ def evaluation_create(request):
 @login_required
 def evaluation_update(request, pk):
     """Modification d'une évaluation."""
-    evaluation = get_object_or_404(Evaluation, pk=pk)
+    evaluation = get_object_or_404(
+        Evaluation.objects.select_related('enseignement__classe'), pk=pk
+    )
     etab = getattr(request.user, 'etablissement', None)
-    
-    if etab and evaluation.classe.etablissement_id != etab.pk:
-        from django.contrib import messages
+
+    if etab and evaluation.enseignement.classe.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé. Cette évaluation n'appartient pas à votre établissement.")
-        from django.shortcuts import redirect
         return redirect('pedagogie:evaluation_list')
     
     if request.method == 'POST':
@@ -667,23 +683,23 @@ def evaluation_saisie(request, pk):
 
     evaluation = get_object_or_404(
         Evaluation.objects.select_related(
-            'encephal__classe__cycle',
-            'encephal__matiere',
-            'encephal__annee_scolaire',
+            'enseignement__classe__cycle',
+            'enseignement__matiere',
+            'enseignement__annee_scolaire',
             'type_evaluation',
             'trimestre',
         ),
         pk=pk,
     )
-    classe = evaluation.encephal.classe
-    enseignement = evaluation.encephal
+    classe = evaluation.enseignement.classe
+    enseignement = evaluation.enseignement
     trimestre = evaluation.trimestre
-    
+
     # Vérification de sécurité - vérifier que l'enseignant enseigne cette matière
     if request.user.role == 'ENSEIGNANT':
         from pedagogie.models import Enseignement
         authorized = Enseignement.objects.filter(
-            id=encephal.pk,
+            id=enseignement.pk,
             personnel=request.user
         ).exists()
         if not authorized and classe.professeur_principal_id != request.user.id:
@@ -692,7 +708,7 @@ def evaluation_saisie(request, pk):
 
     inscriptions = Inscription.objects.filter(
         classe=classe,
-        annee_scolaire=encephal.annee_scolaire,
+        annee_scolaire=enseignement.annee_scolaire,
     ).exclude(statut='ABANDON').select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
 
     if request.method == 'POST':
@@ -700,7 +716,8 @@ def evaluation_saisie(request, pk):
         errors = []
 
         for ins in inscriptions:
-            est_dispense = request.POST.get(f'disp_{ins.id}') == 'on'
+            dispense_vals = request.POST.getlist(f'disp_{ins.id}')
+            est_dispense = 'on' in dispense_vals
 
             if est_dispense:
                 Resultat.objects.update_or_create(
@@ -719,9 +736,14 @@ def evaluation_saisie(request, pk):
             ).update(dispense=False)
 
             # Gestion "Absent" : note = 0, observation = ABS
-            est_absent = request.POST.get(f'abs_{ins.id}') == 'on'
-            note_val = request.POST.get(f'note_{ins.id}', '').strip()
-            obs_val = request.POST.get(f'obs_{ins.id}', '').strip()
+            absent_vals = request.POST.getlist(f'abs_{ins.id}')
+            est_absent = 'on' in absent_vals
+            
+            note_vals = request.POST.getlist(f'note_{ins.id}')
+            note_val = next((v.strip() for v in note_vals if v.strip() != ''), '')
+            
+            obs_vals = request.POST.getlist(f'obs_{ins.id}')
+            obs_val = next((v.strip() for v in obs_vals if v.strip() != ''), '')
 
             if est_absent:
                 valeur = decimal.Decimal('0.00')
@@ -1210,6 +1232,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     # 2. Rendre le template HTML (on utilisera un template qui boucle sur les élèves)
     html_string = render_to_string('pedagogie/pdf/bulletin_batch.html', {
         'trimestre': trimestre,
+        'classe': classe,
         'students_data': students_data,
         'nb_eleves': nb_eleves,
         'moy_max_classe': moy_max_classe,
@@ -1410,123 +1433,54 @@ def releve_notes(request):
     """
     Relevé de notes : tableau croisé élèves × évaluations.
     Filtres : année scolaire, classe, discipline (matière/enseignement), période.
-    Le filtre période utilise parametres.PeriodeEvaluation (référentiel officiel).
-    La jointure avec les évaluations se fait via trimestre__numero (même clé).
     """
-    from collections import defaultdict
     from parametres.models import PeriodeEvaluation
 
-    # --- Listes pour les selects ---
-    annees = AnneeScolaire.objects.all().order_by('-libelle')
-    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
+    etab = request.user.etablissement
 
-    # Paramètres GET
-    annee_id = request.GET.get('annee') or (str(annee_courante.pk) if annee_courante else None)
+    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut') if etab else AnneeScolaire.objects.none()
+    classes = Classe.objects.filter(etablissement=etab, actif=True).select_related('cycle').order_by('cycle__ordre', 'nom') if etab else Classe.objects.none()
+
+    annee_id = request.GET.get('annee')
     classe_id = request.GET.get('classe')
-    enseignement_id = request.GET.get('enseignement')
+    enseignement_id = request.GET.get('enseignement') or request.GET.get('ENSEIGNEMENT')
     periode_id = request.GET.get('periode')
 
-    annee = AnneeScolaire.objects.filter(pk=annee_id).first() if annee_id else annee_courante
-    classe = Classe.objects.filter(pk=classe_id).first() if classe_id else None
+    annee = annees.filter(pk=annee_id).first() if annee_id else (annees.filter(est_courante=True).first() or annees.first())
+    classe = classes.filter(pk=classe_id).first() if classe_id else None
 
-    # Classes disponibles pour l'année choisie
-    classes = Classe.objects.none()
-    if annee:
-        classes = Classe.objects.filter(
-            enseignements__annee_scolaire=annee
-        ).distinct().order_by('cycle__ordre', 'nom')
+    # Si annee_id est fourni mais annee non trouvé dans le filtre etab → chercher sans filtre
+    if annee_id and not annee:
+        annee = AnneeScolaire.objects.filter(pk=annee_id).first()
 
-    # Enseignements (disciplines) disponibles pour la classe + année
     enseignements = Enseignement.objects.none()
-    if annee and classe:
-        enseignements = (
-            Enseignement.objects
-            .filter(annee_scolaire=annee, classe=classe)
-            .select_related('matiere')
-            .order_by('matiere__nom')
-        )
+    if classe:
+        qs_classe = Enseignement.objects.filter(classe=classe, est_actif=True).select_related('matiere')
+        if annee:
+            qs_filtered = qs_classe.filter(annee_scolaire=annee)
+            enseignements = qs_filtered if qs_filtered.exists() else qs_classe
+        else:
+            enseignements = qs_classe
+        enseignements = enseignements.order_by('matiere__nom')
 
-    # Périodes d'évaluation disponibles pour l'année (référentiel parametres)
     periodes = PeriodeEvaluation.objects.none()
-    if annee:
-        periodes = PeriodeEvaluation.objects.filter(annee_scolaire=annee).order_by('numero')
+    if annee and etab:
+        periodes = PeriodeEvaluation.objects.filter(
+            annee_scolaire=annee, etablissement=etab,
+        ).order_by('numero')
 
-    enseignement = Enseignement.objects.filter(pk=enseignement_id).select_related('matiere', 'classe').first() if enseignement_id else None
-    periode = PeriodeEvaluation.objects.filter(pk=periode_id).first() if periode_id else None
+    # Délègue la construction du tableau à _build_releve_context
+    # On passe str(annee.pk) plutôt que annee_id brut pour couvrir le cas
+    # où annee est auto-sélectionnée (annee_id=None en premier chargement).
+    releve_ctx = {}
+    if enseignement_id:
+        effective_annee_id = str(annee.pk) if annee else annee_id
+        releve_ctx = _build_releve_context(effective_annee_id, enseignement_id, periode_id) or {}
 
-    # --- Données du relevé ---
-    table = None
-    evaluations_cols = []
-    if enseignement:
-        # Évaluations pour cet enseignement, filtrées par période si choisie
-        # La jointure se fait sur trimestre__numero == periode.numero (même annee)
-        ev_qs = (
-            Evaluation.objects
-            .filter(enseignement=enseignement)
-            .select_related('type_evaluation', 'trimestre')
-            .order_by('trimestre__numero', 'date_planifiee')
-        )
-        if periode:
-            ev_qs = ev_qs.filter(
-                trimestre__annee_scolaire=annee,
-                trimestre__numero=periode.numero,
-            )
-
-        evaluations_cols = list(ev_qs)
-
-        # Inscriptions de la classe pour l'année (hors abandon)
-        inscriptions = (
-            Inscription.objects
-            .filter(classe=enseignement.classe, annee_scolaire=annee)
-            .exclude(statut='ABANDON')
-            .select_related('eleve')
-            .order_by('eleve__nom', 'eleve__prenom')
-        )
-
-        # Notes indexées par (inscription_id, evaluation_id)
-        notes_qs = Note.objects.filter(
-            evaluation__in=evaluations_cols,
-            inscription__in=inscriptions,
-        ).values('inscription_id', 'evaluation_id', 'valeur', 'observation', 'statut')
-
-        notes_index = defaultdict(dict)
-        for n in notes_qs:
-            notes_index[n['inscription_id']][n['evaluation_id']] = n
-
-        # Résultats (moyennes par matière) si une période est choisie
-        # Jointure via trimestre__numero == periode.numero
-        resultats_index = {}
-        if periode:
-            for res in Resultat.objects.filter(
-                inscription__in=inscriptions,
-                enseignement=enseignement,
-                trimestre__annee_scolaire=annee,
-                trimestre__numero=periode.numero,
-            ):
-                resultats_index[res.inscription_id] = res
-
-        # Construction du tableau
-        table = []
-        for ins in inscriptions:
-            row_notes = []
-            valeurs = []
-            for ev in evaluations_cols:
-                note_data = notes_index[ins.pk].get(ev.pk)
-                row_notes.append(note_data)
-                if note_data and note_data.get('observation') != 'ABS':
-                    try:
-                        valeurs.append(float(note_data['valeur']))
-                    except (TypeError, ValueError):
-                        pass
-
-            resultat = resultats_index.get(ins.pk)
-            table.append({
-                'inscription': ins,
-                'notes': row_notes,
-                'resultat': resultat,
-                'nb_notes': len(valeurs),
-                'moyenne_locale': round(sum(valeurs) / len(valeurs), 2) if valeurs else None,
-            })
+    # Resolve periode pour l'affichage des selects même sans releve_ctx
+    periode = releve_ctx.get('periode')
+    if not periode and periode_id:
+        periode = PeriodeEvaluation.objects.filter(pk=periode_id).first()
 
     context = {
         'annees': annees,
@@ -1534,16 +1488,22 @@ def releve_notes(request):
         'classes': classes,
         'classe': classe,
         'enseignements': enseignements,
-        'enseignement': enseignement,
+        'enseignement': releve_ctx.get('enseignement'),
         'periodes': periodes,
         'periode': periode,
-        'evaluations_cols': evaluations_cols,
-        'table': table,
+        'evaluations_cols': releve_ctx.get('evaluations_cols', []),
+        'table': releve_ctx.get('table'),
+        'ev_stats': releve_ctx.get('ev_stats', []),
+        'moy_classe': releve_ctx.get('moy_classe'),
+        'moy_max': releve_ctx.get('moy_max'),
+        'moy_min': releve_ctx.get('moy_min'),
+        'nb_saisies': releve_ctx.get('nb_saisies', 0),
+        'nb_max_saisies': releve_ctx.get('nb_max_saisies', 0),
     }
     return render(request, 'pedagogie/releve_notes.html', context)
 
 
-def _build_releve_context(annee_id, classe_id, enseignement_id, periode_id):
+def _build_releve_context(annee_id, enseignement_id, periode_id):
     """Construit le contexte commun pour releve_notes et releve_notes_pdf."""
     from collections import defaultdict
     from parametres.models import PeriodeEvaluation
@@ -1563,7 +1523,7 @@ def _build_releve_context(annee_id, classe_id, enseignement_id, periode_id):
         Evaluation.objects
         .filter(enseignement=enseignement)
         .select_related('type_evaluation', 'trimestre')
-        .order_by('trimestre__numero', 'date_planifiee')
+        .order_by('trimestre__numero', 'type_evaluation__ordre', 'date_planifiee', 'titre')
     )
     if periode and annee:
         ev_qs = ev_qs.filter(
@@ -1656,6 +1616,29 @@ def _build_releve_context(annee_id, classe_id, enseignement_id, periode_id):
     moy_min = min(moyennes, key=lambda x: x['moy']) if moyennes else None
     moy_classe = round(sum(m['moy'] for m in moyennes) / len(moyennes), 2) if moyennes else None
 
+    # Rang dans la classe (par moyenne décroissante, ex aequo inclus)
+    moyennes_indexed = [
+        (i, float(row['resultat'].moyenne_sur_20) if row['resultat'] and row['resultat'].moyenne_sur_20 is not None
+         else float(row['moyenne_locale']) if row['moyenne_locale'] is not None else None)
+        for i, row in enumerate(table)
+    ]
+    sorted_moy = sorted(
+        [(i, m) for i, m in moyennes_indexed if m is not None],
+        key=lambda x: x[1], reverse=True,
+    )
+    rank_map = {}
+    for pos, (i, moy) in enumerate(sorted_moy):
+        if pos > 0 and moy == sorted_moy[pos - 1][1]:
+            rank_map[i] = rank_map[sorted_moy[pos - 1][0]]
+        else:
+            rank_map[i] = pos + 1
+    for i, row in enumerate(table):
+        row['rang'] = rank_map.get(i)
+
+    # Totaux saisies
+    nb_saisies = sum(s['count'] for s in ev_stats)
+    nb_max_saisies = nb_rows * len(evaluations_cols)
+
     # Signataire
     from parametres.models import TypeDocument, SignataireDocument
     type_doc_releve = TypeDocument.objects.filter(code='RELEVE_NOTES').first()
@@ -1678,6 +1661,8 @@ def _build_releve_context(annee_id, classe_id, enseignement_id, periode_id):
         'moy_max': moy_max,
         'moy_min': moy_min,
         'moy_classe': moy_classe,
+        'nb_saisies': nb_saisies,
+        'nb_max_saisies': nb_max_saisies,
         'signataire': signataire,
         'signataire_membre': signataire_membre,
     }
@@ -1692,7 +1677,6 @@ def releve_notes_pdf(request):
 
     ctx = _build_releve_context(
         annee_id=request.GET.get('annee'),
-        classe_id=request.GET.get('classe'),
         enseignement_id=request.GET.get('enseignement'),
         periode_id=request.GET.get('periode'),
     )
@@ -1721,6 +1705,55 @@ def releve_notes_pdf(request):
     return response
 
 
+@login_required
+def fiche_discipline_pdf(request):
+    """
+    Fiche officielle de relevé de notes par discipline et par évaluation,
+    signée par l'enseignant de la classe pour cette discipline.
+    Mêmes paramètres GET que releve_notes : annee, enseignement, periode.
+    """
+    if HTML is None:
+        messages.error(request, "WeasyPrint n'est pas installé sur le serveur.")
+        return redirect('pedagogie:releve_notes')
+
+    ctx = _build_releve_context(
+        annee_id=request.GET.get('annee'),
+        enseignement_id=request.GET.get('enseignement'),
+        periode_id=request.GET.get('periode'),
+    )
+    if not ctx or not ctx['table']:
+        messages.warning(request, "Aucune donnée à imprimer. Vérifiez les filtres sélectionnés.")
+        return redirect(request.META.get('HTTP_REFERER', 'pedagogie:releve_notes'))
+
+    enseignement = ctx['enseignement']
+    professeur = enseignement.personnel  # FK vers MembrePersonnel (peut être None)
+
+    etab = getattr(enseignement.classe, 'etablissement', None)
+    etab_context = get_etablissement_context(etab, request) if etab else {}
+
+    from datetime import date as _date
+    html_string = render_to_string('pedagogie/pdf/fiche_discipline.html', {
+        **ctx,
+        'identite': etab_context.get('identite'),
+        'logo_url': etab_context.get('logo_url'),
+        'etab_logo_url': etab_context.get('etab_logo_url'),
+        'etablissement': etab,
+        'today': _date.today(),
+        'professeur': professeur,
+    })
+
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+
+    periode_label = ctx['periode'].nom.replace(' ', '_') if ctx['periode'] else 'annee'
+    filename = (
+        f"Fiche_{enseignement.matiere.code}_{enseignement.classe.nom}_{periode_label}.pdf"
+        .replace(' ', '_')
+    )
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
+
+
 # ─── RISQUE DE DÉCROCHAGE ────────────────────────────────────────────
 
 @login_required
@@ -1744,9 +1777,35 @@ def risque_decrochage(request):
     if annee_id:
         annee = annees.filter(pk=annee_id).first() or annee
 
-    # Recalcul manuel d'un seul élève (POST depuis la liste)
+    # Recalcul manuel (POST depuis la liste)
     if request.method == 'POST':
         inscription_id = request.POST.get('inscription_id')
+        recalculer_tout = request.POST.get('recalculer_tout')
+
+        if recalculer_tout and annee:
+            # Recalcul pour tous les élèves de l'établissement pour l'année en cours
+            inscriptions = Inscription.objects.filter(
+                annee_scolaire=annee,
+                classe__etablissement=etab
+            ).exclude(statut='ABANDON').select_related('eleve', 'classe')
+
+            count = 0
+            for ins in inscriptions:
+                score, facteurs = calculer_score_risque(ins, annee)
+                niveau = RisqueDecrochage.niveau_pour_score(score)
+                RisqueDecrochage.objects.update_or_create(
+                    inscription=ins,
+                    defaults={'score': score, 'niveau': niveau, 'facteurs': facteurs},
+                )
+                count += 1
+            
+            messages.success(request, f"Analyse terminée : {count} élève(s) traité(s).")
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Refresh'] = 'true'
+                return response
+            return redirect('pedagogie:risque_decrochage')
+
         if inscription_id and annee:
             try:
                 inscription = Inscription.objects.select_related('eleve', 'classe').get(
@@ -1754,13 +1813,23 @@ def risque_decrochage(request):
                 )
                 score, facteurs = calculer_score_risque(inscription, annee)
                 niveau = RisqueDecrochage.niveau_pour_score(score)
-                RisqueDecrochage.objects.update_or_create(
+                risque, _ = RisqueDecrochage.objects.update_or_create(
                     inscription=inscription,
                     defaults={'score': score, 'niveau': niveau, 'facteurs': facteurs},
                 )
+                
+                if request.headers.get('HX-Request'):
+                    return render(request, 'pedagogie/partials/risque_row.html', {'r': risque})
+                
                 messages.success(request, f"Score recalculé : {niveau} ({score}/100)")
             except Inscription.DoesNotExist:
+                if request.headers.get('HX-Request'):
+                    return HttpResponse("Erreur", status=404)
                 messages.error(request, "Inscription introuvable.")
+        
+        if request.headers.get('HX-Request'):
+             return HttpResponse("Ok")
+             
         return redirect('pedagogie:risque_decrochage')
 
     niveau_filtre = request.GET.get('niveau', '')
@@ -1866,3 +1935,968 @@ def risque_decrochage_pdf(request):
     filename = f"risque_decrochage_{annee.libelle.replace(' ', '_') if annee else 'actuel'}.pdf"
     response['Content-Disposition'] = f'inline; filename="{filename}"'
     return response
+
+
+# ═══════════════════════════════════════════════════════════════════
+# BULLETIN ANNUEL
+# ═══════════════════════════════════════════════════════════════════
+
+def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
+    """Construit le contexte pour le bulletin annuel."""
+    from django.db.models import Max, Min, Avg
+    from datetime import date as _date
+    from parametres.models import TypeDocument, SignataireDocument
+    from decimal import Decimal
+
+    etab = inscription.classe.etablissement
+    etab_context = get_etablissement_context(etab, request)
+    cycle = inscription.classe.cycle
+
+    nb_eleves = Inscription.objects.filter(
+        classe=inscription.classe,
+        annee_scolaire=annee_scolaire
+    ).exclude(statut='ABANDON').count()
+
+    # Moyennes par trimestre (pour le récapitulatif) + agrégation annuelle
+    trimestres = list(Trimestre.objects.filter(annee_scolaire=annee_scolaire).order_by('numero'))
+    mg_map = {
+        mg.trimestre_id: mg
+        for mg in MoyenneGenerale.objects.filter(inscription=inscription, trimestre__in=trimestres)
+    }
+    periodes = []
+    total_points_annuel = Decimal('0')
+    total_coefficients_annuel = Decimal('0')
+    for t in trimestres:
+        mg = mg_map.get(t.pk)
+        if mg:
+            if mg.total_points:
+                total_points_annuel += mg.total_points
+            if mg.total_coefficients:
+                total_coefficients_annuel += mg.total_coefficients
+        periodes.append({'nom': t.nom, 'moyenne': mg.moyenne if mg else None})
+
+    moyenne_annuelle = None
+    if total_coefficients_annuel > 0:
+        moyenne_annuelle = (total_points_annuel / total_coefficients_annuel).quantize(Decimal('0.01'))
+
+    from django.db.models import Sum as _Sum
+
+    # Moyenne annuelle de chaque élève actif de la classe (une entrée par élève)
+    all_annuals = list(MoyenneGenerale.objects.filter(
+        inscription__classe=inscription.classe,
+        inscription__annee_scolaire=annee_scolaire,
+        trimestre__in=trimestres,
+    ).exclude(
+        inscription__statut='ABANDON'
+    ).values('inscription_id').annotate(
+        pts=_Sum('total_points'),
+        coef=_Sum('total_coefficients'),
+    ))
+
+    avgs_by_ins = {
+        row['inscription_id']: Decimal(str(row['pts'])) / Decimal(str(row['coef']))
+        for row in all_annuals
+        if row['coef']
+    }
+
+    all_avgs = list(avgs_by_ins.values())
+    moy_max_classe = max(all_avgs) if all_avgs else None
+    moy_min_classe = min(all_avgs) if all_avgs else None
+    moy_avg_classe = (sum(all_avgs) / len(all_avgs)).quantize(Decimal('0.01')) if all_avgs else None
+
+    nb_admis = sum(1 for m in all_avgs if m >= Decimal('10'))
+    taux_reussite = (nb_admis / nb_eleves * 100) if nb_eleves > 0 else 0
+
+    rang_annuel = None
+    if moyenne_annuelle:
+        rang_annuel = 1 + sum(
+            1 for ins_id, moy in avgs_by_ins.items()
+            if ins_id != inscription.pk and moy > moyenne_annuelle
+        )
+
+    mention = _get_mention(moyenne_annuelle) if moyenne_annuelle else None
+    admis = moyenne_annuelle >= Decimal('10') if moyenne_annuelle else False
+
+    type_doc_bulletin = (
+        TypeDocument.objects.filter(code__icontains='bulletin', cycle=cycle, actif=True).first()
+        or TypeDocument.objects.filter(code__icontains='bulletin', actif=True).first()
+    )
+    signataire = SignataireDocument.objects.get_signataire(
+        cycle=cycle, type_document=type_doc_bulletin, annee_scolaire=annee_scolaire,
+    ) if type_doc_bulletin else None
+    signataire_membre = signataire.get_membre_personnel() if signataire else None
+
+    today = _date.today()
+    mois_fr = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+    lieu = (etab.ville + ', le ') if etab.ville else 'Le '
+    date_lieu = f"{lieu}{today.day} {mois_fr[today.month - 1]} {today.year}"
+
+    return {
+        'inscription': inscription,
+        'annee_scolaire': annee_scolaire,
+        'periodes': periodes,
+        'moyenne_annuelle': {
+            'moyenne_annuelle': moyenne_annuelle,
+            'total_points': total_points_annuel,
+            'total_points_max': total_coefficients_annuel * 20,
+            'total_coefficients': total_coefficients_annuel,
+            'rang': rang_annuel,
+            'mention': mention,
+            'admis': admis,
+        },
+        'nb_eleves': nb_eleves,
+        'moy_max_classe': moy_max_classe,
+        'moy_min_classe': moy_min_classe,
+        'moy_avg_classe': moy_avg_classe,
+        'taux_reussite': taux_reussite,
+        'identite': etab_context.get('identite'),
+        'logo_url': etab_context.get('logo_url'),
+        'etab_logo_url': etab_context.get('etab_logo_url'),
+        'etablissement': etab,
+        'signataire': signataire,
+        'signataire_membre': signataire_membre,
+        'date_lieu': date_lieu,
+    }
+
+
+def _get_mention(moyenne):
+    """Retourne la mention selon la moyenne sur 20."""
+    if moyenne is None:
+        return None
+    if moyenne >= 16:
+        return "Très Bien"
+    elif moyenne >= 14:
+        return "Bien"
+    elif moyenne >= 12:
+        return "Assez Bien"
+    elif moyenne >= 10:
+        return "Passable"
+    else:
+        return "Insuffisant"
+
+
+@login_required
+def bulletin_duplicata_pdf(request, inscription_id, trimestre_id):
+    """Génère le duplicata PDF du bulletin trimestriel d'un élève."""
+    if HTML is None:
+        messages.error(request, "L'extension WeasyPrint n'est pas installée sur le serveur.")
+        return redirect('pedagogie:classe_result_list')
+
+    inscription = get_object_or_404(
+        Inscription.objects.select_related('eleve', 'classe__cycle', 'annee_scolaire'),
+        pk=inscription_id,
+    )
+    trimestre = get_object_or_404(Trimestre.objects.select_related('annee_scolaire'), pk=trimestre_id)
+
+    from datetime import date as _date
+    ctx = _build_bulletin_context(request, inscription, trimestre)
+    ctx['is_duplicata'] = True
+    ctx['today'] = _date.today()
+
+    html_string = render_to_string('pedagogie/pdf/bulletin_duplicata.html', ctx)
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    filename = f"DUPLICATA_Bulletin_{inscription.eleve.nom}_{trimestre.nom}.pdf".replace(" ", "_")
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
+
+
+@login_required
+def bulletin_annuel_apercu(request, inscription_id):
+    """Aperçu HTML du bulletin annuel."""
+    inscription = get_object_or_404(
+        Inscription.objects.select_related('eleve', 'classe__cycle', 'annee_scolaire'),
+        pk=inscription_id,
+    )
+    annee_id = request.GET.get('annee')
+    if annee_id:
+        annee_scolaire = get_object_or_404(AnneeScolaire, pk=annee_id)
+    else:
+        annee_scolaire = inscription.annee_scolaire
+
+    if not annee_scolaire:
+        messages.error(request, "Aucune année scolaire trouvée.")
+        return redirect('pedagogie:resultat_classe', class_id=inscription.classe_id)
+
+    ctx = _build_bulletin_annuel_context(request, inscription, annee_scolaire)
+    ctx['pdf_url'] = request.build_absolute_uri(
+        f"/pedagogie/bulletins/{inscription_id}/annuel/pdf/?annee={annee_scolaire.pk}"
+    )
+    return render(request, 'pedagogie/bulletin_apercu.html', ctx)
+
+
+@login_required
+def bulletin_annuel_pdf(request, inscription_id):
+    """Génère le bulletin PDF annuel d'un élève."""
+    if HTML is None:
+        messages.error(request, "L'extension WeasyPrint n'est pas installée sur le serveur.")
+        return redirect('pedagogie:classe_result_list')
+
+    inscription = get_object_or_404(
+        Inscription.objects.select_related('eleve', 'classe__cycle', 'annee_scolaire'),
+        pk=inscription_id,
+    )
+    annee_id = request.GET.get('annee')
+    if annee_id:
+        annee_scolaire = get_object_or_404(AnneeScolaire, pk=annee_id)
+    else:
+        annee_scolaire = inscription.annee_scolaire
+
+    if not annee_scolaire:
+        messages.error(request, "Aucune année scolaire trouvée.")
+        return redirect('pedagogie:classe_result_list')
+
+    ctx = _build_bulletin_annuel_context(request, inscription, annee_scolaire)
+    html_string = render_to_string('pedagogie/pdf/bulletin_annuel.html', ctx)
+
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    filename = f"Bulletin_Annuel_{inscription.eleve.nom}_{annee_scolaire.libelle.replace(' ', '_')}.pdf"
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
+
+
+@login_required
+def bulletin_annuel_classe_batch_pdf(request, class_id):
+    """Génère un PDF contenant tous les bulletins annuels d'une classe."""
+    if HTML is None:
+        messages.error(request, "L'extension WeasyPrint n'est pas installée sur le serveur.")
+        return redirect('pedagogie:resultat_classe', class_id=class_id)
+
+    classe = get_object_or_404(Classe, pk=class_id)
+    annee_id = request.GET.get('annee')
+    if annee_id:
+        annee_scolaire = get_object_or_404(AnneeScolaire, pk=annee_id)
+    else:
+        annee_scolaire = AnneeScolaire.objects.filter(est_courante=True).first()
+
+    if not annee_scolaire:
+        messages.error(request, "Aucune année scolaire trouvée.")
+        return redirect('pedagogie:resultat_classe', class_id=class_id)
+
+    inscriptions = Inscription.objects.select_related(
+        'eleve', 'classe__cycle'
+    ).filter(classe=classe, annee_scolaire=annee_scolaire).exclude(statut='ABANDON')
+
+    etab = classe.etablissement
+    etab_context = get_etablissement_context(etab, request)
+
+    students_data = []
+    for ins in inscriptions:
+        ctx = _build_bulletin_annuel_context(request, ins, annee_scolaire)
+        students_data.append(ctx)
+
+    html_string = render_to_string('pedagogie/pdf/bulletin_annuel_batch.html', {
+        'classe': classe,
+        'annee_scolaire': annee_scolaire,
+        'students_data': students_data,
+        'identite': etab_context.get('identite'),
+        'logo_url': etab_context.get('logo_url'),
+        'etab_logo_url': etab_context.get('etab_logo_url'),
+        'etablissement': etab,
+    })
+
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    filename = f"Bulletins_Annuels_{classe.nom}_{annee_scolaire.libelle.replace(' ', '_')}.pdf"
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
+
+
+# ── Palmarès annuel ──────────────────────────────────────────────────────────
+
+def _compute_palmares_annuel(classe, annee_scolaire):
+    """Calcule le palmarès annuel d'une classe : moyenne, rang et décision du conseil."""
+    from decimal import Decimal
+    from django.db.models import Sum
+
+    trimestres = list(Trimestre.objects.filter(annee_scolaire=annee_scolaire).order_by('numero'))
+
+    rows = list(
+        MoyenneGenerale.objects.filter(
+            inscription__classe=classe,
+            inscription__annee_scolaire=annee_scolaire,
+            trimestre__in=trimestres,
+        ).exclude(
+            inscription__statut='ABANDON'
+        ).values('inscription_id').annotate(
+            pts=Sum('total_points'),
+            coef=Sum('total_coefficients'),
+        )
+    )
+
+    avgs_by_ins = {
+        row['inscription_id']: Decimal(str(row['pts'])) / Decimal(str(row['coef']))
+        for row in rows
+        if row['coef']
+    }
+
+    # Classement avec ex-aequo
+    sorted_avgs = sorted(avgs_by_ins.items(), key=lambda x: x[1], reverse=True)
+    rang_by_ins = {}
+    current_rank = 0
+    current_avg = None
+    for i, (ins_id, avg) in enumerate(sorted_avgs, start=1):
+        if avg != current_avg:
+            current_rank = i
+            current_avg = avg
+        rang_by_ins[ins_id] = current_rank
+
+    inscriptions = list(
+        Inscription.objects.select_related('eleve')
+        .filter(classe=classe, annee_scolaire=annee_scolaire)
+        .exclude(statut='ABANDON')
+        .order_by('eleve__nom', 'eleve__prenom')
+    )
+
+    palmares = []
+    for ins in inscriptions:
+        moyenne = avgs_by_ins.get(ins.pk)
+        rang = rang_by_ins.get(ins.pk)
+        if moyenne is not None:
+            moyenne_q = moyenne.quantize(Decimal('0.01'))
+            admis = moyenne_q >= Decimal('10')
+            decision = "Admis(e) en classe supérieure" if admis else "Redouble la classe"
+        else:
+            moyenne_q = None
+            admis = None
+            decision = "—"
+        palmares.append({
+            'inscription': ins,
+            'eleve': ins.eleve,
+            'moyenne': moyenne_q,
+            'rang': rang,
+            'admis': admis,
+            'decision': decision,
+        })
+
+    palmares.sort(key=lambda x: (x['rang'] or 9999, x['eleve'].nom))
+
+    nb_eleves = len(inscriptions)
+    all_avgs = list(avgs_by_ins.values())
+    nb_admis = sum(1 for m in all_avgs if m >= Decimal('10'))
+    taux_reussite = round(nb_admis / nb_eleves * 100, 1) if nb_eleves > 0 else 0
+    moy_max = max(all_avgs).quantize(Decimal('0.01')) if all_avgs else None
+    moy_min = min(all_avgs).quantize(Decimal('0.01')) if all_avgs else None
+    moy_avg = (sum(all_avgs) / len(all_avgs)).quantize(Decimal('0.01')) if all_avgs else None
+
+    return {
+        'palmares': palmares,
+        'nb_eleves': nb_eleves,
+        'nb_admis': nb_admis,
+        'nb_redoublants': nb_eleves - nb_admis,
+        'taux_reussite': taux_reussite,
+        'moy_max': moy_max,
+        'moy_min': moy_min,
+        'moy_avg': moy_avg,
+    }
+
+
+@login_required
+def palmares_annuel(request, class_id):
+    """Aperçu HTML du palmarès annuel d'une classe."""
+    classe = get_object_or_404(
+        Classe.objects.select_related('cycle', 'etablissement'), pk=class_id
+    )
+    annees = AnneeScolaire.objects.order_by('-date_debut')
+    annee_id = request.GET.get('annee')
+    if annee_id:
+        annee_scolaire = get_object_or_404(AnneeScolaire, pk=annee_id)
+    else:
+        annee_scolaire = AnneeScolaire.objects.filter(est_courante=True).first()
+
+    if not annee_scolaire:
+        messages.error(request, "Aucune année scolaire trouvée.")
+        return redirect('pedagogie:resultat_classe', class_id=class_id)
+
+    data = _compute_palmares_annuel(classe, annee_scolaire)
+
+    from parametres.models import TypeDocument, SignataireDocument
+    cycle = classe.cycle
+    type_doc = (
+        TypeDocument.objects.filter(code__icontains='bulletin', cycle=cycle, actif=True).first()
+        or TypeDocument.objects.filter(code__icontains='bulletin', actif=True).first()
+    )
+    signataire = SignataireDocument.objects.get_signataire(
+        cycle=cycle, type_document=type_doc, annee_scolaire=annee_scolaire,
+    ) if type_doc else None
+    signataire_membre = signataire.get_membre_personnel() if signataire else None
+
+    return render(request, 'pedagogie/palmares_annuel.html', {
+        'classe': classe,
+        'annee_scolaire': annee_scolaire,
+        'annees': annees,
+        'signataire': signataire,
+        'signataire_membre': signataire_membre,
+        **data,
+    })
+
+
+@login_required
+def palmares_annuel_pdf(request, class_id):
+    """Génère le palmarès annuel d'une classe en PDF via WeasyPrint."""
+    if HTML is None:
+        messages.error(request, "L'extension WeasyPrint n'est pas installée sur le serveur.")
+        return redirect('pedagogie:resultat_classe', class_id=class_id)
+
+    classe = get_object_or_404(
+        Classe.objects.select_related('cycle', 'etablissement'), pk=class_id
+    )
+    annee_id = request.GET.get('annee')
+    if annee_id:
+        annee_scolaire = get_object_or_404(AnneeScolaire, pk=annee_id)
+    else:
+        annee_scolaire = AnneeScolaire.objects.filter(est_courante=True).first()
+
+    if not annee_scolaire:
+        messages.error(request, "Aucune année scolaire trouvée.")
+        return redirect('pedagogie:resultat_classe', class_id=class_id)
+
+    from datetime import date as _date
+    from parametres.models import TypeDocument, SignataireDocument
+    etab = classe.etablissement
+    etab_context = get_etablissement_context(etab, request)
+    data = _compute_palmares_annuel(classe, annee_scolaire)
+
+    cycle = classe.cycle
+    type_doc = (
+        TypeDocument.objects.filter(code__icontains='bulletin', cycle=cycle, actif=True).first()
+        or TypeDocument.objects.filter(code__icontains='bulletin', actif=True).first()
+    )
+    signataire = SignataireDocument.objects.get_signataire(
+        cycle=cycle, type_document=type_doc, annee_scolaire=annee_scolaire,
+    ) if type_doc else None
+    signataire_membre = signataire.get_membre_personnel() if signataire else None
+
+    today = _date.today()
+    mois_fr = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+               'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+    lieu = (etab.ville + ', le ') if etab.ville else 'Le '
+    date_lieu = f"{lieu}{today.day} {mois_fr[today.month - 1]} {today.year}"
+
+    ctx = {
+        'classe': classe,
+        'annee_scolaire': annee_scolaire,
+        'identite': etab_context.get('identite'),
+        'logo_url': etab_context.get('logo_url'),
+        'etab_logo_url': etab_context.get('etab_logo_url'),
+        'etablissement': etab,
+        'date_lieu': date_lieu,
+        'signataire': signataire,
+        'signataire_membre': signataire_membre,
+        **data,
+    }
+
+    html_string = render_to_string('pedagogie/pdf/palmares_annuel.html', ctx)
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    filename = f"Palmares_{classe.nom}_{annee_scolaire.libelle.replace(' ', '_')}.pdf"
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
+
+
+# ─── Cahier de textes ─────────────────────────────────────────────────────────
+
+@login_required
+def cahier_textes_index(request):
+    """Sélecteur de classe pour accéder au cahier de textes."""
+    etab = getattr(request.user, 'etablissement', None)
+    classes = (
+        Classe.objects.filter(etablissement=etab, actif=True)
+        .select_related('cycle')
+        .order_by('cycle__ordre', 'cycle__nom', 'nom')
+    ) if etab else Classe.objects.none()
+
+    # Si enseignant : restreindre aux classes où il enseigne
+    if request.user.role == 'ENSEIGNANT':
+        annee = AnneeScolaire.objects.filter(
+            etablissement=etab, est_courante=True
+        ).first() if etab else None
+        if annee:
+            classe_ids = Enseignement.objects.filter(
+                annee_scolaire=annee,
+                personnel=request.user,
+                est_actif=True,
+            ).values_list('classe_id', flat=True)
+            classes = classes.filter(pk__in=classe_ids)
+
+    cycles = {}
+    for c in classes:
+        key = c.cycle_id
+        if key not in cycles:
+            cycles[key] = {'cycle': c.cycle, 'classes': []}
+        cycles[key]['classes'].append(c)
+
+    return render(request, 'pedagogie/cahier_textes_index.html', {
+        'cycles': sorted(cycles.values(), key=lambda x: getattr(x['cycle'], 'ordre', 0)),
+    })
+
+
+@login_required
+def cahier_textes_classe(request, classe_id):
+    """Liste des entrées du cahier de textes d'une classe, avec filtres."""
+    etab = getattr(request.user, 'etablissement', None)
+    classe = get_object_or_404(Classe, pk=classe_id)
+
+    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut') if etab else AnneeScolaire.objects.none()
+    annee_id = request.GET.get('annee')
+    annee = annees.filter(pk=annee_id).first() if annee_id else annees.filter(est_courante=True).first()
+
+    enseignement_id = request.GET.get('enseignement')
+    enseignements = Enseignement.objects.filter(
+        classe=classe, annee_scolaire=annee, est_actif=True
+    ).select_related('matiere', 'personnel') if annee else Enseignement.objects.none()
+
+    # Enseignant ne voit que ses propres matières
+    if request.user.role == 'ENSEIGNANT':
+        enseignements = enseignements.filter(personnel=request.user)
+
+    entrees = CahierTextes.objects.filter(
+        enseignement__classe=classe,
+        enseignement__annee_scolaire=annee,
+    ).select_related(
+        'enseignement__matiere', 'enseignement__personnel', 'redige_par'
+    ).order_by('-date', '-created_at') if annee else CahierTextes.objects.none()
+
+    if enseignement_id:
+        entrees = entrees.filter(enseignement_id=enseignement_id)
+
+    if request.user.role == 'ENSEIGNANT':
+        entrees = entrees.filter(enseignement__personnel=request.user)
+
+    is_htmx = request.headers.get('HX-Request')
+    template = 'pedagogie/partials/cahier_textes_liste.html' if is_htmx else 'pedagogie/cahier_textes_classe.html'
+
+    return render(request, template, {
+        'classe': classe,
+        'annees': annees,
+        'annee': annee,
+        'enseignements': enseignements,
+        'enseignement_selectionne': enseignement_id,
+        'entrees': entrees,
+    })
+
+
+@login_required
+def cahier_textes_create(request):
+    """Créer une entrée du cahier de textes (formulaire HTMX)."""
+    etab = getattr(request.user, 'etablissement', None)
+    classe_id = request.GET.get('classe') or request.POST.get('classe')
+    classe = get_object_or_404(Classe, pk=classe_id) if classe_id else None
+
+    annee = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else None
+
+    enseignements = Enseignement.objects.filter(
+        classe=classe, annee_scolaire=annee, est_actif=True
+    ).select_related('matiere') if (classe and annee) else Enseignement.objects.none()
+
+    if request.user.role == 'ENSEIGNANT':
+        enseignements = enseignements.filter(personnel=request.user)
+
+    if request.method == 'POST':
+        enseignement_id = request.POST.get('enseignement')
+        date = request.POST.get('date')
+        heure_debut = request.POST.get('heure_debut') or None
+        heure_fin = request.POST.get('heure_fin') or None
+        contenu = request.POST.get('contenu', '').strip()
+        devoirs = request.POST.get('devoirs', '').strip()
+        date_remise = request.POST.get('date_remise_devoirs') or None
+
+        if not enseignement_id or not date or not contenu:
+            messages.error(request, "L'enseignement, la date et le contenu sont obligatoires.")
+        else:
+            enseignement = get_object_or_404(Enseignement, pk=enseignement_id)
+            CahierTextes.objects.create(
+                enseignement=enseignement,
+                date=date,
+                heure_debut=heure_debut,
+                heure_fin=heure_fin,
+                contenu=contenu,
+                devoirs=devoirs,
+                date_remise_devoirs=date_remise,
+                redige_par=request.user,
+            )
+            messages.success(request, "Entrée ajoutée au cahier de textes.")
+            return redirect('pedagogie:cahier_textes_classe', classe_id=classe.pk)
+
+    return render(request, 'pedagogie/cahier_textes_form.html', {
+        'classe': classe,
+        'annee': annee,
+        'enseignements': enseignements,
+        'action': 'create',
+    })
+
+
+@login_required
+def cahier_textes_update(request, pk):
+    """Modifier une entrée du cahier de textes."""
+    entree = get_object_or_404(CahierTextes, pk=pk)
+    classe = entree.enseignement.classe
+    annee = entree.enseignement.annee_scolaire
+
+    enseignements = Enseignement.objects.filter(
+        classe=classe, annee_scolaire=annee, est_actif=True
+    ).select_related('matiere')
+
+    if request.user.role == 'ENSEIGNANT':
+        enseignements = enseignements.filter(personnel=request.user)
+
+    if request.method == 'POST':
+        heure_debut = request.POST.get('heure_debut') or None
+        heure_fin = request.POST.get('heure_fin') or None
+        contenu = request.POST.get('contenu', '').strip()
+        devoirs = request.POST.get('devoirs', '').strip()
+        date_remise = request.POST.get('date_remise_devoirs') or None
+
+        if not contenu:
+            messages.error(request, "Le contenu du cours est obligatoire.")
+        else:
+            entree.heure_debut = heure_debut
+            entree.heure_fin = heure_fin
+            entree.contenu = contenu
+            entree.devoirs = devoirs
+            entree.date_remise_devoirs = date_remise
+            entree.save()
+            messages.success(request, "Entrée mise à jour.")
+            return redirect('pedagogie:cahier_textes_classe', classe_id=classe.pk)
+
+    return render(request, 'pedagogie/cahier_textes_form.html', {
+        'classe': classe,
+        'annee': annee,
+        'enseignements': enseignements,
+        'entree': entree,
+        'action': 'update',
+    })
+
+
+@login_required
+@require_POST
+def cahier_textes_delete(request, pk):
+    """Supprimer une entrée du cahier de textes."""
+    entree = get_object_or_404(CahierTextes, pk=pk)
+    classe_id = entree.enseignement.classe_id
+    entree.delete()
+    messages.success(request, "Entrée supprimée.")
+    return redirect('pedagogie:cahier_textes_classe', classe_id=classe_id)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Prédiction de réussite aux examens officiels
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def prediction_index(request):
+    """Sélecteur de classe pour la prédiction de réussite."""
+    from etablissements.models import Etablissement
+    etab = Etablissement.objects.first()
+    annee_courante = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else None
+    classes = (
+        Classe.objects.filter(etablissement=etab, actif=True)
+        .select_related('cycle')
+        .order_by('cycle__ordre', 'nom')
+    ) if etab else Classe.objects.none()
+
+    cycles_examens = ['Post-primaire', 'Secondaire', 'Primaire']
+    classes_avec_examen = [
+        c for c in classes
+        if any(x.lower() in (getattr(c.cycle, 'nom', '') or '').lower() for x in cycles_examens)
+    ]
+
+    return render(request, 'pedagogie/prediction_index.html', {
+        'classes': classes_avec_examen,
+        'annee': annee_courante,
+        'toutes_classes': classes,
+    })
+
+
+@login_required
+def prediction_classe(request, class_id):
+    """Vue des prédictions de réussite pour toute une classe."""
+    from etablissements.models import Etablissement
+    classe = get_object_or_404(Classe, pk=class_id)
+    etab = Etablissement.objects.first()
+    annee_courante = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else None
+
+    predictions = (
+        PredictionReussiteExamen.objects
+        .filter(
+            inscription__classe=classe,
+            inscription__annee_scolaire=annee_courante,
+        )
+        .select_related('inscription__eleve')
+        .order_by('-score')
+    )
+
+    return render(request, 'pedagogie/prediction_classe.html', {
+        'classe': classe,
+        'annee': annee_courante,
+        'predictions': predictions,
+        'nb_bon':      predictions.filter(pronostic='BON').count(),
+        'nb_moyen':    predictions.filter(pronostic='MOYEN').count(),
+        'nb_risque':   predictions.filter(pronostic='RISQUE').count(),
+        'nb_critique': predictions.filter(pronostic='CRITIQUE').count(),
+        'nb_total':    predictions.count(),
+    })
+
+
+@login_required
+@require_POST
+def prediction_calculer(request, class_id):
+    """Lance le calcul (ou recalcul) des prédictions pour toute la classe."""
+    from etablissements.models import Etablissement
+    from .predictions import calculer_predictions_classe
+    classe = get_object_or_404(Classe, pk=class_id)
+    etab = Etablissement.objects.first()
+    annee = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else None
+
+    resultats = calculer_predictions_classe(classe, annee)
+    messages.success(request, f"{len(resultats)} prédiction(s) calculée(s) pour {classe.nom}.")
+    return redirect('pedagogie:prediction_classe', class_id=class_id)
+
+
+@login_required
+def prediction_classe_pdf(request, class_id):
+    """Rapport PDF de prédiction pour le conseil de classe."""
+    if HTML is None:
+        messages.error(request, "WeasyPrint n'est pas disponible.")
+        return redirect('pedagogie:prediction_classe', class_id=class_id)
+
+    from etablissements.models import Etablissement
+    classe = get_object_or_404(Classe, pk=class_id)
+    etab = Etablissement.objects.first()
+    annee = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else None
+    etab_ctx = get_etablissement_context(etab, request) if etab else {}
+
+    predictions = (
+        PredictionReussiteExamen.objects
+        .filter(inscription__classe=classe, inscription__annee_scolaire=annee)
+        .select_related('inscription__eleve')
+        .order_by('-score')
+    )
+
+    html_str = render_to_string('pedagogie/prediction_classe_pdf.html', {
+        'classe': classe,
+        'annee': annee,
+        'predictions': predictions,
+        'etablissement': etab,
+        'identite': etab_ctx.get('identite'),
+    }, request=request)
+
+    pdf = HTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()
+    filename = f"Predictions_{classe.nom}_{annee.libelle if annee else ''}.pdf".replace(' ', '_')
+    resp = HttpResponse(pdf, content_type='application/pdf')
+    resp['Content-Disposition'] = f'inline; filename="{filename}"'
+    return resp
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bulletins de compétences (Préscolaire / Primaire)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def competences_index(request):
+    """Sélecteur de cycle pour les bulletins de compétences."""
+    from etablissements.models import Etablissement
+    etab = Etablissement.objects.first()
+    # Seuls les cycles Préscolaire et Primaire utilisent les compétences
+    cycles_cibles = ['PRES', 'PRIM']
+    cycles = (
+        Cycle.objects.filter(etablissement=etab, code__in=cycles_cibles)
+        .order_by('ordre')
+    ) if etab else Cycle.objects.none()
+    return render(request, 'pedagogie/competences_index.html', {
+        'cycles': cycles,
+        'etablissement': etab,
+    })
+
+
+@login_required
+def competences_referentiel(request, cycle_id):
+    """Référentiel de compétences pour un cycle donné (lecture + ajout HTMX)."""
+    from etablissements.models import Etablissement
+    etab = Etablissement.objects.first()
+    cycle = get_object_or_404(Cycle, pk=cycle_id)
+    competences = (
+        Competence.objects.filter(cycle=cycle, actif=True)
+        .select_related('matiere')
+        .order_by('matiere__code', 'ordre', 'libelle')
+    )
+    matieres = Matiere.objects.filter(
+        configurations_cycle__cycle=cycle
+    ).order_by('code').distinct()
+
+    if request.method == 'POST':
+        libelle = request.POST.get('libelle', '').strip()
+        matiere_id = request.POST.get('matiere') or None
+        ordre = int(request.POST.get('ordre', 0) or 0)
+        if libelle:
+            matiere = Matiere.objects.filter(pk=matiere_id).first() if matiere_id else None
+            Competence.objects.create(
+                cycle=cycle,
+                matiere=matiere,
+                libelle=libelle,
+                ordre=ordre,
+            )
+            messages.success(request, "Compétence ajoutée.")
+        return redirect('pedagogie:competences_referentiel', cycle_id=cycle_id)
+
+    return render(request, 'pedagogie/competences_referentiel.html', {
+        'cycle': cycle,
+        'competences': competences,
+        'matieres': matieres,
+        'etablissement': etab,
+    })
+
+
+@login_required
+@require_POST
+def competence_supprimer(request, pk):
+    """Supprime (désactive) une compétence."""
+    comp = get_object_or_404(Competence, pk=pk)
+    comp.actif = False
+    comp.save(update_fields=['actif'])
+    messages.success(request, f"Compétence supprimée : {comp.libelle}")
+    return redirect('pedagogie:competences_referentiel', cycle_id=comp.cycle_id)
+
+
+@login_required
+def competences_saisie(request, classe_id):
+    """Saisie des niveaux de compétences pour une classe et un trimestre."""
+    from etablissements.models import Etablissement
+    etab = Etablissement.objects.first()
+    classe = get_object_or_404(Classe, pk=classe_id)
+    annee = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else None
+
+    trimestres = Trimestre.objects.filter(annee_scolaire=annee).order_by('numero') if annee else Trimestre.objects.none()
+    trimestre_id = request.GET.get('trimestre') or request.POST.get('trimestre')
+    trimestre = Trimestre.objects.filter(pk=trimestre_id).first() if trimestre_id else trimestres.first()
+
+    inscriptions = (
+        Inscription.objects.filter(classe=classe, annee_scolaire=annee)
+        .select_related('eleve')
+        .exclude(statut='ABANDON')
+        .order_by('eleve__nom', 'eleve__prenom')
+    ) if annee else Inscription.objects.none()
+
+    competences = (
+        Competence.objects.filter(cycle=classe.cycle, actif=True)
+        .select_related('matiere')
+        .order_by('matiere__code', 'ordre')
+    ) if classe.cycle_id else Competence.objects.none()
+
+    if request.method == 'POST' and trimestre:
+        niveaux_choices = EvaluationCompetence.NiveauChoices.values
+        for ins in inscriptions:
+            for comp in competences:
+                key = f"niveau_{ins.pk}_{comp.pk}"
+                niveau = request.POST.get(key, EvaluationCompetence.NiveauChoices.NON_EVALUE)
+                if niveau not in niveaux_choices:
+                    niveau = EvaluationCompetence.NiveauChoices.NON_EVALUE
+                obs_key = f"obs_{ins.pk}_{comp.pk}"
+                obs = request.POST.get(obs_key, '').strip()[:200]
+                EvaluationCompetence.objects.update_or_create(
+                    inscription=ins,
+                    competence=comp,
+                    trimestre=trimestre,
+                    defaults={'niveau': niveau, 'observation': obs},
+                )
+        messages.success(request, "Évaluations enregistrées.")
+        return redirect(f"{request.path}?trimestre={trimestre.pk}")
+
+    # Construire grille : {inscription_id: {competence_id: EvaluationCompetence}}
+    evals_qs = EvaluationCompetence.objects.filter(
+        inscription__in=inscriptions,
+        competence__in=competences,
+        trimestre=trimestre,
+    ) if trimestre else EvaluationCompetence.objects.none()
+    grille = {}
+    for ev in evals_qs:
+        grille.setdefault(str(ev.inscription_id), {})[str(ev.competence_id)] = ev
+
+    # Grille JSON pour le JS de pré-sélection : {ins_id: {comp_id: niveau}}
+    import json as _json
+    grille_json = _json.dumps({
+        ins_id: {comp_id: ev.niveau for comp_id, ev in comps.items()}
+        for ins_id, comps in grille.items()
+    })
+
+    return render(request, 'pedagogie/competences_saisie.html', {
+        'classe': classe,
+        'annee': annee,
+        'trimestre': trimestre,
+        'trimestres': trimestres,
+        'inscriptions': inscriptions,
+        'competences': competences,
+        'grille': grille,
+        'grille_json': grille_json,
+        'niveaux': EvaluationCompetence.NiveauChoices,
+        'etablissement': etab,
+    })
+
+
+@login_required
+def competences_bulletin_pdf(request, inscription_id, trimestre_id):
+    """Bulletin de compétences PDF pour un élève à un trimestre."""
+    if HTML is None:
+        messages.error(request, "WeasyPrint n'est pas disponible.")
+        return redirect('pedagogie:competences_index')
+
+    from etablissements.models import Etablissement
+    inscription = get_object_or_404(
+        Inscription.objects.select_related('eleve', 'classe__cycle'),
+        pk=inscription_id,
+    )
+    trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
+    etab = Etablissement.objects.first()
+    etab_ctx = get_etablissement_context(etab, request) if etab else {}
+
+    competences = (
+        Competence.objects.filter(cycle=inscription.classe.cycle, actif=True)
+        .select_related('matiere')
+        .order_by('matiere__code', 'ordre')
+    )
+    evals_qs = EvaluationCompetence.objects.filter(
+        inscription=inscription,
+        competence__in=competences,
+        trimestre=trimestre,
+    ).select_related('competence__matiere')
+    evals_map = {str(ev.competence_id): ev for ev in evals_qs}
+
+    # Regrouper par matière
+    from collections import defaultdict
+    groupes = defaultdict(list)
+    for comp in competences:
+        ev = evals_map.get(str(comp.pk))
+        groupes[comp.matiere].append({'competence': comp, 'evaluation': ev})
+    groupes_list = [(mat, items) for mat, items in groupes.items()]
+
+    html_str = render_to_string('pedagogie/competences_bulletin_pdf.html', {
+        'inscription': inscription,
+        'trimestre': trimestre,
+        'groupes': groupes_list,
+        'etablissement': etab,
+        'identite': etab_ctx.get('identite'),
+    }, request=request)
+
+    pdf = HTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()
+    eleve = inscription.eleve
+    nom = f"Bulletin_{eleve.nom}_{eleve.prenom}_{trimestre.numero}.pdf".replace(' ', '_')
+    resp = HttpResponse(pdf, content_type='application/pdf')
+    resp['Content-Disposition'] = f'inline; filename="{nom}"'
+    return resp

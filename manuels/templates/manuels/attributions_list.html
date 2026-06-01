@@ -1,0 +1,81 @@
+{% extends "core/base.html" %}
+
+{% block title %}Attributions en cours — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">Attributions en cours</h1>
+      <p class="page-subtitle">Manuels actuellement remis aux élèves</p>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'manuels:non_rendus' %}" class="btn-secondary btn-sm">Non rendus</a>
+      {% if annee_sel %}
+      <a href="{% url 'manuels:attributions_annee_pdf' %}?annee={{ annee_sel.pk }}" class="btn-secondary btn-sm" target="_blank">⬇ Imprimer PDF</a>
+      {% endif %}
+      <a href="{% url 'manuels:attribution_create' %}" class="btn-primary btn-sm">+ Attribution</a>
+    </div>
+  </div>
+
+  <!-- Filtre année -->
+  <div class="card mb-4 animate-fade-up delay-1">
+    <div class="card-body">
+      <form method="get">
+        <div class="d-flex gap-3 align-end">
+          <div class="form-group flex-1">
+            <label class="input-label">Année scolaire</label>
+            <select name="annee" class="input select" onchange="this.form.submit()">
+              {% for a in annees %}
+              <option value="{{ a.pk }}" {% if annee_sel and annee_sel.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card animate-fade-up delay-2">
+    <div class="card-body p-0">
+      {% if attributions %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Classe</th>
+            <th>Manuel</th>
+            <th>Exemplaire</th>
+            <th>État sortie</th>
+            <th>Date attribution</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in attributions %}
+          <tr>
+            <td class="fw-600">{{ a.inscription.eleve.nom }} {{ a.inscription.eleve.prenom }}</td>
+            <td>{{ a.inscription.classe.nom }}</td>
+            <td>{{ a.exemplaire.manuel.titre }}</td>
+            <td class="font-mono text-sm">{{ a.exemplaire.code_exemplaire }}</td>
+            <td><span class="badge badge-outline">{{ a.get_etat_sortie_display }}</span></td>
+            <td>{{ a.date_attribution }}</td>
+            <td class="text-right">
+              <a href="{% url 'manuels:attribution_retour' pk=a.pk %}" class="btn-ghost btn-xs">Retour</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <p>Aucune attribution en cours pour cette année.</p>
+        <a href="{% url 'manuels:attribution_create' %}" class="btn-primary btn-sm">Créer une attribution</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

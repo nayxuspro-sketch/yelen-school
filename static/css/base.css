@@ -1,6 +1,11 @@
+/*
+ * YELEN SCHOOL - Base CSS
+ * Fonts - loaded in yelen.css
+ */
+
 @font-face {
   font-family: 'Playfair Display';
-  src: url('{% static "fonts/PlayfairDisplay.woff2" %}') format('woff2');
+  src: url('../fonts/PlayfairDisplay.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;

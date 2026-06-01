@@ -38,15 +38,16 @@ class RoleChoices(models.TextChoices):
     Aligné sur PROMPT_V3_3.md §2.2.
     Note : Directeur = Directeur / Proviseur (jamais Directeur/SG).
     """
-    SUPER_ADMIN = 'SUPER_ADMIN', 'Super Admin Éditeur'
-    DIRECTEUR   = 'DIRECTEUR',   'Directeur / Proviseur'
-    CENSEUR     = 'CENSEUR',     'Censeur / Proviseur'
-    AVS         = 'AVS',         'Agent de Vie Scolaire'
-    ENSEIGNANT  = 'ENSEIGNANT',  'Enseignant'
-    COMPTABLE   = 'COMPTABLE',   'Comptable'
-    SECRETAIRE  = 'SECRETAIRE',  'Secrétaire'
-    PARENT      = 'PARENT',      'Parent'
-    ELEVE       = 'ELEVE',       'Élève'
+    SUPER_ADMIN       = 'SUPER_ADMIN',       'Super Admin Éditeur'
+    DIRECTEUR_RESEAU  = 'DIRECTEUR_RESEAU',  'Directeur Réseau'
+    DIRECTEUR         = 'DIRECTEUR',         'Directeur / Proviseur'
+    CENSEUR           = 'CENSEUR',           'Censeur / Proviseur'
+    AVS               = 'AVS',               'Agent de Vie Scolaire'
+    ENSEIGNANT        = 'ENSEIGNANT',         'Enseignant'
+    COMPTABLE         = 'COMPTABLE',          'Comptable'
+    SECRETAIRE        = 'SECRETAIRE',         'Secrétaire'
+    PARENT            = 'PARENT',             'Parent'
+    ELEVE             = 'ELEVE',              'Élève'
 
 
 # ──────────────────────────────────────────────

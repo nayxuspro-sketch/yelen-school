@@ -1,0 +1,157 @@
+{% extends 'core/base.html' %}
+
+{% block nav_bulletins %}active{% endblock %}
+{% block title %}Bulletins Annuels — YELEN SCHOOL{% endblock %}
+{% block page_title %}Bulletins Annuels{% endblock %}
+{% block page_subtitle %}Consulter et générer les bulletins de fin d'année{% endblock %}
+
+{% block content %}
+
+{# ── Filtres ── #}
+<div class="bul-ann-filters animate-fade-up">
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        Année scolaire
+      </h3>
+    </div>
+    <div class="card-body">
+      <form method="get" id="annee-form">
+        <div class="form-group">
+          <select name="annee" class="form-select" onchange="document.getElementById('annee-form').submit()">
+            <option value="">— Choisir une année —</option>
+            {% for a in annees %}
+            <option value="{{ a.pk }}" {% if annee.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+        Classe
+      </h3>
+    </div>
+    <div class="card-body">
+      <form method="get" id="classe-form">
+        <input type="hidden" name="annee" value="{{ annee.pk|default:'' }}">
+        <div class="form-group">
+          <select name="classe" class="form-select" onchange="document.getElementById('classe-form').submit()">
+            <option value="">— Choisir une classe —</option>
+            {% for c in classes %}
+            <option value="{{ c.pk }}" {% if classe.pk == c.pk %}selected{% endif %}>{{ c.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{# ── Contenu : classe + année sélectionnées ── #}
+{% if classe and annee %}
+
+  {# Barre batch #}
+  <div class="bul-ann-batch-bar animate-fade-up">
+    <div class="bul-ann-batch-info">
+      <span class="bul-ann-batch-title">{{ classe.nom }} — {{ annee.libelle }}</span>
+      <span class="bul-ann-batch-sub">
+        {{ inscriptions|length }} élève{{ inscriptions|length|pluralize }} · Génération groupée du PDF complet
+      </span>
+    </div>
+    <a href="{% url 'bulletins:bulletin_annuel_batch_pdf' class_id=classe.pk annee_pk=annee.pk %}"
+       class="btn-primary" target="_blank">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Tous les bulletins (PDF)
+    </a>
+  </div>
+
+  {# Liste des élèves #}
+  {% if inscriptions %}
+  <div class="card animate-fade-up delay-1">
+    <div class="card-header">
+      <h3 class="card-title">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        Élèves
+      </h3>
+      <div class="card-header-actions">
+        <span class="badge">{{ inscriptions|length }} élève{{ inscriptions|length|pluralize }}</span>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Matricule</th>
+            <th>Nom &amp; Prénom</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ins in inscriptions %}
+          <tr class="bul-ann-student-row">
+            <td>
+              <span class="badge-matricule">{{ ins.eleve.matricule }}</span>
+            </td>
+            <td class="font-medium">{{ ins.eleve.nom|upper }} {{ ins.eleve.prenom }}</td>
+            <td>
+              <div class="bul-ann-actions">
+                <a href="{% url 'bulletins:bulletin_annuel' inscription_id=ins.pk annee_pk=annee.pk %}"
+                   class="btn-secondary btn-sm" title="Voir le bulletin">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                  Voir
+                </a>
+                <a href="{% url 'bulletins:bulletin_annuel_pdf' inscription_id=ins.pk annee_pk=annee.pk %}"
+                   class="btn-primary btn-sm" target="_blank" title="Télécharger PDF">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  PDF
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="alert alert-info animate-fade-up delay-1">
+    Aucun élève inscrit dans cette classe pour cette année scolaire.
+  </div>
+  {% endif %}
+
+{% else %}
+<div class="alert alert-info animate-fade-up">
+  Sélectionnez une année scolaire et une classe pour afficher les bulletins.
+</div>
+{% endif %}
+
+{% endblock %}

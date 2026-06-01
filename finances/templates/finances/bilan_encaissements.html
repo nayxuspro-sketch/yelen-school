@@ -3,181 +3,215 @@
 {% block title %}Bilan des Encaissements - YELEN SCHOOL{% endblock %}
 
 {% block content %}
-<div style="max-width:64rem; margin:0 auto;">
-    <div class="page-header">
+<div class="content-narrow">
+
+    <!-- Page header avec actions d'export -->
+    <div class="page-header animate-fade-up">
         <div>
             <h1 class="page-title">Bilan des Encaissements</h1>
-            <p class="page-subtitle">Statistiques des paiements reçus</p>
+            <p class="page-subtitle">Statistiques et détail des paiements reçus</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'finances:bilan_encaissements_pdf' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
+               target="_blank" class="btn-secondary btn-sm" title="Imprimer PDF">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                PDF
+            </a>
+            <a href="{% url 'finances:bilan_encaissements_csv' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
+               class="btn-secondary btn-sm" title="Exporter CSV">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                CSV
+            </a>
+            <a href="{% url 'finances:bilan_encaissements_xlsx' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
+               class="btn-secondary btn-sm btn-excel" title="Exporter Excel (.xlsx)">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                Excel
+            </a>
         </div>
     </div>
 
-    <form method="get" class="card mb-6">
-        <div class="d-flex gap-3 align-end flex-wrap">
-            <div class="form-group" style="flex:1; min-width:150px;">
-                <label class="input-label">Année scolaire</label>
-                <select name="annee" class="input select">
-                    <option value="">Toutes</option>
-                    {% for a in annees %}
-                    <option value="{{ a.pk }}" {% if annee_selected and annee_selected.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group" style="flex:1; min-width:150px;">
-                <label class="input-label">Rubrique</label>
-                <select name="rubrique" class="input select">
-                    <option value="">Toutes</option>
-                    {% for r in rubriques %}
-                    <option value="{{ r.pk }}" {% if rub_selected and rub_selected.pk == r.pk %}selected{% endif %}>{{ r.nom }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group" style="width:140px;">
-                <label class="input-label">Date début</label>
-                <input type="date" name="date_debut" value="{{ date_debut }}" class="input">
-            </div>
-            <div class="form-group" style="width:140px;">
-                <label class="input-label">Date fin</label>
-                <input type="date" name="date_fin" value="{{ date_fin }}" class="input">
-            </div>
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn-primary">Filtrer</button>
-                <a href="{% url 'finances:bilan_encaissements' %}" class="btn-secondary" title="Réinitialiser">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                </a>
-                <a href="{% url 'finances:bilan_encaissements_pdf' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
-                   target="_blank" class="btn-secondary" title="Imprimer PDF">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                    </svg>
-                </a>
-                <a href="{% url 'finances:bilan_encaissements_csv' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
-                   class="btn-secondary" title="Exporter CSV (Excel)">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                    </svg>
-                </a>
-            </div>
+    <!-- Formulaire de filtres -->
+    <div class="card mb-6 animate-fade-up delay-1">
+        <div class="card-header">
+            <span class="card-title">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+                </svg>
+                Filtres
+            </span>
+            <a href="{% url 'finances:bilan_encaissements' %}" class="btn-ghost btn-sm" title="Réinitialiser les filtres">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Réinitialiser
+            </a>
         </div>
-    </form>
+        <div class="card-body">
+            <form method="get">
+                <div class="d-flex gap-3 align-end flex-wrap">
+                    <div class="form-group flex-1 min-w-150">
+                        <label class="input-label">Année scolaire</label>
+                        <select name="annee" class="input select">
+                            <option value="">Toutes</option>
+                            {% for a in annees %}
+                            <option value="{{ a.pk }}" {% if annee_selected and annee_selected.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group flex-1 min-w-150">
+                        <label class="input-label">Rubrique</label>
+                        <select name="rubrique" class="input select">
+                            <option value="">Toutes</option>
+                            {% for r in rubriques %}
+                            <option value="{{ r.pk }}" {% if rub_selected and rub_selected.pk == r.pk %}selected{% endif %}>{{ r.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group w-140">
+                        <label class="input-label">Date début</label>
+                        <input type="date" name="date_debut" value="{{ date_debut }}" class="input">
+                    </div>
+                    <div class="form-group w-140">
+                        <label class="input-label">Date fin</label>
+                        <input type="date" name="date_fin" value="{{ date_fin }}" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">&nbsp;</label>
+                        <button type="submit" class="btn-primary">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            Filtrer
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <!-- Statistiques globales -->
-    <div class="stats-grid mb-6">
-        <div class="stat-card">
-            <div class="stat-icon" style="background:var(--color-success);">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- Statistiques globales v4.0 -->
+    <div class="stats-grid mb-6 animate-fade-up delay-2">
+        <div class="stat-card" style="--accent-color: #00A86B">
+            <div class="stat-card-accent"></div>
+            <div class="stat-icon-wrap" style="background: rgba(0,168,107,0.15); color: #00C07A;">
+                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
             </div>
-            <div>
-                <div class="stat-label">Total Encaissé</div>
-                <div class="stat-value" style="color:var(--color-success);">{{ total_encaissement|floatformat:0 }} FCAF</div>
-            </div>
+            <div class="stat-value">{{ total_encaissement|floatformat:0 }}</div>
+            <div class="stat-label">Total Encaissé (FCFA)</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon" style="background:var(--color-primary);">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="stat-card" style="--accent-color: #17A2B8">
+            <div class="stat-card-accent"></div>
+            <div class="stat-icon-wrap" style="background: rgba(23,162,184,0.15); color: #17A2B8;">
+                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                 </svg>
             </div>
-            <div>
-                <div class="stat-label">Nombre de transactions</div>
-                <div class="stat-value">{{ nb_paiements }}</div>
-            </div>
+            <div class="stat-value">{{ nb_paiements }}</div>
+            <div class="stat-label">Transactions</div>
         </div>
     </div>
 
-    <!-- Graphiques CSS (hors ligne) -->
+    <!-- Graphiques CSS -->
     {% with max_mode=par_mode.items|dictsort:'total'|last %}
     {% with max_jour=par_jour.items|dictsort:'total'|last %}
-    <div class="form-grid-2 mb-6">
-        <!-- Graphique par mode de paiement -->
+    <div class="form-grid-2 mb-6 animate-fade-up delay-3">
+        <!-- Répartition par mode de paiement -->
         <div class="card">
             <div class="card-header">
                 <span class="card-title">Répartition par Mode de Paiement</span>
+                <span class="badge badge-neutral">{{ par_mode.items|length }} modes</span>
             </div>
-            <div class="graph-card">
+            <div class="card-body">
                 <div class="barh-container">
                     {% for mode, data in par_mode.items %}
                     <div class="barh-item">
                         <span class="barh-label">{{ mode }}</span>
                         <div class="barh-track">
-                            <div class="barh-fill" style="width:{% widthratio data.total max_mode.1.total 100 %}%; background:{% cycle '#00A86B' '#3B82F6' '#F59E0B' '#EF4444' '#8B5CF6' '#EC4899' '#14B8A6' '#F97316' %};"></div>
+                            <div class="barh-fill" style="width:{% widthratio data.total max_mode.1.total 100 %}%; background:{% cycle '#00A86B' '#17A2B8' '#F5A623' '#DC3545' '#A259FF' '#EC4899' '#14B8A6' '#F97316' %};"></div>
                         </div>
                         <span class="barh-value">{{ data.total|floatformat:0 }}</span>
                     </div>
                     {% empty %}
-                    <p class="graph-subtitle">Aucune donnée</p>
+                    <p class="text-muted text-sm">Aucune donnée</p>
                     {% endfor %}
                 </div>
+                <table class="data-table mt-3">
+                    <thead>
+                        <tr>
+                            <th>Mode</th>
+                            <th class="td-right">Nombre</th>
+                            <th class="td-right">Total (FCFA)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mode, data in par_mode.items %}
+                        <tr>
+                            <td>{{ mode }}</td>
+                            <td class="td-right">{{ data.count }}</td>
+                            <td class="td-right fw-bold">{{ data.total|floatformat:0 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">Aucune donnée</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <table class="data-table mt-3">
-                <thead>
-                    <tr>
-                        <th>Mode</th>
-                        <th style="text-align:right;">Nombre</th>
-                        <th style="text-align:right;">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for mode, data in par_mode.items %}
-                    <tr>
-                        <td>{{ mode }}</td>
-                        <td style="text-align:right;">{{ data.count }}</td>
-                        <td style="text-align:right;" class="fw-bold">{{ data.total|floatformat:0 }} FCAF</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" class="text-center text-muted">Aucune donnée</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
 
-        <!-- Graphique évolution temporelle -->
+        <!-- Évolution temporelle -->
         <div class="card">
             <div class="card-header">
                 <span class="card-title">Évolution des Encaissements</span>
+                <span class="badge badge-neutral">10 derniers jours</span>
             </div>
-            <div class="graph-card">
+            <div class="card-body">
                 <div class="barh-container">
                     {% for jour, data in par_jour.items|slice:":10" %}
                     <div class="barh-item">
                         <span class="barh-label">{{ jour }}</span>
                         <div class="barh-track">
-                            <div class="barh-fill" style="width:{% widthratio data.total max_jour.1.total 100 %}%; background:linear-gradient(90deg, #00A86B, #007A4D);"></div>
+                            <div class="barh-fill barh-fill-primary" style="width:{% widthratio data.total max_jour.1.total 100 %}%;"></div>
                         </div>
                         <span class="barh-value">{{ data.total|floatformat:0 }}</span>
                     </div>
                     {% empty %}
-                    <p class="graph-subtitle">Aucune donnée</p>
+                    <p class="text-muted text-sm">Aucune donnée</p>
                     {% endfor %}
                 </div>
+                <table class="data-table mt-3">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th class="td-right">Nombre</th>
+                            <th class="td-right">Total (FCFA)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for jour, data in par_jour.items|slice:":10" %}
+                        <tr>
+                            <td>{{ jour }}</td>
+                            <td class="td-right">{{ data.count }}</td>
+                            <td class="td-right fw-bold">{{ data.total|floatformat:0 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">Aucune donnée</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <table class="data-table mt-3">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th style="text-align:right;">Nombre</th>
-                        <th style="text-align:right;">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for jour, data in par_jour.items|slice:":10" %}
-                    <tr>
-                        <td>{{ jour }}</td>
-                        <td style="text-align:right;">{{ data.count }}</td>
-                        <td style="text-align:right;" class="fw-bold">{{ data.total|floatformat:0 }} FCAF</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" class="text-center text-muted">Aucune donnée</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
     {% endwith %}
@@ -186,22 +220,23 @@
     <!-- Graphique par cycle -->
     {% if cycles_list %}
     {% with max_cycle=cycles_list|dictsort:'total'|last %}
-    <div class="card mb-6">
+    <div class="card mb-6 animate-fade-up delay-3">
         <div class="card-header">
             <span class="card-title">Encaissements par Cycle</span>
+            <span class="badge badge-success">{{ cycles_list|length }} cycle{{ cycles_list|length|pluralize }}</span>
         </div>
-        <div class="graph-card">
+        <div class="card-body">
             <div class="barh-container">
                 {% for c in cycles_list %}
                 <div class="barh-item">
                     <span class="barh-label">{{ c.cycle.nom }}</span>
                     <div class="barh-track">
-                        <div class="barh-fill" style="width:{% widthratio c.total max_cycle.total 100 %}%; background:{% cycle '#00A86B' '#3B82F6' '#F59E0B' '#EF4444' %};"></div>
+                        <div class="barh-fill" style="width:{% widthratio c.total max_cycle.total 100 %}%; background:{% cycle '#00A86B' '#17A2B8' '#F5A623' '#DC3545' %};"></div>
                     </div>
                     <span class="barh-value">{{ c.total|floatformat:0 }}</span>
                 </div>
                 {% empty %}
-                <p class="graph-subtitle">Aucune donnée</p>
+                <p class="text-muted text-sm">Aucune donnée</p>
                 {% endfor %}
             </div>
         </div>
@@ -209,25 +244,23 @@
     {% endwith %}
     {% endif %}
 
-    <!-- Liste des paiements par cycle et classe -->
+    <!-- Détail par cycle et classe -->
     {% for cycle_data in cycles_list %}
-    <div class="card mb-4">
-        <div class="card-header" style="background:var(--color-primary); color:white;">
-            <div class="d-flex justify-between align-center">
-                <span class="fw-bold">{{ cycle_data.cycle.nom }}</span>
-                <span class="badge" style="background:rgba(255,255,255,0.2); color:white;">
-                    {{ cycle_data.total|floatformat:0 }} FCFA
-                </span>
+    <div class="card mb-4 animate-fade-up">
+        <div class="card-header">
+            <div class="d-flex align-center gap-3">
+                <span class="fw-semibold">{{ cycle_data.cycle.nom }}</span>
             </div>
+            <span class="badge badge-success">{{ cycle_data.total|floatformat:0 }} FCFA</span>
         </div>
-        
+
         {% for classe_data in cycle_data.classes %}
-        <div style="padding:1rem; border-bottom:1px solid var(--color-border);">
+        <div class="section-row">
             <div class="d-flex justify-between align-center mb-3">
                 <span class="fw-semibold">{{ classe_data.classe.nom }}</span>
                 <span class="badge badge-warning">{{ classe_data.total|floatformat:0 }} FCFA</span>
             </div>
-            
+
             <table class="data-table">
                 <thead>
                     <tr>
@@ -235,7 +268,7 @@
                         <th>Élève</th>
                         <th>Rubrique</th>
                         <th>Mode</th>
-                        <th style="text-align:right;">Montant</th>
+                        <th class="td-right">Montant (FCFA)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -245,7 +278,7 @@
                         <td class="fw-medium">{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
                         <td>{{ p.rubrique.nom|default:"—" }}</td>
                         <td>{{ p.mode_paiement|default:"—" }}</td>
-                        <td style="text-align:right;" class="fw-bold" style="color:var(--color-success);">{{ p.montant|floatformat:0 }} FCFA</td>
+                        <td class="td-right fw-bold color-success">{{ p.montant|floatformat:0 }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -254,25 +287,18 @@
         {% endfor %}
     </div>
     {% empty %}
-    <div class="card">
+    <div class="card animate-fade-up">
         <div class="empty-state">
-            <p class="empty-state-text">Aucun paiement trouvé pour les critères sélectionnés.</p>
+            <div class="empty-state-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 class="fw-semibold mb-2">Aucun paiement trouvé</h3>
+            <p class="empty-state-text">Aucun encaissement ne correspond aux critères sélectionnés.</p>
         </div>
     </div>
     {% endfor %}
+
 </div>
-
-<style>
-.graph-card { padding: var(--space-4); }
-.graph-title { font-size: 0.85rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-3); }
-.graph-subtitle { font-size: 0.75rem; color: var(--color-text-muted); text-align: center; margin-top: var(--space-2); }
-
-/* Barres horizontales */
-.barh-container { display: flex; flex-direction: column; gap: var(--space-3); }
-.barh-item { display: flex; align-items: center; gap: var(--space-3); }
-.barh-label { min-width: 100px; font-size: 0.8rem; color: var(--color-text-secondary); }
-.barh-track { flex: 1; height: 24px; background: var(--color-bg-subtle); border-radius: var(--radius); overflow: hidden; }
-.barh-fill { height: 100%; border-radius: var(--radius); transition: width 0.3s; }
-.barh-value { min-width: 80px; text-align: right; font-size: 0.8rem; font-weight: 600; color: var(--color-text-primary); }
-</style>
 {% endblock %}

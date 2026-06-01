@@ -225,6 +225,8 @@ def conseil_pv_pdf(request, conseil_id):
 @login_required
 def sanction_list(request):
     """Liste des sanctions disciplinaires, regroupées par classe."""
+    from django.db.models import Q
+    
     annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
     qs = SanctionDisciplinaire.objects.select_related(
         'inscription__eleve', 'inscription__classe__cycle', 'prononcee_par', 'trimestre', 'type_sanction'
@@ -236,7 +238,32 @@ def sanction_list(request):
     if type_filtre:
         qs = qs.filter(type_sanction_id=type_filtre)
 
-    # Regroupement par classe
+    statut_filtre = request.GET.get('statut')
+    if statut_filtre:
+        qs = qs.filter(statut=statut_filtre)
+
+    classe_filtre = request.GET.get('classe')
+    if classe_filtre:
+        qs = qs.filter(inscription__classe_id=classe_filtre)
+
+    date_min = request.GET.get('date_min')
+    if date_min:
+        qs = qs.filter(date_sanction__gte=date_min)
+
+    eleve_q = request.GET.get('eleve')
+    if eleve_q:
+        qs = qs.filter(
+            Q(inscription__eleve__nom__icontains=eleve_q) |
+            Q(inscription__eleve__prenom__icontains=eleve_q) |
+            Q(inscription__eleve__matricule__icontains=eleve_q)
+        )
+
+    etab = getattr(request.user, 'etablissement', None)
+    if etab:
+        classes = Classe.objects.filter(etablissement=etab).select_related('cycle').order_by('cycle__ordre', 'nom')
+    else:
+        classes = Classe.objects.select_related('cycle').order_by('cycle__ordre', 'nom')
+
     groupes = {}
     for s in qs:
         classe = s.inscription.classe
@@ -249,9 +276,18 @@ def sanction_list(request):
     return render(request, 'viescolaire/sanction_list.html', {
         'groupes': list(groupes.values()),
         'total': qs.count(),
+        'nb_confirmees': qs.filter(statut='CONFIRME').count(),
+        'nb_en_cours': qs.filter(statut='EN_COURS').count(),
+        'nb_levees': qs.filter(statut='LEVEE').count(),
+        'nb_avec_points': qs.exclude(points=0).count(),
         'annee_courante': annee_courante,
         'types_sanction': types_sanction,
         'type_filtre': type_filtre,
+        'statut_filtre': statut_filtre,
+        'classe_filtre': classe_filtre,
+        'date_min_filtre': date_min,
+        'eleve_filtre': eleve_q,
+        'classes': classes,
     })
 
 
@@ -603,14 +639,36 @@ def emploi_du_temps(request, classe_id):
         .order_by('jour', 'heure_debut')
     )
 
-    # Grille par jour (Lundi→Samedi toujours affichés)
-    jours_dict = {j: [] for j in range(1, 8)}
-    for s in seances:
-        jours_dict[s.jour].append(s)
+    # Index couleur par enseignement (8 couleurs en rotation)
+    color_map = {ens.pk: i % 8 for i, ens in enumerate(enseignements)}
 
-    grille = [
-        {'jour_num': j, 'jour_label': JourSemaine(j).label, 'seances': jours_dict[j]}
-        for j in range(1, 7)
+    # Grille horaire : lignes = créneaux uniques, colonnes = jours (Lun–Sam)
+    JOURS = list(range(1, 7))
+    jours_labels = [JourSemaine(j).label for j in JOURS]
+
+    slots: dict = {}
+    for s in seances:
+        key = (s.heure_debut, s.heure_fin)
+        slots.setdefault(key, {})[s.jour] = s
+
+    grille_creneaux = [
+        {
+            'heure_debut': hd,
+            'heure_fin': hf,
+            'jours': [
+                {
+                    'seance': slot_jours.get(j),
+                    'color_idx': color_map.get(slot_jours[j].enseignement_id, 0)
+                    if j in slot_jours else None,
+                }
+                for j in JOURS
+            ],
+        }
+        for (hd, hf), slot_jours in sorted(slots.items())
+    ]
+
+    enseignements_avec_couleur = [
+        (ens, i % 8) for i, ens in enumerate(enseignements)
     ]
 
     return render(request, 'viescolaire/emploi_du_temps.html', {
@@ -618,7 +676,9 @@ def emploi_du_temps(request, classe_id):
         'annee': annee,
         'annees': annees,
         'enseignements': enseignements,
-        'grille': grille,
+        'enseignements_avec_couleur': enseignements_avec_couleur,
+        'grille_creneaux': grille_creneaux,
+        'jours_labels': jours_labels,
         'jours_choices': JourSemaine.choices,
     })
 
@@ -682,6 +742,76 @@ def seance_delete(request, seance_id):
 
 
 @login_required
+def edt_generer(request, classe_id):
+    """Génération automatique d'EDT — formulaire, aperçu et application."""
+    import json as _json
+    from .models import ConfigEDT
+    from .services import GenerateurEDT
+
+    etab = _get_etab(request)
+    classe = get_object_or_404(Classe, pk=classe_id)
+
+    annee_id = request.GET.get('annee') or request.POST.get('annee')
+    if annee_id:
+        annee = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
+    else:
+        annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+
+    config = ConfigEDT.objects.filter(etablissement=etab).first()
+
+    if request.method == 'GET':
+        return render(request, 'viescolaire/partials/edt_generation_form.html', {
+            'classe': classe,
+            'annee': annee,
+            'config': config,
+        })
+
+    action = request.POST.get('action', 'preview')
+    mode = request.POST.get('mode', 'remplacer')
+
+    if action == 'preview':
+        gen = GenerateurEDT(classe, annee, config)
+        resultat = gen.generer()
+        request.session[f'edt_preview_{classe.pk}'] = resultat.to_json()
+        return render(request, 'viescolaire/partials/edt_apercu.html', {
+            'classe': classe,
+            'annee': annee,
+            'resultat': resultat,
+            'mode': mode,
+        })
+
+    if action == 'appliquer':
+        seances_data = []
+        try:
+            raw = request.session.pop(f'edt_preview_{classe.pk}', '[]')
+            seances_data = _json.loads(raw)
+        except (ValueError, TypeError):
+            pass
+
+        if mode == 'remplacer':
+            SeanceCours.objects.filter(
+                enseignement__classe=classe,
+                enseignement__annee_scolaire=annee,
+            ).delete()
+
+        for s in seances_data:
+            try:
+                ens = Enseignement.objects.get(pk=s['enseignement_id'])
+                SeanceCours.objects.get_or_create(
+                    enseignement=ens,
+                    jour=s['jour'],
+                    heure_debut=s['heure_debut'],
+                    defaults={'heure_fin': s['heure_fin']},
+                )
+            except Exception:
+                pass
+
+        return HttpResponse('', headers={'HX-Refresh': 'true'})
+
+    return HttpResponse('Action inconnue.', status=400)
+
+
+@login_required
 def emploi_du_temps_pdf(request, classe_id):
     """Génère un PDF de l'emploi du temps via WeasyPrint."""
     if WeasyHTML is None:
@@ -740,6 +870,194 @@ def emploi_du_temps_pdf(request, classe_id):
     buffer = io.BytesIO()
     WeasyHTML(string=html_string).write_pdf(buffer)
     nom = f"Emploi_du_temps_{classe.nom}_{annee.libelle if annee else 'inconnu'}.pdf".replace(' ', '_')
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{nom}"'
+    return response
+
+
+# ─── Emploi du temps — par professeur ─────────────────────────────────────────
+
+@login_required
+def emploi_du_temps_prof_index(request):
+    """Liste des professeurs avec sélecteur d'année scolaire."""
+    from django.db.models import Count, Q
+    from personnel.models import MembrePersonnel
+
+    etab = _get_etab(request)
+    annees = (
+        AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
+        if etab else AnneeScolaire.objects.none()
+    )
+    annee_id = request.GET.get('annee')
+    annee = (
+        annees.filter(pk=annee_id).first()
+        if annee_id else annees.filter(est_courante=True).first()
+    )
+
+    personnel_qs = (
+        MembrePersonnel.objects
+        .filter(etablissement=etab, is_active=True)
+        .order_by('nom', 'prenom')
+        if etab else MembrePersonnel.objects.none()
+    )
+    if annee:
+        personnel_qs = personnel_qs.annotate(
+            nb_enseignements=Count(
+                'enseignements',
+                filter=Q(
+                    enseignements__annee_scolaire=annee,
+                    enseignements__est_actif=True,
+                ),
+            )
+        )
+
+    return render(request, 'viescolaire/emploi_du_temps_prof_index.html', {
+        'personnel_list': personnel_qs,
+        'annees': annees,
+        'annee': annee,
+    })
+
+
+@login_required
+def emploi_du_temps_prof(request, personnel_id):
+    """Grille hebdomadaire de toutes les séances d'un professeur."""
+    from personnel.models import MembrePersonnel
+
+    etab = _get_etab(request)
+    personnel = get_object_or_404(MembrePersonnel, pk=personnel_id, etablissement=etab)
+
+    annees = (
+        AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
+        if etab else AnneeScolaire.objects.none()
+    )
+    annee_id = request.GET.get('annee')
+    annee = (
+        annees.filter(pk=annee_id).first()
+        if annee_id else annees.filter(est_courante=True).first()
+    )
+
+    enseignements = (
+        Enseignement.objects
+        .filter(personnel=personnel, annee_scolaire=annee, est_actif=True)
+        .select_related('matiere', 'classe')
+        .order_by('classe__nom', 'matiere__nom')
+    ) if annee else Enseignement.objects.none()
+
+    seances = (
+        SeanceCours.objects
+        .filter(enseignement__in=enseignements)
+        .select_related('enseignement__matiere', 'enseignement__classe')
+        .order_by('jour', 'heure_debut')
+    )
+
+    JOURS = list(range(1, 7))
+    jours_labels = [JourSemaine(j).label for j in JOURS]
+
+    slots: dict = {}
+    for s in seances:
+        key = (s.heure_debut, s.heure_fin)
+        slots.setdefault(key, {})[s.jour] = s
+
+    grille_creneaux = [
+        {
+            'heure_debut': hd,
+            'heure_fin': hf,
+            'jours': [{'seance': slot_jours.get(j)} for j in JOURS],
+        }
+        for (hd, hf), slot_jours in sorted(slots.items())
+    ]
+
+    return render(request, 'viescolaire/emploi_du_temps_prof.html', {
+        'personnel': personnel,
+        'annee': annee,
+        'annees': annees,
+        'enseignements': enseignements,
+        'grille_creneaux': grille_creneaux,
+        'jours_labels': jours_labels,
+    })
+
+
+@login_required
+def emploi_du_temps_prof_pdf(request, personnel_id):
+    """Génère le PDF de l'emploi du temps d'un professeur (WeasyPrint)."""
+    if WeasyHTML is None:
+        messages.error(request, "WeasyPrint n'est pas installé sur ce serveur.")
+        return redirect('viescolaire:emploi_du_temps_prof_index')
+
+    from datetime import datetime
+    from personnel.models import MembrePersonnel
+
+    etab = _get_etab(request)
+    personnel = get_object_or_404(MembrePersonnel, pk=personnel_id, etablissement=etab)
+
+    annees = (
+        AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
+        if etab else AnneeScolaire.objects.none()
+    )
+    annee_id = request.GET.get('annee')
+    annee = (
+        annees.filter(pk=annee_id).first()
+        if annee_id else annees.filter(est_courante=True).first()
+    )
+
+    enseignements = list(
+        Enseignement.objects
+        .filter(personnel=personnel, annee_scolaire=annee, est_actif=True)
+        .select_related('matiere', 'classe')
+        .order_by('classe__nom', 'matiere__nom')
+    ) if annee else []
+
+    seances = list(
+        SeanceCours.objects
+        .filter(enseignement__in=enseignements)
+        .select_related('enseignement__matiere', 'enseignement__classe')
+        .order_by('jour', 'heure_debut')
+    )
+
+    jours_dict = {j: [] for j in range(1, 7)}
+    for s in seances:
+        jours_dict[s.jour].append(s)
+    grille = [
+        {'jour_num': j, 'jour_label': JourSemaine(j).label, 'seances': jours_dict[j]}
+        for j in range(1, 7)
+    ]
+
+    total_minutes = sum(
+        int((
+            datetime.combine(datetime.today(), s.heure_fin)
+            - datetime.combine(datetime.today(), s.heure_debut)
+        ).total_seconds() / 60)
+        for s in seances
+    )
+    total_heures = total_minutes // 60
+    total_minutes_reste = total_minutes % 60
+
+    etab_ctx = get_etablissement_context(etab, request) if etab else {}
+    signataire = (
+        SignataireDocument.objects.get_signataire(
+            cycle=None, type_document=None, annee_scolaire=annee,
+        )
+        if annee else None
+    )
+
+    html_string = render_to_string('viescolaire/pdf/emploi_du_temps_prof.html', {
+        'personnel': personnel,
+        'annee': annee,
+        'grille': grille,
+        'enseignements': enseignements,
+        'total_heures': total_heures,
+        'total_minutes_reste': total_minutes_reste,
+        'etab': etab,
+        'identite': etab_ctx.get('identite'),
+        'signataire': signataire,
+    }, request=request)
+
+    buffer = io.BytesIO()
+    WeasyHTML(string=html_string).write_pdf(buffer)
+    nom = (
+        f"EDT_{personnel.nom}_{personnel.prenom}_{annee.libelle if annee else 'inconnu'}.pdf"
+        .replace(' ', '_')
+    )
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{nom}"'
     return response

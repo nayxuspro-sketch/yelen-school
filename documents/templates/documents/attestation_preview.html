@@ -4,113 +4,101 @@
 
 {% block content %}
 
-<div class="page-header animate-fade-up">
+<div class="page-header">
   <div>
     <h1 class="page-title">Attestation de non-redevabilité</h1>
     <p class="page-subtitle">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }} · {{ inscription.classe.nom }}</p>
   </div>
   <div class="d-flex gap-2">
-    {% if solde %}
-    <a href="?format=pdf" class="btn-primary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+    {% if reste == 0 %}
+    <a href="?format=pdf" class="btn btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
       Générer PDF
     </a>
     {% else %}
-    <a href="?format=pdf" class="btn-secondary">Générer quand même</a>
+    <a href="?format=pdf" class="btn btn-secondary">Générer quand même</a>
     {% endif %}
-    <a href="javascript:history.back()" class="btn-secondary">Retour</a>
+    <a href="javascript:history.back()" class="btn btn-secondary">Retour</a>
   </div>
 </div>
 
-<!-- Alerte si solde non nul -->
-{% if not solde %}
-<div style="padding:.9rem 1.25rem; background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.4);
-            border-radius:8px; font-size:.88rem; color:var(--color-warning); margin-bottom:1.25rem;"
-     class="animate-fade-up delay-1">
-  <strong>Attention :</strong> Cet élève a encore un solde dû de
-  <strong>{{ reste|floatformat:0 }} FCFA</strong>.
-  L'attestation peut être générée, mais elle mentionnera ce solde restant.
+{% if reste > 0 %}
+<div class="yk-alert yk-alert--warning yk-animate-fade-up">
+  <span class="yk-alert-icon">⚠</span>
+  <span class="yk-alert-msg">
+    <strong>Attention :</strong> Cet élève a un solde dû de 
+    <strong>{{ reste|floatformat:0 }} FCAF</strong>.
+    L'attestation mentionnera ce montant restant.
+  </span>
 </div>
 {% endif %}
 
-<div class="card animate-fade-up delay-1" style="max-width:700px; padding:2rem;">
+<div class="card" style="max-width: 720px; margin: 0 auto;">
 
-  <!-- En-tête -->
-  <div style="text-align:center; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:2px solid #1a1a1a;">
+  <div style="text-align: center; margin-bottom: var(--space-6); padding-bottom: var(--space-5); border-bottom: 2px solid var(--color-border);">
     {% if identite %}
-    <div style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:#666;">
-      {{ identite.get_type_etablissement_display }}
-    </div>
-    <div style="font-size:1.1rem; font-weight:700; text-transform:uppercase; margin:.25rem 0;">
-      {{ identite.nom_etablissement }}
-    </div>
+    <div class="text-xs text-uppercase text-muted" style="letter-spacing: 0.05em;">{{ identite.get_type_etablissement_display }}</div>
+    <div style="font-size: 1.1rem; font-weight: 700; text-transform: uppercase; margin: var(--space-1) 0;">{{ identite.nom_etablissement }}</div>
     {% endif %}
-    <div style="font-size:1.15rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin:.5rem 0;">
-      ATTESTATION DE NON-REDEVABILITÉ
+    <div style="font-size: 1.15rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin: var(--space-4) 0; color: var(--color-text-primary);">
+      Attestation de non-redevabilité
     </div>
-    <div style="font-size:.82rem; color:#666;">Année scolaire {{ annee_scolaire }}</div>
+    <div class="text-sm text-muted">Année scolaire {{ annee_scolaire }}</div>
   </div>
 
-  <!-- Récapitulatif financier -->
-  <div style="background:{% if solde %}rgba(0,168,107,.07){% else %}rgba(239,68,68,.07){% endif %};
-              border:1px solid {% if solde %}rgba(0,168,107,.3){% else %}rgba(239,68,68,.3){% endif %};
-              border-radius:8px; padding:1rem 1.25rem; margin-bottom:1.5rem; font-size:.87rem;">
-    <div style="display:flex; justify-content:space-between; margin-bottom:.4rem;">
-      <span>Total des frais :</span>
-      <strong>{{ situation.total_du|floatformat:0 }} FCFA</strong>
+  <div style="background: {% if reste == 0 %}rgba(0,168,107,0.08){% else %}rgba(220,53,69,0.08){% endif %}; 
+              border: 1px solid {% if reste == 0 %}rgba(0,168,107,0.25){% else %}rgba(220,53,69,0.25){% endif %}; 
+              border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); margin-bottom: var(--space-6);">
+    <div class="d-flex justify-between mb-2">
+      <span class="text-muted">Total des frais</span>
+      <span class="fw-medium">{{ situation.total_du|floatformat:0 }} FCAF</span>
     </div>
-    <div style="display:flex; justify-content:space-between; margin-bottom:.4rem;">
-      <span>Total payé :</span>
-      <strong>{{ situation.total_paye|floatformat:0 }} FCFA</strong>
+    <div class="d-flex justify-between mb-2">
+      <span class="text-muted">Total payé</span>
+      <span class="fw-medium">{{ situation.total_paye|floatformat:0 }} FCAF</span>
     </div>
-    <div style="display:flex; justify-content:space-between; font-size:.95rem; font-weight:700;
-                padding-top:.4rem; border-top:1px solid rgba(0,0,0,.1);
-                color:{% if solde %}var(--color-primary){% else %}var(--color-danger){% endif %};">
-      <span>Reste à payer :</span>
-      <span>{{ reste|floatformat:0 }} FCFA</span>
+    <div class="d-flex justify-between pt-2" style="border-top: 1px solid var(--color-border);">
+      <span class="fw-semibold">Reste à payer</span>
+      <span class="fw-bold" style="color: {% if reste == 0 %}var(--color-primary){% else %}var(--color-danger){% endif %};">{{ reste|floatformat:0 }} FCAF</span>
     </div>
   </div>
 
-  <!-- Corps de l'attestation -->
-  <div style="font-size:.9rem; line-height:1.85;">
-    <p>
+  <div style="font-size: 0.95rem; line-height: 1.8; color: var(--color-text-primary);">
+    <p style="margin-bottom: var(--space-4);">
       Le soussigné,
       {% if sig_membre %}
         <strong>{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</strong>,
         {{ signataire.fonction|default:"Directeur/Proviseur" }}
-        {% if identite %}de <strong>{{ identite.nom_etablissement }}</strong>{% endif %},
+        {% if identite %} de <strong>{{ identite.nom_etablissement }}</strong>{% endif %},
       {% else %}
         Directeur de l'établissement,
       {% endif %}
-      atteste que :
+      certifie que :
     </p>
 
-    <p>
+    <p style="margin-bottom: var(--space-4);">
       <strong>{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</strong>,
       inscrit(e) en classe de <strong>{{ inscription.classe.nom }}</strong> pour l'année scolaire
       <strong>{{ annee_scolaire }}</strong>,
-      {% if solde %}
-        <strong>a réglé la totalité de ses frais scolaires</strong>
-        et n'est redevable d'aucune somme envers l'établissement.
+      {% if reste == 0 %}
+        <strong>a réglé la totalité de ses frais scolaires</strong> et ne doit aucune somme à l'établissement.
       {% else %}
-        présente un solde restant de <strong>{{ reste|floatformat:0 }} FCFA</strong>.
+        présente un solde restant de <strong>{{ reste|floatformat:0 }} FCAF</strong>.
       {% endif %}
     </p>
 
     <p>La présente attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.</p>
   </div>
 
-  <!-- Signature -->
-  <div style="margin-top:2rem; text-align:right; font-size:.85rem; color:#555;">
+  <div style="margin-top: var(--space-8); text-align: right;">
     {% if sig_membre %}
-    <p>{{ signataire.fonction|default:"Le Directeur / La Directrice" }}</p>
-    <p style="font-weight:700; margin-top:.5rem;">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</p>
+    <div class="text-muted">{{ signataire.fonction|default:"Le Directeur" }}</div>
+    <div class="fw-bold mt-2" style="font-size: 1.1rem;">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</div>
     {% else %}
-    <p>Le Directeur / La Directrice</p>
-    <p style="font-style:italic; margin-top:.75rem;">(Signature et cachet)</p>
+    <div class="text-muted">Le Directeur / La Directrice</div>
+    <div class="fst-italic mt-2 text-muted">(Signature et cachet)</div>
     {% endif %}
   </div>
 

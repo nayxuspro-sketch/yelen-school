@@ -1,0 +1,92 @@
+{% extends "core/base.html" %}
+
+{% block title %}Emplois du temps — Professeurs — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <a href="{% url 'viescolaire:emploi_du_temps_index' %}" class="btn-icon" title="Retour emploi du temps">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Emplois du temps — Professeurs</h1>
+      <p>{% if annee %}{{ annee.libelle }} · {{ personnel_list|length }} professeur{{ personnel_list|length|pluralize }}{% else %}Sélectionnez une année scolaire{% endif %}</p>
+    </div>
+  </div>
+  <div class="dash-section-actions">
+    {% if annees %}
+    <form method="get" class="edt-toolbar">
+      <select name="annee" class="dash-input" onchange="this.form.submit()">
+        <option value="">— Année —</option>
+        {% for a in annees %}
+        <option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>
+          {{ a.libelle }}{% if a.est_courante %} ★{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if not annee %}
+<div class="dash-card animate-fade-up">
+  <div class="dash-empty-state">
+    <div class="dash-empty-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+    </div>
+    <h3 class="dash-empty-title">Choisissez une année scolaire</h3>
+    <p class="dash-empty-text">Sélectionnez une année scolaire pour afficher les professeurs.</p>
+  </div>
+</div>
+
+{% elif not personnel_list %}
+<div class="dash-card animate-fade-up">
+  <div class="dash-empty-state">
+    <div class="dash-empty-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+      </svg>
+    </div>
+    <h3 class="dash-empty-title">Aucun personnel enregistré</h3>
+    <p class="dash-empty-text">Ajoutez des membres du personnel dans <strong>Personnel</strong>.</p>
+  </div>
+</div>
+
+{% else %}
+<div class="edt-prof-grid animate-fade-up delay-1">
+  {% for prof in personnel_list %}
+  <a href="{% url 'viescolaire:emploi_du_temps_prof' prof.pk %}?annee={{ annee.pk }}"
+     class="edt-prof-card">
+    <div class="edt-prof-avatar">{{ prof.prenom|first|upper }}{{ prof.nom|first|upper }}</div>
+    <div class="edt-prof-name">{{ prof.nom|upper }} {{ prof.prenom }}</div>
+    {% if prof.fonction %}
+    <div class="edt-prof-role">{{ prof.fonction }}</div>
+    {% endif %}
+    {% if prof.matricule %}
+    <div class="edt-prof-matricule">{{ prof.matricule }}</div>
+    {% endif %}
+    {% if annee and prof.nb_enseignements is not None %}
+    <span class="badge {% if prof.nb_enseignements > 0 %}badge-success{% else %}badge-neutral{% endif %}">
+      {{ prof.nb_enseignements }} matière{{ prof.nb_enseignements|pluralize }}
+    </span>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

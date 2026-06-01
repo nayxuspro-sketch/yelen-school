@@ -1,0 +1,90 @@
+{% extends "core/base.html" %}
+
+{% block title %}Budget prévisionnel — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">Budget prévisionnel</h1>
+      <p class="page-subtitle">Définissez les montants alloués par catégorie</p>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'finances:tableau_bord_budget' %}{% if annee_sel %}?annee={{ annee_sel.pk }}{% endif %}" class="btn-secondary btn-sm">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        Voir trésorerie
+      </a>
+    </div>
+  </div>
+
+  <!-- Sélecteur d'année -->
+  <div class="card mb-4 animate-fade-up delay-1">
+    <div class="card-body">
+      <form method="get">
+        <div class="d-flex gap-3 align-end">
+          <div class="form-group flex-1">
+            <label class="input-label">Année scolaire</label>
+            <select name="annee" class="input select" onchange="this.form.submit()">
+              {% for a in annees %}
+              <option value="{{ a.pk }}" {% if annee_sel and annee_sel.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if not categories %}
+  <div class="alert-warning-accent animate-fade-up">
+    Aucune catégorie de dépense configurée.
+    <a href="{% url 'finances:categorie_depense_create' %}">Créer une catégorie →</a>
+  </div>
+  {% else %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% if annee_sel %}<input type="hidden" name="annee_scolaire" value="{{ annee_sel.pk }}">{% endif %}
+
+    <div class="card animate-fade-up delay-2">
+      <div class="card-header">
+        <span class="card-title">Montants prévisionnels — {{ annee_sel }}</span>
+        <span class="badge badge-outline">Total : {{ total_prevu|floatformat:0 }} FCFA</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Catégorie</th>
+              <th>Type</th>
+              <th class="text-right" style="width:220px">Budget prévu (FCFA)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ligne in lignes_budget %}
+            <tr>
+              <td class="fw-500">{{ ligne.categorie.nom }}</td>
+              <td><span class="badge badge-outline">{{ ligne.categorie.get_type_depense_display }}</span></td>
+              <td class="text-right">
+                <input type="number" name="budget_{{ ligne.categorie.pk }}" min="0" step="1"
+                       value="{{ ligne.montant|floatformat:0 }}"
+                       class="input text-right" style="width:180px">
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer d-flex justify-end gap-3">
+        <a href="{% url 'finances:categorie_depense_list' %}" class="btn-ghost btn-sm">Gérer les catégories</a>
+        <button type="submit" class="btn-primary">Enregistrer le budget</button>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+
+</div>
+{% endblock %}

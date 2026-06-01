@@ -1120,7 +1120,81 @@ Les badges ont désormais une **bordure fine colorée** en plus du fond — effe
 .activity-divider { height: 1px; background: var(--color-border); margin: 0 18px; }
 ```
 
-### 5.13 Formulaire multi-onglets (`.tab-container`) ⭐ v3.4
+### 5.13 Toggle Switch (`.toggle-switch`) ⭐ v4.3
+
+Composant de bascule ON/OFF de type iOS-style pour les formulaires.
+
+```html
+<label class="toggle-switch">
+  <input type="checkbox" name="feature" value="True" checked>
+  <span class="toggle-slider"></span>
+</label>
+```
+
+```css
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border);
+  border-radius: 99px;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-text-muted);
+  border-radius: 50%;
+  transition: all 0.25s ease;
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 12px rgba(0,168,107,0.35);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  left: 22px;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+```
+
+### 5.14 Param-icon variants (`.param-icon-info`, `.param-icon-warning`)
+
+Variantes de couleur pour l'icône d'en-tête de carte `.param-icon` :
+
+```css
+.param-icon-info {
+  background: rgba(23,162,184,0.13);
+  color: #17A2B8;
+}
+.param-icon-warning {
+  background: rgba(245,166,35,0.13);
+  color: #F5A623;
+}
+```
+
+### 5.15 Formulaire multi-onglets (`.tab-container`) ⭐ v3.4
 
 ```css
 .tab-container {
@@ -1198,6 +1272,155 @@ Les badges ont désormais une **bordure fine colorée** en plus du fond — effe
   </div>
 </div>
 {% endblock %}
+```
+
+### 5.15 Accordéons Sidebar Premium ⭐ v4.2
+
+**Structure HTML :**
+```html
+<button class="accordion-toggle" id="pedagogie-toggle" type="button">
+  <span class="accordion-label">
+    <svg class="accordion-icon"><!-- icône --></svg>
+    Pédagogie
+  </span>
+  <svg class="sb-chevron"><!-- chevron bas --></svg>
+</button>
+<div id="pedagogie-submenu" class="sb-submenu-modern">
+  <a href="/matieres/" class="sb-item-submodern">
+    <span class="sub-item-dot"></span>Matières
+  </a>
+  <!-- autres items -->
+</div>
+```
+
+**CSS - Bouton accordéon :**
+```css
+.accordion-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 11px 14px;
+  margin: 3px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-interface);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.accordion-toggle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,168,107,0.08) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.accordion-toggle:hover {
+  background: rgba(255,255,255,0.03);
+  color: var(--color-text-primary);
+  border-color: rgba(255,255,255,0.04);
+}
+
+.accordion-toggle.active {
+  background: linear-gradient(135deg, rgba(0,168,107,0.15) 0%, rgba(0,168,107,0.05) 100%);
+  color: var(--color-primary-light);
+  border-color: rgba(0,168,107,0.2);
+}
+
+.accordion-toggle .sb-chevron {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, color 0.25s ease;
+}
+
+.accordion-toggle.open .sb-chevron {
+  transform: rotate(180deg);
+  color: var(--color-primary);
+}
+```
+
+**CSS - Sous-menu :**
+```css
+.sb-submenu-modern {
+  padding: 6px 10px 12px 48px;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px) scaleY(0.95);
+  transform-origin: top;
+  transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.35s ease, 
+              transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sb-submenu-modern.open {
+  max-height: 1000px;
+  opacity: 1;
+  transform: translateY(0) scaleY(1);
+}
+
+.sb-item-submodern {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin: 3px 0;
+  color: var(--color-text-muted);
+  font-size: 0.83rem;
+  font-weight: 500;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.sb-item-submodern::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 0;
+  background: linear-gradient(180deg, var(--color-primary), var(--color-primary-light));
+  border-radius: 0 3px 3px 0;
+  transition: transform 0.25s ease, height 0.25s ease;
+  box-shadow: 0 0 8px var(--color-primary-glow);
+}
+
+.sb-item-submodern:hover,
+.sb-item-submodern.active {
+  background: rgba(0,168,107,0.08);
+  color: var(--color-primary-light);
+  border-color: rgba(0,168,107,0.15);
+  padding-left: 20px;
+}
+
+.sb-item-submodern:hover::before,
+.sb-item-submodern.active::before {
+  transform: translateY(-50%) scaleY(1);
+  height: 60%;
+}
+
+/* Animation stagger sur ouverture */
+@keyframes slideInSubItem {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.sb-submenu-modern.open .sb-item-submodern {
+  animation: slideInSubItem 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.sb-submenu-modern.open .sb-item-submodern:nth-child(1) { animation-delay: 0.05s; }
+.sb-submenu-modern.open .sb-item-submodern:nth-child(2) { animation-delay: 0.08s; }
+.sb-submenu-modern.open .sb-item-submodern:nth-child(3) { animation-delay: 0.11s; }
+/* ... jusqu'à 10 items max */
 ```
 
 ```css
@@ -1520,7 +1743,9 @@ Avant de livrer **tout** template HTML, vérifie :
 | v2.0    | Mars 2026 | Ajout `.input-age-readonly`, pattern sélection matricule HTMX |
 | v3.0    | Mars 2026 | Ajout `.tab-container` (onglets cycles), zone signature PDF (`.signature-zone`), checklist mise à jour — Réf. Prompt v3.4 |
 | **v4.0** | **Mars 2026** | **Refonte premium + conformité hors ligne** — fond `#06101E`, sidebar dégradé + indicateur actif lumineux, stat-cards accent ambiant + progress + tendance, badges cristal, topbar glassmorphe, nouveaux tokens `--shadow-*`/`--glow-*`, `.btn-ghost`, `.activity-feed`, `.quick-grid`, `.user-card`, scrollbar affinée, §10 notes scolaires. **Polices auto-hébergées** (`@font-face` + `static/fonts/`), suppression de tout CDN externe, section §0.1 contraintes hors ligne, checklist hors ligne |
+| **v4.2** | **Avril 2026** | **Icônes modernisées** : designs SVG Lucide-style (`stroke-width="1.5"`). **Sidebar accordéons premium** : animations fluides, barre lumineuse, points lumineux. **Page Suivi des Appels** : refonte complète avec header premium, stats cards, timeline élégante, session cards, tableaux modernes, états vides élégants. |
+| **v4.3** | **Mai 2026** | **Toggle Switch iOS-style** (`.toggle-switch` + `.toggle-slider`). **Variantes param-icon** (`.param-icon-info`, `.param-icon-warning`). **Page Configuration SMS** : refonte avec suppression de tous les styles inline, icônes param-icon colorées par section, toggle-switch, classes utilitaires pures. |
 
 ---
 
-*YELEN SCHOOL DESIGN_SYSTEM.md v4.0 — © 2026 — "Illuminer chaque parcours scolaire"*
+*YELEN SCHOOL DESIGN_SYSTEM.md v4.3 — © 2026 — "Illuminer chaque parcours scolaire"*

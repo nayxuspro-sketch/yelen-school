@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
-from .models import Eleve, Inscription, EvenementParcours
+from .models import Eleve, Inscription, EvenementParcours, TransfertEleve
 from .forms import EleveForm, InscriptionForm, TransfertClasseForm
 from parametres.models import AnneeScolaire, Classe
 from core.utils import get_etablissement_context
@@ -211,10 +211,90 @@ def eleve_list_csv(request):
 
 
 @login_required
+def eleve_list_xlsx(request):
+    """Export Excel de la liste des élèves (mêmes filtres qu'eleve_list)."""
+    from core.excel import ExcelExport
+    from core.models import RoleChoices
+
+    if request.user.role not in (
+        RoleChoices.SUPER_ADMIN, RoleChoices.DIRECTEUR, RoleChoices.CENSEUR,
+        RoleChoices.SECRETAIRE, RoleChoices.COMPTABLE,
+    ):
+        messages.error(request, "Vous n'êtes pas autorisé à exporter la liste des élèves.")
+        return redirect('inscriptions:eleve_list')
+
+    query = request.GET.get('q', '')
+    classe_id = request.GET.get('classe', '')
+    statut_filter = request.GET.get('statut', '')
+    ids = request.GET.get('ids', '')
+    etab = getattr(request.user, 'etablissement', None)
+    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
+
+    eleves = Eleve.objects.order_by('nom', 'prenom')
+    if etab:
+        eleves = eleves.filter(inscriptions__classe__etablissement=etab).distinct()
+    if ids:
+        id_list = [i.strip() for i in ids.split(',') if i.strip()]
+        if id_list:
+            eleves = eleves.filter(pk__in=id_list)
+    elif query:
+        eleves = eleves.filter(
+            Q(nom__icontains=query) | Q(prenom__icontains=query) | Q(matricule__icontains=query)
+        )
+    if annee_courante:
+        if classe_id:
+            eleves = eleves.filter(
+                inscriptions__classe_id=classe_id,
+                inscriptions__annee_scolaire=annee_courante,
+            ).distinct()
+        if statut_filter == 'inscrit':
+            eleves = eleves.filter(
+                inscriptions__annee_scolaire=annee_courante,
+            ).exclude(inscriptions__statut='ABANDON').distinct()
+        elif statut_filter == 'abandon':
+            eleves = eleves.filter(
+                inscriptions__annee_scolaire=annee_courante,
+                inscriptions__statut='ABANDON',
+            ).distinct()
+        elif statut_filter == 'non_inscrit':
+            eleves = eleves.exclude(inscriptions__annee_scolaire=annee_courante)
+
+    inscriptions_index = {}
+    if annee_courante:
+        for insc in Inscription.objects.filter(
+            annee_scolaire=annee_courante, eleve__in=eleves
+        ).select_related('classe', 'statut_eleve'):
+            inscriptions_index[str(insc.eleve_id)] = insc
+
+    titre = f"Liste des élèves{' — ' + annee_courante.libelle if annee_courante else ''}"
+    nom_fichier = f"eleves{'_' + annee_courante.libelle if annee_courante else ''}.xlsx".replace(' ', '_')
+
+    wb = ExcelExport("Élèves")
+    wb.add_title(titre, subtitle=etab.nom if etab else '')
+    wb.add_header(['Matricule', 'Nom', 'Prénom', 'Date de naissance', 'Genre', 'Classe', 'Statut élève', 'Statut inscription'])
+
+    for eleve in eleves:
+        insc = inscriptions_index.get(str(eleve.pk))
+        wb.add_row([
+            eleve.matricule or '',
+            eleve.nom,
+            eleve.prenom,
+            eleve.date_naissance.strftime('%d/%m/%Y') if eleve.date_naissance else '',
+            eleve.get_genre_display() if hasattr(eleve, 'get_genre_display') else (eleve.genre or ''),
+            insc.classe.nom if insc and insc.classe else '',
+            insc.statut_eleve.nom if insc and insc.statut_eleve else '',
+            insc.get_statut_display() if insc and hasattr(insc, 'get_statut_display') else (insc.statut if insc else ''),
+        ])
+
+    return wb.response(nom_fichier)
+
+
+@login_required
 def eleve_list_pdf(request):
     """Export PDF de la liste des élèves (mêmes filtres qu'eleve_list)."""
     if _WeasyHTML is None:
-        return HttpResponse("WeasyPrint non disponible.", status=503)
+        messages.error(request, "La génération PDF n'est pas disponible sur ce serveur (WeasyPrint manquant).")
+        return redirect('inscriptions:eleve_list')
 
     from datetime import date as _date
     query = request.GET.get('q', '')
@@ -733,13 +813,13 @@ def reinscrire_eleve(request, pk):
 
 # Couleurs et icônes par type de transition (utilisées dans le template)
 _TRANSITION_META = {
-    'PASSAGE':           {'label': 'Passage',            'color': '#16a34a', 'icon': '↑'},
-    'REDOUBLEMENT':      {'label': 'Redoublement',        'color': '#d97706', 'icon': '↺'},
-    'TRANSFERT_ENTRANT': {'label': 'Transfert entrant',   'color': '#2563eb', 'icon': '→'},
-    'TRANSFERT_SORTANT': {'label': 'Transfert sortant',   'color': '#7c3aed', 'icon': '→'},
-    'ABANDON':           {'label': 'Abandon',             'color': '#dc2626', 'icon': '✕'},
-    'DIPLOME':           {'label': 'Diplôme',             'color': '#0891b2', 'icon': '✓'},
-    'AUTRE':             {'label': 'Événement',           'color': '#6b7280', 'icon': '•'},
+    'PASSAGE':           {'label': 'Passage',            'color': '#16a34a', 'icon': '↑', 'badge_class': 'badge-success'},
+    'REDOUBLEMENT':      {'label': 'Redoublement',        'color': '#d97706', 'icon': '↺', 'badge_class': 'badge-warning'},
+    'TRANSFERT_ENTRANT': {'label': 'Transfert entrant',   'color': '#2563eb', 'icon': '→', 'badge_class': 'badge-info'},
+    'TRANSFERT_SORTANT': {'label': 'Transfert sortant',   'color': '#7c3aed', 'icon': '→', 'badge_class': 'badge-purple'},
+    'ABANDON':           {'label': 'Abandon',             'color': '#dc2626', 'icon': '✕', 'badge_class': 'badge-danger'},
+    'DIPLOME':           {'label': 'Diplôme',             'color': '#0891b2', 'icon': '✓', 'badge_class': 'badge-info'},
+    'AUTRE':             {'label': 'Événement',           'color': '#6b7280', 'icon': '•', 'badge_class': 'badge-neutral'},
 }
 
 
@@ -813,13 +893,13 @@ def eleve_parcours(request, pk):
         # Badges de statut de l'inscription
         badges = []
         if insc.est_redoublant:
-            badges.append({'label': 'Redoublant', 'color': '#d97706'})
+            badges.append({'label': 'Redoublant', 'badge_class': 'badge-redoublant'})
         if insc.statut == 'ABANDON':
-            badges.append({'label': 'Abandon', 'color': '#dc2626'})
+            badges.append({'label': 'Abandon', 'badge_class': 'badge-danger'})
         if insc.statut == 'BOURSIER':
-            badges.append({'label': 'Boursier', 'color': '#0891b2'})
+            badges.append({'label': 'Boursier', 'badge_class': 'badge-boursier'})
         if insc.est_exonere:
-            badges.append({'label': 'Exonéré', 'color': '#7c3aed'})
+            badges.append({'label': 'Exonéré', 'badge_class': 'badge-exonere'})
 
         timeline.append({
             'inscription': insc,
@@ -876,3 +956,266 @@ def evenement_parcours_supprimer(request, pk):
         ev.delete()
         messages.success(request, "Événement supprimé.")
     return redirect('inscriptions:eleve_parcours', pk=eleve_pk)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# TRANSFERTS INTER-ÉTABLISSEMENTS
+# ═══════════════════════════════════════════════════════════════════
+
+@login_required
+def transfert_inter_list(request):
+    """Liste tous les transferts inter-établissements de l'établissement."""
+    etab = getattr(request.user, 'etablissement', None)
+    qs = (
+        TransfertEleve.objects
+        .select_related('inscription__eleve', 'inscription__classe', 'inscription__annee_scolaire', 'demandeur')
+        .filter(inscription__classe__etablissement=etab)
+        .order_by('-date_demande')
+    ) if etab else TransfertEleve.objects.none()
+
+    statut = request.GET.get('statut', '')
+    q = request.GET.get('q', '').strip()
+    if statut:
+        qs = qs.filter(statut=statut)
+    if q:
+        qs = qs.filter(
+            Q(inscription__eleve__nom__icontains=q) |
+            Q(inscription__eleve__prenom__icontains=q) |
+            Q(inscription__eleve__matricule__icontains=q) |
+            Q(etablissement_destination__icontains=q)
+        )
+
+    paginator = Paginator(qs, 25)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'inscriptions/transfert_inter_list.html', {
+        'page_obj': page_obj,
+        'statut': statut,
+        'q': q,
+        'statut_choices': TransfertEleve.StatutChoices.choices,
+        'nb_en_attente': qs.filter(statut='EN_ATTENTE').count() if not statut else 0,
+    })
+
+
+@login_required
+def transfert_inter_demander(request, inscription_id):
+    """Formulaire de demande de transfert inter-établissements."""
+    etab = getattr(request.user, 'etablissement', None)
+    inscription = get_object_or_404(
+        Inscription.objects.select_related('eleve', 'classe', 'annee_scolaire'),
+        pk=inscription_id,
+    )
+    if etab and inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('inscriptions:eleve_list')
+    if inscription.statut == 'ABANDON':
+        messages.error(request, "Cet élève est déjà en statut Abandon.")
+        return redirect('inscriptions:eleve_detail', pk=inscription.eleve.pk)
+    # Vérifier qu'il n'y a pas déjà un transfert en attente
+    if TransfertEleve.objects.filter(inscription=inscription, statut='EN_ATTENTE').exists():
+        messages.warning(request, "Une demande de transfert est déjà en cours pour cet élève.")
+        return redirect('inscriptions:eleve_detail', pk=inscription.eleve.pk)
+
+    if request.method == 'POST':
+        dest = request.POST.get('etablissement_destination', '').strip()
+        motif = request.POST.get('motif', '').strip()
+        if not dest:
+            messages.error(request, "L'établissement de destination est obligatoire.")
+        else:
+            transfert = TransfertEleve.objects.create(
+                inscription=inscription,
+                etablissement_destination=dest,
+                motif=motif,
+                demandeur=request.user,
+            )
+            messages.success(request, f"Demande de transfert créée pour {inscription.eleve.get_nom_complet()}.")
+            return redirect('inscriptions:transfert_inter_detail', pk=transfert.pk)
+
+    return render(request, 'inscriptions/transfert_inter_form.html', {
+        'inscription': inscription,
+    })
+
+
+@login_required
+def transfert_inter_detail(request, pk):
+    """Détail d'un transfert inter-établissements."""
+    etab = getattr(request.user, 'etablissement', None)
+    transfert = get_object_or_404(
+        TransfertEleve.objects.select_related(
+            'inscription__eleve', 'inscription__classe', 'inscription__annee_scolaire',
+            'demandeur', 'traite_par',
+        ),
+        pk=pk,
+    )
+    if etab and transfert.inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('inscriptions:transfert_inter_list')
+
+    # Situation financière
+    from finances.models import Paiement, Echeancier
+    paiements = Paiement.objects.filter(inscription=transfert.inscription).order_by('date_paiement')
+    total_paye = sum(p.montant for p in paiements)
+    echeances = Echeancier.objects.filter(inscription=transfert.inscription)
+    total_du = sum(e.montant_du for e in echeances if not e.paye)
+
+    # Historique des inscriptions
+    inscriptions_historique = (
+        Inscription.objects
+        .filter(eleve=transfert.inscription.eleve)
+        .select_related('classe', 'annee_scolaire')
+        .order_by('annee_scolaire__date_debut')
+    )
+
+    return render(request, 'inscriptions/transfert_inter_detail.html', {
+        'transfert': transfert,
+        'paiements': paiements,
+        'total_paye': total_paye,
+        'total_du': total_du,
+        'inscriptions_historique': inscriptions_historique,
+        'can_approve': request.user.role in ('SUPER_ADMIN', 'DIRECTEUR'),
+    })
+
+
+@login_required
+@require_POST
+def transfert_inter_approuver(request, pk):
+    """Approuve un transfert : marque l'inscription ABANDON + crée EvenementParcours."""
+    if not hasattr(request.user, 'role') or request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR'):
+        messages.error(request, "Vous n'avez pas les droits pour approuver un transfert.")
+        return redirect('inscriptions:transfert_inter_detail', pk=pk)
+
+    etab = getattr(request.user, 'etablissement', None)
+    transfert = get_object_or_404(
+        TransfertEleve.objects.select_related('inscription__eleve', 'inscription__annee_scolaire'),
+        pk=pk,
+    )
+    if etab and transfert.inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('inscriptions:transfert_inter_list')
+    if transfert.statut != 'EN_ATTENTE':
+        messages.warning(request, "Ce transfert a déjà été traité.")
+        return redirect('inscriptions:transfert_inter_detail', pk=pk)
+
+    from django.utils import timezone
+
+    # Mettre à jour le transfert
+    transfert.statut = 'APPROUVE'
+    transfert.date_traitement = timezone.now().date()
+    transfert.traite_par = request.user
+    transfert.notes_admin = request.POST.get('notes_admin', '').strip()
+    transfert.save(update_fields=['statut', 'date_traitement', 'traite_par', 'notes_admin'])
+
+    # Marquer l'inscription comme abandon
+    ins = transfert.inscription
+    ins.statut = 'ABANDON'
+    ins.save(update_fields=['statut'])
+
+    # Mettre à jour l'élève (dernière classe connue)
+    eleve = ins.eleve
+    eleve.last_classe = ins.classe.nom
+    eleve.last_annee = ins.annee_scolaire.libelle
+    eleve.etablissement_origine = ins.classe.etablissement.nom if hasattr(ins.classe, 'etablissement') else ''
+    eleve.save(update_fields=['last_classe', 'last_annee', 'etablissement_origine'])
+
+    # Créer l'événement de parcours
+    EvenementParcours.objects.create(
+        eleve=eleve,
+        type_evenement=EvenementParcours.TypeEvenement.TRANSFERT_SORTANT,
+        annee_scolaire=ins.annee_scolaire,
+        inscription=ins,
+        date_evenement=transfert.date_traitement,
+        motif=transfert.motif,
+        etablissement_transfert=transfert.etablissement_destination,
+        enregistre_par=request.user,
+    )
+
+    messages.success(request, f"Transfert approuvé. {eleve.get_nom_complet()} est désormais marqué(e) en départ.")
+    return redirect('inscriptions:transfert_inter_detail', pk=pk)
+
+
+@login_required
+@require_POST
+def transfert_inter_refuser(request, pk):
+    """Refuse un transfert."""
+    if not hasattr(request.user, 'role') or request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR'):
+        messages.error(request, "Vous n'avez pas les droits pour refuser un transfert.")
+        return redirect('inscriptions:transfert_inter_detail', pk=pk)
+
+    etab = getattr(request.user, 'etablissement', None)
+    transfert = get_object_or_404(TransfertEleve, pk=pk)
+    if etab and transfert.inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('inscriptions:transfert_inter_list')
+    if transfert.statut != 'EN_ATTENTE':
+        messages.warning(request, "Ce transfert a déjà été traité.")
+        return redirect('inscriptions:transfert_inter_detail', pk=pk)
+
+    from django.utils import timezone
+    transfert.statut = 'REFUSE'
+    transfert.date_traitement = timezone.now().date()
+    transfert.traite_par = request.user
+    transfert.notes_admin = request.POST.get('notes_admin', '').strip()
+    transfert.save(update_fields=['statut', 'date_traitement', 'traite_par', 'notes_admin'])
+
+    messages.success(request, "Transfert refusé.")
+    return redirect('inscriptions:transfert_inter_detail', pk=pk)
+
+
+@login_required
+def transfert_inter_dossier_pdf(request, pk):
+    """Génère le dossier de transfert PDF : infos élève, cursus, situation financière."""
+    if _WeasyHTML is None:
+        messages.error(request, "WeasyPrint n'est pas installé sur le serveur.")
+        return redirect('inscriptions:transfert_inter_detail', pk=pk)
+
+    etab = getattr(request.user, 'etablissement', None)
+    transfert = get_object_or_404(
+        TransfertEleve.objects.select_related(
+            'inscription__eleve', 'inscription__classe__cycle',
+            'inscription__annee_scolaire', 'demandeur', 'traite_par',
+        ),
+        pk=pk,
+    )
+    if etab and transfert.inscription.classe.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('inscriptions:transfert_inter_list')
+
+    eleve = transfert.inscription.eleve
+
+    # Cursus complet
+    inscriptions_historique = (
+        Inscription.objects
+        .filter(eleve=eleve)
+        .select_related('classe', 'annee_scolaire')
+        .order_by('annee_scolaire__date_debut')
+    )
+
+    # Situation financière
+    from finances.models import Paiement, Echeancier
+    paiements = list(Paiement.objects.filter(inscription=transfert.inscription).order_by('date_paiement'))
+    total_paye = sum(p.montant for p in paiements)
+    echeances = list(Echeancier.objects.filter(inscription=transfert.inscription))
+    total_du = sum(e.montant_du for e in echeances if not e.paye)
+
+    etab_context = get_etablissement_context(etab, request)
+
+    html_string = render_to_string('inscriptions/pdf/dossier_transfert.html', {
+        'transfert': transfert,
+        'eleve': eleve,
+        'inscriptions_historique': inscriptions_historique,
+        'paiements': paiements,
+        'total_paye': total_paye,
+        'total_du': total_du,
+        'echeances': echeances,
+        'identite': etab_context.get('identite'),
+        'logo_url': etab_context.get('logo_url'),
+        'etab_logo_url': etab_context.get('etab_logo_url'),
+        'etablissement': etab,
+    })
+
+    pdf_file = _WeasyHTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+    nom = f"{eleve.nom}_{eleve.prenom}".replace(' ', '_')
+    filename = f"Dossier_Transfert_{nom}.pdf"
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response

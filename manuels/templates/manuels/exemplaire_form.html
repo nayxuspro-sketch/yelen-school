@@ -1,0 +1,65 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if instance %}Modifier l'exemplaire{% else %}Nouvel exemplaire{% endif %} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">{% if instance %}Modifier l'exemplaire{% else %}Nouvel exemplaire{% endif %}</h1>
+      <p class="page-subtitle">{{ manuel.titre }}</p>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'manuels:manuel_detail' pk=manuel.pk %}" class="btn-secondary btn-sm">← Retour</a>
+    </div>
+  </div>
+
+  <form method="post" class="animate-fade-up delay-1">
+    {% csrf_token %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">Détails de l'exemplaire</span></div>
+      <div class="card-body">
+
+        {% if instance %}
+        <div class="form-group">
+          <label class="input-label">Code exemplaire</label>
+          <input type="text" value="{{ instance.code_exemplaire }}" class="input" disabled>
+        </div>
+        {% endif %}
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="input-label required">État</label>
+            <select name="etat" class="input select" required>
+              {% for val, lbl in etats %}
+              <option value="{{ val }}" {% if instance and instance.etat == val %}selected{% elif not instance and val == 'NEUF' %}selected{% endif %}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Année d'acquisition</label>
+            <input type="number" name="annee_acquisition" min="2000" max="2100"
+                   value="{{ instance.annee_acquisition|default:today_year }}" class="input">
+          </div>
+        </div>
+
+        {% if not instance %}
+        <div class="form-group">
+          <label class="input-label required">Nombre d'exemplaires</label>
+          <input type="number" name="nombre" min="1" max="100" value="1" class="input">
+        </div>
+        {% endif %}
+
+      </div>
+      <div class="card-footer d-flex justify-end gap-3">
+        <a href="{% url 'manuels:manuel_detail' pk=manuel.pk %}" class="btn-ghost">Annuler</a>
+        <button type="submit" class="btn-primary">
+          {% if instance %}Enregistrer{% else %}Créer le(s) exemplaire(s){% endif %}
+        </button>
+      </div>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

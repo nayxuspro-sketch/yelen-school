@@ -2,132 +2,181 @@
 {% block title %}Relances de Paiement — YELEN SCHOOL{% endblock %}
 
 {% block content %}
-<div style="max-width:48rem; margin:0 auto;">
-  <div class="page-header">
+<div class="form-page-wrap">
+
+  <div class="page-header animate-fade-up">
     <div>
       <h1 class="page-title">Relances de Paiement</h1>
       <p class="page-subtitle">Générer les lettres de relance par classe et par rubrique</p>
     </div>
   </div>
 
-  <div class="card" style="padding:var(--space-6);">
-    <form id="relance-form" method="get" action="{% url 'finances:relance_paiement_pdf' %}" target="_blank">
-
-      <!-- Année scolaire -->
-      <div class="form-group mb-5">
-        <label class="form-label" for="id_annee">Année scolaire <span style="color:var(--color-danger)">*</span></label>
-        <select name="annee" id="id_annee" class="input select" required onchange="updateRelanceCount()">
-          <option value="">— Choisir une année —</option>
-          {% for a in annees %}
-          <option value="{{ a.pk }}" {% if annee and annee.pk == a.pk %}selected{% endif %}>
-            {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
-          </option>
-          {% endfor %}
-        </select>
+  <div class="card animate-fade-up delay-1">
+    <div class="card-header">
+      <div class="d-flex align-center gap-3">
+        <div class="card-header-icon">
+          <svg width="17" height="17" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-title">Relances PDF</span>
+          <p class="card-header-sub">Sélectionnez les critères pour générer les courriers</p>
+        </div>
       </div>
+    </div>
 
-      <!-- Classe -->
-      <div class="form-group mb-5">
-        <label class="form-label" for="id_classe">Classe <span style="color:var(--color-danger)">*</span></label>
-        <select name="classe" id="id_classe" class="input select" required onchange="updateRelanceCount()">
-          <option value="">— Choisir une classe —</option>
-          <option value="all" style="font-weight:600; color:var(--color-primary, #00A86B);">Toutes les classes</option>
-          {% for c in classes %}
-          <option value="{{ c.pk }}">{{ c.nom }} — {{ c.cycle.nom }}</option>
-          {% endfor %}
-        </select>
-      </div>
+    <form id="relance-form" method="get" action="{% url 'finances:relance_paiement_pdf' %}" target="_blank" class="form-body">
 
-      <!-- Rubrique -->
-      <div class="form-group mb-5">
-        <label class="form-label" for="id_rubrique">Rubrique de paiement <span style="color:var(--color-danger)">*</span></label>
-        <select name="rubrique" id="id_rubrique" class="input select" required onchange="updateRelanceCount()">
-          <option value="">— Choisir une rubrique —</option>
-          {% for r in rubriques %}
-          <option value="{{ r.pk }}">{{ r.nom }}</option>
-          {% endfor %}
-        </select>
-      </div>
+      <div class="form-grid-2">
 
-      <!-- Date d'échéance (obligatoire) -->
-      <div class="form-group mb-5">
-        <label class="form-label" for="id_date_echeance">Date limite de paiement <span style="color:var(--color-danger)">*</span></label>
-        <input type="date" name="date_echeance" id="id_date_echeance" class="input" style="max-width:200px;" required>
-      </div>
+        <!-- Année scolaire -->
+        <div class="form-group">
+          <label class="input-label" for="id_annee">
+            Année scolaire <span class="required-star">*</span>
+          </label>
+          <select name="annee" id="id_annee" class="input select" required>
+            <option value="">— Choisir une année —</option>
+            {% for a in annees %}
+            <option value="{{ a.pk }}" {% if annee and annee.pk == a.pk %}selected{% endif %}>
+              {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
 
-      <!-- Compteur de redevables (HTMX) -->
-      <div id="relance-count" style="min-height:44px; margin-bottom:var(--space-5);"></div>
+        <!-- Classe -->
+        <div class="form-group">
+          <label class="input-label" for="id_classe">
+            Classe <span class="required-star">*</span>
+          </label>
+          <select name="classe" id="id_classe" class="input select" required>
+            <option value="">— Choisir une classe —</option>
+            <option value="all">Toutes les classes</option>
+            {% for c in classes %}
+            <option value="{{ c.pk }}">{{ c.nom }} — {{ c.cycle.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
 
-      <div class="d-flex gap-3 justify-end" style="flex-wrap:wrap;">
+        <!-- Rubrique -->
+        <div class="form-group">
+          <label class="input-label" for="id_rubrique">
+            Rubrique de paiement <span class="required-star">*</span>
+          </label>
+          <select name="rubrique" id="id_rubrique" class="input select" required>
+            <option value="">— Choisir une rubrique —</option>
+            {% for r in rubriques %}
+            <option value="{{ r.pk }}">{{ r.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Date limite -->
+        <div class="form-group">
+          <label class="input-label" for="id_date_echeance">
+            Date limite de paiement <span class="required-star">*</span>
+          </label>
+          <input type="date" name="date_echeance" id="id_date_echeance" class="input" required>
+        </div>
+
+        <!-- Compteur HTMX (pleine largeur) -->
+        <div class="form-grid-2-full relance-count" id="relance-count"></div>
+
+      </div><!-- /.form-grid-2 -->
+
+      <div class="form-actions">
         <a href="{% url 'finances:liste_redevables' %}" class="btn-secondary">Annuler</a>
-        <button type="submit" class="btn-primary" style="gap:.5rem; display:flex; align-items:center;">
+        <button type="submit" class="btn-primary">
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
           </svg>
           Générer les relances PDF
         </button>
-        <button type="button" onclick="soumettreSMS()"
-                class="btn-outline" style="gap:.5rem; display:flex; align-items:center;">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-          </svg>
-          Envoyer SMS de relance
-        </button>
       </div>
     </form>
 
-    {# Formulaire POST caché pour l'envoi SMS #}
-    <form id="sms-form" method="post" action="{% url 'finances:relance_sms' %}" style="display:none;">
-      {% csrf_token %}
-      <input type="hidden" name="annee"    id="sms-annee">
-      <input type="hidden" name="classe"   id="sms-classe">
-      <input type="hidden" name="rubrique" id="sms-rubrique">
-    </form>
-  </div>
+    <hr class="card-divider">
+
+    <!-- Section SMS -->
+    <div class="form-body">
+      <h3 class="card-section-title">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="hint-icon">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+        </svg>
+        Envoyer des SMS de relance
+      </h3>
+
+      <form id="sms-form" method="post" action="{% url 'finances:relance_sms' %}">
+        {% csrf_token %}
+
+        <div class="form-grid-2 mb-4">
+
+          <!-- Année SMS -->
+          <div class="form-group">
+            <label class="input-label" for="sms-annee">Année</label>
+            <select name="annee" id="sms-annee" class="input select" required>
+              <option value="">— Choisir —</option>
+              {% for a in annees %}
+              <option value="{{ a.pk }}">{{ a.libelle }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Classe SMS -->
+          <div class="form-group">
+            <label class="input-label" for="sms-classe">Classe</label>
+            <select name="classe" id="sms-classe" class="input select" required>
+              <option value="">— Choisir —</option>
+              <option value="all">Toutes les classes</option>
+              {% for c in classes %}
+              <option value="{{ c.pk }}">{{ c.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Rubrique SMS -->
+          <div class="form-group">
+            <label class="input-label" for="sms-rubrique">Rubrique</label>
+            <select name="rubrique" id="sms-rubrique" class="input select" required>
+              <option value="">— Choisir —</option>
+              {% for r in rubriques %}
+              <option value="{{ r.pk }}">{{ r.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Bouton SMS aligné en bas -->
+          <div class="form-group-end">
+            <button type="submit" class="btn-primary">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+              Envoyer SMS
+            </button>
+          </div>
+
+        </div><!-- /.form-grid-2 -->
+      </form>
+    </div>
+  </div><!-- /.card -->
 
   <!-- Note -->
-  <div class="card mt-5" style="padding:var(--space-4); background:#fefce8; border-color:#fde68a;">
-    <p style="margin:0; font-size:.875rem; color:#854d0e;">
-      <strong>Note :</strong> Seuls les élèves ayant un <strong>reste à payer &gt; 0</strong> pour la rubrique sélectionnée
-      apparaîtront dans les relances. Les élèves à jour sont automatiquement exclus.
+  <div class="alert alert-warning animate-fade-up delay-2 mt-4">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <p>
+      <strong>Note :</strong> Seuls les élèves ayant un <strong>reste à payer &gt; 0</strong>
+      pour la rubrique sélectionnée apparaîtront dans les relances.
+      Les élèves à jour sont automatiquement exclus.
     </p>
   </div>
+
 </div>
-
-<script>
-function soumettreSMS() {
-  var annee    = document.getElementById('id_annee').value;
-  var classe   = document.getElementById('id_classe').value;
-  var rubrique = document.getElementById('id_rubrique').value;
-  if (!annee || !classe || !rubrique) {
-    alert('Veuillez sélectionner une année, une classe et une rubrique.');
-    return;
-  }
-  document.getElementById('sms-annee').value    = annee;
-  document.getElementById('sms-classe').value   = classe;
-  document.getElementById('sms-rubrique').value = rubrique;
-  document.getElementById('sms-form').submit();
-}
-
-function updateRelanceCount() {
-  var annee   = document.getElementById('id_annee').value;
-  var classe  = document.getElementById('id_classe').value;
-  var rubrique = document.getElementById('id_rubrique').value;
-  var box = document.getElementById('relance-count');
-
-  if (!annee || !classe || !rubrique) {
-    box.innerHTML = '';
-    return;
-  }
-
-  box.innerHTML = '<div style="font-size:.8rem;color:#64748b;padding:.5rem 0;">Calcul en cours…</div>';
-
-  fetch('{% url "finances:relance_count" %}?annee=' + annee + '&classe=' + classe + '&rubrique=' + rubrique)
-    .then(function(r){ return r.text(); })
-    .then(function(html){ box.innerHTML = html; })
-    .catch(function(){ box.innerHTML = ''; });
-}
-</script>
 {% endblock %}

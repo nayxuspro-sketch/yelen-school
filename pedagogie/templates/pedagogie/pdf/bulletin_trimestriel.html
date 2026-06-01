@@ -1,200 +1,432 @@
-{% extends "pedagogie/pdf/bulletin_base.html" %}
-{% load signataire_tags %}
+{% load signataire_tags %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+@page {
+    size: A4 portrait;
+    margin: 10mm 12mm 12mm 12mm;
+    @bottom-right {
+        content: "Page " counter(page) " / " counter(pages);
+        font-size: 6.5pt;
+        color: #555;
+    }
+    @bottom-left {
+        content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }}";
+        font-size: 6.5pt;
+        color: #555;
+    }
+}
+html, body {
+    font-family: Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #000;
+    line-height: 1.25;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+}
 
-{% block pdf_content %}
+/* ── En-tête ── */
+.bul-header {
+    display: flex;
+    align-items: center;
+    gap: 6pt;
+    background: #f5f5f5;
+    padding: 4pt 8pt;
+    margin-bottom: 4pt;
+    border: 1pt solid #ccc;
+}
+.bul-badge {
+    width: 30pt;
+    height: 30pt;
+    min-width: 30pt;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5pt solid #111;
+    text-align: center;
+    line-height: 27pt;
+    font-family: 'Playfair Display', serif;
+    font-size: 10pt;
+    font-weight: 700;
+    color: #111;
+}
+.bul-badge img { width: 26pt; height: 26pt; border-radius: 50%; vertical-align: middle; filter: grayscale(100%); }
+.bul-school-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 11pt;
+    font-weight: 700;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.3pt;
+    margin: 0 0 1pt;
+}
+.bul-school-sub { font-size: 7pt; color: #555; margin: 0.5pt 0; }
 
-<!-- ══ Titre ══ -->
-<div class="document-title">
-    <h2>BULLETIN DE NOTES — {{ trimestre.nom }}</h2>
-    <p>Année Scolaire : {{ trimestre.annee_scolaire.libelle }}</p>
-</div>
+/* ── Bannière titre ── */
+.bul-title {
+    background: #fff;
+    color: #111;
+    text-align: center;
+    padding: 3.5pt 8pt;
+    margin-bottom: 4pt;
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6pt;
+    border: 1.5pt solid #111;
+}
 
-<!-- ══ Fiche élève ══ -->
-<div class="student-box">
-    <div>
-        <div class="info-group">
-            <div class="info-label">Élève</div>
-            <div class="info-value"><strong>{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</strong></div>
-        </div>
-        <div class="info-group">
-            <div class="info-label">Matricule</div>
-            <div class="info-value matricule">{{ inscription.eleve.matricule }}</div>
-        </div>
+/* ── Cartes ── */
+.bul-card {
+    background: #fff;
+    margin-bottom: 3pt;
+    border: 1pt solid #ccc;
+}
+.bul-section-label {
+    padding: 2pt 6pt;
+    border-left: 2.5pt solid #111;
+    background: #ebebeb;
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #111;
+}
+.bul-card-body { padding: 4pt 6pt; }
+
+/* ── Grille infos élève ── */
+.bul-info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2pt 7pt;
+    margin-bottom: 2pt;
+}
+.bul-info-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2pt 7pt;
+}
+.bul-info-label {
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #555;
+    margin-bottom: 0.5pt;
+}
+.bul-info-value {
+    font-size: 8.5pt;
+    color: #000;
+    font-weight: 600;
+}
+.bul-matricule {
+    font-family: 'DejaVu Sans Mono', monospace;
+    color: #111;
+    font-weight: 700;
+    font-size: 8.5pt;
+}
+.bul-hr {
+    border: none;
+    border-top: 1pt solid #ccc;
+    margin: 2.5pt 0;
+}
+
+/* ── Tableau des notes ── */
+.bul-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.bul-table th {
+    background: #111;
+    color: #fff;
+    text-align: left;
+    padding: 2.5pt 5pt;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.bul-table td {
+    padding: 2.5pt 5pt;
+    font-size: 8.5pt;
+    color: #000;
+    border-bottom: 0.5pt solid #ccc;
+}
+.bul-table tr:nth-child(even) td { background: #f5f5f5; }
+.bul-tc { text-align: center; }
+.bul-bold { font-weight: 700; }
+.bul-italic { font-style: italic; font-size: 7.5pt; }
+.bul-total-row td {
+    background: #ebebeb !important;
+    font-weight: 700;
+    border-top: 1.5pt solid #111;
+    border-bottom: 1.5pt solid #111;
+    color: #000;
+    font-size: 9pt;
+}
+.bul-muted { color: #555; }
+
+/* ── Conduite ── */
+.bul-cond-table { width: 100%; border-collapse: collapse; }
+.bul-cond-table th {
+    background: #ebebeb;
+    color: #111;
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2pt 5pt;
+    text-align: left;
+    border-bottom: 1pt solid #ccc;
+}
+.bul-cond-table td {
+    padding: 2pt 5pt;
+    font-size: 8.5pt;
+    color: #000;
+    border-bottom: 0.5pt solid #ccc;
+}
+
+/* ── Statistiques ── */
+.bul-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3pt;
+    margin-bottom: 3pt;
+}
+.bul-stat-box {
+    background: #fff;
+    border: 1pt solid #ccc;
+    border-left: 2.5pt solid #111;
+    padding: 3pt 4pt;
+    text-align: center;
+}
+.bul-stat-label {
+    font-size: 6.5pt;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 1pt;
+}
+.bul-stat-value { font-size: 10pt; font-weight: 700; color: #111; }
+.bul-rang-line {
+    font-size: 8pt;
+    color: #000;
+    text-align: center;
+}
+.bul-rang-badge {
+    display: inline;
+    background: #fff;
+    border: 1pt solid #555;
+    padding: 0.5pt 5pt;
+    color: #111;
+    font-weight: 700;
+    font-size: 8.5pt;
+}
+
+/* ── Signatures ── */
+.bul-sig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12pt;
+    margin-top: 5pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+.bul-sig-col { text-align: center; font-size: 8pt; }
+</style>
+</head>
+<body>
+
+<!-- ══ EN-TÊTE ÉTABLISSEMENT ══ -->
+<div class="bul-header">
+    <div class="bul-badge">
+        {% if logo_url %}<img src="{{ logo_url }}" alt="Logo">
+        {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo">
+        {% else %}{{ identite.sigle|default:"YS" }}{% endif %}
     </div>
     <div>
-        <div class="info-group">
-            <div class="info-label">Classe</div>
-            <div class="info-value">{{ inscription.classe.nom }}</div>
-        </div>
-        <div class="info-group">
-            <div class="info-label">Cycle</div>
-            <div class="info-value">{{ inscription.classe.cycle.nom }}</div>
+        <div class="bul-school-name">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</div>
+        {% if identite.devise %}<div class="bul-school-sub">{{ identite.devise }}</div>{% endif %}
+        <div class="bul-school-sub">
+            {% if identite.telephone %}Tél : {{ identite.telephone }}{% endif %}
+            {% if identite.telephone and identite.adresse_complete %} · {% endif %}
+            {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
         </div>
     </div>
 </div>
 
-<!-- ══ Tableau des matières ══ -->
-<table>
-    <thead>
-        <tr>
-            <th style="width:30%;">Matières</th>
-            <th style="text-align:center; width:7%;">Coef</th>
-            <th style="text-align:center; width:13%;">Moy. /20</th>
-            <th style="text-align:center; width:12%;">Rang</th>
-            <th style="width:19%;">Appréciation</th>
-            <th style="width:19%;">Professeur</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for result in resultats_annotes %}
-        <tr{% if result.dispense %} style="opacity:.65;"{% endif %}>
-            <td><strong>{{ result.enseignement.matiere.nom }}</strong></td>
-            <td style="text-align:center;">{{ result.coefficient_utilise|floatformat:0 }}</td>
-            <td class="moyenne-col">
-                {% if result.dispense %}<em style="color:#000000; font-size:7.5pt;">Dispensé</em>
-                {% else %}{{ result.moyenne }}{% endif %}
-            </td>
-            <td style="text-align:center; font-size:8pt;">
-                {% if result.dispense %}-
-                {% elif result.rang %}{{ result.rang }}{% if result.rang == 1 %}er{% else %}ème{% endif %}/{{ nb_eleves }}
-                {% else %}-{% endif %}
-            </td>
-            <td style="font-size:7.5pt; font-style:italic;
-                       color:{% if result.appreciation and not result.dispense %}{{ result.appreciation.couleur }}{% else %}#000000{% endif %};">
-                {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle }}{% else %}-{% endif %}
-            </td>
-            <td style="font-size:7.5pt; vertical-align:middle;">
-                <div style="display:flex; align-items:flex-end; gap:4pt;">
-                    <span style="white-space:nowrap;">
-                        {% if result.enseignement.personnel %}
-                            {{ result.enseignement.personnel.nom|upper }} {{ result.enseignement.personnel.prenom }}
-                        {% else %}&nbsp;{% endif %}
-                    </span>
-                    <span style="flex:1; border-bottom:0.5pt solid #000000; min-width:18pt;">&nbsp;</span>
-                </div>
-            </td>
-        </tr>
-        {% endfor %}
+<!-- ══ TITRE ══ -->
+<div class="bul-title">
+    BULLETIN DE NOTES — {{ trimestre.nom|upper }} — {{ trimestre.annee_scolaire.libelle }}
+</div>
 
-        {% if sanctions_conduite %}
-        <!-- ── Conduite ── -->
-        <tr>
-            <td colspan="6" style="padding:0; border-top:1pt solid #cbd5e1;">
-                <table style="margin:0; border:none; width:100%; font-size:7.5pt;">
-                    <tr style="background:#f8fafc;">
-                        <td colspan="4" style="padding:2pt 6pt; font-weight:700; font-size:7pt;
-                                               text-transform:uppercase; letter-spacing:.06em; color:#000000;
-                                               border-bottom:0.5pt solid #e2e8f0;">
-                            Conduite
-                        </td>
-                    </tr>
-                    <tr style="background:#f8fafc; font-size:6.5pt; color:#000000;">
-                        <th style="width:25%; text-align:left; padding:1.5pt 6pt; font-weight:600; border-bottom:0.5pt solid #e2e8f0;">Type</th>
-                        <th style="width:14%; text-align:center; padding:1.5pt 6pt; font-weight:600; border-bottom:0.5pt solid #e2e8f0;">Date</th>
-                        <th style="width:11%; text-align:center; padding:1.5pt 6pt; font-weight:600; border-bottom:0.5pt solid #e2e8f0;">Points</th>
-                        <th style="width:50%; text-align:left; padding:1.5pt 6pt; font-weight:600; border-bottom:0.5pt solid #e2e8f0;">Appréciation</th>
-                    </tr>
-                    {% for s in sanctions_conduite %}
-                    <tr>
-                        <td style="padding:2pt 6pt; border-bottom:0.5pt solid #f1f5f9;">{{ s.type_sanction.libelle }}</td>
-                        <td style="text-align:center; padding:2pt 6pt; border-bottom:0.5pt solid #f1f5f9; color:#000000;">{{ s.date_sanction|date:"d/m/Y" }}</td>
-                        <td style="text-align:center; padding:2pt 6pt; border-bottom:0.5pt solid #f1f5f9; font-weight:700;
-                                   color:{% if s.points > 0 %}#16a34a{% elif s.points < 0 %}#dc2626{% else %}#000000{% endif %};">
-                            {% if s.points != 0 %}{% if s.points > 0 %}+{% endif %}{{ s.points }}{% else %}—{% endif %}
-                        </td>
-                        <td style="padding:2pt 6pt; border-bottom:0.5pt solid #f1f5f9; font-style:italic; color:#374151;">
-                            {{ s.appreciation_conduite|default:"—" }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            </td>
-        </tr>
-        {% endif %}
-    </tbody>
-</table>
+<!-- ══ IDENTITÉ DE L'ÉLÈVE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Identité de l'élève</div>
+    <div class="bul-card-body">
+        <div class="bul-info-row">
+            <div>
+                <div class="bul-info-label">Matricule</div>
+                <div class="bul-matricule">{{ inscription.eleve.matricule }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Sexe</div>
+                <div class="bul-info-value">{{ inscription.eleve.get_genre_display|default:"-" }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Effectif</div>
+                <div class="bul-info-value">{{ nb_eleves }} élève{{ nb_eleves|pluralize }}</div>
+            </div>
+        </div>
+        <div class="bul-info-row">
+            <div>
+                <div class="bul-info-label">Nom &amp; Prénom</div>
+                <div class="bul-info-value">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Classe</div>
+                <div class="bul-info-value">{{ inscription.classe.nom }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Date de naissance</div>
+                <div class="bul-info-value">{{ inscription.eleve.date_naissance|date:"d/m/Y"|default:"-" }}</div>
+            </div>
+        </div>
+        <hr class="bul-hr">
+        <div class="bul-info-row-2">
+            <div>
+                <div class="bul-info-label">Cycle</div>
+                <div class="bul-info-value">{{ inscription.classe.cycle.nom|default:"-" }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Classe redoublée</div>
+                <div class="bul-info-value">{{ inscription.est_redoublant|yesno:"Oui,Non" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- ══ Récapitulatif ══ -->
-<div class="recap-box">
-    <table style="margin:0; border:none;">
-        <tr>
-            <td style="text-align:center; padding:3pt 6pt; border:none;
-                       width:{% if appreciation_generale %}25%{% else %}33%{% endif %};">
-                <div class="info-label">Total des points</div>
-                <div class="info-value">
-                    <strong>{{ mg.total_points|floatformat:2 }}</strong>
-                    <span style="font-size:8pt; color:#000000;">&nbsp;/&nbsp;{{ total_points_max|floatformat:2 }}</span>
-                </div>
-            </td>
-            <td style="text-align:center; padding:3pt 6pt; border:none;
-                       width:{% if appreciation_generale %}25%{% else %}34%{% endif %};">
-                <div class="info-label">Moyenne Générale</div>
-                <div class="info-value" style="color:#00A86B; font-size:13pt;">
-                    <strong>{{ mg.moyenne }}&nbsp;/&nbsp;20</strong>
-                </div>
-            </td>
-            <td style="text-align:center; padding:3pt 6pt; border:none;
-                       width:{% if appreciation_generale %}25%{% else %}33%{% endif %};">
-                <div class="info-label">Rang</div>
-                <div class="info-value">
-                    <strong>{{ mg.rang }}{% if mg.rang == 1 %}er{% else %}ème{% endif %}&nbsp;/&nbsp;{{ nb_eleves }}&nbsp;élève{{ nb_eleves|pluralize }}</strong>
-                </div>
-            </td>
-            {% if appreciation_generale %}
-            <td style="text-align:center; padding:3pt 6pt; border:none; width:25%;">
-                <div class="info-label">Appréciation</div>
-                <div class="info-value" style="color:{{ appreciation_generale.couleur }}; font-weight:bold;">
-                    {{ appreciation_generale.libelle }}
-                </div>
-            </td>
-            {% endif %}
-        </tr>
-        {% if moy_max_classe or moy_min_classe %}
-        <tr style="border-top:1pt solid #e2e8f0;">
-            <td style="text-align:center; padding:3pt 6pt; border:none;">
-                <div class="info-label">Plus forte moyenne</div>
-                <div class="info-value" style="color:#16a34a;">
-                    <strong>{{ moy_max_classe|floatformat:2 }}</strong>
-                </div>
-            </td>
-            <td style="text-align:center; padding:3pt 6pt; border:none;">
-                <div class="info-label">Moyenne de la classe</div>
-                <div class="info-value" style="color:#2563eb;">
-                    <strong>{{ moy_avg_classe|floatformat:2 }}</strong>
-                </div>
-            </td>
-            <td style="text-align:center; padding:3pt 6pt; border:none;">
-                <div class="info-label">Plus faible moyenne</div>
-                <div class="info-value" style="color:#dc2626;">
-                    <strong>{{ moy_min_classe|floatformat:2 }}</strong>
-                </div>
-            </td>
-            {% if appreciation_generale %}<td style="border:none;"></td>{% endif %}
-        </tr>
-        {% endif %}
+<!-- ══ NOTES DU TRIMESTRE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Notes du {{ trimestre.nom }}</div>
+    <table class="bul-table">
+        <thead>
+            <tr>
+                <th style="width:30%;">Matières</th>
+                <th class="bul-tc" style="width:7%;">Coef</th>
+                <th class="bul-tc" style="width:12%;">Moy. /20</th>
+                <th class="bul-tc" style="width:11%;">Rang</th>
+                <th style="width:22%;">Appréciation</th>
+                <th style="width:18%;">Professeur</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in resultats_annotes %}
+            <tr{% if result.dispense %} style="opacity:.55;"{% endif %}>
+                <td class="bul-bold">{{ result.enseignement.matiere.nom }}</td>
+                <td class="bul-tc bul-muted">{{ result.coefficient_utilise|floatformat:0 }}</td>
+                <td class="bul-tc bul-bold">
+                    {% if result.dispense %}<em class="bul-muted" style="font-weight:normal;">Disp.</em>
+                    {% else %}{{ result.moyenne }}{% endif %}
+                </td>
+                <td class="bul-tc bul-muted">
+                    {% if result.dispense %}—
+                    {% elif result.rang %}{{ result.rang }}{% if result.rang == 1 %}er{% else %}e{% endif %}/{{ nb_eleves }}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="bul-italic bul-muted">
+                    {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle }}{% else %}—{% endif %}
+                </td>
+                <td class="bul-muted">
+                    {% if result.enseignement.personnel %}{{ result.enseignement.personnel.nom|upper }} {{ result.enseignement.personnel.prenom }}{% else %}&nbsp;{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            <!-- Ligne récapitulatif -->
+            <tr class="bul-total-row">
+                <td colspan="2" style="text-align:right; font-weight:bold;">Moyenne générale :</td>
+                <td class="bul-tc" style="font-size:12pt; font-weight:bold;">{{ mg.moyenne }}&nbsp;/&nbsp;20</td>
+                <td class="bul-tc bul-muted">
+                    {{ mg.rang }}{% if mg.rang == 1 %}er{% else %}e{% endif %}&nbsp;/&nbsp;{{ nb_eleves }}
+                </td>
+                <td colspan="2" class="bul-muted">
+                    Total : {{ mg.total_points|floatformat:2 }}&nbsp;/&nbsp;{{ total_points_max|floatformat:2 }} pts
+                </td>
+            </tr>
+        </tbody>
     </table>
 </div>
 
-<!-- ══ Commentaire pédagogique ══ -->
-{% if commentaire_eleve %}
-<div style="margin-bottom:8pt; padding:6pt 10pt;
-            border:1pt solid #e2e8f0; border-left:3pt solid #00A86B;
-            border-radius:3pt; background:#f8fafc;">
-    <div style="font-size:7pt; font-weight:700; text-transform:uppercase;
-                letter-spacing:.05em; color:#00A86B; margin-bottom:3pt;">
-        Appréciation du Conseil des Professeurs
-    </div>
-    <p style="margin:0; font-size:8.5pt; color:#1e293b; line-height:1.55;
-              font-style:italic;">{{ commentaire_eleve }}</p>
+{% if sanctions_conduite %}
+<!-- ══ CONDUITE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Conduite</div>
+    <table class="bul-cond-table">
+        <thead>
+            <tr>
+                <th style="width:25%;">Type</th>
+                <th class="bul-tc" style="width:14%;">Date</th>
+                <th class="bul-tc" style="width:10%;">Points</th>
+                <th>Appréciation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sanctions_conduite %}
+            <tr>
+                <td>{{ s.type_sanction.libelle }}</td>
+                <td class="bul-tc bul-muted">{{ s.date_sanction|date:"d/m/Y" }}</td>
+                <td class="bul-tc bul-bold">
+                    {% if s.points != 0 %}{% if s.points > 0 %}+{% endif %}{{ s.points }}{% else %}—{% endif %}
+                </td>
+                <td class="bul-italic bul-muted">{{ s.appreciation_conduite|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endif %}
 
-<!-- ══ Signatures ══ -->
-<div class="footer-sig">
-    <div class="sig-box"></div>
-    <div class="sig-box">
-        {% signataire_auto "BULLETIN" %}
+<!-- ══ STATISTIQUES DE LA CLASSE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Statistiques de la classe</div>
+    <div class="bul-card-body">
+        <div class="bul-stats">
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus haute moy.</div>
+                <div class="bul-stat-value">{{ moy_max_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus faible moy.</div>
+                <div class="bul-stat-value">{{ moy_min_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Moy. de classe</div>
+                <div class="bul-stat-value">{{ moy_avg_classe|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="bul-rang-line">
+            Rang &nbsp;<span class="bul-rang-badge">{{ mg.rang }}{% if mg.rang == 1 %}er{% else %}ème{% endif %}</span>&nbsp; / {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
+            {% if appreciation_generale %}&nbsp;·&nbsp; <strong>{{ appreciation_generale.libelle }}</strong>{% endif %}
+        </div>
     </div>
 </div>
 
-{% endblock %}
+{% if commentaire_eleve %}
+<!-- ══ APPRÉCIATION DU CONSEIL ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Appréciation du Conseil des Professeurs</div>
+    <div class="bul-card-body">
+        <p style="margin:0; font-style:italic; color:#000; line-height:1.5;">{{ commentaire_eleve }}</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- ══ SIGNATURES ══ -->
+<div class="bul-sig-grid">
+    <div class="bul-sig-col"></div>
+    <div class="bul-sig-col">{% signataire_auto "BULLETIN" %}</div>
+</div>
+
+</body>
+</html>

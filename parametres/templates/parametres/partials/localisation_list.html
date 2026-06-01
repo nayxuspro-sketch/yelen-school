@@ -1,0 +1,68 @@
+<div id="localisation-list">
+{% if localisations %}
+<div class="table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Type</th>
+        <th>Bâtiment</th>
+        <th>Étage / N°</th>
+        <th>Statut</th>
+        <th style="text-align:right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for loc in localisations %}
+      <tr>
+        <td class="fw-semibold">{{ loc.nom }}</td>
+        <td>{{ loc.get_type_localisation_display }}</td>
+        <td class="text-secondary">{{ loc.batiment|default:"—" }}</td>
+        <td class="text-secondary">
+          Ét. {{ loc.etage }}{% if loc.numero %} · N° {{ loc.numero }}{% endif %}
+        </td>
+        <td>
+          {% if loc.actif %}
+            <span class="badge badge-success">Actif</span>
+          {% else %}
+            <span class="badge badge-neutral">Inactif</span>
+          {% endif %}
+        </td>
+        <td style="text-align:right;">
+          <div class="d-flex justify-end gap-2">
+            <button class="btn-icon" title="Modifier"
+                    hx-get="{% url 'parametres:localisation_edit' loc.pk %}"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </button>
+            <button class="btn-icon" title="Supprimer" style="color:var(--color-danger);"
+                    hx-post="{% url 'parametres:localisation_delete' loc.pk %}"
+                    hx-confirm="Supprimer « {{ loc.nom }} » ?"
+                    hx-target="#localisation-list"
+                    hx-swap="outerHTML">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state" style="padding:3rem; text-align:center;">
+  <svg width="48" height="48" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24" style="margin:0 auto 1rem;">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+  </svg>
+  <p class="text-muted">Aucune localisation configurée.</p>
+</div>
+{% endif %}
+</div>

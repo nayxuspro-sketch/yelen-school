@@ -1,425 +1,454 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Guide d'utilisation — YELEN SCHOOL</title>
-  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
-  <style>
-    :root {
-      --color-primary: #00a86b;
-      --color-bg: #f8fafc;
-      --color-text: #1e293b;
-      --color-text-muted: #64748b;
-      --color-border: #e2e8f0;
-    }
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: var(--color-bg);
-      color: var(--color-text);
-      line-height: 1.6;
-      margin: 0;
-      padding: 0;
-    }
-    .guide-container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-    .guide-header {
-      text-align: center;
-      margin-bottom: 2.5rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 2px solid var(--color-border);
-    }
-    .guide-header h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 0 0 0.5rem;
-    }
-    .guide-header p {
-      color: var(--color-text-muted);
-      margin: 0;
-    }
-    .toc {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .toc h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin: 0 0 1rem;
-      color: #0f172a;
-    }
-    .toc-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.75rem;
-    }
-    .toc-link {
-      display: block;
-      padding: 0.5rem 0.75rem;
-      background: #f1f5f9;
-      border-radius: 6px;
-      text-decoration: none;
-      color: var(--color-text);
-      font-size: 0.875rem;
-      transition: all 0.2s;
-    }
-    .toc-link:hover {
-      background: var(--color-primary);
-      color: #fff;
-    }
-    .section {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .section h2 {
-      font-size: 1.125rem;
-      font-weight: 600;
-      margin: 0 0 1rem;
-      color: #0f172a;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .section h2 .icon {
-      width: 24px;
-      height: 24px;
-      background: var(--color-primary);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 0.75rem;
-    }
-    .section h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin: 1.25rem 0 0.5rem;
-      color: #334155;
-    }
-    .section p, .section li {
-      font-size: 0.875rem;
-      color: #475569;
-    }
-    .section ul {
-      margin: 0;
-      padding-left: 1.25rem;
-    }
-    .section li {
-      margin-bottom: 0.375rem;
-    }
-    .tip-box {
-      background: #f0fdf4;
-      border-left: 3px solid var(--color-primary);
-      border-radius: 6px;
-      padding: 0.75rem 1rem;
-      margin: 0.75rem 0;
-      font-size: 0.8rem;
-      color: #166534;
-    }
-    .warning-box {
-      background: #fef3c7;
-      border-left: 3px solid #f59e0b;
-      border-radius: 6px;
-      padding: 0.75rem 1rem;
-      margin: 0.75rem 0;
-      font-size: 0.8rem;
-      color: #92400e;
-    }
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--color-primary);
-      text-decoration: none;
-      font-size: 0.875rem;
-      margin-bottom: 1rem;
-    }
-    .back-link:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-  <div class="guide-container">
-    <a href="/" class="back-link">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-      </svg>
-      Retour à l'accueil
-    </a>
+{% extends "core/base.html" %}
+{% load static static_v %}
 
-    <div class="guide-header">
-      <h1>Guide d'utilisation — YELEN SCHOOL</h1>
-      <p>Illuminer chaque parcours scolaire</p>
+{% block title %}Guide d'utilisation — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+  <!-- ── En-tête ──────────────────────────────────────────────────── -->
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-4">
+      <a href="{% url 'licences:statut' %}" class="btn-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="guide-header-title">Guide d'utilisation</h1>
+        <p class="guide-header-label">Système de Gestion YELEN SCHOOL</p>
+      </div>
     </div>
-
-    <nav class="toc">
-      <h2>Table des matières</h2>
-      <div class="toc-grid">
-        <a href="#inscriptions" class="toc-link">📝 Inscriptions</a>
-        <a href="#pedagogie" class="toc-link">📚 Pédagogie</a>
-        <a href="#presences" class="toc-link">✅ Présences</a>
-        <a href="#examens" class="toc-link">📋 Examens</a>
-        <a href="#finances" class="toc-link">💰 Finances</a>
-        <a href="#personnel" class="toc-link">👥 Personnel</a>
-        <a href="#viescolaire" class="toc-link">🏫 Vie scolaire</a>
-        <a href="#documents" class="toc-link">📄 Documents</a>
-        <a href="#parametres" class="toc-link">⚙️ Paramètres</a>
-      </div>
-    </nav>
-
-    <section id="inscriptions" class="section">
-      <h2><span class="icon">1</span> Inscriptions</h2>
-      <p>Le module Inscriptions permet de gérer l'enregistrement et l'inscription des élèves.</p>
-      
-      <h3>Enregistrer un nouvel élève</h3>
-      <ul>
-        <li>Aller dans <strong>Inscriptions → Élèves</strong></li>
-        <li>Cliquer sur <strong>"Nouvel élève"</strong></li>
-        <li>Remplir les informations : nom, prénom, date de naissance, sexe, pièce d'identité</li>
-        <li>Enregistrer — l'élève est créé avec un matricule automatique</li>
-      </ul>
-
-      <h3>Inscrire un élève à une classe</h3>
-      <ul>
-        <li>Aller dans <strong>Inscriptions → Inscriptions</strong></li>
-        <li>Sélectionner l'année scolaire et la classe cible</li>
-        <li>Cocher les élèves à inscrire</li>
-        <li>Confirmer l'inscription</li>
-      </ul>
-
-      <h3>Réinscription massive</h3>
-      <ul>
-        <li>Aller dans <strong>Inscriptions → Réinscription</strong></li>
-        <li>Sélectionner la classe source et la classe cible</li>
-        <li>Cocher les élèves à réinscrire</li>
-        <li>Valider</li>
-      </ul>
-
-      <div class="tip-box">
-        💡 <strong>Astuce :</strong> Utilisez les filtres pour rechercher rapidement un élève par nom ou matricule.
-      </div>
-    </section>
-
-    <section id="pedagogie" class="section">
-      <h2><span class="icon">2</span> Pédagogie</h2>
-      <p>Ce module gère les notes, évaluations et bulletins.</p>
-      
-      <h3>Configurer les matières</h3>
-      <ul>
-        <li>Aller dans <strong>Pédagogie → Matières</strong></li>
-        <li>Créer une matière avec son coefficient</li>
-        <li>Associer la matière aux classes via <strong>Enseignements</strong></li>
-      </ul>
-
-      <h3>Saisir les notes</h3>
-      <ul>
-        <li>Aller dans <strong>Pédagogie → Saisie de notes</strong></li>
-        <li>Sélectionner la classe, la matière et le type d'évaluation</li>
-        <li>Saisir les notes — les champs invalides sont marqués en rouge</li>
-        <li>Enregistrer</li>
-      </ul>
-
-      <h3>Générer les bulletins</h3>
-      <ul>
-        <li>Aller dans <strong>Pédagogie → Bulletins</strong></li>
-        <li>Sélectionner la classe et le trimestre</li>
-        <li>Générer les bulletins PDF par élève ou par classe</li>
-      </ul>
-
-      <div class="warning-box">
-        ⚠️ <strong>Attention :</strong> Vérifiez les appréciations dans Paramètres avant de générer les bulletins.
-      </div>
-    </section>
-
-    <section id="presences" class="section">
-      <h2><span class="icon">3</span> Présences</h2>
-      <p>Gérez les appels quotidiens et les absences.</p>
-      
-      <h3>Faire l'appel</h3>
-      <ul>
-        <li>Aller dans <strong>Présences → Appels</strong></li>
-        <li>Sélectionner la classe et la date</li>
-        <li>Marquer les élèves absents (A) ou retards (R)</li>
-        <li>Enregistrer</li>
-      </ul>
-
-      <h3>Justifier une absence</h3>
-      <ul>
-        <li>Aller dans <strong>Présences → Justifications</strong></li>
-        <li>Cliquer sur l'absence à justifier</li>
-        <li>Sélectionner le motif et ajouter une remarque si nécessaire</li>
-        <li>Valider</li>
-      </ul>
-
-      <div class="tip-box">
-        💡 Les parents peuvent justifier les absences via le portail parent (si activé).
-      </div>
-    </section>
-
-    <section id="examens" class="section">
-      <h2><span class="icon">4</span> Examens</h2>
-      <p>Planifiez les sessions d'examens et gérez les candidats.</p>
-      
-      <h3>Créer une session</h3>
-      <ul>
-        <li>Aller dans <strong>Examens → Sessions</strong></li>
-        <li>Créer une nouvelle session avec dates et capacité</li>
-        <li>Définir les centres d'examen</li>
-      </ul>
-
-      <h3>Inscrire des candidats</h3>
-      <ul>
-        <li>Ouvrir la session d'examen</li>
-        <li>Aller dans <strong>Inscrire par classe</strong></li>
-        <li>Sélectionner les élèves et le centre</li>
-        <li>Valider</li>
-      </ul>
-
-      <h3>Imprimer les listes</h3>
-      <ul>
-        <li>Dans la session, cliquer sur <strong>Liste candidats PDF</strong></li>
-        <li>Filtrer par centre si nécessaire</li>
-        <li>Télécharger le PDF</li>
-      </ul>
-    </section>
-
-    <section id="finances" class="section">
-      <h2><span class="icon">5</span> Finances</h2>
-      <p>Gérez les paiements de scolarité et suivez les encaissements.</p>
-      
-      <h3>Enregistrer un paiement</h3>
-      <ul>
-        <li>Aller dans <strong>Finances → Paiements</strong></li>
-        <li>Sélectionner l'élève</li>
-        <li>Indiquer le montant et le mode de paiement</li>
-        <li>Un reçu PDF est généré automatiquement</li>
-      </ul>
-
-      <h3>Créer un échéancier</h3>
-      <ul>
-        <li>Aller dans <strong>Finances → Échéancier</strong></li>
-        <li>Sélectionner l'élève et les rubriques</li>
-        <li>Définir les dates d'échéance</li>
-        <li>Enregistrer</li>
-      </ul>
-
-      <h3>Suivre les encaissements</h3>
-      <ul>
-        <li>Aller dans <strong>Finances → Bilan encaissements</strong></li>
-        <li>Sélectionner la période</li>
-        <li>Visualiser les graphiques et statistiques</li>
-      </ul>
-
-      <div class="tip-box">
-        💡 Les reçus sont numérotés automatiquement (REC-2026-00001).
-      </div>
-    </section>
-
-    <section id="personnel" class="section">
-      <h2><span class="icon">6</span> Personnel</h2>
-      <p>Gérez les employés de l'établissement.</p>
-      
-      <h3>Ajouter un membre du personnel</h3>
-      <ul>
-        <li>Aller dans <strong>Personnel → Liste</strong></li>
-        <li>Cliquer sur <strong>"Nouveau membre"</strong></li>
-        <li>Remplir les informations : nom, prénom, poste, date d'embauche</li>
-        <li>Enregistrer</li>
-      </ul>
-
-      <h3>Désactiver un membre</h3>
-      <ul>
-        <li>Dans la liste, cliquer sur le bouton <strong>⚡</strong> (toggle)</li>
-        <li>Confirmer — le membre est marqué comme inactif</li>
-      </ul>
-
-      <div class="warning-box">
-        ⚠️ Les membres désactivés n'apparaissent plus dans les listes mais leurs données sont conservées.
-      </div>
-    </section>
-
-    <section id="viescolaire" class="section">
-      <h2><span class="icon">7</span> Vie scolaire</h2>
-      <p>Emplois du temps, sanctions, activités parascolaires.</p>
-      
-      <h3>Créer un emploi du temps</h3>
-      <ul>
-        <li>Aller dans <strong>Vie scolaire → Emploi du temps</strong></li>
-        <li>Sélectionner la classe</li>
-        <li>Ajouter les cours par créneau</li>
-        <li>Enregistrer</li>
-      </ul>
-
-      <h3>Enregistrer une sanction</h3>
-      <ul>
-        <li>Aller dans <strong>Vie scolaire → Sanctions</strong></li>
-        <li>Sélectionner l'élève, le type et la gravité</li>
-        <li>Ajouter une description</li>
-        <li>Enregistrer</li>
-      </ul>
-    </section>
-
-    <section id="documents" class="section">
-      <h2><span class="icon">8</span> Documents</h2>
-      <p>Générez les documents administratifs.</p>
-      
-      <h3>Générer une liste de classe</h3>
-      <ul>
-        <li>Aller dans <strong>Documents → Listes de classes</strong></li>
-        <li>Sélectionner la classe et le format</li>
-        <li>Télécharger le PDF</li>
-      </ul>
-
-      <h3>Cartes scolaires</h3>
-      <ul>
-        <li>Aller dans <strong>Documents → Cartes scolaires</strong></li>
-        <li>Sélectionner la classe</li>
-        <li>Générer les cartes pour tous les élèves</li>
-      </ul>
-    </section>
-
-    <section id="parametres" class="section">
-      <h2><span class="icon">9</span> Paramètres</h2>
-      <p>Configurez l'établissement et les règles métier.</p>
-      
-      <h3>Identité de l'établissement</h3>
-      <ul>
-        <li>Aller dans <strong>Paramètres → Identité établissement</strong></li>
-        <li>Télécharger le logo, la signature et le cachet</li>
-        <li>Ces éléments apparaissent sur les PDF</li>
-      </ul>
-
-      <h3>Configurer les signataires</h3>
-      <ul>
-        <li>Aller dans <strong>Paramètres → Signataires</strong></li>
-        <li>Ajouter les personnes habilitées à signer les documents</li>
-        <li>Définir leur fonction et ordre de signature</li>
-      </ul>
-
-      <h3>Cycles et Classes</h3>
-      <ul>
-        <li>Aller dans <strong>Paramètres → Cycles</strong></li>
-        <li>Créer les cycles (Primaire, Collège, Lycée)</li>
-        <li>Ajouter les classes et les associer à un cycle</li>
-      </ul>
-    </section>
-
-    <p style="text-align: center; color: var(--color-text-muted); font-size: 0.8rem; margin-top: 2rem;">
-      © 2026 YELEN SCHOOL — Burkina Faso
-    </p>
   </div>
-</body>
-</html>
+
+  <!-- ── Table des matières ────────────────────────────────────────── -->
+  <div class="card mb-5 animate-fade-up delay-1">
+    <div class="card-header">
+      <div class="d-flex align-center gap-3">
+        <div class="card-header-icon">
+          <svg width="17" height="17" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-title">Index des Modules</span>
+          <p class="card-header-sub">Naviguer directement vers une section</p>
+        </div>
+      </div>
+    </div>
+    <div class="form-body">
+      <div class="guide-toc-grid">
+
+        <a href="#inscriptions" class="guide-toc-item">
+          <span class="guide-toc-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/>
+            </svg>
+          </span>
+          Inscriptions &amp; Élèves
+        </a>
+
+        <a href="#pedagogie" class="guide-toc-item">
+          <span class="guide-toc-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+          </span>
+          Pédagogie &amp; Notes
+        </a>
+
+        <a href="#presences" class="guide-toc-item">
+          <span class="guide-toc-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </span>
+          Présences &amp; Appels
+        </a>
+
+        <a href="#examens" class="guide-toc-item">
+          <span class="guide-toc-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+            </svg>
+          </span>
+          Examens Officiels
+        </a>
+
+        <a href="#finances" class="guide-toc-item">
+          <span class="guide-toc-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </span>
+          Finances &amp; Scolarité
+        </a>
+
+        <a href="#personnel" class="guide-toc-item">
+          <span class="guide-toc-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </span>
+          Ressources Humaines
+        </a>
+
+        <a href="#viescolaire" class="guide-toc-item">
+          <span class="guide-toc-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+          </span>
+          Vie Scolaire
+        </a>
+
+        <a href="#documents" class="guide-toc-item">
+          <span class="guide-toc-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+          </span>
+          Documents Admin
+        </a>
+
+        <a href="#parametres" class="guide-toc-item">
+          <span class="guide-toc-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </span>
+          Configuration
+        </a>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 01 : Inscriptions ─────────────────────────────────── -->
+  <div id="inscriptions" class="card guide-section-card mb-5 animate-fade-up delay-1">
+    <div class="form-body">
+      <div class="guide-section-head">
+        <div class="guide-section-num">01</div>
+        <h2 class="guide-section-title">Inscriptions</h2>
+      </div>
+      <p class="text-sm text-secondary mb-4">
+        Gestion centrale du cycle de vie des élèves, de l'enregistrement au suivi scolaire annuel.
+      </p>
+
+      <h3 class="guide-sub-heading">Enregistrer un nouvel élève</h3>
+      <ul class="guide-list">
+        <li>Naviguer vers <strong>Inscriptions → Élèves</strong>.</li>
+        <li>Cliquer sur <strong>+ Nouvel élève</strong>.</li>
+        <li>Remplir les données d'état civil (Nom, Prénom, Date de naissance, Sexe).</li>
+        <li>Le système génère automatiquement un <strong>matricule unique</strong> (ex : BF-2026-00001) — non modifiable.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Inscrire un élève à une classe</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Inscriptions → Inscriptions</strong>.</li>
+        <li>Sélectionner l'<strong>année scolaire en cours</strong> et la <strong>classe cible</strong>.</li>
+        <li>Rechercher l'élève par matricule ou par nom.</li>
+        <li>Choisir le <strong>statut tarifaire</strong> (Régulier, Boursier, etc.).</li>
+        <li>Valider l'inscription définitive.</li>
+      </ul>
+
+      <div class="guide-tip">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p><strong>Astuce :</strong> Utilisez la barre de recherche pour trouver un élève par son matricule ou son nom, quel que soit le module actuel.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 02 : Pédagogie ────────────────────────────────────── -->
+  <div id="pedagogie" class="card guide-section-card mb-5 animate-fade-up delay-1">
+    <div class="form-body">
+      <div class="guide-section-head">
+        <div class="guide-section-num">02</div>
+        <h2 class="guide-section-title">Pédagogie</h2>
+      </div>
+      <p class="text-sm text-secondary mb-4">
+        Outils de suivi des performances académiques et génération des rapports trimestriels.
+      </p>
+
+      <h3 class="guide-sub-heading">Saisie des évaluations</h3>
+      <ul class="guide-list">
+        <li>Accéder à <strong>Pédagogie → Saisie de notes</strong>.</li>
+        <li>Filtrer par Classe, Matière et Trimestre.</li>
+        <li>Saisir les notes <strong>sur 20</strong>. Le système valide en temps réel (rouge si hors plage).</li>
+        <li>Cliquer sur <strong>Enregistrer</strong> pour figer les notes.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Production des bulletins</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Pédagogie → Résultats → [classe]</strong>.</li>
+        <li>Cliquer sur <strong>Bulletins PDF (batch)</strong> pour le trimestre souhaité.</li>
+        <li>Le système calcule automatiquement les moyennes, rangs et statistiques de classe.</li>
+        <li>Télécharger le PDF global ou les bulletins individuels depuis la colonne Actions.</li>
+      </ul>
+
+      <div class="guide-warning">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <p><strong>Attention :</strong> Toute modification de note après génération d'un bulletin nécessite une nouvelle génération. Un signataire de type BULLETIN doit être configuré dans <strong>Paramètres → Signataires</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 03 : Présences ─────────────────────────────────────── -->
+  <div id="presences" class="card guide-section-card mb-5 animate-fade-up delay-1">
+    <div class="form-body">
+      <div class="guide-section-head">
+        <div class="guide-section-num">03</div>
+        <h2 class="guide-section-title">Présences</h2>
+      </div>
+      <p class="text-sm text-secondary mb-4">
+        Contrôle de l'assiduité des élèves et communication avec les parents.
+      </p>
+
+      <h3 class="guide-sub-heading">Faire l'appel</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Présences → Faire l'appel</strong> et sélectionner la séance.</li>
+        <li>Pour chaque élève, choisir parmi les 3 statuts : <strong>Présent</strong>, <strong>Absent</strong>, <strong>En retard</strong>.</li>
+        <li>Le bouton <strong>« Tout présent »</strong> coche tous les élèves en un clic.</li>
+        <li><strong>Brouillon</strong> : sauvegarde sans clôturer (modifiable). <strong>Clôturer</strong> : archive définitivement (irréversible).</li>
+        <li>En cas d'absence, un <strong>SMS automatique</strong> est envoyé aux parents si le module SMS est configuré.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Justifier une absence</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Présences → Justifications</strong> (AVS, Censeur ou Directeur).</li>
+        <li>Créer une justification avec le motif et la période concernée.</li>
+        <li>Le Censeur ou le Directeur accepte ou refuse — si acceptée, l'absence passe de <strong>Absent</strong> à <strong>Excusé</strong>.</li>
+      </ul>
+
+      <div class="guide-tip">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p><strong>Pointage QR Code :</strong> Chaque élève dispose d'un QR code unique. Scanner = présence enregistrée instantanément. Disponible dans <strong>Présences → Pointage QR</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 04 : Examens ───────────────────────────────────────── -->
+  <div id="examens" class="card guide-section-card mb-5 animate-fade-up delay-2">
+    <div class="form-body">
+      <div class="guide-section-head">
+        <div class="guide-section-num">04</div>
+        <h2 class="guide-section-title">Examens Officiels</h2>
+      </div>
+      <p class="text-sm text-secondary mb-4">
+        Organisation des sessions d'examens officiels (BAC, BEPC, CEP) et gestion des candidats.
+      </p>
+
+      <h3 class="guide-sub-heading">Créer une session et inscrire les candidats</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Examens → + Nouvelle session</strong> et renseigner le type et les dates.</li>
+        <li>Configurer les <strong>centres et salles</strong> via <strong>Examens → Centres</strong>.</li>
+        <li>Inscrire les candidats depuis <strong>Examens → Candidats → + Inscrire</strong>.</li>
+        <li>Saisir les résultats puis générer la liste officielle par centre.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Section 05 : Finances ──────────────────────────────────────── -->
+  <div id="finances" class="card guide-section-card mb-5 animate-fade-up delay-2">
+    <div class="form-body">
+      <div class="guide-section-head">
+        <div class="guide-section-num">05</div>
+        <h2 class="guide-section-title">Finances</h2>
+      </div>
+      <p class="text-sm text-secondary mb-4">
+        Comptabilité scolaire : encaissements, arriérés, bourses et bilans financiers.
+      </p>
+
+      <h3 class="guide-sub-heading">Enregistrer un paiement</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Finances → + Nouveau paiement</strong> ou depuis le profil élève (icône $).</li>
+        <li>Rechercher l'élève — sa situation financière s'affiche immédiatement.</li>
+        <li>Les rubriques apparaissent en <strong>cartes cliquables</strong> : soldées (grisées) ou en attente.</li>
+        <li>Cliquer sur une carte pour la sélectionner et saisir le montant versé.</li>
+        <li>Le bouton <strong>⚡ Tout régler</strong> sélectionne toutes les rubriques en attente en un clic.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Bourses et exonérations</h3>
+      <ul class="guide-list">
+        <li><strong>Finances → Types de bourses → + Nouveau type</strong> : configurer la réduction (% ou FCFA fixe).</li>
+        <li><strong>Finances → Bourses → + Attribuer</strong> : associer la bourse à un élève — le montant dû est réduit automatiquement.</li>
+        <li><strong>Finances → Élèves exonérés</strong> : exempter totalement un élève d'une rubrique.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Relances de paiement</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Finances → Relances</strong>.</li>
+        <li>Sélectionner l'année, la classe, la rubrique et la date limite.</li>
+        <li>Le nombre d'élèves redevables s'affiche automatiquement.</li>
+        <li>Générer le PDF (coupons A5, 3 par page) ou envoyer les SMS de relance.</li>
+      </ul>
+
+      <div class="guide-tip">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p>Tous les montants sont enregistrés en <strong>FCFA</strong> conformément aux normes de l'UEMOA.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 06 : Personnel ────────────────────────────────────── -->
+  <div id="personnel" class="card guide-section-card mb-5 animate-fade-up delay-2">
+    <div class="form-body">
+      <div class="guide-section-head">
+        <div class="guide-section-num">06</div>
+        <h2 class="guide-section-title">Ressources Humaines</h2>
+      </div>
+      <p class="text-sm text-secondary mb-4">
+        Gestion du personnel permanent et des vacataires : dossiers, contrats, salaires et congés.
+      </p>
+
+      <h3 class="guide-sub-heading">Dossiers du personnel</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Personnel → + Nouveau membre</strong>.</li>
+        <li>Renseigner l'identité, la fonction et les cycles d'enseignement.</li>
+        <li>Le matricule <strong>PERS-AAAA-NNNNN</strong> est généré automatiquement.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Vacations et salaires</h3>
+      <ul class="guide-list">
+        <li><strong>Personnel → Vacations → + Nouveau contrat</strong> : créer un contrat vacataire, saisir les heures effectuées, générer le bulletin de vacation PDF.</li>
+        <li><strong>Personnel → Salaires</strong> : saisir les éléments de paie mensuels.</li>
+        <li><strong>Personnel → Congés → + Nouvelle demande</strong> : gérer les demandes de congé.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Section 07 : Vie Scolaire ─────────────────────────────────── -->
+  <div id="viescolaire" class="card guide-section-card mb-5 animate-fade-up delay-3">
+    <div class="form-body">
+      <div class="guide-section-head">
+        <div class="guide-section-num">07</div>
+        <h2 class="guide-section-title">Vie Scolaire</h2>
+      </div>
+      <p class="text-sm text-secondary mb-4">
+        Suivi disciplinaire, activités parascolaires et capital de points des élèves.
+      </p>
+
+      <h3 class="guide-sub-heading">Sanctions et discipline</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Vie scolaire → Sanctions → + Nouvelle sanction</strong>.</li>
+        <li>Renseigner l'élève, le type (Avertissement, Blâme, Exclusion…), la date et le motif.</li>
+        <li>Les sanctions déduisent des points du capital de l'élève — alerte si le capital tombe à 0.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Activités parascolaires</h3>
+      <ul class="guide-list">
+        <li>Créer des activités dans <strong>Vie scolaire → Activités</strong>.</li>
+        <li>Inscrire les participants depuis la fiche de l'activité.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Section 08 : Documents ─────────────────────────────────────── -->
+  <div id="documents" class="card guide-section-card mb-5 animate-fade-up delay-3">
+    <div class="form-body">
+      <div class="guide-section-head">
+        <div class="guide-section-num">08</div>
+        <h2 class="guide-section-title">Documents Administratifs</h2>
+      </div>
+      <p class="text-sm text-secondary mb-4">
+        Génération de documents officiels signés : certificats, attestations, convocations, circulaires.
+      </p>
+
+      <h3 class="guide-sub-heading">Documents disponibles</h3>
+      <ul class="guide-list">
+        <li><strong>Certificat de scolarité</strong> — Documents → Certificat → saisir le matricule → Générer.</li>
+        <li><strong>Attestation de fréquentation</strong> — Documents → Attestation de fréquentation.</li>
+        <li><strong>Relevé de notes / Cursus scolaire</strong> — Documents → Cursus scolaire.</li>
+        <li><strong>Autorisation d'absence</strong> — Documents → Autorisation d'absence.</li>
+        <li><strong>Liste alphabétique d'une classe</strong> — Documents → Listes de classe.</li>
+        <li><strong>Convocations</strong> — Documents → Convocations → + Nouvelle convocation.</li>
+        <li><strong>Circulaires</strong> — Documents → Circulaires → + Nouvelle circulaire.</li>
+      </ul>
+
+      <div class="guide-warning">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <p>Chaque type de document requiert un <strong>signataire configuré</strong>. Aller dans <strong>Paramètres → Signataires des documents</strong> pour les créer (type, cycle, membre du personnel).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 09 : Paramètres ───────────────────────────────────── -->
+  <div id="parametres" class="card guide-section-card mb-5 animate-fade-up delay-3">
+    <div class="form-body">
+      <div class="guide-section-head">
+        <div class="guide-section-num">09</div>
+        <h2 class="guide-section-title">Paramètres</h2>
+      </div>
+      <p class="text-sm text-secondary mb-4">
+        Personnalisation de YELEN SCHOOL : identité de l'établissement, années scolaires, SMS et comptes.
+      </p>
+
+      <h3 class="guide-sub-heading">Identité de l'établissement</h3>
+      <ul class="guide-list">
+        <li>Uploader le <strong>logo et le tampon</strong> dans <strong>Paramètres → Établissement → Identité</strong>.</li>
+        <li>Configurer les <strong>signataires autorisés</strong> par cycle et par type de document.</li>
+        <li>Les signatures scannées apparaissent automatiquement sur les PDF officiels.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Années scolaires et trimestres</h3>
+      <ul class="guide-list">
+        <li><strong>Paramètres → Années scolaires → + Nouvelle année</strong> : créer et activer l'année courante.</li>
+        <li><strong>Paramètres → Trimestres</strong> : créer les 3 périodes avec leurs dates.</li>
+        <li><strong>Finances → Rubriques</strong> puis <strong>Finances → Tarifs</strong> : définir les frais par classe.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Configuration SMS</h3>
+      <ul class="guide-list">
+        <li>Aller dans <strong>Paramètres → Configuration SMS</strong>.</li>
+        <li>Renseigner le fournisseur (Semaphore, Twilio…), la clé API et le nom de l'expéditeur.</li>
+        <li>Utiliser le bouton <strong>Envoyer un SMS test</strong> pour valider la configuration.</li>
+      </ul>
+
+      <h3 class="guide-sub-heading">Comptes utilisateurs</h3>
+      <ul class="guide-list">
+        <li><strong>Administration → Utilisateurs → Nouvel utilisateur</strong> : créer un compte avec son rôle.</li>
+        <li>Rôles disponibles : DIRECTEUR · PROVISEUR · CENSEUR · SECRÉTAIRE · COMPTABLE · ENSEIGNANT · PARENT.</li>
+        <li><strong>Nouveau compte parent</strong> : associe les élèves liés pour les notifications et le portail parent.</li>
+      </ul>
+
+      <div class="guide-tip">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p>L'<strong>assistant IA</strong> intégré (Administration → Assistant IA) répond aux questions sur les données en temps réel <em>et</em> aux questions de fonctionnement grâce à la base de connaissances du guide.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Pied de page ──────────────────────────────────────────────── -->
+  <div class="guide-footer-bar animate-fade-up delay-3">
+    <p>© 2026 YELEN SCHOOL — Burkina Faso — Illuminer chaque parcours scolaire</p>
+  </div>
+
+{% endblock %}

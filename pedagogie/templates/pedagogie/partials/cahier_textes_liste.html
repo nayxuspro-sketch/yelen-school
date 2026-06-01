@@ -1,0 +1,112 @@
+{% if entrees %}
+<div class="d-flex align-center justify-between mb-3 no-print">
+  <span class="text-sm text-muted">{{ entrees|length }} entrée{{ entrees|length|pluralize }}</span>
+</div>
+
+{% regroup entrees by date as entrees_par_date %}
+{% for groupe in entrees_par_date %}
+
+<div class="mb-4">
+  <!-- Séparateur de date -->
+  <div class="d-flex align-center gap-3 mb-3">
+    <span class="badge badge-neutral">{{ groupe.grouper|date:"l d F Y" }}</span>
+    <div class="flex-1" style="height:1px; background:var(--color-border);"></div>
+  </div>
+
+  {% for entree in groupe.list %}
+  <div class="card mb-3">
+    <div class="card-header">
+      <div class="d-flex align-center gap-3">
+        <div class="module-icon" style="width:38px; height:38px; flex-shrink:0;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+        </div>
+        <div>
+          <div class="fw-semibold">{{ entree.enseignement.matiere.nom }}</div>
+          <div class="text-xs text-muted">
+            {% if entree.heure_debut %}{{ entree.heure_debut|time:"H\hi" }}{% endif %}
+            {% if entree.heure_debut and entree.heure_fin %} — {% endif %}
+            {% if entree.heure_fin %}{{ entree.heure_fin|time:"H\hi" }}{% endif %}
+            {% if entree.enseignement.personnel %}
+              · {{ entree.enseignement.personnel.nom }} {{ entree.enseignement.personnel.prenom }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="d-flex gap-2 no-print">
+        <a href="{% url 'pedagogie:cahier_textes_update' entree.pk %}" class="btn-icon" title="Modifier">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+        </a>
+        <form method="post" action="{% url 'pedagogie:cahier_textes_delete' entree.pk %}"
+              onsubmit="return confirm('Supprimer cette entrée ?')">
+          {% csrf_token %}
+          <button type="submit" class="btn-icon btn-icon-danger" title="Supprimer">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Contenu du cours -->
+      <div class="mb-3">
+        <div class="text-xs text-muted mb-1" style="text-transform:uppercase; letter-spacing:.06em;">Contenu du cours</div>
+        <p class="text-sm" style="white-space:pre-wrap; line-height:1.7;">{{ entree.contenu }}</p>
+      </div>
+
+      <!-- Devoirs -->
+      {% if entree.a_des_devoirs %}
+      <div class="d-flex align-start gap-3 p-3"
+           style="background:rgba(245,166,35,0.07); border:1px solid rgba(245,166,35,0.15); border-radius:var(--radius-md);">
+        <svg width="16" height="16" fill="none" stroke="#F5A623" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        <div class="flex-1">
+          <div class="text-xs fw-semibold mb-1" style="color:#F5A623; text-transform:uppercase; letter-spacing:.06em;">
+            Devoirs
+            {% if entree.date_remise_devoirs %}
+              · À remettre le {{ entree.date_remise_devoirs|date:"d/m/Y" }}
+            {% endif %}
+          </div>
+          <p class="text-sm" style="white-space:pre-wrap; line-height:1.7;">{{ entree.devoirs }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Métadonnées -->
+      <div class="d-flex align-center gap-3 mt-3">
+        <span class="text-xs text-muted">
+          Saisi par {{ entree.redige_par.get_full_name|default:entree.redige_par.email }}
+        </span>
+        <span class="text-xs text-muted">·</span>
+        <span class="text-xs text-muted">{{ entree.created_at|date:"d/m/Y à H\hi" }}</span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+      </svg>
+    </div>
+    <h3 class="fw-semibold mb-2">Aucune entrée</h3>
+    <p class="empty-state-text">Aucun cours n'a encore été renseigné pour cette sélection.</p>
+  </div>
+</div>
+{% endif %}

@@ -1,0 +1,61 @@
+<tr id="risque-row-{{ r.inscription.pk }}" class="animate-fade-in">
+    <td>
+        <div class="dash-eleve-cell">
+            <div class="dash-avatar {% if r.niveau == 'CRITIQUE' %}risque-avatar-critique{% elif r.niveau == 'ELEVE' %}risque-avatar-eleve{% elif r.niveau == 'MODERE' %}risque-avatar-modere{% else %}risque-avatar-faible{% endif %}"
+                 style="width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">
+                {{ r.inscription.eleve.nom|first|upper }}{{ r.inscription.eleve.prenom|first|upper }}
+            </div>
+            <div>
+                <span class="dash-eleve-name">{{ r.inscription.eleve.nom|upper }} {{ r.inscription.eleve.prenom }}</span>
+                <span class="dash-eleve-meta">{{ r.inscription.eleve.matricule }}</span>
+            </div>
+        </div>
+    </td>
+    <td>
+        <span class="dash-eleve-meta" style="color: var(--color-text-primary); font-weight: 500;">{{ r.inscription.classe.nom }}</span>
+    </td>
+    <td>
+        <div class="dash-score-container">
+            <div class="dash-score-bar-bg">
+                <div class="dash-score-bar-fill" 
+                     style="width: {{ r.score }}%; background: {% if r.niveau == 'CRITIQUE' %}var(--color-purple){% elif r.niveau == 'ELEVE' %}var(--color-danger){% elif r.niveau == 'MODERE' %}var(--color-gold){% else %}var(--color-success){% endif %};">
+                </div>
+            </div>
+            <span class="dash-score-value" style="color: {% if r.niveau == 'CRITIQUE' %}var(--color-purple){% elif r.niveau == 'ELEVE' %}var(--color-danger){% elif r.niveau == 'MODERE' %}var(--color-gold){% else %}var(--color-success){% endif %};">
+                {{ r.score }}
+            </span>
+        </div>
+    </td>
+    <td>
+        <span class="dash-status-pill {% if r.niveau == 'CRITIQUE' %}pill-critique{% elif r.niveau == 'ELEVE' %}pill-eleve{% elif r.niveau == 'MODERE' %}pill-modere{% else %}pill-faible{% endif %}">
+            <span class="dash-status-dot"></span>
+            {{ r.get_niveau_display }}
+        </span>
+    </td>
+    <td>
+        {% if r.facteurs %}
+            <span class="dash-eleve-meta">{{ r.facteurs.0.libelle }}</span>
+        {% else %}
+            <span class="dash-eleve-meta" style="font-style: italic; opacity: 0.5;">Aucun facteur</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="dash-eleve-meta">{{ r.date_calcul|date:"d/m/Y" }}</div>
+    </td>
+    <td style="text-align: right;">
+        <button class="dash-refresh-btn" 
+                hx-post="{% url 'pedagogie:risque_decrochage' %}"
+                hx-vals='{"inscription_id": "{{ r.inscription.pk }}"}'
+                hx-target="#risque-row-{{ r.inscription.pk }}"
+                hx-swap="outerHTML"
+                hx-indicator="#indicator-{{ r.inscription.pk }}"
+                title="Recalculer">
+            <svg id="indicator-{{ r.inscription.pk }}" class="htmx-indicator" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <svg class="normal-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+        </button>
+    </td>
+</tr>

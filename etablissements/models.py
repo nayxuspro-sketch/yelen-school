@@ -10,6 +10,40 @@ from django.utils.translation import gettext_lazy as _
 from core.models import BaseModel, CycleChoices
 
 
+class GroupeEtablissements(BaseModel):
+    """
+    Groupe (réseau) regroupant plusieurs établissements sous une même entité.
+    Accessible uniquement avec la licence RESEAU.
+    """
+    nom = models.CharField(
+        max_length=255,
+        verbose_name=_("Nom du groupe"),
+    )
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name=_("Code du groupe"),
+        help_text=_("Code unique, ex: YELEN-GRP"),
+    )
+    description = models.TextField(
+        blank=True,
+        default='',
+        verbose_name=_("Description"),
+    )
+
+    class Meta:
+        verbose_name = _("Groupe d'établissements")
+        verbose_name_plural = _("Groupes d'établissements")
+        ordering = ['nom']
+
+    def __str__(self):
+        return f"{self.nom} ({self.code})"
+
+    @property
+    def nb_etablissements(self):
+        return self.etablissements.count()
+
+
 class Etablissement(BaseModel):
     """
     Entité représentant un établissement scolaire (école, collège, lycée).
@@ -58,6 +92,15 @@ class Etablissement(BaseModel):
         max_length=100,
         default='Burkina Faso',
         verbose_name=_("Pays")
+    )
+    groupe = models.ForeignKey(
+        GroupeEtablissements,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='etablissements',
+        verbose_name=_("Groupe / Réseau"),
+        help_text=_("Groupe d'établissements auquel appartient cet établissement (Licence RESEAU)"),
     )
 
     class Meta:

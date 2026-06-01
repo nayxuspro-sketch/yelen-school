@@ -61,6 +61,20 @@ def _e(value):
     return html_escape_lib.escape(str(value or ''))
 
 
+import re as _re
+
+@register.filter
+def strip_article(value):
+    """Supprime l'article défini initial (Le, La, L') d'une fonction/titre.
+
+    Utilisé dans le corps d'un certificat après 'Le soussigné,' pour éviter
+    la répétition : 'Le soussigné, … Le Directeur des études' → 'Directeur des études'.
+    """
+    if not value:
+        return value
+    return _re.sub(r"^(Le |La |L')", '', str(value), flags=_re.IGNORECASE)
+
+
 def _detecter_cycle_et_annee(context):
     """
     Auto-détecte le Cycle et l'AnneeScolaire depuis le contexte du template.

@@ -135,4 +135,22 @@ urlpatterns = [
     path('modeles-messages/', views.modeles_messages_list, name='modeles_messages'),
     path('modeles-messages/<str:type_msg>/edit/', views.modele_message_form, name='modele_message_form'),
     path('modeles-messages/<str:type_msg>/reset/', views.modele_message_reset, name='modele_message_reset'),
+
+    # Localisations de postes
+    path('localisations/', views.localisation_list, name='localisation_list'),
+    path('localisations/create/', views.localisation_form, name='localisation_create'),
+    path('localisations/<uuid:pk>/edit/', views.localisation_form, name='localisation_edit'),
+    path('localisations/<uuid:pk>/delete/', views.localisation_delete, name='localisation_delete'),
+
+    # Co-signataires (à implémenter)
+    # path('signataires/<uuid:signataire_pk>/cosignataires/', views.cosignataire_list, name='cosignataire_list'),
+    # path('signataires/<uuid:signataire_pk>/cosignataires/create/', views.cosignataire_form, name='cosignataire_create'),
+    # path('signataires/<uuid:signataire_pk>/cosignataires/<uuid:pk>/edit/', views.cosignataire_form, name='cosignataire_edit'),
+    # path('cosignataires/<uuid:pk>/delete/', views.cosignataire_delete, name='cosignataire_delete'),
+
+    # SMS automatiques (à implémenter)
+    # path('sms-auto/', views.sms_auto_config, name='sms_auto_config'),
+    # path('sms-auto/<uuid:pk>/toggle/', views.sms_auto_toggle, name='sms_auto_toggle'),
+    # path('sms-auto/<uuid:pk>/save/', views.sms_auto_save, name='sms_auto_save'),
+    # path('sms-auto/<uuid:pk>/executer/', views.sms_auto_executer, name='sms_auto_executer'),
 ]

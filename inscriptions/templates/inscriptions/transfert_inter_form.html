@@ -1,0 +1,46 @@
+{% extends "core/base.html" %}
+
+{% block title %}Demande de transfert — {{ inscription.eleve.get_nom_complet }}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'inscriptions:eleve_detail' pk=inscription.eleve.pk %}"
+       style="font-size:0.8rem; color:var(--color-text-muted); text-decoration:none; display:flex; align-items:center; gap:4px; margin-bottom:var(--space-1);">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Retour fiche élève
+    </a>
+    <h1 class="page-title">Demande de transfert inter-établissements</h1>
+    <p class="page-subtitle">{{ inscription.eleve.nom }} {{ inscription.eleve.prenom }} — {{ inscription.classe.nom }} — {{ inscription.annee_scolaire.libelle }}</p>
+  </div>
+</div>
+
+<div class="card animate-fade-up" style="max-width:600px;">
+  <div style="padding:var(--space-5);">
+    <div class="alert" style="background:#fff7ed; border:1px solid #f97316; border-radius:8px; padding:var(--space-3) var(--space-4); margin-bottom:var(--space-5); font-size:0.875rem; color:#92400e;">
+      <strong>Attention :</strong> L'approbation de ce transfert marquera l'élève en statut <em>Abandon</em>
+      pour l'année scolaire en cours et génèrera un dossier de transfert PDF.
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group" style="margin-bottom:var(--space-4);">
+        <label class="input-label">Établissement de destination <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="etablissement_destination" class="input" required
+               placeholder="Nom de l'établissement d'accueil" style="width:100%;">
+      </div>
+      <div class="form-group" style="margin-bottom:var(--space-5);">
+        <label class="input-label">Motif du transfert</label>
+        <textarea name="motif" class="input" rows="3" style="width:100%; resize:vertical;"
+                  placeholder="Raison du transfert (déménagement, choix de filière…)"></textarea>
+      </div>
+      <div class="d-flex gap-3">
+        <button type="submit" class="btn-primary">Soumettre la demande</button>
+        <a href="{% url 'inscriptions:eleve_detail' pk=inscription.eleve.pk %}" class="btn-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,100 +1,96 @@
-{% load static %}
+{% load static static_v %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Activation de licence — YELEN SCHOOL</title>
-  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
-  <style>
-    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--color-bg, #f8fafc); }
-    .licence-card { max-width:560px; width:100%; background:#fff; border-radius:16px; box-shadow:0 4px 32px rgba(0,0,0,.10); padding:48px 40px; text-align:center; }
-    .licence-icon { font-size:52px; margin-bottom:16px; }
-    .licence-title { font-size:1.5rem; font-weight:700; color:#1a2a42; margin-bottom:8px; }
-    .licence-subtitle { color:#64748b; font-size:0.9rem; margin-bottom:32px; }
-    .info-box { background:#f1f5f9; border-radius:10px; padding:20px 24px; text-align:left; margin-bottom:24px; }
-    .info-box p { margin:0 0 6px; font-size:0.85rem; color:#374151; }
-    .info-box p:last-child { margin-bottom:0; }
-    .info-label { font-weight:600; color:#1a2a42; }
-    .plans-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:24px 0; text-align:left; }
-    .plan-card { border:1.5px solid var(--color-border, #e2e8f0); border-radius:10px; padding:14px 16px; }
-    .plan-name { font-weight:700; font-size:0.9rem; color:#1a2a42; margin-bottom:4px; }
-    .plan-detail { font-size:0.78rem; color:#64748b; }
-    .plan-price { font-size:0.85rem; font-weight:600; color:var(--color-primary, #00a86b); margin-top:6px; }
-    .btn-admin { display:inline-block; background:#1a2a42; color:#fff; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.9rem; margin-top:8px; }
-    .btn-admin:hover { background:#243a5a; }
-    .contact-line { font-size:0.82rem; color:#64748b; margin-top:20px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activation — YELEN SCHOOL</title>
+    <link rel="stylesheet" href="{% static_v 'css/yelen.css' %}">
 </head>
-<body>
-<div class="licence-card">
+<body style="background: var(--color-bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: 'Outfit'; position: relative; overflow-x: hidden;">
 
-  <div class="licence-icon">🔑</div>
-  <div class="licence-title">Activation de licence YELEN SCHOOL</div>
+    {# Aura Background Elements #}
+    <div style="position: fixed; top: -10%; left: -10%; width: 40%; height: 40%; background: radial-gradient(circle, rgba(0, 168, 107, 0.05) 0%, transparent 70%); pointer-events: none; z-index: 0;"></div>
 
-  {% if licence %}
-    <div class="licence-subtitle">
-      Votre licence est en cours de traitement.
+    <div class="dash-card animate-fade-up" style="max-width: 700px; width: 95%; padding: 50px; background: rgba(17, 30, 53, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); z-index: 1;">
+        
+        <div style="text-align: center; margin-bottom: 45px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--color-primary) 0%, #3B82F6 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); transform: rotate(5deg);">
+                <svg width="40" height="40" fill="none" stroke="#FFF" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                </svg>
+            </div>
+            <h1 style="color: #FFF; font-size: 34px; margin: 0 0 8px; font-family: 'Playfair Display'; font-weight: 700;">Activation du Service</h1>
+            <p style="color: var(--color-text-secondary); margin: 0; font-size: 15px; letter-spacing: 0.5px;">Propulsez votre établissement dans l'ère numérique</p>
+        </div>
+
+        {% if licence %}
+            <div style="background: rgba(0, 168, 107, 0.1); border: 1px solid rgba(0, 168, 107, 0.2); border-radius: 16px; padding: 30px; margin-bottom: 40px; text-align: center;">
+                <div style="width: 50px; height: 50px; background: var(--color-primary); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                    <svg width="30" height="30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <h3 style="color: #FFF; margin-bottom: 10px;">Licence Détectée</h3>
+                <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 25px;">
+                    Une licence valide est associée à l'entité <strong>{{ etab.nom }}</strong>.
+                </p>
+                
+                <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px; display: grid; gap: 12px; text-align: left; margin-bottom: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12px; color: var(--color-text-muted);">Référence d'activation</span>
+                        <code style="color: var(--color-primary-light); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; font-family: 'DejaVu Sans Mono';">{{ licence.cle_licence }}</code>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12px; color: var(--color-text-muted);">Package</span>
+                        <span style="color: #FFF; font-weight: 700; font-size: 13px;">{{ licence.get_type_licence_display }}</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    {% if is_superuser %}
+                    <a href="/licences/" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 48px;">Finaliser l'Installation</a>
+                    {% endif %}
+                    <a href="{% url 'accounts:logout' %}" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center; height: 48px;">Sortie</a>
+                </div>
+            </div>
+        {% else %}
+            <div style="margin-bottom: 45px;">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px;">
+                    <div style="height: 1px; flex: 1; background: linear-gradient(to right, transparent, rgba(255,255,255,0.1));"></div>
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--color-text-muted); font-weight: 600;">Plans Disponibles</span>
+                    <div style="height: 1px; flex: 1; background: linear-gradient(to left, transparent, rgba(255,255,255,0.1));"></div>
+                </div>
+                
+                <div class="dash-grid" style="grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px; position: relative; overflow: hidden;">
+                        <div style="color: #FFF; font-weight: 700; font-size: 16px; margin-bottom: 5px;">Starter</div>
+                        <div style="color: var(--color-text-muted); font-size: 11px; margin-bottom: 15px;">Max 150 élèves</div>
+                        <div style="color: var(--color-primary-light); font-weight: 800; font-size: 14px;">15 000 FCFA <small style="font-weight: 400; opacity: 0.7;">/ an</small></div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px;">
+                        <div style="color: #FFF; font-weight: 700; font-size: 16px; margin-bottom: 5px;">Standard</div>
+                        <div style="color: var(--color-text-muted); font-size: 11px; margin-bottom: 15px;">Max 500 élèves</div>
+                        <div style="color: var(--color-primary-light); font-weight: 800; font-size: 14px;">35 000 FCFA <small style="font-weight: 400; opacity: 0.7;">/ an</small></div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px;">
+                        <div style="color: #FFF; font-weight: 700; font-size: 16px; margin-bottom: 5px;">Premium</div>
+                        <div style="color: var(--color-text-muted); font-size: 11px; margin-bottom: 15px;">Max 2000 élèves</div>
+                        <div style="color: var(--color-primary-light); font-weight: 800; font-size: 14px;">75 000 FCFA <small style="font-weight: 400; opacity: 0.7;">/ an</small></div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, rgba(0, 168, 107, 0.1), rgba(0, 168, 107, 0.02)); border: 1px solid var(--color-primary); border-radius: 16px; padding: 20px;">
+                        <div style="color: #FFF; font-weight: 700; font-size: 16px; margin-bottom: 5px;">Réseau Hub</div>
+                        <div style="color: var(--color-text-muted); font-size: 11px; margin-bottom: 15px;">Illimité / Multi-sites</div>
+                        <div style="color: var(--color-primary-light); font-weight: 800; font-size: 14px;">Sur Devis</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <a href="mailto:support@yelenschool.bf" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 50px; font-weight: 700; background: var(--color-primary); box-shadow: 0 4px 15px rgba(0,168,107,0.3);">Commander une Licence</a>
+                <a href="{% url 'accounts:logout' %}" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center; height: 50px;">Déconnexion</a>
+            </div>
+        {% endif %}
+
     </div>
-    <div class="info-box">
-      <p><span class="info-label">Établissement :</span> {{ etab.nom }}</p>
-      <p><span class="info-label">Clé de licence :</span> <code>{{ licence.cle_licence }}</code></p>
-      <p><span class="info-label">Type :</span> {{ licence.get_type_licence_display }}</p>
-      <p><span class="info-label">Statut :</span> {{ licence.get_statut_display }}</p>
-    </div>
-    {% if is_superuser %}
-      <a href="/licences/" class="btn-admin">Gérer les licences</a>
-    {% else %}
-      <p class="contact-line">Contactez l'équipe YELEN SCHOOL pour activer votre licence.</p>
-    {% endif %}
 
-  {% else %}
-    <div class="licence-subtitle">
-      {% if etab %}
-        Aucune licence trouvée pour <strong>{{ etab.nom }}</strong>.<br>
-        Choisissez un plan et contactez-nous pour démarrer.
-      {% else %}
-        Votre compte n'est pas encore associé à un établissement.
-      {% endif %}
-    </div>
-
-    <div class="plans-grid">
-      <div class="plan-card">
-        <div class="plan-name">Starter</div>
-        <div class="plan-detail">Jusqu'à 150 élèves · 10 classes</div>
-        <div class="plan-price">15 000 FCFA / an</div>
-      </div>
-      <div class="plan-card">
-        <div class="plan-name">Standard</div>
-        <div class="plan-detail">Jusqu'à 500 élèves · 30 classes</div>
-        <div class="plan-price">35 000 FCFA / an</div>
-      </div>
-      <div class="plan-card">
-        <div class="plan-name">Premium</div>
-        <div class="plan-detail">Jusqu'à 2 000 élèves · 100 classes</div>
-        <div class="plan-price">75 000 FCFA / an</div>
-      </div>
-      <div class="plan-card">
-        <div class="plan-name">Réseau</div>
-        <div class="plan-detail">Illimité · Multi-établissements</div>
-        <div class="plan-price">Sur devis</div>
-      </div>
-    </div>
-
-    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:8px;">
-      {% if is_superuser %}
-      <a href="/licences/nouvelle/" class="btn-admin">Créer une licence</a>
-      {% endif %}
-      <a href="mailto:support@yelengroup.com" class="btn-admin" style="background:var(--color-primary,#00a86b);">Contacter le support</a>
-      <a href="{% url 'accounts:logout' %}" class="btn-admin" style="background:#64748b;">Se déconnecter</a>
-    </div>
-
-    <p class="contact-line">
-      Pour obtenir une licence, contactez l'équipe YELEN SCHOOL.<br>
-      <strong>support@yelengroup.com</strong>
-    </p>
-  {% endif %}
-
-</div>
 </body>
 </html>

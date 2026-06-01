@@ -4,130 +4,144 @@
 
 {% block content %}
 
+<!-- En-tête -->
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'inscriptions:eleve_list' %}" class="btn-icon">
+    <a href="{% url 'inscriptions:eleve_list' %}" class="btn-icon" title="Retour à la liste">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
+    <div class="elv-avatar">{{ eleve.nom|first|upper }}{{ eleve.prenom|first|upper }}</div>
     <div>
       <h1 class="page-title">{{ eleve.get_nom_complet }}</h1>
-      <p class="page-subtitle">Matricule : <span class="text-primary text-mono">{{ eleve.matricule }}</span> · {{ eleve.age_formatted }}</p>
+      <p class="page-subtitle">
+        <span class="text-mono text-accent">{{ eleve.matricule }}</span>
+        &nbsp;·&nbsp;{{ eleve.age_formatted }}
+      </p>
     </div>
   </div>
-  <div class="d-flex gap-2">
-    <form method="post" action="{% url 'inscriptions:eleve_delete' eleve.pk %}" style="display:inline;"
-          data-confirm="Désactiver {{ eleve.get_nom_complet }} ? Cette action peut être annulée par un administrateur.">
+  <div class="d-flex gap-3 align-center">
+    <a href="{% url 'inscriptions:eleve_update' eleve.pk %}" class="dash-btn-secondary">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+      </svg>
+      Modifier
+    </a>
+    <a href="{% url 'inscriptions:inscription_create' eleve.pk %}" class="btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>
+      </svg>
+      Inscrire cette année
+    </a>
+    <form method="post" action="{% url 'inscriptions:eleve_delete' eleve.pk %}" class="d-inline"
+          onsubmit="return confirm('Désactiver {{ eleve.get_nom_complet }} ?')">
       {% csrf_token %}
-      <button type="submit" class="btn-secondary" style="color:var(--color-danger);">
+      <button type="submit" class="btn-danger">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+        </svg>
         Désactiver
       </button>
     </form>
-    <a href="{% url 'inscriptions:eleve_parcours' eleve.pk %}" class="btn-secondary">
-      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:4px;">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-      </svg>
-      Parcours
-    </a>
-    <a href="{% url 'inscriptions:eleve_update' eleve.pk %}" class="btn-secondary">Modifier le profil</a>
-    <a href="{% url 'inscriptions:inscription_create' eleve.pk %}" class="btn-primary">Inscrire cette année</a>
   </div>
 </div>
 
-<!-- Info rapide + raccourci parcours -->
-<div style="display:grid; grid-template-columns:1fr auto; gap:var(--space-3); margin-bottom:var(--space-4);" class="animate-fade-up delay-1">
-
-  <div class="card" style="padding:var(--space-4);">
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-4);">
-      <div>
-        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Dernière Classe</div>
-        <div class="fw-medium">{{ eleve.last_classe|default:"Non renseignée" }}</div>
-      </div>
-      <div>
-        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Téléphone Parents</div>
-        <div class="fw-medium">{{ eleve.telephone_parent|default:"-" }}</div>
-      </div>
-      <div>
-        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Lieu de Naissance</div>
-        <div class="fw-medium">{{ eleve.lieu_naissance }}</div>
-      </div>
-    </div>
+<!-- Bande d'info rapide -->
+<div class="elv-infobar animate-fade-up delay-1">
+  <div class="elv-infobar-item">
+    <span class="elv-infobar-label">Dernière classe</span>
+    <span class="elv-infobar-val">{{ eleve.last_classe|default:"—" }}</span>
   </div>
-
-  <a href="{% url 'inscriptions:eleve_parcours' eleve.pk %}"
-     class="card"
-     style="padding:var(--space-4) var(--space-5); display:flex; flex-direction:column;
-            align-items:center; justify-content:center; gap:var(--space-2);
-            text-decoration:none; min-width:130px;
-            border:1.5px solid var(--color-border);
-            transition:border-color .15s, box-shadow .15s;"
-     onmouseover="this.style.borderColor='var(--color-primary)'; this.style.boxShadow='0 0 0 3px var(--color-primary-light,#dcfce7)';"
-     onmouseout="this.style.borderColor='var(--color-border)'; this.style.boxShadow='';">
-    <svg width="28" height="28" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-    </svg>
-    <span style="font-size:.8rem; font-weight:700; color:var(--color-primary); white-space:nowrap;">Parcours scolaire</span>
-    <span style="font-size:.72rem; color:var(--color-text-muted);">{{ inscriptions|length }} année{{ inscriptions|length|pluralize }}</span>
-  </a>
-
+  <div class="elv-infobar-item">
+    <span class="elv-infobar-label">Téléphone parents</span>
+    <span class="elv-infobar-val">{{ eleve.telephone_parent|default:"—" }}</span>
+  </div>
+  <div class="elv-infobar-item">
+    <span class="elv-infobar-label">Date de naissance</span>
+    <span class="elv-infobar-val">{{ eleve.date_naissance|date:"d/m/Y" }}</span>
+  </div>
+  <div class="elv-infobar-item">
+    <span class="elv-infobar-label">Scolarité</span>
+    <span class="elv-infobar-val">{{ inscriptions|length }} année{{ inscriptions|length|pluralize }}</span>
+  </div>
 </div>
 
-<div style="display:grid; grid-template-columns:280px 1fr; gap:var(--space-6); align-items:start;" class="animate-fade-up delay-2">
+<!-- Corps principal -->
+<div class="elv-layout animate-fade-up delay-2">
 
-  <!-- Sidebar -->
+  <!-- ── Colonne gauche (sidebar) ─────────────────────────────── -->
   <div>
+
+    <!-- État Civil -->
     <div class="card mb-4">
-      <div class="card-header"><span class="card-title">État Civil & Localisation</span></div>
-      <div style="padding:var(--space-4);">
-        <div class="d-flex justify-between" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
-          <span class="text-muted">Naissance</span>
-          <span>{{ eleve.date_naissance|date:"d M Y" }}</span>
+      <div class="elv-shd">
+        <span class="elv-shd-title">État Civil</span>
+        <span class="elv-shd-sub">{{ eleve.lieu_naissance }}</span>
+      </div>
+      <div class="elv-fields">
+        <div class="elv-field">
+          <span class="elv-field-k">Naissance</span>
+          <span class="elv-field-v">{{ eleve.date_naissance|date:"d M Y" }}</span>
         </div>
-        <div class="d-flex justify-between" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
-          <span class="text-muted">Nationalité</span>
-          <span>{{ eleve.nationalite }}</span>
+        <div class="elv-field">
+          <span class="elv-field-k">Nationalité</span>
+          <span class="elv-field-v">{{ eleve.nationalite|default:"—" }}</span>
         </div>
-        <div class="d-flex justify-between" style="padding:var(--space-2) 0; font-size:0.85rem; border-bottom:1px solid var(--color-border);">
-          <span class="text-muted">Commune</span>
-          <span>{{ eleve.commune }}</span>
+        <div class="elv-field">
+          <span class="elv-field-k">Commune</span>
+          <span class="elv-field-v">{{ eleve.commune|default:"—" }}</span>
         </div>
-        <div class="d-flex justify-between" style="padding:var(--space-2) 0; font-size:0.85rem;">
-          <span class="text-muted">Province</span>
-          <span>{{ eleve.province }}</span>
+        <div class="elv-field">
+          <span class="elv-field-k">Province</span>
+          <span class="elv-field-v">{{ eleve.province|default:"—" }}</span>
         </div>
       </div>
     </div>
 
+    <!-- Parents & Tuteur -->
     <div class="card">
-      <div class="card-header"><span class="card-title">Parents & Tuteur</span></div>
-      <div style="padding:var(--space-4);">
-        <div style="margin-bottom:var(--space-3);">
-          <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; margin-bottom:2px;">Père</div>
-          <div style="font-size:0.85rem;">{{ eleve.nom_pere|default:"-" }} ({{ eleve.profession_pere }})</div>
+      <div class="elv-shd">
+        <span class="elv-shd-title">Parents &amp; Tuteur</span>
+      </div>
+      <div class="elv-parents">
+        <div class="elv-parent-item">
+          <span class="elv-parent-role">Père</span>
+          <span class="elv-parent-name">{{ eleve.nom_pere|default:"Non renseigné" }}</span>
+          {% if eleve.profession_pere %}<span class="elv-parent-prof">{{ eleve.profession_pere }}</span>{% endif %}
         </div>
-        <div style="margin-bottom:var(--space-3);">
-          <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; margin-bottom:2px;">Mère</div>
-          <div style="font-size:0.85rem;">{{ eleve.nom_mere|default:"-" }} ({{ eleve.profession_mere }})</div>
-        </div>
-        <div class="divider"></div>
-        <div style="margin-top:var(--space-3);">
-          <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; margin-bottom:4px;">Tuteur / Contact</div>
-          <div class="fw-bold" style="font-size:0.9rem;">{{ eleve.tuteur_nom }}</div>
-          <div class="text-primary" style="font-size:0.85rem;">{{ eleve.tuteur_telephone }}</div>
-          <p class="text-muted" style="font-size:0.78rem; margin-top:4px; font-style:italic;">{{ eleve.tuteur_adresse }}</p>
+        <div class="elv-parent-item">
+          <span class="elv-parent-role">Mère</span>
+          <span class="elv-parent-name">{{ eleve.nom_mere|default:"Non renseignée" }}</span>
+          {% if eleve.profession_mere %}<span class="elv-parent-prof">{{ eleve.profession_mere }}</span>{% endif %}
         </div>
       </div>
+      {% if eleve.tuteur_nom %}
+      <div class="elv-tuteur">
+        <span class="elv-tuteur-role">Tuteur / Contact principal</span>
+        <span class="elv-tuteur-name">{{ eleve.tuteur_nom }}</span>
+        {% if eleve.tuteur_telephone %}<span class="elv-tuteur-phone">{{ eleve.tuteur_telephone }}</span>{% endif %}
+        {% if eleve.tuteur_adresse %}<span class="elv-tuteur-addr">{{ eleve.tuteur_adresse }}</span>{% endif %}
+      </div>
+      {% endif %}
     </div>
+
   </div>
 
-  <!-- Main -->
+  <!-- ── Colonne droite (main) ────────────────────────────────── -->
   <div>
-    <div class="table-wrapper mb-4">
-      <div class="card-header" style="padding:var(--space-4) var(--space-6);">
-        <span class="card-title">Cursus Scolaire</span>
-        <span class="text-muted" style="font-size:0.75rem;">Historique des inscriptions</span>
+
+    <!-- Cursus scolaire -->
+    <div class="card mb-4">
+      <div class="elv-shd">
+        <span class="elv-shd-title">Cursus Scolaire</span>
+        <a href="{% url 'inscriptions:eleve_parcours' eleve.pk %}" class="dash-btn-secondary dash-btn-sm">
+          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          Parcours complet
+        </a>
       </div>
       <div class="table-scroll">
         <table class="data-table">
@@ -136,73 +150,79 @@
               <th>Année</th>
               <th>Classe</th>
               <th>Statut</th>
-              <th style="text-align:right">Actions</th>
+              <th class="td-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for inscr in inscriptions %}
-            <tr {% if inscr.statut == 'ABANDON' %}style="opacity:0.6;"{% endif %}>
+            <tr {% if inscr.statut == 'ABANDON' %}class="elv-row-abandon"{% endif %}>
               <td class="fw-bold">{{ inscr.annee_scolaire.libelle }}</td>
               <td>
                 <div class="fw-medium">{{ inscr.classe.nom }}</div>
-                <div class="text-muted" style="font-size:0.75rem;">{{ inscr.classe.cycle.nom }}</div>
+                <div class="td-small td-muted">{{ inscr.classe.cycle.nom }}</div>
               </td>
               <td>
                 {% if inscr.statut == 'ABANDON' %}
                   <span class="badge badge-danger">Abandon</span>
                 {% elif inscr.est_exonere %}
-                  <span class="badge badge-secondary">Exonéré</span>
+                  <span class="badge badge-neutral">Exonéré</span>
                 {% elif inscr.statut == 'BOURSIER' %}
                   <span class="badge badge-info">Boursier</span>
                 {% elif inscr.statut == 'NON_AFFECTE' %}
                   <span class="badge badge-warning">Non affecté</span>
                 {% elif inscr.statut == 'EXONERE' %}
-                  <span class="badge badge-secondary">Exonéré</span>
+                  <span class="badge badge-neutral">Exonéré</span>
                 {% else %}
                   <span class="badge badge-success">Affecté</span>
                 {% endif %}
               </td>
-              <td style="text-align:right;">
+              <td class="td-right">
                 <div class="d-flex justify-end gap-2">
                   <a href="{% url 'presences:bilan_eleve' inscr.pk %}"
-                     class="btn-icon" title="Bilan présences & justifications" style="color:var(--color-info, #3b82f6);">
+                     class="btn-icon btn-icon-info" title="Bilan présences">
                     <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                     </svg>
                   </a>
                   <a href="{% url 'finances:paiement_create' %}?inscription={{ inscr.pk }}"
-                     class="btn-icon" title="Enregistrer un paiement" style="color:var(--color-success);">
+                     class="btn-icon btn-icon-success" title="Enregistrer un paiement">
                     <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                   </a>
                   <a href="{% url 'finances:situation_eleve' inscr.pk %}"
                      class="btn-icon" title="Situation financière">
                     <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                   </a>
                   {% if inscr.statut != 'ABANDON' %}
                   <a href="{% url 'inscriptions:transfert_classe' inscr.pk %}"
-                     class="btn-icon" title="Transférer dans une autre classe" style="color:var(--color-primary);">
+                     class="btn-icon btn-icon-primary" title="Transférer dans une autre classe">
                     <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                     </svg>
                   </a>
+                  <a href="{% url 'inscriptions:transfert_inter_demander' inscription_id=inscr.pk %}"
+                     class="btn-icon btn-icon-gold" title="Transfert inter-établissements">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                    </svg>
+                  </a>
                   {% endif %}
-                  <form method="post" action="{% url 'inscriptions:marquer_abandon' inscr.pk %}" style="display:inline;">
+                  <form method="post" action="{% url 'inscriptions:marquer_abandon' inscr.pk %}" class="d-inline">
                     {% csrf_token %}
                     {% if inscr.statut == 'ABANDON' %}
-                    <button type="submit" class="btn-icon" title="Annuler l'abandon" style="color:var(--color-success);">
+                    <button type="submit" class="btn-icon btn-icon-success" title="Annuler l'abandon">
                       <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                       </svg>
                     </button>
                     {% else %}
-                    <button type="submit" class="btn-icon" title="Marquer Abandon" style="color:var(--color-danger);"
+                    <button type="submit" class="btn-icon btn-icon-danger" title="Marquer Abandon"
                             onclick="return confirm('Marquer {{ inscr.eleve.get_nom_complet }} comme Abandon pour {{ inscr.annee_scolaire.libelle }} ?')">
                       <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                       </svg>
                     </button>
                     {% endif %}
@@ -216,10 +236,10 @@
                 <div class="empty-state">
                   <div class="empty-state-icon">
                     <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                   </div>
-                  <p class="empty-state-text">Aucun historique d'inscription trouvé.</p>
+                  <p class="empty-state-text">Aucun historique d'inscription.</p>
                 </div>
               </td>
             </tr>
@@ -230,52 +250,55 @@
     </div>
 
     <!-- Documents -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);">
-      {% if last_inscription %}
-      <a href="{% url 'documents:certificat_scolarite' last_inscription.pk %}" class="card" style="padding:var(--space-4); cursor:pointer; text-decoration:none; color:inherit; display:block;">
-        <div class="d-flex align-center gap-3">
-          <div class="stat-icon stat-icon-green" style="width:40px; height:40px; flex-shrink:0;">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-          </div>
-          <div>
-            <div class="fw-bold">Certificat de Scolarité</div>
-            <p class="text-muted" style="font-size:0.75rem;">Générer le PDF officiel</p>
-          </div>
-        </div>
-      </a>
-      {% else %}
-      <div class="card" style="padding:var(--space-4); opacity:0.5;">
-        <div class="d-flex align-center gap-3">
-          <div class="stat-icon stat-icon-green" style="width:40px; height:40px; flex-shrink:0;">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-          </div>
-          <div>
-            <div class="fw-bold">Certificat de Scolarité</div>
-            <p class="text-muted" style="font-size:0.75rem;">Aucune inscription active</p>
-          </div>
-        </div>
+    <div class="card">
+      <div class="elv-shd">
+        <span class="elv-shd-title">Documents</span>
       </div>
-      {% endif %}
-      <a href="{% url 'inscriptions:eleve_carte' eleve.pk %}" class="card" style="padding:var(--space-4); cursor:pointer; text-decoration:none; color:inherit; display:block;">
-        <div class="d-flex align-center gap-3">
-          <div class="stat-icon stat-icon-blue" style="width:40px; height:40px; flex-shrink:0;">
+      <div class="elv-docs-grid">
+
+        {% if last_inscription %}
+        <a href="{% url 'documents:certificat_scolarite' last_inscription.pk %}" class="elv-doc">
+          <div class="elv-doc-icon elv-doc-icon-green">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
           </div>
           <div>
-            <div class="fw-bold">Carte Scolaire</div>
-            <p class="text-muted" style="font-size:0.75rem;">Aperçu et impression</p>
+            <div class="elv-doc-label">Certificat de Scolarité</div>
+            <div class="elv-doc-sub">Générer le PDF officiel</div>
+          </div>
+        </a>
+        {% else %}
+        <div class="elv-doc elv-doc-off">
+          <div class="elv-doc-icon elv-doc-icon-green">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="elv-doc-label">Certificat de Scolarité</div>
+            <div class="elv-doc-sub">Aucune inscription active</div>
           </div>
         </div>
-      </a>
-    </div>
-  </div>
+        {% endif %}
 
-</div>
+        <a href="{% url 'inscriptions:eleve_carte' eleve.pk %}" class="elv-doc">
+          <div class="elv-doc-icon elv-doc-icon-blue">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="elv-doc-label">Carte Scolaire</div>
+            <div class="elv-doc-sub">Aperçu et impression</div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+</div><!-- /elv-layout -->
 
 {% endblock %}

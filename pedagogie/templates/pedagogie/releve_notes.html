@@ -4,421 +4,475 @@
 
 {% block content %}
 
-<!-- ── En-tête page ── -->
-<div class="page-header animate-fade-up">
-  <div>
-    <h1 class="page-title">Relevé de notes</h1>
-    <p class="text-muted" style="margin-top:.25rem;">Tableau des notes par classe et par discipline</p>
+{# ── En-tête ── #}
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Relevé de notes</h1>
+      <p>
+        {% if enseignement %}{{ enseignement.matiere.nom }} · {{ enseignement.classe.nom }} · {{ annee.libelle }}
+        {% elif classe %}{{ classe.nom }} — choisir une discipline
+        {% elif annee %}{{ annee.libelle }} — choisir une classe
+        {% else %}Tableau des notes par classe et par discipline{% endif %}
+      </p>
+    </div>
   </div>
   {% if enseignement and table %}
-  <div>
+  <div class="dash-section-actions">
     <a href="{% url 'pedagogie:releve_notes_pdf' %}?{{ request.GET.urlencode }}"
-       target="_blank"
-       class="btn btn-primary"
-       style="display:inline-flex; align-items:center; gap:.5rem;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a1 1 0 001-1v-4a1 1 0 00-1-1H9a1 1 0 00-1 1v4a1 1 0 001 1zm1-9V5a1 1 0 00-1-1H9a1 1 0 00-1 1v3"/>
+       target="_blank" class="dash-btn dash-btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <polyline stroke-linecap="round" stroke-linejoin="round" points="6,9 6,2 18,2 18,9"/>
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
       </svg>
-      Imprimer PDF
+      Relevé PDF
+    </a>
+    <a href="{% url 'pedagogie:fiche_discipline_pdf' %}?{{ request.GET.urlencode }}"
+       target="_blank" class="dash-btn dash-btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Fiche discipline
     </a>
   </div>
   {% endif %}
 </div>
 
-<!-- ── Formulaire de filtres en étapes ── -->
-<div class="card animate-fade-up" style="margin-bottom:1.5rem;">
-  <div style="padding:1.25rem 1.5rem 1rem;">
+{# ── Filtres — stepper 4 étapes ── #}
+<div class="dash-card animate-fade-up" style="margin-bottom:1.25rem;">
 
-    <div style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--color-text-muted); margin-bottom:1.1rem; display:flex; align-items:center; gap:.5rem;">
-      <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
-      </svg>
-      Filtres du relevé
+  <form method="get" action="{% url 'pedagogie:releve_notes' %}" id="filter-form">
+    <div class="rlv-filters-grid">
+
+      {# Étape 1 : Année #}
+      <div class="rlv-step {% if annee %}rlv-step-done{% endif %}">
+        <div class="rlv-step-head">
+          <div class="rlv-step-dot">
+            {% if annee %}
+            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
+              <polyline stroke-linecap="round" stroke-linejoin="round" points="20,6 9,17 4,12"/>
+            </svg>
+            {% else %}1{% endif %}
+          </div>
+          <div class="rlv-step-line"></div>
+        </div>
+        <label class="rlv-step-slabel">Année scolaire</label>
+        <select name="annee" class="dash-input">
+          <option value="">— Choisir —</option>
+          {% for a in annees %}
+          <option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>
+            {{ a.libelle }}{% if a.est_courante %} ★{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Étape 2 : Classe #}
+      <div class="rlv-step {% if classe %}rlv-step-done{% elif annee %}rlv-step-active{% endif %}">
+        <div class="rlv-step-head">
+          <div class="rlv-step-dot">
+            {% if classe %}
+            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
+              <polyline stroke-linecap="round" stroke-linejoin="round" points="20,6 9,17 4,12"/>
+            </svg>
+            {% else %}2{% endif %}
+          </div>
+          <div class="rlv-step-line"></div>
+        </div>
+        <label class="rlv-step-slabel">
+          Classe
+          {% if not annee %}<span class="rlv-step-hint2">— année d'abord</span>{% endif %}
+        </label>
+        <select name="classe" class="dash-input">
+          <option value="">— Choisir —</option>
+          {% for cl in classes %}
+          <option value="{{ cl.pk }}" {% if classe and cl.pk == classe.pk %}selected{% endif %}>{{ cl.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Étape 3 : Discipline #}
+      <div class="rlv-step {% if enseignement %}rlv-step-done{% elif classe %}rlv-step-active{% endif %}">
+        <div class="rlv-step-head">
+          <div class="rlv-step-dot">
+            {% if enseignement %}
+            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
+              <polyline stroke-linecap="round" stroke-linejoin="round" points="20,6 9,17 4,12"/>
+            </svg>
+            {% else %}3{% endif %}
+          </div>
+          <div class="rlv-step-line"></div>
+        </div>
+        <label class="rlv-step-slabel">
+          Discipline
+          {% if not classe %}<span class="rlv-step-hint2">— classe d'abord</span>{% endif %}
+        </label>
+        <select name="enseignement" class="dash-input"
+                {% if not classe %}disabled{% endif %}>
+          <option value="">— Choisir —</option>
+          {% for ens in enseignements %}
+          <option value="{{ ens.pk }}" {% if enseignement and ens.pk == enseignement.pk %}selected{% endif %}>
+            {{ ens.matiere.nom }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Étape 4 : Période (optionnelle) #}
+      <div class="rlv-step {% if periode %}rlv-step-done{% elif enseignement %}rlv-step-active{% endif %}">
+        <div class="rlv-step-head">
+          <div class="rlv-step-dot rlv-step-num-opt">
+            {% if periode %}
+            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
+              <polyline stroke-linecap="round" stroke-linejoin="round" points="20,6 9,17 4,12"/>
+            </svg>
+            {% else %}4{% endif %}
+          </div>
+        </div>
+        <label class="rlv-step-slabel">
+          Période
+          <span class="rlv-step-hint2">(optionnel)</span>
+        </label>
+        <select name="periode" class="dash-input"
+                {% if not enseignement %}disabled{% endif %}>
+          <option value="">Toutes les périodes</option>
+          {% for p in periodes %}
+          <option value="{{ p.pk }}" {% if periode and p.pk == periode.pk %}selected{% endif %}>{{ p.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
     </div>
 
-    <form method="get" id="filter-form">
-      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:1rem; align-items:start;">
+    {% if enseignement or classe or annee %}
+    <div class="rlv-filters-reset">
+      <a href="{% url 'pedagogie:releve_notes' %}" class="dash-btn dash-btn-secondary">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        Réinitialiser
+      </a>
+    </div>
+    {% endif %}
+  </form>
+</div>
 
-        <!-- Étape 1 : Année -->
-        <div class="filter-step {% if annee %}step-done{% endif %}">
-          <label class="input-label step-label">
-            <span class="step-num">1</span>
-            Année scolaire
-          </label>
-          <select name="annee" class="input select" onchange="this.form.submit()">
-            <option value="">— Choisir —</option>
-            {% for a in annees %}
-              <option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>
-                {{ a.libelle }}{% if a.est_courante %} ★{% endif %}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
 
-        <!-- Étape 2 : Classe -->
-        <div class="filter-step {% if classe %}step-done{% elif annee %}step-active{% endif %}">
-          <label class="input-label step-label">
-            <span class="step-num">2</span>
-            Classe
-            {% if not annee %}<span class="step-hint-inline">— choisir l'année d'abord</span>{% endif %}
-          </label>
-          <select name="classe" class="input select" onchange="this.form.submit()"
-                  {% if not annee %}disabled{% endif %}>
-            <option value="">— Choisir —</option>
-            {% for cl in classes %}
-              <option value="{{ cl.pk }}" {% if classe and cl.pk == classe.pk %}selected{% endif %}>{{ cl.nom }}</option>
-            {% endfor %}
-          </select>
-        </div>
+{# ═══ ÉTAT VIDE — guide pas-à-pas ═══ #}
+{% if not enseignement %}
 
-        <!-- Étape 3 : Discipline -->
-        <div class="filter-step {% if enseignement %}step-done{% elif classe %}step-active{% endif %}">
-          <label class="input-label step-label">
-            <span class="step-num">3</span>
-            Discipline
-            {% if not classe %}<span class="step-hint-inline">— choisir la classe d'abord</span>{% endif %}
-          </label>
-          <select name="enseignement" class="input select" onchange="this.form.submit()"
-                  {% if not classe %}disabled{% endif %}>
-            <option value="">— Choisir —</option>
-            {% for ens in enseignements %}
-              <option value="{{ ens.pk }}" {% if enseignement and ens.pk == enseignement.pk %}selected{% endif %}>
-                {{ ens.matiere.nom }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
+<div class="dash-card animate-fade-up">
+  <div class="rlv-guide">
 
-        <!-- Étape 4 : Période (optionnelle) -->
-        <div class="filter-step {% if periode %}step-done{% elif enseignement %}step-active{% endif %}">
-          <label class="input-label step-label">
-            <span class="step-num step-num-opt">4</span>
-            Période
-            <span style="font-weight:400; font-style:italic; font-size:.73rem; color:var(--color-text-muted);">(optionnel)</span>
-          </label>
-          <select name="periode" class="input select" onchange="this.form.submit()"
-                  {% if not enseignement %}disabled{% endif %}>
-            <option value="">Toutes les périodes</option>
-            {% for p in periodes %}
-              <option value="{{ p.pk }}" {% if periode and p.pk == periode.pk %}selected{% endif %}>{{ p.nom }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
+    <div class="rlv-guide-step {% if annee %}rlv-guide-step-done{% endif %}">
+      <div class="rlv-guide-num">{% if annee %}✓{% else %}1{% endif %}</div>
+      <div>
+        <div class="rlv-guide-text">Choisir l'<strong>année scolaire</strong></div>
       </div>
+      {% if annee %}<span class="rlv-guide-value">{{ annee.libelle }}</span>{% endif %}
+    </div>
 
-      <!-- Bouton reset si filtre actif -->
-      {% if enseignement or classe or annee %}
-      <div style="margin-top:.9rem; display:flex; justify-content:flex-end;">
-        <a href="{% url 'pedagogie:releve_notes' %}" class="btn btn-sm btn-outline"
-           style="font-size:.8rem; display:inline-flex; align-items:center; gap:.35rem;">
-          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-          Réinitialiser
-        </a>
+    <div class="rlv-guide-step {% if classe %}rlv-guide-step-done{% endif %}">
+      <div class="rlv-guide-num">{% if classe %}✓{% else %}2{% endif %}</div>
+      <div>
+        <div class="rlv-guide-text">Choisir la <strong>classe</strong></div>
       </div>
-      {% endif %}
+      {% if classe %}<span class="rlv-guide-value">{{ classe.nom }}</span>{% endif %}
+    </div>
 
-    </form>
+    <div class="rlv-guide-step">
+      <div class="rlv-guide-num">3</div>
+      <div>
+        <div class="rlv-guide-text">Choisir la <strong>discipline</strong> — le tableau s'affiche automatiquement</div>
+      </div>
+    </div>
+
+    <div class="rlv-guide-step rlv-guide-step-pending">
+      <div class="rlv-guide-num">4</div>
+      <div>
+        <div class="rlv-guide-text">Filtrer par <strong>période</strong> <em>(optionnel)</em></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-{% if not enseignement %}
 
-  <!-- ── Placeholder ── -->
-  <div class="card animate-fade-up" style="text-align:center; padding:3.5rem 2rem;">
-    <div style="width:64px; height:64px; background:var(--bg-subtle); border-radius:50%; margin:0 auto 1.25rem; display:flex; align-items:center; justify-content:center; opacity:.5;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-      </svg>
-    </div>
-    <p style="font-weight:600; margin:0 0 .4rem; color:var(--text-primary);">Aucun relevé sélectionné</p>
-    <p class="text-muted" style="font-size:.88rem; max-width:360px; margin:0 auto;">
-      Complétez les étapes ci-dessus : <strong>Année → Classe → Discipline</strong><br>
-      puis filtrez par trimestre si besoin.
-    </p>
-  </div>
-
+{# ═══ RÉSULTATS ═══ #}
 {% elif table is not None %}
 
-  <!-- ── Bandeau discipline ── -->
-  <div class="card animate-fade-up" style="margin-bottom:1rem; background:linear-gradient(135deg, var(--bg-card) 0%, var(--bg-subtle) 100%); border-left:4px solid var(--color-primary);">
-    <div class="card-body" style="padding:.9rem 1.25rem;">
-      <div class="d-flex justify-between align-center flex-wrap gap-3">
-        <div>
-          <div style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--color-primary); margin-bottom:.2rem;">
-            Relevé de notes
-          </div>
-          <div style="font-size:1.1rem; font-weight:700; color:var(--text-primary);">
-            {{ enseignement.matiere.nom }}
-            <span style="color:var(--text-muted); font-weight:400; font-size:.95rem;">— {{ enseignement.classe.nom }}</span>
-          </div>
-          <div class="text-muted" style="font-size:.8rem; margin-top:.2rem;">
-            {{ annee.libelle }}
-            {% if periode %}
-              &nbsp;·&nbsp; {{ periode.nom }}
-            {% else %}
-              &nbsp;·&nbsp; Toutes périodes
-            {% endif %}
-          </div>
-        </div>
-        <div class="d-flex gap-3 flex-wrap">
-          <div style="text-align:center; min-width:56px;">
-            <div style="font-size:1.5rem; font-weight:800; color:var(--text-primary); line-height:1;">{{ table|length }}</div>
-            <div style="font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted);">Élève{{ table|length|pluralize }}</div>
-          </div>
-          <div style="width:1px; background:var(--border-color);"></div>
-          <div style="text-align:center; min-width:56px;">
-            <div style="font-size:1.5rem; font-weight:800; color:var(--text-primary); line-height:1;">{{ evaluations_cols|length }}</div>
-            <div style="font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted);">Éval{{ evaluations_cols|length|pluralize }}.</div>
-          </div>
-          <div style="width:1px; background:var(--border-color);"></div>
-          <div style="text-align:center; min-width:56px;">
-            <div id="stat-saisies" style="font-size:1.5rem; font-weight:800; color:var(--color-primary); line-height:1;">—</div>
-            <div style="font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted);">Saisies</div>
-          </div>
-          <div style="width:1px; background:var(--border-color);"></div>
-          <div style="text-align:center; min-width:56px;">
-            <div id="stat-moy" style="font-size:1.5rem; font-weight:800; line-height:1; color:var(--text-muted);">—</div>
-            <div style="font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted);">Moy. /20</div>
-          </div>
-        </div>
+{# ── Bandeau discipline v2 ── #}
+<div class="rlv-banner-v2 animate-fade-up">
+  <div class="rlv-banner-v2-left">
+    <div class="rlv-mat-icon">{{ enseignement.matiere.nom|first|upper }}</div>
+    <div>
+      <div class="rlv-banner-v2-title">{{ enseignement.matiere.nom }}</div>
+      <div class="rlv-banner-v2-sub">
+        {{ enseignement.classe.nom }}&nbsp;·&nbsp;{{ annee.libelle }}
+        {% if periode %}&nbsp;·&nbsp;{{ periode.nom }}{% else %}&nbsp;·&nbsp;Toutes périodes{% endif %}
       </div>
+      {% if nb_max_saisies %}
+      <div class="rlv-saisie-track">
+        <div class="rlv-saisie-fill" data-pct="{% widthratio nb_saisies nb_max_saisies 100 %}"></div>
+      </div>
+      {% endif %}
     </div>
   </div>
 
-  <!-- ── Tableau ── -->
-  <div class="card animate-fade-up" style="overflow-x:auto;">
-    <table class="table" style="min-width:600px; font-size:.875rem; border-collapse:collapse;">
+  <div class="rlv-chips">
+    <div class="rlv-chip">
+      <span class="rlv-chip-val">{{ table|length }}</span>
+      <span class="rlv-chip-lbl">Élève{{ table|length|pluralize }}</span>
+    </div>
+    <div class="rlv-chip">
+      <span class="rlv-chip-val">{{ evaluations_cols|length }}</span>
+      <span class="rlv-chip-lbl">Éval{{ evaluations_cols|length|pluralize }}.</span>
+    </div>
+    <div class="rlv-chip rlv-chip-primary">
+      <span class="rlv-chip-val">{{ nb_saisies }}/{{ nb_max_saisies }}</span>
+      <span class="rlv-chip-lbl">Saisies</span>
+    </div>
+    {% if moy_classe %}
+    <div class="rlv-chip {% if moy_classe >= 10 %}rlv-chip-good{% else %}rlv-chip-bad{% endif %}">
+      <span class="rlv-chip-val">{{ moy_classe }}</span>
+      <span class="rlv-chip-lbl">Moy. /20</span>
+    </div>
+    {% else %}
+    <div class="rlv-chip rlv-chip-muted">
+      <span class="rlv-chip-val">—</span>
+      <span class="rlv-chip-lbl">Moy. /20</span>
+    </div>
+    {% endif %}
+    {% if moy_max %}
+    <div class="rlv-chip rlv-chip-good" title="Meilleur·e : {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }}">
+      <span class="rlv-chip-val">{{ moy_max.moy }}</span>
+      <span class="rlv-chip-lbl">Max</span>
+    </div>
+    {% endif %}
+    {% if moy_min %}
+    <div class="rlv-chip {% if moy_min.moy >= 10 %}rlv-chip-good{% else %}rlv-chip-bad{% endif %}"
+         title="Min : {{ moy_min.inscription.eleve.nom|upper }} {{ moy_min.inscription.eleve.prenom }}">
+      <span class="rlv-chip-val">{{ moy_min.moy }}</span>
+      <span class="rlv-chip-lbl">Min</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
 
-      <thead>
-        <tr>
-          <th style="width:36px; text-align:center; color:var(--text-muted); font-weight:500;">#</th>
-          <th style="min-width:200px; text-align:left;">Élève</th>
-          {% for ev in evaluations_cols %}
-            <th style="text-align:center; min-width:80px; padding:.6rem .4rem; cursor:default;"
-                title="{{ ev.titre }} — {{ ev.date_planifiee|date:'d/m/Y' }} — Barème : /{{ ev.bareme }}">
-              <div style="font-size:.68rem; font-weight:600; color:var(--text-muted); margin-bottom:.15rem;">
-                {{ ev.trimestre.nom|truncatechars:6 }}
-              </div>
-              <div style="font-size:.78rem; font-weight:700; white-space:nowrap;">
-                {{ ev.type_evaluation.nom|truncatechars:12 }}
-              </div>
-              <div style="font-size:.68rem; color:var(--text-muted); margin-top:.1rem;">
-                {{ ev.date_planifiee|date:"d/m" }} &nbsp;·&nbsp; /{{ ev.bareme }}
-              </div>
-            </th>
-          {% endfor %}
-          <th style="text-align:center; min-width:75px; border-left:2px solid var(--color-primary); background:color-mix(in srgb, var(--color-primary) 6%, transparent); color:var(--color-primary);">
-            Moy /20
-          </th>
-        </tr>
-      </thead>
 
-      <tbody>
-        {% for row in table %}
-        <tr style="transition:background .1s;" onmouseover="this.style.background='var(--bg-hover,rgba(0,168,107,.04))'" onmouseout="this.style.background=''">
+{# ── Tableau ── #}
+<div class="rlv-table-card animate-fade-up">
 
-          <td style="text-align:center; color:var(--text-muted); font-size:.75rem;">{{ forloop.counter }}</td>
+  {# Toolbar : recherche + meta #}
+  {% if table %}
+  <div class="rlv-toolbar">
+    <div class="rlv-search-wrap">
+      <svg class="rlv-search-icon" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input type="text" id="rlv-search" class="dash-input rlv-search-input"
+             placeholder="Rechercher un élève…" autocomplete="off">
+    </div>
+    <span id="rlv-count" class="dash-form-hint"></span>
+    <div class="rlv-toolbar-meta">
+      {{ table|length }} élève{{ table|length|pluralize }}
+      &nbsp;·&nbsp;
+      {{ evaluations_cols|length }} éval{{ evaluations_cols|length|pluralize }}.
+    </div>
+  </div>
+  {% endif %}
 
-          <td style="padding:.55rem .75rem;">
-            <div style="font-weight:600; font-size:.9rem;">{{ row.inscription.eleve.nom|upper }} {{ row.inscription.eleve.prenom }}</div>
-            <div style="font-size:.72rem; color:var(--text-muted); font-family:monospace; margin-top:.1rem;">{{ row.inscription.eleve.matricule }}</div>
-          </td>
+  <table class="rlv-table" id="rlv-table">
 
-          {% for note_data in row.notes %}
-            {% if note_data %}
-              {% if note_data.observation == 'ABS' %}
-                <td style="text-align:center; background:rgba(231,76,60,.07);">
-                  <span style="color:#e74c3c; font-weight:700; font-size:.78rem; letter-spacing:.03em;">ABS</span>
-                </td>
-              {% else %}
-                {% with sv=note_data.sur_20|default:0 %}
-                <td style="text-align:center; background:{% if note_data.sur_20 >= 10 %}rgba(39,174,96,.07){% else %}rgba(231,76,60,.07){% endif %};">
-                  <span style="font-weight:700; color:{% if note_data.sur_20 >= 10 %}#27ae60{% else %}#e74c3c{% endif %}; font-size:.9rem;">
-                    {{ note_data.valeur|floatformat:"-2" }}
-                  </span>
-                  {% if note_data.sur_20 %}
-                  <div style="font-size:.65rem; color:var(--text-muted); margin-top:.05rem;">
-                    {{ note_data.sur_20|floatformat:1 }}/20
-                  </div>
-                  {% endif %}
-                </td>
-                {% endwith %}
-              {% endif %}
-            {% else %}
-              <td style="text-align:center;">
-                <span style="color:var(--text-muted); opacity:.35; font-size:.85rem;">—</span>
-              </td>
-            {% endif %}
-          {% endfor %}
-
-          <td style="text-align:center; border-left:2px solid var(--color-primary); font-weight:700; font-size:.95rem; padding:.55rem .5rem;">
-            {% if row.resultat and row.resultat.moyenne_sur_20 is not None %}
-              <span style="color:{% if row.resultat.moyenne_sur_20 >= 10 %}#27ae60{% else %}#e74c3c{% endif %};">
-                {{ row.resultat.moyenne_sur_20|floatformat:2 }}
-              </span>
-            {% elif row.moyenne_locale is not None %}
-              <span style="color:var(--text-muted);" title="Estimation locale — calculer les moyennes pour valider">
-                ~{{ row.moyenne_locale|floatformat:2 }}
-              </span>
-            {% else %}
-              <span style="opacity:.25;">—</span>
-            {% endif %}
-          </td>
-
-        </tr>
-        {% empty %}
-          <tr>
-            <td colspan="{{ evaluations_cols|length|add:3 }}" style="text-align:center; color:var(--text-muted); padding:2.5rem;">
-              Aucun élève inscrit dans cette classe pour cette année.
-            </td>
-          </tr>
+    <thead>
+      <tr>
+        <th class="rlv-th-idx">#</th>
+        <th class="rlv-th-eleve">Élève</th>
+        {% for ev in evaluations_cols %}
+        <th class="rlv-th-ev"
+            title="{{ ev.titre }} — {{ ev.date_planifiee|date:'d/m/Y' }} — Barème : /{{ ev.bareme }}">
+          <div class="rlv-th-ev-trimestre">{{ ev.trimestre.nom|truncatechars:6 }}</div>
+          <div class="rlv-th-ev-type">{{ ev.type_evaluation.nom|truncatechars:12 }}</div>
+          <div class="rlv-th-ev-meta">{{ ev.date_planifiee|date:"d/m" }}&nbsp;·&nbsp;/{{ ev.bareme }}</div>
+        </th>
         {% endfor %}
-      </tbody>
+        <th class="rlv-th-moy">Moy /20</th>
+        <th class="rlv-th-rang">Rang</th>
+      </tr>
+    </thead>
 
-      <!-- ── Pied : stats colonnes (rempli par JS) ── -->
-      {% if evaluations_cols and table %}
-      <tfoot>
-        <tr id="tfoot-avg" style="border-top:2px solid var(--border-color); background:var(--bg-subtle);">
-          <td colspan="2" style="padding:.45rem .75rem; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);">
-            Moy. classe
-          </td>
-          {% for ev in evaluations_cols %}
-            <td style="text-align:center; font-size:.8rem; font-weight:700; color:var(--text-primary);" id="col-avg-{{ forloop.counter0 }}">—</td>
-          {% endfor %}
-          <td style="border-left:2px solid var(--color-primary);"></td>
-        </tr>
-        <tr id="tfoot-count" style="background:var(--bg-subtle);">
-          <td colspan="2" style="padding:.35rem .75rem .5rem; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);">
-            Notes saisies
-          </td>
-          {% for ev in evaluations_cols %}
-            <td style="text-align:center; font-size:.75rem; color:var(--text-muted);" id="col-count-{{ forloop.counter0 }}">—</td>
-          {% endfor %}
-          <td style="border-left:2px solid var(--color-primary);"></td>
-        </tr>
-      </tfoot>
-      {% endif %}
+    <tbody>
+      {% for row in table %}
+      <tr class="rlv-row" data-nom="{{ row.inscription.eleve.nom|lower }} {{ row.inscription.eleve.prenom|lower }}">
 
-    </table>
+        <td class="rlv-td-idx">{{ forloop.counter }}</td>
+
+        <td class="rlv-td-eleve">
+          <div class="rlv-eleve-nom">{{ row.inscription.eleve.nom|upper }} {{ row.inscription.eleve.prenom }}</div>
+          <div class="rlv-eleve-matricule">{{ row.inscription.eleve.matricule }}</div>
+        </td>
+
+        {% for note_data in row.notes %}
+        {% if note_data %}
+          {% if note_data.observation == 'ABS' %}
+          <td class="rlv-td-note rlv-note-abs">
+            <span class="rlv-abs-pill">ABS</span>
+          </td>
+          {% else %}
+          <td class="rlv-td-note {% if note_data.sur_20 >= 10 %}rlv-note-good{% else %}rlv-note-bad{% endif %}">
+            <span class="{% if note_data.sur_20 >= 10 %}rlv-note-val-good{% else %}rlv-note-val-bad{% endif %}">
+              {{ note_data.valeur|floatformat:"-2" }}
+            </span>
+            {% if note_data.sur_20 %}
+            <div class="rlv-note-sub">{{ note_data.sur_20|floatformat:1 }}/20</div>
+            {% endif %}
+          </td>
+          {% endif %}
+        {% else %}
+        <td class="rlv-td-note">
+          <span class="rlv-note-empty">—</span>
+        </td>
+        {% endif %}
+        {% endfor %}
+
+        <td class="rlv-td-moy">
+          {% if row.resultat and row.resultat.moyenne_sur_20 is not None %}
+            <span class="{% if row.resultat.moyenne_sur_20 >= 10 %}rlv-moy-good{% else %}rlv-moy-bad{% endif %}">
+              {{ row.resultat.moyenne_sur_20|floatformat:2 }}
+            </span>
+          {% elif row.moyenne_locale is not None %}
+            <span class="rlv-moy-est" title="Estimation — calculer les moyennes pour valider">
+              ~{{ row.moyenne_locale|floatformat:2 }}
+            </span>
+          {% else %}
+            <span class="rlv-moy-empty">—</span>
+          {% endif %}
+        </td>
+
+        <td class="rlv-td-rang">
+          {% if row.rang %}
+            {% if row.rang == 1 %}<span class="rlv-rang-medal" title="1er">🥇</span>
+            {% elif row.rang == 2 %}<span class="rlv-rang-medal" title="2ème">🥈</span>
+            {% elif row.rang == 3 %}<span class="rlv-rang-medal" title="3ème">🥉</span>
+            {% else %}<span class="rlv-rang-val">{{ row.rang }}<sup>e</sup></span>
+            {% endif %}
+          {% else %}
+          <span class="rlv-note-empty">—</span>
+          {% endif %}
+        </td>
+
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="{{ evaluations_cols|length|add:4 }}" class="dash-empty-cell">
+          Aucun élève inscrit dans cette classe pour cette année.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+    {# ── Pied : stats colonnes ── #}
+    {% if evaluations_cols and table %}
+    <tfoot>
+      <tr class="rlv-tfoot-row">
+        <td colspan="2" class="rlv-tfoot-label">Moy. classe</td>
+        {% for stat in ev_stats %}
+        <td class="rlv-tfoot-avg {% if stat.avg and stat.avg >= 10 %}rlv-tfoot-avg-good{% elif stat.avg %}rlv-tfoot-avg-bad{% endif %}">
+          {% if stat.avg %}{{ stat.avg }}{% else %}—{% endif %}
+        </td>
+        {% endfor %}
+        <td class="rlv-td-moy"></td>
+        <td class="rlv-td-rang"></td>
+      </tr>
+      <tr class="rlv-tfoot-row">
+        <td colspan="2" class="rlv-tfoot-label">Notes saisies</td>
+        {% for stat in ev_stats %}
+        <td class="rlv-tfoot-count">{{ stat.count }}/{{ table|length }}</td>
+        {% endfor %}
+        <td class="rlv-td-moy"></td>
+        <td class="rlv-td-rang"></td>
+      </tr>
+    </tfoot>
+    {% endif %}
+
+  </table>
+
+  {# ── Légende intégrée en pied de carte ── #}
+  <div class="rlv-table-footer">
+    <span class="rlv-legend-pill">
+      <span class="rlv-legend-sw rlv-legend-sw-good"></span> ≥ 10
+    </span>
+    <span class="rlv-legend-pill">
+      <span class="rlv-legend-sw rlv-legend-sw-bad"></span> &lt; 10
+    </span>
+    <span class="rlv-legend-pill">
+      <span class="rlv-abs-pill">ABS</span> Absent
+    </span>
+    <span class="rlv-legend-pill">~ Estimation (moyennes non calculées)</span>
+    {% if moy_max %}
+    <span class="rlv-legend-pill rlv-table-footer-right">
+      🏆 {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }} &nbsp;{{ moy_max.moy }}/20
+    </span>
+    {% endif %}
   </div>
 
-  <!-- ── Légende ── -->
-  <div class="d-flex gap-3 flex-wrap" style="margin-top:.75rem; font-size:.78rem; color:var(--text-muted);">
-    <span style="display:inline-flex; align-items:center; gap:.35rem;">
-      <span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:rgba(39,174,96,.2);"></span> ≥ moyenne
-    </span>
-    <span style="display:inline-flex; align-items:center; gap:.35rem;">
-      <span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:rgba(231,76,60,.2);"></span> &lt; moyenne
-    </span>
-    <span style="display:inline-flex; align-items:center; gap:.35rem;">
-      <span style="color:#e74c3c; font-weight:700; font-size:.7rem;">ABS</span> Absent
-    </span>
-    <span style="display:inline-flex; align-items:center; gap:.35rem;">
-      <span style="color:var(--text-muted);">~</span> Moyenne estimée (non encore calculée)
-    </span>
-  </div>
+</div>
 
 {% endif %}
 
-<!-- ── Styles ── -->
-<style>
-  /* ── Filtres en étapes ── */
-  .filter-step { display:flex; flex-direction:column; }
+{% endblock %}
 
-  .step-num {
-    display:inline-flex; align-items:center; justify-content:center;
-    width:18px; height:18px; border-radius:50%;
-    background:var(--color-primary); color:#fff;
-    font-size:.6rem; font-weight:800;
-    margin-right:.4rem; flex-shrink:0;
-    vertical-align:middle;
-  }
-  .filter-step:not(.step-done):not(.step-active) .step-num {
-    background:var(--color-bg-input, #1e2d3d);
-    color:var(--color-text-muted);
-    border:1.5px solid var(--color-border, rgba(255,255,255,.1));
-  }
-  .step-active .step-num {
-    background:transparent;
-    color:var(--color-primary);
-    border:1.5px solid var(--color-primary);
-  }
-  .step-done .step-num { background:var(--color-primary); color:#fff; border:none; }
-
-  .step-label {
-    font-size:.8rem; font-weight:600;
-    display:flex; align-items:center;
-    margin-bottom:.4rem; color:var(--color-text-secondary);
-    gap:0;
-  }
-  .step-done .step-label { color:var(--color-text-primary); }
-  .step-active .step-label { color:var(--color-text-primary); }
-
-  .step-hint-inline {
-    font-size:.68rem; color:var(--color-text-muted);
-    font-style:italic; font-weight:400; margin-left:.3rem;
-  }
-
-  .step-num-opt {
-    background:var(--color-bg-input, #1e2d3d) !important;
-    color:var(--color-text-muted) !important;
-    border:1.5px solid var(--color-border, rgba(255,255,255,.1)) !important;
-  }
-  .step-done .step-num-opt { background:var(--color-primary) !important; color:#fff !important; border:none !important; }
-
-  .filter-step .input.select:disabled {
-    opacity:.4; cursor:not-allowed; pointer-events:none;
-  }
-</style>
-
-<!-- ── JS stats ── -->
-{% if evaluations_cols and table %}
-<script>
+{% block extra_js %}
+<script nonce="{{ request.csp_nonce }}">
 (function() {
-  const rows = document.querySelectorAll('tbody tr');
-  const nbCols = {{ evaluations_cols|length }};
-  const nbEleves = {{ table|length }};
-  let totalSaisies = 0, totalVals = [];
-
-  for (let c = 0; c < nbCols; c++) {
-    const vals = []; let count = 0;
-    rows.forEach(row => {
-      const cell = row.cells[c + 2];
-      if (!cell) return;
-      const txt = cell.textContent.trim();
-      const num = parseFloat(txt);
-      if (!isNaN(num)) { vals.push(num); count++; totalVals.push(num); }
-      else if (txt.includes('ABS')) count++;
+  document.querySelectorAll('#filter-form select').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      var form = document.getElementById('filter-form');
+      var url = new URL(form.action);
+      var params = new URLSearchParams(new FormData(form));
+      for(var pair of params) {
+        if(pair[1]) url.searchParams.set(pair[0], pair[1]);
+      }
+      window.location.href = url.toString();
     });
-    totalSaisies += count;
+  });
 
-    const avgEl = document.getElementById('col-avg-' + c);
-    const cntEl = document.getElementById('col-count-' + c);
-    if (avgEl) {
-      if (vals.length) {
-        const avg = (vals.reduce((a,b) => a+b,0)/vals.length).toFixed(2);
-        avgEl.textContent = avg;
-        avgEl.style.color = parseFloat(avg) >= 10 ? '#27ae60' : '#e74c3c';
-      } else { avgEl.textContent = '—'; }
-    }
-    if (cntEl) cntEl.textContent = count + '/' + nbEleves;
+  document.querySelectorAll('.rlv-saisie-fill[data-pct]').forEach(function(el) {
+    el.style.width = el.dataset.pct + '%';
+  });
+})();
+</script>
+{% if table %}
+<script nonce="{{ request.csp_nonce }}">
+(function() {
+  const input   = document.getElementById('rlv-search');
+  const counter = document.getElementById('rlv-count');
+  const rows    = Array.from(document.querySelectorAll('#rlv-table tbody tr[data-nom]'));
+  const total   = rows.length;
+
+  function filter() {
+    const q = input.value.trim().toLowerCase();
+    let visible = 0;
+    rows.forEach(function(row) {
+      const match = !q || row.dataset.nom.includes(q);
+      row.classList.toggle('rlv-row-hidden', !match);
+      if (match) visible++;
+    });
+    counter.textContent = q ? visible + '/' + total + ' élève' + (visible > 1 ? 's' : '') : '';
   }
 
-  // Stat globales dans le bandeau
-  const statSaisies = document.getElementById('stat-saisies');
-  const statMoy = document.getElementById('stat-moy');
-  const maxSaisies = nbEleves * nbCols;
-  if (statSaisies) statSaisies.textContent = totalSaisies + '/' + maxSaisies;
-  if (statMoy && totalVals.length) {
-    const moy = (totalVals.reduce((a,b)=>a+b,0)/totalVals.length).toFixed(2);
-    statMoy.textContent = moy;
-    statMoy.style.color = parseFloat(moy) >= 10 ? '#27ae60' : '#e74c3c';
-  }
+  input.addEventListener('input', filter);
 })();
 </script>
 {% endif %}
-
 {% endblock %}

@@ -7,169 +7,135 @@
 <div class="page-header animate-fade-up">
   <div>
     <h1 class="page-title">Bilan des périodes d'évaluation</h1>
-    {% if annee %}<p class="page-subtitle">Année scolaire {{ annee }}</p>{% endif %}
+    {% if annee %}<p class="page-subtitle">Année scolaire {{ annee.libelle }}</p>{% endif %}
   </div>
-  <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
-    <a href="{% url 'pedagogie:classe_result_list' %}" class="btn-secondary">
+  <div class="dash-actions">
+    <a href="{% url 'pedagogie:classe_result_list' %}" class="dash-btn dash-btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
       Résultats par classe
     </a>
   </div>
 </div>
 
-<!-- ── Sélecteur d'année ── -->
-<form method="get" id="form-annee" class="d-flex align-center gap-3 mb-4 animate-fade-up delay-1">
-  <label class="input-label" style="margin:0; white-space:nowrap;">Année scolaire</label>
-  <select name="annee" onchange="this.form.submit()" class="input select" style="max-width:220px;">
-    {% for a in annees %}
-    <option value="{{ a.pk }}" {% if a.pk == annee.pk %}selected{% endif %}>
-      {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
-    </option>
-    {% endfor %}
-  </select>
-</form>
+<div class="dash-info-row animate-fade-up delay-1" style="margin-bottom: 1.5rem;">
+  <form method="get" id="form-annee" style="display: flex; align-items: center; gap: 0.75rem;">
+    <label class="dash-form-label" style="margin: 0; white-space: nowrap;">Année scolaire</label>
+    <select name="annee" onchange="this.form.submit()" class="input" style="min-width: 200px;">
+      {% for a in annees %}
+      <option value="{{ a.pk }}" {% if a.pk == annee.pk %}selected{% endif %}>
+        {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
 
 {% if not periodes_data %}
-<div class="card animate-fade-up delay-2">
-  <div class="empty-state" style="padding:2rem;">
-    <p class="empty-state-text">Aucun résultat calculé pour cette année scolaire.</p>
-  </div>
+<div class="dash-empty-state animate-fade-up delay-2">
+  <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color: var(--color-text-muted); margin-bottom: 1rem;">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+  </svg>
+  <p style="color: var(--color-text-secondary);">Aucun résultat calculé pour cette année scolaire.</p>
 </div>
 
 {% else %}
 
-<!-- ── Barre d'actions ── -->
-<div class="animate-fade-up delay-2"
-     style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;
-            margin-bottom:1.25rem; padding:.75rem 1rem;
-            background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
-
-  <!-- Bouton Imprimer (offline) -->
+<div class="dash-action-bar animate-fade-up delay-2" id="action-bar-container" style="position: relative; z-index: 9999;">
   <form method="post" action="{% url 'pedagogie:bilan_pdf' %}" target="_blank" id="form-pdf">
     {% csrf_token %}
     <input type="hidden" name="annee" value="{{ annee.pk }}">
     <input type="hidden" name="commentaires" id="input-commentaires" value="{}">
-    <button type="submit" class="btn-primary"
-            style="gap:.6rem; display:flex; align-items:center; padding:.55rem 1.2rem; font-size:.92rem; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,.15);">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+    <button type="submit" class="dash-btn dash-btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
       </svg>
       Imprimer le bilan
     </button>
   </form>
 
-  <!-- Séparateur vertical -->
-  <div style="width:1px; height:28px; background:#e2e8f0; display:none;" id="sep-ia"></div>
+  <div class="dash-action-sep" id="sep-ia"></div>
 
-  <!-- Bouton Analyse IA -->
-  <button type="button" id="btn-ia"
-          onclick="genererAnalyseIA()"
-          class="btn-primary"
-          style="gap:.5rem; display:flex; align-items:center;"
-          title="Nécessite une connexion Internet">
-    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+  <div id="btn-ia" class="dash-btn dash-btn-secondary" title="Analyse locale - fonctionne sans Internet">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
     </svg>
     <span id="btn-ia-label">Analyser avec l'IA</span>
-  </button>
-
-  <!-- Indicateur offline -->
-  <span id="badge-offline"
-        style="display:none; font-size:.78rem; color:#d97706; align-items:center; gap:.35rem;">
-    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M3 3l18 18M10.584 10.584a3 3 0 004.243 4.243"/>
-    </svg>
-    Connexion Internet requise pour l'analyse IA
-  </span>
-
-  <!-- Zone de message d'erreur IA -->
-  <span id="ia-erreur" style="display:none; font-size:.78rem; color:#dc2626;"></span>
-</div>
-
-<!-- Données JSON pour l'IA — sérialisées côté serveur (caractères spéciaux protégés) -->
-<script id="stats-json" type="application/json">{{ stats_ia_json|safe }}</script>
-
-<!-- ══════════════════════════════════════════════════
-     SECTIONS PAR PÉRIODE
-══════════════════════════════════════════════════ -->
-{% for periode in periodes_data %}
-<div class="animate-fade-up delay-2" style="margin-bottom:2rem;" id="periode-{{ periode.trimestre.pk }}">
-
-  <!-- En-tête de la période -->
-  <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem;">
-    <div style="background:var(--color-primary,#059669); color:#fff;
-                border-radius:6px; padding:6px 16px; font-weight:700;
-                font-size:.95rem; letter-spacing:.03em; white-space:nowrap;">
-      {{ periode.trimestre.nom }}
-    </div>
-    <div style="flex:1; height:2px;
-                background:linear-gradient(90deg,var(--color-primary,#059669)20%,#e2e8f0);
-                border-radius:2px;"></div>
   </div>
 
-  <!-- Tableau statistiques -->
+  <span id="badge-offline" class="dash-offline-badge" title="L'analyse fonctionne aussi sans connexion Internet">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M3 3l18 18M10.584 10.584a3 3 0 004.243 4.243"/>
+    </svg>
+    Hors ligne
+  </span>
+
+  <span id="ia-erreur" class="dash-error-msg"></span>
+</div>
+
+<script id="stats-json" type="application/json">{{ stats_ia_json|safe }}</script>
+
+{% for periode in periodes_data %}
+<div class="dash-section animate-fade-up delay-2" id="periode-{{ periode.trimestre.pk }}">
+
+  <div class="dash-section-header">
+    <div class="dash-periode-badge">
+      {{ periode.trimestre.nom }}
+    </div>
+    <div class="dash-periode-line"></div>
+  </div>
+
   <div class="table-wrapper">
     <div class="table-scroll">
       <table class="data-table">
         <thead>
           <tr>
-            <th style="min-width:140px;">Classe</th>
-            <th style="text-align:center; white-space:nowrap;">Élèves</th>
-            <th style="text-align:center; white-space:nowrap;">Moy. classe</th>
-            <th style="text-align:center; white-space:nowrap; color:#16a34a;">Plus haute</th>
-            <th style="text-align:center; white-space:nowrap; color:#dc2626;">Plus faible</th>
-            <th style="text-align:center; white-space:nowrap;">Taux de réussite</th>
+            <th>Classe</th>
+            <th class="dash-th-center">Élèves</th>
+            <th class="dash-th-center">Moy. classe</th>
+            <th class="dash-th-success">Plus haute</th>
+            <th class="dash-th-danger">Plus faible</th>
+            <th class="dash-th-center">Taux de réussite</th>
           </tr>
         </thead>
         <tbody>
           {% for ligne in periode.lignes %}
           <tr>
-            <td style="white-space:nowrap;">
-              <a href="{% url 'pedagogie:resultat_classe' ligne.classe.pk %}"
-                 style="font-weight:600; text-decoration:none; color:var(--color-primary,#059669);">
+            <td>
+              <a href="{% url 'pedagogie:resultat_classe' ligne.classe.pk %}" class="dash-classe-link">
                 {{ ligne.classe.nom }}
               </a>
-              <div style="font-size:.72rem; color:var(--color-text-secondary);">
-                {{ ligne.classe.cycle.nom }}
-              </div>
-              <div style="margin-top:.25rem;">
-                <a href="{% url 'pedagogie:releve_moyenne_classe_pdf' %}?classe={{ ligne.classe.pk }}&trimestre={{ periode.trimestre.pk }}"
-                   target="_blank"
-                   title="Relevé de moyennes par ordre de mérite"
-                   style="display:inline-flex; align-items:center; gap:.3rem;
-                          font-size:.7rem; color:#64748b; text-decoration:none;
-                          padding:.15rem .45rem; border:1px solid #e2e8f0;
-                          border-radius:4px; background:#f8fafc;">
-                  <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                  </svg>
-                  Relevé PDF
-                </a>
-              </div>
+              <div class="dash-classe-cycle">{{ ligne.classe.cycle.nom }}</div>
+              <a href="{% url 'pedagogie:releve_moyenne_classe_pdf' %}?classe={{ ligne.classe.pk }}&trimestre={{ periode.trimestre.pk }}"
+                 target="_blank"
+                 title="Relevé de moyennes par ordre de mérite"
+                 class="dash-pdf-link">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                Relevé PDF
+              </a>
             </td>
-            <td style="text-align:center; font-size:.85rem;">{{ ligne.stats.nb_eleves }}</td>
-            <td style="text-align:center; font-weight:700; font-size:.9rem;
-                       color:{% if ligne.stats.moy_classe and ligne.stats.moy_classe >= 10 %}#16a34a{% elif ligne.stats.moy_classe %}#dc2626{% else %}#94a3b8{% endif %};">
+            <td class="dash-td-center">{{ ligne.stats.nb_eleves }}</td>
+            <td class="dash-td-center dash-moyenne {% if ligne.stats.moy_classe and ligne.stats.moy_classe >= 10 %}dash-moyenne-good{% elif ligne.stats.moy_classe %}dash-moyenne-bad{% endif %}">
               {% if ligne.stats.moy_classe %}{{ ligne.stats.moy_classe }}{% else %}—{% endif %}
             </td>
-            <td style="text-align:center; font-size:.85rem; color:#16a34a; font-weight:600;">
+            <td class="dash-td-center dash-td-success">
               {% if ligne.stats.moy_max %}{{ ligne.stats.moy_max }}{% else %}—{% endif %}
             </td>
-            <td style="text-align:center; font-size:.85rem; color:#dc2626; font-weight:600;">
+            <td class="dash-td-center dash-td-danger">
               {% if ligne.stats.moy_min %}{{ ligne.stats.moy_min }}{% else %}—{% endif %}
             </td>
-            <td style="text-align:center; font-size:.85rem;">
+            <td class="dash-td-center">
               {% if ligne.stats.taux is not None %}
-              <span style="font-weight:600;
-                           color:{% if ligne.stats.taux >= 75 %}#16a34a{% elif ligne.stats.taux >= 50 %}#d97706{% else %}#dc2626{% endif %};">
+              <span class="dash-taux dash-taux-{% if ligne.stats.taux >= 75 %}good{% elif ligne.stats.taux >= 50 %}mid{% else %}bad{% endif %}">
                 {{ ligne.stats.taux }}%
               </span>
-              <div style="font-size:.7rem; color:var(--color-text-secondary);">
-                {{ ligne.stats.nb_admis }}/{{ ligne.stats.nb_eleves }}
-              </div>
+              <div class="dash-taux-detail">{{ ligne.stats.nb_admis }}/{{ ligne.stats.nb_eleves }}</div>
               {% else %}—{% endif %}
             </td>
           </tr>
@@ -179,89 +145,149 @@
     </div>
   </div>
 
-  <!-- Zone analyses IA (remplie dynamiquement par JS) -->
   {% for ligne in periode.lignes %}
-  <div id="ia-{{ ligne.classe.pk }}_{{ periode.trimestre.pk }}"
-       style="display:none; margin-top:.5rem; margin-bottom:.5rem;"></div>
+  <div id="ia-{{ ligne.classe.pk }}_{{ periode.trimestre.pk }}" class="dash-ia-zone"></div>
   {% endfor %}
 
 </div>
 {% endfor %}
 
-<!-- Légende -->
-<div class="d-flex gap-4 mt-3 animate-fade-up"
-     style="font-size:.78rem; color:var(--color-text-secondary); flex-wrap:wrap;">
-  <span><span style="color:#16a34a; font-weight:700;">■</span> Moy. ≥ 10 / Taux ≥ 75%</span>
-  <span><span style="color:#d97706; font-weight:700;">■</span> Taux 50–74%</span>
-  <span><span style="color:#dc2626; font-weight:700;">■</span> Moy. &lt; 10 / Taux &lt; 50%</span>
+<div class="dash-legend animate-fade-up delay-3">
+  <span class="dash-legend-item"><span class="dash-legend-dot dash-legend-good"></span> Moy. ≥ 10 / Taux ≥ 75%</span>
+  <span class="dash-legend-item"><span class="dash-legend-dot dash-legend-mid"></span> Taux 50–74%</span>
+  <span class="dash-legend-item"><span class="dash-legend-dot dash-legend-bad"></span> Moy. &lt; 10 / Taux &lt; 50%</span>
 </div>
+
+{% load static %}
+<script src="{% static 'js/bilan_periodes.js' %}"></script>
 
 {% endif %}
 
 {% endblock %}
 
 {% block extra_js %}
+<style>
+.dash-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.dash-info-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.dash-form-label { font-size: 0.8125rem; color: var(--color-text-muted); white-space: nowrap; }
+.dash-empty-state { text-align: center; padding: 3rem 1rem; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.dash-action-bar { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; padding: 0.75rem 1rem; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.dash-action-sep { width: 1px; height: 24px; background: var(--color-border); display: none; }
+.dash-offline-badge { display: none; font-size: 0.78rem; color: #d97706; align-items: center; gap: 0.35rem; }
+.dash-error-msg { display: none; font-size: 0.78rem; color: var(--color-danger); }
+.dash-section { margin-bottom: 2rem; }
+.dash-section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.dash-periode-badge { background: var(--color-primary); color: #fff; border-radius: 6px; padding: 6px 16px; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.03em; white-space: nowrap; }
+.dash-periode-line { flex: 1; height: 2px; background: linear-gradient(90deg, var(--color-primary) 20%, var(--color-border)); border-radius: 2px; }
+.dash-th-center { text-align: center; }
+.dash-th-success { text-align: center; color: var(--color-note-excellent); }
+.dash-th-danger { text-align: center; color: var(--color-note-insuffisant); }
+.dash-classe-link { font-weight: 600; text-decoration: none; color: var(--color-primary); }
+.dash-classe-link:hover { color: var(--color-primary-light); }
+.dash-classe-cycle { font-size: 0.72rem; color: var(--color-text-secondary); margin-top: 2px; }
+.dash-pdf-link { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: var(--color-text-muted); text-decoration: none; padding: 0.15rem 0.45rem; border: 1px solid var(--color-border); border-radius: 4px; background: rgba(255,255,255,0.02); margin-top: 0.25rem; transition: all 0.15s; }
+.dash-pdf-link:hover { color: var(--color-primary); border-color: var(--color-primary); }
+.dash-td-center { text-align: center; font-size: 0.85rem; }
+.dash-moyenne { font-weight: 700; font-size: 0.9rem; }
+.dash-moyenne-good { color: var(--color-note-excellent); }
+.dash-moyenne-bad { color: var(--color-note-insuffisant); }
+.dash-td-success { color: var(--color-note-excellent); font-weight: 600; }
+.dash-td-danger { color: var(--color-note-insuffisant); font-weight: 600; }
+.dash-taux { font-weight: 600; }
+.dash-taux-good { color: var(--color-note-excellent); }
+.dash-taux-mid { color: var(--color-gold); }
+.dash-taux-bad { color: var(--color-note-insuffisant); }
+.dash-taux-detail { font-size: 0.7rem; color: var(--color-text-secondary); }
+.dash-ia-zone { display: none; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+.dash-legend { display: flex; gap: 1.5rem; margin-top: 1rem; font-size: 0.78rem; color: var(--color-text-secondary); flex-wrap: wrap; }
+.dash-legend-item { display: flex; align-items: center; gap: 0.4rem; }
+.dash-legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+.dash-legend-good { background: var(--color-note-excellent); }
+.dash-legend-mid { background: var(--color-gold); }
+.dash-legend-bad { background: var(--color-note-insuffisant); }
+</style>
 <script>
-// ── Détection offline ─────────────────────────────────────────────────────────
+// Note: L'analyse IA fonctionne 100% hors ligne - pas de connexion Internet nécessaire
+// On garde la détection pour info visuelle seulement
 function majEtatConnexion() {
   const online = navigator.onLine;
-  const btn    = document.getElementById('btn-ia');
   const badge  = document.getElementById('badge-offline');
-  if (!btn) return;
-  btn.disabled = !online;
-  btn.style.opacity = online ? '1' : '.45';
-  btn.style.cursor  = online ? 'pointer' : 'not-allowed';
-  badge.style.display = online ? 'none' : 'flex';
+  if (badge) {
+    badge.style.display = online ? 'none' : 'flex';
+  }
 }
 window.addEventListener('online',  majEtatConnexion);
 window.addEventListener('offline', majEtatConnexion);
 document.addEventListener('DOMContentLoaded', majEtatConnexion);
 
-// ── Rendu d'un bloc d'analyse IA ─────────────────────────────────────────────
+// Ajouter écouteur sur le bouton IA
+document.addEventListener('DOMContentLoaded', function() {
+  var btnIa = document.getElementById('btn-ia');
+  if (btnIa) {
+    btnIa.addEventListener('click', function(e) {
+      console.log('Bouton cliqué!');
+      genererAnalyseIA();
+    });
+  }
+});
+
 function rendreAnalyseIA(cle, analyse) {
   const zone = document.getElementById('ia-' + cle);
-  if (!zone) return;
+  if (!zone) {
+    console.warn('Zone IA non trouvée:', cle);
+    return;
+  }
 
   const recos = (analyse.recommandations || [])
-    .map(r => `<li style="margin-bottom:.2rem;">${r}</li>`)
+    .map(r => `<li>${r}</li>`)
     .join('');
 
   zone.innerHTML = `
-    <div style="padding:.75rem 1rem; border-left:3px solid var(--color-primary,#059669);
-                background:#f0fdf4; border-radius:0 6px 6px 0; font-size:.85rem;">
-      <div style="font-weight:700; color:var(--color-primary,#059669);
-                  font-size:.72rem; text-transform:uppercase; letter-spacing:.04em;
-                  margin-bottom:.4rem;">Analyse IA</div>
-      <p style="margin:0 0 .5rem; color:#1e293b; line-height:1.5;">
-        ${analyse.commentaire || ''}
-      </p>
-      ${recos ? `<div style="color:#374151;"><strong>Recommandations :</strong>
-        <ul style="margin:.3rem 0 0 1.2rem; padding:0; line-height:1.6;">${recos}</ul></div>` : ''}
+    <div class="dash-ia-card">
+      <div class="dash-ia-title">Analyse IA</div>
+      <p class="dash-ia-text">${analyse.commentaire || ''}</p>
+      ${recos ? `<div class="dash-ia-recos"><strong>Recommandations :</strong><ul>${recos}</ul></div>` : ''}
     </div>`;
   zone.style.display = 'block';
+  
+  zone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// ── Génération de l'analyse IA ───────────────────────────────────────────────
 let commentairesGeneres = {};
 
 async function genererAnalyseIA() {
   const btn    = document.getElementById('btn-ia');
   const label  = document.getElementById('btn-ia-label');
   const errDiv = document.getElementById('ia-erreur');
+  const sepIa  = document.getElementById('sep-ia');
+  const jsonEl = document.getElementById('stats-json');
+  
   errDiv.style.display = 'none';
+  errDiv.textContent = '';
 
-  // Stats JSON embarqué dans la page
+  if (!jsonEl || !jsonEl.textContent.trim()) {
+    errDiv.textContent = 'Aucune donnée disponible';
+    errDiv.style.display = 'inline';
+    return;
+  }
+
   let stats = [];
   try {
-    stats = JSON.parse(document.getElementById('stats-json').textContent);
+    stats = JSON.parse(jsonEl.textContent);
   } catch(e) {
-    errDiv.textContent = 'Impossible de lire les données du bilan.';
+    errDiv.textContent = 'Erreur de parsing: ' + e.message;
+    errDiv.style.display = 'inline';
+    return;
+  }
+
+  if (!stats || stats.length === 0) {
+    errDiv.textContent = 'Aucune donnée à analyser';
     errDiv.style.display = 'inline';
     return;
   }
 
   btn.disabled = true;
-  label.textContent = 'Génération en cours…';
+  label.textContent = 'Génération...';
 
   const csrfToken = document.cookie
     .split('; ')
@@ -284,29 +310,38 @@ async function genererAnalyseIA() {
       throw new Error(json.erreur || `Erreur HTTP ${resp.status}`);
     }
 
-    commentairesGeneres = json.commentaires || {};
+    if (!json.commentaires) {
+      throw new Error('Aucun commentaire');
+    }
 
-    // Afficher chaque analyse sous la ligne concernée
+    commentairesGeneres = json.commentaires;
+
     for (const [cle, analyse] of Object.entries(commentairesGeneres)) {
       rendreAnalyseIA(cle, analyse);
     }
 
-    // Mettre à jour le champ caché du formulaire PDF
-    document.getElementById('input-commentaires').value =
-      JSON.stringify(commentairesGeneres);
-
-    label.textContent = 'Analyse générée ✓';
-    btn.disabled = false;
-
-    // Petit badge de succès
-    document.getElementById('sep-ia').style.display = 'block';
+    document.getElementById('input-commentaires').value = JSON.stringify(commentairesGeneres);
+    label.textContent = 'Analyse générée';
+    sepIa.style.display = 'block';
 
   } catch(e) {
-    errDiv.textContent = 'Erreur IA : ' + (e.message || e);
+    errDiv.textContent = 'Erreur: ' + e.message;
     errDiv.style.display = 'inline';
     label.textContent = 'Analyser avec l\'IA';
     btn.disabled = false;
   }
 }
 </script>
+<style>
+.dash-ia-card { padding: 0.75rem 1rem; border-left: 3px solid var(--color-primary); background: rgba(0,168,107,0.08); border-radius: 0 6px 6px 0; font-size: 0.85rem; animation: dashIaFadeIn 0.4s ease both; }
+.dash-ia-title { font-weight: 700; color: var(--color-primary); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
+.dash-ia-text { margin: 0 0 0.5rem; color: var(--color-text-primary); line-height: 1.5; }
+.dash-ia-recos { color: var(--color-text-secondary); }
+.dash-ia-recos ul { margin: 0.3rem 0 0 1.2rem; padding: 0; line-height: 1.6; }
+.dash-btn-loading { position: relative; pointer-events: none; }
+.dash-btn-loading::after { content: ''; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: dashSpin 0.8s linear infinite; }
+.dash-btn-success { background: var(--color-note-excellent) !important; border-color: var(--color-note-excellent) !important; }
+@keyframes dashIaFadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dashSpin { to { transform: translateY(-50%) rotate(360deg); } }
+</style>
 {% endblock %}

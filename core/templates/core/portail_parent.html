@@ -1,106 +1,210 @@
-{% extends 'core/base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#06101E">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="YELEN Parent">
+  <link rel="manifest" href="/manifest.json">
+  <title>Portail Parent — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+</head>
 
-{% block title %}Portail Parent{% endblock %}
+<body class="pp-app">
 
-{% block content %}
-<div class="page-header animate-fade-up">
-    <div>
-        <p class="page-subtitle">Espace famille</p>
-        <h1 class="page-title">Bonjour, {{ request.user.get_full_name }}</h1>
+  <!-- Topbar -->
+  <header class="pp-topbar">
+    <div class="pp-topbar-logo">YELEN SCHOOL</div>
+    <div class="pp-topbar-user">
+      <div class="pp-user-name">{{ request.user.get_full_name }}</div>
+      <div class="pp-user-etab">{% if annee %}{{ annee.libelle }}{% else %}Parent{% endif %}</div>
     </div>
-    {% if annee %}
-    <span class="badge badge-info" style="font-size:0.85rem; padding:6px 12px;">
-        {{ annee.libelle }}
-    </span>
-    {% endif %}
-</div>
+  </header>
 
-{% if not enfants %}
-<div class="card animate-fade-up" style="padding:var(--space-8); text-align:center;">
-    <div style="width:56px; height:56px; border-radius:50%; background:var(--color-primary-ambient); display:flex; align-items:center; justify-content:center; margin:0 auto var(--space-4);">
-        <svg width="28" height="28" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+  <!-- Contenu Principal -->
+  <main class="pp-content">
+
+    <!-- Bannière Offline -->
+    <div id="pwa-offline-banner" class="pp-banner pp-banner--offline pp-hidden">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M12 12h.01M8.464 15.536a5 5 0 010-7.072"/>
+      </svg>
+      &nbsp; Mode hors ligne
+    </div>
+
+    <!-- Bannière Installation PWA -->
+    <div id="pwa-install-banner" class="pp-banner pp-banner--install pp-hidden">
+      <div class="pp-banner-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
         </svg>
-    </div>
-    <h3 style="font-size:1.1rem; font-weight:600; margin-bottom:var(--space-2);">Aucun élève associé</h3>
-    <p style="color:var(--color-text-muted); font-size:0.9rem;">
-        Votre compte n'est lié à aucun élève pour le moment.<br>
-        Contactez l'administration de l'établissement.
-    </p>
-</div>
-{% else %}
-
-<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:var(--space-5);">
-{% for enfant in enfants %}
-<div class="card animate-fade-up" style="overflow:hidden;">
-    {# En-tête élève #}
-    <div style="padding:var(--space-4) var(--space-5); background:linear-gradient(135deg, var(--color-primary) 0%, #00c47a 100%); color:#fff;">
-        <div style="display:flex; align-items:center; gap:var(--space-3);">
-            <div style="width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:700; flex-shrink:0;">
-                {{ enfant.eleve.prenom|first|upper }}
-            </div>
-            <div>
-                <div style="font-weight:700; font-size:1rem;">{{ enfant.eleve.get_nom_complet }}</div>
-                {% if enfant.inscription %}
-                <div style="font-size:0.8rem; opacity:0.85;">{{ enfant.inscription.classe.nom }}</div>
-                {% else %}
-                <div style="font-size:0.8rem; opacity:0.7;">Non inscrit cette année</div>
-                {% endif %}
-            </div>
-        </div>
+      </div>
+      <div class="pp-banner-body">
+        <strong>YELEN SCHOOL</strong>
+        <p>Ajouter à l'écran d'accueil</p>
+      </div>
+      <button class="btn-primary btn-sm" onclick="pwaTriggerInstall()">Installer</button>
     </div>
 
-    {# Statistiques #}
-    <div style="display:grid; grid-template-columns:repeat(3, 1fr); border-bottom:1px solid var(--color-border);">
-        {# Moyenne #}
-        <div style="padding:var(--space-4); text-align:center; border-right:1px solid var(--color-border);">
-            <div style="font-size:1.4rem; font-weight:700; color:{% if enfant.derniere_mg %}{% if enfant.derniere_mg.valeur >= 10 %}var(--color-primary){% else %}#ef4444{% endif %}{% else %}var(--color-text-muted){% endif %};">
-                {% if enfant.derniere_mg %}{{ enfant.derniere_mg.valeur|floatformat:2 }}{% else %}—{% endif %}
-            </div>
-            <div style="font-size:0.72rem; color:var(--color-text-muted); margin-top:2px; text-transform:uppercase; letter-spacing:.03em;">
-                {% if enfant.derniere_mg %}Moy. {{ enfant.derniere_mg.trimestre.nom }}{% else %}Moyenne{% endif %}
-            </div>
-        </div>
-        {# Absences #}
-        <div style="padding:var(--space-4); text-align:center; border-right:1px solid var(--color-border);">
-            <div style="font-size:1.4rem; font-weight:700; color:{% if enfant.nb_absences_recentes > 5 %}#ef4444{% elif enfant.nb_absences_recentes > 0 %}#f59e0b{% else %}var(--color-text-primary){% endif %};">
-                {{ enfant.nb_absences_recentes }}
-            </div>
-            <div style="font-size:0.72rem; color:var(--color-text-muted); margin-top:2px; text-transform:uppercase; letter-spacing:.03em;">Absences / 30j</div>
-        </div>
-        {# Paiements #}
-        <div style="padding:var(--space-4); text-align:center;">
-            <div style="font-size:1rem; font-weight:700; color:var(--color-text-primary);">
-                {{ enfant.total_paye|floatformat:0 }}
-            </div>
-            <div style="font-size:0.72rem; color:var(--color-text-muted); margin-top:2px; text-transform:uppercase; letter-spacing:.03em;">FCFA payés</div>
-        </div>
-    </div>
-
-    {# Infos complémentaires #}
-    {% if enfant.inscription %}
-    <div style="padding:var(--space-3) var(--space-5); font-size:0.82rem; color:var(--color-text-secondary); display:flex; gap:var(--space-4); flex-wrap:wrap;">
-        <span>
-            <span style="color:var(--color-text-muted);">Matricule :</span>
-            {{ enfant.eleve.matricule|default:"—" }}
-        </span>
-        <span>
-            <span style="color:var(--color-text-muted);">Statut :</span>
-            {{ enfant.inscription.statut_eleve.nom|default:"—" }}
-        </span>
-    </div>
-    {% endif %}
-</div>
-{% endfor %}
-</div>
-
-<div class="card animate-fade-up delay-2" style="margin-top:var(--space-5); padding:var(--space-4) var(--space-5);">
-    <p style="font-size:0.85rem; color:var(--color-text-muted); margin:0; display:flex; align-items:center; gap:var(--space-2);">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    {% if not enfants %}
+    <div class="pp-empty animate-fade-up">
+      <div class="pp-empty-icon">
+        <svg width="52" height="52" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
         </svg>
-        Pour toute question concernant la scolarité de votre enfant, contactez directement l'administration de l'établissement.
-    </p>
-</div>
-{% endif %}
-{% endblock %}
+      </div>
+      <h3 class="pp-empty-title">Dossier vide</h3>
+      <p class="pp-empty-text">
+        Aucun élève n'est encore lié à votre compte parent. Veuillez contacter l'administration pour régulariser votre dossier.
+      </p>
+    </div>
+    {% else %}
+
+    {% for enfant in enfants %}
+    <div class="pp-card animate-fade-up">
+
+      <!-- En-tête -->
+      <div class="pp-card-header">
+        <div class="pp-avatar-wrap">
+          <div class="pp-avatar">{{ enfant.eleve.prenom|first|upper }}</div>
+          <div class="pp-status"></div>
+        </div>
+        <div class="pp-info">
+          <div class="pp-nom">{{ enfant.eleve.get_nom_complet }}</div>
+          {% if enfant.inscription %}
+          <div class="pp-classe">{{ enfant.inscription.classe.nom }} · {{ enfant.inscription.classe.get_cycle_display }}</div>
+          {% else %}
+          <div class="pp-classe pp-classe--danger">Dossier incomplet</div>
+          {% endif %}
+        </div>
+        {% if enfant.eleve.photo %}
+        <img src="{{ enfant.eleve.photo.url }}" alt="" class="pp-photo">
+        {% endif %}
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="pp-stats">
+        <div class="pp-stat">
+          <div class="pp-glow pp-glow--primary"></div>
+          {% if enfant.derniere_mg %}
+            <div class="pp-val {% if enfant.derniere_mg.valeur >= 10 %}pp-val--success{% else %}pp-val--danger{% endif %}">
+              {{ enfant.derniere_mg.valeur|floatformat:2 }}
+            </div>
+          {% else %}
+            <div class="pp-val pp-val--empty">—</div>
+          {% endif %}
+          <div class="pp-stat-label">Moyenne</div>
+        </div>
+        <div class="pp-stat">
+          <div class="pp-glow pp-glow--danger"></div>
+          <div class="pp-val {% if enfant.nb_absences_recentes > 5 %}pp-val--danger{% elif enfant.nb_absences_recentes > 0 %}pp-val--warning{% endif %}">
+            {{ enfant.nb_absences_recentes }}
+          </div>
+          <div class="pp-stat-label">Absences</div>
+        </div>
+        <div class="pp-stat">
+          <div class="pp-glow pp-glow--gold"></div>
+          <div class="pp-val pp-val--sm">
+            {{ enfant.total_paye|floatformat:0 }}
+          </div>
+          <div class="pp-stat-label">Paiements</div>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="pp-badges">
+        <span class="badge badge-neutral">{{ enfant.eleve.matricule }}</span>
+        <span class="badge badge-success">{{ enfant.inscription.statut_eleve.nom|default:"Inscrit" }}</span>
+        {% if enfant.inscription.exonere %}
+        <span class="badge badge-warning">Exonéré</span>
+        {% endif %}
+      </div>
+
+      <!-- Devoirs -->
+      {% if enfant.devoirs_a_venir %}
+      <div class="pp-section">
+        <div class="pp-section-title">
+          <svg class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+          <span class="pp-section-label">Travail à faire</span>
+        </div>
+
+        {% for devoir in enfant.devoirs_a_venir %}
+        <div class="pp-devoir">
+          <div class="pp-devoir-date">
+            <span class="pp-devoir-day">{{ devoir.date_remise_devoirs|date:"d" }}</span>
+            <span class="pp-devoir-month">{{ devoir.date_remise_devoirs|date:"M" }}</span>
+          </div>
+          <div class="pp-devoir-detail">
+            <div class="pp-devoir-subject">{{ devoir.enseignement.matiere.nom }}</div>
+            <div class="pp-devoir-text">{{ devoir.devoirs }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+
+    {% endif %}
+
+    <!-- Footer Brand -->
+    <div class="pp-footer">
+      <div class="pp-footer-logo">YELEN SCHOOL</div>
+      <p class="pp-footer-tagline">Illuminer chaque parcours scolaire</p>
+    </div>
+
+  </main>
+
+  <!-- Navigation Basse PWA -->
+  <nav class="pp-nav">
+    <a href="#" class="pp-nav-item pp-nav-item--active">
+      <span class="pp-nav-icon">
+        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+      </span>
+      Accueil
+    </a>
+    <a href="{% url 'core:portail_parent_notifications' %}" class="pp-nav-item">
+      <span class="pp-nav-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+      </span>
+      Notifs
+    </a>
+    <a href="{% url 'core:portail_parent_bulletins' %}" class="pp-nav-item">
+      <span class="pp-nav-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </span>
+      Bulletins
+    </a>
+    <a href="{% url 'accounts:logout' %}" class="pp-nav-item pp-nav-item--danger">
+      <span class="pp-nav-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </span>
+      Quitter
+    </a>
+  </nav>
+
+  <script src="{% static 'js/pwa.js' %}" defer></script>
+</body>
+</html>

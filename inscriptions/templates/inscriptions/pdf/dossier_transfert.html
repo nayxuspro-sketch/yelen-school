@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm 15mm;
+    @top-center {
+      content: "Dossier de transfert — {{ eleve.nom }} {{ eleve.prenom }}";
+      font-size: 8pt; color: #6b7280;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " / " counter(pages);
+      font-size: 7.5pt; color: #9ca3af;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #111827; background: #fff; }
+
+  .header {
+    display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 2px solid #00A86B;
+  }
+  .header-logo img { width: 44px; height: 44px; object-fit: contain; }
+  .header-text { flex: 1; }
+  .header-etab { font-size: 12pt; font-weight: bold; color: #111827; margin-bottom: 2px; }
+  .header-sub { font-size: 8pt; color: #6b7280; }
+  .header-right { text-align: right; font-size: 7.5pt; color: #6b7280; }
+
+  .doc-title {
+    text-align: center; margin: 16px 0;
+    background: #1d4ed8; color: #fff;
+    padding: 10px 0; border-radius: 4px;
+  }
+  .doc-title h1 { font-size: 14pt; font-weight: bold; letter-spacing: 0.04em; }
+  .doc-title p { font-size: 8.5pt; opacity: .85; margin-top: 3px; }
+
+  .stamp {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 8pt;
+    font-weight: bold;
+  }
+  .stamp-approuve { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .stamp-attente  { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+  .stamp-refuse   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+  .section-title {
+    font-size: 9.5pt; font-weight: bold; color: #1d4ed8;
+    text-transform: uppercase; letter-spacing: .06em;
+    border-bottom: 1px solid #93c5fd;
+    padding-bottom: 3px; margin: 14px 0 8px;
+  }
+
+  .info-grid {
+    display: grid; grid-template-columns: 140px 1fr; gap: 4px 12px;
+    margin-bottom: 10px;
+  }
+  .info-label { color: #6b7280; font-size: 8.5pt; }
+  .info-value { font-weight: 600; font-size: 8.5pt; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px; }
+  th { background: #1d4ed8; color: #fff; padding: 5px 7px; text-align: left; font-weight: 600; }
+  td { padding: 4px 7px; border-bottom: 1px solid #e5e7eb; }
+  tr:nth-child(even) td { background: #f0f4ff; }
+
+  .total-row td { font-weight: bold; background: #dbeafe !important; border-top: 2px solid #3b82f6; }
+  .no-data { text-align: center; color: #9ca3af; padding: 10px; font-style: italic; }
+
+  .finance-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 8pt; font-weight: bold;
+  }
+  .finance-ok  { background: #dcfce7; color: #166534; }
+  .finance-due { background: #fee2e2; color: #991b1b; }
+
+  .signature-block {
+    margin-top: 24px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;
+    font-size: 8pt;
+  }
+  .sig-box { text-align: center; }
+  .sig-line { border-bottom: 1px solid #111827; margin: 40px 10px 4px; }
+  .sig-label { color: #6b7280; }
+
+  .watermark-approved {
+    position: fixed; top: 40%; left: 20%;
+    transform: rotate(-35deg);
+    font-size: 72pt; font-weight: bold;
+    color: rgba(16,185,129,0.07);
+    letter-spacing: 0.1em;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+{% if transfert.statut == 'APPROUVE' %}
+<div class="watermark-approved">APPROUVÉ</div>
+{% endif %}
+
+{# En-tête établissement #}
+<div class="header">
+  <div class="header-logo">
+    {% if etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo">{% endif %}
+  </div>
+  <div class="header-text">
+    <div class="header-etab">{% if identite %}{{ identite.nom_complet|default:identite.nom }}{% elif etablissement %}{{ etablissement.nom }}{% else %}YELEN SCHOOL{% endif %}</div>
+    {% if identite %}
+    <div class="header-sub">{{ identite.adresse|default:"" }}{% if identite.telephone %} — Tél. {{ identite.telephone }}{% endif %}</div>
+    {% endif %}
+  </div>
+  <div class="header-right">
+    Dossier N° {{ transfert.pk|truncatechars:8 }}<br>
+    Date : {{ transfert.date_demande|date:"d/m/Y" }}<br>
+    <span class="stamp stamp-{% if transfert.statut == 'APPROUVE' %}approuve{% elif transfert.statut == 'EN_ATTENTE' %}attente{% else %}refuse{% endif %}">
+      {{ transfert.get_statut_display }}
+    </span>
+  </div>
+</div>
+
+{# Titre #}
+<div class="doc-title">
+  <h1>Dossier de Transfert Inter-Établissements</h1>
+  <p>{{ transfert.inscription.annee_scolaire.libelle }}</p>
+</div>
+
+{# Infos élève #}
+<div class="section-title">Identité de l'élève</div>
+<div class="two-col">
+  <div class="info-grid">
+    <span class="info-label">Nom & Prénom</span>
+    <span class="info-value">{{ eleve.nom|upper }} {{ eleve.prenom }}</span>
+    <span class="info-label">Matricule</span>
+    <span class="info-value">{{ eleve.matricule|default:"—" }}</span>
+    <span class="info-label">Date de naissance</span>
+    <span class="info-value">{{ eleve.date_naissance|date:"d/m/Y"|default:"—" }}</span>
+    <span class="info-label">Lieu de naissance</span>
+    <span class="info-value">{{ eleve.lieu_naissance|default:"—" }}</span>
+    <span class="info-label">Nationalité</span>
+    <span class="info-value">{{ eleve.nationalite|default:"—" }}</span>
+  </div>
+  <div class="info-grid">
+    <span class="info-label">Classe</span>
+    <span class="info-value">{{ transfert.inscription.classe.nom }}</span>
+    <span class="info-label">Cycle</span>
+    <span class="info-value">{{ transfert.inscription.classe.cycle.nom|default:"—" }}</span>
+    <span class="info-label">Statut inscription</span>
+    <span class="info-value">{{ transfert.inscription.get_statut_display }}</span>
+    <span class="info-label">Parent / Tuteur</span>
+    <span class="info-value">{{ eleve.tuteur_nom|default:eleve.nom_parent|default:"—" }}</span>
+    <span class="info-label">Téléphone</span>
+    <span class="info-value">{{ eleve.tuteur_telephone|default:eleve.telephone_parent|default:"—" }}</span>
+  </div>
+</div>
+
+{# Infos transfert #}
+<div class="section-title">Informations du transfert</div>
+<div class="info-grid">
+  <span class="info-label">Établissement d'origine</span>
+  <span class="info-value">{% if etablissement %}{{ etablissement.nom }}{% else %}—{% endif %}</span>
+  <span class="info-label">Établissement de destination</span>
+  <span class="info-value">{{ transfert.etablissement_destination }}</span>
+  <span class="info-label">Motif</span>
+  <span class="info-value">{{ transfert.motif|default:"—" }}</span>
+  <span class="info-label">Date de la demande</span>
+  <span class="info-value">{{ transfert.date_demande|date:"d/m/Y" }}</span>
+  {% if transfert.date_traitement %}
+  <span class="info-label">Date d'approbation</span>
+  <span class="info-value">{{ transfert.date_traitement|date:"d/m/Y" }}</span>
+  <span class="info-label">Traité par</span>
+  <span class="info-value">{{ transfert.traite_par.get_full_name|default:"—" }}</span>
+  {% endif %}
+</div>
+
+{# Cursus scolaire #}
+<div class="section-title">Cursus scolaire</div>
+<table>
+  <thead>
+    <tr>
+      <th>Année scolaire</th>
+      <th>Classe</th>
+      <th>Cycle</th>
+      <th>Statut</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ins in inscriptions_historique %}
+    <tr>
+      <td>{{ ins.annee_scolaire.libelle }}</td>
+      <td><strong>{{ ins.classe.nom }}</strong></td>
+      <td>{{ ins.classe.cycle.nom|default:"—" }}</td>
+      <td>{{ ins.get_statut_display }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="no-data">Aucun historique disponible.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{# Situation financière #}
+<div class="section-title">
+  Situation financière
+  &nbsp;
+  {% if total_du > 0 %}
+    <span class="finance-badge finance-due">Solde impayé : {{ total_du|floatformat:0 }} FCFA</span>
+  {% else %}
+    <span class="finance-badge finance-ok">Situation régulière</span>
+  {% endif %}
+</div>
+{% if paiements %}
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Rubrique</th>
+      <th>Mode</th>
+      <th style="text-align:right;">Montant (FCFA)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in paiements %}
+    <tr>
+      <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
+      <td>{{ p.rubrique.nom|default:"—" }}</td>
+      <td>{{ p.mode_paiement|default:"—" }}</td>
+      <td style="text-align:right;">{{ p.montant|floatformat:0 }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="total-row">
+      <td colspan="3">Total encaissé</td>
+      <td style="text-align:right;">{{ total_paye|floatformat:0 }}</td>
+    </tr>
+  </tbody>
+</table>
+{% else %}
+<p class="no-data">Aucun paiement enregistré pour cette inscription.</p>
+{% endif %}
+
+{# Signatures #}
+<div class="signature-block">
+  <div class="sig-box">
+    <div class="sig-line"></div>
+    <div class="sig-label">Le parent / tuteur</div>
+  </div>
+  <div class="sig-box">
+    <div class="sig-line"></div>
+    <div class="sig-label">Le Directeur</div>
+  </div>
+  <div class="sig-box">
+    <div class="sig-line"></div>
+    <div class="sig-label">Cachet de l'établissement</div>
+  </div>
+</div>
+
+</body>
+</html>

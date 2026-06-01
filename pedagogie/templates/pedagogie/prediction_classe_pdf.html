@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 1.8cm 1.5cm 1.5cm; }
+
+  body {
+    font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif;
+    font-size: 10pt;
+    color: #111;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ── En-tête ── */
+  .etab-nom  { font-weight: 700; font-size: 13pt; margin-bottom: 2pt; }
+  h1         { font-size: 15pt; font-weight: 700; color: #111; margin: 0 0 2pt; }
+  .sub       { font-size: 8.5pt; color: #444; margin-bottom: 14pt; }
+
+  /* ── Séparateur haut ── */
+  .barre-top    { border-top: 3pt solid #111; margin-bottom: 10pt; }
+  .barre-bottom { border-top: 1pt solid #999; margin-top: 14pt; }
+
+  /* ── Boîtes stats ── */
+  .stats { display: flex; gap: 10pt; margin: 10pt 0 14pt; }
+  .stat-box {
+    border: 1.5pt solid #555;
+    border-radius: 4pt;
+    padding: 7pt 10pt;
+    text-align: center;
+    flex: 1;
+  }
+  .stat-box .val { font-size: 20pt; font-weight: 700; color: #111; display: block; line-height: 1.1; }
+  .stat-box .lbl { font-size: 7pt;  color: #444; display: block; margin-top: 2pt; }
+
+  /* Épaisseur de bordure croissante selon la gravité */
+  .stat-bon      { border-color: #555; border-width: 1pt; }
+  .stat-moyen    { border-color: #333; border-width: 1.5pt; }
+  .stat-risque   { border-color: #222; border-width: 2pt; }
+  .stat-critique { border-color: #111; border-width: 2.5pt; background: #f0f0f0; }
+
+  /* ── Tableau ── */
+  table { width: 100%; border-collapse: collapse; margin-top: 4pt; font-size: 9pt; }
+
+  thead th {
+    background: #111;
+    color: #fff;
+    padding: 5pt 7pt;
+    font-size: 8pt;
+    font-weight: 600;
+    text-align: left;
+  }
+  thead th.right  { text-align: right; }
+  thead th.center { text-align: center; }
+
+  tbody td {
+    padding: 5pt 7pt;
+    border-bottom: 0.5pt solid #ccc;
+    vertical-align: middle;
+  }
+  tbody tr:nth-child(even) td { background: #f5f5f5; }
+
+  .right  { text-align: right; }
+  .center { text-align: center; }
+
+  /* ── Tendance : symbole + gras pour neg ── */
+  .tendance-pos { font-weight: 600; }
+  .tendance-neg { font-weight: 700; }
+
+  /* ── Badges pronostic — différenciés par fond gris et bordure ── */
+  .badge {
+    display: inline-block;
+    padding: 2pt 7pt;
+    border-radius: 10pt;
+    font-size: 7.5pt;
+    font-weight: 600;
+    border: 0.8pt solid #999;
+  }
+  .bon      { background: #fff;  border-color: #555; color: #111; }
+  .moyen    { background: #e8e8e8; border-color: #666; color: #111; }
+  .risque   { background: #c8c8c8; border-color: #444; color: #111; font-weight: 700; }
+  .critique { background: #555;    border-color: #111; color: #fff; font-weight: 700; }
+
+  /* ── Score bar (N&B : largeur uniquement, fond gris) ── */
+  .score-bar {
+    display: inline-block;
+    height: 8pt;
+    border-radius: 3pt;
+    background: #888;
+    vertical-align: middle;
+  }
+
+  /* ── Pied de page ── */
+  .footer {
+    font-size: 7pt;
+    color: #666;
+    text-align: center;
+    padding-top: 6pt;
+  }
+</style>
+</head>
+<body>
+
+{% if etablissement %}
+<div class="etab-nom">{{ etablissement.nom }}</div>
+{% endif %}
+
+<h1>Rapport de prédiction — {{ classe.nom }}</h1>
+<div class="sub">
+  Probabilité de réussite à l'examen officiel
+  {% if annee %}&nbsp;·&nbsp;{{ annee.libelle }}{% endif %}
+  &nbsp;·&nbsp;Généré le {% now "d/m/Y" %}
+</div>
+
+<div class="barre-top"></div>
+
+{% if predictions %}
+<div class="stats">
+  <div class="stat-box stat-bon">
+    <span class="val">{{ nb_bon|default:"0" }}</span>
+    <span class="lbl">Bon pronostic ≥ 70 %</span>
+  </div>
+  <div class="stat-box stat-moyen">
+    <span class="val">{{ nb_moyen|default:"0" }}</span>
+    <span class="lbl">Moyen 50–69 %</span>
+  </div>
+  <div class="stat-box stat-risque">
+    <span class="val">{{ nb_risque|default:"0" }}</span>
+    <span class="lbl">Risqué 30–49 %</span>
+  </div>
+  <div class="stat-box stat-critique">
+    <span class="val">{{ nb_critique|default:"0" }}</span>
+    <span class="lbl">Critique &lt; 30 %</span>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Élève</th>
+      <th>Examen</th>
+      <th class="right">Moy. (/20)</th>
+      <th class="right">Tendance</th>
+      <th class="right">Abs. NJ</th>
+      <th class="right">Score</th>
+      <th class="center">Pronostic</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in predictions %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td><strong>{{ p.inscription.eleve.nom|upper }} {{ p.inscription.eleve.prenom }}</strong></td>
+      <td>{{ p.examen_cible }}</td>
+      <td class="right">
+        {% if p.mg_actuelle %}{{ p.mg_actuelle|floatformat:2 }}{% else %}—{% endif %}
+      </td>
+      <td class="right {% if p.tendance is not None %}{% if p.tendance >= 0 %}tendance-pos{% else %}tendance-neg{% endif %}{% endif %}">
+        {% if p.tendance is not None %}{{ p.tendance|floatformat:2|stringformat:"+.2f" }}{% else %}—{% endif %}
+      </td>
+      <td class="right">{{ p.nb_absences_nj }}</td>
+      <td class="right"><strong>{{ p.score }}%</strong></td>
+      <td class="center">
+        <span class="badge {% if p.pronostic == 'BON' %}bon{% elif p.pronostic == 'MOYEN' %}moyen{% elif p.pronostic == 'RISQUE' %}risque{% else %}critique{% endif %}">
+          {{ p.get_pronostic_display }}
+        </span>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<div class="barre-bottom"></div>
+<div class="footer">
+  YELEN SCHOOL &nbsp;—&nbsp; Rapport de prédiction indicatif basé sur les moyennes et l'assiduité &nbsp;·&nbsp;
+  Score = (Moy/20)×100 ± tendance ± assiduité
+</div>
+
+</body>
+</html>

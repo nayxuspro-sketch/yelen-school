@@ -15,16 +15,59 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
+from datetime import timedelta
 
 from core.models import RoleChoices
 from .forms import UserCreateForm, UserUpdateForm, SetPasswordForm, ProfileUpdateForm, ChangeOwnPasswordForm
 from .models import User
+from licences.models import Licence
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_DURATION_MINUTES = 15
+_LICENCE_ALERT_DAYS = 30
+
+
+def _check_licence_post_login(request, user, on_expired_redirect='accounts:login'):
+    """
+    Vérifie la licence de l'établissement après connexion.
+    Déconnecte et retourne une réponse si la licence est expirée.
+    Ajoute un warning si elle expire bientôt.
+    Retourne None si tout est OK.
+    """
+    if not user.etablissement_id:
+        return None
+    try:
+        licence = Licence.objects.get(etablissement_id=user.etablissement_id)
+        today = timezone.now().date()
+        date_alerte = licence.date_expiration - timedelta(days=_LICENCE_ALERT_DAYS)
+        if licence.date_expiration < today:
+            logout(request)
+            messages.error(
+                request,
+                f"La licence de votre établissement a expiré le "
+                f"{licence.date_expiration.strftime('%d/%m/%Y')}. "
+                f"Veuillez contacter l'administrateur pour le renouvellement."
+            )
+            return redirect(on_expired_redirect)
+        if date_alerte <= today <= licence.date_expiration:
+            jours_restants = (licence.date_expiration - today).days
+            messages.warning(
+                request,
+                f"Attention : la licence de votre établissement expire le "
+                f"{licence.date_expiration.strftime('%d/%m/%Y')} "
+                f"(dans {jours_restants} jour(s)). Veuillez procéder au renouvellement."
+            )
+    except Licence.DoesNotExist:
+        messages.warning(
+            request,
+            "Aucune licence n'est associée à votre établissement. "
+            "Contactez l'administrateur."
+        )
+    return None
+
 
 def _admin_required(view_func):
     """Décorateur : réservé aux SUPER_ADMIN et DIRECTEUR."""
@@ -65,11 +108,11 @@ def login_view(request):
         return redirect('core:home')
 
     if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
+        email = request.POST.get('username', '').strip().lower()
         password = request.POST.get('password', '').strip()
 
         if not email or not password:
-            messages.error(request, "Veuillez fournir votre email et mot de passe.")
+            messages.error(request, "Veuillez fournir votre identifiant et mot de passe.")
             return render(request, 'accounts/login.html')
 
         user = authenticate(request, username=email, password=password)
@@ -78,7 +121,7 @@ def login_view(request):
                 remaining_seconds = (user.locked_until - timezone.now()).seconds
                 remaining_minutes = remaining_seconds // 60 + 1
                 messages.error(
-                    request, 
+                    request,
                     f"Compte temporairement verrouillé. Réessayez dans {remaining_minutes} minute(s)."
                 )
                 return render(request, 'accounts/login.html')
@@ -92,28 +135,32 @@ def login_view(request):
                 request.session['_2fa_user_pk'] = str(user.pk)
                 request.session['_2fa_next'] = request.GET.get('next', '')
                 return redirect('accounts:login_2fa')
+
             login(request, user)
+            blocked = _check_licence_post_login(request, user, on_expired_redirect='accounts:login')
+            if blocked:
+                return blocked
             return _redirect_after_login(request, user, request.GET.get('next', ''))
         else:
-            messages.error(request, "Email ou mot de passe incorrect.")
-            
+            messages.error(request, "Identifiant ou mot de passe incorrect.")
+
             try:
                 user = User.objects.get(email__iexact=email)
                 user.failed_login_attempts += 1
-                
+
                 if user.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
                     user.locked_until = timezone.now() + timezone.timedelta(minutes=LOCKOUT_DURATION_MINUTES)
                     user.save(update_fields=['failed_login_attempts', 'locked_until'])
                     messages.error(
-                        request, 
+                        request,
                         f"Compte verrouillé après {MAX_LOGIN_ATTEMPTS} tentatives échouées. "
                         f"Réessayez dans {LOCKOUT_DURATION_MINUTES} minutes."
                     )
                 else:
                     remaining = MAX_LOGIN_ATTEMPTS - user.failed_login_attempts
                     messages.error(
-                        request, 
-                        f"Email ou mot de passe incorrect. Il vous reste {remaining} tentative(s)."
+                        request,
+                        f"Identifiant ou mot de passe incorrect. Il vous reste {remaining} tentative(s)."
                     )
             except User.DoesNotExist:
                 pass
@@ -140,6 +187,9 @@ def login_2fa(request):
             del request.session['_2fa_user_pk']
             next_url = request.session.pop('_2fa_next', '')
             login(request, user)
+            blocked = _check_licence_post_login(request, user)
+            if blocked:
+                return blocked
             return _redirect_after_login(request, user, next_url)
         messages.error(request, "Code incorrect ou expiré. Réessayez.")
 
@@ -155,7 +205,10 @@ def logout_view(request):
 @login_required
 def totp_setup(request):
     """Activation de la 2FA : affiche le QR code et valide le premier code."""
-    import pyotp, qrcode, io, base64
+    import pyotp
+    import qrcode
+    import io
+    import base64
     from django.core.signing import Signer
 
     user = request.user
@@ -166,14 +219,14 @@ def totp_setup(request):
         if not signed_secret:
             messages.error(request, "Session expirée. Recommencez.")
             return redirect('accounts:totp_setup')
-        
+
         try:
             signer = Signer()
             secret = signer.unsign(signed_secret)
         except Exception:
             messages.error(request, "Session expirée. Recommencez.")
             return redirect('accounts:totp_setup')
-        
+
         totp = pyotp.TOTP(secret)
         if totp.verify(code, valid_window=1):
             user.totp_secret = secret
@@ -182,7 +235,7 @@ def totp_setup(request):
             messages.success(request, "Double authentification activée avec succès.")
             return redirect('accounts:profile')
         messages.error(request, "Code incorrect. Vérifiez votre application et réessayez.")
-        
+
         new_secret = pyotp.random_base32()
     else:
         new_secret = pyotp.random_base32()
@@ -317,21 +370,52 @@ def user_create(request):
 def parent_create(request):
     """Création d'un compte parent avec liaison aux élèves."""
     from .forms import ParentCreateForm
-    
+    from inscriptions.models import Inscription
+    from parametres.models import AnneeScolaire
+
     etab = request.user.etablissement
-    
+
     if request.method == 'POST':
         form = ParentCreateForm(request.POST, etablissement=etab)
         if form.is_valid():
             parent = form.save()
-            messages.success(request, f"Compte parent créé pour {parent.get_full_name()}. Élèves liés : {parent.eleves_lies.count()}")
+            nb_lies = parent.eleves_lies.count()
+            messages.success(request, f"Compte parent créé pour {parent.get_full_name()}. Élèves liés : {nb_lies}")
             return redirect('accounts:user_list')
     else:
         form = ParentCreateForm(etablissement=etab)
 
+    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
+    eleves_inscrits = []
+    if annee_courante:
+        seen = set()
+        for insc in (
+            Inscription.objects
+            .filter(
+                classe__etablissement=etab,
+                annee_scolaire=annee_courante,
+                eleve__is_active=True,
+            )
+            .select_related('eleve', 'classe')
+            .order_by('eleve__nom', 'eleve__prenom')
+        ):
+            pk = str(insc.eleve.pk)
+            if pk not in seen:
+                seen.add(pk)
+                eleves_inscrits.append({
+                    'pk': pk,
+                    'label': f"{insc.eleve.prenom} {insc.eleve.nom}",
+                    'matricule': insc.eleve.matricule or '',
+                    'classe': insc.classe.nom,
+                })
+
+    selected_eleves = set(form.data.getlist('eleves')) if form.is_bound else set()
+
     return render(request, 'accounts/parent_form.html', {
         'form': form,
         'title': "Créer un compte parent",
+        'eleves_inscrits': eleves_inscrits,
+        'selected_eleves': selected_eleves,
     })
 
 

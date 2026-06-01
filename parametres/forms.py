@@ -4,11 +4,11 @@ from pedagogie.models import TypeEvaluation
 from personnel.models import MembrePersonnel
 
 from .models import (
-    TypeDocument, Cycle, AnneeScolaire, Classe, Poste, StatutEleve,
-    RubriquePaiement, AppreciationMoyenneSecondaire, AppreciationMoyennePrimaire,
-    CategorieDiscipline, Discipline, PeriodeEvaluation, TypeSanction,
-    TitreFonction, TitreHonorifiquePersonnel, EvenementCalendrier,
-    IdentiteEtablissement,
+    TypeDocument, Cycle, AnneeScolaire, Classe, Poste, LocalisationPoste,
+    StatutEleve, RubriquePaiement, AppreciationMoyenneSecondaire,
+    AppreciationMoyennePrimaire, CategorieDiscipline, Discipline,
+    PeriodeEvaluation, TypeSanction, TitreFonction, TitreHonorifiquePersonnel,
+    EvenementCalendrier, IdentiteEtablissement,
 )
 
 
@@ -48,6 +48,12 @@ class PosteForm(forms.ModelForm):
         model = Poste
         fields = ['titre', 'code', 'categorie', 'description', 'actif']
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
+
+
+class LocalisationPosteForm(forms.ModelForm):
+    class Meta:
+        model = LocalisationPoste
+        fields = ['nom', 'type_localisation', 'batiment', 'etage', 'numero', 'actif']
 
 
 class StatutEleveForm(forms.ModelForm):
@@ -173,43 +179,27 @@ class IdentiteEtablissementForm(forms.ModelForm):
 
     def clean_logo(self):
         image = self.cleaned_data.get('logo')
-        if image:
-            _validate_image(image, 'logo', max_size=2 * 1024 * 1024)  # 2MB
+        if image and hasattr(image, 'size'):
+            _validate_image(image, max_size=2 * 1024 * 1024)
         return image
 
     def clean_signature_directeur(self):
         image = self.cleaned_data.get('signature_directeur')
-        if image:
-            _validate_image(image, 'signature_directeur', max_size=512 * 1024)  # 512KB
+        if image and hasattr(image, 'size'):
+            _validate_image(image, max_size=512 * 1024)
         return image
 
     def clean_cachet_etablissement(self):
         image = self.cleaned_data.get('cachet_etablissement')
-        if image:
-            _validate_image(image, 'cachet_etablissement', max_size=512 * 1024)  # 512KB
+        if image and hasattr(image, 'size'):
+            _validate_image(image, max_size=512 * 1024)
         return image
 
 
-def _validate_image(image, field_name, max_size):
-    """Valide le type MIME et la taille d'une image."""
-    from django.core.exceptions import ValidationError
-    
-    # Liste des types MIME autorisés
-    allowed_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
-    
-    # Vérifier le type MIME
-    if hasattr(image, 'content_type'):
-        if image.content_type not in allowed_types:
-            raise ValidationError(
-                f"Le fichier {field_name} doit être au format PNG, JPEG ou WebP."
-            )
-    
-    # Vérifier la taille
-    if image.size > max_size:
-        max_mb = max_size / (1024 * 1024)
-        raise ValidationError(
-            f"La taille du fichier {field_name} ne doit pas dépasser {max_mb}MB."
-        )
+def _validate_image(image, max_size):
+    """Valide la taille et le contenu réel d'une image via Pillow."""
+    from core.validators import validate_image_upload
+    validate_image_upload(image, max_size_bytes=max_size)
 
 
 class TypeEvaluationForm(forms.ModelForm):

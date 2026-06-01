@@ -1,0 +1,95 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hors ligne — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
+    .offline-card {
+      max-width: 420px; width: 90%;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+    .offline-icon {
+      width: 64px; height: 64px;
+      background: rgba(217,119,6,0.12);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+    .offline-icon svg { width: 30px; height: 30px; color: #d97706; }
+    .offline-title { font-size: 1.35rem; font-weight: 700; color: var(--color-text); margin: 0 0 0.5rem; }
+    .offline-body  { font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.6; margin: 0 0 1.75rem; }
+    .offline-hint  { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 1.25rem; }
+    #status-dot {
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; background: #d97706;
+      margin-right: 0.35rem; vertical-align: middle;
+    }
+    #status-dot.online { background: var(--color-primary); }
+  </style>
+</head>
+<body class="login-clean-body">
+
+  <div class="offline-card animate-fade-up">
+
+    <div class="offline-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <line x1="1" y1="1" x2="23" y2="23"/>
+        <path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/>
+        <path d="M5 12.55a10.94 10.94 0 015.17-2.39"/>
+        <path d="M10.71 5.05A16 16 0 0122.56 9"/>
+        <path d="M1.42 9a15.91 15.91 0 014.7-2.88"/>
+        <path d="M8.53 16.11a6 6 0 016.95 0"/>
+        <circle cx="12" cy="20" r="1" fill="currentColor"/>
+      </svg>
+    </div>
+
+    <h1 class="offline-title">Connexion interrompue</h1>
+    <p class="offline-body">
+      Le serveur YELEN SCHOOL n'est pas accessible.<br>
+      Vérifiez que vous êtes bien connecté au réseau local de l'établissement.
+    </p>
+
+    <button onclick="window.location.reload()" class="btn-primary" style="width:100%;">
+      Réessayer
+    </button>
+
+    <p class="offline-hint">
+      <span id="status-dot"></span>
+      <span id="status-text">Surveillance de la connexion…</span>
+    </p>
+
+  </div>
+
+  <script>
+  (function () {
+    var dot  = document.getElementById('status-dot');
+    var text = document.getElementById('status-text');
+
+    function update() {
+      if (navigator.onLine) {
+        dot.className  = 'online';
+        text.textContent = 'Connexion rétablie — rechargement…';
+        setTimeout(function () { window.location.href = '/'; }, 1200);
+      } else {
+        dot.className  = '';
+        text.textContent = 'Hors ligne — en attente du réseau…';
+      }
+    }
+
+    window.addEventListener('online',  update);
+    window.addEventListener('offline', update);
+    update();
+  })();
+  </script>
+</body>
+</html>

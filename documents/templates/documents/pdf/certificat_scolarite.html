@@ -4,67 +4,209 @@
 <head>
 <meta charset="UTF-8">
 <style>
-    body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 11pt; color: #1a1a1a; margin: 0; padding: 0; }
-    .page { padding: 2cm; }
-    .entete { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5cm; }
-    .entete-logo img { width: 80px; height: 80px; object-fit: contain; }
-    .entete-centre { text-align: center; flex: 1; padding: 0 1cm; }
-    .entete-centre .pays { font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-    .entete-centre .etablissement { font-size: 13pt; font-weight: bold; text-transform: uppercase; }
-    .entete-centre .agrement { font-size: 9pt; color: #666; font-style: italic; margin-top: 3px; }
-    .entete-centre .type { font-size: 9pt; color: #555; }
-    .entete-cachet img { width: 80px; height: 80px; object-fit: contain; }
-    .separateur { border: none; border-top: 2px solid #1a1a1a; margin: 0.5cm 0; }
-    .titre-doc { text-align: center; margin: 1cm 0; }
-    .titre-doc h1 { font-size: 16pt; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 2px solid #1a1a1a; display: inline-block; padding-bottom: 4px; }
-    .corps { line-height: 2; font-size: 11pt; margin: 1cm 0; }
-    .corps p { margin: 0.3cm 0; }
-    .corps strong { font-weight: bold; text-decoration: underline; }
-    .signature { margin-top: 2cm; text-align: right; }
-    .signature .lieu-date { margin-bottom: 0.5cm; }
-    .signature .titre-signataire { font-size: 10pt; margin-bottom: 0.3cm; }
-    .signature img { width: 100px; height: 60px; object-fit: contain; }
-    .signature .nom-signataire { font-weight: bold; margin-top: 0.3cm; }
-    .numero { font-size: 9pt; color: #888; margin-top: 1cm; text-align: center; }
+/* ── Page ── */
+@page {
+    size: A4;
+    margin: 0;
+}
+html {
+    margin: 0;
+    padding: 0;
+}
+body {
+    margin: 0;
+    padding: 0;
+    width: 21cm;
+    height: 29.7cm;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #000;
+    background: #fff;
+}
+
+/* ── Barres d'accent ── */
+.barre-top    { height: 5pt; background: #111; }
+.barre-bottom { height: 4pt; background: #111; margin-top: 0.25cm; }
+
+/* ── Zone de contenu ── */
+.page { padding: 0.6cm 2cm 0.6cm; }
+
+/* ── En-tête (table 3 colonnes) ── */
+.entete {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    border-bottom: 2.5pt solid #111;
+    padding-bottom: 0.3cm;
+    margin-bottom: 0.3cm;
+}
+.entete-col { display: table-cell; vertical-align: middle; }
+.entete-col-logo   { width: 2cm; }
+.entete-col-cachet { width: 2cm; text-align: right; }
+.entete-col-centre { text-align: center; padding: 0 0.4cm; }
+
+.entete-col-logo img,
+.entete-col-cachet img {
+    width: 1.6cm;
+    height: 1.6cm;
+    object-fit: contain;
+    filter: grayscale(100%);
+}
+
+.entete-pays {
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #444;
+    margin-bottom: 2pt;
+}
+.entete-nom {
+    font-size: 12pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: #111;
+}
+.entete-agrement {
+    font-size: 7.5pt;
+    color: #444;
+    font-style: italic;
+    margin-top: 2pt;
+}
+.entete-type { font-size: 7.5pt; color: #333; margin-top: 1pt; }
+
+/* ── Titre du document ── */
+.titre-section { text-align: center; margin: 0.3cm 0 0.3cm; }
+.titre-h1 {
+    font-size: 14pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: #111;
+    border-top: 2pt solid #111;
+    border-bottom: 2pt solid #111;
+    padding: 4pt 1cm;
+    display: inline-block;
+    margin: 0;
+}
+.titre-annee {
+    font-size: 8.5pt;
+    color: #111;
+    font-weight: bold;
+    margin-top: 4pt;
+    letter-spacing: 0.3px;
+}
+
+/* ── Corps du certificat ── */
+.corps {
+    line-height: 1.65;
+    font-size: 10.5pt;
+    margin: 0.3cm 0 0.25cm;
+    text-align: justify;
+}
+.corps p { margin: 0.12cm 0; }
+.corps strong { font-weight: bold; text-decoration: underline; }
+.corps .valoir-droit { font-style: italic; margin-top: 0.2cm; }
+
+/* ── Bas de page : QR (gauche) + Signature (droite) ── */
+.bas-page {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1pt solid #aaa;
+    margin-top: 0.5cm;
+    padding-top: 0.25cm;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+.bas-qr {
+    display: table-cell;
+    vertical-align: bottom;
+    width: 3.5cm;
+}
+.bas-qr img { display: block; filter: grayscale(100%); }
+.bas-qr-legende {
+    font-size: 6.5pt;
+    color: #444;
+    line-height: 1.4;
+    margin-top: 3pt;
+}
+.bas-num {
+    font-size: 7.5pt;
+    color: #555;
+    font-style: italic;
+    margin-top: 4pt;
+}
+.bas-sig {
+    display: table-cell;
+    vertical-align: bottom;
+    text-align: right;
+}
+.sig-lieu-date {
+    font-size: 9.5pt;
+    color: #111;
+    font-style: italic;
+    margin-bottom: 0.1cm;
+}
+.sig-fonction {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #111;
+}
+.sig-espace { height: 1.1cm; }
+.sig-trait {
+    width: 5.5cm;
+    border-top: 1pt solid #111;
+    margin-left: auto;
+    margin-bottom: 0.12cm;
+}
+.sig-nom {
+    font-size: 10pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #111;
+}
 </style>
 </head>
 <body>
+
+<div class="barre-top"></div>
+
 <div class="page">
 
     <!-- En-tête -->
     <div class="entete">
-        <div class="entete-logo">
+        <div class="entete-col entete-col-logo">
             {% if logo_url %}
             <img src="{{ logo_url }}" alt="Logo">
             {% elif etab_logo_url %}
             <img src="{{ etab_logo_url }}" alt="Logo">
             {% endif %}
         </div>
-        <div class="entete-centre">
-            <div class="pays">Burkina Faso</div>
-            <div class="etablissement">
+        <div class="entete-col entete-col-centre">
+            <div class="entete-pays">Burkina Faso</div>
+            <div class="entete-nom">
                 {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ annee_scolaire.etablissement }}{% endif %}
             </div>
             {% if identite and identite.numero_agrement_mena %}
-            <div class="agrement">N° Agrément MENA: {{ identite.numero_agrement_mena }}</div>
+            <div class="entete-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</div>
             {% endif %}
-            <div class="type">
-                {% if identite %}{{ identite.get_type_etablissement_display }}{% endif %}
-            </div>
+            {% if identite %}
+            <div class="entete-type">{{ identite.get_type_etablissement_display }}</div>
+            {% endif %}
         </div>
-        <div class="entete-cachet">
+        <div class="entete-col entete-col-cachet">
             {% if identite and identite.cachet_etablissement %}
             <img src="{{ identite.cachet_etablissement.url }}" alt="Cachet">
             {% endif %}
         </div>
     </div>
 
-    <hr class="separateur">
-
     <!-- Titre -->
-    <div class="titre-doc">
-        <h1>Certificat de Scolarité</h1>
-        <p style="font-size:9pt; color:#555; margin-top:4px;">Année scolaire {{ annee_scolaire }}</p>
+    <div class="titre-section">
+        <h1 class="titre-h1">Certificat de Scolarité</h1>
+        <div class="titre-annee">Année scolaire {{ annee_scolaire }}</div>
     </div>
 
     <!-- Corps -->
@@ -72,9 +214,8 @@
         <p>
             Le soussigné,
             {% if sig_membre %}
-                {% if signataire.titre_honorifique %}{{ signataire.titre_honorifique }},{% endif %}
                 <strong>{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</strong>,
-                {{ signataire.fonction|default:"Directeur/Proviseur" }}{% if identite %} de <strong>{{ identite.nom_etablissement }}</strong>{% endif %},
+                {{ signataire.fonction|strip_article|default:"Directeur/Proviseur" }}{% if identite %} de <strong>{{ identite.nom_etablissement }}</strong>{% endif %},
             {% elif identite and identite.nom_directeur %}
                 <strong>{{ identite.nom_directeur }}</strong>,
                 Directeur/Proviseur de <strong>{{ identite.nom_etablissement }}</strong>,
@@ -83,39 +224,53 @@
             {% endif %}
             certifie que :
         </p>
-
         <p>
             <strong>{{ eleve.get_nom_complet }}</strong>,
             né(e) le <strong>{{ eleve.date_naissance|date:"d F Y" }}</strong>
             à <strong>{{ eleve.lieu_naissance }}</strong>,
             de nationalité <strong>{{ eleve.nationalite }}</strong>,
         </p>
-
         <p>
             est régulièrement inscrit(e) dans cet établissement pour l'année scolaire
             <strong>{{ annee_scolaire }}</strong>,
             en classe de <strong>{{ classe.nom }}</strong> ({{ classe.cycle.nom }}).
         </p>
-
-        <p>Ce certificat est délivré à l'intéressé(e) pour servir et valoir ce que de droit.</p>
+        <p class="valoir-droit">
+            Ce certificat est délivré à l'intéressé(e) pour servir et valoir ce que de droit.
+        </p>
     </div>
 
-    <!-- Signature -->
-    {% signataire_auto "CERT_SCOL" %}
+    <!-- Bas : QR (gauche) + Signature (droite) -->
+    <div class="bas-page">
+        <div class="bas-qr">
+            {% with etab_nom=identite.nom_etablissement|default:annee_scolaire.etablissement %}
+            {% qr_eleve eleve.matricule eleve.nom eleve.prenom etab_nom 'petit' adresse=identite.adresse ville=identite.ville telephone=identite.telephone %}
+            {% endwith %}
+            <div class="bas-qr-legende">
+                {{ eleve.matricule }}<br>
+                {{ eleve.nom|upper }} {{ eleve.prenom }}
+            </div>
+            <div class="bas-num">N° {{ document.numero_document|default:"—" }}</div>
+        </div>
+        <div class="bas-sig">
+            <div class="sig-lieu-date">
+                {% if identite and identite.ville %}{{ identite.ville }}, {% endif %}le {% now "d F Y" %}
+            </div>
+            <div class="sig-fonction">
+                {% if sig_membre %}{{ signataire.fonction|default:"Le Directeur / La Directrice" }}
+                {% else %}Le Directeur / La Directrice{% endif %}
+            </div>
+            <div class="sig-espace"></div>
 
-    <div class="numero">N° {{ document.numero_document|default:"—" }}</div>
-
-    <!-- QR Code élève -->
-    <div style="margin-top:0.8cm; display:flex; align-items:flex-start; gap:0.4cm;">
-        {% with etab_nom=identite.nom_etablissement|default:annee_scolaire.etablissement %}
-        {% qr_eleve eleve.matricule eleve.nom eleve.prenom etab_nom 'grand' adresse=identite.adresse ville=identite.ville telephone=identite.telephone %}
-        {% endwith %}
-        <div style="font-size:7pt; color:#888; line-height:1.6; margin-top:4px;">
-            {{ eleve.matricule }}<br>
-            {{ eleve.nom|upper }} {{ eleve.prenom }}
+            <div class="sig-nom">
+                {% if sig_membre %}{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}{% endif %}
+            </div>
         </div>
     </div>
 
 </div>
+
+<div class="barre-bottom"></div>
+
 </body>
 </html>

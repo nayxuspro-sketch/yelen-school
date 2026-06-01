@@ -1745,7 +1745,7 @@ class ModeleMessage(BaseModel):
         return f"{self.get_type_display()} — {self.etablissement}"
 
     @classmethod
-    def get_contenu(cls, etablissement, type_msg, variables):
+    def get_contenu(cls, etablissement, type_msg, variables):  # noqa: E501 (original method continues)
         """
         Retourne le contenu SMS personnalisé pour ce type,
         ou le message par défaut si aucun modèle n'est configuré.
@@ -1788,3 +1788,72 @@ class TitreHonorifiquePersonnel(BaseModel):
 
     def __str__(self):
         return self.nom
+
+
+# ═══════════════════════════════════════════════════════════════════
+# DÉCLENCHEURS SMS AUTOMATIQUES
+# ═══════════════════════════════════════════════════════════════════
+
+class DeclencheurSMS(BaseModel):
+    """
+    Configuration d'un envoi SMS automatique planifié.
+
+    Chaque déclencheur correspond à un type d'événement (absence, échéancier, résultats).
+    L'exécution est déclenchée par la commande management `sms_auto` ou manuellement
+    depuis l'interface Paramètres.
+
+    Types disponibles :
+      ABSENCE_J1  — SMS J+1 pour absences non justifiées de la veille
+      ECHEANCIER  — Rappel N jours avant l'échéance impayée
+      RESULTATS   — SMS à la publication d'un nouveau bulletin
+    """
+
+    class TypeChoices(models.TextChoices):
+        ABSENCE_J1 = 'ABSENCE_J1', _('Absences non justifiées (J+1)')
+        ECHEANCIER = 'ECHEANCIER', _("Rappel d'échéancier")
+        RESULTATS  = 'RESULTATS',  _('Bulletin disponible')
+
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='declencheurs_sms',
+        verbose_name=_("Établissement"),
+    )
+
+    type_declencheur = models.CharField(
+        max_length=20,
+        choices=TypeChoices.choices,
+        verbose_name=_("Type de déclencheur"),
+    )
+
+    actif = models.BooleanField(
+        default=False,
+        verbose_name=_("Actif"),
+    )
+
+    jours_avant = models.PositiveSmallIntegerField(
+        default=3,
+        verbose_name=_("Jours avant l'échéance"),
+        help_text=_("Utilisé pour le type Échéancier : envoyer le rappel N jours avant la date limite."),
+    )
+
+    last_run = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Dernière exécution"),
+    )
+
+    nb_envoyes_total = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("SMS envoyés au total"),
+    )
+
+    class Meta:
+        verbose_name = _("Déclencheur SMS automatique")
+        verbose_name_plural = _("Déclencheurs SMS automatiques")
+        unique_together = [['etablissement', 'type_declencheur']]
+        ordering = ['type_declencheur']
+
+    def __str__(self):
+        statut = "✅" if self.actif else "⏸"
+        return f"{statut} {self.get_type_declencheur_display()} — {self.etablissement}"

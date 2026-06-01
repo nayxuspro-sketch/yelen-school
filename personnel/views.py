@@ -121,6 +121,55 @@ def personnel_list_csv(request):
 
 
 @login_required
+def personnel_list_xlsx(request):
+    """Export Excel de la liste du personnel (mêmes filtres que personnel_list)."""
+    from core.excel import ExcelExport
+
+    query = request.GET.get('q', '')
+    show_all = request.GET.get('tous') == '1'
+    ids = request.GET.get('ids', '')
+    etab = getattr(request.user, 'etablissement', None)
+
+    personnel = MembrePersonnel.objects.prefetch_related('cycles').order_by('nom', 'prenom')
+    if etab:
+        personnel = personnel.filter(etablissement=etab)
+
+    if ids:
+        id_list = [i.strip() for i in ids.split(',') if i.strip()]
+        if id_list:
+            personnel = personnel.filter(pk__in=id_list)
+    else:
+        if not show_all:
+            personnel = personnel.filter(is_active=True)
+        if query:
+            personnel = personnel.filter(
+                Q(nom__icontains=query) | Q(prenom__icontains=query) | Q(matricule__icontains=query)
+            )
+
+    nom_fichier = f"personnel{'_' + etab.code if etab else ''}.xlsx"
+
+    wb = ExcelExport("Personnel")
+    wb.add_title("Liste du personnel", subtitle=etab.nom if etab else '')
+    wb.add_header(['Matricule', 'Nom', 'Prénom', 'Genre', 'Date de naissance', 'Téléphone', 'Email', 'Fonction', 'Cycles', 'Actif'])
+
+    for m in personnel:
+        wb.add_row([
+            m.matricule or '',
+            m.nom,
+            m.prenom,
+            m.get_genre_display() if hasattr(m, 'get_genre_display') else (m.genre or ''),
+            m.date_naissance.strftime('%d/%m/%Y') if m.date_naissance else '',
+            m.telephone or '',
+            m.email or '',
+            m.fonction or '',
+            ', '.join(c.nom for c in m.cycles.all()),
+            'Oui' if m.is_active else 'Non',
+        ])
+
+    return wb.response(nom_fichier)
+
+
+@login_required
 def personnel_detail(request, pk):
     """Détails d'un membre du personnel."""
     etab = getattr(request.user, 'etablissement', None)
@@ -312,7 +361,7 @@ def contrat_travail(request, pk):
         else "Vacation à temps partiel" if membre.est_vacataire
         else "CDI (Contrat à durée indéterminée)"
     )
-    poste_str = inscription_courante.poste.nom if inscription_courante and inscription_courante.poste else membre.fonction
+    poste_str = inscription_courante.poste.titre if inscription_courante and inscription_courante.poste else membre.fonction
     cycle_str = f", cycle {inscription_courante.cycle.nom}" if inscription_courante and inscription_courante.cycle else ""
     date_debut_str = (
         inscription_courante.date_debut.strftime("%d/%m/%Y")

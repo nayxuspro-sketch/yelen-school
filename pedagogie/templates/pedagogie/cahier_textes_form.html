@@ -1,0 +1,131 @@
+{% extends "core/base.html" %}
+
+{% block title %}
+  {% if action == 'create' %}Nouvelle entrée{% else %}Modifier l'entrée{% endif %}
+   — Cahier de textes — YELEN SCHOOL
+{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">
+      {% if action == 'create' %}Nouvelle entrée{% else %}Modifier l'entrée{% endif %}
+    </h1>
+    <p class="page-subtitle">
+      Cahier de textes — {{ classe.nom }}{% if annee %} · {{ annee.libelle }}{% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    {% if classe %}
+    <a href="{% url 'pedagogie:cahier_textes_classe' classe.pk %}" class="btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1">
+  <div class="card-header">
+    <span class="card-title">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+      </svg>
+      Informations du cours
+    </span>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      {% if classe %}
+      <input type="hidden" name="classe" value="{{ classe.pk }}">
+      {% endif %}
+
+      <!-- Matière + Date -->
+      <div class="form-grid-2 mb-4">
+        <div class="form-group">
+          <label class="input-label">Matière <span style="color:var(--color-danger);">*</span></label>
+          {% if action == 'update' %}
+          <input type="text" class="input" value="{{ entree.enseignement.matiere.nom }}" readonly>
+          {% else %}
+          <select name="enseignement" class="input select" required>
+            <option value="">— Choisir une matière —</option>
+            {% for ens in enseignements %}
+            <option value="{{ ens.pk }}">
+              {{ ens.matiere.nom }}
+              {% if ens.personnel %} — {{ ens.personnel.nom }} {{ ens.personnel.prenom }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="input-label">Date du cours <span style="color:var(--color-danger);">*</span></label>
+          <input type="date" name="date" class="input" required
+                 value="{% if action == 'update' %}{{ entree.date|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}">
+        </div>
+      </div>
+
+      <!-- Heures -->
+      <div class="form-grid-2 mb-4">
+        <div class="form-group">
+          <label class="input-label">Heure de début</label>
+          <input type="time" name="heure_debut" class="input"
+                 value="{% if action == 'update' and entree.heure_debut %}{{ entree.heure_debut|time:'H:i' }}{% endif %}">
+        </div>
+        <div class="form-group">
+          <label class="input-label">Heure de fin</label>
+          <input type="time" name="heure_fin" class="input"
+                 value="{% if action == 'update' and entree.heure_fin %}{{ entree.heure_fin|time:'H:i' }}{% endif %}">
+        </div>
+      </div>
+
+      <!-- Contenu du cours -->
+      <div class="form-group mb-4">
+        <label class="input-label">
+          Contenu traité <span style="color:var(--color-danger);">*</span>
+        </label>
+        <textarea name="contenu" class="input" rows="5"
+                  placeholder="Décrivez les notions abordées durant ce cours…" required>{% if action == 'update' %}{{ entree.contenu }}{% endif %}</textarea>
+      </div>
+
+      <!-- Séparateur devoirs -->
+      <div class="d-flex align-center gap-3 mb-4">
+        <span class="text-xs text-muted" style="text-transform:uppercase; letter-spacing:.06em; white-space:nowrap;">Devoirs (optionnel)</span>
+        <div class="flex-1" style="height:1px; background:var(--color-border);"></div>
+      </div>
+
+      <!-- Devoirs -->
+      <div class="form-group mb-4">
+        <label class="input-label">Travail à faire à la maison</label>
+        <textarea name="devoirs" class="input" rows="3"
+                  placeholder="Exercices, lectures, révisions…">{% if action == 'update' %}{{ entree.devoirs }}{% endif %}</textarea>
+      </div>
+
+      <div class="form-group mb-4">
+        <label class="input-label">Date de remise des devoirs</label>
+        <input type="date" name="date_remise_devoirs" class="input"
+               value="{% if action == 'update' and entree.date_remise_devoirs %}{{ entree.date_remise_devoirs|date:'Y-m-d' }}{% endif %}">
+      </div>
+
+      <!-- Actions -->
+      <div class="d-flex gap-3 justify-end">
+        {% if classe %}
+        <a href="{% url 'pedagogie:cahier_textes_classe' classe.pk %}" class="btn-secondary">
+          Annuler
+        </a>
+        {% endif %}
+        <button type="submit" class="btn-primary">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          {% if action == 'create' %}Enregistrer{% else %}Mettre à jour{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

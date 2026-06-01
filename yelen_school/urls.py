@@ -18,8 +18,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from core import views as core_views
 
 urlpatterns = [
+    # Service Workers servis à la racine (scope = /)
+    path('sw.js', core_views.pwa_service_worker, name='pwa_service_worker'),
+    path('app-sw.js', core_views.app_service_worker, name='app_service_worker'),
     path('', include('core.urls')),
     path('admin/', admin.site.urls),
     path('parametres/', include('parametres.urls')),
@@ -36,6 +40,8 @@ urlpatterns = [
     path('etablissements/', include('etablissements.urls')),
     path('viescolaire/', include('viescolaire.urls')),
     path('bulletins/', include('bulletins.urls')),
+    path('manuels/', include('manuels.urls')),
+    path('communication/', include('communication.urls')),
     path('api/', include('api.urls')),
 ]
 

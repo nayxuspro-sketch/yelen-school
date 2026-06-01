@@ -10,7 +10,7 @@ class LicenceForm(forms.ModelForm):
     """Formulaire de création / modification d'une licence."""
 
     date_expiration = forms.DateField(
-        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'dash-input'}),
         label="Date d'expiration",
         initial=lambda: (date.today() + timedelta(days=365)).isoformat(),
     )
@@ -19,9 +19,9 @@ class LicenceForm(forms.ModelForm):
         model = Licence
         fields = ['etablissement', 'type_licence', 'date_expiration', 'notes_interne']
         widgets = {
-            'etablissement': forms.Select(attrs={'class': 'form-control'}),
-            'type_licence': forms.Select(attrs={'class': 'form-control'}),
-            'notes_interne': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'etablissement': forms.Select(attrs={'class': 'dash-input'}),
+            'type_licence': forms.Select(attrs={'class': 'dash-input'}),
+            'notes_interne': forms.Textarea(attrs={'class': 'dash-input', 'rows': 3}),
         }
         labels = {
             'etablissement': 'Établissement',
@@ -60,7 +60,7 @@ class RenouvelerForm(forms.Form):
         choices=DUREE_CHOICES,
         label='Durée du renouvellement',
         initial=365,
-        widget=forms.RadioSelect(attrs={'class': 'form-radio'}),
+        widget=forms.RadioSelect(attrs={'class': 'input'}),
     )
 
     def clean_duree_jours(self):
@@ -74,12 +74,12 @@ class RevoquerForm(forms.Form):
         label='Motif de révocation',
         max_length=255,
         widget=forms.TextInput(attrs={
-            'class': 'form-control',
+            'class': 'dash-input',
             'placeholder': 'Ex : non-paiement, fraude détectée…',
         }),
     )
 
     confirmation = forms.BooleanField(
         label="Je confirme la révocation de cette licence. L'établissement perdra immédiatement l'accès à l'application.",
-        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+        widget=forms.CheckboxInput(attrs={'class': 'dash-checkbox'}),
     )

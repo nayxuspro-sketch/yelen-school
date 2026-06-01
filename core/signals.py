@@ -79,18 +79,29 @@ def log_audit(sender, instance, action=None, **kwargs):
         logging.error(f"Audit log failed: {e}")
 
 
+def _log_post_save(sender, instance, created, **kwargs):
+    """Wrapper post_save qui distingue CREATE et UPDATE."""
+    action = 'CREATE' if created else 'UPDATE'
+    log_audit(sender=sender, instance=instance, action=action, **kwargs)
+
+
+def _log_pre_delete(sender, instance, **kwargs):
+    """Wrapper pre_delete pour DELETE."""
+    log_audit(sender=sender, instance=instance, action='DELETE', **kwargs)
+
+
 def setup_audit_signals():
     """Configure les signaux pour tous les modèles."""
     from django.apps import apps
-    
+
     for model in apps.get_models():
         # Vérifier si le modèle hérite de BaseModel
         if hasattr(model, '_meta') and model._meta.proxy:
             continue
         try:
             if hasattr(model, 'created_at'):
-                post_save.connect(log_audit, sender=model, dispatch_uid=f'audit_{model._meta.label}')
-                pre_delete.connect(log_audit, sender=model, dispatch_uid=f'audit_{model._meta.label}')
+                post_save.connect(_log_post_save, sender=model, dispatch_uid=f'audit_save_{model._meta.label}')
+                pre_delete.connect(_log_pre_delete, sender=model, dispatch_uid=f'audit_delete_{model._meta.label}')
         except Exception:
             pass
 

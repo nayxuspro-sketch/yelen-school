@@ -15,8 +15,8 @@ from django.views.decorators.http import require_POST
 
 from .forms import (
     TypeDocumentForm, SignataireForm,
-    AnneeScolaireForm, CycleForm, ClasseForm, PosteForm, StatutEleveForm,
-    RubriquePaiementForm, AppreciationMoyenneSecondaireForm,
+    AnneeScolaireForm, CycleForm, ClasseForm, PosteForm, LocalisationPosteForm,
+    StatutEleveForm, RubriquePaiementForm, AppreciationMoyenneSecondaireForm,
     AppreciationMoyennePrimaireForm, CategorieDisciplineForm, DisciplineForm,
     PeriodeEvaluationForm, TypeSanctionForm, TitreFonctionForm,
     TitreHonorifiquePersonnelForm, TypeEvaluationForm,
@@ -24,7 +24,7 @@ from .forms import (
 )
 from .models import (
     Cycle, AnneeScolaire, TypeDocument, SignataireDocument,
-    Classe, Poste, StatutEleve, RubriquePaiement, TarifScolarite,
+    Classe, Poste, LocalisationPoste, StatutEleve, RubriquePaiement, TarifScolarite,
     AppreciationMoyenneSecondaire, AppreciationMoyennePrimaire, PeriodeEvaluation, Discipline,
     CategorieDiscipline, TypeSanction, TitreFonction, TitreHonorifiquePersonnel,
     EvenementCalendrier, ModeleMessage,
@@ -59,6 +59,7 @@ def parametres_index(request):
         'nb_periodes':    count(PeriodeEvaluation),
         'nb_titres_fonctions':    TitreFonction.objects.count(),
         'nb_titres_honorifiques': TitreHonorifiquePersonnel.objects.count(),
+        'nb_localisations': count(LocalisationPoste),
     }
     return render(request, 'parametres/index.html', context)
 
@@ -220,6 +221,48 @@ def poste_form(request, pk=None):
         return render(request, 'parametres/partials/poste_form.html', {**ctx, 'error': form.errors.as_text()})
 
     return render(request, 'parametres/partials/poste_form.html', ctx)
+
+
+# ─── LOCALISATIONS ───────────────────────────────────────────────────
+
+@login_required
+def localisation_list(request):
+    etab = _get_etab(request)
+    localisations = LocalisationPoste.objects.filter(etablissement=etab).order_by('type_localisation', 'nom') if etab else LocalisationPoste.objects.none()
+    tpl = 'parametres/partials/localisation_list.html' if request.headers.get('HX-Request') else 'parametres/localisations.html'
+    return render(request, tpl, {'localisations': localisations})
+
+
+@login_required
+def localisation_form(request, pk=None):
+    etab = _get_etab(request)
+    localisation = get_object_or_404(LocalisationPoste, pk=pk, etablissement=etab) if pk else None
+    ctx = {
+        'localisation': localisation,
+        'type_choices': LocalisationPoste._meta.get_field('type_localisation').choices,
+    }
+
+    if request.method == 'POST':
+        if not etab:
+            return render(request, 'parametres/partials/localisation_form.html', {**ctx, 'error': "Votre compte n'est pas associé à un établissement."})
+        form = LocalisationPosteForm(request.POST, instance=localisation)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            if not localisation:
+                instance.etablissement = etab
+            instance.save()
+            return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
+        return render(request, 'parametres/partials/localisation_form.html', {**ctx, 'error': form.errors.as_text()})
+
+    return render(request, 'parametres/partials/localisation_form.html', ctx)
+
+
+@login_required
+@require_POST
+def localisation_delete(request, pk):
+    etab = _get_etab(request)
+    obj = get_object_or_404(LocalisationPoste, pk=pk, etablissement=etab)
+    return _delete_view(request, obj)
 
 
 # ─── STATUTS ÉLÈVE ───────────────────────────────────────────────────
@@ -1531,7 +1574,7 @@ def calendrier(request):
         'mois_nom': [
             '', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
             'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-        ][mois] + f' {annee_cal}',
+        ][mois],
         'mois': mois,
         'annee_cal': annee_cal,
         'mois_prec': mois_prec,
@@ -1541,6 +1584,7 @@ def calendrier(request):
         'tous_evenements': tous_evenements,
         'types': EvenementCalendrier.TypeChoices.choices,
         'jours_semaine': ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+        'today_iso': today.isoformat(),
     })
 
 

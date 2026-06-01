@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paiement {{ demande.reference }} — YELEN SCHOOL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #0A1628;
+      color: #E2E8F0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .container { max-width: 480px; width: 100%; }
+    .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #00A86B;
+    }
+    .card {
+      background: #111E35;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .card-body { padding: 1.5rem; }
+    .ref {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #00A86B;
+      margin-bottom: 0.25rem;
+    }
+    .subtitle { font-size: 0.875rem; color: #94A3B8; }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.9rem;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #94A3B8; }
+    .info-value { font-weight: 600; }
+    .montant { font-size: 1.5rem; font-weight: 700; color: #F5A623; }
+    .steps {
+      background: rgba(0, 168, 107, 0.08);
+      border: 1px solid rgba(0, 168, 107, 0.2);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .steps-title {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #00A86B;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+    }
+    .step {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      margin-bottom: 0.6rem;
+      font-size: 0.875rem;
+    }
+    .step-num {
+      background: #00A86B;
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .ussd {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #F5A623;
+      text-align: center;
+      margin: 1rem 0;
+      letter-spacing: 0.05em;
+    }
+    .badge-statut {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-attente { background: rgba(245,166,35,0.15); color: #F5A623; }
+    .badge-confirme { background: rgba(0,168,107,0.15); color: #00A86B; }
+    .badge-annule { background: rgba(239,68,68,0.15); color: #EF4444; }
+    .footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #64748B;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">YELEN SCHOOL</div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="ref">{{ demande.reference }}</div>
+        <div class="subtitle">
+          Demande de paiement Mobile Money
+          &nbsp;·&nbsp;
+          {% if demande.statut == 'EN_ATTENTE' %}
+            <span class="badge-statut badge-attente">En attente</span>
+          {% elif demande.statut == 'CONFIRME' %}
+            <span class="badge-statut badge-confirme">Confirmé</span>
+          {% else %}
+            <span class="badge-statut badge-annule">Annulé</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="info-label">Élève</span>
+          <span class="info-value">{{ eleve.nom }} {{ eleve.prenom }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Classe</span>
+          <span class="info-value">{{ classe.nom }}</span>
+        </div>
+        {% if demande.rubrique %}
+        <div class="info-row">
+          <span class="info-label">Rubrique</span>
+          <span class="info-value">{{ demande.rubrique.nom }}</span>
+        </div>
+        {% endif %}
+        <div class="info-row">
+          <span class="info-label">Montant à payer</span>
+          <span class="info-value montant">{{ demande.montant|floatformat:0 }} FCFA</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Date de la demande</span>
+          <span class="info-value">{{ demande.created_at|date:"d/m/Y à H\hi" }}</span>
+        </div>
+
+        {% if demande.statut == 'EN_ATTENTE' %}
+        <div class="steps">
+          <div class="steps-title">Comment payer via Orange Money</div>
+          <div class="ussd">*144#</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <span>Composez <strong>*144#</strong> sur votre téléphone Orange</span>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <span>Sélectionnez <strong>Paiement marchand</strong></span>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <span>Entrez le montant : <strong>{{ demande.montant|floatformat:0 }} FCFA</strong></span>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <span>Mentionnez la référence <strong>{{ demande.reference }}</strong> à l'école pour confirmation</span>
+          </div>
+        </div>
+        {% elif demande.statut == 'CONFIRME' %}
+        <div class="steps" style="background:rgba(0,168,107,0.08); border-color:rgba(0,168,107,0.3);">
+          <div class="steps-title" style="color:#00A86B;">Paiement confirmé</div>
+          <p style="font-size:0.875rem;">
+            Votre paiement a été reçu et validé par l'administration le
+            {{ demande.confirme_le|date:"d/m/Y à H\hi" }}.
+          </p>
+        </div>
+        {% else %}
+        <div class="steps" style="background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.2);">
+          <div class="steps-title" style="color:#EF4444;">Demande annulée</div>
+          <p style="font-size:0.875rem;">
+            Cette demande a été annulée. Contactez l'administration pour plus d'informations.
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="footer">
+      YELEN SCHOOL — Système de gestion scolaire<br>
+      Ce lien est personnel et confidentiel.
+    </div>
+  </div>
+</body>
+</html>

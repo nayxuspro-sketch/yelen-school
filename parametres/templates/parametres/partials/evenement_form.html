@@ -1,13 +1,21 @@
-<div id="modal-overlay" class="modal-overlay">
-    <div class="modal-box">
+<div id="modal-overlay" class="modal-overlay animate-fade-in">
+    <div class="modal-box animate-zoom-in v-glass">
+        
+        {# Header Stylisé #}
         <div class="modal-header">
-            <span class="modal-title">
-                {% if evt %}Modifier l'événement{% else %}Nouvel événement{% endif %}
-            </span>
+            <div class="d-flex align-center gap-4">
+                <div class="stat-icon-green">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="12" y1="14" x2="12" y2="18"></line><line x1="10" y1="16" x2="14" y2="16"></line></svg>
+                </div>
+                <div>
+                    <h3 class="modal-title">
+                        {% if evt %}Modifier l'événement{% else %}Nouvel événement{% endif %}
+                    </h3>
+                    <p class="text-xs text-muted uppercase">Agenda scolaire — Yelen School</p>
+                </div>
+            </div>
             <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
         </div>
 
@@ -17,70 +25,105 @@
               hx-target="#modal-container"
               hx-swap="innerHTML">
             {% csrf_token %}
+            
             <div class="modal-body">
-                {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+                {% if error %}
+                <div class="alert alert-danger mb-6 d-flex align-center gap-3 animate-fade-up">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span class="text-sm fw-medium">{{ error }}</span>
+                </div>
+                {% endif %}
 
+                {# ── SECTION 1 : INFORMATIONS GÉNÉRALES ── #}
+                <div class="mb-6">
+                    <div class="form-group mb-4">
+                        <label class="input-label text-primary-light">Intitulé de l'événement</label>
+                        <div class="input-wrapper">
+                            <input type="text" name="titre" value="{{ evt.titre|default:'' }}"
+                                   placeholder="Ex: Vacances de Noël, Foire aux Livres..."
+                                   required class="input w-full">
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group mb-4">
+                            <label class="input-label text-muted">Type / Catégorie</label>
+                            <div class="input-wrapper">
+                                <select name="type" required class="input select w-full">
+                                    {% for val, label in types %}
+                                    <option value="{{ val }}" {% if evt.type == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label class="input-label text-muted">Année scolaire</label>
+                            <div class="input-wrapper">
+                                <select name="annee_scolaire" required class="input select w-full">
+                                    {% for a in annees %}
+                                    <option value="{{ a.pk }}"
+                                        {% if evt and evt.annee_scolaire_id == a.pk %}selected
+                                        {% elif not evt and a.est_courante %}selected{% endif %}>
+                                        Session {{ a.libelle }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── SECTION 2 : PÉRIODE & DURÉE ── #}
+                <div class="card mb-6">
+                    <div class="d-flex align-center gap-2 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <span class="input-label text-primary m-0">Période de l'événement</span>
+                    </div>
+                    
+                    <div class="form-grid-2 mb-4">
+                        <div class="form-group">
+                            <label class="input-label text-muted">Début</label>
+                            <div class="input-wrapper">
+                                <input type="date" name="date_debut" value="{{ evt.date_debut|date:'Y-m-d'|default:'' }}"
+                                       required class="input w-full">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="input-label text-muted">Fin</label>
+                            <div class="input-wrapper">
+                                <input type="date" name="date_fin" value="{{ evt.date_fin|date:'Y-m-d'|default:'' }}"
+                                       required class="input w-full">
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="d-flex align-center gap-2">
+                        <input type="checkbox" name="journee_complete"
+                               {% if evt.journee_complete or not evt %}checked{% endif %}>
+                        <span class="text-sm text-secondary">Événement occupant toute la journée</span>
+                    </label>
+                </div>
+
+                {# ── SECTION 3 : NOTES ── #}
                 <div class="form-group">
-                    <label class="input-label">Titre <span style="color:#FF6B7A;">*</span></label>
-                    <input type="text" name="titre" value="{{ evt.titre|default:'' }}"
-                           placeholder="Ex: Vacances de Toussaint, Fête de l'indépendance…"
-                           required class="input">
-                </div>
-
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label class="input-label">Type <span style="color:#FF6B7A;">*</span></label>
-                        <select name="type" required class="input">
-                            {% for val, label in types %}
-                            <option value="{{ val }}" {% if evt.type == val %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="input-label">Année scolaire <span style="color:#FF6B7A;">*</span></label>
-                        <select name="annee_scolaire" required class="input">
-                            {% for a in annees %}
-                            <option value="{{ a.pk }}"
-                                {% if evt and evt.annee_scolaire_id == a.pk %}selected
-                                {% elif not evt and a.est_courante %}selected{% endif %}>
-                                {{ a.libelle }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                    <label class="input-label text-muted">Description & Détails complémentaires</label>
+                    <div class="input-wrapper">
+                        <textarea name="description" rows="3" class="input w-full" 
+                                  placeholder="Observations ou remarques particulières...">{{ evt.description|default:'' }}</textarea>
                     </div>
                 </div>
+            </div>
 
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label class="input-label">Date de début <span style="color:#FF6B7A;">*</span></label>
-                        <input type="date" name="date_debut" value="{{ evt.date_debut|date:'Y-m-d'|default:'' }}"
-                               required class="input">
-                    </div>
-                    <div class="form-group">
-                        <label class="input-label">Date de fin <span style="color:#FF6B7A;">*</span></label>
-                        <input type="date" name="date_fin" value="{{ evt.date_fin|date:'Y-m-d'|default:'' }}"
-                               required class="input">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="input-label">Description</label>
-                    <textarea name="description" rows="3" class="input" style="resize:vertical;"
-                              placeholder="Détails optionnels…">{{ evt.description|default:'' }}</textarea>
-                </div>
-
-                <label class="d-flex align-center gap-3" style="cursor:pointer;">
-                    <input type="checkbox" name="journee_complete"
-                           {% if evt.journee_complete or not evt %}checked{% endif %}
-                           style="width:1rem; height:1rem; accent-color:var(--color-primary);">
-                    <span class="text-sm text-secondary">Journée complète</span>
-                </label>
-
-                <div class="modal-footer">
-                    <button type="button" onclick="document.getElementById('modal-overlay').remove()"
-                            class="btn-secondary">Annuler</button>
-                    <button type="submit" class="btn-primary">Enregistrer</button>
-                </div>
+            {# Footer #}
+            <div class="modal-footer">
+                <button type="button" onclick="document.getElementById('modal-overlay').remove()"
+                        class="btn-secondary">
+                    Annuler
+                </button>
+                <button type="submit" class="btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 10 0 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Enregistrer l'événement
+                </button>
             </div>
         </form>
     </div>

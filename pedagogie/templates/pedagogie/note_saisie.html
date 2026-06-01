@@ -4,102 +4,109 @@
 
 {% block content %}
 
-<!-- ── En-tête ── -->
-<div class="page-header animate-fade-up">
-  <div>
-    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
-      <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}" class="text-muted" style="text-decoration:none;">
-        {{ evaluation.enseignement.classe.nom }}
-      </a>
-      <span>›</span>
-      <span>{{ evaluation.enseignement.matiere.nom }}</span>
-      <span>›</span>
-      <span>{{ evaluation.trimestre.nom }}</span>
+{# ── En-tête ── #}
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}" class="btn-icon" title="Retour">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
     </div>
-    <h1 class="page-title">{{ evaluation.titre }}</h1>
-    <div class="d-flex align-center gap-4 flex-wrap" style="margin-top:.5rem;">
-      <span class="text-mono" style="font-size:.85rem; color:var(--color-primary);">
-        Barème : /{{ evaluation.bareme|floatformat:0 }}
-      </span>
-      <span class="text-muted" style="font-size:.85rem;">{{ evaluation.type_evaluation.nom }}</span>
-      <span class="text-muted" style="font-size:.85rem;">{{ evaluation.date_planifiee|date:"d/m/Y" }}</span>
+    <div>
+      <div class="note-breadcrumb">
+        <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}">{{ evaluation.enseignement.classe.nom }}</a>
+        <span class="note-breadcrumb-sep">›</span>
+        <span>{{ evaluation.enseignement.matiere.nom }}</span>
+        <span class="note-breadcrumb-sep">›</span>
+        <span>{{ evaluation.trimestre.nom }}</span>
+      </div>
+      <h1>{{ evaluation.titre }}</h1>
+      <div class="note-meta-row">
+        <span class="note-meta-bareme">Barème : /{{ evaluation.bareme|floatformat:0 }}</span>
+        <span class="note-meta-item">{{ evaluation.type_evaluation.nom }}</span>
+        <span class="note-meta-item">{{ evaluation.date_planifiee|date:"d/m/Y" }}</span>
+      </div>
     </div>
   </div>
-  <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}" class="btn-secondary">
-    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-    </svg>
-    Retour
-  </a>
+  <div class="dash-section-actions">
+    <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}" class="dash-btn dash-btn-secondary">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Retour
+    </a>
+  </div>
 </div>
 
 {% if messages %}
-  {% for msg in messages %}
-  <div class="alert alert-{{ msg.tags|default:'info' }} mb-4 animate-fade-up">{{ msg }}</div>
-  {% endfor %}
+{% for msg in messages %}
+<div class="dash-alert dash-alert-{{ msg.tags|default:'info' }} animate-fade-up">{{ msg }}</div>
+{% endfor %}
 {% endif %}
 
-<!-- ── Panneau stats ── -->
-<div class="d-flex gap-3 flex-wrap mb-4 animate-fade-up delay-1">
-  <div class="card" style="flex:1; min-width:120px; padding:.875rem 1.25rem;">
-    <div class="text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.25rem;">Élèves</div>
-    <div class="fw-bold" style="font-size:1.5rem;">{{ nb_total }}</div>
+{# ── Panneau stats ── #}
+<div class="note-stats animate-fade-up delay-1">
+  <div class="note-stat-card">
+    <div class="note-stat-label">Élèves</div>
+    <div class="note-stat-value">{{ nb_total }}</div>
   </div>
-  <div class="card" style="flex:1; min-width:120px; padding:.875rem 1.25rem; border-color:var(--color-primary);">
-    <div class="text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.25rem;">Saisies</div>
-    <div class="fw-bold" style="font-size:1.5rem; color:var(--color-primary);">
+  <div class="note-stat-card note-stat-card-primary">
+    <div class="note-stat-label">Saisies</div>
+    <div class="note-stat-value note-stat-value-primary">
       <span id="stat-saisies">{{ nb_saisies }}</span> / {{ nb_total }}
     </div>
   </div>
-  <div class="card" style="flex:1; min-width:120px; padding:.875rem 1.25rem;">
-    <div class="text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.25rem;">Moyenne</div>
-    <div class="fw-bold" style="font-size:1.5rem;"><span id="stat-moy">—</span></div>
+  <div class="note-stat-card">
+    <div class="note-stat-label">Moyenne</div>
+    <div class="note-stat-value"><span id="stat-moy">—</span></div>
   </div>
-  <div class="card" style="flex:1; min-width:120px; padding:.875rem 1.25rem;">
-    <div class="text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.25rem;">Min / Max</div>
-    <div class="fw-bold" style="font-size:1.1rem;"><span id="stat-min">—</span> / <span id="stat-max">—</span></div>
+  <div class="note-stat-card">
+    <div class="note-stat-label">Min / Max</div>
+    <div class="note-stat-value note-stat-value-sm"><span id="stat-min">—</span> / <span id="stat-max">—</span></div>
   </div>
 </div>
 
-<!-- ── Panneau contrôle qualité (affiché dynamiquement) ── -->
-<div id="cq-panel" style="display:none; margin-bottom:1rem;" class="animate-fade-up"></div>
+{# ── Panneau contrôle qualité ── #}
+<div id="cq-panel" class="note-cq-panel animate-fade-up" hidden></div>
 
 <form method="post" id="form-saisie">
   {% csrf_token %}
   <input type="hidden" name="bareme" value="{{ evaluation.bareme }}">
 
-  <!-- ══════════════════════════════════════════════
-       DESKTOP  (≥ 768px) — tableau classique
-  ══════════════════════════════════════════════ -->
-  <div class="card animate-fade-up delay-2 ns-desktop" style="padding:0; overflow:hidden;">
-    <div class="table-scroll">
+  {# ════════ DESKTOP (≥ 768px) ════════ #}
+  <div class="note-table-card animate-fade-up delay-2 ns-desktop">
+    <div class="note-table-scroll">
       <table class="data-table" id="table-notes">
         <thead>
           <tr>
-            <th style="width:3rem; text-align:center;">#</th>
+            <th class="note-col-idx">#</th>
             <th>Élève</th>
-            <th style="text-align:center; width:120px;">
-              Note <span class="text-muted" style="font-size:.75rem; font-weight:400;">/{{ evaluation.bareme|floatformat:0 }}</span>
+            <th class="note-col-note">
+              Note <span class="note-col-bareme">/{{ evaluation.bareme|floatformat:0 }}</span>
             </th>
-            <th style="text-align:center; width:80px;">Absent</th>
-            <th style="text-align:center; width:100px;" title="Dispensé : cette matière ne compte pas dans la moyenne générale">Dispensé</th>
+            <th class="note-col-abs">Absent</th>
+            <th class="note-col-disp" title="Dispensé : cette matière ne compte pas dans la moyenne générale">Dispensé</th>
             <th>Observation</th>
           </tr>
         </thead>
         <tbody>
           {% for item in eleves_data %}
           <tr id="row-{{ item.inscription.pk }}"
-              class="note-row {% if item.note and not item.est_dispense %}row-saisie{% endif %} {% if item.est_dispense %}row-dispense{% endif %}"
-              style="transition:background .2s; {% if item.est_dispense %}opacity:.6;{% endif %}">
-            <td class="text-muted text-mono" style="text-align:center; font-size:.8rem;">{{ forloop.counter }}</td>
+              class="note-row {% if item.note and not item.est_dispense %}note-row-saisie{% endif %} {% if item.est_dispense %}note-row-dispense{% endif %}">
+            <td class="note-col-idx text-mono text-muted" style="font-size:.8rem;">{{ forloop.counter }}</td>
             <td>
-              <div class="fw-semibold" style="text-transform:uppercase;">{{ item.inscription.eleve.nom }}</div>
-              <div class="text-muted" style="font-size:.8rem;">{{ item.inscription.eleve.prenom }}</div>
-              <div class="text-mono" style="font-size:.7rem; color:var(--color-text-secondary);">{{ item.inscription.eleve.matricule }}</div>
+              <div class="note-eleve-nom">{{ item.inscription.eleve.nom }}</div>
+              <div class="note-eleve-prenom">{{ item.inscription.eleve.prenom }}</div>
+              <div class="note-eleve-matricule">{{ item.inscription.eleve.matricule }}</div>
             </td>
-            <td style="text-align:center;">
+            <td class="note-col-note">
               <input type="number"
-                     class="input note-input"
+                     class="dash-input note-input note-input-num"
                      name="note_{{ item.inscription.id }}"
                      id="note-{{ item.inscription.pk }}"
                      step="0.25" min="0" max="{{ evaluation.bareme }}"
@@ -107,10 +114,9 @@
                      value="{{ item.note.valeur|default:'' }}"
                      placeholder="—"
                      data-row="{{ item.inscription.pk }}"
-                     style="width:90px; text-align:center; font-weight:700; font-size:1rem;"
                      {% if item.est_dispense %}disabled{% endif %}>
             </td>
-            <td style="text-align:center;">
+            <td class="note-col-abs">
               <input type="checkbox"
                      class="abs-checkbox"
                      name="abs_{{ item.inscription.id }}"
@@ -120,7 +126,7 @@
                      {% if item.est_absent %}checked{% endif %}
                      {% if item.est_dispense %}disabled{% endif %}>
             </td>
-            <td style="text-align:center;">
+            <td class="note-col-disp">
               <input type="checkbox"
                      class="disp-checkbox"
                      name="disp_{{ item.inscription.id }}"
@@ -130,7 +136,7 @@
             </td>
             <td>
               <input type="text"
-                     class="input w-full"
+                     class="dash-input dash-input-full"
                      name="obs_{{ item.inscription.id }}"
                      id="obs-{{ item.inscription.pk }}"
                      value="{{ item.note.observation|default:'' }}"
@@ -144,37 +150,28 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════
-       MOBILE  (< 768px) — cartes empilées
-  ══════════════════════════════════════════════ -->
+  {# ════════ MOBILE (< 768px) ════════ #}
   <div class="ns-mobile animate-fade-up delay-2">
     {% for item in eleves_data %}
     <div id="mrow-{{ item.inscription.pk }}"
-         class="ns-card {% if item.est_dispense %}ns-card-dispense{% endif %}"
-         style="background:var(--color-surface); border:1.5px solid var(--color-border); border-radius:12px; margin-bottom:.75rem; overflow:hidden; transition:border-color .2s, background .2s;">
+         class="ns-card {% if item.est_dispense %}ns-card-dispense{% endif %}">
 
-      <!-- Ligne nom + compteur -->
-      <div style="display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem .5rem;">
+      <div class="ns-card-header">
         <div>
-          <div style="font-weight:700; text-transform:uppercase; font-size:.95rem; line-height:1.2;">{{ item.inscription.eleve.nom }}</div>
-          <div style="font-size:.82rem; color:var(--color-text-muted);">
+          <div class="ns-card-nom">{{ item.inscription.eleve.nom }}</div>
+          <div class="ns-card-prenom">
             {{ item.inscription.eleve.prenom }}
-            <span class="text-mono" style="font-size:.72rem; color:var(--color-text-secondary); margin-left:.4rem;">{{ item.inscription.eleve.matricule }}</span>
+            <span class="ns-card-matricule">{{ item.inscription.eleve.matricule }}</span>
           </div>
         </div>
-        <div style="font-size:.75rem; color:var(--color-text-muted); font-weight:600;">{{ forloop.counter }}/{{ nb_total }}</div>
+        <div class="ns-card-counter">{{ forloop.counter }}/{{ nb_total }}</div>
       </div>
 
-      <!-- Zone de saisie principale -->
-      <div style="padding:.5rem 1rem .75rem; display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;">
-
-        <!-- Champ note — grand pour mobile -->
-        <div style="display:flex; flex-direction:column; align-items:center; gap:.2rem; flex:0 0 auto;">
-          <label style="font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--color-text-muted); font-weight:600;">
-            Note / {{ evaluation.bareme|floatformat:0 }}
-          </label>
+      <div class="ns-card-body">
+        <div class="ns-card-note-group">
+          <div class="ns-card-note-label">Note / {{ evaluation.bareme|floatformat:0 }}</div>
           <input type="number"
-                 class="input note-input note-input-mobile"
+                 class="dash-input note-input note-input-num note-input-mobile"
                  name="note_{{ item.inscription.id }}"
                  id="mnote-{{ item.inscription.pk }}"
                  step="0.25" min="0" max="{{ evaluation.bareme }}"
@@ -182,24 +179,18 @@
                  value="{{ item.note.valeur|default:'' }}"
                  placeholder="—"
                  data-row="{{ item.inscription.pk }}"
-                 {% if item.est_dispense %}disabled{% endif %}
-                 style="width:88px; height:52px; text-align:center; font-weight:700; font-size:1.4rem; border-radius:10px; padding:0;">
+                 {% if item.est_dispense %}disabled{% endif %}>
         </div>
 
-        <!-- Boutons Absent / Dispensé -->
-        <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; flex:1; justify-content:flex-end;">
-
-          <!-- Absent -->
+        <div class="ns-card-actions">
           <label class="ns-toggle-btn {% if item.est_absent %}ns-toggle-abs{% endif %}"
-                 id="lbl-abs-{{ item.inscription.pk }}"
-                 style="display:flex; align-items:center; gap:.4rem; padding:.5rem .9rem; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; user-select:none; white-space:nowrap;">
+                 id="lbl-abs-{{ item.inscription.pk }}">
             <input type="checkbox"
                    class="abs-checkbox"
                    name="abs_{{ item.inscription.id }}"
                    id="mabs-{{ item.inscription.pk }}"
                    data-row="{{ item.inscription.pk }}"
                    data-note-id="mnote-{{ item.inscription.pk }}"
-                   style="display:none;"
                    {% if item.est_absent %}checked{% endif %}
                    {% if item.est_dispense %}disabled{% endif %}>
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,35 +199,29 @@
             Absent
           </label>
 
-          <!-- Dispensé -->
           <label class="ns-toggle-btn {% if item.est_dispense %}ns-toggle-disp{% endif %}"
-                 id="lbl-disp-{{ item.inscription.pk }}"
-                 style="display:flex; align-items:center; gap:.4rem; padding:.5rem .9rem; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; user-select:none; white-space:nowrap;">
+                 id="lbl-disp-{{ item.inscription.pk }}">
             <input type="checkbox"
                    class="disp-checkbox"
                    name="disp_{{ item.inscription.id }}"
                    id="mdisp-{{ item.inscription.pk }}"
                    data-row="{{ item.inscription.pk }}"
-                   style="display:none;"
                    {% if item.est_dispense %}checked{% endif %}>
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             Dispensé
           </label>
-
         </div>
       </div>
 
-      <!-- Observation (collapsible sur mobile) -->
-      <div style="padding:0 1rem .75rem;">
+      <div class="ns-card-obs">
         <input type="text"
-               class="input"
+               class="dash-input"
                name="obs_{{ item.inscription.id }}"
                id="mobs-{{ item.inscription.pk }}"
                value="{{ item.note.observation|default:'' }}"
                placeholder="Observation (optionnel)…"
-               style="font-size:.82rem;"
                {% if item.est_dispense %}disabled{% endif %}>
       </div>
 
@@ -244,21 +229,20 @@
     {% endfor %}
   </div>
 
-  <!-- ── Footer sticky ── -->
-  <div style="position:sticky; bottom:var(--space-4); z-index:10; margin-top:var(--space-4);">
-    <div class="card d-flex justify-between align-center gap-4 flex-wrap"
-         style="padding:var(--space-3) var(--space-5); border-color:var(--color-primary);">
-      <div class="d-flex align-center gap-4 flex-wrap">
-        <span class="text-muted" style="font-size:.85rem;">
-          <span class="fw-bold text-primary" id="footer-saisies">{{ nb_saisies }}</span>/{{ nb_total }} saisies
+  {# ── Footer sticky ── #}
+  <div class="note-footer-sticky">
+    <div class="note-footer-card">
+      <div class="note-footer-left">
+        <span class="note-footer-count">
+          <span class="text-primary fw-bold" id="footer-saisies">{{ nb_saisies }}</span>/{{ nb_total }} saisies
         </span>
-        <span class="text-muted ns-desktop" style="font-size:.8rem; font-style:italic;">
-          Utilisez <kbd style="border:1px solid var(--color-border); border-radius:3px; padding:1px 5px; font-size:.75rem;">Tab</kbd> pour naviguer.
+        <span class="note-footer-hint ns-desktop">
+          Utilisez <kbd class="note-kbd">Tab</kbd> pour naviguer.
         </span>
       </div>
-      <div class="d-flex gap-2">
-        <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}" class="btn-secondary">Annuler</a>
-        <button type="submit" class="btn-primary" style="min-width:160px;">
+      <div class="note-footer-actions">
+        <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}" class="dash-btn dash-btn-secondary">Annuler</a>
+        <button type="submit" class="dash-btn note-footer-submit">
           <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
@@ -272,69 +256,26 @@
 {% endblock %}
 
 {% block extra_js %}
-<style>
-/* ── Visibilité responsive ── */
-.ns-desktop { display: block; }
-.ns-mobile  { display: none;  }
-
-@media (max-width: 767px) {
-  .ns-desktop { display: none !important; }
-  .ns-mobile  { display: block; }
-}
-
-/* ── Cartes mobile ── */
-.ns-card-dispense { opacity: .55; }
-
-.ns-toggle-btn.ns-toggle-abs {
-  border-color: var(--color-danger, #ef4444) !important;
-  background: rgba(239,68,68,.08);
-  color: var(--color-danger, #ef4444);
-}
-.ns-toggle-btn.ns-toggle-disp {
-  border-color: var(--color-primary) !important;
-  background: rgba(0,168,107,.08);
-  color: var(--color-primary);
-}
-.ns-card.ns-card-saisie {
-  border-color: var(--color-primary) !important;
-  background: rgba(0,168,107,.04);
-}
-.ns-card.ns-card-absent {
-  border-color: var(--color-danger, #ef4444) !important;
-  background: rgba(239,68,68,.04);
-}
-
-/* ── input note mobile — pas de flèches ── */
-.note-input-mobile::-webkit-inner-spin-button,
-.note-input-mobile::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.note-input-mobile { -moz-appearance: textfield; }
-</style>
-
 <script>
 (function () {
   const bareme = parseFloat("{{ evaluation.bareme }}");
 
-  /* ─────────────────────────────────────────────
-     Helpers partagés desktop + mobile
-  ───────────────────────────────────────────── */
-  function mobileRowId(inscPk) {
-    return document.getElementById('mrow-' + inscPk);
+  function mobileRowId(pk) {
+    return document.getElementById('mrow-' + pk);
   }
 
-  function updateRowColor(inscPk) {
-    /* Desktop */
-    const row = document.getElementById('row-' + inscPk);
-    const noteD = document.getElementById('note-' + inscPk);
-    const absD  = document.getElementById('abs-'  + inscPk);
+  function updateRowColor(pk) {
+    const row   = document.getElementById('row-'   + pk);
+    const noteD = document.getElementById('note-'  + pk);
+    const absD  = document.getElementById('abs-'   + pk);
     if (row) {
-      if (absD && absD.checked)            row.style.background = 'rgba(255,107,122,.07)';
-      else if (noteD && noteD.value !== '') row.style.background = 'rgba(0,168,107,.07)';
-      else                                  row.style.background = '';
+      row.classList.remove('note-row-saisie', 'note-row-absent');
+      if (absD && absD.checked)             row.classList.add('note-row-absent');
+      else if (noteD && noteD.value !== '') row.classList.add('note-row-saisie');
     }
-    /* Mobile */
-    const card = mobileRowId(inscPk);
-    const noteM = document.getElementById('mnote-' + inscPk);
-    const absM  = document.getElementById('mabs-'  + inscPk);
+    const card  = mobileRowId(pk);
+    const noteM = document.getElementById('mnote-' + pk);
+    const absM  = document.getElementById('mabs-'  + pk);
     if (card) {
       card.classList.remove('ns-card-saisie', 'ns-card-absent');
       if (absM && absM.checked)             card.classList.add('ns-card-absent');
@@ -365,22 +306,17 @@
     checkQualite(vals);
   }
 
-  /* ─────────────────────────────────────────────
-     Contrôle qualité des notes
-  ───────────────────────────────────────────── */
   function checkQualite(vals) {
-    const panel  = document.getElementById('cq-panel');
+    const panel   = document.getElementById('cq-panel');
     const nbTotal = {{ nb_total }};
     const alertes = [];
 
-    if (vals.length < 2) { panel.style.display = 'none'; return; }
+    if (vals.length < 2) { panel.hidden = true; return; }
 
-    const nbAbs     = document.querySelectorAll('.abs-checkbox:checked').length;
-    const notesSeules = vals.filter(v => v > 0);  // sans les 0 d'absents
-    const zeros     = document.querySelectorAll('.note-input:not([disabled])');
-    let   nbZerosNonAbs = 0;
-    zeros.forEach(inp => {
-      const v = parseFloat(inp.value);
+    const nbAbs = document.querySelectorAll('.abs-checkbox:checked').length;
+    let nbZerosNonAbs = 0;
+    document.querySelectorAll('.note-input:not([disabled])').forEach(inp => {
+      const v  = parseFloat(inp.value);
       const pk = inp.dataset.row;
       const absEl = document.getElementById('abs-' + pk) || document.getElementById('mabs-' + pk);
       if (!isNaN(v) && v === 0 && !(absEl && absEl.checked)) nbZerosNonAbs++;
@@ -390,132 +326,52 @@
     const moyPct  = moy / bareme;
     const saisies = vals.length;
 
-    // 1. Zéros généralisés non justifiés
     if (nbZerosNonAbs > 0 && nbZerosNonAbs / saisies >= 0.4) {
-      alertes.push({
-        niveau: 'danger',
-        icone: '⚠',
-        titre: 'Zéros non justifiés',
-        detail: `${nbZerosNonAbs} élève${nbZerosNonAbs > 1 ? 's ont' : ' a'} 0 sans être marqué${nbZerosNonAbs > 1 ? 's' : ''} absent. Confirmez ou cochez "Absent".`
-      });
+      alertes.push({ niveau: 'danger', icone: '⚠', titre: 'Zéros non justifiés',
+        detail: `${nbZerosNonAbs} élève${nbZerosNonAbs > 1 ? 's ont' : ' a'} 0 sans être marqué${nbZerosNonAbs > 1 ? 's' : ''} absent. Confirmez ou cochez "Absent".` });
     }
-
-    // 2. Taux d'absents anormalement élevé
     if (nbAbs > 0 && nbAbs / nbTotal >= 0.4) {
-      alertes.push({
-        niveau: 'warning',
-        icone: '👥',
-        titre: 'Taux d\'absents élevé',
-        detail: `${nbAbs} élève${nbAbs > 1 ? 's absents' : ' absent'} sur ${nbTotal} (${Math.round(nbAbs/nbTotal*100)} %). Vérifiez si la date est correcte.`
-      });
+      alertes.push({ niveau: 'warning', icone: '👥', titre: "Taux d'absents élevé",
+        detail: `${nbAbs} élève${nbAbs > 1 ? 's absents' : ' absent'} sur ${nbTotal} (${Math.round(nbAbs/nbTotal*100)} %). Vérifiez si la date est correcte.` });
     }
-
-    // 3. Moyenne très basse (< 25 % du barème)
     if (saisies >= 3 && moyPct < 0.25) {
-      alertes.push({
-        niveau: 'warning',
-        icone: '📉',
-        titre: 'Moyenne très basse',
-        detail: `Moyenne de ${moy.toFixed(2)}/${bareme} (${Math.round(moyPct*100)} % du barème). Vérifiez les valeurs saisies.`
-      });
+      alertes.push({ niveau: 'warning', icone: '📉', titre: 'Moyenne très basse',
+        detail: `Moyenne de ${moy.toFixed(2)}/${bareme} (${Math.round(moyPct*100)} % du barème). Vérifiez les valeurs saisies.` });
     }
-
-    // 4. Moyenne très haute (> 90 % du barème)
     if (saisies >= 3 && moyPct > 0.9) {
-      alertes.push({
-        niveau: 'info',
-        icone: '📈',
-        titre: 'Moyenne très haute',
-        detail: `Moyenne de ${moy.toFixed(2)}/${bareme} (${Math.round(moyPct*100)} % du barème).`
-      });
+      alertes.push({ niveau: 'info', icone: '📈', titre: 'Moyenne très haute',
+        detail: `Moyenne de ${moy.toFixed(2)}/${bareme} (${Math.round(moyPct*100)} % du barème).` });
     }
-
-    // 5. Notes identiques pour la majorité
     if (saisies >= 4) {
       const freq = {};
       vals.forEach(v => { freq[v] = (freq[v] || 0) + 1; });
       const [valMode, cntMode] = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
       if (cntMode / saisies >= 0.6) {
-        alertes.push({
-          niveau: 'warning',
-          icone: '🔁',
-          titre: 'Notes identiques suspectes',
-          detail: `${cntMode} élèves sur ${saisies} ont exactement la même note (${parseFloat(valMode).toFixed(2)}/${bareme}).`
-        });
+        alertes.push({ niveau: 'warning', icone: '🔁', titre: 'Notes identiques suspectes',
+          detail: `${cntMode} élèves sur ${saisies} ont exactement la même note (${parseFloat(valMode).toFixed(2)}/${bareme}).` });
       }
     }
-
-    // 6. Tous au barème maximum
     if (saisies >= 3 && vals.every(v => v === bareme)) {
-      alertes.push({
-        niveau: 'info',
-        icone: '🏆',
-        titre: 'Tous au maximum',
-        detail: `Tous les élèves ont la note maximale (${bareme}/${bareme}).`
-      });
+      alertes.push({ niveau: 'info', icone: '🏆', titre: 'Tous au maximum',
+        detail: `Tous les élèves ont la note maximale (${bareme}/${bareme}).` });
     }
 
-    if (alertes.length === 0) { panel.style.display = 'none'; return; }
+    if (alertes.length === 0) { panel.hidden = true; return; }
 
-    const couleurs = {
-      danger:  { bg: '#fef2f2', border: '#fecaca', titre: '#b91c1c', badge: '#ef4444' },
-      warning: { bg: '#fffbeb', border: '#fde68a', titre: '#92400e', badge: '#f59e0b' },
-      info:    { bg: '#eff6ff', border: '#bfdbfe', titre: '#1e40af', badge: '#3b82f6' },
-    };
-
-    panel.style.display = 'block';
-    panel.innerHTML = alertes.map(a => {
-      const c = couleurs[a.niveau] || couleurs.info;
-      return `<div style="display:flex; gap:.75rem; align-items:flex-start; padding:.75rem 1rem;
-                background:${c.bg}; border:1px solid ${c.border}; border-radius:10px; margin-bottom:.5rem;">
-        <span style="font-size:1.15rem; flex-shrink:0; margin-top:1px;">${a.icone}</span>
-        <div style="flex:1;">
-          <div style="font-weight:700; font-size:.875rem; color:${c.titre};">${a.titre}</div>
-          <div style="font-size:.82rem; color:${c.titre}; opacity:.85; margin-top:2px;">${a.detail}</div>
+    panel.hidden = false;
+    panel.innerHTML = alertes.map(a =>
+      `<div class="note-cq-item note-cq-item-${a.niveau}">
+        <span class="note-cq-icon">${a.icone}</span>
+        <div class="note-cq-body">
+          <div class="note-cq-title note-cq-title-${a.niveau}">${a.titre}</div>
+          <div class="note-cq-detail">${a.detail}</div>
         </div>
-        <span style="display:inline-block; padding:.15rem .5rem; border-radius:99px;
-               background:${c.badge}; color:#fff; font-size:.7rem; font-weight:700;
-               flex-shrink:0; align-self:center; text-transform:uppercase;">${a.niveau}</span>
-      </div>`;
-    }).join('');
+        <span class="note-cq-badge note-cq-badge-${a.niveau}">${a.niveau}</span>
+      </div>`
+    ).join('');
   }
 
-  /* Alertes bloquant la soumission si le niveau est danger */
-  function hasBlockingAlertes() {
-    const vals = [];
-    document.querySelectorAll('.note-input:not([disabled])').forEach(inp => {
-      const v = parseFloat(inp.value);
-      if (!isNaN(v)) vals.push(v);
-    });
-    document.querySelectorAll('.abs-checkbox:checked').forEach(() => vals.push(0));
-    if (vals.length < 2) return false;
-
-    const nbAbs = document.querySelectorAll('.abs-checkbox:checked').length;
-    const zeros = document.querySelectorAll('.note-input:not([disabled])');
-    let nbZerosNonAbs = 0;
-    zeros.forEach(inp => {
-      const v = parseFloat(inp.value);
-      const pk = inp.dataset.row;
-      const absEl = document.getElementById('abs-' + pk) || document.getElementById('mabs-' + pk);
-      if (!isNaN(v) && v === 0 && !(absEl && absEl.checked)) nbZerosNonAbs++;
-    });
-    return nbZerosNonAbs > 0 && nbZerosNonAbs / vals.length >= 0.4;
-  }
-
-  /* ─────────────────────────────────────────────
-     Sync desktop ↔ mobile pour un même élève
-  ───────────────────────────────────────────── */
-  function syncPair(srcId, dstId, prop) {
-    const src = document.getElementById(srcId);
-    const dst = document.getElementById(dstId);
-    if (!src || !dst) return;
-    src.addEventListener('input', () => { dst[prop] = src[prop]; updateStats(); });
-    src.addEventListener('change', () => { dst[prop] = src[prop]; updateStats(); });
-  }
-
-  /* ─────────────────────────────────────────────
-     Gestion Dispensé
-  ───────────────────────────────────────────── */
+  /* ── Dispensé ── */
   function applyDispense(pk, checked) {
     ['note-','obs-','abs-'].forEach(prefix => {
       const el = document.getElementById(prefix + pk);
@@ -527,21 +383,16 @@
     });
     const card = mobileRowId(pk);
     const row  = document.getElementById('row-' + pk);
-    if (card) { card.classList.toggle('ns-card-dispense', checked); }
-    if (row)  { row.style.opacity = checked ? '0.6' : ''; }
-
-    /* Style bouton Dispensé mobile */
-    ['lbl-disp-' + pk].forEach(id => {
-      const lbl = document.getElementById(id);
-      if (lbl) lbl.classList.toggle('ns-toggle-disp', checked);
-    });
+    if (card) card.classList.toggle('ns-card-dispense', checked);
+    if (row)  row.classList.toggle('note-row-dispense', checked);
+    const lbl = document.getElementById('lbl-disp-' + pk);
+    if (lbl) lbl.classList.toggle('ns-toggle-disp', checked);
     updateStats();
   }
 
   document.querySelectorAll('.disp-checkbox').forEach(cb => {
     cb.addEventListener('change', function () {
       const pk = this.dataset.row;
-      /* Synchroniser l'autre checkbox Dispensé (desktop ↔ mobile) */
       ['disp-','mdisp-'].forEach(prefix => {
         const other = document.getElementById(prefix + pk);
         if (other && other !== this) other.checked = this.checked;
@@ -550,9 +401,7 @@
     });
   });
 
-  /* ─────────────────────────────────────────────
-     Gestion Absent
-  ───────────────────────────────────────────── */
+  /* ── Absent ── */
   function applyAbsent(pk, checked) {
     ['note-','mnote-'].forEach(prefix => {
       const el = document.getElementById(prefix + pk);
@@ -569,7 +418,6 @@
         if (el && el.value === 'ABS') el.value = '';
       });
     }
-    /* Style bouton Absent mobile */
     const lbl = document.getElementById('lbl-abs-' + pk);
     if (lbl) lbl.classList.toggle('ns-toggle-abs', checked);
     updateRowColor(pk);
@@ -579,7 +427,6 @@
   document.querySelectorAll('.abs-checkbox').forEach(cb => {
     cb.addEventListener('change', function () {
       const pk = this.dataset.row;
-      /* Sync abs desktop ↔ mobile */
       ['abs-','mabs-'].forEach(prefix => {
         const other = document.getElementById(prefix + pk);
         if (other && other !== this) other.checked = this.checked;
@@ -588,30 +435,24 @@
     });
   });
 
-  /* ─────────────────────────────────────────────
-     Saisie de note — validation + sync
-  ───────────────────────────────────────────── */
+  /* ── Saisie note ── */
   document.querySelectorAll('.note-input').forEach(inp => {
     inp.addEventListener('input', function () {
       const pk = this.dataset.row;
-      /* Sync desktop ↔ mobile */
       ['note-','mnote-'].forEach(prefix => {
         const other = document.getElementById(prefix + pk);
         if (other && other !== this) other.value = this.value;
       });
       const v = parseFloat(this.value);
       const invalid = !isNaN(v) && this.value !== '' && (v < 0 || v > bareme);
-      this.style.borderColor = invalid ? '#F87171' : '';
-      this.style.background  = invalid ? 'rgba(220,53,69,0.08)' : '';
+      this.classList.toggle('note-input-num-error', invalid);
       this.title = invalid ? `Note invalide — max : ${bareme}` : '';
       updateRowColor(pk);
       updateStats();
     });
   });
 
-  /* ─────────────────────────────────────────────
-     Navigation clavier mobile — Enter → suivant
-  ───────────────────────────────────────────── */
+  /* ── Navigation mobile (Enter → suivant) ── */
   const mobileInputs = Array.from(document.querySelectorAll('.note-input-mobile'));
   mobileInputs.forEach((inp, idx) => {
     inp.addEventListener('keydown', function (e) {
@@ -623,11 +464,8 @@
     });
   });
 
-  /* ─────────────────────────────────────────────
-     Validation avant soumission
-  ───────────────────────────────────────────── */
+  /* ── Validation avant soumission ── */
   document.getElementById('form-saisie').addEventListener('submit', function (e) {
-    // 1. Bloquer si notes hors barème
     const invalides = Array.from(document.querySelectorAll('.note-input')).filter(inp => {
       const v = parseFloat(inp.value);
       return !isNaN(v) && inp.value !== '' && (v < 0 || v > bareme);
@@ -639,11 +477,9 @@
       alert(`${invalides.length} note(s) invalide(s) — barème max : ${bareme}`);
       return;
     }
-
-    // 2. Demander confirmation si des alertes qualité sont visibles
     const panel = document.getElementById('cq-panel');
-    if (panel.style.display !== 'none' && panel.innerHTML.trim() !== '') {
-      const texteAlertes = Array.from(panel.querySelectorAll('[style*="font-weight:700"]'))
+    if (!panel.hidden && panel.innerHTML.trim() !== '') {
+      const texteAlertes = Array.from(panel.querySelectorAll('.note-cq-title'))
         .map(el => '• ' + el.textContent.trim()).join('\n');
       const ok = confirm(
         'Des anomalies ont été détectées :\n\n' + texteAlertes +
@@ -653,9 +489,7 @@
     }
   });
 
-  /* ─────────────────────────────────────────────
-     Init
-  ───────────────────────────────────────────── */
+  /* ── Init ── */
   document.querySelectorAll('.abs-checkbox:checked').forEach(cb => {
     const pk = cb.dataset.row;
     ['note-','mnote-'].forEach(prefix => {

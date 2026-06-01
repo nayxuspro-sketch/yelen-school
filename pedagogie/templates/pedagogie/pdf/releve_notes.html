@@ -10,21 +10,21 @@
       @bottom-center {
         content: "Page " counter(page) " / " counter(pages);
         font-size: 7pt;
-        color: #94a3b8;
+        color: #555;
       }
       @bottom-right {
         content: "{{ annee.libelle }}";
         font-size: 7pt;
-        color: #94a3b8;
+        color: #555;
       }
     }
 
     * { box-sizing: border-box; }
 
     body {
-      font-family: 'DejaVu Sans', sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       font-size: 9pt;
-      color: #1e293b;
+      color: #111;
       margin: 0;
       padding: 0;
       background: white;
@@ -35,7 +35,7 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 2.5pt solid #00A86B;
+      border-bottom: 2.5px solid #111;
       padding-bottom: 8pt;
       margin-bottom: 10pt;
     }
@@ -43,24 +43,23 @@
     .school-name {
       font-size: 15pt;
       font-weight: bold;
-      color: #00A86B;
+      color: #111;
       text-transform: uppercase;
       letter-spacing: 0.8pt;
     }
     .school-meta {
       font-size: 7.5pt;
-      color: #64748b;
+      color: #555;
       margin-top: 3pt;
       line-height: 1.5;
     }
     .header-right { text-align: right; flex-shrink: 0; margin-left: 12pt; }
-    .header-right img { max-height: 48pt; max-width: 80pt; }
+    .header-right img { max-height: 48pt; max-width: 80pt; filter: grayscale(100%); }
 
     /* ══ BANDEAU TITRE ══ */
     .doc-banner {
-      background: #0f172a;
+      background: #111;
       color: white;
-      border-radius: 4pt;
       padding: 7pt 14pt;
       margin-bottom: 8pt;
       display: flex;
@@ -76,12 +75,13 @@
     }
     .doc-banner .banner-sub {
       font-size: 8pt;
-      color: #94a3b8;
+      color: #ccc;
       margin-top: 3pt;
     }
     .badge-count {
-      background: #00A86B;
-      border-radius: 20pt;
+      background: #fff;
+      border: 1.5pt solid #ccc;
+      color: #111;
       padding: 4pt 12pt;
       font-size: 8pt;
       font-weight: bold;
@@ -96,10 +96,10 @@
       margin-bottom: 8pt;
     }
     .info-card {
-      border: 1pt solid #e2e8f0;
-      border-radius: 3pt;
+      border: 1pt solid #ccc;
+      border-left: 3pt solid #111;
       padding: 5pt 8pt;
-      background: #f8fafc;
+      background: #fff;
     }
     .info-card label {
       display: block;
@@ -107,25 +107,31 @@
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: .4pt;
-      color: #94a3b8;
+      color: #555;
       margin-bottom: 2pt;
     }
     .info-card span {
       font-size: 8.5pt;
       font-weight: bold;
-      color: #0f172a;
+      color: #111;
     }
     .info-card .sub {
       font-size: 7pt;
-      color: #64748b;
+      color: #555;
       font-weight: normal;
+    }
+    .info-card .non-assigne {
+      font-size: 8.5pt;
+      font-weight: normal;
+      color: #aaa;
+      font-style: italic;
     }
 
     /* ══ TABLEAU ══ */
     table { width: 100%; border-collapse: collapse; font-size: 8pt; }
 
     thead th {
-      background: #0f172a;
+      background: #111;
       color: white;
       padding: 5pt 3pt;
       text-align: center;
@@ -133,68 +139,68 @@
       font-weight: bold;
       vertical-align: bottom;
     }
-    thead th.th-num   { width: 16pt; color: #64748b; }
+    thead th.th-num   { width: 16pt; color: #ccc; }
     thead th.th-eleve { text-align: left; min-width: 130pt; padding-left: 7pt; }
     thead th.th-note  { min-width: 34pt; }
     thead th.th-moy   {
-      background: #00A86B;
+      background: #555;
       min-width: 40pt;
-      border-left: 2pt solid #059669;
+      border-left: 2pt solid #333;
     }
 
     .ev-label  { font-size: 7pt; font-weight: bold; }
     .ev-date   { font-size: 6pt; opacity: .8; margin-top: 1pt; }
     .ev-bareme { font-size: 6pt; opacity: .7; font-style: italic; }
 
-    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody tr:nth-child(even) { background: #f5f5f5; }
     tbody tr:nth-child(odd)  { background: #ffffff; }
 
     td {
       padding: 3.5pt 3pt;
-      border-bottom: 0.5pt solid #e2e8f0;
+      border-bottom: 0.5pt solid #ccc;
       vertical-align: middle;
     }
-    td.td-num   { text-align: center; color: #94a3b8; font-size: 7pt; border-right: 0.5pt solid #e2e8f0; }
+    td.td-num   { text-align: center; color: #555; font-size: 7pt; border-right: 0.5pt solid #ccc; }
     td.td-eleve { padding-left: 7pt; }
     td.td-eleve .nom { font-weight: bold; font-size: 8.5pt; }
-    td.td-eleve .mat { font-size: 6.5pt; color: #94a3b8; }
+    td.td-eleve .mat { font-size: 6.5pt; color: #555; }
 
-    /* Coloration des notes (/20 calculé en Python via sur_20) */
-    td.note-ok   { text-align: center; font-weight: bold; color: #15803d; background: #f0fdf4; }
-    td.note-low  { text-align: center; font-weight: bold; color: #dc2626; background: #fff1f2; }
-    td.note-abs  { text-align: center; font-weight: bold; color: #dc2626; font-size: 7pt; }
-    td.note-vide { text-align: center; color: #cbd5e1; }
+    /* Notes N&B : OK = gras normal, insuffisant = gras + italique */
+    td.note-ok   { text-align: center; font-weight: bold; }
+    td.note-low  { text-align: center; font-weight: bold; font-style: italic; }
+    td.note-abs  { text-align: center; font-weight: bold; font-size: 7pt; }
+    td.note-vide { text-align: center; color: #aaa; }
 
     /* Colonne moyenne */
     td.td-moy {
       text-align: center;
       font-weight: bold;
       font-size: 10pt;
-      border-left: 2pt solid #00A86B;
+      border-left: 2pt solid #555;
     }
-    td.td-moy.moy-ok  { color: #15803d; background: #f0fdf4; }
-    td.td-moy.moy-low { color: #dc2626; background: #fff1f2; }
-    td.td-moy.moy-est { color: #0369a1; background: #f0f9ff; }
-    td.td-moy.moy-nd  { color: #94a3b8; }
+    td.td-moy.moy-ok  { font-weight: bold; }
+    td.td-moy.moy-low { font-weight: bold; font-style: italic; }
+    td.td-moy.moy-est { font-style: italic; color: #555; }
+    td.td-moy.moy-nd  { color: #aaa; font-weight: normal; }
 
     /* ══ PIED DE TABLEAU ══ */
     tfoot tr.tf-avg td {
-      border-top: 2pt solid #0f172a;
-      border-bottom: 0.5pt solid #94a3b8;
-      background: #e2e8f0;
+      border-top: 2pt solid #111;
+      border-bottom: 2pt solid #111;
+      background: #fff;
       font-size: 7.5pt;
       font-weight: bold;
-      color: #0f172a;
+      color: #111;
       padding: 4pt 3pt;
       text-align: center;
     }
     tfoot tr.tf-count td {
-      background: #f1f5f9;
+      background: #ebebeb;
       font-size: 7pt;
-      color: #1e293b;
+      color: #111;
       padding: 3pt 3pt;
       text-align: center;
-      border-bottom: 1pt solid #cbd5e1;
+      border-bottom: 1pt solid #ccc;
     }
     tfoot td.tf-label {
       text-align: left;
@@ -203,26 +209,69 @@
       font-size: 6.5pt;
       letter-spacing: .4pt;
       padding-left: 7pt;
-      color: #0f172a;
+      color: #111;
     }
-    tfoot td.tf-moy-col { border-left: 2pt solid #00A86B; }
-    tfoot td.tf-ok  { color: #15803d; }
-    tfoot td.tf-low { color: #dc2626; }
+    tfoot td.tf-moy-col { border-left: 2pt solid #555; }
+    tfoot td.tf-ok  { font-weight: bold; }
+    tfoot td.tf-low { font-weight: bold; font-style: italic; }
+    tfoot td.tf-vide { color: #aaa; }
+
+    /* ══ RÉCAPITULATIF MOYENNES ══ */
+    .recap-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6pt;
+      margin-top: 8pt;
+    }
+    .recap-card {
+      border: 1pt solid #ccc;
+      border-left: 3pt solid #111;
+      background: #fff;
+      padding: 6pt 10pt;
+      text-align: center;
+    }
+    .recap-card-title {
+      font-size: 6.5pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: .4pt;
+      color: #555;
+      margin-bottom: 3pt;
+    }
+    .recap-card-val {
+      font-size: 14pt;
+      font-weight: bold;
+      color: #111;
+    }
+    .recap-card-val-low {
+      font-size: 14pt;
+      font-weight: bold;
+      font-style: italic;
+      color: #111;
+    }
+    .recap-card-val span { font-size: 8pt; font-weight: normal; }
+    .recap-card-sub {
+      font-size: 7.5pt;
+      color: #555;
+      margin-top: 2pt;
+    }
+    .recap-card-empty { color: #aaa; }
 
     /* ══ SIGNATAIRE ══ */
     .sig-zone     { margin-top: 20pt; text-align: right; page-break-inside: avoid; }
-    .sig-date     { font-size: 9pt; color: #475569; margin: 0; }
-    .sig-fonction { font-size: 10pt; font-weight: bold; color: #0f172a; margin: 24pt 0 0; }
+    .sig-date     { font-size: 9pt; color: #555; margin: 0; }
+    .sig-fonction { font-size: 10pt; font-weight: bold; color: #111; margin: 24pt 0 0; }
     .sig-name     { font-size: 10pt; font-weight: bold; color: #000; margin: 20pt 0 0; text-transform: uppercase; }
-    .sig-honors   { font-size: 8pt; font-style: italic; color: #475569; margin: 2pt 0 0; }
+    .sig-honors   { font-size: 8pt; font-style: italic; color: #555; margin: 2pt 0 0; }
 
     /* ══ LÉGENDE ══ */
-    .legende { display: flex; gap: 12pt; margin-top: 6pt; font-size: 6.5pt; color: #64748b; align-items: center; }
+    .legende { display: flex; gap: 12pt; margin-top: 6pt; font-size: 6.5pt; color: #555; align-items: center; flex-wrap: wrap; }
     .leg-item { display: flex; align-items: center; gap: 3pt; }
-    .leg-dot  { width: 7pt; height: 7pt; border-radius: 50%; display: inline-block; }
-    .leg-ok   { background: #bbf7d0; }
-    .leg-low  { background: #fecaca; }
-    .leg-est  { background: #bae6fd; }
+    .leg-dot  { width: 7pt; height: 7pt; display: inline-block; border: 1pt solid #555; }
+    .leg-ok   { background: #fff; }
+    .leg-low  { background: #ddd; }
+    .leg-est  { background: #ebebeb; }
+    .leg-vide-text { color: #aaa; font-style: italic; }
   </style>
 </head>
 <body>
@@ -281,7 +330,7 @@
     {% if enseignement.personnel %}
       <span>{{ enseignement.personnel.prenom }} {{ enseignement.personnel.nom }}</span>
     {% else %}
-      <span style="color:#94a3b8; font-weight:normal;">Non assigné</span>
+      <span class="non-assigne">Non assigné</span>
     {% endif %}
   </div>
   <div class="info-card">
@@ -362,9 +411,9 @@
         {% if stat.avg != None %}
           {% if stat.avg >= 10 %}<td class="tf-ok">{{ stat.avg|floatformat:2 }}</td>
           {% else %}<td class="tf-low">{{ stat.avg|floatformat:2 }}</td>{% endif %}
-        {% else %}<td style="color:#94a3b8;">—</td>{% endif %}
+        {% else %}<td class="tf-vide">—</td>{% endif %}
       {% endfor %}
-      <td class="tf-moy-col" style="color:#94a3b8;">—</td>
+      <td class="tf-moy-col tf-vide">—</td>
     </tr>
     <tr class="tf-count">
       <td colspan="2" class="tf-label">Saisies</td>
@@ -379,58 +428,54 @@
 
 <!-- ══ Récapitulatif moyennes ══ -->
 {% if moy_max or moy_min or moy_classe %}
-<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6pt; margin-top:8pt;">
+<div class="recap-grid">
 
-  <div style="border:1pt solid #bbf7d0; border-radius:3pt; background:#f0fdf4; padding:6pt 10pt; text-align:center;">
-    <div style="font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:.4pt; color:#15803d; margin-bottom:3pt;">
-      Meilleure moyenne
-    </div>
+  <div class="recap-card">
+    <div class="recap-card-title">Meilleure moyenne</div>
     {% if moy_max %}
-    <div style="font-size:14pt; font-weight:bold; color:#15803d;">{{ moy_max.moy }}<span style="font-size:8pt; font-weight:normal;">/20</span></div>
-    <div style="font-size:7.5pt; color:#166534; margin-top:2pt;">
+    <div class="recap-card-val">{{ moy_max.moy }}<span>/20</span></div>
+    <div class="recap-card-sub">
       {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }}
     </div>
-    {% else %}<div style="color:#94a3b8;">—</div>{% endif %}
+    {% else %}<div class="recap-card-empty">—</div>{% endif %}
   </div>
 
-  <div style="border:1pt solid #e2e8f0; border-radius:3pt; background:#f8fafc; padding:6pt 10pt; text-align:center;">
-    <div style="font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:.4pt; color:#475569; margin-bottom:3pt;">
-      Moyenne de la classe
-    </div>
+  <div class="recap-card">
+    <div class="recap-card-title">Moyenne de la classe</div>
     {% if moy_classe %}
-    <div style="font-size:14pt; font-weight:bold; color:{% if moy_classe >= 10 %}#15803d{% else %}#dc2626{% endif %};">
-      {{ moy_classe }}<span style="font-size:8pt; font-weight:normal;">/20</span>
-    </div>
-    <div style="font-size:7.5pt; color:#475569; margin-top:2pt;">{{ table|length }} élève{{ table|length|pluralize }}</div>
-    {% else %}<div style="color:#94a3b8;">—</div>{% endif %}
+    {% if moy_classe >= 10 %}
+    <div class="recap-card-val">{{ moy_classe }}<span>/20</span></div>
+    {% else %}
+    <div class="recap-card-val-low">{{ moy_classe }}<span>/20</span></div>
+    {% endif %}
+    <div class="recap-card-sub">{{ table|length }} élève{{ table|length|pluralize }}</div>
+    {% else %}<div class="recap-card-empty">—</div>{% endif %}
   </div>
 
-  <div style="border:1pt solid #fecaca; border-radius:3pt; background:#fff1f2; padding:6pt 10pt; text-align:center;">
-    <div style="font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:.4pt; color:#dc2626; margin-bottom:3pt;">
-      Moyenne la plus faible
-    </div>
+  <div class="recap-card">
+    <div class="recap-card-title">Moyenne la plus faible</div>
     {% if moy_min %}
-    <div style="font-size:14pt; font-weight:bold; color:#dc2626;">{{ moy_min.moy }}<span style="font-size:8pt; font-weight:normal;">/20</span></div>
-    <div style="font-size:7.5pt; color:#991b1b; margin-top:2pt;">
+    <div class="recap-card-val-low">{{ moy_min.moy }}<span>/20</span></div>
+    <div class="recap-card-sub">
       {{ moy_min.inscription.eleve.nom|upper }} {{ moy_min.inscription.eleve.prenom }}
     </div>
-    {% else %}<div style="color:#94a3b8;">—</div>{% endif %}
+    {% else %}<div class="recap-card-empty">—</div>{% endif %}
   </div>
 
 </div>
 {% endif %}
 
 <div class="legende">
-  <div class="leg-item"><span class="leg-dot leg-ok"></span> &ge; 10/20</div>
-  <div class="leg-item"><span class="leg-dot leg-low"></span> &lt; 10/20</div>
-  <div class="leg-item"><span class="leg-dot leg-est"></span> Moyenne estimée (non validée)</div>
-  <span style="margin-left:auto; font-size:6pt; color:#94a3b8;">
+  <div class="leg-item"><span class="leg-dot leg-ok"></span> &ge; 10/20 (gras)</div>
+  <div class="leg-item"><span class="leg-dot leg-low"></span> &lt; 10/20 (gras italique)</div>
+  <div class="leg-item"><span class="leg-dot leg-est"></span> Moyenne estimée (non validée, italique)</div>
+  <span style="margin-left:auto; font-size:6pt; color:#555;">
     Coloration calculée sur l'équivalent /20 de chaque note (note &divide; barème &times; 20).
   </span>
 </div>
 
 {% else %}
-<div style="text-align:center; color:#94a3b8; padding:30pt; border:1pt dashed #e2e8f0; border-radius:4pt; margin-top:10pt;">
+<div style="text-align:center; color:#555; padding:30pt; border:1pt dashed #ccc; margin-top:10pt;">
   Aucune donnée à afficher. Vérifiez les filtres sélectionnés.
 </div>
 {% endif %}

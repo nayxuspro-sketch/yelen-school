@@ -4,30 +4,40 @@
 
 {% block content %}
 
-<div class="page-header animate-fade-up">
-  <div class="d-flex align-center gap-4">
-    <a href="/licences/" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-      </svg>
-    </a>
-    <h1 class="page-title">{{ titre }}</h1>
-  </div>
+<div class="dash-section-header animate-fade-up">
+    <div class="dash-section-title">
+        <a href="/licences/" class="dash-btn dash-btn-secondary" style="padding: 10px; min-width: auto; border-radius: 50%;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+        </a>
+        <div>
+            <h1>{{ titre }}</h1>
+            <p>Confirmation de l'opération en cours</p>
+        </div>
+    </div>
 </div>
 
-<div class="card animate-fade-up delay-1" style="max-width:480px;">
-  <div style="padding:var(--space-6);">
-    <p style="font-size:0.9rem; color:var(--color-text); line-height:1.6; margin-bottom:var(--space-6);">
-      {{ message }}
-    </p>
-    <form method="post">
-      {% csrf_token %}
-      <div class="d-flex gap-3">
-        <button type="submit" class="{{ btn_class }}">{{ btn_label }}</button>
-        <a href="/licences/" class="btn-secondary">Annuler</a>
-      </div>
-    </form>
-  </div>
+<div class="dash-card animate-fade-up" style="max-width: 500px;">
+    <div class="dash-card-body" style="padding: 32px; text-align: center;">
+        <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.03); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+            <svg width="32" height="32" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        
+        <p style="font-size: 15px; color: #FFF; line-height: 1.6; margin-bottom: 32px;">
+            {{ message }}
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="submit" class="dash-btn dash-btn-primary" style="flex: 1; justify-content: center;">{{ btn_label }}</button>
+                <a href="/licences/" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center;">Annuler</a>
+            </div>
+        </form>
+    </div>
 </div>
 
 {% endblock %}

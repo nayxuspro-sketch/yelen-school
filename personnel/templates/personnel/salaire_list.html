@@ -10,92 +10,97 @@
     <p class="page-subtitle">Gestion des bulletins de salaire mensuels</p>
   </div>
   <div class="d-flex gap-2">
-    <a href="{% url 'personnel:salaire_create' %}" class="btn-primary">Nouveau bulletin</a>
+    <a href="{% url 'personnel:salaire_create' %}" class="btn btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nouveau bulletin
+    </a>
   </div>
 </div>
 
 {# ── Filtres ── #}
-<form method="get" class="card animate-fade-up delay-1"
-      style="padding:var(--space-4); margin-bottom:var(--space-4); display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:flex-end;">
-  <div class="form-group" style="margin:0; min-width:140px;">
-    <label class="form-label">Mois</label>
-    <select name="mois" class="input select">
-      <option value="">Tous les mois</option>
-      {% for num, nom in mois_choices %}
-        <option value="{{ num }}" {% if mois_filtre == num|stringformat:"s" %}selected{% endif %}>{{ nom }}</option>
-      {% endfor %}
-    </select>
+<form method="get" class="card animate-fade-up delay-1" style="padding: var(--space-4); margin-bottom: var(--space-4);">
+  <div class="form-grid-2" style="gap: var(--space-4); align-items: flex-end;">
+    <div class="form-group" style="margin: 0;">
+      <label class="form-label">Mois</label>
+      <select name="mois" class="input select" style="width: 100%;">
+        <option value="">Tous les mois</option>
+        {% for num, nom in mois_choices %}
+          <option value="{{ num }}" {% if mois_filtre == num|stringformat:"s" %}selected{% endif %}>{{ nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin: 0;">
+      <label class="form-label">Année</label>
+      <input type="number" name="annee" value="{{ annee_filtre }}" class="input" style="width: 100%;">
+    </div>
+    <div class="form-group" style="margin: 0;">
+      <label class="form-label">Statut</label>
+      <select name="statut" class="input select" style="width: 100%;">
+        <option value="">Tous</option>
+        {% for val, lib in statut_choices %}
+          <option value="{{ val }}" {% if statut_filtre == val %}selected{% endif %}>{{ lib }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="d-flex gap-2" style="align-items: flex-end;">
+      <button type="submit" class="btn btn-secondary">Filtrer</button>
+      <a href="{% url 'personnel:salaire_list' %}" class="btn btn-ghost">Réinitialiser</a>
+    </div>
   </div>
-  <div class="form-group" style="margin:0; min-width:100px;">
-    <label class="form-label">Année</label>
-    <input type="number" name="annee" value="{{ annee_filtre }}" class="input" style="width:100px;">
-  </div>
-  <div class="form-group" style="margin:0; min-width:140px;">
-    <label class="form-label">Statut</label>
-    <select name="statut" class="input select">
-      <option value="">Tous</option>
-      {% for val, lib in statut_choices %}
-        <option value="{{ val }}" {% if statut_filtre == val %}selected{% endif %}>{{ lib }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <button type="submit" class="btn-secondary">Filtrer</button>
-  <a href="{% url 'personnel:salaire_list' %}" class="btn-secondary">Réinitialiser</a>
 </form>
 
 {# ── Tableau ── #}
 <div class="table-wrapper animate-fade-up delay-2">
-  <div class="table-scroll">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Membre du personnel</th>
-          <th>Mois / Année</th>
-          <th style="text-align:right;">Salaire brut</th>
-          <th style="text-align:right;">Retenues</th>
-          <th style="text-align:right;">Salaire net</th>
-          <th>Statut</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for s in salaires %}
-        <tr>
-          <td class="fw-bold">{{ s.personnel.get_nom_complet }}</td>
-          <td>{{ s.get_mois_display }} {{ s.annee }}</td>
-          <td style="text-align:right;" class="text-mono">{{ s.salaire_brut|floatformat:"0" }} FCFA</td>
-          <td style="text-align:right;" class="text-mono" style="color:var(--color-danger);">
-            {{ s.total_retenues|floatformat:"0" }} FCFA
-          </td>
-          <td style="text-align:right;" class="text-mono fw-bold">{{ s.salaire_net|floatformat:"0" }} FCFA</td>
-          <td>
-            {% if s.statut == 'PAYE' %}
-              <span class="badge badge-success">Payé</span>
-            {% elif s.statut == 'VALIDE' %}
-              <span class="badge badge-info">Validé</span>
-            {% else %}
-              <span class="badge badge-neutral">Brouillon</span>
-            {% endif %}
-          </td>
-          <td style="text-align:right; white-space:nowrap;">
-            <a href="{% url 'personnel:salaire_detail' s.pk %}"
-               style="font-size:0.78rem; color:var(--color-primary); text-decoration:none;">
-              Voir
-            </a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="7">
-            <div class="empty-state">
-              <p class="empty-state-text">Aucun bulletin de salaire pour ces critères.</p>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Membre du personnel</th>
+        <th>Mois / Année</th>
+        <th style="text-align: right;">Salaire brut</th>
+        <th style="text-align: right;">Retenues</th>
+        <th style="text-align: right;">Salaire net</th>
+        <th>Statut</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in salaires %}
+      <tr>
+        <td class="fw-bold">{{ s.personnel.get_nom_complet }}</td>
+        <td>{{ s.get_mois_display }} {{ s.annee }}</td>
+        <td style="text-align: right;" class="text-mono">{{ s.salaire_brut|floatformat:"0" }} FCA</td>
+        <td style="text-align: right; color: var(--color-danger);" class="text-mono">
+          {{ s.total_retenues|floatformat:"0" }} FCA
+        </td>
+        <td style="text-align: right;" class="text-mono fw-bold">{{ s.salaire_net|floatformat:"0" }} FCA</td>
+        <td>
+          {% if s.statut == 'PAYE' %}
+            <span class="badge badge-success">Payé</span>
+          {% elif s.statut == 'VALIDE' %}
+            <span class="badge badge-info">Validé</span>
+          {% else %}
+            <span class="badge badge-neutral">Brouillon</span>
+          {% endif %}
+        </td>
+        <td style="text-align: right;">
+          <a href="{% url 'personnel:salaire_detail' s.pk %}" class="btn btn-ghost btn-sm">
+            Voir
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7">
+          <div class="empty-state" style="padding: var(--space-8);">
+            <p class="empty-state-text">Aucun bulletin de salaire pour ces critères.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 {% endblock %}

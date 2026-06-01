@@ -1,0 +1,185 @@
+{% extends "core/base.html" %}
+
+{% block title %}Trésorerie — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">Tableau de bord — Trésorerie</h1>
+      <p class="page-subtitle">Recettes vs Dépenses vs Budget prévisionnel</p>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'finances:tableau_bord_budget_xlsx' %}{% if annee_sel %}?annee={{ annee_sel.pk }}{% endif %}"
+         class="btn-secondary btn-sm btn-excel">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        </svg>
+        Excel
+      </a>
+      <a href="{% url 'finances:depense_create' %}" class="btn-primary btn-sm">+ Dépense</a>
+    </div>
+  </div>
+
+  <!-- Sélecteur année -->
+  <div class="card mb-5 animate-fade-up delay-1">
+    <div class="card-body">
+      <form method="get">
+        <div class="d-flex gap-3 align-end">
+          <div class="form-group flex-1">
+            <label class="input-label">Année scolaire</label>
+            <select name="annee" class="input select" onchange="this.form.submit()">
+              {% for a in annees %}
+              <option value="{{ a.pk }}" {% if annee_sel and annee_sel.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="stats-row animate-fade-up delay-1 mb-5">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="stat-label">Recettes encaissées</p>
+        <p class="stat-value">{{ recettes_total|floatformat:0 }} FCFA</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--red">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="stat-label">Dépenses validées</p>
+        <p class="stat-value">{{ total_depenses|floatformat:0 }} FCFA</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon {% if solde >= 0 %}stat-icon--green{% else %}stat-icon--red{% endif %}">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+        </svg>
+      </div>
+      <div>
+        <p class="stat-label">Solde net</p>
+        <p class="stat-value {% if solde < 0 %}text-danger{% endif %}">{{ solde|floatformat:0 }} FCFA</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="stat-label">Budget prévu</p>
+        <p class="stat-value">{{ total_prevu|floatformat:0 }} FCFA</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Détail par catégorie -->
+  <div class="card animate-fade-up delay-2">
+    <div class="card-header">
+      <span class="card-title">Suivi budgétaire par catégorie</span>
+      <a href="{% url 'finances:budget_previsionnel' %}{% if annee_sel %}?annee={{ annee_sel.pk }}{% endif %}"
+         class="btn-ghost btn-sm">Modifier le budget →</a>
+    </div>
+    <div class="card-body p-0">
+      {% if lignes %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Catégorie</th>
+            <th class="text-right">Budget prévu</th>
+            <th class="text-right">Dépensé</th>
+            <th class="text-right">Écart</th>
+            <th style="width:160px">Consommation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in lignes %}
+          <tr {% if l.depasse %}class="row-warning"{% endif %}>
+            <td>
+              <span class="fw-500">{{ l.categorie.nom }}</span>
+              <br><span class="text-muted text-sm">{{ l.categorie.get_type_depense_display }}</span>
+            </td>
+            <td class="text-right">{{ l.prevu|floatformat:0 }} FCFA</td>
+            <td class="text-right fw-600">{{ l.reel|floatformat:0 }} FCFA</td>
+            <td class="text-right {% if l.ecart < 0 %}text-danger fw-600{% endif %}">
+              {% if l.ecart < 0 %}▲ {{ l.ecart|floatformat:0|slice:"1:" }} FCFA dépassé{% else %}{{ l.ecart|floatformat:0 }} FCFA{% endif %}
+            </td>
+            <td>
+              {% if l.prevu > 0 %}
+              <div class="progress-bar-wrap">
+                <div class="progress-bar {% if l.depasse %}progress-bar--danger{% else %}progress-bar--green{% endif %}"
+                     style="width: {{ l.pct }}%"></div>
+              </div>
+              <span class="text-sm text-muted">{{ l.pct }} %</span>
+              {% else %}
+              <span class="text-muted text-sm">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="table-total">
+            <td class="fw-700">Total</td>
+            <td class="text-right fw-700">{{ total_prevu|floatformat:0 }} FCFA</td>
+            <td class="text-right fw-700">{{ total_depenses|floatformat:0 }} FCFA</td>
+            <td class="text-right fw-700 {% if total_prevu < total_depenses %}text-danger{% endif %}">
+              {{ total_prevu|add:total_depenses|floatformat:0 }} FCFA
+            </td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <p>Aucune catégorie de dépense configurée.</p>
+        <a href="{% url 'finances:categorie_depense_create' %}" class="btn-primary btn-sm">Créer des catégories</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Évolution mensuelle -->
+  {% if evolution %}
+  <div class="card animate-fade-up delay-3 mt-5">
+    <div class="card-header">
+      <span class="card-title">Évolution mensuelle des dépenses</span>
+    </div>
+    <div class="card-body p-0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mois</th>
+            <th class="text-right">Dépenses (FCFA)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in evolution %}
+          <tr>
+            <td>{{ m.mois|date:"F Y" }}</td>
+            <td class="text-right fw-500">{{ m.total|floatformat:0 }} FCFA</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

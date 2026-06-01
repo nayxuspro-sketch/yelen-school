@@ -1,0 +1,368 @@
+{% load signataire_tags %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+@page {
+    size: A4 portrait;
+    margin: 10mm 12mm 12mm 12mm;
+    @bottom-right {
+        content: "Page " counter(page) " / " counter(pages);
+        font-size: 6.5pt;
+        color: #555;
+    }
+    @bottom-left {
+        content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }}";
+        font-size: 6.5pt;
+        color: #555;
+    }
+}
+html, body {
+    font-family: Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #000;
+    line-height: 1.25;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+}
+
+/* ── En-tête ── */
+.bul-header {
+    display: flex;
+    align-items: center;
+    gap: 6pt;
+    background: #f5f5f5;
+    padding: 4pt 8pt;
+    margin-bottom: 4pt;
+    border: 1pt solid #ccc;
+}
+.bul-badge {
+    width: 30pt;
+    height: 30pt;
+    min-width: 30pt;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5pt solid #111;
+    text-align: center;
+    line-height: 27pt;
+    font-family: 'Playfair Display', serif;
+    font-size: 10pt;
+    font-weight: 700;
+    color: #111;
+}
+.bul-badge img { width: 26pt; height: 26pt; border-radius: 50%; vertical-align: middle; filter: grayscale(100%); }
+.bul-school-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 11pt;
+    font-weight: 700;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.3pt;
+    margin: 0 0 1pt;
+}
+.bul-school-sub { font-size: 7pt; color: #555; margin: 0.5pt 0; }
+
+/* ── Titre ── */
+.bul-title {
+    background: #fff;
+    color: #111;
+    text-align: center;
+    padding: 3.5pt 8pt;
+    margin-bottom: 4pt;
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6pt;
+    border: 1.5pt solid #111;
+}
+
+/* ── Cartes ── */
+.bul-card {
+    background: #fff;
+    margin-bottom: 3pt;
+    border: 1pt solid #ccc;
+}
+.bul-section-label {
+    padding: 2pt 6pt;
+    border-left: 2.5pt solid #111;
+    background: #ebebeb;
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #111;
+}
+.bul-card-body { padding: 4pt 6pt; }
+
+/* ── Grille infos élève ── */
+.bul-info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2pt 7pt;
+    margin-bottom: 2pt;
+}
+.bul-info-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2pt 7pt;
+}
+.bul-info-label {
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #555;
+    margin-bottom: 0.5pt;
+}
+.bul-info-value { font-size: 8.5pt; color: #000; font-weight: 600; }
+.bul-matricule {
+    font-family: 'DejaVu Sans Mono', monospace;
+    color: #111;
+    font-weight: 700;
+    font-size: 8.5pt;
+}
+.bul-hr { border: none; border-top: 1pt solid #ccc; margin: 2.5pt 0; }
+
+/* ── Tableau récapitulatif des périodes ── */
+.bul-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.bul-table th {
+    padding: 2pt 6pt;
+    font-size: 7pt;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1pt solid #ccc;
+    background: #ebebeb;
+    text-align: left;
+}
+.bul-table th:last-child { text-align: right; }
+.bul-table td {
+    padding: 3pt 6pt;
+    font-size: 8.5pt;
+    color: #000;
+    border-bottom: 0.5pt solid #ccc;
+}
+.bul-table td:last-child { text-align: right; font-weight: 700; font-size: 9pt; }
+.bul-total-row td {
+    background: #ebebeb !important;
+    font-weight: 700;
+    font-size: 9pt;
+    border-top: 1.5pt solid #111;
+    border-bottom: 1.5pt solid #111;
+}
+
+/* ── Statistiques ── */
+.bul-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3pt;
+    margin-bottom: 3pt;
+}
+.bul-stat-box {
+    background: #fff;
+    border: 1pt solid #ccc;
+    border-left: 2.5pt solid #111;
+    padding: 3pt 4pt;
+    text-align: center;
+}
+.bul-stat-label {
+    font-size: 6.5pt;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 1pt;
+}
+.bul-stat-value { font-size: 10pt; font-weight: 700; color: #111; }
+.bul-rang-line { font-size: 8pt; color: #000; text-align: center; }
+.bul-rang-badge {
+    display: inline;
+    background: #fff;
+    border: 1pt solid #555;
+    padding: 0.5pt 5pt;
+    color: #111;
+    font-weight: 700;
+    font-size: 8.5pt;
+}
+
+/* ── Bannière décision ── */
+.bul-decision-admis {
+    background: #f5f5f5;
+    border: 1.5pt solid #111;
+    text-align: center;
+    padding: 3pt 8pt;
+    color: #000;
+    font-weight: 700;
+    font-size: 9pt;
+    margin-bottom: 3pt;
+}
+.bul-decision-ajourne {
+    background: #ddd;
+    border: 1.5pt solid #111;
+    text-align: center;
+    padding: 3pt 8pt;
+    color: #000;
+    font-weight: 700;
+    font-size: 9pt;
+    margin-bottom: 3pt;
+    font-style: italic;
+}
+
+/* ── Signatures ── */
+.bul-sig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12pt;
+    margin-top: 5pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+.bul-sig-col { text-align: center; font-size: 8pt; }
+</style>
+</head>
+<body>
+
+<!-- ══ EN-TÊTE ÉTABLISSEMENT ══ -->
+<div class="bul-header">
+    <div class="bul-badge">
+        {% if logo_url %}<img src="{{ logo_url }}" alt="Logo">
+        {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo">
+        {% else %}{{ identite.sigle|default:"YS" }}{% endif %}
+    </div>
+    <div>
+        <div class="bul-school-name">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</div>
+        {% if identite.devise %}<div class="bul-school-sub">{{ identite.devise }}</div>{% endif %}
+        <div class="bul-school-sub">
+            {% if identite.telephone %}Tél : {{ identite.telephone }}{% endif %}
+            {% if identite.telephone and identite.adresse_complete %} · {% endif %}
+            {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ══ TITRE ══ -->
+<div class="bul-title">
+    BULLETIN DE FIN D'ANNÉE — {{ annee_scolaire.libelle }}
+</div>
+
+<!-- ══ IDENTITÉ DE L'ÉLÈVE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Identité de l'élève</div>
+    <div class="bul-card-body">
+        <div class="bul-info-row">
+            <div>
+                <div class="bul-info-label">Matricule</div>
+                <div class="bul-matricule">{{ inscription.eleve.matricule }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Sexe</div>
+                <div class="bul-info-value">{{ inscription.eleve.get_genre_display|default:"-" }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Effectif</div>
+                <div class="bul-info-value">{{ nb_eleves }} élève{{ nb_eleves|pluralize }}</div>
+            </div>
+        </div>
+        <div class="bul-info-row">
+            <div>
+                <div class="bul-info-label">Nom &amp; Prénom</div>
+                <div class="bul-info-value">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Classe</div>
+                <div class="bul-info-value">{{ inscription.classe.nom }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Date de naissance</div>
+                <div class="bul-info-value">{{ inscription.eleve.date_naissance|date:"d/m/Y"|default:"-" }}</div>
+            </div>
+        </div>
+        <hr class="bul-hr">
+        <div class="bul-info-row-2">
+            <div>
+                <div class="bul-info-label">Cycle</div>
+                <div class="bul-info-value">{{ inscription.classe.cycle.nom|default:"-" }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Classe redoublée</div>
+                <div class="bul-info-value">{{ inscription.est_redoublant|yesno:"Oui,Non" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ RÉCAPITULATIF DES PÉRIODES ══ -->
+{% if periodes %}
+<div class="bul-card">
+    <div class="bul-section-label">Récapitulatif des moyennes</div>
+    <table class="bul-table">
+        <thead>
+            <tr>
+                <th>Période d'évaluation</th>
+                <th>Moyenne /20</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in periodes %}
+            <tr>
+                <td>{{ p.nom }}</td>
+                <td style="font-weight:{% if p.moyenne %}bold{% else %}normal{% endif %};">
+                    {% if p.moyenne %}{{ p.moyenne|floatformat:2 }}{% else %}—{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            <tr class="bul-total-row">
+                <td>Moyenne annuelle</td>
+                <td style="font-size:12pt;">
+                    {{ moyenne_annuelle.moyenne_annuelle|floatformat:2 }}&nbsp;/&nbsp;20
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- ══ STATISTIQUES DE LA CLASSE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Statistiques de la classe</div>
+    <div class="bul-card-body">
+        <div class="bul-stats">
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus forte moy.</div>
+                <div class="bul-stat-value">{{ moy_max_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus faible moy.</div>
+                <div class="bul-stat-value">{{ moy_min_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Moy. de classe</div>
+                <div class="bul-stat-value">{{ moy_avg_classe|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="bul-rang-line">
+            Rang annuel &nbsp;<span class="bul-rang-badge">{{ moyenne_annuelle.rang|default:"—" }}{% if moyenne_annuelle.rang == 1 %}er{% elif moyenne_annuelle.rang %}ème{% endif %}</span>&nbsp; / {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
+            {% if moyenne_annuelle.mention %}&nbsp;·&nbsp; <strong>{{ moyenne_annuelle.mention }}</strong>{% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ══ DÉCISION ══ -->
+{% if moyenne_annuelle.admis %}
+<div class="bul-decision-admis">ADMIS EN CLASSE SUPERIEURE — Moyenne annuelle : {{ moyenne_annuelle.moyenne_annuelle|floatformat:2 }}/20</div>
+{% else %}
+<div class="bul-decision-ajourne">NON ADMIS — Moyenne annuelle : {{ moyenne_annuelle.moyenne_annuelle|floatformat:2 }}/20 (seuil suffisant : 10,00/20)</div>
+{% endif %}
+
+<!-- ══ SIGNATURES ══ -->
+<div class="bul-sig-grid">
+    <div class="bul-sig-col"></div>
+    <div class="bul-sig-col">{% signataire_auto "BULLETIN" %}</div>
+</div>
+
+</body>
+</html>

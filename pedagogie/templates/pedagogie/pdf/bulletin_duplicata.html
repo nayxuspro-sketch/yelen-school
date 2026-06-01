@@ -1,0 +1,516 @@
+{% load signataire_tags %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+@page {
+    size: A4;
+    margin: 1.5cm 1.5cm;
+    @bottom-right {
+        content: "Duplicata — Page " counter(page) " / " counter(pages);
+        font-size: 7pt;
+        color: #000;
+    }
+}
+html, body {
+    font-family: Arial, sans-serif;
+    font-size: 8pt;
+    color: #000;
+    line-height: 1.25;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+}
+
+/* ── Filigrane DUPLICATA ── */
+.watermark {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    width: 520pt;
+    height: 70pt;
+    line-height: 70pt;
+    text-align: center;
+    transform: rotate(-38deg);
+    font-size: 60pt;
+    font-weight: 900;
+    color: rgba(0,0,0,0.08);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Bandeau DUPLICATA ── */
+.dup-banner {
+    background: #ddd;
+    border: 1pt solid #555;
+    padding: 2pt 8pt;
+    margin-bottom: 4pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5pt;
+}
+.dup-banner-icon {
+    font-size: 9pt;
+    font-weight: bold;
+    color: #111;
+}
+.dup-banner-text {
+    font-size: 8pt;
+    font-weight: 700;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.dup-banner-sub {
+    font-size: 7pt;
+    color: #555;
+    margin-left: 3pt;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* ── En-tête ── */
+.bul-header {
+    display: flex;
+    align-items: center;
+    gap: 7pt;
+    background: #f5f5f5;
+    padding: 5pt 8pt;
+    margin-bottom: 4pt;
+    border: 1pt solid #ccc;
+    position: relative;
+}
+.bul-badge {
+    width: 30pt;
+    height: 30pt;
+    min-width: 30pt;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5pt solid #111;
+    text-align: center;
+    line-height: 27pt;
+    font-family: 'Playfair Display', serif;
+    font-size: 10pt;
+    font-weight: 700;
+    color: #111;
+}
+.bul-badge img { width: 27pt; height: 27pt; border-radius: 50%; vertical-align: middle; filter: grayscale(100%); }
+.bul-school-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 12pt;
+    font-weight: 700;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.3pt;
+    margin: 0 0 1pt;
+}
+.bul-school-sub { font-size: 7pt; color: #555; margin: 0.5pt 0; }
+
+/* Tampon DUPLICATA dans le coin du header */
+.dup-stamp {
+    position: absolute;
+    top: 4pt;
+    right: 7pt;
+    background: #ddd;
+    border: 1pt solid #111;
+    padding: 1pt 5pt;
+    font-size: 7pt;
+    font-weight: 900;
+    color: #111;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transform: rotate(2deg);
+}
+
+/* ── Bannière titre ── */
+.bul-title {
+    background: #555;
+    color: #fff;
+    text-align: center;
+    padding: 4pt 8pt;
+    margin-bottom: 4pt;
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6pt;
+}
+.bul-title-sub {
+    font-size: 7pt;
+    font-weight: 400;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0;
+    text-transform: none;
+    margin-top: 1pt;
+}
+
+/* ── Cartes ── */
+.bul-card {
+    background: #fff;
+    margin-bottom: 4pt;
+    border: 1pt solid #ccc;
+    page-break-inside: avoid;
+    position: relative;
+    z-index: 1;
+}
+.bul-section-label {
+    padding: 2pt 7pt;
+    border-left: 2.5pt solid #111;
+    background: #ebebeb;
+    font-size: 6pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #111;
+}
+.bul-card-body { padding: 5pt 7pt; }
+
+/* ── Grille infos élève ── */
+.bul-info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2pt 7pt;
+    margin-bottom: 3pt;
+}
+.bul-info-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2pt 7pt;
+}
+.bul-info-label {
+    font-size: 6pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #555;
+    margin-bottom: 0.5pt;
+}
+.bul-info-value {
+    font-size: 8pt;
+    color: #000;
+    font-weight: 600;
+}
+.bul-matricule {
+    font-family: 'DejaVu Sans Mono', monospace;
+    color: #111;
+    font-weight: 700;
+    font-size: 8pt;
+}
+.bul-hr {
+    border: none;
+    border-top: 1pt solid #ccc;
+    margin: 3pt 0;
+}
+
+/* ── Tableau des notes ── */
+.bul-table { width: 100%; border-collapse: collapse; }
+.bul-table th {
+    background: #111;
+    color: #fff;
+    text-align: left;
+    padding: 2.5pt 4pt;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.bul-table td {
+    padding: 2pt 4pt;
+    font-size: 7.5pt;
+    color: #000;
+    border-bottom: 0.5pt solid #ccc;
+}
+.bul-table tr:nth-child(even) td { background: #f5f5f5; }
+.bul-tc { text-align: center; }
+.bul-bold { font-weight: 700; }
+.bul-italic { font-style: italic; font-size: 7pt; }
+.bul-total-row td {
+    background: #ebebeb !important;
+    font-weight: 700;
+    border-top: 2pt solid #111;
+    border-bottom: 2pt solid #111;
+    color: #000;
+    font-size: 8pt;
+}
+.bul-muted { color: #555; }
+
+/* ── Conduite ── */
+.bul-cond-table { width: 100%; border-collapse: collapse; }
+.bul-cond-table th {
+    background: #ebebeb;
+    color: #111;
+    font-size: 6pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2pt 4pt;
+    text-align: left;
+    border-bottom: 0.5pt solid #ccc;
+}
+.bul-cond-table td {
+    padding: 2pt 4pt;
+    font-size: 7pt;
+    color: #000;
+    border-bottom: 0.5pt solid #ccc;
+}
+
+/* ── Statistiques ── */
+.bul-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4pt;
+    margin-bottom: 3pt;
+}
+.bul-stat-box {
+    background: #fff;
+    border: 1pt solid #ccc;
+    border-left: 3pt solid #111;
+    padding: 3pt 3pt;
+    text-align: center;
+}
+.bul-stat-label {
+    font-size: 6pt;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 1pt;
+}
+.bul-stat-value { font-size: 10pt; font-weight: 700; color: #111; }
+.bul-rang-line { font-size: 7pt; color: #555; text-align: center; }
+.bul-rang-badge {
+    display: inline;
+    background: #fff;
+    border: 1pt solid #555;
+    padding: 1pt 5pt;
+    color: #111;
+    font-weight: 700;
+    font-size: 7.5pt;
+}
+
+/* ── Signatures ── */
+.bul-sig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10pt;
+    margin-top: 5pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    position: relative;
+    z-index: 1;
+}
+.bul-sig-col { text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- Filigrane diagonal -->
+<div class="watermark">DUPLICATA</div>
+
+<!-- ══ BANDEAU DUPLICATA ══ -->
+<div class="dup-banner">
+  <span class="dup-banner-icon">!</span>
+  <span class="dup-banner-text">Duplicata officiel</span>
+  <span class="dup-banner-sub">— Ce document est une reproduction du bulletin original —</span>
+</div>
+
+<!-- ══ EN-TÊTE ÉTABLISSEMENT ══ -->
+<div class="bul-header">
+    <div class="bul-badge">
+        {% if logo_url %}<img src="{{ logo_url }}" alt="Logo">
+        {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo">
+        {% else %}{{ identite.sigle|default:"YS" }}{% endif %}
+    </div>
+    <div>
+        <div class="bul-school-name">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</div>
+        {% if identite.devise %}<div class="bul-school-sub">{{ identite.devise }}</div>{% endif %}
+        <div class="bul-school-sub">
+            {% if identite.telephone %}Tél : {{ identite.telephone }}{% endif %}
+            {% if identite.telephone and identite.adresse_complete %} · {% endif %}
+            {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
+        </div>
+    </div>
+    <div class="dup-stamp">Duplicata</div>
+</div>
+
+<!-- ══ TITRE ══ -->
+<div class="bul-title">
+    BULLETIN DE NOTES — {{ trimestre.nom|upper }} — {{ trimestre.annee_scolaire.libelle }}
+    <div class="bul-title-sub">Duplicata officiel délivré le {{ today|date:"d/m/Y" }}</div>
+</div>
+
+<!-- ══ IDENTITÉ DE L'ÉLÈVE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Identité de l'élève</div>
+    <div class="bul-card-body">
+        <div class="bul-info-row">
+            <div>
+                <div class="bul-info-label">Matricule</div>
+                <div class="bul-matricule">{{ inscription.eleve.matricule }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Sexe</div>
+                <div class="bul-info-value">{{ inscription.eleve.get_genre_display|default:"-" }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Effectif</div>
+                <div class="bul-info-value">{{ nb_eleves }} élève{{ nb_eleves|pluralize }}</div>
+            </div>
+        </div>
+        <div class="bul-info-row">
+            <div>
+                <div class="bul-info-label">Nom &amp; Prénom</div>
+                <div class="bul-info-value">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Classe</div>
+                <div class="bul-info-value">{{ inscription.classe.nom }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Date de naissance</div>
+                <div class="bul-info-value">{{ inscription.eleve.date_naissance|date:"d/m/Y"|default:"-" }}</div>
+            </div>
+        </div>
+        <hr class="bul-hr">
+        <div class="bul-info-row-2">
+            <div>
+                <div class="bul-info-label">Cycle</div>
+                <div class="bul-info-value">{{ inscription.classe.cycle.nom|default:"-" }}</div>
+            </div>
+            <div>
+                <div class="bul-info-label">Classe redoublée</div>
+                <div class="bul-info-value">{{ inscription.est_redoublant|yesno:"Oui,Non" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ NOTES DU TRIMESTRE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Notes du {{ trimestre.nom }}</div>
+    <table class="bul-table">
+        <thead>
+            <tr>
+                <th style="width:30%;">Matières</th>
+                <th class="bul-tc" style="width:7%;">Coef</th>
+                <th class="bul-tc" style="width:12%;">Moy. /20</th>
+                <th class="bul-tc" style="width:11%;">Rang</th>
+                <th style="width:22%;">Appréciation</th>
+                <th style="width:18%;">Professeur</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in resultats_annotes %}
+            <tr{% if result.dispense %} style="opacity:.55;"{% endif %}>
+                <td class="bul-bold">{{ result.enseignement.matiere.nom }}</td>
+                <td class="bul-tc bul-muted">{{ result.coefficient_utilise|floatformat:0 }}</td>
+                <td class="bul-tc bul-bold">
+                    {% if result.dispense %}<em class="bul-muted" style="font-weight:normal;">Disp.</em>
+                    {% else %}{{ result.moyenne }}{% endif %}
+                </td>
+                <td class="bul-tc bul-muted">
+                    {% if result.dispense %}—
+                    {% elif result.rang %}{{ result.rang }}{% if result.rang == 1 %}er{% else %}e{% endif %}/{{ nb_eleves }}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="bul-italic bul-muted">
+                    {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle }}{% else %}—{% endif %}
+                </td>
+                <td class="bul-muted">
+                    {% if result.enseignement.personnel %}{{ result.enseignement.personnel.nom|upper }} {{ result.enseignement.personnel.prenom }}{% else %}&nbsp;{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            <!-- Ligne récapitulatif -->
+            <tr class="bul-total-row">
+                <td colspan="2" style="text-align:right; font-weight:bold;">Moyenne générale :</td>
+                <td class="bul-tc" style="font-size:10pt; font-weight:bold;">{{ mg.moyenne }}&nbsp;/&nbsp;20</td>
+                <td class="bul-tc bul-muted">
+                    {{ mg.rang }}{% if mg.rang == 1 %}er{% else %}e{% endif %}&nbsp;/&nbsp;{{ nb_eleves }}
+                </td>
+                <td colspan="2" class="bul-muted">
+                    Total : {{ mg.total_points|floatformat:2 }}&nbsp;/&nbsp;{{ total_points_max|floatformat:2 }} pts
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+{% if sanctions_conduite %}
+<!-- ══ CONDUITE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Conduite</div>
+    <table class="bul-cond-table">
+        <thead>
+            <tr>
+                <th style="width:25%;">Type</th>
+                <th class="bul-tc" style="width:14%;">Date</th>
+                <th class="bul-tc" style="width:10%;">Points</th>
+                <th>Appréciation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sanctions_conduite %}
+            <tr>
+                <td>{{ s.type_sanction.libelle }}</td>
+                <td class="bul-tc bul-muted">{{ s.date_sanction|date:"d/m/Y" }}</td>
+                <td class="bul-tc bul-bold">
+                    {% if s.points != 0 %}{% if s.points > 0 %}+{% endif %}{{ s.points }}{% else %}—{% endif %}
+                </td>
+                <td class="bul-italic bul-muted">{{ s.appreciation_conduite|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- ══ STATISTIQUES DE LA CLASSE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Statistiques de la classe</div>
+    <div class="bul-card-body">
+        <div class="bul-stats">
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus haute moy.</div>
+                <div class="bul-stat-value">{{ moy_max_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus faible moy.</div>
+                <div class="bul-stat-value">{{ moy_min_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Moy. de classe</div>
+                <div class="bul-stat-value">{{ moy_avg_classe|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="bul-rang-line">
+            Rang &nbsp;<span class="bul-rang-badge">{{ mg.rang }}{% if mg.rang == 1 %}er{% else %}ème{% endif %}</span>&nbsp; / {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
+            {% if appreciation_generale %}&nbsp;·&nbsp; <strong>{{ appreciation_generale.libelle }}</strong>{% endif %}
+        </div>
+    </div>
+</div>
+
+{% if commentaire_eleve %}
+<!-- ══ APPRÉCIATION DU CONSEIL ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Appréciation du Conseil des Professeurs</div>
+    <div class="bul-card-body">
+        <p style="margin:0; font-style:italic; color:#000; line-height:1.3;">{{ commentaire_eleve }}</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- ══ SIGNATURES ══ -->
+<div class="bul-sig-grid">
+    <div class="bul-sig-col"></div>
+    <div class="bul-sig-col">{% signataire_auto "BULLETIN" %}</div>
+</div>
+
+</body>
+</html>

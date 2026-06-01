@@ -75,21 +75,59 @@
 </div>
 
 {# ── Filtre par classe ── #}
-<div class="card animate-fade-up" style="padding:var(--space-4) var(--space-6); margin-bottom:var(--space-5);">
-  <form method="get" class="d-flex align-center gap-4" style="flex-wrap:wrap;">
-    <label class="fw-semibold" style="font-size:0.9rem; white-space:nowrap;">Filtrer par classe :</label>
-    <select name="classe" class="form-select" style="max-width:280px;" onchange="this.form.submit()">
-      <option value="">— Toutes les classes ({{ lignes|length }} élève{{ lignes|length|pluralize }}) —</option>
-      {% for c in classes %}
-      <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == classe_id %}selected{% endif %}>
-        {{ c.nom }}{% if c.cycle %} ({{ c.cycle.nom }}){% endif %}
-      </option>
-      {% endfor %}
-    </select>
-    {% if classe_id %}
-    <a href="{% url 'presences:bilan_annuel' %}" class="btn btn-outline btn-sm">Toutes les classes</a>
-    {% endif %}
-  </form>
+<div class="card animate-fade-up mb-5">
+  <div class="card-header">
+    <div class="d-flex align-center gap-3">
+      <div class="card-header-icon">
+        <svg width="17" height="17" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+        </svg>
+      </div>
+      <div>
+        <span class="card-title">Filtrer par classe</span>
+        <p class="card-header-sub">
+          {{ lignes|length }} élève{{ lignes|length|pluralize }} affiché{{ lignes|length|pluralize }}{% if classe_selectionnee %} — {{ classe_selectionnee.nom }}{% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-body">
+    <form method="get">
+      <div class="form-grid-2">
+
+        <div class="form-group">
+          <label for="id_classe" class="input-label">Classe</label>
+          <select name="classe" id="id_classe" class="input select" onchange="this.form.submit()">
+            <option value="">— Toutes les classes —</option>
+            {% regroup classes by cycle as classes_par_cycle %}
+            {% for groupe in classes_par_cycle %}
+            <optgroup label="{{ groupe.grouper|default:'Sans cycle' }}">
+              {% for c in groupe.list %}
+              <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == classe_id %}selected{% endif %}>
+                {{ c.nom }}
+              </option>
+              {% endfor %}
+            </optgroup>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group form-group-end">
+          {% if classe_id %}
+          <a href="{% url 'presences:bilan_annuel' %}" class="btn-secondary">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Toutes les classes
+          </a>
+          {% endif %}
+        </div>
+
+      </div>
+    </form>
+  </div>
 </div>
 
 {# ── Tableau ── #}

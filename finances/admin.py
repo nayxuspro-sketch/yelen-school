@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Paiement, TypeBourse, BourseEleve
+from .models import Paiement, TypeBourse, BourseEleve, CategorieDepense, BudgetAnnuel, Depense
 
 
 @admin.register(TypeBourse)
@@ -22,3 +22,25 @@ class PaiementAdmin(admin.ModelAdmin):
     list_display = ['inscription', 'rubrique', 'montant', 'date_paiement', 'mode_paiement', 'numero_recu']
     list_filter = ['mode_paiement', 'date_paiement']
     search_fields = ['inscription__eleve__nom', 'numero_recu']
+
+
+@admin.register(CategorieDepense)
+class CategorieDepenseAdmin(admin.ModelAdmin):
+    list_display = ['code', 'nom', 'type_depense', 'etablissement', 'actif']
+    list_filter = ['type_depense', 'actif', 'etablissement']
+    search_fields = ['nom', 'code']
+
+
+@admin.register(BudgetAnnuel)
+class BudgetAnnuelAdmin(admin.ModelAdmin):
+    list_display = ['annee_scolaire', 'categorie', 'montant_prevu']
+    list_filter = ['annee_scolaire', 'categorie__type_depense']
+    search_fields = ['categorie__nom']
+
+
+@admin.register(Depense)
+class DepenseAdmin(admin.ModelAdmin):
+    list_display = ['numero_depense', 'libelle', 'categorie', 'montant', 'date_depense', 'statut', 'saisi_par']
+    list_filter = ['statut', 'categorie__type_depense', 'mode_paiement', 'annee_scolaire']
+    search_fields = ['libelle', 'numero_depense', 'beneficiaire', 'reference']
+    readonly_fields = ['numero_depense', 'saisi_par', 'valide_par', 'date_validation']

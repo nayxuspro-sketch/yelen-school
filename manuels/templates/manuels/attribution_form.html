@@ -1,0 +1,102 @@
+{% extends "core/base.html" %}
+
+{% block title %}Attribuer un manuel — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="page-header animate-fade-up">
+    <div>
+      <h1 class="page-title">Attribuer un manuel</h1>
+      <p class="page-subtitle">Attribution nominative d'un exemplaire à un élève</p>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'manuels:attributions_list' %}" class="btn-secondary btn-sm">← Attributions</a>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="alert-error animate-fade-up mb-4">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" class="animate-fade-up delay-1">
+    {% csrf_token %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">Sélection de l'exemplaire</span></div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="input-label required">Manuel</label>
+          <select name="manuel_sel" class="input select"
+                  hx-get="{% url 'manuels:htmx_exemplaires' %}"
+                  hx-target="#exemplaires-select"
+                  hx-trigger="change"
+                  hx-include="[name='manuel_sel']">
+            <option value="">-- Choisir un manuel --</option>
+            {% for m in manuels %}
+            <option value="{{ m.pk }}">{{ m.titre }} ({{ m.get_cycle_display }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label required">Exemplaire disponible</label>
+          <select name="exemplaire" id="exemplaires-select" class="input select" required>
+            {% if exemplaire_sel %}
+            <option value="{{ exemplaire_sel.pk }}" selected>{{ exemplaire_sel.code_exemplaire }} — {{ exemplaire_sel.get_etat_display }}</option>
+            {% else %}
+            <option value="">-- Sélectionner un manuel d'abord --</option>
+            {% endif %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label required">État à la sortie</label>
+          <select name="etat_sortie" class="input select" required>
+            {% for val, lbl in etats %}
+            <option value="{{ val }}" {% if val == 'BON' %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><span class="card-title">Élève destinataire</span></div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="input-label required">Classe</label>
+          <select name="classe_sel" class="input select"
+                  hx-get="{% url 'manuels:htmx_eleves' %}"
+                  hx-target="#eleves-select"
+                  hx-trigger="change"
+                  hx-include="[name='classe_sel']">
+            <option value="">-- Choisir une classe --</option>
+            {% for c in classes %}
+            <option value="{{ c.pk }}" {% if classe_sel == c.pk|stringformat:'s' %}selected{% endif %}>{{ c.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label required">Élève</label>
+          <select name="inscription" id="eleves-select" class="input select" required>
+            {% if inscriptions %}
+              {% for i in inscriptions %}
+              <option value="{{ i.pk }}">{{ i.eleve.nom }} {{ i.eleve.prenom }}</option>
+              {% endfor %}
+            {% else %}
+            <option value="">-- Sélectionner une classe d'abord --</option>
+            {% endif %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label required">Date d'attribution</label>
+          <input type="date" name="date_attribution" value="{{ today }}" class="input" required>
+        </div>
+      </div>
+      <div class="card-footer d-flex justify-end gap-3">
+        <a href="{% url 'manuels:attributions_list' %}" class="btn-ghost">Annuler</a>
+        <button type="submit" class="btn-primary">Confirmer l'attribution</button>
+      </div>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

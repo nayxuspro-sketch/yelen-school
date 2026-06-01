@@ -1,4 +1,5 @@
 import datetime
+import uuid as _uuid
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from core.models import BaseModel
@@ -338,3 +339,273 @@ class HistoriqueRelance(BaseModel):
             f"Relance {self.get_canal_display()} — "
             f"{self.inscription.eleve} — {self.date_relance}"
         )
+
+
+class DemandePaiementMobile(BaseModel):
+    """Demande de paiement via Mobile Money (Orange Money Burkina Faso)."""
+
+    class StatutChoices(models.TextChoices):
+        EN_ATTENTE = 'EN_ATTENTE', _('En attente')
+        CONFIRME   = 'CONFIRME',   _('Confirmé')
+        ANNULE     = 'ANNULE',     _('Annulé')
+
+    inscription = models.ForeignKey(
+        Inscription,
+        on_delete=models.CASCADE,
+        related_name='demandes_mobile',
+        verbose_name=_("Inscription"),
+    )
+    rubrique = models.ForeignKey(
+        'parametres.RubriquePaiement',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name=_("Rubrique de paiement"),
+    )
+    montant = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        verbose_name=_("Montant (FCFA)"),
+    )
+    telephone = models.CharField(
+        max_length=20,
+        verbose_name=_("Numéro Orange Money"),
+    )
+    reference = models.CharField(
+        max_length=20, unique=True, blank=True,
+        verbose_name=_("Référence MM"),
+    )
+    token = models.CharField(
+        max_length=64, unique=True, blank=True,
+        verbose_name=_("Token de confirmation"),
+    )
+    statut = models.CharField(
+        max_length=20,
+        choices=StatutChoices.choices,
+        default=StatutChoices.EN_ATTENTE,
+        verbose_name=_("Statut"),
+    )
+    confirme_le = models.DateTimeField(null=True, blank=True, verbose_name=_("Confirmé le"))
+    confirme_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='confirmations_mobile',
+        verbose_name=_("Confirmé par"),
+    )
+    paiement = models.OneToOneField(
+        Paiement,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='demande_mobile',
+        verbose_name=_("Paiement généré"),
+    )
+    sms_envoye = models.BooleanField(default=False, verbose_name=_("SMS envoyé"))
+    observations = models.TextField(blank=True, verbose_name=_("Observations"))
+    cree_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='demandes_mobile_creees',
+        verbose_name=_("Créé par"),
+    )
+
+    class Meta:
+        verbose_name = _("Demande paiement Mobile Money")
+        verbose_name_plural = _("Demandes paiement Mobile Money")
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            self.reference = self._generer_reference()
+        if not self.token:
+            self.token = _uuid.uuid4().hex
+        super().save(*args, **kwargs)
+
+    def _generer_reference(self):
+        from django.utils import timezone
+        annee = timezone.now().year
+        dernier = DemandePaiementMobile.objects.filter(
+            reference__startswith=f'MM-{annee}'
+        ).order_by('-reference').first()
+        if dernier and dernier.reference:
+            try:
+                seq = int(dernier.reference.split('-')[-1]) + 1
+            except (ValueError, IndexError):
+                seq = 1
+        else:
+            seq = 1
+        return f'MM-{annee}-{seq:05d}'
+
+    def __str__(self):
+        return f"MM {self.reference} — {self.inscription.eleve} ({self.montant} FCFA)"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  MODULE BUDGET & DÉPENSES
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TypeDepense(models.TextChoices):
+    SALAIRES      = 'SALAIRES',      _('Salaires et charges')
+    FOURNITURES   = 'FOURNITURES',   _('Fournitures et matériel')
+    MAINTENANCE   = 'MAINTENANCE',   _('Maintenance et réparations')
+    UTILITIES     = 'UTILITIES',     _('Eau, électricité, internet')
+    COMMUNICATION = 'COMMUNICATION', _('Communication et publicité')
+    TRANSPORT     = 'TRANSPORT',     _('Transport et déplacements')
+    FORMATION     = 'FORMATION',     _('Formation du personnel')
+    AUTRE         = 'AUTRE',         _('Autres dépenses')
+
+
+class StatutDepense(models.TextChoices):
+    BROUILLON = 'BROUILLON', _('Brouillon')
+    VALIDEE   = 'VALIDEE',   _('Validée')
+    ANNULEE   = 'ANNULEE',   _('Annulée')
+
+
+class CategorieDepense(BaseModel):
+    """Catégorie de dépense paramétrable par établissement."""
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='categories_depenses',
+        verbose_name=_("Établissement"),
+    )
+    nom = models.CharField(max_length=100, verbose_name=_("Nom"))
+    code = models.CharField(max_length=20, verbose_name=_("Code"))
+    type_depense = models.CharField(
+        max_length=20,
+        choices=TypeDepense.choices,
+        default=TypeDepense.AUTRE,
+        verbose_name=_("Type"),
+    )
+    actif = models.BooleanField(default=True, verbose_name=_("Actif"))
+
+    class Meta:
+        verbose_name = _("Catégorie de dépense")
+        verbose_name_plural = _("Catégories de dépenses")
+        unique_together = ('etablissement', 'code')
+        ordering = ['type_depense', 'nom']
+
+    def __str__(self):
+        return f"{self.nom} ({self.get_type_depense_display()})"
+
+
+class BudgetAnnuel(BaseModel):
+    """Budget prévisionnel par catégorie de dépense et par année scolaire."""
+    annee_scolaire = models.ForeignKey(
+        AnneeScolaire,
+        on_delete=models.CASCADE,
+        related_name='budgets',
+        verbose_name=_("Année scolaire"),
+    )
+    categorie = models.ForeignKey(
+        CategorieDepense,
+        on_delete=models.CASCADE,
+        related_name='budgets',
+        verbose_name=_("Catégorie"),
+    )
+    montant_prevu = models.DecimalField(
+        max_digits=14, decimal_places=2,
+        default=0,
+        verbose_name=_("Montant prévu (FCFA)"),
+    )
+
+    class Meta:
+        verbose_name = _("Budget annuel")
+        verbose_name_plural = _("Budgets annuels")
+        unique_together = ('annee_scolaire', 'categorie')
+        ordering = ['categorie__type_depense', 'categorie__nom']
+
+    def __str__(self):
+        return f"{self.categorie} — {self.annee_scolaire} : {self.montant_prevu} FCFA"
+
+
+class Depense(BaseModel):
+    """Enregistrement d'une dépense de l'établissement."""
+    annee_scolaire = models.ForeignKey(
+        AnneeScolaire,
+        on_delete=models.CASCADE,
+        related_name='depenses',
+        verbose_name=_("Année scolaire"),
+    )
+    categorie = models.ForeignKey(
+        CategorieDepense,
+        on_delete=models.CASCADE,
+        related_name='depenses',
+        verbose_name=_("Catégorie"),
+    )
+    numero_depense = models.CharField(
+        max_length=20, unique=True, blank=True,
+        verbose_name=_("N° dépense"),
+    )
+    libelle = models.CharField(max_length=200, verbose_name=_("Libellé"))
+    montant = models.DecimalField(
+        max_digits=14, decimal_places=2,
+        verbose_name=_("Montant (FCFA)"),
+    )
+    date_depense = models.DateField(
+        default=datetime.date.today,
+        verbose_name=_("Date"),
+    )
+    mode_paiement = models.CharField(
+        max_length=20,
+        choices=ModePaiement.choices,
+        default=ModePaiement.ESPECES,
+        verbose_name=_("Mode de paiement"),
+    )
+    beneficiaire = models.CharField(
+        max_length=200, blank=True,
+        verbose_name=_("Bénéficiaire"),
+    )
+    reference = models.CharField(
+        max_length=100, blank=True,
+        verbose_name=_("Référence / N° pièce"),
+    )
+    statut = models.CharField(
+        max_length=20,
+        choices=StatutDepense.choices,
+        default=StatutDepense.BROUILLON,
+        verbose_name=_("Statut"),
+    )
+    observation = models.TextField(blank=True, verbose_name=_("Observation"))
+    saisi_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='depenses_saisies',
+        verbose_name=_("Saisi par"),
+    )
+    valide_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='depenses_validees',
+        verbose_name=_("Validé par"),
+    )
+    date_validation = models.DateField(null=True, blank=True, verbose_name=_("Date de validation"))
+
+    class Meta:
+        verbose_name = _("Dépense")
+        verbose_name_plural = _("Dépenses")
+        ordering = ['-date_depense', '-created_at']
+
+    def save(self, *args, **kwargs):
+        if not self.numero_depense:
+            self.numero_depense = self._generer_numero()
+        super().save(*args, **kwargs)
+
+    def _generer_numero(self):
+        from django.utils import timezone
+        annee = timezone.now().year
+        dernier = Depense.objects.filter(
+            numero_depense__startswith=f'DEP-{annee}'
+        ).order_by('-numero_depense').first()
+        if dernier and dernier.numero_depense:
+            try:
+                seq = int(dernier.numero_depense.split('-')[-1]) + 1
+            except (ValueError, IndexError):
+                seq = 1
+        else:
+            seq = 1
+        return f'DEP-{annee}-{seq:05d}'
+
+    def __str__(self):
+        return f"{self.numero_depense} — {self.libelle} ({self.montant} FCFA)"

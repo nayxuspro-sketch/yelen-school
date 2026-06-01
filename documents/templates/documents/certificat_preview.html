@@ -9,7 +9,7 @@
   <div class="d-flex align-center gap-4">
     <a href="{% url 'documents:document_list' %}" class="btn-icon">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
     <div>
@@ -19,13 +19,16 @@
   </div>
   <div class="d-flex gap-2 align-center">
     {% if not signataire %}
-    <span style="font-size:0.8rem; color:var(--color-warning,#d97706); font-weight:600;">
-      ⚠ Signataire manquant
+    <span class="badge badge-warning">
+      <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      Signataire manquant
     </span>
     {% endif %}
-    <a href="?format=pdf" target="_blank" class="btn btn-primary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+    <a href="?format=pdf" target="_blank" class="btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
       </svg>
       Générer le PDF
@@ -34,46 +37,40 @@
 </div>
 
 {% if not signataire %}
-<div class="animate-fade-up" style="margin-bottom:var(--space-4); padding:var(--space-3) var(--space-5); background:rgba(217,119,6,0.08); border:1px solid rgba(217,119,6,0.3); border-left:4px solid var(--color-warning,#d97706); border-radius:var(--radius-md);">
-  <span style="font-size:0.88rem; color:var(--color-warning,#d97706); font-weight:600;">
+<div class="alert-warning-accent animate-fade-up">
+  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+  </svg>
+  <span>
     Aucun signataire configuré pour le cycle {{ classe.cycle.nom }}.
+    <a href="{% url 'parametres:signataires_list' %}">Configurer →</a>
   </span>
-  <a href="{% url 'parametres:signataires_list' %}" style="color:var(--color-warning,#d97706); text-decoration:underline; margin-left:var(--space-2); font-size:0.88rem;">
-    Configurer →
-  </a>
 </div>
 {% endif %}
 
-{# ── Aperçu document (rendu fidèle au PDF) ── #}
-<div class="animate-fade-up delay-1" style="max-width:700px;">
+<div class="doc-preview-wrap animate-fade-up delay-1">
 
-  {# Indication aperçu #}
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-3);">
-    <span style="font-size:0.78rem; color:var(--color-text-muted); display:flex; align-items:center; gap:6px;">
+  <div class="doc-preview-meta">
+    <span class="doc-preview-label">
       <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
       </svg>
       Aperçu du document — le PDF sera identique
     </span>
-    <span style="font-size:0.75rem; color:var(--color-text-muted);">Format A4</span>
+    <span class="doc-preview-format">Format A4</span>
   </div>
 
-  {# Carte document #}
-  <div style="background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-lg); box-shadow:var(--shadow-md,0 4px 16px rgba(0,0,0,.08)); overflow:hidden;">
+  <div class="doc-cert-card">
+    <div class="doc-cert-topbar"></div>
+    <div class="doc-cert-body">
 
-    {# Barre de couleur supérieure #}
-    <div style="height:4px; background:var(--color-primary);"></div>
-
-    <div style="padding:2rem 2.5rem;">
-
-      {# En-tête établissement #}
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.2rem; padding-bottom:1rem; border-bottom:2px solid #1a1a1a;">
-        <div style="width:72px; height:72px; background:var(--color-primary-ambient,#e8f8f0); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+      <div class="doc-cert-header">
+        <div class="doc-cert-logo-box">
           {% if logo_url %}
-          <img src="{{ logo_url }}" alt="Logo" style="width:64px; height:64px; object-fit:contain;">
+          <img src="{{ logo_url }}" alt="Logo" class="doc-cert-logo-img">
           {% elif etab_logo_url %}
-          <img src="{{ etab_logo_url }}" alt="Logo" style="width:64px; height:64px; object-fit:contain;">
+          <img src="{{ etab_logo_url }}" alt="Logo" class="doc-cert-logo-img">
           {% else %}
           <svg width="28" height="28" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
@@ -81,100 +78,84 @@
           {% endif %}
         </div>
 
-        <div style="text-align:center; flex:1; padding:0 1rem;">
-          <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:1.5px; color:#555; margin-bottom:3px;">Burkina Faso</div>
-          <div style="font-size:1rem; font-weight:700; text-transform:uppercase; line-height:1.2;">
+        <div class="doc-cert-etab-center">
+          <p class="doc-cert-etab-country">Burkina Faso</p>
+          <p class="doc-cert-etab-name">
             {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement }}{% endif %}
-          </div>
+          </p>
           {% if identite and identite.numero_agrement_mena %}
-          <div style="font-size:0.72rem; color:#666; font-style:italic; margin-top:2px;">
-            N° Agrément MENA : {{ identite.numero_agrement_mena }}
-          </div>
+          <p class="doc-cert-etab-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>
           {% endif %}
           {% if identite %}
-          <div style="font-size:0.72rem; color:#555; margin-top:1px;">{{ identite.get_type_etablissement_display }}</div>
+          <p class="doc-cert-etab-type">{{ identite.get_type_etablissement_display }}</p>
           {% endif %}
         </div>
 
-        <div style="width:72px; height:72px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <div class="doc-cert-stamp-box">
           {% if identite and identite.cachet_etablissement %}
-          <img src="{{ identite.cachet_etablissement.url }}" alt="Cachet" style="width:64px; height:64px; object-fit:contain;">
+          <img src="{{ identite.cachet_etablissement.url }}" alt="Cachet" class="doc-cert-stamp-img">
           {% else %}
-          <div style="width:60px; height:60px; border-radius:50%; border:2px dashed var(--color-border); display:flex; align-items:center; justify-content:center;">
-            <span style="font-size:0.6rem; color:var(--color-text-muted); text-align:center; line-height:1.2;">Cachet</span>
+          <div class="doc-cert-stamp-placeholder">
+            <span>Cachet</span>
           </div>
           {% endif %}
         </div>
       </div>
 
-      {# Titre du document #}
-      <div style="text-align:center; margin:1.5rem 0;">
-        <h2 style="font-size:1.15rem; font-weight:700; text-transform:uppercase; letter-spacing:3px; border-bottom:2px solid #1a1a1a; display:inline-block; padding-bottom:5px; margin:0;">
-          Certificat de Scolarité
-        </h2>
-        <p style="font-size:0.78rem; color:#555; margin-top:6px;">Année scolaire {{ annee_scolaire }}</p>
+      <div class="doc-cert-title-section">
+        <h2 class="doc-cert-title">Certificat de Scolarité</h2>
+        <p class="doc-cert-year">Année scolaire {{ annee_scolaire }}</p>
       </div>
 
-      {# Corps du certificat #}
-      <div style="line-height:2; font-size:0.92rem; margin:1.2rem 0; color:#1a1a1a;">
-        <p style="margin:0.4rem 0;">
+      <div class="doc-cert-text">
+        <p>
           Le soussigné,
           {% if sig_membre %}
-            {% if signataire.titre_honorifique %}{{ signataire.titre_honorifique }},{% endif %}
-            <strong style="text-decoration:underline;">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</strong>,
-            {{ signataire.fonction|default:"Directeur/Proviseur" }}{% if identite %} de <strong style="text-decoration:underline;">{{ identite.nom_etablissement }}</strong>{% endif %},
+            <strong class="doc-cert-strong">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</strong>,
+            {{ signataire.fonction|strip_article|default:"Directeur/Proviseur" }}{% if identite %} de <strong class="doc-cert-strong">{{ identite.nom_etablissement }}</strong>{% endif %}{% if signataire.titre_honorifique %}, {{ signataire.titre_honorifique }}{% endif %},
           {% elif identite and identite.nom_directeur %}
-            <strong style="text-decoration:underline;">{{ identite.nom_directeur }}</strong>,
-            Directeur/Proviseur de <strong style="text-decoration:underline;">{{ identite.nom_etablissement }}</strong>,
+            <strong class="doc-cert-strong">{{ identite.nom_directeur }}</strong>,
+            Directeur/Proviseur de <strong class="doc-cert-strong">{{ identite.nom_etablissement }}</strong>,
           {% else %}
-            <em style="color:var(--color-warning,#d97706);">[Signataire non configuré]</em>,
+            <em class="doc-cert-warning-text">[Signataire non configuré]</em>,
           {% endif %}
           certifie que :
         </p>
-
-        <p style="margin:0.4rem 0;">
-          <strong style="text-decoration:underline;">{{ eleve.get_nom_complet }}</strong>,
-          né(e) le <strong style="text-decoration:underline;">{{ eleve.date_naissance|date:"d F Y" }}</strong>
-          à <strong style="text-decoration:underline;">{{ eleve.lieu_naissance }}</strong>,
-          de nationalité <strong style="text-decoration:underline;">{{ eleve.nationalite }}</strong>,
+        <p>
+          <strong class="doc-cert-strong">{{ eleve.get_nom_complet }}</strong>,
+          né(e) le <strong class="doc-cert-strong">{{ eleve.date_naissance|date:"d F Y" }}</strong>
+          à <strong class="doc-cert-strong">{{ eleve.lieu_naissance }}</strong>,
+          de nationalité <strong class="doc-cert-strong">{{ eleve.nationalite }}</strong>,
         </p>
-
-        <p style="margin:0.4rem 0;">
+        <p>
           est régulièrement inscrit(e) dans cet établissement pour l'année scolaire
-          <strong style="text-decoration:underline;">{{ annee_scolaire }}</strong>,
-          en classe de <strong style="text-decoration:underline;">{{ classe.nom }}</strong> ({{ classe.cycle.nom }}).
+          <strong class="doc-cert-strong">{{ annee_scolaire }}</strong>,
+          en classe de <strong class="doc-cert-strong">{{ classe.nom }}</strong> ({{ classe.cycle.nom }}).
         </p>
-
-        <p style="margin:0.4rem 0;">Ce certificat est délivré à l'intéressé(e) pour servir et valoir ce que de droit.</p>
+        <p>Ce certificat est délivré à l'intéressé(e) pour servir et valoir ce que de droit.</p>
       </div>
 
-      {# Signature #}
-      <div style="margin-top:2rem; text-align:right;">
+      <div class="doc-cert-signature">
         {% if identite and identite.ville %}
-        <p style="font-size:0.85rem; color:#555; margin-bottom:6px;">
-          {{ identite.ville }}, le {% now "d F Y" %}
-        </p>
+        <p class="doc-cert-sig-city">{{ identite.ville }}, le {% now "d F Y" %}</p>
         {% endif %}
-        <p style="font-size:0.82rem; margin-bottom:0.8rem; color:#333;">
-          {% if sig_membre %}
-            {{ signataire.titre_honorifique|default:"" }} {{ signataire.fonction|default:"Le Directeur / La Directrice" }}
-          {% else %}
-            Le Directeur / La Directrice
-          {% endif %}
-        </p>
-        <div style="width:110px; height:55px; margin-left:auto; display:flex; align-items:center; justify-content:center; border-bottom:1px solid #1a1a1a;">
-          {% if sig_membre and sig_membre.photo %}
-          {# espace signature #}
+        <div class="doc-cert-sig-block">
+          <p class="doc-cert-sig-role">
+            {% if sig_membre %}{{ signataire.fonction|default:"Le Directeur / La Directrice" }}
+            {% else %}Le Directeur / La Directrice{% endif %}
+          </p>
+          <div class="doc-cert-sig-area"></div>
+          <p class="doc-cert-sig-name">
+            {% if sig_membre %}{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}{% else %}&nbsp;{% endif %}
+          </p>
+          {% if sig_membre and signataire.titre_honorifique %}
+          <p class="doc-cert-sig-honorifique">{{ signataire.titre_honorifique }}</p>
           {% endif %}
         </div>
-        <p style="font-size:0.82rem; font-weight:700; margin-top:4px;">
-          {% if sig_membre %}{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}{% endif %}
-        </p>
       </div>
 
-      {# Pied : numéro #}
-      <div style="margin-top:1.5rem; padding-top:0.8rem; border-top:1px solid #e5e7eb; text-align:center;">
-        <span style="font-size:0.7rem; color:#9ca3af; font-style:italic;">
+      <div class="doc-cert-footer">
+        <span class="doc-cert-footer-text">
           N° [sera attribué à la génération du PDF] · {{ eleve.matricule }}
         </span>
       </div>

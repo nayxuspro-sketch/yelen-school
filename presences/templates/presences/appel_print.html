@@ -2,122 +2,548 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Appels — Impression</title>
+  <title>Liste des Appels — Impression</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; background: #fff; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .print-header { text-align: center; margin-bottom: 1.5rem; border-bottom: 2px solid #000; padding-bottom: 0.75rem; }
-    .print-header h1 { font-size: 14pt; font-weight: bold; }
-    .print-header p { font-size: 10pt; color: #444; margin-top: 0.25rem; }
-
-    .date-section { margin-bottom: 1.5rem; page-break-inside: avoid; }
-    .date-title {
-      font-size: 12pt;
-      font-weight: bold;
-      background: #f0f0f0;
-      border-left: 4px solid #000;
-      padding: 0.3rem 0.6rem;
-      margin-bottom: 0.5rem;
-      text-transform: capitalize;
+    :root {
+      --app-bg:      #0A1628;
+      --card-bg:     #111E35;
+      --primary:     #00A86B;
+      --primary-dark:#007a4e;
+      --text:        #1a1a2e;
+      --text-muted:  #64748b;
+      --border:      #e2e8f0;
+      --row-alt:     #f8fafc;
     }
-    .classe-block { margin-bottom: 1rem; margin-left: 0.5rem; page-break-inside: avoid; }
-    .classe-title { font-size: 10.5pt; font-weight: bold; margin-bottom: 0.25rem; }
 
-    table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-    th { background: #e8e8e8; border: 1px solid #bbb; padding: 4px 8px; text-align: left; font-weight: bold; }
-    td { border: 1px solid #ccc; padding: 4px 8px; }
-    tr:nth-child(even) td { background: #fafafa; }
+    body {
+      font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif;
+      font-size: 10.5pt;
+      color: var(--text);
+      background: #fff;
+      line-height: 1.5;
+    }
 
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-
-    .no-data { text-align: center; padding: 2rem; color: #666; font-style: italic; }
-
-    .print-footer { margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 0.5rem; font-size: 9pt; color: #666; display: flex; justify-content: space-between; }
-
+    /* ════════════════════════════════════════════════
+       ÉCRAN
+    ════════════════════════════════════════════════ */
     @media screen {
-      body { max-width: 900px; margin: 2rem auto; padding: 1rem; }
-      .no-print { display: flex; gap: 1rem; justify-content: flex-end; margin-bottom: 1.5rem; }
-      .btn { padding: 0.5rem 1.25rem; border-radius: 6px; border: none; cursor: pointer; font-size: 10pt; font-weight: 600; }
-      .btn-print { background: #1a1a1a; color: #fff; }
-      .btn-close { background: #e5e7eb; color: #111; text-decoration: none; display: inline-flex; align-items: center; }
+      body { background: var(--app-bg); min-height: 100vh; }
+
+      .toolbar {
+        background: var(--card-bg);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .toolbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 11pt;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.5px;
+      }
+      .toolbar-brand .dot-green {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--primary);
+      }
+      .toolbar-meta {
+        font-size: 9pt;
+        color: rgba(255,255,255,0.45);
+        font-weight: 400;
+        margin-left: 0.5rem;
+      }
+      .toolbar-actions { display: flex; gap: 0.6rem; }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 1.1rem;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 10pt;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        transition: background 0.15s;
+      }
+      .btn-print { background: var(--primary); color: #fff; }
+      .btn-print:hover { background: var(--primary-dark); }
+      .btn-back {
+        background: rgba(255,255,255,0.06);
+        color: rgba(255,255,255,0.75);
+        border: 1px solid rgba(255,255,255,0.10);
+      }
+      .btn-back:hover { background: rgba(255,255,255,0.10); color: #fff; }
+
+      .document-wrap {
+        max-width: 900px;
+        margin: 2rem auto 3rem;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 32px rgba(0,0,0,0.35);
+        padding: 2.5rem 3rem;
+      }
+    }
+
+    /* ════════════════════════════════════════════════
+       IMPRESSION
+    ════════════════════════════════════════════════ */
+    @media print {
+      @page {
+        size: A4;
+        margin: 1.8cm 1.5cm 1.5cm;
+        @bottom-right {
+          content: "Page " counter(page) " / " counter(pages);
+          font-size: 7.5pt;
+          color: #999;
+          font-family: 'Outfit', Arial, sans-serif;
+        }
+      }
+      .toolbar { display: none !important; }
+      .document-wrap { padding: 0; box-shadow: none; border-radius: 0; }
+      body { background: #fff; }
+      .page-break { page-break-before: always; }
+    }
+
+    /* ════════════════════════════════════════════════
+       EN-TÊTE DU DOCUMENT
+    ════════════════════════════════════════════════ */
+    .doc-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding-bottom: 1rem;
+      border-bottom: 2.5pt solid var(--text);
+      margin-bottom: 1.25rem;
+    }
+    .doc-etab {
+      font-size: 8.5pt;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 3px;
     }
     @media print {
-      .no-print { display: none; }
-      body { margin: 0; padding: 0.5cm; }
+      .doc-etab { color: var(--text); }
     }
+    .doc-header-left h1 {
+      font-size: 17pt;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.15;
+    }
+    .doc-sub {
+      font-size: 9pt;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .doc-header-right { text-align: right; }
+    .doc-periode {
+      display: inline-block;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 0.35rem 0.85rem;
+      font-size: 9pt;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .doc-print-date {
+      display: block;
+      font-size: 8pt;
+      color: var(--text-muted);
+      margin-top: 5px;
+      text-align: right;
+    }
+
+    /* ════════════════════════════════════════════════
+       RÉCAPITULATIF GLOBAL
+    ════════════════════════════════════════════════ */
+    .global-summary {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .g-stat {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .g-stat:last-child { border-right: none; }
+    .g-num {
+      display: block;
+      font-size: 16pt;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.1;
+    }
+    .g-lbl {
+      display: block;
+      font-size: 7.5pt;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .g-stat.g-presents .g-num { color: #007a4e; }
+    .g-stat.g-absents  .g-num { color: #b91c1c; }
+    .g-stat.g-retards  .g-num { color: #b45309; }
+    @media print {
+      .g-stat.g-presents .g-num,
+      .g-stat.g-absents  .g-num,
+      .g-stat.g-retards  .g-num { color: var(--text); }
+    }
+
+    /* ════════════════════════════════════════════════
+       SECTION DATE
+    ════════════════════════════════════════════════ */
+    .date-section { margin-bottom: 2rem; page-break-inside: avoid; }
+
+    .date-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #f1f5f9;
+      border-left: 4px solid var(--text);
+      padding: 0.5rem 1rem;
+      margin-bottom: 0.9rem;
+      border-radius: 0 4px 4px 0;
+    }
+    .date-heading .date-label {
+      font-size: 11pt;
+      font-weight: 700;
+      color: var(--text);
+      text-transform: capitalize;
+    }
+    .date-heading .date-badge {
+      font-size: 8pt;
+      font-weight: 600;
+      background: var(--text);
+      color: #fff;
+      border-radius: 99px;
+      padding: 2px 9px;
+    }
+
+    /* ════════════════════════════════════════════════
+       BLOC CLASSE
+    ════════════════════════════════════════════════ */
+    .classe-block {
+      margin-bottom: 1.25rem;
+      padding-left: 0.75rem;
+      border-left: 2px solid var(--border);
+      page-break-inside: avoid;
+    }
+    .classe-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+    .classe-heading .classe-nom {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .classe-heading .classe-cycle {
+      font-size: 8.5pt;
+      color: var(--text-muted);
+    }
+
+    /* Stats par classe */
+    .stats-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+      padding: 0.4rem 0.75rem;
+      background: #f8fafc;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 8.5pt;
+      font-weight: 500;
+    }
+    .stat-item .stat-num { font-weight: 700; font-size: 10pt; }
+    .stat-item.present .stat-num { color: #007a4e; }
+    .stat-item.absent  .stat-num { color: #b91c1c; }
+    .stat-item.retard  .stat-num { color: #b45309; }
+    .stat-sep { color: var(--border); font-size: 8pt; }
+    .stat-pct {
+      margin-left: auto;
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    @media print {
+      .stat-item.present .stat-num,
+      .stat-item.absent  .stat-num,
+      .stat-item.retard  .stat-num { color: var(--text); }
+    }
+
+    /* ════════════════════════════════════════════════
+       TABLEAU
+    ════════════════════════════════════════════════ */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+      margin-top: 0.2rem;
+    }
+    thead th {
+      background: var(--text);
+      color: #fff;
+      padding: 0.45rem 0.65rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 8pt;
+      letter-spacing: 0.3px;
+    }
+    thead th.tc { text-align: center; }
+    tbody td {
+      padding: 0.4rem 0.65rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    tbody tr:nth-child(even) td { background: var(--row-alt); }
+    .tc { text-align: center; }
+
+    /* Badge statut */
+    .statut {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 99px;
+      font-size: 7.5pt;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .statut-clos    { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+    .statut-encours { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+    @media print {
+      .statut-clos    { background: #f5f5f5; border-color: #999; color: var(--text); }
+      .statut-encours { background: #e8e8e8; border-color: #666; color: var(--text); }
+    }
+
+    /* ════════════════════════════════════════════════
+       ÉTAT VIDE / PIED DE PAGE
+    ════════════════════════════════════════════════ */
+    .no-data {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+      font-style: italic;
+      background: #f8fafc;
+      border-radius: 6px;
+      border: 1px dashed var(--border);
+      margin: 1.5rem 0;
+    }
+    .doc-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 8pt;
+      color: var(--text-muted);
+    }
+    .doc-footer .brand { font-weight: 700; color: var(--text); }
   </style>
 </head>
 <body>
 
-<div class="no-print">
-  <a href="javascript:history.back()" class="btn btn-close">← Retour</a>
-  <button class="btn btn-print" onclick="window.print()">🖨 Imprimer</button>
+<!-- ── Barre d'outils (écran uniquement) ── -->
+<div class="toolbar">
+  <div class="toolbar-brand">
+    <span class="dot-green"></span>
+    YELEN SCHOOL
+    <span class="toolbar-meta">
+      — Liste des appels{% if classe_filtre %} · {{ classe_filtre.nom }}{% endif %}
+    </span>
+  </div>
+  <div class="toolbar-actions">
+    <a href="javascript:history.back()" class="btn btn-back">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Retour
+    </a>
+    <button class="btn btn-print" onclick="window.print()">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8" rx="1" stroke-width="2"/>
+      </svg>
+      Imprimer
+    </button>
+  </div>
 </div>
 
-<div class="print-header">
-  <h1>Liste des Appels{% if annee %} — {{ annee.libelle }}{% endif %}</h1>
-  <p>
-    {% if date_debut and date_fin %}
-      Du {{ date_debut }} au {{ date_fin }}
-    {% elif date_debut %}
-      À partir du {{ date_debut }}
-    {% elif date_fin %}
-      Jusqu'au {{ date_fin }}
-    {% else %}
-      Toute la période
-    {% endif %}
-  </p>
-</div>
+<!-- ── Document ── -->
+<div class="document-wrap">
 
-{% if groupes_dates %}
+  <!-- En-tête -->
+  <div class="doc-header">
+    <div class="doc-header-left">
+      {% if etablissement %}
+      <div class="doc-etab">{{ etablissement.nom }}</div>
+      {% endif %}
+      <h1>Liste des Appels</h1>
+      <p class="doc-sub">
+        {% if annee %}Année scolaire {{ annee.libelle }}{% endif %}
+        {% if classe_filtre %} &nbsp;·&nbsp; {{ classe_filtre.nom }}{% if classe_filtre.cycle %} ({{ classe_filtre.cycle.nom }}){% endif %}{% endif %}
+      </p>
+    </div>
+    <div class="doc-header-right">
+      <span class="doc-periode">
+        {% if date_debut and date_fin %}
+          Du {{ date_debut }} au {{ date_fin }}
+        {% elif date_debut %}
+          À partir du {{ date_debut }}
+        {% elif date_fin %}
+          Jusqu'au {{ date_fin }}
+        {% else %}
+          Toute la période
+        {% endif %}
+      </span>
+      <span class="doc-print-date">Imprimé le {% now "d/m/Y à H:i" %}</span>
+    </div>
+  </div>
+
+  <!-- Récapitulatif global -->
+  {% if grand_appels %}
+  <div class="global-summary">
+    <div class="g-stat">
+      <span class="g-num">{{ grand_appels }}</span>
+      <span class="g-lbl">Séances</span>
+    </div>
+    <div class="g-stat g-presents">
+      <span class="g-num">{{ grand_presents }}</span>
+      <span class="g-lbl">Présences</span>
+    </div>
+    <div class="g-stat g-absents">
+      <span class="g-num">{{ grand_absents }}</span>
+      <span class="g-lbl">Absences</span>
+    </div>
+    <div class="g-stat g-retards">
+      <span class="g-num">{{ grand_retards }}</span>
+      <span class="g-lbl">Retards</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Contenu par date -->
+  {% if groupes_dates %}
   {% for groupe_date in groupes_dates %}
-  <div class="date-section">
-    <div class="date-title">{{ groupe_date.date|date:"l d F Y" }}</div>
+  <section class="date-section">
+
+    <div class="date-heading">
+      <span class="date-label">{{ groupe_date.date|date:"l d F Y" }}</span>
+      <span class="date-badge">{{ groupe_date.groupes_classes|length }} classe{{ groupe_date.groupes_classes|length|pluralize }}</span>
+    </div>
 
     {% for groupe_classe in groupe_date.groupes_classes %}
     <div class="classe-block">
-      <div class="classe-title">
-        {{ groupe_classe.classe.nom }}{% if groupe_classe.classe.cycle %} — {{ groupe_classe.classe.cycle.nom }}{% endif %}
+
+      <div class="classe-heading">
+        <span class="classe-nom">{{ groupe_classe.classe.nom }}</span>
+        {% if groupe_classe.classe.cycle %}
+        <span class="classe-cycle">{{ groupe_classe.classe.cycle.nom }}</span>
+        {% endif %}
       </div>
+
+      <div class="stats-row">
+        <div class="stat-item present">
+          <span class="stat-num">{{ groupe_classe.total_presents }}</span> présents
+        </div>
+        <span class="stat-sep">·</span>
+        <div class="stat-item absent">
+          <span class="stat-num">{{ groupe_classe.total_absents }}</span> absents
+        </div>
+        <span class="stat-sep">·</span>
+        <div class="stat-item retard">
+          <span class="stat-num">{{ groupe_classe.total_retards }}</span> retards
+        </div>
+        {% if groupe_classe.pct_presence %}
+        <span class="stat-pct">{{ groupe_classe.pct_presence }}% de présence</span>
+        {% endif %}
+      </div>
+
       <table>
         <thead>
           <tr>
             <th>Matière</th>
-            <th class="text-center">Heure</th>
-            <th class="text-center">Présents</th>
-            <th class="text-center">Absents</th>
-            <th class="text-center">Retards</th>
-            <th class="text-center">Statut</th>
+            <th class="tc">Horaire</th>
+            <th class="tc">Prés.</th>
+            <th class="tc">Abs.</th>
+            <th class="tc">Ret.</th>
+            <th class="tc">Statut</th>
           </tr>
         </thead>
         <tbody>
           {% for appel in groupe_classe.appels %}
           <tr>
-            <td>{{ appel.enseignement.matiere.nom|default:"—" }}</td>
-            <td class="text-center">
-              {% if appel.heure_debut %}{{ appel.heure_debut|time:"H:i" }}{% if appel.heure_fin %} – {{ appel.heure_fin|time:"H:i" }}{% endif %}{% else %}—{% endif %}
+            <td>{{ appel.matiere.nom|default:"—" }}</td>
+            <td class="tc">
+              {% if appel.heure_debut %}
+                {{ appel.heure_debut|time:"H:i" }}{% if appel.heure_fin %} – {{ appel.heure_fin|time:"H:i" }}{% endif %}
+              {% else %}—{% endif %}
             </td>
-            <td class="text-center">{{ appel.nb_presents }}</td>
-            <td class="text-center">{{ appel.nb_absents }}</td>
-            <td class="text-center">{{ appel.nb_retards }}</td>
-            <td class="text-center">{% if appel.est_clos %}Clôturé{% else %}En cours{% endif %}</td>
+            <td class="tc">{{ appel.nb_presents }}</td>
+            <td class="tc">{{ appel.nb_absents }}</td>
+            <td class="tc">{{ appel.nb_retards }}</td>
+            <td class="tc">
+              <span class="statut {% if appel.est_clos %}statut-clos{% else %}statut-encours{% endif %}">
+                {% if appel.est_clos %}Clôturé{% else %}En cours{% endif %}
+              </span>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+
     </div>
     {% endfor %}
-  </div>
-  {% endfor %}
-{% else %}
-  <p class="no-data">Aucun appel pour les critères sélectionnés.</p>
-{% endif %}
 
-<div class="print-footer">
-  <span>YELEN SCHOOL</span>
-  <span>Imprimé le {% now "d/m/Y à H:i" %}</span>
+  </section>
+  {% endfor %}
+
+  {% else %}
+  <div class="no-data">
+    Aucun appel enregistré pour les critères sélectionnés.
+  </div>
+  {% endif %}
+
+  <!-- Pied de page -->
+  <footer class="doc-footer">
+    <span class="brand">{% if etablissement %}{{ etablissement.nom }}{% else %}YELEN SCHOOL{% endif %}</span>
+    <span>Suivi des présences — usage interne</span>
+  </footer>
+
 </div>
 
 </body>

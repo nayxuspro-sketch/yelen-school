@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4 landscape; margin: 1.5cm 2cm; }
+
+  body { font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif; font-size: 10pt; color: #111; }
+
+  /* ── En-tête ── */
+  .doc-header { border-bottom: 3pt solid #111; padding-bottom: 8pt; margin-bottom: 14pt; }
+  .doc-title   { font-size: 15pt; font-weight: bold; margin: 0 0 2pt; }
+  .doc-meta    { font-size: 9pt; color: #444; }
+
+  /* ── Statistiques ── */
+  .stats-bar { display: flex; gap: 16pt; margin-bottom: 14pt; }
+  .stat {
+    flex: 1;
+    background: #fff;
+    border: 1pt solid #ccc;
+    border-left: 3pt solid #111;
+    padding: 5pt 10pt;
+    font-size: 9pt;
+    color: #333;
+  }
+  .stat strong { display: block; font-size: 14pt; color: #111; line-height: 1.2; }
+
+  /* ── Tableau ── */
+  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+
+  thead th {
+    background: #111;
+    color: #fff;
+    padding: 6pt 8pt;
+    text-align: left;
+    white-space: nowrap;
+    font-size: 8.5pt;
+    font-weight: 600;
+  }
+
+  tbody td { padding: 5pt 8pt; border-bottom: 0.5pt solid #ddd; vertical-align: middle; }
+  tbody tr:nth-child(even) td { background: #f4f4f4; }
+
+  /* Séparateur de classe */
+  .classe-row td {
+    background: #ddd;
+    font-weight: 700;
+    font-size: 9pt;
+    color: #111;
+    padding: 4pt 8pt;
+    border-top: 1pt solid #bbb;
+  }
+
+  /* Ligne total */
+  .total-row td {
+    font-weight: 700;
+    background: #fff;
+    border-top: 2pt solid #111;
+    border-bottom: 2pt solid #111;
+  }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    padding: 1pt 6pt;
+    border-radius: 3pt;
+    font-size: 7.5pt;
+    font-weight: 600;
+    border: 0.8pt solid;
+  }
+  .badge-ok   { background: #fff; border-color: #555; color: #111; }
+  .badge-warn { background: #ddd; border-color: #555; color: #111; font-style: italic; }
+
+  /* ── Matricule/code ── */
+  .mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 8pt; }
+
+  /* ── Pied de page ── */
+  .footer {
+    margin-top: 16pt;
+    font-size: 8pt;
+    color: #777;
+    text-align: right;
+    border-top: 0.5pt solid #ccc;
+    padding-top: 5pt;
+  }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+  <div class="doc-title">Attributions de manuels — {{ annee }}</div>
+  <div class="doc-meta">
+    {% if etab %}{{ etab }} &nbsp;|&nbsp; {% endif %}
+    Imprimé le : {{ today }}
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><strong>{{ attributions|length }}</strong>Attributions totales</div>
+  <div class="stat"><strong>{{ nb_en_cours }}</strong>En cours</div>
+  <div class="stat"><strong>{{ nb_rendus }}</strong>Rendus</div>
+</div>
+
+{% if attributions %}
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Classe</th>
+      <th>Élève</th>
+      <th>Manuel</th>
+      <th>Code exemplaire</th>
+      <th>État sortie</th>
+      <th>Date attribution</th>
+      <th>Date retour</th>
+      <th>État retour</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% regroup attributions by inscription.classe.nom as par_classe %}
+    {% for groupe in par_classe %}
+    <tr class="classe-row">
+      <td colspan="9">{{ groupe.grouper }} — {{ groupe.list|length }} attribution{% if groupe.list|length > 1 %}s{% endif %}</td>
+    </tr>
+    {% for a in groupe.list %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ a.inscription.classe.nom }}</td>
+      <td><strong>{{ a.inscription.eleve.nom }} {{ a.inscription.eleve.prenom }}</strong></td>
+      <td>{{ a.exemplaire.manuel.titre }}</td>
+      <td class="mono">{{ a.exemplaire.code_exemplaire }}</td>
+      <td><span class="badge badge-ok">{{ a.get_etat_sortie_display }}</span></td>
+      <td>{{ a.date_attribution }}</td>
+      <td>
+        {% if a.date_retour %}
+          {{ a.date_retour }}
+        {% else %}
+          <span class="badge badge-warn">En cours</span>
+        {% endif %}
+      </td>
+      <td>{% if a.etat_retour %}{{ a.get_etat_retour_display }}{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
+    <tr class="total-row">
+      <td colspan="2">Total</td>
+      <td colspan="7">
+        {{ attributions|length }} attribution{% if attributions|length > 1 %}s{% endif %}
+        — {{ nb_en_cours }} en cours, {{ nb_rendus }} rendu{% if nb_rendus > 1 %}s{% endif %}
+      </td>
+    </tr>
+  </tbody>
+</table>
+{% else %}
+<p>Aucune attribution pour cette année scolaire.</p>
+{% endif %}
+
+<p class="footer">YELEN SCHOOL — Document généré automatiquement</p>
+</body>
+</html>

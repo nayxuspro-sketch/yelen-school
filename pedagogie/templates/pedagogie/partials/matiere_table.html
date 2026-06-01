@@ -1,51 +1,64 @@
+<div class="card-header">
+  <span class="card-title">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+    </svg>
+    Matières enregistrées
+  </span>
+  <span class="badge badge-neutral">{{ matiere_list|length }} matière{{ matiere_list|length|pluralize }}</span>
+</div>
+
 <div class="table-scroll">
   <table class="data-table">
     <thead>
       <tr>
         <th>Code</th>
-        <th>Nom de la Matière</th>
+        <th>Nom de la matière</th>
         <th>Catégorie</th>
-        <th>Coeff. défaut</th>
-        <th>Barème défaut</th>
+        <th>Coeff.</th>
+        <th>Barème</th>
         <th>Cycles configurés</th>
-        <th style="text-align:right">Actions</th>
+        <th class="td-right">Actions</th>
       </tr>
     </thead>
     <tbody>
       {% for matiere in matiere_list %}
       <tr>
-        <td class="text-mono text-primary fw-bold col-matricule">{{ matiere.code }}</td>
+        <td class="col-matricule">{{ matiere.code }}</td>
         <td>
           <div class="fw-semibold">{{ matiere.nom }}</div>
           {% if matiere.nom_complet %}
-          <div class="text-muted" style="font-size:0.75rem; font-style:italic;">{{ matiere.nom_complet }}</div>
+          <div class="text-xs text-muted">{{ matiere.nom_complet }}</div>
           {% endif %}
         </td>
         <td>
-          <span class="badge badge-neutral" style="text-transform:uppercase; letter-spacing:.04em;">{{ matiere.get_categorie_display }}</span>
+          <span class="badge badge-neutral">{{ matiere.get_categorie_display }}</span>
         </td>
-        <td class="fw-bold text-muted" style="font-size:.85rem;">{{ matiere.coefficient }}</td>
-        <td class="text-muted" style="font-size:0.8rem;">{{ matiere.moy_min }} — {{ matiere.moy_max }}</td>
+        <td class="fw-bold text-muted text-sm">{{ matiere.coefficient }}</td>
+        <td class="text-muted text-xs">{{ matiere.moy_min }} — {{ matiere.moy_max }}</td>
         <td>
           {% with configs=matiere.configurations_cycle.all %}
           {% if configs %}
             <div class="d-flex flex-wrap gap-1">
               {% for cfg in configs %}
-              <span class="badge badge-primary" style="font-size:.7rem;" title="{{ cfg.cycle.nom }} : coeff {{ cfg.coefficient }}, barème {{ cfg.moy_min }}–{{ cfg.moy_max }}">
+              <span class="badge badge-info"
+                    title="{{ cfg.cycle.nom }} : coeff {{ cfg.coefficient }}, barème {{ cfg.moy_min }}–{{ cfg.moy_max }}">
                 {{ cfg.cycle.nom }} ×{{ cfg.coefficient }}
               </span>
               {% endfor %}
             </div>
           {% else %}
-            <span class="text-muted" style="font-size:.8rem; font-style:italic;">Défaut pour tous</span>
+            <span class="text-xs text-muted">Défaut pour tous</span>
           {% endif %}
           {% endwith %}
         </td>
-        <td style="text-align:right;">
+        <td class="td-right">
           <div class="d-flex justify-end gap-2">
             <a href="{% url 'pedagogie:matiere_update' matiere.pk %}" class="btn-icon" title="Modifier / Configurer cycles">
               <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
               </svg>
             </a>
           </div>
@@ -56,11 +69,13 @@
         <td colspan="7">
           <div class="empty-state">
             <div class="empty-state-icon">
-              <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
               </svg>
             </div>
-            <p class="empty-state-text">Aucune matière enregistrée.</p>
+            <h3 class="fw-semibold mb-2">Aucune matière enregistrée</h3>
+            <p class="empty-state-text">Créez votre première matière avec le bouton <strong>Nouvelle matière</strong>.</p>
           </div>
         </td>
       </tr>

@@ -1,6 +1,7 @@
 from django import forms
 from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel
 from parametres.models import Cycle, TitreFonction, TitreHonorifiquePersonnel
+from core.validators import validate_image_upload
 
 # Import pour le chiffrement
 try:
@@ -72,6 +73,12 @@ class MembrePersonnelForm(forms.ModelForm):
                 choices=[('', '---------')] + [(t, t) for t in titres_h]
             )
         _apply_yelen_classes(self.fields)
+
+    def clean_photo(self):
+        photo = self.cleaned_data.get('photo')
+        if photo and hasattr(photo, 'size'):
+            validate_image_upload(photo)
+        return photo
 
 
 class InscriptionPersonnelForm(forms.ModelForm):

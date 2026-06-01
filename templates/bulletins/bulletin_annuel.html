@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block nav_bulletins %}active{% endblock %}
+{% block title %}Bulletin Annuel — {{ inscription.eleve.get_nom_complet }}{% endblock %}
+
+{% block page_title %}Bulletin Annuel de Notes{% endblock %}
+
+{% block extra_css %}
+<style>
+  .bulletin-container {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: var(--space-6);
+  }
+
+  /* En-tête établissement */
+  .bulletin-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-2) 100%);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+  }
+
+  .bulletin-header__logo {
+    width: 56px;
+    height: 56px;
+    background: var(--color-primary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-family-logo);
+    font-size: 1.4rem;
+    color: white;
+    font-weight: 700;
+  }
+
+  .bulletin-header__info h1 {
+    font-family: var(--font-family-logo);
+    font-size: 1.4rem;
+    color: var(--color-primary);
+    margin: 0;
+  }
+
+  .bulletin-header__info p {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: var(--space-1) 0 0;
+  }
+
+  /* Sections */
+  .bulletin-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+    overflow: hidden;
+  }
+
+  .bulletin-section__header {
+    background: var(--color-bg);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .bulletin-section__header h2 {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-muted);
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .bulletin-section__body {
+    padding: var(--space-4);
+  }
+
+  /* Grid d'informations */
+  .bulletin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .bulletin-grid--4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .bulletin-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .bulletin-item__label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-faint);
+  }
+
+  .bulletin-item__value {
+    font-size: var(--text-base);
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  .bulletin-item__value--mono {
+    font-family: var(--font-family-mono);
+    color: var(--color-primary);
+  }
+
+  /* Tableau */
+  .bulletin-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .bulletin-table th {
+    background: var(--color-bg);
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .bulletin-table td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border-soft);
+    font-size: var(--text-sm);
+  }
+
+  .bulletin-table td.center {
+    text-align: center;
+  }
+
+  .bulletin-table td.moyenne {
+    font-weight: 600;
+  }
+
+  .bulletin-table td.note-success {
+    color: var(--color-success);
+  }
+
+  .bulletin-table td.note-fail {
+    color: var(--color-danger);
+  }
+
+  /* Matières détaillées */
+  .bulletin-matieres {
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+  }
+
+  .bulletin-matieres h4 {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-faint);
+    margin: 0 0 var(--space-2);
+  }
+
+  .bulletin-matiere-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-1) 0;
+    font-size: var(--text-sm);
+  }
+
+  .bulletin-matiere-row .nom {
+    color: var(--color-text);
+  }
+
+  .bulletin-matiere-row .coef {
+    color: var(--color-text-faint);
+  }
+
+  .bulletin-matiere-row .note {
+    font-weight: 600;
+  }
+
+  /* Résumé annuel */
+  .bulletin-resume {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-4);
+  }
+
+  .bulletin-resume__moyenne {
+    text-align: center;
+  }
+
+  .bulletin-resume__moyenne .label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-faint);
+  }
+
+  .bulletin-resume__moyenne .value {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+  }
+
+  .bulletin-resume__moyenne .value.success {
+    color: var(--color-success);
+  }
+
+  .bulletin-resume__moyenne .value.fail {
+    color: var(--color-danger);
+  }
+
+  .bulletin-resume__stats {
+    text-align: right;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  /* Décision */
+  .bulletin-decision {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-4);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .bulletin-decision--success {
+    background: rgba(0,168,107,0.15);
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .bulletin-decision--fail {
+    background: rgba(229,62,62,0.15);
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger);
+  }
+
+  /* Appréciation */
+  .bulletin-appreciation {
+    padding: var(--space-4);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-4);
+  }
+
+  .bulletin-appreciation__label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-2);
+  }
+
+  .bulletin-appreciation__text {
+    font-size: var(--text-base);
+    color: var(--color-text);
+    font-style: italic;
+  }
+
+  /* Signature */
+  .bulletin-signature {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--space-6);
+  }
+
+  .bulletin-signature__block {
+    text-align: center;
+    min-width: 200px;
+  }
+
+  .bulletin-signature__title {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-faint);
+    margin-bottom: var(--space-6);
+  }
+
+  .bulletin-signature__line {
+    border-top: 1px solid var(--color-border);
+    width: 80%;
+    margin: 0 auto;
+  }
+
+  .bulletin-signature__name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    margin-top: var(--space-2);
+  }
+
+  .bulletin-signature__date {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: var(--space-4);
+  }
+
+  /* Impression PDF */
+  @media print {
+    .bulletin-container {
+      max-width: 100%;
+      padding: 0;
+      background: white;
+    }
+
+    .bulletin-header,
+    .bulletin-section {
+      background: white;
+      border-color: #e2e8f0;
+    }
+
+    .bulletin-section__header {
+      background: #f1f5f9;
+    }
+
+    .bulletin-table th,
+    .bulletin-table td {
+      border-color: #e2e8f0;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bulletin-container">
+
+  {# En-tête établissement #}
+  <header class="bulletin-header">
+    <div class="bulletin-header__logo">YS</div>
+    <div class="bulletin-header__info">
+      <h1>YELEN SCHOOL</h1>
+      <p>
+        {% if inscription.classe.etablissement %}
+          {{ inscription.classe.etablissement.devise|default:'' }} · 
+          {{ inscription.classe.etablissement.telephone|default:'' }}
+        {% endif %}
+      </p>
+    </div>
+  </header>
+
+  {# Titre du bulletin #}
+  <div class="bulletin-section">
+    <div class="bulletin-section__body" style="text-align: center;">
+      <h2 style="font-size: var(--text-lg); margin: 0; color: var(--color-text);">
+        BULLETIN DE FIN D'ANNÉE
+      </h2>
+      <p style="margin: var(--space-2) 0 0; color: var(--color-text-muted);">
+        Année scolaire {{ annee.libelle }}
+      </p>
+    </div>
+  </div>
+
+  {# Informations de l'élève #}
+  <section class="bulletin-section">
+    <div class="bulletin-section__header">
+      <h2>Informations de l'élève</h2>
+    </div>
+    <div class="bulletin-section__body">
+      <div class="bulletin-grid">
+        <div class="bulletin-item">
+          <span class="bulletin-item__label">Matricule</span>
+          <span class="bulletin-item__value bulletin-item__value--mono">{{ inscription.eleve.matricule }}</span>
+        </div>
+        <div class="bulletin-item">
+          <span class="bulletin-item__label">Date de naissance</span>
+          <span class="bulletin-item__value">{{ inscription.eleve.date_naissance|date:"d/m/Y" }}</span>
+        </div>
+        <div class="bulletin-item">
+          <span class="bulletin-item__label">Nom & Prénom</span>
+          <span class="bulletin-item__value">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</span>
+        </div>
+        <div class="bulletin-item">
+          <span class="bulletin-item__label">Sexe</span>
+          <span class="bulletin-item__value">{{ inscription.eleve.get_sexe_display }}</span>
+        </div>
+      </div>
+      <div class="bulletin-grid bulletin-grid--4" style="margin-top: var(--space-3);">
+        <div class="bulletin-item">
+          <span class="bulletin-item__label">Classe</span>
+          <span class="bulletin-item__value">{{ inscription.classe.nom }}</span>
+        </div>
+        <div class="bulletin-item">
+          <span class="bulletin-item__label">Effectif</span>
+          <span class="bulletin-item__value">{{ bulletin.effectif_classe }} élèves</span>
+        </div>
+        <div class="bulletin-item">
+          <span class="bulletin-item__label">Classe redoublée</span>
+          <span class="bulletin-item__value">
+            {% if inscription.eleve.a_redouble %}Oui{% else %}Non{% endif %}
+          </span>
+        </div>
+        <div class="bulletin-item">
+          <span class="bulletin-item__label">Rang</span>
+          <span class="bulletin-item__value">
+            {% if bulletin.rang_annuel %}{{ bulletin.rang_annuel }}{% else %}—{% endif %}ème / {{ bulletin.effectif_classe }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# Évaluations et Moyennes #}
+  <section class="bulletin-section">
+    <div class="bulletin-section__header">
+      <h2>Évaluations et Moyennes</h2>
+    </div>
+    <div class="bulletin-section__body">
+      <table class="bulletin-table">
+        <thead>
+          <tr>
+            <th>Évaluations</th>
+            <th class="center">Moyenne /20</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for periode in bulletin.donnees_json.periodes %}
+          <tr>
+            <td>
+              {{ periode.nom }}
+              {# Afficher les matières en détail si présentes #}
+              {% if periode.matieres %}
+              <div class="bulletin-matieres">
+                <h4>Détail des matières</h4>
+                {% for matiere in periode.matieres %}
+                <div class="bulletin-matiere-row">
+                  <span class="nom">{{ matiere.nom }}</span>
+                  <span class="coef">Coef {{ matiere.coefficient }}</span>
+                  <span class="note {% if matiere.note >= 10 %}note-success{% else %}note-fail{% endif %}">
+                    {{ matiere.note|floatformat:2 }}
+                  </span>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </td>
+            <td class="center moyenne {% if periode.moyenne_periode >= 10 %}note-success{% else %}note-fail{% endif %}">
+              {{ periode.moyenne_periode|floatformat:2 }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {# Résumé annuel #}
+      <div class="bulletin-resume">
+        <div class="bulletin-resume__moyenne">
+          <div class="label">Moyenne annuelle /20</div>
+          <div class="value {% if bulletin.est_admis %}success{% else %}fail{% endif %}">
+            {{ bulletin.moyenne_annuelle|floatformat:2 }}
+          </div>
+        </div>
+        <div class="bulletin-resume__stats">
+          <div>Plus forte moyenne : <strong>{{ bulletin.moyenne_max_classe|floatformat:2|default:"—" }}</strong></div>
+          <div>Plus faible moyenne : <strong>{{ bulletin.moyenne_min_classe|floatformat:2|default:"—" }}</strong></div>
+          <div>Moyenne de la classe : <strong>{{ bulletin.moyenne_classe|floatformat:2|default:"—" }}</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# Décision du conseil #}
+  <section class="bulletin-section">
+    <div class="bulletin-section__header">
+      <h2>Décision du conseil</h2>
+    </div>
+    <div class="bulletin-section__body">
+      <div class="bulletin-decision {% if bulletin.est_admis %}bulletin-decision--success{% else %}bulletin-decision--fail{% endif %}">
+        {% if bulletin.est_admis %}
+          <span>✓</span>
+          <span>ADMIS EN CLASSE SUPÉRIEURE</span>
+        {% else %}
+          <span>✗</span>
+          <span>REDOUBLE EN CLASSE</span>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {# Appréciation #}
+  {% if bulletin.appreciation_conseil %}
+  <section class="bulletin-section">
+    <div class="bulletin-section__header">
+      <h2>Appréciation du conseil de classe</h2>
+    </div>
+    <div class="bulletin-section__body">
+      <div class="bulletin-appreciation">
+        <div class="bulletin-appreciation__text">{{ bulletin.appreciation_conseil }}</div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# Signature #}
+  <footer class="bulletin-signature">
+    <div class="bulletin-signature__block">
+      <p class="bulletin-signature__title">Le Directeur des études</p>
+      <div class="bulletin-signature__line"></div>
+      {% if directeur %}
+      <p class="bulletin-signature__name">{{ directeur.nom }} {{ directeur.prenom }}</p>
+      {% else %}
+      <p class="bulletin-signature__name">_________________</p>
+      {% endif %}
+      <p class="bulletin-signature__date">
+        {% if bulletin.lieu_signature %}{{ bulletin.lieu_signature }}, {% endif %}
+        le {{ bulletin.date_signature|date:"d/m/Y"|default:"" }}
+      </p>
+    </div>
+  </footer>
+
+</div>
+{% endblock %}
