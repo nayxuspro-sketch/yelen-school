@@ -898,7 +898,9 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 
 **À quoi ça sert :** Permet de paramétrer la passerelle SMS pour l'envoi de notifications aux parents (absences, relances, convocations, bulletins).
 
-**Interface :** La page se compose de trois cartes :
+**Interface :** La page se compose de quatre cartes :
+
+0. **URL Endpoint du Webhook SMS** — Affiche l'URL du webhook `/communication/webhook/sms/` à configurer dans l'App Android SMS Gateway. Bouton "Copier l'URL" pour copier en un clic.
 
 1. **Paramètres de Backend** — Configuration de la passerelle :
    - **Activer le service SMS** — Toggle ON/OFF pour activer/désactiver l'envoi SMS
@@ -909,6 +911,8 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 2. **Test de Connectivité** — Lancer un diagnostic pour vérifier la connexion au modem ou à l'API
 
 3. **Envoi Manuel** — Envoyer un SMS de test vers un numéro pour valider la configuration
+
+**Prise en compte immédiate (sans redémarrage) :** Depuis la version avec cache runtime, les modifications de configuration SMS sont appliquées immédiatement après le clic sur "Enregistrer". Le système stocke les valeurs dans un cache mémoire (via `get_sms_val()` / `set_sms_config_runtime()`) et les persist dans le fichier `.env`. Aucun redémarrage du serveur ni du conteneur Docker n'est nécessaire.
 
 **Design :** Page modernisée avec cartes premium, icônes param-icon colorées par section, toggle-switch iOS-style, et classes CSS exclusives du design system (zéro style inline).
 
