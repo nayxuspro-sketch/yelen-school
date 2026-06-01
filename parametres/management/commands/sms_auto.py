@@ -39,8 +39,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from django.conf import settings
-        if not getattr(settings, 'SMS_ENABLED', False):
+        from core.sms import get_sms_val
+        if not get_sms_val('SMS_ENABLED'):
             self.stdout.write(self.style.WARNING("SMS_ENABLED=False — aucun SMS envoyé."))
             return
 

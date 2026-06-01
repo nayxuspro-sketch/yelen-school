@@ -737,69 +737,88 @@ def sms_configuration(request):
     if request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR'):
         return HttpResponseForbidden("Accès réservé aux administrateurs.")
 
-    from django.conf import settings
-    from core.sms import tester_modem
-    import os
+    from core.sms import tester_modem, get_sms_val
     from pathlib import Path
 
     BASE_DIR = Path(__file__).resolve().parent.parent
     env_file = BASE_DIR / '.env'
 
-    backend = getattr(settings, 'SMS_BACKEND', 'http')
     config = {
-        'SMS_ENABLED':        getattr(settings, 'SMS_ENABLED',        False),
-        'SMS_BACKEND':        backend,
-        'SMS_HTTP_URL':       getattr(settings, 'SMS_HTTP_URL',       ''),
-        'SMS_HTTP_USER':      getattr(settings, 'SMS_HTTP_USER',      'admin'),
-        'SMS_HTTP_PASSWORD':  getattr(settings, 'SMS_HTTP_PASSWORD', ''),
-        'SMS_HTTP_TIMEOUT':   getattr(settings, 'SMS_HTTP_TIMEOUT',   10),
-        'SMS_MODEM_PORT':     getattr(settings, 'SMS_MODEM_PORT',     'COM3'),
-        'SMS_MODEM_BAUD':     getattr(settings, 'SMS_MODEM_BAUD',    9600),
-        'SMS_MODEM_TIMEOUT':  getattr(settings, 'SMS_MODEM_TIMEOUT',  10),
+        'SMS_ENABLED':        get_sms_val('SMS_ENABLED'),
+        'SMS_BACKEND':        get_sms_val('SMS_BACKEND'),
+        'SMS_HTTP_URL':       get_sms_val('SMS_HTTP_URL'),
+        'SMS_HTTP_USER':      get_sms_val('SMS_HTTP_USER'),
+        'SMS_HTTP_PASSWORD':  get_sms_val('SMS_HTTP_PASSWORD'),
+        'SMS_HTTP_TIMEOUT':   get_sms_val('SMS_HTTP_TIMEOUT'),
+        'SMS_MODEM_PORT':     get_sms_val('SMS_MODEM_PORT'),
+        'SMS_MODEM_BAUD':     get_sms_val('SMS_MODEM_BAUD'),
+        'SMS_MODEM_TIMEOUT':  get_sms_val('SMS_MODEM_TIMEOUT'),
     }
+
+    webhook_url = request.build_absolute_uri('/communication/webhook/sms/')
 
     test_result = None
 
+    SMS_VARS = [
+        'SMS_ENABLED',
+        'SMS_BACKEND',
+        'SMS_HTTP_URL',
+        'SMS_HTTP_USER',
+        'SMS_HTTP_PASSWORD',
+        'SMS_HTTP_TIMEOUT',
+        'SMS_MODEM_PORT',
+        'SMS_MODEM_BAUD',
+        'SMS_MODEM_TIMEOUT',
+    ]
+
     if request.method == 'POST':
         if 'sauvegarder' in request.POST:
-            sms_enabled = request.POST.get('SMS_ENABLED', 'False')
-            sms_backend = request.POST.get('SMS_BACKEND', 'http')
-            sms_http_url = request.POST.get('SMS_HTTP_URL', '').strip()
-            sms_http_user = request.POST.get('SMS_HTTP_USER', 'admin')
-            sms_http_password = request.POST.get('SMS_HTTP_PASSWORD', '')
-            sms_http_timeout = request.POST.get('SMS_HTTP_TIMEOUT', '10')
-            sms_modem_port = request.POST.get('SMS_MODEM_PORT', 'COM3')
-            sms_modem_baud = request.POST.get('SMS_MODEM_BAUD', '9600')
-            sms_modem_timeout = request.POST.get('SMS_MODEM_TIMEOUT', '10')
+            form_values = {
+                'SMS_ENABLED':       request.POST.get('SMS_ENABLED', 'False'),
+                'SMS_BACKEND':       request.POST.get('SMS_BACKEND', 'http'),
+                'SMS_HTTP_URL':      request.POST.get('SMS_HTTP_URL', '').strip(),
+                'SMS_HTTP_USER':     request.POST.get('SMS_HTTP_USER', 'admin'),
+                'SMS_HTTP_PASSWORD': request.POST.get('SMS_HTTP_PASSWORD', ''),
+                'SMS_HTTP_TIMEOUT':  request.POST.get('SMS_HTTP_TIMEOUT', '10'),
+                'SMS_MODEM_PORT':    request.POST.get('SMS_MODEM_PORT', 'COM3'),
+                'SMS_MODEM_BAUD':    request.POST.get('SMS_MODEM_BAUD', '9600'),
+                'SMS_MODEM_TIMEOUT': request.POST.get('SMS_MODEM_TIMEOUT', '10'),
+            }
 
             try:
-                env_content = env_file.read_text(encoding='utf-8')
-                lines = env_content.split('\n')
+                found = {v: False for v in SMS_VARS}
+                if env_file.exists():
+                    raw = env_file.read_text(encoding='utf-8')
+                    lines = raw.split('\n')
+                else:
+                    lines = []
+
                 new_lines = []
                 for line in lines:
-                    if line.startswith('SMS_ENABLED='):
-                        new_lines.append(f'SMS_ENABLED={sms_enabled}')
-                    elif line.startswith('SMS_BACKEND='):
-                        new_lines.append(f'SMS_BACKEND={sms_backend}')
-                    elif line.startswith('SMS_HTTP_URL='):
-                        new_lines.append(f'SMS_HTTP_URL={sms_http_url}')
-                    elif line.startswith('SMS_HTTP_USER='):
-                        new_lines.append(f'SMS_HTTP_USER={sms_http_user}')
-                    elif line.startswith('SMS_HTTP_PASSWORD='):
-                        new_lines.append(f'SMS_HTTP_PASSWORD={sms_http_password}')
-                    elif line.startswith('SMS_HTTP_TIMEOUT='):
-                        new_lines.append(f'SMS_HTTP_TIMEOUT={sms_http_timeout}')
-                    elif line.startswith('SMS_MODEM_PORT='):
-                        new_lines.append(f'SMS_MODEM_PORT={sms_modem_port}')
-                    elif line.startswith('SMS_MODEM_BAUD='):
-                        new_lines.append(f'SMS_MODEM_BAUD={sms_modem_baud}')
-                    elif line.startswith('SMS_MODEM_TIMEOUT='):
-                        new_lines.append(f'SMS_MODEM_TIMEOUT={sms_modem_timeout}')
-                    elif line.strip():
+                    stripped = line.strip()
+                    matched = False
+                    for var in SMS_VARS:
+                        prefix = var + '='
+                        if stripped.startswith(prefix) or stripped.startswith(prefix.lower()):
+                            new_lines.append(f'{var}={form_values[var]}')
+                            found[var] = True
+                            matched = True
+                            break
+                    if not matched:
                         new_lines.append(line)
 
+                for var in SMS_VARS:
+                    if not found[var]:
+                        if var == 'SMS_HTTP_URL' and not any(l.strip().startswith('#') and 'HTTP' in l for l in new_lines):
+                            new_lines.append(f'# Backend HTTP — app Android "SMS Gateway"')
+                        new_lines.append(f'{var}={form_values[var]}')
+
                 env_file.write_text('\n'.join(new_lines), encoding='utf-8')
-                messages.success(request, "Configuration SMS enregistrée. Veuillez redémarrer le serveur pour appliquer les changements.")
+
+                from core.sms import set_sms_config_runtime
+                set_sms_config_runtime(**form_values)
+
+                messages.success(request, "Configuration SMS enregistrée et appliquée immédiatement (sans redémarrage).")
                 return redirect('core:sms_configuration')
             except Exception as e:
                 messages.error(request, f"Erreur lors de l'enregistrement : {e}")
@@ -823,6 +842,7 @@ def sms_configuration(request):
     return render(request, 'core/sms_configuration.html', {
         'config': config,
         'test_result': test_result,
+        'webhook_url': webhook_url,
     })
 
 
@@ -876,7 +896,8 @@ def reunion_parents(request):
                     numeros_vus.add(numero)
                     numeros.append(numero)
 
-            if getattr(settings, 'SMS_ENABLED', False) and numeros:
+            from core.sms import get_sms_val
+            if get_sms_val('SMS_ENABLED') and numeros:
                 from core.tasks import envoyer_sms_async
                 etab_nom = etab.nom if etab else 'YELEN SCHOOL'
                 msg = (

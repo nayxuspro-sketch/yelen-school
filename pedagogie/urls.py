@@ -111,6 +111,7 @@ urlpatterns = [
     path('competences/cycle/<uuid:cycle_id>/referentiel/', views.competences_referentiel, name='competences_referentiel'),
     path('competences/competence/<uuid:pk>/supprimer/', views.competence_supprimer, name='competence_supprimer'),
     path('competences/classe/<uuid:classe_id>/saisie/', views.competences_saisie, name='competences_saisie'),
+    path('competences/sauvegarder/', views.competence_sauvegarder, name='competence_sauvegarder'),
     path('competences/bulletin/<uuid:inscription_id>/trimestre/<uuid:trimestre_id>/pdf/', views.competences_bulletin_pdf, name='competences_bulletin_pdf'),
 
     # Cahier de textes

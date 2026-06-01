@@ -12,6 +12,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 
+from core.sms import get_sms_val
+
 logger = logging.getLogger(__name__)
 
 
@@ -61,7 +63,7 @@ def creer_notification(destinataire, type_notif, titre, message, lien='',
         except Exception as e:
             logger.error(f"Notification email échoué pour {destinataire.email}: {e}")
 
-    if envoyer_sms and getattr(settings, 'SMS_ENABLED', False):
+    if envoyer_sms and get_sms_val('SMS_ENABLED'):
         numero = getattr(destinataire, 'telephone', '') or ''
         if numero:
             try:
@@ -111,7 +113,7 @@ def notifier_bulletin_publie(bulletin):
         for parent in parents:
             creer_notification(parent, 'BULLETIN', titre, message_inapp,
                                lien='/bulletins/', envoyer_sms=False)
-            if getattr(settings, 'SMS_ENABLED', False):
+            if get_sms_val('SMS_ENABLED'):
                 numero = getattr(parent, 'telephone', '') or ''
                 if numero:
                     from core.tasks import envoyer_sms_async
@@ -145,7 +147,7 @@ def notifier_absence(presence):
             'matiere': f" en {matiere}" if matiere else '',
             'etablissement': etab.nom,
         })
-        if getattr(settings, 'SMS_ENABLED', False):
+        if get_sms_val('SMS_ENABLED'):
             numero = (
                 eleve.telephone_parent
                 or eleve.tuteur_telephone
@@ -184,7 +186,7 @@ def notifier_retard(presence):
             'matiere': f" en {matiere}" if matiere else '',
             'etablissement': etab.nom,
         })
-        if getattr(settings, 'SMS_ENABLED', False):
+        if get_sms_val('SMS_ENABLED'):
             numero = (
                 eleve.telephone_parent
                 or eleve.tuteur_telephone
@@ -217,7 +219,7 @@ def notifier_relance_paiement(inscription, rubrique, montant):
         parents = eleve.utilisateurs_lies.filter(role='PARENT', is_active=True)
         for parent in parents:
             creer_notification(parent, 'GENERAL', titre, message_inapp, envoyer_sms=False)
-            if getattr(settings, 'SMS_ENABLED', False):
+            if get_sms_val('SMS_ENABLED'):
                 numero = getattr(parent, 'telephone', '') or ''
                 if numero:
                     from core.tasks import envoyer_sms_async
@@ -249,7 +251,7 @@ def notifier_reunion(etablissement, date, heure, lieu, objet, parents_numeros):
         titre = f"Réunion parents — {date}"
         for parent, numero in parents_numeros:
             creer_notification(parent, 'GENERAL', titre, sms_message, envoyer_sms=False)
-            if getattr(settings, 'SMS_ENABLED', False) and numero:
+            if get_sms_val('SMS_ENABLED') and numero:
                 from core.tasks import envoyer_sms_async
                 envoyer_sms_async(numero, sms_message)
     except Exception as e:

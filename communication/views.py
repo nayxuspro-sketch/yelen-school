@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 from inscriptions.models import Eleve
 from parametres.models import AnneeScolaire
@@ -194,6 +195,62 @@ def repondre(request, token):
 
     return render(request, 'communication/repondre.html', {
         'msg': msg,
+    })
+
+
+# ─── SMS DIRECT — SIMULATEUR / INTERFACE PARENT ──────────────────
+
+@login_required
+def sms_direct_simulateur(request):
+    """Interface HTMX de simulation du SMS Direct (Parent-SMS)."""
+    from .models import IncomingSMSLog
+    logs = IncomingSMSLog.objects.all()[:20]
+    return render(request, 'communication/sms_direct.html', {
+        'logs': logs,
+    })
+
+
+@login_required
+@require_POST
+def sms_direct_envoyer(request):
+    """Envoie une commande SMS simulée et retourne la réponse."""
+    import json
+    from django.test.client import RequestFactory
+
+    phone = request.POST.get('phone', '').strip()
+    message = request.POST.get('message', '').strip()
+
+    if not phone or not message:
+        return HttpResponse(
+            '<div class="alert alert-danger">Numéro et message requis.</div>',
+            headers={'HX-Trigger': 'smsError'},
+        )
+
+    factory = RequestFactory()
+    req = factory.post('/communication/webhook/sms/', {
+        'phoneNumber': phone,
+        'message': message,
+    })
+    req.META['SERVER_NAME'] = request.META.get('SERVER_NAME', 'localhost')
+    req.META['SERVER_PORT'] = request.META.get('SERVER_PORT', '8000')
+
+    from django.test.utils import override_settings
+    with override_settings(CELERY_TASK_ALWAYS_EAGER=True):
+        resp = webhook_incoming_sms(req)
+
+    try:
+        data = json.loads(resp.content)
+    except Exception:
+        data = {'status': 'error', 'response': 'Erreur de traitement'}
+
+    from .models import IncomingSMSLog
+    dernier_log = IncomingSMSLog.objects.filter(sender_number=phone).order_by('-created_at').first()
+
+    return render(request, 'communication/partials/sms_direct_result.html', {
+        'data': data,
+        'phone': phone,
+        'message': message,
+        'log': dernier_log,
     })
 
 

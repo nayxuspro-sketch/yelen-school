@@ -22,8 +22,57 @@ import re
 import time
 
 from django.conf import settings
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
+
+SMS_CACHE_KEY = 'yelen_sms_runtime_config'
+
+SMS_VARS = [
+    'SMS_ENABLED', 'SMS_BACKEND',
+    'SMS_HTTP_URL', 'SMS_HTTP_USER', 'SMS_HTTP_PASSWORD', 'SMS_HTTP_TIMEOUT',
+    'SMS_MODEM_PORT', 'SMS_MODEM_BAUD', 'SMS_MODEM_TIMEOUT',
+]
+
+SMS_DEFAULTS = {
+    'SMS_ENABLED':       False,
+    'SMS_BACKEND':       'http',
+    'SMS_HTTP_URL':      'http://192.168.1.100:8080/message',
+    'SMS_HTTP_USER':     'admin',
+    'SMS_HTTP_PASSWORD': '',
+    'SMS_HTTP_TIMEOUT':  10,
+    'SMS_MODEM_PORT':    'COM3',
+    'SMS_MODEM_BAUD':    9600,
+    'SMS_MODEM_TIMEOUT': 10,
+}
+
+
+def get_sms_config() -> dict:
+    """Lit la config SMS : priorite au cache (runtime), puis settings."""
+    runtime = cache.get(SMS_CACHE_KEY, {})
+    config = {}
+    for key in SMS_VARS:
+        if key in runtime:
+            config[key] = runtime[key]
+        else:
+            config[key] = getattr(settings, key, SMS_DEFAULTS.get(key))
+    return config
+
+
+def get_sms_val(key: str):
+    """Lit une seule valeur de config SMS."""
+    runtime = cache.get(SMS_CACHE_KEY, {})
+    if key in runtime:
+        return runtime[key]
+    return getattr(settings, key, SMS_DEFAULTS.get(key))
+
+
+def set_sms_config_runtime(**kwargs):
+    """Ecrit les valeurs runtime dans le cache (prise en compte immediate, sans redemarrage)."""
+    runtime = cache.get(SMS_CACHE_KEY, {})
+    runtime.update(kwargs)
+    cache.set(SMS_CACHE_KEY, runtime, timeout=None)
+    logger.info(f"Config SMS runtime mise a jour : {', '.join(kwargs.keys())}")
 
 
 # ── Validation et normalisation ───────────────────────────────────────────────
@@ -66,10 +115,10 @@ def _envoyer_http(numero: str, message: str) -> tuple:
     import json
     import base64
 
-    url      = getattr(settings, 'SMS_HTTP_URL',      'http://192.168.1.100:8080/message')
-    user     = getattr(settings, 'SMS_HTTP_USER',     'admin')
-    password = getattr(settings, 'SMS_HTTP_PASSWORD', '')
-    timeout  = int(getattr(settings, 'SMS_HTTP_TIMEOUT', 10))
+    url      = get_sms_val('SMS_HTTP_URL')
+    user     = get_sms_val('SMS_HTTP_USER')
+    password = get_sms_val('SMS_HTTP_PASSWORD')
+    timeout  = int(get_sms_val('SMS_HTTP_TIMEOUT'))
 
     payload = json.dumps({
         'message':      message,
@@ -127,9 +176,9 @@ def _get_serial():
             "pyserial non installé. "
             "Copiez le dossier 'serial' depuis votre installation Python vers le venv."
         )
-    port    = getattr(settings, 'SMS_MODEM_PORT',    'COM3')
-    baud    = getattr(settings, 'SMS_MODEM_BAUD',    9600)
-    timeout = getattr(settings, 'SMS_MODEM_TIMEOUT', 10)
+    port    = get_sms_val('SMS_MODEM_PORT')
+    baud    = get_sms_val('SMS_MODEM_BAUD')
+    timeout = int(get_sms_val('SMS_MODEM_TIMEOUT'))
     return serial.Serial(port, baudrate=baud, timeout=timeout)
 
 
@@ -153,7 +202,7 @@ def _envoyer_serial(numero: str, message: str) -> tuple:
         if 'OK' not in rep:
             motif = (
                 f"Le modem ne répond pas à la commande AT (réponse : {rep!r}). "
-                f"Vérifiez le port {getattr(settings, 'SMS_MODEM_PORT', '?')} et le branchement."
+                f"Vérifiez le port {get_sms_val('SMS_MODEM_PORT')} et le branchement."
             )
             logger.error(f"SMS série échoué — {motif}")
             return False, motif
@@ -206,7 +255,7 @@ def envoyer_sms(numero: str, message: str) -> tuple:
         (True, '')           si succès
         (False, 'motif')     si échec
     """
-    if not getattr(settings, 'SMS_ENABLED', False):
+    if not get_sms_val('SMS_ENABLED'):
         return False, "SMS_ENABLED est désactivé dans la configuration."
 
     if not _numero_valide(numero):
@@ -219,7 +268,7 @@ def envoyer_sms(numero: str, message: str) -> tuple:
     if len(message) > 160:
         message = message[:157] + '...'
 
-    backend = getattr(settings, 'SMS_BACKEND', 'http').lower()
+    backend = str(get_sms_val('SMS_BACKEND')).lower()
 
     if backend == 'http':
         return _envoyer_http(numero, message)
@@ -240,9 +289,9 @@ def tester_modem() -> dict:
     Returns:
         dict : {'ok': bool, 'message': str, 'operateur': str|None, 'backend': str}
     """
-    backend = getattr(settings, 'SMS_BACKEND', 'http').lower()
+    backend = str(get_sms_val('SMS_BACKEND')).lower()
 
-    if not getattr(settings, 'SMS_ENABLED', False):
+    if not get_sms_val('SMS_ENABLED'):
         return {
             'ok': False,
             'message': 'SMS désactivé (SMS_ENABLED=False)',
@@ -254,10 +303,10 @@ def tester_modem() -> dict:
         import urllib.request
         import urllib.error
         import base64
-        url      = getattr(settings, 'SMS_HTTP_URL', 'http://192.168.1.100:8080/message')
-        user     = getattr(settings, 'SMS_HTTP_USER', 'admin')
-        password = getattr(settings, 'SMS_HTTP_PASSWORD', '')
-        timeout  = int(getattr(settings, 'SMS_HTTP_TIMEOUT', 5))
+        url      = get_sms_val('SMS_HTTP_URL')
+        user     = get_sms_val('SMS_HTTP_USER')
+        password = get_sms_val('SMS_HTTP_PASSWORD')
+        timeout  = int(get_sms_val('SMS_HTTP_TIMEOUT'))
         # Ping sur /health (endpoint de l'app SMS Gateway)
         base_url = '/'.join(url.split('/')[:3]) + '/health'
         credentials = base64.b64encode(f"{user}:{password}".encode()).decode()

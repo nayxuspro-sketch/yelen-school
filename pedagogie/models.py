@@ -573,6 +573,14 @@ class Competence(BaseModel):
         related_name='competences',
         verbose_name=_("Matière"),
     )
+    class CategorieChoices(models.TextChoices):
+        SAVOIRS_ACAD   = 'SAVOIRS_ACAD',   _("Savoirs académiques")
+        COMP_PRATIQUE  = 'COMP_PRATIQUE',  _("Compétences pratiques de vie")
+        HYGIENE        = 'HYGIENE',        _("Hygiène et santé collective")
+        ENVIRONNEMENT  = 'ENVIRONNEMENT',  _("Environnement et développement durable")
+        PATRIMOINE     = 'PATRIMOINE',     _("Citoyenneté et patrimoine")
+        TRANSVERSALE   = 'TRANSVERSALE',   _("Compétence transversale")
+
     libelle = models.CharField(
         max_length=300,
         verbose_name=_("Libellé de la compétence"),
@@ -580,6 +588,12 @@ class Competence(BaseModel):
     description = models.TextField(
         blank=True, default='',
         verbose_name=_("Description / indicateurs"),
+    )
+    categorie = models.CharField(
+        max_length=30,
+        choices=CategorieChoices.choices,
+        default=CategorieChoices.SAVOIRS_ACAD,
+        verbose_name=_("Catégorie APC"),
     )
     ordre = models.PositiveSmallIntegerField(
         default=0,
@@ -590,7 +604,7 @@ class Competence(BaseModel):
     class Meta:
         verbose_name = _("Compétence")
         verbose_name_plural = _("Compétences")
-        ordering = ['cycle', 'matiere__code', 'ordre', 'libelle']
+        ordering = ['cycle', 'matiere__code', 'categorie', 'ordre', 'libelle']
 
     def __str__(self):
         mat = self.matiere.code if self.matiere else "—"

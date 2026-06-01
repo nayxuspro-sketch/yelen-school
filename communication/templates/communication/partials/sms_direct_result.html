@@ -1,0 +1,36 @@
+<div class="card mt-3" style="border-left:3px solid {% if data.status == 'success' %}#00A86B{% else %}#E53E3E{% endif %};">
+  <div class="card-body">
+    <div class="d-flex align-center gap-2 mb-2">
+      <span class="badge {% if data.status == 'success' %}badge-success{% else %}badge-danger{% endif %}">
+        {{ data.status|upper }}
+      </span>
+      <span class="text-sm text-muted">Réponse du serveur</span>
+    </div>
+
+    <div class="d-flex gap-3 flex-wrap">
+      <div class="form-group" style="flex:1; min-width:200px;">
+        <label class="input-label">📤 Message envoyé</label>
+        <div class="input" style="background:#0D1B2E; cursor:default;">
+          <span class="text-sm">{{ message }}</span>
+        </div>
+      </div>
+      <div class="form-group" style="flex:1; min-width:200px;">
+        <label class="input-label">📩 Réponse reçue (simulation SMS)</label>
+        <div class="input" style="background:rgba(0,168,107,0.06); cursor:default; border-color:rgba(0,168,107,0.2);">
+          <span class="text-sm" style="color:#00A86B;">{{ data.response }}</span>
+        </div>
+      </div>
+    </div>
+
+    {% if log %}
+    <div class="d-flex gap-2 mt-2 flex-wrap">
+      <span class="text-xs text-muted">Expéditeur : {{ log.sender_number }}</span>
+      <span class="text-xs text-muted">· Commande : {{ log.command_type }}</span>
+      {% if log.eleve %}
+      <span class="text-xs text-muted">· Élève : {{ log.eleve.nom|upper }} {{ log.eleve.prenom }}</span>
+      {% endif %}
+      <span class="text-xs text-muted">· {{ log.created_at|date:"H:i:s" }}</span>
+    </div>
+    {% endif %}
+  </div>
+</div>

@@ -1,10 +1,10 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 4.2
-version_guide: 2.15
-date_mise_a_jour: 13/05/2026 (v2.15)
-modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail]
-modules_en_attente: [portail_parent, transferts, api_rest]
+version_guide: 2.16
+date_mise_a_jour: 01/06/2026 (v2.16)
+modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc]
+modules_en_attente: [portail_parent, transferts, api_rest, orientation_postbac, solar_guard]
 redige_par: Agent IA — Développement YELEN SCHOOL
 ---
 
@@ -4609,17 +4609,30 @@ Si une prédiction a été calculée, un widget apparaît automatiquement sur la
 
 ---
 
-## 23. Bulletins de Compétences (Préscolaire / Primaire)
+## 23. Carnet APC Sahélien — Évaluation par Compétences (Préscolaire / Primaire)
 
-Ce module remplace les notes chiffrées sur 20 par une évaluation par compétences pour les cycles Préscolaire et Primaire, plus adaptée au développement du jeune enfant.
+Ce module implémente l'**Approche Par Compétences (APC)** obligatoire pour les cycles Préscolaire et Primaire au Burkina Faso. Il remplace les notes chiffrées sur 20 par une évaluation par **feux tricolores** (Acquis / En cours / Non acquis) adaptée au développement du jeune enfant et au contexte sahélien.
 
-### 23.1 Accès
+### 23.1 Catégories de compétences APC
+
+Les compétences sont classées en **6 catégories** adaptées au contexte burkinabè :
+
+| Catégorie | Description | Exemples |
+| --- | --- | --- |
+| **Savoirs académiques** | Compétences fondamentales (lecture, écriture, calcul) | Lire un texte, compter jusqu'à 100 |
+| **Compétences pratiques de vie** | Savoir-faire quotidiens | Jardiner, préparer un repas simple |
+| **Hygiène et santé collective** | Prévention et bien-être | Se laver les mains, hygiène dentaire |
+| **Environnement et développement durable** | Sensibilisation écologique | Lutter contre la désertification, tri des déchets |
+| **Citoyenneté et patrimoine** | Éducation civique et culturelle | Respect des aînés, patrimoine local |
+| **Compétence transversale** | Compétence interdisciplinaire | Travail en groupe, résolution de problèmes |
+
+### 23.2 Accès
 
 `Pédagogie → Bulletins compétences`
 
 Seuls les cycles **Préscolaire** (code PRES) et **Primaire** (code PRIM) sont affichés.
 
-### 23.2 Étape 1 — Configurer le référentiel
+### 23.3 Étape 1 — Configurer le référentiel
 
 Avant toute saisie, il faut définir les compétences à évaluer :
 
@@ -4627,31 +4640,38 @@ Avant toute saisie, il faut définir les compétences à évaluer :
 2. Cliquer sur **Référentiel**
 3. Ajouter les compétences une par une :
    - **Libellé** (obligatoire) : ex. "Reconnaît et écrit les chiffres de 0 à 9"
+   - **Catégorie APC** : sélectionner la catégorie appropriée
    - **Matière** (facultative) : associer la compétence à une matière du cycle
    - **Ordre** : numéro d'ordre pour organiser l'affichage
 
-Exemples de compétences Primaire :
+Les compétences sont regroupées par **catégorie APC** dans le tableau du référentiel, facilitant la navigation.
 
-- `[MATH]` Compte jusqu'à 100 sans erreur
-- `[MATH]` Effectue des additions simples sans retenue
-- `[LANG]` Lit un texte court à voix haute
-- `[LANG]` Écrit son prénom et son nom correctement
+Exemples de compétences par catégorie :
 
-### 23.3 Étape 2 — Saisir les évaluations
+| Catégorie | Compétence |
+| --- | --- |
+| Savoirs académiques | Compte jusqu'à 100 sans erreur |
+| Savoirs académiques | Lit un texte court à voix haute |
+| Compétences pratiques | Plante et entretient un arbre à l'école |
+| Hygiène et santé | Se lave les mains avant le repas |
+| Environnement | Trie les déchets dans la poubelle adaptée |
+| Patrimoine | Connaît les symboles de la nation |
+
+### 23.4 Étape 2 — Saisir les évaluations (HTMX)
 
 1. Sur la page d'accueil, cliquer sur le nom de la **classe** sous le cycle
 2. Sélectionner le **trimestre**
-3. La grille affiche : élèves en lignes × compétences en colonnes
-4. Pour chaque cellule, sélectionner le niveau :
-   - **✅ Acquis** — L'élève maîtrise la compétence
-   - **🔄 En cours d'acquisition** — Des progrès visibles mais pas encore maîtrisé
-   - **❌ Non acquis** — Un accompagnement est nécessaire
-   - **— Non évalué** (valeur par défaut)
-5. Cliquer **Enregistrer les évaluations**
+3. Les élèves sont affichés sous forme de **cartes individuelles pliables**
+4. Pour chaque compétence, cliquer sur le **bouton de niveau** pour basculer entre les états :
+   - **Bouton vert** → **Acquis** (compétence maîtrisée)
+   - **Bouton orange** → **En cours d'acquisition** (progrès visibles)
+   - **Bouton rouge** → **Non acquis** (accompagnement nécessaire)
+   - **Bouton gris** → **Non évalué** (pas encore observé)
+5. Chaque clic **sauvegarde automatiquement** via HTMX — pas besoin de bouton "Enregistrer"
 
-La grille mémorise les niveaux déjà saisis — revenir modifier ne repart pas de zéro.
+Les 3 premières cartes sont dépliées par défaut. Cliquer sur l'en-tête d'une carte pour la déplier/replier.
 
-### 23.4 Étape 3 — Générer le bulletin PDF
+### 23.5 Étape 3 — Générer le bulletin PDF
 
 Depuis la page de saisie, section **Bulletins individuels PDF** :
 
@@ -4659,21 +4679,32 @@ Depuis la page de saisie, section **Bulletins individuels PDF** :
 - Le bulletin s'ouvre dans un nouvel onglet avec :
   - En-tête établissement
   - Identité de l'élève (nom, matricule, classe, trimestre)
-  - Compétences regroupées par matière avec leur niveau
+  - Compétences regroupées par catégorie APC avec leur niveau
+  - Barres de progression colorées par catégorie
+  - Synthèse des acquisitions (Acquis / En cours / Non acquis)
   - Zone de signatures (enseignant · parent · cachet)
 
-### 23.5 Niveaux d'acquisition
+### 23.6 Intégration au bulletin trimestriel
 
-| Niveau | Symbole | Signification |
+Pour les cycles Préscolaire et Primaire, la section **Évaluation par compétences (APC)** est automatiquement intégrée au bulletin de notes trimestriel standard, entre les notes et la conduite.
+
+Le bulletin inclut :
+- Un tableau détaillé de toutes les compétences par catégorie
+- Des barres de progression colorées
+- Un récapitulatif chiffré des acquisitions
+
+### 23.7 Niveaux d'acquisition
+
+| Niveau | Couleur | Signification |
 | --- | --- | --- |
-| Acquis | ✅ | Compétence maîtrisée |
-| En cours d'acquisition | 🔄 | Progrès en cours |
-| Non acquis | ❌ | Accompagnement nécessaire |
-| Non évalué | — | Pas encore observé |
+| Acquis | Vert | Compétence maîtrisée |
+| En cours d'acquisition | Orange | Progrès en cours |
+| Non acquis | Rouge | Accompagnement nécessaire |
+| Non évalué | Gris | Pas encore observé |
 
-### 23.6 Compatibilité avec le système de notes
+### 23.8 Compatibilité avec le système de notes
 
-Ce module est une **extension** du système existant — il ne remplace pas les notes chiffrées. Pour les classes Primaire qui utilisent à la fois des notes ET des compétences, les deux évaluations coexistent indépendamment.
+Ce module est une **extension** du système existant — il ne remplace pas les notes chiffrées. Pour les classes Primaire qui utilisent à la fois des notes ET des compétences, les deux évaluations coexistent indépendamment dans le bulletin.
 
 ---
 
@@ -5499,7 +5530,22 @@ MASTER_SMS_NUMBERS = [
 
 ---
 
-### 10.5 Journal des SMS (Audit Log)
+### 10.5 Simulateur Web (Administrateur)
+
+Une interface de **simulation** est disponible pour les administrateurs qui souhaitent tester le système SMS Direct sans passerelle SMS réelle :
+
+1. Aller dans **Communication → SMS Direct** (dans la barre latérale)
+2. Saisir un **numéro de téléphone** (doit correspondre à un parent enregistré)
+3. Saisir une **commande** (NOTE, SOLDE, ABS, AIDE)
+4. Cliquer **Envoyer la requête SMS**
+
+Le simulateur :
+- Envoie la requête au même webhook que la passerelle SMS réelle
+- Affiche la réponse exacte que le parent recevrait par SMS
+- Enregistre la requête dans le journal d'audit (`IncomingSMSLog`)
+- Affiche l'historique des 20 dernières requêtes
+
+### 10.6 Journal des SMS (Audit Log)
 
 Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via l'administration Django :
 

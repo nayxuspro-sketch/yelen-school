@@ -84,6 +84,15 @@
         <input type="text" name="libelle" class="input" required
                placeholder="Ex : Reconnaît et écrit les chiffres de 0 à 9">
       </div>
+      <!-- Catégorie APC -->
+      <div class="form-group">
+        <label class="input-label">Catégorie APC</label>
+        <select name="categorie" class="input">
+          {% for val, label in categories.items %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
       <!-- Matière + Ordre -->
       <div class="form-grid-2">
         <div class="form-group">
@@ -125,7 +134,7 @@
   </div>
 
   {% if competences %}
-  {% regroup competences by matiere as groupes_matiere %}
+  {% regroup competences by get_categorie_display as groupes_cat %}
   <div class="table-wrapper">
     <table class="data-table">
       <thead>
@@ -133,21 +142,18 @@
           <th style="width:36px;">#</th>
           <th style="width:110px;">Matière</th>
           <th>Libellé de la compétence</th>
+          <th style="width:130px;">Catégorie APC</th>
           <th style="width:60px;" class="text-center">Ord.</th>
           <th style="width:90px;" class="text-center">Action</th>
         </tr>
       </thead>
       <tbody>
-        {% for groupe in groupes_matiere %}
+        {% for groupe in groupes_cat %}
         <!-- Séparateur de groupe -->
         <tr class="table-group-row">
-          <td colspan="5">
-            <span class="badge {% if groupe.grouper %}badge-info{% else %}badge-neutral{% endif %}">
-              {% if groupe.grouper %}
-              {{ groupe.grouper.code }} — {{ groupe.grouper.nom }}
-              {% else %}
-              Compétences transversales
-              {% endif %}
+          <td colspan="6">
+            <span class="badge badge-primary" style="background:rgba(0,168,107,0.15); color:#00A86B;">
+              {{ groupe.grouper }}
             </span>
           </td>
         </tr>
@@ -162,6 +168,7 @@
             {% endif %}
           </td>
           <td>{{ comp.libelle }}</td>
+          <td><span class="text-xs text-muted">{{ comp.get_categorie_display }}</span></td>
           <td class="text-center text-muted">{{ comp.ordre }}</td>
           <td class="text-center">
             <form method="post" action="{% url 'pedagogie:competence_supprimer' comp.pk %}"

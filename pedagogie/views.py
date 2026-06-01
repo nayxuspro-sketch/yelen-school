@@ -1099,6 +1099,34 @@ def _build_bulletin_context(request, inscription, trimestre):
         mg, nb_eleves, stats_classe['avg_moy'], resultats_annotes, sanctions_conduite
     )
 
+    # Compétences APC (Préscolaire / Primaire uniquement)
+    competences_data = None
+    if cycle and cycle.code in ('PRES', 'PRIM'):
+        competences_qs = (
+            Competence.objects.filter(cycle=cycle, actif=True)
+            .select_related('matiere')
+            .order_by('matiere__code', 'categorie', 'ordre')
+        )
+        evals_qs = EvaluationCompetence.objects.filter(
+            inscription=inscription,
+            competence__in=competences_qs,
+            trimestre=trimestre,
+        )
+        evals_map = {str(ev.competence_id): ev for ev in evals_qs}
+
+        from collections import defaultdict
+        groupes = defaultdict(list)
+        for comp in competences_qs:
+            ev = evals_map.get(str(comp.pk))
+            groupes[comp.get_categorie_display()].append({'competence': comp, 'evaluation': ev})
+        competences_data = {
+            'groupes': [(cat, items) for cat, items in groupes.items()],
+            'total': competences_qs.count(),
+            'acquis': sum(1 for ev in evals_map.values() if ev.niveau == 'ACQUIS'),
+            'en_cours': sum(1 for ev in evals_map.values() if ev.niveau == 'EN_COURS'),
+            'non_acquis': sum(1 for ev in evals_map.values() if ev.niveau == 'NON_ACQUIS'),
+        }
+
     return {
         'inscription': inscription,
         'trimestre': trimestre,
@@ -1119,6 +1147,7 @@ def _build_bulletin_context(request, inscription, trimestre):
         'signataire': signataire,
         'signataire_membre': signataire_membre,
         'date_lieu': date_lieu,
+        'competences_data': competences_data,
     }
 
 
@@ -1191,6 +1220,26 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     ).select_related('type_sanction').order_by('date_sanction'):
         sanctions_par_ins.setdefault(s.inscription_id, []).append(s)
 
+    # Compétences APC (batch: précharger pour tous les élèves du cycle PRES/PRIM)
+    cycle = classe.cycle
+    competences_par_ins = {}
+    if cycle and cycle.code in ('PRES', 'PRIM'):
+        competences_qs = list(
+            Competence.objects.filter(cycle=cycle, actif=True)
+            .select_related('matiere')
+            .order_by('matiere__code', 'categorie', 'ordre')
+        )
+        all_evals = EvaluationCompetence.objects.filter(
+            inscription__in=inscriptions,
+            competence__in=competences_qs,
+            trimestre=trimestre,
+        )
+        for ins_pk in inscriptions.values_list('pk', flat=True):
+            competences_par_ins[ins_pk] = {'competences': competences_qs, 'evals_map': {}}
+        for ev in all_evals:
+            competences_par_ins.setdefault(ev.inscription_id, {'competences': competences_qs, 'evals_map': {}})
+            competences_par_ins[ev.inscription_id]['evals_map'][str(ev.competence_id)] = ev
+
     students_data = []
     for ins in inscriptions:
         try:
@@ -1198,13 +1247,32 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
             resultats = list(Resultat.objects.filter(inscription=ins, trimestre=trimestre).select_related('enseignement__matiere', 'enseignement__personnel'))
             resultats_annotes = _annotate_resultats(resultats, apprs, cycle_code)
             sanctions = sanctions_par_ins.get(ins.pk, [])
+
+            # Compétences APC pour cet élève
+            competences_data = None
+            if cycle and cycle.code in ('PRES', 'PRIM') and ins.pk in competences_par_ins:
+                cdata = competences_par_ins[ins.pk]
+                from collections import defaultdict
+                groupes = defaultdict(list)
+                for comp in cdata['competences']:
+                    ev = cdata['evals_map'].get(str(comp.pk))
+                    groupes[comp.get_categorie_display()].append({'competence': comp, 'evaluation': ev})
+                competences_data = {
+                    'groupes': [(cat, items) for cat, items in groupes.items()],
+                    'total': len(cdata['competences']),
+                    'acquis': sum(1 for ev in cdata['evals_map'].values() if ev.niveau == 'ACQUIS'),
+                    'en_cours': sum(1 for ev in cdata['evals_map'].values() if ev.niveau == 'EN_COURS'),
+                    'non_acquis': sum(1 for ev in cdata['evals_map'].values() if ev.niveau == 'NON_ACQUIS'),
+                }
+
             students_data.append({
                 'inscription': ins,
                 'mg': mg,
                 'resultats_annotes': resultats_annotes,
                 'appreciation_generale': _get_appreciation_generale(ins, mg, etab),
                 'sanctions_conduite': sanctions,
-                'commentaire_eleve': None,  # calculé après (besoin de moy_avg_classe)
+                'commentaire_eleve': None,
+                'competences_data': competences_data,
             })
         except MoyenneGenerale.DoesNotExist:
             continue
@@ -2739,10 +2807,15 @@ def competences_referentiel(request, cycle_id):
         configurations_cycle__cycle=cycle
     ).order_by('code').distinct()
 
+    categories = {
+        k: str(v) for k, v in Competence.CategorieChoices.choices
+    }
+
     if request.method == 'POST':
         libelle = request.POST.get('libelle', '').strip()
         matiere_id = request.POST.get('matiere') or None
         ordre = int(request.POST.get('ordre', 0) or 0)
+        categorie = request.POST.get('categorie', Competence.CategorieChoices.SAVOIRS_ACAD)
         if libelle:
             matiere = Matiere.objects.filter(pk=matiere_id).first() if matiere_id else None
             Competence.objects.create(
@@ -2750,6 +2823,7 @@ def competences_referentiel(request, cycle_id):
                 matiere=matiere,
                 libelle=libelle,
                 ordre=ordre,
+                categorie=categorie,
             )
             messages.success(request, "Compétence ajoutée.")
         return redirect('pedagogie:competences_referentiel', cycle_id=cycle_id)
@@ -2758,6 +2832,7 @@ def competences_referentiel(request, cycle_id):
         'cycle': cycle,
         'competences': competences,
         'matieres': matieres,
+        'categories': categories,
         'etablissement': etab,
     })
 
@@ -2847,6 +2922,50 @@ def competences_saisie(request, classe_id):
         'grille_json': grille_json,
         'niveaux': EvaluationCompetence.NiveauChoices,
         'etablissement': etab,
+    })
+
+
+@login_required
+@require_POST
+def competence_sauvegarder(request):
+    """Sauvegarde HTMX individuelle d'une évaluation de compétence."""
+    ins_id = request.POST.get('inscription')
+    comp_id = request.POST.get('competence')
+    trim_id = request.POST.get('trimestre')
+    niveau = request.POST.get('niveau', EvaluationCompetence.NiveauChoices.NON_EVALUE)
+
+    niveaux_vals = [v for v, _ in EvaluationCompetence.NiveauChoices.choices]
+    if niveau not in niveaux_vals:
+        niveau = EvaluationCompetence.NiveauChoices.NON_EVALUE
+
+    ins = get_object_or_404(Inscription, pk=ins_id)
+    comp = get_object_or_404(Competence, pk=comp_id)
+    trim = get_object_or_404(Trimestre, pk=trim_id)
+
+    EvaluationCompetence.objects.update_or_create(
+        inscription=ins,
+        competence=comp,
+        trimestre=trim,
+        defaults={'niveau': niveau},
+    )
+
+    competences = (
+        Competence.objects.filter(cycle=ins.classe.cycle, actif=True)
+        .select_related('matiere')
+        .order_by('matiere__code', 'categorie', 'ordre')
+    )
+    evals_qs = EvaluationCompetence.objects.filter(
+        inscription=ins, competence__in=competences, trimestre=trim
+    )
+    grille = {}
+    for ev in evals_qs:
+        grille.setdefault(str(ev.inscription_id), {})[str(ev.competence_id)] = ev
+
+    return render(request, 'pedagogie/partials/competence_eleve_card.html', {
+        'ins': ins,
+        'competences': competences,
+        'grille': grille,
+        'trimestre': trim,
     })
 
 

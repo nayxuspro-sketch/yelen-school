@@ -224,6 +224,16 @@ html, body {
     font-size: 8.5pt;
 }
 
+/* ── Compétences APC ── */
+.bul-comp-table { width:100%; border-collapse:collapse; font-size:7.5pt; }
+.bul-comp-table td { padding:1.5pt 3pt; border-bottom:0.5pt solid #eee; }
+.bul-comp-cat { font-weight:700; font-size:6.5pt; color:#111; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+.bul-comp-stat { flex:1; border:1pt solid #ccc; border-left:3pt solid #555; padding:2pt 4pt; text-align:center; }
+.bul-comp-stat-val { font-size:10pt; font-weight:700; display:block; }
+.bul-comp-stat-lbl { font-size:6pt; text-transform:uppercase; letter-spacing:0.04em; color:#555; }
+.bul-comp-bar-wrap { display:flex; gap:4pt; flex-wrap:wrap; margin:2pt 0; }
+.bul-comp-bar { height:6pt; border-radius:2pt; min-width:2pt; }
+
 /* ── Signatures ── */
 .bul-sig-grid {
     display: grid;
@@ -357,6 +367,87 @@ html, body {
         </tbody>
     </table>
 </div>
+
+{% if competences_data %}
+<!-- ══ COMPÉTENCES APC ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Évaluation par compétences (APC)</div>
+    <div class="bul-card-body">
+        {% with cd=competences_data %}
+        <!-- Barres de progression par catégorie -->
+        <div style="display:flex; gap:4pt; margin-bottom:3pt;">
+            {% for cat, items in cd.groupes %}
+            {% with total=items|length %}
+            <div style="flex:1; min-width:70pt;">
+                <div style="font-size:6pt; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:#555; margin-bottom:1pt;">{{ cat|truncatechars:12 }}</div>
+                <div style="display:flex; height:5pt; border-radius:2pt; overflow:hidden; background:#eee;">
+                    {% for item in items %}
+                    {% with ev=item.evaluation %}
+                    <div class="bul-comp-bar" style="background:{% if not ev %}#ccc{% elif ev.niveau == 'ACQUIS' %}#065f46{% elif ev.niveau == 'EN_COURS' %}#92400e{% elif ev.niveau == 'NON_ACQUIS' %}#991b1b{% else %}#ccc{% endif %}; width:{% widthratio 1 total 100 %}%;"></div>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        <!-- Tableau détaillé des compétences -->
+        <table class="bul-comp-table">
+            <thead>
+                <tr>
+                    <th class="bul-comp-cat" style="width:25%;">Catégorie</th>
+                    <th style="width:55%;">Compétence</th>
+                    <th style="width:20%; text-align:center;">Niveau</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat, items in cd.groupes %}
+                {% for item in items %}
+                <tr>
+                    {% if forloop.first %}
+                    <td class="bul-comp-cat" rowspan="{{ items|length }}">{{ cat }}</td>
+                    {% endif %}
+                    <td>{{ item.competence.libelle }}</td>
+                    <td style="text-align:center;">
+                        {% with ev=item.evaluation %}
+                        {% if ev %}
+                        <span style="font-size:7.5pt; font-weight:700;
+                            {% if ev.niveau == 'ACQUIS' %}color:#065f46;{% elif ev.niveau == 'EN_COURS' %}color:#92400e;{% elif ev.niveau == 'NON_ACQUIS' %}color:#991b1b;{% else %}color:#999;{% endif %}">
+                            {{ ev.get_niveau_display }}
+                        </span>
+                        {% else %}
+                        <span style="color:#ccc;">—</span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <!-- Synthèse -->
+        <div style="display:flex; gap:6pt; margin-top:3pt;">
+            <div class="bul-comp-stat" style="background:#d1fae5; border-left-color:#065f46;">
+                <span class="bul-comp-stat-val">{{ cd.acquis }}</span>
+                <span class="bul-comp-stat-lbl">Acquis</span>
+            </div>
+            <div class="bul-comp-stat" style="background:#fef3c7; border-left-color:#92400e;">
+                <span class="bul-comp-stat-val">{{ cd.en_cours }}</span>
+                <span class="bul-comp-stat-lbl">En cours</span>
+            </div>
+            <div class="bul-comp-stat" style="background:#fee2e2; border-left-color:#991b1b;">
+                <span class="bul-comp-stat-val">{{ cd.non_acquis }}</span>
+                <span class="bul-comp-stat-lbl">Non acquis</span>
+            </div>
+            <div class="bul-comp-stat" style="background:#f3f4f6; border-left-color:#6b7280;">
+                <span class="bul-comp-stat-val">{{ cd.total }}</span>
+                <span class="bul-comp-stat-lbl">Total</span>
+            </div>
+        </div>
+        {% endwith %}
+    </div>
+</div>
+{% endif %}
 
 {% if sanctions_conduite %}
 <!-- ══ CONDUITE ══ -->

@@ -8,7 +8,7 @@
 <div class="page-header animate-fade-up">
   <div>
     <h1 class="page-title">Configuration SMS</h1>
-    <p class="page-subtitle">Paramètres de communication par SMS</p>
+    <p class="page-subtitle">Paramètres de communication par SMS — Webhook SMS Direct</p>
   </div>
   <div>
     <span class="badge badge-{% if config.SMS_ENABLED %}success{% else %}neutral{% endif %}">
@@ -25,8 +25,34 @@
 </div>
 {% endif %}
 
+{# ── 0. URL du Webhook SMS Direct ── #}
+<div class="card mb-6 animate-fade-up delay-1" style="border-left:3px solid #00A86B;">
+  <div class="card-header">
+    <span class="card-title">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+      </svg>
+      URL Endpoint du Webhook SMS
+    </span>
+    <button class="btn-secondary btn-sm" onclick="copierWebhook()" id="btn-copy-url">
+      Copier l'URL
+    </button>
+  </div>
+  <div class="card-body">
+    <div class="d-flex align-center gap-2 flex-wrap">
+      <code id="webhook-url" class="input" style="flex:1; padding:10px 14px; font-family:'DejaVu Sans Mono',monospace; font-size:13px; color:#00A86B; word-break:break-all; cursor:text;">
+        {{ webhook_url }}
+      </code>
+    </div>
+    <div class="d-flex gap-4 mt-2 flex-wrap text-xs text-muted">
+      <span>📱 Configurez cette URL dans l'App Android SMS Gateway</span>
+      <span>· Formats supportés : JSON POST, Form POST, GET</span>
+    </div>
+  </div>
+</div>
+
 {# ── 1. Paramètres de Backend ── #}
-<div class="card mb-6 animate-fade-up delay-1">
+<div class="card mb-6 animate-fade-up delay-2">
   <div class="card-header">
     <div class="d-flex align-center gap-3">
       <div class="param-icon">
@@ -63,7 +89,7 @@
 
     <div id="config-http" class="{% if config.SMS_BACKEND != 'http' %}d-none{% endif %}">
       <div class="mb-4">
-        <label class="input-label">URL Endpoint</label>
+        <label class="input-label">URL Endpoint de la passerelle Android</label>
         <input type="text" name="SMS_HTTP_URL" class="input w-full" value="{{ config.SMS_HTTP_URL }}" placeholder="http://192.168.1.100:8080/message">
       </div>
       <div class="d-flex gap-4 mb-4 flex-wrap">
@@ -99,7 +125,7 @@
     </div>
 
     <div class="d-flex align-center gap-4 mt-6 flex-wrap">
-      <button type="submit" name="sauvegarder" class="btn btn-primary">
+      <button type="submit" name="sauvegarder" class="btn-primary">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
           <polyline points="17 21 17 13 7 13 7 21"/>
@@ -107,13 +133,13 @@
         </svg>
         Enregistrer
       </button>
-      <span class="text-muted text-sm">Un redémarrage est nécessaire pour appliquer les changements.</span>
+      <span class="text-muted text-sm">Les changements sont appliqués immédiatement (sans redémarrage).</span>
     </div>
   </form>
 </div>
 
 {# ── 2. Test de Connectivité ── #}
-<div class="card mb-6 animate-fade-up delay-2">
+<div class="card mb-6 animate-fade-up delay-3">
   <div class="card-header">
     <div class="d-flex align-center gap-3">
       <div class="param-icon param-icon-info">
@@ -128,7 +154,7 @@
   <form method="post">
     {% csrf_token %}
     <div class="d-flex align-center gap-4 flex-wrap">
-      <button type="submit" name="tester" class="btn btn-secondary" {% if not config.SMS_ENABLED %}disabled{% endif %}>
+      <button type="submit" name="tester" class="btn-secondary" {% if not config.SMS_ENABLED %}disabled{% endif %}>
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M12 2L2 7l10 5 10-5-10-5z"/>
           <path d="M2 17l10 5 10-5"/>
@@ -155,7 +181,7 @@
 </div>
 
 {# ── 3. Envoi Manuel de Test ── #}
-<div class="card animate-fade-up delay-3">
+<div class="card animate-fade-up delay-4">
   <div class="card-header">
     <div class="d-flex align-center gap-3">
       <div class="param-icon param-icon-warning">
@@ -175,7 +201,7 @@
                placeholder="+226 70 00 00 00"
                {% if not config.SMS_ENABLED %}disabled{% endif %}>
       </div>
-      <button type="submit" name="envoyer_test" class="btn btn-primary" {% if not config.SMS_ENABLED %}disabled{% endif %}>
+      <button type="submit" name="envoyer_test" class="btn-primary" {% if not config.SMS_ENABLED %}disabled{% endif %}>
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M22 2L11 13"/>
           <path d="M22 2L15 22l-4-9-9-4z"/>
@@ -186,6 +212,28 @@
     <p class="text-muted text-sm mt-3">Note : Ce test utilise les cr&eacute;dits de la carte SIM.</p>
   </form>
 </div>
+
+<script>
+function copierWebhook() {
+  var url = document.getElementById('webhook-url');
+  var btn = document.getElementById('btn-copy-url');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url.textContent.trim()).then(function() {
+      btn.textContent = '✓ Copié !';
+      setTimeout(function() { btn.textContent = 'Copier l\'URL'; }, 2000);
+    });
+  } else {
+    var range = document.createRange();
+    range.selectNodeContents(url);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    btn.textContent = '✓ Copié !';
+    setTimeout(function() { btn.textContent = 'Copier l\'URL'; }, 2000);
+  }
+}
+</script>
 
 <script>
 document.getElementById('id_sms_backend').addEventListener('change', function() {
