@@ -2624,6 +2624,23 @@ input::-webkit-strong-password-auto-fill-button {
   height: 18px;
   display: block;
   pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+/* Icône cachée — remplace tout style="display:none" inline */
+.pw-icon-hidden {
+  display: none !important;
+}
+
+/* Effet actif : bouton œil allumé */
+.login-clean-pw-toggle.is-active {
+  color: var(--color-primary);
+}
+
+.login-clean-pw-toggle.is-active:hover {
+  color: var(--color-primary-light);
+  background: rgba(0,168,107,0.08);
 }
 
 /* ── Checkbox ── */

@@ -264,7 +264,7 @@ Ouvre ton navigateur et saisis l'adresse du logiciel. Tu arrives sur la page de 
 - Panneau formulaire : glassmorphism subtil, backdrop-filter blur
 - Champs avec icônes SVG intégrées et anneau vert au focus
 - Bouton dégradé vert avec élévation au survol (`translateY(-2px)`)
-- Toggle mot de passe : bouton indépendant (hors shadow DOM) utilisant `inp.type` (propriété directe, `'password'` / `'text'`) avec état suivi via `data-pw-visible` ; icônes SVG œil ouvert/fermé commutées par `style.display`, protégées des clics intempestifs par `pointer-events: none` en CSS (`.login-clean-pw-toggle svg`)
+- **Toggle mot de passe (v4.2.1) :** bouton œil indépendant (`#btn-pw-toggle`) positionné à droite du champ. Au clic, bascule `inp.type` entre `'password'` et `'text'`. La visibilité des deux icônes SVG (œil ouvert / œil barré) est gérée par la classe CSS `.pw-icon-hidden` (`display: none !important`) — aucun `style` inline. Le bouton reçoit la classe `.is-active` (vert `#00A86B`) quand le mot de passe est visible, et revient à la couleur neutre quand il est masqué. L'attribut `aria-pressed` et `aria-label` sont mis à jour dynamiquement pour l'accessibilité.
 - Spinner de chargement animé pendant la soumission
 - Accès rapides pour tester les différents profils
 - Responsive : panneau branding masqué sous 960 px
