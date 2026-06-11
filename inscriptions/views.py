@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -1300,3 +1301,146 @@ def transfert_inter_dossier_pdf(request, pk):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{filename}"'
     return response
+
+
+# ═══════════════════════════════════════════════════════════════════
+# IMPORT / EXPORT — Template et import XLSX
+# ═══════════════════════════════════════════════════════════════════
+
+_COLONNES_IMPORT = [
+    'Nom *', 'Prénom(s) *', 'Genre (M/F) *', 'Date naissance (DD/MM/AAAA) *',
+    'Lieu naissance *', 'Nationalité', 'Province', 'Commune', 'Village',
+    'Téléphone urgence', 'Email',
+    'Nom père', 'Profession père', 'Nom mère', 'Profession mère',
+    'Téléphone parents', 'Nom tuteur', 'Téléphone tuteur', 'Adresse tuteur',
+    'Établissement origine',
+]
+
+
+@login_required
+def eleve_import_template(request):
+    """Télécharge un modèle Excel vide pour l'import d'élèves."""
+    from core.excel import ExcelExport
+    wb = ExcelExport("Import élèves")
+    wb.add_title("Modèle d'import — Élèves", "Remplir ce fichier puis importer-le dans YELEN SCHOOL")
+    wb.add_header(_COLONNES_IMPORT)
+    wb.add_row([''] * len(_COLONNES_IMPORT))
+    return wb.response("modele_import_eleves.xlsx")
+
+
+@login_required
+def eleve_import(request):
+    """Importe un fichier XLSX contenant des élèves."""
+    from core.excel import _HAS_OPENPYXL
+    if not _HAS_OPENPYXL:
+        messages.error(request, "openpyxl n'est pas installé sur le serveur.")
+        return redirect('inscriptions:eleve_list')
+
+    if request.method == 'POST' and request.FILES.get('fichier'):
+        fichier = request.FILES['fichier']
+        if not fichier.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, "Format de fichier non supporté. Utilisez un fichier .xlsx.")
+            return redirect('inscriptions:eleve_list')
+
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(fichier, data_only=True)
+            ws = wb.active
+            rows = list(ws.iter_rows(min_row=2, values_only=True))
+        except Exception as e:
+            messages.error(request, f"Erreur de lecture du fichier : {e}")
+            return redirect('inscriptions:eleve_list')
+
+        crees, erreurs = 0, []
+        for idx, row in enumerate(rows, start=2):
+            nom        = str(row[0] or '').strip()
+            prenom     = str(row[1] or '').strip()
+            genre      = str(row[2] or '').strip().upper()
+            date_naiss = str(row[3] or '').strip()
+            lieu_naiss = str(row[4] or '').strip()
+            nationalite = str(row[5] or '').strip() or 'Burkinabè'
+            province   = str(row[6] or '').strip()
+            commune    = str(row[7] or '').strip()
+            village    = str(row[8] or '').strip()
+            tel_urg    = str(row[9] or '').strip()
+            email      = str(row[10] or '').strip()
+            nom_pere   = str(row[11] or '').strip()
+            prof_pere  = str(row[12] or '').strip()
+            nom_mere   = str(row[13] or '').strip()
+            prof_mere  = str(row[14] or '').strip()
+            tel_parent = str(row[15] or '').strip()
+            tuteur_nom = str(row[16] or '').strip()
+            tuteur_tel = str(row[17] or '').strip()
+            tuteur_adr = str(row[18] or '').strip()
+            etab_origine = str(row[19] or '').strip()
+
+            # Validation
+            errs = []
+            if not nom:
+                errs.append("Nom manquant")
+            if not prenom:
+                errs.append("Prénom manquant")
+            if genre not in ('M', 'F'):
+                errs.append("Genre invalide (M ou F)")
+            if not lieu_naiss:
+                errs.append("Lieu de naissance manquant")
+
+            date_naissance = None
+            if date_naiss:
+                for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y'):
+                    try:
+                        date_naissance = datetime.strptime(date_naiss, fmt).date()
+                        break
+                    except ValueError:
+                        pass
+                if not date_naissance:
+                    errs.append("Date naissance invalide (utilisez DD/MM/AAAA)")
+            else:
+                errs.append("Date de naissance manquante")
+
+            if errs:
+                erreurs.append(f"Ligne {idx} ({prenom} {nom}) : {'; '.join(errs)}")
+                continue
+
+            try:
+                eleve = Eleve(
+                    nom=nom.upper(),
+                    prenom=prenom,
+                    genre=genre,
+                    date_naissance=date_naissance,
+                    lieu_naissance=lieu_naiss,
+                    nationalite=nationalite or 'Burkinabè',
+                    province=province,
+                    commune=commune,
+                    village=village,
+                    telephone_urgence=tel_urg,
+                    email=email,
+                    nom_pere=nom_pere,
+                    profession_pere=prof_pere,
+                    nom_mere=nom_mere,
+                    profession_mere=prof_mere,
+                    telephone_parent=tel_parent,
+                    tuteur_nom=tuteur_nom,
+                    tuteur_telephone=tuteur_tel,
+                    tuteur_adresse=tuteur_adr,
+                    etablissement_origine=etab_origine,
+                )
+                eleve.save()
+                crees += 1
+            except Exception as e:
+                erreurs.append(f"Ligne {idx} ({prenom} {nom}) : {e}")
+
+        msg = f"{crees} élève(s) créé(s) avec succès."
+        if erreurs:
+            msg += f" {len(erreurs)} erreur(s)."
+            messages.warning(request, msg)
+            request.session['import_erreurs'] = erreurs[:20]
+        else:
+            messages.success(request, msg)
+        return redirect('inscriptions:eleve_list')
+
+    # GET : afficher le formulaire
+    erreurs = request.session.pop('import_erreurs', [])
+    return render(request, 'inscriptions/eleve_import.html', {
+        'erreurs': erreurs,
+    })

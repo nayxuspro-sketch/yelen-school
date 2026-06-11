@@ -35,4 +35,7 @@ urlpatterns = [
     path('transferts/<uuid:pk>/approuver/', views.transfert_inter_approuver, name='transfert_inter_approuver'),
     path('transferts/<uuid:pk>/refuser/', views.transfert_inter_refuser, name='transfert_inter_refuser'),
     path('transferts/<uuid:pk>/dossier/pdf/', views.transfert_inter_dossier_pdf, name='transfert_inter_dossier_pdf'),
+    # Import Excel
+    path('import/template/', views.eleve_import_template, name='eleve_import_template'),
+    path('import/', views.eleve_import, name='eleve_import'),
 ]
