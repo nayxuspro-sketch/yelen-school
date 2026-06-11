@@ -1,3 +1,5 @@
+import uuid
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -130,7 +132,14 @@ def eleve_list_csv(request):
 
     # Filtre par IDs si selection
     if ids:
-        id_list = [id.strip() for id in ids.split(',') if id.strip()]
+        id_list = []
+        for raw in ids.split(','):
+            raw = raw.strip()
+            if raw:
+                try:
+                    id_list.append(uuid.UUID(raw))
+                except (ValueError, AttributeError):
+                    pass
         if id_list:
             eleves = eleves.filter(pk__in=id_list)
     elif query:
@@ -243,7 +252,14 @@ def eleve_list_xlsx(request):
             Q(inscriptions__isnull=True)
         ).distinct()
     if ids:
-        id_list = [i.strip() for i in ids.split(',') if i.strip()]
+        id_list = []
+        for raw in ids.split(','):
+            raw = raw.strip()
+            if raw:
+                try:
+                    id_list.append(uuid.UUID(raw))
+                except (ValueError, AttributeError):
+                    pass
         if id_list:
             eleves = eleves.filter(pk__in=id_list)
     elif query:
@@ -324,7 +340,14 @@ def eleve_list_pdf(request):
 
     # Filtre par IDs si selection
     if ids:
-        id_list = [id.strip() for id in ids.split(',') if id.strip()]
+        id_list = []
+        for raw in ids.split(','):
+            raw = raw.strip()
+            if raw:
+                try:
+                    id_list.append(uuid.UUID(raw))
+                except (ValueError, AttributeError):
+                    pass
         if id_list:
             eleves = eleves.filter(pk__in=id_list)
     elif query:
