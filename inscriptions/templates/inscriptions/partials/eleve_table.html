@@ -17,7 +17,7 @@
     <tbody>
       {% for eleve in eleve_list %}
       {% with inscription=inscriptions_courantes|get_item:eleve.pk %}
-      <tr {% if inscription.statut == 'ABANDON' %}style="opacity:0.55;"{% endif %}>
+      <tr {% if inscription.statut == 'ABANDON' or not eleve.is_active %}style="opacity:0.55;"{% endif %}>
         <td>
           <input type="checkbox" class="bulk-checkbox" value="{{ eleve.pk }}" onchange="toggleBulkBar()">
         </td>
@@ -33,7 +33,9 @@
         <td class="text-mono text-primary col-matricule">{{ eleve.matricule }}</td>
         <td class="text-secondary">{{ eleve.age_formatted }}</td>
         <td>
-          {% if inscription.statut == 'ABANDON' %}
+          {% if not eleve.is_active %}
+            <span class="badge badge-neutral">Désactivé</span>
+          {% elif inscription.statut == 'ABANDON' %}
             <span class="badge badge-danger">Abandon</span>
           {% elif eleve.last_classe %}
             <span class="badge badge-neutral">{{ eleve.last_classe }}</span>

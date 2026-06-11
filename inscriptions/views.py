@@ -26,11 +26,12 @@ def eleve_list(request):
     etab = getattr(request.user, 'etablissement', None)
     annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
 
-    # Restreindre aux élèves ayant au moins une inscription dans cet établissement
+    # Inclure les élèves sans inscription (nouveaux) + ceux inscrits dans l'établissement
     eleves = Eleve.objects.order_by('nom', 'prenom')
     if etab:
         eleves = eleves.filter(
-            inscriptions__classe__etablissement=etab
+            Q(inscriptions__classe__etablissement=etab) |
+            Q(inscriptions__isnull=True)
         ).distinct()
 
     if query:
@@ -59,6 +60,8 @@ def eleve_list(request):
             eleves = eleves.exclude(
                 inscriptions__annee_scolaire=annee_courante,
             )
+        elif statut_filter == 'inactif':
+            eleves = eleves.filter(is_active=False)
 
     paginator = Paginator(eleves, 50)
     page_obj = paginator.get_page(page_number)
@@ -121,7 +124,8 @@ def eleve_list_csv(request):
     eleves = Eleve.objects.order_by('nom', 'prenom')
     if etab:
         eleves = eleves.filter(
-            inscriptions__classe__etablissement=etab
+            Q(inscriptions__classe__etablissement=etab) |
+            Q(inscriptions__isnull=True)
         ).distinct()
 
     # Filtre par IDs si selection
@@ -170,6 +174,8 @@ def eleve_list_csv(request):
             eleves = eleves.exclude(
                 inscriptions__annee_scolaire=annee_courante,
             )
+        elif statut_filter == 'inactif':
+            eleves = eleves.filter(is_active=False)
 
     # Inscriptions de l'année courante indexées par eleve_id
     inscriptions_index = {}
@@ -232,7 +238,10 @@ def eleve_list_xlsx(request):
 
     eleves = Eleve.objects.order_by('nom', 'prenom')
     if etab:
-        eleves = eleves.filter(inscriptions__classe__etablissement=etab).distinct()
+        eleves = eleves.filter(
+            Q(inscriptions__classe__etablissement=etab) |
+            Q(inscriptions__isnull=True)
+        ).distinct()
     if ids:
         id_list = [i.strip() for i in ids.split(',') if i.strip()]
         if id_list:
@@ -258,6 +267,8 @@ def eleve_list_xlsx(request):
             ).distinct()
         elif statut_filter == 'non_inscrit':
             eleves = eleves.exclude(inscriptions__annee_scolaire=annee_courante)
+        elif statut_filter == 'inactif':
+            eleves = eleves.filter(is_active=False)
 
     inscriptions_index = {}
     if annee_courante:
@@ -307,7 +318,8 @@ def eleve_list_pdf(request):
     eleves = Eleve.objects.order_by('nom', 'prenom')
     if etab:
         eleves = eleves.filter(
-            inscriptions__classe__etablissement=etab
+            Q(inscriptions__classe__etablissement=etab) |
+            Q(inscriptions__isnull=True)
         ).distinct()
 
     # Filtre par IDs si selection
@@ -341,6 +353,8 @@ def eleve_list_pdf(request):
             eleves = eleves.exclude(
                 inscriptions__annee_scolaire=annee_courante,
             )
+        elif statut_filter == 'inactif':
+            eleves = eleves.filter(is_active=False)
 
     # Inscriptions de l'année courante indexées par eleve_id
     inscriptions_index = {}
@@ -403,7 +417,7 @@ def eleve_detail(request, pk):
     eleve = get_object_or_404(Eleve, pk=pk)
     etab = getattr(request.user, 'etablissement', None)
     
-    if etab and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+    if etab and eleve.inscriptions.exists() and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
         messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
         return redirect('inscriptions:eleve_list')
     
@@ -443,7 +457,7 @@ def eleve_update(request, pk):
     eleve = get_object_or_404(Eleve, pk=pk)
     etab = getattr(request.user, 'etablissement', None)
     
-    if etab and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+    if etab and eleve.inscriptions.exists() and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
         messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
         return redirect('inscriptions:eleve_list')
     
@@ -468,7 +482,7 @@ def inscription_create(request, pk):
     eleve = get_object_or_404(Eleve, pk=pk)
     etab = getattr(request.user, 'etablissement', None)
     
-    if etab and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+    if etab and eleve.inscriptions.exists() and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
         messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
         return redirect('inscriptions:eleve_list')
     
@@ -478,6 +492,9 @@ def inscription_create(request, pk):
             inscription = form.save(commit=False)
             inscription.eleve = eleve
             inscription.save()
+            eleve.last_classe = inscription.classe.nom
+            eleve.last_annee = inscription.annee_scolaire.libelle
+            eleve.save(update_fields=['last_classe', 'last_annee'])
             messages.success(request, f"Inscription confirmée pour {eleve.get_nom_complet()}.")
             return redirect('inscriptions:eleve_detail', pk=eleve.pk)
     else:
@@ -507,6 +524,9 @@ def inscription_update(request, pk):
         form = InscriptionForm(request.POST, instance=inscription, etablissement=etab)
         if form.is_valid():
             form.save()
+            eleve.last_classe = inscription.classe.nom
+            eleve.last_annee = inscription.annee_scolaire.libelle
+            eleve.save(update_fields=['last_classe', 'last_annee'])
             messages.success(request, f"Inscription de {eleve.get_nom_complet()} mise à jour.")
             return redirect('inscriptions:eleve_detail', pk=eleve.pk)
     else:
@@ -621,12 +641,16 @@ def transfert_classe(request, pk):
             ancienne_classe = inscription.classe
             inscription.classe = form.cleaned_data['classe']
             inscription.save(update_fields=['classe'])
+            eleve = inscription.eleve
+            eleve.last_classe = inscription.classe.nom
+            eleve.last_annee = inscription.annee_scolaire.libelle
+            eleve.save(update_fields=['last_classe', 'last_annee'])
             messages.success(
                 request,
-                f"{inscription.eleve.get_nom_complet()} transféré(e) de "
+                f"{eleve.get_nom_complet()} transféré(e) de "
                 f"{ancienne_classe.nom} vers {inscription.classe.nom}."
             )
-            return redirect('inscriptions:eleve_detail', pk=inscription.eleve.pk)
+            return redirect('inscriptions:eleve_detail', pk=eleve.pk)
     else:
         form = TransfertClasseForm(inscription=inscription, etablissement=etab)
 
@@ -641,7 +665,17 @@ def transfert_classe(request, pk):
 @require_POST
 def eleve_delete(request, pk):
     """Soft-delete d'un élève (is_active=False)."""
-    eleve = get_object_or_404(Eleve, pk=pk, is_active=True)
+    eleve = get_object_or_404(Eleve, pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+
+    if etab and eleve.inscriptions.exists() and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+        messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
+
+    if not eleve.is_active:
+        messages.warning(request, f"L'élève {eleve.get_nom_complet()} est déjà désactivé.")
+        return redirect('inscriptions:eleve_detail', pk=eleve.pk)
+
     eleve.is_active = False
     eleve.save(update_fields=['is_active'])
     messages.success(request, f"L'élève {eleve.get_nom_complet()} a été désactivé.")
@@ -788,14 +822,16 @@ def reinscrire_eleve(request, pk):
         
         classe = get_object_or_404(Classe, pk=classe_id)
         
-        inscription = Inscription.objects.create(
+        Inscription.objects.create(
             eleve=eleve,
             annee_scolaire=annee_courante,
             classe=classe,
             statut='AFFECTE'
         )
-        
-        messages.success(request, f"{eleve.get_nom_complet} réinscrit en {classe.nom}.")
+        eleve.last_classe = classe.nom
+        eleve.last_annee = annee_courante.libelle
+        eleve.save(update_fields=['last_classe', 'last_annee'])
+        messages.success(request, f"{eleve.get_nom_complet()} réinscrit en {classe.nom}.")
         return redirect('inscriptions:reinscription_list')
     
     classes = []
