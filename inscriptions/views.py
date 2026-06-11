@@ -211,6 +211,23 @@ def eleve_list_csv(request):
 
     for eleve in eleves:
         insc = inscriptions_index.get(str(eleve.pk))
+        statut_inscription = 'Désactivé' if not eleve.is_active else (
+            insc.get_statut_display() if insc and hasattr(insc, 'get_statut_display')
+            else (insc.statut if insc else '')
+        )
+        writer.writerow([
+            eleve.matricule or '',
+            eleve.nom,
+            eleve.prenom,
+            eleve.date_naissance.strftime('%d/%m/%Y') if eleve.date_naissance else '',
+            eleve.get_genre_display() if hasattr(eleve, 'get_genre_display') else (eleve.genre or ''),
+            insc.classe.nom if insc and insc.classe else '',
+            insc.statut_eleve.nom if insc and insc.statut_eleve else '',
+            statut_inscription,
+        ])
+
+    for eleve in eleves:
+        insc = inscriptions_index.get(str(eleve.pk))
         writer.writerow([
             eleve.matricule or '',
             eleve.nom,
@@ -302,6 +319,10 @@ def eleve_list_xlsx(request):
 
     for eleve in eleves:
         insc = inscriptions_index.get(str(eleve.pk))
+        statut_inscription = 'Désactivé' if not eleve.is_active else (
+            insc.get_statut_display() if insc and hasattr(insc, 'get_statut_display')
+            else (insc.statut if insc else '')
+        )
         wb.add_row([
             eleve.matricule or '',
             eleve.nom,
@@ -310,7 +331,7 @@ def eleve_list_xlsx(request):
             eleve.get_genre_display() if hasattr(eleve, 'get_genre_display') else (eleve.genre or ''),
             insc.classe.nom if insc and insc.classe else '',
             insc.statut_eleve.nom if insc and insc.statut_eleve else '',
-            insc.get_statut_display() if insc and hasattr(insc, 'get_statut_display') else (insc.statut if insc else ''),
+            statut_inscription,
         ])
 
     return wb.response(nom_fichier)
@@ -395,7 +416,8 @@ def eleve_list_pdf(request):
         except Classe.DoesNotExist:
             pass
     filtre_statut_labels = {
-        'inscrit': 'Inscrits', 'abandon': 'Abandon', 'non_inscrit': 'Non inscrits'
+        'inscrit': 'Inscrits', 'abandon': 'Abandon', 'non_inscrit': 'Non inscrits',
+        'inactif': 'Désactivés',
     }
     filtre_statut = filtre_statut_labels.get(statut_filter, '')
 
@@ -409,7 +431,7 @@ def eleve_list_pdf(request):
             'date_naissance': eleve.date_naissance.strftime('%d/%m/%Y') if eleve.date_naissance else '',
             'genre': eleve.get_genre_display() if hasattr(eleve, 'get_genre_display') else (eleve.genre or ''),
             'classe': insc.classe.nom if insc and insc.classe else '',
-            'statut_inscription': insc.statut if insc else '',
+            'statut_inscription': 'Désactivé' if not eleve.is_active else (insc.statut if insc else ''),
         })
 
     ctx_etab = get_etablissement_context(etab, request) if etab else {}
