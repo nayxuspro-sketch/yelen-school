@@ -153,7 +153,9 @@
       <td class="col-genre">{{ row.genre }}</td>
       <td class="col-classe">{{ row.classe }}</td>
       <td class="col-statut">
-        {% if row.statut_inscription == 'ABANDON' %}
+        {% if row.statut_inscription == 'Désactivé' %}
+          <span class="badge badge-abandon">Désactivé</span>
+        {% elif row.statut_inscription == 'ABANDON' %}
           <span class="badge badge-abandon">Abandon</span>
         {% elif row.statut_inscription %}
           <span class="badge badge-active">Inscrit</span>
