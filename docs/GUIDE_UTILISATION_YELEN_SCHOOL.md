@@ -4065,6 +4065,8 @@ docker-compose -f docker-compose.dev.yml up -d
 python manage.py runserver
 ```
 
+> Pour le guide de **déploiement complet** (installation, configuration, sauvegarde, mise à jour, dépannage), consultez le document dédié : [`docs/GUIDE_DEPLOIEMENT_WINDOWS.md`](GUIDE_DEPLOIEMENT_WINDOWS.md).
+
 ---
 
 ### 18.5 Système de Notifications
@@ -5564,3 +5566,42 @@ Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via
 | Traité | `Oui` si la réponse a été générée avec succès |
 | Date | Horodatage automatique |
 
+---
+
+## 19. SÉCURITÉ DE L'APPLICATION
+
+### 19.1 Rapport d'Audit de Sécurité
+
+YELEN SCHOOL fait l'objet d'audits de sécurité réguliers. Le rapport complet est disponible dans `docs/AUDIT_SECURITE.md`.
+
+**Version actuelle du rapport :** v6.0 — 23 juin 2026
+
+| Niveau | Statut |
+|--------|--------|
+| 🔴 Critiques | 1 ouvert — Action immédiate requise |
+| 🟠 Hautes | 3 ouvertes |
+| 🟡 Moyennes | 4 ouvertes |
+| ✅ Score global | 6.5/10 |
+
+### 19.2 Bonnes Pratiques pour les Administrateurs
+
+**Ne jamais :**
+- Partager ou afficher la clé `SECRET_KEY` Django ni les clés API
+- Utiliser `DEBUG=True` en production
+- Créer des comptes avec des mots de passe faibles (minimum 12 caractères)
+- Donner le rôle SUPER_ADMIN à des utilisateurs sans nécessité absolue
+
+**À faire régulièrement :**
+- Vérifier les tentatives de connexion échouées dans la liste des utilisateurs
+- Révoquer les comptes du personnel qui quitte l'établissement
+- Contrôler les logs SMS entrants pour détecter des tentatives d'énumération
+- Mettre à jour les dépendances Python (`pip-audit`)
+
+### 19.3 Vulnérabilité en Cours — Action Requise
+
+> ⚠️ **CRITIQUE (juin 2026)** : Si vous utilisez l'intégration Anthropic AI,
+> la clé API doit être révoquée et remplacée immédiatement. Contacter l'administrateur technique.
+
+---
+
+*Guide v2.17 — Mis à jour le 23/06/2026 — Section 19 : Sécurité ajoutée*
