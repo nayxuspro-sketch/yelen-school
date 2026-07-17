@@ -56,10 +56,10 @@ La machine qui fera office de serveur doit rester allumée pendant les heures d'
 
 | Technologie | À quoi ça sert ? |
 |-------------|------------------|
-| **Django 4.2** | Le cœur de l'application — gère les pages web, les utilisateurs, la sécurité |
+| **Django 4.2 + Gunicorn** | Le cœur de l'application — Gunicorn est le serveur WSGI professionnel (4 workers, timeouts) qui fait tourner Django en production |
 | **PostgreSQL 15** | La base de données — stocke TOUTES les données (élèves, notes, paiements) |
 | **Redis 7** | Le cache — accélère l'application en mémorisant les données fréquentes |
-| **Nginx** | Le serveur web frontal — gère le HTTPS, les certificats SSL, la sécurité |
+| **Nginx** | Le serveur web frontal — gère le HTTPS (certificat auto-signé), la terminaison SSL, et sert les fichiers statiques |
 | **WeasyPrint** | Générateur de PDF — produit les bulletins, certificats, listes |
 | **MinIO** | Stockage de fichiers — photos des élèves, documents justificatifs |
 
@@ -184,30 +184,37 @@ dir
 Vous devez voir ces fichiers :
 
 ```
-Dockerfile              ← L'emballage de l'application
+Dockerfile              ← L'emballage de l'application (utilise Gunicorn en production)
 docker-compose.dev.yml  ← La recette pour tout lancer
 manage.py               ← Le cœur Django (ne pas toucher)
-lancer-yelen.bat        ← Raccourci pour démarrer (double-clic)
 .env                    ← Vos paramètres secrets (à configurer)
+.env.example            ← Template de configuration (à copier si .env absent)
+.dockerignore           ← Exclut les fichiers inutiles du conteneur Docker
+README.md               ← Présentation du projet
+entrypoint.sh           ← Script de démarrage (migrate + collectstatic automatiques)
 ```
 
-> ⚠️ **Si `.env` est absent :** copiez `.env.example` s'il existe, ou créez-le manuellement (voir section 4).
+> ⚠️ **Si `.env` est absent :** copiez `.env.example` vers `.env` et modifiez-le (voir section 4).
 
 ### 3.5 Structure du projet — Où sont les choses ?
 
 ```
 E:\yelen-school\
-├── Dockerfile                 # Instructions pour construire l'image
+├── Dockerfile                 # Instructions pour construire l'image (Gunicorn WSGI)
 ├── docker-compose.dev.yml     # Configuration des services
 ├── manage.py                  # Point d'entrée Django
 ├── .env                       # Variables d'environnement (SECRET)
-├── lancer-yelen.bat           # Lanceur double-clic
+├── .env.example               # Template du fichier .env (documentation)
+├── .dockerignore              # Exclut .git, .env, caches du contexte Docker
+├── entrypoint.sh              # Script de démarrage (migrate + collectstatic)
+├── README.md                  # Présentation du projet
 │
 ├── yelen_school/              # Configuration Django
 │   └── settings.py            # Paramètres de l'application
 │
 ├── templates/                 # Pages HTML
-├── static/                    # CSS, JavaScript, images
+├── static/                    # CSS, JavaScript, images (source)
+├── staticfiles/               # Fichiers statiques collectés (servis par Nginx)
 ├── media/                     # Fichiers uploadés (photos, documents)
 │
 ├── accounts/                  # Gestion des comptes
@@ -223,10 +230,10 @@ E:\yelen-school\
 ├── communication/             # SMS, emails
 │
 ├── nginx/                     # Configuration du serveur web
-│   └── default.conf           # Règles Nginx
+│   └── default.conf           # Règles Nginx (proxy inverse + fichiers statiques)
 │
 ├── requirements/              # Dépendances Python
-│   └── base.txt               # Liste des bibliothèques
+│   └── base.txt               # Liste des bibliothèques (inclut gunicorn)
 │
 └── docs/                      # Documentation
     └── GUIDE_DEPLOIEMENT_WINDOWS.md  ← Ce document
@@ -239,6 +246,11 @@ E:\yelen-school\
 ### 4.1 Qu'est-ce que le fichier .env ?
 
 Le fichier `.env` contient **tous les secrets** de l'application : mots de passe, clés, adresses. Il est lu au démarrage de l'application. **Sans lui, rien ne fonctionne.**
+
+> 💡 **Un template est disponible :** `.env.example` à la racine du projet. Copiez-le et adaptez-le :
+> ```cmd
+> copy .env.example .env
+> ```
 
 > ⚠️ **Ne partagez JAMAIS ce fichier.** Il contient les mots de passe de votre établissement.
 > ⚠️ **Ne le mettez JAMAIS dans une archive ZIP envoyée par email.**
@@ -272,6 +284,11 @@ DEBUG=False
 # Séparez chaque adresse par une virgule (sans espace)
 # Exemple : ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.100
 ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Origines CSRF autorisées — mêmes valeurs que ALLOWED_HOSTS mais avec https://
+# Séparez chaque origine par une virgule
+# Exemple : CSRF_TRUSTED_ORIGINS=https://localhost,https://192.168.1.100
+CSRF_TRUSTED_ORIGINS=https://localhost,https://127.0.0.1
 
 # ═══════════════════════════════════════════════
 # BASE DE DONNÉES (PostgreSQL)
@@ -371,6 +388,7 @@ Avant de continuer, vérifiez :
 - [ ] `MINIO_SECRET_KEY` est changé
 - [ ] `SMS_ENABLED=False` si vous n'utilisez pas les SMS
 - [ ] `ALLOWED_HOSTS` contient au moins `localhost,127.0.0.1`
+- [ ] `CSRF_TRUSTED_ORIGINS` correspond aux adresses utilisées (avec `https://`)
 
 ---
 
@@ -424,7 +442,9 @@ yelen-school-mailhog-1  Up              0.0.0.0:8025->8025/tcp
 
 ### 5.3 Créer les tables dans la base de données (migrations)
 
-**Cette étape est OBLIGATOIRE.** Sans elle, la base de données est vide et l'application ne fonctionne pas.
+**Les migrations sont automatiques** — l'entrypoint du conteneur (`entrypoint.sh`) exécute `python manage.py migrate` à chaque démarrage. Vous n'avez normalement rien à faire.
+
+Si vous devez les forcer manuellement (après un changement de version, par exemple) :
 
 ```cmd
 docker compose -f docker-compose.dev.yml exec web python manage.py migrate
@@ -465,6 +485,10 @@ Le programme vous pose ces questions :
 
 ### 5.5 Collecter les fichiers statiques (CSS, icônes, images)
 
+**La collecte est automatique** — l'entrypoint du conteneur exécute `python manage.py collectstatic --noinput --clear` à chaque démarrage. Les fichiers sont copiés dans `staticfiles/` et servis directement par Nginx via l'alias `/static/`.
+
+Si vous devez forcer la collecte manuellement :
+
 ```cmd
 docker compose -f docker-compose.dev.yml exec web python manage.py collectstatic --noinput
 ```
@@ -478,6 +502,12 @@ http://localhost:8000/accounts/login/
 ```
 
 Vous devez voir la page de connexion de YELEN SCHOOL (fond bleu foncé `#0A1628`, logo vert).
+
+> 💡 **Alternative HTTPS :** Si vous passez par Nginx (port 443), utilisez :
+> ```
+> https://localhost/accounts/login/
+> ```
+> ⚠️ Le certificat SSL est auto-signé — le navigateur affichera un avertissement de sécurité. Cliquez sur "Avancé" → "Continuer vers localhost" (c'est normal et sécurisé pour un usage en réseau local).
 
 Connectez-vous avec l'email et le mot de passe créés à l'étape 5.4.
 
@@ -504,7 +534,7 @@ docker compose -f docker-compose.dev.yml logs web --tail=20
 
 Cochez chaque point après l'avoir testé :
 
-- [ ] **Page de connexion** — `http://localhost:8000/accounts/login/` s'affiche (fond sombre, pas de page blanche)
+- [ ] **Page de connexion** — `http://localhost:8000/accounts/login/` (ou `https://localhost/`) s'affiche (fond sombre, pas de page blanche)
 - [ ] **Connexion** — l'email et le mot de passe fonctionnent
 - [ ] **Tableau de bord** — les menus principaux s'affichent après connexion
 - [ ] **Paramètres** — la page `Paramètres` se charge
@@ -554,7 +584,7 @@ Si la page ne s'affiche pas, voir la section [10. Accès depuis les autres poste
 **Méthode simple (double-clic) :**
 - Ouvrez l'Explorateur Windows
 - Allez dans `E:\yelen-school\`
-- Double-cliquez sur `lancer-yelen.bat`
+- Double-cliquez sur `lancer-yelen.bat` (si le fichier existe) ou lancez la commande ci-dessous
 - Attendez 1-2 minutes que Docker démarre
 - Le navigateur s'ouvre automatiquement sur la page de connexion
 
@@ -853,8 +883,16 @@ docker compose -f docker-compose.dev.yml exec web python manage.py migrate
 
 ### 9.7 Étape 6 — Mettre à jour les fichiers statiques
 
+**Automatique** : la collecte des fichiers statiques est exécutée à chaque démarrage du conteneur (via `entrypoint.sh`). Un simple redémarrage suffit :
+
 ```cmd
-docker compose -f docker-compose.dev.yml exec web python manage.py collectstatic --noinput
+docker compose -f docker-compose.dev.yml restart web
+```
+
+Si vous voulez forcer la collecte immédiatement :
+
+```cmd
+docker compose -f docker-compose.dev.yml exec web python manage.py collectstatic --noinput --clear
 ```
 
 ### 9.8 Étape 7 — Vérifier que tout fonctionne
@@ -914,10 +952,11 @@ Exemple d'adresses possibles : `192.168.1.42`, `10.0.0.5`, `172.16.0.10`.
 notepad E:\yelen-school\.env
 ```
 
-Trouvez la ligne `ALLOWED_HOSTS` et ajoutez l'adresse IP du serveur :
+Trouvez les lignes `ALLOWED_HOSTS` et `CSRF_TRUSTED_ORIGINS` et ajoutez l'adresse IP du serveur :
 
 ```dotenv
 ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.100
+CSRF_TRUSTED_ORIGINS=https://localhost,https://127.0.0.1,https://192.168.1.100
 ```
 
 Redémarrez l'application :
@@ -933,6 +972,9 @@ Sur les autres postes, ouvrez un navigateur et tapez :
 ```
 http://192.168.1.100:8000/accounts/login/
 ```
+
+> Si vous passez par Nginx (HTTPS avec certificat auto-signé) : `https://192.168.1.100/accounts/login/`
+> ⚠️ Le navigateur affichera un avertissement "Votre connexion n'est pas privée" — cliquez sur **"Avancé" → "Continuer vers 192.168.1.100"**. C'est normal en réseau local.
 
 > Remplacez `192.168.1.100` par l'adresse IP réelle de votre serveur.
 
@@ -1219,8 +1261,8 @@ copy .env.local.backup .env
 
 | Service | Port(s) | Rôle | Visible depuis le réseau ? |
 |---------|---------|------|---------------------------|
-| **web** (Django) | 8000 | Application principale | Oui — interface utilisateur |
-| **nginx** | 80, 443 | Proxy HTTPS, SSL, sécurité | Oui (443 si HTTPS activé) |
+| **web** (Django + Gunicorn) | 8000 | Application principale (4 workers Gunicorn) | Oui — interface utilisateur |
+| **nginx** | 80 → 443 | Proxy HTTPS, SSL auto-signé, sert les fichiers statiques | Oui (443 — HTTPS) |
 | **db** (PostgreSQL) | 5432 | Base de données | Non — interne seulement |
 | **redis** | 6379 | Cache / sessions | Non — interne seulement |
 | **minio** | 9000, 9001 | Stockage fichiers, console admin | Non (9001 accessible si besoin) |
@@ -1228,10 +1270,11 @@ copy .env.local.backup .env
 
 ### 12.3 Structure des volumes Docker (où sont les données)
 
-| Volume Docker | Contenu | Emplacement physique (Windows) |
+| Volume / Montage | Contenu | Emplacement physique (Windows) |
 |---------------|---------|-------------------------------|
 | `postgres_data` | **Toutes les données** (élèves, notes, paiements) | `\\wsl.localhost\docker\volumes\...` |
 | `nginx_certs` | Certificats SSL pour HTTPS | `\\wsl.localhost\docker\volumes\...` |
+| `./staticfiles` (bind mount) | Fichiers statiques collectés, servis par Nginx | `E:\yelen-school\staticfiles\` |
 
 > ⚠️ **Ne touchez jamais à ces dossiers directement.** Utilisez toujours les commandes Docker.
 
