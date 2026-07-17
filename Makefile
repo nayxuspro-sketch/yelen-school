@@ -1,6 +1,6 @@
 COMPOSE = docker-compose -f docker-compose.dev.yml
 
-.PHONY: dev build stop restart logs shell migrate makemigrations createsuperuser
+.PHONY: dev build stop restart logs shell migrate makemigrations createsuperuser admin
 
 ## Démarrer tous les services
 dev:
@@ -45,6 +45,10 @@ shell:
 ## Créer un superutilisateur
 createsuperuser:
 	$(COMPOSE) exec web python manage.py createsuperuser
+
+## Créer/Réinitialiser le super admin par défaut (admin@yelen.edu / admin123)
+admin:
+	$(COMPOSE) exec web python manage.py ensure_admin
 
 ## Ouvrir un shell bash dans le conteneur web
 bash:

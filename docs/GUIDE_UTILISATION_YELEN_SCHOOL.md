@@ -2,8 +2,8 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 4.2
 version_guide: 2.16
-date_mise_a_jour: 01/06/2026 (v2.16)
-modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc]
+date_mise_a_jour: 23/06/2026 (v2.17)
+modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran]
 modules_en_attente: [portail_parent, transferts, api_rest, orientation_postbac, solar_guard]
 redige_par: Agent IA — Développement YELEN SCHOOL
 ---
@@ -109,6 +109,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [18.5 Système de Notifications](#185-système-de-notifications)
   - [18.6 Journal d'Audit (Traçabilité)](#186-journal-daudit-traçabilité)
   - [18.7 Réunion de Parents](#187-réunion-de-parents-reunion-parents)
+  - [18.8 Galerie de Captures d'Écran](#188-galerie-de-captures-décran)
 
 ---
 
@@ -116,7 +117,11 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 ### 0.1 Présentation de YELEN SCHOOL
 
-YELEN SCHOOL est un logiciel de gestion scolaire conçu spécifiquement pour les établissements d'enseignement du **Burkina Faso**. Le mot « Yelen » signifie *lumière* en bambara — une métaphore du savoir qui éclaire chaque élève.
+YELEN SCHOOL est un logiciel de gestion scolaire conçu spécifiquement pour les établissements d'enseignement du **Burkina Faso**.
+
+Les captures d'écran suivantes (disponibles dans `docs/screenshots/`) montrent l'interface réelle de l'application. Les images sont référencées dans chaque section concernée.
+
+--- Le mot « Yelen » signifie *lumière* en bambara — une métaphore du savoir qui éclaire chaque élève.
 
 Ce logiciel te permet de gérer, depuis un seul endroit :
 
@@ -174,6 +179,8 @@ Ce guide est organisé **par module**. Chaque section suit le même schéma :
 
 > **Astuce :** Si tu cherches une fonction précise, utilise la table des matières ci-dessus pour aller directement à la bonne section.
 
+> **🖼 Captures d'écran :** Ce guide inclut désormais des captures d'écran réelles de l'application (section 1). Les images sont situées dans le dossier `docs/screenshots/`. Elles illustrent l'interface telle qu'elle apparaît dans le navigateur.
+
 ---
 
 ### 0.5 Lexique des Termes Utilisés
@@ -215,47 +222,7 @@ YELEN SCHOOL fonctionne dans ton navigateur web. L'adresse dépend de ton instal
 
 Ouvre ton navigateur et saisis l'adresse du logiciel. Tu arrives sur la page de connexion :
 
-```
-╔════════════════════════════════════════════════════════════════════════╗
-║  ┌──────────────────────────────────────────────────────────────────┐ ║
-║  │  🎓  YELEN SCHOOL                                               │ ║
-║  │                                                                  │ ║
-║  │  Gérez votre établissement                                       │ ║
-║  │  en toute simplicité                                            │ ║
-║  │                                                                  │ ║
-║  │  ✓ Notes & Bulletins    ✓ Paiements & Finances                 │ ║
-║  │  ✓ Présences & Discipline ✓ Documents & Certificats              │ ║
-║  │                                                                  │ ║
-║  │  ──────── Cycles ──────── Profils ──────── Hors ligne ───────   │ ║
-║  │       4                 9                100%                   │ ║
-║  └──────────────────────────────────────────────────────────────────┘ ║
-║                                                                        ║
-║                        Bon retour                                      ║
-║              Entrez vos identifiants pour continuer                    ║
-║                                                                        ║
-║    ┌────────────────────────────────────────────────────────────┐     ║
-║    │  📧  exemple@ecole.bf                                     │     ║
-║    └────────────────────────────────────────────────────────────┘     ║
-║                                                                        ║
-║    ┌────────────────────────────────────────────────────────────┐     ║
-║    │  🔒  ••••••••••                                   👁       │     ║
-║    └────────────────────────────────────────────────────────────┘     ║
-║                                                                        ║
-║    □ Se souvenir de moi          Mot de passe oublié ?                 ║
-║                                                                        ║
-║    ┌────────────────────────────────────────────────────────────┐     ║
-║    │              Se connecter                          →        │     ║
-║    └────────────────────────────────────────────────────────────┘     ║
-║                                                                        ║
-║              ───────── Accès rapide ─────────                         ║
-║    ┌──────────┐  ┌──────────┐  ┌──────────┐                          ║
-║    │ 👤       │  │ 📄       │  │ 🎓       │                          ║
-║    │Directeur │  │Secrétaire│  │Enseignant│                          ║
-║    └──────────┘  └──────────┘  └──────────┘                          ║
-║                                                                        ║
-║                    Burkina Faso · v4.2                                 ║
-╚════════════════════════════════════════════════════════════════════════╝
-```
+![Écran de connexion YELEN SCHOOL](screenshots/01-login.png)
 
 **Design Premium (v4.2+) :**
 - Layout deux panneaux : branding à gauche (masqué en mobile), formulaire à droite
@@ -284,42 +251,32 @@ YELEN SCHOOL fonctionne **hors ligne** — la réinitialisation par e-mail n'est
 
 L'administrateur (SUPER\_ADMIN ou DIRECTEUR) peut modifier le mot de passe depuis la fiche utilisateur sans avoir besoin de connaître l'ancien.
 
+**Compte Super Admin par défaut :**
+
+| Champ | Valeur |
+|-------|--------|
+| Email | `admin@yelen.edu` |
+| Mot de passe | `admin123` |
+
+Ce compte est créé automatiquement lors du premier déploiement. Il possède tous les droits (SUPER_ADMIN) et permet de paramétrer l'application avant de créer d'autres utilisateurs.
+
+> ⚠️ **Réinitialisation automatique au démarrage :** Depuis la v4.2, le conteneur Docker exécute automatiquement `python manage.py ensure_admin` au démarrage via l'entrypoint. Cette commande crée ou réinitialise le super administrateur `admin@yelen.edu` avec le mot de passe `admin123` à chaque redémarrage du conteneur. Si le mot de passe est modifié volontairement, un redémarrage du conteneur (`docker compose restart web`) le rétablit automatiquement.
+>
+> **Réinitialisation manuelle (sans redémarrer) :**
+> ```bash
+> docker exec yelen-school-web-1 python manage.py ensure_admin
+> ```
+> Ou via les scripts : `./start.sh admin` (Linux) / `.\start.ps1 admin` (PowerShell) / `.\dev.ps1 admin`
+
 ---
 
 ### 1.3 Tableau de Bord selon le Rôle
 
 Une fois connecté, le tableau de bord s'adapte à ton rôle :
 
-**Tableau de bord — Directeur / Proviseur**
+**Tableau de bord — Super Admin / Directeur**
 
-```
-╔══════════════════════════════════════════════════════════════════╗
-║  🎓 YELEN SCHOOL              Lycée Zinda — Ouagadougou          ║
-║  Année scolaire : 2025-2026   Bienvenue, M. KONÉ Seydou          ║
-╠═══════════════╦═══════════════╦══════════════╦═══════════════════╣
-║  👨‍🎓 Élèves    ║  👥 Personnel  ║  💰 Finances  ║  📋 Documents     ║
-║     847        ║      42        ║   2 415 000  ║      156          ║
-║  inscrits      ║  membres       ║  FCFA perçus ║  générés          ║
-╠═══════════════╩═══════════════╩══════════════╩═══════════════════╣
-║  Menu principal :                                                ║
-║  [Paramètres] [Élèves] [Inscriptions] [Notes] [Présences]        ║
-║  [Finances]   [Examens] [Personnel]   [Documents] [Licences]     ║
-╚══════════════════════════════════════════════════════════════════╝
-```
-
-**Tableau de bord — Enseignant**
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║  🎓 YELEN SCHOOL              Bienvenue, M. TRAORÉ Ibrahim        ║
-╠══════════════════════════════════════════════════════════════════╣
-║  Mes classes aujourd'hui :   Terminale A · 1ère C · 2nde B       ║
-║  Mes notes à saisir :        18 élèves en attente (3ème B)       ║
-║  Prochain cours :            Mathématiques — 08h00 — Salle 4     ║
-╠══════════════════════════════════════════════════════════════════╣
-║  [Mes Classes] [Saisir Notes] [Présences] [Mon Profil]           ║
-╚══════════════════════════════════════════════════════════════════╝
-```
+![Tableau de bord YELEN SCHOOL](screenshots/02-dashboard.png)
 
 ---
 
@@ -521,7 +478,7 @@ Ces optimisations garantissent qu'un bulletin avec jusqu'à **15 matières** + c
 - **En-tête** : badge logo circulaire + nom + devise + contact de l'établissement
 - **Titre** : bannière verte avec le nom du trimestre et l'année
 - **Identité de l'élève** : matricule, sexe, nom, classe, date de naissance, effectif, cycle, redoublant
-- **Notes du trimestre** : tableau complet matières / coeff / moyenne / rang / appréciation / professeur
+- **Notes du trimestre** : tableau complet matières / coeff / moyenne / rang / appréciation / professeur / signature du professeur
 - **Statistiques de la classe** : plus forte, plus faible, moyenne de classe + rang de l'élève
 - **Conduite** (si sanctions) · **Appréciation du Conseil** (si commentaire) · **Signature**
 
@@ -5568,6 +5525,60 @@ Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via
 
 ---
 
+## 18.8 Galerie de Captures d'Écran
+
+> Les captures d'écran ci-dessous montrent l'interface réelle de YELEN SCHOOL. Elles sont situées dans le dossier `docs/screenshots/`.
+
+### 18.8.1 Page de Connexion
+
+![Écran de connexion](screenshots/01-login.png)
+*Page de connexion avec panneau branding à gauche et formulaire à droite.*
+
+### 18.8.2 Tableau de Bord
+
+![Tableau de bord](screenshots/02-dashboard.png)
+*Tableau de bord après connexion (vue Super Admin).*
+
+### 18.8.3 Gestion des Élèves
+
+![Liste des élèves](screenshots/03-eleves-list.png)
+*Liste des élèves inscrits avec recherche et filtres.*
+
+![Fiche détail d'un élève](screenshots/04-eleve-detail.png)
+*Page profil d'un élève avec informations complètes.*
+
+### 18.8.4 Paramètres — Classes
+
+![Liste des classes](screenshots/05-classes-list.png)
+*Liste des classes configurées par cycle.*
+
+### 18.8.5 Pédagogie — Matières
+
+![Liste des matières](screenshots/06-matieres.png)
+*Référentiel des matières enseignées.*
+
+### 18.8.6 Gestion du Personnel
+
+![Liste du personnel](screenshots/07-personnel.png)
+*Liste du personnel enseignant et administratif.*
+
+### 18.8.7 Finances
+
+![Paiements et finances](screenshots/08-paiements.png)
+*Gestion des paiements de scolarité.*
+
+### 18.8.8 Documents
+
+![Documents administratifs](screenshots/09-documents.png)
+*Génération des documents officiels.*
+
+### 18.8.9 Présences
+
+![Présences et appels](screenshots/10-presences.png)
+*Sélection de classe pour l'appel.*
+
+---
+
 ## 19. SÉCURITÉ DE L'APPLICATION
 
 ### 19.1 Rapport d'Audit de Sécurité
@@ -5604,4 +5615,4 @@ YELEN SCHOOL fait l'objet d'audits de sécurité réguliers. Le rapport complet 
 
 ---
 
-*Guide v2.17 — Mis à jour le 23/06/2026 — Section 19 : Sécurité ajoutée*
+*Guide v2.18 — Mis à jour le 23/06/2026 — Section 18.8 : Galerie de captures d'écran ajoutée*

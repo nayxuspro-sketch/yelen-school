@@ -14,6 +14,7 @@ switch ($cmd) {
     "makemigrations"  { Invoke-Expression "$COMPOSE run --rm web python manage.py makemigrations" }
     "shell"           { Invoke-Expression "$COMPOSE run --rm web python manage.py shell" }
     "createsuperuser" { Invoke-Expression "$COMPOSE run --rm web python manage.py createsuperuser" }
+    "admin"           { Invoke-Expression "$COMPOSE run --rm web python manage.py ensure_admin" }
     "bash"            { Invoke-Expression "$COMPOSE run --rm web bash" }
     "psql"            { Invoke-Expression "$COMPOSE exec db psql -U yelen_user -d yelen_school_db" }
     default {
@@ -25,6 +26,7 @@ switch ($cmd) {
         Write-Host "  .\dev.ps1 makemigrations   - Creer des migrations"
         Write-Host "  .\dev.ps1 logs             - Voir les logs"
         Write-Host "  .\dev.ps1 shell            - Shell Django"
+        Write-Host "  .\dev.ps1 admin            - Creer/Reinitialiser le super admin par defaut"
         Write-Host "  .\dev.ps1 psql             - Console PostgreSQL"
         Write-Host "  .\dev.ps1 bash             - Bash dans le conteneur web"
     }

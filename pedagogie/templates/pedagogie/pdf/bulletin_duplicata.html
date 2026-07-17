@@ -397,12 +397,13 @@ html, body {
     <table class="bul-table">
         <thead>
             <tr>
-                <th style="width:30%;">Matières</th>
+                <th style="width:28%;">Matières</th>
                 <th class="bul-tc" style="width:7%;">Coef</th>
-                <th class="bul-tc" style="width:12%;">Moy. /20</th>
-                <th class="bul-tc" style="width:11%;">Rang</th>
-                <th style="width:22%;">Appréciation</th>
-                <th style="width:18%;">Professeur</th>
+                <th class="bul-tc" style="width:10%;">Moy. /20</th>
+                <th class="bul-tc" style="width:9%;">Rang</th>
+                <th style="width:19%;">Appréciation</th>
+                <th style="width:15%;">Professeur</th>
+                <th style="width:12%;">Signature</th>
             </tr>
         </thead>
         <tbody>
@@ -425,6 +426,7 @@ html, body {
                 <td class="bul-muted">
                     {% if result.enseignement.personnel %}{{ result.enseignement.personnel.nom|upper }} {{ result.enseignement.personnel.prenom }}{% else %}&nbsp;{% endif %}
                 </td>
+                <td class="bul-tc bul-muted" style="font-size:7pt;">_______________</td>
             </tr>
             {% endfor %}
             <!-- Ligne récapitulatif -->
@@ -434,7 +436,7 @@ html, body {
                 <td class="bul-tc bul-muted">
                     {{ mg.rang }}{% if mg.rang == 1 %}er{% else %}e{% endif %}&nbsp;/&nbsp;{{ nb_eleves }}
                 </td>
-                <td colspan="2" class="bul-muted">
+                <td colspan="3" class="bul-muted">
                     Total : {{ mg.total_points|floatformat:2 }}&nbsp;/&nbsp;{{ total_points_max|floatformat:2 }} pts
                 </td>
             </tr>

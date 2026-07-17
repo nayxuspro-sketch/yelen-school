@@ -17,6 +17,7 @@ switch ($cmd) {
     "migrate"    { & $COMPOSE run --rm web python manage.py migrate }
     "shell"      { & $COMPOSE run --rm web python manage.py shell }
     "superuser"  { & $COMPOSE run --rm web python manage.py createsuperuser }
+    "admin"      { & $COMPOSE run --rm web python manage.py ensure_admin }
     "bash"       { & $COMPOSE run --rm web bash }
     default {
         Write-Host "用法 (Usage):" -ForegroundColor Cyan
@@ -28,6 +29,7 @@ switch ($cmd) {
         Write-Host "  .\start.ps1 migrate    - Appliquer les migrations"
         Write-Host "  .\start.ps1 shell       - Shell Django"
         Write-Host "  .\start.ps1 superuser  - Creer un superuser"
+        Write-Host "  .\start.ps1 admin      - Creer/Reinitialiser le super admin par defaut"
         Write-Host "  .\start.ps1 bash       - Entrer dans le conteneur"
     }
 }

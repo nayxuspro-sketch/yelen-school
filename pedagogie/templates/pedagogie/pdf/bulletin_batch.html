@@ -67,12 +67,13 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width:30%;">Matières</th>
+                        <th style="width:28%;">Matières</th>
                         <th style="text-align:center; width:7%;">Coef</th>
-                        <th style="text-align:center; width:12%;">Moy./20</th>
+                        <th style="text-align:center; width:10%;">Moy./20</th>
                         <th style="text-align:center; width:8%;">Rang</th>
-                        <th style="width:20%;">Appréciation</th>
-                        <th style="width:23%;">Professeur</th>
+                        <th style="width:18%;">Appréciation</th>
+                        <th style="width:15%;">Professeur</th>
+                        <th style="width:14%;">Signature</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -90,12 +91,13 @@
                         <td>
                             {% if result.enseignement.personnel %}{{ result.enseignement.personnel.nom|upper }} {{ result.enseignement.personnel.prenom }}{% else %}-{% endif %}
                         </td>
+                        <td style="text-align:center; font-size:7pt; color:#555;">_______________</td>
                     </tr>
                     {% endfor %}
 
                     {% if data.sanctions_conduite %}
                     <tr>
-                        <td colspan="6" style="padding:0; border-top:1pt solid #ccc;">
+                        <td colspan="7" style="padding:0; border-top:1pt solid #ccc;">
                             <table style="margin:0; border:none; width:100%; font-size:7pt;">
                                 <tr style="background:#ebebeb;">
                                     <td colspan="4" style="padding:2pt 6pt; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#111; border-bottom:0.5pt solid #ccc;">

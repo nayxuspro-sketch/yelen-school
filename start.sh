@@ -34,11 +34,14 @@ case "$1" in
     superuser)
         $COMPOSE run --rm web python manage.py createsuperuser
         ;;
+    admin)
+        $COMPOSE run --rm web python manage.py ensure_admin
+        ;;
     bash)
         $COMPOSE run --rm web bash
         ;;
     *)
-        echo "Usage: ./start.sh {start|start-bg|stop|build|restart|logs|logs-web|migrate|shell|superuser|bash}"
+        echo "Usage: ./start.sh {start|start-bg|stop|build|restart|logs|logs-web|migrate|shell|superuser|admin|bash}"
         echo ""
         echo "  start       - Demarrer tout (foreground)"
         echo "  start-bg    - Demarrer en arriere-plan"
@@ -50,6 +53,7 @@ case "$1" in
         echo "  migrate     - Appliquer les migrations"
         echo "  shell       - Shell Django"
         echo "  superuser   - Creer un superuser"
+        echo "  admin       - Creer/Reinitialiser le super admin par defaut"
         echo "  bash        - Entrer dans le conteneur"
         ;;
 esac
