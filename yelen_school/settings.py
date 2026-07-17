@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # Mode debug - désactiver en production!
-DEBUG = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes')
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -41,9 +41,6 @@ if not SECRET_KEY:
 
 # Clé API Anthropic — nécessite une connexion Internet (fonctionnalités IA)
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
-
-# Mode debug - désactiver en production!
-DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # Hôtes autorisés - définir en production via ALLOWED_HOSTS env var
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
@@ -75,13 +72,8 @@ if not DEBUG:
     # Content-Security-Policy : gérée par CSPNonceMiddleware (csp_middleware.py)
     # Les anciennes SECURE_CSP_* n'étaient pas lues par Django — supprimées.
 
-# Autorise les requêtes POST/CSRF depuis HTTPS local (Nginx dev)
-CSRF_TRUSTED_ORIGINS = [
-    'https://localhost',
-    'https://127.0.0.1',
-    'https://192.168.11.112',
-    # Ajoutez votre IP locale si besoin, ex: 'https://192.168.1.42'
-]
+# Autorise les requêtes POST/CSRF depuis les origines de confiance
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://localhost,https://127.0.0.1').split(',') if o.strip()]
 
 # Indique à Django qu'il est derrière un proxy HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -215,6 +207,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

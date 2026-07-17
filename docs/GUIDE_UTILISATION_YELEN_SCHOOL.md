@@ -3978,13 +3978,24 @@ cp PlayfairDisplay-Bold.woff2 e:/yelen-school/static/fonts/
 
 #### Collecte des Fichiers Statiques (Déploiement)
 
-Avant de déployer en production, exécute la collecte des fichiers statiques :
+La collecte des fichiers statiques est automatisée dans l'entrypoint Docker (`entrypoint.sh`) :
+exécutée automatiquement après les migrations à chaque démarrage du conteneur.
+
+En cas de déploiement manuel (hors Docker) :
 
 ```bash
 python manage.py collectstatic --noinput
 ```
 
-Cela copie tous les fichiers de `static/` vers `STATIC_ROOT` configuré dans `settings.py`.
+Cela copie tous les fichiers de `static/` vers `staticfiles/` à la racine du projet (configuré via `STATIC_ROOT` dans `settings.py`). Nginx sert ces fichiers directement via l'alias `/static/`.
+
+#### Serveur WSGI de Production
+
+Le serveur de développement Django (`runserver`) n'est pas utilisé en production. Le Dockerfile utilise **Gunicorn** avec 4 workers :
+
+```bash
+gunicorn yelen_school.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120
+```
 
 #### Redémarrage du Serveur après Mise à Jour
 
@@ -4001,13 +4012,19 @@ python manage.py runserver 0.0.0.0:8000
 
 #### Variables d'Environnement Obligatoires
 
-Le fichier `.env` à la racine du projet doit contenir :
+Le fichier `.env` à la racine du projet doit contenir. Un template est disponible : [`.env.example`](../.env.example).
 
 ```
-DATABASE_URL=postgresql://user:password@host:5432/yelen_school
 SECRET_KEY=...valeur-secrète...
 DEBUG=False
-ALLOWED_HOSTS=192.168.X.X,localhost
+ALLOWED_HOSTS=.votre-domaine.com,www.votre-domaine.com
+CSRF_TRUSTED_ORIGINS=https://votre-domaine.com,https://www.votre-domaine.com
+DB_NAME=yelen_school_db
+DB_USER=yelen_user
+DB_PASSWORD=...mot-de-passe...
+DB_HOST=db
+DB_PORT=5432
+REDIS_URL=redis://redis:6379/0
 ```
 
 > **Règle absolue :** PostgreSQL est obligatoire. L'utilisation de SQLite (même en développement) est interdit. Utilise Docker Compose pour démarrer PostgreSQL en local.
@@ -4015,11 +4032,8 @@ ALLOWED_HOSTS=192.168.X.X,localhost
 #### Démarrer l'Environnement de Développement avec Docker
 
 ```bash
-# Démarrer PostgreSQL et Redis en arrière-plan
-docker-compose -f docker-compose.dev.yml up -d
-
-# Lancer le serveur Django
-python manage.py runserver
+# Tout l'environnement (PostgreSQL, Redis, Nginx, Django/Gunicorn)
+docker compose -f docker-compose.dev.yml up --build
 ```
 
 > Pour le guide de **déploiement complet** (installation, configuration, sauvegarde, mise à jour, dépannage), consultez le document dédié : [`docs/GUIDE_DEPLOIEMENT_WINDOWS.md`](GUIDE_DEPLOIEMENT_WINDOWS.md).
