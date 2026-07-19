@@ -150,6 +150,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'yelen_school.audit_middleware.AuditRequestMiddleware',
+    # Génération automatique de l'année scolaire (désactivé — création manuelle)
+    # 'parametres.middleware.AnneeScolaireAutoMiddleware',
     # 'licences.middleware.LicenceCheckMiddleware',
     # 'licences.middleware.LicenceLimitsMiddleware',
     # 'licences.middleware.LicenceContextMiddleware',

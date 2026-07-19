@@ -2,8 +2,8 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 4.2
 version_guide: 2.16
-date_mise_a_jour: 23/06/2026 (v2.17)
-modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran]
+date_mise_a_jour: 19/07/2026 (v2.18)
+modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel]
 modules_en_attente: [portail_parent, transferts, api_rest, orientation_postbac, solar_guard]
 redige_par: Agent IA — Développement YELEN SCHOOL
 ---
@@ -23,6 +23,9 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [1.8 Se Connecter avec la 2FA Activée](#18-se-connecter-avec-la-2fa-activée)
   - [1.9 Désactiver la 2FA](#19-désactiver-la-2fa)
 - [2. Paramètres de l'Établissement](#2-paramètres-de-létablissement)
+  - [2.1 Identité de l'établissement](#21-identité-de-létablissement)
+  - [2.2 Gestion des Années Scolaires](#22-gestion-des-années-scolaires)
+  - [2.3 Génération Automatique de la Nouvelle Année Scolaire](#23-génération-automatique-de-la-nouvelle-année-scolaire)
   - [2.17 Configuration SMS](#217-configuration-sms)
   - [2.7 Appréciations et Moyennes (Secondaire)](#27-appréciations-et-moyennes)
   - [2.10 Signataires des Documents PDF](#210-signataires-des-documents-pdf)
@@ -30,7 +33,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [2.14 Types d'Évaluation](#214-types-dévaluation)
   - [2.15 Calendrier Scolaire](#215-calendrier-scolaire)
   - [2.16 Modèles de Messages SMS](#216-modèles-de-messages-sms)
-  - [2.18 Localisations des Postes](#29-localisations-des-postes)
+  - [2.18 Localisations des Postes](#218-localisations-des-postes)
 - [3. Enregistrement des Élèves](#3-enregistrement-des-élèves)
   - [3.8 Page Profil Élève — Vue d'ensemble](#38-page-profil-élève--vue-densemble)
 - [4. Inscription et Réinscription](#4-inscription-et-réinscription)
@@ -844,6 +847,49 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 - **Devise** : phrase ou valeur éducative de l'établissement
 
 **Design v2.11 :** La page a été modernisée avec des sections séparées (card-header + card-title), des icônes Lucide par section, et une correction de l'affichage des messages de confirmation.
+
+---
+
+### 2.2 Gestion des Années Scolaires
+
+> **Accès :** `Paramètres → Années scolaires`
+
+**À quoi ça sert :** Créer et gérer les années scolaires de l'établissement. Chaque année scolaire définit une période d'enseignement avec une date de début et une date de fin.
+
+**Interface :** Tableau listant toutes les années avec les colonnes :
+- **Libellé** (ex: `2025-2026`)
+- **Date début / Date fin**
+- **Statut** — badge vert "Courante" pour l'année active
+
+**Actions disponibles :**
+- **Créer** — ajouter une nouvelle année (libellé, dates, cocher "Année en cours")
+- **Définir comme courante** — cliquer sur le bouton dans la liste pour basculer
+- **Supprimer** — impossible si des inscriptions sont rattachées
+
+**Règles :**
+- Un seul établissement ne peut avoir qu'**une seule année courante** à la fois
+- Les matricules élèves (`BF-AAAA-NNNNN`) sont liés à l'année de première inscription
+
+---
+
+### 2.3 Création Manuelle d'une Année Scolaire (recommandé)
+
+> **L'année scolaire se crée manuellement** via l'interface `Paramètres → Années scolaires`.
+
+**Procédure :**
+1. Cliquer sur **Ajouter une année scolaire**
+2. Saisir le libellé (ex: `2025-2026`)
+3. Définir la date de début (généralement 1er octobre) et la date de fin (30 juin)
+4. Cocher **"Année en cours"** pour activer la nouvelle année
+5. Valider
+
+> L'ancienne année passe automatiquement à `Année précédente` dès qu'une nouvelle année est marquée comme courante.
+
+**Commande manuelle (pour les administrateurs — dépréciée) :**
+```bash
+python manage.py auto_generer_annee_scolaire --dry-run # simulation
+python manage.py auto_generer_annee_scolaire --force   # création forcée
+```
 
 ---
 

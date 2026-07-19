@@ -7,6 +7,15 @@ les règles ci-dessous **sans exception**.
 
 ---
 
+## Décisions antérieures
+
+- **Année scolaire : création manuelle** — Le basculement automatique au 5 juillet
+  a été désactivé (middleware commenté). Les années sont créées via l'interface
+  `Paramètres → Années scolaires`. La commande et le service Django existent
+  toujours pour usage administratif manuel.
+
+---
+
 ## Stack technique
 
 | Composant        | Technologie                             |
