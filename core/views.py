@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.db.models import Sum, Count, Q
 from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
 
 from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 
@@ -1179,3 +1180,36 @@ def chatbot(request):
     return render(request, 'core/chatbot.html', {
         'display_history': display_history,
     })
+
+
+# ── HEALTHCHECK ─────────────────────────────────────────────────────────────
+
+@never_cache
+def health_check(request):
+    """Endpoint de healthcheck pour le load balancer / monitoring Docker."""
+    from django.db import connections
+
+    health = {'status': 'ok', 'version': '1.0.0'}
+
+    # Vérification base de données
+    db_ok = False
+    try:
+        conn = connections['default']
+        conn.cursor()
+        db_ok = True
+    except Exception:
+        pass
+    health['database'] = 'ok' if db_ok else 'error'
+
+    # Vérification cache Redis
+    cache_ok = False
+    try:
+        from django.core.cache import cache
+        cache.set('_health_check', 1, 5)
+        cache_ok = cache.get('_health_check') == 1
+    except Exception:
+        pass
+    health['cache'] = 'ok' if cache_ok else 'error'
+
+    status_code = 200 if (db_ok and cache_ok) else 503
+    return JsonResponse(health, status=status_code)

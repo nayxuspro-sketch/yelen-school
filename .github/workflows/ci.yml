@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: yelen_school_db
+          POSTGRES_USER: yelen_user
+          POSTGRES_PASSWORD: yelen_password_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready -U yelen_user -d yelen_school_db
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements/base.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-xlib-2.0-0
+          pip install -r requirements/base.txt
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+        env:
+          DEBUG: "False"
+          SECRET_KEY: ci-secret-key-for-testing-only
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: yelen_school_db
+          DB_USER: yelen_user
+          DB_PASSWORD: yelen_password_ci
+          REDIS_URL: redis://localhost:6379/1
+
+      - name: Run tests
+        run: python -m pytest --tb=short -x --cov --cov-report=term-missing
+        env:
+          DEBUG: "False"
+          SECRET_KEY: ci-secret-key-for-testing-only
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: yelen_school_db
+          DB_USER: yelen_user
+          DB_PASSWORD: yelen_password_ci
+          REDIS_URL: redis://localhost:6379/1

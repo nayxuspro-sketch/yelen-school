@@ -31,4 +31,7 @@ urlpatterns = [
 
     # Chatbot IA
     path('assistant/', views.chatbot, name='chatbot'),
+
+    # Healthcheck pour load balancer / monitoring
+    path('health/', views.health_check, name='health_check'),
 ]

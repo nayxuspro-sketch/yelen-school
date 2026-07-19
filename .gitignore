@@ -8,5 +8,7 @@ htmlcov/
 .coverage
 node_modules/
 staticfiles/
-
+logs/
+tests.bat
+err.txt
 nul

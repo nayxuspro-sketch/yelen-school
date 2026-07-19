@@ -4,7 +4,7 @@ Tests unitaires pour core/models.py
 Vérifie la fondation du projet YELEN SCHOOL :
 - BaseModel : UUID pk, timestamps, is_active, abstract, ordering
 - CycleChoices : 4 cycles scolaires MENA BF
-- RoleChoices : 9 rôles RBAC alignés PROMPT v3.3
+- RoleChoices : 10 rôles RBAC alignés PROMPT v3.3
 """
 
 import uuid
@@ -90,13 +90,13 @@ class RoleChoicesTest(TestCase):
     """Tests pour les choix de rôles RBAC."""
 
     def test_role_choices_count(self):
-        """Il doit y avoir exactement 9 rôles."""
-        self.assertEqual(len(RoleChoices.choices), 9)
+        """Il doit y avoir exactement 10 rôles."""
+        self.assertEqual(len(RoleChoices.choices), 10)
 
     def test_role_choices_values(self):
-        """Vérification des 9 valeurs attendues."""
+        """Vérification des 10 valeurs attendues."""
         expected = {
-            'SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR', 'AVS',
+            'SUPER_ADMIN', 'DIRECTEUR_RESEAU', 'DIRECTEUR', 'CENSEUR', 'AVS',
             'ENSEIGNANT', 'COMPTABLE', 'SECRETAIRE', 'PARENT', 'ELEVE',
         }
         actual = {r.value for r in RoleChoices}

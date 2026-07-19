@@ -8,9 +8,14 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - nginx_certs:/etc/nginx/certs
-      - ./staticfiles:/app/staticfiles:ro
+      - staticfiles:/app/staticfiles:ro
     depends_on:
       - web
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     entrypoint: >
       sh -c "
         if [ ! -f /etc/nginx/certs/yelen.crt ]; then
@@ -18,35 +23,39 @@ services:
           openssl req -x509 -nodes -days 3650 -newkey rsa:2048
             -keyout /etc/nginx/certs/yelen.key
             -out    /etc/nginx/certs/yelen.crt
-            -subj '/CN=yelen-school-dev/O=YELEN SCHOOL/C=BF'
-            -addext 'subjectAltName=IP:127.0.0.1,DNS:localhost';
+            -subj '/CN=yelen-school/O=YELEN SCHOOL/C=BF';
         fi &&
         nginx -g 'daemon off;'
       "
 
   web:
+    image: yelen-school:latest
     build: .
     volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
+      - staticfiles:/app/staticfiles
+      - media:/app/media
+      - logs:/app/logs
     env_file: .env
     environment:
       DB_HOST: db
-      REDIS_URL: redis://redis:6379/0
-    # devices:  # Décommenter quand le modem GSM est branché
-      # - /dev/ttyUSB0:/dev/ttyUSB0   # Modem GSM USB (Huawei, ZTE…)
-      # - /dev/ttyACM0:/dev/ttyACM0   # Alternative selon le modèle
+      REDIS_URL: redis://redis:6379/1
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
   db:
     image: postgres:15
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_DB: yelen_school_db
       POSTGRES_USER: yelen_user
@@ -55,29 +64,27 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U yelen_user -d yelen_school_db"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   redis:
     image: redis:7-alpine
-
-  minio:
-    image: minio/minio
-    command: server /data --console-address ':9001'
-    environment:
-      MINIO_ROOT_USER: yelenaccess
-      MINIO_ROOT_PASSWORD: yelensecret
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-
-  mailhog:
-    image: mailhog/mailhog
-    ports:
-      - "8025:8025"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64M
 
 volumes:
   postgres_data:
   nginx_certs:
+  staticfiles:
+  media:
+  logs:

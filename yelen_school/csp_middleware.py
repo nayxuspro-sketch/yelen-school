@@ -45,9 +45,9 @@ class CSPNonceMiddleware:
         content_type = response.get('Content-Type', '')
         if 'text/html' in content_type and 'Content-Security-Policy' not in response:
             csp_parts = list(self._CSP_BASE) + [
-                f"script-src 'self' 'nonce-{nonce}' 'unsafe-inline'",
+                f"script-src 'self' 'nonce-{nonce}'",
                 f"style-src 'self' 'nonce-{nonce}'",
-                f"script-src-attr 'self' 'unsafe-inline'",
+                f"script-src-attr 'none'",
             ]
             response['Content-Security-Policy'] = '; '.join(csp_parts)
 

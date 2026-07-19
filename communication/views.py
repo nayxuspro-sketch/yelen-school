@@ -255,10 +255,11 @@ def sms_direct_envoyer(request):
 
 
 @csrf_exempt
+@require_POST
 def webhook_incoming_sms(request):
     """
     Webhook pour traiter les SMS entrants des parents (PWA Parent-SMS Direct).
-    Supporte les formats JSON (Android SMS Gateway) et les paramètres standards GET/POST.
+    Supporte les formats JSON (Android SMS Gateway) et les paramètres standards POST.
     """
     import json
     import re
@@ -272,6 +273,28 @@ def webhook_incoming_sms(request):
     from presences.models import Presence
     from finances.views import _calcul_situation_financiere
     from .models import IncomingSMSLog
+
+    # ── Authentification du webhook ────────────────────────────────────
+    # Vérification IP (si une liste d'IP autorisées est configurée)
+    if settings.SMS_ALLOWED_IPS:
+        remote_ip = request.META.get('REMOTE_ADDR', '')
+        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
+        client_ip = (forwarded_for.split(',')[0].strip()
+                     if forwarded_for else remote_ip)
+        if client_ip not in settings.SMS_ALLOWED_IPS:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Accès non autorisé.'},
+                status=403,
+            )
+
+    # Vérification du token partagé (passé en paramètre GET ou header X-SMS-Token)
+    token = (request.GET.get('token', '')
+             or request.META.get('HTTP_X_SMS_TOKEN', ''))
+    if settings.SMS_WEBHOOK_TOKEN and token != settings.SMS_WEBHOOK_TOKEN:
+        return JsonResponse(
+            {'status': 'error', 'message': 'Token invalide.'},
+            status=403,
+        )
 
     sender_number = ""
     message_text = ""

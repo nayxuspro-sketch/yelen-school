@@ -8,7 +8,7 @@ from pedagogie.models import Matiere, Note
 class TestPedagogieViews:
     @pytest.fixture
     def logged_in_client(self, client):
-        user = baker.make('accounts.User', is_superuser=True)
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN')
         client.force_login(user)
         return client
 
@@ -25,7 +25,7 @@ class TestPedagogieViews:
         url = reverse('pedagogie:enseignement_list')
         response = logged_in_client.get(url)
         assert response.status_code == 200
-        assert 'enseignement_list' in response.context
+        assert 'classes_groupes' in response.context
 
     def test_evaluation_list_view(self, logged_in_client):
         """Vérifie l'accès à la liste des évaluations."""
@@ -58,7 +58,7 @@ class TestPedagogieViews:
         """Vérifie la saisie groupée des notes."""
         annee = baker.make('parametres.AnneeScolaire', est_courante=True)
         classe = baker.make('parametres.Classe')
-        ins = baker.make('inscriptions.Inscription', statut='ACTIF', annee_scolaire=annee, classe=classe)
+        ins = baker.make('inscriptions.Inscription', annee_scolaire=annee, classe=classe)
         ens = baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe)
         evaluation = baker.make('pedagogie.Evaluation', enseignement=ens)
         url = reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk})

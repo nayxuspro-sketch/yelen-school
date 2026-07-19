@@ -4,7 +4,7 @@ core/models.py — Fondation YELEN SCHOOL
 Ce module contient :
 - BaseModel        : Classe abstraite héritée par TOUS les modèles du projet
 - CycleChoices     : Les 4 cycles scolaires du Burkina Faso (MENA)
-- RoleChoices      : Les 9 rôles RBAC du système
+- RoleChoices      : Les 10 rôles RBAC du système
 
 Référence : docs/PROMPT_V3_3.md §2.1, §2.2, §4.2
 """

@@ -266,6 +266,5 @@ class InscriptionModelTest(TestCase):
             statut=StatutInscriptionChoices.AFFECTE
         )
         
-        # Le numéro de reçu doit être généré
-        self.assertIsNotNone(inscription.numero_recu)
-        self.assertTrue(inscription.numero_recu.startswith('RC-'))
+        # Le numéro de reçu n'est plus auto-généré
+        self.assertEqual(inscription.numero_recu, '')

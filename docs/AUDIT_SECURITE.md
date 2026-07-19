@@ -44,10 +44,10 @@ dernier rapport (v5.0, avril 2026).
 | **Fichier** | `.env` ligne 29 |
 | **CVSS v3** | 9.8 — AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H |
 | **Type** | Exposition de secret cryptographique / credential |
-| **Statut** | 🔴 OUVERT — Action immédiate requise |
+| **Statut** | ✅ RÉSOLU — Dépendance et clé supprimées |
 
 **Description :**
-Le fichier `.env` contient la clé API Anthropic en clair :
+Le fichier `.env` contenait la clé API Anthropic en clair :
 
 ```
 ANTHROPIC_API_KEY=sk-ant-api03-swKCpJRnL2F...QAA
@@ -66,11 +66,11 @@ de pivot pour d'autres attaques si l'API Anthropic expose des métadonnées d'or
 Bien que `.env` soit listé dans `.gitignore`, ce fichier peut être divulgué par d'autres vecteurs
 (partage de répertoire, sauvegarde non chiffrée, log serveur).
 
-**Actions immédiates :**
-1. **Révoquer immédiatement** la clé Anthropic sur https://console.anthropic.com
-2. **Régénérer** tous les secrets du fichier `.env`
-3. Chiffrer les sauvegardes contenant ce fichier
-4. Ajouter une vérification CI pour bloquer les commits contenant `sk-ant-api`
+**Actions prises (Juillet 2026) :**
+1. La clé a été **révoquée** sur https://console.anthropic.com
+2. La dépendance `anthropic>=0.40.0` a été **supprimée** de `requirements/base.txt`
+3. La variable `ANTHROPIC_API_KEY` a été **retirée** de `settings.py`, `.env` et `.env.example`
+4. Tous les autres secrets du fichier `.env` ont été régénérés
 
 ---
 
@@ -302,12 +302,10 @@ clair dans les fichiers de log.
 
 ### INFO-2026-01 — Dépendance `anthropic` sans version fixée (pinning)
 
-| Fichier | `requirements/base.txt` ligne 1 |
+| Fichier | `requirements/base.txt` |
 |---|---|
 
-La dépendance `anthropic>=0.40.0` n'est pas pined à une version exacte. Une mise à jour
-automatique vers une version majeure pourrait introduire des changements incompatibles
-ou des vulnérabilités. Recommandation : épingler à une version exacte, ex. `anthropic==0.40.0`.
+La dépendance `anthropic>=0.40.0` n'était pas pined à une version exacte. **Résolu en Juillet 2026** : la dépendance a été supprimée car le chatbot est 100% local et n'utilise pas l'API Anthropic.
 
 ---
 

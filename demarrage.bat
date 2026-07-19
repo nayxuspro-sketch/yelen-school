@@ -50,7 +50,7 @@ echo.
 echo [2/3] Attente du serveur web (cela peut prendre 30 a 60 secondes)...
 set "RETRIES=0"
 :wait_loop
-curl -s -o nul -w "%%{http_code}" http://localhost:8000/ 2>nul | findstr "200 302 401" >nul 2>&1
+curl -s -o nul -w "%%{http_code}" http://localhost:8000/ 2>nul | findstr "200 301 302 401" >nul 2>&1
 if !ERRORLEVEL! equ 0 goto server_ready
 set /a RETRIES+=1
 if !RETRIES! geq 30 (

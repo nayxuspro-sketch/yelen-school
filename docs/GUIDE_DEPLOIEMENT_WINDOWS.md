@@ -345,13 +345,6 @@ SMS_MODEM_PORT=COM3              # Port série du modem
 SMS_MODEM_BAUD=9600              # Vitesse de communication
 SMS_MODEM_TIMEOUT=10
 
-# ═══════════════════════════════════════════════
-# IA — Analyse du risque de décrochage (optionnel)
-# Nécessite une connexion Internet
-# ═══════════════════════════════════════════════
-
-# Laissez vide si vous n'utilisez pas l'IA
-ANTHROPIC_API_KEY=
 ```
 
 ### 4.4 Synchroniser les mots de passe

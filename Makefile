@@ -1,4 +1,4 @@
-COMPOSE = docker-compose -f docker-compose.dev.yml
+COMPOSE = docker compose -f docker-compose.dev.yml
 
 .PHONY: dev build stop restart logs shell migrate makemigrations createsuperuser admin
 
@@ -57,6 +57,18 @@ bash:
 ## Ouvrir psql dans le conteneur db
 psql:
 	$(COMPOSE) exec db psql -U yelen_user -d yelen_school_db
+
+## Lancer les tests unitaires (dans le conteneur web)
+test:
+	$(COMPOSE) exec web python -m pytest $(ARGS)
+
+## Lancer les tests avec couverture
+test-cov:
+	$(COMPOSE) exec web python -m pytest --cov --cov-report=term --cov-report=html $(ARGS)
+
+## Lancer les tests d'une app spécifique (ex: make test-app app=core)
+test-app:
+	$(COMPOSE) exec web python -m pytest $(app)/tests/ $(ARGS)
 
 ## Afficher l'IP locale (pour accès depuis le téléphone)
 ip:

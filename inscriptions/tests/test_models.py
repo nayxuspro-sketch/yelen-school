@@ -36,11 +36,10 @@ class TestInscriptionModel:
             # Utilisation de baker.make qui appelle save()
             baker.make('inscriptions.Inscription', eleve=eleve, annee_scolaire=annee)
 
-    def test_numero_recu_generation(self):
-        """Vérifie que le numéro de reçu est généré si un montant est payé."""
-        inscription = baker.make('inscriptions.Inscription', montant_paye=50000, numero_recu='')
-        assert inscription.numero_recu.startswith('RC-')
-        assert len(inscription.numero_recu) > 5
+    def test_numero_recu_vide_par_defaut(self):
+        """Vérifie que le numéro de reçu est vide par défaut (n'est plus auto-généré)."""
+        inscription = baker.make('inscriptions.Inscription')
+        assert inscription.numero_recu == ''
 
     def test_str_representation(self):
         """Vérifie la représentation textuelle de l'inscription."""

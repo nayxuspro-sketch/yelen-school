@@ -11,6 +11,10 @@ class Command(BaseCommand):
     help = "Crée ou réinitialise le super administrateur par défaut."
 
     def handle(self, *args, **options):
+        self.stdout.write(self.style.WARNING(
+            "⚠️  Ceci réinitialise le mot de passe admin à 'admin123'. "
+            "Désactivez ENSURE_ADMIN après le premier déploiement."
+        ))
         user, created = User.objects.get_or_create(
             email=ADMIN_EMAIL,
             defaults={

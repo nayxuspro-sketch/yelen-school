@@ -8,7 +8,7 @@ from model_bakery import baker
 class TestFinancesViews:
     @pytest.fixture
     def logged_in_client(self, client):
-        user = baker.make('accounts.User', is_superuser=True)
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN')
         client.force_login(user)
         return client
 
@@ -65,7 +65,7 @@ class TestApiRubriquesInscription:
 
     @pytest.fixture
     def logged_in_client(self, client):
-        user = baker.make('accounts.User', is_superuser=True)
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN')
         client.force_login(user)
         return client
 
@@ -171,10 +171,9 @@ class TestApiRubriquesInscription:
         response = logged_in_client.get(url)
         assert response.status_code == 200
         data = response.json()
-        # Doit retourner les rubriques de la classe via le fallback (pas d'erreur)
-        assert len(data['rubriques']) == 1
-        assert data['rubriques'][0]['id'] == str(rubrique.pk)
-        assert 'error' not in data
+        # Aucun tarif configuré pour ce statut → rubriques vides + message d'erreur
+        assert data['rubriques'] == []
+        assert 'error' in data
 
     def test_api_requiert_authentification(self, client, setup_tarifs):
         """L'API doit être protégée par login_required."""

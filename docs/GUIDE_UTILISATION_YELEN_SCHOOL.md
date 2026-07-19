@@ -2,7 +2,7 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 4.2
 version_guide: 2.16
-date_mise_a_jour: 19/07/2026 (v2.18)
+date_mise_a_jour: 19/07/2026 (v3.1)
 modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel]
 modules_en_attente: [portail_parent, transferts, api_rest, orientation_postbac, solar_guard]
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -263,9 +263,11 @@ L'administrateur (SUPER\_ADMIN ou DIRECTEUR) peut modifier le mot de passe depui
 
 Ce compte est créé automatiquement lors du premier déploiement. Il possède tous les droits (SUPER_ADMIN) et permet de paramétrer l'application avant de créer d'autres utilisateurs.
 
-> ⚠️ **Réinitialisation automatique au démarrage :** Depuis la v4.2, le conteneur Docker exécute automatiquement `python manage.py ensure_admin` au démarrage via l'entrypoint. Cette commande crée ou réinitialise le super administrateur `admin@yelen.edu` avec le mot de passe `admin123` à chaque redémarrage du conteneur. Si le mot de passe est modifié volontairement, un redémarrage du conteneur (`docker compose restart web`) le rétablit automatiquement.
->
-> **Réinitialisation manuelle (sans redémarrer) :**
+> ⚠️ **Création automatique au premier démarrage :** Depuis la v4.2, si `ENSURE_ADMIN=true` dans `.env`, le conteneur Docker exécute `python manage.py ensure_admin` au démarrage via l'entrypoint. Cette commande crée le super administrateur `admin@yelen.edu` avec le mot de passe `admin123`.
+> >
+> > **Sécurité :** Après le premier déploiement, mettez `ENSURE_ADMIN=false` dans `.env` pour éviter la réinitialisation du mot de passe en cas de redémarrage. Changez également le mot de passe depuis l'interface.
+> >
+> > **Réinitialisation manuelle (si nécessaire) :**
 > ```bash
 > docker exec yelen-school-web-1 python manage.py ensure_admin
 > ```
@@ -309,12 +311,15 @@ En mode **modification**, la section mot de passe est remplacée par une case à
 | Rôle | Accès |
 |---|---|
 | SUPER_ADMIN | Toutes les fonctionnalités, tous les établissements |
+| DIRECTEUR_RESEAU | Gestion multi-établissements |
 | DIRECTEUR | Toutes les fonctionnalités de son établissement |
-| PROVISEUR | Pédagogie, présences, bulletins |
 | CENSEUR | Présences, discipline |
-| SECRÉTAIRE | Documents, inscriptions |
-| COMPTABLE | Finances |
+| AVS | Agent de Vie Scolaire |
 | ENSEIGNANT | Notes, présences de ses classes |
+| COMPTABLE | Finances |
+| SECRÉTAIRE | Documents, inscriptions |
+| PARENT | Portail parent, suivi scolaire |
+| ELEVE | Consultation des notes et bulletins |
 
 > **Règle de sécurité :** Un DIRECTEUR ne peut pas créer un compte SUPER_ADMIN. L'établissement d'un Directeur est pré-sélectionné et non modifiable.
 
@@ -4084,6 +4089,26 @@ docker compose -f docker-compose.dev.yml up --build
 
 > Pour le guide de **déploiement complet** (installation, configuration, sauvegarde, mise à jour, dépannage), consultez le document dédié : [`docs/GUIDE_DEPLOIEMENT_WINDOWS.md`](GUIDE_DEPLOIEMENT_WINDOWS.md).
 
+#### Lancer les Tests Unitaires
+
+Les tests doivent être exécutés **depuis le conteneur web** pour éviter un bug connu de psycopg2 + libpq sur Windows (locale française génère une `UnicodeDecodeError` lors de la connexion PostgreSQL).
+
+```bash
+# Lancer tous les tests
+docker compose -f docker-compose.dev.yml exec web python -m pytest
+
+# Lancer les tests d'une app spécifique
+docker compose -f docker-compose.dev.yml exec web python -m pytest core/tests/
+
+# Lancer avec couverture
+docker compose -f docker-compose.dev.yml exec web python -m pytest --cov --cov-report=term
+
+# Via le script batch (Windows)
+tests.bat core/tests/test_models.py -v
+```
+
+Les fichiers `conftest.py` désactivent automatiquement le journal d'audit pendant l'exécution des tests pour éviter les erreurs de clé étrangère.
+
 ---
 
 ### 18.5 Système de Notifications
@@ -4177,6 +4202,8 @@ Pour que les parents reçoivent les notifications d'absence :
 > **Cas d'usage :** Un directeur remarque qu'une note a été modifiée. Il consulte le journal d'audit, filtre par type « modification de note », et identifie immédiatement quel enseignant a effectué la modification, à quelle heure et depuis quelle adresse réseau.
 
 > **Conservation :** Les entrées du journal sont conservées indéfiniment. Elles ne peuvent pas être supprimées par les utilisateurs normaux.
+
+> **Note technique — Tests :** L'audit est automatiquement désactivé pendant l'exécution des tests unitaires (via `conftest.py` et le flag `_audit_disabled` dans `core/signals.py`). En dehors d'une requête HTTP (shell, commandes), l'audit est également ignoré pour éviter les erreurs de clé étrangère lors des rollbacks de transaction.
 
 ---
 
@@ -5668,11 +5695,191 @@ YELEN SCHOOL fait l'objet d'audits de sécurité réguliers. Le rapport complet 
 - Contrôler les logs SMS entrants pour détecter des tentatives d'énumération
 - Mettre à jour les dépendances Python (`pip-audit`)
 
-### 19.3 Vulnérabilité en Cours — Action Requise
+### 19.3 Déploiement Local (Quick Start)
 
-> ⚠️ **CRITIQUE (juin 2026)** : Si vous utilisez l'intégration Anthropic AI,
-> la clé API doit être révoquée et remplacée immédiatement. Contacter l'administrateur technique.
+#### Prérequis
+
+- **Windows :** Docker Desktop installé et en cours d'exécution
+- **Linux :** Docker Engine + Docker Compose plugin
+- Git (optionnel, pour les mises à jour)
+
+#### 1. Configuration de l'environnement
+
+Copier le fichier `.env.example` vers `.env` et ajuster les valeurs :
+
+```bash
+cp .env.example .env
+```
+
+Variables essentielles pour un déploiement local :
+
+| Variable | Valeur recommandée | Notes |
+|----------|-------------------|-------|
+| `DEBUG` | `false` | `true` en développement uniquement |
+| `SECRET_KEY` | Clé de 64 octets | Générer avec `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Ajouter le nom de domaine si nécessaire |
+| `DB_PASSWORD` | Mot de passe fort | Pour un nouveau volume DB, laisser généré ; pour un volume existant, utiliser le mot de passe d'origine |
+| `DISABLE_HTTPS_REDIRECT` | `true` | Désactive la redirection HTTPS (pratique en local sans certificat) |
+| `ENSURE_ADMIN` | `true` | `false` après le premier déploiement (sécurité) |
+| `EMAIL_HOST` | *(laisser vide)* | Backend console utilisé automatiquement si vide → pas de plantage SMTP |
+
+#### 2. Lancement de l'application
+
+**Windows :** Double-cliquer sur `demarrage.bat` (ou `lancer-yelen.bat`).
+Le script vérifie Docker, construit l'image, démarre les conteneurs et ouvre le navigateur.
+
+**En ligne de commande (tous OS) :**
+
+```bash
+# Construire et démarrer
+docker compose -f docker-compose.dev.yml up -d --build
+
+# Voir les logs
+docker compose -f docker-compose.dev.yml logs -f web
+```
+
+L'application est accessible sur : **http://localhost:8000**
+
+#### 3. Première connexion
+
+| Champ | Valeur |
+|-------|--------|
+| Email | `admin@yelen.edu` |
+| Mot de passe | `admin123` |
+
+Ce compte est créé automatiquement au premier démarrage si `ENSURE_ADMIN=true` dans `.env`.
+
+**Actions post-connexion :**
+1. Aller dans `Paramètres → Établissement` pour configurer l'identité de l'école
+2. Créer les utilisateurs (Directeur, Enseignants, etc.)
+3. Configurer l'année scolaire dans `Paramètres → Années scolaires`
+4. Mettre `ENSURE_ADMIN=false` dans `.env` pour éviter la réinitialisation du mot de passe
+5. Changer le mot de passe admin depuis le profil utilisateur
+
+#### 4. Arrêt et redémarrage
+
+```bash
+# Arrêter les conteneurs
+docker compose -f docker-compose.dev.yml down
+
+# Redémarrer uniquement le serveur web
+docker compose -f docker-compose.dev.yml restart web
+
+# Voir les logs en temps réel
+docker compose -f docker-compose.dev.yml logs -f
+```
+
+### 19.4 Déploiement Production
+
+#### Prérequis
+
+- Serveur Linux avec Docker Engine 24+ et Docker Compose plugin
+- Nom de domaine configuré (DNS pointant vers le serveur)
+- Certificat SSL (Let's Encrypt ou autre)
+- PostgreSQL 15 (via Docker)
+
+#### 1. Fichier `.env` production
+
+```bash
+cp .env.example .env
+```
+
+Variables pour la production :
+
+| Variable | Valeur | Notes |
+|----------|--------|-------|
+| `DEBUG` | `false` | **Ne jamais mettre `true` en production** |
+| `SECRET_KEY` | Clé forte 64 octets | Générer et ne jamais partager |
+| `ALLOWED_HOSTS` | `.votre-domaine.com` | Domaine principal |
+| `CSRF_TRUSTED_ORIGINS` | `https://votre-domaine.com,https://www.votre-domaine.com` | Domaines autorisés pour POST |
+| `DB_PASSWORD` | Mot de passe fort | Générer, sera utilisé à l'initialisation du volume |
+| `DISABLE_HTTPS_REDIRECT` | *(omettre ou `false`)* | La redirection HTTPS doit être active en production |
+| `ENSURE_ADMIN` | `true` (1er lancement) puis `false` | Crée l'admin au premier démarrage |
+| `EMAIL_HOST` | Serveur SMTP | Configurer les emails transactionnels |
+| `SMS_ENABLED` | `false` | Activer seulement si un serveur SMS est disponible |
+
+#### 2. Lancement avec docker-compose.prod.yml
+
+```bash
+# Démarrer
+docker compose -f docker-compose.prod.yml up -d
+
+# Vérifier l'état
+docker compose -f docker-compose.prod.yml ps
+
+# Voir les logs
+docker compose -f docker-compose.prod.yml logs -f
+```
+
+Le fichier `docker-compose.prod.yml` inclut :
+- **Nginx** avec proxy HTTPS, certificat auto-signé (remplacer par un certificat Let's Encrypt)
+- **Web** : Gunicorn 4 workers, limites mémoire (512 Mo max, 256 Mo réservé)
+- **PostgreSQL** : Port 5432 exposé uniquement en local (`127.0.0.1`)
+- **Redis** : Base `1` (la base `0` est réservée au développement)
+- **Limites mémoire** : Nginx 128 Mo, Redis 64 Mo, PostgreSQL 256 Mo
+- **Volumes persistants** : `postgres_data`, `staticfiles`, `media`, `logs`
+- **Pas de MailHog** ni MinIO (services développement)
+
+#### 3. Healthcheck
+
+Un endpoint de monitoring est disponible :
+
+```bash
+curl https://votre-domaine.com/health/
+```
+
+Retourne **200** si tout va bien (base de données + Redis accessibles), **503** sinon.
+
+#### 4. Mise à jour
+
+```bash
+# Récupérer les dernières sources (git pull)
+git pull
+
+# Reconstruire l'image et redémarrer
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### 19.5 Architecture des conteneurs
+
+```
+Utilisateur
+    │
+    ▼
+┌──────────┐   HTTPS:443     ┌──────────┐   proxy_pass   ┌──────────┐
+│  Nginx   │──────────────→  │  Nginx   │──────────────→ │ Gunicorn │
+│ (80→443) │  (certif SSL)   │ (SSL)    │  http://web:8000│ :8000    │
+└──────────┘                 └──────────┘                └──────────┘
+                                                               │
+                                                    ┌──────────┴──────────┐
+                                                    │                     │
+                                               ┌──────────┐        ┌──────────┐
+                                               │PostgreSQL│        │  Redis   │
+                                               │  :5432   │        │  :6379   │
+                                               └──────────┘        └──────────┘
+```
+
+### 19.6 Correctifs de Sécurité (Juillet 2026)
+
+**Correctifs appliqués dans le cadre de la mise en production :**
+
+| Correctif | Détail |
+|-----------|--------|
+| **Clé API Anthropic** | Dépendance et clé supprimées (le chatbot est 100% local) |
+| **CSP renforcé** | `'unsafe-inline'` retiré de `script-src` — les scripts inline nécessitent un nonce |
+| **Webhook SMS authentifié** | IP whitelist + token partagé obligatoires en production |
+| **Déconnexion CSRF-safe** | Logout passe uniquement en POST (protection contre les attaques CSRF) |
+| **Cache Redis** | LocMemCache → Redis (sessions partagées entre workers) |
+| **Logging** | Logs Django écrits sur disque (fichiers tournants, 10 Mo max) |
+| **Sessions** | `SESSION_COOKIE_AGE=3600` (remplace `SESSION_TIMEOUT` inopérant) |
+| **Secrets** | `SECRET_KEY` et `DB_PASSWORD` remplacés par des clés fortes |
+| **Fichiers orphelins** | 8 scripts de debug supprimés de la racine du projet |
+| **DB_PASSWORD synchronisé** | `docker-compose.dev.yml` utilise `${DB_PASSWORD}` depuis `.env` |
+| **CSRF_TRUSTED_ORIGINS** | `https://localhost,https://127.0.0.1` ajoutés pour le déploiement local |
+| **Email conditionnel** | Backend console si `EMAIL_HOST` vide — pas de plantage SMTP |
+| **SSL configurable** | `DISABLE_HTTPS_REDIRECT` permet de désactiver le redirect HTTPS en local |
+| **ENSURE_ADMIN** | Nouvelle variable d'env — `true` au premier lancement, `false` ensuite |
 
 ---
 
-*Guide v2.18 — Mis à jour le 23/06/2026 — Section 18.8 : Galerie de captures d'écran ajoutée*
+*Guide v3.1 — Mis à jour le 19/07/2026 — Section 19 : Guide de déploiement complet (local + production)*

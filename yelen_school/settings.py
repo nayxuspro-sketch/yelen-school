@@ -39,8 +39,7 @@ if not SECRET_KEY:
             "En production, définissez la variable d'environnement SECRET_KEY."
         )
 
-# Clé API Anthropic — nécessite une connexion Internet (fonctionnalités IA)
-ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+
 
 # Hôtes autorisés - définir en production via ALLOWED_HOSTS env var
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
@@ -48,19 +47,22 @@ if not ALLOWED_HOSTS and DEBUG:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 
 # ── SÉCURITÉ HTTP (Production) ────────────────────────────────────────────────
+# SSL Redirect — désactiver pour déploiement local sans HTTPS (via DISABLE_HTTPS_REDIRECT=true)
+_SECURE_SSL_REDIRECT = os.environ.get('DISABLE_HTTPS_REDIRECT', 'false').lower() != 'true'
+
 if not DEBUG:
     # HSTS - Force HTTPS pendant 1 an
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     
-    # HTTPS obligatoire
-    SECURE_SSL_REDIRECT = True
-    SECURE_FORCE_HTTPS = True
+    # HTTPS obligatoire (désactivable via DISABLE_HTTPS_REDIRECT)
+    if _SECURE_SSL_REDIRECT:
+        SECURE_SSL_REDIRECT = True
     
     # Cookie sécurisé
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = bool(_SECURE_SSL_REDIRECT)
+    CSRF_COOKIE_SECURE = bool(_SECURE_SSL_REDIRECT)
     
     # Prévention XSS / sniffing
     SECURE_BROWSER_XSS_FILTER = True
@@ -220,6 +222,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Email — console par défaut (sûr en local), SMTP si EMAIL_HOST configuré
+if os.environ.get('EMAIL_HOST'):
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 # Authentification
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
@@ -243,6 +251,12 @@ SMS_MODEM_PORT = os.environ.get('SMS_MODEM_PORT', 'COM3')  # ex: /dev/ttyUSB0
 SMS_MODEM_BAUD = int(os.environ.get('SMS_MODEM_BAUD', '9600'))
 SMS_MODEM_TIMEOUT = int(os.environ.get('SMS_MODEM_TIMEOUT', '10'))
 
+# ── WEBHOOK SMS ────────────────────────────────────────────────────────────────
+# Token partagé : l'application SMS Gateway doit inclure ?token=... dans l'URL
+SMS_WEBHOOK_TOKEN = os.environ.get('SMS_WEBHOOK_TOKEN', '')
+# IP autorisées à appeler le webhook (séparées par des virgules)
+SMS_ALLOWED_IPS = [ip.strip() for ip in os.environ.get('SMS_ALLOWED_IPS', '').split(',') if ip.strip()]
+
 # ── SÉCURITÉ RENFORCÉE ─────────────────────────────────────────────────────────
 
 # Politique de mot de passe renforcée (12 caractères minimum)
@@ -263,14 +277,15 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Session - sécurité production
-SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG and _SECURE_SSL_REDIRECT
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-SESSION_TIMEOUT = 3600  # 1 heure de timeout
+SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '3600'))  # 1 heure
+SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF
-CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG and _SECURE_SSL_REDIRECT
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 
@@ -281,10 +296,69 @@ TOKEN_EXPIRY_HOURS = int(os.environ.get('TOKEN_EXPIRY_HOURS', '24'))
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024   # 5 Mo en mémoire
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 Mo max par requête
 
-# Cache - sécurité
+# ── LOGGING ────────────────────────────────────────────────────────────────────
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_DIR / 'django.log',
+            'maxBytes': 10 * 1024 * 1024,
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'security_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_DIR / 'security.log',
+            'maxBytes': 5 * 1024 * 1024,
+            'backupCount': 3,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['security_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}
+
+# Cache - Redis (partagé entre workers Gunicorn)
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'yelen-cache',
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://redis:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
     }
 }

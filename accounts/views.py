@@ -16,6 +16,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
 from datetime import timedelta
+from django.views.decorators.http import require_POST
 
 from core.models import RoleChoices
 from .forms import UserCreateForm, UserUpdateForm, SetPasswordForm, ProfileUpdateForm, ChangeOwnPasswordForm
@@ -196,8 +197,9 @@ def login_2fa(request):
     return render(request, 'accounts/login_2fa.html', {'email': user.email})
 
 
+@require_POST
 def logout_view(request):
-    """Déconnexion utilisateur."""
+    """Déconnexion utilisateur (POST uniquement — protection CSRF)."""
     logout(request)
     return redirect('accounts:login')
 

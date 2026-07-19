@@ -26,7 +26,7 @@ class TestApiAuth:
         url = reverse('api:obtenir_token')
         response = client.post(
             url,
-            {'username': user.username, 'password': 'testpass123'},
+            {'username': user.email, 'password': 'testpass123'},
             content_type='application/json',
         )
         assert response.status_code == 200

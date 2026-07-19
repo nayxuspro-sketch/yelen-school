@@ -9,9 +9,26 @@ from django.forms.models import model_to_dict
 from yelen_school.audit_middleware import get_request, get_user_from_request, get_client_ip
 
 
+_audit_disabled = False
+
+
+def disable_audit():
+    global _audit_disabled
+    _audit_disabled = True
+
+
+def enable_audit():
+    global _audit_disabled
+    _audit_disabled = False
+
+
 def log_audit(sender, instance, action=None, **kwargs):
     """Enregistre une action dans l'audit trail."""
     from core.models import AuditLog
+    
+    # Ignorer si l'audit est désactivé (tests)
+    if _audit_disabled:
+        return
     
     # Déterminer l'action basée sur le type de signal
     signal = kwargs.get('signal')
@@ -28,6 +45,12 @@ def log_audit(sender, instance, action=None, **kwargs):
     if not instance.pk and action != 'CREATE':
         return
     
+    # Ignorer en dehors d'une requête HTTP (tests, shell, commandes)
+    # pour éviter les ForeignKeyViolation lors des rollbacks de transaction
+    request = get_request()
+    if request is None:
+        return
+    
     try:
         # Récupérer l'utilisateur depuis l'instance ou la requête
         user = None
@@ -37,18 +60,15 @@ def log_audit(sender, instance, action=None, **kwargs):
             user = get_user_from_request()
         
         # Récupérer l'IP cliente
-        request = get_request()
         ip_address = get_client_ip(request) if request else None
         
-        # Obtenir les valeurs avant modification pour UPDATE/DELETE
+        # Récupérer les anciennes valeurs pour UPDATE/DELETE
         changes = {}
-        old_instance = None
         
         if action in ('UPDATE', 'DELETE'):
             try:
                 old_instance = sender.objects.get(pk=instance.pk)
                 if action == 'UPDATE':
-                    # Comparer les champs modifiés
                     for field in instance._meta.fields:
                         if field.name in ('created_at', 'updated_at', 'created_by', 'updated_by', '_current_user'):
                             continue
@@ -74,7 +94,6 @@ def log_audit(sender, instance, action=None, **kwargs):
             ip_address=ip_address,
         )
     except Exception as e:
-        # Ne pas bloquer les opérations si l'audit échoue
         import logging
         logging.error(f"Audit log failed: {e}")
 

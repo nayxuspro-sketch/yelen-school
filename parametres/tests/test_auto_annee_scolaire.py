@@ -12,6 +12,7 @@ from django.utils import timezone
 from model_bakery import baker
 
 from parametres.models import AnneeScolaire
+import parametres.services
 from parametres.services import auto_generer_annee_scolaire
 
 
