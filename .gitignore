@@ -12,3 +12,10 @@ logs/
 tests.bat
 err.txt
 nul
+output.txt
+output_test.log
+temp.hex
+makemigrations_error.log
+nginx/default.dev.conf
+_test_run.bat
+desktop/
