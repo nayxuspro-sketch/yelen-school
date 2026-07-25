@@ -7,15 +7,19 @@ Les matricules sont l'identifiant unique et permanent de chaque personne.
 ## Formats
 
 ### Élève
-- Format   : BF-AAAA-NNNNN
-- Exemple  : BF-2024-00001
-- AAAA     : année scolaire d'enregistrement
-- NNNNN    : numéro séquentiel sur 5 chiffres, repart à 00001 chaque année
+- Format   : {CODE_ETAB}-AAAA-NN
+- Exemple  : 01-2026-5
+- CODE_ETAB : code de l'établissement
+- AAAA     : année d'enregistrement
+- NN       : numéro d'enregistrement
 
 ### Personnel
-- Format   : PERS-AAAA-NNNNN
-- Exemple  : PERS-2024-00001
-- Même logique que le matricule élève
+- Format   : {CODE_ETAB}-P-AAAA-NN
+- Exemple  : 01-P-2026-2
+- CODE_ETAB : code de l'établissement
+- P        : Personnel
+- AAAA     : année d'enregistrement
+- NN       : numéro d'enregistrement
 
 ## Règles obligatoires
 

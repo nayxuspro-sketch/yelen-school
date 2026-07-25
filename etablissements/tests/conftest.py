@@ -28,8 +28,8 @@ def eleve_actif(db):
                        actif=True,
                        exonere=False,
                        date_naissance=date(2013, 5, 15))
-    # Vérifie que le matricule BF- a bien été généré
-    assert eleve.matricule.startswith('BF-')
+    # Vérifie que le matricule a bien été généré
+    assert eleve.matricule.startswith('XX-')
  # Vérifie que l'âge est calculé (non stocké)
     assert eleve.age is not None
     assert isinstance(eleve.age, int)
@@ -37,11 +37,12 @@ def eleve_actif(db):
 
 @pytest.fixture
 def membre_personnel(db, annee_scolaire):
-    """Crée un membre du personnel avec matricule PERS-."""
+    """Crée un membre du personnel."""
+    etab = baker.make('etablissements.Etablissement', code='01')
     membre = baker.make('personnel.MembrePersonnel',
-                        actif=True, sexe='M')
-    # Vérifie que le matricule PERS- a été généré
-    assert membre.matricule_personnel.startswith('PERS-')
+                        etablissement=etab, actif=True, genre='M')
+    # Vérifie que le matricule est au bon format
+    assert membre.matricule.startswith('01-P-')
     # Crée l'inscription annuelle
     baker.make('personnel.InscriptionPersonnel',
                membre=membre, annee_scolaire=annee_scolaire,

@@ -45,12 +45,12 @@ les règles ci-dessous **sans exception**.
 ## Règles métier — NON NÉGOCIABLES
 
 ### Matricules
-| Type       | Format            | Comportement                              |
-|------------|-------------------|-------------------------------------------|
-| Élève      | `BF-AAAA-NNNNN`   | Généré automatiquement, jamais modifiable |
-| Personnel  | `PERS-AAAA-NNNNN` | Idem                                      |
+| Type       | Format              | Comportement                              |
+|------------|---------------------|-------------------------------------------|
+| Élève      | `{CODE_ETAB}-AAAA-NN` | Généré automatiquement, jamais modifiable |
+| Personnel  | `{CODE_ETAB}-P-AAAA-NN` | Idem                                      |
 
-*AAAA = année courante, NNNNN = séquence sur 5 chiffres.*
+*CODE_ETAB = code établissement, AAAA = année courante, NN = numéro d'enregistrement.*
 
 ### Champs calculés
 - **Âge** : toujours calculé depuis `date_naissance` (champ `readonly`, jamais saisi manuellement).

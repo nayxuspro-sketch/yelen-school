@@ -1,5 +1,7 @@
 from django import forms
+from django.contrib.auth.forms import PasswordResetForm as DjangoPasswordResetForm
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 
 from .models import User
 from core.models import RoleChoices
@@ -174,7 +176,7 @@ class ChangeOwnPasswordForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.user = user
 
-    def clean(self):
+def clean(self):
         cleaned_data = super().clean()
         p1 = cleaned_data.get('password1', '')
         p2 = cleaned_data.get('password2', '')
@@ -182,10 +184,41 @@ class ChangeOwnPasswordForm(forms.Form):
             self.add_error('password2', "Les mots de passe ne correspondent pas.")
         if p1:
             try:
-                validate_password(p1, self.user)
+                validate_password(p1)
             except forms.ValidationError as e:
                 self.add_error('password1', e)
         return cleaned_data
+
+
+class PasswordResetRateLimitedForm(DjangoPasswordResetForm):
+    """PasswordResetForm avec limitation de débit (3 requêtes/heure/session).
+
+    Protège contre les abus de demande de réinitialisation par email.
+    """
+
+    RATE_LIMIT_MAX = 3
+    RATE_LIMIT_WINDOW_MINUTES = 60
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+
+        request = self.request
+        if request:
+            reset_attempts = request.session.get('password_reset_attempts', [])
+            now_ts = timezone.now().timestamp()
+            cutoff = now_ts - (self.RATE_LIMIT_WINDOW_MINUTES * 60)
+            reset_attempts = [t for t in reset_attempts if isinstance(t, (int, float)) and t > cutoff]
+            if len(reset_attempts) >= self.RATE_LIMIT_MAX:
+                oldest = reset_attempts[0]
+                remaining_seconds = int(oldest + (self.RATE_LIMIT_WINDOW_MINUTES * 60) - now_ts)
+                raise forms.ValidationError(
+                    f"Trop de tentatives. Réessayez dans {max(1, remaining_seconds // 60)} minute(s)."
+                )
+            reset_attempts.append(now_ts)
+            request.session['password_reset_attempts'] = reset_attempts
+            request.session.modified = True
+
+        return email
 
 
 class ParentCreateForm(forms.ModelForm):

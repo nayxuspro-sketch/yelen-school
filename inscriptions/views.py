@@ -483,10 +483,15 @@ def eleve_detail(request, pk):
 @login_required
 def eleve_create(request):
     """Création d'un nouvel élève."""
+    etab = getattr(request.user, 'etablissement', None)
+
     if request.method == 'POST':
         form = EleveForm(request.POST, request.FILES)
         if form.is_valid():
-            eleve = form.save()
+            eleve = form.save(commit=False)
+            if etab:
+                eleve._etablissement_code = etab.code
+            eleve.save()
             messages.success(request, f"Élève {eleve.get_nom_complet()} créé avec succès.")
             return redirect('inscriptions:eleve_detail', pk=eleve.pk)
     else:

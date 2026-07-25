@@ -30,7 +30,7 @@ Coverage minimum obligatoire : 80% sur chaque app.
 - @pytest.mark.signataire  : tests SignataireDocument
 
 ### Cas à tester obligatoirement
-- Génération matricule unique BF-AAAA-NNNNN
+- Génération matricule unique (élève: {CODE_ETAB}-AAAA-NN, personnel: {CODE_ETAB}-P-AAAA-NN)
 - Calcul automatique de l'âge depuis date_naissance
 - Unicité contrainte (cycle × type_document × annee_scolaire)
 - Feature Flags selon niveau de licence

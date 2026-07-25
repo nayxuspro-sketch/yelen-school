@@ -11,8 +11,8 @@ Chaque modèle que tu crées respecte ces règles sans exception.
 - BaseModel contient : id (UUID), created_at, updated_at, is_active
 
 ### Champs
-- Matricule élève    : BF-AAAA-NNNNN — généré auto dans save(), jamais modifiable
-- Matricule personnel: PERS-AAAA-NNNNN — même logique
+- Matricule élève    : {CODE_ETAB}-AAAA-NN — généré auto dans save(), jamais modifiable
+- Matricule personnel: {CODE_ETAB}-P-AAAA-NN — même logique
 - Âge               : PropertyField calculé depuis date_naissance, jamais stocké
 - Monnaie           : DecimalField en FCFA, max_digits=12, decimal_places=0
 - Notes             : DecimalField sur 20, max_digits=4, decimal_places=2

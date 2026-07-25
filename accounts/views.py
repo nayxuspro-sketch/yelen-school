@@ -8,6 +8,7 @@ from functools import wraps
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import PasswordResetView
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -19,9 +20,25 @@ from datetime import timedelta
 from django.views.decorators.http import require_POST
 
 from core.models import RoleChoices
-from .forms import UserCreateForm, UserUpdateForm, SetPasswordForm, ProfileUpdateForm, ChangeOwnPasswordForm
+from .forms import UserCreateForm, UserUpdateForm, SetPasswordForm, ProfileUpdateForm, ChangeOwnPasswordForm, PasswordResetRateLimitedForm
 from .models import User
 from licences.models import Licence
+
+
+# ── Mot de passe oublié — vue avec limitation de débit ────────────────────────
+
+class PasswordResetRateLimitedView(PasswordResetView):
+    """PasswordResetView avec limitation de débit (3 req./h) anti-brute force.
+
+    Utilise PasswordResetRateLimitedForm qui vérifie la session
+    et bloque après RATE_LIMIT_MAX tentatives par fenêtre.
+    """
+    form_class = PasswordResetRateLimitedForm
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.request = self.request
+        return form
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

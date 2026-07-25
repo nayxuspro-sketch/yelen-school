@@ -25,10 +25,10 @@ Voici 6 propositions majeures conçues pour maximiser la résilience, l'accessib
 
 *   **Concept** : Permettre aux parents d'interroger le serveur YELEN SCHOOL de l'école directement par SMS sans connexion internet.
 *   **Fonctionnement** :
-    1. Le parent envoie un code SMS structuré à un numéro court ou à la passerelle locale (ex : `NOTE BF-2026-00123 T1`).
+    1. Le parent envoie un code SMS structuré à un numéro court ou à la passerelle locale (ex : `NOTE 01-2026-00123 T1`).
     2. La passerelle Android locale (SMS Gateway) ou le modem USB reçoit le message et transmet la requête à l'instance locale Django.
     3. Le système vérifie le numéro de téléphone émetteur (pour s'assurer qu'il correspond à un parent enregistré) et extrait les données.
-    4. YELEN SCHOOL génère et renvoie un SMS automatique récapitulant les moyennes de l'élève ou son solde financier actuel (ex : `SOLDE BF-2026-00123`).
+    4. YELEN SCHOOL génère et renvoie un SMS automatique récapitulant les moyennes de l'élève ou son solde financier actuel (ex : `SOLDE 01-2026-00123`).
 *   **Innovation** : 100 % accessible hors-ligne pour la famille, coût minime, immédiateté de l'information.
 
 ---

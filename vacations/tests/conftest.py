@@ -23,7 +23,7 @@ def personnel(db):
         'personnel.MembrePersonnel',
         nom='KABORÉ',
         prenom='Adama',
-        matricule='PERS-YSK-2026-0001',
+        matricule='YSK-P-2026-0001',
         genre='M',
         nationalite='Burkinabè',
         lieu_naissance='Ouagadougou',

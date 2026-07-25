@@ -55,18 +55,18 @@ class Eleve(BaseModel):
     """
     Informations complètes d'un élève.
 
-    Chaque élève a un matricule unique au format: BF-{REGION}-{ANNEE}-{SEQ:04d}
-    Ex: BF-BK-2026-0001 (BK = Bukina Faso, région Burkina)
+    Chaque élève a un matricule unique au format: {CODE_ETAB}-{ANNEE}-{SEQ}
+    Ex: 01-2026-5 (01 = code établissement, 2026 = année, 5 = numéro d'enregistrement)
 
     Note v3.4: L'âge est calculé dynamiquement (non stocké).
     """
 
-    # Matricule unique (format: BF-{REGION}-{ANNEE}-{SEQ:04d})
+    # Matricule unique (format: {CODE_ETAB}-{ANNEE}-{SEQ})
     matricule = models.CharField(
         max_length=20,
         unique=True,
         verbose_name=_("Matricule"),
-        help_text=_("Format: BF-{REGION}-{ANNEE}-{SEQ:04d}")
+        help_text=_("Format: {CODE_ETAB}-{ANNEE}-{SEQ}")
     )
 
     # Informations personnelles
@@ -271,25 +271,29 @@ class Eleve(BaseModel):
 
     def _generate_matricule(self):
         """
-        Génère un matricule unique au format: BF-{REGION}-{ANNEE}-{SEQ:04d}
-        Ex: BF-BK-2026-0001
+        Génère un matricule unique au format: {CODE_ETAB}-{ANNEE}-{SEQ}
+        Ex: 01-2026-5
+
+        Le code établissement est défini via l'attribut _etablissement_code
+        sur l'instance (passé par la vue avant la sauvegarde).
         """
         from datetime import datetime
-        import random
 
-        # Code pays/région (Burkina Faso par défaut)
-        region = 'BK'  # BK = Burkina
+        # Code établissement
+        etab_code = getattr(self, '_etablissement_code', None)
+        if not etab_code:
+            etab_code = 'XX'  # Fallback
 
         # Année en cours
         year = datetime.now().year
 
-        # Compter les élèves existants cette année
+        # Compter les élèves existants pour ce code et année
         count = Eleve.objects.filter(
-            matricule__startswith=f'BF-{region}-{year}'
+            matricule__startswith=f'{etab_code}-{year}-'
         ).count() + 1
 
         # Générer le matricule
-        self.matricule = f"BF-{region}-{year}-{count:04d}"
+        self.matricule = f"{etab_code}-{year}-{count}"
 
 
 # ═══════════════════════════════════════════════════════════════════

@@ -70,8 +70,8 @@ class MembrePersonnel(BaseModel):
     """
     Informations complètes d'un membre du personnel.
     
-    Chaque membre a un matricule unique au format: PERS-{ETAB}-{ANNEE}-{SEQ:04d}
-    Ex: PERS-YSK-2026-0001
+    Chaque membre a un matricule unique au format: {CODE_ETAB}-P-{ANNEE}-{SEQ}
+    Ex: 01-P-2026-2 (01 = code établissement, P = Personnel, 2026 = année, 2 = numéro d'enregistrement)
     
     Note v3.3: Le personnel doit avoir une InscriptionPersonnel validée
     chaque année pour être actif dans les emplois du temps, présences, etc.
@@ -84,7 +84,7 @@ class MembrePersonnel(BaseModel):
         blank=True,
         default='',
         verbose_name=_("Matricule"),
-        help_text=_("Format: PERS-{ETAB}-{ANNEE}-{SEQ:04d}")
+        help_text=_("Format: {CODE_ETAB}-P-{ANNEE}-{SEQ}")
     )
     
     # Informations personnelles
@@ -281,15 +281,15 @@ class MembrePersonnel(BaseModel):
         super().save(*args, **kwargs)
     
     def _generate_matricule(self):
-        """Génère le matricule PERS-{ETAB}-{ANNEE}-{SEQ:04d}."""
+        """Génère le matricule au format: {CODE_ETAB}-P-{ANNEE}-{SEQ}."""
         from datetime import date as date_module
         
-        etab_code = 'ETAB'
+        etab_code = 'XX'
         if self.etablissement and self.etablissement.code:
             etab_code = self.etablissement.code.upper()
         
         annee = date_module.today().year
-        prefix = f"PERS-{etab_code}-{annee}-"
+        prefix = f"{etab_code}-P-{annee}-"
         
         last_personnel = MembrePersonnel.objects.filter(
             matricule__startswith=prefix
@@ -304,7 +304,7 @@ class MembrePersonnel(BaseModel):
         else:
             next_seq = 1
         
-        self.matricule = f"PERS-{etab_code}-{annee}-{next_seq:04d}"
+        self.matricule = f"{etab_code}-P-{annee}-{next_seq}"
 
 
 # ═══════════════════════════════════════════════════════════════════

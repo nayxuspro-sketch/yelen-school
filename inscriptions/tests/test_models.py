@@ -8,8 +8,8 @@ class TestEleveModel:
     def test_matricule_generation(self):
         """Vérifie que le matricule est généré automatiquement."""
         eleve = baker.make('inscriptions.Eleve', matricule='')
-        assert eleve.matricule.startswith('BF-BK-')
-        assert len(eleve.matricule) == 15  # BF-BK-2026-0001 (15 chars)
+        assert eleve.matricule.startswith('XX-')
+        assert len(eleve.matricule) == 10  # XX-2026-01 (10 chars)
 
     def test_age_calculation(self):
         """Vérifie le calcul dynamique de l'âge."""
@@ -20,9 +20,9 @@ class TestEleveModel:
 
     def test_str_representation(self):
         """Vérifie la représentation textuelle de l'élève."""
-        eleve = baker.make('inscriptions.Eleve', nom="Traore", prenom="Paul", matricule="BF-BK-2026-0001")
+        eleve = baker.make('inscriptions.Eleve', nom="Traore", prenom="Paul", matricule="01-2026-01")
         assert "Paul Traore" in str(eleve)
-        assert "BF-BK-2026-0001" in str(eleve)
+        assert "01-2026-01" in str(eleve)
 
 @pytest.mark.django_db
 class TestInscriptionModel:

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 4.2
-version_guide: 2.16
-date_mise_a_jour: 19/07/2026 (v3.1)
+version_guide: 2.17
+date_mise_a_jour: 24/07/2026 (v3.2)
 modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel]
 modules_en_attente: [portail_parent, transferts, api_rest, orientation_postbac, solar_guard]
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -248,11 +248,16 @@ Ouvre ton navigateur et saisis l'adresse du logiciel. Tu arrives sur la page de 
 
 **Mot de passe oublié :**
 
-YELEN SCHOOL fonctionne **hors ligne** — la réinitialisation par e-mail n'est pas disponible. Clique sur le lien **"Mot de passe oublié ?"** pour afficher un panneau d'information qui t'indique la marche à suivre :
+Clique sur le lien **"Mot de passe oublié ?"** pour lancer la réinitialisation par email.
 
-> Contactez votre administrateur : *Administration → Utilisateurs → [votre compte] → Changer le mot de passe*
+Le système vérifie si l'adresse email est connue et envoie un lien sécurisé valable **72 heures**. Si le serveur SMTP n'est pas configuré (mode local), l'email est affiché dans la console Docker (accessible via `docker compose logs web`).
 
-L'administrateur (SUPER\_ADMIN ou DIRECTEUR) peut modifier le mot de passe depuis la fiche utilisateur sans avoir besoin de connaître l'ancien.
+**Sécurité :**
+- Limitation à **3 demandes par heure** (anti-brute force)
+- Token à usage unique avec horodatage (anti-rejeu)
+- Aucune information sur l'existence du compte (anti-énumération)
+
+> ⚠️ **Alternative admin :** L'administrateur peut modifier manuellement le mot de passe depuis *Administration → Utilisateurs → [compte] → Modifier le mot de passe*, sans connaître l'ancien.
 
 **Compte Super Admin par défaut :**
 
@@ -637,7 +642,7 @@ bulletins = generer_bulletins_annuels_classe(classe, annee)
 |---------|-------------|
 | **Rang** | Classement annuel avec gestion des ex-aequo (même rang si même moyenne) |
 | **Élève** | Nom (majuscules) + Prénom |
-| **Matricule** | Identifiant unique de l'élève (format `BF-AAAA-NNNNN`) |
+| **Matricule** | Identifiant unique de l'élève (format `{CODE_ETAB}-AAAA-NN`) |
 | **Moyenne Annuelle** | Agrégation de tous les trimestres, sur 20 — verte ≥10, rouge <10 |
 | **Décision du conseil** | "Admis(e) en classe supérieure" si moyenne ≥ 10, sinon "Redouble la classe" |
 
@@ -873,7 +878,7 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 
 **Règles :**
 - Un seul établissement ne peut avoir qu'**une seule année courante** à la fois
-- Les matricules élèves (`BF-AAAA-NNNNN`) sont liés à l'année de première inscription
+- Les matricules élèves (`{CODE_ETAB}-AAAA-NN`) sont liés à l'année de première inscription
 
 ---
 
@@ -3028,7 +3033,7 @@ Le document contient : en-tête de l'établissement, numéro d'ordre, matricule,
 | Colonne | Description |
 |---------|-------------|
 | N° | Numéro d'ordre |
-| Matricule | Matricule PERS-{ETAB}-{ANNEE}-{SEQ} |
+| Matricule | Matricule {CODE_ETAB}-P-{ANNEE}-{SEQ} |
 | Nom et Prénom(s) | Nom complet en majuscules |
 | Genre | H (Homme) ou F (Femme) |
 | Poste / Fonction | Titre du poste occupé cette année |
@@ -3750,7 +3755,15 @@ Pour les congrégations, fondations et réseaux d'écoles, un tableau de bord co
 
 ### Q1. J'ai oublié mon mot de passe. Que faire ?
 
-Contacte ton administrateur système. Il peut réinitialiser ton mot de passe depuis le panneau d'administration. Tu ne peux pas réinitialiser ton mot de passe toi-même par email (le logiciel fonctionne hors ligne).
+Depuis l'écran de connexion, clique sur **"Mot de passe oublié ?"** et saisis ton adresse email. Un lien de réinitialisation valable 72h t'est envoyé.
+
+Si le serveur SMTP n'est pas configuré, l'administrateur peut récupérer le lien dans les logs Docker :
+```bash
+docker compose -f docker-compose.dev.yml logs web | grep "password_reset"
+```
+
+**Alternative :** L'administrateur peut réinitialiser ton mot de passe depuis
+*Administration → Utilisateurs → [ton compte] → Modifier le mot de passe*.
 
 ---
 
@@ -4074,11 +4087,19 @@ DB_NAME=yelen_school_db
 DB_USER=yelen_user
 DB_PASSWORD=...mot-de-passe...
 DB_HOST=db
-DB_PORT=5432
+DB_PORT=5433
 REDIS_URL=redis://redis:6379/0
 ```
 
 > **Règle absolue :** PostgreSQL est obligatoire. L'utilisation de SQLite (même en développement) est interdit. Utilise Docker Compose pour démarrer PostgreSQL en local.
+
+> **⚠️ Conflit de ports PostgreSQL :** Si vous avez PostgreSQL installé nativement sur Windows, il écoute aussi sur le port 5432.  
+> Pour éviter le conflit, le Docker Compose expose PostgreSQL sur le port **5433** de l'hôte (mappé vers 5432 dans le conteneur).  
+> Le fichier `.env` utilise `DB_PORT=5433` pour les connexions depuis l'hôte. Pour désactiver le PostgreSQL natif :
+> ```powershell
+> Stop-Service postgresql-x64-18 -Force
+> Set-Service postgresql-x64-18 -StartupType Disabled
+> ```
 
 #### Démarrer l'Environnement de Développement avec Docker
 
@@ -4087,11 +4108,15 @@ REDIS_URL=redis://redis:6379/0
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-> Pour le guide de **déploiement complet** (installation, configuration, sauvegarde, mise à jour, dépannage), consultez le document dédié : [`docs/GUIDE_DEPLOIEMENT_WINDOWS.md`](GUIDE_DEPLOIEMENT_WINDOWS.md).
+> **Note :** Le fichier `manage.py` charge automatiquement le fichier `.env` via `python-dotenv` au démarrage, ce qui permet d'exécuter les commandes Django localement sans configuration supplémentaire.
+
+> **⚡ Fichiers statiques :** Le middleware `WhiteNoise` est activé dans les settings (`whitenoise.middleware.WhiteNoiseMiddleware`).  
+> Il sert les fichiers statiques même quand `DEBUG=False`, ce qui évite les pages sans CSS.  
+> En développement local, `DEBUG=True` est recommandé dans `.env` pour un fonctionnement optimal.
 
 #### Lancer les Tests Unitaires
 
-Les tests doivent être exécutés **depuis le conteneur web** pour éviter un bug connu de psycopg2 + libpq sur Windows (locale française génère une `UnicodeDecodeError` lors de la connexion PostgreSQL).
+Les tests peuvent être exécutés depuis l'hôte Windows (plus besoin de passer par le conteneur) ou depuis le conteneur web :
 
 ```bash
 # Lancer tous les tests
@@ -5481,12 +5506,12 @@ NOTE <matricule> [trimestre]
 
 | Paramètre | Description | Exemple |
 |-----------|-------------|---------|
-| `matricule` | Matricule de l'élève (format `BF-AAAA-NNNNN`) | `BF-2026-00042` |
+| `matricule` | Matricule de l'élève (format `{CODE_ETAB}-AAAA-NN`) | `01-2026-00042` |
 | `trimestre` | Facultatif : `T1`, `T2`, `T3` ou un chiffre. Si absent → dernier trimestre. | `T1` |
 
 **Exemples :**
-- `NOTE BF-2026-00042 T1` → Moyenne du 1er trimestre
-- `NOTE BF-2026-00042` → Dernière moyenne disponible
+- `NOTE 01-2026-00042 T1` → Moyenne du 1er trimestre
+- `NOTE 01-2026-00042` → Dernière moyenne disponible
 
 **Réponse type :**
 ```
@@ -5503,7 +5528,7 @@ SOLDE <matricule>
 
 Retourne le montant dû, le total payé et le reste à payer **en FCFA**.
 
-**Exemple :** `SOLDE BF-2026-00042`
+**Exemple :** `SOLDE 01-2026-00042`
 
 **Réponse type :**
 ```
@@ -5520,7 +5545,7 @@ ABS <matricule>
 
 Retourne le nombre d'absences non justifiées et excusées sur l'année en cours.
 
-**Exemple :** `ABS BF-2026-00042`
+**Exemple :** `ABS 01-2026-00042`
 
 **Réponse type :**
 ```
@@ -5719,14 +5744,35 @@ Variables essentielles pour un déploiement local :
 | `SECRET_KEY` | Clé de 64 octets | Générer avec `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
 | `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Ajouter le nom de domaine si nécessaire |
 | `DB_PASSWORD` | Mot de passe fort | Pour un nouveau volume DB, laisser généré ; pour un volume existant, utiliser le mot de passe d'origine |
+| `DB_PORT` | `5433` | Port d'exposition de PostgreSQL (port 5433 sur l'hôte → 5432 dans le conteneur Docker). Évite le conflit si PostgreSQL est installé nativement sur Windows (port 5432). |
 | `DISABLE_HTTPS_REDIRECT` | `true` | Désactive la redirection HTTPS (pratique en local sans certificat) |
 | `ENSURE_ADMIN` | `true` | `false` après le premier déploiement (sécurité) |
 | `EMAIL_HOST` | *(laisser vide)* | Backend console utilisé automatiquement si vide → pas de plantage SMTP |
 
+> **⚠️ Conflit PostgreSQL natif :** Si vous avez PostgreSQL installé nativement sur Windows (service `postgresql-x64-18`),
+> il écoute sur le port 5432 et entre en conflit avec le PostgreSQL de Docker.  
+> Le Docker Compose expose PostgreSQL sur le port **5433** de l'hôte pour éviter ce conflit.  
+> Pour désactiver le PostgreSQL natif, exécutez dans PowerShell (en administrateur) :
+> ```powershell
+> Stop-Service postgresql-x64-18
+> Set-Service postgresql-x64-18 -StartupType Disabled
+> ```
+
 #### 2. Lancement de l'application
 
 **Windows :** Double-cliquer sur `demarrage.bat` (ou `lancer-yelen.bat`).
-Le script vérifie Docker, construit l'image, démarre les conteneurs et ouvre le navigateur.
+
+`demarrage.bat` effectue les vérifications suivantes avant de lancer :
+1. **Docker Desktop** est installé et en cours d'exécution
+2. **Conteneurs déjà en cours ?** — si oui, ouvre directement le navigateur sans reconstruire
+3. Si les conteneurs ne sont pas encore lancés, exécute `docker compose up -d --build`
+4. **Attente du serveur web** — boucle de scrutation (jusqu'à 80 secondes) :
+   - Vérifie toutes les 2 secondes que `http://localhost:8000` répond
+   - Ouvre le navigateur dès que le serveur est prêt (évite l'erreur `NS_ERROR_NET_EMPTY_RESPONSE`)
+
+`lancer-yelen.bat` offre un lancement plus simple (sans vérifications préalables) avec la même boucle d'attente.
+
+En cas d'échec, le script affiche les logs de diagnostic (web et db).
 
 **En ligne de commande (tous OS) :**
 
@@ -5734,11 +5780,18 @@ Le script vérifie Docker, construit l'image, démarre les conteneurs et ouvre l
 # Construire et démarrer
 docker compose -f docker-compose.dev.yml up -d --build
 
+# Démarrer sans nginx (si port 80 occupé)
+docker compose -f docker-compose.dev.yml up -d --build web db redis minio mailhog
+
 # Voir les logs
 docker compose -f docker-compose.dev.yml logs -f web
 ```
 
 L'application est accessible sur : **http://localhost:8000**
+
+> **Nginx en développement :** La configuration `nginx/default.dev.conf` est utilisée en mode dev
+> (HTTP uniquement, pas de redirect HTTPS, pas de certificat SSL). Pour la production,
+> utilisez `docker-compose.prod.yml` qui référence `nginx/default.conf` avec SSL.
 
 #### 3. Première connexion
 

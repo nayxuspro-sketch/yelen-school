@@ -18,9 +18,9 @@ def post_json(url, payload):
 
 BASE = 'http://localhost:8000/communication/webhook/sms/'
 HEADERS = {'Content-Type': 'application/json'}
-PHONE_OK = '+22670048114'       # Parent de SALAM Kaboré (BF-BK-2026-0002)
+PHONE_OK = '+22670048114'       # Parent de SALAM Kaboré
 PHONE_BAD = '+22699999999'      # Numéro inconnu
-MATRICULE = 'BF-BK-2026-0002'
+MATRICULE = '01-2026-0002'
 
 TESTS = [
     (

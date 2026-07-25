@@ -23,7 +23,7 @@ class TestIncomingSMSWebhook:
         # Student and Inscription
         self.eleve = baker.make(
             'inscriptions.Eleve',
-            matricule='BF-BK-2026-9999',
+            matricule='01-2026-9999',
             nom='OUEDRAOGO',
             prenom='Adama',
             telephone_parent='+22670112233'
@@ -73,7 +73,7 @@ class TestIncomingSMSWebhook:
         """Verifie le rejet d'un numero non autorise."""
         response = client.post(self.url, {
             'phoneNumber': '+22670999999',  # Pas le parent
-            'message': 'NOTE BF-BK-2026-9999 T1'
+            'message': 'NOTE 01-2026-9999 T1'
         }, secure=True)
         assert response.status_code == 200
         data = response.json()
@@ -89,7 +89,7 @@ class TestIncomingSMSWebhook:
         """Verifie le retour correct des notes pour un parent autorise."""
         response = client.post(self.url, {
             'phoneNumber': '+22670112233',  # Parent
-            'message': 'NOTE BF-BK-2026-9999 T1'
+            'message': 'NOTE 01-2026-9999 T1'
         }, secure=True)
         assert response.status_code == 200
         data = response.json()
@@ -114,7 +114,7 @@ class TestIncomingSMSWebhook:
 
         response = client.post(self.url, {
             'phoneNumber': '+22670112233',  # Parent
-            'message': 'ABS BF-BK-2026-9999'
+            'message': 'ABS 01-2026-9999'
         }, secure=True)
         assert response.status_code == 200
         data = response.json()
@@ -146,7 +146,7 @@ class TestIncomingSMSWebhook:
 
         response = client.post(self.url, {
             'phoneNumber': '+22670112233',  # Parent
-            'message': 'SOLDE BF-BK-2026-9999'
+            'message': 'SOLDE 01-2026-9999'
         }, secure=True)
         assert response.status_code == 200
         data = response.json()

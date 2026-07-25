@@ -1,7 +1,7 @@
 """URL configuration for accounts app."""
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
-
 app_name = 'accounts'
 
 urlpatterns = [
@@ -9,6 +9,34 @@ urlpatterns = [
     path('login/',      views.login_view,  name='login'),
     path('login/2fa/',  views.login_2fa,   name='login_2fa'),
     path('logout/',     views.logout_view, name='logout'),
+
+    # Mot de passe oublié — réinitialisation par email avec limitation de débit
+    path('mot-de-passe-oublie/',
+        views.PasswordResetRateLimitedView.as_view(
+            template_name='accounts/password_reset_form.html',
+            email_template_name='accounts/password_reset_email.txt',
+            subject_template_name='accounts/password_reset_subject.txt',
+            success_url='/accounts/mot-de-passe-oublie/envoye/',
+        ),
+        name='password_reset'),
+    path('mot-de-passe-oublie/envoye/',
+        auth_views.PasswordResetDoneView.as_view(
+            template_name='accounts/password_reset_done.html',
+        ),
+        name='password_reset_done'),
+    path('reinitialiser/<uidb64>/<token>/',
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name='accounts/password_reset_confirm.html',
+            success_url='/accounts/reinitialiser/termine/',
+        ),
+        name='password_reset_confirm'),
+    path('reinitialiser/termine/',
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name='accounts/password_reset_complete.html',
+        ),
+        name='password_reset_complete'),
+
+    # Profil
     path('profile/',    views.profile_view, name='profile'),
     path('profile/mot-de-passe/', views.profile_change_password, name='profile_change_password'),
     path('profile/2fa/activer/',   views.totp_setup,   name='totp_setup'),

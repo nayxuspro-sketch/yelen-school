@@ -57,7 +57,7 @@ def seed():
     for nom, prenom, genre, date_naiss, lieu_naiss, fonction, date_embauche in personnel_data:
         # Générer un matricule unique
         existing_count = MembrePersonnel.objects.count() + 1
-        matricule = f"PERS-YSK-2026-{existing_count:04d}"
+        matricule = f"YSK-P-2026-{existing_count:02d}"
         
         p, created = MembrePersonnel.objects.get_or_create(
             nom=nom,

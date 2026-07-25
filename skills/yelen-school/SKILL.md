@@ -55,8 +55,8 @@ casse quelque chose en production, pas seulement l'esthétique du code.
 |---|---|---|
 | Modèles | Tout modèle étend `BaseModel` (`core/models.py`) | Cohérence des champs d'audit/historique sur toute la base |
 | Logique métier | Jamais dans les vues — services/managers uniquement | Testabilité, réutilisation, vues HTMX restent fines |
-| Matricule élève | `BF-AAAA-NNNNN`, auto-généré, non modifiable | Traçabilité officielle, conforme aux usages administratifs BF |
-| Matricule personnel | `PERS-AAAA-NNNNN`, auto-généré, non modifiable | Idem |
+| Matricule élève | `{CODE_ETAB}-AAAA-NN`, auto-généré, non modifiable | Code établissement-Année-Numéro |
+| Matricule personnel | `{CODE_ETAB}-P-AAAA-NN`, auto-généré, non modifiable | Idem |
 | Âge | Toujours calculé depuis `date_naissance`, jamais saisi | Évite les incohérences de saisie |
 | Cycles scolaires | `Préscolaire` / `Primaire` / `Post-primaire` / `Secondaire` | Référentiel officiel BF, ne pas inventer d'autres cycles |
 | Monnaie | FCFA uniquement | Marché cible |

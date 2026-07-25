@@ -46,6 +46,20 @@ ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',
 if not ALLOWED_HOSTS and DEBUG:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 
+# Ajout automatique de l'IP locale pour l'accès réseau local
+import socket
+try:
+    _hostname = socket.gethostname()
+    _lan_ip = socket.gethostbyname(_hostname)
+    if _lan_ip and not _lan_ip.startswith('127.'):
+        ALLOWED_HOSTS.append(_lan_ip)
+        ALLOWED_HOSTS.append(_hostname)
+except Exception:
+    pass
+
+# Déduplication et nettoyage
+ALLOWED_HOSTS = list(dict.fromkeys(h for h in ALLOWED_HOSTS if h))
+
 # ── SÉCURITÉ HTTP (Production) ────────────────────────────────────────────────
 # SSL Redirect — désactiver pour déploiement local sans HTTPS (via DISABLE_HTTPS_REDIRECT=true)
 _SECURE_SSL_REDIRECT = os.environ.get('DISABLE_HTTPS_REDIRECT', 'false').lower() != 'true'
@@ -76,6 +90,16 @@ if not DEBUG:
 
 # Autorise les requêtes POST/CSRF depuis les origines de confiance
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://localhost,https://127.0.0.1').split(',') if o.strip()]
+
+# Ajout automatique de l'IP locale pour l'accès réseau local
+try:
+    _lan_ip = socket.gethostbyname(socket.gethostname())
+    if _lan_ip and not _lan_ip.startswith('127.'):
+        _lan_origin = f'http://{_lan_ip}:8000'
+        if _lan_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(_lan_origin)
+except Exception:
+    pass
 
 # Indique à Django qu'il est derrière un proxy HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -141,6 +165,7 @@ AUTH_USER_MODEL = 'accounts.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -212,6 +237,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

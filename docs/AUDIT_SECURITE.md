@@ -91,7 +91,7 @@ ce qui est intentionnel pour un webhook. Cependant, cette conception crée plusi
 
 1. **Aucun secret partagé / HMAC** : n'importe qui connaissant l'URL peut envoyer une
    fausse requête et se faire passer pour un SMS entrant d'un parent.
-2. **Injection de matricule** : en envoyant `NOTE BF-2026-00001` avec un numéro quelconque,
+2. **Injection de matricule** : en envoyant `NOTE 01-2026-00001` avec un numéro quelconque,
    l'attaquant peut potentiellement extraire les notes, soldes ou absences d'un élève si
    le numéro est dans la liste autorisée.
 3. **DoS par saturation de SMS** : l'endpoint déclenche `envoyer_sms_async` sans rate limiting.

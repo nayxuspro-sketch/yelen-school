@@ -63,7 +63,7 @@ personnel/models.py doit inclure:
   - poste (FK vers parametres.Poste)
   - cycles (M2M vers Cycle)
   - est_directeur (BooleanField)
-  - matricule (PERS-{ETAB}-{ANNEE}-{SEQ:04d})
+  - matricule ({CODE_ETAB}-P-{ANNEE}-{SEQ:02d})
 
 - InscriptionPersonnel (nouveau)
   - personnel (FK)
@@ -92,7 +92,7 @@ inscriptions/models.py:
   - observations
 
 - Eleve (nouveau - pourrait être dans accounts)
-  - matricule (BF-{REGION}-{ANNEE}-{SEQ:04d})
+  - matricule ({CODE_ETAB}-{ANNEE}-{SEQ:02d})
   - nom
   - prenom
   - date_naissance
@@ -229,7 +229,7 @@ Integration des signataires dans les documents:
 ### Module Inscriptions
 - [ ] Créer le modèle Eleve avec toutes les infos
 - [ ] Créer le modèle Inscription
-- [ ] Implémenter la logique de matricule (BF-{REGION}-{ANNEE}-{SEQ})
+- [ ] Implémenter la logique de matricule ({CODE_ETAB}-{ANNEE}-{SEQ})
 - [ ] Créer le workflow inscription/réinscription
 - [ ] Ajouter la logique d'âge calculé (non stocké)
 - [ ] Créer les templates inscription

@@ -171,10 +171,12 @@
           </svg>
           Aide
         </a>
-        <a href="{% url 'accounts:logout' %}" class="btn-secondary btn-sm"
-           style="flex: 1; justify-content: center;">
-          Déconnexion
-        </a>
+        <form method="post" action="{% url 'accounts:logout' %}" style="flex:1; margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="btn-secondary btn-sm" style="width:100%; justify-content: center;">
+            Déconnexion
+          </button>
+        </form>
       </div>
       {% endif %}
     </div>

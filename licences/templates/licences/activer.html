@@ -47,9 +47,12 @@
 
                 <div style="display: flex; gap: 15px;">
                     {% if is_superuser %}
-                    <a href="/licences/" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 48px;">Finaliser l'Installation</a>
+                    <a href="{% url 'licences:licence_list' %}" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 48px;">Finaliser l'Installation</a>
                     {% endif %}
-                    <a href="{% url 'accounts:logout' %}" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center; height: 48px;">Sortie</a>
+                    <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center; height: 48px; border:none; cursor:pointer; font-family:inherit; font-size:13px;">Sortie</button>
+                    </form>
                 </div>
             </div>
         {% else %}
@@ -86,7 +89,10 @@
 
             <div style="display: flex; gap: 15px;">
                 <a href="mailto:support@yelenschool.bf" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 50px; font-weight: 700; background: var(--color-primary); box-shadow: 0 4px 15px rgba(0,168,107,0.3);">Commander une Licence</a>
-                <a href="{% url 'accounts:logout' %}" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center; height: 50px;">Déconnexion</a>
+                <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center; height: 50px; border:none; cursor:pointer; font-family:inherit; font-size:13px;">Déconnexion</button>
+                </form>
             </div>
         {% endif %}
 

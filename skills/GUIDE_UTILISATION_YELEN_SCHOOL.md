@@ -1345,22 +1345,21 @@ Une fois créé, le modèle est disponible lors des actions nécessitant un SMS 
 
 Le matricule est attribué **automatiquement** par le système. Il est unique pour chaque élève.
 
-**Format : `BF-{REGION}-{ANNEE}-{SEQ}`**
+**Format : `{CODE_ETAB}-{ANNEE}-{SEQ}`**
 
 | Partie | Signification | Exemple |
 |--------|---------------|---------|
-| `BF` | Burkina Faso | BF |
-| `{REGION}` | Code de la région | CEN (Centre), BOB (Bobo), KDG (Koudougou), FAD (Fada) |
-| `{ANNEE}` | Année scolaire sur 4 chiffres | 2526 (pour 2025-2026) |
-| `{SEQ}` | Numéro séquentiel | 0001, 0002, ..., 9999 |
+| `{CODE_ETAB}` | Code de l'établissement | 01, YSK, LYCB |
+| `{ANNEE}` | Année d'enregistrement sur 4 chiffres | 2026 |
+| `{SEQ}` | Numéro séquentiel sur 2 chiffres | 01, 02, ..., 99 |
 
 **Exemples :**
 
 | Matricule | Interprétation |
 |-----------|----------------|
-| `BF-CEN-2526-0001` | 1er élève enregistré, région Centre, année 2025-2026 |
-| `BF-BOB-2526-0234` | 234ème élève, région Hauts-Bassins (Bobo), 2025-2026 |
-| `BF-FAD-2526-0012` | 12ème élève, région Est (Fada N'Gourma), 2025-2026 |
+| `01-2026-01` | 1er élève enregistré, établissement 01, année 2026 |
+| `YSK-2026-05` | 5ème élève enregistré, école YSK, année 2026 |
+| `LYCB-2026-12` | 12ème élève, Lycée Bobo, année 2026 |
 
 > **Note :** Le matricule est définitif. Il ne change pas si l'élève change de classe ou d'établissement.
 
@@ -1641,8 +1640,8 @@ Pour imprimer toutes les cartes d'une classe en un seul fichier :
 ┌────┬────────────────────┬──────────┬────────────────┬──────────────────────┐
 │ N° │ Nom & Prénom       │Matricule │ Dernière Classe│ Actions              │
 ├────┼────────────────────┼──────────┼────────────────┼──────────────────────┤
-│  1 │ TRAORÉ Moussa      │BF-BK-... │ 🔴 Abandon     │ [👁] [✅]            │
-│  2 │ SAWADOGO Aminata   │BF-BK-... │ Terminale A    │ [👁] [📋] [✏] [💰]  │
+│  1 │ TRAORÉ Moussa      │01-...    │ 🔴 Abandon     │ [👁] [✅]            │
+│  2 │ SAWADOGO Aminata   │01-...    │ Terminale A    │ [👁] [📋] [✏] [💰]  │
 └────┴────────────────────┴──────────┴────────────────┴──────────────────────┘
 ```
 
@@ -1768,21 +1767,21 @@ Pour imprimer toutes les cartes d'une classe en un seul fichier :
 
 ### 5.2 Comprendre le Matricule Personnel
 
-**Format : `PERS-{ETAB}-{ANNEE}-{SEQ}`**
+**Format : `{CODE_ETAB}-P-{ANNEE}-{SEQ}`**
 
 | Partie | Signification | Exemple |
 |--------|---------------|---------|
-| `PERS` | Personnel | PERS |
-| `{ETAB}` | Code de l'établissement | LYCB (Lycée Zinda Bobo), COLK (Collège Koudougou) |
-| `{ANNEE}` | Année d'embauche | 2526 |
-| `{SEQ}` | Numéro séquentiel | 0001, ..., 9999 |
+| `{CODE_ETAB}` | Code de l'établissement | LYCB (Lycée Zinda Bobo), COLK (Collège Koudougou) |
+| `P` | Personnel | P |
+| `{ANNEE}` | Année d'embauche | 2026 |
+| `{SEQ}` | Numéro d'enregistrement | 1, 2, ..., N |
 
 **Exemples :**
 
 | Matricule | Interprétation |
 |-----------|----------------|
-| `PERS-LYCB-2526-0012` | 12ème agent enregistré au Lycée Bobo, 2025-2026 |
-| `PERS-COLZ-2425-0003` | 3ème agent au Collège de Zogona, 2024-2025 |
+| `LYCB-P-2026-12` | 12ème agent enregistré au Lycée Bobo, 2026 |
+| `COLZ-P-2025-03` | 3ème agent au Collège de Zogona, 2025 |
 
 ---
 

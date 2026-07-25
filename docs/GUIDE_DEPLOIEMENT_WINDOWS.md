@@ -192,6 +192,8 @@ manage.py               ← Le cœur Django (ne pas toucher)
 .dockerignore           ← Exclut les fichiers inutiles du conteneur Docker
 README.md               ← Présentation du projet
 entrypoint.sh           ← Script de démarrage (migrate + collectstatic automatiques)
+demarrage.bat           ← Script de LANCEMENT quotidien (détecte l'IP et ouvre le navigateur)
+lancer-yelen.bat        ← Script de lancement simplifié
 ```
 
 > ⚠️ **Si `.env` est absent :** copiez `.env.example` vers `.env` et modifiez-le (voir section 4).
@@ -207,6 +209,8 @@ E:\yelen-school\
 ├── .env.example               # Template du fichier .env (documentation)
 ├── .dockerignore              # Exclut .git, .env, caches du contexte Docker
 ├── entrypoint.sh              # Script de démarrage (migrate + collectstatic)
+├── demarrage.bat              # Script de LANCEMENT QUOTIDIEN (double-clic)
+├── lancer-yelen.bat           # Script de lancement simplifié
 ├── README.md                  # Présentation du projet
 │
 ├── yelen_school/              # Configuration Django
@@ -283,6 +287,8 @@ DEBUG=False
 # Hôtes autorisés — liste des adresses qui peuvent accéder à l'application
 # Séparez chaque adresse par une virgule (sans espace)
 # Exemple : ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.100
+# ⚠️ Si vous utilisez demarrage.bat, l'IP LAN du serveur est détectée automatiquement.
+#    Vous n'avez pas besoin de l'ajouter manuellement ici.
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Origines CSRF autorisées — mêmes valeurs que ALLOWED_HOSTS mais avec https://
@@ -380,8 +386,9 @@ Avant de continuer, vérifiez :
 - [ ] `DB_PASSWORD` est un mot de passe fort (lettres + chiffres + symboles)
 - [ ] `MINIO_SECRET_KEY` est changé
 - [ ] `SMS_ENABLED=False` si vous n'utilisez pas les SMS
-- [ ] `ALLOWED_HOSTS` contient au moins `localhost,127.0.0.1`
+- [ ] `ALLOWED_HOSTS` contient au moins `localhost,127.0.0.1` (l'IP LAN est auto-détectée par `demarrage.bat`)
 - [ ] `CSRF_TRUSTED_ORIGINS` correspond aux adresses utilisées (avec `https://`)
+- [ ] `demarrage.bat` présent à la racine (utilisez-le pour le lancement quotidien)
 
 ---
 
@@ -532,7 +539,7 @@ Cochez chaque point après l'avoir testé :
 - [ ] **Tableau de bord** — les menus principaux s'affichent après connexion
 - [ ] **Paramètres** — la page `Paramètres` se charge
 - [ ] **Élèves** — la liste des élèves s'affiche (vide au début, c'est normal)
-- [ ] **Création d'un élève** — créez un élève test, le matricule `BF-2026-00001` est généré automatiquement
+- [ ] **Création d'un élève** — créez un élève test, le matricule (ex: `01-2026-00001`) est généré automatiquement
 - [ ] **PDF** — générez un bulletin PDF ou un certificat, le fichier se télécharge
 - [ ] **Déconnexion** — le bouton de déconnexion fonctionne
 
@@ -574,14 +581,23 @@ Si la page ne s'affiche pas, voir la section [10. Accès depuis les autres poste
 
 ### 7.1 Démarrer l'application
 
-**Méthode simple (double-clic) :**
+**Méthode recommandée — `demarrage.bat` (double-clic) :**
 - Ouvrez l'Explorateur Windows
 - Allez dans `E:\yelen-school\`
-- Double-cliquez sur `lancer-yelen.bat` (si le fichier existe) ou lancez la commande ci-dessous
+- Double-cliquez sur **`demarrage.bat`**
+- Ce script :
+  1. Vérifie que Docker Desktop est en marche
+  2. Détecte automatiquement l'adresse IP LAN du serveur (`192.168.X.X`)
+  3. Transmet cette IP à l'application (plus besoin de la configurer manuellement)
+  4. Lance l'application avec `docker compose up -d`
+  5. Ouvre le navigateur sur la page de connexion
 - Attendez 1-2 minutes que Docker démarre
-- Le navigateur s'ouvre automatiquement sur la page de connexion
 
-> 💡 Créez un raccourci de `lancer-yelen.bat` sur le Bureau pour un accès encore plus rapide.
+> 💡 Créez un raccourci de `demarrage.bat` sur le Bureau pour un accès encore plus rapide.
+
+**Méthode alternative — `lancer-yelen.bat` (double-clic) :**
+- Version simplifiée : démarre l'application sans détection d'IP
+- Utile si vous avez déjà configuré l'IP manuellement
 
 **Méthode terminal :**
 ```cmd
@@ -941,6 +957,13 @@ Exemple d'adresses possibles : `192.168.1.42`, `10.0.0.5`, `172.16.0.10`.
 
 ### 10.3 Ajouter l'adresse IP dans le fichier .env
 
+**Méthode A (automatique) — Utilisez `demarrage.bat` :**
+Le script `demarrage.bat` détecte automatiquement l'IP LAN du serveur à chaque lancement et la transmet à l'application via la variable d'environnement `HOST_LAN_IP`. **Aucune modification manuelle du `.env` n'est nécessaire.**
+
+Il suffit de double-cliquer sur `demarrage.bat` et tous les postes du réseau pourront accéder à l'application.
+
+**Méthode B (manuelle) — Si vous n'utilisez pas `demarrage.bat` :**
+
 ```cmd
 notepad E:\yelen-school\.env
 ```
@@ -981,6 +1004,8 @@ http://192.168.1.100:8000/accounts/login/
 
 **Problème :** Par défaut, l'adresse IP du serveur peut changer à chaque redémarrage du routeur. Si l'IP change, personne ne peut plus accéder à l'application depuis les autres postes.
 
+> 💡 **Avantage de `demarrage.bat` :** Si vous l'utilisez, même si l'IP change, le script la détecte automatiquement à chaque lancement. Vous n'avez rien à modifier. C'est la solution recommandée pour éviter ce problème.
+
 **Solution :** Donner une adresse IP fixe au serveur.
 
 **Méthode simple — via les paramètres Windows :**
@@ -1010,7 +1035,9 @@ Si les autres postes ne parviennent pas à accéder à l'application :
 netsh advfirewall firewall add rule name="YELEN SCHOOL" protocol=TCP dir=in localport=8000 action=allow
 ```
 
-> Exécutez cette commande une seule fois. Elle autorise les connexions entrantes sur le port 8000.
+> Exécutez cette commande **une seule fois** (en administrateur). Elle autorise les connexions entrantes sur le port 8000.
+>
+> 💡 **`demarrage.bat`** tente également d'ouvrir ce port automatiquement à chaque lancement (via la même commande). Si le pare-feu bloque toujours, exécutez la commande ci-dessus manuellement.
 
 ---
 
@@ -1236,7 +1263,7 @@ copy .env.local.backup .env
 ┌──────────────────────────────────────────────────────┐
 │            YELEN SCHOOL — AIDE MÉMOIRE                │
 │                                                      │
-│  DÉMARRER     : docker compose up -d                 │
+│  DÉMARRER     : Double-clic sur demarrage.bat        │
 │  ARRÊTER      : docker compose down                  │
 │  ÉTAT         : docker compose ps                    │
 │  LOGS         : docker compose logs -f               │
@@ -1247,6 +1274,7 @@ copy .env.local.backup .env
 │  ADRESSE WEB  : http://localhost:8000                │
 │                                                      │
 │  ⚠️ Arrêter Docker AVANT d'éteindre la machine      │
+│  💡 demarrage.bat détecte l'IP automatiquement       │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -1353,6 +1381,8 @@ docker compose -f docker-compose.dev.yml exec db psql -U yelen_user -d yelen_sch
 
 ---
 
-*Document rédigé pour YELEN SCHOOL — Version 4.2 — Juin 2026*
+*Document rédigé pour YELEN SCHOOL — Version 4.2 — Juillet 2026*
 
-*📘 Guide mis à jour — Section Documentation déploiement*
+*Dernières mises à jour : ajout de `demarrage.bat` avec détection automatique de l'IP LAN, mise à jour des sections 3.4, 3.5, 4.3, 7.1, 10.3, 10.6, 10.7 et 12.1.*
+
+*📘 Guide mis à jour — Section Documentation déploiement (Windows)*

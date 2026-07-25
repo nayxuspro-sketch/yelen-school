@@ -100,7 +100,7 @@
     "09": {
       "file": "skills/09-matricule-system.md",
       "invoke": "/09-matricule",
-      "description": "Matricules BF-AAAA-NNNNN et PERS-AAAA-NNNNN — unicité"
+      "description": "Matricules {CODE_ETAB}-AAAA-NN — unicité par établissement et année"
     },
     "10": {
       "file": "skills/10-age-calcul.md",
@@ -118,8 +118,8 @@
     "langue": "Toujours répondre en français",
     "monnaie": "Toujours FCFA — jamais € ou $",
     "notes": "Toujours sur 20 — jamais sur 100",
-    "matricule_eleve": "Format BF-AAAA-NNNNN — généré automatiquement, jamais modifiable",
-    "matricule_personnel": "Format PERS-AAAA-NNNNN — même logique",
+"matricule_eleve": "Format {CODE_ETAB}-AAAA-NN — généré automatiquement, jamais modifiable",
+"matricule_personnel": "Format {CODE_ETAB}-P-AAAA-NN — même logique",
     "age": "Calculé automatiquement depuis date_naissance — jamais saisi manuellement",
     "design": "Couleurs #1B4332 (vert) + #D4AF37 (or) — JAMAIS fond blanc, JAMAIS Arial/Inter",
     "licence": "Chaque vue métier doit avoir @requires_licence_feature — obligatoire",

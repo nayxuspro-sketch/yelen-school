@@ -39,7 +39,7 @@ description: >
 ```python
 # eleves/models.py
 class Eleve(BaseModel):
-    matricule        # BF-AAAA-NNNNN — auto, readonly
+    matricule        # {CODE_ETAB}-AAAA-NN (élève) / {CODE_ETAB}-P-AAAA-NN (personnel) — auto, readonly
     nom, prenom, date_naissance
     classe           # FK → Classe
 
