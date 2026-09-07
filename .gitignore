@@ -19,3 +19,9 @@ makemigrations_error.log
 nginx/default.dev.conf
 _test_run.bat
 desktop/
+
+# Mode autonome (SQLite) — données locales du serveur, jamais versionnées
+data/
+.venv/
+*.sqlite3-wal
+*.sqlite3-shm

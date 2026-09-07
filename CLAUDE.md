@@ -12,8 +12,8 @@ les règles ci-dessous **sans exception**.
 | Composant        | Technologie                          |
 |------------------|--------------------------------------|
 | Backend          | Django 4.2                           |
-| Base de données  | PostgreSQL (jamais SQLite, même en dev) |
-| Cache / files    | Redis                                |
+| Base de données  | PostgreSQL (mode serveur) **ou** SQLite (mode autonome, `DB_ENGINE=sqlite`) |
+| Cache / files    | Redis (mode serveur) ou DatabaseCache (mode autonome) |
 | Conteneurisation | Docker                               |
 | UI dynamique     | HTMX (jamais React, Vue, Angular)    |
 | PDF              | WeasyPrint                           |
@@ -26,7 +26,7 @@ les règles ci-dessous **sans exception**.
 
 1. **HTMX uniquement** pour toutes les interactions UI. Aucun framework JS frontend.
 2. **Tous les modèles étendent `BaseModel`** défini dans `core/models.py`.
-3. **PostgreSQL obligatoire** — ne jamais proposer SQLite, y compris pour les tests.
+3. **Portabilité PostgreSQL + SQLite obligatoire** — tout code doit fonctionner sur les deux (pas de `django.contrib.postgres`, pas de `distinct('champ')`, pas de SQL spécifique). Les tests s'exécutent sur les deux moteurs.
 4. **Tests** : pytest + model_bakery, couverture minimale **80 %**.
 5. Aucune logique métier dans les vues : utiliser des services ou managers.
 
@@ -124,7 +124,7 @@ yelen_school/
 
 ## Checklist avant de soumettre une réponse
 
-- [ ] Aucune migration SQLite ni `db.sqlite3` suggérée
+- [ ] Code portable PostgreSQL + SQLite (aucune fonctionnalité spécifique à un moteur)
 - [ ] Tous les nouveaux modèles héritent de `BaseModel`
 - [ ] Pas de framework JS autre que HTMX
 - [ ] Montants en FCFA, notes sur 20

@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, OuterRef, Subquery
 from django.db.models.functions import TruncDate
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
@@ -130,13 +130,22 @@ def paiement_list(request):
 
     query = request.GET.get('q', '').strip()
 
-    # Dernière transaction par inscription (DISTINCT ON PostgreSQL)
+    # Dernière transaction par inscription — requête portable (PostgreSQL + SQLite).
+    # Remplace l'ancien `.distinct('inscription_id')` (DISTINCT ON, PostgreSQL uniquement)
+    # par une sous-requête corrélée : on ne garde que le paiement le plus récent
+    # (date_paiement, puis created_at) de chaque inscription.
+    dernier_paiement = (
+        Paiement.objects
+        .filter(inscription=OuterRef('inscription'))
+        .order_by('-date_paiement', '-created_at')
+        .values('pk')[:1]
+    )
     qs = (
         Paiement.objects
         .filter(inscription__annee_scolaire=annee_courante)
+        .filter(pk=Subquery(dernier_paiement))
         .select_related('inscription__eleve', 'inscription__classe', 'rubrique')
-        .order_by('inscription_id', '-date_paiement', '-created_at')
-        .distinct('inscription_id')
+        .order_by('-date_paiement', '-created_at')
     )
 
     if query:

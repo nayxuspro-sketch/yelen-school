@@ -304,7 +304,8 @@ class MembrePersonnel(BaseModel):
         else:
             next_seq = 1
         
-        self.matricule = f"{etab_code}-P-{annee}-{next_seq}"
+        # Format {CODE_ETAB}-P-AAAA-NN (NN sur 2 chiffres minimum)
+        self.matricule = f"{etab_code}-P-{annee}-{next_seq:02d}"
 
 
 # ═══════════════════════════════════════════════════════════════════

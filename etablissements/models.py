@@ -3,11 +3,30 @@ Modèles pour l'application Etablissements.
 Géré par: YELEN SCHOOL
 """
 
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 
 from core.models import BaseModel, CycleChoices
+
+
+def validate_cycles(value):
+    """Valide la liste des cycles (remplace la validation des choices de l'ex-ArrayField).
+
+    Le champ est un JSONField portable (PostgreSQL et SQLite) : on s'assure
+    qu'il contient bien une liste de codes appartenant à CycleChoices.
+    """
+    if value in (None, ''):
+        return
+    if not isinstance(value, list):
+        raise ValidationError(_("Les cycles doivent être fournis sous forme de liste."))
+    valides = set(CycleChoices.values)
+    invalides = [c for c in value if c not in valides]
+    if invalides:
+        raise ValidationError(
+            _("Cycle(s) invalide(s) : %(cycles)s"),
+            params={'cycles': ', '.join(map(str, invalides))},
+        )
 
 
 class GroupeEtablissements(BaseModel):
@@ -78,10 +97,13 @@ class Etablissement(BaseModel):
         null=True,
         verbose_name=_("Logo de l'établissement")
     )
-    cycles = ArrayField(
-        base_field=models.CharField(max_length=20, choices=CycleChoices.choices),
+    # JSONField (liste de codes CycleChoices) — portable PostgreSQL / SQLite.
+    # Remplace l'ancien ArrayField (PostgreSQL uniquement) ; même usage côté code :
+    # une liste Python, ex. ['PRIMAIRE', 'SECONDAIRE'].
+    cycles = models.JSONField(
         blank=True,
         default=list,
+        validators=[validate_cycles],
         verbose_name=_("Cycles proposés"),
     )
     ville = models.CharField(

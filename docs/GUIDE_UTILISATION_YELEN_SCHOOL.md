@@ -5484,6 +5484,35 @@ La liste affiche toutes les localisations configurées pour l'établissement, av
 
 ---
 
+
+## 32. Mode autonome — Installation sur un serveur d'école sans Docker (SQLite)
+
+Depuis septembre 2026, YELEN SCHOOL peut fonctionner **sans Docker, sans
+PostgreSQL et sans Redis** : la base de données est un simple fichier SQLite sur
+le serveur de l'établissement, et les postes (20 et plus) accèdent à
+l'application par navigateur à l'adresse `http://IP-DU-SERVEUR:8000`.
+
+- **Activation** : `DB_ENGINE=sqlite` dans le fichier `.env` (modèle fourni :
+  `.env.autonome.example`). Le mode PostgreSQL/Docker reste disponible et
+  inchangé (`DB_ENGINE=postgresql`, valeur par défaut).
+- **Démarrage** : double-clic sur `demarrer-autonome.bat` (Windows) ou
+  `./demarrer-autonome.sh` (Linux). Le script installe tout au premier lancement,
+  applique les migrations, crée l'administrateur et affiche l'adresse à
+  communiquer aux postes.
+- **Sauvegarde** : `python manage.py sauvegarde_sqlite` (à chaud, vérifiée,
+  compressée, rotation automatique) — à planifier chaque nuit.
+- **Capacité validée** : 1 500 élèves × 5 ans d'historique (1,08 million de
+  notes) et 20 navigateurs simultanés sans aucune erreur.
+- **Changements de code associés** (transparents pour les utilisateurs) : le
+  champ *Cycles proposés* de l'établissement est désormais stocké en JSON
+  (portable), la liste des paiements utilise une requête portable, le cache peut
+  fonctionner sans Redis (`CACHE_BACKEND=database`), les matricules sont
+  toujours au format `{CODE_ETAB}-AAAA-NN` (numéro sur 2 chiffres minimum), et
+  la liste des évaluations d'un enseignant ne montre plus que ses propres
+  évaluations.
+
+Guide détaillé : [`docs/GUIDE_MODE_AUTONOME_SQLITE.md`](GUIDE_MODE_AUTONOME_SQLITE.md).
+
 ## 10. COMMUNICATION PARENTS — SMS DIRECT
 
 ### 10.1 Présentation de Parent-SMS Direct

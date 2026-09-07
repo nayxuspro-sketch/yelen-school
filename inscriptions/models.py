@@ -264,10 +264,26 @@ class Eleve(BaseModel):
         return "N/A"
 
     def save(self, *args, **kwargs):
-        """Génère automatiquement le matricule si non défini."""
-        if not self.matricule:
+        """Génère automatiquement le matricule si non défini.
+
+        En cas de collision (deux inscriptions strictement simultanées sur des
+        workers différents), l'unicité du matricule lève IntegrityError : on
+        régénère alors le numéro et on réessaie (au plus 5 fois).
+        """
+        if self.matricule:
+            return super().save(*args, **kwargs)
+
+        from django.db import IntegrityError, transaction
+
+        for tentative in range(5):
             self._generate_matricule()
-        super().save(*args, **kwargs)
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except IntegrityError as exc:
+                if 'matricule' not in str(exc).lower() or tentative == 4:
+                    raise
+        return None
 
     def _generate_matricule(self):
         """
@@ -292,8 +308,8 @@ class Eleve(BaseModel):
             matricule__startswith=f'{etab_code}-{year}-'
         ).count() + 1
 
-        # Générer le matricule
-        self.matricule = f"{etab_code}-{year}-{count}"
+        # Générer le matricule — format {CODE_ETAB}-AAAA-NN (NN sur 2 chiffres minimum)
+        self.matricule = f"{etab_code}-{year}-{count:02d}"
 
 
 # ═══════════════════════════════════════════════════════════════════

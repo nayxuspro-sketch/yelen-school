@@ -15,7 +15,7 @@ from .forms import MatiereForm, MatiereCycleForm, EnseignementForm, EvaluationFo
 from .utils import CalculateurMoyenne
 from parametres.models import AnneeScolaire, Classe, Cycle
 from inscriptions.models import Inscription
-from core.utils import get_etablissement_context
+from core.utils import get_etablissement_context, filtre_enseignant
 
 try:
     from weasyprint import HTML
@@ -546,6 +546,12 @@ def evaluation_list(request):
         .annotate(nb_notes=Count('notes'))
     )
 
+    # Un enseignant ne voit que ses propres évaluations (cohérent avec le
+    # contrôle d'autorisation de evaluation_saisie) — et la page reste légère :
+    # ~150 lignes au lieu des ~6 000 de tout l'établissement.
+    if request.user.role == 'ENSEIGNANT':
+        evaluations = evaluations.filter(enseignement__personnel=filtre_enseignant(request.user))
+
     if query:
         evaluations = evaluations.filter(
             Q(titre__icontains=query) |
@@ -700,9 +706,9 @@ def evaluation_saisie(request, pk):
         from pedagogie.models import Enseignement
         authorized = Enseignement.objects.filter(
             id=enseignement.pk,
-            personnel=request.user
+            personnel=filtre_enseignant(request.user)
         ).exists()
-        if not authorized and classe.professeur_principal_id != request.user.id:
+        if not authorized and getattr(classe, 'professeur_principal_id', None) != getattr(filtre_enseignant(request.user), 'pk', object()):
             messages.error(request, "Vous n'êtes pas autorisé à saisir les notes de cette évaluation.")
             return redirect('pedagogie:evaluation_list')
 
@@ -2487,7 +2493,7 @@ def cahier_textes_index(request):
         if annee:
             classe_ids = Enseignement.objects.filter(
                 annee_scolaire=annee,
-                personnel=request.user,
+                personnel=filtre_enseignant(request.user),
                 est_actif=True,
             ).values_list('classe_id', flat=True)
             classes = classes.filter(pk__in=classe_ids)
@@ -2521,7 +2527,7 @@ def cahier_textes_classe(request, classe_id):
 
     # Enseignant ne voit que ses propres matières
     if request.user.role == 'ENSEIGNANT':
-        enseignements = enseignements.filter(personnel=request.user)
+        enseignements = enseignements.filter(personnel=filtre_enseignant(request.user))
 
     entrees = CahierTextes.objects.filter(
         enseignement__classe=classe,
@@ -2534,7 +2540,7 @@ def cahier_textes_classe(request, classe_id):
         entrees = entrees.filter(enseignement_id=enseignement_id)
 
     if request.user.role == 'ENSEIGNANT':
-        entrees = entrees.filter(enseignement__personnel=request.user)
+        entrees = entrees.filter(enseignement__personnel=filtre_enseignant(request.user))
 
     is_htmx = request.headers.get('HX-Request')
     template = 'pedagogie/partials/cahier_textes_liste.html' if is_htmx else 'pedagogie/cahier_textes_classe.html'
@@ -2565,7 +2571,7 @@ def cahier_textes_create(request):
     ).select_related('matiere') if (classe and annee) else Enseignement.objects.none()
 
     if request.user.role == 'ENSEIGNANT':
-        enseignements = enseignements.filter(personnel=request.user)
+        enseignements = enseignements.filter(personnel=filtre_enseignant(request.user))
 
     if request.method == 'POST':
         enseignement_id = request.POST.get('enseignement')
@@ -2613,7 +2619,7 @@ def cahier_textes_update(request, pk):
     ).select_related('matiere')
 
     if request.user.role == 'ENSEIGNANT':
-        enseignements = enseignements.filter(personnel=request.user)
+        enseignements = enseignements.filter(personnel=filtre_enseignant(request.user))
 
     if request.method == 'POST':
         heure_debut = request.POST.get('heure_debut') or None

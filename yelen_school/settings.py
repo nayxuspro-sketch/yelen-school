@@ -114,7 +114,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.postgres',
     # Apps YELEN SCHOOL
     'core',
     'personnel',
@@ -160,6 +159,10 @@ REST_FRAMEWORK = {
         'login': '5/min',  # Limite login pour éviter brute force
     },
 }
+
+# django.contrib.postgres n'a de sens (et ne se charge) qu'avec PostgreSQL
+if os.environ.get('DB_ENGINE', 'postgresql').strip().lower() != 'sqlite':
+    INSTALLED_APPS.insert(INSTALLED_APPS.index('django.contrib.staticfiles') + 1, 'django.contrib.postgres')
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -208,16 +211,45 @@ WSGI_APPLICATION = 'yelen_school.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'yelen_school_db'),
-        'USER': os.environ.get('DB_USER', 'yelen_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'yelen_password_dev'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+# Deux modes de déploiement, sélectionnés par la variable d'environnement DB_ENGINE :
+#   DB_ENGINE=postgresql (défaut) → mode serveur / Docker : PostgreSQL + Redis
+#   DB_ENGINE=sqlite              → mode autonome : un seul fichier de base de
+#                                   données (SQLITE_PATH), aucun service externe.
+#                                   Les postes clients accèdent au serveur par le
+#                                   navigateur ; seul le serveur ouvre le fichier.
+DB_ENGINE = os.environ.get('DB_ENGINE', 'postgresql').strip().lower()
+IS_SQLITE = DB_ENGINE == 'sqlite'
+
+if IS_SQLITE:
+    SQLITE_PATH = Path(os.environ.get('SQLITE_PATH', BASE_DIR / 'data' / 'yelen_school.sqlite3'))
+    SQLITE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': SQLITE_PATH,
+            'OPTIONS': {
+                # Attente max (s) lorsqu'un autre worker écrit — évite "database is locked"
+                'timeout': 30,
+            },
+            # Réutilisation des connexions entre requêtes (le fichier reste ouvert)
+            'CONN_MAX_AGE': 600,
+            'CONN_HEALTH_CHECKS': True,
+        }
     }
-}
+    # Les PRAGMA (WAL, synchronous, busy_timeout…) sont appliqués à chaque
+    # nouvelle connexion par core/db_sqlite.py (signal connection_created),
+    # car Django 4.2 ne propose pas encore l'option `init_command` pour SQLite.
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'yelen_school_db'),
+            'USER': os.environ.get('DB_USER', 'yelen_user'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'yelen_password_dev'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -378,13 +410,44 @@ LOGGING = {
     },
 }
 
-# Cache - Redis (partagé entre workers Gunicorn)
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://redis:6379/1'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+# Cache — doit être PARTAGÉ entre les workers (Gunicorn/Waitress) : le code
+# l'utilise comme état commun (année courante, statut licence, config SMS runtime).
+#   CACHE_BACKEND=redis    (défaut en mode PostgreSQL) → Redis
+#   CACHE_BACKEND=database (défaut en mode SQLite)     → table dans la base, aucun service
+#   CACHE_BACKEND=file                                 → répertoire CACHE_DIR
+#   CACHE_BACKEND=locmem                               → mémoire (mono-process uniquement)
+CACHE_BACKEND = os.environ.get('CACHE_BACKEND', 'database' if IS_SQLITE else 'redis').strip().lower()
+
+if CACHE_BACKEND == 'redis':
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': os.environ.get('REDIS_URL', 'redis://redis:6379/1'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
         }
     }
-}
+elif CACHE_BACKEND == 'file':
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': os.environ.get('CACHE_DIR', str(BASE_DIR / 'data' / 'cache')),
+            'OPTIONS': {'MAX_ENTRIES': 5000},
+        }
+    }
+elif CACHE_BACKEND == 'locmem':
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'yelen-school',
+        }
+    }
+else:  # 'database' — table créée par `manage.py createcachetable` (automatique via start_autonome)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+            'LOCATION': 'yelen_cache',
+            'OPTIONS': {'MAX_ENTRIES': 5000, 'CULL_FREQUENCY': 4},
+        }
+    }

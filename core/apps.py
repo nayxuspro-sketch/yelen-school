@@ -9,3 +9,6 @@ class CoreConfig(AppConfig):
 
     def ready(self):
         import core.signals  # noqa: F401
+        # Mode autonome (DB_ENGINE=sqlite) : PRAGMA WAL & co. sur chaque connexion
+        from core.db_sqlite import register as register_sqlite_pragmas
+        register_sqlite_pragmas()

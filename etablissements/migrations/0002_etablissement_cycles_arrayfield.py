@@ -1,5 +1,6 @@
 from django.db import migrations, models
-import django.contrib.postgres.fields
+
+from ._compat import cycles_field_historique
 
 
 def csv_cycles_to_list(apps, schema_editor):
@@ -37,20 +38,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='etablissement',
             name='cycles',
-            field=django.contrib.postgres.fields.ArrayField(
-                base_field=models.CharField(
-                    choices=[
-                        ('PRESCOLAIRE', 'Préscolaire'),
-                        ('PRIMAIRE', 'Primaire'),
-                        ('POST_PRIMAIRE', 'Post-Primaire'),
-                        ('SECONDAIRE', 'Secondaire'),
-                    ],
-                    max_length=20,
-                ),
-                blank=True,
-                default=list,
-                verbose_name='Cycles proposés',
-            ),
+            # ArrayField sur PostgreSQL / JSONField ailleurs (voir _compat.py)
+            field=cycles_field_historique(),
         ),
         # 3. Migration des données CSV → list
         migrations.RunPython(csv_cycles_to_list, list_cycles_to_csv),

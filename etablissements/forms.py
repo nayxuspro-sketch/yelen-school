@@ -23,7 +23,7 @@ class EtablissementForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # ArrayField stores a list — initialise the MultipleChoiceField from it
+        # Le JSONField stocke une liste — initialise le MultipleChoiceField à partir d'elle
         if self.instance and self.instance.pk:
             self.initial['cycles'] = self.instance.cycles or []
 
