@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    name: Tests — mode serveur (PostgreSQL + Redis)
     runs-on: ubuntu-latest
 
     services:
@@ -75,3 +76,35 @@ jobs:
           DB_USER: yelen_user
           DB_PASSWORD: yelen_password_ci
           REDIS_URL: redis://localhost:6379/1
+
+  test-sqlite:
+    name: Tests — mode autonome (SQLite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-xlib-2.0-0
+          pip install -r requirements/base.txt
+      - name: Migrations + cache table (SQLite)
+        run: |
+          python manage.py migrate --noinput
+          python manage.py createcachetable
+          python manage.py makemigrations --check --dry-run
+        env:
+          DB_ENGINE: sqlite
+          DEBUG: "False"
+          SECRET_KEY: ci-secret-key-for-testing-only
+          DISABLE_HTTPS_REDIRECT: "true"
+      - name: Run tests (SQLite)
+        run: python -m pytest --tb=short -x
+        env:
+          DB_ENGINE: sqlite
+          CACHE_BACKEND: database
+          DEBUG: "False"
+          SECRET_KEY: ci-secret-key-for-testing-only
+          DISABLE_HTTPS_REDIRECT: "true"
