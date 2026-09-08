@@ -14,6 +14,7 @@ Crée (idempotent — relancer ne duplique rien) :
 Usage :
     DB_ENGINE=sqlite python scripts/seed_charge.py            # jeu complet
     DB_ENGINE=sqlite python scripts/seed_charge.py --annees 1 # plus rapide
+    DB_ENGINE=sqlite python scripts/seed_charge.py --eleves 2500 --annees 5
 """
 import argparse
 import os
@@ -60,8 +61,8 @@ NIVEAUX = {
 MATIERES = [('FR', 'Français', 4), ('MATH', 'Mathématiques', 4), ('SVT', 'SVT', 2), ('PC', 'Physique-Chimie', 2),
             ('HG', 'Histoire-Géographie', 2), ('ANG', 'Anglais', 2), ('EPS', 'EPS', 1), ('PHILO', 'Philosophie', 2),
             ('ECM', 'Éducation civique', 1), ('ARTS', 'Arts', 1), ('INFO', 'Informatique', 1), ('LV2', 'Allemand', 2)]
-NB_ELEVES = 1500
-NB_CLASSES = 40
+NB_ELEVES = 1500   # surchargé par --eleves
+NB_CLASSES = 40    # recalculé : ~40 élèves par classe
 EVALS_PAR_TRIM = 4
 PWD = 'Yelen2026!'
 
@@ -83,16 +84,31 @@ def build_etablissement():
     classes = list(Classe.objects.filter(etablissement=etab).order_by('nom'))
     if len(classes) < NB_CLASSES:
         classes = []
-        # 40 classes réparties : 3 PRES, 12 PRIM, 16 POST, 9 SEC
-        plan = [('PRES', 1), ('PRIM', 2), ('POST', 4), ('SEC', 3)]
-        for ccode, par_niveau in plan:
+        # Répartition de base pour 40 classes : 3 PRES, 12 PRIM, 16 POST, 9 SEC,
+        # mise à l'échelle pour NB_CLASSES (sections A, B, C, ...)
+        base = [('PRES', 1), ('PRIM', 2), ('POST', 4), ('SEC', 3)]
+        facteur = NB_CLASSES / 40
+        for ccode, par_niveau in base:
+            n_sections = max(1, round(par_niveau * facteur))
             for niveau in NIVEAUX[ccode]:
-                for k in range(par_niveau):
+                for k in range(n_sections):
+                    if len(classes) >= NB_CLASSES:
+                        break
                     nom = f"{niveau} {chr(65 + k)}"
                     c, _ = Classe.objects.get_or_create(
                         etablissement=etab, nom=nom,
                         defaults=dict(cycle=cycles[ccode], niveau=niveau, capacite_max=45, actif=True))
                     classes.append(c)
+        # Complément éventuel pour atteindre exactement NB_CLASSES
+        k = 0
+        while len(classes) < NB_CLASSES:
+            niveau = NIVEAUX['POST'][k % 4]
+            nom = f"{niveau} {chr(65 + 10 + k // 4)}"
+            c, _ = Classe.objects.get_or_create(
+                etablissement=etab, nom=nom,
+                defaults=dict(cycle=cycles['POST'], niveau=niveau, capacite_max=45, actif=True))
+            classes.append(c)
+            k += 1
     return etab, cycles, classes[:NB_CLASSES]
 
 
@@ -247,7 +263,11 @@ def build_users(etab):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--annees', type=int, default=5)
+    ap.add_argument('--eleves', type=int, default=1500, help="Nombre d'élèves par année")
     args = ap.parse_args()
+    global NB_ELEVES, NB_CLASSES
+    NB_ELEVES = args.eleves
+    NB_CLASSES = max(4, round(NB_ELEVES / 40))
 
     log(f"SGBD : {connection.vendor} — {connection.settings_dict['NAME']}")
     t0 = time.time()

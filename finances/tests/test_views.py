@@ -181,3 +181,140 @@ class TestApiRubriquesInscription:
         url = reverse('finances:api_rubriques', kwargs={'inscription_id': inscription.pk})
         response = client.get(url)
         assert response.status_code == 302
+
+
+@pytest.mark.django_db
+class TestSituationsFinancieresEnLot:
+    """
+    Non-régression de l'optimisation « liste des redevables » :
+    _situations_financieres_en_lot (4 requêtes pour N élèves) doit donner
+    exactement les mêmes montants que _calcul_situation_financiere (4 requêtes
+    PAR élève) — y compris avec bourses, remboursements et élèves sans statut.
+    """
+
+    @pytest.fixture
+    def jeu(self):
+        from decimal import Decimal
+        annee = baker.make('parametres.AnneeScolaire', est_courante=True)
+        etab = baker.make('etablissements.Etablissement')
+        cycle = baker.make('parametres.Cycle', etablissement=etab)
+        c1 = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, niveau='6EME', nom='6e A')
+        c2 = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, niveau='6EME', nom='6e B')
+        c3 = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, niveau='5EME', nom='5e A')
+        statut = baker.make('parametres.StatutEleve', etablissement=etab)
+        scol = baker.make('parametres.RubriquePaiement', etablissement=etab, actif=True, code='SCOL')
+        insc = baker.make('parametres.RubriquePaiement', etablissement=etab, actif=True, code='INSC')
+        # Deux classes de même niveau avec le même tarif → dédoublonnage par rubrique
+        for cl in (c1, c2):
+            baker.make('parametres.TarifScolarite', etablissement=etab, classe=cl, annee_scolaire=annee,
+                       statut_eleve=statut, rubrique=scol, montant=Decimal('90000'), actif=True)
+            baker.make('parametres.TarifScolarite', etablissement=etab, classe=cl, annee_scolaire=annee,
+                       statut_eleve=statut, rubrique=insc, montant=Decimal('10000'), actif=True)
+        baker.make('parametres.TarifScolarite', etablissement=etab, classe=c3, annee_scolaire=annee,
+                   statut_eleve=statut, rubrique=scol, montant=Decimal('70000'), actif=True)
+        # Tarif inactif : ne doit jamais compter
+        baker.make('parametres.TarifScolarite', etablissement=etab, classe=c3, annee_scolaire=annee,
+                   statut_eleve=statut, rubrique=insc, montant=Decimal('99999'), actif=False)
+
+        i_normal = baker.make('inscriptions.Inscription', classe=c1, annee_scolaire=annee, statut_eleve=statut)
+        i_boursier = baker.make('inscriptions.Inscription', classe=c2, annee_scolaire=annee, statut_eleve=statut)
+        i_rembourse = baker.make('inscriptions.Inscription', classe=c3, annee_scolaire=annee, statut_eleve=statut)
+        i_sans_statut = baker.make('inscriptions.Inscription', classe=c1, annee_scolaire=annee, statut_eleve=None)
+        i_trop_paye = baker.make('inscriptions.Inscription', classe=c3, annee_scolaire=annee, statut_eleve=statut)
+
+        baker.make('finances.Paiement', inscription=i_normal, rubrique=scol, montant=Decimal('40000'))
+        baker.make('finances.Paiement', inscription=i_boursier, rubrique=scol, montant=Decimal('30000'))
+        p = baker.make('finances.Paiement', inscription=i_rembourse, rubrique=scol, montant=Decimal('50000'))
+        baker.make('finances.Remboursement', paiement=p, montant=Decimal('5000'))
+        baker.make('finances.Paiement', inscription=i_sans_statut, rubrique=scol, montant=Decimal('15000'))
+        baker.make('finances.Paiement', inscription=i_trop_paye, rubrique=scol, montant=Decimal('80000'))
+        tb = baker.make('finances.TypeBourse', etablissement=etab, valeur_reduction=Decimal('25000'))
+        baker.make('finances.BourseEleve', inscription=i_boursier, type_bourse=tb, montant_accorde=Decimal('25000'), actif=True)
+        baker.make('finances.BourseEleve', inscription=i_normal, type_bourse=tb, montant_accorde=Decimal('99999'), actif=False)
+        return annee, [i_normal, i_boursier, i_rembourse, i_sans_statut, i_trop_paye]
+
+    def test_lot_identique_a_unitaire(self, jeu):
+        from finances.views import _calcul_situation_financiere, _situations_financieres_en_lot
+        from inscriptions.models import Inscription
+        annee, inscriptions = jeu
+        qs = Inscription.objects.filter(annee_scolaire=annee).select_related('classe', 'statut_eleve')
+        lot = _situations_financieres_en_lot(qs)
+        assert set(lot) == {i.pk for i in inscriptions}
+        for insc in qs:
+            unit = _calcul_situation_financiere(insc)
+            assert lot[insc.pk] == {
+                'total_du': unit['total_du'],
+                'total_paye': unit['total_paye'],
+                'reste_a_payer': unit['reste_a_payer'],
+            }, f"Écart pour {insc.pk}"
+
+    def test_montants_attendus(self, jeu):
+        from decimal import Decimal
+        from finances.views import _situations_financieres_en_lot
+        annee, (i_normal, i_boursier, i_rembourse, i_sans_statut, i_trop_paye) = jeu
+        lot = _situations_financieres_en_lot([i_normal, i_boursier, i_rembourse, i_sans_statut, i_trop_paye])
+        # 90 000 + 10 000 (dédoublonné malgré 2 classes de même niveau) − 40 000 payés
+        assert lot[i_normal.pk] == {'total_du': Decimal('100000'), 'total_paye': Decimal('40000'), 'reste_a_payer': Decimal('60000')}
+        # Bourse active de 25 000 déduite du dû
+        assert lot[i_boursier.pk] == {'total_du': Decimal('75000'), 'total_paye': Decimal('30000'), 'reste_a_payer': Decimal('45000')}
+        # Remboursement de 5 000 déduit du payé ; tarif inactif ignoré
+        assert lot[i_rembourse.pk] == {'total_du': Decimal('70000'), 'total_paye': Decimal('45000'), 'reste_a_payer': Decimal('25000')}
+        # Sans statut : dû 0, reste 0, mais payé conservé
+        assert lot[i_sans_statut.pk] == {'total_du': Decimal('0'), 'total_paye': Decimal('15000'), 'reste_a_payer': Decimal('0')}
+        # Trop-perçu : reste jamais négatif
+        assert lot[i_trop_paye.pk] == {'total_du': Decimal('70000'), 'total_paye': Decimal('80000'), 'reste_a_payer': Decimal('0')}
+
+    def test_liste_vide(self):
+        from finances.views import _situations_financieres_en_lot
+        assert _situations_financieres_en_lot([]) == {}
+
+    def test_nombre_de_requetes_constant(self, jeu, django_assert_max_num_queries):
+        """Le calcul en lot ne doit pas dépendre du nombre d'élèves (pas de N+1)."""
+        from finances.views import _situations_financieres_en_lot
+        from inscriptions.models import Inscription
+        annee, _ = jeu
+        inscriptions = list(Inscription.objects.filter(annee_scolaire=annee).select_related('classe', 'statut_eleve'))
+        with django_assert_max_num_queries(4):
+            _situations_financieres_en_lot(inscriptions)
+
+    def test_page_redevables_et_pdf(self, jeu, client):
+        """Les deux vues utilisant le calcul en lot répondent toujours 200."""
+        annee, _ = jeu
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=annee.etablissement)
+        client.force_login(user)
+        assert client.get(reverse('finances:liste_redevables')).status_code == 200
+        assert client.get(reverse('finances:liste_redevables_pdf')).status_code == 200
+
+
+@pytest.mark.django_db
+class TestPaiementListPagination:
+    """La liste des paiements est paginée (50 élèves/page) : 2 500 élèves ne
+    doivent plus produire une page HTML de plusieurs Mo."""
+
+    def test_pagination_50_par_page(self, client):
+        etab = baker.make('etablissements.Etablissement')
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab)
+        client.force_login(user)
+        annee = baker.make('parametres.AnneeScolaire', est_courante=True, etablissement=etab)
+        for _ in range(60):
+            insc = baker.make('inscriptions.Inscription', annee_scolaire=annee)
+            baker.make('finances.Paiement', inscription=insc, montant=1000)
+
+        url = reverse('finances:paiement_list')
+        r = client.get(url)
+        assert r.status_code == 200
+        assert r.context['page_obj'].paginator.count == 60
+        assert r.context['page_obj'].paginator.num_pages == 2
+        assert len(list(r.context['paiements'])) == 50
+
+        r2 = client.get(url + '?page=2')
+        assert r2.status_code == 200
+        assert len(list(r2.context['paiements'])) == 10
+
+        # Page hors bornes → dernière page (get_page), jamais de 404
+        assert client.get(url + '?page=999').status_code == 200
+
+        # Partiel HTMX (recherche) : paginé aussi
+        r3 = client.get(url, HTTP_HX_REQUEST='true')
+        assert r3.status_code == 200
+        assert 'Page 1 / 2' in r3.content.decode()

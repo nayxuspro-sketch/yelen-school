@@ -68,3 +68,32 @@
     </tbody>
   </table>
 </div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination" style="display:flex; align-items:center; justify-content:center; gap:var(--space-2); padding:var(--space-4) 0;">
+  {% if page_obj.has_previous %}
+  <a hx-get="{% url 'finances:paiement_list' %}?page={{ page_obj.previous_page_number }}&q={{ query|urlencode }}"
+     hx-target="#paiement-table"
+     hx-push-url="true"
+     class="btn-icon" title="Page précédente">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+  </a>
+  {% endif %}
+  <span class="text-secondary" style="font-size:0.875rem;">
+    Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    &nbsp;&mdash;&nbsp;{{ page_obj.paginator.count }} élève{{ page_obj.paginator.count|pluralize }}
+  </span>
+  {% if page_obj.has_next %}
+  <a hx-get="{% url 'finances:paiement_list' %}?page={{ page_obj.next_page_number }}&q={{ query|urlencode }}"
+     hx-target="#paiement-table"
+     hx-push-url="true"
+     class="btn-icon" title="Page suivante">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+    </svg>
+  </a>
+  {% endif %}
+</div>
+{% endif %}

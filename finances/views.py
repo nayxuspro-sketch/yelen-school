@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Sum, Count, Q, OuterRef, Subquery
 from django.db.models.functions import TruncDate
 from django.http import JsonResponse, HttpResponse
+from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
@@ -34,6 +35,77 @@ def _numero_valide(numero):
     # +226XXXXXXXX ou 00226XXXXXXXX ou 8 chiffres commençant par 0,5,6,7
     return bool(_re.fullmatch(r'(\+226|00226)?\d{8}', n) and
                 _re.search(r'\d{8}$', n))
+
+
+def _situations_financieres_en_lot(inscriptions):
+    """
+    Version « en lot » de _calcul_situation_financiere : calcule
+    {inscription_id: {'total_du', 'total_paye', 'reste_a_payer'}} pour toutes
+    les inscriptions fournies en 4 requêtes agrégées au lieu de 4 par élève.
+
+    Reproduit strictement les mêmes règles :
+    - total payé  = Σ paiements − Σ remboursements
+    - total dû    = Σ tarifs actifs (niveau × statut_eleve × année), dédoublonnés
+                    par rubrique, − Σ bourses actives ; 0 si pas de statut_eleve
+    - reste       = max(total dû net − total payé, 0)
+    Utilisée par les listes (redevables, PDF) sur des milliers d'inscriptions.
+    """
+    inscriptions = list(inscriptions)
+    ids = [i.pk for i in inscriptions]
+    if not ids:
+        return {}
+
+    verses = {
+        r['inscription_id']: r['s'] or Decimal('0')
+        for r in Paiement.objects.filter(inscription_id__in=ids).values('inscription_id').annotate(s=Sum('montant'))
+    }
+    rembourses = {
+        r['paiement__inscription_id']: r['s'] or Decimal('0')
+        for r in Remboursement.objects.filter(paiement__inscription_id__in=ids)
+        .values('paiement__inscription_id').annotate(s=Sum('montant'))
+    }
+    bourses = {
+        r['inscription_id']: r['s'] or Decimal('0')
+        for r in BourseEleve.objects.filter(inscription_id__in=ids, actif=True)
+        .values('inscription_id').annotate(s=Sum('montant_accorde'))
+    }
+
+    # Tarifs : une seule requête pour toutes les combinaisons (etab, niveau, année, statut)
+    combos = {
+        (i.classe.etablissement_id, i.classe.niveau, i.annee_scolaire_id, i.statut_eleve_id)
+        for i in inscriptions if i.statut_eleve_id
+    }
+    tarifs_par_combo = {}
+    if combos:
+        etab_ids = {c[0] for c in combos}
+        annee_ids = {c[2] for c in combos}
+        statut_ids = {c[3] for c in combos}
+        tarifs = (
+            TarifScolarite.objects
+            .filter(etablissement_id__in=etab_ids, annee_scolaire_id__in=annee_ids,
+                    statut_eleve_id__in=statut_ids, actif=True)
+            .values_list('etablissement_id', 'classe__niveau', 'annee_scolaire_id',
+                         'statut_eleve_id', 'rubrique_id', 'montant')
+        )
+        for etab_id, niveau, annee_id, statut_id, rubrique_id, montant in tarifs:
+            # dédoublonnage par rubrique (comme la version unitaire)
+            tarifs_par_combo.setdefault((etab_id, niveau, annee_id, statut_id), {}).setdefault(rubrique_id, montant)
+
+    result = {}
+    for i in inscriptions:
+        total_paye = verses.get(i.pk, Decimal('0')) - rembourses.get(i.pk, Decimal('0'))
+        if not i.statut_eleve_id:
+            result[i.pk] = {'total_du': Decimal('0'), 'total_paye': total_paye, 'reste_a_payer': Decimal('0')}
+            continue
+        combo = (i.classe.etablissement_id, i.classe.niveau, i.annee_scolaire_id, i.statut_eleve_id)
+        total_du = sum(tarifs_par_combo.get(combo, {}).values(), Decimal('0'))
+        total_du_net = max(total_du - bourses.get(i.pk, Decimal('0')), Decimal('0'))
+        result[i.pk] = {
+            'total_du': total_du_net,
+            'total_paye': total_paye,
+            'reste_a_payer': max(total_du_net - total_paye, Decimal('0')),
+        }
+    return result
 
 
 def _calcul_situation_financiere(inscription):
@@ -169,8 +241,14 @@ def paiement_list(request):
         total_encaisse = stats['total'] or 0
         nb_transactions = stats['nb'] or 0
 
+    # Pagination (50 élèves par page) : sans elle, la page pesait 5,4 Mo de HTML
+    # pour 2 500 élèves et mettait ~1 s à se générer à chaque recherche.
+    paginator = Paginator(qs, 50)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
     context = {
-        'paiements': qs,
+        'paiements': page_obj.object_list,
+        'page_obj': page_obj,
         'total_encaisse': total_encaisse,
         'nb_transactions': nb_transactions,
         'annee_courante': annee_courante,
@@ -853,11 +931,14 @@ def liste_redevables(request):
     total_redevable = Decimal('0')
     nb_redevables = 0
     
+    # Situations financières calculées en lot (4 requêtes) au lieu de 4 par élève
+    situations = _situations_financieres_en_lot(inscriptions)
+
     for inscr in inscriptions:
         classe = inscr.classe
         cycle = classe.cycle
 
-        sit = _calcul_situation_financiere(inscr)
+        sit = situations[inscr.pk]
         total_du = sit['total_du']
         total_paye = sit['total_paye']
         reste = sit['reste_a_payer']
@@ -1317,11 +1398,14 @@ def liste_redevables_pdf(request):
     total_redevable = Decimal('0')
     nb_redevables = 0
     
+    # Situations financières calculées en lot (4 requêtes) au lieu de 4 par élève
+    situations = _situations_financieres_en_lot(inscriptions)
+
     for inscr in inscriptions:
         classe = inscr.classe
         cycle = classe.cycle
 
-        sit = _calcul_situation_financiere(inscr)
+        sit = situations[inscr.pk]
         total_du = sit['total_du']
         total_paye = sit['total_paye']
         reste = sit['reste_a_payer']

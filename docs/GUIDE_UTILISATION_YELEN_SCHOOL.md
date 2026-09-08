@@ -5679,7 +5679,7 @@ La liste affiche toutes les localisations configurées pour l'établissement, av
 
 Depuis septembre 2026, YELEN SCHOOL peut fonctionner **sans Docker, sans
 PostgreSQL et sans Redis** : la base de données est un simple fichier SQLite sur
-le serveur de l'établissement, et les postes (20 et plus) accèdent à
+le serveur de l'établissement, et les postes (20 à 40) accèdent à
 l'application par navigateur à l'adresse `http://IP-DU-SERVEUR:8000`.
 
 - **Activation** : `DB_ENGINE=sqlite` dans le fichier `.env` (modèle fourni :
@@ -5691,8 +5691,18 @@ l'application par navigateur à l'adresse `http://IP-DU-SERVEUR:8000`.
   communiquer aux postes.
 - **Sauvegarde** : `python manage.py sauvegarde_sqlite` (à chaud, vérifiée,
   compressée, rotation automatique) — à planifier chaque nuit.
-- **Capacité validée** : 1 500 élèves × 5 ans d'historique (1,08 million de
-  notes) et 20 navigateurs simultanés sans aucune erreur.
+- **Capacité validée** : 1 500 élèves × 5 ans (1,08 million de notes) avec
+  20 navigateurs simultanés, puis **2 500 élèves × 5 ans (1,8 million de notes,
+  base de 850 Mo) avec 40 navigateurs simultanés** — 0 erreur dans les deux
+  cas. En rythme humain (5 à 15 s entre deux clics), toutes les pages répondent
+  en moins d'une seconde (accueil 21 ms, liste des élèves 106 ms, saisie de
+  38 notes 331 ms, liste des redevables 908 ms). Dimensionnement conseillé :
+  2 cœurs / 4 Go jusqu'à 20 postes, **4 cœurs / 8 Go pour 40 postes**.
+- **Optimisations livrées avec ce test** : la *liste des redevables* (et son
+  PDF) calcule la situation de tous les élèves en 4 requêtes au lieu de 4 par
+  élève (5 s → 0,9 s pour 2 500 élèves) ; la *liste des paiements* est paginée
+  par 50 élèves avec des flèches ← → sous le tableau (la recherche reste
+  instantanée et paginée elle aussi).
 - **Changements de code associés** (transparents pour les utilisateurs) : le
   champ *Cycles proposés* de l'établissement est désormais stocké en JSON
   (portable), la liste des paiements utilise une requête portable, le cache peut

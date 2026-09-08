@@ -14,7 +14,7 @@
  PC comptable   ─┤   réseau local (Wi-Fi / câble)      ┌──────────── SERVEUR ────────────┐
  PC direction   ─┼──────── http://192.168.1.10:8000 ───▶│  YELEN SCHOOL (Python)          │
  PC salle profs ─┤                                      │   └─▶ data/yelen_school.sqlite3 │
- … (20+ postes) ─┘                                      └─────────────────────────────────┘
+ … (20 à 40 postes) ─┘                                      └─────────────────────────────────┘
 ```
 
 - La base de données est **un seul fichier** (`data/yelen_school.sqlite3`) sur le
@@ -23,24 +23,69 @@
 - Le **même code** fonctionne dans les deux modes ; on choisit par la variable
   `DB_ENGINE` (`sqlite` ou `postgresql`) dans le fichier `.env`.
 
-### Résultats du test de charge (référence)
+### Résultats des tests de charge (référence)
 
-Test réalisé sur la version 2026-09 avec une base de **1 500 élèves × 5 ans**
-(1 080 000 notes, 45 000 paiements, fichier de 513 Mo) et **20 navigateurs
-simultanés enchaînant des actions sans pause pendant 90 s** (4 workers, 2 CPU) :
+Deux campagnes ont été menées sur la version 2026-09, sur une machine de test
+volontairement modeste (**2 cœurs, 2 Go de RAM**, Gunicorn 4 workers × 2 threads,
+SQLite en mode WAL). Le script `scripts/charge_20_navigateurs.py` simule de vrais
+navigateurs : connexion, saisie de notes, liste des élèves, appel, paiements,
+redevables, bulletins…
 
-| Indicateur | Résultat |
-|---|---|
-| Requêtes HTTP traitées | 1 953 (21 req/s soutenues) |
-| Erreurs | **0** (aucune erreur « database is locked ») |
-| Saisie de 38 notes (POST) — médiane | 2,1 s sous charge maximale, 0,8 s à 5 utilisateurs |
-| Pages de consultation — médiane | 0,3 à 0,6 s sous charge maximale |
-| Intégrité de la base après le test | `integrity_check = ok`, 0 violation de clé étrangère |
+#### Campagne 1 — 1 500 élèves / an, 20 postes
 
-Le facteur limitant était le **processeur** (2 cœurs à 100 %), pas SQLite : la
-part « base de données » d'une page typique est de 0 à 50 ms. Un serveur à
-4 cœurs et un SSD divise ces temps par 2 à 3 — et 20 humains ne cliquent pas en
-boucle sans pause.
+Base de **1 500 élèves × 5 ans** (1 080 000 notes, 45 000 paiements, 513 Mo),
+**20 navigateurs** enchaînant les actions sans pause pendant 90 s : 1 953
+requêtes (21 req/s), **0 erreur**, saisie de 38 notes en 2,1 s médiane sous
+charge maximale, pages de consultation 0,3 à 0,6 s, `integrity_check = ok`.
+
+#### Campagne 2 — 2 500 élèves / an, 40 postes
+
+Base de **2 500 élèves × 5 ans** — 62 classes, 12 500 inscriptions,
+**1 800 000 notes**, 75 000 paiements, fichier de **850 Mo** — et
+**40 navigateurs simultanés** (34 enseignants, 4 secrétaires, 2 comptables)
+pendant 120 s, avec deux rythmes :
+
+| Scénario | Requêtes | Débit | Erreurs | CPU serveur |
+|---|---|---|---|---|
+| **Réaliste** — pause de 5 à 15 s entre deux clics (comme un humain) | 564 | 3,3 req/s | **0** | ≈ 45 % |
+| **Stress** — 40 postes qui cliquent en boucle sans aucune pause | 2 014 | 16,3 req/s | **0** | 100 % (saturé) |
+
+Temps de réponse en scénario **réaliste** (médiane / 95ᵉ centile) :
+
+| Action | Médiane | p95 |
+|---|---|---|
+| Accueil, fiche élève, appel, bulletins, situation financière | 12 – 37 ms | < 100 ms |
+| Recherche d'un élève | 51 ms | 89 ms |
+| Liste des élèves (paginée) | 106 ms | 159 ms |
+| Connexion (POST) | 156 ms | 272 ms |
+| Liste des paiements (paginée, 50 par page) | 171 ms | 175 ms |
+| Liste des évaluations | 208 ms | 313 ms |
+| Enregistrement de 38 notes (POST) | 331 ms | 501 ms |
+| Formulaire nouveau paiement | 549 ms | 647 ms |
+| Liste des redevables (2 500 élèves, calcul en lot) | 908 ms | 953 ms |
+
+Après chaque campagne : `integrity_check = ok`, 0 violation de clé étrangère,
+aucun message « database is locked », aucune réponse HTTP 4xx/5xx, tous les
+paiements et notes saisis pendant le test retrouvés dans la base.
+
+**Ce qu'il faut en retenir**
+
+- **SQLite n'est pas le facteur limitant** : la part « base de données » d'une
+  page est de 3 à 90 ms, même avec 1,8 million de notes. Le facteur limitant
+  est le **processeur** du serveur (rendu des pages HTML par Python).
+- Dans le scénario stress, les temps montent (médiane 1 à 4 s) uniquement
+  parce que 2 cœurs se partagent 40 requêtes simultanées : c'est de la file
+  d'attente CPU, pas des blocages de base. Sur un serveur **4 cœurs / 8 Go**
+  (voir §2) avec `GUNICORN_WORKERS=6` à `8`, ces temps sont divisés par 3 à 4.
+- Deux pages ont été optimisées à l'occasion de ce test : la **liste des
+  redevables** calcule désormais la situation de tous les élèves en 4 requêtes
+  au lieu de 4 par élève (5 s → 0,9 s pour 2 500 élèves), et la **liste des
+  paiements** est paginée par 50 (page de 5,4 Mo → 150 Ko).
+
+> Dimensionnement : **jusqu'à 1 500 élèves / 20 postes**, un PC de bureau récent
+> (2 cœurs, 4 Go, SSD) suffit. **Pour 2 500 élèves / 40 postes**, prévoir
+> **4 cœurs / 8 Go / SSD** et 6 à 8 workers. Au-delà de 4 000 élèves ou de
+> 60 postes simultanés, passer en mode PostgreSQL (§7).
 
 ---
 
@@ -48,8 +93,8 @@ boucle sans pause.
 
 | Élément | Minimum | Recommandé |
 |---|---|---|
-| Processeur | 2 cœurs | 4 cœurs |
-| Mémoire | 4 Go | 8 Go |
+| Processeur | 2 cœurs (≤ 20 postes) | 4 cœurs (40 postes) |
+| Mémoire | 4 Go (≤ 20 postes) | 8 Go (40 postes) |
 | Disque | **SSD**, 20 Go libres | SSD + 2ᵉ disque/clé USB pour les sauvegardes |
 | Système | Windows 10/11, Windows Server, Ubuntu 22.04+ | — |
 | Réseau | IP **fixe** sur le réseau local (ex. `192.168.1.10`) | — |
@@ -181,5 +226,13 @@ python manage.py loaddata export.json
 | `core/db_sqlite.py` | PRAGMA SQLite (WAL…) appliqués à chaque connexion |
 | `core/management/commands/sauvegarde_sqlite.py` | Sauvegarde à chaud avec rotation |
 | `etablissements/migrations/0005_…` + `_compat.py` | Champ `cycles` portable (ArrayField → JSONField) |
-| `scripts/seed_charge.py` | Jeu de données réaliste (1 500 élèves × 5 ans) pour tests |
-| `scripts/charge_20_navigateurs.py` | Test de charge de bout en bout (20 navigateurs simulés) |
+| `scripts/seed_charge.py` | Jeu de données réaliste pour tests : `--eleves 2500 --annees 5` |
+| `scripts/charge_20_navigateurs.py` | Test de charge de bout en bout : `--users 40 --duree 120 --reflexion 5-15` (pause humaine entre deux clics ; `0-0` = stress) |
+
+Rejouer le test de charge (sur une base de test, jamais sur la base de production) :
+
+```bash
+python scripts/seed_charge.py --eleves 2500 --annees 5          # génère la base
+python scripts/charge_20_navigateurs.py --url http://127.0.0.1:8000 \
+       --users 40 --duree 120 --reflexion 5-15 --rubrique <UUID rubrique SCOL>
+```

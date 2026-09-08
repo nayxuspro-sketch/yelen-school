@@ -28,6 +28,7 @@ from urllib.error import HTTPError, URLError
 
 PWD = 'Yelen2026!'
 RUBRIQUE_ID = ''  # renseigné au démarrage (rubrique 'Scolarité' de l'établissement de test)
+REFLEXION = (0.0, 0.0)  # pause humaine min/max entre deux actions (s)
 CSRF_RE = re.compile(r'name="csrfmiddlewaretoken" value="([^"]+)"')
 UUID_RE = re.compile(r'/inscriptions/eleve/([0-9a-f-]{36})/')
 EVAL_RE = re.compile(r'/pedagogie/evaluations/([0-9a-f-]{36})/saisie/')
@@ -72,6 +73,8 @@ class Navigateur:
             if code >= 400 or code == 0:
                 errors[label] += 1
                 error_samples.setdefault(label, (code, html[:300]))
+        if REFLEXION[1] > 0:
+            time.sleep(self.rnd.uniform(*REFLEXION))  # temps de lecture / saisie de l'utilisateur
         return code, html
 
     def get(self, label, path):
@@ -151,18 +154,20 @@ NOMS = ['OUEDRAOGO', 'SAWADOGO', 'KABORE', 'ZONGO', 'TRAORE', 'COMPAORE', 'ILBOU
 
 
 def main():
-    global stop_at, RUBRIQUE_ID
+    global stop_at, RUBRIQUE_ID, REFLEXION
     ap = argparse.ArgumentParser()
     ap.add_argument('--url', default='http://localhost:8000')
     ap.add_argument('--users', type=int, default=20)
     ap.add_argument('--duree', type=int, default=60)
     ap.add_argument('--rubrique', default='', help='UUID de la rubrique de paiement (Scolarité)')
+    ap.add_argument('--reflexion', default='0-0', help="Pause humaine entre actions, en s (ex. '5-15'). '0-0' = stress sans pause")
     args = ap.parse_args()
     RUBRIQUE_ID = args.rubrique
+    REFLEXION = tuple(float(x) for x in args.reflexion.split('-'))
 
     roles = ['COMPTABLE', 'SECRETAIRE', 'SECRETAIRE'] + ['ENSEIGNANT'] * 17
     roles = (roles * ((args.users // 20) + 1))[:args.users]
-    print(f"→ {args.users} navigateurs simultanés pendant {args.duree} s sur {args.url}")
+    print(f"→ {args.users} navigateurs simultanés pendant {args.duree} s sur {args.url} — pause humaine {args.reflexion} s")
     print(f"  rôles : {roles.count('ENSEIGNANT')} enseignants, {roles.count('COMPTABLE')} comptable(s), {roles.count('SECRETAIRE')} secrétaires\n")
 
     stop_at = time.time() + args.duree
