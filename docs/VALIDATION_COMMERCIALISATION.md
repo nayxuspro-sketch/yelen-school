@@ -1,7 +1,7 @@
 # Rapport de validation de commercialisation
 
-**Date du contrôle :** 14 septembre 2026 (UTC)  
-**Branche :** `arena/01a06c5a-yelen-school`  
+**Date du contrôle :** 14 septembre 2026 (UTC)
+**Branche :** `arena/01a06c5a-yelen-school`
 **Règle de lecture :** `PASS` signifie qu'une preuve d'exécution est disponible ; `BLOCKED` signifie que la preuve n'a pas pu être obtenue dans l'environnement de contrôle ; `FAIL` signifie qu'un contrôle exécutable a échoué.
 
 Ce rapport ne transforme pas une indisponibilité d'environnement en validation réussie. Les contrôles locaux ne basculent jamais vers SQLite : le projet et la suite officielle restent configurés pour PostgreSQL.
