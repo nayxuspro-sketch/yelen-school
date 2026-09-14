@@ -154,6 +154,7 @@ $LoginUrl = "http://localhost:$httpPort/accounts/login/"
 
 $secretKey = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'))
 $dbPassword = 'Yelen-' + [guid]::NewGuid().ToString('N')
+$smsWebhookToken = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'))
 
 $lanIp = Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp -ErrorAction SilentlyContinue |
     Where-Object {
@@ -177,6 +178,7 @@ if ($FreshInstallation) {
 }
 Ensure-EnvValue 'DB_NAME' 'yelen_school_db'
 Ensure-EnvValue 'DB_USER' 'yelen_user'
+Ensure-EnvValue 'SMS_WEBHOOK_TOKEN' $smsWebhookToken
 Ensure-EnvValue 'DEBUG' 'False'
 Ensure-EnvValue 'DISABLE_HTTPS_REDIRECT' 'true'
 Ensure-EnvValue 'ALLOWED_HOSTS' "localhost,127.0.0.1,$lanIp"

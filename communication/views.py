@@ -244,6 +244,10 @@ def sms_direct_envoyer(request):
     })
     req.META['SERVER_NAME'] = request.META.get('SERVER_NAME', 'localhost')
     req.META['SERVER_PORT'] = request.META.get('SERVER_PORT', '8000')
+    # Marqueur Python interne : il ne peut pas être forgé par une requête HTTP
+    # et permet à l'interface authentifiée de réutiliser le même traitement
+    # sans passer par l'authentification du webhook externe.
+    req._yelen_internal_sms = True
 
     from django.test.utils import override_settings
     with override_settings(CELERY_TASK_ALWAYS_EAGER=True):
@@ -274,11 +278,15 @@ def webhook_incoming_sms(request):
     Webhook pour traiter les SMS entrants des parents (PWA Parent-SMS Direct).
     Supporte les formats JSON (Android SMS Gateway) et les paramètres standards POST.
     """
+    import hashlib
+    import hmac
     import json
     import re
     from django.views.decorators.csrf import csrf_exempt
     from django.http import JsonResponse, HttpResponse
     from django.conf import settings
+    from django.core.cache import cache
+    from django.utils.crypto import constant_time_compare
     from core.sms import _normaliser_numero
     from core.tasks import envoyer_sms_async
     from inscriptions.models import Eleve, Inscription
@@ -287,27 +295,72 @@ def webhook_incoming_sms(request):
     from finances.views import _calcul_situation_financiere
     from .models import IncomingSMSLog
 
-    # ── Authentification du webhook ────────────────────────────────────
-    # Vérification IP (si une liste d'IP autorisées est configurée)
-    if settings.SMS_ALLOWED_IPS:
+    # ── Authentification et limitation du webhook ─────────────────────
+    # L'interface interne est déjà protégée par login_required. Le marqueur
+    # Python est volontairement distinct d'un en-tête HTTP forgeable.
+    internal_request = getattr(request, '_yelen_internal_sms', False)
+    if not internal_request:
         remote_ip = request.META.get('REMOTE_ADDR', '')
         forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
         client_ip = (forwarded_for.split(',')[0].strip()
                      if forwarded_for else remote_ip)
-        if client_ip not in settings.SMS_ALLOWED_IPS:
+
+        # Vérification IP (si une liste d'IP autorisées est configurée).
+        if settings.SMS_ALLOWED_IPS and client_ip not in settings.SMS_ALLOWED_IPS:
             return JsonResponse(
                 {'status': 'error', 'message': 'Accès non autorisé.'},
                 status=403,
             )
 
-    # Vérification du token partagé (passé en paramètre GET ou header X-SMS-Token)
-    token = (request.GET.get('token', '')
-             or request.META.get('HTTP_X_SMS_TOKEN', ''))
-    if settings.SMS_WEBHOOK_TOKEN and token != settings.SMS_WEBHOOK_TOKEN:
-        return JsonResponse(
-            {'status': 'error', 'message': 'Token invalide.'},
-            status=403,
-        )
+        # Limite par adresse source pour éviter l'inondation de SMS et des logs.
+        rate_limit = max(1, int(getattr(settings, 'SMS_WEBHOOK_RATE_LIMIT', 60)))
+        rate_key = f"yelen:sms-webhook:{client_ip}:{timezone.now().strftime('%Y%m%d%H%M')}"
+        try:
+            request_count = cache.incr(rate_key)
+        except ValueError:
+            cache.add(rate_key, 1, timeout=70)
+            request_count = 1
+        if request_count > rate_limit:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Trop de requêtes. Réessayez plus tard.'},
+                status=429,
+            )
+
+        configured_token = getattr(settings, 'SMS_WEBHOOK_TOKEN', '').strip()
+        if configured_token.lower().startswith(('generer-', 'votre-', 'changez')):
+            configured_token = ''
+        hmac_secret = getattr(settings, 'SMS_WEBHOOK_HMAC_SECRET', '').strip()
+
+        # Un webhook sans secret est toléré uniquement en DEBUG. Les installations
+        # locales client ont DEBUG=False et doivent donc générer un token.
+        if not configured_token and not hmac_secret and not settings.DEBUG:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Webhook SMS non configuré.'},
+                status=503,
+            )
+
+        token = (request.GET.get('token', '')
+                 or request.META.get('HTTP_X_SMS_TOKEN', ''))
+        signature = request.META.get('HTTP_X_SMS_SIGNATURE', '').strip().lower()
+        authenticated = False
+
+        if hmac_secret and signature:
+            expected_signature = hmac.new(
+                hmac_secret.encode('utf-8'),
+                request.body,
+                hashlib.sha256,
+            ).hexdigest()
+            authenticated = constant_time_compare(signature, expected_signature)
+        elif configured_token:
+            authenticated = constant_time_compare(token, configured_token)
+        elif settings.DEBUG:
+            authenticated = True
+
+        if not authenticated:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Authentification webhook invalide.'},
+                status=403,
+            )
 
     sender_number = ""
     message_text = ""

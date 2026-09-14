@@ -5,6 +5,8 @@
 > **Public :** administrateur technique de l'établissement.
 >
 > **Objectif :** installer YELEN SCHOOL sur une machine Windows avec PostgreSQL et Redis gérés localement par Docker Desktop. Après l'installation initiale, l'application fonctionne sur le réseau local sans connexion Internet quotidienne.
+>
+> **État de référence :** 14 septembre 2026. Les fonctions décrites comme automatiques sont celles présentes dans les scripts du dépôt ; les validations runtime Windows et la recette réelle de restauration restent à exécuter sur une machine équipée de Docker Desktop.
 
 ---
 
@@ -332,11 +334,18 @@ La commande technique équivalente est :
 
 La tâche `YELEN SCHOOL - SMS automatiques` exécute `python manage.py sms_auto` dans le conteneur web et écrit dans `logs\\sms-auto.log`. Les SMS doivent être activés dans **Configuration SMS**, la passerelle locale doit répondre et les déclencheurs doivent être activés dans **Paramètres → SMS automatiques**. Chaque déclencheur est protégé contre une seconde exécution le même jour.
 
-Avant d'activer la tâche en production, utiliser le bouton **Tester** sur un seul déclencheur et vérifier le journal de la passerelle SMS.
+Avant d'activer la tâche en production :
 
-### 6.4 Journal de programmation
+1. lancer `docker compose -f docker-compose.client.yml exec -T web python manage.py sms_auto --dry-run` ;
+2. vérifier le nombre et le contenu attendus sans qu'aucun SMS ne soit envoyé ;
+3. tester le bouton **Tester** sur un seul déclencheur ;
+4. vérifier le journal de la passerelle SMS.
 
-Les sorties de la tâche sont écrites dans `backups\backup.log` si la tâche est lancée par le script fourni. Surveiller régulièrement :
+La passerelle qui appelle le webhook entrant doit envoyer `X-SMS-Token` avec la valeur de `SMS_WEBHOOK_TOKEN`. Un `X-SMS-Signature` HMAC-SHA256 peut être utilisé avec `SMS_WEBHOOK_HMAC_SECRET`. Le token est généré par l'installateur et ne doit pas être placé dans une URL publique.
+
+### 6.4 Contrôle des sauvegardes
+
+Les sorties de la tâche de sauvegarde sont écrites dans `backups\backup.log` si la tâche est lancée par le script fourni. Surveiller régulièrement :
 
 - la date de modification de la dernière paire ;
 - la taille du dump et de l'archive médias ;
@@ -382,7 +391,8 @@ Le script :
 2. recrée la base PostgreSQL et importe le dump ;
 3. redémarre le service web ;
 4. restaure l'archive médias associée lorsqu'elle existe ;
-5. garantit une tentative de redémarrage du service web même en cas d'erreur.
+5. exécute `manage.py check`, puis attend un endpoint `/health/` indiquant que PostgreSQL et Redis répondent ;
+6. garantit une tentative de redémarrage du service web même en cas d'erreur.
 
 Pour une exécution non interactive dans une procédure déjà validée :
 
@@ -391,7 +401,7 @@ Pour une exécution non interactive dans une procédure déjà validée :
   -BackupFile .\backups\yelen_school_20260914_220000.dump -Yes
 ```
 
-N'utiliser `-Yes` qu'après avoir vérifié le chemin de la sauvegarde. Après restauration, se connecter, contrôler quelques élèves, paiements et documents, puis vérifier quelques fichiers médias.
+N'utiliser `-Yes` qu'après avoir vérifié le chemin de la sauvegarde. Le script réalise un contrôle technique (`manage.py check` et `/health/`), mais la recette fonctionnelle doit encore être faite manuellement : se connecter, contrôler quelques élèves, paiements et documents, ouvrir un PDF, puis vérifier quelques fichiers médias.
 
 ### 7.3 Programmer une restauration unique sous Windows
 

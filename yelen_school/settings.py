@@ -280,10 +280,15 @@ SMS_MODEM_BAUD = int(os.environ.get('SMS_MODEM_BAUD', '9600'))
 SMS_MODEM_TIMEOUT = int(os.environ.get('SMS_MODEM_TIMEOUT', '10'))
 
 # ── WEBHOOK SMS ────────────────────────────────────────────────────────────────
-# Token partagé : l'application SMS Gateway doit inclure ?token=... dans l'URL
-SMS_WEBHOOK_TOKEN = os.environ.get('SMS_WEBHOOK_TOKEN', '')
+# Secret partagé : la passerelle SMS doit l'envoyer dans X-SMS-Token.
+# Le paramètre ?token=... reste accepté uniquement pour les passerelles
+# anciennes ; le header est recommandé car il évite les secrets dans les URLs.
+SMS_WEBHOOK_TOKEN = os.environ.get('SMS_WEBHOOK_TOKEN', '').strip()
+# Optionnel : signature HMAC-SHA256 du corps brut dans X-SMS-Signature.
+SMS_WEBHOOK_HMAC_SECRET = os.environ.get('SMS_WEBHOOK_HMAC_SECRET', '').strip()
 # IP autorisées à appeler le webhook (séparées par des virgules)
 SMS_ALLOWED_IPS = [ip.strip() for ip in os.environ.get('SMS_ALLOWED_IPS', '').split(',') if ip.strip()]
+SMS_WEBHOOK_RATE_LIMIT = int(os.environ.get('SMS_WEBHOOK_RATE_LIMIT', '60'))
 
 # ── SÉCURITÉ RENFORCÉE ─────────────────────────────────────────────────────────
 

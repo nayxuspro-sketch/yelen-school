@@ -94,6 +94,7 @@ LOGIN_URL="http://localhost:${http_port}/accounts/login/"
 
 secret_key="$(random_hex)$(random_hex)"
 db_password="Yelen-$(random_hex | cut -c1-24)"
+sms_webhook_token="$(random_hex)$(random_hex)"
 lan_ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}' || true)"
 if [[ -z "$lan_ip" || "$lan_ip" == 127.* || "$lan_ip" == 169.254.* ]]; then
     lan_ip="$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -Ev '^(127\.|169\.254\.)' | head -n 1 || true)"
@@ -113,6 +114,7 @@ else
 fi
 ensure_env_value DB_NAME 'yelen_school_db'
 ensure_env_value DB_USER 'yelen_user'
+ensure_env_value SMS_WEBHOOK_TOKEN "$sms_webhook_token"
 ensure_env_value DEBUG 'False'
 ensure_env_value DISABLE_HTTPS_REDIRECT 'true'
 ensure_env_value ALLOWED_HOSTS "localhost,127.0.0.1,$lan_ip"

@@ -106,22 +106,30 @@ class Command(BaseCommand):
     # ── ABSENCE J+1 ────────────────────────────────────────────────
 
     def _absence_j1(self, declencheur, etab, dry_run):
-        from presences.models import Absence
+        from presences.models import Presence
         hier = timezone.now().date() - timedelta(days=1)
 
+        # Le projet stocke les absences dans Presence (statut ABSENT), liées
+        # à un Appel ; il n'existe pas de modèle Absence séparé. Un élève peut
+        # avoir plusieurs appels le même jour : un seul SMS est envoyé.
         absences = (
-            Absence.objects
+            Presence.objects
             .filter(
                 inscription__classe__etablissement=etab,
-                date=hier,
-                justifie=False,
+                appel__date=hier,
+                statut=Presence.StatutChoices.ABSENT,
             )
             .select_related('inscription__eleve', 'inscription__classe')
         )
 
         etab_nom = etab.nom
         nb = 0
+        inscriptions_deja_traitees = set()
         for absence in absences:
+            inscription_id = absence.inscription_id
+            if inscription_id in inscriptions_deja_traitees:
+                continue
+            inscriptions_deja_traitees.add(inscription_id)
             eleve = absence.inscription.eleve
             numero = (
                 eleve.telephone_parent

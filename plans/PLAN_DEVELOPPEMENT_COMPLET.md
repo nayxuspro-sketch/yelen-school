@@ -1,309 +1,149 @@
-# Plan de Développement Complet - YELEN SCHOOL v3.4
+# Plan de développement et d'exploitation — YELEN SCHOOL
 
-*Date: 11 Mars 2026*
-*Deadline: 1er Août 2026*
+**État de référence :** 14 septembre 2026
+**Branche de travail :** `arena/01a06c5a-yelen-school`
+**Base officielle :** PostgreSQL 15 géré localement par Docker
+**Objectif :** installation autonome chez un établissement, utilisable sur le réseau local sans connexion Internet quotidienne.
 
----
+> Ce document remplace l'ancien plan daté de mars 2026, qui déclarait à tort plusieurs modules déjà présents comme « non implémentés ». Il décrit uniquement ce qui est livré dans le dépôt et les validations encore ouvertes.
 
-## 📊 État Actuel du Projet
+## 1. Socle livré
 
-### Modules Implémentés ✅
+| Domaine | État réel | Périmètre livré |
+|---|---|---|
+| Comptes et accès | ✅ Livré | utilisateurs, rôles, sessions, réinitialisation de mot de passe, 2FA TOTP avec défi signé et expiration de cinq minutes |
+| Établissements et paramètres | ✅ Livré | établissements, classes, cycles, années scolaires, identité, modèles et déclencheurs SMS |
+| Élèves et inscriptions | ✅ Livré | fiches élèves, inscriptions, réinscriptions, matricules et cloisonnement par établissement |
+| Pédagogie | ✅ Livré | matières, enseignements, évaluations, notes, moyennes et analyse du risque de décrochage |
+| Bulletins et documents | ✅ Livré | bulletins trimestriels/annuels, PDF, documents administratifs, signataires et archivage |
+| Présences et vie scolaire | ✅ Livré | appels, présences, justifications, QR, discipline, activités et convocations |
+| Finances | ✅ Livré | tarifs, échéanciers, paiements, reçus, relances, bourses et états financiers |
+| Examens et vacations | ✅ Livré | candidats, centres/salles, listes et bulletins de vacation |
+| Communication | ✅ Livré | messages aux parents, SMS local, webhook entrant authentifié et journaux associés |
+| Licences | ✅ Livré | licences, limitations et contrôle d'expiration ; l'activation commerciale doit encore être décidée |
 
-| Module | État | Description |
-|--------|------|-------------|
-| **core** | ✅ Terminé | BaseModel, CycleChoices, RoleChoices |
-| **accounts** | ✅ Terminé | User avec RBAC (9 rôles), authentification |
-| **etablissements** | ✅ Terminé | Etablissement, Cycle, Classe |
-| **parametres** | ✅ Terminé | 14 modèles + Signataires v3.4 |
-| **licences** | ✅ Terminé | Système de licences, feature flags, middleware |
+« Livré » signifie que le code, les migrations et les parcours applicatifs sont présents. La validation runtime complète reste indiquée dans la section 5.
 
-### Modules Partiellement Implémentés ⚠️
+## 2. Automatisations locales livrées
 
-| Module | État | Description |
-|--------|------|-------------|
-| **personnel** | ⚠️ Partiel | MembrePersonnel basique (nom, prenom, fonction) |
+### 2.1 Analyse du risque de décrochage
 
-### Modules Non Implémentés ❌
+Commande :
 
-| Module | État | Priorité |
-|--------|------|----------|
-| **inscriptions** | ❌ À développer | HAUTE |
-| **pedagogie** | ❌ À développer | HAUTE |
-| **bulletins** | ❌ À développer | HAUTE |
-| **documents** | ❌ À développer | HAUTE |
-| **examens** | ❌ À développer | MOYENNE |
-| **presences** | ❌ À développer | MOYENNE |
-| **vacations** | ❌ À développer | MOYENNE |
-| **finances** | ❌ À développer | MOYENNE |
-
----
-
-## 🎯 Prochaines Étapes Prioritaires
-
-### Phase 1: Foundation (Semaines 1-2)
-
-#### 1.1 Enrichir le modèle Personnel
-```
-_PRIORITÉ HAUTE_
-
-personnel/models.py doit inclure:
-- MembrePersonnel (enrichi)
-  - date_naissance
-  - lieu_naissance
-  - genre (M/F)
-  - telephone
-  - email
-  - adresse
-  - numero_cni
-  - date_embauche
-  - situation_matrimoniale
-  - nombre_enfants
-  - photo
-  - etablissement (FK)
-  - poste (FK vers parametres.Poste)
-  - cycles (M2M vers Cycle)
-  - est_directeur (BooleanField)
-  - matricule ({CODE_ETAB}-P-{ANNEE}-{SEQ:02d})
-
-- InscriptionPersonnel (nouveau)
-  - personnel (FK)
-  - annee_scolaire (FK)
-  - poste (FK)
-  - cycle (FK)
-  - actif (BooleanField)
-  - date_inscription
+```text
+python manage.py calculer_risques
+python manage.py calculer_risques --strict
 ```
 
-#### 1.2 Créer les modèles Inscriptions
-```
-_PRIORITÉ HAUTE_
+La commande traite l'année courante, exclut les inscriptions abandonnées, met à jour `RisqueDecrochage` et peut retourner une erreur si une inscription échoue avec `--strict`.
 
-inscriptions/models.py:
-- Inscription
-  - eleve (FK)
-  - annee_scolaire (FK)
-  - classe (FK)
-  - date_inscription
-  - statut (Affecté/Non affecté/Boursier/Exonéré)
-  - numero_recu
-  - montant_paye
-  - parent_tuteur (FK)
-  -_redoublant (BooleanField)
-  - observations
+Sous Windows :
 
-- Eleve (nouveau - pourrait être dans accounts)
-  - matricule ({CODE_ETAB}-{ANNEE}-{SEQ:02d})
-  - nom
-  - prenom
-  - date_naissance
-  - lieu_naissance
-  - genre
-  - nationalite
-  - pays_residence
-  - province
-  - commune
-  - village
-  - telephone_urgence
-  - email
-  - photo
-  - nom_pere
-  - nom_mere
-  - telephone_parent
-  - profession_pere
-  - profession_mere
-  - tuteur_nom
-  - tuteur_telephone
-  - tuteur_adresse
-  - etablissement_origine
-  - last_classe (FK vers Classe)
-  - last_annee (FK vers AnneeScolaire)
-
-- InscriptionPersonnel (dans personnel)
+```text
+programmer-risques.bat [HH:MM]
 ```
 
----
+La tâche `YELEN SCHOOL - Analyse du risque de décrochage` est quotidienne à 02:00 par défaut. Elle démarre les services Docker sans reconstruction, lance la commande en mode strict, écrit `logs\risques.log` et retourne un code d'échec exploitable par le Planificateur de tâches.
 
-### Phase 2: Modules Métier (Semaines 3-6)
+### 2.2 SMS automatiques
 
-#### 2.1 Pedagogie
-```
-inscriptions/models.py ou pedagogie/models.py:
-- Enseignement
-- Evaluation
-- Note
-- Composition
-- Resultat
-```
+Configuration : `Paramètres → SMS automatiques`
+Commande :
 
-#### 2.2 Bulletins
-```
-bulletins/models.py:
-- Bulletin
-- Appreciation
-- Moyenne
-- Rang
-- Hole
+```text
+python manage.py sms_auto
+python manage.py sms_auto --dry-run
+python manage.py sms_auto --etablissement <UUID>
 ```
 
-#### 2.3 Examens
-```
-examens/models.py:
-- Examen (CEP/BEPC/BAC)
-- InscriptionExamen
-- Surveillance
-- SalleExamen
-```
+Types livrés :
 
----
+- `ABSENCE_J1` : absence non justifiée de la veille, un seul SMS par élève et par exécution ;
+- `ECHEANCIER` : rappel à la date exacte calculée à partir de `jours_avant` ;
+- `RESULTATS` : bulletin nouvellement publié depuis la dernière exécution.
 
-### Phase 3: Modules Complémentaires (Semaines 7-10)
+La commande est désactivée tant que `SMS_ENABLED` n'est pas explicitement activé. `--dry-run` ne modifie pas `last_run` et n'appelle pas l'envoi SMS. Une garde quotidienne empêche les doublons après une exécution réussie.
 
-#### 3.1 Presences
-```
-presences/models.py:
-- Presence
-- Absence
-- Retard
-- Appel
--justification
+Sous Windows :
+
+```text
+programmer-sms.bat [HH:MM]
 ```
 
-#### 3.2 Vacations
-```
-vacations/models.py:
-- Vacation
-- HeureSupplementaire
-- BulletinVacation
-```
+La tâche est quotidienne à 07:00 par défaut et écrit `logs\sms-auto.log`. La passerelle SMS reste locale : aucune API Internet n'est requise par l'application.
 
-#### 3.3 Finances
-```
-finances/models.py:
-- Paiement
-- Recu
-- Facture
-- Rubrique
-- Tarif
-```
+## 3. Déploiement local et données
 
----
+### 3.1 Installation
 
-### Phase 4: Documents & Integration (Semaines 11-14)
+- `docker-compose.client.yml` fournit PostgreSQL 15, Redis 7 et le service web ;
+- `.env` est généré ou complété par les installateurs ;
+- `install-local.sh` et `install-windows.ps1` génèrent les secrets Django, PostgreSQL et `SMS_WEBHOOK_TOKEN` lors d'une nouvelle installation ;
+- le port HTTP local est choisi et persisté dans `.env` ;
+- Windows peut créer la règle pare-feu limitée au réseau local ;
+- aucune ouverture Internet publique ni configuration WireGuard n'est activée par défaut.
 
-#### 4.1 Module Documents
-```
-documents/models.py:
-- Document
-- TypeDocument (peut utiliser parametres.TypeDocument)
-- ModeleDocument
-- GenerationDocument
+### 3.2 Sauvegarde
 
-- Signatures (intégration avec parametres.SignataireDocument)
+Une sauvegarde complète est une paire :
+
+```text
+backups/yelen_school_YYYYMMDD_HHMMSS.dump
+backups/yelen_school_YYYYMMDD_HHMMSS_media.tar.gz
 ```
 
-#### 4.2 Intégration PDF
-```
-Integration des signataires dans les documents:
-- Certificat de scolarité
-- Bulletin de notes
-- Reçu de paiement
-- Autorisation d'absence
-- Attestation de non-redevabilité
-- Cursus scolaire
-- Carte d'identité scolaire
-- Listes (classe, personnel)
-```
+Les scripts livrés sont `installer/backup-windows.ps1` et `installer/backup-local.sh`. Ils utilisent `pg_dump` au format custom, archivent les médias, suppriment les fichiers incomplets et appliquent une rétention locale. Les procédures Windows Task Scheduler et Linux cron sont documentées dans les guides de déploiement.
 
----
+### 3.3 Restauration
 
-## 📋 Checklist des Tâches par Module
+Les scripts `installer/restore-windows.ps1` et `installer/restore-local.sh` :
 
-### Module Personnel (Enrichissement)
-- [ ] Ajouter les champs manquants à MembrePersonnel
-- [ ] Créer le modèle InscriptionPersonnel
-- [ ] Implémenter la gestion des cycles par personnel
-- [ ] Ajouter la vue d'inscription annuelle du personnel
-- [ ] Créer les templates CRUD personnel
-- [ ] Ajouter les tests unitaires
+1. demandent une confirmation explicite, sauf option documentée ;
+2. arrêtent le web et recréent la base PostgreSQL ;
+3. restaurent le dump avec `pg_restore` ;
+4. restaurent l'archive médias associée ;
+5. exécutent `manage.py check` et attendent un `/health/` avec base et cache opérationnels.
 
-### Module Inscriptions
-- [ ] Créer le modèle Eleve avec toutes les infos
-- [ ] Créer le modèle Inscription
-- [ ] Implémenter la logique de matricule ({CODE_ETAB}-{ANNEE}-{SEQ})
-- [ ] Créer le workflow inscription/réinscription
-- [ ] Ajouter la logique d'âge calculé (non stocké)
-- [ ] Créer les templates inscription
-- [ ] Ajouter les tests unitaires
+La recette doit ensuite vérifier la connexion, un élève, un paiement, un document PDF et un fichier média sur une installation de test. Cette recette n'est pas encore exécutée dans l'environnement courant, car Docker n'y est pas disponible.
 
-### Module Pedagogie
-- [ ] Créer les modèles enseignements/evaluations
-- [ ] Implémenter la gestion des notes
-- [ ] Créer les calculs de moyennes
-- [ ] Ajouter les templates saisies notes
+## 4. Sécurité livrée
 
-### Module Bulletins
-- [ ] Créer les modèles bulletins
-- [ ] Implémenter la génération de bulletins PDF
-- [ ] Intégrer les signataires dans les bulletins
-- [ ] Ajouter les appreciation conduite
+- le défi 2FA est signé par `TimestampSigner` et expire après cinq minutes ;
+- le webhook SMS exige un token ou une signature HMAC hors `DEBUG`, vérifie éventuellement les IP et applique une limite par adresse ;
+- les installateurs génèrent le token webhook ;
+- le format de logs Nginx exclut l'en-tête `Authorization` et la query string ;
+- la CI contient une étape `pip-audit` ;
+- PostgreSQL et Redis restent internes au réseau Docker ;
+- `docs/AUDIT_SECURITE.md` est le rapport de référence unique.
 
-### Module Examens
-- [ ] Créer les modèles examens
-- [ ] Gérer les inscriptions aux examens (CEP/BEPC/BAC)
-- [ ] Créer les templates gestion exams
+## 5. Validations restantes
 
-### Module Documents
-- [ ] Créer le système de génération PDF
-- [ ] Intégrer les signataires paramétrables
-- [ ] Créer les templates pour chaque type de document
+Ces éléments sont explicitement ouverts et ne doivent pas être présentés comme exécutés :
 
-### Module Presences
-- [ ] Créer le modèle présence/absence
-- [ ] Implémenter les pointages
-- [ ] Créer les rapports de présence
+- [ ] exécuter la CI complète avec PostgreSQL 15 et Redis 7 ;
+- [x] mettre à niveau les dépendances signalées par `pip-audit` ; audit local du 14/09/2026 : aucune vulnérabilité connue ;
+- [ ] laisser la CI rejouer `pip-audit` et traiter toute nouvelle alerte ;
+- [ ] tester en runtime le webhook SMS : token valide/invalide, HMAC, rate limit, absence de secret et absence d'envoi réel ;
+- [ ] exécuter les scripts PowerShell sur Windows avec Docker Desktop ;
+- [ ] créer une sauvegarde réelle, restaurer la paire sur une installation de test et effectuer le contrôle fonctionnel post-restauration ;
+- [ ] vérifier les règles pare-feu après un changement automatique de port ;
+- [ ] décider l'activation des middlewares de licence pour l'offre commerciale.
 
-### Module Vacations
-- [ ] Créer le modèle vacation
-- [ ] Implémenter le calcul des heures
-- [ ] Créer les bulletins mensuels
+## 6. Règles de mise en production client
 
-### Module Finances
-- [ ] Créer le modèle paiement
-- [ ] Implémenter la gestion des reçus
-- [ ] Créer les rapports financiers
+1. conserver PostgreSQL, jamais SQLite, pour l'exécution et les tests officiels ;
+2. configurer `DEBUG=False`, `ALLOWED_HOSTS` et les origines CSRF locales ;
+3. changer le mot de passe administrateur initial ;
+4. activer les SMS seulement après avoir testé la passerelle et les modèles ;
+5. lancer `sms_auto --dry-run` avant la première tâche réelle ;
+6. conserver `.env` hors du dépôt et les sauvegardes hors de la machine ;
+7. ne jamais exposer `5432`, `6379` ou le port web directement sur Internet ;
+8. documenter toute restauration et contrôler les données après celle-ci.
 
----
+## 7. Documents de référence
 
-## 🎨 Design System
-
-Le projet utilise:
-- **Backend**: Django 4.2 + DRF
-- **Frontend**: HTMX + Alpine.js + Tailwind CSS
-- **Base de données**: PostgreSQL 15
-- **Cache**: Redis 7
-- **PDF**: WeasyPrint
-- **Conteneurisation**: Docker
-
-### Palette de Couleurs
-- Fond global: `#0A1628`
-- Surface cartes: `#111E35`
-- Vert principal: `#00A86B`
-- Or: `#F5A623`
-
-### Design Mobile-First
-- Version responsive obligatoire
-- Navigation mobile optimisée
-
----
-
-## 🚀 Stratégie de Développement Recommandée
-
-1. **Commencer par personnel et inscriptions** - Ce sont les fondations
-2. **Implémenter pedagogie et bulletins** - Cœur métier de l'école
-3. **Ajouter examens** - Important pour le calendrier scolaire
-4. **Développer presences, vacations, finances** - Modules complémentaires
-5. **Finaliser documents avec signataires** - Point d'aboutissement v3.4
-
----
-
-*Ce plan sera mis à jour au fur et à mesure de l'avancement du projet.*
+- Installation et exploitation Windows : `docs/GUIDE_DEPLOIEMENT_WINDOWS.md` ;
+- procédures utilisateurs et administrateurs : `docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` ;
+- sauvegarde/restauration : `installer/README.txt` et les scripts `installer/backup-*`, `installer/restore-*` ;
+- état de sécurité : `docs/AUDIT_SECURITE.md` ;
+- archive de test : `YELEN_SCHOOL_TEST.zip` lorsqu'elle est régénérée après une modification.

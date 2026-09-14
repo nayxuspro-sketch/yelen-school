@@ -50,21 +50,21 @@ restart_web() {
 }
 trap restart_web EXIT
 
-echo '[1/4] Suppression de la base actuelle...'
+echo '[1/5] Suppression de la base actuelle...'
 docker compose -f "$COMPOSE_FILE" exec -T db dropdb --if-exists -U "$DB_USER" "$DB_NAME"
 docker compose -f "$COMPOSE_FILE" exec -T db createdb -U "$DB_USER" -O "$DB_USER" "$DB_NAME"
 
-echo '[2/4] Restauration de la base PostgreSQL...'
+echo '[2/5] Restauration de la base PostgreSQL...'
 if ! cat "$BACKUP_FILE" | docker compose -f "$COMPOSE_FILE" exec -T db \
     pg_restore -U "$DB_USER" -d "$DB_NAME" --no-owner --no-privileges --exit-on-error -; then
     fail 'La restauration PostgreSQL a échoué. La base doit être restaurée depuis une autre sauvegarde valide.'
 fi
 
-echo '[3/4] Redémarrage du service web...'
+echo '[3/5] Redémarrage du service web...'
 docker compose -f "$COMPOSE_FILE" up -d web >/dev/null
 
 if [[ -f "$MEDIA_BACKUP_FILE" ]]; then
-    echo '[4/4] Restauration des médias...'
+    echo '[4/5] Restauration des médias...'
     if ! cat "$MEDIA_BACKUP_FILE" | docker compose -f "$COMPOSE_FILE" exec -T web \
         python /app/installer/media_archive.py restore; then
         fail 'La restauration des médias a échoué.'
@@ -74,5 +74,21 @@ else
     echo 'La base est restaurée, mais les fichiers téléversés ne le sont pas.'
 fi
 
-echo '[OK] Restauration terminée.'
-echo 'Vérifiez la connexion et quelques données importantes dans l’application.'
+echo '[5/5] Contrôle fonctionnel post-restauration...'
+docker compose -f "$COMPOSE_FILE" exec -T web python manage.py check
+health_ok=0
+for _ in $(seq 1 30); do
+    if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
+        "import json,urllib.request; d=json.load(urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=5)); assert d.get('status') == 'ok' and d.get('database') == 'ok' and d.get('cache') == 'ok'" \
+        >/dev/null 2>&1; then
+        health_ok=1
+        break
+    fi
+    sleep 2
+done
+if [[ "$health_ok" -ne 1 ]]; then
+    fail 'Le contrôle /health/ a échoué après la restauration.'
+fi
+
+echo '[OK] Restauration terminée et contrôle /health/ réussi.'
+echo 'Vérifiez aussi la connexion et quelques données importantes dans l’application.'

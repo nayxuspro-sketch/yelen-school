@@ -1,16 +1,18 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 4.2
-version_guide: 2.17
-date_mise_a_jour: 24/07/2026 (v3.2)
-modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel]
-modules_en_attente: [portail_parent, transferts, api_rest, orientation_postbac, solar_guard]
+version_guide: 2.18
+date_mise_a_jour: 14/09/2026 (état de référence)
+modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, portail_parent, transferts, api_rest, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel, analyse_risque, sms_auto, sauvegarde_restauration]
+modules_en_attente: [orientation_postbac, solar_guard]
 redige_par: Agent IA — Développement YELEN SCHOOL
 ---
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 4.2 — Avril 2026 (Guide v2.6)
+### Version 4.2 — État de référence du 14 septembre 2026 (Guide v2.18)
+
+> Les procédures IA, SMS automatiques, sécurité et sauvegarde/restauration correspondent au code présent dans cette branche. La recette PostgreSQL/Windows et la restauration réelle restent à effectuer sur une machine équipée de Docker Desktop.
 
 ---
 
@@ -165,7 +167,7 @@ YELEN SCHOOL est développé par et pour le contexte burkinabè. Il respecte les
 | **Enseignant** | Professeur | Ses matières, notes, présences |
 | **Comptable** | Gestionnaire financier | Finances uniquement |
 | **Agent de Vie Scolaire (AVS)** | Surveillance et discipline | Présences, vie scolaire |
-| **Parent** | Père ou mère d'élève | Consultation uniquement *(à venir)* |
+| **Parent** | Père ou mère d'élève | Portail parent et consultation autorisée |
 
 ---
 
@@ -916,7 +918,7 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 **Interface :** La page se compose de quatre cartes :
 
-0. **URL Endpoint du Webhook SMS** — Affiche l'URL du webhook `/communication/webhook/sms/` à configurer dans l'App Android SMS Gateway. Bouton "Copier l'URL" pour copier en un clic.
+0. **URL Endpoint du Webhook SMS** — Affiche l'URL du webhook `/communication/webhook/sms/` à configurer dans l'App Android SMS Gateway. Bouton "Copier l'URL" pour copier en un clic. La passerelle doit aussi envoyer `X-SMS-Token` avec la valeur de `SMS_WEBHOOK_TOKEN` stockée dans `.env` ; ne pas placer ce secret dans une URL ou un ticket.
 
 1. **Paramètres de Backend** — Configuration de la passerelle :
    - **Activer le service SMS** — Toggle ON/OFF pour activer/désactiver l'envoi SMS
@@ -926,7 +928,7 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 2. **Test de Connectivité** — Lancer un diagnostic pour vérifier la connexion au modem ou à l'API
 
-3. **Envoi Manuel** — Envoyer un SMS de test vers un numéro pour valider la configuration
+3. **Envoi Manuel** — Envoyer un SMS de test vers un numéro pour valider la configuration. Cette action envoie réellement un SMS lorsque `SMS_ENABLED=True` ; utiliser d'abord `sms_auto --dry-run` pour vérifier les déclencheurs automatiques.
 
 **Prise en compte immédiate (sans redémarrage) :** Depuis la version avec cache runtime, les modifications de configuration SMS sont appliquées immédiatement après le clic sur "Enregistrer". Le système stocke les valeurs dans un cache mémoire (via `get_sms_val()` / `set_sms_config_runtime()`) et les persist dans le fichier `.env`. Aucun redémarrage du serveur ni du conteneur Docker n'est nécessaire.
 
@@ -3555,9 +3557,9 @@ Sélectionne la période et obtiens :
 
 ---
 
-## 15. FONCTIONNALITÉS À VENIR 🔜
+## 15. ÉTAT DES FONCTIONNALITÉS ET LIMITES
 
-Cette section recense honnêtement les fonctionnalités **non encore disponibles** dans l'interface utilisateur, classées par priorité de développement.
+Cette section distingue les fonctions livrées dans le dépôt des fonctions encore planifiées ou dont la recette runtime reste à effectuer. Une fonction marquée « livrée » n'implique pas que la recette PostgreSQL/Windows a déjà été exécutée sur chaque installation client.
 
 ---
 
@@ -3575,18 +3577,20 @@ Cette section recense honnêtement les fonctionnalités **non encore disponibles
 | **Signataires configurables** par cycle et doc | ✅ Fonctionnel | Version actuelle |
 | **Design System v4 / Aura** (interface premium) | ✅ Fonctionnel | Version actuelle |
 | **Conformité hors ligne complète** (polices locales) | ✅ Fonctionnel | Version actuelle |
-| **Tests automatisés** (coverage ≥ 80 %) | ✅ Fonctionnel | Version actuelle |
+| **Suite de tests automatisés** | 🔧 Présente ; CI PostgreSQL/Redis à exécuter | Branche actuelle |
 | **Emploi du temps par classe** (interface complète) | ✅ Fonctionnel | Version actuelle |
 | **Emploi du temps par professeur** (grille + PDF) | ✅ Fonctionnel | Version actuelle |
 | **Échéanciers** (création, modification, suppression) | ✅ Fonctionnel | Version actuelle |
-| **Transfert inter-établissements** | 🔧 En développement | Version 4.2 |
+| **Transfert inter-établissements** | ✅ Livré | Branche actuelle |
 | **Procès-verbal du conseil de classe PDF** | ✅ Fonctionnel | Version actuelle |
 | **Bulletin de vacation PDF** | ✅ Fonctionnel | Version actuelle |
 | **Relevé de notes par discipline** | ✅ Disponible | Version actuelle |
 | **Bilan des périodes** | ✅ Disponible | Version actuelle |
-| **Portail Parent** | 📌 Planifié | Version 4.2 |
-| **Exports Excel / CSV** | 📌 Planifié | Version 4.2 |
-| **IA prédictive (décrochage)** | ✅ Fonctionnel | Version actuelle |
+| **Portail Parent** | ✅ Livré | Branche actuelle |
+| **Exports Excel / CSV** | ✅ Livré | Branche actuelle |
+| **IA/règles de risque de décrochage** | ✅ Livré ; tâche locale planifiable | Branche actuelle |
+| **SMS automatiques** | ✅ Livré ; envoi réel à activer explicitement | Branche actuelle |
+| **Sauvegarde/restauration PostgreSQL + médias** | ✅ Scripts livrés ; recette réelle restante | Branche actuelle |
 | **Multi-établissements (Réseau)** | 📌 Planifié | Version 4.x |
 | **Gestion des licences** (interface) | ✅ Fonctionnel | Version actuelle |
 
@@ -3600,15 +3604,15 @@ Cette section recense honnêtement les fonctionnalités **non encore disponibles
 
 ### 15.2 Transfert Inter-Établissements
 
-> **Disponible dans :** Version 4.0
+> **✅ Livré dans la branche actuelle**
 
-Un élève qui quitte l'établissement pourra faire l'objet d'une demande de transfert officielle. La fonctionnalité permettra de :
+Un élève qui quitte l'établissement peut faire l'objet d'une demande de transfert officielle. Le module permet de :
 
-- Générer un **dossier de transfert** (relevé de notes, historique, situation financière)
-- Marquer l'élève comme « transféré » dans l'établissement d'origine
-- Intégrer un élève transféré avec son matricule d'origine (Licence Réseau uniquement)
+- générer un **dossier de transfert** (relevé de notes, historique, situation financière) ;
+- marquer l'élève comme transféré dans l'établissement d'origine ;
+- suivre la demande, son approbation ou son refus avec les rôles autorisés.
 
-> Pour l'instant : l'historique complet d'un élève reste dans l'établissement d'origine. Un nouvel établissement peut créer une inscription avec le matricule existant pour assurer la continuité.
+Le transfert ne déplace pas automatiquement les données vers un autre serveur : l'établissement de destination doit créer l'inscription nécessaire selon sa procédure locale.
 
 ---
 
@@ -3662,30 +3666,27 @@ Le bulletin de vacation saisi dans le module Vacations (section 11.3) peut être
 
 ### 15.6 Portail Parent
 
-> **Disponible dans :** Version Standard et supérieure — Version 4.1
+> **✅ Livré dans la branche actuelle**
 
-Les parents ou tuteurs légaux pourront se connecter depuis un téléphone ou un ordinateur pour consulter :
+Les parents ou tuteurs légaux peuvent se connecter depuis un téléphone ou un ordinateur pour consulter :
 
-- Les notes et moyennes de leur enfant par trimestre
-- Le calendrier des absences et retards
-- La situation financière (montants payés, solde restant)
-- Les sanctions disciplinaires et convocations
-- Les activités parascolaires auxquelles l'enfant est inscrit
+- les notes et moyennes de leur enfant par trimestre ;
+- les bulletins publiés ;
+- les notifications qui leur sont destinées.
 
-> L'accès sera sécurisé par un code parent attribué lors de l'inscription.
+L'accès dépend d'un compte parent configuré par l'établissement. Les données sont filtrées par l'élève associé ; le portail ne constitue pas un accès administrateur.
 
 ---
 
 ### 15.7 Exports Excel / CSV
 
-> **Disponible dans :** Version 4.1
+> **✅ Livré dans la branche actuelle**
 
-En complément des exports PDF existants, les exports Excel permettront de :
+En complément des exports PDF, les exports disponibles permettent notamment de :
 
-- Exporter la liste des élèves avec toutes leurs informations
-- Exporter les résultats d'une classe pour traitement externe
-- Exporter l'historique des paiements pour la comptabilité
-- Exporter les présences pour analyse statistique
+- exporter la liste des élèves et du personnel ;
+- exporter les résultats et les présences au format CSV ;
+- exporter le bilan des encaissements au format Excel.
 
 ---
 
@@ -3733,11 +3734,13 @@ Réservé au super-administrateur, cet espace offre deux fonctions :
 
 ---
 
-### 15.9 Prédiction des Risques de Décrochage Scolaire (IA)
+### 15.9 Analyse des Risques de Décrochage (IA locale)
 
-> **Disponible dans :** Version actuelle
+> **✅ Livré dans la branche actuelle**
 
-Le module analyse les données de chaque élève (notes, absences et facteurs pédagogiques) pour établir un **score de risque de décrochage**. Le Directeur ou le Proviseur peut consulter les niveaux de risque, filtrer les élèves et exporter le rapport PDF. Une tâche Windows peut recalculer automatiquement les scores chaque nuit avec `programmer-risques.bat` ; le tableau de bord affiche ensuite les élèves nécessitant une intervention préventive.
+Le module calcule localement un **score de risque de décrochage** à partir des données pédagogiques et de présence disponibles. Il ne dépend pas d'un service IA Internet quotidien. Le Directeur ou le Proviseur peut consulter les niveaux de risque, filtrer les élèves et exporter le rapport PDF.
+
+La commande `python manage.py calculer_risques --strict` peut être planifiée avec `programmer-risques.bat` chaque nuit. Le journal `logs\\risques.log` contient le résultat et les erreurs ; une erreur d'inscription fait échouer la tâche en mode strict.
 
 ---
 
@@ -3814,7 +3817,7 @@ Non directement. En cas d'erreur de saisie, contacte le Directeur ou le Comptabl
 
 ### Q9. Comment sauvegarder les données ?
 
-Les sauvegardes sont automatiques et gérées par l'administrateur technique. Si le logiciel est installé sur un serveur local, l'administrateur doit configurer les sauvegardes régulières. Contacte ton prestataire technique.
+Les scripts de sauvegarde PostgreSQL et médias sont fournis, mais une sauvegarde n'est automatique qu'après programmation par l'administrateur technique. Il doit vérifier régulièrement la paire `.dump` et `_media.tar.gz`, puis en conserver une copie hors du serveur. Consulte la procédure « Distribution locale autonome et sauvegardes ».
 
 ---
 
@@ -5804,14 +5807,17 @@ Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via
 
 YELEN SCHOOL fait l'objet d'audits de sécurité réguliers. Le rapport complet est disponible dans `docs/AUDIT_SECURITE.md`.
 
-**Version actuelle du rapport :** v6.0 — 23 juin 2026
+**Version actuelle du rapport :** audit de suivi — 14 septembre 2026
 
-| Niveau | Statut |
+L'audit actuel ne publie pas de score numérique avant l'exécution de la suite PostgreSQL et des tests Windows. L'audit local `pip-audit` du 14/09/2026 ne signale aucune vulnérabilité connue ; les validations encore nécessaires sont documentées dans `docs/AUDIT_SECURITE.md`.
+
+| Domaine | Statut |
 |--------|--------|
-| 🔴 Critiques | 1 ouvert — Action immédiate requise |
-| 🟠 Hautes | 3 ouvertes |
-| 🟡 Moyennes | 4 ouvertes |
-| ✅ Score global | 6.5/10 |
+| Authentification, CSRF et rôles | ✅ Contrôlé statiquement |
+| API, IDOR et uploads | ✅ Contrôlé statiquement |
+| Webhook SMS | 🔧 Secret, HMAC optionnel et rate limit ajoutés — test runtime à effectuer |
+| Dépendances | ✅ Versions mises à niveau ; audit local sans vulnérabilité connue le 14/09/2026, CI à rejouer |
+| Sauvegarde/restauration | ⏳ Test réel Windows restant |
 
 ### 19.2 Bonnes Pratiques pour les Administrateurs
 

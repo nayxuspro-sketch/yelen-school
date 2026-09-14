@@ -34,6 +34,10 @@ les autres postes puissent accéder à l'application.
 L'application reste accessible sur le serveur si la demande UAC est refusée,
 mais l'accès depuis le réseau local peut être bloqué par le pare-feu.
 
+Lors d'une nouvelle installation, un secret `SMS_WEBHOOK_TOKEN` est généré
+pour protéger le webhook SMS. Ne pas le remplacer par une valeur publique et
+ne pas partager le fichier `.env`.
+
 Si le port demandé est occupé, demarrage.bat essaie automatiquement les ports
 8000, 8001, 8002, 8003, 8004 puis 8005. Le port sélectionné est conservé dans
 .env et affiché à la fin de l'installation. Si toute la plage est occupée,
@@ -126,7 +130,10 @@ Linux / macOS :
 
 L'archive des médias associée (_media.tar.gz) est restaurée automatiquement si
 elle est présente. La restauration remplace toutes les données actuelles. Une
-confirmation explicite est demandée, sauf si l'option --yes est fournie.
+confirmation explicite est demandée, sauf si l'option --yes est fournie. Les
+scripts terminent par `manage.py check` puis vérifient `/health/` (PostgreSQL et
+Redis) ; contrôler ensuite manuellement un élève, un paiement, un PDF et un
+fichier média.
 
 Restauration programmée — Windows
 ---------------------------------

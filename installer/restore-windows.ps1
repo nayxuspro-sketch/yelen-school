@@ -89,19 +89,19 @@ if (-not $Yes) {
     if ($confirmation -cne 'RESTAURER') { Fail 'Restauration annulée.' }
 }
 
-Write-Host '[1/4] Arrêt de l’application...' -ForegroundColor Cyan
+Write-Host '[1/5] Arrêt de l’application...' -ForegroundColor Cyan
 & docker compose -f $ComposeFile stop web
 if ($LASTEXITCODE -ne 0) { Fail 'Impossible d’arrêter le service web.' }
 
 try {
-    Write-Host '[2/4] Reconstruction de la base PostgreSQL...' -ForegroundColor Cyan
+    Write-Host '[2/5] Reconstruction de la base PostgreSQL...' -ForegroundColor Cyan
     & docker compose -f $ComposeFile exec -T db dropdb --if-exists -U $dbUser $dbName
     if ($LASTEXITCODE -ne 0) { Fail 'Impossible de supprimer la base actuelle.' }
     & docker compose -f $ComposeFile exec -T db createdb -U $dbUser -O $dbUser $dbName
     if ($LASTEXITCODE -ne 0) { Fail 'Impossible de créer la base restaurée.' }
 
     $dbArguments = "compose -f `"$ComposeFile`" exec -T db pg_restore -U $dbUser -d $dbName --no-owner --no-privileges --exit-on-error -"
-    Write-Host '[3/4] Import de la base PostgreSQL...' -ForegroundColor Cyan
+    Write-Host '[3/5] Import de la base PostgreSQL...' -ForegroundColor Cyan
     Invoke-DockerRestoreFromFile $dbArguments $BackupFile
 
     & docker compose -f $ComposeFile up -d web | Out-Host
@@ -109,15 +109,32 @@ try {
 
     if (Test-Path $mediaFile) {
         $mediaArguments = "compose -f `"$ComposeFile`" exec -T web python /app/installer/media_archive.py restore"
-        Write-Host '[4/4] Import des médias...' -ForegroundColor Cyan
+        Write-Host '[4/5] Import des médias...' -ForegroundColor Cyan
         Invoke-DockerRestoreFromFile $mediaArguments $mediaFile
     } else {
         Write-Host "[AVERTISSEMENT] Archive médias absente : $mediaFile" -ForegroundColor Yellow
         Write-Host 'La base est restaurée, mais les fichiers téléversés ne le sont pas.' -ForegroundColor Yellow
     }
+
+    Write-Host '[5/5] Contrôle fonctionnel post-restauration...' -ForegroundColor Cyan
+    & docker compose -f $ComposeFile exec -T web python manage.py check
+    if ($LASTEXITCODE -ne 0) { Fail 'La vérification Django a échoué après la restauration.' }
+
+    $healthCode = "import json,urllib.request; d=json.load(urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=5)); assert d.get('status') == 'ok' and d.get('database') == 'ok' and d.get('cache') == 'ok'"
+    $healthOk = $false
+    for ($attempt = 1; $attempt -le 30; $attempt++) {
+        & docker compose -f $ComposeFile exec -T web python -c $healthCode *> $null
+        if ($LASTEXITCODE -eq 0) {
+            $healthOk = $true
+            break
+        }
+        Start-Sleep -Seconds 2
+    }
+    if (-not $healthOk) { Fail 'Le contrôle /health/ a échoué après la restauration.' }
 } finally {
     Write-Host 'Vérification du démarrage de YELEN SCHOOL...' -ForegroundColor Cyan
     & docker compose -f $ComposeFile up -d web | Out-Host
 }
 
-Write-Host '[OK] Restauration terminée. Vérifiez quelques données dans l’application.' -ForegroundColor Green
+Write-Host '[OK] Restauration terminée et contrôle /health/ réussi.' -ForegroundColor Green
+Write-Host 'Vérifiez aussi la connexion et quelques données dans l’application.'
