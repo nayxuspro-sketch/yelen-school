@@ -1018,17 +1018,18 @@ def app_manifest(request):
     return JsonResponse(manifest)
 
 
+@never_cache
 def app_service_worker(request):
     """Service Worker de l'application principale — cache les assets, page offline en fallback."""
     sw = """
-const APP_CACHE = 'yelen-app-v1';
+const APP_CACHE = 'yelen-app-v2';
 const PRECACHE = [
   '/offline/',
   '/static/css/yelen.css',
   '/static/js/htmx.min.js',
 ];
 const STATIC_ORIGIN = self.location.origin;
-const BYPASS = ['/accounts/', '/admin/', '/api/', '/sw.js'];
+const BYPASS = ['/accounts/', '/admin/', '/api/', '/sw.js', '/app-sw.js'];
 
 // ── Install : pré-cache les assets critiques ──
 self.addEventListener('install', e => {
