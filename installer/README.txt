@@ -53,6 +53,16 @@ Windows, tous les jours à 22 h :
   La tâche s'exécute dans la session Windows qui l'enregistre ; Docker Desktop
   doit être configuré pour démarrer avec Windows.
 
+Démarrage automatique de l'application — Windows
+------------------------------------------------
+Pour démarrer YELEN SCHOOL automatiquement à chaque ouverture de session :
+  Depuis la racine, clic droit sur programmer-demarrage.bat
+  puis « Exécuter en tant qu'administrateur ».
+
+La tâche « YELEN SCHOOL - Démarrage automatique » attend que Docker Desktop
+réponde puis exécute docker compose up -d. Elle ne reconstruit pas l'image et
+ne supprime aucun volume. Son journal est dans logs\startup.log.
+
 Linux / macOS, tous les jours à 22 h :
   ./installer/register-backup-cron.sh 22:00
 

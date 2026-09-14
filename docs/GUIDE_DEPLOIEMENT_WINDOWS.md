@@ -167,7 +167,26 @@ docker compose -f docker-compose.client.yml down
 
 L'arrêt normal ne supprime ni PostgreSQL, ni Redis, ni les médias. Pour une utilisation quotidienne, il suffit généralement de laisser Docker Desktop et les services fonctionner.
 
-### 4.2 Avant d'éteindre le serveur
+### 4.2 Démarrage automatique avec Windows
+
+Pour que YELEN SCHOOL démarre automatiquement après l'ouverture de session Windows :
+
+1. Démarrer Docker Desktop et effectuer une première installation avec `demarrage.bat`.
+2. Depuis la racine du projet, faire un clic droit sur `programmer-demarrage.bat`.
+3. Choisir **Exécuter en tant qu'administrateur**.
+4. Vérifier la création de la tâche `YELEN SCHOOL - Démarrage automatique`.
+
+À chaque ouverture de session, la tâche attend que Docker Desktop réponde puis exécute `docker compose -f docker-compose.client.yml up -d`. Elle ne reconstruit pas l'image et ne supprime aucun volume. Le journal est écrit dans `logs\startup.log`.
+
+Cette tâche s'exécute dans la session de l'utilisateur qui l'a enregistrée. Configurer Docker Desktop pour démarrer avec Windows. Tester le fonctionnement en redémarrant Windows, puis vérifier :
+
+```powershell
+docker compose -f docker-compose.client.yml ps
+```
+
+En cas de changement de code ou de dépendances, utiliser `demarrage.bat` pour reconstruire l'image avec `--build`. Le démarrage automatique quotidien reste volontairement plus rapide et local, sans reconstruction.
+
+### 4.3 Avant d'éteindre le serveur
 
 1. Vérifier qu'aucune restauration ou mise à jour n'est en cours.
 2. Vérifier que la sauvegarde quotidienne précédente est présente.

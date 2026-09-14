@@ -4150,6 +4150,10 @@ L'installateur crée `.env`, génère les secrets locaux, applique les migration
 
 `demarrage.bat` ne se limite pas à exécuter `docker compose -f docker-compose.client.yml up -d --build` : il prépare aussi la configuration, attend que la page de connexion soit disponible et ouvre le navigateur. Il est idempotent et peut être relancé sans supprimer les volumes. Le port par défaut est `8000`; en cas de conflit, ajouter `YELEN_HTTP_PORT=8001` dans `.env` puis relancer `demarrage.bat` : l'attente et l'adresse affichée utilisent alors le port configuré.
 
+**Démarrage automatique Windows :**
+
+Après la première installation, faire un clic droit sur `programmer-demarrage.bat` puis choisir **Exécuter en tant qu'administrateur**. La tâche `YELEN SCHOOL - Démarrage automatique` attend Docker Desktop à chaque ouverture de session puis exécute `docker compose -f docker-compose.client.yml up -d`, sans reconstruire ni supprimer les volumes. Son journal est écrit dans `logs\startup.log`. Utiliser ensuite `demarrage.bat` uniquement pour une mise à jour ou une reconstruction de l'image.
+
 **Installation Linux/macOS :**
 
 ```bash
