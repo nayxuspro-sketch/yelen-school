@@ -26,8 +26,8 @@ Les données PostgreSQL, Redis, les médias, les fichiers statiques et les logs
 sont conservés dans des volumes Docker nommés. Ne supprimez pas ces volumes
 sans disposer d'une sauvegarde.
 
-Sauvegarde PostgreSQL
----------------------
+Sauvegarde PostgreSQL et médias
+-------------------------------
 Windows :
   Double-cliquer sur backup-windows.bat
   ou : powershell -ExecutionPolicy Bypass -File .\installer\backup-windows.ps1
@@ -35,19 +35,36 @@ Windows :
 Linux / macOS :
   ./installer/backup-local.sh
 
-Les sauvegardes sont créées dans backups/ et les 30 plus récentes sont
-conservées par défaut. Ce dossier est ignoré par Git.
+Chaque sauvegarde produit deux fichiers associés dans backups/ :
+  yelen_school_YYYYMMDD_HHMMSS.dump
+  yelen_school_YYYYMMDD_HHMMSS_media.tar.gz
 
-Restauration PostgreSQL
------------------------
+Les 30 sauvegardes les plus récentes sont conservées par défaut. Ce dossier
+est ignoré par Git.
+
+Programmation automatique
+-------------------------
+Windows, tous les jours à 22 h :
+  Double-cliquer sur register-backup-task.bat
+  ou : powershell -ExecutionPolicy Bypass -File .\installer\register-backup-task.ps1
+  Journal : backups\backup.log
+  La tâche s'exécute dans la session Windows qui l'enregistre ; Docker Desktop
+  doit être configuré pour démarrer avec Windows.
+
+Linux / macOS, tous les jours à 22 h :
+  ./installer/register-backup-cron.sh 22:00
+
+Restauration PostgreSQL et médias
+---------------------------------
 Windows :
   installer\restore-windows.bat backups\yelen_school_YYYYMMDD_HHMMSS.dump
 
 Linux / macOS :
   ./installer/restore-local.sh backups/yelen_school_YYYYMMDD_HHMMSS.dump
 
-La restauration remplace toutes les données actuelles. Une confirmation
-explicite est demandée, sauf si l'option --yes est fournie.
+L'archive des médias associée (_media.tar.gz) est restaurée automatiquement si
+elle est présente. La restauration remplace toutes les données actuelles. Une
+confirmation explicite est demandée, sauf si l'option --yes est fournie.
 
 Commandes utiles
 ----------------

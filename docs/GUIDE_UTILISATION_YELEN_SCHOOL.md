@@ -109,6 +109,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [18.2 Fonctionnement Hors Ligne](#182-fonctionnement-hors-ligne-complet)
   - [18.3 Design System v4 — Refonte Aura](#183-design-system-v4--refonte-aura)
   - [18.4 Guide Administrateur Technique](#184-guide-administrateur-technique)
+    - [Distribution locale autonome et sauvegardes](#distribution-locale-autonome-et-sauvegardes)
   - [18.5 Système de Notifications](#185-système-de-notifications)
   - [18.6 Journal d'Audit (Traçabilité)](#186-journal-daudit-traçabilité)
   - [18.7 Réunion de Parents](#187-réunion-de-parents-reunion-parents)
@@ -4133,6 +4134,58 @@ tests.bat core/tests/test_models.py -v
 ```
 
 Les fichiers `conftest.py` désactivent automatiquement le journal d'audit pendant l'exécution des tests pour éviter les erreurs de clé étrangère.
+
+#### Distribution locale autonome et sauvegardes
+
+La distribution destinée à un établissement client se lance avec `docker-compose.client.yml`. Elle regroupe l'application Django, PostgreSQL et Redis dans un environnement local géré automatiquement. PostgreSQL reste la base officielle du projet ; SQLite n'est pas utilisé.
+
+**Installation Windows :**
+
+1. Installer et démarrer Docker Desktop.
+2. Double-cliquer sur `demarrage.bat` ou `installer/install-windows.bat`.
+3. Attendre l'ouverture de `http://localhost:8000/accounts/login/`.
+4. Se connecter avec le compte initial affiché par l'installateur, puis changer son mot de passe.
+
+L'installateur crée `.env`, génère les secrets locaux, applique les migrations et désactive `ENSURE_ADMIN` après le premier démarrage. Les données PostgreSQL, Redis, médias et journaux sont conservées dans des volumes Docker persistants. Le parcours détaillé Windows, la programmation de la tâche planifiée PostgreSQL et médias, le réseau local et la reprise sur une nouvelle machine sont décrits dans `docs/GUIDE_DEPLOIEMENT_WINDOWS.md`.
+
+**Installation Linux/macOS :**
+
+```bash
+chmod +x installer/install-local.sh
+./installer/install-local.sh
+```
+
+**Sauvegarde quotidienne :**
+
+```bash
+# Windows
+installer\backup-windows.bat
+
+# Linux/macOS
+./installer/backup-local.sh
+```
+
+Une sauvegarde produit un fichier PostgreSQL `.dump` et une archive associée `_media.tar.gz`. Les deux fichiers doivent être conservés ensemble et copiés régulièrement sur un support différent du serveur.
+
+**Programmation automatique :**
+
+```powershell
+# Windows — tous les jours à 22 h
+.\installer\register-backup-task.ps1
+```
+
+```bash
+# Linux/macOS — tous les jours à 22 h
+./installer/register-backup-cron.sh 22:00
+```
+
+**Restauration :**
+
+```bash
+./installer/restore-local.sh backups/yelen_school_YYYYMMDD_HHMMSS.dump
+```
+
+Sous Windows, utiliser `installer\restore-windows.bat`. La restauration remplace la base et les médias actuels et demande une confirmation explicite. Tester régulièrement une restauration sur une machine de secours afin de vérifier que les sauvegardes sont réellement exploitables.
 
 ---
 

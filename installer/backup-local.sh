@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sauvegarde PostgreSQL de l'installation locale YELEN SCHOOL.
+# Sauvegarde PostgreSQL et médias de l'installation locale YELEN SCHOOL.
 
 set -Eeuo pipefail
 
@@ -36,19 +36,32 @@ fi
 mkdir -p "$BACKUP_DIR"
 timestamp="$(date '+%Y%m%d_%H%M%S')"
 backup_file="$BACKUP_DIR/yelen_school_${timestamp}.dump"
-temporary_file="${backup_file}.part"
-trap 'rm -f "$temporary_file"' EXIT
+media_file="$BACKUP_DIR/yelen_school_${timestamp}_media.tar.gz"
+db_temporary_file="${backup_file}.part"
+media_temporary_file="${media_file}.part"
+trap 'rm -f "$db_temporary_file" "$media_temporary_file"' EXIT
 
-echo "[1/2] Export de PostgreSQL vers $backup_file"
+echo "[1/3] Export de PostgreSQL vers $backup_file"
 if ! docker compose -f "$COMPOSE_FILE" exec -T db \
-    pg_dump -U "$DB_USER" -d "$DB_NAME" --format=custom > "$temporary_file"; then
+    pg_dump -U "$DB_USER" -d "$DB_NAME" --format=custom > "$db_temporary_file"; then
     fail 'La sauvegarde PostgreSQL a échoué.'
 fi
-
-if [[ ! -s "$temporary_file" ]]; then
-    fail 'Le fichier de sauvegarde est vide.'
+if [[ ! -s "$db_temporary_file" ]]; then
+    fail 'Le fichier de sauvegarde PostgreSQL est vide.'
 fi
-mv "$temporary_file" "$backup_file"
+mv "$db_temporary_file" "$backup_file"
+
+echo "[2/3] Export des médias vers $media_file"
+if ! docker compose -f "$COMPOSE_FILE" exec -T web \
+    python /app/installer/media_archive.py create > "$media_temporary_file"; then
+    rm -f "$backup_file"
+    fail 'La sauvegarde des médias a échoué.'
+fi
+if [[ ! -s "$media_temporary_file" ]]; then
+    rm -f "$backup_file"
+    fail 'Le fichier de sauvegarde des médias est vide.'
+fi
+mv "$media_temporary_file" "$media_file"
 
 old_files="$(ls -1t "$BACKUP_DIR"/yelen_school_*.dump 2>/dev/null || true)"
 count=0
@@ -56,9 +69,11 @@ while IFS= read -r old_file; do
     [[ -z "$old_file" ]] && continue
     count=$((count + 1))
     if (( count > KEEP )); then
-        rm -f -- "$old_file"
+        rm -f -- "$old_file" "${old_file%.dump}_media.tar.gz"
     fi
 done <<< "$old_files"
 
-echo "[2/2] Sauvegarde terminée : $backup_file"
-echo "Rétention appliquée : $KEEP sauvegarde(s) maximum"
+echo '[3/3] Sauvegarde terminée'
+echo "  Base PostgreSQL : $backup_file"
+echo "  Médias          : $media_file"
+echo "  Rétention       : $KEEP sauvegarde(s) maximum"

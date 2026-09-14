@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Restauration PostgreSQL de l'installation locale YELEN SCHOOL.
+# Restauration PostgreSQL et médias de l'installation locale YELEN SCHOOL.
 # Usage : ./installer/restore-local.sh backups/yelen_school_YYYYMMDD_HHMMSS.dump
 
 set -Eeuo pipefail
@@ -34,9 +34,10 @@ DB_NAME="$(get_env_value DB_NAME)"
 DB_USER="$(get_env_value DB_USER)"
 DB_NAME="${DB_NAME:-yelen_school_db}"
 DB_USER="${DB_USER:-yelen_user}"
+MEDIA_BACKUP_FILE="${BACKUP_FILE%.dump}_media.tar.gz"
 
 if [[ "${2:-}" != '--yes' ]]; then
-    echo 'ATTENTION : cette opération remplace toutes les données de la base.'
+    echo 'ATTENTION : cette opération remplace toutes les données de la base et des médias.'
     read -r -p 'Tapez RESTAURER pour continuer : ' confirmation
     [[ "$confirmation" == 'RESTAURER' ]] || fail 'Restauration annulée.'
 fi
@@ -49,18 +50,29 @@ restart_web() {
 }
 trap restart_web EXIT
 
-echo '[1/3] Suppression de la base actuelle...'
+echo '[1/4] Suppression de la base actuelle...'
 docker compose -f "$COMPOSE_FILE" exec -T db dropdb --if-exists -U "$DB_USER" "$DB_NAME"
 docker compose -f "$COMPOSE_FILE" exec -T db createdb -U "$DB_USER" -O "$DB_USER" "$DB_NAME"
 
-echo '[2/3] Restauration de la sauvegarde...'
+echo '[2/4] Restauration de la base PostgreSQL...'
 if ! cat "$BACKUP_FILE" | docker compose -f "$COMPOSE_FILE" exec -T db \
     pg_restore -U "$DB_USER" -d "$DB_NAME" --no-owner --no-privileges --exit-on-error -; then
     fail 'La restauration PostgreSQL a échoué. La base doit être restaurée depuis une autre sauvegarde valide.'
 fi
 
-echo '[3/3] Redémarrage de YELEN SCHOOL et application des migrations...'
+echo '[3/4] Redémarrage du service web...'
 docker compose -f "$COMPOSE_FILE" up -d web >/dev/null
+
+if [[ -f "$MEDIA_BACKUP_FILE" ]]; then
+    echo '[4/4] Restauration des médias...'
+    if ! cat "$MEDIA_BACKUP_FILE" | docker compose -f "$COMPOSE_FILE" exec -T web \
+        python /app/installer/media_archive.py restore; then
+        fail 'La restauration des médias a échoué.'
+    fi
+else
+    echo "[AVERTISSEMENT] Archive médias absente : $MEDIA_BACKUP_FILE"
+    echo 'La base est restaurée, mais les fichiers téléversés ne le sont pas.'
+fi
 
 echo '[OK] Restauration terminée.'
 echo 'Vérifiez la connexion et quelques données importantes dans l’application.'
