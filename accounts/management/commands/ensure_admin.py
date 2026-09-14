@@ -78,7 +78,17 @@ class Command(BaseCommand):
                 password = self._initial_password()
                 user.set_password(password)
                 user.must_change_password = True
-                update_fields.extend(['password', 'must_change_password'])
+                # Une réinitialisation explicite doit aussi rendre le compte
+                # immédiatement utilisable après plusieurs tentatives
+                # erronées, sans attendre l'expiration du verrouillage.
+                user.failed_login_attempts = 0
+                user.locked_until = None
+                update_fields.extend([
+                    'password',
+                    'must_change_password',
+                    'failed_login_attempts',
+                    'locked_until',
+                ])
                 message = (
                     f"Mot de passe de {ADMIN_EMAIL} réinitialisé. "
                     "Le changement est obligatoire à la prochaine connexion."

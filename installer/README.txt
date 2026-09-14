@@ -21,7 +21,12 @@ Après l'installation
   Mot de passe   : généré aléatoirement et affiché une seule fois par l'installateur
 
 Le changement du mot de passe est obligatoire à la première connexion. Le secret
-temporaire est retiré de `.env` après le démarrage réussi.
+temporaire est retiré de `.env` après le démarrage réussi. `admin123` est un ancien
+mot de passe de compatibilité et n'est pas utilisé pour une nouvelle installation.
+
+Si le mot de passe temporaire est perdu, réinitialiser le compte sans supprimer
+les volumes PostgreSQL :
+  docker compose -f docker-compose.client.yml exec -e INITIAL_ADMIN_PASSWORD='Choisir-un-secret-de-12-caracteres' web python manage.py ensure_admin --reset
 
 Accès réseau local et pare-feu Windows
 --------------------------------------

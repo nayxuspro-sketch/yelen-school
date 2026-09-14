@@ -170,7 +170,19 @@ Pour une nouvelle installation, le compte créé automatiquement est :
 - **Email :** `admin@yelen.edu`
 - **Mot de passe temporaire :** généré aléatoirement et affiché une seule fois par l'installateur
 
+`admin123` est un ancien mot de passe de compatibilité ; il n'est pas le mot de passe d'une nouvelle installation et ne doit pas être utilisé. Le mot de passe à saisir est celui affiché par `demarrage.bat` après le démarrage réussi.
+
 Le changement de mot de passe est obligatoire à la première connexion. Le secret temporaire est retiré de `.env` après le démarrage réussi et `ENSURE_ADMIN` passe à `false`.
+
+#### Mot de passe temporaire perdu ou compte verrouillé
+
+Sans supprimer les volumes PostgreSQL, réinitialiser explicitement le compte depuis la racine du projet. Choisir un secret privé d'au moins 12 caractères :
+
+```powershell
+docker compose -f docker-compose.client.yml exec -e INITIAL_ADMIN_PASSWORD='Yelen-Admin-2026-Remplacer-9f4c' web python manage.py ensure_admin --reset
+```
+
+La commande réinitialise le mot de passe, déverrouille le compte si les cinq tentatives erronées l'ont bloqué, et impose son remplacement à la prochaine connexion. Ne pas remplacer ce secret par `admin123` et ne pas communiquer le secret dans un ticket.
 
 ### 3.2 Fichier `.env`
 

@@ -269,7 +269,7 @@ Le système vérifie si l'adresse email est connue et envoie un lien sécurisé 
 | Email | `admin@yelen.edu` |
 | Mot de passe | Généré aléatoirement par l'installateur |
 
-Ce compte possède tous les droits (SUPER_ADMIN). L'installateur affiche le mot de passe temporaire une seule fois, puis le retire de `.env`. Le changement du mot de passe est obligatoire à la première connexion.
+Ce compte possède tous les droits (SUPER_ADMIN). L'installateur affiche le mot de passe temporaire une seule fois, puis le retire de `.env`. Le changement du mot de passe est obligatoire à la première connexion. `admin123` est un ancien mot de passe de compatibilité et n'est pas utilisé pour une nouvelle installation.
 
 > ⚠️ **Création automatique au premier démarrage :** si `ENSURE_ADMIN=true` dans `.env`, le conteneur Docker exécute `python manage.py ensure_admin` avec `INITIAL_ADMIN_PASSWORD`. Ce secret ne doit jamais être copié dans un ticket ou un journal.
 > >

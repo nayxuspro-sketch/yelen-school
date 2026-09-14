@@ -4,6 +4,7 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.urls import reverse
+from django.utils import timezone
 from model_bakery import baker
 
 from accounts.models import User
@@ -100,16 +101,23 @@ def test_ensure_admin_creates_once_and_does_not_reset_on_restart(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_ensure_admin_reset_is_explicit(monkeypatch):
+def test_ensure_admin_reset_is_explicit_and_unlocks_account(monkeypatch):
     monkeypatch.setenv('INITIAL_ADMIN_PASSWORD', 'First-initial-secret-123!')
     call_command('ensure_admin')
+
+    admin = User.objects.get(email='admin@yelen.edu')
+    admin.failed_login_attempts = 5
+    admin.locked_until = timezone.now() + timezone.timedelta(minutes=15)
+    admin.save(update_fields=['failed_login_attempts', 'locked_until'])
 
     monkeypatch.setenv('INITIAL_ADMIN_PASSWORD', 'Reset-secret-789!')
     call_command('ensure_admin', '--reset')
 
-    admin = User.objects.get(email='admin@yelen.edu')
+    admin.refresh_from_db()
     assert admin.check_password('Reset-secret-789!')
     assert admin.must_change_password is True
+    assert admin.failed_login_attempts == 0
+    assert admin.locked_until is None
 
 
 @pytest.mark.django_db
