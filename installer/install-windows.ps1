@@ -191,6 +191,10 @@ if ([string]::IsNullOrWhiteSpace($lanIp)) {
     $lanIp = '127.0.0.1'
 }
 
+# Le nom Windows permet un accès stable sur le réseau local, par exemple
+# http://NOMPC:8001, si la résolution de noms du réseau est disponible.
+$computerName = [System.Environment]::MachineName
+
 Ensure-EnvValue 'SECRET_KEY' $secretKey
 if ($FreshInstallation) {
     Ensure-EnvValue 'DB_PASSWORD' $dbPassword
@@ -205,18 +209,25 @@ Ensure-EnvValue 'DB_USER' 'yelen_user'
 Ensure-EnvValue 'SMS_WEBHOOK_TOKEN' $smsWebhookToken
 Ensure-EnvValue 'DEBUG' 'False'
 Ensure-EnvValue 'DISABLE_HTTPS_REDIRECT' 'true'
-Ensure-EnvListValues 'ALLOWED_HOSTS' @(
+$allowedHosts = @(
     'localhost',
     '127.0.0.1',
     $lanIp
 )
-Ensure-EnvListValues 'CSRF_TRUSTED_ORIGINS' @(
+$csrfOrigins = @(
     'http://localhost',
     'http://127.0.0.1',
     "http://localhost:$httpPort",
     "http://127.0.0.1:$httpPort",
     "http://${lanIp}:$httpPort"
 )
+if (-not [string]::IsNullOrWhiteSpace($computerName)) {
+    $allowedHosts += $computerName
+    $csrfOrigins += "http://${computerName}"
+    $csrfOrigins += "http://${computerName}:$httpPort"
+}
+Ensure-EnvListValues 'ALLOWED_HOSTS' $allowedHosts
+Ensure-EnvListValues 'CSRF_TRUSTED_ORIGINS' $csrfOrigins
 if ($FreshInstallation) {
     Set-EnvValue 'ENSURE_ADMIN' 'true'
     Set-EnvValue 'INITIAL_ADMIN_PASSWORD' $initialAdminPassword

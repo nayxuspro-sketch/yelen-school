@@ -103,6 +103,7 @@ fi
 if [[ -z "$lan_ip" ]]; then
     lan_ip="127.0.0.1"
 fi
+server_name="$(hostname -s 2>/dev/null || true)"
 
 ensure_env_value SECRET_KEY "$secret_key"
 if [[ "$fresh_installation" -eq 1 ]]; then
@@ -118,16 +119,24 @@ ensure_env_value DB_USER 'yelen_user'
 ensure_env_value SMS_WEBHOOK_TOKEN "$sms_webhook_token"
 ensure_env_value DEBUG 'False'
 ensure_env_value DISABLE_HTTPS_REDIRECT 'true'
-ensure_env_list_values ALLOWED_HOSTS \
-    'localhost' \
-    '127.0.0.1' \
+allowed_hosts=(
+    'localhost'
+    '127.0.0.1'
     "$lan_ip"
-ensure_env_list_values CSRF_TRUSTED_ORIGINS \
-    'http://localhost' \
-    'http://127.0.0.1' \
-    "http://localhost:${http_port}" \
-    "http://127.0.0.1:${http_port}" \
+)
+csrf_origins=(
+    'http://localhost'
+    'http://127.0.0.1'
+    "http://localhost:${http_port}"
+    "http://127.0.0.1:${http_port}"
     "http://${lan_ip}:${http_port}"
+)
+if [[ -n "$server_name" ]]; then
+    allowed_hosts+=("$server_name")
+    csrf_origins+=("http://${server_name}" "http://${server_name}:${http_port}")
+fi
+ensure_env_list_values ALLOWED_HOSTS "${allowed_hosts[@]}"
+ensure_env_list_values CSRF_TRUSTED_ORIGINS "${csrf_origins[@]}"
 if [[ "$fresh_installation" -eq 1 ]]; then
     set_env_value ENSURE_ADMIN true
     set_env_value INITIAL_ADMIN_PASSWORD "$initial_admin_password"

@@ -172,6 +172,31 @@ Sur le serveur : ouvrir l'adresse affichée par l'installateur, généralement `
 
 Depuis un autre poste du réseau, utiliser l'adresse IP et le port affichés par l'installateur, par exemple `http://192.168.1.50:8003/`. Le script d'installation ajoute l'IP détectée aux hôtes autorisés. Si l'adresse IP change, relancer l'installation ou mettre à jour `.env`, puis reconstruire le service web.
 
+#### Adresse stable par nom de machine
+
+Pour éviter de communiquer l'adresse IP, utiliser le nom Windows du serveur :
+
+```powershell
+$env:COMPUTERNAME
+```
+
+Si le résultat est `NOMPC` et que la résolution de noms fonctionne sur le réseau local, l'adresse devient par exemple :
+
+```text
+http://NOMPC:8001/accounts/login/
+```
+
+L'installateur ajoute automatiquement le nom de machine à `ALLOWED_HOSTS` et l'origine avec le port à `CSRF_TRUSTED_ORIGINS`. Pour une URL réellement stable, réserver aussi une adresse DHCP au serveur et conserver un port libre fixe, par exemple `YELEN_HTTP_PORT=8001`. Si ce port est occupé, le mécanisme de sécurité peut sélectionner un autre port et l'adresse devra alors être actualisée.
+
+Tester depuis un poste client :
+
+```powershell
+Test-Connection NOMPC -Count 1
+Test-NetConnection NOMPC -Port 8001
+```
+
+Si `NOMPC` n'est pas résolu, configurer le nom dans le DNS ou le serveur DHCP du réseau local. Éviter de modifier manuellement le fichier `hosts` sur chaque poste sauf pour un dépannage temporaire.
+
 ---
 
 ## 4. Utilisation quotidienne
