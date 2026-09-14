@@ -131,6 +131,8 @@ docker compose -f docker-compose.client.yml ps
 
 Les causes habituelles sont Docker Desktop arrêté, les ports TCP `8000` à `8005` déjà utilisés, ou un manque d'espace disque. `demarrage.bat` essaie automatiquement les ports `8000`, `8001`, `8002`, `8003`, `8004` puis `8005` et conserve le port trouvé dans `.env`. Corriger la cause puis relancer `demarrage.bat` si toute la plage est occupée. Le démarrage est idempotent : il réutilise `.env` et les volumes existants.
 
+Si l'échec survient après la création de `.env` mais avant que la page de connexion soit prête, ne supprimez pas ce fichier et ne recréez pas les volumes. Une relance détecte `ENSURE_ADMIN=true`, conserve le `INITIAL_ADMIN_PASSWORD` déjà généré, puis le réaffiche uniquement après le démarrage réussi avant de nettoyer ces variables.
+
 ### Le fichier `.env` n'existe pas
 
 Vérifier d'abord que le terminal se trouve à la racine de l'application, là où se trouvent `demarrage.bat`, `docker-compose.client.yml` et `.env.example` :
