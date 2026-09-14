@@ -156,6 +156,11 @@ class User(AbstractUser, BaseModel):
         verbose_name='Compte verrouillé jusqu\'à',
         help_text='Date de fin du verrouillage temporaire.',
     )
+    must_change_password = models.BooleanField(
+        default=False,
+        verbose_name='Changement de mot de passe requis',
+        help_text='Force le changement du mot de passe à la prochaine connexion.',
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

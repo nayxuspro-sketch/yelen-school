@@ -64,6 +64,27 @@ function Set-DotEnvValue {
     )
 }
 
+function Test-FirewallRuleForPort {
+    param([int]$Port)
+
+    if (-not (Get-Command Get-NetFirewallRule -ErrorAction SilentlyContinue)) {
+        return $false
+    }
+
+    try {
+        $rules = @(Get-NetFirewallRule -Name 'YELEN_SCHOOL_LocalWeb' -ErrorAction SilentlyContinue)
+        if ($rules.Count -eq 0) {
+            return $false
+        }
+        $filters = @($rules | Get-NetFirewallPortFilter -ErrorAction Stop)
+        return [bool]($filters | Where-Object {
+            $_.Protocol -eq 'TCP' -and $_.LocalPort.ToString() -eq [string]$Port
+        })
+    } catch {
+        return $false
+    }
+}
+
 New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
 try {
     if (-not (Test-Path $ComposeFile)) {
@@ -131,21 +152,30 @@ try {
         Set-DotEnvValue 'YELEN_HTTP_PORT' ([string]$selectedPort)
     }
 
-    if ($portChanged) {
-        Write-StartupLog "Le port TCP $requestedPort est occupé. Port sélectionné automatiquement : $selectedPort."
+    $firewallNeedsUpdate = $portChanged -or
+        (-not (Test-FirewallRuleForPort -Port $selectedPort))
 
-        # Ne pas demander une élévation UAC à chaque ouverture de session :
-        # le pare-feu n'est réappliqué que si le port change réellement.
+    if ($firewallNeedsUpdate) {
+        if ($portChanged) {
+            Write-StartupLog "Le port TCP $requestedPort est occupé. Port sélectionné automatiquement : $selectedPort."
+        } else {
+            Write-StartupLog "La règle du pare-feu ne correspond pas au port TCP $selectedPort. Synchronisation nécessaire."
+        }
+
+        # La tâche planifiée est enregistrée avec le niveau d'exécution élevé.
+        # Lors d'un démarrage normal la règle conforme est donc conservée sans
+        # nouvelle UAC ; une demande ne survient qu'après un changement ou une
+        # absence de règle.
         if (Test-Path $FirewallScript) {
             & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $selectedPort
             if ($LASTEXITCODE -ne 0) {
-                Write-StartupLog 'AVERTISSEMENT : le pare-feu n’a pas été actualisé après le changement de port.'
+                Write-StartupLog 'AVERTISSEMENT : le pare-feu n’a pas été actualisé.'
             }
         } else {
             Write-StartupLog 'AVERTISSEMENT : script de configuration du pare-feu introuvable.'
         }
     } else {
-        Write-StartupLog "Port HTTP conservé : $selectedPort."
+        Write-StartupLog "Port HTTP conservé : $selectedPort ; règle pare-feu inchangée."
     }
 
     Set-Location $Root

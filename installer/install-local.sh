@@ -95,6 +95,7 @@ LOGIN_URL="http://localhost:${http_port}/accounts/login/"
 secret_key="$(random_hex)$(random_hex)"
 db_password="Yelen-$(random_hex | cut -c1-24)"
 sms_webhook_token="$(random_hex)$(random_hex)"
+initial_admin_password="$(random_hex | cut -c1-32)"
 lan_ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}' || true)"
 if [[ -z "$lan_ip" || "$lan_ip" == 127.* || "$lan_ip" == 169.254.* ]]; then
     lan_ip="$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -Ev '^(127\.|169\.254\.)' | head -n 1 || true)"
@@ -126,6 +127,7 @@ ensure_env_list_values CSRF_TRUSTED_ORIGINS \
     "http://${lan_ip}:${http_port}"
 if [[ "$fresh_installation" -eq 1 ]]; then
     set_env_value ENSURE_ADMIN true
+    set_env_value INITIAL_ADMIN_PASSWORD "$initial_admin_password"
     set_env_value EMAIL_HOST ''
 fi
 
@@ -150,13 +152,17 @@ fi
 
 if [[ "$fresh_installation" -eq 1 ]]; then
     set_env_value ENSURE_ADMIN false
+    # Le secret n'est plus nécessaire après la création du compte et ne doit
+    # pas rester dans .env. Le compte impose son remplacement à la connexion.
+    set_env_value INITIAL_ADMIN_PASSWORD ''
 fi
 
 echo '[OK] YELEN SCHOOL est opérationnel'
 echo "Adresse : $LOGIN_URL"
 if [[ "$fresh_installation" -eq 1 ]]; then
-    echo 'Compte initial : admin@yelen.edu / admin123'
-    echo 'Changez ce mot de passe après la première connexion.'
+    echo 'Compte initial : admin@yelen.edu'
+    echo "Mot de passe temporaire à usage unique : $initial_admin_password"
+    echo 'Le remplacement de ce mot de passe est obligatoire à la première connexion.'
 fi
 echo "Accès réseau local : http://${lan_ip}:${http_port}/"
 

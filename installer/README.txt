@@ -18,21 +18,25 @@ Après l'installation
 --------------------
   Adresse locale : http://localhost:8000/accounts/login/
   Compte initial : admin@yelen.edu
-  Mot de passe   : admin123
+  Mot de passe   : généré aléatoirement et affiché une seule fois par l'installateur
 
-Changez le mot de passe dès la première connexion.
+Le changement du mot de passe est obligatoire à la première connexion. Le secret
+temporaire est retiré de `.env` après le démarrage réussi.
 
 Accès réseau local et pare-feu Windows
 --------------------------------------
-Lors de l'exécution de demarrage.bat, le script crée ou met à jour la règle
-Windows « YELEN SCHOOL - Accès réseau local » pour le port défini par
-YELEN_HTTP_PORT (8000 par défaut). La règle autorise uniquement le trafic TCP
-sur les profils réseau privé ou domaine et le sous-réseau local. La règle ne
-s'applique pas au profil Public. Accepter la demande UAC pour que
-les autres postes puissent accéder à l'application.
+Lors de la première exécution de demarrage.bat, ou lorsqu'un changement de
+port le rend nécessaire, le script crée ou met à jour la règle Windows
+« YELEN SCHOOL - Accès réseau local » pour le port défini par YELEN_HTTP_PORT
+(8000 par défaut). La règle autorise uniquement le trafic TCP sur les profils
+réseau privé ou domaine et le sous-réseau local. Elle ne s'applique pas au
+profil Public. La tâche de démarrage automatique réutilise la règle conforme
+sans demander une élévation UAC à chaque ouverture de session.
 
-L'application reste accessible sur le serveur si la demande UAC est refusée,
-mais l'accès depuis le réseau local peut être bloqué par le pare-feu.
+Accepter la demande UAC lors de la création ou de la modification de la règle
+pour que les autres postes puissent accéder à l'application. L'application
+reste accessible sur le serveur si la demande UAC est refusée, mais l'accès
+depuis le réseau local peut être bloqué par le pare-feu.
 
 Lors d'une nouvelle installation, un secret `SMS_WEBHOOK_TOKEN` est généré
 pour protéger le webhook SMS. Ne pas le remplacer par une valeur publique et

@@ -172,6 +172,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Force le remplacement du mot de passe initial avant l'accès aux modules.
+    'yelen_school.password_middleware.ForcePasswordChangeMiddleware',
     # CSP nonces — doit être APRÈS AuthenticationMiddleware
     'yelen_school.csp_middleware.CSPNonceMiddleware',
     # Restriction rôles PARENT/ÉLÈVE — doit être APRÈS AuthenticationMiddleware

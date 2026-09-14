@@ -335,7 +335,8 @@ def profile_change_password(request):
     pw_form = ChangeOwnPasswordForm(request.POST, user=request.user)
     if pw_form.is_valid():
         request.user.set_password(pw_form.cleaned_data['password1'])
-        request.user.save(update_fields=['password'])
+        request.user.must_change_password = False
+        request.user.save(update_fields=['password', 'must_change_password'])
         # Reconnecter après changement de mot de passe pour éviter la déconnexion
         from django.contrib.auth import update_session_auth_hash
         update_session_auth_hash(request, request.user)

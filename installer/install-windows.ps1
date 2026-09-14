@@ -92,6 +92,29 @@ function Ensure-EnvListValues {
     Set-EnvValue $Name ($values -join ',')
 }
 
+function Test-FirewallRuleForPort {
+    param([int]$Port)
+
+    if (-not (Get-Command Get-NetFirewallRule -ErrorAction SilentlyContinue)) {
+        return $false
+    }
+
+    try {
+        $rules = @(Get-NetFirewallRule -Name 'YELEN_SCHOOL_LocalWeb' -ErrorAction SilentlyContinue)
+        if ($rules.Count -eq 0) {
+            return $false
+        }
+        $filters = @($rules | Get-NetFirewallPortFilter -ErrorAction Stop)
+        return [bool]($filters | Where-Object {
+            $_.Protocol -eq 'TCP' -and $_.LocalPort.ToString() -eq [string]$Port
+        })
+    } catch {
+        # En cas d'impossibilité de vérifier, l'installation propose une
+        # synchronisation ponctuelle plutôt que de laisser une règle obsolète.
+        return $false
+    }
+}
+
 if (-not (Test-Path $PortSelectorScript)) {
     Stop-Installation "Script de sélection de port introuvable : $PortSelectorScript"
 }
@@ -155,6 +178,7 @@ $LoginUrl = "http://localhost:$httpPort/accounts/login/"
 $secretKey = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'))
 $dbPassword = 'Yelen-' + [guid]::NewGuid().ToString('N')
 $smsWebhookToken = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'))
+$initialAdminPassword = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')).Substring(0, 32)
 
 $lanIp = Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp -ErrorAction SilentlyContinue |
     Where-Object {
@@ -191,6 +215,7 @@ Ensure-EnvListValues 'CSRF_TRUSTED_ORIGINS' @(
 )
 if ($FreshInstallation) {
     Set-EnvValue 'ENSURE_ADMIN' 'true'
+    Set-EnvValue 'INITIAL_ADMIN_PASSWORD' $initialAdminPassword
     # L'installation locale ne doit pas dépendre d'un serveur SMTP externe.
     Set-EnvValue 'EMAIL_HOST' ''
 }
@@ -202,12 +227,20 @@ if ($FreshInstallation) {
 )
 Write-Host '[OK] Configuration locale préparée' -ForegroundColor Green
 
+$firewallNeedsUpdate = $FreshInstallation -or
+    ($httpPortNumber -ne $requestedHttpPortNumber) -or
+    (-not (Test-FirewallRuleForPort -Port $httpPortNumber))
+
 if (Test-Path $FirewallScript) {
-    Write-Host '[OK] Configuration du pare-feu Windows pour le réseau local...' -ForegroundColor Cyan
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $httpPortNumber
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host '[AVERTISSEMENT] Le pare-feu n’a pas été configuré. L’application restera accessible localement, mais l’accès depuis les autres postes peut être bloqué.' -ForegroundColor Yellow
-        Write-Host 'Relancez demarrage.bat et acceptez la demande UAC pour autoriser le réseau local.' -ForegroundColor Yellow
+    if ($firewallNeedsUpdate) {
+        Write-Host '[OK] Configuration du pare-feu Windows pour le réseau local...' -ForegroundColor Cyan
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $httpPortNumber
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host '[AVERTISSEMENT] Le pare-feu n’a pas été configuré. L’application restera accessible localement, mais l’accès depuis les autres postes peut être bloqué.' -ForegroundColor Yellow
+            Write-Host 'Relancez demarrage.bat et acceptez la demande UAC pour autoriser le réseau local.' -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "[OK] Règle du pare-feu déjà conforme au port TCP $httpPortNumber : aucune élévation demandée." -ForegroundColor Green
     }
 } else {
     Write-Host '[AVERTISSEMENT] Script de configuration du pare-feu introuvable : accès réseau local non configuré.' -ForegroundColor Yellow
@@ -243,9 +276,11 @@ if (-not $ready) {
 
 if ($FreshInstallation) {
     # Le compte initial a été créé par entrypoint.sh. On évite de réinitialiser
-    # son mot de passe lors des prochains redémarrages.
+    # son mot de passe lors des prochains redémarrages et on retire le secret
+    # temporaire du fichier .env.
     $script:EnvContent = Get-Content $EnvFile -Raw
     Set-EnvValue 'ENSURE_ADMIN' 'false'
+    Set-EnvValue 'INITIAL_ADMIN_PASSWORD' ''
     [System.IO.File]::WriteAllText(
         $EnvFile,
         $script:EnvContent,
@@ -259,8 +294,8 @@ Write-Host "Adresse : $LoginUrl" -ForegroundColor White
 if ($FreshInstallation) {
     Write-Host 'Compte initial :' -ForegroundColor Yellow
     Write-Host '  Email       : admin@yelen.edu' -ForegroundColor Yellow
-    Write-Host '  Mot de passe: admin123' -ForegroundColor Yellow
-    Write-Host 'Changez ce mot de passe après la première connexion.' -ForegroundColor Yellow
+    Write-Host "  Mot de passe temporaire : $initialAdminPassword" -ForegroundColor Yellow
+    Write-Host 'Le remplacement de ce mot de passe est obligatoire à la première connexion.' -ForegroundColor Yellow
 }
 Write-Host "Accès réseau local : http://${lanIp}:$httpPort/" -ForegroundColor White
 

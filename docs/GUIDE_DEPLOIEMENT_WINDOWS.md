@@ -86,7 +86,7 @@ Le script appelle `installer\install-windows.bat` et :
 - crée `.env` depuis `.env.example` si nécessaire ;
 - génère une clé Django et un mot de passe PostgreSQL local ;
 - configure `DB_HOST=db`, Redis et les hôtes du réseau local ;
-- crée ou met à jour la règle entrante Windows `YELEN SCHOOL - Accès réseau local` pour le port TCP `YELEN_HTTP_PORT`, uniquement sur les profils privé ou domaine et le sous-réseau local ;
+- crée ou met à jour, uniquement si nécessaire, la règle entrante Windows `YELEN SCHOOL - Accès réseau local` pour le port TCP `YELEN_HTTP_PORT`, uniquement sur les profils privé ou domaine et le sous-réseau local ;
 - démarre `docker-compose.client.yml` avec `--build` ;
 - applique les migrations et collecte les fichiers statiques via `entrypoint.sh` ;
 - crée le compte administrateur initial lors d'une nouvelle installation ;
@@ -121,9 +121,9 @@ Les causes habituelles sont Docker Desktop arrêté, les ports TCP `8000` à `80
 Pour une nouvelle installation, le compte créé automatiquement est :
 
 - **Email :** `admin@yelen.edu`
-- **Mot de passe initial :** `admin123`
+- **Mot de passe temporaire :** généré aléatoirement et affiché une seule fois par l'installateur
 
-Changer ce mot de passe immédiatement après la première connexion. Le script passe ensuite `ENSURE_ADMIN` à `false` afin de ne pas réinitialiser le mot de passe aux redémarrages suivants.
+Le changement de mot de passe est obligatoire à la première connexion. Le secret temporaire est retiré de `.env` après le démarrage réussi et `ENSURE_ADMIN` passe à `false`.
 
 ### 3.2 Fichier `.env`
 
@@ -179,7 +179,7 @@ Pour que YELEN SCHOOL démarre automatiquement après l'ouverture de session Win
 3. Choisir **Exécuter en tant qu'administrateur**.
 4. Vérifier la création de la tâche `YELEN SCHOOL - Démarrage automatique`.
 
-À chaque ouverture de session, la tâche attend que Docker Desktop réponde, vérifie que le port HTTP conservé dans `.env` est toujours utilisable, puis exécute `docker compose -f docker-compose.client.yml up -d`. Si le port est occupé par un autre programme, elle essaie automatiquement la plage `8000` à `8005`, conserve le nouveau port dans `.env` et actualise la règle du pare-feu. Elle ne reconstruit pas l'image et ne supprime aucun volume. Le journal est écrit dans `logs\startup.log`. Si l'actualisation du pare-feu échoue, relancer `demarrage.bat` et accepter la demande UAC.
+À chaque ouverture de session, la tâche attend que Docker Desktop réponde, vérifie que le port HTTP conservé dans `.env` est toujours utilisable, puis exécute `docker compose -f docker-compose.client.yml up -d`. Si le port est occupé par un autre programme, elle essaie automatiquement la plage `8000` à `8005`, conserve le nouveau port dans `.env` et actualise la règle du pare-feu. Elle ne reconstruit pas l'image et ne supprime aucun volume. Le journal est écrit dans `logs\startup.log`. Une règle déjà conforme n'est pas réappliquée : aucune demande UAC n'intervient lors d'une ouverture de session normale. Si une règle doit être créée ou actualisée et que la tâche ne dispose pas des droits élevés, relancer `demarrage.bat` et accepter la demande UAC.
 
 Cette tâche s'exécute dans la session de l'utilisateur qui l'a enregistrée. Configurer Docker Desktop pour démarrer avec Windows. Tester le fonctionnement en redémarrant Windows, puis vérifier :
 
@@ -508,7 +508,7 @@ Get-NetIPAddress -AddressFamily IPv4 |
 
 ### 9.2 Pare-feu Windows
 
-Lors de chaque exécution de `demarrage.bat`, le script crée ou met à jour automatiquement la règle :
+Lors de la première exécution de `demarrage.bat`, ou lorsqu'un changement de port le rend nécessaire, le script crée ou met à jour automatiquement la règle :
 
 ```text
 YELEN SCHOOL - Accès réseau local

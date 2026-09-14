@@ -1,20 +1,42 @@
-from django.core.management.base import BaseCommand
+import os
+
+from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
 ADMIN_EMAIL = "admin@yelen.edu"
-ADMIN_PASSWORD = "admin123"
+LEGACY_ADMIN_PASSWORD = "admin123"
 
 
 class Command(BaseCommand):
-    help = "Crée ou réinitialise le super administrateur par défaut."
+    help = "Crée le super administrateur initial sans réinitialiser un compte existant."
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--reset',
+            action='store_true',
+            help="Réinitialise explicitement le mot de passe avec INITIAL_ADMIN_PASSWORD.",
+        )
+
+    def _initial_password(self):
+        password = os.environ.get('INITIAL_ADMIN_PASSWORD', '').strip()
+        if not password or password.lower().startswith(('generer-', 'votre-', 'changez')):
+            raise CommandError(
+                'INITIAL_ADMIN_PASSWORD doit être défini avec un secret aléatoire '
+                'd’au moins 12 caractères.'
+            )
+        if len(password) < 12:
+            raise CommandError('INITIAL_ADMIN_PASSWORD doit contenir au moins 12 caractères.')
+        return password
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.WARNING(
-            "⚠️  Ceci réinitialise le mot de passe admin à 'admin123'. "
-            "Désactivez ENSURE_ADMIN après le premier déploiement."
-        ))
+        # Valider avant la création afin qu'un installateur mal configuré ne
+        # laisse pas en base un compte initial sans mot de passe utilisable.
+        initial_password = None
+        if not User.objects.filter(email=ADMIN_EMAIL).exists():
+            initial_password = self._initial_password()
+
         user, created = User.objects.get_or_create(
             email=ADMIN_EMAIL,
             defaults={
@@ -25,22 +47,45 @@ class Command(BaseCommand):
                 "is_superuser": True,
                 "is_active": True,
                 "role": "SUPER_ADMIN",
+                "must_change_password": True,
             },
         )
 
+        update_fields = []
         if created:
-            user.set_password(ADMIN_PASSWORD)
-            user.save(update_fields=["password"])
-            self.stdout.write(self.style.SUCCESS(
-                f"Super administrateur {ADMIN_EMAIL} créé avec succès."
-            ))
+            password = initial_password or self._initial_password()
+            user.set_password(password)
+            user.must_change_password = True
+            update_fields = ['password', 'must_change_password']
+            message = (
+                f"Super administrateur {ADMIN_EMAIL} créé. "
+                "Le changement du mot de passe est obligatoire à la première connexion."
+            )
         else:
             user.is_staff = True
             user.is_superuser = True
             user.is_active = True
             user.role = "SUPER_ADMIN"
-            user.set_password(ADMIN_PASSWORD)
-            user.save(update_fields=["password", "is_staff", "is_superuser", "is_active", "role"])
-            self.stdout.write(self.style.SUCCESS(
-                f"Mot de passe du super administrateur {ADMIN_EMAIL} réinitialisé."
-            ))
+            update_fields = ['is_staff', 'is_superuser', 'is_active', 'role']
+
+            # Les installations historiques utilisant encore admin123 doivent
+            # passer par le même parcours de remplacement obligatoire.
+            if user.check_password(LEGACY_ADMIN_PASSWORD):
+                user.must_change_password = True
+                update_fields.append('must_change_password')
+
+            if options.get('reset'):
+                password = self._initial_password()
+                user.set_password(password)
+                user.must_change_password = True
+                update_fields.extend(['password', 'must_change_password'])
+                message = (
+                    f"Mot de passe de {ADMIN_EMAIL} réinitialisé. "
+                    "Le changement est obligatoire à la prochaine connexion."
+                )
+            else:
+                message = f"Super administrateur {ADMIN_EMAIL} vérifié sans réinitialiser son mot de passe."
+
+        if update_fields:
+            user.save(update_fields=list(dict.fromkeys(update_fields)))
+        self.stdout.write(self.style.SUCCESS(message))

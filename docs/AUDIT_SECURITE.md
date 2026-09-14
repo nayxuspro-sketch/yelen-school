@@ -58,7 +58,7 @@ Ces points ne peuvent pas être clôturés par une simple revue statique :
 4. vérifier les en-têtes CSP sur une réponse HTML réelle ;
 5. vérifier les logs Nginx dans le conteneur ;
 6. effectuer le test complet de sauvegarde/restauration sous Windows ;
-7. vérifier les secrets générés et le remplacement du mot de passe initial `admin123` sur une installation client ;
+7. vérifier le secret initial généré, son retrait de `.env` et le remplacement obligatoire du mot de passe temporaire sur une installation client ;
 8. décider si les middlewares de licence commentés doivent être activés pour l'offre commerciale.
 
 ## 5. Règles de déploiement

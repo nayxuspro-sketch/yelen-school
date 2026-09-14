@@ -267,17 +267,15 @@ Le système vérifie si l'adresse email est connue et envoie un lien sécurisé 
 | Champ | Valeur |
 |-------|--------|
 | Email | `admin@yelen.edu` |
-| Mot de passe | `admin123` |
+| Mot de passe | Généré aléatoirement par l'installateur |
 
-Ce compte est créé automatiquement lors du premier déploiement. Il possède tous les droits (SUPER_ADMIN) et permet de paramétrer l'application avant de créer d'autres utilisateurs.
+Ce compte possède tous les droits (SUPER_ADMIN). L'installateur affiche le mot de passe temporaire une seule fois, puis le retire de `.env`. Le changement du mot de passe est obligatoire à la première connexion.
 
-> ⚠️ **Création automatique au premier démarrage :** Depuis la v4.2, si `ENSURE_ADMIN=true` dans `.env`, le conteneur Docker exécute `python manage.py ensure_admin` au démarrage via l'entrypoint. Cette commande crée le super administrateur `admin@yelen.edu` avec le mot de passe `admin123`.
+> ⚠️ **Création automatique au premier démarrage :** si `ENSURE_ADMIN=true` dans `.env`, le conteneur Docker exécute `python manage.py ensure_admin` avec `INITIAL_ADMIN_PASSWORD`. Ce secret ne doit jamais être copié dans un ticket ou un journal.
 > >
-> > **Sécurité :** Après le premier déploiement, mettez `ENSURE_ADMIN=false` dans `.env` pour éviter la réinitialisation du mot de passe en cas de redémarrage. Changez également le mot de passe depuis l'interface.
-> >
-> > **Réinitialisation manuelle (si nécessaire) :**
+> > **Réinitialisation manuelle explicite (si nécessaire) :** définir temporairement `INITIAL_ADMIN_PASSWORD` dans l'environnement puis lancer :
 > ```bash
-> docker exec yelen-school-web-1 python manage.py ensure_admin
+> docker exec yelen-school-web-1 python manage.py ensure_admin --reset
 > ```
 > Ou via les scripts : `./start.sh admin` (Linux) / `.\start.ps1 admin` (PowerShell) / `.\dev.ps1 admin`
 
@@ -4153,7 +4151,7 @@ La distribution destinée à un établissement client se lance avec `docker-comp
 
 L'installateur crée `.env`, génère les secrets locaux, applique les migrations et désactive `ENSURE_ADMIN` après le premier démarrage. Les données PostgreSQL, Redis, médias et journaux sont conservées dans des volumes Docker persistants. Le parcours détaillé Windows, la programmation de la tâche planifiée PostgreSQL et médias, le réseau local et la reprise sur une nouvelle machine sont décrits dans `docs/GUIDE_DEPLOIEMENT_WINDOWS.md`.
 
-`demarrage.bat` ne se limite pas à exécuter `docker compose -f docker-compose.client.yml up -d --build` : il prépare aussi la configuration, recherche automatiquement un port libre dans l'ordre `8000`, `8001`, `8002`, `8003`, `8004`, `8005`, attend que la page de connexion soit disponible et ouvre le navigateur. Le port sélectionné est conservé dans `.env`, utilisé pour l'adresse affichée et pour la règle du pare-feu Windows. Le script est idempotent et peut être relancé sans supprimer les volumes. Si toute la plage est occupée, définir manuellement un autre `YELEN_HTTP_PORT` libre. Une confirmation UAC est demandée pour autoriser l'accès depuis le réseau privé local.
+`demarrage.bat` ne se limite pas à exécuter `docker compose -f docker-compose.client.yml up -d --build` : il prépare aussi la configuration, recherche automatiquement un port libre dans l'ordre `8000`, `8001`, `8002`, `8003`, `8004`, `8005`, attend que la page de connexion soit disponible et ouvre le navigateur. Le port sélectionné est conservé dans `.env`, utilisé pour l'adresse affichée et pour la règle du pare-feu Windows. Le script est idempotent et peut être relancé sans supprimer les volumes. Si toute la plage est occupée, définir manuellement un autre `YELEN_HTTP_PORT` libre. Une confirmation UAC est demandée uniquement lors de la création ou de la modification nécessaire de la règle pare-feu, pas lors d'une ouverture de session normale avec la tâche automatique.
 
 **Démarrage automatique Windows :**
 
@@ -5860,6 +5858,7 @@ Variables essentielles pour un déploiement local :
 | `DB_PORT` | `5433` | Port d'exposition de PostgreSQL (port 5433 sur l'hôte → 5432 dans le conteneur Docker). Évite le conflit si PostgreSQL est installé nativement sur Windows (port 5432). |
 | `DISABLE_HTTPS_REDIRECT` | `true` | Désactive la redirection HTTPS (pratique en local sans certificat) |
 | `ENSURE_ADMIN` | `true` | `false` après le premier déploiement (sécurité) |
+| `INITIAL_ADMIN_PASSWORD` | Secret aléatoire d'au moins 12 caractères | Généré par l'installateur, affiché une seule fois puis retiré de `.env` |
 | `EMAIL_HOST` | *(laisser vide)* | Backend console utilisé automatiquement si vide → pas de plantage SMTP |
 
 > **⚠️ Conflit PostgreSQL natif :** Si vous avez PostgreSQL installé nativement sur Windows (service `postgresql-x64-18`),
@@ -5912,16 +5911,16 @@ L'application est accessible sur **http://localhost:8000** par défaut, ou sur l
 | Champ | Valeur |
 |-------|--------|
 | Email | `admin@yelen.edu` |
-| Mot de passe | `admin123` |
+| Mot de passe | Temporaire, généré et affiché par l'installateur |
 
-Ce compte est créé automatiquement au premier démarrage si `ENSURE_ADMIN=true` dans `.env`.
+Le compte est créé automatiquement au premier démarrage si `ENSURE_ADMIN=true` et `INITIAL_ADMIN_PASSWORD` sont définis. Le changement du mot de passe est obligatoire avant l'accès aux autres modules.
 
 **Actions post-connexion :**
-1. Aller dans `Paramètres → Établissement` pour configurer l'identité de l'école
-2. Créer les utilisateurs (Directeur, Enseignants, etc.)
-3. Configurer l'année scolaire dans `Paramètres → Années scolaires`
-4. Mettre `ENSURE_ADMIN=false` dans `.env` pour éviter la réinitialisation du mot de passe
-5. Changer le mot de passe admin depuis le profil utilisateur
+1. Remplacer le mot de passe temporaire dans le formulaire imposé
+2. Aller dans `Paramètres → Établissement` pour configurer l'identité de l'école
+3. Créer les utilisateurs (Directeur, Enseignants, etc.)
+4. Configurer l'année scolaire dans `Paramètres → Années scolaires`
+5. Vérifier que `ENSURE_ADMIN=false` et que `INITIAL_ADMIN_PASSWORD` est vide dans `.env`
 
 #### 4. Arrêt et redémarrage
 
@@ -5962,6 +5961,7 @@ Variables pour la production :
 | `DB_PASSWORD` | Mot de passe fort | Générer, sera utilisé à l'initialisation du volume |
 | `DISABLE_HTTPS_REDIRECT` | *(omettre ou `false`)* | La redirection HTTPS doit être active en production |
 | `ENSURE_ADMIN` | `true` (1er lancement) puis `false` | Crée l'admin au premier démarrage |
+| `INITIAL_ADMIN_PASSWORD` | Secret aléatoire temporaire | Fourni par l'installateur au premier lancement, puis supprimé de `.env` |
 | `EMAIL_HOST` | Serveur SMTP | Configurer les emails transactionnels |
 | `SMS_ENABLED` | `false` | Activer seulement si un serveur SMS est disponible |
 
