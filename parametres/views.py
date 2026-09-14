@@ -114,7 +114,7 @@ def annee_set_courante(request, pk):
 def cycle_list(request):
     etab = _get_etab(request)
     cycles = Cycle.objects.filter(etablissement=etab).prefetch_related('classes').order_by('ordre', 'nom') if etab else Cycle.objects.none()
-    tpl = 'parametres/partials/cycle_list.html' if request.headers.get('HX-Request') else 'parametres/cycles.html'
+    tpl = 'parametres/partials/cycle_tree.html' if request.headers.get('HX-Request') else 'parametres/cycles.html'
     return render(request, tpl, {'cycles': cycles})
 
 
