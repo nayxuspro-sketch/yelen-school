@@ -34,6 +34,11 @@ les autres postes puissent accéder à l'application.
 L'application reste accessible sur le serveur si la demande UAC est refusée,
 mais l'accès depuis le réseau local peut être bloqué par le pare-feu.
 
+Si le port demandé est occupé, demarrage.bat essaie automatiquement les ports
+8000, 8001, 8002, 8003, 8004 puis 8005. Le port sélectionné est conservé dans
+.env et affiché à la fin de l'installation. Si toute la plage est occupée,
+définir un autre YELEN_HTTP_PORT libre dans .env puis relancer le script.
+
 Les données PostgreSQL, Redis, les médias, les fichiers statiques et les logs
 sont conservés dans des volumes Docker nommés. Ne supprimez pas ces volumes
 sans disposer d'une sauvegarde.

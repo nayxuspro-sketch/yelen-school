@@ -108,7 +108,7 @@ docker compose -f docker-compose.client.yml logs --tail=120 web
 docker compose -f docker-compose.client.yml ps
 ```
 
-Les causes habituelles sont Docker Desktop arrêté, un port `8000` déjà utilisé, ou un manque d'espace disque. Corriger la cause puis relancer `demarrage.bat`. Le démarrage est idempotent : il réutilise `.env` et les volumes existants.
+Les causes habituelles sont Docker Desktop arrêté, les ports TCP `8000` à `8005` déjà utilisés, ou un manque d'espace disque. `demarrage.bat` essaie automatiquement les ports `8000`, `8001`, `8002`, `8003`, `8004` puis `8005` et conserve le port trouvé dans `.env`. Corriger la cause puis relancer `demarrage.bat` si toute la plage est occupée. Le démarrage est idempotent : il réutilise `.env` et les volumes existants.
 
 ---
 
@@ -489,21 +489,21 @@ docker compose -f docker-compose.client.yml logs --tail=200 web
 
 PostgreSQL doit être `healthy` avant que le service web soit disponible. La première construction peut être longue.
 
-### Le port 8000 est déjà utilisé
+### Les ports HTTP sont déjà utilisés
 
-Modifier `YELEN_HTTP_PORT` dans `.env`, par exemple :
+Lors de l'exécution de `demarrage.bat`, l'installateur teste automatiquement la plage suivante :
+
+```text
+8000 → 8001 → 8002 → 8003 → 8004 → 8005
+```
+
+Le premier port libre est écrit dans `.env`, puis utilisé pour Docker, l'adresse affichée et la règle du pare-feu Windows. L'adresse à communiquer aux postes clients est celle affichée par l'installateur, par exemple `http://192.168.1.50:8003/`.
+
+Si les six ports sont occupés, définir un autre port libre dans `.env`, puis relancer `demarrage.bat` :
 
 ```dotenv
-YELEN_HTTP_PORT=8001
+YELEN_HTTP_PORT=8010
 ```
-
-Puis relancer :
-
-```powershell
-docker compose -f docker-compose.client.yml up -d --build
-```
-
-L'adresse devient `http://localhost:8001/`. Relancer `demarrage.bat` afin que la règle du pare-feu soit automatiquement remplacée, puis mettre à jour l'adresse communiquée aux postes clients.
 
 ### L'application affiche une erreur de connexion PostgreSQL
 

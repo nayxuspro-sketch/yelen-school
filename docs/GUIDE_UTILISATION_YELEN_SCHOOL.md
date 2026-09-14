@@ -4148,7 +4148,7 @@ La distribution destinée à un établissement client se lance avec `docker-comp
 
 L'installateur crée `.env`, génère les secrets locaux, applique les migrations et désactive `ENSURE_ADMIN` après le premier démarrage. Les données PostgreSQL, Redis, médias et journaux sont conservées dans des volumes Docker persistants. Le parcours détaillé Windows, la programmation de la tâche planifiée PostgreSQL et médias, le réseau local et la reprise sur une nouvelle machine sont décrits dans `docs/GUIDE_DEPLOIEMENT_WINDOWS.md`.
 
-`demarrage.bat` ne se limite pas à exécuter `docker compose -f docker-compose.client.yml up -d --build` : il prépare aussi la configuration, attend que la page de connexion soit disponible et ouvre le navigateur. Il est idempotent et peut être relancé sans supprimer les volumes. Le port par défaut est `8000`; en cas de conflit, ajouter `YELEN_HTTP_PORT=8001` dans `.env` puis relancer `demarrage.bat` : l'attente, l'adresse affichée et la règle du pare-feu Windows utilisent alors le port configuré. Une confirmation UAC est demandée pour autoriser l'accès depuis le réseau privé local.
+`demarrage.bat` ne se limite pas à exécuter `docker compose -f docker-compose.client.yml up -d --build` : il prépare aussi la configuration, recherche automatiquement un port libre dans l'ordre `8000`, `8001`, `8002`, `8003`, `8004`, `8005`, attend que la page de connexion soit disponible et ouvre le navigateur. Le port sélectionné est conservé dans `.env`, utilisé pour l'adresse affichée et pour la règle du pare-feu Windows. Le script est idempotent et peut être relancé sans supprimer les volumes. Si toute la plage est occupée, définir manuellement un autre `YELEN_HTTP_PORT` libre. Une confirmation UAC est demandée pour autoriser l'accès depuis le réseau privé local.
 
 **Démarrage automatique Windows :**
 
@@ -5873,10 +5873,10 @@ Variables essentielles pour un déploiement local :
 3. Exécute `docker compose -f docker-compose.client.yml up -d --build` de manière idempotente
 4. **Attente du serveur web** — boucle de scrutation jusqu'à 120 secondes :
    - vérifie toutes les 2 secondes que le port défini par `YELEN_HTTP_PORT` répond ;
-   - utilise le port `8000` par défaut ;
+   - utilise `8000` comme premier port, puis essaie automatiquement `8001`, `8002`, `8003`, `8004` et `8005` si nécessaire ;
    - ouvre le navigateur dès que le serveur est prêt.
 
-`lancer-yelen.bat` appelle le même installateur. Si un autre service utilise le port 8000, ajouter `YELEN_HTTP_PORT=8001` dans `.env` avant de relancer l'un des deux fichiers `.bat`.
+`lancer-yelen.bat` appelle le même installateur et bénéficie de la même sélection automatique des ports `8000` à `8005`. Si toute la plage est occupée, ajouter un `YELEN_HTTP_PORT` libre dans `.env` avant de relancer l'un des deux fichiers `.bat`.
 
 En cas d'échec, le script affiche les logs de diagnostic (web et db).
 
