@@ -317,7 +317,22 @@ Pour une exécution non interactive dans une procédure déjà validée :
 
 N'utiliser `-Yes` qu'après avoir vérifié le chemin de la sauvegarde. Après restauration, se connecter, contrôler quelques élèves, paiements et documents, puis vérifier quelques fichiers médias.
 
-### 7.3 Restauration depuis Linux/macOS
+### 7.3 Programmer une restauration unique sous Windows
+
+Une restauration automatique est destructive. Le script fourni programme donc une seule exécution, et non une restauration quotidienne. Vérifier la paire, prévenir les utilisateurs et s'assurer que Docker Desktop sera disponible à l'heure choisie.
+
+Depuis la racine du projet, faire un clic droit sur `programmer-restauration.bat`, puis choisir **Exécuter en tant qu'administrateur**. Depuis un terminal administrateur :
+
+```powershell
+.\programmer-restauration.bat `
+  ".\backups\yelen_school_20260914_220000.dump" 03:00 CONFIRMER
+```
+
+Le fichier `_media.tar.gz` associé doit être présent. Le mot `CONFIRMER` est obligatoire pour éviter une programmation accidentelle. La tâche est visible dans le Planificateur de tâches sous `YELEN SCHOOL - Restauration programmée` et son journal est écrit dans `backups\restore.log`.
+
+Avant l'heure prévue, il est possible d'annuler la tâche depuis le Planificateur de tâches. Ne programmez pas cette opération pendant l'utilisation de l'application.
+
+### 7.4 Restauration depuis Linux/macOS
 
 La même paire peut être restaurée avec :
 
@@ -327,7 +342,7 @@ La même paire peut être restaurée avec :
 
 Cette commande est documentée ici pour les installations multiplateformes ; elle utilise également `docker-compose.client.yml` et PostgreSQL local.
 
-### 7.4 Si la restauration échoue
+### 7.5 Si la restauration échoue
 
 Ne pas supprimer les volumes et ne pas relancer une restauration avec une paire incomplète. Conserver le dump original, noter le message affiché, puis consulter :
 

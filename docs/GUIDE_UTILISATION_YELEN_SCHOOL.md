@@ -4192,6 +4192,15 @@ Une sauvegarde produit un fichier PostgreSQL `.dump` et une archive associée `_
 
 Sous Windows, utiliser `installer\restore-windows.bat`. La restauration remplace la base et les médias actuels et demande une confirmation explicite. Tester régulièrement une restauration sur une machine de secours afin de vérifier que les sauvegardes sont réellement exploitables.
 
+Pour programmer une restauration unique à une heure donnée sous Windows :
+
+```powershell
+.\programmer-restauration.bat `
+  ".\backups\yelen_school_YYYYMMDD_HHMMSS.dump" 03:00 CONFIRMER
+```
+
+Cette opération est destructive et n'est jamais quotidienne par défaut. Le fichier `_media.tar.gz` associé doit être présent ; la tâche et son journal `backups\restore.log` peuvent être contrôlés par l'administrateur.
+
 ---
 
 ### 18.5 Système de Notifications

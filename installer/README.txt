@@ -68,6 +68,16 @@ L'archive des médias associée (_media.tar.gz) est restaurée automatiquement s
 elle est présente. La restauration remplace toutes les données actuelles. Une
 confirmation explicite est demandée, sauf si l'option --yes est fournie.
 
+Restauration programmée — Windows
+---------------------------------
+Cette opération est destructive et est donc programmée une seule fois, jamais
+quotidiennement par défaut. Utiliser uniquement après avoir vérifié la paire de
+sauvegarde et l'absence d'utilisateurs connectés :
+  programmer-restauration.bat "backups\yelen_school_YYYYMMDD_HHMMSS.dump" 03:00 CONFIRMER
+
+Le fichier associé _media.tar.gz doit être présent. La tâche écrit son journal
+dans backups\restore.log et peut être vérifiée dans le Planificateur de tâches.
+
 Commandes utiles
 ----------------
   docker compose -f docker-compose.client.yml ps
