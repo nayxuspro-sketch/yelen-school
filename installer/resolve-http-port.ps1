@@ -17,10 +17,20 @@ function Test-YelenTcpPortAvailable {
         [int]$Port
     )
 
+    # Vérifier d'abord les sockets d'écoute Windows, y compris les services
+    # liés à l'adresse LAN ou à 0.0.0.0. Tester uniquement 127.0.0.1 pouvait
+    # laisser passer un port que Docker ne pouvait ensuite publier.
+    if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
+        $listeners = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+        if ($listeners.Count -gt 0) {
+            return $false
+        }
+    }
+
     $listener = $null
     try {
         $listener = New-Object -TypeName System.Net.Sockets.TcpListener -ArgumentList @(
-            [System.Net.IPAddress]::Loopback,
+            [System.Net.IPAddress]::Any,
             $Port
         )
         $listener.Start()
@@ -61,13 +71,23 @@ function Test-YelenContainerPortInUse {
         Pop-Location
     }
 
-    if ($composeExitCode -ne 0) {
-        return $false
+    if ($composeExitCode -eq 0 -and [bool]($published | Where-Object {
+        $_.ToString().Trim() -match "(^|:)$Port$"
+    })) {
+        return $true
     }
 
-    return [bool]($published | Where-Object {
-        $_.ToString().Trim() -match "(^|:)$Port$"
-    })
+    # Vérifier aussi les autres conteneurs Docker : un ancien projet Compose
+    # ou un service orphelin peut occuper le port sans apparaître dans le
+    # fichier Compose actuellement utilisé.
+    $allPublished = @(& docker ps --format '{{.Ports}}' 2>$null)
+    if ($LASTEXITCODE -eq 0) {
+        return [bool]($allPublished | Where-Object {
+            $_.ToString() -match ":$Port->"
+        })
+    }
+
+    return $false
 }
 
 function Select-YelenHttpPort {

@@ -15,6 +15,13 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+try {
+    [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+} catch {
+    # Certaines anciennes consoles Windows ne permettent pas de modifier
+    # l'encodage ; le déroulement de l'installation reste inchangé.
+}
 $Root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $ComposeFile = Join-Path $Root 'docker-compose.client.yml'
 $FirewallScript = Join-Path $PSScriptRoot 'configure-firewall.ps1'
