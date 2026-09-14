@@ -1887,7 +1887,12 @@ def risque_decrochage(request):
                 )
                 
                 if request.headers.get('HX-Request'):
-                    return render(request, 'pedagogie/partials/risque_row.html', {'r': risque})
+                    response = render(request, 'pedagogie/partials/risque_row.html', {
+                        'r': risque,
+                        'annee': annee,
+                    })
+                    response['HX-Trigger'] = 'risqueUpdated'
+                    return response
                 
                 messages.success(request, f"Score recalculé : {niveau} ({score}/100)")
             except Inscription.DoesNotExist:
@@ -1927,7 +1932,7 @@ def risque_decrochage(request):
     stats = {n: tous.filter(niveau=n).count() for n in RisqueDecrochage.NiveauChoices.values}
     stats['total'] = tous.count()
 
-    return render(request, 'pedagogie/risque_decrochage.html', {
+    context = {
         'risques': risques_qs,
         'annee': annee,
         'annees': annees,
@@ -1936,7 +1941,11 @@ def risque_decrochage(request):
         'classe_id': classe_id,
         'stats': stats,
         'niveaux': RisqueDecrochage.NiveauChoices.choices,
-    })
+    }
+    if request.headers.get('HX-Request') and request.GET.get('_partial') == 'stats':
+        return render(request, 'pedagogie/partials/risque_stats.html', context)
+
+    return render(request, 'pedagogie/risque_decrochage.html', context)
 
 
 # ─── PDF RISQUE DE DÉCROCHAGE ───────────────────────────────────────────

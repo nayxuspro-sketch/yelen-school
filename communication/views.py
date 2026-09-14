@@ -59,6 +59,9 @@ def message_list(request):
         'nb_repondu': nb_repondu,
         'nb_en_attente': nb_en_attente,
     }
+    if request.headers.get('HX-Request') and request.GET.get('_partial') == 'stats':
+        return render(request, 'communication/partials/message_stats.html', ctx)
+
     tpl = ('communication/partials/message_list.html'
            if request.headers.get('HX-Request')
            else 'communication/messages_list.html')
@@ -205,6 +208,14 @@ def sms_direct_simulateur(request):
     """Interface HTMX de simulation du SMS Direct (Parent-SMS)."""
     from .models import IncomingSMSLog
     logs = IncomingSMSLog.objects.all()[:20]
+    if request.headers.get('HX-Request') and request.GET.get('_partial') == 'history':
+        return render(request, 'communication/partials/sms_direct_history.html', {
+            'logs': logs,
+        })
+    if request.headers.get('HX-Request') and request.GET.get('_partial') == 'count':
+        return render(request, 'communication/partials/sms_direct_count.html', {
+            'logs': logs,
+        })
     return render(request, 'communication/sms_direct.html', {
         'logs': logs,
     })
@@ -246,12 +257,14 @@ def sms_direct_envoyer(request):
     from .models import IncomingSMSLog
     dernier_log = IncomingSMSLog.objects.filter(sender_number=phone).order_by('-created_at').first()
 
-    return render(request, 'communication/partials/sms_direct_result.html', {
+    response = render(request, 'communication/partials/sms_direct_result.html', {
         'data': data,
         'phone': phone,
         'message': message,
         'log': dernier_log,
     })
+    response['HX-Trigger'] = 'smsHistoryUpdated'
+    return response
 
 
 @csrf_exempt

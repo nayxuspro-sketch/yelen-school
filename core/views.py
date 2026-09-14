@@ -454,10 +454,13 @@ def notifications_list(request):
     nb_non_lues = Notification.objects.filter(
         destinataire=request.user, lu=False
     ).count()
-    return render(request, 'core/notifications.html', {
+    context = {
         'notifications': notifications,
         'nb_non_lues': nb_non_lues,
-    })
+    }
+    if request.GET.get('_partial') == 'header':
+        return render(request, 'core/partials/notifications_header.html', context)
+    return render(request, 'core/notifications.html', context)
 
 
 @login_required
@@ -483,7 +486,9 @@ def notification_marquer_lu(request, pk):
     
     notif.lu = True
     notif.save(update_fields=['lu'])
-    return render(request, 'core/partials/notification_item.html', {'notif': notif})
+    response = render(request, 'core/partials/notification_item.html', {'notif': notif})
+    response['HX-Trigger'] = 'notificationsUpdated'
+    return response
 
 
 @login_required

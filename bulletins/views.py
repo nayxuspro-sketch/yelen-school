@@ -124,7 +124,10 @@ def bulletins_classe(request, class_id, trimestre_id):
     nb_publies = sum(1 for l in lignes if l['bulletin'] and l['bulletin'].est_publie)
     nb_moyennes = sum(1 for l in lignes if l['moyenne_calculee'])
 
-    tpl = 'bulletins/partials/bulletins_classe_table.html' if request.headers.get('HX-Request') else 'bulletins/bulletins_classe.html'
+    if request.headers.get('HX-Request') and request.GET.get('_partial') == 'stats':
+        tpl = 'bulletins/partials/bulletins_stats.html'
+    else:
+        tpl = 'bulletins/partials/bulletins_classe_table.html' if request.headers.get('HX-Request') else 'bulletins/bulletins_classe.html'
     return render(request, tpl, {
         'classe': classe,
         'trimestre': trimestre,
@@ -258,7 +261,10 @@ def bulletin_publier(request, inscription_id, trimestre_id):
         'trimestre': trimestre,
         'moyenne_calculee': mg is not None,
     })
-    response['HX-Trigger'] = json.dumps({'showToast': toast})
+    response['HX-Trigger'] = json.dumps({
+        'showToast': toast,
+        'bulletinUpdated': True,
+    })
     return response
 
 

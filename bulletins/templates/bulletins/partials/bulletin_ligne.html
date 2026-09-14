@@ -59,7 +59,7 @@
       <button
         hx-post="{% url 'bulletins:bulletin_publier' inscription_id=inscription.pk trimestre_id=trimestre.pk %}"
         hx-target="#ligne-{{ inscription.pk }}"
-        hx-swap="outerHTML"
+        hx-swap="none"
         class="btn btn-sm {% if bulletin and bulletin.est_publie %}btn-danger{% else %}btn-primary{% endif %}"
         style="padding:4px 8px; font-size:0.75rem;">
         {% if bulletin and bulletin.est_publie %}Dépublier{% else %}Publier{% endif %}
