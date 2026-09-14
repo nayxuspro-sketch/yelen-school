@@ -18,7 +18,6 @@ $ErrorActionPreference = 'Stop'
 $Root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $ComposeFile = Join-Path $Root 'docker-compose.client.yml'
 $EnvFile = Join-Path $Root '.env'
-$LoginUrl = 'http://localhost:8000/accounts/login/'
 
 function Stop-Installation {
     param([string]$Message)
@@ -71,6 +70,26 @@ function Ensure-EnvValue {
     }
 }
 
+function Ensure-EnvListValues {
+    param(
+        [string]$Name,
+        [string[]]$RequiredValues
+    )
+
+    $current = Get-EnvValue $Name
+    if ([string]::IsNullOrWhiteSpace($current) -or $current -match 'generer|choisissez|votre-|changez') {
+        $values = @()
+    } else {
+        $values = @($current -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    }
+    foreach ($required in $RequiredValues) {
+        if ($values -notcontains $required) {
+            $values += $required
+        }
+    }
+    Set-EnvValue $Name ($values -join ',')
+}
+
 Write-Host '>>> YELEN SCHOOL - Installation locale' -ForegroundColor Cyan
 Write-Host ''
 
@@ -102,6 +121,16 @@ if ($null -eq $script:EnvContent) {
     $script:EnvContent = ''
 }
 
+$httpPort = Get-EnvValue 'YELEN_HTTP_PORT'
+if ([string]::IsNullOrWhiteSpace($httpPort)) {
+    $httpPort = '8000'
+}
+$httpPortNumber = 0
+if (-not [int]::TryParse($httpPort, [ref]$httpPortNumber) -or $httpPortNumber -lt 1 -or $httpPortNumber -gt 65535) {
+    Stop-Installation 'YELEN_HTTP_PORT doit être un port compris entre 1 et 65535.'
+}
+$LoginUrl = "http://localhost:$httpPort/accounts/login/"
+
 $secretKey = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'))
 $dbPassword = 'Yelen-' + [guid]::NewGuid().ToString('N')
 
@@ -130,7 +159,13 @@ Ensure-EnvValue 'DB_USER' 'yelen_user'
 Ensure-EnvValue 'DEBUG' 'False'
 Ensure-EnvValue 'DISABLE_HTTPS_REDIRECT' 'true'
 Ensure-EnvValue 'ALLOWED_HOSTS' "localhost,127.0.0.1,$lanIp"
-Ensure-EnvValue 'CSRF_TRUSTED_ORIGINS' "http://localhost,http://127.0.0.1,http://${lanIp}:8000"
+Ensure-EnvListValues 'CSRF_TRUSTED_ORIGINS' @(
+    'http://localhost',
+    'http://127.0.0.1',
+    "http://localhost:$httpPort",
+    "http://127.0.0.1:$httpPort",
+    "http://${lanIp}:$httpPort"
+)
 if ($FreshInstallation) {
     Set-EnvValue 'ENSURE_ADMIN' 'true'
     # L'installation locale ne doit pas dépendre d'un serveur SMTP externe.
@@ -193,7 +228,7 @@ if ($FreshInstallation) {
     Write-Host '  Mot de passe: admin123' -ForegroundColor Yellow
     Write-Host 'Changez ce mot de passe après la première connexion.' -ForegroundColor Yellow
 }
-Write-Host "Accès réseau local : http://${lanIp}:8000/" -ForegroundColor White
+Write-Host "Accès réseau local : http://${lanIp}:$httpPort/" -ForegroundColor White
 
 if (-not $NoBrowser) {
     Start-Process $LoginUrl

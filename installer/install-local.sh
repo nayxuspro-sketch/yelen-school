@@ -7,7 +7,6 @@ set -Eeuo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="$ROOT/docker-compose.client.yml"
 ENV_FILE="$ROOT/.env"
-LOGIN_URL="http://localhost:8000/accounts/login/"
 
 fail() {
     echo "[ERREUR] $1" >&2
@@ -47,6 +46,24 @@ ensure_env_value() {
     fi
 }
 
+ensure_env_list_values() {
+    local key="$1"
+    shift
+    local current
+    local required
+    current="$(get_env_value "$key" || true)"
+    if [[ -z "$current" || "$current" =~ generer|choisissez|votre-|changez ]]; then
+        current=''
+    fi
+    for required in "$@"; do
+        case ",$current," in
+            *",$required,"*) ;;
+            *) current="${current:+$current,}$required" ;;
+        esac
+    done
+    set_env_value "$key" "$current"
+}
+
 random_hex() {
     if command -v openssl >/dev/null 2>&1; then
         openssl rand -hex 32
@@ -67,6 +84,13 @@ if [[ ! -f "$ENV_FILE" ]]; then
     fresh_installation=1
     echo '[OK] Fichier .env créé à partir de .env.example'
 fi
+
+http_port="$(get_env_value YELEN_HTTP_PORT || true)"
+http_port="${http_port:-8000}"
+if ! [[ "$http_port" =~ ^[0-9]{1,5}$ ]] || (( 10#$http_port < 1 || 10#$http_port > 65535 )); then
+    fail 'YELEN_HTTP_PORT doit être un port compris entre 1 et 65535.'
+fi
+LOGIN_URL="http://localhost:${http_port}/accounts/login/"
 
 secret_key="$(random_hex)$(random_hex)"
 db_password="Yelen-$(random_hex | cut -c1-24)"
@@ -92,7 +116,12 @@ ensure_env_value DB_USER 'yelen_user'
 ensure_env_value DEBUG 'False'
 ensure_env_value DISABLE_HTTPS_REDIRECT 'true'
 ensure_env_value ALLOWED_HOSTS "localhost,127.0.0.1,$lan_ip"
-ensure_env_value CSRF_TRUSTED_ORIGINS "http://localhost,http://127.0.0.1,http://${lan_ip}:8000"
+ensure_env_list_values CSRF_TRUSTED_ORIGINS \
+    'http://localhost' \
+    'http://127.0.0.1' \
+    "http://localhost:${http_port}" \
+    "http://127.0.0.1:${http_port}" \
+    "http://${lan_ip}:${http_port}"
 if [[ "$fresh_installation" -eq 1 ]]; then
     set_env_value ENSURE_ADMIN true
     set_env_value EMAIL_HOST ''
@@ -127,7 +156,7 @@ if [[ "$fresh_installation" -eq 1 ]]; then
     echo 'Compte initial : admin@yelen.edu / admin123'
     echo 'Changez ce mot de passe après la première connexion.'
 fi
-echo "Accès réseau local : http://${lan_ip}:8000/"
+echo "Accès réseau local : http://${lan_ip}:${http_port}/"
 
 if command -v xdg-open >/dev/null 2>&1; then
     xdg-open "$LOGIN_URL" >/dev/null 2>&1 || true

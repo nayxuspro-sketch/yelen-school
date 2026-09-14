@@ -215,7 +215,7 @@ Ce guide est organisé **par module**. Chaque section suit le même schéma :
 
 YELEN SCHOOL fonctionne dans ton navigateur web. L'adresse dépend de ton installation :
 
-- **Réseau local** : `http://192.168.X.X:8000` (adresse fournie par ton administrateur)
+- **Réseau local** : `http://192.168.X.X:8000` par défaut, ou le port défini par `YELEN_HTTP_PORT` (adresse fournie par ton administrateur)
 - **Internet** : `https://[nom-etablissement].yelenscnool.bf` *(si hébergé)*
 
 > YELEN SCHOOL est conçu pour fonctionner **hors ligne** sur un réseau local. Tu n'as pas besoin d'une connexion internet si le serveur est installé dans ton établissement.
@@ -4148,6 +4148,8 @@ La distribution destinée à un établissement client se lance avec `docker-comp
 
 L'installateur crée `.env`, génère les secrets locaux, applique les migrations et désactive `ENSURE_ADMIN` après le premier démarrage. Les données PostgreSQL, Redis, médias et journaux sont conservées dans des volumes Docker persistants. Le parcours détaillé Windows, la programmation de la tâche planifiée PostgreSQL et médias, le réseau local et la reprise sur une nouvelle machine sont décrits dans `docs/GUIDE_DEPLOIEMENT_WINDOWS.md`.
 
+`demarrage.bat` ne se limite pas à exécuter `docker compose -f docker-compose.client.yml up -d --build` : il prépare aussi la configuration, attend que la page de connexion soit disponible et ouvre le navigateur. Il est idempotent et peut être relancé sans supprimer les volumes. Le port par défaut est `8000`; en cas de conflit, ajouter `YELEN_HTTP_PORT=8001` dans `.env` puis relancer `demarrage.bat` : l'attente et l'adresse affichée utilisent alors le port configuré.
+
 **Installation Linux/macOS :**
 
 ```bash
@@ -5861,15 +5863,16 @@ Variables essentielles pour un déploiement local :
 
 **Windows :** Double-cliquer sur `demarrage.bat` (ou `lancer-yelen.bat`).
 
-`demarrage.bat` effectue les vérifications suivantes avant de lancer :
+`demarrage.bat` appelle l'installateur local et effectue les vérifications suivantes avant de lancer :
 1. **Docker Desktop** est installé et en cours d'exécution
-2. **Conteneurs déjà en cours ?** — si oui, ouvre directement le navigateur sans reconstruire
-3. Si les conteneurs ne sont pas encore lancés, exécute `docker compose up -d --build`
-4. **Attente du serveur web** — boucle de scrutation (jusqu'à 80 secondes) :
-   - Vérifie toutes les 2 secondes que `http://localhost:8000` répond
-   - Ouvre le navigateur dès que le serveur est prêt (évite l'erreur `NS_ERROR_NET_EMPTY_RESPONSE`)
+2. Le fichier `.env` est préparé et ses secrets locaux sont conservés
+3. Exécute `docker compose -f docker-compose.client.yml up -d --build` de manière idempotente
+4. **Attente du serveur web** — boucle de scrutation jusqu'à 120 secondes :
+   - vérifie toutes les 2 secondes que le port défini par `YELEN_HTTP_PORT` répond ;
+   - utilise le port `8000` par défaut ;
+   - ouvre le navigateur dès que le serveur est prêt.
 
-`lancer-yelen.bat` offre un lancement plus simple (sans vérifications préalables) avec la même boucle d'attente.
+`lancer-yelen.bat` appelle le même installateur. Si un autre service utilise le port 8000, ajouter `YELEN_HTTP_PORT=8001` dans `.env` avant de relancer l'un des deux fichiers `.bat`.
 
 En cas d'échec, le script affiche les logs de diagnostic (web et db).
 
@@ -5886,7 +5889,7 @@ docker compose -f docker-compose.dev.yml up -d --build web db redis minio mailho
 docker compose -f docker-compose.dev.yml logs -f web
 ```
 
-L'application est accessible sur : **http://localhost:8000**
+L'application est accessible sur **http://localhost:8000** par défaut, ou sur le port indiqué par `YELEN_HTTP_PORT` dans `.env`.
 
 > **Nginx en développement :** La configuration `nginx/default.dev.conf` est utilisée en mode dev
 > (HTTP uniquement, pas de redirect HTTPS, pas de certificat SSL). Pour la production,
