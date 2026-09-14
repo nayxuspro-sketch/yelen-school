@@ -118,7 +118,10 @@ ensure_env_value DB_USER 'yelen_user'
 ensure_env_value SMS_WEBHOOK_TOKEN "$sms_webhook_token"
 ensure_env_value DEBUG 'False'
 ensure_env_value DISABLE_HTTPS_REDIRECT 'true'
-ensure_env_value ALLOWED_HOSTS "localhost,127.0.0.1,$lan_ip"
+ensure_env_list_values ALLOWED_HOSTS \
+    'localhost' \
+    '127.0.0.1' \
+    "$lan_ip"
 ensure_env_list_values CSRF_TRUSTED_ORIGINS \
     'http://localhost' \
     'http://127.0.0.1' \

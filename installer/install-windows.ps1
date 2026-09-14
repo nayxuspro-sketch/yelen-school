@@ -205,7 +205,11 @@ Ensure-EnvValue 'DB_USER' 'yelen_user'
 Ensure-EnvValue 'SMS_WEBHOOK_TOKEN' $smsWebhookToken
 Ensure-EnvValue 'DEBUG' 'False'
 Ensure-EnvValue 'DISABLE_HTTPS_REDIRECT' 'true'
-Ensure-EnvValue 'ALLOWED_HOSTS' "localhost,127.0.0.1,$lanIp"
+Ensure-EnvListValues 'ALLOWED_HOSTS' @(
+    'localhost',
+    '127.0.0.1',
+    $lanIp
+)
 Ensure-EnvListValues 'CSRF_TRUSTED_ORIGINS' @(
     'http://localhost',
     'http://127.0.0.1',

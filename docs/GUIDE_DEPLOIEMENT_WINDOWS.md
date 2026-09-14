@@ -570,6 +570,43 @@ Ne pas exposer directement PostgreSQL (`5432`) ou Redis (`6379`) au réseau : ce
 - vérifier que le moteur Linux est sélectionné ;
 - relancer `demarrage.bat`.
 
+### Réponse HTTP 400 « Bad Request » avec l'adresse réseau
+
+Utiliser une URL sans espace, par exemple :
+
+```text
+http://192.168.11.106:8001/
+```
+
+Une réponse Django `400` avec un message `Invalid HTTP_HOST header` signifie généralement que l'adresse IP du serveur n'est pas présente dans `ALLOWED_HOSTS`. Sur le serveur Windows, vérifier `.env` :
+
+```dotenv
+YELEN_HTTP_PORT=8001
+ALLOWED_HOSTS=localhost,127.0.0.1,192.168.11.106
+CSRF_TRUSTED_ORIGINS=http://localhost,http://127.0.0.1,http://localhost:8001,http://127.0.0.1:8001,http://192.168.11.106:8001
+```
+
+Puis relancer l'installation idempotente ou recréer uniquement le service web, sans supprimer les volumes :
+
+```powershell
+.\demarrage.bat
+# ou, après modification manuelle de .env :
+docker compose -f docker-compose.client.yml up -d --force-recreate web
+```
+
+Le port réellement sélectionné est celui affiché par `demarrage.bat` et présent dans `YELEN_HTTP_PORT`. Si l'erreur disparaît mais que la connexion expire, vérifier ensuite la règle pare-feu :
+
+```powershell
+Get-NetFirewallRule -Name YELEN_SCHOOL_LocalWeb |
+  Get-NetFirewallPortFilter
+```
+
+Le pare-feu provoque normalement un délai d'attente, pas une réponse HTTP 400. Pour confirmer le diagnostic Django :
+
+```powershell
+docker compose -f docker-compose.client.yml logs --tail=100 web
+```
+
 ### Les services ne sont pas prêts
 
 ```powershell
