@@ -22,6 +22,18 @@ Après l'installation
 
 Changez le mot de passe dès la première connexion.
 
+Accès réseau local et pare-feu Windows
+--------------------------------------
+Lors de l'exécution de demarrage.bat, le script crée ou met à jour la règle
+Windows « YELEN SCHOOL - Accès réseau local » pour le port défini par
+YELEN_HTTP_PORT (8000 par défaut). La règle autorise uniquement le trafic TCP
+sur les profils réseau privé ou domaine et le sous-réseau local. La règle ne
+s'applique pas au profil Public. Accepter la demande UAC pour que
+les autres postes puissent accéder à l'application.
+
+L'application reste accessible sur le serveur si la demande UAC est refusée,
+mais l'accès depuis le réseau local peut être bloqué par le pare-feu.
+
 Les données PostgreSQL, Redis, les médias, les fichiers statiques et les logs
 sont conservés dans des volumes Docker nommés. Ne supprimez pas ces volumes
 sans disposer d'une sauvegarde.

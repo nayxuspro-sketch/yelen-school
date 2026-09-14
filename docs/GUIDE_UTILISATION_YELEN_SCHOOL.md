@@ -4148,7 +4148,7 @@ La distribution destinée à un établissement client se lance avec `docker-comp
 
 L'installateur crée `.env`, génère les secrets locaux, applique les migrations et désactive `ENSURE_ADMIN` après le premier démarrage. Les données PostgreSQL, Redis, médias et journaux sont conservées dans des volumes Docker persistants. Le parcours détaillé Windows, la programmation de la tâche planifiée PostgreSQL et médias, le réseau local et la reprise sur une nouvelle machine sont décrits dans `docs/GUIDE_DEPLOIEMENT_WINDOWS.md`.
 
-`demarrage.bat` ne se limite pas à exécuter `docker compose -f docker-compose.client.yml up -d --build` : il prépare aussi la configuration, attend que la page de connexion soit disponible et ouvre le navigateur. Il est idempotent et peut être relancé sans supprimer les volumes. Le port par défaut est `8000`; en cas de conflit, ajouter `YELEN_HTTP_PORT=8001` dans `.env` puis relancer `demarrage.bat` : l'attente et l'adresse affichée utilisent alors le port configuré.
+`demarrage.bat` ne se limite pas à exécuter `docker compose -f docker-compose.client.yml up -d --build` : il prépare aussi la configuration, attend que la page de connexion soit disponible et ouvre le navigateur. Il est idempotent et peut être relancé sans supprimer les volumes. Le port par défaut est `8000`; en cas de conflit, ajouter `YELEN_HTTP_PORT=8001` dans `.env` puis relancer `demarrage.bat` : l'attente, l'adresse affichée et la règle du pare-feu Windows utilisent alors le port configuré. Une confirmation UAC est demandée pour autoriser l'accès depuis le réseau privé local.
 
 **Démarrage automatique Windows :**
 

@@ -17,6 +17,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $ComposeFile = Join-Path $Root 'docker-compose.client.yml'
+$FirewallScript = Join-Path $PSScriptRoot 'configure-firewall.ps1'
 $EnvFile = Join-Path $Root '.env'
 
 function Stop-Installation {
@@ -178,6 +179,17 @@ if ($FreshInstallation) {
     [System.Text.UTF8Encoding]::new($false)
 )
 Write-Host '[OK] Configuration locale préparée' -ForegroundColor Green
+
+if (Test-Path $FirewallScript) {
+    Write-Host '[OK] Configuration du pare-feu Windows pour le réseau local...' -ForegroundColor Cyan
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $httpPortNumber
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '[AVERTISSEMENT] Le pare-feu n’a pas été configuré. L’application restera accessible localement, mais l’accès depuis les autres postes peut être bloqué.' -ForegroundColor Yellow
+        Write-Host 'Relancez demarrage.bat et acceptez la demande UAC pour autoriser le réseau local.' -ForegroundColor Yellow
+    }
+} else {
+    Write-Host '[AVERTISSEMENT] Script de configuration du pare-feu introuvable : accès réseau local non configuré.' -ForegroundColor Yellow
+}
 
 Set-Location $Root
 Write-Host '[1/3] Construction et démarrage des services...' -ForegroundColor Cyan

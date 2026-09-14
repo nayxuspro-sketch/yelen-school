@@ -84,6 +84,7 @@ Le script appelle `installer\install-windows.bat` et :
 - crée `.env` depuis `.env.example` si nécessaire ;
 - génère une clé Django et un mot de passe PostgreSQL local ;
 - configure `DB_HOST=db`, Redis et les hôtes du réseau local ;
+- crée ou met à jour la règle entrante Windows `YELEN SCHOOL - Accès réseau local` pour le port TCP `YELEN_HTTP_PORT`, uniquement sur les profils privé ou domaine et le sous-réseau local ;
 - démarre `docker-compose.client.yml` avec `--build` ;
 - applique les migrations et collecte les fichiers statiques via `entrypoint.sh` ;
 - crée le compte administrateur initial lors d'une nouvelle installation ;
@@ -441,9 +442,31 @@ Get-NetIPAddress -AddressFamily IPv4 |
 
 ### 9.2 Pare-feu Windows
 
-Si le serveur répond en local mais pas depuis un autre poste, autoriser le port TCP `8000` dans le pare-feu Windows, uniquement sur le profil réseau privé de l'établissement. Ne pas exposer directement PostgreSQL (`5432`) ou Redis (`6379`) au réseau : ces services restent internes à Docker.
+Lors de chaque exécution de `demarrage.bat`, le script crée ou met à jour automatiquement la règle :
 
-Le navigateur des utilisateurs n'a pas besoin d'Internet pour accéder à l'application ; il doit seulement atteindre le serveur sur le réseau local.
+```text
+YELEN SCHOOL - Accès réseau local
+```
+
+La règle autorise uniquement le port TCP défini par `YELEN_HTTP_PORT` (8000 par défaut), sur les profils réseau **Privé** ou **Domaine** et depuis le sous-réseau local. Elle ne s'applique pas au profil Public. Si Windows affiche une demande UAC, l'accepter pour permettre l'accès depuis les autres postes. Si elle est refusée, l'application reste accessible sur le serveur mais peut rester inaccessible depuis le réseau local.
+
+En cas de changement de port, relancer `demarrage.bat` : l'ancienne règle YELEN SCHOOL est remplacée par la règle correspondant au nouveau port.
+
+Pour vérifier la règle depuis PowerShell administrateur :
+
+```powershell
+Get-NetFirewallRule -Name YELEN_SCHOOL_LocalWeb |
+  Get-NetFirewallPortFilter
+```
+
+Pour la supprimer manuellement si nécessaire :
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\installer\configure-firewall.ps1 -Port 8000 -Remove
+```
+
+Ne pas exposer directement PostgreSQL (`5432`) ou Redis (`6379`) au réseau : ces services restent internes à Docker. Le navigateur des utilisateurs n'a pas besoin d'Internet pour accéder à l'application ; il doit seulement atteindre le serveur sur le réseau local.
 
 ---
 
@@ -480,7 +503,7 @@ Puis relancer :
 docker compose -f docker-compose.client.yml up -d --build
 ```
 
-L'adresse devient `http://localhost:8001/`. Mettre à jour l'adresse communiquée aux postes clients et les règles de pare-feu.
+L'adresse devient `http://localhost:8001/`. Relancer `demarrage.bat` afin que la règle du pare-feu soit automatiquement remplacée, puis mettre à jour l'adresse communiquée aux postes clients.
 
 ### L'application affiche une erreur de connexion PostgreSQL
 
