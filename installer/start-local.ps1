@@ -13,6 +13,8 @@ $ErrorActionPreference = 'Stop'
 $Root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $ComposeFile = Join-Path $Root 'docker-compose.client.yml'
 $EnvFile = Join-Path $Root '.env'
+$FirewallScript = Join-Path $PSScriptRoot 'configure-firewall.ps1'
+$PortSelectorScript = Join-Path $PSScriptRoot 'resolve-http-port.ps1'
 $LogDirectory = Join-Path $Root 'logs'
 $LogFile = Join-Path $LogDirectory 'startup.log'
 
@@ -29,6 +31,37 @@ function Get-DotEnvValue {
     $line = Get-Content $EnvFile | Where-Object { $_ -match "^$([regex]::Escape($Name))=" } | Select-Object -First 1
     if ($null -eq $line) { return '' }
     return ($line -replace "^$([regex]::Escape($Name))=", '').Trim()
+}
+
+function Set-DotEnvValue {
+    param(
+        [string]$Name,
+        [string]$Value
+    )
+
+    $content = Get-Content $EnvFile -Raw
+    if ($null -eq $content) {
+        $content = ''
+    }
+
+    $escapedName = [regex]::Escape($Name)
+    $line = "$Name=$Value"
+    if ([regex]::IsMatch($content, "(?m)^$escapedName=.*$")) {
+        $content = [regex]::Replace(
+            $content,
+            "(?m)^$escapedName=.*$",
+            [System.Text.RegularExpressions.MatchEvaluator]{ param($match) $line }
+        )
+    } else {
+        $separator = if ($content.EndsWith("`n")) { '' } else { "`r`n" }
+        $content = "$content$separator$line`r`n"
+    }
+
+    [System.IO.File]::WriteAllText(
+        $EnvFile,
+        $content,
+        [System.Text.UTF8Encoding]::new($false)
+    )
 }
 
 New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
@@ -67,6 +100,52 @@ try {
     }
     if (-not $dockerReady) {
         throw 'Docker Desktop ne répond pas après 180 secondes.'
+    }
+
+    if (-not (Test-Path $PortSelectorScript)) {
+        throw "Script de sélection de port introuvable : $PortSelectorScript"
+    }
+    . $PortSelectorScript
+
+    $requestedPortText = Get-DotEnvValue 'YELEN_HTTP_PORT'
+    if ([string]::IsNullOrWhiteSpace($requestedPortText)) {
+        $requestedPortText = '8000'
+    }
+    $requestedPort = 0
+    if (-not [int]::TryParse($requestedPortText, [ref]$requestedPort) -or $requestedPort -lt 1 -or $requestedPort -gt 65535) {
+        throw 'YELEN_HTTP_PORT doit être un port compris entre 1 et 65535.'
+    }
+
+    try {
+        $selectedPort = Select-YelenHttpPort -Root $Root -ComposeFile $ComposeFile -PreferredPort $requestedPort
+    } catch {
+        throw $_.Exception.Message
+    }
+
+    $configuredPortLine = Get-Content $EnvFile |
+        Where-Object { $_ -match '^YELEN_HTTP_PORT=' } |
+        Select-Object -First 1
+    $portValueMissing = $null -eq $configuredPortLine
+    $portChanged = $selectedPort -ne $requestedPort
+    if ($portChanged -or $portValueMissing) {
+        Set-DotEnvValue 'YELEN_HTTP_PORT' ([string]$selectedPort)
+    }
+
+    if ($portChanged) {
+        Write-StartupLog "Le port TCP $requestedPort est occupé. Port sélectionné automatiquement : $selectedPort."
+
+        # Ne pas demander une élévation UAC à chaque ouverture de session :
+        # le pare-feu n'est réappliqué que si le port change réellement.
+        if (Test-Path $FirewallScript) {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $selectedPort
+            if ($LASTEXITCODE -ne 0) {
+                Write-StartupLog 'AVERTISSEMENT : le pare-feu n’a pas été actualisé après le changement de port.'
+            }
+        } else {
+            Write-StartupLog 'AVERTISSEMENT : script de configuration du pare-feu introuvable.'
+        }
+    } else {
+        Write-StartupLog "Port HTTP conservé : $selectedPort."
     }
 
     Set-Location $Root

@@ -4152,7 +4152,7 @@ L'installateur crée `.env`, génère les secrets locaux, applique les migration
 
 **Démarrage automatique Windows :**
 
-Après la première installation, faire un clic droit sur `programmer-demarrage.bat` puis choisir **Exécuter en tant qu'administrateur**. La tâche `YELEN SCHOOL - Démarrage automatique` attend Docker Desktop à chaque ouverture de session puis exécute `docker compose -f docker-compose.client.yml up -d`, sans reconstruire ni supprimer les volumes. Son journal est écrit dans `logs\startup.log`. Utiliser ensuite `demarrage.bat` uniquement pour une mise à jour ou une reconstruction de l'image.
+Après la première installation, faire un clic droit sur `programmer-demarrage.bat` puis choisir **Exécuter en tant qu'administrateur**. La tâche `YELEN SCHOOL - Démarrage automatique` attend Docker Desktop à chaque ouverture de session, vérifie le port conservé dans `.env` et applique le même fallback `8000` à `8005` si un autre programme l'occupe. Le nouveau port est conservé dans `.env` et la règle du pare-feu est actualisée uniquement lorsqu'il change, afin d'éviter une demande UAC à chaque ouverture de session. La tâche ne reconstruit ni ne supprime les volumes. Son journal est écrit dans `logs\startup.log`. Utiliser ensuite `demarrage.bat` uniquement pour une mise à jour ou une reconstruction de l'image.
 
 **Installation Linux/macOS :**
 

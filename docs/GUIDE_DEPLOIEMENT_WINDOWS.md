@@ -177,7 +177,7 @@ Pour que YELEN SCHOOL démarre automatiquement après l'ouverture de session Win
 3. Choisir **Exécuter en tant qu'administrateur**.
 4. Vérifier la création de la tâche `YELEN SCHOOL - Démarrage automatique`.
 
-À chaque ouverture de session, la tâche attend que Docker Desktop réponde puis exécute `docker compose -f docker-compose.client.yml up -d`. Elle ne reconstruit pas l'image et ne supprime aucun volume. Le journal est écrit dans `logs\startup.log`.
+À chaque ouverture de session, la tâche attend que Docker Desktop réponde, vérifie que le port HTTP conservé dans `.env` est toujours utilisable, puis exécute `docker compose -f docker-compose.client.yml up -d`. Si le port est occupé par un autre programme, elle essaie automatiquement la plage `8000` à `8005`, conserve le nouveau port dans `.env` et actualise la règle du pare-feu. Elle ne reconstruit pas l'image et ne supprime aucun volume. Le journal est écrit dans `logs\startup.log`. Si l'actualisation du pare-feu échoue, relancer `demarrage.bat` et accepter la demande UAC.
 
 Cette tâche s'exécute dans la session de l'utilisateur qui l'a enregistrée. Configurer Docker Desktop pour démarrer avec Windows. Tester le fonctionnement en redémarrant Windows, puis vérifier :
 

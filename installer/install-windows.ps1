@@ -18,6 +18,7 @@ $ErrorActionPreference = 'Stop'
 $Root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $ComposeFile = Join-Path $Root 'docker-compose.client.yml'
 $FirewallScript = Join-Path $PSScriptRoot 'configure-firewall.ps1'
+$PortSelectorScript = Join-Path $PSScriptRoot 'resolve-http-port.ps1'
 $EnvFile = Join-Path $Root '.env'
 
 function Stop-Installation {
@@ -91,73 +92,10 @@ function Ensure-EnvListValues {
     Set-EnvValue $Name ($values -join ',')
 }
 
-function Test-TcpPortAvailable {
-    param([int]$Port)
-
-    $listener = $null
-    try {
-        $listener = New-Object -TypeName System.Net.Sockets.TcpListener -ArgumentList @(
-            [System.Net.IPAddress]::Loopback,
-            $Port
-        )
-        $listener.Start()
-        return $true
-    } catch {
-        return $false
-    } finally {
-        if ($null -ne $listener) {
-            try { $listener.Stop() } catch { }
-        }
-    }
+if (-not (Test-Path $PortSelectorScript)) {
+    Stop-Installation "Script de sélection de port introuvable : $PortSelectorScript"
 }
-
-function Test-YelenPortInUse {
-    param([int]$Port)
-
-    $published = @()
-    $composeExitCode = 1
-    Push-Location $Root
-    try {
-        # Le port 8000 est le port interne du conteneur web. Docker Compose
-        # renvoie ici le port publié réellement utilisé par YELEN SCHOOL.
-        $published = @(& docker compose -f $ComposeFile port web 8000 2>$null)
-        $composeExitCode = $LASTEXITCODE
-    } catch {
-        return $false
-    } finally {
-        Pop-Location
-    }
-
-    if ($composeExitCode -ne 0) {
-        return $false
-    }
-
-    return [bool]($published | Where-Object {
-        $_.ToString().Trim() -match "(^|:)$Port$"
-    })
-}
-
-function Select-HttpPort {
-    param([int]$PreferredPort)
-
-    # L'ordre de repli est volontairement limité aux ports documentés pour
-    # éviter de choisir un port inattendu chez le client.
-    $candidatePorts = @($PreferredPort) + @(8000..8005)
-    $candidatePorts = @($candidatePorts | Select-Object -Unique)
-
-    foreach ($candidate in $candidatePorts) {
-        # Si YELEN SCHOOL tourne déjà sur ce port, le conserver lors d'un
-        # nouveau lancement de demarrage.bat.
-        if (Test-YelenPortInUse $candidate) {
-            return [int]$candidate
-        }
-        if (Test-TcpPortAvailable $candidate) {
-            return [int]$candidate
-        }
-    }
-
-    throw 'Aucun port disponible dans la plage YELEN SCHOOL (8000 à 8005). Libérez un port ou définissez un autre YELEN_HTTP_PORT dans .env.'
-}
+. $PortSelectorScript
 
 Write-Host '>>> YELEN SCHOOL - Installation locale' -ForegroundColor Cyan
 Write-Host ''
@@ -200,17 +138,18 @@ if (-not [int]::TryParse($httpPort, [ref]$requestedHttpPortNumber) -or $requeste
 }
 
 try {
-    $httpPortNumber = Select-HttpPort $requestedHttpPortNumber
+    $httpPortNumber = Select-YelenHttpPort -Root $Root -ComposeFile $ComposeFile -PreferredPort $requestedHttpPortNumber
 } catch {
     Stop-Installation $_.Exception.Message
 }
 $httpPort = [string]$httpPortNumber
 if ($httpPortNumber -ne $requestedHttpPortNumber) {
     Write-Host "[AVERTISSEMENT] Le port TCP $requestedHttpPortNumber est déjà utilisé. Port sélectionné automatiquement : $httpPortNumber." -ForegroundColor Yellow
-    Set-EnvValue 'YELEN_HTTP_PORT' $httpPort
 } else {
     Write-Host "[OK] Port HTTP sélectionné : $httpPort" -ForegroundColor Green
 }
+# Toujours persister le port retenu, y compris le port 8000 par défaut.
+Set-EnvValue 'YELEN_HTTP_PORT' $httpPort
 $LoginUrl = "http://localhost:$httpPort/accounts/login/"
 
 $secretKey = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'))

@@ -77,8 +77,12 @@ Pour démarrer YELEN SCHOOL automatiquement à chaque ouverture de session :
   puis « Exécuter en tant qu'administrateur ».
 
 La tâche « YELEN SCHOOL - Démarrage automatique » attend que Docker Desktop
-réponde puis exécute docker compose up -d. Elle ne reconstruit pas l'image et
-ne supprime aucun volume. Son journal est dans logs\startup.log.
+réponde, vérifie le port conservé dans .env, puis exécute docker compose up -d.
+Si le port est occupé par un autre programme, elle essaie automatiquement les
+ports 8000 à 8005, conserve le nouveau port dans .env et actualise le pare-feu.
+Elle ne reconstruit pas l'image et ne supprime aucun volume. Son journal est
+dans logs\startup.log. Si le pare-feu ne peut pas être actualisé, relancer
+demarrage.bat et accepter la demande UAC.
 
 Linux / macOS, tous les jours à 22 h :
   ./installer/register-backup-cron.sh 22:00
