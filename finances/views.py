@@ -13,7 +13,8 @@ import io
 import json
 try:
     from weasyprint import HTML as WeasyHTML
-except ImportError:
+except (ImportError, OSError):
+    # Les vues PDF vérifient cette valeur avant de générer un document.
     WeasyHTML = None
 from .models import (
     FraisScolarite, Paiement, Echeancier, ModePaiement, Remboursement,

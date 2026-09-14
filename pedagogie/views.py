@@ -19,7 +19,7 @@ from core.utils import get_etablissement_context
 
 try:
     from weasyprint import HTML
-except ImportError:
+except (ImportError, OSError):
     HTML = None
 
 @login_required
