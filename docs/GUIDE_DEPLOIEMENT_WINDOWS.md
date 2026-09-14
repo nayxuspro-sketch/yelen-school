@@ -668,6 +668,24 @@ docker compose -f docker-compose.client.yml logs --tail=200 web
 
 PostgreSQL doit être `healthy` avant que le service web soit disponible. La première construction peut être longue.
 
+### Docker affiche « Bind ... port is already allocated »
+
+La construction de l'image peut réussir alors que le démarrage web échoue parce qu'un ancien conteneur ou un autre programme occupe le port choisi. Vérifier les ports et conteneurs actifs :
+
+```powershell
+docker ps --format "table {{.Names}}`t{{.Ports}}`t{{.Status}}"
+docker ps -a --filter "name=yelen-school" --format "table {{.Names}}`t{{.Status}}"
+Get-NetTCPConnection -LocalPort 8001 -State Listen -ErrorAction SilentlyContinue
+```
+
+Si les conteneurs YELEN ou des services orphelins d'une ancienne configuration occupent le port, les retirer sans supprimer les volumes :
+
+```powershell
+docker compose -f docker-compose.client.yml down --remove-orphans
+```
+
+Ne jamais ajouter `-v` à cette commande. Relancer ensuite `demarrage.bat`. Si un autre logiciel utilise toujours le port, modifier `YELEN_HTTP_PORT` dans `.env` vers un port libre, par exemple `8002`, puis relancer l'installateur. Utiliser le port affiché par l'installateur pour l'adresse IP ou le nom du serveur.
+
 ### Les ports HTTP sont déjà utilisés
 
 Lors de l'exécution de `demarrage.bat`, l'installateur teste automatiquement la plage suivante :
