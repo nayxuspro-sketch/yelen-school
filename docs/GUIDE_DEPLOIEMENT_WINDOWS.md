@@ -7,12 +7,15 @@
 > **Objectif :** installer YELEN SCHOOL sur une machine Windows avec PostgreSQL et Redis gérés localement par Docker Desktop. Après l'installation initiale, l'application fonctionne sur le réseau local sans connexion Internet quotidienne.
 >
 > **État de référence :** 14 septembre 2026. Les fonctions décrites comme automatiques sont celles présentes dans les scripts du dépôt ; les validations runtime Windows et la recette réelle de restauration restent à exécuter sur une machine équipée de Docker Desktop.
+>
+> **Statut commercial :** préparation technique estimée à **≈ 60 %** ; **0/7 gate** de commercialisation entièrement validé. Cette procédure peut être utilisée pour un pilote accompagné, mais ne constitue pas une certification de mise en production sans réserve. Voir `docs/VALIDATION_COMMERCIALISATION.md` pour les commandes, environnements et résultats exacts.
 
 ---
 
 ## Sommaire
 
 1. [Architecture et prérequis](#1-architecture-et-prérequis)
+   - [État de validation avant installation](#14-état-de-validation-à-connaître-avant-linstallation)
 2. [Installation initiale](#2-installation-initiale)
 3. [Configuration et premier accès](#3-configuration-et-premier-accès)
 4. [Utilisation quotidienne](#4-utilisation-quotidienne)
@@ -58,6 +61,20 @@ La première installation télécharge l'image PostgreSQL, l'image Redis et les 
 
 Choisir un dossier simple, par exemple `C:\YELEN-SCHOOL`. Le chemin peut contenir des espaces ; les scripts utilisent des chemins absolus. Ne pas placer les sauvegardes uniquement sur le même disque que l'ordinateur serveur.
 
+### 1.4 État de validation à connaître avant l'installation
+
+Les pourcentages ci-dessous mesurent la préparation et les preuves disponibles ; ils ne sont pas une note automatique de la qualité fonctionnelle du logiciel.
+
+| Indicateur | État au 14/09/2026 |
+|---|---:|
+| Gates de commercialisation entièrement validés | **0 % (0/7)** |
+| Contrôles statiques exécutés | **100 % réussis** |
+| Implémentation du changement obligatoire de mot de passe initial | **≈ 80 %** — recette réelle encore nécessaire |
+| Préparation technique globale | **≈ 60 %** — estimation provisoire |
+| Commercialisation sans réserve | **Non validée** |
+
+Les gates non exécutables dans l'environnement disponible sont `BLOCKED`, pas `PASS`. Avant une vente générale, réaliser l'installation réelle, le test de port et de pare-feu, la sauvegarde/restauration et la recette post-restauration. Ne pas utiliser SQLite pour contourner la validation PostgreSQL.
+
 ---
 
 ## 2. Installation initiale
@@ -84,7 +101,7 @@ Le script appelle `installer\install-windows.bat` et :
 
 - vérifie que Docker répond ;
 - crée `.env` depuis `.env.example` si nécessaire ;
-- génère une clé Django et un mot de passe PostgreSQL local ;
+- génère une clé Django, un mot de passe PostgreSQL local et un secret temporaire pour le compte administrateur initial ;
 - configure `DB_HOST=db`, Redis et les hôtes du réseau local ;
 - crée ou met à jour, uniquement si nécessaire, la règle entrante Windows `YELEN SCHOOL - Accès réseau local` pour le port TCP `YELEN_HTTP_PORT`, uniquement sur les profils privé ou domaine et le sous-réseau local ;
 - démarre `docker-compose.client.yml` avec `--build` ;
@@ -100,6 +117,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 ```
 
 Ne lancez pas `docker compose down -v` pour résoudre un simple problème de démarrage : cela détruirait les volumes et les données.
+
+À la fin d'une nouvelle installation, la console affiche le compte `admin@yelen.edu` et son mot de passe temporaire aléatoire. Notez-le dans un support protégé, ne le copiez pas dans un ticket ou un journal, puis changez-le immédiatement. Après le démarrage réussi, `INITIAL_ADMIN_PASSWORD` est vidé et `ENSURE_ADMIN` passe à `false` dans `.env`.
 
 ### 2.3 Si l'installation échoue
 
@@ -136,9 +155,12 @@ DB_PASSWORD=mot_de_passe_genere_localement
 DB_HOST=db
 DB_PORT=5432
 REDIS_URL=redis://redis:6379/0
-# Uniquement pendant le premier démarrage ; l'installateur le retire ensuite.
-INITIAL_ADMIN_PASSWORD=secret_temporaire_genere
+# Générée automatiquement pour le premier démarrage ; ne jamais la partager dans un ticket.
+# Après une installation réussie, la valeur doit rester vide.
+INITIAL_ADMIN_PASSWORD=
 ```
+
+Pendant le premier démarrage, l'installateur fournit temporairement cette variable au conteneur puis la retire de `.env`. Après le premier démarrage, vérifier que `INITIAL_ADMIN_PASSWORD` est vide et que `ENSURE_ADMIN=false`. Ne pas conserver le secret temporaire dans une sauvegarde non chiffrée.
 
 Ne pas remplacer `DB_PASSWORD` sur une installation existante sans procédure de migration : PostgreSQL a été initialisé avec ce mot de passe. Les scripts d'installation ne réécrivent pas une valeur existante valide.
 
@@ -146,9 +168,9 @@ Les sauvegardes `.dump` et `_media.tar.gz` ne contiennent pas `.env`. Sauvegarde
 
 ### 3.3 Adresse locale
 
-Sur le serveur : `http://localhost:8000/accounts/login/`.
+Sur le serveur : ouvrir l'adresse affichée par l'installateur, généralement `http://localhost:8000/accounts/login/`. Si le port 8000 est occupé, le port de remplacement sélectionné est affiché et enregistré dans `.env`.
 
-Depuis un autre poste du réseau, utiliser l'adresse IP du serveur, par exemple `http://192.168.1.50:8000/`. Le script d'installation ajoute l'IP détectée aux hôtes autorisés. Si l'adresse IP change, relancer l'installation ou mettre à jour `.env`, puis reconstruire le service web.
+Depuis un autre poste du réseau, utiliser l'adresse IP et le port affichés par l'installateur, par exemple `http://192.168.1.50:8003/`. Le script d'installation ajoute l'IP détectée aux hôtes autorisés. Si l'adresse IP change, relancer l'installation ou mettre à jour `.env`, puis reconstruire le service web.
 
 ---
 
@@ -495,12 +517,13 @@ Une sauvegarde est indispensable avant toute migration de schéma.
 
 ### 9.1 Adresse à communiquer
 
-Depuis un poste client, ouvrir :
+Depuis un poste client, ouvrir l'adresse affichée par l'installateur :
 
 ```text
-http://ADRESSE_IP_DU_SERVEUR:8000/
+http://ADRESSE_IP_DU_SERVEUR:PORT_YELEN
 ```
 
+Le port est `8000` par défaut, mais peut être remplacé automatiquement par un port libre entre `8000` et `8005`.
 Pour connaître l'adresse IPv4 du serveur :
 
 ```powershell
@@ -620,5 +643,5 @@ Si le fichier `.env` original est restauré, les secrets Django et le mot de pas
 - Copier les sauvegardes hors de la machine.
 - Ne jamais supprimer les volumes Docker pour résoudre un problème courant.
 - Tester une restauration périodiquement.
-- Changer le mot de passe administrateur initial dès la première connexion.
-- Protéger `.env` comme un secret.
+- Remplacer obligatoirement le mot de passe administrateur temporaire à la première connexion.
+- Protéger `.env` comme un secret et vérifier que `INITIAL_ADMIN_PASSWORD` est vide après l'installation.
