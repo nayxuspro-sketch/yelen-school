@@ -430,6 +430,9 @@
         <a href="{% url 'parametres:annee_list' %}" class="sb-item-submodern" data-url="/parametres/annees/"><span class="sub-item-dot"></span>Années scolaires</a>
         <a href="{% url 'parametres:calendrier' %}" class="sb-item-submodern" data-url="/parametres/calendrier/"><span class="sub-item-dot"></span>Calendrier scolaire</a>
         <a href="{% url 'parametres:modeles_messages' %}" class="sb-item-submodern" data-url="/parametres/modeles-messages/"><span class="sub-item-dot"></span>Modèles de messages</a>
+        {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' %}
+        <a href="{% url 'parametres:sms_auto_config' %}" class="sb-item-submodern" data-url="/parametres/sms-auto/"><span class="sub-item-dot"></span>SMS automatiques</a>
+        {% endif %}
         <a href="{% url 'parametres:cycle_list' %}" class="sb-item-submodern" data-url="/parametres/cycles/"><span class="sub-item-dot"></span>Cycles</a>
         <a href="{% url 'parametres:classe_list' %}" class="sb-item-submodern" data-url="/parametres/classes/"><span class="sub-item-dot"></span>Classes</a>
         <a href="{% url 'parametres:poste_list' %}" class="sb-item-submodern" data-url="/parametres/postes/"><span class="sub-item-dot"></span>Postes</a>

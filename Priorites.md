@@ -27,7 +27,7 @@
 - ~~`calculer_risques` (management command) et `utils_ia.py` sont complets~~
 - ~~Le déclenchement est uniquement manuel via `python manage.py calculer_risques`~~
 - ~~**À faire :** configurer un cron (ex. `0 2 * * *`) + ajouter une alerte visible dans le tableau de bord quand des élèves sont en zone rouge~~
-- ✅ **Terminé** — widget dashboard avec compteurs Critique/Élevé/Modéré, liste des élèves à risque et bouton "Analyser / Recalculer" (vue `core:risque_recalculer`)
+- ✅ **Terminé** — widget dashboard avec compteurs Critique/Élevé/Modéré, liste des élèves à risque, bouton "Analyser / Recalculer" et tâche Windows nocturne via `programmer-risques.bat` (02:00 par défaut).
 
 ---
 
@@ -72,7 +72,7 @@
   - ~~Cron pour rappels d'échéanciers (ex. 3 jours avant la date limite)~~
   - ~~Cron pour diffusion des résultats (moyennes disponibles)~~
   - ~~Interface de configuration des déclencheurs automatiques dans `parametres`~~
-- ✅ **Terminé** — modèle `DeclencheurSMS`, commande `sms_auto` (3 types : ABSENCE_J1, ECHEANCIER, RESULTATS), interface HTMX dans Paramètres avec toggle actif/inactif, édition jours_avant et exécution manuelle
+- ✅ **Terminé** — modèle `DeclencheurSMS`, commande `sms_auto` (3 types : ABSENCE_J1, ECHEANCIER, RESULTATS), interface HTMX réactivée dans Paramètres, exécution manuelle et tâche Windows quotidienne via `programmer-sms.bat` (07:00 par défaut), avec garde anti-double exécution quotidienne.
 
 ---
 
@@ -97,7 +97,7 @@
 | 2 | Portail parent — accès via menu | Faible | ✅ Terminé |
 | 4 | CoSignataires — UI | Faible | ✅ Terminé |
 | 5 | LocalisationPoste — UI | Faible | ✅ Terminé |
-| 7 | IA décrochage — déclenchement auto | Faible | 📌 Planifié |
+| 7 | IA décrochage — déclenchement auto | Faible | ✅ Terminé |
 | 3 | Tableau global échéanciers + alertes | Moyen | ✅ Terminé |
 | 6 | Export Excel | Moyen | ✅ Terminé |
 | 8 | Bulletins en masse (batch) | Moyen | ✅ Terminé |

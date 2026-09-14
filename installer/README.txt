@@ -70,6 +70,35 @@ Windows, tous les jours à 22 h :
   La tâche s'exécute dans la session Windows qui l'enregistre ; Docker Desktop
   doit être configuré pour démarrer avec Windows.
 
+Analyse automatique du risque de décrochage — Windows
+-----------------------------------------------------
+Pour recalculer chaque nuit les scores de risque des élèves :
+  Depuis la racine, clic droit sur programmer-risques.bat
+  puis « Exécuter en tant qu'administrateur ».
+
+L'heure par défaut est 02:00. Pour choisir une autre heure :
+  programmer-risques.bat 03:30
+
+La tâche « YELEN SCHOOL - Analyse du risque de décrochage » exécute la commande
+Django dans le conteneur web sans reconstruire l'image. Son journal est dans
+logs\risques.log. Tester la tâche depuis le Planificateur de tâches Windows.
+Docker Desktop doit être démarré et le serveur doit avoir une année scolaire
+courante configurée.
+
+SMS automatiques — Windows
+---------------------------
+Pour exécuter chaque matin les déclencheurs SMS actifs :
+  Depuis la racine, clic droit sur programmer-sms.bat
+  puis « Exécuter en tant qu'administrateur ».
+
+L'heure par défaut est 07:00. Pour choisir une autre heure :
+  programmer-sms.bat 08:00
+
+La tâche « YELEN SCHOOL - SMS automatiques » exécute `sms_auto` dans le
+conteneur web et écrit son journal dans logs\sms-auto.log. Les SMS doivent être
+activés et la passerelle locale configurée. Chaque déclencheur est protégé
+contre une seconde exécution le même jour.
+
 Démarrage automatique de l'application — Windows
 ------------------------------------------------
 Pour démarrer YELEN SCHOOL automatiquement à chaque ouverture de session :

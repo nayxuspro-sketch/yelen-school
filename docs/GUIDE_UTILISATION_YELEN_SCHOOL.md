@@ -840,6 +840,8 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 
 > **Attention :** L'analyse globale peut prendre plusieurs secondes selon l'effectif total de l'établissement. Un indicateur de chargement s'affiche pendant le traitement.
 
+**Analyse automatique :** Sous Windows, programmer `programmer-risques.bat` en tant qu'administrateur pour exécuter chaque nuit l'analyse complète. L'heure par défaut est 02:00 ; le journal est écrit dans `logs\\risques.log`. La tâche nécessite une année scolaire courante et Docker Desktop démarré.
+
 ---
 
 ## 2. PARAMÈTRES DE L'ÉTABLISSEMENT
@@ -3584,7 +3586,7 @@ Cette section recense honnêtement les fonctionnalités **non encore disponibles
 | **Bilan des périodes** | ✅ Disponible | Version actuelle |
 | **Portail Parent** | 📌 Planifié | Version 4.2 |
 | **Exports Excel / CSV** | 📌 Planifié | Version 4.2 |
-| **IA prédictive (décrochage)** | 📌 Planifié | Version 4.x |
+| **IA prédictive (décrochage)** | ✅ Fonctionnel | Version actuelle |
 | **Multi-établissements (Réseau)** | 📌 Planifié | Version 4.x |
 | **Gestion des licences** (interface) | ✅ Fonctionnel | Version actuelle |
 
@@ -3733,9 +3735,9 @@ Réservé au super-administrateur, cet espace offre deux fonctions :
 
 ### 15.9 Prédiction des Risques de Décrochage Scolaire (IA)
 
-> **Disponible dans :** Version Premium — Version 4.x
+> **Disponible dans :** Version actuelle
 
-Un module d'intelligence artificielle analysera automatiquement les données de chaque élève (notes en baisse, absences fréquentes, sanctions répétées) pour établir un **score de risque de décrochage**. Le Directeur ou le Proviseur recevra une alerte et pourra engager une action préventive (entretien, conseil aux parents, suivi renforcé).
+Le module analyse les données de chaque élève (notes, absences et facteurs pédagogiques) pour établir un **score de risque de décrochage**. Le Directeur ou le Proviseur peut consulter les niveaux de risque, filtrer les élèves et exporter le rapport PDF. Une tâche Windows peut recalculer automatiquement les scores chaque nuit avec `programmer-risques.bat` ; le tableau de bord affiche ensuite les élèves nécessitant une intervention préventive.
 
 ---
 

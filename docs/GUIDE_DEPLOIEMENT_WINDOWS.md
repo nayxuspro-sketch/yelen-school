@@ -278,7 +278,63 @@ Dans le Planificateur de tâches, cliquer sur **Exécuter** pour effectuer un pr
 
 La tâche nécessite que Docker Desktop et son moteur soient disponibles à l'heure prévue. Pour une exécution fiable, configurer Docker Desktop pour démarrer avec Windows et laisser la session qui l'exécute autorisée à utiliser Docker. Les erreurs éventuelles sont visibles dans l'historique du Planificateur et dans les journaux Docker.
 
-### 6.2 Journal de programmation
+### 6.2 Analyse automatique du risque de décrochage
+
+L'analyse de décrochage peut être exécutée automatiquement chaque nuit dans le conteneur web. Depuis la racine du projet, faire un clic droit sur `programmer-risques.bat`, puis choisir **Exécuter en tant qu'administrateur**.
+
+La tâche est programmée à 02:00 par défaut :
+
+```powershell
+.\programmer-risques.bat
+```
+
+Pour choisir une autre heure :
+
+```powershell
+.\programmer-risques.bat 03:30
+```
+
+La commande technique équivalente est :
+
+```powershell
+.\installer\register-risk-task.ps1 -Time 02:00
+```
+
+La tâche `YELEN SCHOOL - Analyse du risque de décrochage` démarre les services sans reconstruire l'image, puis exécute :
+
+```text
+docker compose -f docker-compose.client.yml exec -T web python manage.py calculer_risques --strict
+```
+
+Le journal est écrit dans `logs\risques.log`. Vérifier une première fois la tâche avec **Exécuter** dans le Planificateur de tâches Windows et contrôler le tableau de bord le lendemain. Une année scolaire doit être marquée comme courante pour que l'analyse puisse s'exécuter.
+
+### 6.3 SMS automatiques
+
+Les déclencheurs SMS actifs peuvent être exécutés automatiquement chaque matin. Depuis la racine du projet, faire un clic droit sur `programmer-sms.bat`, puis choisir **Exécuter en tant qu'administrateur**.
+
+L'heure par défaut est 07:00 :
+
+```powershell
+.\programmer-sms.bat
+```
+
+Pour choisir une autre heure :
+
+```powershell
+.\programmer-sms.bat 08:00
+```
+
+La commande technique équivalente est :
+
+```powershell
+.\installer\register-sms-task.ps1 -Time 07:00
+```
+
+La tâche `YELEN SCHOOL - SMS automatiques` exécute `python manage.py sms_auto` dans le conteneur web et écrit dans `logs\\sms-auto.log`. Les SMS doivent être activés dans **Configuration SMS**, la passerelle locale doit répondre et les déclencheurs doivent être activés dans **Paramètres → SMS automatiques**. Chaque déclencheur est protégé contre une seconde exécution le même jour.
+
+Avant d'activer la tâche en production, utiliser le bouton **Tester** sur un seul déclencheur et vérifier le journal de la passerelle SMS.
+
+### 6.4 Journal de programmation
 
 Les sorties de la tâche sont écrites dans `backups\backup.log` si la tâche est lancée par le script fourni. Surveiller régulièrement :
 
