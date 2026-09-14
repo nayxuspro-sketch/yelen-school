@@ -181,13 +181,16 @@ button {
   color: var(--color-text-primary);
   position: relative;
   overflow-x: hidden;
+  /* Isoler la décoration fixe pour éviter les artefacts de composition
+     (doublons/traînées) dans Chromium et les navigateurs Windows. */
+  isolation: isolate;
 }
 
 /* ── Lueurs Décoratives Aura ── */
 .aura-glow-container {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
@@ -195,9 +198,11 @@ button {
 .aura-glow {
   position: absolute;
   border-radius: var(--radius-full);
-  filter: blur(80px);
-  opacity: 0.35;
-  animation: auraFloat 20s infinite alternate ease-in-out;
+  /* Le flou animé créait des artefacts visuels sur certains GPU Windows.
+     Le dégradé radial suffit à garder une lueur légère et stable. */
+  filter: none;
+  opacity: 0.28;
+  animation: none;
 }
 
 .aura-glow-1 {
@@ -705,6 +710,8 @@ button {
   flex-direction: column;
   min-height: 100vh;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 .content {
