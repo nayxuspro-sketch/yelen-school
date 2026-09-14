@@ -45,8 +45,10 @@ est ignoré par Git.
 Programmation automatique
 -------------------------
 Windows, tous les jours à 22 h :
-  Double-cliquer sur register-backup-task.bat
-  ou : powershell -ExecutionPolicy Bypass -File .\installer\register-backup-task.ps1
+  Depuis la racine, clic droit sur programmer-sauvegarde.bat
+  puis « Exécuter en tant qu'administrateur ».
+  Pour une autre heure : programmer-sauvegarde.bat 23:30
+  Script technique : powershell -ExecutionPolicy Bypass -File .\installer\register-backup-task.ps1
   Journal : backups\backup.log
   La tâche s'exécute dans la session Windows qui l'enregistre ; Docker Desktop
   doit être configuré pour démarrer avec Windows.

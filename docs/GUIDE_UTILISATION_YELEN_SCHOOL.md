@@ -4169,9 +4169,14 @@ Une sauvegarde produit un fichier PostgreSQL `.dump` et une archive associée `_
 
 **Programmation automatique :**
 
+```text
+# Windows — clic droit sur programmer-sauvegarde.bat
+# puis « Exécuter en tant qu'administrateur »
+```
+
 ```powershell
-# Windows — tous les jours à 22 h
-.\installer\register-backup-task.ps1
+# Windows — ou depuis PowerShell, tous les jours à 22 h
+.\programmer-sauvegarde.bat
 ```
 
 ```bash

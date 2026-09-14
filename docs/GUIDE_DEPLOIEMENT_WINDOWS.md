@@ -234,16 +234,18 @@ La vérification complète consiste à restaurer la paire sur une installation d
 
 ### 6.1 Tâche planifiée Windows
 
-Depuis le dossier racine, ouvrir PowerShell **en tant qu'administrateur** puis exécuter :
+Depuis le dossier racine, faire un clic droit sur `programmer-sauvegarde.bat`, puis choisir **Exécuter en tant qu'administrateur**.
+
+Le script programme la sauvegarde tous les jours à 22 h par défaut. Pour choisir une autre heure depuis PowerShell :
+
+```powershell
+.\programmer-sauvegarde.bat 23:30
+```
+
+Le script technique équivalent reste disponible ici :
 
 ```powershell
 .\installer\register-backup-task.ps1 -Time 22:00
-```
-
-Ou double-cliquer sur :
-
-```text
-installer\register-backup-task.bat
 ```
 
 Une tâche nommée `YELEN SCHOOL - Sauvegarde PostgreSQL et médias` est créée ou remplacée. L'heure est exprimée en format 24 heures :
