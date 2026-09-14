@@ -96,6 +96,16 @@ secret_key="$(random_hex)$(random_hex)"
 db_password="Yelen-$(random_hex | cut -c1-24)"
 sms_webhook_token="$(random_hex)$(random_hex)"
 initial_admin_password="$(random_hex | cut -c1-32)"
+initial_setup_pending="$fresh_installation"
+existing_initial_password="$(get_env_value INITIAL_ADMIN_PASSWORD || true)"
+existing_ensure_admin="$(get_env_value ENSURE_ADMIN || true)"
+if [[ "$fresh_installation" -eq 0 && "$existing_ensure_admin" == 'true' \
+    && -n "$existing_initial_password" \
+    && ! "$existing_initial_password" =~ ^(generer-|votre-|changez) ]]; then
+    # Reprise d'une installation interrompue après l'écriture de .env.
+    initial_setup_pending=1
+    initial_admin_password="$existing_initial_password"
+fi
 lan_ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}' || true)"
 if [[ -z "$lan_ip" || "$lan_ip" == 127.* || "$lan_ip" == 169.254.* ]]; then
     lan_ip="$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -Ev '^(127\.|169\.254\.)' | head -n 1 || true)"
@@ -162,7 +172,7 @@ if [[ "$ready" -ne 1 ]]; then
     fail 'Le serveur ne répond pas après 120 secondes.'
 fi
 
-if [[ "$fresh_installation" -eq 1 ]]; then
+if [[ "$initial_setup_pending" -eq 1 ]]; then
     set_env_value ENSURE_ADMIN false
     # Le secret n'est plus nécessaire après la création du compte et ne doit
     # pas rester dans .env. Le compte impose son remplacement à la connexion.
@@ -171,7 +181,7 @@ fi
 
 echo '[OK] YELEN SCHOOL est opérationnel'
 echo "Adresse : $LOGIN_URL"
-if [[ "$fresh_installation" -eq 1 ]]; then
+if [[ "$initial_setup_pending" -eq 1 ]]; then
     echo 'Compte initial : admin@yelen.edu'
     echo "Mot de passe temporaire à usage unique : $initial_admin_password"
     echo 'Le remplacement de ce mot de passe est obligatoire à la première connexion.'

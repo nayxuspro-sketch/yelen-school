@@ -186,6 +186,19 @@ $secretKey = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'))
 $dbPassword = 'Yelen-' + [guid]::NewGuid().ToString('N')
 $smsWebhookToken = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'))
 $initialAdminPassword = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')).Substring(0, 32)
+$initialSetupPending = $FreshInstallation
+$existingInitialPassword = Get-EnvValue 'INITIAL_ADMIN_PASSWORD'
+$existingEnsureAdmin = (Get-EnvValue 'ENSURE_ADMIN').ToLowerInvariant()
+if (-not $FreshInstallation -and
+    $existingEnsureAdmin -eq 'true' -and
+    -not [string]::IsNullOrWhiteSpace($existingInitialPassword) -and
+    $existingInitialPassword -notmatch '^(generer-|votre-|changez)') {
+    # Reprise d'une installation interrompue après l'écriture de .env :
+    # conserver le secret déjà injecté dans le conteneur et l'afficher après
+    # le prochain démarrage réussi au lieu d'en générer un autre.
+    $initialSetupPending = $true
+    $initialAdminPassword = $existingInitialPassword.Trim()
+}
 
 $lanIp = Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp -ErrorAction SilentlyContinue |
     Where-Object {
@@ -296,7 +309,7 @@ if (-not $ready) {
     Stop-Installation 'Le serveur ne répond pas après 120 secondes.'
 }
 
-if ($FreshInstallation) {
+if ($initialSetupPending) {
     # Le compte initial a été créé par entrypoint.sh. On évite de réinitialiser
     # son mot de passe lors des prochains redémarrages et on retire le secret
     # temporaire du fichier .env.
@@ -313,7 +326,7 @@ if ($FreshInstallation) {
 Write-Host '[OK] YELEN SCHOOL est opérationnel' -ForegroundColor Green
 Write-Host ''
 Write-Host "Adresse : $LoginUrl" -ForegroundColor White
-if ($FreshInstallation) {
+if ($initialSetupPending) {
     Write-Host 'Compte initial :' -ForegroundColor Yellow
     Write-Host '  Email       : admin@yelen.edu' -ForegroundColor Yellow
     Write-Host "  Mot de passe temporaire : $initialAdminPassword" -ForegroundColor Yellow
