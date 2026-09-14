@@ -147,3 +147,61 @@ Ces éléments sont explicitement ouverts et ne doivent pas être présentés co
 - sauvegarde/restauration : `installer/README.txt` et les scripts `installer/backup-*`, `installer/restore-*` ;
 - état de sécurité : `docs/AUDIT_SECURITE.md` ;
 - archive de test : `YELEN_SCHOOL_TEST.zip` lorsqu'elle est régénérée après une modification.
+
+## 8. Plan de passage à une commercialisation sans réserve
+
+### 8.1 Définition de « sans réserve »
+
+« Sans réserve » ne signifie pas zéro défaut. Cela signifie qu'aucun blocage technique, sécurité, exploitation ou contractuel connu ne reste ouvert pour le périmètre vendu. Toute limite non corrigée doit être explicitement acceptée par le client et exclue du périmètre de l'offre.
+
+La commercialisation générale ne sera déclarée ouverte qu'après validation de tous les gates ci-dessous. Les durées sont indicatives et commencent à J0 de la phase de recette ; elles ne remplacent pas les essais réels.
+
+### 8.2 Feuille de route par gates
+
+| Gate | Durée indicative | Travail | Critère de sortie obligatoire |
+|---|---:|---|---|
+| G0 — Offre et périmètre | 2–3 jours | Définir les éditions, OS supportés, matériel SMS, fonctionnement local, exclusions VPN/Internet, prix, SLA, RPO/RTO et support | Fiche produit, matrice des responsabilités et contrat-type validés |
+| G1 — Stabilisation PostgreSQL | 5–7 jours | CI complète avec PostgreSQL 15 et Redis 7, migrations depuis une base vide et une base existante, tests de commandes IA/SMS, vérification Django 5.2 | Tous les tests bloquants passent ; aucune migration manquante ; aucune régression critique |
+| G2 — Sécurité et données | 5–7 jours | Tester 2FA, cloisonnement établissement, API, webhook token/HMAC/rate limit, CSP, logs, uploads et secrets ; imposer le changement du mot de passe initial ; formaliser conservation, accès et suppression des données | Zéro vulnérabilité critique ou haute ouverte ; audit dynamique signé ; procédure de secrets et politique de confidentialité publiées |
+| G3 — Installation et mises à jour | 5–7 jours | Installation Windows propre, installation Linux, port occupé, pare-feu local, démarrage automatique, arrêt/redémarrage, mise à jour sans perte de volumes, retour arrière | Deux installations propres réussies sur des machines de test ; procédure exécutable par un technicien sans modifier le code |
+| G4 — Sauvegarde et reprise | 3–5 jours | Réaliser une paire `.dump` + médias, vérifier son intégrité, restaurer sur une installation séparée, contrôler connexion, élève, paiement, PDF et média ; mesurer RPO/RTO | Deux restaurations complètes réussies consécutivement et rapport de recette signé |
+| G5 — Recette fonctionnelle | 5–10 jours | Parcours par rôle : direction, secrétariat, enseignant, comptable, vie scolaire et parent ; bulletins/PDF ; import/export ; analyse de risque ; SMS en `--dry-run`, puis un envoi réel explicitement autorisé | 100 % des scénarios critiques passent ; aucune donnée de test ne sort vers un vrai numéro pendant la recette sèche |
+| G6 — Pilote accompagné | 2–4 semaines | Déployer chez un établissement pilote, migrer un petit jeu de données, former les utilisateurs, surveiller les journaux, traiter les incidents et mesurer les temps de réponse | Au moins un cycle opérationnel complet sans incident bloquant, sauvegardes vérifiées et compte-rendu client accepté |
+| G7 — Release commerciale | 2–3 jours | Geler la version, produire l'archive et les sommes de contrôle, publier la notice de version, licence, guide, procédure support et plan de rollback | Go commercial signé par développement, exploitation, sécurité et responsable produit |
+
+### 8.3 Mesures de qualité à atteindre
+
+Avant la vente générale, les seuils suivants sont obligatoires :
+
+- 100 % des tests critiques passent dans la CI avec PostgreSQL et Redis ;
+- aucune vulnérabilité critique ou haute connue non traitée ;
+- deux installations propres Windows et une installation Linux validées ;
+- deux restaurations complètes réussies, base et médias compris ;
+- changement du mot de passe administrateur imposé au premier démarrage ;
+- aucun SMS automatique actif par défaut ; `--dry-run` validé avant activation ;
+- aucun secret présent dans le dépôt, l'archive ou les journaux ;
+- séparation des données vérifiée avec au moins deux établissements de test ;
+- documentation d'installation, d'exploitation, de sauvegarde et d'incident testée par une personne autre que son auteur ;
+- contrat, politique de confidentialité, licence et procédure de support prêts à être remis au client.
+
+### 8.4 Décision commerciale par étape
+
+- **Avant G1–G4 :** démonstration interne uniquement.
+- **Après G4 :** pilote payant possible avec accompagnement et périmètre écrit.
+- **Après G6 :** vente à plusieurs établissements possible.
+- **Après G7 :** commercialisation générale sans réserve technique connue.
+
+### 8.5 Livrables de la release finale
+
+La release finale devra contenir :
+
+1. une archive versionnée avec SHA-256 ;
+2. un installateur ou une procédure d'installation reproductible ;
+3. un fichier `.env.example` sans secret réel ;
+4. les images Docker ou leur procédure de récupération initiale ;
+5. les scripts de démarrage, SMS, analyse de risque, sauvegarde et restauration ;
+6. le rapport de recette PostgreSQL/Redis/Windows ;
+7. le rapport de restauration et les mesures RPO/RTO ;
+8. l'audit de sécurité daté ;
+9. les conditions de licence, la politique de confidentialité et le guide support ;
+10. une procédure de retour arrière et de récupération après incident.
