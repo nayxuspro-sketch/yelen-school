@@ -4192,14 +4192,46 @@ Une sauvegarde produit un fichier PostgreSQL `.dump` et une archive associée `_
 
 Sous Windows, utiliser `installer\restore-windows.bat`. La restauration remplace la base et les médias actuels et demande une confirmation explicite. Tester régulièrement une restauration sur une machine de secours afin de vérifier que les sauvegardes sont réellement exploitables.
 
-Pour programmer une restauration unique à une heure donnée sous Windows :
+**Restauration automatique ponctuelle sous Windows :**
+
+Une restauration remplace la base PostgreSQL et les médias actuels. Elle doit être programmée uniquement après avoir réalisé une sauvegarde récente, vérifié la paire de fichiers et prévenu les utilisateurs de l'établissement.
+
+Le fichier `programmer-restauration.bat` programme une restauration **unique** à l'heure demandée. Elle n'est pas quotidienne par défaut afin d'éviter d'écraser les nouvelles données de l'école.
+
+Depuis la racine du projet, ouvrir PowerShell **en tant qu'administrateur** ou faire un clic droit sur `programmer-restauration.bat` et choisir **Exécuter en tant qu'administrateur** :
 
 ```powershell
 .\programmer-restauration.bat `
   ".\backups\yelen_school_YYYYMMDD_HHMMSS.dump" 03:00 CONFIRMER
 ```
 
-Cette opération est destructive et n'est jamais quotidienne par défaut. Le fichier `_media.tar.gz` associé doit être présent ; la tâche et son journal `backups\restore.log` peuvent être contrôlés par l'administrateur.
+Remplacer `yelen_school_YYYYMMDD_HHMMSS.dump` par le nom réel du dump et `03:00` par l'heure souhaitée au format `HH:MM`. Le mot `CONFIRMER` est obligatoire pour empêcher une programmation accidentelle.
+
+Avant de créer la tâche, le script vérifie automatiquement :
+
+- la présence du fichier `.dump` PostgreSQL ;
+- la présence de l'archive médias associée portant le même horodatage et le suffixe `_media.tar.gz` ;
+- la taille non nulle des deux fichiers ;
+- la présence de `.env`, de `docker-compose.client.yml` et du script de restauration.
+
+La tâche créée dans le Planificateur de tâches s'appelle `YELEN SCHOOL - Restauration programmée`. Elle s'exécutera une seule fois au prochain horaire demandé. Docker Desktop doit être démarré et les utilisateurs doivent être déconnectés à l'heure prévue. Le journal est écrit dans `backups\restore.log`.
+
+Pour contrôler la tâche avant son exécution :
+
+1. ouvrir le **Planificateur de tâches Windows** ;
+2. rechercher `YELEN SCHOOL - Restauration programmée` ;
+3. vérifier l'heure et le chemin de la sauvegarde ;
+4. supprimer ou désactiver la tâche si la restauration n'est plus nécessaire.
+
+Le script technique équivalent est disponible avec :
+
+```powershell
+.\installer\register-restore-task.ps1 `
+  -BackupFile ".\backups\yelen_school_YYYYMMDD_HHMMSS.dump" `
+  -Time 03:00 -ConfirmRestore
+```
+
+Après l'exécution, vérifier l'application, quelques données importantes et plusieurs fichiers médias. Ne jamais utiliser `docker compose down -v` pour préparer une restauration : cette commande supprime les volumes Docker.
 
 ---
 
