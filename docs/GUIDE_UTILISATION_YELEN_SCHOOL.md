@@ -1,7 +1,7 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 4.2
-version_guide: 2.18
+version_guide: 2.19
 date_mise_a_jour: 14/09/2026 (état de référence)
 modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, portail_parent, transferts, api_rest, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel, analyse_risque, sms_auto, sauvegarde_restauration]
 modules_en_attente: [orientation_postbac, solar_guard]
@@ -10,9 +10,9 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 4.2 — État de référence du 14 septembre 2026 (Guide v2.18)
+### Version 4.2 — État de référence du 14 septembre 2026 (Guide v2.19)
 
-> Les procédures IA, SMS automatiques, sécurité et sauvegarde/restauration correspondent au code présent dans cette branche. La recette PostgreSQL/Windows et la restauration réelle restent à effectuer sur une machine équipée de Docker Desktop.
+> Les procédures IA, SMS automatiques, sécurité et sauvegarde/restauration correspondent au code présent dans cette branche. La recette PostgreSQL/Windows et la restauration réelle restent à effectuer sur une machine équipée de Docker Desktop. La version est exploitable pour un pilote accompagné, mais n'est pas encore déclarée commercialisable sans réserve.
 
 ---
 
@@ -5807,7 +5807,19 @@ YELEN SCHOOL fait l'objet d'audits de sécurité réguliers. Le rapport complet 
 
 **Version actuelle du rapport :** audit de suivi — 14 septembre 2026
 
-L'audit actuel ne publie pas de score numérique avant l'exécution de la suite PostgreSQL et des tests Windows. L'audit local `pip-audit` du 14/09/2026 ne signale aucune vulnérabilité connue ; les validations encore nécessaires sont documentées dans `docs/AUDIT_SECURITE.md`.
+L'audit actuel ne constitue pas un score automatique de qualité produit. Il distingue l'avancement technique de la validation réelle : l'audit local `pip-audit` du 14/09/2026 ne signale aucune vulnérabilité connue, mais les validations PostgreSQL, Redis, Windows et restauration restent nécessaires.
+
+#### État de qualité et de préparation au 14/09/2026
+
+| Indicateur | Estimation | Interprétation |
+|------------|-----------:|----------------|
+| Gates de commercialisation entièrement validés | **0 %** (0/7) | Aucune commercialisation générale sans réserve ne doit être annoncée. |
+| Contrôles statiques exécutés | **100 % réussis** | Syntaxe, compilation, cohérence de migration et contrôle shell uniquement ; cela ne remplace pas un test runtime. |
+| Implémentation du changement obligatoire de mot de passe | **≈ 80 %** | Code, migration, installateurs et tests ajoutés ; parcours PostgreSQL/Windows encore à exécuter. |
+| Préparation technique globale | **≈ 60 %** | Estimation de travail, et non certification ou garantie de qualité. |
+| Commercialisation sans réserve | **0 % validée** | Les gates bloqués ne sont pas comptés comme réussis. |
+
+Les gates non validés sont marqués **BLOCKED**, et non **FAIL**, lorsque l'environnement de recette manque. Aucun test officiel n'est basculé vers SQLite : PostgreSQL et Redis restent obligatoires. Le détail des commandes, environnements et résultats figure dans `docs/VALIDATION_COMMERCIALISATION.md`.
 
 | Domaine | Statut |
 |--------|--------|
@@ -6049,4 +6061,4 @@ Utilisateur
 
 ---
 
-*Guide v3.1 — Mis à jour le 19/07/2026 — Section 19 : Guide de déploiement complet (local + production)*
+*Guide v3.2 — Mis à jour le 14/09/2026 — Section 19 : état de préparation, sécurité et déploiement complet (local + production)*
