@@ -131,6 +131,32 @@ docker compose -f docker-compose.client.yml ps
 
 Les causes habituelles sont Docker Desktop arrêté, les ports TCP `8000` à `8005` déjà utilisés, ou un manque d'espace disque. `demarrage.bat` essaie automatiquement les ports `8000`, `8001`, `8002`, `8003`, `8004` puis `8005` et conserve le port trouvé dans `.env`. Corriger la cause puis relancer `demarrage.bat` si toute la plage est occupée. Le démarrage est idempotent : il réutilise `.env` et les volumes existants.
 
+### Le fichier `.env` n'existe pas
+
+Vérifier d'abord que le terminal se trouve à la racine de l'application, là où se trouvent `demarrage.bat`, `docker-compose.client.yml` et `.env.example` :
+
+```powershell
+Set-Location C:\YELEN-SCHOOL
+Get-ChildItem demarrage.bat, docker-compose.client.yml, .env.example
+```
+
+Pour une **première installation**, ne copiez pas `.env.example` manuellement. Lancez directement :
+
+```powershell
+.\demarrage.bat
+```
+
+L'installateur créera `.env`, générera les secrets locaux, ajoutera le nom du serveur et l'adresse IP aux hôtes autorisés, puis affichera le mot de passe temporaire de `admin@yelen.edu`.
+
+Si l'application possède déjà des volumes ou fonctionne déjà, **ne lancez pas une installation neuve et ne supprimez pas les volumes**. Restaurez le `.env` original depuis une copie protégée. À défaut, récupérez localement les valeurs `DB_PASSWORD`, `SECRET_KEY`, `ALLOWED_HOSTS` et `CSRF_TRUSTED_ORIGINS` depuis la configuration des conteneurs Docker ; ne transmettez jamais ces valeurs à l'équipe support ni dans un ticket :
+
+```powershell
+docker ps --format "{{.ID}}`t{{.Names}}"
+docker inspect NOM_DU_CONTENEUR_WEB --format '{{range .Config.Env}}{{println .}}{{end}}'
+```
+
+Après restauration ou recréation correcte de `.env`, relancer `demarrage.bat`. Ne jamais exécuter `docker compose down -v` pour résoudre l'absence du fichier : cette commande détruit les volumes de données.
+
 ---
 
 ## 3. Configuration et premier accès
