@@ -136,6 +136,8 @@ DB_PASSWORD=mot_de_passe_genere_localement
 DB_HOST=db
 DB_PORT=5432
 REDIS_URL=redis://redis:6379/0
+# Uniquement pendant le premier démarrage ; l'installateur le retire ensuite.
+INITIAL_ADMIN_PASSWORD=secret_temporaire_genere
 ```
 
 Ne pas remplacer `DB_PASSWORD` sur une installation existante sans procédure de migration : PostgreSQL a été initialisé avec ce mot de passe. Les scripts d'installation ne réécrivent pas une valeur existante valide.
