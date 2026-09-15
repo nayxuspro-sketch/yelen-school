@@ -37,12 +37,6 @@
     Connexion au serveur perdue — vérifiez le réseau local
   </div>
 
-  {# Lueurs Aura d'arrière-plan #}
-  <div class="aura-glow-container" aria-hidden="true">
-    <div class="aura-glow aura-glow-1"></div>
-    <div class="aura-glow aura-glow-2"></div>
-  </div>
-
   {# ════════════════════════════════════════ SIDEBAR MODERNE ══════════════════════════════════════ #}
   <aside id="sidebar" class="sb-modern">
 
@@ -430,6 +424,9 @@
         <a href="{% url 'parametres:annee_list' %}" class="sb-item-submodern" data-url="/parametres/annees/"><span class="sub-item-dot"></span>Années scolaires</a>
         <a href="{% url 'parametres:calendrier' %}" class="sb-item-submodern" data-url="/parametres/calendrier/"><span class="sub-item-dot"></span>Calendrier scolaire</a>
         <a href="{% url 'parametres:modeles_messages' %}" class="sb-item-submodern" data-url="/parametres/modeles-messages/"><span class="sub-item-dot"></span>Modèles de messages</a>
+        {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' %}
+        <a href="{% url 'parametres:sms_auto_config' %}" class="sb-item-submodern" data-url="/parametres/sms-auto/"><span class="sub-item-dot"></span>SMS automatiques</a>
+        {% endif %}
         <a href="{% url 'parametres:cycle_list' %}" class="sb-item-submodern" data-url="/parametres/cycles/"><span class="sub-item-dot"></span>Cycles</a>
         <a href="{% url 'parametres:classe_list' %}" class="sb-item-submodern" data-url="/parametres/classes/"><span class="sub-item-dot"></span>Classes</a>
         <a href="{% url 'parametres:poste_list' %}" class="sb-item-submodern" data-url="/parametres/postes/"><span class="sub-item-dot"></span>Postes</a>
@@ -536,14 +533,15 @@
           </svg>
         </a>
         {% if user.is_authenticated %}
-        <a href="{% url 'core:notifications_list' %}" class="sb-footer-btn" title="Notifications"
-           hx-get="{% url 'core:notifications_badge' %}"
-           hx-trigger="load, every 60s"
-           hx-target="#notif-badge-wrap"
-           hx-swap="innerHTML">
+        <a href="{% url 'core:notifications_list' %}" class="sb-footer-btn" title="Notifications" style="position:relative;">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
           </svg>
+          <span id="notif-badge-wrap"
+                hx-get="{% url 'core:notifications_badge' %}"
+                hx-trigger="load, every 60s, notificationsUpdated from:body"
+                hx-target="this"
+                hx-swap="innerHTML"></span>
         </a>
         <form method="post" action="{% url 'accounts:logout' %}" style="display:inline; margin:0;">
             {% csrf_token %}

@@ -454,10 +454,13 @@ def notifications_list(request):
     nb_non_lues = Notification.objects.filter(
         destinataire=request.user, lu=False
     ).count()
-    return render(request, 'core/notifications.html', {
+    context = {
         'notifications': notifications,
         'nb_non_lues': nb_non_lues,
-    })
+    }
+    if request.GET.get('_partial') == 'header':
+        return render(request, 'core/partials/notifications_header.html', context)
+    return render(request, 'core/notifications.html', context)
 
 
 @login_required
@@ -483,7 +486,9 @@ def notification_marquer_lu(request, pk):
     
     notif.lu = True
     notif.save(update_fields=['lu'])
-    return render(request, 'core/partials/notification_item.html', {'notif': notif})
+    response = render(request, 'core/partials/notification_item.html', {'notif': notif})
+    response['HX-Trigger'] = 'notificationsUpdated'
+    return response
 
 
 @login_required
@@ -1013,17 +1018,18 @@ def app_manifest(request):
     return JsonResponse(manifest)
 
 
+@never_cache
 def app_service_worker(request):
     """Service Worker de l'application principale — cache les assets, page offline en fallback."""
     sw = """
-const APP_CACHE = 'yelen-app-v1';
+const APP_CACHE = 'yelen-app-v2';
 const PRECACHE = [
   '/offline/',
   '/static/css/yelen.css',
   '/static/js/htmx.min.js',
 ];
 const STATIC_ORIGIN = self.location.origin;
-const BYPASS = ['/accounts/', '/admin/', '/api/', '/sw.js'];
+const BYPASS = ['/accounts/', '/admin/', '/api/', '/sw.js', '/app-sw.js'];
 
 // ── Install : pré-cache les assets critiques ──
 self.addEventListener('install', e => {

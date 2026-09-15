@@ -108,27 +108,13 @@
 </div>
 {% else %}
 
-<div class="d-flex gap-4 mb-6 animate-fade-up delay-2">
-  <div class="card" style="flex:1; text-align:center; padding:20px;">
-    <div class="text-muted text-sm mb-1">Total analysés</div>
-    <div class="fw-bold" style="font-size:1.5rem;">{{ stats.total }}</div>
-  </div>
-  <div class="card" style="flex:1; text-align:center; padding:20px; border-color:var(--color-success);">
-    <div class="text-success text-sm mb-1">Faible</div>
-    <div class="fw-bold text-success" style="font-size:1.5rem;">{{ stats.FAIBLE }}</div>
-  </div>
-  <div class="card" style="flex:1; text-align:center; padding:20px; border-color:var(--color-gold);">
-    <div class="text-warning text-sm mb-1">Modéré</div>
-    <div class="fw-bold text-warning" style="font-size:1.5rem;">{{ stats.MODERE }}</div>
-  </div>
-  <div class="card" style="flex:1; text-align:center; padding:20px; border-color:var(--color-danger);">
-    <div class="text-danger text-sm mb-1">Élevé</div>
-    <div class="fw-bold text-danger" style="font-size:1.5rem;">{{ stats.ELEVE }}</div>
-  </div>
-  <div class="card" style="flex:1; text-align:center; padding:20px; border-color:rgba(220,53,69,0.5);">
-    <div class="text-danger text-sm mb-1">Critique</div>
-    <div class="fw-bold text-danger" style="font-size:1.5rem;">{{ stats.CRITIQUE }}</div>
-  </div>
+<div id="risque-stats"
+     class="d-flex gap-4 mb-6 animate-fade-up delay-2"
+     hx-trigger="risqueUpdated from:body"
+     hx-get="{% url 'pedagogie:risque_decrochage' %}?_partial=stats{% if annee %}&annee={{ annee.pk }}{% endif %}"
+     hx-target="#risque-stats"
+     hx-swap="innerHTML">
+  {% include "pedagogie/partials/risque_stats.html" %}
 </div>
 
 <div class="card animate-fade-up delay-3">

@@ -16,7 +16,9 @@ from core.utils import get_etablissement_context
 
 try:
     from weasyprint import HTML as _WeasyHTML
-except ImportError:
+except (ImportError, OSError):
+    # Le serveur peut démarrer sans les bibliothèques système PDF ; les vues
+    # concernées afficheront un message d'indisponibilité.
     _WeasyHTML = None
 
 @login_required

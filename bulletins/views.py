@@ -124,7 +124,10 @@ def bulletins_classe(request, class_id, trimestre_id):
     nb_publies = sum(1 for l in lignes if l['bulletin'] and l['bulletin'].est_publie)
     nb_moyennes = sum(1 for l in lignes if l['moyenne_calculee'])
 
-    tpl = 'bulletins/partials/bulletins_classe_table.html' if request.headers.get('HX-Request') else 'bulletins/bulletins_classe.html'
+    if request.headers.get('HX-Request') and request.GET.get('_partial') == 'stats':
+        tpl = 'bulletins/partials/bulletins_stats.html'
+    else:
+        tpl = 'bulletins/partials/bulletins_classe_table.html' if request.headers.get('HX-Request') else 'bulletins/bulletins_classe.html'
     return render(request, tpl, {
         'classe': classe,
         'trimestre': trimestre,
@@ -258,7 +261,10 @@ def bulletin_publier(request, inscription_id, trimestre_id):
         'trimestre': trimestre,
         'moyenne_calculee': mg is not None,
     })
-    response['HX-Trigger'] = json.dumps({'showToast': toast})
+    response['HX-Trigger'] = json.dumps({
+        'showToast': toast,
+        'bulletinUpdated': True,
+    })
     return response
 
 
@@ -338,7 +344,10 @@ from django.views import View
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from weasyprint import HTML
+try:
+    from weasyprint import HTML
+except (ImportError, OSError):
+    HTML = None
 
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire
@@ -425,6 +434,11 @@ class BulletinAnnuelPDFView(LoginRequiredMixin, View):
     """Génère le PDF du bulletin annuel de notes."""
 
     def get(self, request, inscription_id, annee_pk):
+        if HTML is None:
+            return HttpResponse(
+                "La génération PDF n'est pas disponible sur ce serveur.",
+                status=503,
+            )
         inscription = get_object_or_404(
             Inscription.objects.select_related('eleve', 'classe', 'classe__etablissement'),
             pk=inscription_id,
@@ -452,7 +466,11 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
     """Génère un PDF groupé avec tous les bulletins annuels d'une classe."""
 
     def get(self, request, class_id, annee_pk):
-        from weasyprint import HTML
+        if HTML is None:
+            return HttpResponse(
+                "La génération PDF n'est pas disponible sur ce serveur.",
+                status=503,
+            )
         from django.template.loader import render_to_string
         from parametres.models import Classe
         from pedagogie.views import _build_bulletin_annuel_context

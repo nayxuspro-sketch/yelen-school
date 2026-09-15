@@ -176,10 +176,13 @@ class ChangeOwnPasswordForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.user = user
 
-def clean(self):
+    def clean(self):
         cleaned_data = super().clean()
+        old_password = cleaned_data.get('old_password', '')
         p1 = cleaned_data.get('password1', '')
         p2 = cleaned_data.get('password2', '')
+        if self.user and old_password and not self.user.check_password(old_password):
+            self.add_error('old_password', "Le mot de passe actuel est incorrect.")
         if p1 and p2 and p1 != p2:
             self.add_error('password2', "Les mots de passe ne correspondent pas.")
         if p1:

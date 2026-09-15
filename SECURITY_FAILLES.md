@@ -1,4 +1,6 @@
-# 🔒 FAILLES DE SÉCURITÉ - YELEN SCHOOL
+# 🔒 FAILLES DE SÉCURITÉ - YELEN SCHOOL (historique)
+
+> **Document historique.** Cet inventaire du 9 avril 2026 n'est pas l'état actuel et peut contenir des constats déjà corrigés ou formulés avant les changements de l'application. Consulter `docs/AUDIT_SECURITE.md` pour l'état de référence du 14 septembre 2026.
 
 **Date d'audit :** 09/04/2026  
 **Projet :** YELEN SCHOOL v4.2  
