@@ -29,9 +29,16 @@ Environnement : Linux, Python 3.11.2 ; environnement Python `/tmp/yelen-security
 | `python -m compileall -q finances manuels licences` | `PASS` |
 | `/tmp/yelen-security-venv/bin/python manage.py makemigrations --check --dry-run` | `PASS` : `No changes detected` pour toutes les applications ; avertissement séparé car PostgreSQL local est indisponible |
 | `/tmp/yelen-security-venv/bin/pytest licences/test_license_crypto.py licences/test_license_enforcement.py core/tests/test_audit_security.py finances/tests/test_security_controls.py` | `PASS` : 26 tests ciblés, dont limite signée nulle, non-divulgation d'audit des signatures/tokens, RBAC/IDOR financier et montants positifs |
+| `/tmp/yelen-security-venv/bin/pytest finances/tests/test_postgres_constraints.py --collect-only` | `PASS` : 10 scénarios collectés pour les contraintes CHECK PostgreSQL ; exécution réelle encore bloquée par l'indisponibilité de PostgreSQL |
 | `/tmp/yelen-security-venv/bin/python manage.py check` | `PASS` sans erreur système ; avertissements WeasyPrint non bloquants sur les bibliothèques natives absentes |
 | tests Django nécessitant une base, migrations SQL et concurrence | `BLOCKED` : PostgreSQL refuse la connexion sur `localhost:5432` ; SQLite n'est pas utilisé |
 | test de socket `localhost:5432` et `localhost:6379` | `BLOCKED` : les deux ports refusent la connexion |
+
+## Renforcement de l'intégrité financière
+
+- `finances/migrations/0015_bourseeleve_bourse_montant_positif_and_more.py` ajoute des contraintes `CHECK` PostgreSQL pour les montants positifs des frais, paiements, remboursements, échéances, bourses, relances, Mobile Money et dépenses, ainsi que pour les budgets non négatifs.
+- `finances/tests/test_postgres_constraints.py` couvre les mises à jour directes par `QuerySet.update()` et vérifie la présence des neuf contraintes. Ces tests sont collectés mais restent `BLOCKED` tant que PostgreSQL n'est pas démarré ; la migration n'a pas été appliquée dans ce sandbox.
+- La règle `DIRECTEUR_RESEAU` est explicitement séparée des vues financières détaillées d'un établissement ; son périmètre financier est le dashboard réseau agrégé.
 
 ## Modifications contrôlables du gate 6
 

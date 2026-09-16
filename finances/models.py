@@ -53,6 +53,12 @@ class FraisScolarite(BaseModel):
         verbose_name = _("Frais de Scolarité")
         verbose_name_plural = _("Frais de Scolarité")
         unique_together = ('annee_scolaire', 'classe', 'type_frais')
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='frais_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         _require_amount(self.montant, "Le montant des frais")
@@ -104,6 +110,12 @@ class Paiement(BaseModel):
         verbose_name = _("Paiement")
         verbose_name_plural = _("Paiements")
         ordering = ['-date_paiement', '-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='paiement_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         _require_amount(self.montant, "Le montant d'un paiement")
@@ -177,6 +189,12 @@ class Remboursement(BaseModel):
         verbose_name = _("Remboursement")
         verbose_name_plural = _("Remboursements")
         ordering = ['-date_remboursement', '-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='remboursement_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         _require_amount(self.montant, "Le montant d'un remboursement")
@@ -232,6 +250,12 @@ class Echeancier(BaseModel):
         verbose_name = _("Échéance de paiement")
         verbose_name_plural = _("Échéancier")
         ordering = ['date_limite']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant_du__gt=0),
+                name='echeancier_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         _require_amount(self.montant_du, "Le montant d'une échéance")
@@ -357,6 +381,12 @@ class BourseEleve(BaseModel):
         verbose_name = _("Bourse / Aide scolaire")
         verbose_name_plural = _("Bourses / Aides scolaires")
         ordering = ['-date_attribution']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant_accorde__gt=0),
+                name='bourse_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         _require_amount(self.montant_accorde, "Le montant d'une bourse")
@@ -423,6 +453,12 @@ class HistoriqueRelance(BaseModel):
         verbose_name = _("Historique de relance")
         verbose_name_plural = _("Historiques de relances")
         ordering = ['-date_relance', '-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant_reclame__gt=0),
+                name='relance_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         _require_amount(self.montant_reclame, "Le montant réclamé")
@@ -506,6 +542,12 @@ class DemandePaiementMobile(BaseModel):
         verbose_name = _("Demande paiement Mobile Money")
         verbose_name_plural = _("Demandes paiement Mobile Money")
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='mobile_money_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         _require_amount(self.montant, "Le montant de la demande Mobile Money")
@@ -612,6 +654,12 @@ class BudgetAnnuel(BaseModel):
         verbose_name_plural = _("Budgets annuels")
         unique_together = ('annee_scolaire', 'categorie')
         ordering = ['categorie__type_depense', 'categorie__nom']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant_prevu__gte=0),
+                name='budget_montant_non_negatif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         _require_amount(self.montant_prevu, "Le montant prévu", strictly_positive=False)
@@ -690,6 +738,12 @@ class Depense(BaseModel):
         verbose_name = _("Dépense")
         verbose_name_plural = _("Dépenses")
         ordering = ['-date_depense', '-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='depense_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         _require_amount(self.montant, "Le montant d'une dépense")
