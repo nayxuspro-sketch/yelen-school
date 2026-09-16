@@ -108,13 +108,33 @@ function Test-FirewallRuleForPort {
 
     try {
         $rules = @(Get-NetFirewallRule -Name 'YELEN_SCHOOL_LocalWeb' -ErrorAction SilentlyContinue)
-        if ($rules.Count -eq 0) {
-            return $false
+        foreach ($rule in $rules) {
+            $profile = $rule.Profile.ToString()
+            if (
+                $rule.Enabled -ne 'True' -or
+                $rule.Direction -ne 'Inbound' -or
+                $rule.Action -ne 'Allow' -or
+                $profile -notmatch 'Domain' -or
+                $profile -notmatch 'Private' -or
+                $profile -match 'Public' -or
+                $rule.EdgeTraversalPolicy -ne 'Block'
+            ) {
+                continue
+            }
+
+            $portFilters = @($rule | Get-NetFirewallPortFilter -ErrorAction Stop)
+            $addressFilters = @($rule | Get-NetFirewallAddressFilter -ErrorAction Stop)
+            $portOk = $portFilters | Where-Object {
+                $_.Protocol -eq 'TCP' -and $_.LocalPort.ToString() -eq [string]$Port
+            }
+            $addressOk = $addressFilters | Where-Object {
+                @($_.RemoteAddress) -contains 'LocalSubnet'
+            }
+            if ($portOk -and $addressOk) {
+                return $true
+            }
         }
-        $filters = @($rules | Get-NetFirewallPortFilter -ErrorAction Stop)
-        return [bool]($filters | Where-Object {
-            $_.Protocol -eq 'TCP' -and $_.LocalPort.ToString() -eq [string]$Port
-        })
+        return $false
     } catch {
         # En cas d'impossibilité de vérifier, l'installation propose une
         # synchronisation ponctuelle plutôt que de laisser une règle obsolète.
@@ -200,13 +220,21 @@ if (-not $FreshInstallation -and
     $initialAdminPassword = $existingInitialPassword.Trim()
 }
 
-$lanIp = Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp -ErrorAction SilentlyContinue |
+$ipCandidates = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
     Where-Object {
         $_.IPAddress -notlike '127.*' -and
-        $_.IPAddress -notlike '169.254.*'
-    } |
+        $_.IPAddress -notlike '169.254.*' -and
+        $_.IPAddress -notlike '0.0.0.0'
+    })
+$lanIp = $ipCandidates |
+    Where-Object { $_.PrefixOrigin -eq 'Dhcp' } |
     Select-Object -First 1 -ExpandProperty IPAddress
-
+if ([string]::IsNullOrWhiteSpace($lanIp)) {
+    # Une adresse LAN statique est valide : ne pas retomber à tort sur
+    # 127.0.0.1 simplement parce qu'elle n'a pas été obtenue par DHCP.
+    $lanIp = $ipCandidates |
+        Select-Object -First 1 -ExpandProperty IPAddress
+}
 if ([string]::IsNullOrWhiteSpace($lanIp)) {
     $lanIp = '127.0.0.1'
 }

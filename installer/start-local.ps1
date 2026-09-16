@@ -73,13 +73,33 @@ function Test-FirewallRuleForPort {
 
     try {
         $rules = @(Get-NetFirewallRule -Name 'YELEN_SCHOOL_LocalWeb' -ErrorAction SilentlyContinue)
-        if ($rules.Count -eq 0) {
-            return $false
+        foreach ($rule in $rules) {
+            $profile = $rule.Profile.ToString()
+            if (
+                $rule.Enabled -ne 'True' -or
+                $rule.Direction -ne 'Inbound' -or
+                $rule.Action -ne 'Allow' -or
+                $profile -notmatch 'Domain' -or
+                $profile -notmatch 'Private' -or
+                $profile -match 'Public' -or
+                $rule.EdgeTraversalPolicy -ne 'Block'
+            ) {
+                continue
+            }
+
+            $portFilters = @($rule | Get-NetFirewallPortFilter -ErrorAction Stop)
+            $addressFilters = @($rule | Get-NetFirewallAddressFilter -ErrorAction Stop)
+            $portOk = $portFilters | Where-Object {
+                $_.Protocol -eq 'TCP' -and $_.LocalPort.ToString() -eq [string]$Port
+            }
+            $addressOk = $addressFilters | Where-Object {
+                @($_.RemoteAddress) -contains 'LocalSubnet'
+            }
+            if ($portOk -and $addressOk) {
+                return $true
+            }
         }
-        $filters = @($rules | Get-NetFirewallPortFilter -ErrorAction Stop)
-        return [bool]($filters | Where-Object {
-            $_.Protocol -eq 'TCP' -and $_.LocalPort.ToString() -eq [string]$Port
-        })
+        return $false
     } catch {
         return $false
     }

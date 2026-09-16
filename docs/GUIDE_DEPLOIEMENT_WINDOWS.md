@@ -55,7 +55,7 @@ Le fichier `docker-compose.dev.yml` est réservé au développement. Pour une in
 - Docker Desktop installé, démarré et configuré avec le moteur Linux ;
 - accès administrateur lors de l'installation de Docker Desktop ;
 - PowerShell 5.1 ou PowerShell 7 ;
-- une adresse IP fixe ou réservée sur le réseau local est recommandée pour le poste serveur ;
+- une adresse IP fixe ou réservée sur le réseau local est recommandée pour le poste serveur ; les adresses statiques comme DHCP sont détectées par l'installateur ;
 - un support externe ou un autre poste pour copier les sauvegardes.
 
 La première installation télécharge l'image PostgreSQL, l'image Redis et les dépendances Python. Une connexion Internet est donc nécessaire à ce moment-là. Les démarrages et l'utilisation courante sont ensuite locaux, tant que les images Docker sont déjà présentes.
@@ -686,8 +686,10 @@ En cas de changement de port, relancer `demarrage.bat` : l'ancienne règle YELEN
 Pour vérifier la règle depuis PowerShell administrateur :
 
 ```powershell
-Get-NetFirewallRule -Name YELEN_SCHOOL_LocalWeb |
-  Get-NetFirewallPortFilter
+$rule = Get-NetFirewallRule -Name YELEN_SCHOOL_LocalWeb
+$rule | Format-List DisplayName,Enabled,Direction,Action,Profile,EdgeTraversalPolicy
+$rule | Get-NetFirewallPortFilter
+$rule | Get-NetFirewallAddressFilter
 ```
 
 Pour la supprimer manuellement si nécessaire :

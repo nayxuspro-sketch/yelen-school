@@ -41,6 +41,7 @@ Environnement : Linux, Python 3.11.2 ; environnement Python `/tmp/yelen-security
 - `finances/tests/test_postgres_constraints.py` couvre les mises à jour directes par `QuerySet.update()` et vérifie la présence des neuf contraintes. Ces 10 tests sont collectés mais restent `BLOCKED` tant que PostgreSQL n'est pas démarré ; la migration n'a pas été appliquée dans ce sandbox.
 - `finances/tests/test_postgres_financial_security.py` collecte six scénarios DB pour les IDOR inter-établissements, l'annulation auditée, les paiements/remboursements concurrents et la confirmation Mobile Money idempotente ; leur exécution reste `BLOCKED` par le même serveur indisponible.
 - La règle `DIRECTEUR_RESEAU` est explicitement séparée des vues financières détaillées d'un établissement ; son périmètre financier est le dashboard réseau agrégé.
+- Les scripts Windows vérifient désormais, avant de conserver une règle existante, le port TCP, l'action `Allow`, la direction entrante, les profils `Domain,Private`, l'absence de `Public`, `RemoteAddress=LocalSubnet` et `EdgeTraversalPolicy=Block`. L'exécution PowerShell sur un poste Windows réel reste à valider.
 
 ## Modifications contrôlables du gate 6
 
