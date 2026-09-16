@@ -35,6 +35,14 @@ from .models import Licence, FEATURE_FLAGS
 # FONCTIONS UTILITAIRES
 # ═══════════════════════════════════════════════════════════════════
 
+def _superuser_bypass_allowed(user) -> bool:
+    """Le bypass est réservé à un build fournisseur explicitement autorisé."""
+    return bool(
+        getattr(user, 'is_superuser', False)
+        and getattr(settings, 'LICENSE_ALLOW_SUPERUSER_BYPASS', False)
+    )
+
+
 def get_licence_active(etablissement) -> Optional[Licence]:
     """
     Récupère la licence active d'un établissement.
@@ -66,7 +74,7 @@ def has_feature(user, feature_name: str) -> bool:
         bool: True si l'utilisateur peut utiliser cette feature
     """
     # Super admin peut tout faire
-    if user.is_superuser:
+    if _superuser_bypass_allowed(user):
         return True
     
     # Vérifier que l'utilisateur a un établissement
@@ -93,7 +101,7 @@ def get_features_disponibles(user) -> list:
     Returns:
         list: Liste des noms de features accessibles
     """
-    if user.is_superuser:
+    if _superuser_bypass_allowed(user):
         return list(FEATURE_FLAGS.keys())
     
     if not hasattr(user, 'etablissement') or user.etablissement is None:
@@ -171,7 +179,7 @@ def requires_licence_feature(
             user = request.user
             
             # Super admin bypass
-            if user.is_superuser:
+            if _superuser_bypass_allowed(user):
                 return view_func(request, *args, **kwargs)
             
             # Vérifier que l'utilisateur a un établissement
@@ -308,7 +316,7 @@ def check_licence_validity(view_func: Callable) -> Callable:
         user = request.user
         
         # Super admin bypass
-        if user.is_superuser:
+        if _superuser_bypass_allowed(user):
             return view_func(request, *args, **kwargs)
         
         # Vérifier l'établissement
@@ -366,7 +374,7 @@ class LicenceFeatureMixin:
             return redirect_to_login(request.get_full_path())
         
         # Super admin bypass
-        if user.is_superuser:
+        if _superuser_bypass_allowed(user):
             return super().dispatch(request, *args, **kwargs)
         
         # Vérifier l'établissement

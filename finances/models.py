@@ -1,11 +1,30 @@
 import datetime
+from decimal import Decimal, InvalidOperation
 import uuid as _uuid
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import connection, models, transaction
 from django.utils.translation import gettext_lazy as _
 from core.models import BaseModel
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription
 from django.conf import settings
+
+
+def _require_amount(value, label, *, strictly_positive=True):
+    """Valide un montant avant toute écriture, y compris hors formulaire."""
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        amount = None
+    invalid = (
+        amount is None
+        or not amount.is_finite()
+        or (amount <= 0 if strictly_positive else amount < 0)
+    )
+    if invalid:
+        qualifier = "strictement positif" if strictly_positive else "positif ou nul"
+        raise ValidationError(f"{label} doit être {qualifier}.")
+
 
 class TypeFrais(models.TextChoices):
     SCOLARITE = 'SCOLARITE', _('Scolarité')
@@ -34,6 +53,10 @@ class FraisScolarite(BaseModel):
         verbose_name = _("Frais de Scolarité")
         verbose_name_plural = _("Frais de Scolarité")
         unique_together = ('annee_scolaire', 'classe', 'type_frais')
+
+    def save(self, *args, **kwargs):
+        _require_amount(self.montant, "Le montant des frais")
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         target = self.classe.nom if self.classe else self.get_cycle_display()
@@ -83,9 +106,24 @@ class Paiement(BaseModel):
         ordering = ['-date_paiement', '-created_at']
 
     def save(self, *args, **kwargs):
+        _require_amount(self.montant, "Le montant d'un paiement")
+        if not self._state.adding:
+            raise ValidationError(
+                "Un paiement comptabilisé est immuable ; utilisez un remboursement audité."
+            )
         if not self.numero_recu:
-            self.numero_recu = self._generer_numero_recu()
-        super().save(*args, **kwargs)
+            with transaction.atomic():
+                if connection.vendor == 'postgresql':
+                    with connection.cursor() as cursor:
+                        cursor.execute('SELECT pg_advisory_xact_lock(%s)', [87154232])
+                self.numero_recu = self._generer_numero_recu()
+                return super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            "Un paiement comptabilisé ne peut pas être supprimé ; utilisez un remboursement audité."
+        )
 
     def _generer_numero_recu(self):
         """Génère un numéro de reçu unique: REC-2026-00001"""
@@ -140,6 +178,44 @@ class Remboursement(BaseModel):
         verbose_name_plural = _("Remboursements")
         ordering = ['-date_remboursement', '-created_at']
 
+    def save(self, *args, **kwargs):
+        _require_amount(self.montant, "Le montant d'un remboursement")
+        if self._state.adding and self.paiement_id:
+            payment_amount = (
+                Paiement.objects.filter(pk=self.paiement_id)
+                .values_list('montant', flat=True)
+                .first()
+            )
+            if payment_amount is not None:
+                already_refunded = (
+                    type(self).objects.filter(
+                        paiement_id=self.paiement_id,
+                        is_active=True,
+                    ).aggregate(total=models.Sum('montant'))['total']
+                    or Decimal('0')
+                )
+                if already_refunded + self.montant > payment_amount:
+                    raise ValidationError(
+                        "Le total des remboursements ne peut pas dépasser le paiement."
+                    )
+        if not self._state.adding:
+            previous = type(self).objects.get(pk=self.pk)
+            changed = {
+                field.name for field in self._meta.concrete_fields
+                if field.name not in {'updated_at'}
+                and getattr(previous, field.attname) != getattr(self, field.attname)
+            }
+            if changed - {'is_active', 'updated_by'}:
+                raise ValidationError(
+                    "Un remboursement existant ne peut pas être modifié, seulement annulé."
+                )
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            "Un remboursement ne peut pas être supprimé ; désactivez-le avec un motif."
+        )
+
     def __str__(self):
         return f"Remboursement {self.montant} FCFA — {self.paiement}"
 
@@ -156,6 +232,10 @@ class Echeancier(BaseModel):
         verbose_name = _("Échéance de paiement")
         verbose_name_plural = _("Échéancier")
         ordering = ['date_limite']
+
+    def save(self, *args, **kwargs):
+        _require_amount(self.montant_du, "Le montant d'une échéance")
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.libelle} - {self.inscription.eleve} ({self.montant_du} FCFA)"
@@ -216,6 +296,12 @@ class TypeBourse(BaseModel):
         unique_together = ('etablissement', 'code')
         ordering = ['nom']
 
+    def save(self, *args, **kwargs):
+        _require_amount(self.valeur_reduction, "La valeur de réduction", strictly_positive=False)
+        if self.type_reduction == TypeReduction.POURCENTAGE and self.valeur_reduction > 100:
+            raise ValidationError("Une réduction en pourcentage ne peut pas dépasser 100.")
+        return super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.nom} ({self.get_source_display()})"
 
@@ -271,6 +357,10 @@ class BourseEleve(BaseModel):
         verbose_name = _("Bourse / Aide scolaire")
         verbose_name_plural = _("Bourses / Aides scolaires")
         ordering = ['-date_attribution']
+
+    def save(self, *args, **kwargs):
+        _require_amount(self.montant_accorde, "Le montant d'une bourse")
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return (
@@ -333,6 +423,10 @@ class HistoriqueRelance(BaseModel):
         verbose_name = _("Historique de relance")
         verbose_name_plural = _("Historiques de relances")
         ordering = ['-date_relance', '-created_at']
+
+    def save(self, *args, **kwargs):
+        _require_amount(self.montant_reclame, "Le montant réclamé")
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return (
@@ -414,11 +508,16 @@ class DemandePaiementMobile(BaseModel):
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
-        if not self.reference:
-            self.reference = self._generer_reference()
-        if not self.token:
-            self.token = _uuid.uuid4().hex
-        super().save(*args, **kwargs)
+        _require_amount(self.montant, "Le montant de la demande Mobile Money")
+        with transaction.atomic():
+            if not self.reference:
+                if connection.vendor == 'postgresql':
+                    with connection.cursor() as cursor:
+                        cursor.execute('SELECT pg_advisory_xact_lock(%s)', [87154233])
+                self.reference = self._generer_reference()
+            if not self.token:
+                self.token = _uuid.uuid4().hex
+            return super().save(*args, **kwargs)
 
     def _generer_reference(self):
         from django.utils import timezone
@@ -514,6 +613,10 @@ class BudgetAnnuel(BaseModel):
         unique_together = ('annee_scolaire', 'categorie')
         ordering = ['categorie__type_depense', 'categorie__nom']
 
+    def save(self, *args, **kwargs):
+        _require_amount(self.montant_prevu, "Le montant prévu", strictly_positive=False)
+        return super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.categorie} — {self.annee_scolaire} : {self.montant_prevu} FCFA"
 
@@ -566,6 +669,7 @@ class Depense(BaseModel):
         verbose_name=_("Statut"),
     )
     observation = models.TextField(blank=True, verbose_name=_("Observation"))
+    motif_annulation = models.TextField(blank=True, verbose_name=_("Motif d'annulation"))
     saisi_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -588,9 +692,30 @@ class Depense(BaseModel):
         ordering = ['-date_depense', '-created_at']
 
     def save(self, *args, **kwargs):
+        _require_amount(self.montant, "Le montant d'une dépense")
         if not self.numero_depense:
             self.numero_depense = self._generer_numero()
-        super().save(*args, **kwargs)
+        if self.statut == StatutDepense.VALIDEE:
+            if not self.valide_par_id or not self.date_validation:
+                raise ValidationError("Une dépense validée doit avoir un validateur et une date.")
+            if self.valide_par_id == self.saisi_par_id:
+                raise ValidationError("Le saisisseur ne peut pas valider sa propre dépense.")
+        if self.statut == StatutDepense.ANNULEE and not self.motif_annulation.strip():
+            raise ValidationError("Le motif d'annulation est obligatoire.")
+        if not self._state.adding:
+            previous = type(self).objects.get(pk=self.pk)
+            if previous.statut == StatutDepense.ANNULEE:
+                raise ValidationError("Une dépense annulée ne peut plus être modifiée.")
+            if previous.statut == StatutDepense.VALIDEE and self.statut != StatutDepense.ANNULEE:
+                raise ValidationError("Une dépense validée ne peut plus être modifiée.")
+            if self.statut == StatutDepense.VALIDEE:
+                if not self.valide_par_id or not self.date_validation:
+                    raise ValidationError("Une dépense validée doit avoir un validateur et une date.")
+                if self.valide_par_id == self.saisi_par_id:
+                    raise ValidationError("Le saisisseur ne peut pas valider sa propre dépense.")
+            if self.statut == StatutDepense.ANNULEE and not self.motif_annulation.strip():
+                raise ValidationError("Le motif d'annulation est obligatoire.")
+        return super().save(*args, **kwargs)
 
     def _generer_numero(self):
         from django.utils import timezone

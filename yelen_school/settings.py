@@ -61,6 +61,10 @@ except Exception:
 ALLOWED_HOSTS = list(dict.fromkeys(h for h in ALLOWED_HOSTS if h))
 
 # ── SÉCURITÉ HTTP (Production) ────────────────────────────────────────────────
+# Les en-têtes de proxy sont désactivés par défaut : l'application est déployée
+# sur le LAN et REMOTE_ADDR ne doit pas être falsifiable par un client.
+TRUST_PROXY_HEADERS = os.environ.get('TRUST_PROXY_HEADERS', 'False').lower() == 'true'
+TRUSTED_PROXY_IPS = [ip.strip() for ip in os.environ.get('TRUSTED_PROXY_IPS', '').split(',') if ip.strip()]
 # SSL Redirect — désactiver pour déploiement local sans HTTPS (via DISABLE_HTTPS_REDIRECT=true)
 _SECURE_SSL_REDIRECT = os.environ.get('DISABLE_HTTPS_REDIRECT', 'false').lower() != 'true'
 
@@ -91,11 +95,13 @@ if not DEBUG:
 # Autorise les requêtes POST/CSRF depuis les origines de confiance
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://localhost,https://127.0.0.1').split(',') if o.strip()]
 
-# Ajout automatique de l'IP locale pour l'accès réseau local
+# Ajout automatique de l'IP locale pour l'accès réseau local.
+# Le port est configurable pour éviter les conflits avec un autre service local.
 try:
+    _local_http_port = os.environ.get('YELEN_HTTP_PORT', '8000')
     _lan_ip = socket.gethostbyname(socket.gethostname())
     if _lan_ip and not _lan_ip.startswith('127.'):
-        _lan_origin = f'http://{_lan_ip}:8000'
+        _lan_origin = f'http://{_lan_ip}:{_local_http_port}'
         if _lan_origin not in CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append(_lan_origin)
 except Exception:
@@ -170,6 +176,11 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Force le remplacement du mot de passe initial avant l'accès aux modules.
+    'yelen_school.password_middleware.ForcePasswordChangeMiddleware',
+    'yelen_school.session_security.SessionSecurityMiddleware',
+    'yelen_school.two_factor_middleware.TwoFactorRequiredMiddleware',
+    'yelen_school.finance_middleware.FinanceAccessMiddleware',
     # CSP nonces — doit être APRÈS AuthenticationMiddleware
     'yelen_school.csp_middleware.CSPNonceMiddleware',
     # Restriction rôles PARENT/ÉLÈVE — doit être APRÈS AuthenticationMiddleware
@@ -179,10 +190,27 @@ MIDDLEWARE = [
     'yelen_school.audit_middleware.AuditRequestMiddleware',
     # Génération automatique de l'année scolaire (désactivé — création manuelle)
     # 'parametres.middleware.AnneeScolaireAutoMiddleware',
-    # 'licences.middleware.LicenceCheckMiddleware',
-    # 'licences.middleware.LicenceLimitsMiddleware',
-    # 'licences.middleware.LicenceContextMiddleware',
+    # Les contrôles de licence seront activés après migration des licences
+    # existantes vers des documents Ed25519 signés. Ne pas activer un contrôle
+    # HMAC comme solution commerciale.
+    'licences.middleware.LicenceCheckMiddleware',
+    'licences.middleware.LicenceLimitsMiddleware',
+    'licences.middleware.LicenceContextMiddleware',
 ]
+
+# Compatibilité de migration strictement temporaire. False par défaut : une
+# signature HMAC calculable avec SECRET_KEY chez le client n'est pas une preuve
+# commerciale. Cette option ne doit jamais être activée dans une distribution.
+ALLOW_LEGACY_HMAC_LICENSES = (
+    os.environ.get('ALLOW_LEGACY_HMAC_LICENSES', 'False').lower() == 'true'
+)
+# En production (DEBUG=False), le contrôle de licence est obligatoire. En
+# développement explicite, les tests et le travail local restent disponibles
+# sans licence commerciale. Ce n'est pas une option livrée à l'utilisateur.
+LICENSE_ENFORCEMENT_ENABLED = not DEBUG
+# Un build client ne doit pas permettre à un simple superutilisateur local de
+# contourner l'expiration ou les limites.
+LICENSE_ALLOW_SUPERUSER_BYPASS = False
 
 ROOT_URLCONF = 'yelen_school.urls'
 
@@ -278,10 +306,15 @@ SMS_MODEM_BAUD = int(os.environ.get('SMS_MODEM_BAUD', '9600'))
 SMS_MODEM_TIMEOUT = int(os.environ.get('SMS_MODEM_TIMEOUT', '10'))
 
 # ── WEBHOOK SMS ────────────────────────────────────────────────────────────────
-# Token partagé : l'application SMS Gateway doit inclure ?token=... dans l'URL
-SMS_WEBHOOK_TOKEN = os.environ.get('SMS_WEBHOOK_TOKEN', '')
+# Secret partagé : la passerelle SMS doit l'envoyer dans X-SMS-Token.
+# Le paramètre ?token=... reste accepté uniquement pour les passerelles
+# anciennes ; le header est recommandé car il évite les secrets dans les URLs.
+SMS_WEBHOOK_TOKEN = os.environ.get('SMS_WEBHOOK_TOKEN', '').strip()
+# Optionnel : signature HMAC-SHA256 du corps brut dans X-SMS-Signature.
+SMS_WEBHOOK_HMAC_SECRET = os.environ.get('SMS_WEBHOOK_HMAC_SECRET', '').strip()
 # IP autorisées à appeler le webhook (séparées par des virgules)
 SMS_ALLOWED_IPS = [ip.strip() for ip in os.environ.get('SMS_ALLOWED_IPS', '').split(',') if ip.strip()]
+SMS_WEBHOOK_RATE_LIMIT = int(os.environ.get('SMS_WEBHOOK_RATE_LIMIT', '60'))
 
 # ── SÉCURITÉ RENFORCÉE ─────────────────────────────────────────────────────────
 
@@ -308,6 +341,7 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '3600'))  # 1 heure
+SESSION_IDLE_TIMEOUT = int(os.environ.get('SESSION_IDLE_TIMEOUT', '1800'))  # 30 min d'inactivité
 SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF

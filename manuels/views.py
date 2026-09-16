@@ -3,6 +3,8 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -10,6 +12,7 @@ from django.views.decorators.http import require_POST
 from finances.models import Paiement
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, RubriquePaiement
+from yelen_school.finance_middleware import FINANCE_WRITE_ROLES
 
 from .models import AttributionManuel, EtatManuel, ExemplaireManuel, ManuelScolaire
 
@@ -18,6 +21,11 @@ from .models import AttributionManuel, EtatManuel, ExemplaireManuel, ManuelScola
 
 def _etab(request):
     return request.user.etablissement
+
+
+def _require_finance_write(request):
+    if getattr(request.user, 'role', None) not in FINANCE_WRITE_ROLES:
+        raise PermissionDenied("La facturation est réservée aux rôles financiers autorisés.")
 
 
 def _annee_courante(etab):
@@ -364,37 +372,49 @@ def non_rendus(request):
 @require_POST
 def facturer_non_rendu(request, pk):
     """Génère un paiement dans finances pour le manuel non rendu et notifie les parents par SMS."""
+    _require_finance_write(request)
     etab = _etab(request)
-    attribution = get_object_or_404(
-        AttributionManuel, pk=pk,
-        exemplaire__manuel__etablissement=etab,
-        date_retour__isnull=True,
-        facture_genere=False,
-    )
-    manuel = attribution.exemplaire.manuel
-    inscription = attribution.inscription
-    eleve = inscription.eleve
+    # Le verrou porte sur l'attribution avant toute écriture : deux requêtes
+    # concurrentes ne peuvent ainsi pas facturer le même manuel deux fois.
+    with transaction.atomic():
+        attribution = get_object_or_404(
+            AttributionManuel.objects.select_for_update(), pk=pk,
+            exemplaire__manuel__etablissement=etab,
+            date_retour__isnull=True,
+            facture_genere=False,
+        )
+        manuel = attribution.exemplaire.manuel
+        inscription = attribution.inscription
+        eleve = inscription.eleve
 
-    if manuel.prix_remplacement <= 0:
-        messages.warning(request, "Prix de remplacement non défini pour ce manuel.")
-        return redirect('manuels:non_rendus')
+        if manuel.prix_remplacement <= 0:
+            messages.warning(request, "Prix de remplacement non défini pour ce manuel.")
+            return redirect('manuels:non_rendus')
 
-    # Rubrique et paiement
-    rubrique, _ = RubriquePaiement.objects.get_or_create(
-        etablissement=etab,
-        code='MNR',
-        defaults={'nom': 'Manuel non rendu', 'obligatoire': False},
-    )
-    Paiement.objects.create(
-        inscription=inscription,
-        rubrique=rubrique,
-        montant=manuel.prix_remplacement,
-        date_paiement=date.today(),
-        mode_paiement='ESPECES',
-        observation=f"Manuel non rendu : {manuel.titre} ({attribution.exemplaire.code_exemplaire})",
-    )
-    attribution.facture_genere = True
-    attribution.save()
+        # Rubrique, paiement et marquage de l'attribution forment une seule unité
+        # financière : un échec ne doit pas laisser un paiement orphelin ou une
+        # attribution marquée sans écriture correspondante.
+        rubrique, _ = RubriquePaiement.objects.get_or_create(
+            etablissement=etab,
+            code='MNR',
+            defaults={'nom': 'Manuel non rendu', 'obligatoire': False},
+        )
+        paiement = Paiement(
+            inscription=inscription,
+            rubrique=rubrique,
+            montant=manuel.prix_remplacement,
+            date_paiement=date.today(),
+            mode_paiement='ESPECES',
+            observation=f"Manuel non rendu : {manuel.titre} ({attribution.exemplaire.code_exemplaire})",
+            encaisse_par=request.user,
+            statut_eleve=inscription.statut_eleve,
+        )
+        paiement._audit_reason = 'Facturation d’un manuel non rendu'
+        paiement.save()
+        attribution.facture_genere = True
+        attribution.updated_by = request.user
+        attribution._audit_reason = 'Facturation d’un manuel non rendu'
+        attribution.save()
 
     # ── Notification SMS aux parents ──────────────────────────────────────────
     _notifier_parents_manuel_non_rendu(eleve, manuel, etab)

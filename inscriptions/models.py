@@ -444,7 +444,35 @@ class Inscription(BaseModel):
             )
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        """Sauvegarde avec réservation atomique de la capacité élèves."""
+        from django.conf import settings
+
+        counts_toward_limit = self.statut in {
+            StatutInscriptionChoices.AFFECTE,
+            StatutInscriptionChoices.BOURSIER,
+            StatutInscriptionChoices.EXONERE,
+        }
+        annee_courante = bool(
+            self.annee_scolaire_id
+            and getattr(self.annee_scolaire, 'est_courante', False)
+        )
+        needs_reservation = bool(
+            getattr(settings, 'LICENSE_ENFORCEMENT_ENABLED', True)
+            and counts_toward_limit
+            and annee_courante
+        )
+
+        # Une réactivation d'un abandon consomme également une place.
+        if not self._state.adding and needs_reservation:
+            previous = type(self).objects.filter(pk=self.pk).values('statut').first()
+            needs_reservation = not previous or previous['statut'] == StatutInscriptionChoices.ABANDON
+
+        if needs_reservation:
+            from licences.limits import reserve_limit
+            with reserve_limit(self.classe.etablissement, 'eleves'):
+                super().save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
 
 
 # ═══════════════════════════════════════════════════════════════════

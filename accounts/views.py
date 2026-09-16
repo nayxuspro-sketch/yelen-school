@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordResetView
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -22,7 +23,9 @@ from django.views.decorators.http import require_POST
 from core.models import RoleChoices
 from .forms import UserCreateForm, UserUpdateForm, SetPasswordForm, ProfileUpdateForm, ChangeOwnPasswordForm, PasswordResetRateLimitedForm
 from .models import User
+from .security import LoginRateLimiter
 from licences.models import Licence
+from yelen_school.two_factor_middleware import REQUIRED_2FA_ROLES
 
 
 # ── Mot de passe oublié — vue avec limitation de débit ────────────────────────
@@ -46,6 +49,24 @@ class PasswordResetRateLimitedView(PasswordResetView):
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_DURATION_MINUTES = 15
 _LICENCE_ALERT_DAYS = 30
+TWO_FACTOR_MAX_ATTEMPTS = 5
+
+
+def _requires_2fa(user):
+    return getattr(user, 'role', None) in REQUIRED_2FA_ROLES
+
+
+def _clear_2fa_challenge(request):
+    for key in ('_2fa_user_pk', '_2fa_next', '_2fa_enroll', '_2fa_failed_attempts'):
+        request.session.pop(key, None)
+
+
+def _get_failed_2fa_attempts(request, key='_2fa_failed_attempts'):
+    try:
+        return int(request.session.get(key, 0))
+    except (TypeError, ValueError):
+        request.session.pop(key, None)
+        return 0
 
 
 def _check_licence_post_login(request, user, on_expired_redirect='accounts:login'):
@@ -133,8 +154,13 @@ def login_view(request):
             messages.error(request, "Veuillez fournir votre identifiant et mot de passe.")
             return render(request, 'accounts/login.html')
 
+        if LoginRateLimiter.is_blocked(request, email):
+            messages.error(request, "Trop de tentatives. Réessayez dans une minute.")
+            return render(request, 'accounts/login.html', status=429)
+
         user = authenticate(request, username=email, password=password)
         if user is not None:
+            LoginRateLimiter.clear_account(request, email)
             if user.locked_until and user.locked_until > timezone.now():
                 remaining_seconds = (user.locked_until - timezone.now()).seconds
                 remaining_minutes = remaining_seconds // 60 + 1
@@ -150,9 +176,22 @@ def login_view(request):
                 user.save(update_fields=['failed_login_attempts', 'locked_until'])
 
             if user.totp_enabled and user.totp_secret:
-                request.session['_2fa_user_pk'] = str(user.pk)
+                # Ne jamais laisser un identifiant utilisateur modifiable en
+                # clair dans la session intermédiaire de la double authentification.
+                request.session['_2fa_user_pk'] = TimestampSigner().sign(str(user.pk))
                 request.session['_2fa_next'] = request.GET.get('next', '')
+                request.session['_2fa_enroll'] = False
+                request.session['_2fa_failed_attempts'] = 0
                 return redirect('accounts:login_2fa')
+
+            if _requires_2fa(user):
+                # Un compte privilégié sans 2FA n'est jamais connecté avant son
+                # enrôlement : la session ne contient qu'un défi signé de 5 min.
+                request.session['_2fa_user_pk'] = TimestampSigner().sign(str(user.pk))
+                request.session['_2fa_next'] = request.GET.get('next', '')
+                request.session['_2fa_enroll'] = True
+                request.session['_2fa_failed_attempts'] = 0
+                return redirect('accounts:login_2fa_setup')
 
             login(request, user)
             blocked = _check_licence_post_login(request, user, on_expired_redirect='accounts:login')
@@ -160,6 +199,7 @@ def login_view(request):
                 return blocked
             return _redirect_after_login(request, user, request.GET.get('next', ''))
         else:
+            LoginRateLimiter.register_failure(request, email)
             messages.error(request, "Identifiant ou mot de passe incorrect.")
 
             try:
@@ -186,29 +226,139 @@ def login_view(request):
     return render(request, 'accounts/login.html')
 
 
+def _get_pending_2fa_user(request):
+    signed_user_pk = request.session.get('_2fa_user_pk')
+    if not signed_user_pk:
+        return None
+    try:
+        user_pk = TimestampSigner().unsign(signed_user_pk, max_age=300)
+        user = User.objects.get(pk=user_pk, is_active=True)
+    except (BadSignature, SignatureExpired, User.DoesNotExist):
+        _clear_2fa_challenge(request)
+        return None
+    return user
+
+
+def login_2fa_setup(request):
+    """Enrôlement 2FA obligatoire avant la première session privilégiée."""
+    import base64
+    import io
+    import pyotp
+    import qrcode
+    from django.core.signing import Signer
+
+    if not request.session.get('_2fa_enroll'):
+        return redirect('accounts:login')
+    user = _get_pending_2fa_user(request)
+    if user is None or not _requires_2fa(user):
+        return redirect('accounts:login')
+
+    if request.method == 'POST':
+        failed_attempts = _get_failed_2fa_attempts(request)
+        if failed_attempts >= TWO_FACTOR_MAX_ATTEMPTS:
+            _clear_2fa_challenge(request)
+            messages.error(request, "Trop de codes 2FA incorrects. Recommencez la connexion.")
+            return redirect('accounts:login')
+
+        signed_secret = request.POST.get('signed_secret', '').strip()
+        code = request.POST.get('code', '').strip().replace(' ', '')
+        try:
+            secret = Signer().unsign(signed_secret)
+        except Exception:
+            secret = ''
+        valid = bool(secret and pyotp.TOTP(secret).verify(code, valid_window=1))
+        if valid:
+            next_url = request.session.get('_2fa_next', '')
+            user.totp_secret = secret
+            user.totp_enabled = True
+            user.save(update_fields=['totp_secret', 'totp_enabled'])
+            _clear_2fa_challenge(request)
+            login(request, user)
+            blocked = _check_licence_post_login(request, user)
+            if blocked:
+                return blocked
+            messages.success(request, "Double authentification activée. Connexion sécurisée.")
+            return _redirect_after_login(request, user, next_url)
+
+        failed_attempts += 1
+        request.session['_2fa_failed_attempts'] = failed_attempts
+        if failed_attempts >= TWO_FACTOR_MAX_ATTEMPTS:
+            _clear_2fa_challenge(request)
+            messages.error(request, "Trop de codes 2FA incorrects. Recommencez la connexion.")
+            return redirect('accounts:login')
+        messages.error(request, "Code incorrect. Vérifiez votre application et réessayez.")
+
+    new_secret = pyotp.random_base32()
+    uri = pyotp.TOTP(new_secret).provisioning_uri(
+        name=user.email,
+        issuer_name='YELEN SCHOOL',
+    )
+    buf = io.BytesIO()
+    qrcode.make(uri).save(buf, format='PNG')
+    return render(request, 'accounts/totp_setup.html', {
+        'signed_secret': Signer().sign(new_secret),
+        'qr_b64': base64.b64encode(buf.getvalue()).decode(),
+        'pending_login': True,
+        'pending_email': user.email,
+    })
+
+
 def login_2fa(request):
     """Connexion utilisateur — étape 2 : code TOTP."""
-    user_pk = request.session.get('_2fa_user_pk')
-    if not user_pk:
+    signed_user_pk = request.session.get('_2fa_user_pk')
+    if request.session.get('_2fa_enroll'):
+        return redirect('accounts:login_2fa_setup')
+    if not signed_user_pk:
         return redirect('accounts:login')
 
     try:
-        user = User.objects.get(pk=user_pk)
+        # Le défi 2FA est court : un jeton intermédiaire expire après cinq minutes.
+        user_pk = TimestampSigner().unsign(signed_user_pk, max_age=300)
+    except (BadSignature, SignatureExpired):
+        request.session.pop('_2fa_user_pk', None)
+        request.session.pop('_2fa_next', None)
+        messages.error(request, "La vérification 2FA a expiré. Recommencez la connexion.")
+        return redirect('accounts:login')
+
+    try:
+        user = User.objects.get(
+            pk=user_pk,
+            is_active=True,
+            totp_enabled=True,
+        )
     except User.DoesNotExist:
+        _clear_2fa_challenge(request)
+        return redirect('accounts:login')
+
+    if not user.totp_secret:
+        _clear_2fa_challenge(request)
         return redirect('accounts:login')
 
     if request.method == 'POST':
         import pyotp
+        failed_attempts = _get_failed_2fa_attempts(request)
+        if failed_attempts >= TWO_FACTOR_MAX_ATTEMPTS:
+            _clear_2fa_challenge(request)
+            messages.error(request, "Trop de codes 2FA incorrects. Recommencez la connexion.")
+            return redirect('accounts:login')
+
         code = request.POST.get('code', '').strip().replace(' ', '')
         totp = pyotp.TOTP(user.totp_secret)
         if totp.verify(code, valid_window=1):
-            del request.session['_2fa_user_pk']
-            next_url = request.session.pop('_2fa_next', '')
+            next_url = request.session.get('_2fa_next', '')
+            _clear_2fa_challenge(request)
             login(request, user)
             blocked = _check_licence_post_login(request, user)
             if blocked:
                 return blocked
             return _redirect_after_login(request, user, next_url)
+
+        failed_attempts += 1
+        request.session['_2fa_failed_attempts'] = failed_attempts
+        if failed_attempts >= TWO_FACTOR_MAX_ATTEMPTS:
+            _clear_2fa_challenge(request)
+            messages.error(request, "Trop de codes 2FA incorrects. Recommencez la connexion.")
+            return redirect('accounts:login')
         messages.error(request, "Code incorrect ou expiré. Réessayez.")
 
     return render(request, 'accounts/login_2fa.html', {'email': user.email})
@@ -231,8 +381,15 @@ def totp_setup(request):
     from django.core.signing import Signer
 
     user = request.user
+    if user.totp_enabled and user.totp_secret:
+        return redirect('accounts:profile')
 
     if request.method == 'POST':
+        failed_attempts = _get_failed_2fa_attempts(request, '_totp_setup_failed_attempts')
+        if failed_attempts >= TWO_FACTOR_MAX_ATTEMPTS:
+            request.session.pop('_totp_setup_failed_attempts', None)
+            messages.error(request, "Trop de codes incorrects. Recommencez plus tard.")
+            return redirect('accounts:profile')
         code = request.POST.get('code', '').strip().replace(' ', '')
         signed_secret = request.POST.get('signed_secret', '').strip()
         if not signed_secret:
@@ -251,7 +408,14 @@ def totp_setup(request):
             user.totp_secret = secret
             user.totp_enabled = True
             user.save(update_fields=['totp_secret', 'totp_enabled'])
+            request.session.pop('_totp_setup_failed_attempts', None)
             messages.success(request, "Double authentification activée avec succès.")
+            return redirect('accounts:profile')
+        failed_attempts += 1
+        request.session['_totp_setup_failed_attempts'] = failed_attempts
+        if failed_attempts >= TWO_FACTOR_MAX_ATTEMPTS:
+            request.session.pop('_totp_setup_failed_attempts', None)
+            messages.error(request, "Trop de codes incorrects. Recommencez plus tard.")
             return redirect('accounts:profile')
         messages.error(request, "Code incorrect. Vérifiez votre application et réessayez.")
 
@@ -283,14 +447,29 @@ def totp_disable(request):
     user = request.user
     if not user.totp_enabled:
         return redirect('accounts:profile')
+    if _requires_2fa(user):
+        messages.error(request, "La 2FA est obligatoire pour ce rôle et ne peut pas être désactivée.")
+        return redirect('accounts:profile')
+    if not user.totp_secret:
+        messages.error(request, "Secret 2FA invalide.")
+        return redirect('accounts:profile')
+
+    failed_attempts = _get_failed_2fa_attempts(request, '_totp_disable_failed_attempts')
+    if failed_attempts >= TWO_FACTOR_MAX_ATTEMPTS:
+        request.session.pop('_totp_disable_failed_attempts', None)
+        messages.error(request, "Trop de codes incorrects. Réessayez plus tard.")
+        return redirect('accounts:profile')
 
     code = request.POST.get('code', '').strip().replace(' ', '')
     if pyotp.TOTP(user.totp_secret).verify(code, valid_window=1):
         user.totp_secret = ''
         user.totp_enabled = False
         user.save(update_fields=['totp_secret', 'totp_enabled'])
+        request.session.pop('_totp_disable_failed_attempts', None)
         messages.success(request, "Double authentification désactivée.")
     else:
+        failed_attempts += 1
+        request.session['_totp_disable_failed_attempts'] = failed_attempts
         messages.error(request, "Code incorrect. La 2FA n'a pas été désactivée.")
 
     return redirect('accounts:profile')
@@ -321,7 +500,8 @@ def profile_change_password(request):
     pw_form = ChangeOwnPasswordForm(request.POST, user=request.user)
     if pw_form.is_valid():
         request.user.set_password(pw_form.cleaned_data['password1'])
-        request.user.save(update_fields=['password'])
+        request.user.must_change_password = False
+        request.user.save(update_fields=['password', 'must_change_password'])
         # Reconnecter après changement de mot de passe pour éviter la déconnexion
         from django.contrib.auth import update_session_auth_hash
         update_session_auth_hash(request, request.user)

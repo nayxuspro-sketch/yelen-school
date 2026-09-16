@@ -8,7 +8,10 @@ from pedagogie.models import Matiere, Note
 class TestPedagogieViews:
     @pytest.fixture
     def logged_in_client(self, client):
-        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN')
+        user = baker.make(
+            'accounts.User', is_superuser=True, role='SUPER_ADMIN',
+            totp_enabled=True, totp_secret='JBSWY3DPEHPK3PXP',
+        )
         client.force_login(user)
         return client
 

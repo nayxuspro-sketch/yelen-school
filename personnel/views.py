@@ -3,6 +3,7 @@ from datetime import date as date_module
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
@@ -264,9 +265,13 @@ def inscription_create(request, pk):
         if form.is_valid():
             inscription = form.save(commit=False)
             inscription.personnel = membre
-            inscription.save()
-            messages.success(request, f"Inscription enregistrée pour {membre.get_nom_complet()}.")
-            return redirect('personnel:detail', pk=membre.pk)
+            try:
+                inscription.save()
+            except ValidationError as exc:
+                form.add_error(None, exc)
+            else:
+                messages.success(request, f"Inscription enregistrée pour {membre.get_nom_complet()}.")
+                return redirect('personnel:detail', pk=membre.pk)
     else:
         etab = getattr(request.user, 'etablissement', None)
         annee_courante = AnneeScolaire.objects.filter(

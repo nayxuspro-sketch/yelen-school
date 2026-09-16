@@ -420,6 +420,31 @@ class InscriptionPersonnel(BaseModel):
                       f"pour {self.cycle.nom} en {self.annee_scolaire.libelle}")
                 )
 
+    def save(self, *args, **kwargs):
+        """Réserve atomiquement un poste enseignant de la licence."""
+        from django.conf import settings
+
+        is_teacher = bool(
+            self.est_actif
+            and getattr(self.poste, 'categorie', '') == 'ENSEIGNEMENT'
+        )
+        if not self._state.adding and is_teacher and getattr(
+            settings, 'LICENSE_ENFORCEMENT_ENABLED', True
+        ):
+            previous = type(self).objects.filter(pk=self.pk).values(
+                'est_actif', 'poste__categorie'
+            ).first()
+            is_teacher = not previous or (
+                not previous['est_actif']
+                or previous['poste__categorie'] != 'ENSEIGNEMENT'
+            )
+
+        if is_teacher and getattr(settings, 'LICENSE_ENFORCEMENT_ENABLED', True):
+            from licences.limits import reserve_limit
+            with reserve_limit(self.personnel.etablissement, 'enseignants'):
+                return super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
+
 
 # ═══════════════════════════════════════════════════════════════════
 # 3. SALAIRE MENSUEL DU PERSONNEL

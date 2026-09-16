@@ -1,46 +1,35 @@
-"""
-licences/boot_check.py
-======================
-Vérification d'intégrité des licences au démarrage de l'application.
+"""Vérification de cohérence des licences au démarrage Django.
 
-Appelé depuis LicencesConfig.ready() — s'exécute une seule fois au boot.
+Le contrôle distingue explicitement :
+- une ancienne licence HMAC à migrer ;
+- une licence Ed25519 falsifiée ;
+- une licence signée liée à un autre serveur ;
+- une licence arrivée à expiration.
 
-Contrôles effectués :
-  1. HMAC — la signature stockée correspond-elle aux données actuelles ?
-  2. Expiration — des licences ACTIVE sont-elles déjà expirées sans mise à jour ?
-  3. Révocation — les licences REVOQUEE sont-elles correctement marquées ?
-
-En cas d'anomalie :
-  - La licence est marquée REVOQUEE (si signature invalide) ou EXPIREE
-  - Un avertissement CRITIQUE est émis dans le logger Django
-  - Le démarrage N'EST PAS bloqué (dégradation gracieuse)
+Une licence copiée sur une autre machine n'est pas automatiquement révoquée :
+la révocation destructive empêcherait une procédure légitime de remplacement
+de serveur. Elle est signalée et doit être refusée par le middleware actif.
 """
 
+from __future__ import annotations
+
+import hashlib
 import logging
 
-logger = logging.getLogger('licences.boot')
+logger = logging.getLogger("licences.boot")
 
 
 def run_boot_check() -> dict:
-    """
-    Exécute la vérification complète des licences.
-
-    Returns:
-        dict avec les clés :
-            ok          (bool)  — True si aucune anomalie détectée
-            total       (int)   — Nombre de licences vérifiées
-            valides     (int)   — Licences saines
-            tampering   (list)  — Clés de licences avec signature invalide
-            expirees    (list)  — Licences ACTIVE mais date dépassée
-            errors      (list)  — Erreurs techniques (DB inaccessible, etc.)
-    """
+    """Vérifie les licences sans bloquer les commandes de maintenance Django."""
     result = {
-        'ok': True,
-        'total': 0,
-        'valides': 0,
-        'tampering': [],
-        'expirees': [],
-        'errors': [],
+        "ok": True,
+        "total": 0,
+        "valides": 0,
+        "tampering": [],
+        "binding": [],
+        "expirees": [],
+        "legacy": [],
+        "errors": [],
     }
 
     try:
@@ -49,83 +38,107 @@ def run_boot_check() -> dict:
 
         licences = list(
             Licence.objects.only(
-                'id', 'cle_licence', 'type_licence',
-                'date_expiration', 'statut', 'signature_hmac',
+                "id",
+                "cle_licence",
+                "type_licence",
+                "date_expiration",
+                "statut",
+                "signature_hmac",
+                "signature_ed25519",
+                "signed_payload",
+                "etablissement_id",
             )
         )
-        result['total'] = len(licences)
+        result["total"] = len(licences)
 
         for licence in licences:
             try:
                 _verifier_licence(licence, timezone, Licence, StatutLicence, result)
             except Exception as exc:
-                result['errors'].append(f"{licence.cle_licence}: {exc}")
+                result["errors"].append(f"{licence.cle_licence}: {exc}")
                 logger.exception(
                     "[LICENCES BOOT] Erreur inattendue sur %s : %s",
-                    licence.cle_licence, exc
+                    licence.cle_licence,
+                    exc,
                 )
-
     except Exception as exc:
-        # La table n'existe pas encore (première migration) ou autre erreur DB
+        # Table absente pendant le premier migrate, ou DB temporairement
+        # indisponible : le démarrage est laissé aux contrôles de disponibilité.
         msg = f"Impossible d'accéder aux licences au démarrage : {exc}"
-        result['errors'].append(msg)
+        result["errors"].append(msg)
         logger.warning("[LICENCES BOOT] %s", msg)
         return result
 
-    result['ok'] = not (result['tampering'] or result['expirees'] or result['errors'])
+    result["ok"] = not any(
+        result[key] for key in ("tampering", "binding", "expirees", "legacy", "errors")
+    )
     _log_summary(result)
     return result
 
 
 def _verifier_licence(licence, timezone, Licence, StatutLicence, result):
-    """Vérifie une licence individuelle et met à jour result."""
-
-    # ── 1. Vérification HMAC (intégrité cryptographique) ──────────────────
-    if not licence.verifier_signature():
-        result['tampering'].append(licence.cle_licence)
-        result['ok'] = False
-
-        logger.critical(
-            "[LICENCES BOOT] TAMPERING DÉTECTÉ — Licence %s : "
-            "signature HMAC invalide. Révocation automatique.",
+    """Vérifie une licence individuelle et met à jour le résultat."""
+    if not licence.signature_ed25519 or not licence.signed_payload:
+        result["legacy"].append(licence.cle_licence)
+        logger.warning(
+            "[LICENCES BOOT] Licence %s : ancienne signature HMAC détectée. "
+            "Migration Ed25519 obligatoire avant commercialisation.",
             licence.cle_licence,
         )
+        # Transition non destructive : l'installation existante n'est pas
+        # modifiée, mais cette licence n'est pas considérée comme certifiée.
+        return
 
-        # Marquer comme révoquée sans passer par save() complet
-        # (évite de regénérer la signature avec les données corrompues)
-        Licence.objects.filter(pk=licence.pk).update(
-            statut=StatutLicence.REVOQUEE,
+    if not licence.verifier_signature():
+        result["tampering"].append(licence.cle_licence)
+        logger.critical(
+            "[LICENCES BOOT] TAMPERING — licence %s : signature Ed25519 invalide.",
+            licence.cle_licence,
         )
-        _audit_systeme(licence, 'TENTATIVE_FRAUDE',
-                       "Boot check : signature HMAC invalide — révocation automatique")
-        return  # Ne pas continuer la vérification d'une licence corrompue
+        # Révocation automatique d'une signature falsifiée : le statut local ne
+        # doit pas permettre de réactiver une ligne dont les données sont modifiées.
+        Licence.objects.filter(pk=licence.pk).update(statut=StatutLicence.REVOQUEE)
+        _audit_systeme(
+            licence,
+            "TENTATIVE_FRAUDE",
+            "Boot check : signature Ed25519 invalide — révocation automatique",
+        )
+        return
 
-    # ── 2. Vérification expiration (licences ACTIVE expirées) ─────────────
+    if licence.statut == StatutLicence.ACTIVE and not licence.est_liee_au_serveur():
+        result["binding"].append(licence.cle_licence)
+        logger.critical(
+            "[LICENCES BOOT] BINDING — licence %s utilisée sur un serveur différent.",
+            licence.cle_licence,
+        )
+        _audit_systeme(
+            licence,
+            "TENTATIVE_FRAUDE",
+            "Boot check : empreinte serveur différente — accès à refuser",
+        )
+        return
+
     if (
         licence.statut == StatutLicence.ACTIVE
         and licence.date_expiration < timezone.now().date()
     ):
-        result['expirees'].append(licence.cle_licence)
-        result['ok'] = False
-
+        result["expirees"].append(licence.cle_licence)
         logger.warning(
             "[LICENCES BOOT] Licence %s expirée le %s — mise à jour du statut.",
             licence.cle_licence,
             licence.date_expiration,
         )
-
-        Licence.objects.filter(pk=licence.pk).update(
-            statut=StatutLicence.EXPIREE,
+        Licence.objects.filter(pk=licence.pk).update(statut=StatutLicence.EXPIREE)
+        _audit_systeme(
+            licence,
+            "EXPIRATION",
+            f"Boot check : licence expirée le {licence.date_expiration}",
         )
-        _audit_systeme(licence, 'EXPIRATION',
-                       f"Boot check : licence expirée le {licence.date_expiration}")
         return
 
-    # ── 3. Tout est sain ───────────────────────────────────────────────────
-    result['valides'] += 1
-
+    result["valides"] += 1
     logger.debug(
-        "[LICENCES BOOT] Licence %s (%s) OK — expire le %s",
+        "[LICENCES BOOT] Licence %s (%s) vérifiée — expire le %s",
         licence.cle_licence,
         licence.type_licence,
         licence.date_expiration,
@@ -133,69 +146,59 @@ def _verifier_licence(licence, timezone, Licence, StatutLicence, result):
 
 
 def _audit_systeme(licence, action: str, description: str):
-    """
-    Enregistre une entrée d'audit système sans lever d'exception.
-    Utilise update() pour éviter les effets de bord du save() de LicenceAuditLog.
-    """
+    """Enregistre un événement de licence sans bloquer le démarrage."""
     try:
         from django.utils import timezone as tz
         from .models import LicenceAuditLog
-        import hashlib
 
-        # Dernière entrée pour le chaînage
-        derniere = (
-            LicenceAuditLog.objects
-            .filter(licence=licence)
-            .order_by('-created_at')
-            .values_list('hash_actuel', flat=True)
+        previous = (
+            LicenceAuditLog.objects.filter(licence=licence)
+            .order_by("-created_at")
+            .values_list("hash_actuel", flat=True)
             .first()
-        ) or ''
-
+        ) or ""
         now = tz.now()
-        contenu = (
+        content = (
             f"{licence.cle_licence}:{action}:{description}:"
-            f"{now.isoformat()}:{derniere}"
-        ).encode('utf-8')
-        hash_actuel = hashlib.sha256(contenu).hexdigest()
-
-        # bulk_create bypass save() (qui appelle _generer_hash avec created_at=None)
-        LicenceAuditLog.objects.bulk_create([
-            LicenceAuditLog(
-                licence=licence,
-                action=action,
-                description=description,
-                acteur_systeme=True,
-                hash_precedent=derniere,
-                hash_actuel=hash_actuel,
-            )
-        ])
+            f"{now.isoformat()}:{previous}"
+        ).encode("utf-8")
+        LicenceAuditLog.objects.bulk_create(
+            [
+                LicenceAuditLog(
+                    licence=licence,
+                    action=action,
+                    description=description,
+                    acteur_systeme=True,
+                    hash_precedent=previous,
+                    hash_actuel=hashlib.sha256(content).hexdigest(),
+                )
+            ]
+        )
     except Exception as exc:
         logger.warning("[LICENCES BOOT] Impossible d'enregistrer l'audit : %s", exc)
 
 
 def _log_summary(result: dict):
-    """Émet un résumé lisible dans les logs."""
-    level = logging.INFO if result['ok'] else logging.WARNING
-
+    level = logging.INFO if result["ok"] else logging.WARNING
     logger.log(
         level,
-        "[LICENCES BOOT] Vérification terminée — "
-        "%d licence(s) contrôlée(s) : %d valide(s), "
-        "%d signature(s) invalide(s), %d expirée(s), %d erreur(s).",
-        result['total'],
-        result['valides'],
-        len(result['tampering']),
-        len(result['expirees']),
-        len(result['errors']),
+        "[LICENCES BOOT] %d licence(s) : %d valide(s), %d falsifiée(s), "
+        "%d binding(s) invalide(s), %d expirée(s), %d legacy, %d erreur(s).",
+        result["total"],
+        result["valides"],
+        len(result["tampering"]),
+        len(result["binding"]),
+        len(result["expirees"]),
+        len(result["legacy"]),
+        len(result["errors"]),
     )
-
-    if result['tampering']:
+    if result["tampering"]:
         logger.critical(
-            "[LICENCES BOOT] ALERTE SÉCURITÉ — Licences avec tampering : %s",
-            ', '.join(result['tampering']),
+            "[LICENCES BOOT] ALERTE — licences falsifiées : %s",
+            ", ".join(result["tampering"]),
         )
-    if result['expirees']:
-        logger.warning(
-            "[LICENCES BOOT] Licences expirées corrigées : %s",
-            ', '.join(result['expirees']),
+    if result["binding"]:
+        logger.critical(
+            "[LICENCES BOOT] ALERTE — licences copiées ou serveur remplacé : %s",
+            ", ".join(result["binding"]),
         )

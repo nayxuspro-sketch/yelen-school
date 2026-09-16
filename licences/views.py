@@ -2,10 +2,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 
-import hashlib
-import hmac
-from datetime import date
-
 from django.conf import settings
 
 from .forms import LicenceForm, RenouvelerForm, RevoquerForm
@@ -15,7 +11,22 @@ from .models import Licence, StatutLicence, LIMITES_LICENCES, TypeLicence, FEATU
 # ── Garde superuser ───────────────────────────────────────────────────────────
 
 def _superuser_required(view_func):
-    return user_passes_test(lambda u: u.is_superuser, login_url='/')(view_func)
+    """Réserve l'émission/révocation web au build fournisseur.
+
+    En production cliente, les licences sont importées hors ligne par fichier
+    signé ; un superutilisateur local ne doit pas pouvoir modifier les données
+    commerciales depuis l'interface.
+    """
+    def can_manage(user):
+        return bool(
+            user.is_superuser
+            and (
+                not getattr(settings, 'LICENSE_ENFORCEMENT_ENABLED', True)
+                or getattr(settings, 'LICENSE_ALLOW_SUPERUSER_BYPASS', False)
+            )
+        )
+
+    return user_passes_test(can_manage, login_url='/')(view_func)
 
 
 def _get_licence(user):
@@ -288,110 +299,15 @@ def guide(request):
 @login_required
 @_superuser_required
 def outils_licence(request):
+    """Ancien écran HMAC désactivé.
+
+    L'émission et la vérification de licences sont volontairement sorties de
+    l'interface web : la clé privée fournisseur ne doit jamais être manipulée
+    par une requête HTTP ou stockée dans l'installation cliente.
     """
-    Outils cryptographiques offline :
-    - Génération de clé YELEN-XXXX-XXXX-XXXX à partir de type + établissement
-    - Vérification de signature HMAC d'une licence existante
-    """
-    from etablissements.models import Etablissement
+    from django.http import HttpResponseGone
 
-    etablissements = Etablissement.objects.order_by('nom')
-    types = TypeLicence.choices
-
-    ctx = {
-        'etablissements': etablissements,
-        'types': types,
-        'action': None,
-        'resultat': None,
-        'erreur': None,
-    }
-
-    if request.method != 'POST':
-        return render(request, 'licences/outils.html', ctx)
-
-    action = request.POST.get('action')
-    ctx['action'] = action
-
-    secret = settings.SECRET_KEY.encode('utf-8')
-
-    if action == 'generer':
-        type_licence = request.POST.get('type_licence', '').strip()
-        etab_id = request.POST.get('etablissement_id', '').strip()
-
-        if not type_licence or type_licence not in dict(TypeLicence.choices):
-            ctx['erreur'] = "Type de licence invalide."
-            return render(request, 'licences/outils.html', ctx)
-        if not etab_id:
-            ctx['erreur'] = "Identifiant d'établissement requis."
-            return render(request, 'licences/outils.html', ctx)
-
-        from django.utils import timezone
-        timestamp = timezone.now().isoformat()
-        message = f"{type_licence}:{etab_id}:{timestamp}".encode('utf-8')
-        sig = hmac.new(secret, message, hashlib.sha256).hexdigest()
-        code = sig[:12].upper()
-        cle = f"YELEN-{code[:4]}-{code[4:8]}-{code[8:12]}"
-
-        # Calculer la signature d'intégrité (pour une expiration à 1 an)
-        date_exp = date.today().replace(year=date.today().year + 1)
-        msg_sig = f"{cle}:{type_licence}:{date_exp.isoformat()}".encode('utf-8')
-        signature_hmac = hmac.new(secret, msg_sig, hashlib.sha256).hexdigest()
-
-        ctx['resultat'] = {
-            'mode': 'generer',
-            'cle': cle,
-            'type_licence': type_licence,
-            'type_display': dict(TypeLicence.choices).get(type_licence, type_licence),
-            'etab_id': etab_id,
-            'timestamp': timestamp,
-            'date_exp_defaut': date_exp.strftime('%d/%m/%Y'),
-            'signature_hmac': signature_hmac,
-        }
-
-    elif action == 'verifier':
-        cle = request.POST.get('cle_licence', '').strip().upper()
-        type_licence = request.POST.get('type_licence_v', '').strip()
-        date_exp_str = request.POST.get('date_expiration', '').strip()
-
-        if not cle or not type_licence or not date_exp_str:
-            ctx['erreur'] = "Tous les champs sont requis pour la vérification."
-            return render(request, 'licences/outils.html', ctx)
-
-        try:
-            date_exp = date.fromisoformat(date_exp_str)
-        except ValueError:
-            ctx['erreur'] = "Format de date invalide (attendu : AAAA-MM-JJ)."
-            return render(request, 'licences/outils.html', ctx)
-
-        msg_sig = f"{cle}:{type_licence}:{date_exp.isoformat()}".encode('utf-8')
-        signature_attendue = hmac.new(secret, msg_sig, hashlib.sha256).hexdigest()
-
-        # Chercher la licence en base pour comparer la signature stockée
-        try:
-            lic_db = Licence.objects.get(cle_licence=cle)
-            signature_stockee = lic_db.signature_hmac
-            valide_db = hmac.compare_digest(signature_stockee, signature_attendue)
-            valide_calcul = lic_db.verifier_signature()
-        except Licence.DoesNotExist:
-            lic_db = None
-            valide_db = None
-            # Vérification purement offline : la signature calculée est le résultat
-            valide_calcul = True  # on ne peut pas vérifier sans la DB
-
-        ctx['resultat'] = {
-            'mode': 'verifier',
-            'cle': cle,
-            'type_licence': type_licence,
-            'type_display': dict(TypeLicence.choices).get(type_licence, type_licence),
-            'date_exp': date_exp.strftime('%d/%m/%Y'),
-            'signature_calculee': signature_attendue,
-            'lic_db': lic_db,
-            'valide_db': valide_db,
-            'valide_calcul': valide_calcul,
-            'en_base': lic_db is not None,
-        }
-
-    else:
-        ctx['erreur'] = "Action inconnue."
-
-    return render(request, 'licences/outils.html', ctx)
+    return HttpResponseGone(
+        "L'outil local de licence HMAC a été désactivé. "
+        "Utilisez les commandes fournisseur Ed25519."
+    )

@@ -2,9 +2,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from django.db import transaction
 from django.db.models import Sum, Count, Q
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models.functions import TruncDate
-from django.http import JsonResponse, HttpResponse
+from django.http import Http404, JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
@@ -13,7 +15,8 @@ import io
 import json
 try:
     from weasyprint import HTML as WeasyHTML
-except ImportError:
+except (ImportError, OSError):
+    # Les vues PDF vérifient cette valeur avant de générer un document.
     WeasyHTML = None
 from .models import (
     FraisScolarite, Paiement, Echeancier, ModePaiement, Remboursement,
@@ -24,6 +27,12 @@ from .forms import FraisScolariteForm, EcheancierForm
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, TarifScolarite, RubriquePaiement
 from core.utils import get_etablissement_context
+from core.audit import record_audit
+from yelen_school.finance_middleware import (
+    FINANCE_VIEW_ROLES,
+    FINANCE_WRITE_ROLES,
+    FINANCE_APPROVER_ROLES,
+)
 import re as _re
 
 
@@ -33,6 +42,17 @@ def _numero_valide(numero):
     # +226XXXXXXXX ou 00226XXXXXXXX ou 8 chiffres commençant par 0,5,6,7
     return bool(_re.fullmatch(r'(\+226|00226)?\d{8}', n) and
                 _re.search(r'\d{8}$', n))
+
+
+def _require_finance_role(request, roles):
+    if getattr(request.user, 'role', None) not in roles:
+        raise PermissionDenied("Action financière non autorisée pour ce rôle.")
+
+
+def _require_same_establishment(request, inscription):
+    user_etab = getattr(request.user, 'etablissement_id', None)
+    if user_etab is not None and inscription.classe.etablissement_id != user_etab:
+        raise PermissionDenied("Cette opération concerne un autre établissement.")
 
 
 def _calcul_situation_financiere(inscription):
@@ -50,14 +70,14 @@ def _calcul_situation_financiere(inscription):
     total_verse = paiements.aggregate(s=Sum('montant'))['s'] or Decimal('0')
     total_rembourse = (
         Remboursement.objects
-        .filter(paiement__inscription=inscription)
+        .filter(paiement__inscription=inscription, is_active=True)
         .aggregate(s=Sum('montant'))['s'] or Decimal('0')
     )
     total_paye = total_verse - total_rembourse
 
     # Bourses actives pour cette inscription
     bourses = BourseEleve.objects.filter(
-        inscription=inscription, actif=True,
+        inscription=inscription, actif=True, is_active=True,
     ).select_related('type_bourse', 'rubrique')
 
     # Sans statut_eleve, impossible de déterminer les frais — total_du = 0
@@ -113,9 +133,47 @@ def _calcul_situation_financiere(inscription):
     }
 
 
+def _payment_overage_errors(inscription, lignes):
+    """Recalcule les plafonds sous verrou logique de l'inscription."""
+    etablissement = inscription.classe.etablissement
+    errors = []
+    seen = set()
+    for rubrique, montant, _echeance in lignes:
+        if rubrique.etablissement_id != etablissement.pk:
+            errors.append(f"La rubrique « {rubrique} » appartient à un autre établissement.")
+            continue
+        if rubrique.pk in seen:
+            errors.append(f"La rubrique « {rubrique.nom} » est répétée dans le paiement.")
+            continue
+        seen.add(rubrique.pk)
+        deja_verse = (
+            Paiement.objects.filter(inscription=inscription, rubrique=rubrique)
+            .aggregate(Sum('montant'))['montant__sum'] or Decimal('0')
+        )
+        tarif_qs = TarifScolarite.objects.filter(
+            etablissement=etablissement,
+            classe__niveau=inscription.classe.niveau,
+            annee_scolaire=inscription.annee_scolaire,
+            actif=True,
+            rubrique=rubrique,
+        )
+        if inscription.statut_eleve_id:
+            tarif_qs = tarif_qs.filter(statut_eleve=inscription.statut_eleve)
+        tarif = tarif_qs.first()
+        if tarif:
+            reste = Decimal(str(tarif.montant)) - deja_verse
+            if montant > reste:
+                errors.append(
+                    f"« {rubrique.nom} » : montant versé {montant:,.0f} FCFA "
+                    f"dépasse le reste à payer {max(reste, Decimal('0')):,.0f} FCFA."
+                )
+    return errors
+
+
 @login_required
 def paiement_list(request):
     """Tableau de bord financier : dernière transaction par élève."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     from django.core.cache import cache
 
     etab = request.user.etablissement
@@ -175,6 +233,7 @@ def paiement_list(request):
 @login_required
 def paiement_create(request):
     """Enregistrement d'un paiement multi-rubriques."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     etab = request.user.etablissement
     
     # Chercher d'abord l'année courante, sinon la plus récente
@@ -207,6 +266,13 @@ def paiement_create(request):
         echeances_raw  = request.POST.getlist('echeances[]')
 
         errors = []
+        if date_paiement:
+            from datetime import date as _date
+            try:
+                date_paiement = _date.fromisoformat(date_paiement)
+            except ValueError:
+                errors.append("La date de paiement est invalide.")
+                date_paiement = None
 
         # Inscription
         inscription = None
@@ -214,8 +280,13 @@ def paiement_create(request):
             errors.append("L'inscription est obligatoire.")
         else:
             try:
-                inscription = Inscription.objects.get(pk=inscription_id)
-            except Inscription.DoesNotExist:
+                inscription = Inscription.objects.select_related('classe', 'annee_scolaire', 'statut_eleve').get(pk=inscription_id)
+                if (
+                    request.user.etablissement_id is not None
+                    and inscription.classe.etablissement_id != request.user.etablissement_id
+                ):
+                    errors.append("Cette inscription appartient à un autre établissement.")
+            except (Inscription.DoesNotExist, ValueError, ValidationError):
                 errors.append("Inscription introuvable.")
 
         # Mode de paiement
@@ -223,9 +294,11 @@ def paiement_create(request):
         if not mode_paiement or mode_paiement not in valid_modes:
             errors.append("Le mode de paiement est obligatoire.")
 
-        # Référence obligatoire si ≠ Espèces
+        # Référence obligatoire si ≠ Espèces et bornée par le modèle.
         if mode_paiement and mode_paiement != ModePaiement.ESPECES and not reference:
             errors.append("La référence de transaction est obligatoire pour ce mode de paiement.")
+        if len(reference) > 100:
+            errors.append("La référence de transaction ne peut pas dépasser 100 caractères.")
 
         # Lignes rubriques
         lignes = []
@@ -238,76 +311,75 @@ def paiement_create(request):
                 errors.append(f"Montant invalide pour la rubrique #{i + 1}.")
                 continue
 
-            if montant < 0:
-                errors.append(f"Le montant ne peut pas être négatif (rubrique #{i + 1}).")
-                continue
-            if montant == 0:
-                errors.append(f"Le montant ne peut pas être nul (rubrique #{i + 1}).")
+            if not montant.is_finite() or montant <= 0:
+                errors.append(f"Le montant doit être strictement positif (rubrique #{i + 1}).")
                 continue
 
             try:
-                rubrique = RubriquePaiement.objects.get(pk=rid)
-            except RubriquePaiement.DoesNotExist:
-                errors.append(f"Rubrique #{rid} introuvable.")
+                rubrique_qs = RubriquePaiement.objects.filter(pk=rid)
+                if inscription is not None:
+                    rubrique_qs = rubrique_qs.filter(etablissement=inscription.classe.etablissement)
+                rubrique = rubrique_qs.get()
+            except (RubriquePaiement.DoesNotExist, ValueError, ValidationError):
+                errors.append(f"Rubrique #{rid} introuvable ou hors établissement.")
                 continue
 
-            echeance = echeances_raw[i] if i < len(echeances_raw) else None
-            lignes.append((rubrique, montant, echeance or None))
+            echeance_raw = echeances_raw[i].strip() if i < len(echeances_raw) else ''
+            echeance = None
+            if echeance_raw:
+                from datetime import date as _date
+                try:
+                    echeance = _date.fromisoformat(echeance_raw)
+                except ValueError:
+                    errors.append(f"Échéance invalide pour la rubrique #{i + 1}.")
+                    continue
+            lignes.append((rubrique, montant, echeance))
 
         if not lignes:
             errors.append("Veuillez renseigner au moins une rubrique avec un montant valide.")
 
-        # Vérifier que le montant versé ne dépasse pas le reste à payer par rubrique
+        # Le contrôle est répété sous verrou de ligne : deux encaissements
+        # concurrents ne peuvent pas dépasser le tarif restant.
         if not errors and inscription:
-            etablissement = inscription.classe.etablissement
-            for rubrique, montant, _echeance in lignes:
-                deja_verse = (
-                    Paiement.objects.filter(inscription=inscription, rubrique=rubrique)
-                    .aggregate(Sum('montant'))['montant__sum'] or Decimal('0')
-                )
-                tarif_qs = TarifScolarite.objects.filter(
-                    etablissement=etablissement,
-                    classe__niveau=inscription.classe.niveau,
-                    annee_scolaire=inscription.annee_scolaire,
-                    actif=True,
-                    rubrique=rubrique,
-                )
-                if inscription.statut_eleve_id:
-                    tarif_qs = tarif_qs.filter(statut_eleve=inscription.statut_eleve)
-                tarif = tarif_qs.first()
-                if tarif:
-                    reste = Decimal(str(tarif.montant)) - deja_verse
-                    if montant > reste:
-                        errors.append(
-                            f"« {rubrique.nom} » : montant versé {montant:,.0f} FCFA "
-                            f"dépasse le reste à payer {max(reste, Decimal('0')):,.0f} FCFA."
+            try:
+                with transaction.atomic():
+                    locked_inscription = (
+                        Inscription.objects.select_for_update()
+                        .select_related('classe', 'annee_scolaire', 'statut_eleve', 'eleve')
+                        .get(pk=inscription.pk)
+                    )
+                    errors.extend(_payment_overage_errors(locked_inscription, lignes))
+                    if errors:
+                        raise ValueError('payment_validation_failed')
+                    inscription = locked_inscription
+                    paiement_ids = []
+                    for rubriq, montant, echeance in lignes:
+                        paiement = Paiement(
+                            inscription=inscription,
+                            rubrique=rubriq,
+                            montant=montant,
+                            date_paiement=date_paiement or timezone.now().date(),
+                            mode_paiement=mode_paiement,
+                            reference=reference,
+                            echeance=echeance,
+                            observation=observation,
+                            encaisse_par=request.user,
+                            statut_eleve=inscription.statut_eleve,
                         )
-
-        if not errors and inscription:
-            paiement_ids = []
-            for rubriq, montant, echeance in lignes:
-                paiement = Paiement.objects.create(
-                    inscription=inscription,
-                    rubrique=rubriq,
-                    montant=montant,
-                    date_paiement=date_paiement or timezone.now().date(),
-                    mode_paiement=mode_paiement,
-                    reference=reference,
-                    echeance=echeance,
-                    observation=observation,
-                    encaisse_par=request.user,
-                    statut_eleve=inscription.statut_eleve,
+                        paiement._audit_reason = 'Encaissement saisi depuis le module financier'
+                        paiement.save()
+                        paiement_ids.append(paiement.pk)
+            except ValueError:
+                paiement_ids = []
+            else:
+                total = sum(m for _, m, _e in lignes)
+                request.session['paiement_ids'] = [str(pk) for pk in paiement_ids]
+                request.session['paiement_inscription_id'] = str(inscription.pk)
+                messages.success(
+                    request,
+                    f"{len(lignes)} paiement(s) enregistré(s) pour {inscription.eleve} — Total : {total:,.0f} FCFA"
                 )
-                paiement_ids.append(paiement.pk)
-            
-            total = sum(m for _, m, _e in lignes)
-            request.session['paiement_ids'] = [str(pk) for pk in paiement_ids]
-            request.session['paiement_inscription_id'] = str(inscription.pk)
-            messages.success(
-                request,
-                f"{len(lignes)} paiement(s) enregistré(s) pour {inscription.eleve} — Total : {total:,.0f} FCFA"
-            )
-            return redirect('finances:paiement_confirmation')
+                return redirect('finances:paiement_confirmation')
 
         # Re-render avec erreurs — données soumises pour repopulation JS
         submitted_lines = [
@@ -337,7 +409,9 @@ def paiement_create(request):
 @login_required
 def situation_eleve(request, inscription_id):
     """Vue détaillée de la situation financière d'un élève."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     inscription = get_object_or_404(Inscription, pk=inscription_id)
+    _require_same_establishment(request, inscription)
     etab = getattr(request.user, 'etablissement', None)
     
     if etab and inscription.classe.etablissement_id != etab.pk:
@@ -346,7 +420,9 @@ def situation_eleve(request, inscription_id):
 
     sit = _calcul_situation_financiere(inscription)
 
-    echeancier_list = Echeancier.objects.filter(inscription=inscription).order_by('date_limite')
+    echeancier_list = Echeancier.objects.filter(
+        inscription=inscription, is_active=True
+    ).order_by('date_limite')
     echeancier_total = echeancier_list.aggregate(s=Sum('montant_du'))['s'] or Decimal('0')
     echeancier_paye = echeancier_list.filter(paye=True).aggregate(s=Sum('montant_du'))['s'] or Decimal('0')
 
@@ -358,7 +434,7 @@ def situation_eleve(request, inscription_id):
     # Remboursements liés à cette inscription (pour affichage dans la page)
     remboursements = (
         Remboursement.objects
-        .filter(paiement__inscription=inscription)
+        .filter(paiement__inscription=inscription, is_active=True)
         .select_related('paiement__rubrique', 'rembourse_par')
         .order_by('-date_remboursement')
     )
@@ -395,15 +471,17 @@ def situation_eleve(request, inscription_id):
 @login_required
 def remboursement_create(request, paiement_id):
     """Enregistrer un remboursement (total ou partiel) pour un paiement."""
+    _require_finance_role(request, FINANCE_APPROVER_ROLES)
     paiement = get_object_or_404(
         Paiement.objects.select_related('inscription__eleve', 'rubrique'),
         pk=paiement_id,
     )
     inscription = paiement.inscription
+    _require_same_establishment(request, inscription)
 
     # Montant déjà remboursé pour ce paiement
     deja_rembourse = (
-        Remboursement.objects.filter(paiement=paiement)
+        Remboursement.objects.filter(paiement=paiement, is_active=True)
         .aggregate(s=Sum('montant'))['s'] or Decimal('0')
     )
     remboursable = paiement.montant - deja_rembourse
@@ -418,39 +496,62 @@ def remboursement_create(request, paiement_id):
         date_raw = request.POST.get('date_remboursement', '').strip()
 
         errors = []
+        if not motif:
+            errors.append("Le motif du remboursement est obligatoire.")
         montant = None
         try:
             montant = Decimal(montant_raw)
-            if montant <= 0:
+            if not montant.is_finite() or montant <= 0:
                 errors.append("Le montant doit être supérieur à 0.")
             elif montant > remboursable:
                 errors.append(
                     f"Le montant remboursable est au maximum {remboursable:,.0f} FCFA "
                     f"(paiement {paiement.montant:,.0f} FCFA − déjà remboursé {deja_rembourse:,.0f} FCFA)."
                 )
-        except InvalidOperation:
+        except (InvalidOperation, ValueError):
             errors.append("Montant invalide.")
 
         from datetime import date as _date
-        try:
-            date_remb = _date.fromisoformat(date_raw) if date_raw else _date.today()
-        except ValueError:
+        date_remb = None
+        if date_raw:
+            try:
+                date_remb = _date.fromisoformat(date_raw)
+            except ValueError:
+                errors.append("La date de remboursement est invalide.")
+        else:
             date_remb = _date.today()
 
         if not errors:
-            Remboursement.objects.create(
-                paiement=paiement,
-                montant=montant,
-                motif=motif,
-                date_remboursement=date_remb,
-                rembourse_par=request.user,
-            )
-            messages.success(
-                request,
-                f"Remboursement de {montant:,.0f} FCFA enregistré pour "
-                f"{inscription.eleve.get_nom_complet()}."
-            )
-            return redirect('finances:situation_eleve', inscription_id=inscription.pk)
+            with transaction.atomic():
+                locked_paiement = Paiement.objects.select_for_update().get(pk=paiement.pk)
+                locked_deja_rembourse = (
+                    Remboursement.objects.filter(
+                        paiement=locked_paiement, is_active=True
+                    ).aggregate(s=Sum('montant'))['s'] or Decimal('0')
+                )
+                locked_remboursable = locked_paiement.montant - locked_deja_rembourse
+                if montant > locked_remboursable:
+                    errors.append(
+                        f"Le montant remboursable est désormais limité à "
+                        f"{max(locked_remboursable, Decimal('0')):,.0f} FCFA."
+                    )
+                else:
+                    remboursement = Remboursement(
+                        paiement=locked_paiement,
+                        montant=montant,
+                        motif=motif,
+                        date_remboursement=date_remb,
+                        rembourse_par=request.user,
+                    )
+                    remboursement._audit_reason = motif or 'Remboursement financier'
+                    remboursement.save()
+            if not errors:
+                messages.success(
+                    request,
+                    f"Remboursement de {montant:,.0f} FCFA enregistré pour "
+                    f"{inscription.eleve.get_nom_complet()}."
+                )
+                return redirect('finances:situation_eleve', inscription_id=inscription.pk)
 
         return render(request, 'finances/remboursement_form.html', {
             'paiement': paiement,
@@ -474,15 +575,24 @@ def remboursement_create(request, paiement_id):
 
 @login_required
 def remboursement_delete(request, remboursement_id):
-    """Annuler (supprimer) un remboursement."""
+    """Annuler un remboursement par désactivation, sans effacer l'historique."""
+    _require_finance_role(request, FINANCE_APPROVER_ROLES)
     remb = get_object_or_404(
         Remboursement.objects.select_related('paiement__inscription'),
         pk=remboursement_id,
     )
     inscription_id = remb.paiement.inscription.pk
+    _require_same_establishment(request, remb.paiement.inscription)
     if request.method == 'POST':
-        remb.delete()
-        messages.success(request, "Remboursement annulé.")
+        reason = request.POST.get('motif', '').strip()
+        if not reason:
+            messages.error(request, "Le motif d'annulation est obligatoire.")
+            return redirect('finances:situation_eleve', inscription_id=inscription_id)
+        remb._audit_reason = reason
+        remb.is_active = False
+        remb.updated_by = request.user
+        remb.save(update_fields=['is_active', 'updated_by', 'updated_at'])
+        messages.success(request, "Remboursement annulé et conservé dans l'historique.")
     return redirect('finances:situation_eleve', inscription_id=inscription_id)
 
 
@@ -493,7 +603,9 @@ def api_rubriques_inscription(request, inscription_id):
     pour une inscription donnée (classe × statut × année scolaire).
     Utilisé par le formulaire de paiement pour le remplissage automatique.
     """
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     inscription = get_object_or_404(Inscription, pk=inscription_id)
+    _require_same_establishment(request, inscription)
     etab = getattr(request.user, 'etablissement', None)
     if etab and inscription.classe.etablissement_id != etab.pk:
         from django.http import JsonResponse as _JsonResponse
@@ -512,7 +624,7 @@ def api_rubriques_inscription(request, inscription_id):
     # Total remboursé par rubrique (pour calcul du reste réel)
     totaux_rembourses = (
         Remboursement.objects
-        .filter(paiement__inscription=inscription)
+        .filter(paiement__inscription=inscription, is_active=True)
         .values('paiement__rubrique_id')
         .annotate(total=Sum('montant'))
     )
@@ -625,11 +737,13 @@ def api_rubriques_inscription(request, inscription_id):
 def recu_pdf(request, paiement_id):
     """Génère le reçu de paiement en PDF via WeasyPrint.
     Regroupe toutes les rubriques payées de l'inscription dans un tableau."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     if WeasyHTML is None:
         messages.error(request, "WeasyPrint n'est pas installé.")
         return redirect('finances:paiement_list')
     paiement = get_object_or_404(Paiement, pk=paiement_id)
     inscription = paiement.inscription
+    _require_same_establishment(request, inscription)
     etablissement = inscription.classe.etablissement
     etab = getattr(request.user, 'etablissement', None)
     if etab and etablissement.pk != etab.pk:
@@ -744,10 +858,12 @@ def recu_pdf(request, paiement_id):
 @login_required
 def historique_pdf(request, inscription_id):
     """Génère l'historique de versements en PDF via WeasyPrint."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     if WeasyHTML is None:
         messages.error(request, "WeasyPrint n'est pas installé.")
         return redirect('finances:paiement_list')
     inscription = get_object_or_404(Inscription, pk=inscription_id)
+    _require_same_establishment(request, inscription)
     etablissement = inscription.classe.etablissement
     etab = getattr(request.user, 'etablissement', None)
     if etab and etablissement.pk != etab.pk:
@@ -780,6 +896,7 @@ def historique_pdf(request, inscription_id):
 @login_required
 def paiement_confirmation(request):
     """Page de confirmation après un paiement avec option d'impression du reçu."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     paiement_ids = request.session.get('paiement_ids', [])
     inscription_id = request.session.get('paiement_inscription_id')
     
@@ -793,11 +910,19 @@ def paiement_confirmation(request):
         messages.error(request, "Inscription introuvable.")
         return redirect('finances:paiement_list')
     
-    paiements = Paiement.objects.filter(pk__in=paiement_ids).select_related(
-        'inscription__eleve', 'rubrique', 'encaisse_par'
-    )
+    _require_same_establishment(request, inscription)
+    try:
+        paiements = Paiement.objects.filter(
+            pk__in=paiement_ids,
+            inscription=inscription,
+        ).select_related('inscription__eleve', 'rubrique', 'encaisse_par')
+    except (ValueError, ValidationError):
+        paiements = Paiement.objects.none()
+    if not paiements.exists():
+        messages.error(request, "Aucun paiement correspondant à cette inscription.")
+        return redirect('finances:paiement_list')
     etab = inscription.classe.etablissement
-    
+
     etab_context = get_etablissement_context(etab, request)
     
     return render(request, 'finances/paiement_confirmation.html', {
@@ -812,6 +937,7 @@ def paiement_confirmation(request):
 @login_required
 def liste_redevables(request):
     """Liste des élèves redevables (ayant un reste à payer > 0)."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     if not etab:
         messages.error(request, "Votre compte n'est pas associé à un établissement.")
@@ -935,12 +1061,19 @@ def _bilan_paiements_qs(etab, annee_id, date_debut, date_fin, rub_id):
     Factorise la logique commune aux vues bilan HTML, PDF et CSV.
     """
     annee_selected = None
-    if annee_id:
-        annee_selected = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
+    try:
+        if annee_id:
+            annee_selected = get_object_or_404(
+                AnneeScolaire, pk=annee_id, etablissement=etab
+            )
 
-    rub_selected = None
-    if rub_id:
-        rub_selected = get_object_or_404(RubriquePaiement, pk=rub_id, etablissement=etab)
+        rub_selected = None
+        if rub_id:
+            rub_selected = get_object_or_404(
+                RubriquePaiement, pk=rub_id, etablissement=etab
+            )
+    except (ValueError, ValidationError) as exc:
+        raise Http404("Filtre financier invalide.") from exc
 
     paiements = (
         Paiement.objects
@@ -967,6 +1100,7 @@ def _bilan_paiements_qs(etab, annee_id, date_debut, date_fin, rub_id):
 @login_required
 def bilan_encaissements(request):
     """Bilan des encaissements par année scolaire et période."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     if not etab:
         messages.error(request, "Votre compte n'est pas associé à un établissement.")
@@ -1079,6 +1213,7 @@ def bilan_encaissements(request):
 @login_required
 def bilan_encaissements_pdf(request):
     """Génère un PDF du bilan des encaissements."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     if WeasyHTML is None:
         messages.error(request, "WeasyPrint n'est pas installé.")
         return redirect('finances:bilan_encaissements')
@@ -1192,6 +1327,7 @@ def bilan_encaissements_pdf(request):
 @login_required
 def bilan_encaissements_csv(request):
     """Export CSV du bilan des encaissements (mêmes filtres que la vue HTML)."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     if not etab:
         messages.error(request, "Votre compte n'est pas associé à un établissement.")
@@ -1234,6 +1370,7 @@ def bilan_encaissements_csv(request):
 @login_required
 def bilan_encaissements_xlsx(request):
     """Export Excel du bilan des encaissements (mêmes filtres que la vue HTML)."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     from core.excel import ExcelExport
 
     etab = request.user.etablissement
@@ -1283,6 +1420,7 @@ def bilan_encaissements_xlsx(request):
 @login_required
 def liste_redevables_pdf(request):
     """Génère un PDF de la liste des élèves redevables."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     if WeasyHTML is None:
         messages.error(request, "WeasyPrint n'est pas installé.")
         return redirect('finances:liste_redevables')
@@ -1379,6 +1517,7 @@ def liste_redevables_pdf(request):
 @login_required
 def liste_exoneres(request):
     """Liste des élèves exonérés de paiement, regroupés par classe."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     if not etab:
         messages.error(request, "Votre compte n'est pas associé à un établissement.")
@@ -1438,6 +1577,7 @@ def liste_exoneres(request):
 @login_required
 def liste_exoneres_pdf(request):
     """Génère le PDF de la liste des élèves exonérés, regroupés par classe."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     if WeasyHTML is None:
         messages.error(request, "WeasyPrint n'est pas installé.")
         return redirect('finances:liste_exoneres')
@@ -1500,6 +1640,7 @@ def liste_exoneres_pdf(request):
 @login_required
 def relance_paiement(request):
     """Sélecteur pour la génération des relances de paiement."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     if not etab:
         messages.error(request, "Votre compte n'est pas associé à un établissement.")
@@ -1524,6 +1665,7 @@ def relance_paiement(request):
 @login_required
 def relance_count(request):
     """Retourne en HTML le nombre d'élèves redevables pour les relances (usage HTMX)."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     annee_id    = request.GET.get('annee')
     classe_id   = request.GET.get('classe')
@@ -1532,8 +1674,13 @@ def relance_count(request):
     if not (annee_id and classe_id and rubrique_id and etab):
         return HttpResponse('')
 
-    annee    = AnneeScolaire.objects.filter(pk=annee_id, etablissement=etab).first()
-    rubrique = RubriquePaiement.objects.filter(pk=rubrique_id, etablissement=etab).first()
+    try:
+        annee = AnneeScolaire.objects.filter(pk=annee_id, etablissement=etab).first()
+        rubrique = RubriquePaiement.objects.filter(
+            pk=rubrique_id, etablissement=etab
+        ).first()
+    except (ValueError, ValidationError):
+        return HttpResponse('')
 
     if not (annee and rubrique):
         return HttpResponse('')
@@ -1599,6 +1746,7 @@ def relance_count(request):
 @login_required
 def relance_paiement_pdf(request):
     """Génère le PDF des relances de paiement pour une classe et une rubrique."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     if WeasyHTML is None:
         messages.error(request, "WeasyPrint n'est pas installé.")
         return redirect('finances:relance_paiement')
@@ -1739,7 +1887,12 @@ def relance_paiement_pdf(request):
         for r in relances
     ]
     if historique_bulk:
-        HistoriqueRelance.objects.bulk_create(historique_bulk)
+        # Ne pas utiliser bulk_create : les signaux d'audit doivent tracer
+        # chaque relance et conserver son contexte utilisateur.
+        with transaction.atomic():
+            for relance in historique_bulk:
+                relance.created_by = request.user
+                relance.save()
 
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{nom}"'
@@ -1749,13 +1902,18 @@ def relance_paiement_pdf(request):
 @login_required
 def echeancier_create(request, inscription_id):
     """Créer un échéancier pour un élève."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     inscription = get_object_or_404(Inscription, pk=inscription_id)
+    _require_same_establishment(request, inscription)
     
     if request.method == 'POST':
         form = EcheancierForm(request.POST)
         if form.is_valid():
             echeancier = form.save(commit=False)
             echeancier.inscription = inscription
+            echeancier.created_by = request.user
+            echeancier.updated_by = request.user
+            echeancier._audit_reason = 'Création d’une échéance financière'
             echeancier.save()
             messages.success(request, f"Échéance '{echeancier.libelle}' créée avec succès.")
             return redirect('finances:situation_eleve', inscription_id=inscription.pk)
@@ -1772,13 +1930,18 @@ def echeancier_create(request, inscription_id):
 @login_required
 def echeancier_edit(request, echeancier_id):
     """Modifier une échéance existante."""
-    echeancier = get_object_or_404(Echeancier, pk=echeancier_id)
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    echeancier = get_object_or_404(Echeancier, pk=echeancier_id, is_active=True)
     inscription = echeancier.inscription
+    _require_same_establishment(request, inscription)
     
     if request.method == 'POST':
         form = EcheancierForm(request.POST, instance=echeancier)
         if form.is_valid():
-            form.save()
+            echeancier = form.save(commit=False)
+            echeancier.updated_by = request.user
+            echeancier._audit_reason = 'Modification d’une échéance financière'
+            echeancier.save()
             messages.success(request, f"Échéance '{echeancier.libelle}' mise à jour.")
             return redirect('finances:situation_eleve', inscription_id=inscription.pk)
     else:
@@ -1794,14 +1957,23 @@ def echeancier_edit(request, echeancier_id):
 
 @login_required
 def echeancier_delete(request, echeancier_id):
-    """Supprimer une échéance."""
-    echeancier = get_object_or_404(Echeancier, pk=echeancier_id)
+    """Désactiver une échéance sans supprimer la trace financière."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    echeancier = get_object_or_404(Echeancier, pk=echeancier_id, is_active=True)
     inscription = echeancier.inscription
+    _require_same_establishment(request, inscription)
     
     if request.method == 'POST':
+        reason = request.POST.get('motif', '').strip()
+        if not reason:
+            messages.error(request, "Le motif de désactivation est obligatoire.")
+            return redirect('finances:situation_eleve', inscription_id=inscription.pk)
         echeancier_name = echeancier.libelle
-        echeancier.delete()
-        messages.success(request, f"Échéance '{echeancier_name}' supprimée.")
+        echeancier._audit_reason = reason
+        echeancier.is_active = False
+        echeancier.updated_by = request.user
+        echeancier.save(update_fields=['is_active', 'updated_by', 'updated_at'])
+        messages.success(request, f"Échéance '{echeancier_name}' désactivée et conservée.")
         return redirect('finances:situation_eleve', inscription_id=inscription.pk)
     
     return render(request, 'finances/echeancier_confirm_delete.html', {
@@ -1813,10 +1985,12 @@ def echeancier_delete(request, echeancier_id):
 @login_required
 def certificat_non_redevabilite(request, inscription_id):
     """Génère le certificat de non-redevabilité en PDF."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     if WeasyHTML is None:
         messages.error(request, "WeasyPrint n'est pas installé.")
         return redirect('finances:paiement_list')
     inscription = get_object_or_404(Inscription, pk=inscription_id)
+    _require_same_establishment(request, inscription)
     etablissement = inscription.classe.etablissement
     
     etab_context = get_etablissement_context(etablissement, request)
@@ -1853,6 +2027,7 @@ def certificat_non_redevabilite(request, inscription_id):
 @require_POST
 def relance_sms(request):
     """Envoie des SMS de relance paiement aux parents des élèves redevables."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     from core.notifications import notifier_relance_paiement
 
     etab = request.user.etablissement
@@ -1913,7 +2088,7 @@ def relance_sms(request):
             sms_msg = ModeleMessage.get_contenu(etab, 'PAIEMENT', {
                 'nom_eleve': eleve.get_nom_complet(),
                 'montant': f"{reste:,.0f}".replace(',', ' '),
-                'rubrique': racine.nom,
+                'rubrique': rubrique.nom,
                 'etablissement': etab.nom,
             })
         except Exception:
@@ -1948,6 +2123,7 @@ def relance_sms(request):
 @login_required
 def historique_relances(request):
     """Vue globale de l'historique des relances envoyées, avec filtres."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     from .models import HistoriqueRelance
 
     etab = request.user.etablissement
@@ -2024,7 +2200,9 @@ def historique_relances(request):
 @login_required
 def bourse_create(request, inscription_id):
     """Attribuer une bourse ou aide scolaire à une inscription."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     inscription = get_object_or_404(Inscription, pk=inscription_id)
+    _require_same_establishment(request, inscription)
     etab = inscription.classe.etablissement
 
     types_bourses = TypeBourse.objects.filter(etablissement=etab, actif=True).order_by('nom')
@@ -2046,12 +2224,12 @@ def bourse_create(request, inscription_id):
 
         try:
             type_bourse = TypeBourse.objects.get(pk=type_bourse_id, etablissement=etab)
-        except TypeBourse.DoesNotExist:
+        except (TypeBourse.DoesNotExist, ValueError, ValidationError):
             errors.append("Type de bourse invalide.")
 
         try:
             montant = Decimal(montant_raw)
-            if montant <= 0:
+            if not montant.is_finite() or montant <= 0:
                 errors.append("Le montant doit être positif.")
         except (InvalidOperation, ValueError):
             errors.append("Montant invalide.")
@@ -2063,7 +2241,12 @@ def bourse_create(request, inscription_id):
             rubrique = None
             if rubrique_id:
                 from parametres.models import RubriquePaiement as RP
-                rubrique = RP.objects.filter(pk=rubrique_id, etablissement=etab).first()
+                try:
+                    rubrique = RP.objects.filter(
+                        pk=rubrique_id, etablissement=etab
+                    ).first()
+                except (ValueError, ValidationError):
+                    rubrique = None
 
             BourseEleve.objects.create(
                 inscription=inscription,
@@ -2075,6 +2258,8 @@ def bourse_create(request, inscription_id):
                 reference_document=reference,
                 observation=observation,
                 attribue_par=request.user,
+                created_by=request.user,
+                updated_by=request.user,
                 actif=True,
             )
             messages.success(
@@ -2095,8 +2280,10 @@ def bourse_create(request, inscription_id):
 @login_required
 def bourse_edit(request, bourse_id):
     """Modifier une bourse attribuee."""
-    bourse = get_object_or_404(BourseEleve, pk=bourse_id)
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    bourse = get_object_or_404(BourseEleve, pk=bourse_id, is_active=True, actif=True)
     inscription = bourse.inscription
+    _require_same_establishment(request, inscription)
     etab = inscription.classe.etablissement
 
     types_bourses = TypeBourse.objects.filter(etablissement=etab, actif=True).order_by('nom')
@@ -2119,12 +2306,12 @@ def bourse_edit(request, bourse_id):
 
         try:
             type_bourse = TypeBourse.objects.get(pk=type_bourse_id, etablissement=etab)
-        except TypeBourse.DoesNotExist:
+        except (TypeBourse.DoesNotExist, ValueError, ValidationError):
             errors.append("Type de bourse invalide.")
 
         try:
             montant = Decimal(montant_raw)
-            if montant <= 0:
+            if not montant.is_finite() or montant <= 0:
                 errors.append("Le montant doit etre positif.")
         except (InvalidOperation, ValueError):
             errors.append("Montant invalide.")
@@ -2136,7 +2323,12 @@ def bourse_edit(request, bourse_id):
             rubrique = None
             if rubrique_id:
                 from parametres.models import RubriquePaiement as RP
-                rubrique = RP.objects.filter(pk=rubrique_id, etablissement=etab).first()
+                try:
+                    rubrique = RP.objects.filter(
+                        pk=rubrique_id, etablissement=etab
+                    ).first()
+                except (ValueError, ValidationError):
+                    rubrique = None
 
             bourse.type_bourse = type_bourse
             bourse.montant_accorde = montant
@@ -2146,6 +2338,8 @@ def bourse_edit(request, bourse_id):
             bourse.reference_document = reference
             bourse.observation = observation
             bourse.actif = actif
+            bourse.updated_by = request.user
+            bourse._audit_reason = 'Modification d’une attribution de bourse'
             bourse.save()
             messages.success(request, "Bourse mise a jour.")
             return redirect('finances:situation_eleve', inscription_id=inscription.pk)
@@ -2162,18 +2356,29 @@ def bourse_edit(request, bourse_id):
 @login_required
 @require_POST
 def bourse_delete(request, bourse_id):
-    """Supprimer une bourse attribuee."""
-    bourse = get_object_or_404(BourseEleve, pk=bourse_id)
+    """Désactiver une bourse sans supprimer l'historique."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    bourse = get_object_or_404(BourseEleve, pk=bourse_id, is_active=True, actif=True)
+    _require_same_establishment(request, bourse.inscription)
     inscription_id = bourse.inscription_id
     nom = bourse.type_bourse.nom
-    bourse.delete()
-    messages.success(request, f"Bourse {nom!r} supprimee.")
+    reason = request.POST.get('motif', '').strip()
+    if not reason:
+        messages.error(request, "Le motif de désactivation est obligatoire.")
+    else:
+        bourse._audit_reason = reason
+        bourse.actif = False
+        bourse.is_active = False
+        bourse.updated_by = request.user
+        bourse.save(update_fields=['actif', 'is_active', 'updated_by', 'updated_at'])
+        messages.success(request, f"Bourse {nom!r} désactivée et conservée.")
     return redirect('finances:situation_eleve', inscription_id=inscription_id)
 
 
 @login_required
 def boursiers_list(request):
     """Liste globale de tous les eleves beneficiant d'une bourse ou aide scolaire."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     annee_id = request.GET.get('annee')
     classe_id = request.GET.get('classe')
@@ -2189,6 +2394,7 @@ def boursiers_list(request):
         inscription__annee_scolaire=annee_sel,
         inscription__classe__etablissement=etab,
         actif=True,
+        is_active=True,
     ).select_related(
         'inscription__eleve', 'inscription__classe',
         'type_bourse', 'rubrique',
@@ -2217,6 +2423,7 @@ def boursiers_list(request):
 @login_required
 def boursiers_pdf(request):
     """PDF - Liste des boursiers/beneficiaires d'aides."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     if WeasyHTML is None:
         messages.error(request, "WeasyPrint n'est pas installé sur ce serveur.")
         return redirect('finances:boursiers_list')
@@ -2233,6 +2440,7 @@ def boursiers_pdf(request):
         inscription__annee_scolaire=annee_sel,
         inscription__classe__etablissement=etab,
         actif=True,
+        is_active=True,
     ).select_related(
         'inscription__eleve', 'inscription__classe',
         'type_bourse', 'rubrique',
@@ -2267,6 +2475,7 @@ def boursiers_pdf(request):
 @login_required
 def type_bourse_list(request):
     """Gerer les types de bourses de l'etablissement."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     types = TypeBourse.objects.filter(etablissement=etab).order_by('nom')
     return render(request, 'finances/type_bourse_list.html', {'types': types})
@@ -2275,6 +2484,7 @@ def type_bourse_list(request):
 @login_required
 def type_bourse_form(request, type_id=None):
     """Creer ou modifier un type de bourse."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     etab = request.user.etablissement
     instance = get_object_or_404(TypeBourse, pk=type_id, etablissement=etab) if type_id else None
 
@@ -2301,7 +2511,7 @@ def type_bourse_form(request, type_id=None):
             errors.append("Le code est obligatoire.")
         try:
             valeur = Decimal(valeur_raw)
-            if valeur <= 0:
+            if not valeur.is_finite() or valeur <= 0:
                 errors.append("La valeur de reduction doit etre positive.")
             if type_reduction == TypeReduction.POURCENTAGE and valeur > 100:
                 errors.append("Un pourcentage ne peut pas depasser 100.")
@@ -2322,7 +2532,12 @@ def type_bourse_form(request, type_id=None):
             rubrique = None
             if rubrique_id:
                 from parametres.models import RubriquePaiement as RP
-                rubrique = RP.objects.filter(pk=rubrique_id, etablissement=etab).first()
+                try:
+                    rubrique = RP.objects.filter(
+                        pk=rubrique_id, etablissement=etab
+                    ).first()
+                except (ValueError, ValidationError):
+                    rubrique = None
 
             if instance:
                 instance.nom = nom
@@ -2333,6 +2548,8 @@ def type_bourse_form(request, type_id=None):
                 instance.valeur_reduction = valeur
                 instance.rubrique = rubrique
                 instance.actif = actif
+                instance.updated_by = request.user
+                instance._audit_reason = 'Modification d’un type de bourse'
                 instance.save()
                 messages.success(request, f"Type de bourse {nom!r} mis a jour.")
             else:
@@ -2340,6 +2557,7 @@ def type_bourse_form(request, type_id=None):
                     etablissement=etab, nom=nom, code=code, description=description,
                     source=source, type_reduction=type_reduction, valeur_reduction=valeur,
                     rubrique=rubrique, actif=actif,
+                    created_by=request.user, updated_by=request.user,
                 )
                 messages.success(request, f"Type de bourse {nom!r} cree.")
             return redirect('finances:type_bourse_list')
@@ -2355,21 +2573,31 @@ def type_bourse_form(request, type_id=None):
 @login_required
 @require_POST
 def type_bourse_delete(request, type_id):
-    """Supprimer un type de bourse (si aucune attribution active)."""
+    """Désactiver un type de bourse sans supprimer l'historique."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     etab = request.user.etablissement
     tb = get_object_or_404(TypeBourse, pk=type_id, etablissement=etab)
-    if tb.attributions.filter(actif=True).exists():
-        messages.error(request, "Impossible de supprimer : des bourses actives utilisent ce type.")
+    if tb.attributions.filter(actif=True, is_active=True).exists():
+        messages.error(request, "Impossible de désactiver : des bourses actives utilisent ce type.")
     else:
-        nom = tb.nom
-        tb.delete()
-        messages.success(request, f"Type {nom!r} supprime.")
+        reason = request.POST.get('motif', '').strip()
+        if not reason:
+            messages.error(request, "Le motif de désactivation est obligatoire.")
+        else:
+            nom = tb.nom
+            tb._audit_reason = reason
+            tb.actif = False
+            tb.is_active = False
+            tb.updated_by = request.user
+            tb.save(update_fields=['actif', 'is_active', 'updated_by', 'updated_at'])
+            messages.success(request, f"Type {nom!r} désactivé et conservé.")
     return redirect('finances:type_bourse_list')
 
 
 @login_required
 def api_calculer_bourse(request):
     """AJAX - Calcule le montant d'une bourse a partir du type et du total du."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     type_id = request.GET.get('type_bourse')
     total_du_raw = request.GET.get('total_du', '0').replace(',', '.')
     try:
@@ -2378,7 +2606,10 @@ def api_calculer_bourse(request):
         total_du = Decimal('0')
 
     try:
-        tb = TypeBourse.objects.get(pk=type_id)
+        tb_qs = TypeBourse.objects.filter(pk=type_id, actif=True, is_active=True)
+        if request.user.etablissement_id is not None:
+            tb_qs = tb_qs.filter(etablissement_id=request.user.etablissement_id)
+        tb = tb_qs.get()
     except TypeBourse.DoesNotExist:
         return JsonResponse({'montant': '0'})
 
@@ -2400,6 +2631,7 @@ def api_calculer_bourse(request):
 @login_required
 def echeancier_global(request):
     """Vue globale de tous les échéanciers : en retard, à venir, payés."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     if not etab:
         messages.error(request, "Votre compte n'est pas associé à un établissement.")
@@ -2421,7 +2653,11 @@ def echeancier_global(request):
 
     qs = (
         Echeancier.objects
-        .filter(inscription__annee_scolaire=annee_sel, inscription__classe__etablissement=etab)
+        .filter(
+            inscription__annee_scolaire=annee_sel,
+            inscription__classe__etablissement=etab,
+            is_active=True,
+        )
         .select_related('inscription__eleve', 'inscription__classe__cycle')
         .order_by('date_limite', 'inscription__eleve__nom')
     ) if annee_sel else Echeancier.objects.none()
@@ -2479,6 +2715,7 @@ def echeancier_global(request):
 @login_required
 def echeancier_global_xlsx(request):
     """Export Excel du tableau global des échéanciers."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     from core.excel import ExcelExport
 
     etab = request.user.etablissement
@@ -2500,7 +2737,11 @@ def echeancier_global_xlsx(request):
 
     qs = (
         Echeancier.objects
-        .filter(inscription__annee_scolaire=annee_sel, inscription__classe__etablissement=etab)
+        .filter(
+            inscription__annee_scolaire=annee_sel,
+            inscription__classe__etablissement=etab,
+            is_active=True,
+        )
         .select_related('inscription__eleve', 'inscription__classe__cycle')
         .order_by('date_limite', 'inscription__eleve__nom')
     ) if annee_sel else Echeancier.objects.none()
@@ -2567,17 +2808,24 @@ def echeancier_global_xlsx(request):
 @login_required
 def mobile_money_list(request):
     """Tableau de bord des demandes Mobile Money."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     ctx = {}
     qs = DemandePaiementMobile.objects.select_related(
         'inscription__eleve', 'inscription__classe', 'rubrique', 'cree_par', 'confirme_par'
     )
+    etab = getattr(request.user, 'etablissement', None)
+    if etab is not None:
+        qs = qs.filter(inscription__classe__etablissement=etab)
     statut = request.GET.get('statut', '')
     if statut:
         qs = qs.filter(statut=statut)
 
-    en_attente = DemandePaiementMobile.objects.filter(statut='EN_ATTENTE').count()
-    confirme   = DemandePaiementMobile.objects.filter(statut='CONFIRME').count()
-    annule     = DemandePaiementMobile.objects.filter(statut='ANNULE').count()
+    counts = DemandePaiementMobile.objects.all()
+    if etab is not None:
+        counts = counts.filter(inscription__classe__etablissement=etab)
+    en_attente = counts.filter(statut='EN_ATTENTE').count()
+    confirme   = counts.filter(statut='CONFIRME').count()
+    annule     = counts.filter(statut='ANNULE').count()
 
     ctx.update({
         'demandes': qs,
@@ -2593,13 +2841,22 @@ def mobile_money_list(request):
 @login_required
 def mobile_money_create(request):
     """Créer une demande de paiement Mobile Money pour un élève."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     ctx = {}
     inscription_id = request.GET.get('inscription') or request.POST.get('inscription')
-    inscription = get_object_or_404(Inscription, pk=inscription_id) if inscription_id else None
+    try:
+        inscription = get_object_or_404(Inscription, pk=inscription_id) if inscription_id else None
+    except (ValueError, ValidationError):
+        messages.error(request, "Inscription invalide.")
+        inscription = None
+    if inscription:
+        _require_same_establishment(request, inscription)
 
     rubriques = []
     if inscription:
-        rubriques = RubriquePaiement.objects.filter(actif=True).order_by('ordre', 'nom')
+        rubriques = RubriquePaiement.objects.filter(
+            actif=True, etablissement=inscription.classe.etablissement
+        ).order_by('ordre', 'nom')
 
     if request.method == 'POST':
         inscription_id = request.POST.get('inscription')
@@ -2609,33 +2866,52 @@ def mobile_money_create(request):
 
         if not inscription_id or not montant_raw or not telephone:
             messages.error(request, "Tous les champs obligatoires doivent être renseignés.")
+        elif not _numero_valide(telephone):
+            messages.error(request, "Numéro de téléphone Mobile Money invalide.")
         else:
             try:
                 montant = Decimal(montant_raw)
-                if montant <= 0:
+                if not montant.is_finite() or montant <= 0:
                     raise ValueError
             except (InvalidOperation, ValueError):
                 messages.error(request, "Montant invalide.")
                 montant = None
 
             if montant:
-                insc = get_object_or_404(Inscription, pk=inscription_id)
-                rubrique = None
-                if rubrique_id:
-                    rubrique = RubriquePaiement.objects.filter(pk=rubrique_id).first()
+                try:
+                    insc = get_object_or_404(Inscription, pk=inscription_id)
+                except (ValueError, ValidationError):
+                    messages.error(request, "Inscription invalide.")
+                    insc = None
+                if insc is not None:
+                    _require_same_establishment(request, insc)
+                    rubrique = None
+                    if rubrique_id:
+                        try:
+                            rubrique = RubriquePaiement.objects.filter(
+                                pk=rubrique_id,
+                                etablissement=insc.classe.etablissement,
+                                actif=True,
+                            ).first()
+                        except (ValueError, ValidationError):
+                            rubrique = None
+                        if rubrique is None:
+                            messages.error(request, "Rubrique de paiement invalide.")
+                            montant = None
 
-                demande = DemandePaiementMobile.objects.create(
-                    inscription=insc,
-                    rubrique=rubrique,
-                    montant=montant,
-                    telephone=telephone,
-                    cree_par=request.user,
-                )
+                    if montant:
+                        demande = DemandePaiementMobile.objects.create(
+                            inscription=insc,
+                            rubrique=rubrique,
+                            montant=montant,
+                            telephone=telephone,
+                            cree_par=request.user,
+                        )
 
-                _envoyer_sms_mobile_money(demande, request)
+                        _envoyer_sms_mobile_money(demande, request)
 
-                messages.success(request, f"Demande {demande.reference} créée. SMS envoyé au {telephone}.")
-                return redirect('finances:situation_eleve', inscription_id=insc.pk)
+                        messages.success(request, f"Demande {demande.reference} créée. SMS envoyé au {telephone}.")
+                        return redirect('finances:situation_eleve', inscription_id=insc.pk)
 
     ctx.update({
         'inscription': inscription,
@@ -2648,26 +2924,41 @@ def mobile_money_create(request):
 @require_POST
 def mobile_money_confirmer(request, pk):
     """Le comptable confirme manuellement la réception du paiement."""
-    demande = get_object_or_404(DemandePaiementMobile, pk=pk)
-    if demande.statut != DemandePaiementMobile.StatutChoices.EN_ATTENTE:
-        messages.warning(request, "Cette demande ne peut plus être confirmée.")
-        return redirect('finances:mobile_money_list')
-
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     reference_transaction = request.POST.get('reference_transaction', '').strip()
 
-    paiement = Paiement.objects.create(
-        inscription=demande.inscription,
-        rubrique=demande.rubrique,
-        montant=demande.montant,
-        mode_paiement=ModePaiement.MOBILE_MONEY,
-        reference=reference_transaction or demande.reference,
-        encaisse_par=request.user,
-    )
-    demande.statut       = DemandePaiementMobile.StatutChoices.CONFIRME
-    demande.confirme_le  = timezone.now()
-    demande.confirme_par = request.user
-    demande.paiement     = paiement
-    demande.save()
+    with transaction.atomic():
+        demande = get_object_or_404(
+            DemandePaiementMobile.objects.select_for_update().select_related(
+                'inscription__classe', 'inscription__eleve', 'rubrique'
+            ),
+            pk=pk,
+        )
+        _require_same_establishment(request, demande.inscription)
+        if demande.statut != DemandePaiementMobile.StatutChoices.EN_ATTENTE:
+            messages.warning(request, "Cette demande ne peut plus être confirmée.")
+            return redirect('finances:mobile_money_list')
+
+        paiement = Paiement(
+            inscription=demande.inscription,
+            rubrique=demande.rubrique,
+            montant=demande.montant,
+            mode_paiement=ModePaiement.MOBILE_MONEY,
+            reference=reference_transaction or demande.reference,
+            encaisse_par=request.user,
+            statut_eleve=demande.inscription.statut_eleve,
+        )
+        paiement._audit_reason = "Confirmation manuelle d'une réception Mobile Money"
+        paiement.save()
+        demande._audit_reason = "Confirmation manuelle d'une réception Mobile Money"
+        demande.statut = DemandePaiementMobile.StatutChoices.CONFIRME
+        demande.confirme_le = timezone.now()
+        demande.confirme_par = request.user
+        demande.paiement = paiement
+        demande.updated_by = request.user
+        demande.save(update_fields=[
+            'statut', 'confirme_le', 'confirme_par', 'paiement', 'updated_by', 'updated_at'
+        ])
 
     messages.success(request, f"Paiement {demande.reference} confirmé. Reçu généré.")
     return redirect('finances:situation_eleve', inscription_id=demande.inscription.pk)
@@ -2677,14 +2968,27 @@ def mobile_money_confirmer(request, pk):
 @require_POST
 def mobile_money_annuler(request, pk):
     """Annuler une demande Mobile Money en attente."""
-    demande = get_object_or_404(DemandePaiementMobile, pk=pk)
-    if demande.statut != DemandePaiementMobile.StatutChoices.EN_ATTENTE:
-        messages.warning(request, "Seules les demandes en attente peuvent être annulées.")
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    reason = request.POST.get('raison', '').strip()
+    if not reason:
+        messages.error(request, "Le motif d'annulation est obligatoire.")
         return redirect('finances:mobile_money_list')
 
-    demande.statut = DemandePaiementMobile.StatutChoices.ANNULE
-    demande.observations = request.POST.get('raison', '')
-    demande.save()
+    with transaction.atomic():
+        demande = get_object_or_404(
+            DemandePaiementMobile.objects.select_for_update(),
+            pk=pk,
+        )
+        _require_same_establishment(request, demande.inscription)
+        if demande.statut != DemandePaiementMobile.StatutChoices.EN_ATTENTE:
+            messages.warning(request, "Seules les demandes en attente peuvent être annulées.")
+            return redirect('finances:mobile_money_list')
+        demande._audit_reason = reason
+        demande.statut = DemandePaiementMobile.StatutChoices.ANNULE
+        demande.observations = reason
+        demande.updated_by = request.user
+        demande.save(update_fields=['statut', 'observations', 'updated_by', 'updated_at'])
+
     messages.info(request, f"Demande {demande.reference} annulée.")
     return redirect('finances:mobile_money_list')
 
@@ -2746,6 +3050,7 @@ def _get_annees(etab):
 
 @login_required
 def categorie_depense_list(request):
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab, _ = _etab_and_annee(request)
     categories = CategorieDepense.objects.filter(etablissement=etab).order_by('type_depense', 'nom')
     return render(request, 'finances/categorie_depense_list.html', {
@@ -2755,6 +3060,7 @@ def categorie_depense_list(request):
 
 @login_required
 def categorie_depense_form(request, pk=None):
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     from .models import TypeDepense
     etab, _ = _etab_and_annee(request)
     instance = get_object_or_404(CategorieDepense, pk=pk, etablissement=etab) if pk else None
@@ -2778,12 +3084,15 @@ def categorie_depense_form(request, pk=None):
                 instance.code = code
                 instance.type_depense = type_depense
                 instance.actif = actif
+                instance.updated_by = request.user
+                instance._audit_reason = 'Modification d’une catégorie de dépense'
                 instance.save()
                 messages.success(request, f"Catégorie « {nom} » mise à jour.")
             else:
                 CategorieDepense.objects.create(
                     etablissement=etab, nom=nom, code=code,
                     type_depense=type_depense, actif=actif,
+                    created_by=request.user, updated_by=request.user,
                 )
                 messages.success(request, f"Catégorie « {nom} » créée.")
             return redirect('finances:categorie_depense_list')
@@ -2798,13 +3107,22 @@ def categorie_depense_form(request, pk=None):
 @login_required
 @require_POST
 def categorie_depense_delete(request, pk):
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     etab, _ = _etab_and_annee(request)
     cat = get_object_or_404(CategorieDepense, pk=pk, etablissement=etab)
     if cat.depenses.exists():
         messages.error(request, "Impossible de supprimer : des dépenses utilisent cette catégorie.")
     else:
-        cat.delete()
-        messages.success(request, "Catégorie supprimée.")
+        reason = request.POST.get('motif', '').strip()
+        if not reason:
+            messages.error(request, "Le motif de désactivation est obligatoire.")
+        else:
+            cat._audit_reason = reason
+            cat.actif = False
+            cat.is_active = False
+            cat.updated_by = request.user
+            cat.save(update_fields=['actif', 'is_active', 'updated_by', 'updated_at'])
+            messages.success(request, "Catégorie désactivée et conservée dans l'historique.")
     return redirect('finances:categorie_depense_list')
 
 
@@ -2812,6 +3130,7 @@ def categorie_depense_delete(request, pk):
 
 @login_required
 def depense_list(request):
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab, annee_courante = _etab_and_annee(request)
     annees = _get_annees(etab)
 
@@ -2860,6 +3179,7 @@ def depense_list(request):
 
 @login_required
 def depense_form(request, pk=None):
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     etab, annee_courante = _etab_and_annee(request)
     instance = get_object_or_404(Depense, pk=pk, annee_scolaire__etablissement=etab) if pk else None
 
@@ -2884,7 +3204,7 @@ def depense_form(request, pk=None):
 
         try:
             montant = Decimal(montant_str.replace(' ', '').replace(',', '.'))
-            if montant <= 0:
+            if not montant.is_finite() or montant <= 0:
                 raise ValueError
         except (InvalidOperation, ValueError):
             error = "Montant invalide."
@@ -2905,6 +3225,8 @@ def depense_form(request, pk=None):
                 instance.beneficiaire = beneficiaire
                 instance.reference = reference
                 instance.observation = observation
+                instance.updated_by = request.user
+                instance._audit_reason = 'Modification d’une dépense en brouillon'
                 instance.save()
                 messages.success(request, f"Dépense {instance.numero_depense} mise à jour.")
             else:
@@ -2913,7 +3235,8 @@ def depense_form(request, pk=None):
                     libelle=libelle, montant=montant, date_depense=date_dep,
                     mode_paiement=mode, beneficiaire=beneficiaire,
                     reference=reference, observation=observation,
-                    statut=StatutDepense.BROUILLON, saisi_par=request.user,
+                    statut=StatutDepense.BROUILLON,
+                    saisi_par=request.user, created_by=request.user, updated_by=request.user,
                 )
                 messages.success(request, f"Dépense {dep.numero_depense} créée.")
             return redirect('finances:depense_list')
@@ -2933,48 +3256,80 @@ def depense_form(request, pk=None):
 @login_required
 @require_POST
 def depense_delete(request, pk):
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     etab, _ = _etab_and_annee(request)
-    dep = get_object_or_404(Depense, pk=pk, annee_scolaire__etablissement=etab)
-    if dep.statut == StatutDepense.VALIDEE:
-        messages.error(request, "Une dépense validée ne peut pas être supprimée.")
-    else:
-        num = dep.numero_depense
-        dep.delete()
-        messages.success(request, f"Dépense {num} supprimée.")
+    reason = request.POST.get('motif', '').strip()
+    with transaction.atomic():
+        dep = get_object_or_404(
+            Depense.objects.select_for_update(),
+            pk=pk,
+            annee_scolaire__etablissement=etab,
+        )
+        if dep.statut == StatutDepense.VALIDEE:
+            messages.error(request, "Une dépense validée doit être annulée par un approbateur, pas supprimée.")
+        elif not reason:
+            messages.error(request, "Le motif d'annulation est obligatoire.")
+        else:
+            num = dep.numero_depense
+            dep._audit_reason = reason
+            dep.motif_annulation = reason
+            dep.statut = StatutDepense.ANNULEE
+            dep.updated_by = request.user
+            dep.save(update_fields=['statut', 'motif_annulation', 'updated_by', 'updated_at'])
+            messages.success(request, f"Dépense {num} annulée et conservée dans l'historique.")
     return redirect('finances:depense_list')
 
 
 @login_required
 @require_POST
 def depense_valider(request, pk):
-    from django.core.exceptions import PermissionDenied
+    _require_finance_role(request, FINANCE_APPROVER_ROLES)
     etab, _ = _etab_and_annee(request)
-    if request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR', 'COMPTABLE'):
-        raise PermissionDenied
-    dep = get_object_or_404(Depense, pk=pk, annee_scolaire__etablissement=etab)
-    if dep.statut != StatutDepense.BROUILLON:
-        messages.error(request, "Seule une dépense en brouillon peut être validée.")
-    else:
-        import datetime as _dt
-        dep.statut = StatutDepense.VALIDEE
-        dep.valide_par = request.user
-        dep.date_validation = _dt.date.today()
-        dep.save(update_fields=['statut', 'valide_par', 'date_validation'])
-        messages.success(request, f"Dépense {dep.numero_depense} validée.")
+    with transaction.atomic():
+        dep = get_object_or_404(
+            Depense.objects.select_for_update(),
+            pk=pk,
+            annee_scolaire__etablissement=etab,
+        )
+        if dep.statut != StatutDepense.BROUILLON:
+            messages.error(request, "Seule une dépense en brouillon peut être validée.")
+        elif dep.saisi_par_id == request.user.pk:
+            messages.error(request, "Le saisisseur ne peut pas valider sa propre dépense.")
+        else:
+            import datetime as _dt
+            dep._audit_reason = request.POST.get('motif', '').strip() or 'Validation de dépense par un approbateur'
+            dep.statut = StatutDepense.VALIDEE
+            dep.valide_par = request.user
+            dep.date_validation = _dt.date.today()
+            dep.updated_by = request.user
+            dep.save(update_fields=['statut', 'valide_par', 'date_validation', 'updated_by', 'updated_at'])
+            messages.success(request, f"Dépense {dep.numero_depense} validée.")
     return redirect('finances:depense_list')
 
 
 @login_required
 @require_POST
 def depense_annuler(request, pk):
+    _require_finance_role(request, FINANCE_APPROVER_ROLES)
     etab, _ = _etab_and_annee(request)
-    dep = get_object_or_404(Depense, pk=pk, annee_scolaire__etablissement=etab)
-    if dep.statut == StatutDepense.ANNULEE:
-        messages.error(request, "Cette dépense est déjà annulée.")
-    else:
-        dep.statut = StatutDepense.ANNULEE
-        dep.save(update_fields=['statut'])
-        messages.success(request, f"Dépense {dep.numero_depense} annulée.")
+    reason = request.POST.get('motif', '').strip()
+    with transaction.atomic():
+        dep = get_object_or_404(
+            Depense.objects.select_for_update(),
+            pk=pk,
+            annee_scolaire__etablissement=etab,
+        )
+        if dep.statut == StatutDepense.ANNULEE:
+            messages.error(request, "Cette dépense est déjà annulée.")
+        elif not reason:
+            messages.error(request, "Le motif d'annulation est obligatoire.")
+        else:
+            dep._audit_reason = reason
+            dep.motif_annulation = reason
+            dep.statut = StatutDepense.ANNULEE
+            dep.updated_by = request.user
+            dep.save(update_fields=['statut', 'motif_annulation', 'updated_by', 'updated_at'])
+            messages.success(request, f"Dépense {dep.numero_depense} annulée.")
     return redirect('finances:depense_list')
 
 
@@ -2982,6 +3337,7 @@ def depense_annuler(request, pk):
 
 @login_required
 def budget_previsionnel(request):
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
     etab, annee_courante = _etab_and_annee(request)
     annees = _get_annees(etab)
 
@@ -2991,18 +3347,41 @@ def budget_previsionnel(request):
     categories = CategorieDepense.objects.filter(etablissement=etab, actif=True)
 
     if request.method == 'POST' and annee_sel:
+        budgets_a_ecrire = []
+        budget_errors = []
         for cat in categories:
             val = request.POST.get(f'budget_{cat.pk}', '').strip()
             try:
                 montant = Decimal(val.replace(' ', '').replace(',', '.'))
+                if not montant.is_finite() or montant < 0:
+                    raise ValueError
             except (InvalidOperation, ValueError):
-                montant = Decimal('0')
-            BudgetAnnuel.objects.update_or_create(
-                annee_scolaire=annee_sel, categorie=cat,
-                defaults={'montant_prevu': montant},
-            )
-        messages.success(request, "Budget prévisionnel enregistré.")
-        return redirect(f"{request.path}?annee={annee_sel.pk}")
+                budget_errors.append(f"Montant invalide pour « {cat.nom} ».")
+                continue
+            budgets_a_ecrire.append((cat, montant))
+
+        if budget_errors:
+            for error in budget_errors:
+                messages.error(request, error)
+        else:
+            with transaction.atomic():
+                for cat, montant in budgets_a_ecrire:
+                    budget, created = BudgetAnnuel.objects.get_or_create(
+                        annee_scolaire=annee_sel,
+                        categorie=cat,
+                        defaults={
+                            'montant_prevu': montant,
+                            'created_by': request.user,
+                            'updated_by': request.user,
+                        },
+                    )
+                    if not created:
+                        budget._audit_reason = 'Mise à jour du budget prévisionnel'
+                        budget.montant_prevu = montant
+                        budget.updated_by = request.user
+                        budget.save(update_fields=['montant_prevu', 'updated_by', 'updated_at'])
+            messages.success(request, "Budget prévisionnel enregistré.")
+            return redirect(f"{request.path}?annee={annee_sel.pk}")
 
     budgets_map = {}
     if annee_sel:
@@ -3028,6 +3407,7 @@ def budget_previsionnel(request):
 
 @login_required
 def tableau_bord_budget(request):
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     from django.db.models.functions import TruncMonth
     etab, annee_courante = _etab_and_annee(request)
     annees = _get_annees(etab)
@@ -3100,6 +3480,7 @@ def tableau_bord_budget(request):
 
 @login_required
 def tableau_bord_budget_xlsx(request):
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment, numbers
     from openpyxl.utils import get_column_letter

@@ -68,7 +68,7 @@
   <form hx-post="{% url 'bulletins:bulletin_saisir' inscription_id=inscription.pk trimestre_id=trimestre.pk %}"
         hx-target="#modal-content"
         hx-swap="innerHTML"
-        hx-on::after-request="if(event.detail.successful && event.detail.xhr.status===204){ document.getElementById('bulletin-modal').style.display='none'; htmx.trigger(document.body,'bulletinUpdated'); }">
+        hx-on::after-request="if(event.detail.successful && event.detail.xhr.status===204){ document.getElementById('bulletin-modal').style.display='none'; }">
     {% csrf_token %}
 
     {# Absences #}

@@ -364,6 +364,23 @@ class Classe(BaseModel):
     def __str__(self):
         return f"{self.nom} ({self.cycle.nom})"
 
+    def save(self, *args, **kwargs):
+        """Réserve atomiquement une classe active de la licence."""
+        from django.conf import settings
+
+        active = bool(self.actif)
+        if not self._state.adding and active and getattr(
+            settings, 'LICENSE_ENFORCEMENT_ENABLED', True
+        ):
+            previous = type(self).objects.filter(pk=self.pk).values('actif').first()
+            active = not previous or not previous['actif']
+
+        if active and getattr(settings, 'LICENSE_ENFORCEMENT_ENABLED', True):
+            from licences.limits import reserve_limit
+            with reserve_limit(self.etablissement, 'classes'):
+                return super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
+
 
 # ═══════════════════════════════════════════════════════════════════
 # 4. POSTE (Personnel)

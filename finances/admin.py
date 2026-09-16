@@ -22,6 +22,16 @@ class PaiementAdmin(admin.ModelAdmin):
     list_display = ['inscription', 'rubrique', 'montant', 'date_paiement', 'mode_paiement', 'numero_recu']
     list_filter = ['mode_paiement', 'date_paiement']
     search_fields = ['inscription__eleve__nom', 'numero_recu']
+    readonly_fields = tuple(field.name for field in Paiement._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(CategorieDepense)

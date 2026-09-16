@@ -4,6 +4,7 @@ from datetime import datetime
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse
@@ -16,7 +17,9 @@ from core.utils import get_etablissement_context
 
 try:
     from weasyprint import HTML as _WeasyHTML
-except ImportError:
+except (ImportError, OSError):
+    # Le serveur peut démarrer sans les bibliothèques système PDF ; les vues
+    # concernées afficheront un message d'indisponibilité.
     _WeasyHTML = None
 
 @login_required
@@ -105,7 +108,7 @@ def eleve_list(request):
 def eleve_list_csv(request):
     """Export CSV de la liste des eleves (memes filtres qu'eleve_list)."""
     import csv
-    from core.models import AuditLog
+    from core.audit import record_audit
     from django.utils import timezone
     
     # Vérification de rôle - seuls certains rôles peuvent exporter
@@ -150,20 +153,23 @@ def eleve_list_csv(request):
             Q(matricule__icontains=query)
         )
     
-    # Journaliser l'export CSV
+    # Un export est une opération sensible : il n'est pas délivré si sa trace
+    # append-only ne peut pas être écrite.
     try:
-        AuditLog.objects.create(
-            user=request.user,
+        record_audit(
             action='EXPORT',
+            user=request.user,
+            request=request,
             app_label='inscriptions',
             model_name='eleve',
-            object_id=None,
+            object_id='csv-export',
             object_repr=f"Export CSV - {eleves.count()} élèves",
             changes={'type': 'csv', 'filtres': query or 'aucun'},
-            ip_address=request.META.get('REMOTE_ADDR'),
+            reason='Export demandé depuis la liste des élèves',
         )
     except Exception:
-        pass  # Ne pas bloquer l'export si l'audit échoue
+        messages.error(request, "L'export est indisponible car sa traçabilité n'a pas pu être garantie.")
+        return redirect('inscriptions:eleve_list')
 
     if annee_courante:
         if classe_id:
@@ -542,12 +548,16 @@ def inscription_create(request, pk):
         if form.is_valid():
             inscription = form.save(commit=False)
             inscription.eleve = eleve
-            inscription.save()
-            eleve.last_classe = inscription.classe.nom
-            eleve.last_annee = inscription.annee_scolaire.libelle
-            eleve.save(update_fields=['last_classe', 'last_annee'])
-            messages.success(request, f"Inscription confirmée pour {eleve.get_nom_complet()}.")
-            return redirect('inscriptions:eleve_detail', pk=eleve.pk)
+            try:
+                inscription.save()
+            except ValidationError as exc:
+                form.add_error(None, exc)
+            else:
+                eleve.last_classe = inscription.classe.nom
+                eleve.last_annee = inscription.annee_scolaire.libelle
+                eleve.save(update_fields=['last_classe', 'last_annee'])
+                messages.success(request, f"Inscription confirmée pour {eleve.get_nom_complet()}.")
+                return redirect('inscriptions:eleve_detail', pk=eleve.pk)
     else:
         annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
         form = InscriptionForm(
@@ -871,14 +881,18 @@ def reinscrire_eleve(request, pk):
             messages.error(request, "Veuillez sélectionner une classe.")
             return redirect('inscriptions:reinscrire_eleve', pk=pk)
         
-        classe = get_object_or_404(Classe, pk=classe_id)
+        classe = get_object_or_404(Classe, pk=classe_id, etablissement=etab)
         
-        Inscription.objects.create(
-            eleve=eleve,
-            annee_scolaire=annee_courante,
-            classe=classe,
-            statut='AFFECTE'
-        )
+        try:
+            Inscription.objects.create(
+                eleve=eleve,
+                annee_scolaire=annee_courante,
+                classe=classe,
+                statut='AFFECTE'
+            )
+        except ValidationError as exc:
+            messages.error(request, str(exc))
+            return redirect('inscriptions:reinscrire_eleve', pk=pk)
         eleve.last_classe = classe.nom
         eleve.last_annee = annee_courante.libelle
         eleve.save(update_fields=['last_classe', 'last_annee'])

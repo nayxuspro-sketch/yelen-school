@@ -10,6 +10,12 @@ def disable_ssl_redirect(settings):
 
 
 @pytest.fixture(autouse=True)
+def disable_license_enforcement_for_tests(settings):
+    """Les tests fonctionnels historiques n'ont pas de licence émise."""
+    settings.LICENSE_ENFORCEMENT_ENABLED = False
+
+
+@pytest.fixture(autouse=True)
 def disable_audit_for_tests():
     """Désactive le signal d'audit pendant tous les tests."""
     from core.signals import disable_audit

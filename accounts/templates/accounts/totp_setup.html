@@ -91,7 +91,11 @@
             </div>
 
             <div style="display:flex; gap:var(--space-3); margin-top:var(--space-4);">
+              {% if pending_login %}
+              <a href="{% url 'accounts:login' %}" class="btn-secondary" style="flex:1; text-align:center;">Annuler</a>
+              {% else %}
               <a href="{% url 'accounts:profile' %}" class="btn-secondary" style="flex:1; text-align:center;">Annuler</a>
+              {% endif %}
               <button type="submit" class="btn-primary" style="flex:1; justify-content:center;">Activer la 2FA</button>
             </div>
           </form>

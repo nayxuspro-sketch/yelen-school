@@ -12,7 +12,7 @@ Auteur: YELEN SCHOOL Team
 Date: Mars 2026
 """
 
-from datetime import timedelta
+import hashlib
 from typing import Callable
 
 from django.conf import settings
@@ -32,294 +32,212 @@ from .models import Licence, LicenceAlert, LicenceAuditLog, StatutLicence
 # ═══════════════════════════════════════════════════════════════════
 
 class LicenceCheckMiddleware:
-    """
-    Middleware de vérification des licences.
-    
-    S'exécute à chaque requête pour :
-    1. Vérifier la validité de la licence
-    2. Mettre à jour le statut si expirée
-    3. Créer les alertes d'expiration
-    4. Bloquer l'accès si licence invalide
-    
-    Configuration dans settings.py:
-        MIDDLEWARE = [
-            ...
-            'licences.middleware.LicenceCheckMiddleware',
-        ]
-    """
-    
-    # URLs exemptées de vérification (toujours accessibles)
-    EXEMPTED_URLS = [
-        '/admin/',
+    """Bloque toute utilisation client sans licence Ed25519 valide."""
+
+    # Ces pages doivent rester visibles pour expliquer une absence, une
+    # expiration ou une procédure de renouvellement. L'administration Django
+    # n'est pas exemptée : un superutilisateur client ne doit pas contourner la
+    # licence en passant par /admin/.
+    EXEMPTED_URLS = (
         '/accounts/login/',
         '/accounts/logout/',
         '/licences/activer/',
         '/licences/renouveler/',
-        '/licences/upgrade/',
+        '/licences/support/',
+        '/licences/guide/',
+        '/licences/mon-abonnement/',
         '/static/',
         '/media/',
         '/__debug__/',
-    ]
-    
-    # Fréquence de vérification (éviter de surcharger la DB)
-    CACHE_TIMEOUT = 300  # 5 minutes
-    
+    )
+    CACHE_TIMEOUT = 60
+
     def __init__(self, get_response: Callable):
-        """Initialise le middleware."""
         self.get_response = get_response
-    
+
     def __call__(self, request: HttpRequest) -> HttpResponse:
-        """
-        Traite chaque requête.
-        
-        Args:
-            request: Requête HTTP Django
-            
-        Returns:
-            HttpResponse
-        """
-        # Vérifier si l'URL est exemptée
+        if not getattr(settings, 'LICENSE_ENFORCEMENT_ENABLED', True):
+            return self.get_response(request)
         if self._is_exempted_url(request.path):
             return self.get_response(request)
-        
-        # Vérifier uniquement pour les utilisateurs authentifiés
         if not request.user.is_authenticated:
             return self.get_response(request)
-        
-        # Super admin bypass
-        if request.user.is_superuser:
+
+        # Le bypass est réservé à un environnement fournisseur explicitement
+        # configuré. Un simple is_superuser chez le client ne suffit pas.
+        if (
+            request.user.is_superuser
+            and getattr(settings, 'LICENSE_ALLOW_SUPERUSER_BYPASS', False)
+        ):
             return self.get_response(request)
-        
-        # Vérifier que l'utilisateur a un établissement
-        if not hasattr(request.user, 'etablissement') or request.user.etablissement is None:
-            # Pas d'établissement : rediriger vers configuration du profil
+
+        etablissement = getattr(request.user, 'etablissement', None)
+        if etablissement is None:
             if request.path != reverse('accounts:profile'):
                 messages.warning(
                     request,
-                    _("Veuillez compléter votre profil et associer un établissement.")
+                    _("Veuillez compléter votre profil et associer un établissement."),
                 )
                 return redirect('accounts:profile')
             return self.get_response(request)
-        
-        # Récupérer la licence de l'établissement
-        etablissement = request.user.etablissement
-        
+
         try:
             licence = etablissement.licence
         except Licence.DoesNotExist:
-            # Pas de licence : rediriger vers activation
             if request.path != reverse('licences:activer'):
                 messages.error(
                     request,
-                    _("Votre établissement n'a pas de licence. "
-                      "Veuillez activer une licence pour accéder à l'application.")
+                    _("Votre établissement n'a pas de licence. Importez le fichier signé fourni par YELEN SCHOOL."),
                 )
                 return redirect('licences:activer')
             return self.get_response(request)
-        
-        # Vérifier la licence avec cache
-        cache_key = f'licence_check_{licence.id}'
-        cached_status = cache.get(cache_key)
-        
-        if cached_status is None:
-            # Cache expiré : vérifier la licence
-            is_valid, redirect_response = self._check_licence(request, licence)
-            
+
+        from .fingerprint import get_server_fingerprint
+        cache_key = self._cache_key(licence, get_server_fingerprint())
+        if cache.get(cache_key) is None:
+            is_valid, response = self._check_licence(request, licence)
             if not is_valid:
-                return redirect_response
-            
-            # Mettre en cache le résultat positif
+                return response
             cache.set(cache_key, 'valid', self.CACHE_TIMEOUT)
-        
-        # Licence valide : continuer
+
         return self.get_response(request)
-    
+
+    @staticmethod
+    def _cache_key(licence: Licence, fingerprint: str) -> str:
+        # Le statut, l'expiration, la signature et l'empreinte font partie de
+        # la clé : une modification DB ne réutilise pas un cache positif ancien.
+        signature = licence.signature_ed25519 or licence.signature_hmac
+        material = ':'.join((
+            str(licence.pk),
+            signature,
+            licence.statut,
+            licence.date_expiration.isoformat(),
+            fingerprint,
+        ))
+        return 'licence_check_' + hashlib.sha256(material.encode('utf-8')).hexdigest()
+
     def _is_exempted_url(self, path: str) -> bool:
-        """
-        Vérifie si l'URL est exemptée de vérification.
-        
-        Args:
-            path: Chemin de l'URL
-            
-        Returns:
-            bool: True si exemptée
-        """
-        for exempted in self.EXEMPTED_URLS:
-            if path.startswith(exempted):
-                return True
-        return False
-    
+        return any(path.startswith(prefix) for prefix in self.EXEMPTED_URLS)
+
     def _check_licence(self, request: HttpRequest, licence: Licence) -> tuple:
-        """
-        Vérifie la validité complète de la licence.
-        
-        Args:
-            request: Requête HTTP
-            licence: Instance de Licence
-            
-        Returns:
-            tuple: (is_valid: bool, redirect_response: HttpResponse or None)
-        """
-        # 1. Vérifier la signature HMAC
+        # Une licence historique HMAC est refusée en mode commercial, même si
+        # son HMAC correspond à SECRET_KEY.
+        if not licence.utilise_signature_forte:
+            self._log_audit(
+                licence,
+                'TENTATIVE_FRAUDE',
+                'Licence historique HMAC refusée : migration Ed25519 nécessaire',
+                request,
+            )
+            messages.error(
+                request,
+                _("Cette installation utilise une licence historique non certifiée. Importez une licence Ed25519."),
+            )
+            return False, redirect('licences:support')
+
         if not licence.verifier_signature():
             self._log_audit(
                 licence,
                 'TENTATIVE_FRAUDE',
-                "Signature HMAC invalide détectée",
-                request
+                'Signature Ed25519 ou payload de licence invalide',
+                request,
             )
-            
             messages.error(
                 request,
-                _("⚠️ La signature de votre licence est invalide. "
-                  "Contactez le support immédiatement.")
+                _("La licence est invalide ou a été modifiée. Contactez le support."),
             )
             return False, redirect('licences:support')
-        
-        # 2. Vérifier l'expiration
+
+        if licence.statut == StatutLicence.REVOQUEE:
+            messages.error(request, _("La licence a été révoquée. Contactez le support."))
+            return False, redirect('licences:support')
+
         if licence.date_expiration < timezone.now().date():
-            # Licence expirée : mettre à jour le statut
             if licence.statut != StatutLicence.EXPIREE:
-                licence.statut = StatutLicence.EXPIREE
-                licence.save()
-                
+                Licence.objects.filter(pk=licence.pk).update(statut=StatutLicence.EXPIREE)
                 self._log_audit(
                     licence,
                     'EXPIRATION',
-                    f"Licence expirée le {licence.date_expiration}",
-                    request
+                    f'Licence expirée le {licence.date_expiration}',
+                    request,
                 )
-                
-                # Créer une alerte
                 self._creer_alerte_expiration(licence, 'EXPIREE')
-            
             messages.error(
                 request,
-                _("🔴 Votre licence a expiré le {date}. "
-                  "Veuillez la renouveler pour continuer à utiliser l'application.").format(
-                    date=licence.date_expiration.strftime('%d/%m/%Y')
-                )
+                _("Votre licence a expiré le {date}. Importez un renouvellement signé.").format(
+                    date=licence.date_expiration.strftime('%d/%m/%Y'),
+                ),
             )
             return False, redirect('licences:renouveler')
-        
-        # 3. Vérifier si la licence est révoquée
-        if licence.statut == StatutLicence.REVOQUEE:
+
+        if licence.statut != StatutLicence.ACTIVE:
             messages.error(
                 request,
-                _("🚫 Votre licence a été révoquée. Contactez le support.")
+                _("La licence n'est pas activée. Importez puis activez le fichier fourni par YELEN SCHOOL."),
+            )
+            return False, redirect('licences:activer')
+
+        if not licence.est_liee_au_serveur():
+            self._log_audit(
+                licence,
+                'TENTATIVE_FRAUDE',
+                'Empreinte serveur différente de celle du payload signé',
+                request,
+            )
+            messages.error(
+                request,
+                _("Cette licence est liée à un autre serveur. Contactez le support pour un remplacement autorisé."),
             )
             return False, redirect('licences:support')
-        
-        # 4. Générer les alertes d'expiration si nécessaire
+
         self._generer_alertes_expiration(licence)
-        
-        # 5. Mettre à jour la date de dernière vérification
-        licence.derniere_verification = timezone.now()
-        licence.save(update_fields=['derniere_verification'])
-        
-        # Licence valide
+        Licence.objects.filter(pk=licence.pk).update(derniere_verification=timezone.now())
         return True, None
-    
+
     def _generer_alertes_expiration(self, licence: Licence) -> None:
-        """
-        Génère les alertes d'expiration automatiques.
-        
-        Crée des alertes à J-30, J-15, J-7, J-1 si elles n'existent pas.
-        
-        Args:
-            licence: Instance de Licence
-        """
         jours_restants = licence.jours_restants()
-        
-        # Définir les seuils d'alerte
-        seuils = {
-            30: 'J-30',
-            15: 'J-15',
-            7: 'J-7',
-            1: 'J-1',
-        }
-        
-        for seuil, type_alerte in seuils.items():
-            if jours_restants <= seuil:
-                # Vérifier si l'alerte existe déjà
-                alerte_existe = LicenceAlert.objects.filter(
-                    licence=licence,
-                    type_alerte=type_alerte
-                ).exists()
-                
-                if not alerte_existe:
-                    # Créer l'alerte
-                    LicenceAlert.objects.create(
-                        licence=licence,
-                        type_alerte=type_alerte
-                    )
-                    
-                    # Logger dans l'audit
-                    self._log_audit(
-                        licence,
-                        'VERIFICATION',
-                        f"Alerte {type_alerte} créée ({jours_restants} jours restants)",
-                        None
-                    )
-    
+        for seuil, type_alerte in {30: 'J-30', 15: 'J-15', 7: 'J-7', 1: 'J-1'}.items():
+            if jours_restants <= seuil and not LicenceAlert.objects.filter(
+                licence=licence,
+                type_alerte=type_alerte,
+            ).exists():
+                LicenceAlert.objects.create(licence=licence, type_alerte=type_alerte)
+                self._log_audit(
+                    licence,
+                    'VERIFICATION',
+                    f'Alerte {type_alerte} créée ({jours_restants} jours restants)',
+                    None,
+                )
+
     def _creer_alerte_expiration(self, licence: Licence, type_alerte: str) -> None:
-        """
-        Crée une alerte d'expiration.
-        
-        Args:
-            licence: Instance de Licence
-            type_alerte: Type d'alerte
-        """
-        LicenceAlert.objects.create(
-            licence=licence,
-            type_alerte=type_alerte
-        )
-    
-def _log_audit(
-            self,
-            licence: Licence,
-            action: str,
-            description: str,
-            request: HttpRequest | None = None,
+        LicenceAlert.objects.get_or_create(licence=licence, type_alerte=type_alerte)
+
+    def _log_audit(
+        self,
+        licence: Licence,
+        action: str,
+        description: str,
+        request: HttpRequest | None = None,
     ) -> None:
-        """
-        Enregistre une entrée d'audit.
-        
-        Args:
-            licence: Licence concernée
-            action: Type d'action
-            description: Description de l'action
-            request: Requête HTTP (optionnel)
-        """
         try:
             LicenceAuditLog.objects.create(
                 licence=licence,
                 action=action,
                 description=description,
                 acteur_user=request.user if request and request.user.is_authenticated else None,
-                acteur_systeme=True if request is None else False,
+                acteur_systeme=request is None,
                 ip_address=self._get_client_ip(request) if request else None,
                 user_agent=request.META.get('HTTP_USER_AGENT', '') if request else '',
             )
         except Exception:
+            # Une alerte de licence ne doit pas rendre l'application inutilisable
+            # si le journal historique est temporairement indisponible.
             pass
-    
-    def _get_client_ip(self, request: HttpRequest) -> str:
-        """
-        Récupère l'adresse IP réelle du client.
-        
-        Args:
-            request: Requête HTTP
-            
-        Returns:
-            str: Adresse IP
-        """
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+
+    @staticmethod
+    def _get_client_ip(request: HttpRequest) -> str:
+        forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+        return forwarded.split(',')[0].strip() if forwarded else request.META.get('REMOTE_ADDR', '')
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -327,82 +245,71 @@ def _log_audit(
 # ═══════════════════════════════════════════════════════════════════
 
 class LicenceLimitsMiddleware:
-    """
-    Middleware de vérification des limites de licence.
-    
-    Vérifie que l'établissement ne dépasse pas les limites
-    de sa licence (nombre d'élèves, enseignants, classes).
-    
-    S'exécute moins fréquemment que LicenceCheckMiddleware.
-    
-    Configuration:
-        MIDDLEWARE = [
-            ...
-            'licences.middleware.LicenceCheckMiddleware',
-            'licences.middleware.LicenceLimitsMiddleware',  # Après LicenceCheck
-        ]
-    """
-    
-    CACHE_TIMEOUT = 3600  # 1 heure
-    
+    """Bloque les écritures lorsque les compteurs dépassent une licence."""
+
+    CACHE_TIMEOUT = 30
+
     def __init__(self, get_response: Callable):
-        """Initialise le middleware."""
         self.get_response = get_response
-    
+
     def __call__(self, request: HttpRequest) -> HttpResponse:
-        """
-        Traite chaque requête.
-        
-        Args:
-            request: Requête HTTP
-            
-        Returns:
-            HttpResponse
-        """
-        # Vérifier uniquement pour les utilisateurs authentifiés avec établissement
+        if not getattr(settings, 'LICENSE_ENFORCEMENT_ENABLED', True):
+            return self.get_response(request)
         if not request.user.is_authenticated:
             return self.get_response(request)
-        
-        if request.user.is_superuser:
+        if (
+            request.user.is_superuser
+            and getattr(settings, 'LICENSE_ALLOW_SUPERUSER_BYPASS', False)
+        ):
             return self.get_response(request)
-        
-        if not hasattr(request.user, 'etablissement') or request.user.etablissement is None:
+
+        etab = getattr(request.user, 'etablissement', None)
+        if etab is None:
             return self.get_response(request)
-        
-        # Vérifier les limites avec cache
-        etablissement = request.user.etablissement
-        
         try:
-            licence = etablissement.licence
+            licence = etab.licence
         except Licence.DoesNotExist:
             return self.get_response(request)
-        
-        cache_key = f'licence_limits_{licence.id}'
-        cached_check = cache.get(cache_key)
-        
-        if cached_check is None:
-            # Vérifier les limites
-            self._check_limits(request, licence)
-            
-            # Mettre en cache
-            cache.set(cache_key, 'checked', self.CACHE_TIMEOUT)
-        
+
+        # Les écritures ne réutilisent jamais un résultat de comptage ancien.
+        cache_key = self._cache_key(licence)
+        violations = None if request.method not in {'GET', 'HEAD', 'OPTIONS'} else cache.get(cache_key)
+        if violations is None:
+            violations = self._check_limits(request, licence)
+            if request.method in {'GET', 'HEAD', 'OPTIONS'}:
+                cache.set(cache_key, violations, self.CACHE_TIMEOUT)
+
+        if violations and request.method not in {'GET', 'HEAD', 'OPTIONS'}:
+            message = _(
+                "Opération refusée : la limite de licence est dépassée pour %(items)s."
+            ) % {'items': ', '.join(violations)}
+            messages.error(request, message)
+            if request.path.startswith('/api/'):
+                from django.http import JsonResponse
+                return JsonResponse(
+                    {'error': 'licence_limit_exceeded', 'details': violations},
+                    status=403,
+                )
+            return HttpResponse(message, status=403, content_type='text/plain; charset=utf-8')
+
         return self.get_response(request)
-    
-    def _check_limits(self, request: HttpRequest, licence: Licence) -> None:
-        """
-        Vérifie les limites de la licence et avertit si elles sont dépassées.
 
-        Args:
-            request: Requête HTTP
-            licence: Instance de Licence
-        """
-        from .models import LIMITES_LICENCES
+    @staticmethod
+    def _cache_key(licence: Licence) -> str:
+        material = ':'.join((
+            str(licence.pk),
+            licence.signature_ed25519 or licence.signature_hmac,
+            licence.statut,
+            licence.date_expiration.isoformat(),
+        ))
+        return 'licence_limits_' + hashlib.sha256(material.encode('utf-8')).hexdigest()
 
-        limites = LIMITES_LICENCES.get(licence.type_licence, {})
+    def _check_limits(self, request: HttpRequest, licence: Licence) -> dict:
+        """Retourne les limites dépassées ; ne se contente plus d'avertir."""
+        limites = licence.limites_effectives()
         etab = licence.etablissement
+        violations = {}
 
-        # ── Élèves (inscriptions actives de l'année courante) ──────────
         try:
             from inscriptions.models import Inscription
             nb_eleves = (
@@ -410,64 +317,43 @@ class LicenceLimitsMiddleware:
                 .filter(
                     classe__etablissement=etab,
                     annee_scolaire__est_courante=True,
+                    statut__in=('AFFECTE', 'BOURSIER', 'EXONERE'),
                 )
-                .values('eleve_id')
-                .distinct()
-                .count()
+                .values('eleve_id').distinct().count()
             )
-            max_eleves = limites.get('max_eleves', 0)
-            if max_eleves and nb_eleves > max_eleves:
-                messages.warning(
-                    request,
-                    _(
-                        "Limite de licence depassee : %(nb)d eleves inscrits "
-                        "pour un maximum de %(max)d (licence %(type)s)."
-                    ) % {'nb': nb_eleves, 'max': max_eleves, 'type': licence.get_type_licence_display()},
-                )
+            maximum = limites.get('max_eleves', 0)
+            if maximum < 0 or nb_eleves > maximum:
+                violations['eleves'] = {'current': nb_eleves, 'max': maximum}
         except ImportError:
             pass
 
-        # ── Enseignants (personnel actif, catégorie Enseignement) ──────
         try:
             from personnel.models import InscriptionPersonnel
             nb_enseignants = (
                 InscriptionPersonnel.objects
                 .filter(
                     cycle__etablissement=etab,
-                    is_active=True,
+                    est_actif=True,
                     poste__categorie='ENSEIGNEMENT',
                 )
-                .values('personnel_id')
-                .distinct()
-                .count()
+                .values('personnel_id').distinct().count()
             )
-            max_enseignants = limites.get('max_enseignants', 0)
-            if max_enseignants and nb_enseignants > max_enseignants:
-                messages.warning(
-                    request,
-                    _(
-                        "Limite de licence depassee : %(nb)d enseignants actifs "
-                        "pour un maximum de %(max)d (licence %(type)s)."
-                    ) % {'nb': nb_enseignants, 'max': max_enseignants, 'type': licence.get_type_licence_display()},
-                )
+            maximum = limites.get('max_enseignants', 0)
+            if maximum < 0 or nb_enseignants > maximum:
+                violations['enseignants'] = {'current': nb_enseignants, 'max': maximum}
         except ImportError:
             pass
 
-        # ── Classes ────────────────────────────────────────────────────
         try:
             from parametres.models import Classe
-            nb_classes = Classe.objects.filter(etablissement=etab, is_active=True).count()
-            max_classes = limites.get('max_classes', 0)
-            if max_classes and nb_classes > max_classes:
-                messages.warning(
-                    request,
-                    _(
-                        "Limite de licence dépassée : %(nb)d classes actives "
-                        "pour un maximum de %(max)d (licence %(type)s)."
-                    ) % {'nb': nb_classes, 'max': max_classes, 'type': licence.get_type_licence_display()},
-                )
+            nb_classes = Classe.objects.filter(etablissement=etab, actif=True).count()
+            maximum = limites.get('max_classes', 0)
+            if maximum < 0 or nb_classes > maximum:
+                violations['classes'] = {'current': nb_classes, 'max': maximum}
         except ImportError:
             pass
+
+        return violations
 
 
 # ═══════════════════════════════════════════════════════════════════

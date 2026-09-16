@@ -9,6 +9,7 @@ Usage :
     python manage.py sms_auto --type ECHEANCIER
     python manage.py sms_auto --type RESULTATS
     python manage.py sms_auto --dry-run
+    python manage.py sms_auto --etablissement <uuid>
 
 Cron recommandé (Windows Task Scheduler ou Linux cron) :
     0 7 * * * /path/to/venv/bin/python manage.py sms_auto
@@ -37,20 +38,29 @@ class Command(BaseCommand):
             action='store_true',
             help="Simuler sans envoyer de SMS",
         )
+        parser.add_argument(
+            '--etablissement',
+            type=str,
+            help="UUID d'un établissement à traiter (défaut : tous)",
+        )
 
     def handle(self, *args, **options):
         from core.sms import get_sms_val
-        if not get_sms_val('SMS_ENABLED'):
+        sms_enabled = get_sms_val('SMS_ENABLED') is True or str(get_sms_val('SMS_ENABLED')).strip().lower() in {'1', 'true', 'yes', 'on'}
+        if not sms_enabled:
             self.stdout.write(self.style.WARNING("SMS_ENABLED=False — aucun SMS envoyé."))
             return
 
         from parametres.models import DeclencheurSMS
         filtre_type = options.get('type')
+        etablissement_id = options.get('etablissement')
         dry_run = options.get('dry_run', False)
 
         qs = DeclencheurSMS.objects.filter(actif=True).select_related('etablissement')
         if filtre_type:
             qs = qs.filter(type_declencheur=filtre_type)
+        if etablissement_id:
+            qs = qs.filter(etablissement_id=etablissement_id)
 
         total = 0
         for declencheur in qs:
@@ -64,6 +74,14 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Total : {total} SMS {'simulés' if dry_run else 'envoyés'}."))
 
     def _run_declencheur(self, declencheur, dry_run):
+        # Une exécution planifiée ne doit pas renvoyer deux fois le même
+        # déclencheur le même jour (clic manuel + tâche Windows, par exemple).
+        if not dry_run and declencheur.last_run:
+            last_run_date = timezone.localtime(declencheur.last_run).date()
+            if last_run_date >= timezone.localdate():
+                logger.info("Déclencheur SMS déjà exécuté aujourd'hui : %s", declencheur)
+                return 0
+
         t = declencheur.type_declencheur
         etab = declencheur.etablissement
         nb = 0
@@ -75,32 +93,43 @@ class Command(BaseCommand):
         elif t == 'RESULTATS':
             nb = self._resultats_dispo(declencheur, etab, dry_run)
 
-        if not dry_run and nb > 0:
+        if not dry_run:
             declencheur.last_run = timezone.now()
-            declencheur.nb_envoyes_total = (declencheur.nb_envoyes_total or 0) + nb
-            declencheur.save(update_fields=['last_run', 'nb_envoyes_total'])
+            update_fields = ['last_run']
+            if nb > 0:
+                declencheur.nb_envoyes_total = (declencheur.nb_envoyes_total or 0) + nb
+                update_fields.append('nb_envoyes_total')
+            declencheur.save(update_fields=update_fields)
 
         return nb
 
     # ── ABSENCE J+1 ────────────────────────────────────────────────
 
     def _absence_j1(self, declencheur, etab, dry_run):
-        from presences.models import Absence
+        from presences.models import Presence
         hier = timezone.now().date() - timedelta(days=1)
 
+        # Le projet stocke les absences dans Presence (statut ABSENT), liées
+        # à un Appel ; il n'existe pas de modèle Absence séparé. Un élève peut
+        # avoir plusieurs appels le même jour : un seul SMS est envoyé.
         absences = (
-            Absence.objects
+            Presence.objects
             .filter(
                 inscription__classe__etablissement=etab,
-                date=hier,
-                justifie=False,
+                appel__date=hier,
+                statut=Presence.StatutChoices.ABSENT,
             )
             .select_related('inscription__eleve', 'inscription__classe')
         )
 
         etab_nom = etab.nom
         nb = 0
+        inscriptions_deja_traitees = set()
         for absence in absences:
+            inscription_id = absence.inscription_id
+            if inscription_id in inscriptions_deja_traitees:
+                continue
+            inscriptions_deja_traitees.add(inscription_id)
             eleve = absence.inscription.eleve
             numero = (
                 eleve.telephone_parent
@@ -139,8 +168,7 @@ class Command(BaseCommand):
             .filter(
                 inscription__classe__etablissement=etab,
                 paye=False,
-                date_limite__lte=seuil,
-                date_limite__gte=today,
+                date_limite=seuil,
             )
             .select_related('inscription__eleve')
         )

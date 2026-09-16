@@ -22,7 +22,7 @@ from .forms import SessionExamenForm, CentreExamenForm, SalleExamenForm
 
 try:
     from weasyprint import HTML as WeasyHTML
-except ImportError:
+except (ImportError, OSError):
     WeasyHTML = None
 
 

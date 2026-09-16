@@ -144,6 +144,9 @@
               <!-- Annuler -->
               <form method="post" action="{% url 'finances:mobile_money_annuler' d.pk %}">
                 {% csrf_token %}
+                <input type="text" name="raison" required maxlength="255"
+                       placeholder="Motif d'annulation" aria-label="Motif d'annulation"
+                       class="input input-sm">
                 <button type="submit" class="btn-icon btn-icon-danger" title="Annuler"
                         onclick="return confirm('Annuler la demande {{ d.reference }} ?')">
                   <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">

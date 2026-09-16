@@ -13,8 +13,15 @@ class FraisScolariteForm(forms.ModelForm):
             'classe': forms.Select(attrs={'class': 'input select'}),
             'cycle': forms.Select(attrs={'class': 'input select'}),
             'type_frais': forms.Select(attrs={'class': 'input select'}),
-            'montant': forms.NumberInput(attrs={'class': 'input', 'step': '0.01'}),
+            'montant': forms.NumberInput(attrs={'class': 'input', 'step': '0.01', 'min': '0.01'}),
         }
+
+    def clean_montant(self):
+        montant = self.cleaned_data.get('montant')
+        if montant is None or montant <= 0:
+            raise forms.ValidationError(_("Le montant des frais doit être strictement positif."))
+        return montant
+
 
 class PaiementForm(forms.ModelForm):
     class Meta:
@@ -34,6 +41,12 @@ class PaiementForm(forms.ModelForm):
             'echeance': forms.DateInput(attrs={'class': 'input', 'type': 'date'}),
             'observation': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
         }
+
+    def clean_montant(self):
+        montant = self.cleaned_data.get('montant')
+        if montant is not None and montant <= 0:
+            raise forms.ValidationError(_("Le montant du paiement doit être strictement positif."))
+        return montant
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -61,9 +74,15 @@ class EcheancierForm(forms.ModelForm):
         widgets = {
             'libelle': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ex: 1ère tranche, Scolarité mois de...'}),
             'date_limite': forms.DateInput(attrs={'class': 'input', 'type': 'date'}),
-            'montant_du': forms.NumberInput(attrs={'class': 'input', 'step': '0.01', 'placeholder': 'Montant attendu'}),
+            'montant_du': forms.NumberInput(attrs={'class': 'input', 'step': '0.01', 'min': '0.01', 'placeholder': 'Montant attendu'}),
             'paye': forms.CheckboxInput(attrs={'class': 'checkbox'}),
         }
+
+    def clean_montant_du(self):
+        montant = self.cleaned_data.get('montant_du')
+        if montant is None or montant <= 0:
+            raise forms.ValidationError(_("Le montant de l'échéance doit être strictement positif."))
+        return montant
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

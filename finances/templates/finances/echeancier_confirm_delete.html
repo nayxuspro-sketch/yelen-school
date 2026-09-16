@@ -40,11 +40,14 @@
         </div>
       </div>
       
-      <p class="text-muted mt-4" style="font-size:0.9rem;">Cette action est irréversible.</p>
+      <p class="text-muted mt-4" style="font-size:0.9rem;">L'échéance sera désactivée et conservée dans l'historique. Un motif est obligatoire.</p>
       
       <form method="post" class="form-actions mt-6">
         {% csrf_token %}
-        <button type="submit" class="btn-danger">Supprimer</button>
+        <label class="form-label" for="id_motif">Motif de désactivation <span style="color:var(--color-danger);">*</span></label>
+        <input type="text" id="id_motif" name="motif" class="input" maxlength="255" required
+               placeholder="Ex. échéance remplacée">
+        <button type="submit" class="btn-danger">Désactiver</button>
         <a href="{% url 'finances:situation_eleve' inscription.id %}" class="btn-secondary">Annuler</a>
       </form>
     </div>
