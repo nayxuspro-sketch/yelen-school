@@ -29,6 +29,11 @@ class FinanceAccessMiddleware:
 
     Le lien public Mobile Money ``/finances/payer/<token>/`` reste accessible
     sans session : il n'expose que la confirmation destinée au parent.
+
+    ``DIRECTEUR_RESEAU`` n'est volontairement pas inclus ici : son accès
+    financier est le tableau de bord réseau agrégé, qui applique le périmètre
+    de son groupe. Les vues financières détaillées restent limitées à un
+    établissement et ne doivent pas être ouvertes avec une portée ambiguë.
     """
 
     def __init__(self, get_response):

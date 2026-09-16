@@ -2,7 +2,7 @@
 
 **Date du contrôle :** 16 septembre 2026 (UTC)
 **Branche :** `arena/01a06c5a-yelen-school`
-**Mise à jour :** contrôles hors base relancés après durcissement des limites, des montants financiers, des motifs d'audit et des migrations historiques.
+**Mise à jour :** contrôles hors base relancés après durcissement des limites, des montants financiers, des motifs d'audit, de la confidentialité des signatures/tokens et des migrations historiques.
 **Règle de lecture :** `PASS` signifie qu'une preuve d'exécution est disponible ; `BLOCKED` signifie que la preuve n'a pas pu être obtenue dans l'environnement de contrôle ; `FAIL` signifie qu'un contrôle exécutable a échoué.
 
 Ce rapport ne transforme pas une indisponibilité d'environnement en validation réussie. Les contrôles locaux ne basculent jamais vers SQLite : le projet et la suite officielle restent configurés pour PostgreSQL.
@@ -28,7 +28,7 @@ Environnement : Linux, Python 3.11.2 ; environnement Python `/tmp/yelen-security
 | `git diff --check` | `PASS` |
 | `python -m compileall -q finances manuels licences` | `PASS` |
 | `/tmp/yelen-security-venv/bin/python manage.py makemigrations --check --dry-run` | `PASS` : `No changes detected` pour toutes les applications ; avertissement séparé car PostgreSQL local est indisponible |
-| `/tmp/yelen-security-venv/bin/pytest licences/test_license_crypto.py licences/test_license_enforcement.py core/tests/test_audit_security.py finances/tests/test_security_controls.py` | `PASS` : 24 tests ciblés, dont limite signée nulle, non-divulgation d'audit, RBAC/IDOR financier et montants positifs |
+| `/tmp/yelen-security-venv/bin/pytest licences/test_license_crypto.py licences/test_license_enforcement.py core/tests/test_audit_security.py finances/tests/test_security_controls.py` | `PASS` : 26 tests ciblés, dont limite signée nulle, non-divulgation d'audit des signatures/tokens, RBAC/IDOR financier et montants positifs |
 | `/tmp/yelen-security-venv/bin/python manage.py check` | `PASS` sans erreur système ; avertissements WeasyPrint non bloquants sur les bibliothèques natives absentes |
 | tests Django nécessitant une base, migrations SQL et concurrence | `BLOCKED` : PostgreSQL refuse la connexion sur `localhost:5432` ; SQLite n'est pas utilisé |
 | test de socket `localhost:5432` et `localhost:6379` | `BLOCKED` : les deux ports refusent la connexion |

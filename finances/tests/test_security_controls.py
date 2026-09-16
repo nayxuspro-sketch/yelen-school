@@ -31,6 +31,14 @@ def test_non_financial_role_cannot_enter_finances():
         )
 
 
+def test_network_director_uses_aggregate_dashboard_not_school_finance_views():
+    """Le rôle réseau ne doit pas contourner le périmètre d'un établissement."""
+    with pytest.raises(PermissionDenied):
+        FinanceAccessMiddleware(lambda request: 'allowed')(
+            _request('/finances/paiements/', role='DIRECTEUR_RESEAU')
+        )
+
+
 def test_establishment_boundary_rejects_cross_school_object():
     request = _request('/finances/paiements/', role='COMPTABLE')
     request.user.etablissement_id = 'school-a'
