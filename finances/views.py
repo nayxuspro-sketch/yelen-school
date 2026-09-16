@@ -26,6 +26,7 @@ from .models import (
 from .forms import FraisScolariteForm, EcheancierForm
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, TarifScolarite, RubriquePaiement
+from core.models import RoleChoices
 from core.utils import get_etablissement_context
 from core.audit import record_audit
 from yelen_school.finance_middleware import (
@@ -50,8 +51,12 @@ def _require_finance_role(request, roles):
 
 
 def _require_same_establishment(request, inscription):
+    """Refuse tout objet hors établissement, sauf au Super Admin global."""
+    if getattr(request.user, 'role', None) == RoleChoices.SUPER_ADMIN:
+        return
+
     user_etab = getattr(request.user, 'etablissement_id', None)
-    if user_etab is not None and inscription.classe.etablissement_id != user_etab:
+    if user_etab is None or inscription.classe.etablissement_id != user_etab:
         raise PermissionDenied("Cette opération concerne un autre établissement.")
 
 

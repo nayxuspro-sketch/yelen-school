@@ -51,6 +51,17 @@ def test_establishment_boundary_rejects_cross_school_object():
         _require_same_establishment(request, inscription)
 
 
+def test_establishment_boundary_rejects_financial_role_without_school():
+    request = _request('/finances/paiements/', role='COMPTABLE')
+    inscription = SimpleNamespace(
+        classe=SimpleNamespace(etablissement_id='school-a'),
+    )
+    from finances.views import _require_same_establishment
+
+    with pytest.raises(PermissionDenied):
+        _require_same_establishment(request, inscription)
+
+
 def test_public_mobile_money_link_remains_available_without_session():
     request = _request('/finances/payer/opaque-token/', role='PARENT')
     assert FinanceAccessMiddleware(lambda request: 'allowed')(request) == 'allowed'
