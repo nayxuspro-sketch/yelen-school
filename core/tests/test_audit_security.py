@@ -8,6 +8,8 @@ from core.audit import record_audit
 from core.models import AuditLog
 from core.signals import _snapshot
 from accounts.models import User
+from bulletins.models import Bulletin
+from licences.models import Licence
 from yelen_school.audit_middleware import get_client_ip
 
 
@@ -53,6 +55,26 @@ def test_audit_snapshot_never_stores_password_or_totp_secret():
     assert 'totp_secret' not in snapshot
     assert 'raw-password' not in repr(snapshot)
     assert 'BASE32-SECRET' not in repr(snapshot)
+
+
+def test_audit_snapshot_never_stores_license_signatures_or_response_tokens():
+    licence = Licence(
+        signature_hmac='hmac-secret',
+        signature_ed25519='ed25519-secret',
+        signed_payload={'max_eleves': 500, 'private_key': 'must-not-leak'},
+    )
+    bulletin = Bulletin(token_signature='parent-response-token')
+
+    licence_snapshot = _snapshot(licence)
+    bulletin_snapshot = _snapshot(bulletin)
+
+    for value in ('hmac-secret', 'ed25519-secret', 'must-not-leak'):
+        assert value not in repr(licence_snapshot)
+    assert 'signature_hmac' not in licence_snapshot
+    assert 'signature_ed25519' not in licence_snapshot
+    assert 'signed_payload' not in licence_snapshot
+    assert 'parent-response-token' not in repr(bulletin_snapshot)
+    assert 'token_signature' not in bulletin_snapshot
 
 
 def test_audit_hash_is_deterministic_for_same_payload():

@@ -20,8 +20,9 @@ from yelen_school.audit_middleware import get_request
 
 _audit_disabled = False
 _SENSITIVE_FIELDS = frozenset({
-    'password', 'totp_secret', 'token', 'secret', 'private_key',
-    'signature_ed25519', 'signed_payload', 'api_key', 'access_token',
+    'password', 'totp_secret', 'token', 'token_signature', 'secret',
+    'private_key', 'signature_hmac', 'signature_ed25519', 'signed_payload',
+    'api_key', 'access_token', 'refresh_token',
 })
 
 
