@@ -29,10 +29,13 @@ Environnement : Linux, Python 3.11.2 ; environnement Python `/tmp/yelen-security
 | `python -m compileall -q finances manuels licences` | `PASS` |
 | `/tmp/yelen-security-venv/bin/python manage.py makemigrations --check --dry-run` | `PASS` : `No changes detected` pour toutes les applications ; avertissement séparé car PostgreSQL local est indisponible |
 | `/tmp/yelen-security-venv/bin/pytest licences/test_license_crypto.py licences/test_license_enforcement.py core/tests/test_audit_security.py finances/tests/test_security_controls.py` | `PASS` : 29 tests ciblés, dont limite signée nulle, binding serveur, non-divulgation d'audit des signatures/tokens, RBAC/IDOR financier et montants positifs |
+| `/tmp/yelen-security-venv/bin/pytest licences/test_license_crypto.py licences/test_license_enforcement.py accounts/test_security_controls.py` | `PASS` : 15 tests autonomes de licence, binding serveur, limite signée nulle, 2FA et limitation de connexion |
+| `/tmp/yelen-security-venv/bin/pytest --collect-only -q` | `PASS` : 268 tests collectés sans erreur d'importation |
 | `/tmp/yelen-security-venv/bin/pytest finances/tests/test_postgres_constraints.py --collect-only` | `PASS` : 10 scénarios collectés pour les contraintes CHECK PostgreSQL ; exécution réelle encore bloquée par l'indisponibilité de PostgreSQL |
 | `/tmp/yelen-security-venv/bin/pytest finances/tests/test_postgres_financial_security.py --collect-only` | `PASS` : 7 scénarios collectés pour IDOR, immutabilité/annulation auditée et concurrence ; exécution réelle encore bloquée par l'indisponibilité de PostgreSQL |
 | `/tmp/yelen-security-venv/bin/pytest manuels/tests/test_postgres_constraints.py --collect-only` | `PASS` : 2 scénarios collectés pour le prix de remplacement et l'unicité d'attribution active ; exécution réelle encore bloquée par l'indisponibilité de PostgreSQL |
 | `/tmp/yelen-security-venv/bin/python manage.py check` | `PASS` sans erreur système ; avertissements WeasyPrint non bloquants sur les bibliothèques natives absentes |
+| `/tmp/yelen-security-venv/bin/python manage.py migrate --plan` | `BLOCKED` : la lecture de l'historique des migrations échoue dès la connexion PostgreSQL sur `localhost:5432` |
 | tests Django nécessitant une base, migrations SQL et concurrence | `BLOCKED` : PostgreSQL refuse la connexion sur `localhost:5432` ; SQLite n'est pas utilisé |
 | test de socket `localhost:5432` et `localhost:6379` | `BLOCKED` : les deux ports refusent la connexion |
 
