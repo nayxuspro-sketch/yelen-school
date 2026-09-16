@@ -62,6 +62,12 @@ class ManuelScolaire(BaseModel):
         verbose_name = _("Manuel scolaire")
         verbose_name_plural = _("Manuels scolaires")
         ordering = ['cycle', 'titre']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(prix_remplacement__gte=0),
+                name='manuel_prix_non_negatif',
+            ),
+        ]
 
     def __str__(self):
         return self.titre
@@ -197,6 +203,13 @@ class AttributionManuel(BaseModel):
         verbose_name = _("Attribution de manuel")
         verbose_name_plural = _("Attributions de manuels")
         ordering = ['-date_attribution']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['exemplaire'],
+                condition=models.Q(date_retour__isnull=True),
+                name='manuel_exemplaire_non_rendu_unique',
+            ),
+        ]
 
     def __str__(self):
         return (

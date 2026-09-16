@@ -4,7 +4,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -20,7 +20,11 @@ from .models import AttributionManuel, EtatManuel, ExemplaireManuel, ManuelScola
 # ── Helpers ────────────────────────────────────────────────────────────────
 
 def _etab(request):
-    return request.user.etablissement
+    """Retourne le contexte local ; aucun accès ambigu sans établissement."""
+    etab = getattr(request.user, 'etablissement', None)
+    if etab is None:
+        raise PermissionDenied("Votre compte n'est associé à aucun établissement.")
+    return etab
 
 
 def _require_finance_write(request):
@@ -76,17 +80,36 @@ def manuel_form(request, pk=None):
 
         if not titre:
             error = "Le titre est obligatoire."
+
+        prix = None
         if not error:
             try:
                 prix = Decimal(prix_str.replace(' ', '').replace(',', '.'))
             except (InvalidOperation, ValueError):
-                prix = Decimal('0')
+                error = "Le prix de remplacement doit être un nombre valide."
+            if prix is not None and prix < 0:
+                error = "Le prix de remplacement ne peut pas être négatif."
+
+        annee_edition = None
+        if not error and annee_ed:
+            try:
+                annee_edition = int(annee_ed)
+            except ValueError:
+                error = "L'année d'édition doit être un nombre entier."
+
+        classe = None
+        if not error and classe_id:
+            classe = Classe.objects.filter(pk=classe_id, etablissement=etab).first()
+            if classe is None:
+                error = "La classe sélectionnée n'appartient pas à cet établissement."
+
+        if not error:
             kwargs = dict(
                 titre=titre, auteur=auteur, editeur=editeur, isbn=isbn,
                 cycle=cycle,
-                classe_id=classe_id,
+                classe=classe,
                 matiere_id=matiere_id,
-                annee_edition=int(annee_ed) if annee_ed else None,
+                annee_edition=annee_edition,
                 prix_remplacement=prix,
             )
             if instance:
@@ -175,12 +198,18 @@ def exemplaire_form(request, manuel_pk, pk=None):
 def exemplaire_delete(request, manuel_pk, pk):
     etab = _etab(request)
     manuel = get_object_or_404(ManuelScolaire, pk=manuel_pk, etablissement=etab)
-    ex = get_object_or_404(ExemplaireManuel, pk=pk, manuel=manuel)
-    if ex.attributions.filter(date_retour__isnull=True).exists():
-        messages.error(request, "Cet exemplaire est actuellement attribué à un élève.")
-        return redirect('manuels:manuel_detail', pk=manuel_pk)
-    ex.actif = False
-    ex.save()
+    with transaction.atomic():
+        ex = get_object_or_404(
+            ExemplaireManuel.objects.select_for_update(),
+            pk=pk,
+            manuel=manuel,
+            manuel__etablissement=etab,
+        )
+        if ex.attributions.filter(date_retour__isnull=True).exists():
+            messages.error(request, "Cet exemplaire est actuellement attribué à un élève.")
+            return redirect('manuels:manuel_detail', pk=manuel_pk)
+        ex.actif = False
+        ex.save()
     messages.success(request, f"Exemplaire {ex.code_exemplaire} désactivé.")
     return redirect('manuels:manuel_detail', pk=manuel_pk)
 
@@ -197,6 +226,7 @@ def attributions_list(request):
 
     qs = AttributionManuel.objects.filter(
         exemplaire__manuel__etablissement=etab,
+        inscription__classe__etablissement=etab,
         date_retour__isnull=True,
     ).select_related(
         'exemplaire__manuel', 'inscription__eleve', 'inscription__classe'
@@ -220,7 +250,12 @@ def attribution_form(request, exemplaire_pk=None):
     # Pré-sélection si exemplaire fourni en URL
     exemplaire_sel = None
     if exemplaire_pk:
-        exemplaire_sel = get_object_or_404(ExemplaireManuel, pk=exemplaire_pk, manuel__etablissement=etab)
+        exemplaire_sel = get_object_or_404(
+            ExemplaireManuel,
+            pk=exemplaire_pk,
+            manuel__etablissement=etab,
+            actif=True,
+        )
 
     manuels = ManuelScolaire.objects.filter(etablissement=etab, actif=True)
     classes = Classe.objects.filter(etablissement=etab).order_by('nom')
@@ -232,24 +267,37 @@ def attribution_form(request, exemplaire_pk=None):
         date_attr = request.POST.get('date_attribution') or str(date.today())
         etat_sortie = request.POST.get('etat_sortie', EtatManuel.BON)
 
-        exemplaire = get_object_or_404(ExemplaireManuel, pk=ex_pk, manuel__etablissement=etab)
-        inscription = get_object_or_404(Inscription, pk=insc_pk, annee_scolaire__etablissement=etab)
-
-        if not exemplaire.est_disponible:
-            error = "Cet exemplaire est déjà attribué à un élève."
+        try:
+            with transaction.atomic():
+                exemplaire = (
+                    ExemplaireManuel.objects.select_for_update()
+                    .get(pk=ex_pk, manuel__etablissement=etab, actif=True)
+                )
+                inscription = get_object_or_404(
+                    Inscription,
+                    pk=insc_pk,
+                    annee_scolaire__etablissement=etab,
+                    classe__etablissement=etab,
+                )
+                if not exemplaire.est_disponible:
+                    error = "Cet exemplaire est déjà attribué à un élève."
+                else:
+                    AttributionManuel.objects.create(
+                        exemplaire=exemplaire,
+                        inscription=inscription,
+                        date_attribution=date_attr,
+                        etat_sortie=etat_sortie,
+                    )
+        except (ExemplaireManuel.DoesNotExist, IntegrityError):
+            error = "Cet exemplaire vient d'être attribué par un autre utilisateur."
         else:
-            AttributionManuel.objects.create(
-                exemplaire=exemplaire,
-                inscription=inscription,
-                date_attribution=date_attr,
-                etat_sortie=etat_sortie,
-            )
-            messages.success(
-                request,
-                f"Manuel {exemplaire.code_exemplaire} attribué à "
-                f"{inscription.eleve.nom} {inscription.eleve.prenom}."
-            )
-            return redirect('manuels:attributions_list')
+            if error is None:
+                messages.success(
+                    request,
+                    f"Manuel {exemplaire.code_exemplaire} attribué à "
+                    f"{inscription.eleve.nom} {inscription.eleve.prenom}."
+                )
+                return redirect('manuels:attributions_list')
 
     # Exemplaires disponibles pour HTMX select (tout charger initialement)
     exemplaires_dispo = ExemplaireManuel.objects.filter(
@@ -261,6 +309,7 @@ def attribution_form(request, exemplaire_pk=None):
     if classe_id and annee_courante:
         inscriptions = Inscription.objects.filter(
             classe_id=classe_id,
+            classe__etablissement=etab,
             annee_scolaire=annee_courante,
         ).select_related('eleve').order_by('eleve__nom')
 
@@ -287,6 +336,7 @@ def inscription_par_classe(request):
     if classe_id and annee_courante:
         inscriptions = Inscription.objects.filter(
             classe_id=classe_id,
+            classe__etablissement=etab,
             annee_scolaire=annee_courante,
         ).select_related('eleve').order_by('eleve__nom')
     return render(request, 'manuels/partials/eleves_options.html', {
@@ -313,23 +363,34 @@ def exemplaires_par_manuel(request):
 @login_required
 def attribution_retour(request, pk):
     etab = _etab(request)
-    attribution = get_object_or_404(
-        AttributionManuel, pk=pk,
+    attribution_qs = AttributionManuel.objects.filter(
+        pk=pk,
         exemplaire__manuel__etablissement=etab,
+        inscription__classe__etablissement=etab,
         date_retour__isnull=True,
     )
+    attribution = get_object_or_404(attribution_qs, pk=pk)
     error = None
 
     if request.method == 'POST':
         d_retour = request.POST.get('date_retour') or str(date.today())
         etat_ret = request.POST.get('etat_retour', EtatManuel.BON)
         observation = request.POST.get('observation', '').strip()
-        attribution.date_retour = d_retour
-        attribution.etat_retour = etat_ret
-        attribution.observation = observation
-        attribution.exemplaire.etat = etat_ret
-        attribution.exemplaire.save()
-        attribution.save()
+        with transaction.atomic():
+            attribution = get_object_or_404(
+                attribution_qs.select_for_update(),
+                pk=pk,
+            )
+            exemplaire = (
+                ExemplaireManuel.objects.select_for_update()
+                .get(pk=attribution.exemplaire_id)
+            )
+            attribution.date_retour = d_retour
+            attribution.etat_retour = etat_ret
+            attribution.observation = observation
+            exemplaire.etat = etat_ret
+            exemplaire.save()
+            attribution.save()
         messages.success(request, "Retour enregistré.")
         return redirect('manuels:attributions_list')
 
@@ -353,6 +414,7 @@ def non_rendus(request):
 
     qs = AttributionManuel.objects.filter(
         exemplaire__manuel__etablissement=etab,
+        inscription__classe__etablissement=etab,
         date_retour__isnull=True,
     ).select_related(
         'exemplaire__manuel', 'inscription__eleve', 'inscription__classe', 'inscription__annee_scolaire'
@@ -380,6 +442,7 @@ def facturer_non_rendu(request, pk):
         attribution = get_object_or_404(
             AttributionManuel.objects.select_for_update(), pk=pk,
             exemplaire__manuel__etablissement=etab,
+            inscription__classe__etablissement=etab,
             date_retour__isnull=True,
             facture_genere=False,
         )
@@ -484,6 +547,8 @@ def inventaire_classe_pdf(request, classe_pk):
 
     attributions = AttributionManuel.objects.filter(
         inscription__classe=classe,
+        inscription__classe__etablissement=etab,
+        exemplaire__manuel__etablissement=etab,
         inscription__annee_scolaire=annee_courante,
         date_retour__isnull=True,
     ).select_related(
@@ -518,7 +583,11 @@ def attributions_annee_pdf(request):
 
     attributions = (
         AttributionManuel.objects
-        .filter(inscription__annee_scolaire=annee_sel, exemplaire__manuel__etablissement=etab)
+        .filter(
+            inscription__annee_scolaire=annee_sel,
+            inscription__classe__etablissement=etab,
+            exemplaire__manuel__etablissement=etab,
+        )
         .select_related(
             'exemplaire__manuel',
             'inscription__eleve',
@@ -561,6 +630,7 @@ def non_rendus_pdf(request):
         AttributionManuel.objects
         .filter(
             exemplaire__manuel__etablissement=etab,
+            inscription__classe__etablissement=etab,
             date_retour__isnull=True,
         )
         .select_related(

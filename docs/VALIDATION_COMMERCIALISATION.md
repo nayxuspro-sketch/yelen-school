@@ -31,9 +31,18 @@ Environnement : Linux, Python 3.11.2 ; environnement Python `/tmp/yelen-security
 | `/tmp/yelen-security-venv/bin/pytest licences/test_license_crypto.py licences/test_license_enforcement.py core/tests/test_audit_security.py finances/tests/test_security_controls.py` | `PASS` : 29 tests ciblés, dont limite signée nulle, binding serveur, non-divulgation d'audit des signatures/tokens, RBAC/IDOR financier et montants positifs |
 | `/tmp/yelen-security-venv/bin/pytest finances/tests/test_postgres_constraints.py --collect-only` | `PASS` : 10 scénarios collectés pour les contraintes CHECK PostgreSQL ; exécution réelle encore bloquée par l'indisponibilité de PostgreSQL |
 | `/tmp/yelen-security-venv/bin/pytest finances/tests/test_postgres_financial_security.py --collect-only` | `PASS` : 7 scénarios collectés pour IDOR, immutabilité/annulation auditée et concurrence ; exécution réelle encore bloquée par l'indisponibilité de PostgreSQL |
+| `/tmp/yelen-security-venv/bin/pytest manuels/tests/test_postgres_constraints.py --collect-only` | `PASS` : 2 scénarios collectés pour le prix de remplacement et l'unicité d'attribution active ; exécution réelle encore bloquée par l'indisponibilité de PostgreSQL |
 | `/tmp/yelen-security-venv/bin/python manage.py check` | `PASS` sans erreur système ; avertissements WeasyPrint non bloquants sur les bibliothèques natives absentes |
 | tests Django nécessitant une base, migrations SQL et concurrence | `BLOCKED` : PostgreSQL refuse la connexion sur `localhost:5432` ; SQLite n'est pas utilisé |
 | test de socket `localhost:5432` et `localhost:6379` | `BLOCKED` : les deux ports refusent la connexion |
+
+## Durcissement du module des manuels
+
+- `manuels/migrations/0002_attributionmanuel_manuel_exemplaire_non_rendu_unique_and_more.py` ajoute une contrainte `CHECK` PostgreSQL pour interdire les prix de remplacement négatifs et une unicité partielle pour empêcher deux attributions actives du même exemplaire.
+- `manuels/views.py` verrouille l'exemplaire avec `select_for_update()` pendant une attribution, traite l'`IntegrityError` de concurrence, verrouille aussi les retours/suppressions concurrents et refuse tout contexte utilisateur sans établissement.
+- Les listes, filtres HTMX, exports PDF, retours et facturations vérifient désormais simultanément le rattachement de l'exemplaire au manuel de l'établissement et celui de l'inscription à sa classe/année du même établissement.
+- Le formulaire catalogue valide côté application les prix négatifs/invalides et refuse une classe POSTée appartenant à un autre établissement ; le garde DB reste la protection de dernier niveau contre les écritures directes.
+- Les 2 scénarios PostgreSQL du module sont collectés avec succès, mais leur exécution réelle reste `BLOCKED` : PostgreSQL refuse la connexion sur `localhost:5432`; la migration `manuels/0002` n'a donc pas été appliquée dans ce sandbox.
 
 ## Renforcement de l'intégrité financière
 
