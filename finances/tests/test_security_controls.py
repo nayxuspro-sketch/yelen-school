@@ -62,6 +62,21 @@ def test_establishment_boundary_rejects_financial_role_without_school():
         _require_same_establishment(request, inscription)
 
 
+def test_local_finance_context_rejects_unbound_financial_account():
+    request = _request('/finances/mobile-money/', role='COMPTABLE')
+    from finances.views import _require_establishment_context
+
+    with pytest.raises(PermissionDenied):
+        _require_establishment_context(request)
+
+
+def test_super_admin_can_use_global_finance_context():
+    request = _request('/finances/mobile-money/', role='SUPER_ADMIN')
+    from finances.views import _require_establishment_context
+
+    _require_establishment_context(request)
+
+
 def test_public_mobile_money_link_remains_available_without_session():
     request = _request('/finances/payer/opaque-token/', role='PARENT')
     assert FinanceAccessMiddleware(lambda request: 'allowed')(request) == 'allowed'

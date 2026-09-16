@@ -50,6 +50,15 @@ def _require_finance_role(request, roles):
         raise PermissionDenied("Action financière non autorisée pour ce rôle.")
 
 
+def _require_establishment_context(request):
+    """Refuse les comptes financiers locaux sans établissement de rattachement."""
+    if (
+        getattr(request.user, 'role', None) != RoleChoices.SUPER_ADMIN
+        and getattr(request.user, 'etablissement_id', None) is None
+    ):
+        raise PermissionDenied("Votre compte financier n'est associé à aucun établissement.")
+
+
 def _require_same_establishment(request, inscription):
     """Refuse tout objet hors établissement, sauf au Super Admin global."""
     if getattr(request.user, 'role', None) == RoleChoices.SUPER_ADMIN:
@@ -2620,6 +2629,7 @@ def type_bourse_delete(request, type_id):
 def api_calculer_bourse(request):
     """AJAX - Calcule le montant d'une bourse a partir du type et du total du."""
     _require_finance_role(request, FINANCE_WRITE_ROLES)
+    _require_establishment_context(request)
     type_id = request.GET.get('type_bourse')
     total_du_raw = request.GET.get('total_du', '0').replace(',', '.')
     try:
@@ -2831,6 +2841,7 @@ def echeancier_global_xlsx(request):
 def mobile_money_list(request):
     """Tableau de bord des demandes Mobile Money."""
     _require_finance_role(request, FINANCE_VIEW_ROLES)
+    _require_establishment_context(request)
     ctx = {}
     qs = DemandePaiementMobile.objects.select_related(
         'inscription__eleve', 'inscription__classe', 'rubrique', 'cree_par', 'confirme_par'
