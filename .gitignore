@@ -20,6 +20,7 @@ nginx/default.dev.conf
 _test_run.bat
 desktop/
 backups/
-# Archives de test générées hors distribution Git
+# Archives et exports générés hors distribution Git
+deliverables/*
 YELEN_SCHOOL_TEST.zip
 test-download/
