@@ -53,7 +53,7 @@ python manage.py issue_license `
   --etablissement-id "UUID_ETABLISSEMENT" `
   --type STANDARD `
   --expires 2027-09-16 `
-  --server-fingerprint "EMPREINTE_SHA256" `
+  --server-fingerprint "EMPREINTE_SHA256_64_HEX" `
   --private-key C:\coffre\yelen-license-private.pem `
   --output C:\livraison\licence.json
 ```
@@ -66,9 +66,11 @@ L'import vérifie la signature **avant toute écriture** :
 python manage.py import_license C:\livraison\licence.json --activate
 ```
 
-`--activate` exige une empreinte serveur non vide correspondant à la machine
-courante. Un fichier altéré, expiré, destiné à un autre établissement ou signé
-pour un autre serveur est refusé.
+`--server-fingerprint` est obligatoire à l'émission et doit être une empreinte
+SHA-256 hexadécimale de 64 caractères ; l'import refuse aussi un payload non lié.
+`--activate` exige ensuite que cette empreinte corresponde à la machine courante.
+Un fichier altéré, expiré, destiné à un autre établissement ou signé pour un
+autre serveur est refusé.
 
 ## Limites et concurrence
 

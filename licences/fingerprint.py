@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import os
 import platform
+import re
 import socket
 import uuid
 
@@ -38,6 +39,11 @@ def _unix_machine_id() -> str:
         if value:
             return value
     return ""
+
+
+def is_valid_server_fingerprint(value: str) -> bool:
+    """Vérifie le format canonique d'une empreinte serveur SHA-256."""
+    return isinstance(value, str) and bool(re.fullmatch(r"[0-9a-f]{64}", value.strip().lower()))
 
 
 def get_server_fingerprint() -> str:

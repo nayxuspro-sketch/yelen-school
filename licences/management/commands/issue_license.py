@@ -12,6 +12,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from licences.crypto import LicenseCryptoError, sign_payload
+from licences.fingerprint import is_valid_server_fingerprint
 from licences.models import FEATURE_FLAGS, LIMITES_LICENCES, TypeLicence
 
 
@@ -45,7 +46,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--server-fingerprint",
             default="",
-            help="Empreinte SHA-256 du serveur client (activation liée si fournie).",
+            help="Empreinte SHA-256 hexadécimale du serveur client (obligatoire pour l'activation).",
         )
         parser.add_argument(
             "--license-id",
@@ -77,6 +78,12 @@ class Command(BaseCommand):
                 f"Définissez {options['password_env']} pour déchiffrer la clé privée."
             )
 
+        server_fingerprint = options["server_fingerprint"].strip().lower()
+        if not is_valid_server_fingerprint(server_fingerprint):
+            raise CommandError(
+                "--server-fingerprint doit être une empreinte SHA-256 hexadécimale de 64 caractères."
+            )
+
         type_licence = options["type_licence"]
         payload = {
             "schema": 1,
@@ -88,7 +95,7 @@ class Command(BaseCommand):
             "features": sorted(
                 feature for feature, levels in FEATURE_FLAGS.items() if type_licence in levels
             ),
-            "server_fingerprint": options["server_fingerprint"].strip().lower(),
+            "server_fingerprint": server_fingerprint,
             "issued_at": timezone.now().replace(microsecond=0).isoformat(),
             "nonce": secrets.token_urlsafe(18),
         }

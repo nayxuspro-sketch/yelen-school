@@ -7,9 +7,11 @@ from unittest.mock import Mock, patch
 
 import pytest
 from django.contrib.messages.storage.cookie import CookieStorage
+from django.core.management.base import CommandError
 from django.test import RequestFactory, override_settings
 
 from licences.limits import LicenceLimitExceeded, reserve_limit
+from licences.management.commands.import_license import Command as ImportLicenseCommand
 from licences.middleware import LicenceCheckMiddleware
 from licences.models import StatutLicence
 
@@ -130,3 +132,21 @@ def test_zero_signed_limit_rejects_the_first_resource():
 
     assert exc_info.value.maximum == 0
     assert exc_info.value.current == 0
+
+
+def test_import_rejects_a_license_without_server_binding():
+    payload = {
+        'schema': 1,
+        'license_id': 'YELEN-AAAA-BBBB-CCCC',
+        'etablissement_id': 'etablissement-1',
+        'type_licence': 'STARTER',
+        'date_expiration': '2027-09-16',
+        'limits': {'max_eleves': 1, 'max_enseignants': 1, 'max_classes': 1},
+        'features': [],
+        'server_fingerprint': '',
+        'issued_at': '2026-09-16T00:00:00+00:00',
+        'nonce': '1234567890abcdef',
+    }
+
+    with pytest.raises(CommandError, match='Empreinte serveur invalide'):
+        ImportLicenseCommand._validate_payload(payload)

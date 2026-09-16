@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from etablissements.models import Etablissement
 from licences.crypto import verify_signed_payload
-from licences.fingerprint import get_server_fingerprint
+from licences.fingerprint import get_server_fingerprint, is_valid_server_fingerprint
 from licences.models import Licence, StatutLicence, TypeLicence
 
 
@@ -134,8 +134,8 @@ class Command(BaseCommand):
             raise CommandError("Type de licence inconnu.")
         if not isinstance(payload["limits"], dict) or not isinstance(payload["features"], list):
             raise CommandError("Limites ou fonctionnalités invalides.")
-        if not isinstance(payload["server_fingerprint"], str):
-            raise CommandError("Empreinte serveur invalide.")
+        if not is_valid_server_fingerprint(payload["server_fingerprint"]):
+            raise CommandError("Empreinte serveur invalide : SHA-256 hexadécimal attendu.")
         if not isinstance(payload["nonce"], str) or len(payload["nonce"]) < 16:
             raise CommandError("Nonce de licence absent ou trop court.")
         license_id = payload["license_id"]

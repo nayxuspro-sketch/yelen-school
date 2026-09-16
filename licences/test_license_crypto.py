@@ -13,6 +13,7 @@ from licences.crypto import (
     sign_payload,
     verify_signed_payload,
 )
+from licences.fingerprint import is_valid_server_fingerprint
 
 
 def _key_material():
@@ -61,3 +62,11 @@ def test_invalid_signature_and_missing_embedded_key_are_rejected():
     # Sans clé explicite, le build de développement n'a volontairement pas de
     # racine de confiance embarquée.
     assert not verify_signed_payload(payload, signature)
+
+
+def test_server_fingerprint_requires_a_sha256_hex_digest():
+    assert is_valid_server_fingerprint('a' * 64)
+    assert is_valid_server_fingerprint('A' * 64)
+    assert not is_valid_server_fingerprint('')
+    assert not is_valid_server_fingerprint('a' * 63)
+    assert not is_valid_server_fingerprint('g' * 64)

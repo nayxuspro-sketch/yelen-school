@@ -28,7 +28,7 @@ Environnement : Linux, Python 3.11.2 ; environnement Python `/tmp/yelen-security
 | `git diff --check` | `PASS` |
 | `python -m compileall -q finances manuels licences` | `PASS` |
 | `/tmp/yelen-security-venv/bin/python manage.py makemigrations --check --dry-run` | `PASS` : `No changes detected` pour toutes les applications ; avertissement séparé car PostgreSQL local est indisponible |
-| `/tmp/yelen-security-venv/bin/pytest licences/test_license_crypto.py licences/test_license_enforcement.py core/tests/test_audit_security.py finances/tests/test_security_controls.py` | `PASS` : 27 tests ciblés, dont limite signée nulle, non-divulgation d'audit des signatures/tokens, RBAC/IDOR financier et montants positifs |
+| `/tmp/yelen-security-venv/bin/pytest licences/test_license_crypto.py licences/test_license_enforcement.py core/tests/test_audit_security.py finances/tests/test_security_controls.py` | `PASS` : 29 tests ciblés, dont limite signée nulle, binding serveur, non-divulgation d'audit des signatures/tokens, RBAC/IDOR financier et montants positifs |
 | `/tmp/yelen-security-venv/bin/pytest finances/tests/test_postgres_constraints.py --collect-only` | `PASS` : 10 scénarios collectés pour les contraintes CHECK PostgreSQL ; exécution réelle encore bloquée par l'indisponibilité de PostgreSQL |
 | `/tmp/yelen-security-venv/bin/pytest finances/tests/test_postgres_financial_security.py --collect-only` | `PASS` : 6 scénarios collectés pour IDOR, immutabilité/annulation auditée et concurrence ; exécution réelle encore bloquée par l'indisponibilité de PostgreSQL |
 | `/tmp/yelen-security-venv/bin/python manage.py check` | `PASS` sans erreur système ; avertissements WeasyPrint non bloquants sur les bibliothèques natives absentes |
