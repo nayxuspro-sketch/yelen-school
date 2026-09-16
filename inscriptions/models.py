@@ -56,7 +56,7 @@ class Eleve(BaseModel):
     Informations complètes d'un élève.
 
     Chaque élève a un matricule unique au format: {CODE_ETAB}-{ANNEE}-{SEQ}
-    Ex: 01-2026-5 (01 = code établissement, 2026 = année, 5 = numéro d'enregistrement)
+    Ex: 01-2026-05 (01 = code établissement, 2026 = année, 05 = numéro d'enregistrement)
 
     Note v3.4: L'âge est calculé dynamiquement (non stocké).
     """
@@ -272,7 +272,7 @@ class Eleve(BaseModel):
     def _generate_matricule(self):
         """
         Génère un matricule unique au format: {CODE_ETAB}-{ANNEE}-{SEQ}
-        Ex: 01-2026-5
+        Ex: 01-2026-05
 
         Le code établissement est défini via l'attribut _etablissement_code
         sur l'instance (passé par la vue avant la sauvegarde).
@@ -293,7 +293,7 @@ class Eleve(BaseModel):
         ).count() + 1
 
         # Générer le matricule
-        self.matricule = f"{etab_code}-{year}-{count}"
+        self.matricule = f"{etab_code}-{year}-{count:02d}"
 
 
 # ═══════════════════════════════════════════════════════════════════

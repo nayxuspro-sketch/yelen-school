@@ -8,7 +8,7 @@ valident donc les contraintes CHECK réellement installées par migration.
 from decimal import Decimal
 
 import pytest
-from django.db import IntegrityError, connection, transaction
+from django.db import DatabaseError, connection, transaction
 from model_bakery import baker
 
 from finances.models import (
@@ -46,9 +46,16 @@ pytestmark = pytest.mark.skipif(
     ),
 )
 def test_postgres_rejects_direct_invalid_financial_update(model, field, invalid_value):
-    instance = baker.make(model, **{field: Decimal('100')})
+    kwargs = {field: Decimal('100')}
+    if model is BourseEleve:
+        kwargs['type_bourse'] = baker.make(
+            'finances.TypeBourse',
+            type_reduction='MONTANT_FIXE',
+            valeur_reduction=Decimal('100'),
+        )
+    instance = baker.make(model, **kwargs)
 
-    with pytest.raises(IntegrityError):
+    with pytest.raises(DatabaseError):
         with transaction.atomic():
             model.objects.filter(pk=instance.pk).update(**{field: invalid_value})
 

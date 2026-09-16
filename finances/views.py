@@ -358,7 +358,7 @@ def paiement_create(request):
             try:
                 with transaction.atomic():
                     locked_inscription = (
-                        Inscription.objects.select_for_update()
+                        Inscription.objects.select_for_update(of=('self',))
                         .select_related('classe', 'annee_scolaire', 'statut_eleve', 'eleve')
                         .get(pk=inscription.pk)
                     )
@@ -2962,7 +2962,7 @@ def mobile_money_confirmer(request, pk):
 
     with transaction.atomic():
         demande = get_object_or_404(
-            DemandePaiementMobile.objects.select_for_update().select_related(
+            DemandePaiementMobile.objects.select_for_update(of=('self',)).select_related(
                 'inscription__classe', 'inscription__eleve', 'rubrique'
             ),
             pk=pk,

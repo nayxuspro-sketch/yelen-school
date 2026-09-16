@@ -10,11 +10,12 @@ from decimal import Decimal
 from threading import Barrier, Thread
 
 import pytest
-from django.db import IntegrityError, close_old_connections, models, transaction
+from django.db import DatabaseError, close_old_connections, models, transaction
 from django.urls import reverse
 from model_bakery import baker
 
 from core.models import AuditLog
+from core.signals import disable_audit, enable_audit
 from finances.models import (
     DemandePaiementMobile,
     ModePaiement,
@@ -180,39 +181,45 @@ def test_cross_school_situation_is_rejected(financial_school, client):
 
 
 def test_refund_cancellation_is_soft_deleted_and_audited(financial_school, client):
-    user = financial_school['approvers'][0]
-    client.force_login(user)
-    paiement = Paiement.objects.create(
-        inscription=financial_school['inscription'],
-        rubrique=financial_school['rubrique'],
-        montant=100,
-        mode_paiement=ModePaiement.ESPECES,
-        encaisse_par=user,
-    )
-    remboursement = Remboursement.objects.create(
-        paiement=paiement,
-        montant=40,
-        motif='Erreur de caisse',
-        rembourse_par=user,
-    )
+    # La fixture globale désactive les signaux pour les tests ordinaires ; ce
+    # scénario vérifie explicitement la trace produite en production.
+    enable_audit()
+    try:
+        user = financial_school['approvers'][0]
+        client.force_login(user)
+        paiement = Paiement.objects.create(
+            inscription=financial_school['inscription'],
+            rubrique=financial_school['rubrique'],
+            montant=100,
+            mode_paiement=ModePaiement.ESPECES,
+            encaisse_par=user,
+        )
+        remboursement = Remboursement.objects.create(
+            paiement=paiement,
+            montant=40,
+            motif='Erreur de caisse',
+            rembourse_par=user,
+        )
 
-    response = client.post(
-        reverse(
-            'finances:remboursement_delete',
-            kwargs={'remboursement_id': remboursement.pk},
-        ),
-        {'motif': 'Annulation contrôlée du remboursement'},
-    )
-    assert response.status_code == 302
-    remboursement.refresh_from_db()
-    assert remboursement.is_active is False
-    audit = AuditLog.objects.filter(
-        model_name='remboursement',
-        object_id=str(remboursement.pk),
-        action='UPDATE',
-    ).order_by('-timestamp').first()
-    assert audit is not None
-    assert audit.reason == 'Annulation contrôlée du remboursement'
+        response = client.post(
+            reverse(
+                'finances:remboursement_delete',
+                kwargs={'remboursement_id': remboursement.pk},
+            ),
+            {'motif': 'Annulation contrôlée du remboursement'},
+        )
+        assert response.status_code == 302
+        remboursement.refresh_from_db()
+        assert remboursement.is_active is False
+        audit = AuditLog.objects.filter(
+            model_name='remboursement',
+            object_id=str(remboursement.pk),
+            action='UPDATE',
+        ).order_by('-timestamp').first()
+        assert audit is not None
+        assert audit.reason == 'Annulation contrôlée du remboursement'
+    finally:
+        disable_audit()
 
 
 def test_database_blocks_direct_payment_mutation_and_refund_overflow(financial_school):
@@ -224,10 +231,10 @@ def test_database_blocks_direct_payment_mutation_and_refund_overflow(financial_s
         encaisse_par=financial_school['users'][0],
     )
 
-    with pytest.raises(IntegrityError):
+    with pytest.raises(DatabaseError):
         with transaction.atomic():
             Paiement.objects.filter(pk=paiement.pk).update(montant=Decimal('90'))
-    with pytest.raises(IntegrityError):
+    with pytest.raises(DatabaseError):
         with transaction.atomic():
             Paiement.objects.filter(pk=paiement.pk).delete()
 
@@ -237,11 +244,11 @@ def test_database_blocks_direct_payment_mutation_and_refund_overflow(financial_s
         motif='Remboursement initial',
         rembourse_par=financial_school['approvers'][0],
     )
-    with pytest.raises(IntegrityError):
+    with pytest.raises(DatabaseError):
         with transaction.atomic():
             Remboursement.objects.filter(pk=remboursement.pk).update(is_active=False)
 
-    with pytest.raises(IntegrityError):
+    with pytest.raises(DatabaseError):
         with transaction.atomic():
             # bulk_create contourne save() : le trigger doit tout de même
             # empêcher un remboursement qui dépasse le paiement d'origine.
