@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  repository_dispatch:
+    types: [postgres-validation]
 
 jobs:
   test:
@@ -33,6 +35,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Permet de valider explicitement une branche via repository_dispatch.
+          ref: ${{ github.event.client_payload.ref || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
