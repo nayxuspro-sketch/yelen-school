@@ -10,7 +10,7 @@ from decimal import Decimal
 from threading import Barrier, Thread
 
 import pytest
-from django.db import close_old_connections, models
+from django.db import IntegrityError, close_old_connections, models, transaction
 from django.urls import reverse
 from model_bakery import baker
 
@@ -213,6 +213,46 @@ def test_refund_cancellation_is_soft_deleted_and_audited(financial_school, clien
     ).order_by('-timestamp').first()
     assert audit is not None
     assert audit.reason == 'Annulation contrôlée du remboursement'
+
+
+def test_database_blocks_direct_payment_mutation_and_refund_overflow(financial_school):
+    paiement = Paiement.objects.create(
+        inscription=financial_school['inscription'],
+        rubrique=financial_school['rubrique'],
+        montant=100,
+        mode_paiement=ModePaiement.ESPECES,
+        encaisse_par=financial_school['users'][0],
+    )
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            Paiement.objects.filter(pk=paiement.pk).update(montant=Decimal('90'))
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            Paiement.objects.filter(pk=paiement.pk).delete()
+
+    remboursement = Remboursement.objects.create(
+        paiement=paiement,
+        montant=80,
+        motif='Remboursement initial',
+        rembourse_par=financial_school['approvers'][0],
+    )
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            Remboursement.objects.filter(pk=remboursement.pk).update(is_active=False)
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            # bulk_create contourne save() : le trigger doit tout de même
+            # empêcher un remboursement qui dépasse le paiement d'origine.
+            Remboursement.objects.bulk_create([
+                Remboursement(
+                    paiement=paiement,
+                    montant=Decimal('30'),
+                    motif='Dépassement direct',
+                    rembourse_par=financial_school['approvers'][1],
+                )
+            ])
 
 
 def test_concurrent_payments_cannot_exceed_the_tariff(financial_school):

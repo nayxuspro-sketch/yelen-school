@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Sum, Count, Q
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models.functions import TruncDate
@@ -593,10 +593,27 @@ def remboursement_delete(request, remboursement_id):
         if not reason:
             messages.error(request, "Le motif d'annulation est obligatoire.")
             return redirect('finances:situation_eleve', inscription_id=inscription_id)
-        remb._audit_reason = reason
-        remb.is_active = False
-        remb.updated_by = request.user
-        remb.save(update_fields=['is_active', 'updated_by', 'updated_at'])
+        with transaction.atomic():
+            remb = (
+                Remboursement.objects.select_for_update()
+                .select_related('paiement__inscription')
+                .get(pk=remb.pk)
+            )
+            if not remb.is_active:
+                messages.error(request, "Ce remboursement est déjà annulé.")
+                return redirect('finances:situation_eleve', inscription_id=inscription_id)
+            _require_same_establishment(request, remb.paiement.inscription)
+            # Le trigger PostgreSQL refuse toute désactivation non justifiée,
+            # y compris une mise à jour SQL hors du code métier.
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT set_config('yelen.refund_cancel_reason', %s, true)",
+                    [reason],
+                )
+            remb._audit_reason = reason
+            remb.is_active = False
+            remb.updated_by = request.user
+            remb.save(update_fields=['is_active', 'updated_by', 'updated_at'])
         messages.success(request, "Remboursement annulé et conservé dans l'historique.")
     return redirect('finances:situation_eleve', inscription_id=inscription_id)
 
