@@ -13,7 +13,7 @@ import io
 import json
 try:
     from weasyprint import HTML as WeasyHTML
-except ImportError:
+except Exception:  # ImportError ou OSError (libpango/cairo absents)
     WeasyHTML = None
 from .models import (
     FraisScolarite, Paiement, Echeancier, ModePaiement, Remboursement,

@@ -13,7 +13,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 try:
     from weasyprint import HTML as WeasyHTML
-except ImportError:
+except Exception:  # ImportError ou OSError (libpango/cairo absents)
     WeasyHTML = None
 from django.contrib import messages
 from django.views.decorators.http import require_POST

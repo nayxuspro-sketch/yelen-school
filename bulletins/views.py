@@ -338,7 +338,10 @@ from django.views import View
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from weasyprint import HTML
+try:
+    from weasyprint import HTML
+except Exception:  # ImportError ou OSError (libpango/cairo absents)
+    HTML = None
 
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire
@@ -431,6 +434,10 @@ class BulletinAnnuelPDFView(LoginRequiredMixin, View):
         )
         annee = get_object_or_404(AnneeScolaire, pk=annee_pk)
 
+        if HTML is None:
+            messages.error(request, "La génération PDF n'est pas disponible sur ce serveur (WeasyPrint manquant).")
+            return redirect('bulletins:bulletin_annuel')
+
         from pedagogie.views import _build_bulletin_annuel_context
         ctx = _build_bulletin_annuel_context(request, inscription, annee)
 
@@ -452,11 +459,14 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
     """Génère un PDF groupé avec tous les bulletins annuels d'une classe."""
 
     def get(self, request, class_id, annee_pk):
-        from weasyprint import HTML
         from django.template.loader import render_to_string
         from parametres.models import Classe
         from pedagogie.views import _build_bulletin_annuel_context
         from core.utils import get_etablissement_context
+
+        if HTML is None:
+            messages.error(request, "La génération PDF n'est pas disponible sur ce serveur (WeasyPrint manquant).")
+            return redirect('bulletins:bulletin_annuel_index')
 
         classe = get_object_or_404(Classe, pk=class_id)
         annee = get_object_or_404(AnneeScolaire, pk=annee_pk)
