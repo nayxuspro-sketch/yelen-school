@@ -17,7 +17,7 @@ Version: 1.1 - Corrigée
 import hashlib
 import hmac
 import uuid
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone as dt_timezone
 from typing import Dict, List, Optional
 
 from django.conf import settings
@@ -372,7 +372,7 @@ class Licence(BaseModel):
             # Même convention que Django au save : datetime naïf interprété
             # dans le fuseau par défaut de l'application.
             dt = timezone.make_aware(dt)
-        return dt.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        return dt.astimezone(dt_timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     def _message_signature_v2(self) -> str:
         """Message couvert par la signature HMAC — format v2 (complet).
@@ -981,9 +981,9 @@ class LicenceActivation(BaseModel):
         attrs = self.build_attrs_dict()
         expected_fp = self.generate_fingerprint(attrs)
         if not hmac.compare_digest(expected_fp, self.machine_fingerprint):
-            # Empreinte ne correspond plus aux attributs → possible clonage / modif
-            # On continue quand même à vérifier la signature de l'empreinte stockée
-            pass
+            # Empreinte ne correspond plus aux attributs stockés → clonage ou
+            # modification de l'enregistrement : binding invalide (P1 anti-fraude).
+            return False
 
         # 1. Ed25519 si présent + clé publique configurée
         if self.fingerprint_signature_ed25519:

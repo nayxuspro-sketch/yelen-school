@@ -25,3 +25,13 @@ data/
 .venv/
 *.sqlite3-wal
 *.sqlite3-shm
+
+# Fichiers de travail / exports — jamais versionnés
+~$*
+/*.docx
+*.log
+structure.txt
+yelen_source_complet.txt
+.claude/worktrees/
+/*.ttf
+/Playfair_Display/

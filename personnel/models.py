@@ -287,6 +287,10 @@ class MembrePersonnel(BaseModel):
         etab_code = 'XX'
         if self.etablissement and self.etablissement.code:
             etab_code = self.etablissement.code.upper()
+        # Le matricule est limité à 30 caractères : {CODE}-P-AAAA-NN → suffixe
+        # 10 car. minimum (« -P-2026-01 »), donc le code établissement est
+        # tronqué à 18 pour garder une marge sur la séquence.
+        etab_code = etab_code[:18]
         
         annee = date_module.today().year
         prefix = f"{etab_code}-P-{annee}-"
