@@ -4219,7 +4219,9 @@ DB_PORT=5433
 REDIS_URL=redis://redis:6379/0
 ```
 
-> **Règle absolue :** PostgreSQL est obligatoire. L'utilisation de SQLite (même en développement) est interdit. Utilise Docker Compose pour démarrer PostgreSQL en local.
+> **Modes de base de données :** YELEN SCHOOL propose deux moteurs selon vos besoins :
+> - **PostgreSQL + Redis (Par défaut / Docker)** : Recommandé pour les grands réseaux multi-utilisateurs et la haute concurrence.
+> - **SQLite Embarqué (Autonome)** : Support officiel via `DB_ENGINE=sqlite` et le script `demarrer-sqlite.bat` pour un fonctionnement ultra-léger sans Docker, supportant jusqu'à 20 à 25 postes clients sur le réseau local.
 
 > **⚠️ Conflit de ports PostgreSQL :** Si vous avez PostgreSQL installé nativement sur Windows, il écoute aussi sur le port 5432.  
 > Pour éviter le conflit, le Docker Compose expose PostgreSQL sur le port **5433** de l'hôte (mappé vers 5432 dans le conteneur).  

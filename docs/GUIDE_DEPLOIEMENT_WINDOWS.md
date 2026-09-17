@@ -351,6 +351,31 @@ Si vous devez effectuer une mise à jour manuelle, remplacer du code ou interven
 5. Procédez à vos modifications ou mises à jour de code.
 6. **Important** : Avant de quitter le site ou de clore votre intervention, ré-exécutez toujours `verrouiller-dossier-anti-copie.bat` en tant qu'administrateur pour réactiver le bouclier NTFS.
 
+---
+
+## 3.6 Déploiement alternatif : Mode 100% Autonome Embarqué (SQLite & Réseau Local)
+
+Pour les établissements scolaires ne disposant pas de Docker Desktop ou souhaitant une installation ultra-légère sans conteneurisation ni service PostgreSQL/Redis :
+
+### Caractéristiques du Mode SQLite
+- **Zéro installation de serveur de base de données** : un simple interpréteur Python 3.10+ sur la machine serveur suffit.
+- **Accès Multi-Postes en Réseau Local (LAN)** : 15 à 25 ordinateurs (secrétariat, caisse, professeurs, direction) accèdent en simultané via leur navigateur (`http://IP-SERVEUR:8000`).
+- **Base embarquée unique** : Stockée dans `data\yelen_school.sqlite3`.
+- **Haute performance concurrente** : Activé en mode WAL (*Write-Ahead Logging*) via `core/db_sqlite.py` avec attente active de 30 secondes pour éliminer les erreurs de verrouillage.
+
+### Procédure de lancement 1-Clic
+1. Lancez simplement le script à la racine :
+   ```cmd
+   demarrer-sqlite.bat
+   ```
+2. Le script exécute automatiquement :
+   - L'auto-configuration du fichier `.env` (`DB_ENGINE=sqlite`, `SQLITE_PATH=data/yelen_school.sqlite3`, `CACHE_BACKEND=database`, `ALLOWED_HOSTS=*`).
+   - La vérification du bouclier anti-copie physique (`verifier-integrite-anti-copie.bat`).
+   - L'application des migrations et la collecte des fichiers statiques.
+   - L'ouverture automatique du port 8000 dans le pare-feu Windows.
+   - La détection de l'adresse IP locale du serveur affichée à l'écran pour les postes clients.
+   - Le démarrage du serveur multi-threads Waitress.
+
 
 ## 4. Utilisation quotidienne
 
