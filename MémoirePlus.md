@@ -251,4 +251,42 @@ Vérifié résolus : VUL-2026-01 Anthropic, VUL-2026-03 CSP unsafe-inline (déj�
 
 ---
 
-*Dernière mise à jour : 2026-09-17 10:30 UTC par agent arena/01a0aebf — 91 tests verts, 0 onclick, S3/S4/A1/A4/A6 faits.*
+### A7 — Nginx tokens logs
+- Fait `dce9c94` : `docs/SECURITE_NGINX_TOKENS.md` + `nginx/nginx.conf.example` avec `log_format securise` sans Authorization, doc déploiement.
+
+### P1 licences — anti-fraude définitive
+- Fait `57216fa` (77 tests verts licences → 90 avec P2) :
+  - Ed25519 asymétrique : `LICENCE_PRIVATE_KEY` (éditeur hors dépôt) / `LICENCE_PUBLIC_KEY` (app), `signature_ed25519` field, `_load_private_key/_load_public_key`, `verifier_signature_ed25519` prioritaire + anti-downgrade, `generate_licence_keys` management command
+  - `LICENCE_SIGNING_KEY` dédiée (fallback SECRET_KEY)
+  - Phone-home : `heartbeat.py` avec `urllib.request` (pas requests), payload signé HMAC+Ed25519, `LICENCE_HEARTBEAT_URL`, `LICENCE_HEARTBEAT_INTERVAL_HOURS`, `LICENCE_OFFLINE_MAX_DAYS`/`GRACE_DAYS`, `record_heartbeat_success/failure`, fenêtre décroissante, `bail_offline_expire_le`, `is_bail_offline_expired`, `is_heartbeat_required`, `verify_heartbeat_response`
+  - Binding machine multi-attributs : `LicenceActivation` avec `cpu_id`, `disk_serial`, `system_uuid`, `os_info`, `platform_data`, `machine_fingerprint` SHA256 canonique, `fingerprint_signature` HMAC + `fingerprint_signature_ed25519`, `generate_fingerprint`, `build_attrs_dict`, `compute_and_sign_fingerprint`, `verify_fingerprint`, `get_empreinte_serveur`, contrainte DB `unique_active_activation_per_licence` (partial unique index), `binding.py` `get_machine_attrs`/`collect_machine_fingerprint`
+  - ENSURE_ADMIN→staff : `LICENCE_ADMIN_STAFF_ONLY` setting, vérif `is_staff` dans `LicenceAuditLogCentralView`/`VerifyView`
+  - Anti-tamper : `boot_check.py` `_check_antitamper()` vérifie `verifier_signature` source, settings critiques, fichiers critiques, contrainte unique, middlewares, `run_boot_check(strict)` avec `RuntimeError` arrêt app si `LICENCE_ANTITAMPER_ENABLED`+`LICENSE_ENFORCEMENT`+strict, `check_licences` management command avec `--strict`
+
+### P2 — LicenceAuditLog + filigrane PDF + IsLicenseActive API
+- Fait partiel (en cours session) :
+  - `licences/api.py` : `IsLicenseActiveView` `/api/licences/active/` + `LicenceStatusView` `/licences/api/status/` + `LicenceAuditLogCentralView` `/licences/api/audit/` (staff only, filtres licence_id/etab_id/action, pagination, stats) + `LicenceAuditLogVerifyView` `/licences/api/audit/verify/` (vérif chaîne hash)
+  - `licences/pdf_utils.py` : `get_licence_info_for_pdf` (réutilise `_get_licence_for_user` api) + `inject_licence_filigrane_context`
+  - `documents/templates/documents/pdf/partials/filigrane_licence.html` : partial réutilisable avec filigrane diagonal + bandeau bas traçabilité
+  - `documents/templates/documents/pdf/*.html` : 6 templates patchés (attestation_non_redevabilite, certificat_scolarite, circulaire, convocation, liste_classe, liste_personnel) via `{% include "documents/pdf/partials/filigrane_licence.html" %}`
+  - `pedagogie/templates/pedagogie/pdf/*.html` : 13 templates patchés (bulletin_base + 10 via sed + bilan/releve via héritage)
+  - `documents/views.py` : injection `licence_info` dans 6 vues PDF via `inject_licence_filigrane_context`
+  - `pedagogie/views.py` : ajout import `inject_licence_filigrane_context/get_licence_info_for_pdf` + `_pdf_licence_info` helper + injection dans `_build_bulletin_context`/`_build_bulletin_annuel_context` + `bilan_pdf`, `releve_moyenne_classe_pdf`, `bulletin_classe_batch_pdf`, `moyennes_disciplines_pdf`, `releve_notes_pdf`, `fiche_discipline_pdf`, `risque_decrochage_pdf`, `palmares_annuel_pdf`, `bulletin_annuel_classe_batch_pdf`, `prediction_classe_pdf`, `competences_bulletin_pdf` (14 vues)
+  - `bulletins/views.py` : patch `BulletinAnnuelPDFView`/`Batch` avec `licence_info`
+  - Fix bug critique `LicenceAuditLog.save()` : `self.pk is not None` toujours vrai à cause de `default=uuid.uuid4` → remplacé par `not self._state.adding`
+  - Tests P2 : `licences/tests/test_p2_api_filigrane.py` 13 tests (IsLicenseActive API, AuditLog centralisation, filigrane) → 90 tests verts totaux (77+13)
+
+### E — commits 5b85d3e/ea9bafa
+- Vérifié : `git log --all`, `git show-ref`, `fetch --all depth 200` → introuvables. Probablement squashés/rebasés ou dans autre repo. Documenté ici.
+
+## 8. Liens utiles
+
+- PR #3 : https://github.com/nayxuspro-sketch/yelen-school/pull/3
+- PR #4 : https://github.com/nayxuspro-sketch/yelen-school/pull/4
+- Rapport sécurité : `Rapport_Securite.md`, `SECURITY_FAILLES.md`, `Priorites.md`
+- Guide : `docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` (section 19 Sécurité, 19.1.1 API REST)
+- CI : `.github/workflows/ci.yml` (job SQLite ajouté en 1ed8433)
+
+---
+
+*Dernière mise à jour : 2026-09-17 11:00 UTC par agent arena/01a0aebf — 90 tests verts (77 P1 + 13 P2), P1 terminé 57216fa, A7 terminé dce9c94, P2 en cours finalisation (filigrane 16 templates + injection 20 vues, fix AuditLog append-only, api IsLicenseActive + centralisation audit, pdf_utils factorisé).*

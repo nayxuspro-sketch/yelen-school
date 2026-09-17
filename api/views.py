@@ -192,6 +192,34 @@ class AnneePeriodesView(APIView):
         return Response(serializer.data)
 
 
+# ── Licences (P2 IsLicenseActive) ───────────────────────────────────────────
+
+class LicenceActiveView(APIView):
+    """GET /api/licences/active/ — IsLicenseActive API (P2).
+
+    Retourne le statut de la licence de l'établissement courant.
+    Auth : Token DRF.
+    """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [ExpiringTokenAuthentication]
+
+    def get(self, request):
+        # Réutiliser la logique de licences.api
+        from licences.api import _get_licence_for_user, _licence_to_dict
+        etab, licence = _get_licence_for_user(request.user)
+        if not licence:
+            return Response({
+                'active': False,
+                'statut': 'ABSENTE',
+                'message': 'Aucune licence trouvée',
+            }, status=status.HTTP_404_NOT_FOUND)
+        data = _licence_to_dict(licence, etab)
+        strict = request.query_params.get('strict', 'false').lower() == 'true'
+        if strict and not data['active']:
+            return Response(data, status=status.HTTP_403_FORBIDDEN)
+        return Response(data)
+
+
 # ── Élèves ────────────────────────────────────────────────────────────────────
 
 class ElevesListView(APIView):

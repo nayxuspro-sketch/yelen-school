@@ -439,7 +439,18 @@ class BulletinAnnuelPDFView(LoginRequiredMixin, View):
             return redirect('bulletins:bulletin_annuel')
 
         from pedagogie.views import _build_bulletin_annuel_context
+        try:
+            from licences.pdf_utils import get_licence_info_for_pdf as _get_lic_pdf
+        except ImportError:
+            _get_lic_pdf = None
+
         ctx = _build_bulletin_annuel_context(request, inscription, annee)
+        if _get_lic_pdf:
+            try:
+                etab_lic = getattr(request.user, 'etablissement', None) or inscription.classe.etablissement
+                ctx['licence_info'] = _get_lic_pdf(request.user, etab_lic)
+            except Exception:
+                pass
 
         html_string = render_to_string('pedagogie/pdf/bulletin_annuel.html', ctx,
                                        request=request)
@@ -481,6 +492,11 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
 
         etab = classe.etablissement
         etab_context = get_etablissement_context(etab, request)
+        try:
+            from licences.pdf_utils import get_licence_info_for_pdf as _get_lic_pdf2
+            lic_info = _get_lic_pdf2(request.user, etab)
+        except Exception:
+            lic_info = None
 
         students_data = [
             _build_bulletin_annuel_context(request, ins, annee)
@@ -495,6 +511,7 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
             'logo_url': etab_context.get('logo_url'),
             'etab_logo_url': etab_context.get('etab_logo_url'),
             'etablissement': etab,
+            'licence_info': lic_info,
         })
 
         pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()

@@ -1174,8 +1174,9 @@ class LicenceAuditLog(BaseModel):
     
     def save(self, *args, **kwargs):
         """Override save pour générer le hash avec chaînage."""
-        # Première sauvegarde uniquement (append-only)
-        if self.pk is not None:
+        # Première sauvegarde uniquement (append-only) — P2 fix : utiliser _state.adding
+        # car pk est pré-rempli par default=uuid.uuid4
+        if not self._state.adding:
             raise ValidationError(
                 _("Les entrées d'audit ne peuvent pas être modifiées après création.")
             )
