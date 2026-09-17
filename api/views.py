@@ -9,6 +9,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.throttling import UserRateThrottle
 from .authentication import ExpiringTokenAuthentication
+from .permissions import EleveScopeAccess, role_utilisateur
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
@@ -30,9 +31,37 @@ from .serializers import (
 
 def _get_user_etablissement(user):
     """Récupère l'établissement de l'utilisateur ou None si Super Admin."""
-    if user.role == RoleChoices.SUPER_ADMIN:
+    if role_utilisateur(user) == RoleChoices.SUPER_ADMIN:
         return None
-    return user.etablissement
+    return getattr(user, 'etablissement', None)
+
+
+def eleves_visibles(user):
+    """QuerySet des élèves VISIBLES pour l'utilisateur (cloisonnement RBAC).
+
+    - SUPER_ADMIN / DIRECTEUR_RESEAU : tous les établissements
+    - PARENT / ELEVE                : uniquement eleves_lies (enfants / soi)
+    - staff                          : leur établissement uniquement
+    """
+    role = role_utilisateur(user)
+    if role in (RoleChoices.SUPER_ADMIN, RoleChoices.DIRECTEUR_RESEAU):
+        return Eleve.objects.all().order_by('nom', 'prenom')
+    if role in (RoleChoices.PARENT, RoleChoices.ELEVE):
+        return Eleve.objects.filter(
+            pk__in=user.eleves_lies.values('pk'),
+        ).order_by('nom', 'prenom')
+    etab = _get_user_etablissement(user)
+    if etab is None:
+        return Eleve.objects.none()
+    return Eleve.objects.filter(
+        inscriptions__classe__etablissement=etab,
+    ).distinct().order_by('nom', 'prenom')
+
+
+def get_eleve_scope(user, pk):
+    """Élève si dans le périmètre RBAC de l'utilisateur, sinon None
+    (les vues répondent 404 : aucune fuite d'existence)."""
+    return eleves_visibles(user).filter(pk=pk).first()
 
 
 # ── Throttling pour éviter les abus ─────────────────────────────────────────────
@@ -132,18 +161,17 @@ class AnneePeriodesView(APIView):
 # ── Élèves ────────────────────────────────────────────────────────────────────
 
 class ElevesListView(APIView):
-    """GET /api/eleves/ — Liste des élèves (filtrables par matricule, nom)."""
-    permission_classes = [IsAuthenticated]
+    """GET /api/eleves/ — Liste des élèves VISIBLES par le rôle demandeur.
+
+    Cloisonnement : staff → son établissement ; parent → ses enfants ;
+    élève → lui-même ; super admin / directeur réseau → tous.
+    """
+    permission_classes = [EleveScopeAccess]
     authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request):
-        qs = Eleve.objects.all().order_by('nom', 'prenom')
-        
-        # Filtrer par établissement
-        etab = _get_user_etablissement(request.user)
-        if etab:
-            qs = qs.filter(inscriptions__classe__etablissement=etab).distinct()
-        
+        qs = eleves_visibles(request.user)
+
         matricule = request.query_params.get('matricule')
         nom = request.query_params.get('nom')
         if matricule:
@@ -157,35 +185,31 @@ class ElevesListView(APIView):
 
 class EleveDetailView(APIView):
     """GET /api/eleves/<pk>/ — Détail d'un élève."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [EleveScopeAccess]
     authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
-        etab = _get_user_etablissement(request.user)
-        if etab:
-            eleve = get_object_or_404(
-                Eleve.objects.filter(inscriptions__classe__etablissement=etab),
-                pk=pk
+        eleve = get_eleve_scope(request.user, pk)
+        if eleve is None:
+            return Response(
+                {'erreur': 'Élève introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
             )
-        else:
-            eleve = get_object_or_404(Eleve, pk=pk)
         return Response(EleveSerializer(eleve).data)
 
 
 class EleveInscriptionsView(APIView):
     """GET /api/eleves/<pk>/inscriptions/ — Inscriptions d'un élève."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [EleveScopeAccess]
     authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
-        etab = _get_user_etablissement(request.user)
-        if etab:
-            eleve = get_object_or_404(
-                Eleve.objects.filter(inscriptions__classe__etablissement=etab),
-                pk=pk
+        eleve = get_eleve_scope(request.user, pk)
+        if eleve is None:
+            return Response(
+                {'erreur': 'Élève introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
             )
-        else:
-            eleve = get_object_or_404(Eleve, pk=pk)
         inscriptions = Inscription.objects.filter(eleve=eleve).select_related(
             'classe', 'annee_scolaire'
         ).order_by('-annee_scolaire__date_debut')
@@ -195,18 +219,16 @@ class EleveInscriptionsView(APIView):
 
 class EleveBulletinsView(APIView):
     """GET /api/eleves/<pk>/bulletins/ — Bulletins publiés d'un élève."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [EleveScopeAccess]
     authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
-        etab = _get_user_etablissement(request.user)
-        if etab:
-            eleve = get_object_or_404(
-                Eleve.objects.filter(inscriptions__classe__etablissement=etab),
-                pk=pk
+        eleve = get_eleve_scope(request.user, pk)
+        if eleve is None:
+            return Response(
+                {'erreur': 'Élève introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
             )
-        else:
-            eleve = get_object_or_404(Eleve, pk=pk)
         bulletins = Bulletin.objects.filter(
             inscription__eleve=eleve,
             est_publie=True,
@@ -217,18 +239,16 @@ class EleveBulletinsView(APIView):
 
 class EleveMoyennesView(APIView):
     """GET /api/eleves/<pk>/moyennes/ — Moyennes générales d'un élève."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [EleveScopeAccess]
     authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
-        etab = _get_user_etablissement(request.user)
-        if etab:
-            eleve = get_object_or_404(
-                Eleve.objects.filter(inscriptions__classe__etablissement=etab),
-                pk=pk
+        eleve = get_eleve_scope(request.user, pk)
+        if eleve is None:
+            return Response(
+                {'erreur': 'Élève introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
             )
-        else:
-            eleve = get_object_or_404(Eleve, pk=pk)
         annee_id = request.query_params.get('annee')
         qs = MoyenneGenerale.objects.filter(
             inscription__eleve=eleve,
@@ -241,18 +261,16 @@ class EleveMoyennesView(APIView):
 
 class ElevePaiementsView(APIView):
     """GET /api/eleves/<pk>/paiements/ — Paiements d'un élève."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [EleveScopeAccess]
     authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
-        etab = _get_user_etablissement(request.user)
-        if etab:
-            eleve = get_object_or_404(
-                Eleve.objects.filter(inscriptions__classe__etablissement=etab),
-                pk=pk
+        eleve = get_eleve_scope(request.user, pk)
+        if eleve is None:
+            return Response(
+                {'erreur': 'Élève introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
             )
-        else:
-            eleve = get_object_or_404(Eleve, pk=pk)
         annee_id = request.query_params.get('annee')
         qs = Paiement.objects.filter(
             inscription__eleve=eleve,
@@ -265,18 +283,16 @@ class ElevePaiementsView(APIView):
 
 class ElevePresencesView(APIView):
     """GET /api/eleves/<pk>/presences/ — Présences/absences d'un élève."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [EleveScopeAccess]
     authentication_classes = [ExpiringTokenAuthentication]
 
     def get(self, request, pk):
-        etab = _get_user_etablissement(request.user)
-        if etab:
-            eleve = get_object_or_404(
-                Eleve.objects.filter(inscriptions__classe__etablissement=etab),
-                pk=pk
+        eleve = get_eleve_scope(request.user, pk)
+        if eleve is None:
+            return Response(
+                {'erreur': 'Élève introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
             )
-        else:
-            eleve = get_object_or_404(Eleve, pk=pk)
         annee_id = request.query_params.get('annee')
         qs = Presence.objects.filter(
             inscription__eleve=eleve,

@@ -19,7 +19,7 @@ class EleveSerializer(serializers.ModelSerializer):
         model = Eleve
         fields = [
             'id', 'nom', 'prenom', 'nom_complet', 'matricule',
-            'date_naissance', 'sexe', 'telephone_parent',
+            'date_naissance', 'genre', 'telephone_parent',
         ]
 
     def get_nom_complet(self, obj):
