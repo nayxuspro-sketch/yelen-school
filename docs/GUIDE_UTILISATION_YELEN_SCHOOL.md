@@ -1,16 +1,18 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 4.2
-version_guide: 2.17
-date_mise_a_jour: 24/07/2026 (v3.2)
-modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel]
-modules_en_attente: [portail_parent, transferts, api_rest, orientation_postbac, solar_guard]
+version_logiciel: 5.0
+version_guide: 3.3
+date_mise_a_jour: 17/09/2026 (état de référence production & sécurité)
+modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, portail_parent, transferts, api_rest, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel, analyse_risque, sms_auto, sauvegarde_restauration, triggers_financiers, chaine_audit_crypto]
+modules_en_attente: [orientation_postbac, solar_guard]
 redige_par: Agent IA — Développement YELEN SCHOOL
 ---
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 4.2 — Avril 2026 (Guide v2.6)
+### Version 5.0 — Septembre 2026 (Guide v3.3)
+
+> **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
 ---
 
@@ -1815,6 +1817,31 @@ Les points déduits sont définis pour chaque **type de sanction** dans `Paramè
 >
 > **Erreur de configuration :** Si aucun statut élève ou aucun tarif n'est configuré, un message explicite s'affiche avec un lien vers les paramètres.
 
+
+
+#### 🛡️ Sécurité & Triggers Financiers PostgreSQL (Immuabilité)
+
+Depuis la version 5.0, l'intégrité financière est garantie au niveau du moteur de base de données PostgreSQL :
+
+1. **Immuabilité stricte des paiements validés** :
+   - Un paiement comptabilisé ne peut **jamais** être modifié ni supprimé (déclenché par le trigger SQL `yelen_paiement_immutable`).
+   - Toute correction financière doit obligatoirement passer par la procédure officielle de **remboursement audité**.
+2. **Plafonnement dynamique des remboursements** :
+   - Le trigger `yelen_remboursement_guard` empêche formellement la somme des remboursements actifs de dépasser le montant du paiement d'origine.
+   - Les remboursements ne peuvent être supprimés de la base : seule une **annulation motivée** (`is_active=False`) est autorisée, requérant une raison enregistrée en session transactionnelle (`yelen.refund_cancel_reason`).
+3. **Contraintes CHECK de montants** :
+   - Tous les montants saisis (frais, paiements, échéances, bourses, dépenses) doivent être strictement positifs (`> 0`).
+
+```text
+┌────────────────────────────────────────────────────────┐
+│  🔒 Règle d'Immuabilité Financière (PostgreSQL)        │
+├────────────────────────────────────────────────────────┤
+│  Paiement enregistré ──► Bloqué en écriture/suppression │
+│  Correction requise  ──► Créer un Remboursement audité │
+│  Total remboursements ──► Plafonné au montant payé     │
+└────────────────────────────────────────────────────────┘
+```
+
 **Message succès :**
 
 ```
@@ -3364,6 +3391,25 @@ existants ; chaque sauvegarde officielle ré-signe automatiquement en v2.
 > production (voir `.env.example` et `.env.autonome.example`). En mode
 > démonstration sans licence, laisser `false`.
 
+
+**Verrouillage matériel anti-copie (Hardware Machine Binding) :**
+
+YELEN SCHOOL intègre un mécanisme d'ancrage matériel empêchant le clonage ou la copie illicite de l'application sur un autre ordinateur :
+- **Empreinte machine multi-attributs** : le système calcule une empreinte unique basée sur l'UUID matériel de la carte mère, l'identifiant du processeur (CPU ID), le numéro de série du disque dur et l'adresse MAC.
+- **Contrôle d'intégrité au boot & démarrage** : à chaque démarrage de l'application (via `demarrage.bat` et le script `installer/verifier-integrite-anti-copie.bat`), l'empreinte physique actuelle du PC est comparée à celle enregistrée et signée lors du déploiement.
+- **Blocage anti-piratage** : si le dossier de l'application est copié ou déplacé sur un autre ordinateur, le démarrage est immédiatement interrompu avec le message :
+  ```text
+  ================================================================
+    ⛔ VIOLATION DE LICENCE : COPIE ILLICITE DÉTECTÉE
+  ================================================================
+  Cette copie de YELEN SCHOOL a été déplacée sur une autre machine.
+  L'application est protégée et ne peut s'exécuter que sur le
+  serveur physique autorisé lors du déploiement officiel.
+  ================================================================
+  ```
+- **Procédure de transfert officiel** : en cas de changement légitime de serveur par l'établissement (panne matérielle, renouvellement de parc), le technicien éditeur ré-enrôle la nouvelle machine avec les outils officiels de déploiement.
+
+
 ### 13.Guide Page Guide d'utilisation (`/licences/guide/`)
 
 Page de documentation intégrée présentant les 9 modules principaux de YELEN SCHOOL.
@@ -4313,6 +4359,36 @@ Pour que les parents reçoivent les notifications d'absence :
 > **Note technique — Tests :** L'audit est automatiquement désactivé pendant l'exécution des tests unitaires (via `conftest.py` et le flag `_audit_disabled` dans `core/signals.py`). En dehors d'une requête HTTP (shell, commandes), l'audit est également ignoré pour éviter les erreurs de clé étrangère lors des rollbacks de transaction.
 
 ---
+
+
+#### 🔐 Chaîne d'Audit Cryptographique Append-Only (Anti-Falsification)
+
+Le journal d'audit de YELEN SCHOOL utilise un chaînage cryptographique garantissant l'intégrité des événements :
+
+1. **Calcul de Hash SHA-256 en chaîne** :
+   - Chaque entrée enregistrée calcule son propre `entry_hash` combinant l'action, l'utilisateur, l'horodatage, l'établissement, les modifications (`changes`) et le hash de l'entrée précédente (`previous_hash`).
+   - Une suppression ou une altération directe en base de données brise immédiatement la chaîne de hachage.
+2. **Masquage strict des données sensibles** :
+   - Les mots de passe, secrets TOTP, clés privées, jetons d'accès et signatures cryptographiques sont automatiquement exclus des instantanés (`_snapshot`) et remplacés par des empreintes sécurisées.
+3. **Vérification d'intégrité** :
+   - Les administrateurs peuvent vérifier à tout moment la validité de l'historique complet via la commande :
+   ```bash
+   python manage.py verify_audit_chain
+   ```
+   - Si aucune altération n'est détectée : `Chaîne d'audit valide : N entrée(s) vérifiée(s).`
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│  🔗 Chaîne d'Audit Cryptographique                                     │
+├────────────────────────────────────────────────────────────────────────┤
+│  [Entrée #101] Previous: 0000... ──► Hash: a8f4...                     │
+│       ▼                                                                │
+│  [Entrée #102] Previous: a8f4... ──► Hash: e3b1...                     │
+│       ▼                                                                │
+│  [Entrée #103] Previous: e3b1... ──► Hash: 9c2d... (Vérifiée valide)  │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
 
 ### 18.7 Réunion de Parents (`/reunion-parents/`)
 

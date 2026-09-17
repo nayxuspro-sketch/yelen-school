@@ -9,9 +9,13 @@ Ce module contient :
 Référence : docs/PROMPT_V3_3.md §2.1, §2.2, §4.2
 """
 
+import hashlib
+import json
 import uuid
 
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import connection, models, transaction
+from django.utils import timezone
 
 
 # ──────────────────────────────────────────────
@@ -109,16 +113,45 @@ class BaseModel(models.Model):
 # Modèle d'Audit Trail
 # ──────────────────────────────────────────────
 
+class AuditLogQuerySet(models.QuerySet):
+    """Interdit les opérations bulk qui contourneraient l'append-only."""
+
+    def update(self, **kwargs):
+        raise ValidationError("Le journal d'audit ne peut pas être modifié.")
+
+    def delete(self):
+        raise ValidationError("Le journal d'audit ne peut pas être supprimé.")
+
+    def bulk_create(self, objs, **kwargs):
+        raise ValidationError("Utilisez record_audit() pour ajouter une trace.")
+
+
+class AuditLogManager(models.Manager.from_queryset(AuditLogQuerySet)):
+    pass
+
+
 class AuditLog(models.Model):
-    """Journal d'audit pour tracer toutes les modifications."""
+    """Journal append-only, chaîné cryptographiquement.
+
+    ``changes`` contient l'ancien et le nouveau contenu. ``entry_hash`` est
+    calculé sur les métadonnées et ``previous_hash`` ; une suppression ou une
+    modification SQL laisse donc une rupture détectable par la vérification de
+    chaîne. La protection complète exige en plus des droits PostgreSQL séparés
+    et un export signé hors de la base.
+    """
 
     class ActionChoices(models.TextChoices):
         CREATE = 'CREATE', 'Création'
         UPDATE = 'UPDATE', 'Modification'
         DELETE = 'DELETE', 'Suppression'
+        EXPORT = 'EXPORT', 'Export'
+        LOGIN = 'LOGIN', 'Connexion'
+        LOGIN_FAILED = 'LOGIN_FAILED', 'Échec de connexion'
+        SECURITY = 'SECURITY', 'Événement de sécurité'
 
     timestamp = models.DateTimeField(
-        auto_now_add=True,
+        default=timezone.now,
+        editable=False,
         verbose_name='Date/Heure',
     )
     user = models.ForeignKey(
@@ -128,49 +161,101 @@ class AuditLog(models.Model):
         related_name='audit_logs',
         verbose_name='Utilisateur',
     )
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs',
+        verbose_name="Établissement",
+    )
     action = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=ActionChoices.choices,
         verbose_name='Action',
     )
-    app_label = models.CharField(
-        max_length=50,
-        verbose_name='Application',
-    )
-    model_name = models.CharField(
-        max_length=100,
-        verbose_name='Modèle',
-    )
-    object_id = models.UUIDField(
-        verbose_name='ID de l\'objet',
-    )
-    object_repr = models.CharField(
-        max_length=200,
-        verbose_name='Objet',
-    )
-    changes = models.JSONField(
-        default=dict,
-        blank=True,
-        verbose_name='Modifications',
-    )
-    ip_address = models.GenericIPAddressField(
-        null=True,
-        blank=True,
-        verbose_name='Adresse IP',
-    )
+    app_label = models.CharField(max_length=50, verbose_name='Application')
+    model_name = models.CharField(max_length=100, verbose_name='Modèle')
+    object_id = models.CharField(max_length=64, verbose_name="ID de l'objet")
+    object_repr = models.CharField(max_length=200, verbose_name='Objet')
+    changes = models.JSONField(default=dict, blank=True, verbose_name='Modifications')
+    reason = models.TextField(blank=True, default='', verbose_name='Motif')
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name='Adresse IP')
+    user_agent = models.CharField(max_length=500, blank=True, default='', verbose_name='Navigateur')
+    source = models.CharField(max_length=30, default='HTTP', verbose_name='Source')
+    request_id = models.CharField(max_length=64, blank=True, default='', verbose_name='Requête')
+    previous_hash = models.CharField(max_length=64, blank=True, default='', editable=False)
+    entry_hash = models.CharField(max_length=64, blank=True, default='', editable=False)
+
+    objects = AuditLogManager()
 
     class Meta:
-        verbose_name = 'Journal d\'audit'
-        verbose_name_plural = 'Journaux d\'audit'
+        verbose_name = "Journal d'audit"
+        verbose_name_plural = "Journaux d'audit"
         ordering = ['-timestamp']
         indexes = [
             models.Index(fields=['-timestamp']),
             models.Index(fields=['app_label', 'model_name']),
             models.Index(fields=['user', '-timestamp']),
+            models.Index(fields=['etablissement', '-timestamp'], name='core_auditl_etab_ts_idx'),
         ]
 
     def __str__(self):
         return f"{self.action} - {self.object_repr} - {self.user} - {self.timestamp}"
+
+    def _hash_content(self):
+        return json.dumps({
+            'timestamp': self.timestamp.isoformat() if self.timestamp else '',
+            'user_id': str(self.user_id) if self.user_id else None,
+            'etablissement_id': str(self.etablissement_id) if self.etablissement_id else None,
+            'action': self.action,
+            'app_label': self.app_label,
+            'model_name': self.model_name,
+            'object_id': self.object_id,
+            'object_repr': self.object_repr,
+            'changes': self.changes,
+            'reason': self.reason,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'source': self.source,
+            'request_id': self.request_id,
+            'previous_hash': self.previous_hash,
+        }, sort_keys=True, ensure_ascii=False, default=str, separators=(',', ':')).encode('utf-8')
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValidationError("Les entrées d'audit ne peuvent pas être modifiées.")
+        self.timestamp = self.timestamp or timezone.now()
+        # Verrou PostgreSQL commun à toute la chaîne ; fallback pour les outils
+        # de vérification sans PostgreSQL, sans changer la cible officielle.
+        with transaction.atomic():
+            if connection.vendor == 'postgresql':
+                with connection.cursor() as cursor:
+                    cursor.execute('SELECT pg_advisory_xact_lock(%s)', [87154231])
+            previous = (
+                type(self).objects.order_by('-id')
+                .values_list('entry_hash', flat=True)
+                .first()
+            ) or ''
+            self.previous_hash = previous
+            self.entry_hash = hashlib.sha256(self._hash_content()).hexdigest()
+            kwargs.setdefault('force_insert', True)
+            return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Les entrées d'audit ne peuvent jamais être supprimées.")
+
+    def verifier_chaine(self) -> bool:
+        expected = hashlib.sha256(self._hash_content()).hexdigest()
+        if expected != self.entry_hash:
+            return False
+        previous = (
+            type(self).objects.filter(id__lt=self.id)
+            .order_by('-id')
+            .values_list('entry_hash', flat=True)
+            .first()
+        ) or ''
+        return previous == self.previous_hash
 
 
 class Notification(models.Model):

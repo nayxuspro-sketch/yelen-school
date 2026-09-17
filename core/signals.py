@@ -1,15 +1,35 @@
+"""Signaux d'audit pour les modèles métier.
+
+Les changements sont capturés avant l'écriture afin de conserver réellement
+l'ancien et le nouveau contenu. Les signaux fonctionnent aussi hors HTTP : une
+commande ou une tâche est alors marquée ``source=SYSTEM``.
 """
-Signaux pour l'Audit Trail automatique.
-"""
-import json
-from django.db.models import signals
-from django.db.models.signals import pre_save, post_save, pre_delete, post_delete
-from django.contrib.contenttypes.models import ContentType
-from django.forms.models import model_to_dict
-from yelen_school.audit_middleware import get_request, get_user_from_request, get_client_ip
+
+from __future__ import annotations
+
+from datetime import date, datetime, time
+from decimal import Decimal
+from uuid import UUID
+import hashlib
+
+from django.db.models.signals import post_save, pre_delete, pre_save
+
+from core.audit import record_audit
+from yelen_school.audit_middleware import get_request
 
 
 _audit_disabled = False
+_SENSITIVE_FIELDS = frozenset({
+    'password', 'totp_secret', 'token', 'token_signature', 'secret',
+    'private_key', 'signature_hmac', 'signature_ed25519', 'signed_payload',
+    'api_key', 'access_token', 'refresh_token',
+})
+
+
+def _fingerprint(value):
+    if value is None:
+        return ''
+    return hashlib.sha256(str(value).encode('utf-8')).hexdigest()
 
 
 def disable_audit():
@@ -22,108 +42,113 @@ def enable_audit():
     _audit_disabled = False
 
 
-def log_audit(sender, instance, action=None, **kwargs):
-    """Enregistre une action dans l'audit trail."""
+def _serialise(value):
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, (date, datetime, time)):
+        return value.isoformat()
+    if isinstance(value, (Decimal, UUID)):
+        return str(value)
+    return str(value)
+
+
+def _snapshot(instance):
+    values = {}
+    for field in instance._meta.concrete_fields:
+        if field.name in {'created_at', 'updated_at'} or field.name in _SENSITIVE_FIELDS:
+            continue
+        values[field.name] = _serialise(getattr(instance, field.attname, None))
+    return values
+
+
+def _sensitive_fingerprints(instance):
+    return {
+        field.name: _fingerprint(getattr(instance, field.attname, None))
+        for field in instance._meta.concrete_fields
+        if field.name in _SENSITIVE_FIELDS
+    }
+
+
+def _changes(old, new):
+    keys = sorted(set(old) | set(new))
+    return {
+        key: {'old': old.get(key), 'new': new.get(key)}
+        for key in keys
+        if old.get(key) != new.get(key)
+    }
+
+
+def _eligible(sender):
     from core.models import AuditLog
-    
-    # Ignorer si l'audit est désactivé (tests)
-    if _audit_disabled:
+    return sender is not AuditLog and hasattr(sender, '_meta') and hasattr(sender, 'created_at')
+
+
+def _capture_before_save(sender, instance, **kwargs):
+    if _audit_disabled or not _eligible(sender) or not instance.pk:
+        instance._audit_old_values = {}
+        instance._audit_old_sensitive = {}
         return
-    
-    # Déterminer l'action basée sur le type de signal
-    signal = kwargs.get('signal')
-    if signal == 'pre_delete':
-        action = 'DELETE'
-    elif action is None:
-        action = 'UPDATE'
-    
-    # Ne pas journaliser le modèle AuditLog lui-même
-    if sender == AuditLog:
-        return
-    
-    # Ne pas journaliser si instance n'a pas encore d'ID (CREATE)
-    if not instance.pk and action != 'CREATE':
-        return
-    
-    # Ignorer en dehors d'une requête HTTP (tests, shell, commandes)
-    # pour éviter les ForeignKeyViolation lors des rollbacks de transaction
-    request = get_request()
-    if request is None:
-        return
-    
     try:
-        # Récupérer l'utilisateur depuis l'instance ou la requête
-        user = None
-        if hasattr(instance, '_current_user'):
-            user = instance._current_user
-        if not user:
-            user = get_user_from_request()
-        
-        # Récupérer l'IP cliente
-        ip_address = get_client_ip(request) if request else None
-        
-        # Récupérer les anciennes valeurs pour UPDATE/DELETE
-        changes = {}
-        
-        if action in ('UPDATE', 'DELETE'):
-            try:
-                old_instance = sender.objects.get(pk=instance.pk)
-                if action == 'UPDATE':
-                    for field in instance._meta.fields:
-                        if field.name in ('created_at', 'updated_at', 'created_by', 'updated_by', '_current_user'):
-                            continue
-                        old_val = getattr(old_instance, field.name, None)
-                        new_val = getattr(instance, field.name, None)
-                        if old_val != new_val:
-                            changes[field.name] = {
-                                'old': str(old_val) if old_val is not None else None,
-                                'new': str(new_val) if new_val is not None else None,
-                            }
-            except sender.DoesNotExist:
-                pass
-        
-        # Créer l'entrée d'audit
-        AuditLog.objects.create(
-            user=user,
-            action=action,
-            app_label=instance._meta.app_label,
-            model_name=instance._meta.model_name,
-            object_id=instance.pk,
-            object_repr=str(instance)[:200],
-            changes=changes,
-            ip_address=ip_address,
-        )
-    except Exception as e:
-        import logging
-        logging.error(f"Audit log failed: {e}")
+        old = sender.objects.get(pk=instance.pk)
+        instance._audit_old_values = _snapshot(old)
+        instance._audit_old_sensitive = _sensitive_fingerprints(old)
+    except sender.DoesNotExist:
+        instance._audit_old_values = {}
+        instance._audit_old_sensitive = {}
 
 
-def _log_post_save(sender, instance, created, **kwargs):
-    """Wrapper post_save qui distingue CREATE et UPDATE."""
+def _audit_saved(sender, instance, created, **kwargs):
+    if _audit_disabled or not _eligible(sender):
+        return
+    new = _snapshot(instance)
+    old = getattr(instance, '_audit_old_values', {})
+    old_sensitive = getattr(instance, '_audit_old_sensitive', {})
+    new_sensitive = _sensitive_fingerprints(instance)
+    sensitive_changed = sorted(
+        name for name in set(old_sensitive) | set(new_sensitive)
+        if old_sensitive.get(name) != new_sensitive.get(name)
+    )
     action = 'CREATE' if created else 'UPDATE'
-    log_audit(sender=sender, instance=instance, action=action, **kwargs)
+    changes = {'new': new} if created else _changes(old, new)
+    if sensitive_changed:
+        changes['sensitive_fields_changed'] = sensitive_changed
+    elif created and any(new_sensitive.values()):
+        changes['sensitive_fields_present'] = sorted(
+            name for name, fingerprint in new_sensitive.items() if fingerprint
+        )
+    record_audit(
+        instance=instance,
+        action=action,
+        changes=changes,
+        request=get_request(),
+        reason=getattr(instance, '_audit_reason', ''),
+    )
+    instance._audit_old_values = {}
 
 
-def _log_pre_delete(sender, instance, **kwargs):
-    """Wrapper pre_delete pour DELETE."""
-    log_audit(sender=sender, instance=instance, action='DELETE', **kwargs)
+def _audit_deleted(sender, instance, **kwargs):
+    if _audit_disabled or not _eligible(sender):
+        return
+    record_audit(
+        instance=instance,
+        action='DELETE',
+        changes={'old': _snapshot(instance)},
+        request=get_request(),
+        reason=getattr(instance, '_audit_reason', ''),
+    )
 
 
 def setup_audit_signals():
-    """Configure les signaux pour tous les modèles."""
+    """Branche l'audit aux modèles métier BaseModel, une seule fois par label."""
     from django.apps import apps
 
     for model in apps.get_models():
-        # Vérifier si le modèle hérite de BaseModel
-        if hasattr(model, '_meta') and model._meta.proxy:
+        if model._meta.proxy or not hasattr(model, 'created_at'):
             continue
-        try:
-            if hasattr(model, 'created_at'):
-                post_save.connect(_log_post_save, sender=model, dispatch_uid=f'audit_save_{model._meta.label}')
-                pre_delete.connect(_log_pre_delete, sender=model, dispatch_uid=f'audit_delete_{model._meta.label}')
-        except Exception:
-            pass
+        label = model._meta.label
+        pre_save.connect(_capture_before_save, sender=model, dispatch_uid=f'audit_before_{label}')
+        post_save.connect(_audit_saved, sender=model, dispatch_uid=f'audit_save_{label}')
+        pre_delete.connect(_audit_deleted, sender=model, dispatch_uid=f'audit_delete_{label}')
 
 
-# Configuration automatique à l'import
 setup_audit_signals()
