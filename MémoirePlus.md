@@ -8,21 +8,22 @@
 
 - **Projet :** YELEN SCHOOL v5.0 — Gestion scolaire (Burkina Faso), Django 4.2, DRF, PostgreSQL (prod) / SQLite (mode autonome), Redis (prod) / DB cache (autonome).
 - **Dépôt :** `nayxuspro-sketch/yelen-school`
-- **Branche de travail session actuelle :** `arena/01a0aebf-yelen-school` (basée sur `1ed8433` + merge PR #3)
+- **Branche de travail session actuelle :** `arena/01a0af14-yelen-school` (basée sur `main` = `848aeb9`, qui contient PR #3 + PR #4 mergées)
 - **Branches arena historiques :**
   - `arena/01a0aaaf-yelen-school` → PR #3 (P0 licences + RBAC API + S2), 4 commits : `199fd81 fix(pdf)`, `8c7c8b3 feat(licences) P0`, `ad797cb feat(api) RBAC`, `fa204bf feat(api) refresh`
   - `arena/01a0aebf-yelen-school` → PR #4 (suite PR #3 + S3/S4/A1/A4/A6), commits : `a501e63` (S3/S4/A1/A4), `613c90f` (A6 CSP)
-- **PR ouvertes :**
-  - PR #3 : https://github.com/nayxuspro-sketch/yelen-school/pull/3 — P0 + RBAC + S2 (260 tests verts à l'époque, maintenant 91 ciblés)
-  - PR #4 : https://github.com/nayxuspro-sketch/yelen-school/pull/4 — S3/S4/A1/A4/A6 (91 tests verts ciblés)
+- **PR :**
+  - PR #3 — **MERGÉE** — P0 + RBAC + S2
+  - PR #4 — **MERGÉE** — S3/S4/A1/A4/A6 + A7 + P1 + P2
+  - PR #2 (`arena/01a06c5a`, "Validation complète PostgreSQL et Redis") — **OUVERTE mais NON MERGEABLE** : historique sans ancêtre commun avec `main` (181 conflits). Contient des éléments intéressants absents de main : `installer/` (scripts Windows/Linux, sauvegardes, tâches planifiées), `core/audit.py` + `verify_audit_chain`, triggers financiers PostgreSQL (`finances/migrations/0016`), `docs/LICENCE_ED25519.md`, `docker-compose.client.yml`. Décision requise : **fermer** et re-porter manuellement les éléments utiles, ou abandonner.
 
 ---
 
 ## 2. État réel — par ordre de priorité (référence initiale du 17/09/2026)
 
-### 🔴 A. Immédiat (autour du PR #3)
-- [x] CI verte sur PR (job PostgreSQL) — job SQLite ajouté dans `1ed8433`, mais CI PG à vérifier
-- [ ] Production : `LICENSE_ENFORCEMENT=true` dans `.env` (sinon contrôle reste en mode démo)
+### 🔴 A. Immédiat
+- [x] CI rouge sur `main` (848aeb9) : `cryptography` absent de `requirements/base.txt` → `ModuleNotFoundError` — **corrigé** session 01a0af14
+- [x] `LICENSE_ENFORCEMENT` : désormais **actif par défaut** dès que `DEBUG=False` (variable absente → true), warning au boot si explicitement `false` en prod. Un `.env` prod n'a plus besoin de la ligne, mais `LICENSE_ENFORCEMENT=true` reste recommandé explicitement.
 
 ### 🟠 B. Chantier sécurité — 4 axes + audit v6.0
 
@@ -53,7 +54,7 @@ Vérifié résolus : VUL-2026-01 Anthropic, VUL-2026-03 CSP unsafe-inline (déj�
 - [ ] Centralisation `LicenceAuditLog` côté éditeur + alerte SMS immédiate `TENTATIVE_FRAUDE`
 - [ ] Filigrane/métadonnées PDF (établissement + clé licence) pour tracer fuite
 - [ ] API REST non soumise au contrôle licence : middleware ne voit pas auth token DRF → ajouter permission `IsLicenseActive` (trou réel : licence expirée peut passer par API)
-- [ ] Couverture tests ≥80% sur apps faibles ; nettoyage doublons morts (`settings01.py`, `parametres/models0.py`, etc.)
+- [x] Couverture tests ≥80% : licences **84 %** (`test_p2_coverage_suite.py`, 35 tests) ; nettoyage doublons morts fait
 
 ### ⚠️ E. À clarifier
 - Commits `5b85d3e`/`ea9bafa` cités n'existent pas (vérifié reflog) — s'ils vivent ailleurs, synchroniser
@@ -295,5 +296,15 @@ Vérifié résolus : VUL-2026-01 Anthropic, VUL-2026-03 CSP unsafe-inline (déj�
 
 ---
 
-*Dernière mise à jour : 2026-09-17 11:30 UTC par agent arena/01a0aebf — 100 tests verts licences (77 P1 + 23 P2), couverture 74%, P1 terminé 57216fa, A7 dce9c94, P2 terminé 3b39e1d+1b1098e+110bfb3 (IsLicenseActive API, audit centralisation+verify, filigrane 16 templates+20 vues, fix AuditLog _state.adding, pdf_utils factorisé, nettoyage doublons, E commits introuvables documenté).*
+### Session arena/01a0af14 (17/09/2026 après-midi) — clôture des points restants
+- `fix(deps)` : `cryptography==50.0.1` dans `requirements/base.txt` (cause CI rouge main)
+- `sec(licences)` : `LICENSE_ENFORCEMENT` par défaut = `not DEBUG` (sauf sous pytest), warning si désactivé hors DEBUG ; CI fixe `LICENSE_ENFORCEMENT=false` explicitement
+- `chore` : suppression 27 fichiers parasites racine (exports source 13 Mo, `~$…docx`, `structure.txt`, scratch, polices Playfair non référencées, `.claude/worktrees`) + règles `.gitignore`
+- `refactor` : `STORAGES` (remplace `STATICFILES_STORAGE`), `datetime.timezone.utc` → **0 warning de dépréciation** restant sur nos fichiers
+- `test(licences)` : couverture 74 → **84 %** ; `decorators.py` 100 %, `heartbeat.py` 90 %, `binding.py` 84 %
+- **Fix sécurité** : `LicenceActivation.verify_fingerprint()` retournait quand même True si l'empreinte stockée ne correspondait plus aux attributs (le `pass` laissait passer un enregistrement cloné/modifié) → retourne `False`
+- Suite complète : **344 tests verts** (SQLite)
+- Reste ouvert : décision sur PR #2 (voir section 1)
+
+*Dernière mise à jour : 2026-09-17 par agent arena/01a0af14 — voir ci-dessus. Précédente : 2026-09-17 11:30 UTC par agent arena/01a0aebf — 100 tests verts licences (77 P1 + 23 P2), couverture 74%, P1 terminé 57216fa, A7 dce9c94, P2 terminé 3b39e1d+1b1098e+110bfb3 (IsLicenseActive API, audit centralisation+verify, filigrane 16 templates+20 vues, fix AuditLog _state.adding, pdf_utils factorisé, nettoyage doublons, E commits introuvables documenté).*
 

@@ -1,6 +1,6 @@
 # Fonctionnalités à développer — Priorités
 
-> Dernière mise à jour : 2026-04-11
+> Dernière mise à jour : 2026-09-17 — toutes les fonctionnalités listées sont livrées.
 
 ---
 
@@ -97,7 +97,7 @@
 | 2 | Portail parent — accès via menu | Faible | ✅ Terminé |
 | 4 | CoSignataires — UI | Faible | ✅ Terminé |
 | 5 | LocalisationPoste — UI | Faible | ✅ Terminé |
-| 7 | IA décrochage — déclenchement auto | Faible | 📌 Planifié |
+| 7 | IA décrochage — déclenchement auto | Faible | ✅ Terminé |
 | 3 | Tableau global échéanciers + alertes | Moyen | ✅ Terminé |
 | 6 | Export Excel | Moyen | ✅ Terminé |
 | 8 | Bulletins en masse (batch) | Moyen | ✅ Terminé |
