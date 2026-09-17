@@ -513,6 +513,12 @@ def bulletin_parent_consulter(request, token):
     from django.utils import timezone as tz
     bulletin = get_object_or_404(Bulletin, token_signature=token)
 
+    # S3 — expiration du lien public : token_valide vérifié AVANT toute divulgation
+    if not bulletin.token_valide:
+        return render(request, 'bulletins/bulletin_parent.html', {
+            'erreur': "Ce lien de consultation n'est plus valide (expiré ou annulé).",
+        })
+
     if not bulletin.est_publie:
         return render(request, 'bulletins/bulletin_parent.html', {
             'erreur': "Ce bulletin n'est pas encore disponible.",

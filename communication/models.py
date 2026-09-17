@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from core.models import BaseModel
@@ -93,11 +94,24 @@ class MessageParent(BaseModel):
     )
     sms_envoye = models.BooleanField(default=False, verbose_name=_("SMS envoyé"))
     date_envoi_sms = models.DateTimeField(null=True, blank=True, verbose_name=_("Date envoi SMS"))
+    # S3 — expiration du lien de réponse parent (30 jours par défaut)
+    date_expiration = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name=_("Date d'expiration du lien"),
+        help_text=_("Au-delà, le lien public /repondre/ affiche 'lien expiré'."),
+    )
 
     class Meta:
         ordering = ['-created_at']
         verbose_name = _("Message parent")
         verbose_name_plural = _("Messages parents")
+
+    @property
+    def est_valide(self):
+        """True si le lien de réponse est encore valide (non expiré)."""
+        if self.date_expiration is None:
+            return True  # rétro-compatibilité : anciens messages sans expiration
+        return timezone.now() <= self.date_expiration
 
     def __str__(self):
         return f"{self.get_type_display()} — {self.eleve} ({self.get_statut_display()})"

@@ -119,6 +119,7 @@ def message_create(request):
             creneaux_proposes=creneaux,
             telephone_utilise=telephone,
             envoye_par=request.user,
+            date_expiration=timezone.now() + timezone.timedelta(days=30),
         )
 
         if envoyer_sms_flag and telephone:
@@ -149,10 +150,49 @@ def message_detail(request, pk):
     })
 
 
+@login_required
+def justificatif_download(request, pk):
+    """
+    S4 — téléchargement sécurisé des justificatifs parentaux.
+    Accès réservé au staff de l'établissement (pas d'accès public via /media/).
+    """
+    import os
+    from django.http import FileResponse, Http404
+
+    etab = _get_etab(request)
+    # Filtre par établissement pour cloisonnement
+    reponse = get_object_or_404(ReponseParent, pk=pk, message__etablissement=etab)
+
+    if not reponse.justificatif:
+        raise Http404("Aucun justificatif.")
+
+    # Vérification que le fichier existe physiquement
+    if not reponse.justificatif.storage.exists(reponse.justificatif.name):
+        raise Http404("Fichier introuvable.")
+
+    # Nom de fichier pour Content-Disposition
+    filename = os.path.basename(reponse.justificatif.name)
+
+    # FileResponse avec streaming (sécurisé, pas d'exposition du chemin MEDIA)
+    return FileResponse(
+        reponse.justificatif.open('rb'),
+        as_attachment=False,
+        filename=filename,
+    )
+
+
 # ─── RÉPONSE PARENT (vue publique, sans authentification) ────────────
 
 def repondre(request, token):
     msg = get_object_or_404(MessageParent, token=token)
+
+    # S3 — expiration du lien public
+    if not msg.est_valide:
+        return render(request, 'communication/repondre.html', {
+            'msg': msg,
+            'lien_expire': True,
+        })
+
     reponse_existante = getattr(msg, 'reponse', None)
 
     if msg.statut == MessageParent.STATUT_ENVOYE:
@@ -260,12 +300,21 @@ def webhook_incoming_sms(request):
     """
     Webhook pour traiter les SMS entrants des parents (PWA Parent-SMS Direct).
     Supporte les formats JSON (Android SMS Gateway) et les paramètres standards POST.
+
+    Sécurité A1 :
+    - IP whitelist (SMS_ALLOWED_IPS)
+    - Token partagé (SMS_WEBHOOK_TOKEN)
+    - HMAC signature (SMS_WEBHOOK_SECRET) — vérifie X-SMS-Signature = HMAC-SHA256(body, secret)
+    - Rate limiting par IP (SMS_WEBHOOK_RATE_LIMIT req/min)
     """
+    import hashlib
+    import hmac
     import json
     import re
     from django.views.decorators.csrf import csrf_exempt
     from django.http import JsonResponse, HttpResponse
     from django.conf import settings
+    from django.core.cache import cache
     from core.sms import _normaliser_numero
     from core.tasks import envoyer_sms_async
     from inscriptions.models import Eleve, Inscription
@@ -274,13 +323,27 @@ def webhook_incoming_sms(request):
     from finances.views import _calcul_situation_financiere
     from .models import IncomingSMSLog
 
+    # ── Rate limiting par IP (A1) ──────────────────────────────────────
+    remote_ip = request.META.get('REMOTE_ADDR', '') or 'unknown'
+    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    client_ip = (forwarded_for.split(',')[0].strip() if forwarded_for else remote_ip)
+    rl_key = f"sms_webhook_rl:{client_ip}"
+    rl_limit = getattr(settings, 'SMS_WEBHOOK_RATE_LIMIT', 30)
+    try:
+        count = cache.get(rl_key, 0)
+        if count >= rl_limit:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Trop de requêtes. Réessayez dans une minute.'},
+                status=429,
+            )
+        cache.set(rl_key, count + 1, 60)
+    except Exception:
+        # Si le cache est indisponible, on ne bloque pas (fail-open pour disponibilité)
+        pass
+
     # ── Authentification du webhook ────────────────────────────────────
     # Vérification IP (si une liste d'IP autorisées est configurée)
     if settings.SMS_ALLOWED_IPS:
-        remote_ip = request.META.get('REMOTE_ADDR', '')
-        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
-        client_ip = (forwarded_for.split(',')[0].strip()
-                     if forwarded_for else remote_ip)
         if client_ip not in settings.SMS_ALLOWED_IPS:
             return JsonResponse(
                 {'status': 'error', 'message': 'Accès non autorisé.'},
@@ -295,6 +358,28 @@ def webhook_incoming_sms(request):
             {'status': 'error', 'message': 'Token invalide.'},
             status=403,
         )
+
+    # Vérification HMAC (A1) — si SMS_WEBHOOK_SECRET configuré
+    webhook_secret = getattr(settings, 'SMS_WEBHOOK_SECRET', '')
+    if webhook_secret:
+        signature = request.META.get('HTTP_X_SMS_SIGNATURE', '')
+        if not signature:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Signature manquante.'},
+                status=403,
+            )
+        # HMAC-SHA256 du body brut
+        expected = hmac.new(
+            webhook_secret.encode('utf-8'),
+            request.body,
+            hashlib.sha256,
+        ).hexdigest()
+        # Comparaison constant-time
+        if not hmac.compare_digest(expected, signature):
+            return JsonResponse(
+                {'status': 'error', 'message': 'Signature invalide.'},
+                status=403,
+            )
 
     sender_number = ""
     message_text = ""

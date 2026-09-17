@@ -333,6 +333,10 @@ SMS_MODEM_TIMEOUT = int(os.environ.get('SMS_MODEM_TIMEOUT', '10'))
 SMS_WEBHOOK_TOKEN = os.environ.get('SMS_WEBHOOK_TOKEN', '')
 # IP autorisées à appeler le webhook (séparées par des virgules)
 SMS_ALLOWED_IPS = [ip.strip() for ip in os.environ.get('SMS_ALLOWED_IPS', '').split(',') if ip.strip()]
+# Secret HMAC pour signature des requêtes (A1) — si défini, vérifie X-SMS-Signature
+SMS_WEBHOOK_SECRET = os.environ.get('SMS_WEBHOOK_SECRET', '')
+# Rate limiting webhook : max requêtes par minute par IP
+SMS_WEBHOOK_RATE_LIMIT = int(os.environ.get('SMS_WEBHOOK_RATE_LIMIT', '30'))
 
 # ── SÉCURITÉ RENFORCÉE ─────────────────────────────────────────────────────────
 
