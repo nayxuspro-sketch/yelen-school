@@ -112,6 +112,24 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # En production (déploiement école), mettre LICENSE_ENFORCEMENT=true dans .env.
 LICENSE_ENFORCEMENT = os.environ.get('LICENSE_ENFORCEMENT', 'false').lower() == 'true'
 
+# P1 — Architecture anti-fraude définitive
+# Clé dédiée pour signer les licences (au lieu de SECRET_KEY Django) — faille structurelle du mode autonome
+LICENCE_SIGNING_KEY = os.environ.get('LICENCE_SIGNING_KEY', '')  # HMAC legacy, ou vide = fallback SECRET_KEY
+# Ed25519 : clé publique dans l'app (vérification), privée chez éditeur (signature)
+# Format attendu : hex 32 bytes (64 chars hex) ou base64 44 chars
+LICENCE_PUBLIC_KEY = os.environ.get('LICENCE_PUBLIC_KEY', '')
+LICENCE_PRIVATE_KEY = os.environ.get('LICENCE_PRIVATE_KEY', '')  # seulement chez éditeur, jamais en prod école
+# Phone-home : URL serveur éditeur pour heartbeat signé (optionnel)
+LICENCE_HEARTBEAT_URL = os.environ.get('LICENCE_HEARTBEAT_URL', '')
+LICENCE_HEARTBEAT_INTERVAL_HOURS = int(os.environ.get('LICENCE_HEARTBEAT_INTERVAL_HOURS', '24'))
+# Bail hors-ligne : fenêtre décroissante si pas de heartbeat (jours)
+LICENCE_OFFLINE_GRACE_DAYS = int(os.environ.get('LICENCE_OFFLINE_GRACE_DAYS', '7'))
+LICENCE_OFFLINE_MAX_DAYS = int(os.environ.get('LICENCE_OFFLINE_MAX_DAYS', '30'))
+# Binding machine : empreinte multi-attributs
+LICENCE_BINDING_ENABLED = os.environ.get('LICENCE_BINDING_ENABLED', 'false').lower() == 'true'
+# Anti-tamper : vérification intégrité modules licences au boot
+LICENCE_ANTITAMPER_ENABLED = os.environ.get('LICENCE_ANTITAMPER_ENABLED', 'false').lower() == 'true'
+
 
 # Application definition
 

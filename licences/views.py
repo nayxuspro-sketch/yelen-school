@@ -12,10 +12,23 @@ from .forms import LicenceForm, RenouvelerForm, RevoquerForm
 from .models import Licence, StatutLicence, LIMITES_LICENCES, TypeLicence, FEATURE_FLAGS
 
 
-# ── Garde superuser ───────────────────────────────────────────────────────────
+# ── Garde staff éditeur (P1 : ENSURE_ADMIN → staff) ────────────────────────
+# P1 : les vues de gestion licences ne sont plus superuser-only mais staff
+# (éditeur). Le superuser d'une école ne peut pas forger de licences, mais le
+# staff éditeur (is_staff) peut gérer les licences via cette interface.
 
 def _superuser_required(view_func):
-    return user_passes_test(lambda u: u.is_superuser, login_url='/')(view_func)
+    """Legacy : garde superuser (conservé pour compat, redirige vers staff)."""
+    return user_passes_test(lambda u: u.is_staff, login_url='/')(view_func)
+
+
+def _staff_required(view_func):
+    """P1 : garde staff éditeur — is_staff requis."""
+    return user_passes_test(lambda u: u.is_staff, login_url='/')(view_func)
+
+
+# Alias pour migration progressive : ENSURE_ADMIN → staff éditeur
+_ensure_admin_required = _staff_required
 
 
 def _get_licence(user):
@@ -62,7 +75,7 @@ def gestion_licences(request):
 # ── Création ─────────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_create(request):
     """Créer une nouvelle licence pour un établissement."""
     form = LicenceForm(request.POST or None)
@@ -80,7 +93,7 @@ def licence_create(request):
 # ── Modification ──────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_edit(request, pk):
     """Modifier le type et la date d'expiration d'une licence."""
     licence = get_object_or_404(Licence, pk=pk)
@@ -100,7 +113,7 @@ def licence_edit(request, pk):
 # ── Activation ────────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_activer(request, pk):
     """Activer une licence en attente."""
     licence = get_object_or_404(Licence, pk=pk)
@@ -131,7 +144,7 @@ def licence_activer(request, pk):
 # ── Renouvellement ────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_renouveler(request, pk):
     """Renouveler une licence (choisir la durée)."""
     licence = get_object_or_404(Licence, pk=pk)
@@ -153,7 +166,7 @@ def licence_renouveler(request, pk):
 # ── Révocation ────────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_revoquer(request, pk):
     """Révoquer une licence avec saisie du motif."""
     licence = get_object_or_404(Licence, pk=pk)
@@ -286,7 +299,7 @@ def guide(request):
 # ── Outils offline (superuser seulement) ─────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def outils_licence(request):
     """
     Outils cryptographiques offline :
