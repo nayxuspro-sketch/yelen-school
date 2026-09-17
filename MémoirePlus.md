@@ -303,7 +303,10 @@ Vérifié résolus : VUL-2026-01 Anthropic, VUL-2026-03 CSP unsafe-inline (déj�
 - `refactor` : `STORAGES` (remplace `STATICFILES_STORAGE`), `datetime.timezone.utc` → **0 warning de dépréciation** restant sur nos fichiers
 - `test(licences)` : couverture 74 → **84 %** ; `decorators.py` 100 %, `heartbeat.py` 90 %, `binding.py` 84 %
 - **Fix sécurité** : `LicenceActivation.verify_fingerprint()` retournait quand même True si l'empreinte stockée ne correspondait plus aux attributs (le `pass` laissait passer un enregistrement cloné/modifié) → retourne `False`
-- Suite complète : **344 tests verts** (SQLite)
+- `ci` : `--health-cmd` pg_isready non quoté (containers PG ne démarraient pas) ; `pytest-cov` absent des requirements (job PG sortait code 4) ; **matricule personnel > 30 car.** avec code établissement long → `DataError` PostgreSQL uniquement (SQLite n'applique pas `max_length`) : code tronqué à 18 dans `MembrePersonnel._generate_matricule` + fixture `test_limites`
+- Suite complète : **344 tests verts** SQLite **et** PostgreSQL — **CI verte sur les 2 jobs** (PR #5), première fois de l'historique
+- Astuce sandbox : PostgreSQL local sans root via `pip install pgserver` (socket `/tmp/pgdata`, `DB_HOST=/tmp/pgdata`, `CACHE_BACKEND=database`)
+- PR #5 : https://github.com/nayxuspro-sketch/yelen-school/pull/5 — à merger
 - Reste ouvert : décision sur PR #2 (voir section 1)
 
 *Dernière mise à jour : 2026-09-17 par agent arena/01a0af14 — voir ci-dessus. Précédente : 2026-09-17 11:30 UTC par agent arena/01a0aebf — 100 tests verts licences (77 P1 + 23 P2), couverture 74%, P1 terminé 57216fa, A7 dce9c94, P2 terminé 3b39e1d+1b1098e+110bfb3 (IsLicenseActive API, audit centralisation+verify, filigrane 16 templates+20 vues, fix AuditLog _state.adding, pdf_utils factorisé, nettoyage doublons, E commits introuvables documenté).*
