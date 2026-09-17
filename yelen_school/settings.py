@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import sys
+import warnings
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,7 +35,6 @@ if not SECRET_KEY:
     else:
         import secrets
         SECRET_KEY = secrets.token_hex(64)
-        import warnings
         warnings.warn(
             "SECRET_KEY non définie - génération automatique. "
             "En production, définissez la variable d'environnement SECRET_KEY."
@@ -109,8 +110,21 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 #         et contexte + feature flags des vues). Licence expirée ou révoquée
 #         → accès bloqué, redirigé vers les pages licences.
 # false = mode démonstration / développement — aucune restriction.
-# En production (déploiement école), mettre LICENSE_ENFORCEMENT=true dans .env.
-LICENSE_ENFORCEMENT = os.environ.get('LICENSE_ENFORCEMENT', 'false').lower() == 'true'
+# Valeur par défaut SÛRE : activé sauf si explicitement désactivé, ou si
+# DEBUG=true et variable absente (développement local). Un .env de production
+# qui oublie la ligne reste donc protégé.
+_lic_env = os.environ.get('LICENSE_ENFORCEMENT')
+if _lic_env is None:
+    # Sous pytest, mode démo par défaut (les tests licences activent le flag
+    # explicitement via `settings.LICENSE_ENFORCEMENT = True`).
+    LICENSE_ENFORCEMENT = not DEBUG and 'PYTEST_CURRENT_TEST' not in os.environ and 'pytest' not in sys.modules
+else:
+    LICENSE_ENFORCEMENT = _lic_env.lower() == 'true'
+if not DEBUG and not LICENSE_ENFORCEMENT:
+    warnings.warn(
+        "LICENSE_ENFORCEMENT=false alors que DEBUG=False : le contrôle des licences "
+        "est DÉSACTIVÉ (mode démo). En production, mettre LICENSE_ENFORCEMENT=true."
+    )
 
 # P1 — Architecture anti-fraude définitive
 # Clé dédiée pour signer les licences (au lieu de SECRET_KEY Django) — faille structurelle du mode autonome

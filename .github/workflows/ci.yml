@@ -59,6 +59,7 @@ jobs:
           python manage.py collectstatic --noinput
         env:
           DEBUG: "False"
+          LICENSE_ENFORCEMENT: "false"
           SECRET_KEY: ci-secret-key-for-testing-only
           DB_HOST: localhost
           DB_PORT: 5432
@@ -71,6 +72,7 @@ jobs:
         run: python -m pytest --tb=short -x --cov --cov-report=term-missing
         env:
           DEBUG: "False"
+          LICENSE_ENFORCEMENT: "false"
           SECRET_KEY: ci-secret-key-for-testing-only
           DB_HOST: localhost
           DB_PORT: 5432
@@ -101,6 +103,7 @@ jobs:
         env:
           DB_ENGINE: sqlite
           DEBUG: "False"
+          LICENSE_ENFORCEMENT: "false"
           SECRET_KEY: ci-secret-key-for-testing-only
           DISABLE_HTTPS_REDIRECT: "true"
       - name: Run tests (SQLite)
@@ -109,5 +112,6 @@ jobs:
           DB_ENGINE: sqlite
           CACHE_BACKEND: database
           DEBUG: "False"
+          LICENSE_ENFORCEMENT: "false"
           SECRET_KEY: ci-secret-key-for-testing-only
           DISABLE_HTTPS_REDIRECT: "true"
