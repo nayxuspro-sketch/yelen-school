@@ -150,3 +150,74 @@ class TestApiRbac:
         r = client.get(reverse('api:eleves_list'), **self._auth(admin))
         matricules = {e['matricule'] for e in r.json()}
         assert {eleve_a.matricule, eleve_b.matricule} <= matricules
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Renouvellement (rotation) des tokens API
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestApiTokenRefresh:
+    """POST /api/auth/token/refresh/ : rotation du token avant expiration."""
+
+    def _token(self, user):
+        from rest_framework.authtoken.models import Token
+        return Token.objects.create(user=user)
+
+    def test_sans_token_refuse(self, client):
+        r = client.post(reverse('api:renouveler_token'),
+                        content_type='application/json')
+        assert r.status_code == 401
+
+    def test_rotation_invalide_ancien_token(self, client):
+        from rest_framework.authtoken.models import Token
+        user = baker.make('accounts.User')
+        ancien = self._token(user)
+        cle1 = ancien.key
+
+        r = client.post(reverse('api:renouveler_token'),
+                        HTTP_AUTHORIZATION=f'Token {cle1}')
+        assert r.status_code == 200
+        cle2 = r.json()['token']
+        assert cle2 != cle1
+        assert set(r.json()) >= {'token', 'user_id', 'username', 'role'}
+
+        # Un seul token subsiste
+        assert Token.objects.filter(user=user).count() == 1
+
+        # L'ancien token est mort
+        r = client.get(reverse('api:eleves_list'),
+                       HTTP_AUTHORIZATION=f'Token {cle1}')
+        assert r.status_code == 401
+        # Le nouveau fonctionne
+        r = client.get(reverse('api:eleves_list'),
+                       HTTP_AUTHORIZATION=f'Token {cle2}')
+        assert r.status_code == 200
+
+    def test_renouvellement_glissant(self, client):
+        user = baker.make('accounts.User')
+        cle = self._token(user).key
+        for _ in range(3):
+            r = client.post(reverse('api:renouveler_token'),
+                            HTTP_AUTHORIZATION=f'Token {cle}')
+            assert r.status_code == 200
+            cle = r.json()['token']
+        r = client.get(reverse('api:eleves_list'),
+                       HTTP_AUTHORIZATION=f'Token {cle}')
+        assert r.status_code == 200
+
+    def test_token_deja_expiré_non_renouvelable(self, client):
+        """Un token expiré (supprimé par ExpiringTokenAuthentication)
+        ne peut pas être renouvelé : 401, retour à l'authentification
+        complète avec username/password."""
+        from django.utils import timezone
+        from rest_framework.authtoken.models import Token
+        user = baker.make('accounts.User')
+        token = self._token(user)
+        token.created = timezone.now() - timezone.timedelta(hours=25)
+        token.save()
+
+        r = client.post(reverse('api:renouveler_token'),
+                        HTTP_AUTHORIZATION=f'Token {token.key}')
+        assert r.status_code == 401
+        assert not Token.objects.filter(user=user).exists()

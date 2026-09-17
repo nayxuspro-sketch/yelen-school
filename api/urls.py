@@ -11,6 +11,7 @@ urlpatterns = [
     # ── Authentification ──────────────────────────────────────────
     path('auth/token/',          views.ObtenirTokenView.as_view(),   name='obtenir_token'),
     path('auth/token/revoke/',   views.RevoquerTokenView.as_view(),  name='revoquer_token'),
+    path('auth/token/refresh/',  views.RenouvelerTokenView.as_view(), name='renouveler_token'),
 
     # ── Années scolaires ──────────────────────────────────────────
     path('annees/',                          views.AnneesListView.as_view(),     name='annees_list'),

@@ -5817,6 +5817,46 @@ YELEN SCHOOL fait l'objet d'audits de sécurité réguliers. Le rapport complet 
 | 🟡 Moyennes | 4 ouvertes |
 | ✅ Score global | 6.5/10 |
 
+### 19.1.A API REST — Tokens et cloisonnement d'accès
+
+L'API REST (`/api/`) sert les applications externes (PWA) via des tokens
+d'authentification.
+
+| Endpoint | Méthode | Rôle |
+|----------|---------|------|
+| `/api/auth/token/` | POST | Obtenir un token (username + password) |
+| `/api/auth/token/refresh/` | POST | **Renouveler** le token courant (rotation) |
+| `/api/auth/token/revoke/` | DELETE | Révoquer le token courant |
+| `/api/annees/`, `/api/annees/<id>/periodes/` | GET | Années scolaires et périodes |
+| `/api/eleves/` et sous-ressources | GET | Données élèves (RBAC, ci-dessous) |
+
+**Durée de vie des tokens** : un token expire `TOKEN_EXPIRY_HOURS` heures
+après son émission (défaut 24 h) — il est alors supprimé et toute
+requête répond `401`. Le client (PWA) doit appeler
+`POST /api/auth/token/refresh/` **avant** l'expiration pour continuer :
+
+```
+POST /api/auth/token/refresh/
+Authorization: Token <token courant>
+```
+
+La réponse renvoie un **nouveau** token ; l'ancien est immédiatement
+invalidé (rotation — un token intercepté ne reste utile que jusqu'à la
+prochaine rotation). Si le token est déjà expiré, le refresh répond `401`
+: le client repasse par `/api/auth/token/` avec ses identifiants.
+
+**Cloisonnement RBAC des données élèves** :
+
+| Rôle | Périmètre |
+|------|-----------|
+| SUPER_ADMIN, DIRECTEUR_RESEAU | tous les établissements |
+| Staff (DIRECTEUR, CENSEUR, AVS, ENSEIGNANT, COMPTABLE, SECRETAIRE) | leur établissement uniquement |
+| PARENT | uniquement ses enfants (`eleves_lies`) |
+| ELEVE | uniquement lui-même |
+
+Toute requête hors périmètre reçoit `404` (aucune information sur
+l'existence de l'élève). Un parent sans enfant lié reçoit `403`.
+
 ### 19.2 Bonnes Pratiques pour les Administrateurs
 
 **Ne jamais :**

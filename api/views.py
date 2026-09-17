@@ -125,6 +125,40 @@ class RevoquerTokenView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class RenouvelerTokenView(APIView):
+    """POST /api/auth/token/refresh/ — Renouveler (faire tourner) le token courant.
+
+    À appeler par le client (PWA) avant l'expiration du token
+    (TOKEN_EXPIRY_HOURS, défaut 24 h) pour ne pas être déconnecté :
+
+        POST /api/auth/token/refresh/
+        Authorization: Token <token courant>
+
+    Réponse 200 : {'token': '<nouveau token>', 'user_id', 'username', 'role'}.
+    Le token précédent est IMMÉDIATEMENT invalidé (rotation) : un token
+    intercepté ne reste utile que jusqu'à sa prochaine rotation.
+
+    Si le token est déjà expiré (supprimé par ExpiringTokenAuthentication),
+    la réponse est 401 : le client doit repasser par l'authentification
+    complète /api/auth/token/ avec username/password.
+    """
+    authentication_classes = [ExpiringTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [LoginRateThrottle]
+
+    def post(self, request):
+        # Rotation : supprimer tous les tokens de l'utilisateur,
+        # puis en émettre un seul nouveau.
+        Token.objects.filter(user=request.user).delete()
+        nouveau = Token.objects.create(user=request.user)
+        return Response({
+            'token': nouveau.key,
+            'user_id': request.user.pk,
+            'username': request.user.username,
+            'role': getattr(request.user, 'role', ''),
+        })
+
+
 # ── Années scolaires ──────────────────────────────────────────────────────────
 
 class AnneesListView(APIView):
