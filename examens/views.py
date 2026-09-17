@@ -22,13 +22,15 @@ from .forms import SessionExamenForm, CentreExamenForm, SalleExamenForm
 
 try:
     from weasyprint import HTML as WeasyHTML
-except ImportError:
+except Exception:  # ImportError ou OSError (libpango/cairo absents)
     WeasyHTML = None
 
 
 # ── Sessions ──────────────────────────────────────────────────────────────────
 
+from licences.decorators import requires_licence_feature
 @login_required
+@requires_licence_feature('examens_officiels')
 def session_list(request):
     etab = getattr(request.user, 'etablissement', None)
     annee_id = request.GET.get('annee_id', '').strip()
@@ -57,6 +59,7 @@ def session_list(request):
 
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def session_create(request):
     form = SessionExamenForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
@@ -71,6 +74,7 @@ def session_create(request):
 
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def session_edit(request, session_id):
     session = get_object_or_404(SessionExamen, pk=session_id)
     form = SessionExamenForm(request.POST or None, instance=session)
@@ -87,6 +91,7 @@ def session_edit(request, session_id):
 
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def session_detail(request, session_id):
     etab = getattr(request.user, 'etablissement', None)
     session = get_object_or_404(
@@ -129,6 +134,7 @@ def session_detail(request, session_id):
 # ── Inscription d'une classe ──────────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def inscrire_classe(request, session_id, classe_id):
     session = get_object_or_404(SessionExamen, pk=session_id)
     classe = get_object_or_404(Classe, pk=classe_id)
@@ -173,6 +179,7 @@ def inscrire_classe(request, session_id, classe_id):
 # ── Saisie des résultats ──────────────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def saisie_resultats(request, session_id):
     etab = getattr(request.user, 'etablissement', None)
     session = get_object_or_404(SessionExamen, pk=session_id)
@@ -220,6 +227,7 @@ def saisie_resultats(request, session_id):
 # ── Export CSV des résultats ─────────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def session_resultats_csv(request, session_id):
     """Export CSV des resultats d'une session d'examen."""
     session = get_object_or_404(
@@ -267,6 +275,7 @@ def session_resultats_csv(request, session_id):
 # ── Centres ───────────────────────────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def centre_create(request, session_id):
     session = get_object_or_404(SessionExamen, pk=session_id)
     form = CentreExamenForm(request.POST or None)
@@ -285,6 +294,7 @@ def centre_create(request, session_id):
 
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def centre_edit(request, centre_id):
     centre = get_object_or_404(CentreExamen, pk=centre_id)
     form = CentreExamenForm(request.POST or None, instance=centre)
@@ -302,6 +312,7 @@ def centre_edit(request, centre_id):
 
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def centre_delete(request, centre_id):
     centre = get_object_or_404(CentreExamen, pk=centre_id)
     session_id = centre.session.pk
@@ -316,6 +327,7 @@ def centre_delete(request, centre_id):
 # ── Salles ────────────────────────────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def salle_create(request, centre_id):
     centre = get_object_or_404(CentreExamen, pk=centre_id)
     form = SalleExamenForm(request.POST or None)
@@ -334,6 +346,7 @@ def salle_create(request, centre_id):
 
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def salle_edit(request, salle_id):
     salle = get_object_or_404(SalleExamen, pk=salle_id)
     form = SalleExamenForm(request.POST or None, instance=salle)
@@ -351,6 +364,7 @@ def salle_edit(request, salle_id):
 
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def salle_delete(request, salle_id):
     salle = get_object_or_404(SalleExamen, pk=salle_id)
     session_id = salle.centre.session.pk
@@ -364,6 +378,7 @@ def salle_delete(request, salle_id):
 # ── Placements en salle ───────────────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def placement_salle(request, salle_id):
     """Gestion du placement des candidats dans une salle d'examen."""
     salle = get_object_or_404(
@@ -458,6 +473,7 @@ def _candidats_qs(session, centre_id=None):
 
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def candidats_session(request, session_id):
     """Liste des candidats inscrits à une session, filtrable par centre."""
     etab = getattr(request.user, 'etablissement', None)
@@ -488,6 +504,7 @@ def candidats_session(request, session_id):
 
 
 @login_required
+@requires_licence_feature('examens_officiels')
 def candidats_session_pdf(request, session_id):
     """PDF : liste officielle des candidats d'une session (ou d'un centre)."""
     if WeasyHTML is None:

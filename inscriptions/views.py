@@ -16,9 +16,10 @@ from core.utils import get_etablissement_context
 
 try:
     from weasyprint import HTML as _WeasyHTML
-except ImportError:
+except Exception:  # ImportError ou OSError (libpango/cairo absents)
     _WeasyHTML = None
 
+from licences.decorators import requires_licence_feature
 @login_required
 def eleve_list(request):
     """Liste des élèves avec recherche, filtres HTMX et pagination."""
@@ -928,6 +929,7 @@ def _calculer_transition(insc_courante, insc_suivante):
 
 
 @login_required
+@requires_licence_feature('cursus_scolaire')
 def eleve_parcours(request, pk):
     """
     Timeline chronologique du parcours scolaire d'un élève.
@@ -1035,6 +1037,7 @@ def eleve_parcours(request, pk):
 
 
 @login_required
+@requires_licence_feature('cursus_scolaire')
 def evenement_parcours_supprimer(request, pk):
     """Supprime un événement de parcours."""
     ev = get_object_or_404(EvenementParcours, pk=pk)

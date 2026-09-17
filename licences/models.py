@@ -17,7 +17,7 @@ Version: 1.1 - Corrigée
 import hashlib
 import hmac
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Dict, List, Optional
 
 from django.conf import settings
@@ -314,35 +314,79 @@ class Licence(BaseModel):
         
         super().save(*args, **kwargs)
     
-    def _generer_signature_hmac(self) -> None:
-        """Génère la signature HMAC pour cette licence."""
-        secret_key = settings.SECRET_KEY.encode('utf-8')
-        message = (
-            f"{self.cle_licence}:"
-            f"{self.type_licence}:"
+    @staticmethod
+    def _fmt_datetime(dt) -> str:
+        """Formatage canonique (UTC, secondes au millième) d'un DateTimeField
+        pour la signature HMAC.
+
+        Nécessaire car l'isoformat() d'un datetime en mémoire (naïf ou dans un
+        fuseau donné) diffère de celui du même instant relus depuis la base
+        (UTC, microsecondes) : la signature devrait alors diverger. Le format
+        canonique en UTC élimine toute ambiguïté.
+        """
+        if dt is None:
+            return ''
+        if isinstance(dt, date) and not isinstance(dt, datetime):
+            dt = datetime.combine(dt, time.min)
+        if timezone.is_naive(dt):
+            # Même convention que Django au save : datetime naïf interprété
+            # dans le fuseau par défaut de l'application.
+            dt = timezone.make_aware(dt)
+        return dt.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+    def _message_signature_v2(self) -> str:
+        """Message couvert par la signature HMAC — format v2 (complet).
+
+        v2 : cle:type:statut:etablissement_id:date_activation:date_expiration
+
+        Couvre le statut (une révocation locale invalide la signature),
+        l'établissement rattaché (anti-transfert de licence) et la date
+        d'activation (anti-recalage).
+        """
+        date_act = self._fmt_datetime(self.date_activation)
+        etab_id = str(self.etablissement_id) if self.etablissement_id else ''
+        return (
+            f"{self.cle_licence}:{self.type_licence}:{self.statut}:"
+            f"{etab_id}:{date_act}:{self.date_expiration.isoformat()}"
+        )
+
+    def _message_signature_v1(self) -> str:
+        """Message du format v1 (légacy) : cle:type:date_expiration."""
+        return (
+            f"{self.cle_licence}:{self.type_licence}:"
             f"{self.date_expiration.isoformat()}"
-        ).encode('utf-8')
-        
-        self.signature_hmac = hmac.new(secret_key, message, hashlib.sha256).hexdigest()
-    
+        )
+
+    def _signer(self, message: str) -> str:
+        """Calcule le HMAC-SHA256 du message avec la clé de l'application."""
+        return hmac.new(
+            settings.SECRET_KEY.encode('utf-8'),
+            message.encode('utf-8'),
+            hashlib.sha256,
+        ).hexdigest()
+
+    def _generer_signature_hmac(self) -> None:
+        """Génère la signature HMAC (format v2) pour cette licence."""
+        self.signature_hmac = self._signer(self._message_signature_v2())
+
     def verifier_signature(self) -> bool:
         """
         Vérifie l'intégrité de la licence via sa signature HMAC.
-        
+
+        Accepte le format v2 (complet) ou le format v1 (légacy, période de
+        transition — toute licence v1 toujours valide est ré-signée en v2
+        automatiquement au prochain save()). Tant qu'une signature v1
+        valide existe, la licence reste acceptée : aucun déploiement
+        existant n'est invalidé par la montée de version.
+
         Returns:
-            bool: True si la signature est valide
+            bool: True si la signature est valide (v1 ou v2)
         """
-        signature_calculee = hmac.new(
-            settings.SECRET_KEY.encode('utf-8'),
-            (
-                f"{self.cle_licence}:"
-                f"{self.type_licence}:"
-                f"{self.date_expiration.isoformat()}"
-            ).encode('utf-8'),
-            hashlib.sha256
-        ).hexdigest()
-        
-        return hmac.compare_digest(self.signature_hmac, signature_calculee)
+        stockee = self.signature_hmac or ''
+        for message in (self._message_signature_v2(), self._message_signature_v1()):
+            if hmac.compare_digest(stockee, self._signer(message)):
+                return True
+        return False
     
     def _verifier_limites(self) -> None:
         """Vérifie que l'établissement respecte les limites de la licence."""

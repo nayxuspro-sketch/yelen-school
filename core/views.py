@@ -14,6 +14,7 @@ from parametres.models import AnneeScolaire, Classe
 from finances.models import Paiement
 
 
+from licences.decorators import requires_licence_feature
 @login_required
 def home(request):
     """Tableau de bord principal — adapté au rôle de l'utilisateur."""
@@ -506,6 +507,7 @@ def notifications_badge(request):
 
 
 @login_required
+@requires_licence_feature('portail_parents')
 def portail_parent(request):
     """Tableau de bord pour le rôle PARENT (PWA-ready)."""
     if request.user.role != 'PARENT':
@@ -585,6 +587,7 @@ def portail_parent(request):
 
 
 @login_required
+@requires_licence_feature('portail_parents')
 def portail_parent_bulletins(request):
     """Page bulletins PWA pour les parents."""
     if request.user.role != 'PARENT':
@@ -637,6 +640,7 @@ def portail_parent_bulletins(request):
 
 
 @login_required
+@requires_licence_feature('portail_parents')
 def portail_parent_notifications(request):
     """Page notifications PWA pour les parents."""
     if request.user.role != 'PARENT':
@@ -1151,6 +1155,7 @@ def pwa_service_worker(request):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('ia_predictive')
 def chatbot(request):
     """Interface de l'assistant IA — moteur de requêtes local, sans API externe."""
     session_key = 'chatbot_display'

@@ -20,7 +20,9 @@ from .models import ContratVacation, HeureVacation, BulletinVacation
 from .forms import ContratVacationForm
 
 
+from licences.decorators import requires_licence_feature
 @login_required
+@requires_licence_feature('vacations')
 def contrat_list(request):
     """Liste des contrats de vacation actifs."""
     annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
@@ -36,6 +38,7 @@ def contrat_list(request):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def contrat_create(request):
     """Créer un nouveau contrat de vacation."""
     if request.method == 'POST':
@@ -54,6 +57,7 @@ def contrat_create(request):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def saisie_heures(request, contrat_id):
     """Saisie mensuelle des heures pour un contrat."""
     etab = getattr(request.user, 'etablissement', None)
@@ -119,6 +123,7 @@ def saisie_heures(request, contrat_id):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def valider_heure(request, heure_id):
     """Valider une saisie d'heures."""
     etab = getattr(request.user, 'etablissement', None)
@@ -135,6 +140,7 @@ def valider_heure(request, heure_id):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def invalider_heure(request, heure_id):
     """Invalider une saisie d'heures."""
     etab = getattr(request.user, 'etablissement', None)
@@ -150,6 +156,7 @@ def invalider_heure(request, heure_id):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def bulletin_list(request):
     """Liste des bulletins de vacation avec filtre par etablissement et pagination."""
     etab = getattr(request.user, 'etablissement', None)
@@ -193,6 +200,7 @@ def bulletin_list(request):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def generer_bulletin(request, contrat_id, mois, annee):
     """Génère ou régénère le bulletin de vacation d'un vacataire pour un mois."""
     contrat = get_object_or_404(ContratVacation, pk=contrat_id)
@@ -215,6 +223,7 @@ def generer_bulletin(request, contrat_id, mois, annee):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def generer_tous_bulletins(request):
     """Génère les bulletins pour tous les contrats actifs - mois en cours par défaut."""
     from datetime import date
@@ -274,6 +283,7 @@ def generer_tous_bulletins(request):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def valider_bulletin(request, bulletin_id):
     """Valider un bulletin de vacation."""
     etab = getattr(request.user, 'etablissement', None)
@@ -290,6 +300,7 @@ def valider_bulletin(request, bulletin_id):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def payer_bulletin(request, bulletin_id):
     etab = getattr(request.user, 'etablissement', None)
     bulletin = get_object_or_404(BulletinVacation, pk=bulletin_id)
@@ -308,6 +319,7 @@ def payer_bulletin(request, bulletin_id):
 
 
 @login_required
+@requires_licence_feature('vacations')
 def bulletin_vacation_pdf(request, bulletin_id):
     """Génère le PDF d'un bulletin de vacation."""
     bulletin = get_object_or_404(

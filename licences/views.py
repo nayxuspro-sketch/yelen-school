@@ -292,7 +292,16 @@ def outils_licence(request):
     Outils cryptographiques offline :
     - Génération de clé YELEN-XXXX-XXXX-XXXX à partir de type + établissement
     - Vérification de signature HMAC d'une licence existante
+
+    ⚠️ Outil de DÉVELOPPEMENT uniquement : il expose l'algorithme de
+    signature avec le secret local de l'instance. Il est désactivé (404)
+    quand le contrôle des licences est actif (LICENSE_ENFORCEMENT=true).
     """
+    from django.http import Http404
+    from django.conf import settings as django_settings
+    if getattr(django_settings, 'LICENSE_ENFORCEMENT', False):
+        raise Http404()
+
     from etablissements.models import Etablissement
 
     etablissements = Etablissement.objects.order_by('nom')
@@ -332,9 +341,14 @@ def outils_licence(request):
         code = sig[:12].upper()
         cle = f"YELEN-{code[:4]}-{code[4:8]}-{code[8:12]}"
 
-        # Calculer la signature d'intégrité (pour une expiration à 1 an)
+        # Calculer la signature d'intégrité v2 (même format que
+        # Licence._message_signature_v2) pour une expiration à 1 an :
+        # cle:type:statut(EN_ATTENTE):etab_id:date_activation(vide):expiration
         date_exp = date.today().replace(year=date.today().year + 1)
-        msg_sig = f"{cle}:{type_licence}:{date_exp.isoformat()}".encode('utf-8')
+        msg_sig = (
+            f"{cle}:{type_licence}:EN_ATTENTE:{etab_id}::"
+            f"{date_exp.isoformat()}"
+        ).encode('utf-8')
         signature_hmac = hmac.new(secret, msg_sig, hashlib.sha256).hexdigest()
 
         ctx['resultat'] = {
@@ -375,8 +389,9 @@ def outils_licence(request):
         except Licence.DoesNotExist:
             lic_db = None
             valide_db = None
-            # Vérification purement offline : la signature calculée est le résultat
-            valide_calcul = True  # on ne peut pas vérifier sans la DB
+            # Sans la licence en base, il n'existe pas de valeur de
+            # référence : la vérification est impossible (et non « valide »).
+            valide_calcul = None
 
         ctx['resultat'] = {
             'mode': 'verifier',

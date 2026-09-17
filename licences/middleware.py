@@ -49,13 +49,16 @@ class LicenceCheckMiddleware:
     """
     
     # URLs exemptées de vérification (toujours accessibles)
+    # - /licences/ : l'ensemble du module licences doit rester atteignable
+    #   pour permettre la création / activation / renouvellement d'une
+    #   licence (onboarding) et la résolution d'un blocage. Les actions
+    #   sensibles restent protégées au niveau des vues (superuser requis).
+    # - /admin/ n'est PAS exempté : l'admin est soumis au contrôle
+    #   (un superuser avec licence expirée/absente n'y a pas accès).
     EXEMPTED_URLS = [
-        '/admin/',
         '/accounts/login/',
         '/accounts/logout/',
-        '/licences/activer/',
-        '/licences/renouveler/',
-        '/licences/upgrade/',
+        '/licences/',
         '/static/',
         '/media/',
         '/__debug__/',
@@ -86,9 +89,10 @@ class LicenceCheckMiddleware:
         if not request.user.is_authenticated:
             return self.get_response(request)
         
-        # Super admin bypass
-        if request.user.is_superuser:
-            return self.get_response(request)
+        # NOTE : plus de bypass superuser — le compte superuser d'un
+        # déploiement école est soumis au contrôle de licence comme tout
+        # autre utilisateur (il reste libre de gérer les licences via
+        # /licences/, exempté ci-dessus).
         
         # Vérifier que l'utilisateur a un établissement
         if not hasattr(request.user, 'etablissement') or request.user.etablissement is None:
@@ -275,7 +279,7 @@ class LicenceCheckMiddleware:
             type_alerte=type_alerte
         )
     
-def _log_audit(
+    def _log_audit(
             self,
             licence: Licence,
             action: str,
@@ -363,9 +367,6 @@ class LicenceLimitsMiddleware:
         if not request.user.is_authenticated:
             return self.get_response(request)
         
-        if request.user.is_superuser:
-            return self.get_response(request)
-        
         if not hasattr(request.user, 'etablissement') or request.user.etablissement is None:
             return self.get_response(request)
         
@@ -393,81 +394,25 @@ class LicenceLimitsMiddleware:
         """
         Vérifie les limites de la licence et avertit si elles sont dépassées.
 
+        La logique métier (comptage des usages, comparaison aux plafonds)
+        vit dans licences/services.py — le middleware n'émet que les
+        avertissements utilisateurs.
+
         Args:
             request: Requête HTTP
             licence: Instance de Licence
         """
-        from .models import LIMITES_LICENCES
+        from .services import get_usage_limites
 
-        limites = LIMITES_LICENCES.get(licence.type_licence, {})
-        etab = licence.etablissement
-
-        # ── Élèves (inscriptions actives de l'année courante) ──────────
         try:
-            from inscriptions.models import Inscription
-            nb_eleves = (
-                Inscription.objects
-                .filter(
-                    classe__etablissement=etab,
-                    annee_scolaire__est_courante=True,
-                )
-                .values('eleve_id')
-                .distinct()
-                .count()
-            )
-            max_eleves = limites.get('max_eleves', 0)
-            if max_eleves and nb_eleves > max_eleves:
-                messages.warning(
-                    request,
-                    _(
-                        "Limite de licence depassee : %(nb)d eleves inscrits "
-                        "pour un maximum de %(max)d (licence %(type)s)."
-                    ) % {'nb': nb_eleves, 'max': max_eleves, 'type': licence.get_type_licence_display()},
-                )
-        except ImportError:
-            pass
+            resultat = get_usage_limites(licence)
+        except Exception:
+            # Tables absentes (migration partielle) ou erreur de comptage :
+            # le contrôle de limites ne doit jamais bloquer l'application.
+            return
 
-        # ── Enseignants (personnel actif, catégorie Enseignement) ──────
-        try:
-            from personnel.models import InscriptionPersonnel
-            nb_enseignants = (
-                InscriptionPersonnel.objects
-                .filter(
-                    cycle__etablissement=etab,
-                    is_active=True,
-                    poste__categorie='ENSEIGNEMENT',
-                )
-                .values('personnel_id')
-                .distinct()
-                .count()
-            )
-            max_enseignants = limites.get('max_enseignants', 0)
-            if max_enseignants and nb_enseignants > max_enseignants:
-                messages.warning(
-                    request,
-                    _(
-                        "Limite de licence depassee : %(nb)d enseignants actifs "
-                        "pour un maximum de %(max)d (licence %(type)s)."
-                    ) % {'nb': nb_enseignants, 'max': max_enseignants, 'type': licence.get_type_licence_display()},
-                )
-        except ImportError:
-            pass
-
-        # ── Classes ────────────────────────────────────────────────────
-        try:
-            from parametres.models import Classe
-            nb_classes = Classe.objects.filter(etablissement=etab, is_active=True).count()
-            max_classes = limites.get('max_classes', 0)
-            if max_classes and nb_classes > max_classes:
-                messages.warning(
-                    request,
-                    _(
-                        "Limite de licence dépassée : %(nb)d classes actives "
-                        "pour un maximum de %(max)d (licence %(type)s)."
-                    ) % {'nb': nb_classes, 'max': max_classes, 'type': licence.get_type_licence_display()},
-                )
-        except ImportError:
-            pass
+        for depassement in resultat['depassements']:
+            messages.warning(request, depassement['message'])
 
 
 # ═══════════════════════════════════════════════════════════════════

@@ -19,9 +19,10 @@ from core.utils import get_etablissement_context, filtre_enseignant
 
 try:
     from weasyprint import HTML
-except ImportError:
+except Exception:  # ImportError ou OSError (libpango/cairo absents)
     HTML = None
 
+from licences.decorators import requires_licence_feature
 @login_required
 def classe_result_list(request):
     """Liste des classes pour accéder aux résultats."""
@@ -51,6 +52,7 @@ def classe_result_list(request):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def bilan_periodes(request):
     """
     Bilan par période (trimestre) × classe × année scolaire.
@@ -135,6 +137,7 @@ def bilan_periodes(request):
 
 
 @login_required
+@requires_licence_feature('ia_predictive')
 @require_POST
 def generer_commentaires_bilan(request):
     """
@@ -167,6 +170,7 @@ def generer_commentaires_bilan(request):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def bilan_pdf(request):
     """
     Génère le bilan des périodes en PDF (offline).
@@ -273,6 +277,7 @@ def bilan_pdf(request):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def releve_moyenne_classe_pdf(request):
     """
     Relevé de moyenne d'une classe pour un trimestre donné, classé par ordre de mérite.
@@ -1831,6 +1836,7 @@ def fiche_discipline_pdf(request):
 # ─── RISQUE DE DÉCROCHAGE ────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def risque_decrochage(request):
     """
     Tableau de bord des élèves à risque de décrochage scolaire.
@@ -1947,6 +1953,8 @@ def risque_decrochage(request):
 
 # ─── PDF RISQUE DE DÉCROCHAGE ───────────────────────────────────────────
 
+@login_required
+@requires_licence_feature('rapports_avances')
 def risque_decrochage_pdf(request):
     """Génère un PDF de la liste des élèves à risque de décrochage."""
     try:
@@ -2370,6 +2378,7 @@ def _compute_palmares_annuel(classe, annee_scolaire):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def palmares_annuel(request, class_id):
     """Aperçu HTML du palmarès annuel d'une classe."""
     classe = get_object_or_404(
@@ -2410,6 +2419,7 @@ def palmares_annuel(request, class_id):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def palmares_annuel_pdf(request, class_id):
     """Génère le palmarès annuel d'une classe en PDF via WeasyPrint."""
     if HTML is None:
@@ -2665,6 +2675,7 @@ def cahier_textes_delete(request, pk):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('ia_predictive')
 def prediction_index(request):
     """Sélecteur de classe pour la prédiction de réussite."""
     from etablissements.models import Etablissement
@@ -2692,6 +2703,7 @@ def prediction_index(request):
 
 
 @login_required
+@requires_licence_feature('ia_predictive')
 def prediction_classe(request, class_id):
     """Vue des prédictions de réussite pour toute une classe."""
     from etablissements.models import Etablissement
@@ -2724,6 +2736,7 @@ def prediction_classe(request, class_id):
 
 
 @login_required
+@requires_licence_feature('ia_predictive')
 @require_POST
 def prediction_calculer(request, class_id):
     """Lance le calcul (ou recalcul) des prédictions pour toute la classe."""
@@ -2741,6 +2754,7 @@ def prediction_calculer(request, class_id):
 
 
 @login_required
+@requires_licence_feature('ia_predictive')
 def prediction_classe_pdf(request, class_id):
     """Rapport PDF de prédiction pour le conseil de classe."""
     if HTML is None:

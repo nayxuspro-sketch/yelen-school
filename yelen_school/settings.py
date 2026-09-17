@@ -104,6 +104,14 @@ except Exception:
 # Indique à Django qu'il est derrière un proxy HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# ── Contrôle des licences (anti-fraude) ───────────────────────────────────────
+# true  = vérification des licences ACTIVE (middlewares de validité, limites
+#         et contexte + feature flags des vues). Licence expirée ou révoquée
+#         → accès bloqué, redirigé vers les pages licences.
+# false = mode démonstration / développement — aucune restriction.
+# En production (déploiement école), mettre LICENSE_ENFORCEMENT=true dans .env.
+LICENSE_ENFORCEMENT = os.environ.get('LICENSE_ENFORCEMENT', 'false').lower() == 'true'
+
 
 # Application definition
 
@@ -114,6 +122,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Requis par plusieurs templates ({% load humanize %}) : dashboard réseau,
+    # échéancier global, transferts inter-établissements…
+    'django.contrib.humanize',
     # Apps YELEN SCHOOL
     'core',
     'personnel',
@@ -182,10 +193,18 @@ MIDDLEWARE = [
     'yelen_school.audit_middleware.AuditRequestMiddleware',
     # Génération automatique de l'année scolaire (désactivé — création manuelle)
     # 'parametres.middleware.AnneeScolaireAutoMiddleware',
-    # 'licences.middleware.LicenceCheckMiddleware',
-    # 'licences.middleware.LicenceLimitsMiddleware',
-    # 'licences.middleware.LicenceContextMiddleware',
 ]
+
+# Middlewares de contrôle des licences — actifs uniquement si
+# LICENSE_ENFORCEMENT=true (voir ci-dessus). Ordre imposé : Check → Limits →
+# Contexte. En mode développement/démo (LICENSE_ENFORCEMENT=false), le
+# middleware n'est pas chargé : comportement identique à avant l'activation.
+if LICENSE_ENFORCEMENT:
+    MIDDLEWARE += [
+        'licences.middleware.LicenceCheckMiddleware',
+        'licences.middleware.LicenceLimitsMiddleware',
+        'licences.middleware.LicenceContextMiddleware',
+    ]
 
 ROOT_URLCONF = 'yelen_school.urls'
 
