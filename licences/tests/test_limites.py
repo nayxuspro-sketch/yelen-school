@@ -21,7 +21,8 @@ from licences.services import (
 @pytest.fixture
 def etab_annee():
     """Établissement + année scolaire courante."""
-    etab = baker.make('etablissements.Etablissement')
+    # Code court : le matricule personnel {CODE}-P-AAAA-NN est limité à 30 car.
+    etab = baker.make('etablissements.Etablissement', code='LIM')
     annee = baker.make(
         'parametres.AnneeScolaire',
         etablissement=etab,
