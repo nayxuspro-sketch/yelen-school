@@ -28,9 +28,10 @@ data/
 
 # Fichiers de travail / exports — jamais versionnés
 ~$*
-*.docx
+/*.docx
 *.log
 structure.txt
 yelen_source_complet.txt
 .claude/worktrees/
-*.ttf
+/*.ttf
+/Playfair_Display/
