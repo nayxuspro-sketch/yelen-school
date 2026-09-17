@@ -981,9 +981,9 @@ class LicenceActivation(BaseModel):
         attrs = self.build_attrs_dict()
         expected_fp = self.generate_fingerprint(attrs)
         if not hmac.compare_digest(expected_fp, self.machine_fingerprint):
-            # Empreinte ne correspond plus aux attributs → possible clonage / modif
-            # On continue quand même à vérifier la signature de l'empreinte stockée
-            pass
+            # Empreinte ne correspond plus aux attributs stockés → clonage ou
+            # modification de l'enregistrement : binding invalide (P1 anti-fraude).
+            return False
 
         # 1. Ed25519 si présent + clé publique configurée
         if self.fingerprint_signature_ed25519:
