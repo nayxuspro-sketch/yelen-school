@@ -13,9 +13,7 @@
       {{ trimestre.nom }}
     </p>
   </div>
-  <button class="bul-modal-close"
-          onclick="document.getElementById('bulletin-modal').style.display='none'"
-          title="Fermer" type="button">
+  <button class="bul-modal-close" data-csp-dismiss="bulletin-modal" title="Fermer" type="button">
     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
     </svg>
@@ -114,9 +112,7 @@
 
     {# Footer #}
     <div class="bul-modal-footer">
-      <button type="button"
-              onclick="document.getElementById('bulletin-modal').style.display='none'"
-              class="bul-btn-cancel">
+      <button type="button" data-csp-dismiss="bulletin-modal" class="bul-btn-cancel">
         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>

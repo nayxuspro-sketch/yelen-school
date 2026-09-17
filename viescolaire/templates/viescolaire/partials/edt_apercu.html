@@ -8,8 +8,7 @@
         </svg>
         Aperçu — {{ classe.nom }}
       </h2>
-      <button type="button" class="btn-icon"
-              onclick="document.getElementById('edt-gen-container').innerHTML=''">
+      <button type="button" class="btn-icon" data-csp-action="clear-edt-gen" >
         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
@@ -100,8 +99,7 @@
         <input type="hidden" name="mode" value="{{ mode }}">
 
         <div class="modal-footer">
-          <button type="button" class="dash-btn dash-btn-secondary"
-                  onclick="document.getElementById('edt-gen-container').innerHTML=''">
+          <button type="button" class="dash-btn dash-btn-secondary" data-csp-action="clear-edt-gen" >
             Annuler
           </button>
           <button type="submit" class="dash-btn"

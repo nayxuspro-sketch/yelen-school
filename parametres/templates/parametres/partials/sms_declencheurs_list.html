@@ -68,8 +68,7 @@
 
     {# Bouton exécution manuelle #}
     {% if sms_enabled %}
-    <form method="post" action="{% url 'parametres:sms_auto_executer' pk=d.pk %}"
-          onsubmit="return confirm('Exécuter ce déclencheur maintenant ? Des SMS réels seront envoyés.')">
+    <form method="post" action="{% url 'parametres:sms_auto_executer' pk=d.pk %}" data-csp-confirm-submit="Exécuter ce déclencheur maintenant ? Des SMS réels seront envoyés." >
       {% csrf_token %}
       <button type="submit" class="btn-secondary btn-sm" title="Exécuter maintenant">
         <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:3px; vertical-align:middle;">

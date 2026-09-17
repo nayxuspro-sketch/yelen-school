@@ -138,8 +138,7 @@
             </div>
             {% endif %}
           </div>
-          <form method="post" action="{% url 'inscriptions:evenement_supprimer' ev.pk %}"
-                onsubmit="return confirm('Supprimer cet événement ?');">
+          <form method="post" action="{% url 'inscriptions:evenement_supprimer' ev.pk %}" data-csp-confirm-submit="Supprimer cet événement ?" >
             {% csrf_token %}
             <button type="submit" class="btn-icon btn-icon-danger" title="Supprimer">✕</button>
           </form>

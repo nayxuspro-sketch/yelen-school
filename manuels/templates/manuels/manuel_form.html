@@ -100,8 +100,7 @@
   <div class="card mt-4 animate-fade-up delay-3">
     <div class="card-body d-flex justify-between align-center">
       <span class="text-muted">Zone de danger</span>
-      <form method="post" action="{% url 'manuels:manuel_delete' pk=instance.pk %}"
-            onsubmit="return confirm('Retirer ce manuel du catalogue ?')">
+      <form method="post" action="{% url 'manuels:manuel_delete' pk=instance.pk %}" data-csp-confirm-submit="Retirer ce manuel du catalogue ?" >
         {% csrf_token %}
         <button type="submit" class="btn-danger btn-sm">Retirer du catalogue</button>
       </form>

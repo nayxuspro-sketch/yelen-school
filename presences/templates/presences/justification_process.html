@@ -129,15 +129,13 @@
       {% endif %}
 
       <div class="d-flex gap-3" style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--color-border);">
-        <button type="submit" name="decision" value="REFUSEE" class="btn-secondary"
-                onclick="return confirm('Confirmer le refus de cette justification ?')">
+        <button type="submit" name="decision" value="REFUSEE" class="btn-secondary" data-csp-confirm="Confirmer le refus de cette justification ?" >
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
           Refuser
         </button>
-        <button type="submit" name="decision" value="ACCEPTEE" class="btn-primary"
-                onclick="return confirm('Confirmer l\'acceptation ? Les absences de cette période seront marquées comme excusées.')">
+        <button type="submit" name="decision" value="ACCEPTEE" class="btn-primary" data-csp-confirm="Confirmer l'acceptation ? Les absences de cette période seront marquées comme excusées." >
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
           </svg>

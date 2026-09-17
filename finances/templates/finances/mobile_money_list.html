@@ -135,8 +135,7 @@
               {% if d.statut == 'EN_ATTENTE' %}
               <!-- Confirmer -->
               <button type="button" class="btn-icon"
-                      title="Confirmer le paiement"
-                      onclick="document.getElementById('modal-confirmer-{{ d.pk }}').classList.add('modal-open')">
+                      title="Confirmer le paiement" data-csp-modal-open="modal-confirmer-{{ d.pk }}" >
                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
@@ -144,8 +143,7 @@
               <!-- Annuler -->
               <form method="post" action="{% url 'finances:mobile_money_annuler' d.pk %}">
                 {% csrf_token %}
-                <button type="submit" class="btn-icon btn-icon-danger" title="Annuler"
-                        onclick="return confirm('Annuler la demande {{ d.reference }} ?')">
+                <button type="submit" class="btn-icon btn-icon-danger" title="Annuler" data-csp-confirm="Annuler la demande {{ d.reference }} ?" >
                   <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                   </svg>
@@ -172,11 +170,11 @@
         {% if d.statut == 'EN_ATTENTE' %}
         <!-- Modal confirmation -->
         <div id="modal-confirmer-{{ d.pk }}" class="modal">
-          <div class="modal-backdrop" onclick="this.parentElement.classList.remove('modal-open')"></div>
+          <div class="modal-backdrop" data-csp-action="modal-close-parent" ></div>
           <div class="modal-box">
             <div class="modal-header">
               <span class="fw-semibold">Confirmer le paiement {{ d.reference }}</span>
-              <button type="button" class="btn-icon" onclick="this.closest('.modal').classList.remove('modal-open')">
+              <button type="button" class="btn-icon" data-csp-action="modal-close-closest" >
                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -196,8 +194,7 @@
                          placeholder="Ex: OM20260504ABCD">
                 </div>
                 <div class="d-flex gap-3 justify-end">
-                  <button type="button" class="btn-secondary"
-                          onclick="this.closest('.modal').classList.remove('modal-open')">
+                  <button type="button" class="btn-secondary" data-csp-action="modal-close-closest" >
                     Annuler
                   </button>
                   <button type="submit" class="btn-primary">

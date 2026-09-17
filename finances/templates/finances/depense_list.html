@@ -155,8 +155,7 @@
                     </svg>
                   </button>
                 </form>
-                <form method="post" action="{% url 'finances:depense_delete' dep.pk %}" class="d-inline"
-                      onsubmit="return confirm('Supprimer cette dépense ?')">
+                <form method="post" action="{% url 'finances:depense_delete' dep.pk %}" class="d-inline" data-csp-confirm-submit="Supprimer cette dépense ?" >
                   {% csrf_token %}
                   <button type="submit" class="btn-icon btn-icon--danger" title="Supprimer">
                     <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,8 +164,7 @@
                   </button>
                 </form>
                 {% elif dep.statut == 'VALIDEE' %}
-                <form method="post" action="{% url 'finances:depense_annuler' dep.pk %}" class="d-inline"
-                      onsubmit="return confirm('Annuler cette dépense validée ?')">
+                <form method="post" action="{% url 'finances:depense_annuler' dep.pk %}" class="d-inline" data-csp-confirm-submit="Annuler cette dépense validée ?" >
                   {% csrf_token %}
                   <button type="submit" class="btn-icon btn-icon--danger" title="Annuler">
                     <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">

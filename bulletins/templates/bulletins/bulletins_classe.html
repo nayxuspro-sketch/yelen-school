@@ -16,8 +16,7 @@
     <p class="page-subtitle">{{ trimestre.annee_scolaire.libelle }} &bull; {{ classe.cycle.nom }}</p>
   </div>
   <div class="page-actions">
-    <form method="post" action="{% url 'bulletins:bulletins_classe_publier' class_id=classe.pk trimestre_id=trimestre.pk %}"
-          onsubmit="return confirm('Publier tous les bulletins avec moyenne calculée ?')">
+    <form method="post" action="{% url 'bulletins:bulletins_classe_publier' class_id=classe.pk trimestre_id=trimestre.pk %}" data-csp-confirm-submit="Publier tous les bulletins avec moyenne calculée ?" >
       {% csrf_token %}
       <button type="submit" class="btn-primary btn-sm">
         <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,8 +99,7 @@
 
 {# Modale de saisie bulletin (placée en dehors de l'overflow:hidden) #}
 <div id="bulletin-modal"
-     class="bul-modal"
-     onclick="if(event.target === this) this.style.display='none'">
+     class="bul-modal" data-csp-action="modal-backdrop-dismiss" >
   <div class="bul-modal-inner">
     <div id="modal-content">
       <div class="text-center text-muted p-4">Chargement…</div>

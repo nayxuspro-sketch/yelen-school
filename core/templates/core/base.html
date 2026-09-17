@@ -519,7 +519,7 @@
 
     {# ── Pied de sidebar ── #}
     <div class="sb-footer-modern">
-      <button id="pwa-install-btn" onclick="pwaAppInstall()" title="Installer l'application">
+      <button id="pwa-install-btn" data-csp-action="pwa-install" title="Installer l'application">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
@@ -843,6 +843,8 @@
 
   })();
   </script>
+  {# ── CSP compat handlers (A6) — remplace onclick inline bloqués par script-src-attr 'none' ── #}
+  <script nonce="{{ request.csp_nonce }}" src="{% static 'js/csp_handlers.js' %}"></script>
   {% block extra_js %}{% endblock %}
 
   {# ── PWA : Service Worker + détection réseau + install prompt ── #}

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -225,5 +226,6 @@
 
   <div class="footer">YELEN SCHOOL — Ce lien est personnel et confidentiel.</div>
 </div>
+<script nonce="{{ request.csp_nonce }}" src="{% static 'js/csp_handlers.js' %}"></script>
 </body>
 </html>

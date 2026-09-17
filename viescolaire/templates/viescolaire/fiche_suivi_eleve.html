@@ -209,9 +209,7 @@
 <div class="mb-6">
   <div class="fs-tabs-bar">
     {% for tab_id, tab_label, tab_count in tabs_def %}
-    <button type="button"
-            onclick="afficherOnglet('{{ tab_id }}')"
-            id="tab-btn-{{ tab_id }}"
+    <button type="button" data-csp-action="show-tab" data-tab-id="{{ tab_id }}" id="tab-btn-{{ tab_id }}"
             class="fs-tab-btn {% if forloop.first %}active{% endif %}">
       {{ tab_label }}
       {% if tab_count %}<span class="badge badge-success">{{ tab_count }}</span>{% endif %}

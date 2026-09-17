@@ -20,8 +20,7 @@
     <p style="font-size:0.75rem; color:var(--color-text-muted); margin-top:var(--space-2);">
       Variables disponibles :
       {% for v in variables %}
-      <code style="font-size:0.72rem; background:rgba(99,102,241,0.08); color:#6366f1; padding:1px 6px; border-radius:3px; cursor:pointer;"
-            onclick="insertVariable('contenu-{{ type_msg }}', '{{ v }}')">{{ v }}</code>
+      <code style="font-size:0.72rem; background:rgba(99,102,241,0.08); color:#6366f1; padding:1px 6px; border-radius:3px; cursor:pointer;" data-csp-action="insert-variable" data-insert-target="contenu-{{ type_msg }}" data-insert-var="{{ v }}" >{{ v }}</code>
       {% endfor %}
     </p>
   </div>
@@ -36,9 +35,7 @@
 
   <div style="display:flex; gap:var(--space-3);">
     <button type="submit" class="btn-primary" style="font-size:0.85rem;">Enregistrer</button>
-    <button type="button" class="btn-outline" style="font-size:0.85rem;"
-            onclick="document.getElementById('form-{{ type_msg }}').innerHTML=''">Annuler</button>
-  </div>
+    <button type="button" class="btn-outline" style="font-size:0.85rem;" data-csp-action="clear-form" data-form-id="form-{{ type_msg }}">Annuler</button></div>
 </form>
 
 <script>

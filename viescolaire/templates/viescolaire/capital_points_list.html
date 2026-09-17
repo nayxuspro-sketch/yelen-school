@@ -118,7 +118,7 @@
       <tbody>
         {% for l in lignes %}
         {% with inscr=l.inscription %}
-        <tr style="cursor:pointer;" onclick="location.href='{% url 'viescolaire:fiche_suivi_eleve' inscr.id %}#sanctions'">
+        <tr style="cursor:pointer;" data-csp-href-template="fiche_suivi_eleve_sanctions" data-inscr-id="{{ inscr.id }}">
           <td>
             <div class="d-flex align-center gap-3">
               <div style="width:32px; height:32px; border-radius:50%;
@@ -172,7 +172,7 @@
           </td>
           <td>
             <a href="{% url 'viescolaire:fiche_suivi_eleve' inscr.id %}#sanctions"
-               class="btn-secondary btn-sm" onclick="event.stopPropagation()">
+               class="btn-secondary btn-sm" data-csp-action="stop-propagation" >
               Fiche
               <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left:4px;">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

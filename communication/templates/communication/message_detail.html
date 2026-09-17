@@ -228,7 +228,7 @@
         <p class="comm-link-label">Lien de réponse</p>
         <p class="comm-link-url" id="lien-url">{{ lien_reponse }}</p>
         <button type="button" class="btn-secondary btn-sm"
-                onclick="navigator.clipboard.writeText(document.getElementById('lien-url').textContent.trim()).then(()=>{this.textContent='Copié ✓';setTimeout(()=>{this.textContent='Copier le lien'},1500)})">
+                data-csp-action="copy-link" data-copy-target="lien-url">
           Copier le lien
         </button>
       </div>

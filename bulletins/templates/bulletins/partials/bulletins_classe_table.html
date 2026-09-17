@@ -78,9 +78,7 @@
           <button
             hx-get="{% url 'bulletins:bulletin_saisir' inscription_id=ins.pk trimestre_id=trimestre.pk %}"
             hx-target="#modal-content"
-            hx-trigger="click"
-            onclick="document.getElementById('bulletin-modal').style.display='flex'"
-            class="btn btn-sm btn-icon"
+            hx-trigger="click" data-csp-show="bulletin-modal" data-csp-show-display="flex" class="btn btn-sm btn-icon"
             title="Saisir">
             <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
