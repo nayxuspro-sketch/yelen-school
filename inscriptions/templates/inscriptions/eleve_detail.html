@@ -34,8 +34,7 @@
       </svg>
       Inscrire cette année
     </a>
-    <form method="post" action="{% url 'inscriptions:eleve_delete' eleve.pk %}" class="d-inline"
-          onsubmit="return confirm('Désactiver {{ eleve.get_nom_complet }} ?')">
+    <form method="post" action="{% url 'inscriptions:eleve_delete' eleve.pk %}" class="d-inline" data-csp-confirm-submit="Désactiver {{ eleve.get_nom_complet }} ?" >
       {% csrf_token %}
       <button type="submit" class="btn-danger">
         <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,8 +218,7 @@
                       </svg>
                     </button>
                     {% else %}
-                    <button type="submit" class="btn-icon btn-icon-danger" title="Marquer Abandon"
-                            onclick="return confirm('Marquer {{ inscr.eleve.get_nom_complet }} comme Abandon pour {{ inscr.annee_scolaire.libelle }} ?')">
+                    <button type="submit" class="btn-icon btn-icon-danger" title="Marquer Abandon" data-csp-confirm="Marquer {{ inscr.eleve.get_nom_complet }} comme Abandon pour {{ inscr.annee_scolaire.libelle }} ?" >
                       <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                       </svg>

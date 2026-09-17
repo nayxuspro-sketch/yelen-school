@@ -53,8 +53,10 @@ jobs:
           sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-xlib-2.0-0
           pip install -r requirements/base.txt
 
-      - name: Run migrations
-        run: python manage.py migrate --noinput
+      - name: Run migrations + static manifest
+        run: |
+          python manage.py migrate --noinput
+          python manage.py collectstatic --noinput
         env:
           DEBUG: "False"
           SECRET_KEY: ci-secret-key-for-testing-only
@@ -90,10 +92,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-xlib-2.0-0
           pip install -r requirements/base.txt
-      - name: Migrations + cache table (SQLite)
+      - name: Migrations + cache table + static manifest (SQLite)
         run: |
           python manage.py migrate --noinput
           python manage.py createcachetable
+          python manage.py collectstatic --noinput
           python manage.py makemigrations --check --dry-run
         env:
           DB_ENGINE: sqlite

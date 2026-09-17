@@ -59,7 +59,7 @@
       Vérifiez que vous êtes bien connecté au réseau local de l'établissement.
     </p>
 
-    <button onclick="window.location.reload()" class="btn-primary" style="width:100%;">
+    <button data-csp-action="reload" class="btn-primary" style="width:100%;">
       Réessayer
     </button>
 
@@ -91,5 +91,6 @@
     update();
   })();
   </script>
+<script nonce="{{ request.csp_nonce }}" src="{% static 'js/csp_handlers.js' %}"></script>
 </body>
 </html>

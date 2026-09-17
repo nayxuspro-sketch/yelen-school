@@ -2,7 +2,7 @@
     <div class="modal-box">
         <div class="modal-header">
             <span class="modal-title">{% if titre %}Modifier le titre honorifique{% else %}Nouveau titre honorifique{% endif %}</span>
-            <button onclick="document.getElementById('modal-overlay').remove()" class="btn-icon" aria-label="Fermer">
+            <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
@@ -30,7 +30,7 @@
                 {% endif %}
 
                 <div class="modal-footer">
-                    <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-secondary">Annuler</button>
+                    <button type="button" data-csp-remove="modal-overlay" class="btn-secondary">Annuler</button>
                     <button type="submit" class="btn-primary">Enregistrer</button>
                 </div>
             </div>

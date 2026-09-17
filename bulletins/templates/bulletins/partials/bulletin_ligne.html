@@ -45,9 +45,7 @@
       <button
         hx-get="{% url 'bulletins:bulletin_saisir' inscription_id=inscription.pk trimestre_id=trimestre.pk %}"
         hx-target="#modal-content"
-        hx-trigger="click"
-        onclick="document.getElementById('bulletin-modal').style.display='flex'"
-        class="btn btn-sm btn-outline"
+        hx-trigger="click" data-csp-show="bulletin-modal" data-csp-show-display="flex" class="btn btn-sm btn-outline"
         title="Saisir absences et appréciation"
         style="padding:4px 8px;">
         <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -25,15 +25,13 @@
         {% csrf_token %}
         <button type="submit" class="dash-btn dash-btn-primary">Valider</button>
       </form>
-      <form method="post" action="{% url 'personnel:salaire_delete' salaire.pk %}" style="display:inline;"
-            onsubmit="return confirm('Supprimer ce bulletin ?')">
+      <form method="post" action="{% url 'personnel:salaire_delete' salaire.pk %}" style="display:inline;" data-csp-confirm-submit="Supprimer ce bulletin ?" >
         {% csrf_token %}
         <button type="submit" class="dash-btn dash-btn-danger">Supprimer</button>
       </form>
     {% elif salaire.statut == 'VALIDE' %}
       <span class="dash-badge" style="background: rgba(59,130,246,0.15); color: #3b82f6;">Validé</span>
-      <button type="button" class="dash-btn dash-btn-primary"
-              onclick="document.getElementById('modal-paiement').style.display='flex'">
+      <button type="button" class="dash-btn dash-btn-primary" data-csp-show="modal-paiement" data-csp-show-display="flex" >
         Marquer payé
       </button>
     {% else %}
@@ -123,8 +121,7 @@
         <input type="text" name="reference_paiement" class="dash-input" placeholder="N° virement, caisse, etc.">
       </div>
       <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-        <button type="button" class="dash-btn dash-btn-secondary" style="flex: 1;"
-                onclick="document.getElementById('modal-paiement').style.display='none'">
+        <button type="button" class="dash-btn dash-btn-secondary" style="flex: 1;" data-csp-dismiss="modal-paiement" >
           Annuler
         </button>
         <button type="submit" class="dash-btn dash-btn-primary" style="flex: 1;">Confirmer</button>

@@ -23,6 +23,13 @@ from .models import Document
 from core.utils import get_etablissement_context
 from core.models import RoleChoices
 
+# P2 — filigrane PDF avec licence
+try:
+    from licences.pdf_utils import inject_licence_filigrane_context
+except ImportError:
+    def inject_licence_filigrane_context(context, user, etablissement=None):
+        return context
+
 
 def _can_generate_document(user):
     """Vérifie si l'utilisateur peut générer des documents officiels."""
@@ -147,6 +154,8 @@ def certificat_scolarite(request, inscription_id):
         'signataire': signataire,
         'sig_membre': sig_membre,
     }
+    # P2 — filigrane licence
+    context = inject_licence_filigrane_context(context, request.user, etab)
 
     if request.GET.get('format') == 'pdf':
         try:
@@ -371,6 +380,7 @@ def liste_classe_pdf(request, classe_id):
         'signataire_membre': signataire_membre,
         'signataire_fonction': signataire_fonction,
     }
+    context = inject_licence_filigrane_context(context, request.user, etab)
 
     if request.GET.get('format') == 'pdf':
         try:
@@ -559,6 +569,7 @@ def liste_personnel_pdf(request, cycle_id):
         'signataire_membre': signataire_membre,
         'signataire_fonction': signataire_fonction,
     }
+    context = inject_licence_filigrane_context(context, request.user, etab)
 
     if request.GET.get('format') == 'pdf':
         try:
@@ -665,26 +676,28 @@ def convocation_form(request):
                         signataire_nom=f"{sig_membre.nom} {sig_membre.prenom}" if sig_membre else '',
                     )
                     docs_created.append(doc)
+                    conv_ctx = {
+                        'inscription': inscr,
+                        'eleve': inscr.eleve,
+                        'classe': inscr.classe,
+                        'annee_scolaire': inscr.annee_scolaire,
+                        'type_label': type_label,
+                        'date_conv': date_conv,
+                        'heure_conv': heure_conv,
+                        'lieu': lieu_conv,
+                        'objet': objet_conv,
+                        'corps': corps_conv,
+                        'signataire': sig,
+                        'sig_membre': sig_membre,
+                        'identite': etab_ctx.get('identite'),
+                        'logo_url': etab_ctx.get('logo_url'),
+                        'etablissement': etab_i,
+                        'document': doc,
+                    }
+                    conv_ctx = inject_licence_filigrane_context(conv_ctx, request.user, etab_i)
                     pages.append(render_to_string(
                         'documents/pdf/convocation.html',
-                        {
-                            'inscription': inscr,
-                            'eleve': inscr.eleve,
-                            'classe': inscr.classe,
-                            'annee_scolaire': inscr.annee_scolaire,
-                            'type_label': type_label,
-                            'date_conv': date_conv,
-                            'heure_conv': heure_conv,
-                            'lieu': lieu_conv,
-                            'objet': objet_conv,
-                            'corps': corps_conv,
-                            'signataire': sig,
-                            'sig_membre': sig_membre,
-                            'identite': etab_ctx.get('identite'),
-                            'logo_url': etab_ctx.get('logo_url'),
-                            'etablissement': etab_i,
-                            'document': doc,
-                        },
+                        conv_ctx,
                         request=request,
                     ))
 
@@ -795,23 +808,25 @@ def circulaire_form(request):
                     doc.numero_document if (doc and doc.numero_document)
                     else f"CIRC-{_date.today().year}-{_uuid.uuid4().hex[:6].upper()}"
                 )
+                circ_ctx = {
+                    'titre': titre,
+                    'objet': objet,
+                    'corps': corps,
+                    'date_circulaire': date_circ,
+                    'classes_sel': classes_sel,
+                    'signataire': sig,
+                    'sig_membre': sig_membre,
+                    'identite': etab_ctx.get('identite'),
+                    'logo_url': etab_ctx.get('logo_url'),
+                    'etablissement': etab,
+                    'annee_scolaire': annee_courante,
+                    'document': doc,
+                    'ref_circ': ref_circ,
+                }
+                circ_ctx = inject_licence_filigrane_context(circ_ctx, request.user, etab)
                 html_string = render_to_string(
                     'documents/pdf/circulaire.html',
-                    {
-                        'titre': titre,
-                        'objet': objet,
-                        'corps': corps,
-                        'date_circulaire': date_circ,
-                        'classes_sel': classes_sel,
-                        'signataire': sig,
-                        'sig_membre': sig_membre,
-                        'identite': etab_ctx.get('identite'),
-                        'logo_url': etab_ctx.get('logo_url'),
-                        'etablissement': etab,
-                        'annee_scolaire': annee_courante,
-                        'document': doc,
-                        'ref_circ': ref_circ,
-                    },
+                    circ_ctx,
                     request=request,
                 )
                 pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
@@ -928,6 +943,7 @@ def attestation_non_redevabilite(request, inscription_id):
         doc.save()
         context['document'] = doc
 
+        context = inject_licence_filigrane_context(context, request.user, etab)
         html_string = render_to_string(
             'documents/pdf/attestation_non_redevabilite.html',
             context, request=request,

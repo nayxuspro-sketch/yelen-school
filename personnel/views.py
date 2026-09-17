@@ -13,7 +13,9 @@ from .forms import (
 )
 from parametres.models import AnneeScolaire, Cycle
 
+from licences.decorators import requires_licence_feature
 @login_required
+@requires_licence_feature('gestion_personnel')
 def personnel_list(request):
     """Liste des membres du personnel regroupés par cycle."""
     query = request.GET.get('q', '')
@@ -61,6 +63,7 @@ def personnel_list(request):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def personnel_list_csv(request):
     """Export CSV de la liste du personnel (memes filtres que personnel_list)."""
     import csv
@@ -121,6 +124,7 @@ def personnel_list_csv(request):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def personnel_list_xlsx(request):
     """Export Excel de la liste du personnel (mêmes filtres que personnel_list)."""
     from core.excel import ExcelExport
@@ -170,6 +174,7 @@ def personnel_list_xlsx(request):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def personnel_detail(request, pk):
     """Détails d'un membre du personnel."""
     etab = getattr(request.user, 'etablissement', None)
@@ -194,6 +199,7 @@ def personnel_detail(request, pk):
     return render(request, 'personnel/personnel_detail.html', context)
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def personnel_create(request):
     """Création d'un nouveau membre du personnel."""
     if request.method == 'POST':
@@ -208,6 +214,7 @@ def personnel_create(request):
     return render(request, 'personnel/personnel_form.html', {'form': form, 'title': "Ajouter un membre"})
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def personnel_update(request, pk):
     """Modification d'un membre du personnel."""
     etab = getattr(request.user, 'etablissement', None)
@@ -229,6 +236,7 @@ def personnel_update(request, pk):
     return render(request, 'personnel/personnel_form.html', {'form': form, 'title': "Modifier le membre", 'membre': membre})
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def toggle_active(request, pk):
     """Active ou désactive un membre du personnel."""
     if request.method != 'POST':
@@ -250,6 +258,7 @@ def toggle_active(request, pk):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def inscription_create(request, pk):
     """Inscription annuelle d'un membre du personnel."""
     etab = getattr(request.user, 'etablissement', None)
@@ -282,6 +291,7 @@ def inscription_create(request, pk):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def inscription_edit(request, inscription_id):
     """Modification d'une inscription annuelle du personnel."""
     etab = getattr(request.user, 'etablissement', None)
@@ -326,6 +336,7 @@ def inscription_delete(request, inscription_id):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def contrat_travail(request, pk):
     """Aperçu et génération PDF du contrat de travail (établissements non-publics uniquement)."""
     membre = get_object_or_404(
@@ -407,6 +418,7 @@ def contrat_travail(request, pk):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def badge_personnel(request, pk):
     """Aperçu et génération PDF du badge d'un membre du personnel."""
     membre = get_object_or_404(
@@ -461,6 +473,7 @@ def badge_personnel(request, pk):
 # ═══════════════════════════════════════════════════════════════════
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def salaire_list(request):
     """Liste des bulletins de salaire de l'établissement."""
     etab = getattr(request.user, 'etablissement', None)
@@ -495,6 +508,7 @@ def salaire_list(request):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def salaire_create(request, pk=None):
     """Créer un bulletin de salaire (pour un membre spécifique ou depuis la liste)."""
     etab = getattr(request.user, 'etablissement', None)
@@ -545,6 +559,7 @@ def salaire_create(request, pk=None):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def salaire_detail(request, pk):
     """Détail d'un bulletin de salaire (aperçu + PDF)."""
     salaire = get_object_or_404(
@@ -575,6 +590,7 @@ def salaire_detail(request, pk):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def salaire_update(request, pk):
     """Modifier un bulletin de salaire (seulement si BROUILLON)."""
     salaire = get_object_or_404(SalairePersonnel, pk=pk)
@@ -644,6 +660,7 @@ def salaire_delete(request, pk):
 # ═══════════════════════════════════════════════════════════════════
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def conge_list(request):
     """Liste des congés de l'établissement."""
     etab = getattr(request.user, 'etablissement', None)
@@ -674,6 +691,7 @@ def conge_list(request):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def conge_create(request, pk=None):
     """Créer une demande de congé."""
     etab = getattr(request.user, 'etablissement', None)
@@ -737,6 +755,7 @@ def conge_approuver(request, pk):
 
 
 @login_required
+@requires_licence_feature('gestion_personnel')
 def conge_autorisation_pdf(request, pk):
     """Génère le PDF d'autorisation de jouissance de congé."""
     conge = get_object_or_404(

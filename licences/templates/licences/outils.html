@@ -83,7 +83,7 @@
 
       <div class="outils-key-row">
         <code id="cle-generee" class="outils-key-code">{{ resultat.cle }}</code>
-        <button class="dash-btn dash-btn-secondary outils-copy-btn" onclick="copyText('cle-generee', this)">Copier</button>
+        <button class="dash-btn dash-btn-secondary outils-copy-btn" data-csp-action="copy-text" data-copy-text-id="cle-generee" >Copier</button>
       </div>
 
       <span class="outils-hmac-label">Signature HMAC (Audit Log)</span>

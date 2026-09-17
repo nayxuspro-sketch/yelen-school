@@ -91,7 +91,7 @@
       </thead>
       <tbody>
         {% for inscr in inscriptions %}
-        <tr style="cursor:pointer;" onclick="location.href='{% url 'viescolaire:fiche_suivi_eleve' inscr.id %}'">
+        <tr style="cursor:pointer;" data-csp-href-template="fiche_suivi_eleve" data-inscr-id="{{ inscr.id }}">
           <td>
             <div class="d-flex align-center gap-3">
               <div style="width:32px; height:32px; border-radius:50%; background:rgba(0,168,107,.15);
@@ -113,8 +113,7 @@
           <td class="text-secondary" style="font-size:.82rem;">{{ inscr.statut_eleve.nom|default:"—" }}</td>
           <td>
             <a href="{% url 'viescolaire:fiche_suivi_eleve' inscr.id %}"
-               class="btn-secondary btn-sm"
-               onclick="event.stopPropagation()">
+               class="btn-secondary btn-sm" data-csp-action="stop-propagation" >
               Voir la fiche
               <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left:4px;">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

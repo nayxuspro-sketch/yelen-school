@@ -12,10 +12,23 @@ from .forms import LicenceForm, RenouvelerForm, RevoquerForm
 from .models import Licence, StatutLicence, LIMITES_LICENCES, TypeLicence, FEATURE_FLAGS
 
 
-# ── Garde superuser ───────────────────────────────────────────────────────────
+# ── Garde staff éditeur (P1 : ENSURE_ADMIN → staff) ────────────────────────
+# P1 : les vues de gestion licences ne sont plus superuser-only mais staff
+# (éditeur). Le superuser d'une école ne peut pas forger de licences, mais le
+# staff éditeur (is_staff) peut gérer les licences via cette interface.
 
 def _superuser_required(view_func):
-    return user_passes_test(lambda u: u.is_superuser, login_url='/')(view_func)
+    """Legacy : garde superuser (conservé pour compat, redirige vers staff)."""
+    return user_passes_test(lambda u: u.is_staff, login_url='/')(view_func)
+
+
+def _staff_required(view_func):
+    """P1 : garde staff éditeur — is_staff requis."""
+    return user_passes_test(lambda u: u.is_staff, login_url='/')(view_func)
+
+
+# Alias pour migration progressive : ENSURE_ADMIN → staff éditeur
+_ensure_admin_required = _staff_required
 
 
 def _get_licence(user):
@@ -62,7 +75,7 @@ def gestion_licences(request):
 # ── Création ─────────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_create(request):
     """Créer une nouvelle licence pour un établissement."""
     form = LicenceForm(request.POST or None)
@@ -80,7 +93,7 @@ def licence_create(request):
 # ── Modification ──────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_edit(request, pk):
     """Modifier le type et la date d'expiration d'une licence."""
     licence = get_object_or_404(Licence, pk=pk)
@@ -100,7 +113,7 @@ def licence_edit(request, pk):
 # ── Activation ────────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_activer(request, pk):
     """Activer une licence en attente."""
     licence = get_object_or_404(Licence, pk=pk)
@@ -131,7 +144,7 @@ def licence_activer(request, pk):
 # ── Renouvellement ────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_renouveler(request, pk):
     """Renouveler une licence (choisir la durée)."""
     licence = get_object_or_404(Licence, pk=pk)
@@ -153,7 +166,7 @@ def licence_renouveler(request, pk):
 # ── Révocation ────────────────────────────────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def licence_revoquer(request, pk):
     """Révoquer une licence avec saisie du motif."""
     licence = get_object_or_404(Licence, pk=pk)
@@ -286,13 +299,22 @@ def guide(request):
 # ── Outils offline (superuser seulement) ─────────────────────────────────────
 
 @login_required
-@_superuser_required
+@_staff_required
 def outils_licence(request):
     """
     Outils cryptographiques offline :
     - Génération de clé YELEN-XXXX-XXXX-XXXX à partir de type + établissement
     - Vérification de signature HMAC d'une licence existante
+
+    ⚠️ Outil de DÉVELOPPEMENT uniquement : il expose l'algorithme de
+    signature avec le secret local de l'instance. Il est désactivé (404)
+    quand le contrôle des licences est actif (LICENSE_ENFORCEMENT=true).
     """
+    from django.http import Http404
+    from django.conf import settings as django_settings
+    if getattr(django_settings, 'LICENSE_ENFORCEMENT', False):
+        raise Http404()
+
     from etablissements.models import Etablissement
 
     etablissements = Etablissement.objects.order_by('nom')
@@ -332,9 +354,14 @@ def outils_licence(request):
         code = sig[:12].upper()
         cle = f"YELEN-{code[:4]}-{code[4:8]}-{code[8:12]}"
 
-        # Calculer la signature d'intégrité (pour une expiration à 1 an)
+        # Calculer la signature d'intégrité v2 (même format que
+        # Licence._message_signature_v2) pour une expiration à 1 an :
+        # cle:type:statut(EN_ATTENTE):etab_id:date_activation(vide):expiration
         date_exp = date.today().replace(year=date.today().year + 1)
-        msg_sig = f"{cle}:{type_licence}:{date_exp.isoformat()}".encode('utf-8')
+        msg_sig = (
+            f"{cle}:{type_licence}:EN_ATTENTE:{etab_id}::"
+            f"{date_exp.isoformat()}"
+        ).encode('utf-8')
         signature_hmac = hmac.new(secret, msg_sig, hashlib.sha256).hexdigest()
 
         ctx['resultat'] = {
@@ -375,8 +402,9 @@ def outils_licence(request):
         except Licence.DoesNotExist:
             lic_db = None
             valide_db = None
-            # Vérification purement offline : la signature calculée est le résultat
-            valide_calcul = True  # on ne peut pas vérifier sans la DB
+            # Sans la licence en base, il n'existe pas de valeur de
+            # référence : la vérification est impossible (et non « valide »).
+            valide_calcul = None
 
         ctx['resultat'] = {
             'mode': 'verifier',

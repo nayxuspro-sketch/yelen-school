@@ -65,8 +65,7 @@
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="auto">
-        <button type="submit" class="btn-secondary btn-sm"
-                onclick="return confirm('Remplir automatiquement avec {{ places_restantes }} candidat(s) disponible(s) ?')">
+        <button type="submit" class="btn-secondary btn-sm" data-csp-confirm="Remplir automatiquement avec {{ places_restantes }} candidat(s) disponible(s) ?" >
           Remplissage auto
         </button>
       </form>

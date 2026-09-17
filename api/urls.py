@@ -11,6 +11,7 @@ urlpatterns = [
     # ── Authentification ──────────────────────────────────────────
     path('auth/token/',          views.ObtenirTokenView.as_view(),   name='obtenir_token'),
     path('auth/token/revoke/',   views.RevoquerTokenView.as_view(),  name='revoquer_token'),
+    path('auth/token/refresh/',  views.RenouvelerTokenView.as_view(), name='renouveler_token'),
 
     # ── Années scolaires ──────────────────────────────────────────
     path('annees/',                          views.AnneesListView.as_view(),     name='annees_list'),
@@ -18,10 +19,14 @@ urlpatterns = [
 
     # ── Élèves ────────────────────────────────────────────────────
     path('eleves/',                           views.ElevesListView.as_view(),      name='eleves_list'),
-    path('eleves/<int:pk>/',                  views.EleveDetailView.as_view(),     name='eleve_detail'),
-    path('eleves/<int:pk>/inscriptions/',     views.EleveInscriptionsView.as_view(), name='eleve_inscriptions'),
-    path('eleves/<int:pk>/bulletins/',        views.EleveBulletinsView.as_view(),  name='eleve_bulletins'),
-    path('eleves/<int:pk>/moyennes/',         views.EleveMoyennesView.as_view(),   name='eleve_moyennes'),
-    path('eleves/<int:pk>/paiements/',        views.ElevePaiementsView.as_view(),  name='eleve_paiements'),
-    path('eleves/<int:pk>/presences/',        views.ElevePresencesView.as_view(),  name='eleve_presences'),
+    path('eleves/<uuid:pk>/',                  views.EleveDetailView.as_view(),     name='eleve_detail'),
+    path('eleves/<uuid:pk>/inscriptions/',     views.EleveInscriptionsView.as_view(), name='eleve_inscriptions'),
+    path('eleves/<uuid:pk>/bulletins/',        views.EleveBulletinsView.as_view(),  name='eleve_bulletins'),
+    path('eleves/<uuid:pk>/moyennes/',         views.EleveMoyennesView.as_view(),   name='eleve_moyennes'),
+    path('eleves/<uuid:pk>/paiements/',        views.ElevePaiementsView.as_view(),  name='eleve_paiements'),
+    path('eleves/<uuid:pk>/presences/',        views.ElevePresencesView.as_view(),  name='eleve_presences'),
+
+    # ── Licences (P2 IsLicenseActive) ─────────────────────────────
+    path('licences/active/',  views.LicenceActiveView.as_view(),  name='licences_active'),
+    path('licences/status/',  views.LicenceActiveView.as_view(),  name='licences_status'),
 ]

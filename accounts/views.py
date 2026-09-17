@@ -150,7 +150,10 @@ def login_view(request):
                 user.save(update_fields=['failed_login_attempts', 'locked_until'])
 
             if user.totp_enabled and user.totp_secret:
-                request.session['_2fa_user_pk'] = str(user.pk)
+                # A4 — signature du pk 2FA pour éviter la manipulation de session
+                from django.core.signing import Signer
+                signer = Signer()
+                request.session['_2fa_user_pk'] = signer.sign(str(user.pk))
                 request.session['_2fa_next'] = request.GET.get('next', '')
                 return redirect('accounts:login_2fa')
 
@@ -188,8 +191,18 @@ def login_view(request):
 
 def login_2fa(request):
     """Connexion utilisateur — étape 2 : code TOTP."""
-    user_pk = request.session.get('_2fa_user_pk')
-    if not user_pk:
+    signed_pk = request.session.get('_2fa_user_pk')
+    if not signed_pk:
+        return redirect('accounts:login')
+
+    # A4 — vérification de la signature (protection contre manipulation de session)
+    from django.core.signing import Signer, BadSignature
+    try:
+        signer = Signer()
+        user_pk = signer.unsign(signed_pk)
+    except BadSignature:
+        # Session manipulée ou expirée — retour au login
+        request.session.pop('_2fa_user_pk', None)
         return redirect('accounts:login')
 
     try:

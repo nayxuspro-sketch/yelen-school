@@ -104,6 +104,32 @@ except Exception:
 # Indique à Django qu'il est derrière un proxy HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# ── Contrôle des licences (anti-fraude) ───────────────────────────────────────
+# true  = vérification des licences ACTIVE (middlewares de validité, limites
+#         et contexte + feature flags des vues). Licence expirée ou révoquée
+#         → accès bloqué, redirigé vers les pages licences.
+# false = mode démonstration / développement — aucune restriction.
+# En production (déploiement école), mettre LICENSE_ENFORCEMENT=true dans .env.
+LICENSE_ENFORCEMENT = os.environ.get('LICENSE_ENFORCEMENT', 'false').lower() == 'true'
+
+# P1 — Architecture anti-fraude définitive
+# Clé dédiée pour signer les licences (au lieu de SECRET_KEY Django) — faille structurelle du mode autonome
+LICENCE_SIGNING_KEY = os.environ.get('LICENCE_SIGNING_KEY', '')  # HMAC legacy, ou vide = fallback SECRET_KEY
+# Ed25519 : clé publique dans l'app (vérification), privée chez éditeur (signature)
+# Format attendu : hex 32 bytes (64 chars hex) ou base64 44 chars
+LICENCE_PUBLIC_KEY = os.environ.get('LICENCE_PUBLIC_KEY', '')
+LICENCE_PRIVATE_KEY = os.environ.get('LICENCE_PRIVATE_KEY', '')  # seulement chez éditeur, jamais en prod école
+# Phone-home : URL serveur éditeur pour heartbeat signé (optionnel)
+LICENCE_HEARTBEAT_URL = os.environ.get('LICENCE_HEARTBEAT_URL', '')
+LICENCE_HEARTBEAT_INTERVAL_HOURS = int(os.environ.get('LICENCE_HEARTBEAT_INTERVAL_HOURS', '24'))
+# Bail hors-ligne : fenêtre décroissante si pas de heartbeat (jours)
+LICENCE_OFFLINE_GRACE_DAYS = int(os.environ.get('LICENCE_OFFLINE_GRACE_DAYS', '7'))
+LICENCE_OFFLINE_MAX_DAYS = int(os.environ.get('LICENCE_OFFLINE_MAX_DAYS', '30'))
+# Binding machine : empreinte multi-attributs
+LICENCE_BINDING_ENABLED = os.environ.get('LICENCE_BINDING_ENABLED', 'false').lower() == 'true'
+# Anti-tamper : vérification intégrité modules licences au boot
+LICENCE_ANTITAMPER_ENABLED = os.environ.get('LICENCE_ANTITAMPER_ENABLED', 'false').lower() == 'true'
+
 
 # Application definition
 
@@ -114,6 +140,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Requis par plusieurs templates ({% load humanize %}) : dashboard réseau,
+    # échéancier global, transferts inter-établissements…
+    'django.contrib.humanize',
     # Apps YELEN SCHOOL
     'core',
     'personnel',
@@ -182,10 +211,18 @@ MIDDLEWARE = [
     'yelen_school.audit_middleware.AuditRequestMiddleware',
     # Génération automatique de l'année scolaire (désactivé — création manuelle)
     # 'parametres.middleware.AnneeScolaireAutoMiddleware',
-    # 'licences.middleware.LicenceCheckMiddleware',
-    # 'licences.middleware.LicenceLimitsMiddleware',
-    # 'licences.middleware.LicenceContextMiddleware',
 ]
+
+# Middlewares de contrôle des licences — actifs uniquement si
+# LICENSE_ENFORCEMENT=true (voir ci-dessus). Ordre imposé : Check → Limits →
+# Contexte. En mode développement/démo (LICENSE_ENFORCEMENT=false), le
+# middleware n'est pas chargé : comportement identique à avant l'activation.
+if LICENSE_ENFORCEMENT:
+    MIDDLEWARE += [
+        'licences.middleware.LicenceCheckMiddleware',
+        'licences.middleware.LicenceLimitsMiddleware',
+        'licences.middleware.LicenceContextMiddleware',
+    ]
 
 ROOT_URLCONF = 'yelen_school.urls'
 
@@ -314,6 +351,10 @@ SMS_MODEM_TIMEOUT = int(os.environ.get('SMS_MODEM_TIMEOUT', '10'))
 SMS_WEBHOOK_TOKEN = os.environ.get('SMS_WEBHOOK_TOKEN', '')
 # IP autorisées à appeler le webhook (séparées par des virgules)
 SMS_ALLOWED_IPS = [ip.strip() for ip in os.environ.get('SMS_ALLOWED_IPS', '').split(',') if ip.strip()]
+# Secret HMAC pour signature des requêtes (A1) — si défini, vérifie X-SMS-Signature
+SMS_WEBHOOK_SECRET = os.environ.get('SMS_WEBHOOK_SECRET', '')
+# Rate limiting webhook : max requêtes par minute par IP
+SMS_WEBHOOK_RATE_LIMIT = int(os.environ.get('SMS_WEBHOOK_RATE_LIMIT', '30'))
 
 # ── SÉCURITÉ RENFORCÉE ─────────────────────────────────────────────────────────
 

@@ -47,7 +47,7 @@
 
                 <div style="display: flex; gap: 15px;">
                     {% if is_superuser %}
-                    <a href="{% url 'licences:licence_list' %}" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 48px;">Finaliser l'Installation</a>
+                    <a href="{% url 'licences:gestion' %}" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 48px;">Finaliser l'Installation</a>
                     {% endif %}
                     <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
                         {% csrf_token %}

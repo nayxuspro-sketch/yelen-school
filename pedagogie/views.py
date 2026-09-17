@@ -19,9 +19,25 @@ from core.utils import get_etablissement_context, filtre_enseignant
 
 try:
     from weasyprint import HTML
-except ImportError:
+except Exception:  # ImportError ou OSError (libpango/cairo absents)
     HTML = None
 
+from licences.decorators import requires_licence_feature
+# P2 — filigrane licence PDF : helper central licences/pdf_utils.py
+try:
+    from licences.pdf_utils import inject_licence_filigrane_context, get_licence_info_for_pdf
+    def _pdf_licence_info(request, etab=None):
+        try:
+            return get_licence_info_for_pdf(request.user, etab)
+        except Exception:
+            return None
+except ImportError:
+    def inject_licence_filigrane_context(ctx, user, etab=None):  # type: ignore
+        return ctx
+    def get_licence_info_for_pdf(user, etab=None):  # type: ignore
+        return None
+    def _pdf_licence_info(request, etab=None):
+        return None
 @login_required
 def classe_result_list(request):
     """Liste des classes pour accéder aux résultats."""
@@ -51,6 +67,7 @@ def classe_result_list(request):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def bilan_periodes(request):
     """
     Bilan par période (trimestre) × classe × année scolaire.
@@ -135,6 +152,7 @@ def bilan_periodes(request):
 
 
 @login_required
+@requires_licence_feature('ia_predictive')
 @require_POST
 def generer_commentaires_bilan(request):
     """
@@ -167,6 +185,7 @@ def generer_commentaires_bilan(request):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def bilan_pdf(request):
     """
     Génère le bilan des périodes en PDF (offline).
@@ -263,6 +282,8 @@ def bilan_pdf(request):
         'annee':             annee,
         'periodes_data':     periodes_data,
         'avec_commentaires': bool(commentaires),
+        'licence_info':      _pdf_licence_info(request, etab),
+        'etablissement':     etab,
     }, request=request)
 
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
@@ -273,6 +294,7 @@ def bilan_pdf(request):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def releve_moyenne_classe_pdf(request):
     """
     Relevé de moyenne d'une classe pour un trimestre donné, classé par ordre de mérite.
@@ -340,6 +362,8 @@ def releve_moyenne_classe_pdf(request):
         'annee':     trimestre.annee_scolaire,
         'eleves':    eleves,
         'stats':     stats,
+        'licence_info': _pdf_licence_info(request, etab),
+        'etablissement': etab,
     }, request=request)
 
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
@@ -1133,7 +1157,7 @@ def _build_bulletin_context(request, inscription, trimestre):
             'non_acquis': sum(1 for ev in evals_map.values() if ev.niveau == 'NON_ACQUIS'),
         }
 
-    return {
+    ctx_base = {
         'inscription': inscription,
         'trimestre': trimestre,
         'mg': mg,
@@ -1155,6 +1179,9 @@ def _build_bulletin_context(request, inscription, trimestre):
         'date_lieu': date_lieu,
         'competences_data': competences_data,
     }
+    # P2 — filigrane licence
+    ctx_base['licence_info'] = _pdf_licence_info(request, etab)
+    return ctx_base
 
 
 @login_required
@@ -1302,7 +1329,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
 
     # Contexte établissement
     etab_context = get_etablissement_context(etab, request)
-    
+
     # 2. Rendre le template HTML (on utilisera un template qui boucle sur les élèves)
     html_string = render_to_string('pedagogie/pdf/bulletin_batch.html', {
         'trimestre': trimestre,
@@ -1316,6 +1343,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
         'logo_url': etab_context.get('logo_url'),
         'etab_logo_url': etab_context.get('etab_logo_url'),
         'etablissement': etab,
+        'licence_info': _pdf_licence_info(request, etab),
     })
     
     # 3. Générer le PDF
@@ -1485,6 +1513,8 @@ def moyennes_disciplines_pdf(request):
         'identite':      etab_context.get('identite'),
         'logo_url':      etab_context.get('logo_url'),
         'date_impression': tz.now().strftime('%d/%m/%Y'),
+        'licence_info':  _pdf_licence_info(request, etab),
+        'etablissement': etab,
     }, request=request)
 
     if HTML is None:
@@ -1768,6 +1798,7 @@ def releve_notes_pdf(request):
         'logo_url': etab_context.get('logo_url'),
         'etab_logo_url': etab_context.get('etab_logo_url'),
         'etablissement': etab,
+        'licence_info': _pdf_licence_info(request, etab),
     })
 
     pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
@@ -1814,6 +1845,7 @@ def fiche_discipline_pdf(request):
         'etablissement': etab,
         'today': _date.today(),
         'professeur': professeur,
+        'licence_info': _pdf_licence_info(request, etab),
     })
 
     pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
@@ -1831,6 +1863,7 @@ def fiche_discipline_pdf(request):
 # ─── RISQUE DE DÉCROCHAGE ────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def risque_decrochage(request):
     """
     Tableau de bord des élèves à risque de décrochage scolaire.
@@ -1947,6 +1980,8 @@ def risque_decrochage(request):
 
 # ─── PDF RISQUE DE DÉCROCHAGE ───────────────────────────────────────────
 
+@login_required
+@requires_licence_feature('rapports_avances')
 def risque_decrochage_pdf(request):
     """Génère un PDF de la liste des élèves à risque de décrochage."""
     try:
@@ -2002,6 +2037,8 @@ def risque_decrochage_pdf(request):
         'stats': stats,
         'niveau_filtre': niveau_filtre,
         'classe_id': classe_id,
+        'licence_info': _pdf_licence_info(request, etab),
+        'etablissement': etab,
     })
 
     pdf_file = HTML(string=html_content).write_pdf()
@@ -2105,7 +2142,7 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
     lieu = (etab.ville + ', le ') if etab.ville else 'Le '
     date_lieu = f"{lieu}{today.day} {mois_fr[today.month - 1]} {today.year}"
 
-    return {
+    ctx_annuel = {
         'inscription': inscription,
         'annee_scolaire': annee_scolaire,
         'periodes': periodes,
@@ -2131,6 +2168,8 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
         'signataire_membre': signataire_membre,
         'date_lieu': date_lieu,
     }
+    ctx_annuel['licence_info'] = _pdf_licence_info(request, etab)
+    return ctx_annuel
 
 
 def _get_mention(moyenne):
@@ -2270,6 +2309,7 @@ def bulletin_annuel_classe_batch_pdf(request, class_id):
         'logo_url': etab_context.get('logo_url'),
         'etab_logo_url': etab_context.get('etab_logo_url'),
         'etablissement': etab,
+        'licence_info': _pdf_licence_info(request, etab),
     })
 
     pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
@@ -2370,6 +2410,7 @@ def _compute_palmares_annuel(classe, annee_scolaire):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def palmares_annuel(request, class_id):
     """Aperçu HTML du palmarès annuel d'une classe."""
     classe = get_object_or_404(
@@ -2410,6 +2451,7 @@ def palmares_annuel(request, class_id):
 
 
 @login_required
+@requires_licence_feature('rapports_avances')
 def palmares_annuel_pdf(request, class_id):
     """Génère le palmarès annuel d'une classe en PDF via WeasyPrint."""
     if HTML is None:
@@ -2461,6 +2503,7 @@ def palmares_annuel_pdf(request, class_id):
         'date_lieu': date_lieu,
         'signataire': signataire,
         'signataire_membre': signataire_membre,
+        'licence_info': _pdf_licence_info(request, etab),
         **data,
     }
 
@@ -2665,6 +2708,7 @@ def cahier_textes_delete(request, pk):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
+@requires_licence_feature('ia_predictive')
 def prediction_index(request):
     """Sélecteur de classe pour la prédiction de réussite."""
     from etablissements.models import Etablissement
@@ -2692,6 +2736,7 @@ def prediction_index(request):
 
 
 @login_required
+@requires_licence_feature('ia_predictive')
 def prediction_classe(request, class_id):
     """Vue des prédictions de réussite pour toute une classe."""
     from etablissements.models import Etablissement
@@ -2724,6 +2769,7 @@ def prediction_classe(request, class_id):
 
 
 @login_required
+@requires_licence_feature('ia_predictive')
 @require_POST
 def prediction_calculer(request, class_id):
     """Lance le calcul (ou recalcul) des prédictions pour toute la classe."""
@@ -2741,6 +2787,7 @@ def prediction_calculer(request, class_id):
 
 
 @login_required
+@requires_licence_feature('ia_predictive')
 def prediction_classe_pdf(request, class_id):
     """Rapport PDF de prédiction pour le conseil de classe."""
     if HTML is None:
@@ -2768,6 +2815,7 @@ def prediction_classe_pdf(request, class_id):
         'predictions': predictions,
         'etablissement': etab,
         'identite': etab_ctx.get('identite'),
+        'licence_info': _pdf_licence_info(request, etab),
     }, request=request)
 
     pdf = HTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()
@@ -3017,6 +3065,7 @@ def competences_bulletin_pdf(request, inscription_id, trimestre_id):
         'groupes': groupes_list,
         'etablissement': etab,
         'identite': etab_ctx.get('identite'),
+        'licence_info': _pdf_licence_info(request, etab),
     }, request=request)
 
     pdf = HTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()

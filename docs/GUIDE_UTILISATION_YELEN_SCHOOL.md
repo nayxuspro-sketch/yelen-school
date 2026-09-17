@@ -3282,6 +3282,88 @@ Le PDF généré certifie que l'élève **ne doit rien** à l'établissement. Si
 >
 > **Accès menu :** `Menu principal → Licences`
 
+### 13.A Mode de contrôle des licences (anti-fraude)
+
+Le fichier `.env` du serveur contrôle l'application des licences via la variable
+`LICENSE_ENFORCEMENT` :
+
+| Valeur | Comportement | Usage |
+|--------|--------------|-------|
+| `LICENSE_ENFORCEMENT=true` | Vérification active : une licence **absente**, **expirée** ou **révoquée** bloque l'accès à l'application (redirection vers les pages licences). Les plafonds (élèves / enseignants / classes) sont surveillés et signalés. | **Production** — déploiement école |
+| `LICENSE_ENFORCEMENT=false` | Aucune restriction, quelle que soit la licence. Mode démonstration. | Développement / démo / tests |
+
+Quand le contrôle est actif (`true`) :
+
+- **Sans licence** : tout utilisateur de l'établissement est redirigé vers
+  `Licences → Activer` jusqu'à la création + activation d'une licence.
+- **Licence expirée** : statut passé automatiquement à `EXPIREE`, redirection
+  vers `Licences → Renouveler`.
+- **Licence révoquée** : redirection vers `Licences → Support`.
+- **Signature HMAC invalide** (intégrité compromise) : accès bloqué vers
+  `Licences → Support`, événement `TENTATIVE_FRAUDE` enregistré au journal d'audit.
+- **Plafonds dépassés** : avertissement affiché en haut de page (nombre
+  d'élèves inscrits / enseignants actifs / classes actives vs limite du
+  niveau de licence).
+
+**Feature flags — application par niveau de licence :** quand le contrôle
+est actif, l'accès aux modules avancés est verrouillé par niveau de
+licence. Un refus redirige vers *Mon abonnement*
+(`/licences/mon-abonnement/`).
+
+| Module / routes | Niveau minimum |
+|-----------------|----------------|
+| Examens officiels (`/examens/`) | Standard |
+| Personnel (`/personnel/`) | Standard |
+| Vacations (`/vacations/`) | Standard |
+| Parcours scolaire d'un élève (`/inscriptions/eleve/<id>/parcours/`) | Standard |
+| Portail parents (`/portail/parent/…`) | Standard |
+| IA prédictive — prédictions d'examens (`/pedagogie/predictions/`), commentaires IA de bilan | Premium |
+| Rapports avancés — bilans de périodes, risque de décrochage, palmarès annuel | Premium |
+| Multi-établissements (`/etablissements/reseau/`, groupes) | Réseau |
+
+Les modules de base (inscriptions, notes, bulletins, présences, finances
+de base, certificats, attestations) restent accessibles sur tous les
+niveaux.
+
+**Règles de comptage des usages** (année scolaire courante de
+l'établissement) :
+
+| Usage | Comptage |
+|-------|----------|
+| Élèves | Élèves distincts inscrits dans l'année courante (statut autre que ABANDON) |
+| Enseignants | Enseignants distincts dont l'inscription du personnel est active (`est_actif`) dans l'année courante, poste de catégorie *Enseignement* |
+| Classes | Classes actives de l'établissement |
+
+Sans année scolaire courante paramétrée, les usages élèves/enseignants
+sont considérés à 0 (le contrôle reste actif pour les classes).
+- Les pages du module licences (`/licences/…`) restent accessibles pour
+  permettre le déblocage (création, activation, renouvellement, statut).
+- **Aucun passe-droit** : le compte superuser et l'admin Django
+  (`/admin/`) sont soumis au contrôle de licence comme les autres
+  utilisateurs (licence absente/expirée/révooquée = accès bloqué).
+
+**Outil de développement** — `/licences/outils/` (génération /
+vérification de signatures en local) est **désactivé (404) quand le
+contrôle est actif** : il ne doit exister que dans les environnements de
+développement de l'éditeur.
+
+Les vérifications sont effectuées par trois middlewares (charge uniquement
+si `LICENSE_ENFORCEMENT=true`) : `LicenceCheckMiddleware` (validité, cache 5 min),
+`LicenceLimitsMiddleware` (plafonds, cache 1 h) et `LicenceContextMiddleware`
+(injection du contexte licence dans les templates).
+
+**Signature d'intégrité (HMAC v2) :** la signature d'une licence couvre
+`clé + type + statut + établissement + date d'activation + date d'expiration`.
+Toute modification locale de la base (réactivation d'une licence révoquée,
+allongement de la date, transfert à un autre établissement…) casse la
+signature et déclenche le blocage `TENTATIVE_FRAUDE`. Le format v1 (légacy,
+`clé + type + date`) est encore accepté en lecture pour les déploiements
+existants ; chaque sauvegarde officielle ré-signe automatiquement en v2.
+
+> ⚠️ **Déploiement** : mettre `LICENSE_ENFORCEMENT=true` dans le `.env` de
+> production (voir `.env.example` et `.env.autonome.example`). En mode
+> démonstration sans licence, laisser `false`.
+
 ### 13.Guide Page Guide d'utilisation (`/licences/guide/`)
 
 Page de documentation intégrée présentant les 9 modules principaux de YELEN SCHOOL.
@@ -5734,6 +5816,46 @@ YELEN SCHOOL fait l'objet d'audits de sécurité réguliers. Le rapport complet 
 | 🟠 Hautes | 3 ouvertes |
 | 🟡 Moyennes | 4 ouvertes |
 | ✅ Score global | 6.5/10 |
+
+### 19.1.A API REST — Tokens et cloisonnement d'accès
+
+L'API REST (`/api/`) sert les applications externes (PWA) via des tokens
+d'authentification.
+
+| Endpoint | Méthode | Rôle |
+|----------|---------|------|
+| `/api/auth/token/` | POST | Obtenir un token (username + password) |
+| `/api/auth/token/refresh/` | POST | **Renouveler** le token courant (rotation) |
+| `/api/auth/token/revoke/` | DELETE | Révoquer le token courant |
+| `/api/annees/`, `/api/annees/<id>/periodes/` | GET | Années scolaires et périodes |
+| `/api/eleves/` et sous-ressources | GET | Données élèves (RBAC, ci-dessous) |
+
+**Durée de vie des tokens** : un token expire `TOKEN_EXPIRY_HOURS` heures
+après son émission (défaut 24 h) — il est alors supprimé et toute
+requête répond `401`. Le client (PWA) doit appeler
+`POST /api/auth/token/refresh/` **avant** l'expiration pour continuer :
+
+```
+POST /api/auth/token/refresh/
+Authorization: Token <token courant>
+```
+
+La réponse renvoie un **nouveau** token ; l'ancien est immédiatement
+invalidé (rotation — un token intercepté ne reste utile que jusqu'à la
+prochaine rotation). Si le token est déjà expiré, le refresh répond `401`
+: le client repasse par `/api/auth/token/` avec ses identifiants.
+
+**Cloisonnement RBAC des données élèves** :
+
+| Rôle | Périmètre |
+|------|-----------|
+| SUPER_ADMIN, DIRECTEUR_RESEAU | tous les établissements |
+| Staff (DIRECTEUR, CENSEUR, AVS, ENSEIGNANT, COMPTABLE, SECRETAIRE) | leur établissement uniquement |
+| PARENT | uniquement ses enfants (`eleves_lies`) |
+| ELEVE | uniquement lui-même |
+
+Toute requête hors périmètre reçoit `404` (aucune information sur
+l'existence de l'élève). Un parent sans enfant lié reçoit `403`.
 
 ### 19.2 Bonnes Pratiques pour les Administrateurs
 

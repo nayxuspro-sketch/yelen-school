@@ -19,6 +19,7 @@ except ImportError:
     Classe = None
 
 
+from licences.decorators import requires_licence_feature
 @login_required
 def etablissement_detail(request):
     etab = getattr(request.user, 'etablissement', None)
@@ -94,6 +95,7 @@ def _get_groupe(user):
 
 
 @login_required
+@requires_licence_feature('multi_etablissements')
 def reseau_dashboard(request):
     """Dashboard consolidé réseau — statistiques agrégées par établissement."""
     if not _is_reseau_user(request.user):
@@ -153,6 +155,7 @@ def reseau_dashboard(request):
 
 
 @login_required
+@requires_licence_feature('multi_etablissements')
 def groupe_list(request):
     """Liste des groupes d'établissements (SUPER_ADMIN seulement)."""
     if request.user.role != 'SUPER_ADMIN':
@@ -166,6 +169,7 @@ def groupe_list(request):
 
 
 @login_required
+@requires_licence_feature('multi_etablissements')
 def groupe_form(request, pk=None):
     """Création / modification d'un groupe."""
     if request.user.role != 'SUPER_ADMIN':
@@ -195,6 +199,7 @@ def groupe_form(request, pk=None):
 
 
 @login_required
+@requires_licence_feature('multi_etablissements')
 @require_POST
 def groupe_affecter_etab(request, groupe_pk):
     """Affecte un établissement à un groupe."""

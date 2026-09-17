@@ -53,8 +53,7 @@
           Modifier
         </button>
         {% if item.modele %}
-        <form method="post" action="{% url 'parametres:modele_message_reset' type_msg=item.code %}"
-              onsubmit="return confirm('Réinitialiser ce modèle au contenu par défaut ?')">
+        <form method="post" action="{% url 'parametres:modele_message_reset' type_msg=item.code %}" data-csp-confirm-submit="Réinitialiser ce modèle au contenu par défaut ?" >
           {% csrf_token %}
           <button type="submit" class="dash-btn dash-btn-ghost dash-btn-sm">
             Réinitialiser

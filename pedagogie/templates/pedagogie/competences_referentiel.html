@@ -171,8 +171,7 @@
           <td><span class="text-xs text-muted">{{ comp.get_categorie_display }}</span></td>
           <td class="text-center text-muted">{{ comp.ordre }}</td>
           <td class="text-center">
-            <form method="post" action="{% url 'pedagogie:competence_supprimer' comp.pk %}"
-                  onsubmit="return confirm('Supprimer « {{ comp.libelle|truncatechars:40 }} » ?');">
+            <form method="post" action="{% url 'pedagogie:competence_supprimer' comp.pk %}" data-csp-confirm-submit="Supprimer « {{ comp.libelle|truncatechars:40 }} » ?" >
               {% csrf_token %}
               <button type="submit" class="btn-danger btn-sm">Suppr.</button>
             </form>

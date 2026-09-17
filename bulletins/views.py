@@ -338,7 +338,10 @@ from django.views import View
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from weasyprint import HTML
+try:
+    from weasyprint import HTML
+except Exception:  # ImportError ou OSError (libpango/cairo absents)
+    HTML = None
 
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire
@@ -431,8 +434,23 @@ class BulletinAnnuelPDFView(LoginRequiredMixin, View):
         )
         annee = get_object_or_404(AnneeScolaire, pk=annee_pk)
 
+        if HTML is None:
+            messages.error(request, "La génération PDF n'est pas disponible sur ce serveur (WeasyPrint manquant).")
+            return redirect('bulletins:bulletin_annuel')
+
         from pedagogie.views import _build_bulletin_annuel_context
+        try:
+            from licences.pdf_utils import get_licence_info_for_pdf as _get_lic_pdf
+        except ImportError:
+            _get_lic_pdf = None
+
         ctx = _build_bulletin_annuel_context(request, inscription, annee)
+        if _get_lic_pdf:
+            try:
+                etab_lic = getattr(request.user, 'etablissement', None) or inscription.classe.etablissement
+                ctx['licence_info'] = _get_lic_pdf(request.user, etab_lic)
+            except Exception:
+                pass
 
         html_string = render_to_string('pedagogie/pdf/bulletin_annuel.html', ctx,
                                        request=request)
@@ -452,11 +470,14 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
     """Génère un PDF groupé avec tous les bulletins annuels d'une classe."""
 
     def get(self, request, class_id, annee_pk):
-        from weasyprint import HTML
         from django.template.loader import render_to_string
         from parametres.models import Classe
         from pedagogie.views import _build_bulletin_annuel_context
         from core.utils import get_etablissement_context
+
+        if HTML is None:
+            messages.error(request, "La génération PDF n'est pas disponible sur ce serveur (WeasyPrint manquant).")
+            return redirect('bulletins:bulletin_annuel_index')
 
         classe = get_object_or_404(Classe, pk=class_id)
         annee = get_object_or_404(AnneeScolaire, pk=annee_pk)
@@ -471,6 +492,11 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
 
         etab = classe.etablissement
         etab_context = get_etablissement_context(etab, request)
+        try:
+            from licences.pdf_utils import get_licence_info_for_pdf as _get_lic_pdf2
+            lic_info = _get_lic_pdf2(request.user, etab)
+        except Exception:
+            lic_info = None
 
         students_data = [
             _build_bulletin_annuel_context(request, ins, annee)
@@ -485,6 +511,7 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
             'logo_url': etab_context.get('logo_url'),
             'etab_logo_url': etab_context.get('etab_logo_url'),
             'etablissement': etab,
+            'licence_info': lic_info,
         })
 
         pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
@@ -502,6 +529,12 @@ def bulletin_parent_consulter(request, token):
     """Page publique permettant au parent de consulter et signer le bulletin."""
     from django.utils import timezone as tz
     bulletin = get_object_or_404(Bulletin, token_signature=token)
+
+    # S3 — expiration du lien public : token_valide vérifié AVANT toute divulgation
+    if not bulletin.token_valide:
+        return render(request, 'bulletins/bulletin_parent.html', {
+            'erreur': "Ce lien de consultation n'est plus valide (expiré ou annulé).",
+        })
 
     if not bulletin.est_publie:
         return render(request, 'bulletins/bulletin_parent.html', {

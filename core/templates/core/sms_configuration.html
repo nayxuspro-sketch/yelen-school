@@ -34,7 +34,7 @@
       </svg>
       URL Endpoint du Webhook SMS
     </span>
-    <button class="btn-secondary btn-sm" onclick="copierWebhook()" id="btn-copy-url">
+    <button class="btn-secondary btn-sm" data-csp-action="copy-webhook" id="btn-copy-url">
       Copier l'URL
     </button>
   </div>
@@ -251,3 +251,5 @@ document.getElementById('id_sms_backend').addEventListener('change', function() 
 </script>
 
 {% endblock %}
+
+<script nonce="{{ request.csp_nonce }}" src="{% static 'js/csp_handlers.js' %}"></script>

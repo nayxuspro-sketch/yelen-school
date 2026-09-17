@@ -32,8 +32,19 @@
       <p class="comm-reply-meta">Concernant : <strong>{{ msg.eleve.prenom }} {{ msg.eleve.nom }}</strong></p>
     </div>
 
+    {# État : lien expiré (S3) #}
+    {% if lien_expire %}
+    <div class="comm-reply-card">
+      <div class="login-clean-alert login-clean-alert-danger">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m6 4h-6v-6a6 6 0 0112 0v6H12z"/>
+        </svg>
+        Ce lien de réponse n'est plus valide (expiré). Veuillez contacter l'établissement pour obtenir un nouveau lien.
+      </div>
+    </div>
+
     {# État : déjà répondu #}
-    {% if deja_repondu %}
+    {% elif deja_repondu %}
     <div class="comm-reply-card">
       <div class="login-clean-alert login-clean-alert-info">
         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,5 +116,6 @@
 
   </div>
 
+<script nonce="{{ request.csp_nonce }}" src="{% static 'js/csp_handlers.js' %}"></script>
 </body>
 </html>

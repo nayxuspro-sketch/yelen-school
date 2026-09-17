@@ -84,11 +84,8 @@
         <option value="{{ cl.pk }}">{{ cl.nom }}</option>
         {% endfor %}
       </select>
-      <button type="button" class="btn-secondary"
-        onclick="
-          var v = document.querySelector('[name=classe_id]').value;
-          if(v) window.location='{% url 'examens:session_detail' session.pk %}'.replace(/\/$/,'') + '/inscrire/' + v + '/';
-        ">
+      <button type="button" class="btn-secondary" data-csp-action="session-detail-action" data-onclick-content="var v = document.querySelector('[name=classe_id]').value;
+          if(v) window.location='{% url 'examens:session_detail' session.pk %}'.replace(/\/$/,'') + '/inscrire/' + v + '/';" >
         Voir la liste
       </button>
     </form>

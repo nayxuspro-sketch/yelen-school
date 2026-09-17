@@ -35,6 +35,17 @@ from .models import Licence, FEATURE_FLAGS
 # FONCTIONS UTILITAIRES
 # ═══════════════════════════════════════════════════════════════════
 
+def _enforcement_actif() -> bool:
+    """Le contrôle des licences est-il actif (settings.LICENSE_ENFORCEMENT) ?
+
+    Quand le contrôle est inactif (développement / démo / tests), tous les
+    garde-fous de ce module deviennent transparents : aucun blocage, toutes
+    les features sont considérées disponibles — comportement identique à
+    l'application avant l'activation du contrôle.
+    """
+    return bool(getattr(settings, 'LICENSE_ENFORCEMENT', False))
+
+
 def get_licence_active(etablissement) -> Optional[Licence]:
     """
     Récupère la licence active d'un établissement.
@@ -65,20 +76,20 @@ def has_feature(user, feature_name: str) -> bool:
     Returns:
         bool: True si l'utilisateur peut utiliser cette feature
     """
-    # Super admin peut tout faire
-    if user.is_superuser:
+    # Contrôle inactif : toutes les features sont disponibles
+    if not _enforcement_actif():
         return True
-    
+
     # Vérifier que l'utilisateur a un établissement
     if not hasattr(user, 'etablissement') or user.etablissement is None:
         return False
-    
+
     # Récupérer la licence active
     licence = get_licence_active(user.etablissement)
-    
+
     if not licence:
         return False
-    
+
     # Vérifier si la feature est disponible pour ce niveau de licence
     return licence.peut_utiliser_feature(feature_name)
 
@@ -93,17 +104,18 @@ def get_features_disponibles(user) -> list:
     Returns:
         list: Liste des noms de features accessibles
     """
-    if user.is_superuser:
+    # Contrôle inactif : toutes les features sont disponibles
+    if not _enforcement_actif():
         return list(FEATURE_FLAGS.keys())
-    
+
     if not hasattr(user, 'etablissement') or user.etablissement is None:
         return []
-    
+
     licence = get_licence_active(user.etablissement)
-    
+
     if not licence:
         return []
-    
+
     return licence.get_features_disponibles()
 
 
@@ -134,7 +146,7 @@ def get_niveau_licence(user) -> Optional[str]:
 
 def requires_licence_feature(
     feature_name: str,
-    redirect_url: str = '/licences/upgrade/',
+    redirect_url: str = '/licences/mon-abonnement/',
     raise_exception: bool = False,
     api_mode: bool = False
 ):
@@ -168,12 +180,12 @@ def requires_licence_feature(
         @wraps(view_func)
         @login_required
         def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
-            user = request.user
-            
-            # Super admin bypass
-            if user.is_superuser:
+            # Contrôle inactif (développement / démo) : vue non restreinte
+            if not _enforcement_actif():
                 return view_func(request, *args, **kwargs)
-            
+
+            user = request.user
+
             # Vérifier que l'utilisateur a un établissement
             if not hasattr(user, 'etablissement') or user.etablissement is None:
                 return _handle_access_denied(
@@ -305,12 +317,12 @@ def check_licence_validity(view_func: Callable) -> Callable:
     @wraps(view_func)
     @login_required
     def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        user = request.user
-        
-        # Super admin bypass
-        if user.is_superuser:
+        # Contrôle inactif (développement / démo) : vue non restreinte
+        if not _enforcement_actif():
             return view_func(request, *args, **kwargs)
-        
+
+        user = request.user
+
         # Vérifier l'établissement
         if not hasattr(user, 'etablissement') or user.etablissement is None:
             messages.error(request, _("Aucun établissement associé à votre compte."))
@@ -348,7 +360,7 @@ class LicenceFeatureMixin:
     """
     
     required_feature: str = None
-    redirect_url: str = '/licences/upgrade/'
+    redirect_url: str = '/licences/mon-abonnement/'
     raise_exception: bool = False
     
     def dispatch(self, request, *args, **kwargs):
@@ -358,17 +370,17 @@ class LicenceFeatureMixin:
                 "LicenceFeatureMixin nécessite l'attribut 'required_feature'"
             )
         
+        # Contrôle inactif (développement / démo) : vue non restreinte
+        if not _enforcement_actif():
+            return super().dispatch(request, *args, **kwargs)
+
         user = request.user
-        
+
         # Vérifier l'authentification
         if not user.is_authenticated:
             from django.contrib.auth.views import redirect_to_login
             return redirect_to_login(request.get_full_path())
-        
-        # Super admin bypass
-        if user.is_superuser:
-            return super().dispatch(request, *args, **kwargs)
-        
+
         # Vérifier l'établissement
         if not hasattr(user, 'etablissement') or user.etablissement is None:
             messages.error(request, _("Aucun établissement associé."))

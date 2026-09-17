@@ -20,7 +20,7 @@
   </div>
   {% if not appel.est_clos %}
   <div class="appel-header-actions">
-    <button type="button" class="btn-secondary btn-all-present" onclick="markAllPresent()">
+    <button type="button" class="btn-secondary btn-all-present" data-csp-action="mark-all-present" >
       Tout présent
     </button>
     <a href="{% url 'presences:qr_scanner' appel.pk %}" class="btn-primary">
@@ -155,8 +155,7 @@
       </p>
       <div class="appel-form-actions">
         <button type="submit" class="btn-secondary">Enregistrer le brouillon</button>
-        <button type="submit" name="clore" value="1" class="btn-primary"
-                onclick="return confirm('Clôturer cet appel ? Cette action est irréversible.')">
+        <button type="submit" name="clore" value="1" class="btn-primary" data-csp-confirm="Clôturer cet appel ? Cette action est irréversible." >
           Clôturer la séance
         </button>
       </div>
