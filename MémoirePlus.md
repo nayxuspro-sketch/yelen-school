@@ -289,4 +289,11 @@ Vérifié résolus : VUL-2026-01 Anthropic, VUL-2026-03 CSP unsafe-inline (déj�
 
 ---
 
-*Dernière mise à jour : 2026-09-17 11:00 UTC par agent arena/01a0aebf — 90 tests verts (77 P1 + 13 P2), P1 terminé 57216fa, A7 terminé dce9c94, P2 en cours finalisation (filigrane 16 templates + injection 20 vues, fix AuditLog append-only, api IsLicenseActive + centralisation audit, pdf_utils factorisé).*
+### P2 suite — couverture + nettoyage
+- `1b1098e` : nettoyage doublons morts `settings01.py`, `settings--.py`, `models0.py`, `admin0.py`, `licences/tests.py`, `test_bulletin_old.py` (398 lignes supprimées)
+- `110bfb3` : tests couverture `test_p2_coverage.py` 10 tests (binding collect, heartbeat payload/success/failure/verify/send_no_url/send_failure_mock, activation fingerprint, boot_check, check_licences, generate_keys) → 100 tests verts licences, couverture 74% (api 85%, models 78%, binding 59%, heartbeat 37%, generate_keys 80%)
+
+---
+
+*Dernière mise à jour : 2026-09-17 11:30 UTC par agent arena/01a0aebf — 100 tests verts licences (77 P1 + 23 P2), couverture 74%, P1 terminé 57216fa, A7 dce9c94, P2 terminé 3b39e1d+1b1098e+110bfb3 (IsLicenseActive API, audit centralisation+verify, filigrane 16 templates+20 vues, fix AuditLog _state.adding, pdf_utils factorisé, nettoyage doublons, E commits introuvables documenté).*
+
