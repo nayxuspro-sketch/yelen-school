@@ -14,6 +14,7 @@ import json
 try:
     from weasyprint import HTML as WeasyHTML
 except Exception:  # ImportError ou OSError (libpango/cairo absents)
+    # Les vues PDF vérifient cette valeur avant de générer un document.
     WeasyHTML = None
 from .models import (
     FraisScolarite, Paiement, Echeancier, ModePaiement, Remboursement,

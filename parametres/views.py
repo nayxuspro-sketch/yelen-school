@@ -6,12 +6,14 @@ from django import db
 from django.db import models
 from django.db.models.deletion import ProtectedError
 from django.core.paginator import Paginator
+from django.core.management import call_command
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.views.decorators.http import require_POST
+from io import StringIO
 
 from .forms import (
     TypeDocumentForm, SignataireForm,
@@ -27,7 +29,7 @@ from .models import (
     Classe, Poste, LocalisationPoste, StatutEleve, RubriquePaiement, TarifScolarite,
     AppreciationMoyenneSecondaire, AppreciationMoyennePrimaire, PeriodeEvaluation, Discipline,
     CategorieDiscipline, TypeSanction, TitreFonction, TitreHonorifiquePersonnel,
-    EvenementCalendrier, ModeleMessage,
+    EvenementCalendrier, ModeleMessage, DeclencheurSMS,
 )
 from personnel.models import MembrePersonnel
 from etablissements.models import Etablissement
@@ -114,7 +116,7 @@ def annee_set_courante(request, pk):
 def cycle_list(request):
     etab = _get_etab(request)
     cycles = Cycle.objects.filter(etablissement=etab).prefetch_related('classes').order_by('ordre', 'nom') if etab else Cycle.objects.none()
-    tpl = 'parametres/partials/cycle_list.html' if request.headers.get('HX-Request') else 'parametres/cycles.html'
+    tpl = 'parametres/partials/cycle_tree.html' if request.headers.get('HX-Request') else 'parametres/cycles.html'
     return render(request, tpl, {'cycles': cycles})
 
 
@@ -1701,3 +1703,128 @@ def _variables_par_type(type_msg):
         'PAIEMENT': ['{nom_eleve}', '{montant}', '{rubrique}', '{etablissement}'],
         'REUNION':  ['{date}', '{heure}', '{lieu}', '{objet}', '{etablissement}'],
     }.get(type_msg, [])
+
+
+# ─── SMS AUTOMATIQUES ─────────────────────────────────────────────────────────
+
+_SMS_CONFIGURATION_ROLES = {'SUPER_ADMIN', 'DIRECTEUR'}
+
+
+def _check_sms_configuration_access(request):
+    """Retourne l'établissement autorisé pour la configuration SMS."""
+    if getattr(request.user, 'role', None) not in _SMS_CONFIGURATION_ROLES:
+        return None
+    return _get_etab(request)
+
+
+def _sms_enabled():
+    """Interprète correctement les booléens issus du cache runtime ou settings."""
+    from core.sms import get_sms_val
+
+    value = get_sms_val('SMS_ENABLED')
+    return value is True or str(value).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def _get_or_create_sms_triggers(etab):
+    """Garantit l'existence d'un déclencheur par type pour l'établissement."""
+    for trigger_type, _label in DeclencheurSMS.TypeChoices.choices:
+        DeclencheurSMS.objects.get_or_create(
+            etablissement=etab,
+            type_declencheur=trigger_type,
+        )
+    return DeclencheurSMS.objects.filter(etablissement=etab).order_by('type_declencheur')
+
+
+def _render_sms_trigger_list(request, etab):
+    return render(request, 'parametres/partials/sms_declencheurs_list.html', {
+        'declencheurs': _get_or_create_sms_triggers(etab),
+        'sms_enabled': _sms_enabled(),
+    })
+
+
+@login_required
+def sms_auto_config(request):
+    """Configure les déclencheurs SMS automatiques de l'établissement courant."""
+    etab = _check_sms_configuration_access(request)
+    if not etab:
+        return HttpResponseForbidden("Accès réservé aux directeurs et super administrateurs associés à un établissement.")
+
+    return render(request, 'parametres/sms_auto.html', {
+        'declencheurs': _get_or_create_sms_triggers(etab),
+        'sms_enabled': _sms_enabled(),
+    })
+
+
+@login_required
+@require_POST
+def sms_auto_toggle(request, pk):
+    """Active ou désactive un déclencheur SMS sans franchir l'établissement."""
+    etab = _check_sms_configuration_access(request)
+    if not etab:
+        return HttpResponseForbidden("Accès interdit.")
+
+    declencheur = get_object_or_404(DeclencheurSMS, pk=pk, etablissement=etab)
+    declencheur.actif = not declencheur.actif
+    declencheur.updated_by = request.user
+    declencheur.save(update_fields=['actif', 'updated_by', 'updated_at'])
+    return _render_sms_trigger_list(request, etab)
+
+
+@login_required
+@require_POST
+def sms_auto_save(request, pk):
+    """Enregistre le nombre de jours avant échéance pour un déclencheur."""
+    etab = _check_sms_configuration_access(request)
+    if not etab:
+        return HttpResponseForbidden("Accès interdit.")
+
+    declencheur = get_object_or_404(DeclencheurSMS, pk=pk, etablissement=etab)
+    try:
+        jours_avant = int(request.POST.get('jours_avant', ''))
+    except (TypeError, ValueError):
+        jours_avant = 0
+
+    if not 1 <= jours_avant <= 30:
+        messages.error(request, "Le rappel doit être compris entre 1 et 30 jours avant l'échéance.")
+    else:
+        declencheur.jours_avant = jours_avant
+        declencheur.updated_by = request.user
+        declencheur.save(update_fields=['jours_avant', 'updated_by', 'updated_at'])
+        messages.success(request, "Paramètre du rappel d'échéancier enregistré.")
+
+    return redirect('parametres:sms_auto_config')
+
+
+@login_required
+@require_POST
+def sms_auto_executer(request, pk):
+    """Exécute manuellement un déclencheur actif pour l'établissement courant."""
+    etab = _check_sms_configuration_access(request)
+    if not etab:
+        return HttpResponseForbidden("Accès interdit.")
+
+    declencheur = get_object_or_404(DeclencheurSMS, pk=pk, etablissement=etab)
+    if not _sms_enabled():
+        messages.error(request, "Les SMS sont désactivés dans la configuration SMS.")
+        return redirect('parametres:sms_auto_config')
+    if not declencheur.actif:
+        messages.error(request, "Activez ce déclencheur avant de l'exécuter.")
+        return redirect('parametres:sms_auto_config')
+
+    output = StringIO()
+    try:
+        call_command(
+            'sms_auto',
+            type=declencheur.type_declencheur,
+            etablissement=str(etab.pk),
+            stdout=output,
+            stderr=output,
+        )
+    except Exception as exc:
+        messages.error(request, f"Exécution SMS échouée : {exc}")
+    else:
+        lines = [line.strip() for line in output.getvalue().splitlines() if line.strip()]
+        summary = lines[-1] if lines else 'Aucun SMS à envoyer.'
+        messages.success(request, f"Déclencheur exécuté : {summary}")
+
+    return redirect('parametres:sms_auto_config')

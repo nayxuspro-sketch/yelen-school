@@ -6,7 +6,7 @@ Système de gestion scolaire pour établissements privés du Burkina Faso.
 
 | Composant | Technologie |
 |-----------|-------------|
-| Backend | Django 4.2 |
+| Backend | Django 5.2 |
 | Base de données | PostgreSQL 15 (mode serveur) ou SQLite (mode autonome) |
 | Cache / Files | Redis (mode serveur) ou cache base de données (mode autonome) |
 | PDF | WeasyPrint |

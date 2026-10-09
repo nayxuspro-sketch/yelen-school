@@ -35,3 +35,7 @@ yelen_source_complet.txt
 .claude/worktrees/
 /*.ttf
 /Playfair_Display/
+backups/
+# Archives de test générées hors distribution Git
+YELEN_SCHOOL_TEST.zip
+test-download/

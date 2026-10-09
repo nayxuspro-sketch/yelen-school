@@ -59,6 +59,9 @@ def message_list(request):
         'nb_repondu': nb_repondu,
         'nb_en_attente': nb_en_attente,
     }
+    if request.headers.get('HX-Request') and request.GET.get('_partial') == 'stats':
+        return render(request, 'communication/partials/message_stats.html', ctx)
+
     tpl = ('communication/partials/message_list.html'
            if request.headers.get('HX-Request')
            else 'communication/messages_list.html')
@@ -245,6 +248,14 @@ def sms_direct_simulateur(request):
     """Interface HTMX de simulation du SMS Direct (Parent-SMS)."""
     from .models import IncomingSMSLog
     logs = IncomingSMSLog.objects.all()[:20]
+    if request.headers.get('HX-Request') and request.GET.get('_partial') == 'history':
+        return render(request, 'communication/partials/sms_direct_history.html', {
+            'logs': logs,
+        })
+    if request.headers.get('HX-Request') and request.GET.get('_partial') == 'count':
+        return render(request, 'communication/partials/sms_direct_count.html', {
+            'logs': logs,
+        })
     return render(request, 'communication/sms_direct.html', {
         'logs': logs,
     })
@@ -273,6 +284,10 @@ def sms_direct_envoyer(request):
     })
     req.META['SERVER_NAME'] = request.META.get('SERVER_NAME', 'localhost')
     req.META['SERVER_PORT'] = request.META.get('SERVER_PORT', '8000')
+    # Marqueur Python interne : il ne peut pas être forgé par une requête HTTP
+    # et permet à l'interface authentifiée de réutiliser le même traitement
+    # sans passer par l'authentification du webhook externe.
+    req._yelen_internal_sms = True
 
     from django.test.utils import override_settings
     with override_settings(CELERY_TASK_ALWAYS_EAGER=True):
@@ -286,12 +301,14 @@ def sms_direct_envoyer(request):
     from .models import IncomingSMSLog
     dernier_log = IncomingSMSLog.objects.filter(sender_number=phone).order_by('-created_at').first()
 
-    return render(request, 'communication/partials/sms_direct_result.html', {
+    response = render(request, 'communication/partials/sms_direct_result.html', {
         'data': data,
         'phone': phone,
         'message': message,
         'log': dernier_log,
     })
+    response['HX-Trigger'] = 'smsHistoryUpdated'
+    return response
 
 
 @csrf_exempt
@@ -315,6 +332,7 @@ def webhook_incoming_sms(request):
     from django.http import JsonResponse, HttpResponse
     from django.conf import settings
     from django.core.cache import cache
+    from django.utils.crypto import constant_time_compare
     from core.sms import _normaliser_numero
     from core.tasks import envoyer_sms_async
     from inscriptions.models import Eleve, Inscription
@@ -323,61 +341,86 @@ def webhook_incoming_sms(request):
     from finances.views import _calcul_situation_financiere
     from .models import IncomingSMSLog
 
-    # ── Rate limiting par IP (A1) ──────────────────────────────────────
-    remote_ip = request.META.get('REMOTE_ADDR', '') or 'unknown'
-    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    client_ip = (forwarded_for.split(',')[0].strip() if forwarded_for else remote_ip)
-    rl_key = f"sms_webhook_rl:{client_ip}"
-    rl_limit = getattr(settings, 'SMS_WEBHOOK_RATE_LIMIT', 30)
-    try:
-        count = cache.get(rl_key, 0)
-        if count >= rl_limit:
-            return JsonResponse(
-                {'status': 'error', 'message': 'Trop de requêtes. Réessayez dans une minute.'},
-                status=429,
-            )
-        cache.set(rl_key, count + 1, 60)
-    except Exception:
-        # Si le cache est indisponible, on ne bloque pas (fail-open pour disponibilité)
-        pass
+    # ── Authentification et limitation du webhook ─────────────────────
+    # Fusion des deux protections (main A1 + distribution client) :
+    #   - les appels internes (simulateur SMS, déjà derrière login_required)
+    #     portent un marqueur Python non forgeable par HTTP ;
+    #   - pour les appels externes : liste d'IP, rate limiting par IP, puis
+    #     HMAC-SHA256 obligatoire si un secret est configuré, sinon token
+    #     partagé (comparaisons en temps constant) ; hors DEBUG, un webhook
+    #     sans secret ni token est refusé (503) au lieu d'être ouvert.
+    internal_request = getattr(request, '_yelen_internal_sms', False)
+    if not internal_request:
+        remote_ip = request.META.get('REMOTE_ADDR', '') or 'unknown'
+        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
+        client_ip = (forwarded_for.split(',')[0].strip()
+                     if forwarded_for else remote_ip)
 
-    # ── Authentification du webhook ────────────────────────────────────
-    # Vérification IP (si une liste d'IP autorisées est configurée)
-    if settings.SMS_ALLOWED_IPS:
-        if client_ip not in settings.SMS_ALLOWED_IPS:
+        # Vérification IP (si une liste d'IP autorisées est configurée).
+        if settings.SMS_ALLOWED_IPS and client_ip not in settings.SMS_ALLOWED_IPS:
             return JsonResponse(
                 {'status': 'error', 'message': 'Accès non autorisé.'},
                 status=403,
             )
 
-    # Vérification du token partagé (passé en paramètre GET ou header X-SMS-Token)
-    token = (request.GET.get('token', '')
-             or request.META.get('HTTP_X_SMS_TOKEN', ''))
-    if settings.SMS_WEBHOOK_TOKEN and token != settings.SMS_WEBHOOK_TOKEN:
-        return JsonResponse(
-            {'status': 'error', 'message': 'Token invalide.'},
-            status=403,
-        )
-
-    # Vérification HMAC (A1) — si SMS_WEBHOOK_SECRET configuré
-    webhook_secret = getattr(settings, 'SMS_WEBHOOK_SECRET', '')
-    if webhook_secret:
-        signature = request.META.get('HTTP_X_SMS_SIGNATURE', '')
-        if not signature:
+        # Limite par adresse source (SMS_WEBHOOK_RATE_LIMIT requêtes / minute).
+        rate_limit = max(1, int(getattr(settings, 'SMS_WEBHOOK_RATE_LIMIT', 60)))
+        rate_key = f"yelen:sms-webhook:{client_ip}:{timezone.now().strftime('%Y%m%d%H%M')}"
+        try:
+            try:
+                request_count = cache.incr(rate_key)
+            except ValueError:
+                cache.add(rate_key, 1, timeout=70)
+                request_count = 1
+        except Exception:
+            # Cache indisponible : on ne bloque pas (fail-open pour disponibilité)
+            request_count = 0
+        if request_count > rate_limit:
             return JsonResponse(
-                {'status': 'error', 'message': 'Signature manquante.'},
-                status=403,
+                {'status': 'error', 'message': 'Trop de requêtes. Réessayez dans une minute.'},
+                status=429,
             )
-        # HMAC-SHA256 du body brut
-        expected = hmac.new(
-            webhook_secret.encode('utf-8'),
-            request.body,
-            hashlib.sha256,
-        ).hexdigest()
-        # Comparaison constant-time
-        if not hmac.compare_digest(expected, signature):
+
+        configured_token = getattr(settings, 'SMS_WEBHOOK_TOKEN', '').strip()
+        if configured_token.lower().startswith(('generer-', 'votre-', 'changez')):
+            configured_token = ''
+        # Deux noms de variable acceptés (SMS_WEBHOOK_HMAC_SECRET = distribution
+        # client, SMS_WEBHOOK_SECRET = chantier sécurité A1) ; en-tête X-SMS-Signature.
+        hmac_secret = (getattr(settings, 'SMS_WEBHOOK_HMAC_SECRET', '')
+                       or getattr(settings, 'SMS_WEBHOOK_SECRET', '')).strip()
+
+        if not configured_token and not hmac_secret and not settings.DEBUG:
             return JsonResponse(
-                {'status': 'error', 'message': 'Signature invalide.'},
+                {'status': 'error', 'message': 'Webhook SMS non configuré.'},
+                status=503,
+            )
+
+        token = (request.GET.get('token', '')
+                 or request.META.get('HTTP_X_SMS_TOKEN', ''))
+        signature = request.META.get('HTTP_X_SMS_SIGNATURE', '').strip().lower()
+        authenticated = False
+
+        if hmac_secret:
+            # Secret configuré → signature HMAC-SHA256 du corps brut OBLIGATOIRE.
+            if not signature:
+                return JsonResponse(
+                    {'status': 'error', 'message': 'Signature manquante.'},
+                    status=403,
+                )
+            expected_signature = hmac.new(
+                hmac_secret.encode('utf-8'),
+                request.body,
+                hashlib.sha256,
+            ).hexdigest()
+            authenticated = constant_time_compare(signature, expected_signature)
+        elif configured_token:
+            authenticated = constant_time_compare(token, configured_token)
+        elif settings.DEBUG:
+            authenticated = True
+
+        if not authenticated:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Authentification webhook invalide.'},
                 status=403,
             )
 

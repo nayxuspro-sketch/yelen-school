@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordResetView
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -150,10 +151,9 @@ def login_view(request):
                 user.save(update_fields=['failed_login_attempts', 'locked_until'])
 
             if user.totp_enabled and user.totp_secret:
-                # A4 — signature du pk 2FA pour éviter la manipulation de session
-                from django.core.signing import Signer
-                signer = Signer()
-                request.session['_2fa_user_pk'] = signer.sign(str(user.pk))
+                # Ne jamais laisser un identifiant utilisateur modifiable en
+                # clair dans la session intermédiaire de la double authentification.
+                request.session['_2fa_user_pk'] = TimestampSigner().sign(str(user.pk))
                 request.session['_2fa_next'] = request.GET.get('next', '')
                 return redirect('accounts:login_2fa')
 
@@ -191,23 +191,24 @@ def login_view(request):
 
 def login_2fa(request):
     """Connexion utilisateur — étape 2 : code TOTP."""
-    signed_pk = request.session.get('_2fa_user_pk')
-    if not signed_pk:
+    signed_user_pk = request.session.get('_2fa_user_pk')
+    if not signed_user_pk:
         return redirect('accounts:login')
 
-    # A4 — vérification de la signature (protection contre manipulation de session)
-    from django.core.signing import Signer, BadSignature
     try:
-        signer = Signer()
-        user_pk = signer.unsign(signed_pk)
-    except BadSignature:
-        # Session manipulée ou expirée — retour au login
+        # Le défi 2FA est court : un jeton intermédiaire expire après cinq minutes.
+        user_pk = TimestampSigner().unsign(signed_user_pk, max_age=300)
+    except (BadSignature, SignatureExpired):
         request.session.pop('_2fa_user_pk', None)
+        request.session.pop('_2fa_next', None)
+        messages.error(request, "La vérification 2FA a expiré. Recommencez la connexion.")
         return redirect('accounts:login')
 
     try:
         user = User.objects.get(pk=user_pk)
     except User.DoesNotExist:
+        request.session.pop('_2fa_user_pk', None)
+        request.session.pop('_2fa_next', None)
         return redirect('accounts:login')
 
     if request.method == 'POST':
@@ -334,7 +335,8 @@ def profile_change_password(request):
     pw_form = ChangeOwnPasswordForm(request.POST, user=request.user)
     if pw_form.is_valid():
         request.user.set_password(pw_form.cleaned_data['password1'])
-        request.user.save(update_fields=['password'])
+        request.user.must_change_password = False
+        request.user.save(update_fields=['password', 'must_change_password'])
         # Reconnecter après changement de mot de passe pour éviter la déconnexion
         from django.contrib.auth import update_session_auth_hash
         update_session_auth_hash(request, request.user)

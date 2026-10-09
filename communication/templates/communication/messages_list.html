@@ -22,19 +22,13 @@
 <div id="modal-container"></div>
 
 {# Statistiques #}
-<div class="stats-grid animate-fade-up delay-1">
-  <div class="stat-card">
-    <p class="stat-label">Total envoyés</p>
-    <p class="stat-value">{{ nb_total }}</p>
-  </div>
-  <div class="stat-card">
-    <p class="stat-label">En attente de réponse</p>
-    <p class="stat-value stat-value-warning">{{ nb_en_attente }}</p>
-  </div>
-  <div class="stat-card">
-    <p class="stat-label">Répondus</p>
-    <p class="stat-value stat-value-success">{{ nb_repondu }}</p>
-  </div>
+<div id="message-stats"
+     class="stats-grid animate-fade-up delay-1"
+     hx-trigger="messageCreated from:body"
+     hx-get="{% url 'communication:message_list' %}?_partial=stats"
+     hx-target="#message-stats"
+     hx-swap="innerHTML">
+  {% include 'communication/partials/message_stats.html' %}
 </div>
 
 {# Filtres #}

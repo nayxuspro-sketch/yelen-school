@@ -1,4 +1,6 @@
-# Rapport Final d'Audit de Sécurité — YELEN SCHOOL
+# Rapport Final d'Audit de Sécurité — YELEN SCHOOL (historique)
+
+> **Document historique.** Ce rapport du 11 avril 2026 est conservé pour référence. Pour l'état actuel, consulter `docs/AUDIT_SECURITE.md` (audit de suivi du 14 septembre 2026).
 
 **Date :** 11 avril 2026
 **Version application :** 4.1

@@ -4,6 +4,13 @@
 
 {% block content %}
 
+{% if request.user.must_change_password %}
+<div class="alert alert-warning animate-fade-up" role="alert" style="max-width:900px; margin-bottom:var(--space-5);">
+  <strong>Changement obligatoire :</strong>
+  remplacez le mot de passe temporaire avant d'utiliser les autres fonctions de YELEN SCHOOL.
+</div>
+{% endif %}
+
 <div class="page-header animate-fade-up">
   <div>
     <h1 class="page-title">Mon Profil</h1>

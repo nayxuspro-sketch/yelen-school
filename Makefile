@@ -46,9 +46,13 @@ shell:
 createsuperuser:
 	$(COMPOSE) exec web python manage.py createsuperuser
 
-## Créer/Réinitialiser le super admin par défaut (admin@yelen.edu / admin123)
+## Vérifier/créer le super admin avec INITIAL_ADMIN_PASSWORD (sans réinitialisation implicite)
 admin:
 	$(COMPOSE) exec web python manage.py ensure_admin
+
+## Réinitialiser explicitement le super admin avec INITIAL_ADMIN_PASSWORD
+admin-reset:
+	$(COMPOSE) exec web python manage.py ensure_admin --reset
 
 ## Ouvrir un shell bash dans le conteneur web
 bash:
