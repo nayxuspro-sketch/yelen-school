@@ -13,7 +13,7 @@ Usage :
 À planifier en cron (ex : chaque nuit à 02h00) :
     0 2 * * * /path/to/venv/bin/python manage.py calculer_risques
 """
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire
@@ -37,6 +37,10 @@ class Command(BaseCommand):
             '--verbeux', action='store_true',
             help="Affiche le détail de chaque élève traité"
         )
+        parser.add_argument(
+            '--strict', action='store_true',
+            help="Retourne une erreur si au moins une inscription n'a pas pu être traitée"
+        )
 
     def handle(self, *args, **options):
         # ── Résoudre l'année scolaire ──────────────────────────────
@@ -45,13 +49,11 @@ class Command(BaseCommand):
             try:
                 annee = AnneeScolaire.objects.get(pk=annee_id)
             except AnneeScolaire.DoesNotExist:
-                self.stderr.write(self.style.ERROR(f"Année scolaire introuvable : {annee_id}"))
-                return
+                raise CommandError(f"Année scolaire introuvable : {annee_id}")
         else:
             annee = AnneeScolaire.objects.filter(est_courante=True).first()
             if not annee:
-                self.stderr.write(self.style.ERROR("Aucune année scolaire courante définie."))
-                return
+                raise CommandError("Aucune année scolaire courante définie.")
 
         self.stdout.write(f"Année scolaire : {annee.libelle}")
 
@@ -113,3 +115,7 @@ class Command(BaseCommand):
         ))
         if erreurs == 0:
             self.stdout.write(self.style.SUCCESS("Aucune erreur."))
+        elif options.get('strict'):
+            raise CommandError(
+                f"{erreurs} inscription(s) n'ont pas pu être traitée(s)."
+            )

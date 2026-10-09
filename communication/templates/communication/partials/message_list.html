@@ -1,5 +1,5 @@
 <div id="comm-list-container"
-     hx-get="{% url 'communication:message_list' %}"
+     hx-get="{% url 'communication:message_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
      hx-trigger="messageCreated from:body"
      hx-target="this"
      hx-swap="outerHTML"

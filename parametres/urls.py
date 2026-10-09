@@ -148,9 +148,9 @@ urlpatterns = [
     # path('signataires/<uuid:signataire_pk>/cosignataires/<uuid:pk>/edit/', views.cosignataire_form, name='cosignataire_edit'),
     # path('cosignataires/<uuid:pk>/delete/', views.cosignataire_delete, name='cosignataire_delete'),
 
-    # SMS automatiques (à implémenter)
-    # path('sms-auto/', views.sms_auto_config, name='sms_auto_config'),
-    # path('sms-auto/<uuid:pk>/toggle/', views.sms_auto_toggle, name='sms_auto_toggle'),
-    # path('sms-auto/<uuid:pk>/save/', views.sms_auto_save, name='sms_auto_save'),
-    # path('sms-auto/<uuid:pk>/executer/', views.sms_auto_executer, name='sms_auto_executer'),
+    # SMS automatiques
+    path('sms-auto/', views.sms_auto_config, name='sms_auto_config'),
+    path('sms-auto/<uuid:pk>/toggle/', views.sms_auto_toggle, name='sms_auto_toggle'),
+    path('sms-auto/<uuid:pk>/save/', views.sms_auto_save, name='sms_auto_save'),
+    path('sms-auto/<uuid:pk>/executer/', views.sms_auto_executer, name='sms_auto_executer'),
 ]

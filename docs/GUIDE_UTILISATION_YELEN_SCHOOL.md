@@ -1,16 +1,18 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 4.2
-version_guide: 2.17
-date_mise_a_jour: 24/07/2026 (v3.2)
-modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel]
-modules_en_attente: [portail_parent, transferts, api_rest, orientation_postbac, solar_guard]
+version_guide: 2.19
+date_mise_a_jour: 14/09/2026 (état de référence)
+modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, portail_parent, transferts, api_rest, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel, analyse_risque, sms_auto, sauvegarde_restauration]
+modules_en_attente: [orientation_postbac, solar_guard]
 redige_par: Agent IA — Développement YELEN SCHOOL
 ---
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 4.2 — Avril 2026 (Guide v2.6)
+### Version 4.2 — État de référence du 14 septembre 2026 (Guide v2.19)
+
+> Les procédures IA, SMS automatiques, sécurité et sauvegarde/restauration correspondent au code présent dans cette branche. La recette PostgreSQL/Windows et la restauration réelle restent à effectuer sur une machine équipée de Docker Desktop. La version est exploitable pour un pilote accompagné, mais n'est pas encore déclarée commercialisable sans réserve.
 
 ---
 
@@ -109,6 +111,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [18.2 Fonctionnement Hors Ligne](#182-fonctionnement-hors-ligne-complet)
   - [18.3 Design System v4 — Refonte Aura](#183-design-system-v4--refonte-aura)
   - [18.4 Guide Administrateur Technique](#184-guide-administrateur-technique)
+    - [Distribution locale autonome et sauvegardes](#distribution-locale-autonome-et-sauvegardes)
   - [18.5 Système de Notifications](#185-système-de-notifications)
   - [18.6 Journal d'Audit (Traçabilité)](#186-journal-daudit-traçabilité)
   - [18.7 Réunion de Parents](#187-réunion-de-parents-reunion-parents)
@@ -164,7 +167,7 @@ YELEN SCHOOL est développé par et pour le contexte burkinabè. Il respecte les
 | **Enseignant** | Professeur | Ses matières, notes, présences |
 | **Comptable** | Gestionnaire financier | Finances uniquement |
 | **Agent de Vie Scolaire (AVS)** | Surveillance et discipline | Présences, vie scolaire |
-| **Parent** | Père ou mère d'élève | Consultation uniquement *(à venir)* |
+| **Parent** | Père ou mère d'élève | Portail parent et consultation autorisée |
 
 ---
 
@@ -214,7 +217,7 @@ Ce guide est organisé **par module**. Chaque section suit le même schéma :
 
 YELEN SCHOOL fonctionne dans ton navigateur web. L'adresse dépend de ton installation :
 
-- **Réseau local** : `http://192.168.X.X:8000` (adresse fournie par ton administrateur)
+- **Réseau local** : `http://192.168.X.X:8000` par défaut, ou le port défini par `YELEN_HTTP_PORT` (adresse fournie par ton administrateur)
 - **Internet** : `https://[nom-etablissement].yelenscnool.bf` *(si hébergé)*
 
 > YELEN SCHOOL est conçu pour fonctionner **hors ligne** sur un réseau local. Tu n'as pas besoin d'une connexion internet si le serveur est installé dans ton établissement.
@@ -264,17 +267,15 @@ Le système vérifie si l'adresse email est connue et envoie un lien sécurisé 
 | Champ | Valeur |
 |-------|--------|
 | Email | `admin@yelen.edu` |
-| Mot de passe | `admin123` |
+| Mot de passe | Généré aléatoirement par l'installateur |
 
-Ce compte est créé automatiquement lors du premier déploiement. Il possède tous les droits (SUPER_ADMIN) et permet de paramétrer l'application avant de créer d'autres utilisateurs.
+Ce compte possède tous les droits (SUPER_ADMIN). L'installateur affiche le mot de passe temporaire une seule fois, puis le retire de `.env`. Le changement du mot de passe est obligatoire à la première connexion. `admin123` est un ancien mot de passe de compatibilité et n'est pas utilisé pour une nouvelle installation.
 
-> ⚠️ **Création automatique au premier démarrage :** Depuis la v4.2, si `ENSURE_ADMIN=true` dans `.env`, le conteneur Docker exécute `python manage.py ensure_admin` au démarrage via l'entrypoint. Cette commande crée le super administrateur `admin@yelen.edu` avec le mot de passe `admin123`.
+> ⚠️ **Création automatique au premier démarrage :** si `ENSURE_ADMIN=true` dans `.env`, le conteneur Docker exécute `python manage.py ensure_admin` avec `INITIAL_ADMIN_PASSWORD`. Ce secret ne doit jamais être copié dans un ticket ou un journal.
 > >
-> > **Sécurité :** Après le premier déploiement, mettez `ENSURE_ADMIN=false` dans `.env` pour éviter la réinitialisation du mot de passe en cas de redémarrage. Changez également le mot de passe depuis l'interface.
-> >
-> > **Réinitialisation manuelle (si nécessaire) :**
+> > **Réinitialisation manuelle explicite (si nécessaire) :** définir temporairement `INITIAL_ADMIN_PASSWORD` dans l'environnement puis lancer :
 > ```bash
-> docker exec yelen-school-web-1 python manage.py ensure_admin
+> docker exec yelen-school-web-1 python manage.py ensure_admin --reset
 > ```
 > Ou via les scripts : `./start.sh admin` (Linux) / `.\start.ps1 admin` (PowerShell) / `.\dev.ps1 admin`
 
@@ -839,6 +840,8 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 
 > **Attention :** L'analyse globale peut prendre plusieurs secondes selon l'effectif total de l'établissement. Un indicateur de chargement s'affiche pendant le traitement.
 
+**Analyse automatique :** Sous Windows, programmer `programmer-risques.bat` en tant qu'administrateur pour exécuter chaque nuit l'analyse complète. L'heure par défaut est 02:00 ; le journal est écrit dans `logs\\risques.log`. La tâche nécessite une année scolaire courante et Docker Desktop démarré.
+
 ---
 
 ## 2. PARAMÈTRES DE L'ÉTABLISSEMENT
@@ -913,7 +916,7 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 **Interface :** La page se compose de quatre cartes :
 
-0. **URL Endpoint du Webhook SMS** — Affiche l'URL du webhook `/communication/webhook/sms/` à configurer dans l'App Android SMS Gateway. Bouton "Copier l'URL" pour copier en un clic.
+0. **URL Endpoint du Webhook SMS** — Affiche l'URL du webhook `/communication/webhook/sms/` à configurer dans l'App Android SMS Gateway. Bouton "Copier l'URL" pour copier en un clic. La passerelle doit aussi envoyer `X-SMS-Token` avec la valeur de `SMS_WEBHOOK_TOKEN` stockée dans `.env` ; ne pas placer ce secret dans une URL ou un ticket.
 
 1. **Paramètres de Backend** — Configuration de la passerelle :
    - **Activer le service SMS** — Toggle ON/OFF pour activer/désactiver l'envoi SMS
@@ -923,7 +926,7 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 2. **Test de Connectivité** — Lancer un diagnostic pour vérifier la connexion au modem ou à l'API
 
-3. **Envoi Manuel** — Envoyer un SMS de test vers un numéro pour valider la configuration
+3. **Envoi Manuel** — Envoyer un SMS de test vers un numéro pour valider la configuration. Cette action envoie réellement un SMS lorsque `SMS_ENABLED=True` ; utiliser d'abord `sms_auto --dry-run` pour vérifier les déclencheurs automatiques.
 
 **Prise en compte immédiate (sans redémarrage) :** Depuis la version avec cache runtime, les modifications de configuration SMS sont appliquées immédiatement après le clic sur "Enregistrer". Le système stocke les valeurs dans un cache mémoire (via `get_sms_val()` / `set_sms_config_runtime()`) et les persist dans le fichier `.env`. Aucun redémarrage du serveur ni du conteneur Docker n'est nécessaire.
 
@@ -3552,9 +3555,9 @@ Sélectionne la période et obtiens :
 
 ---
 
-## 15. FONCTIONNALITÉS À VENIR 🔜
+## 15. ÉTAT DES FONCTIONNALITÉS ET LIMITES
 
-Cette section recense honnêtement les fonctionnalités **non encore disponibles** dans l'interface utilisateur, classées par priorité de développement.
+Cette section distingue les fonctions livrées dans le dépôt des fonctions encore planifiées ou dont la recette runtime reste à effectuer. Une fonction marquée « livrée » n'implique pas que la recette PostgreSQL/Windows a déjà été exécutée sur chaque installation client.
 
 ---
 
@@ -3572,18 +3575,20 @@ Cette section recense honnêtement les fonctionnalités **non encore disponibles
 | **Signataires configurables** par cycle et doc | ✅ Fonctionnel | Version actuelle |
 | **Design System v4 / Aura** (interface premium) | ✅ Fonctionnel | Version actuelle |
 | **Conformité hors ligne complète** (polices locales) | ✅ Fonctionnel | Version actuelle |
-| **Tests automatisés** (coverage ≥ 80 %) | ✅ Fonctionnel | Version actuelle |
+| **Suite de tests automatisés** | 🔧 Présente ; CI PostgreSQL/Redis à exécuter | Branche actuelle |
 | **Emploi du temps par classe** (interface complète) | ✅ Fonctionnel | Version actuelle |
 | **Emploi du temps par professeur** (grille + PDF) | ✅ Fonctionnel | Version actuelle |
 | **Échéanciers** (création, modification, suppression) | ✅ Fonctionnel | Version actuelle |
-| **Transfert inter-établissements** | 🔧 En développement | Version 4.2 |
+| **Transfert inter-établissements** | ✅ Livré | Branche actuelle |
 | **Procès-verbal du conseil de classe PDF** | ✅ Fonctionnel | Version actuelle |
 | **Bulletin de vacation PDF** | ✅ Fonctionnel | Version actuelle |
 | **Relevé de notes par discipline** | ✅ Disponible | Version actuelle |
 | **Bilan des périodes** | ✅ Disponible | Version actuelle |
-| **Portail Parent** | 📌 Planifié | Version 4.2 |
-| **Exports Excel / CSV** | 📌 Planifié | Version 4.2 |
-| **IA prédictive (décrochage)** | 📌 Planifié | Version 4.x |
+| **Portail Parent** | ✅ Livré | Branche actuelle |
+| **Exports Excel / CSV** | ✅ Livré | Branche actuelle |
+| **IA/règles de risque de décrochage** | ✅ Livré ; tâche locale planifiable | Branche actuelle |
+| **SMS automatiques** | ✅ Livré ; envoi réel à activer explicitement | Branche actuelle |
+| **Sauvegarde/restauration PostgreSQL + médias** | ✅ Scripts livrés ; recette réelle restante | Branche actuelle |
 | **Multi-établissements (Réseau)** | 📌 Planifié | Version 4.x |
 | **Gestion des licences** (interface) | ✅ Fonctionnel | Version actuelle |
 
@@ -3597,15 +3602,15 @@ Cette section recense honnêtement les fonctionnalités **non encore disponibles
 
 ### 15.2 Transfert Inter-Établissements
 
-> **Disponible dans :** Version 4.0
+> **✅ Livré dans la branche actuelle**
 
-Un élève qui quitte l'établissement pourra faire l'objet d'une demande de transfert officielle. La fonctionnalité permettra de :
+Un élève qui quitte l'établissement peut faire l'objet d'une demande de transfert officielle. Le module permet de :
 
-- Générer un **dossier de transfert** (relevé de notes, historique, situation financière)
-- Marquer l'élève comme « transféré » dans l'établissement d'origine
-- Intégrer un élève transféré avec son matricule d'origine (Licence Réseau uniquement)
+- générer un **dossier de transfert** (relevé de notes, historique, situation financière) ;
+- marquer l'élève comme transféré dans l'établissement d'origine ;
+- suivre la demande, son approbation ou son refus avec les rôles autorisés.
 
-> Pour l'instant : l'historique complet d'un élève reste dans l'établissement d'origine. Un nouvel établissement peut créer une inscription avec le matricule existant pour assurer la continuité.
+Le transfert ne déplace pas automatiquement les données vers un autre serveur : l'établissement de destination doit créer l'inscription nécessaire selon sa procédure locale.
 
 ---
 
@@ -3659,30 +3664,27 @@ Le bulletin de vacation saisi dans le module Vacations (section 11.3) peut être
 
 ### 15.6 Portail Parent
 
-> **Disponible dans :** Version Standard et supérieure — Version 4.1
+> **✅ Livré dans la branche actuelle**
 
-Les parents ou tuteurs légaux pourront se connecter depuis un téléphone ou un ordinateur pour consulter :
+Les parents ou tuteurs légaux peuvent se connecter depuis un téléphone ou un ordinateur pour consulter :
 
-- Les notes et moyennes de leur enfant par trimestre
-- Le calendrier des absences et retards
-- La situation financière (montants payés, solde restant)
-- Les sanctions disciplinaires et convocations
-- Les activités parascolaires auxquelles l'enfant est inscrit
+- les notes et moyennes de leur enfant par trimestre ;
+- les bulletins publiés ;
+- les notifications qui leur sont destinées.
 
-> L'accès sera sécurisé par un code parent attribué lors de l'inscription.
+L'accès dépend d'un compte parent configuré par l'établissement. Les données sont filtrées par l'élève associé ; le portail ne constitue pas un accès administrateur.
 
 ---
 
 ### 15.7 Exports Excel / CSV
 
-> **Disponible dans :** Version 4.1
+> **✅ Livré dans la branche actuelle**
 
-En complément des exports PDF existants, les exports Excel permettront de :
+En complément des exports PDF, les exports disponibles permettent notamment de :
 
-- Exporter la liste des élèves avec toutes leurs informations
-- Exporter les résultats d'une classe pour traitement externe
-- Exporter l'historique des paiements pour la comptabilité
-- Exporter les présences pour analyse statistique
+- exporter la liste des élèves et du personnel ;
+- exporter les résultats et les présences au format CSV ;
+- exporter le bilan des encaissements au format Excel.
 
 ---
 
@@ -3730,11 +3732,13 @@ Réservé au super-administrateur, cet espace offre deux fonctions :
 
 ---
 
-### 15.9 Prédiction des Risques de Décrochage Scolaire (IA)
+### 15.9 Analyse des Risques de Décrochage (IA locale)
 
-> **Disponible dans :** Version Premium — Version 4.x
+> **✅ Livré dans la branche actuelle**
 
-Un module d'intelligence artificielle analysera automatiquement les données de chaque élève (notes en baisse, absences fréquentes, sanctions répétées) pour établir un **score de risque de décrochage**. Le Directeur ou le Proviseur recevra une alerte et pourra engager une action préventive (entretien, conseil aux parents, suivi renforcé).
+Le module calcule localement un **score de risque de décrochage** à partir des données pédagogiques et de présence disponibles. Il ne dépend pas d'un service IA Internet quotidien. Le Directeur ou le Proviseur peut consulter les niveaux de risque, filtrer les élèves et exporter le rapport PDF.
+
+La commande `python manage.py calculer_risques --strict` peut être planifiée avec `programmer-risques.bat` chaque nuit. Le journal `logs\\risques.log` contient le résultat et les erreurs ; une erreur d'inscription fait échouer la tâche en mode strict.
 
 ---
 
@@ -3811,7 +3815,7 @@ Non directement. En cas d'erreur de saisie, contacte le Directeur ou le Comptabl
 
 ### Q9. Comment sauvegarder les données ?
 
-Les sauvegardes sont automatiques et gérées par l'administrateur technique. Si le logiciel est installé sur un serveur local, l'administrateur doit configurer les sauvegardes régulières. Contacte ton prestataire technique.
+Les scripts de sauvegarde PostgreSQL et médias sont fournis, mais une sauvegarde n'est automatique qu'après programmation par l'administrateur technique. Il doit vérifier régulièrement la paire `.dump` et `_media.tar.gz`, puis en conserver une copie hors du serveur. Consulte la procédure « Distribution locale autonome et sauvegardes ».
 
 ---
 
@@ -4133,6 +4137,110 @@ tests.bat core/tests/test_models.py -v
 ```
 
 Les fichiers `conftest.py` désactivent automatiquement le journal d'audit pendant l'exécution des tests pour éviter les erreurs de clé étrangère.
+
+#### Distribution locale autonome et sauvegardes
+
+La distribution destinée à un établissement client se lance avec `docker-compose.client.yml`. Elle regroupe l'application Django, PostgreSQL et Redis dans un environnement local géré automatiquement. PostgreSQL reste la base officielle du projet ; SQLite n'est pas utilisé.
+
+**Installation Windows :**
+
+1. Installer et démarrer Docker Desktop.
+2. Double-cliquer sur `demarrage.bat` ou `installer/install-windows.bat`.
+3. Attendre l'ouverture de `http://localhost:8000/accounts/login/`.
+4. Se connecter avec le compte initial affiché par l'installateur, puis changer son mot de passe.
+
+L'installateur crée `.env`, génère les secrets locaux, applique les migrations et désactive `ENSURE_ADMIN` après le premier démarrage. Les données PostgreSQL, Redis, médias et journaux sont conservées dans des volumes Docker persistants. Le parcours détaillé Windows, la programmation de la tâche planifiée PostgreSQL et médias, le réseau local et la reprise sur une nouvelle machine sont décrits dans `docs/GUIDE_DEPLOIEMENT_WINDOWS.md`.
+
+`demarrage.bat` ne se limite pas à exécuter `docker compose -f docker-compose.client.yml up -d --build` : il prépare aussi la configuration, recherche automatiquement un port libre dans l'ordre `8000`, `8001`, `8002`, `8003`, `8004`, `8005`, attend que la page de connexion soit disponible et ouvre le navigateur. Le port sélectionné est conservé dans `.env`, utilisé pour l'adresse affichée et pour la règle du pare-feu Windows. Le script est idempotent et peut être relancé sans supprimer les volumes. Si toute la plage est occupée, définir manuellement un autre `YELEN_HTTP_PORT` libre. Une confirmation UAC est demandée uniquement lors de la création ou de la modification nécessaire de la règle pare-feu, pas lors d'une ouverture de session normale avec la tâche automatique.
+
+**Démarrage automatique Windows :**
+
+Après la première installation, faire un clic droit sur `programmer-demarrage.bat` puis choisir **Exécuter en tant qu'administrateur**. La tâche `YELEN SCHOOL - Démarrage automatique` attend Docker Desktop à chaque ouverture de session, vérifie le port conservé dans `.env` et applique le même fallback `8000` à `8005` si un autre programme l'occupe. Le nouveau port est conservé dans `.env` et la règle du pare-feu est actualisée uniquement lorsqu'il change, afin d'éviter une demande UAC à chaque ouverture de session. La tâche ne reconstruit ni ne supprime les volumes. Son journal est écrit dans `logs\startup.log`. Utiliser ensuite `demarrage.bat` uniquement pour une mise à jour ou une reconstruction de l'image.
+
+**Installation Linux/macOS :**
+
+```bash
+chmod +x installer/install-local.sh
+./installer/install-local.sh
+```
+
+**Sauvegarde quotidienne :**
+
+```bash
+# Windows
+installer\backup-windows.bat
+
+# Linux/macOS
+./installer/backup-local.sh
+```
+
+Une sauvegarde produit un fichier PostgreSQL `.dump` et une archive associée `_media.tar.gz`. Les deux fichiers doivent être conservés ensemble et copiés régulièrement sur un support différent du serveur.
+
+**Programmation automatique :**
+
+```text
+# Windows — clic droit sur programmer-sauvegarde.bat
+# puis « Exécuter en tant qu'administrateur »
+```
+
+```powershell
+# Windows — ou depuis PowerShell, tous les jours à 22 h
+.\programmer-sauvegarde.bat
+```
+
+```bash
+# Linux/macOS — tous les jours à 22 h
+./installer/register-backup-cron.sh 22:00
+```
+
+**Restauration :**
+
+```bash
+./installer/restore-local.sh backups/yelen_school_YYYYMMDD_HHMMSS.dump
+```
+
+Sous Windows, utiliser `installer\restore-windows.bat`. La restauration remplace la base et les médias actuels et demande une confirmation explicite. Tester régulièrement une restauration sur une machine de secours afin de vérifier que les sauvegardes sont réellement exploitables.
+
+**Restauration automatique ponctuelle sous Windows :**
+
+Une restauration remplace la base PostgreSQL et les médias actuels. Elle doit être programmée uniquement après avoir réalisé une sauvegarde récente, vérifié la paire de fichiers et prévenu les utilisateurs de l'établissement.
+
+Le fichier `programmer-restauration.bat` programme une restauration **unique** à l'heure demandée. Elle n'est pas quotidienne par défaut afin d'éviter d'écraser les nouvelles données de l'école.
+
+Depuis la racine du projet, ouvrir PowerShell **en tant qu'administrateur** ou faire un clic droit sur `programmer-restauration.bat` et choisir **Exécuter en tant qu'administrateur** :
+
+```powershell
+.\programmer-restauration.bat `
+  ".\backups\yelen_school_YYYYMMDD_HHMMSS.dump" 03:00 CONFIRMER
+```
+
+Remplacer `yelen_school_YYYYMMDD_HHMMSS.dump` par le nom réel du dump et `03:00` par l'heure souhaitée au format `HH:MM`. Le mot `CONFIRMER` est obligatoire pour empêcher une programmation accidentelle.
+
+Avant de créer la tâche, le script vérifie automatiquement :
+
+- la présence du fichier `.dump` PostgreSQL ;
+- la présence de l'archive médias associée portant le même horodatage et le suffixe `_media.tar.gz` ;
+- la taille non nulle des deux fichiers ;
+- la présence de `.env`, de `docker-compose.client.yml` et du script de restauration.
+
+La tâche créée dans le Planificateur de tâches s'appelle `YELEN SCHOOL - Restauration programmée`. Elle s'exécutera une seule fois au prochain horaire demandé. Docker Desktop doit être démarré et les utilisateurs doivent être déconnectés à l'heure prévue. Le journal est écrit dans `backups\restore.log`.
+
+Pour contrôler la tâche avant son exécution :
+
+1. ouvrir le **Planificateur de tâches Windows** ;
+2. rechercher `YELEN SCHOOL - Restauration programmée` ;
+3. vérifier l'heure et le chemin de la sauvegarde ;
+4. supprimer ou désactiver la tâche si la restauration n'est plus nécessaire.
+
+Le script technique équivalent est disponible avec :
+
+```powershell
+.\installer\register-restore-task.ps1 `
+  -BackupFile ".\backups\yelen_school_YYYYMMDD_HHMMSS.dump" `
+  -Time 03:00 -ConfirmRestore
+```
+
+Après l'exécution, vérifier l'application, quelques données importantes et plusieurs fichiers médias. Ne jamais utiliser `docker compose down -v` pour préparer une restauration : cette commande supprime les volumes Docker.
 
 ---
 
@@ -5697,14 +5805,29 @@ Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via
 
 YELEN SCHOOL fait l'objet d'audits de sécurité réguliers. Le rapport complet est disponible dans `docs/AUDIT_SECURITE.md`.
 
-**Version actuelle du rapport :** v6.0 — 23 juin 2026
+**Version actuelle du rapport :** audit de suivi — 14 septembre 2026
 
-| Niveau | Statut |
+L'audit actuel ne constitue pas un score automatique de qualité produit. Il distingue l'avancement technique de la validation réelle : l'audit local `pip-audit` du 14/09/2026 ne signale aucune vulnérabilité connue, mais les validations PostgreSQL, Redis, Windows et restauration restent nécessaires.
+
+#### État de qualité et de préparation au 14/09/2026
+
+| Indicateur | Estimation | Interprétation |
+|------------|-----------:|----------------|
+| Gates de commercialisation entièrement validés | **0 %** (0/7) | Aucune commercialisation générale sans réserve ne doit être annoncée. |
+| Contrôles statiques exécutés | **100 % réussis** | Syntaxe, compilation, cohérence de migration et contrôle shell uniquement ; cela ne remplace pas un test runtime. |
+| Implémentation du changement obligatoire de mot de passe | **≈ 80 %** | Code, migration, installateurs et tests ajoutés ; parcours PostgreSQL/Windows encore à exécuter. |
+| Préparation technique globale | **≈ 60 %** | Estimation de travail, et non certification ou garantie de qualité. |
+| Commercialisation sans réserve | **0 % validée** | Les gates bloqués ne sont pas comptés comme réussis. |
+
+Les gates non validés sont marqués **BLOCKED**, et non **FAIL**, lorsque l'environnement de recette manque. Aucun test officiel n'est basculé vers SQLite : PostgreSQL et Redis restent obligatoires. Le détail des commandes, environnements et résultats figure dans `docs/VALIDATION_COMMERCIALISATION.md`.
+
+| Domaine | Statut |
 |--------|--------|
-| 🔴 Critiques | 1 ouvert — Action immédiate requise |
-| 🟠 Hautes | 3 ouvertes |
-| 🟡 Moyennes | 4 ouvertes |
-| ✅ Score global | 6.5/10 |
+| Authentification, CSRF et rôles | ✅ Contrôlé statiquement |
+| API, IDOR et uploads | ✅ Contrôlé statiquement |
+| Webhook SMS | 🔧 Secret, HMAC optionnel et rate limit ajoutés — test runtime à effectuer |
+| Dépendances | ✅ Versions mises à niveau ; audit local sans vulnérabilité connue le 14/09/2026, CI à rejouer |
+| Sauvegarde/restauration | ⏳ Test réel Windows restant |
 
 ### 19.2 Bonnes Pratiques pour les Administrateurs
 
@@ -5747,6 +5870,7 @@ Variables essentielles pour un déploiement local :
 | `DB_PORT` | `5433` | Port d'exposition de PostgreSQL (port 5433 sur l'hôte → 5432 dans le conteneur Docker). Évite le conflit si PostgreSQL est installé nativement sur Windows (port 5432). |
 | `DISABLE_HTTPS_REDIRECT` | `true` | Désactive la redirection HTTPS (pratique en local sans certificat) |
 | `ENSURE_ADMIN` | `true` | `false` après le premier déploiement (sécurité) |
+| `INITIAL_ADMIN_PASSWORD` | Secret aléatoire d'au moins 12 caractères | Généré par l'installateur, affiché une seule fois puis retiré de `.env` |
 | `EMAIL_HOST` | *(laisser vide)* | Backend console utilisé automatiquement si vide → pas de plantage SMTP |
 
 > **⚠️ Conflit PostgreSQL natif :** Si vous avez PostgreSQL installé nativement sur Windows (service `postgresql-x64-18`),
@@ -5762,15 +5886,16 @@ Variables essentielles pour un déploiement local :
 
 **Windows :** Double-cliquer sur `demarrage.bat` (ou `lancer-yelen.bat`).
 
-`demarrage.bat` effectue les vérifications suivantes avant de lancer :
+`demarrage.bat` appelle l'installateur local et effectue les vérifications suivantes avant de lancer :
 1. **Docker Desktop** est installé et en cours d'exécution
-2. **Conteneurs déjà en cours ?** — si oui, ouvre directement le navigateur sans reconstruire
-3. Si les conteneurs ne sont pas encore lancés, exécute `docker compose up -d --build`
-4. **Attente du serveur web** — boucle de scrutation (jusqu'à 80 secondes) :
-   - Vérifie toutes les 2 secondes que `http://localhost:8000` répond
-   - Ouvre le navigateur dès que le serveur est prêt (évite l'erreur `NS_ERROR_NET_EMPTY_RESPONSE`)
+2. Le fichier `.env` est préparé et ses secrets locaux sont conservés
+3. Exécute `docker compose -f docker-compose.client.yml up -d --build` de manière idempotente
+4. **Attente du serveur web** — boucle de scrutation jusqu'à 120 secondes :
+   - vérifie toutes les 2 secondes que le port défini par `YELEN_HTTP_PORT` répond ;
+   - utilise `8000` comme premier port, puis essaie automatiquement `8001`, `8002`, `8003`, `8004` et `8005` si nécessaire ;
+   - ouvre le navigateur dès que le serveur est prêt.
 
-`lancer-yelen.bat` offre un lancement plus simple (sans vérifications préalables) avec la même boucle d'attente.
+`lancer-yelen.bat` appelle le même installateur et bénéficie de la même sélection automatique des ports `8000` à `8005`. Si toute la plage est occupée, ajouter un `YELEN_HTTP_PORT` libre dans `.env` avant de relancer l'un des deux fichiers `.bat`.
 
 En cas d'échec, le script affiche les logs de diagnostic (web et db).
 
@@ -5787,7 +5912,7 @@ docker compose -f docker-compose.dev.yml up -d --build web db redis minio mailho
 docker compose -f docker-compose.dev.yml logs -f web
 ```
 
-L'application est accessible sur : **http://localhost:8000**
+L'application est accessible sur **http://localhost:8000** par défaut, ou sur le port indiqué par `YELEN_HTTP_PORT` dans `.env`.
 
 > **Nginx en développement :** La configuration `nginx/default.dev.conf` est utilisée en mode dev
 > (HTTP uniquement, pas de redirect HTTPS, pas de certificat SSL). Pour la production,
@@ -5798,16 +5923,16 @@ L'application est accessible sur : **http://localhost:8000**
 | Champ | Valeur |
 |-------|--------|
 | Email | `admin@yelen.edu` |
-| Mot de passe | `admin123` |
+| Mot de passe | Temporaire, généré et affiché par l'installateur |
 
-Ce compte est créé automatiquement au premier démarrage si `ENSURE_ADMIN=true` dans `.env`.
+Le compte est créé automatiquement au premier démarrage si `ENSURE_ADMIN=true` et `INITIAL_ADMIN_PASSWORD` sont définis. Le changement du mot de passe est obligatoire avant l'accès aux autres modules.
 
 **Actions post-connexion :**
-1. Aller dans `Paramètres → Établissement` pour configurer l'identité de l'école
-2. Créer les utilisateurs (Directeur, Enseignants, etc.)
-3. Configurer l'année scolaire dans `Paramètres → Années scolaires`
-4. Mettre `ENSURE_ADMIN=false` dans `.env` pour éviter la réinitialisation du mot de passe
-5. Changer le mot de passe admin depuis le profil utilisateur
+1. Remplacer le mot de passe temporaire dans le formulaire imposé
+2. Aller dans `Paramètres → Établissement` pour configurer l'identité de l'école
+3. Créer les utilisateurs (Directeur, Enseignants, etc.)
+4. Configurer l'année scolaire dans `Paramètres → Années scolaires`
+5. Vérifier que `ENSURE_ADMIN=false` et que `INITIAL_ADMIN_PASSWORD` est vide dans `.env`
 
 #### 4. Arrêt et redémarrage
 
@@ -5848,6 +5973,7 @@ Variables pour la production :
 | `DB_PASSWORD` | Mot de passe fort | Générer, sera utilisé à l'initialisation du volume |
 | `DISABLE_HTTPS_REDIRECT` | *(omettre ou `false`)* | La redirection HTTPS doit être active en production |
 | `ENSURE_ADMIN` | `true` (1er lancement) puis `false` | Crée l'admin au premier démarrage |
+| `INITIAL_ADMIN_PASSWORD` | Secret aléatoire temporaire | Fourni par l'installateur au premier lancement, puis supprimé de `.env` |
 | `EMAIL_HOST` | Serveur SMTP | Configurer les emails transactionnels |
 | `SMS_ENABLED` | `false` | Activer seulement si un serveur SMS est disponible |
 
@@ -5935,4 +6061,4 @@ Utilisateur
 
 ---
 
-*Guide v3.1 — Mis à jour le 19/07/2026 — Section 19 : Guide de déploiement complet (local + production)*
+*Guide v3.2 — Mis à jour le 14/09/2026 — Section 19 : état de préparation, sécurité et déploiement complet (local + production)*

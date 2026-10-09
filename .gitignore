@@ -19,3 +19,8 @@ makemigrations_error.log
 nginx/default.dev.conf
 _test_run.bat
 desktop/
+backups/
+# Archives de test générées hors distribution Git
+YELEN_SCHOOL_TEST.zip
+test-download/
+.claude/worktrees/

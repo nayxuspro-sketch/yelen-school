@@ -91,11 +91,13 @@ if not DEBUG:
 # Autorise les requêtes POST/CSRF depuis les origines de confiance
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://localhost,https://127.0.0.1').split(',') if o.strip()]
 
-# Ajout automatique de l'IP locale pour l'accès réseau local
+# Ajout automatique de l'IP locale pour l'accès réseau local.
+# Le port est configurable pour éviter les conflits avec un autre service local.
 try:
+    _local_http_port = os.environ.get('YELEN_HTTP_PORT', '8000')
     _lan_ip = socket.gethostbyname(socket.gethostname())
     if _lan_ip and not _lan_ip.startswith('127.'):
-        _lan_origin = f'http://{_lan_ip}:8000'
+        _lan_origin = f'http://{_lan_ip}:{_local_http_port}'
         if _lan_origin not in CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append(_lan_origin)
 except Exception:
@@ -170,6 +172,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Force le remplacement du mot de passe initial avant l'accès aux modules.
+    'yelen_school.password_middleware.ForcePasswordChangeMiddleware',
     # CSP nonces — doit être APRÈS AuthenticationMiddleware
     'yelen_school.csp_middleware.CSPNonceMiddleware',
     # Restriction rôles PARENT/ÉLÈVE — doit être APRÈS AuthenticationMiddleware
@@ -278,10 +282,15 @@ SMS_MODEM_BAUD = int(os.environ.get('SMS_MODEM_BAUD', '9600'))
 SMS_MODEM_TIMEOUT = int(os.environ.get('SMS_MODEM_TIMEOUT', '10'))
 
 # ── WEBHOOK SMS ────────────────────────────────────────────────────────────────
-# Token partagé : l'application SMS Gateway doit inclure ?token=... dans l'URL
-SMS_WEBHOOK_TOKEN = os.environ.get('SMS_WEBHOOK_TOKEN', '')
+# Secret partagé : la passerelle SMS doit l'envoyer dans X-SMS-Token.
+# Le paramètre ?token=... reste accepté uniquement pour les passerelles
+# anciennes ; le header est recommandé car il évite les secrets dans les URLs.
+SMS_WEBHOOK_TOKEN = os.environ.get('SMS_WEBHOOK_TOKEN', '').strip()
+# Optionnel : signature HMAC-SHA256 du corps brut dans X-SMS-Signature.
+SMS_WEBHOOK_HMAC_SECRET = os.environ.get('SMS_WEBHOOK_HMAC_SECRET', '').strip()
 # IP autorisées à appeler le webhook (séparées par des virgules)
 SMS_ALLOWED_IPS = [ip.strip() for ip in os.environ.get('SMS_ALLOWED_IPS', '').split(',') if ip.strip()]
+SMS_WEBHOOK_RATE_LIMIT = int(os.environ.get('SMS_WEBHOOK_RATE_LIMIT', '60'))
 
 # ── SÉCURITÉ RENFORCÉE ─────────────────────────────────────────────────────────
 

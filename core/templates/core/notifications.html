@@ -3,19 +3,7 @@
 {% block title %}Notifications{% endblock %}
 
 {% block content %}
-<div class="page-header animate-fade-up">
-  <div>
-    <p class="page-subtitle">Espace personnel</p>
-    <h1 class="page-title">Notifications
-      {% if nb_non_lues %}<span class="badge badge-danger" style="font-size:0.75rem; margin-left:8px;">{{ nb_non_lues }}</span>{% endif %}
-    </h1>
-  </div>
-  {% if nb_non_lues %}
-  <a href="{% url 'core:notifications_tout_lu' %}" class="btn-outline">
-    Tout marquer comme lu
-  </a>
-  {% endif %}
-</div>
+{% include 'core/partials/notifications_header.html' %}
 
 <div class="card animate-fade-up" style="overflow:hidden;">
   {% if notifications %}

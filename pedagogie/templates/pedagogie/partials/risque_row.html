@@ -44,7 +44,7 @@
     </td>
     <td style="text-align: right;">
         <button class="dash-refresh-btn" 
-                hx-post="{% url 'pedagogie:risque_decrochage' %}"
+                hx-post="{% url 'pedagogie:risque_decrochage' %}{% if annee %}?annee={{ annee.pk }}{% endif %}"
                 hx-vals='{"inscription_id": "{{ r.inscription.pk }}"}'
                 hx-target="#risque-row-{{ r.inscription.pk }}"
                 hx-swap="outerHTML"

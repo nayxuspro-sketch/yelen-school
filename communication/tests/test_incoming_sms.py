@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import json
 import pytest
 from unittest.mock import patch
@@ -13,7 +15,12 @@ from finances.models import FraisScolarite, Echeancier, Paiement
 class TestIncomingSMSWebhook:
 
     @pytest.fixture(autouse=True)
-    def setup_data(self):
+    def setup_data(self, client, settings):
+        # Les tests utilisent le même mécanisme d'authentification que la
+        # passerelle réelle, sans laisser le webhook ouvert par défaut.
+        settings.SMS_WEBHOOK_TOKEN = 'test-webhook-token'
+        client.defaults['HTTP_X_SMS_TOKEN'] = 'test-webhook-token'
+
         # Create common setup objects
         self.etab = baker.make('etablissements.Etablissement')
         self.annee = baker.make('parametres.AnneeScolaire', etablissement=self.etab, est_courante=True)
@@ -175,3 +182,71 @@ class TestIncomingSMSWebhook:
         assert response.status_code == 200
         data = response.json()
         assert data['status'] == 'success'
+
+    def test_invalid_webhook_token_is_rejected(self, client):
+        response = client.post(
+            self.url,
+            {'phoneNumber': '+22670000000', 'message': 'HELP'},
+            HTTP_X_SMS_TOKEN='wrong-token',
+            secure=True,
+        )
+        assert response.status_code == 403
+
+    @patch('django.core.cache.cache')
+    @patch('core.tasks.envoyer_sms_async')
+    def test_rate_limit_rejects_excess_requests(self, mock_envoyer, mock_cache, client, settings):
+        settings.SMS_WEBHOOK_RATE_LIMIT = 1
+        mock_cache.incr.side_effect = [1, 2]
+
+        first = client.post(
+            self.url,
+            {'phoneNumber': '+22670000000', 'message': 'HELP'},
+            secure=True,
+        )
+        second = client.post(
+            self.url,
+            {'phoneNumber': '+22670000000', 'message': 'HELP'},
+            secure=True,
+        )
+
+        assert first.status_code == 200
+        assert second.status_code == 429
+        mock_envoyer.assert_called_once()
+
+    @patch('core.tasks.envoyer_sms_async')
+    def test_hmac_signature_is_accepted(self, mock_envoyer, client, settings):
+        settings.SMS_WEBHOOK_TOKEN = ''
+        settings.SMS_WEBHOOK_HMAC_SECRET = 'test-hmac-secret'
+        client.defaults.pop('HTTP_X_SMS_TOKEN', None)
+        body = json.dumps({
+            'phoneNumber': '+22670000000',
+            'message': 'HELP',
+        }).encode('utf-8')
+        signature = hmac.new(
+            settings.SMS_WEBHOOK_HMAC_SECRET.encode('utf-8'),
+            body,
+            hashlib.sha256,
+        ).hexdigest()
+
+        response = client.post(
+            self.url,
+            body,
+            content_type='application/json',
+            HTTP_X_SMS_SIGNATURE=signature,
+            secure=True,
+        )
+        assert response.status_code == 200
+        mock_envoyer.assert_called_once()
+
+    def test_missing_webhook_secret_is_rejected_outside_debug(self, client, settings):
+        settings.SMS_WEBHOOK_TOKEN = ''
+        settings.SMS_WEBHOOK_HMAC_SECRET = ''
+        settings.DEBUG = False
+        client.defaults.pop('HTTP_X_SMS_TOKEN', None)
+
+        response = client.post(
+            self.url,
+            {'phoneNumber': '+22670000000', 'message': 'HELP'},
+            secure=True,
+        )
+        assert response.status_code == 503
