@@ -6,9 +6,11 @@
 >
 > **Objectif :** installer YELEN SCHOOL sur une machine Windows avec PostgreSQL et Redis gérés localement par Docker Desktop. Après l'installation initiale, l'application fonctionne sur le réseau local sans connexion Internet quotidienne.
 >
-> **État de référence :** 14 septembre 2026. Les fonctions décrites comme automatiques sont celles présentes dans les scripts du dépôt ; les validations runtime Windows et la recette réelle de restauration restent à exécuter sur une machine équipée de Docker Desktop.
+> **État de référence :** 15 septembre 2026. Le parcours client Windows a été validé sur `C:\YELEN-SCHOOL` avec PostgreSQL et Redis conservés dans leurs volumes Docker. Les contrôles de restauration et les autres gates de commercialisation restent à exécuter selon l'environnement.
 >
-> **Statut commercial :** préparation technique estimée à **≈ 60 %** ; **0/7 gate** de commercialisation entièrement validé. Cette procédure peut être utilisée pour un pilote accompagné, mais ne constitue pas une certification de mise en production sans réserve. Voir `docs/VALIDATION_COMMERCIALISATION.md` pour les commandes, environnements et résultats exacts.
+> **Validation client confirmée :** `YELEN_HTTP_PORT=8001`, accès local par `http://localhost:8001/`, accès réseau local par `http://DESKTOP-NKQMF8L:8001/`, redirection normale vers `/accounts/login/?next=/`, sans erreur `Invalid HTTP_HOST header` ni erreur CSRF signalée.
+>
+> **Statut commercial :** les contrôles runtime de cette installation ne constituent pas une certification générale de mise en production. Cette procédure peut être utilisée pour un pilote accompagné ; voir `docs/VALIDATION_COMMERCIALISATION.md` pour les gates et les contrôles restant à effectuer.
 
 ---
 
@@ -18,6 +20,8 @@
    - [État de validation avant installation](#14-état-de-validation-à-connaître-avant-linstallation)
 2. [Installation initiale](#2-installation-initiale)
 3. [Configuration et premier accès](#3-configuration-et-premier-accès)
+   - [Validation après installation](#34-validation-après-installation)
+   - [3.5 Verrouillage matériel et protection anti-copie](#35-verrouillage-matériel-et-protection-anti-copie-procédure-éditeur)
 4. [Utilisation quotidienne](#4-utilisation-quotidienne)
 5. [Sauvegardes PostgreSQL et médias](#5-sauvegardes-postgresql-et-médias)
 6. [Programmation automatique](#6-programmation-automatique)
@@ -52,28 +56,35 @@ Le fichier `docker-compose.dev.yml` est réservé au développement. Pour une in
 - Docker Desktop installé, démarré et configuré avec le moteur Linux ;
 - accès administrateur lors de l'installation de Docker Desktop ;
 - PowerShell 5.1 ou PowerShell 7 ;
-- une adresse IP fixe ou réservée sur le réseau local est recommandée pour le poste serveur ;
+- une adresse IP fixe ou réservée sur le réseau local est recommandée pour le poste serveur ; les adresses statiques comme DHCP sont détectées par l'installateur ;
 - un support externe ou un autre poste pour copier les sauvegardes.
 
 La première installation télécharge l'image PostgreSQL, l'image Redis et les dépendances Python. Une connexion Internet est donc nécessaire à ce moment-là. Les démarrages et l'utilisation courante sont ensuite locaux, tant que les images Docker sont déjà présentes.
 
 ### 1.3 Dossier de l'application
 
-Choisir un dossier simple, par exemple `C:\YELEN-SCHOOL`. Le chemin peut contenir des espaces ; les scripts utilisent des chemins absolus. Ne pas placer les sauvegardes uniquement sur le même disque que l'ordinateur serveur.
+Pour l'installation cliente de référence, utiliser exclusivement le chemin :
+
+```text
+C:\YELEN-SCHOOL
+```
+
+Ne pas utiliser un dossier du Bureau ni créer une seconde copie du projet dans un autre emplacement. Les scripts utilisent ce chemin comme racine de référence. Ne pas placer les sauvegardes uniquement sur le même disque que l'ordinateur serveur.
 
 ### 1.4 État de validation à connaître avant l'installation
 
 Les pourcentages ci-dessous mesurent la préparation et les preuves disponibles ; ils ne sont pas une note automatique de la qualité fonctionnelle du logiciel.
 
-| Indicateur | État au 14/09/2026 |
+| Indicateur | État au 15/09/2026 |
 |---|---:|
-| Gates de commercialisation entièrement validés | **0 % (0/7)** |
-| Contrôles statiques exécutés | **100 % réussis** |
-| Implémentation du changement obligatoire de mot de passe initial | **≈ 80 %** — recette réelle encore nécessaire |
-| Préparation technique globale | **≈ 60 %** — estimation provisoire |
-| Commercialisation sans réserve | **Non validée** |
+| Accès `localhost:8001` et accès réseau local validés | **✅** |
+| Redirection vers `/accounts/login/` validée | **✅** |
+| Authentification PostgreSQL sur volume existant réparée sans perte de données | **✅** |
+| PostgreSQL et Redis conservés dans leurs volumes | **✅** |
+| Tâche de démarrage automatique et restauration | **À vérifier sur chaque poste client** |
+| Gates de commercialisation entièrement validés | **0 % (0/7)** — certification générale non validée |
 
-Les gates non exécutables dans l'environnement disponible sont `BLOCKED`, pas `PASS`. Avant une vente générale, réaliser l'installation réelle, le test de port et de pare-feu, la sauvegarde/restauration et la recette post-restauration. Ne pas utiliser SQLite pour contourner la validation PostgreSQL.
+La validation ci-dessus concerne l'installation cliente de référence et ne remplace pas la recette de sauvegarde/restauration ni les autres gates. Les contrôles non exécutables dans l'environnement disponible sont `BLOCKED`, pas `PASS`. Ne pas utiliser SQLite pour contourner la validation PostgreSQL.
 
 ---
 
@@ -81,15 +92,20 @@ Les gates non exécutables dans l'environnement disponible sont `BLOCKED`, pas `
 
 ### 2.1 Obtenir les fichiers
 
-Copier l'archive fournie par l'équipe YELEN SCHOOL dans le dossier choisi, ou cloner le dépôt avec Git :
+Télécharger l'archive `YELEN_SCHOOL_LATEST.zip`, puis l'extraire directement dans :
+
+```text
+C:\YELEN-SCHOOL
+```
+
+Après extraction, vérifier que `docker-compose.client.yml`, `Dockerfile`, `demarrage.bat` et le dossier `installer` sont directement présents à la racine, et non dans un sous-dossier supplémentaire `YELEN-SCHOOL\YELEN-SCHOOL`.
+
+Pour une installation par Git uniquement lorsque l'équipe fournit une URL de dépôt :
 
 ```powershell
-New-Item -ItemType Directory -Force C:\YELEN-SCHOOL | Out-Null
 Set-Location C:\YELEN-SCHOOL
 git clone URL_DU_DEPOT .
 ```
-
-Vérifier que `docker-compose.client.yml`, `Dockerfile`, `demarrage.bat` et le dossier `installer` sont directement présents à la racine.
 
 ### 2.2 Installation recommandée
 
@@ -119,6 +135,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 Ne lancez pas `docker compose down -v` pour résoudre un simple problème de démarrage : cela détruirait les volumes et les données.
 
 À la fin d'une nouvelle installation, la console affiche le compte `admin@yelen.edu` et son mot de passe temporaire aléatoire. Notez-le dans un support protégé, ne le copiez pas dans un ticket ou un journal, puis changez-le immédiatement. Après le démarrage réussi, `INITIAL_ADMIN_PASSWORD` est vidé et `ENSURE_ADMIN` passe à `false` dans `.env`.
+
+Pour l'installation cliente de référence, conserver ensuite dans `.env` :
+
+```dotenv
+YELEN_HTTP_PORT=8001
+```
+
+Ne pas remplacer ce port par `8002` tant que `8001` est libre et que cette valeur reste la configuration active.
 
 ### 2.3 Si l'installation échoue
 
@@ -208,9 +232,33 @@ Les sauvegardes `.dump` et `_media.tar.gz` ne contiennent pas `.env`. Sauvegarde
 
 ### 3.3 Adresse locale
 
-Sur le serveur : ouvrir l'adresse affichée par l'installateur, généralement `http://localhost:8000/accounts/login/`. Si le port 8000 est occupé, le port de remplacement sélectionné est affiché et enregistré dans `.env`.
+Sur l'installation cliente de référence, ouvrir :
 
-Depuis un autre poste du réseau, utiliser l'adresse IP et le port affichés par l'installateur, par exemple `http://192.168.1.50:8003/`. Le script d'installation ajoute l'IP détectée aux hôtes autorisés. Si l'adresse IP change, relancer l'installation ou mettre à jour `.env`, puis reconstruire le service web.
+```text
+http://localhost:8001/
+```
+
+Depuis un autre poste du réseau local, ouvrir :
+
+```text
+http://DESKTOP-NKQMF8L:8001/
+```
+
+La racine doit répondre par une redirection normale vers :
+
+```text
+/accounts/login/?next=/
+```
+
+Pour cette configuration, `.env` doit autoriser le nom de machine et l'origine HTTP utilisée par le navigateur :
+
+```dotenv
+YELEN_HTTP_PORT=8001
+ALLOWED_HOSTS=localhost,127.0.0.1,DESKTOP-NKQMF8L
+CSRF_TRUSTED_ORIGINS=http://localhost:8001,http://127.0.0.1:8001,http://DESKTOP-NKQMF8L:8001
+```
+
+Ne pas copier un mot de passe ou `SECRET_KEY` dans un ticket. Pour une autre machine, utiliser le nom Windows ou l'adresse IP affichée par l'installateur avec le port enregistré dans `.env`. Le script ajoute automatiquement le nom et l'adresse IP aux hôtes autorisés. Si l'adresse IP change, relancer l'installation ou mettre à jour `.env`, puis recréer uniquement le service web sans supprimer les volumes.
 
 #### Adresse stable par nom de machine
 
@@ -237,7 +285,97 @@ Test-NetConnection NOMPC -Port 8001
 
 Si `NOMPC` n'est pas résolu, configurer le nom dans le DNS ou le serveur DHCP du réseau local. Éviter de modifier manuellement le fichier `hosts` sur chaque poste sauf pour un dépannage temporaire.
 
+### 3.4 Validation après installation
+
+Sur le serveur Windows, vérifier l'état des trois services et le port publié :
+
+```powershell
+Set-Location C:\YELEN-SCHOOL
+docker compose -f .\docker-compose.client.yml ps
+docker compose -f .\docker-compose.client.yml port web 8000
+```
+
+Le résultat attendu est `db` et `redis` en `healthy`, `web` en fonctionnement et un port publié sur `0.0.0.0:8001` lorsque `YELEN_HTTP_PORT=8001`.
+
+Tester ensuite les deux adresses sans suivre automatiquement la redirection :
+
+```powershell
+curl.exe -i http://localhost:8001/
+curl.exe -i http://DESKTOP-NKQMF8L:8001/
+```
+
+Une réponse `302 Found` avec `Location: /accounts/login/?next=/` confirme le routage, l'hôte autorisé et le port actif. Contrôler les erreurs récentes :
+
+```powershell
+docker compose -f .\docker-compose.client.yml logs --since=2m web |
+  Select-String 'Invalid HTTP_HOST|CSRF|password authentication failed|OperationalError'
+```
+
+Cette commande ne doit rien retourner. Ne pas publier PostgreSQL ni Redis sur le réseau local.
+
 ---
+
+---
+
+## 3.5 Verrouillage matériel et protection anti-copie (Procédure Éditeur)
+
+> **Règle absolue :** Cette étape est réalisée **exclusivement par le technicien/éditeur** lors du déploiement chez le client, à partir de sa propre clé USB d'installation. Les scripts d'enrôlement et d'administration (`activer-binding-materiel.bat`, `verrouiller-dossier-anti-copie.bat` et `deverrouiller-dossier-anti-copie.bat`) ne doivent **jamais** être laissés sur la machine du client après votre départ.
+
+### Objectifs de sécurité
+1. **Lier l'installation au matériel physique du client** : l'application est ancrée à l'UUID de la carte mère, au CPU et au numéro de série du disque dur. Si un tiers copie le dossier `C:\YELEN-SCHOOL` et sa base de données sur un autre ordinateur, le script `installer\verifier-integrite-anti-copie.bat` (exécuté par `demarrage.bat`) bloque immédiatement le démarrage (`⛔ VIOLATION DE LICENCE : COPIE ILLICITE DÉTECTÉE`).
+2. **Verrouiller les permissions Windows (NTFS)** : empêcher les utilisateurs réguliers, les comptes invités ou une clé USB branchée sans privilège Administrateur de copier ou de lire le dossier de déploiement et les fichiers sensibles (`.env`).
+3. **Capacité de maintenance réservée à l'Éditeur** : pouvoir reprendre temporairement le contrôle complet en écriture et modification pour injecter des correctifs ou mises à jour via un mot de passe maître confidentiel.
+
+### Procédure sur site (depuis la clé USB Éditeur)
+
+1. Branchez votre clé USB contenant le dossier `outils-editeur\` (archive `outils-editeur-anti-copie.zip` extraite sur votre clé).
+2. **Étape 1 — Liaison matérielle** :
+   - Clic droit sur `activer-binding-materiel.bat` > **Exécuter en tant qu'administrateur**.
+   - Le script extrait les identifiants physiques du PC client et les enregistre dans le fichier `.env` avec `LICENSE_ENFORCEMENT=true` et `LICENCE_ANTITAMPER_ENABLED=true`.
+3. **Étape 2 — Verrouillage des droits NTFS** :
+   - Clic droit sur `verrouiller-dossier-anti-copie.bat` > **Exécuter en tant qu'administrateur**.
+   - Le script supprime l'héritage Windows, retire les droits aux utilisateurs réguliers/invités, réserve le contrôle total au compte Système et Administrateurs locaux, puis masque et surprotège `.env`.
+4. **Étape 3 — Test de lancement** :
+   - Lancez `demarrage.bat` pour vérifier le bon démarrage de YELEN SCHOOL.
+5. **Étape 4 — Retrait sécurisé** :
+   - Débranchez votre clé USB.
+   - Vérifiez que seuls les scripts d'exploitation (`demarrage.bat`, `backup-windows.bat`, `verifier-integrite-anti-copie.bat`) restent sur la machine cliente.
+
+### Procédure de maintenance ultérieure (Déverrouillage Éditeur)
+
+Si vous devez effectuer une mise à jour manuelle, remplacer du code ou intervenir sur la configuration locale du client :
+1. Branchez votre clé USB éditeur.
+2. Clic droit sur `deverrouiller-dossier-anti-copie.bat` > **Exécuter en tant qu'administrateur**.
+3. Saisissez votre **Code Maître Éditeur** confidentiel (défini dans le script).
+4. Le script réassigne la propriété (`takeown`) et réinitialise les permissions NTFS (`icacls /reset` puis permissions d'écriture complètes).
+5. Procédez à vos modifications ou mises à jour de code.
+6. **Important** : Avant de quitter le site ou de clore votre intervention, ré-exécutez toujours `verrouiller-dossier-anti-copie.bat` en tant qu'administrateur pour réactiver le bouclier NTFS.
+
+---
+
+## 3.6 Déploiement alternatif : Mode 100% Autonome Embarqué (SQLite & Réseau Local)
+
+Pour les établissements scolaires ne disposant pas de Docker Desktop ou souhaitant une installation ultra-légère sans conteneurisation ni service PostgreSQL/Redis :
+
+### Caractéristiques du Mode SQLite
+- **Zéro installation de serveur de base de données** : un simple interpréteur Python 3.10+ sur la machine serveur suffit.
+- **Accès Multi-Postes en Réseau Local (LAN)** : 15 à 25 ordinateurs (secrétariat, caisse, professeurs, direction) accèdent en simultané via leur navigateur (`http://IP-SERVEUR:8000`).
+- **Base embarquée unique** : Stockée dans `data\yelen_school.sqlite3`.
+- **Haute performance concurrente** : Activé en mode WAL (*Write-Ahead Logging*) via `core/db_sqlite.py` avec attente active de 30 secondes pour éliminer les erreurs de verrouillage.
+
+### Procédure de lancement 1-Clic
+1. Lancez simplement le script à la racine :
+   ```cmd
+   demarrer-sqlite.bat
+   ```
+2. Le script exécute automatiquement :
+   - L'auto-configuration du fichier `.env` (`DB_ENGINE=sqlite`, `SQLITE_PATH=data/yelen_school.sqlite3`, `CACHE_BACKEND=database`, `ALLOWED_HOSTS=*`).
+   - La vérification du bouclier anti-copie physique (`verifier-integrite-anti-copie.bat`).
+   - L'application des migrations et la collecte des fichiers statiques.
+   - L'ouverture automatique du port 8000 dans le pare-feu Windows.
+   - La détection de l'adresse IP locale du serveur affichée à l'écran pour les postes clients.
+   - Le démarrage du serveur multi-threads Waitress.
+
 
 ## 4. Utilisation quotidienne
 
@@ -611,8 +749,10 @@ En cas de changement de port, relancer `demarrage.bat` : l'ancienne règle YELEN
 Pour vérifier la règle depuis PowerShell administrateur :
 
 ```powershell
-Get-NetFirewallRule -Name YELEN_SCHOOL_LocalWeb |
-  Get-NetFirewallPortFilter
+$rule = Get-NetFirewallRule -Name YELEN_SCHOOL_LocalWeb
+$rule | Format-List DisplayName,Enabled,Direction,Action,Profile,EdgeTraversalPolicy
+$rule | Get-NetFirewallPortFilter
+$rule | Get-NetFirewallAddressFilter
 ```
 
 Pour la supprimer manuellement si nécessaire :
@@ -692,13 +832,13 @@ docker ps -a --filter "name=yelen-school" --format "table {{.Names}}`t{{.Status}
 Get-NetTCPConnection -LocalPort 8001 -State Listen -ErrorAction SilentlyContinue
 ```
 
-Si les conteneurs YELEN ou des services orphelins d'une ancienne configuration occupent le port, les retirer sans supprimer les volumes :
+Si un ancien conteneur de test YELEN ou un service orphelin occupe le port, identifier précisément le conteneur avant de le retirer. Retirer uniquement le conteneur Web obsolète ; ne pas arrêter `db` ou `redis` et ne supprimer aucun volume :
 
 ```powershell
-docker compose -f docker-compose.client.yml down --remove-orphans
+docker rm -f NOM_DU_CONTENEUR_WEB_OBSOLETE
 ```
 
-Ne jamais ajouter `-v` à cette commande. Relancer ensuite `demarrage.bat`. Si un autre logiciel utilise toujours le port, modifier `YELEN_HTTP_PORT` dans `.env` vers un port libre, par exemple `8002`, puis relancer l'installateur. Utiliser le port affiché par l'installateur pour l'adresse IP ou le nom du serveur.
+`docker compose down --remove-orphans` peut aussi retirer des conteneurs orphelins du projet, mais ne jamais ajouter `-v` et toujours vérifier la liste avant l'exécution. Relancer ensuite `demarrage.bat`. Tant que `8001` est libre et que `YELEN_HTTP_PORT=8001` est la configuration active, ne pas basculer vers `8002`. Le mécanisme de sélection automatique n'utilise un autre port que si le port demandé est réellement occupé.
 
 ### Les ports HTTP sont déjà utilisés
 
@@ -708,7 +848,7 @@ Lors de l'exécution de `demarrage.bat`, l'installateur teste automatiquement la
 8000 → 8001 → 8002 → 8003 → 8004 → 8005
 ```
 
-Le premier port libre est écrit dans `.env`, puis utilisé pour Docker, l'adresse affichée et la règle du pare-feu Windows. L'adresse à communiquer aux postes clients est celle affichée par l'installateur, par exemple `http://192.168.1.50:8003/`.
+Le premier port libre est écrit dans `.env`, puis utilisé pour Docker, l'adresse affichée et la règle du pare-feu Windows. L'adresse à communiquer aux postes clients est celle affichée par l'installateur. Pour l'installation de référence, conserver `8001` et communiquer `http://localhost:8001/` sur le serveur ou `http://DESKTOP-NKQMF8L:8001/` sur le réseau local.
 
 Si les six ports sont occupés, définir un autre port libre dans `.env`, puis relancer `demarrage.bat` :
 
@@ -716,14 +856,69 @@ Si les six ports sont occupés, définir un autre port libre dans `.env`, puis r
 YELEN_HTTP_PORT=8010
 ```
 
-### L'application affiche une erreur de connexion PostgreSQL
+### L'application affiche une erreur d'authentification PostgreSQL
 
-Vérifier que `DB_NAME`, `DB_USER` et `DB_PASSWORD` sont cohérents avec le fichier `.env` utilisé lors de l'initialisation. Ne pas changer le mot de passe au hasard sur une base existante. Vérifier l'état :
+Un conteneur PostgreSQL `healthy` indique seulement que le serveur répond. Sur un volume déjà initialisé, la valeur `DB_PASSWORD` de `.env` peut être différente du mot de passe réellement enregistré pour le rôle `yelen_user`. L'erreur typique est :
+
+```text
+FATAL: password authentication failed for user "yelen_user"
+```
+
+Réparer le rôle **sans supprimer la base ni aucun volume** :
 
 ```powershell
-docker compose -f docker-compose.client.yml exec db pg_isready `
-  -U yelen_user -d yelen_school_db
+Set-Location C:\YELEN-SCHOOL
+
+docker compose -f .\docker-compose.client.yml stop web
+
+$DbPassword = (
+    Get-Content .\.env |
+    Where-Object { $_ -match '^DB_PASSWORD=' } |
+    Select-Object -First 1
+) -replace '^DB_PASSWORD=', ''
+
+if ([string]::IsNullOrWhiteSpace($DbPassword)) {
+    throw 'DB_PASSWORD est vide dans .env'
+}
+
+$EscapedPassword = $DbPassword -replace "'", "''"
+$Sql = "ALTER ROLE yelen_user WITH PASSWORD '$EscapedPassword';"
+
+$Sql | docker compose -f .\docker-compose.client.yml exec -T db psql -U yelen_user -d yelen_school_db
 ```
+
+Le résultat attendu est `ALTER ROLE`. Puis recréer uniquement le service Web :
+
+```powershell
+docker compose -f .\docker-compose.client.yml up -d --force-recreate web
+docker compose -f .\docker-compose.client.yml ps
+docker compose -f .\docker-compose.client.yml port web 8000
+```
+
+Vérifier ensuite les deux URL de l'installation de référence et les erreurs récentes, comme dans la section **3.4 Validation après installation**. Ne jamais exécuter `docker compose down -v`, supprimer `yelen_postgres_data` ou recréer la base pour contourner cette erreur.
+
+Pour distinguer la disponibilité du serveur de l'authentification applicative :
+
+```powershell
+docker compose -f .\docker-compose.client.yml exec db pg_isready `
+  -U yelen_user -d yelen_school_db
+docker compose -f .\docker-compose.client.yml logs --tail=100 web
+```
+
+### Firefox reste en chargement pendant le changement de mot de passe
+
+Si Firefox affiche **« Cette page ralentit Firefox »** sur `/accounts/profile/mot-de-passe/` :
+
+1. cliquer sur **Arrêter** et ne pas soumettre le formulaire plusieurs fois ;
+2. vérifier les journaux pendant un nouvel essai unique :
+   ```powershell
+   docker compose -f .\docker-compose.client.yml logs -f --tail=0 web
+   ```
+3. si une réponse `302` ou `200` apparaît, effacer les données du site pour `localhost:8001`, puis recharger avec `Ctrl + F5` ;
+4. si aucune réponse n'apparaît, rechercher dans les logs une erreur PostgreSQL, CSRF ou un redémarrage du conteneur `web` ;
+5. ne pas supprimer les volumes pour corriger ce symptôme.
+
+Après une réparation ou une recréation du service Web, valider les deux URL de la section **3.4** et vérifier l'absence de `Invalid HTTP_HOST header`, d'erreur CSRF et de `password authentication failed` dans les logs récents.
 
 ### Les médias ont disparu après un incident
 
@@ -757,11 +952,13 @@ Si le fichier `.env` original est restauré, les secrets Django et le mot de pas
 
 ## Règles essentielles à retenir
 
-- Utiliser `docker-compose.client.yml`, jamais le compose de développement pour le poste client.
+- Utiliser exclusivement `C:\YELEN-SCHOOL` et `docker-compose.client.yml` pour l'installation cliente.
+- Conserver `YELEN_HTTP_PORT=8001` tant que ce port est libre ; ne pas passer à `8002` pour contourner un problème PostgreSQL.
 - Utiliser les scripts fournis pour sauvegarder PostgreSQL **et** les médias.
 - Conserver ensemble les fichiers `.dump` et `_media.tar.gz`.
 - Copier les sauvegardes hors de la machine.
 - Ne jamais supprimer les volumes Docker pour résoudre un problème courant.
+- En cas de `password authentication failed`, réaligner le rôle PostgreSQL avec `DB_PASSWORD` via le socket local ; ne jamais recréer la base.
 - Tester une restauration périodiquement.
 - Remplacer obligatoirement le mot de passe administrateur temporaire à la première connexion.
 - Protéger `.env` comme un secret et vérifier que `INITIAL_ADMIN_PASSWORD` est vide après l'installation.

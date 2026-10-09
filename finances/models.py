@@ -34,6 +34,12 @@ class FraisScolarite(BaseModel):
         verbose_name = _("Frais de Scolarité")
         verbose_name_plural = _("Frais de Scolarité")
         unique_together = ('annee_scolaire', 'classe', 'type_frais')
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='frais_montant_positif',
+            ),
+        ]
 
     def __str__(self):
         target = self.classe.nom if self.classe else self.get_cycle_display()
@@ -81,6 +87,12 @@ class Paiement(BaseModel):
         verbose_name = _("Paiement")
         verbose_name_plural = _("Paiements")
         ordering = ['-date_paiement', '-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='paiement_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.numero_recu:
@@ -139,6 +151,12 @@ class Remboursement(BaseModel):
         verbose_name = _("Remboursement")
         verbose_name_plural = _("Remboursements")
         ordering = ['-date_remboursement', '-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='remboursement_montant_positif',
+            ),
+        ]
 
     def __str__(self):
         return f"Remboursement {self.montant} FCFA — {self.paiement}"
@@ -156,6 +174,12 @@ class Echeancier(BaseModel):
         verbose_name = _("Échéance de paiement")
         verbose_name_plural = _("Échéancier")
         ordering = ['date_limite']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant_du__gt=0),
+                name='echeancier_montant_positif',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.libelle} - {self.inscription.eleve} ({self.montant_du} FCFA)"
@@ -271,6 +295,12 @@ class BourseEleve(BaseModel):
         verbose_name = _("Bourse / Aide scolaire")
         verbose_name_plural = _("Bourses / Aides scolaires")
         ordering = ['-date_attribution']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant_accorde__gt=0),
+                name='bourse_montant_positif',
+            ),
+        ]
 
     def __str__(self):
         return (
@@ -333,6 +363,12 @@ class HistoriqueRelance(BaseModel):
         verbose_name = _("Historique de relance")
         verbose_name_plural = _("Historiques de relances")
         ordering = ['-date_relance', '-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant_reclame__gt=0),
+                name='relance_montant_positif',
+            ),
+        ]
 
     def __str__(self):
         return (
@@ -412,6 +448,12 @@ class DemandePaiementMobile(BaseModel):
         verbose_name = _("Demande paiement Mobile Money")
         verbose_name_plural = _("Demandes paiement Mobile Money")
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='mobile_money_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.reference:
@@ -513,6 +555,12 @@ class BudgetAnnuel(BaseModel):
         verbose_name_plural = _("Budgets annuels")
         unique_together = ('annee_scolaire', 'categorie')
         ordering = ['categorie__type_depense', 'categorie__nom']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant_prevu__gte=0),
+                name='budget_montant_non_negatif',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.categorie} — {self.annee_scolaire} : {self.montant_prevu} FCFA"
@@ -581,11 +629,18 @@ class Depense(BaseModel):
         verbose_name=_("Validé par"),
     )
     date_validation = models.DateField(null=True, blank=True, verbose_name=_("Date de validation"))
+    motif_annulation = models.TextField(blank=True, verbose_name=_("Motif d'annulation"))
 
     class Meta:
         verbose_name = _("Dépense")
         verbose_name_plural = _("Dépenses")
         ordering = ['-date_depense', '-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name='depense_montant_positif',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.numero_depense:

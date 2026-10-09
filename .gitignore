@@ -39,3 +39,7 @@ backups/
 # Archives de test générées hors distribution Git
 YELEN_SCHOOL_TEST.zip
 test-download/
+
+# Archives de distribution (générées, jamais versionnées)
+/*.zip
+installer/*.zip

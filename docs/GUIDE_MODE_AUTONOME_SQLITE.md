@@ -110,6 +110,13 @@ Linux uniquement — bibliothèques pour la génération PDF :
 
 ## 3. Installation (10 minutes)
 
+> **Deux lanceurs coexistent depuis la fusion v5.0 (octobre 2026)** : `demarrer-autonome.bat`
+> (décrit ci-dessous) et `demarrer-sqlite.bat` (racine et `installer/`), qui fait la même chose
+> en ajoutant l'ouverture du port dans le pare-feu Windows et l'affichage de l'adresse réseau
+> local à communiquer aux autres postes. Les deux sont utilisables ; ils seront unifiés lors
+> des corrections à venir.
+
+
 1. Copier le dossier du projet sur le serveur, par ex. `C:\YELEN\yelen-school`
    (ou `git clone https://github.com/nayxuspro-sketch/yelen-school.git`).
 2. Double-cliquer **`demarrer-autonome.bat`** (Linux : `./demarrer-autonome.sh`).
