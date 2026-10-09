@@ -20,9 +20,9 @@ les règles ci-dessous **sans exception**.
 
 | Composant        | Technologie                             |
 |------------------|-----------------------------------------|
-| Backend          | Django 4.2                              |
-| Base de données  | PostgreSQL (jamais SQLite, même en dev) |
-| Cache / files    | Redis                                   |
+| Backend          | Django 5.2 (épinglé 5.2.17 dans `requirements/base.txt`) |
+| Base de données  | PostgreSQL (mode serveur) **ou** SQLite (mode autonome, `DB_ENGINE=sqlite`) |
+| Cache / files    | Redis (mode serveur) ou DatabaseCache (mode autonome) |
 | Conteneurisation | Docker                                  |
 | UI dynamique     | HTMX (jamais React, Vue, Angular)       |
 | PDF              | WeasyPrint                              |

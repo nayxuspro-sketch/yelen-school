@@ -11,7 +11,7 @@ les règles ci-dessous **sans exception**.
 
 | Composant        | Technologie                          |
 |------------------|--------------------------------------|
-| Backend          | Django 4.2                           |
+| Backend          | Django 5.2 (épinglé 5.2.17 dans `requirements/base.txt`) |
 | Base de données  | PostgreSQL (mode serveur) **ou** SQLite (mode autonome, `DB_ENGINE=sqlite`) |
 | Cache / files    | Redis (mode serveur) ou DatabaseCache (mode autonome) |
 | Conteneurisation | Docker                               |

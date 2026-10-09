@@ -6223,3 +6223,46 @@ Utilisateur
 ---
 
 *Guide v3.2 — Mis à jour le 14/09/2026 — Section 19 : état de préparation, sécurité et déploiement complet (local + production)*
+
+*Guide v3.3 — Mis à jour le 09/10/2026 — Section 33 : source de vérité GitHub, Django 5.2.17, procédure de mise à jour client*
+
+---
+
+## 33. Source de vérité unique : GitHub `main` (réconciliation d'octobre 2026)
+
+Depuis le 09/10/2026, la branche `main` du dépôt GitHub `nayxuspro-sketch/yelen-school`
+est **l'unique source de vérité**. Elle fusionne :
+
+- la distribution client réellement installée (`C:\YELEN-SCHOOL`, importée via la branche
+  `import-production`) : Django **5.2.17**, WeasyPrint 70, `docker-compose.client.yml`,
+  dossier `installer/`, changement de mot de passe obligatoire à la première connexion ;
+- le chantier GitHub : mode autonome SQLite (§32), durcissement sécurité, contrôle des
+  licences, CI PostgreSQL + SQLite.
+
+### 33.1 Ce qui change pour l'exploitation
+
+| Point | Comportement après fusion |
+|-------|---------------------------|
+| Version Django | 5.2.17 partout (image Docker, mode autonome, CI). |
+| Webhook SMS entrant | Authentification unifiée : IP autorisées (`SMS_ALLOWED_IPS`), 60 requêtes/min/IP, signature HMAC-SHA256 **obligatoire** dans `X-SMS-Signature` dès qu'un secret est défini (`SMS_WEBHOOK_HMAC_SECRET` ou `SMS_WEBHOOK_SECRET`), sinon jeton `SMS_WEBHOOK_TOKEN` comparé en temps constant. Sans aucun secret hors `DEBUG`, le webhook répond **503**. |
+| Double authentification | Le jeton de session 2FA expire après **5 minutes** (`TimestampSigner`). |
+| Bulletins PDF | Si WeasyPrint est absent du poste, l'export répond 503 avec un message clair au lieu de planter. |
+| Journal Nginx | Les en-têtes `Authorization` et les paramètres d'URL ne sont jamais journalisés. |
+
+### 33.2 Mettre à jour une installation client existante (Docker)
+
+```cmd
+cd /d C:\YELEN-SCHOOL
+git pull origin main
+docker compose -f docker-compose.client.yml build
+docker compose -f docker-compose.client.yml up -d
+docker compose -f docker-compose.client.yml exec web python manage.py migrate
+```
+
+Les données vivent dans les volumes nommés (`yelen_postgres_data`, `yelen_media`, …) :
+reconstruire l'image ne les touche pas. Le fichier `.env` n'est pas versionné et doit être
+conservé. Vérifier ensuite `docker compose -f docker-compose.client.yml logs --tail 50 web`.
+
+> Le dossier `C:\YELEN-SCHOOL` doit être un **clone git** (`git clone … C:\YELEN-SCHOOL`),
+> plus jamais une copie manuelle : c'est ce qui garantit qu'une correction appliquée sur
+> GitHub se retrouve à l'identique chez chaque client.
