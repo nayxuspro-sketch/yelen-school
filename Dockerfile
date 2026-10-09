@@ -18,7 +18,8 @@ RUN pip install --no-cache-dir -r base.txt
 
 COPY . .
 
-RUN chmod +x entrypoint.sh
+# Tolère un entrypoint.sh récupéré avec des fins de ligne Windows (CRLF)
+RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
 
 EXPOSE 8000
 
