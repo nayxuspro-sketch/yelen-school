@@ -294,22 +294,19 @@ class MembrePersonnel(BaseModel):
         
         annee = date_module.today().year
         prefix = f"{etab_code}-P-{annee}-"
-        
-        last_personnel = MembrePersonnel.objects.filter(
-            matricule__startswith=prefix
-        ).order_by('-matricule').first()
-        
-        if last_personnel and last_personnel.matricule:
+
+        # Séquence suivante = max NUMÉRIQUE des suffixes existants (un tri alphabétique
+        # classerait « -1 » après « -02 » ou « -99 » après « -100 » → doublon → IntegrityError).
+        sequences = []
+        for matricule in MembrePersonnel.objects.filter(matricule__startswith=prefix).values_list('matricule', flat=True):
             try:
-                last_seq = int(last_personnel.matricule.split('-')[-1])
-                next_seq = last_seq + 1
-            except (ValueError, IndexError):
-                next_seq = 1
-        else:
-            next_seq = 1
-        
+                sequences.append(int(matricule[len(prefix):]))
+            except ValueError:
+                continue  # suffixe non numérique (saisie manuelle) : ignoré
+        next_seq = max(sequences, default=0) + 1
+
         # Format {CODE_ETAB}-P-AAAA-NN (NN sur 2 chiffres minimum)
-        self.matricule = f"{etab_code}-P-{annee}-{next_seq:02d}"
+        self.matricule = f"{prefix}{next_seq:02d}"
 
 
 # ═══════════════════════════════════════════════════════════════════

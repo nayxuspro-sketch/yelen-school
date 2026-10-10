@@ -381,3 +381,59 @@ class TestColonneInscriptionAnnuelle:
             client.get(url)
 
         assert len(apres) == len(avant)
+
+
+@pytest.mark.django_db
+class TestMatriculePersonnel:
+    """Régression : la séquence du matricule était déduite d'un tri alphabétique
+    (« -1 » > « -02 », « -99 » > « -100 ») → doublon → IntegrityError (500) sur /personnel/nouveau/."""
+
+    @staticmethod
+    def prefixe(etab):
+        return f"{etab.code}-P-{date.today().year}-"
+
+    def test_sequence_numerique_malgre_un_suffixe_non_complete(self):
+        etab = baker.make('etablissements.Etablissement', code='ETAB001')
+        baker.make('personnel.MembrePersonnel', etablissement=etab, matricule=self.prefixe(etab) + '1')
+        baker.make('personnel.MembrePersonnel', etablissement=etab, matricule=self.prefixe(etab) + '02')
+
+        nouveau = baker.make('personnel.MembrePersonnel', etablissement=etab, matricule='')
+
+        assert nouveau.matricule == self.prefixe(etab) + '03'
+
+    def test_sequence_au_dela_de_cent(self):
+        etab = baker.make('etablissements.Etablissement', code='LY')
+        baker.make('personnel.MembrePersonnel', etablissement=etab, matricule=self.prefixe(etab) + '99')
+        baker.make('personnel.MembrePersonnel', etablissement=etab, matricule=self.prefixe(etab) + '100')
+
+        nouveau = baker.make('personnel.MembrePersonnel', etablissement=etab, matricule='')
+
+        assert nouveau.matricule == self.prefixe(etab) + '101'
+
+    def test_suffixe_manuel_non_numerique_ignore(self):
+        etab = baker.make('etablissements.Etablissement', code='LY')
+        baker.make('personnel.MembrePersonnel', etablissement=etab, matricule=self.prefixe(etab) + 'DIR')
+
+        nouveau = baker.make('personnel.MembrePersonnel', etablissement=etab, matricule='')
+
+        assert nouveau.matricule == self.prefixe(etab) + '01'
+
+    def test_creation_via_le_formulaire(self, client):
+        """Scénario de production : deux membres « -1 » et « -02 », puis ajout d'un troisième."""
+        from personnel.models import MembrePersonnel
+        etab = baker.make('etablissements.Etablissement', code='ETAB001')
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        baker.make('personnel.MembrePersonnel', etablissement=etab, matricule=self.prefixe(etab) + '1')
+        baker.make('personnel.MembrePersonnel', etablissement=etab, matricule=self.prefixe(etab) + '02')
+        client.force_login(user)
+        donnees = {'nom': 'Ouedraogo', 'prenom': 'Issa', 'genre': 'M', 'date_naissance': '1990-01-01',
+                   'lieu_naissance': 'Ouagadougou', 'nationalite': 'Burkinabè', 'fonction': 'Enseignant',
+                   'date_embauche': '2026-09-01', 'situation_matrimoniale': 'CELIBATAIRE',
+                   'nombre_enfants': 0, 'etablissement': etab.pk}
+
+        response = client.post(reverse('personnel:create'), donnees)
+
+        nouveau = MembrePersonnel.objects.get(nom='Ouedraogo')
+        assert response.status_code == 302
+        assert response['Location'] == reverse('personnel:detail', args=[nouveau.pk])
+        assert nouveau.matricule == self.prefixe(etab) + '03'
