@@ -936,6 +936,25 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 ## 5. GESTION DU PERSONNEL
 
+### 5.0 Liste du personnel et exports (CSV, Excel, PDF)
+
+**Accès :** `Personnel` (`/personnel/`). La liste affiche les membres **actifs** de l'établissement,
+regroupés par cycle ; la recherche (nom, prénom ou matricule) filtre en direct et le lien
+« Voir aussi les inactifs » ajoute les membres désactivés (`?tous=1`).
+
+**Exports :** les trois boutons **CSV**, **Excel** et **PDF** en haut à droite exportent
+**exactement la liste affichée** (mêmes filtres : recherche et inactifs). La barre d'actions
+groupées (cases à cocher) exporte la sélection.
+
+| Format | Contenu | Usage |
+|---|---|---|
+| CSV / Excel | Matricule, nom, prénom, genre, date de naissance, téléphone, e-mail, fonction, cycles, actif | Retraitement dans un tableur |
+| **PDF** (`/personnel/pdf/`) | Document A4 paysage avec en-tête de l'établissement (logo, n° d'agrément, adresse), sous-titre rappelant les filtres (« 14 membres — Actifs et inactifs — Recherche : … »), tableau numéroté (matricule, nom, prénom(s), genre, naissance, fonction, téléphone, e-mail, cycles, statut), récapitulatif Total / Hommes / Femmes / Inactifs, date d'édition et numéros de page | Impression, affichage, transmission à l'administration |
+
+Le PDF s'ouvre dans un nouvel onglet (`personnel_<code établissement>.pdf`). Les trois exports
+partagent la même requête (`personnel/selectors.py` → `personnel_filtre`) : une modification des
+filtres de la liste s'applique automatiquement aux trois formats.
+
 ### 5.1 Profil du Personnel (Page de Détail)
 
 **À quoi ça sert :** Affiche la fiche détaillée d'un membre du personnel : informations personnelles, coordonnées, affectations, inscriptions annuelles, bulletins de salaire récents et congés.

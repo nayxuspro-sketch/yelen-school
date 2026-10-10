@@ -5,15 +5,20 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Q
+from django.template.loader import render_to_string
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel
 from .forms import (
     MembrePersonnelForm, InscriptionPersonnelForm,
     SalairePersonnelForm, CongePersonnelForm,
 )
+from .selectors import personnel_filtre
 from parametres.models import AnneeScolaire, Cycle
+from core.utils import get_etablissement_context
 
 from licences.decorators import requires_licence_feature
+from licences.pdf_utils import inject_licence_filigrane_context
 @login_required
 @requires_licence_feature('gestion_personnel')
 def personnel_list(request):
@@ -67,29 +72,10 @@ def personnel_list(request):
 def personnel_list_csv(request):
     """Export CSV de la liste du personnel (memes filtres que personnel_list)."""
     import csv
-    query = request.GET.get('q', '')
-    show_all = request.GET.get('tous') == '1'
-    ids = request.GET.get('ids', '')  # Pour export de selection
     etab = getattr(request.user, 'etablissement', None)
-
-    personnel = MembrePersonnel.objects.prefetch_related('cycles').order_by('nom', 'prenom')
-    if etab:
-        personnel = personnel.filter(etablissement=etab)
-
-    # Filtre par IDs si selection
-    if ids:
-        id_list = [id.strip() for id in ids.split(',') if id.strip()]
-        if id_list:
-            personnel = personnel.filter(pk__in=id_list)
-    else:
-        if not show_all:
-            personnel = personnel.filter(is_active=True)
-        if query:
-            personnel = personnel.filter(
-                Q(nom__icontains=query) |
-                Q(prenom__icontains=query) |
-                Q(matricule__icontains=query)
-            )
+    personnel = personnel_filtre(
+        etab, request.GET.get('q', ''), request.GET.get('tous') == '1', request.GET.get('ids', ''),
+    )
 
     nom_fichier = 'personnel'
     if etab:
@@ -129,26 +115,10 @@ def personnel_list_xlsx(request):
     """Export Excel de la liste du personnel (mêmes filtres que personnel_list)."""
     from core.excel import ExcelExport
 
-    query = request.GET.get('q', '')
-    show_all = request.GET.get('tous') == '1'
-    ids = request.GET.get('ids', '')
     etab = getattr(request.user, 'etablissement', None)
-
-    personnel = MembrePersonnel.objects.prefetch_related('cycles').order_by('nom', 'prenom')
-    if etab:
-        personnel = personnel.filter(etablissement=etab)
-
-    if ids:
-        id_list = [i.strip() for i in ids.split(',') if i.strip()]
-        if id_list:
-            personnel = personnel.filter(pk__in=id_list)
-    else:
-        if not show_all:
-            personnel = personnel.filter(is_active=True)
-        if query:
-            personnel = personnel.filter(
-                Q(nom__icontains=query) | Q(prenom__icontains=query) | Q(matricule__icontains=query)
-            )
+    personnel = personnel_filtre(
+        etab, request.GET.get('q', ''), request.GET.get('tous') == '1', request.GET.get('ids', ''),
+    )
 
     nom_fichier = f"personnel{'_' + etab.code if etab else ''}.xlsx"
 
@@ -171,6 +141,48 @@ def personnel_list_xlsx(request):
         ])
 
     return wb.response(nom_fichier)
+
+
+@login_required
+@requires_licence_feature('gestion_personnel')
+def personnel_list_pdf(request):
+    """Export PDF de la liste du personnel (mêmes filtres que personnel_list, CSV et Excel)."""
+    try:
+        from core.pdf import HTML
+    except Exception:  # ImportError ou OSError (libpango/cairo absents)
+        messages.error(request, "La génération PDF n'est pas disponible sur ce serveur (WeasyPrint manquant).")
+        return redirect('personnel:personnel_list')
+
+    etab = getattr(request.user, 'etablissement', None)
+    query = request.GET.get('q', '').strip()
+    show_all = request.GET.get('tous') == '1'
+    ids = request.GET.get('ids', '')
+    membres = list(personnel_filtre(etab, query, show_all, ids))
+
+    etab_context = get_etablissement_context(etab, request) if etab else {}
+    context = {
+        'membres': membres,
+        'nb_total': len(membres),
+        'nb_hommes': sum(1 for m in membres if m.genre == 'M'),
+        'nb_femmes': sum(1 for m in membres if m.genre == 'F'),
+        'nb_inactifs': sum(1 for m in membres if not m.is_active),
+        'query': query,
+        'show_all': show_all,
+        'selection': bool(ids),
+        'etab_nom': etab.nom if etab else 'YELEN SCHOOL',
+        'date_edition': timezone.localtime().strftime('%d/%m/%Y à %H:%M'),
+        'identite': etab_context.get('identite'),
+        'logo_url': etab_context.get('logo_url') or etab_context.get('etab_logo_url'),
+    }
+    context = inject_licence_filigrane_context(context, request.user, etab)
+
+    html_str = render_to_string('personnel/pdf/liste_personnel.html', context)
+    pdf = HTML(string=html_str, base_url=request.build_absolute_uri('/')).write_pdf()
+
+    nom_fichier = f"personnel{'_' + etab.code if etab else ''}.pdf"
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{nom_fichier}"'
+    return response
 
 
 @login_required
