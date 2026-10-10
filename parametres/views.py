@@ -725,6 +725,7 @@ def signataire_config(request):
             if annee_id else AnneeScolaire.objects.get_annee_courante(etablissement=etab)
         cycle_id = request.POST.get('cycle_id')
         categorie = request.POST.get('categorie')
+        retour = f"{request.path}?annee={annee.id if annee else ''}"
 
         form = SignataireForm(request.POST, etablissement=etab)
         if form.is_valid() and cycle_id and categorie and annee:
@@ -733,6 +734,7 @@ def signataire_config(request):
             titre_h = form.cleaned_data['titre_honorifique']
             try:
                 cycle = Cycle.objects.get(id=cycle_id, etablissement=etab)
+                retour += f"&cycle={cycle.id}"  # rouvre l'onglet du cycle enregistré
                 types = TypeDocument.objects.filter(
                     Q(cycle=cycle) | Q(cycle__isnull=True),
                     categorie=categorie,
@@ -751,15 +753,17 @@ def signataire_config(request):
                             'actif': True,
                         }
                     )
-                messages.success(request, f"Signataire enregistré pour {cycle.nom} · {categorie}.")
+                libelle_cat = TypeDocument.CategorieChoices(categorie).label
+                messages.success(request, f"Signataire enregistré pour {cycle.nom} · {libelle_cat}.")
             except Exception as e:
                 messages.error(request, f"Erreur : {e}")
-        return redirect(f"{request.path}?annee={annee.id if annee else ''}")
+        return redirect(retour)
 
     # ── Construction des données pour le template ──
     cycles = Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre')
     personnel = MembrePersonnel.objects.filter(etablissement=etab, is_active=True).order_by('nom', 'prenom')
     categories = TypeDocument.CategorieChoices.choices
+    cycle_actif_id = request.GET.get('cycle', '')
 
     cycles_data = []
     for cycle in cycles:
@@ -800,7 +804,10 @@ def signataire_config(request):
             'categories':        categories_data,
             'total_configured':  total_configured,
             'total_docs':        total_docs,
+            'actif':             str(cycle.id) == cycle_actif_id,
         })
+    if cycles_data and not any(cd['actif'] for cd in cycles_data):
+        cycles_data[0]['actif'] = True
 
     return render(request, 'parametres/signataire_config_tabs.html', {
         'annees':              annees,

@@ -316,12 +316,21 @@
     }
   });
 
-  // ── Delegation change : data-csp-fill-target="id" ──────────────────
-  // Sur un <select>, recopie le data-fill de l'option choisie dans le champ cible
-  // (ex. montant d'une rubrique → champ Montant). Fonctionne pour le contenu injecté par HTMX.
+  // ── Delegation change ───────────────────────────────────────────────
+  // - data-csp-submit-on-change : soumet le formulaire parent dès que le champ change
+  //   (remplace onchange="this.form.submit()", bloqué par script-src-attr 'none')
+  // - data-csp-fill-target="id" : sur un <select>, recopie le data-fill de l'option choisie
+  //   dans le champ cible (ex. montant d'une rubrique → champ Montant).
+  // Fonctionne pour le contenu injecté par HTMX.
   document.addEventListener('change', function(e) {
     var sel = e.target;
-    if (!sel || !sel.dataset || !sel.dataset.cspFillTarget) return;
+    if (!sel || !sel.dataset) return;
+    if ('cspSubmitOnChange' in sel.dataset && sel.form) {
+      if (typeof sel.form.requestSubmit === 'function') sel.form.requestSubmit();
+      else sel.form.submit();
+      return;
+    }
+    if (!sel.dataset.cspFillTarget) return;
     var cible = document.getElementById(sel.dataset.cspFillTarget);
     var opt = sel.options ? sel.options[sel.selectedIndex] : null;
     if (!cible || !opt) return;

@@ -131,6 +131,7 @@ class TestTarifFormMontantAutomatique:
         assert "addEventListener('change'" in js and 'cspFillTarget' in js and 'dataset.fill' in js
         assert "addEventListener('input'" in js and 'cspSyncTarget' in js and 'cspCountTarget' in js
         assert "case 'insert-variable'" in js and 'window.insertVariable' not in js
+        assert 'cspSubmitOnChange' in js and 'requestSubmit' in js  # onchange="this.form.submit()" sans attribut inline
 
 
 @pytest.mark.django_db
@@ -215,3 +216,68 @@ class TestSimulationTarifaire:
         autre_etab = baker.make('parametres.AnneeScolaire', etablissement=baker.make(Etablissement, code='AUTRE'))
         etranger = client.get(url, {'annee': autre_etab.pk, 'classe': classe.pk, 'statut': statut.pk}).content.decode()
         assert 'introuvable' in etranger
+
+
+@pytest.mark.django_db
+class TestSignataireConfig:
+    """Page /parametres/signataires/configurer/ : style, script et onchange inline étaient bloqués par la CSP
+    (page non mise en forme, onglets et sélecteur d'année inopérants)."""
+
+    @pytest.fixture
+    def contexte(self, client):
+        from datetime import date
+        from parametres.models import TitreFonction, TitreHonorifiquePersonnel, TypeDocument
+        etab = baker.make('etablissements.Etablissement', code='SIG', nom='Ets Signataires')
+        user = baker.make('accounts.User', is_superuser=True, etablissement=etab, must_change_password=False)
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027',
+                           date_debut=date(2026, 9, 1), date_fin=date(2027, 7, 31), est_courante=True)
+        primaire = baker.make('parametres.Cycle', etablissement=etab, code='PRI', nom='Primaire', ordre=1, actif=True)
+        secondaire = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire', ordre=2, actif=True)
+        membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Ouedraogo', prenom='Jean',
+                            is_active=True, matricule='')
+        TitreFonction.objects.get_or_create(nom='Le Directeur', defaults={'actif': True})
+        TitreHonorifiquePersonnel.objects.get_or_create(nom='Monsieur', defaults={'actif': True})
+        assert TypeDocument.objects.filter(categorie='SCOLARITE', actif=True).exists()  # migration 0002
+        client.force_login(user)
+        return annee, primaire, secondaire, membre
+
+    def test_page_sans_style_script_ni_gestionnaire_inline(self, client, contexte):
+        annee, primaire, secondaire, membre = contexte
+        html = client.get(reverse('parametres:signataire_config')).content.decode()
+
+        # Style et script de la page portent le nonce CSP ; plus aucun attribut on*= inline
+        inline = [b for b in re.findall(r'<(?:script|style)\b[^>]*>', html) if 'src="' not in b]
+        assert inline and all('nonce="' in b for b in inline), [b for b in inline if 'nonce="' not in b]
+        assert 'onchange=' not in html and 'onclick=' not in html
+        assert 'name="annee" class="input select" data-csp-submit-on-change' in html
+        # Disposition des champs : grille déterministe, libellés standard, bouton dans la même rangée
+        assert html.count('class="sc-form-row"') == html.count('class="sc-card"') > 0
+        assert '<label class="input-label" for="sig-' in html and 'class="btn-primary sc-btn"' in html
+        assert 'style="' not in html.split('<h1 class="page-title">')[1].split('<style nonce=')[0]
+        # Sans paramètre ?cycle= : premier onglet (Primaire) actif, un seul panneau visible
+        assert f'class="sc-tab sc-tab--active"\n          data-tab="cycle-{primaire.id}"' in html
+        assert f'class="sc-tab "\n          data-tab="cycle-{secondaire.id}"' in html
+        assert html.count('class="sc-panel sc-panel--active"') == 1
+
+    def test_enregistrement_rouvre_l_onglet_du_cycle(self, client, contexte):
+        from parametres.models import SignataireDocument, TypeDocument
+        annee, primaire, secondaire, membre = contexte
+        url = reverse('parametres:signataire_config')
+        reponse = client.post(url, {
+            'annee_id': str(annee.id), 'cycle_id': str(secondaire.id), 'categorie': 'SCOLARITE',
+            'membre_personnel': str(membre.id), 'fonction': 'Le Directeur', 'titre_honorifique': 'Monsieur',
+        })
+        assert reponse.status_code == 302
+        assert reponse['Location'] == f'{url}?annee={annee.id}&cycle={secondaire.id}'
+
+        nb_types = TypeDocument.objects.filter(categorie='SCOLARITE', actif=True, cycle__isnull=True).count()
+        sigs = SignataireDocument.objects.filter(cycle=secondaire, annee_scolaire=annee, actif=True)
+        assert sigs.count() == nb_types and all(s.membre_personnel_id == membre.id for s in sigs)
+
+        html = client.get(reponse['Location']).content.decode()
+        assert 'Signataire enregistré pour Secondaire · Scolarité.' in html
+        assert f'class="sc-tab sc-tab--active"\n          data-tab="cycle-{secondaire.id}"' in html
+        assert f'class="sc-tab "\n          data-tab="cycle-{primaire.id}"' in html
+        assert f'class="sc-panel sc-panel--active" id="cycle-{secondaire.id}"' in html
+        # Le formulaire de la catégorie est pré-rempli avec le signataire enregistré
+        assert f'<option value="{membre.id}"\n              selected>' in html

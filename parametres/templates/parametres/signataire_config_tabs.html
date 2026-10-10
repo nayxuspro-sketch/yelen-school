@@ -20,31 +20,27 @@
 {% endif %}
 
 <!-- Année scolaire -->
-<div class="card mb-4" style="max-width:340px;">
-  <div class="card-body" style="padding:.875rem 1rem;">
-    <label class="input-label" style="margin-bottom:.375rem;display:block;">Année scolaire</label>
-    <form method="get">
-      <select name="annee" class="input select" onchange="this.form.submit()">
-        {% for a in annees %}
-        <option value="{{ a.id }}" {% if annee and annee.id == a.id %}selected{% endif %}>
-          {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
-        </option>
-        {% endfor %}
-      </select>
-    </form>
-  </div>
+<div class="card sc-annee mb-4">
+  <form method="get">
+    <label class="input-label" for="sc-annee">Année scolaire</label>
+    <select id="sc-annee" name="annee" class="input select" data-csp-submit-on-change>
+      {% for a in annees %}
+      <option value="{{ a.id }}" {% if annee and annee.id == a.id %}selected{% endif %}>
+        {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </form>
 </div>
 
 {% if not annee %}
-<div class="card"><div class="card-body" style="text-align:center;padding:2rem;color:var(--color-text-secondary);">
-  Aucune année scolaire trouvée.
-</div></div>
+<div class="card sc-vide">Aucune année scolaire trouvée.</div>
 {% else %}
 
 <!-- Onglets cycles -->
 <div class="sc-tabs">
   {% for cd in cycles_data %}
-  <button class="sc-tab {% if forloop.first %}sc-tab--active{% endif %}"
+  <button type="button" class="sc-tab {% if cd.actif %}sc-tab--active{% endif %}"
           data-tab="cycle-{{ cd.cycle.id }}">
     {{ cd.cycle.nom }}
     <span class="sc-tab-count {% if cd.total_configured == cd.total_docs and cd.total_docs > 0 %}sc-count--ok{% elif cd.total_configured > 0 %}sc-count--partial{% endif %}">
@@ -56,7 +52,7 @@
 
 <!-- Panneaux cycles -->
 {% for cd in cycles_data %}
-<div class="sc-panel {% if forloop.first %}sc-panel--active{% endif %}" id="cycle-{{ cd.cycle.id }}">
+<div class="sc-panel {% if cd.actif %}sc-panel--active{% endif %}" id="cycle-{{ cd.cycle.id }}">
   {% for cat in cd.categories %}
   <div class="sc-card">
 
@@ -65,7 +61,7 @@
       <div>
         <div class="sc-card-title">{{ cat.label }}</div>
         <div class="sc-badges">
-          {% for td in cat.type_docs %}<span class="sc-badge">{{ td.code }}</span>{% endfor %}
+          {% for td in cat.type_docs %}<span class="sc-badge" title="{{ td.libelle }}">{{ td.code }}</span>{% endfor %}
         </div>
       </div>
       <span class="sc-dot {% if cat.configured == cat.total and cat.total > 0 %}sc-dot--ok{% elif cat.configured > 0 %}sc-dot--partial{% else %}sc-dot--none{% endif %}"
@@ -82,9 +78,9 @@
       <div class="sc-form-row">
         <!-- Signataire -->
         <div class="sc-field sc-field--wide">
-          <label class="sc-label">Signataire</label>
-          <select name="membre_personnel" class="input select" required>
-            <option value="">-- Sélectionner un membre du personnel --</option>
+          <label class="input-label" for="sig-{{ cd.cycle.id }}-{{ cat.value }}">Signataire <span class="required-star">*</span></label>
+          <select id="sig-{{ cd.cycle.id }}-{{ cat.value }}" name="membre_personnel" class="input select" required>
+            <option value="">Sélectionner…</option>
             {% for p in personnel %}
             <option value="{{ p.id }}"
               {% if cat.sig_ref and cat.sig_ref.membre_personnel_id == p.id %}selected{% endif %}>
@@ -96,9 +92,9 @@
 
         <!-- Fonction -->
         <div class="sc-field">
-          <label class="sc-label">Fonction</label>
-          <select name="fonction" class="input select">
-            <option value="">-- Sélectionner une fonction --</option>
+          <label class="input-label" for="fct-{{ cd.cycle.id }}-{{ cat.value }}">Fonction</label>
+          <select id="fct-{{ cd.cycle.id }}-{{ cat.value }}" name="fonction" class="input select">
+            <option value="">Sélectionner…</option>
             {% for f in fonctions %}
             <option value="{{ f.nom }}"
               {% if cat.sig_ref and cat.sig_ref.fonction == f.nom %}selected{% endif %}>
@@ -110,9 +106,9 @@
 
         <!-- Titre honorifique -->
         <div class="sc-field">
-          <label class="sc-label">Titre honorifique</label>
-          <select name="titre_honorifique" class="input select">
-            <option value="">-- Sélectionner un titre honorifique --</option>
+          <label class="input-label" for="tit-{{ cd.cycle.id }}-{{ cat.value }}">Titre honorifique</label>
+          <select id="tit-{{ cd.cycle.id }}-{{ cat.value }}" name="titre_honorifique" class="input select">
+            <option value="">Sélectionner…</option>
             {% for t in titres_honorifiques %}
             <option value="{{ t.nom }}"
               {% if cat.sig_ref and cat.sig_ref.titre_honorifique == t.nom %}selected{% endif %}>
@@ -128,14 +124,20 @@
 
   </div>
   {% empty %}
-  <p style="color:var(--color-text-secondary);padding:1rem;">Aucun type de document actif.</p>
+  <p class="sc-vide-cat">Aucun type de document actif.</p>
   {% endfor %}
 </div>
 {% endfor %}
 
 {% endif %}{# annee #}
 
-<style>
+<style nonce="{{ request.csp_nonce }}">
+/* ── Année scolaire ── */
+.sc-annee { max-width: 340px; padding: .875rem 1rem; }
+.sc-annee .input-label { margin-bottom: .375rem; }
+.sc-vide { text-align: center; padding: 2rem; color: var(--color-text-secondary); }
+.sc-vide-cat { color: var(--color-text-secondary); padding: 1rem; }
+
 /* ── Onglets ── */
 .sc-tabs {
   display: flex;
@@ -187,6 +189,7 @@
   border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 1rem 1.125rem;
+  container-type: inline-size;
 }
 .sc-card-head {
   display: flex;
@@ -224,20 +227,26 @@
 .sc-dot--partial { background: #d97706; }
 .sc-dot--none    { background: var(--color-text-muted); opacity: .4; }
 
-/* ── Formulaire inline ── */
+/* ── Formulaire : grille déterministe ──
+   Carte étroite : Signataire sur toute la largeur, puis Fonction · Titre · bouton.
+   Carte large (≥ 880px) : les trois champs et le bouton sur une seule ligne. */
 .sc-form-row {
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: .75rem;
-  flex-wrap: wrap;
+  align-items: end;
 }
-.sc-field { display: flex; flex-direction: column; gap: .25rem; min-width: 160px; }
-.sc-field--wide { flex: 1; min-width: 200px; }
-.sc-label { font-size: .75rem; font-weight: 600; color: var(--color-text-secondary); }
-.sc-btn { flex-shrink: 0; align-self: flex-end; }
+.sc-field { min-width: 0; }
+.sc-field--wide { grid-column: 1 / -1; }
+.sc-field .input-label { margin-bottom: .375rem; }
+.sc-btn { min-height: 48px; white-space: nowrap; }
+@container (min-width: 880px) {
+  .sc-form-row { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .sc-field--wide { grid-column: auto; }
+}
 </style>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (function () {
   var tabs   = document.querySelectorAll('.sc-tab');
   var panels = document.querySelectorAll('.sc-panel');
