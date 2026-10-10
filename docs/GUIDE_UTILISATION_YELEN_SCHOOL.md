@@ -942,6 +942,13 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 regroupés par cycle ; la recherche (nom, prénom ou matricule) filtre en direct et le lien
 « Voir aussi les inactifs » ajoute les membres désactivés (`?tous=1`).
 
+**Colonne « Inscription <année courante> » :** pour chaque membre, badge vert **Inscrit** suivi du
+cycle et du poste de son inscription annuelle active (une ligne par inscription), ou badge orange
+**Non inscrit** avec un lien **Inscrire** qui ouvre directement le formulaire d'inscription annuelle
+(voir §12.7 : c'est cette inscription qui alimente la liste du personnel par cycle). Seules les
+inscriptions *actives* de l'*année scolaire courante* comptent ; sans année courante, la colonne
+affiche « — ».
+
 **Exports :** les trois boutons **CSV**, **Excel** et **PDF** en haut à droite exportent
 **exactement la liste affichée** (mêmes filtres : recherche et inactifs). La barre d'actions
 groupées (cases à cocher) exporte la sélection.

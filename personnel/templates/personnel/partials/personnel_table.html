@@ -26,6 +26,7 @@
           <th style="width:150px;">Fonction</th>
           <th style="width:165px;">Contact</th>
           <th style="width:75px;">Statut</th>
+          <th style="width:170px;">Inscription {% if annee_courante %}{{ annee_courante.libelle }}{% else %}annuelle{% endif %}</th>
           <th style="width:105px; text-align:right">Actions</th>
         </tr>
       </thead>
@@ -55,6 +56,17 @@
               <span class="badge badge-success">Actif</span>
             {% else %}
               <span class="badge badge-danger">Inactif</span>
+            {% endif %}
+          </td>
+          <td class="col-inscription">
+            {% if not annee_courante %}
+              <span class="text-muted" title="Aucune année scolaire courante">—</span>
+            {% elif membre.inscriptions_annee %}
+              <span class="badge badge-success">Inscrit</span>
+              <div class="text-muted" style="font-size:0.75rem; white-space:normal;">{% for inscription in membre.inscriptions_annee %}{{ inscription.cycle.nom }} · {{ inscription.poste.titre }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
+            {% else %}
+              <span class="badge badge-warning">Non inscrit</span>
+              {% if membre.is_active %}<div style="font-size:0.75rem;"><a href="{% url 'personnel:inscription_create' membre.pk %}">Inscrire</a></div>{% endif %}
             {% endif %}
           </td>
           <td style="text-align:right;">
@@ -118,6 +130,7 @@
           <th style="width:150px;">Fonction</th>
           <th style="width:165px;">Contact</th>
           <th style="width:75px;">Statut</th>
+          <th style="width:170px;">Inscription {% if annee_courante %}{{ annee_courante.libelle }}{% else %}annuelle{% endif %}</th>
           <th style="width:105px; text-align:right">Actions</th>
         </tr>
       </thead>
@@ -147,6 +160,17 @@
               <span class="badge badge-success">Actif</span>
             {% else %}
               <span class="badge badge-danger">Inactif</span>
+            {% endif %}
+          </td>
+          <td class="col-inscription">
+            {% if not annee_courante %}
+              <span class="text-muted" title="Aucune année scolaire courante">—</span>
+            {% elif membre.inscriptions_annee %}
+              <span class="badge badge-success">Inscrit</span>
+              <div class="text-muted" style="font-size:0.75rem; white-space:normal;">{% for inscription in membre.inscriptions_annee %}{{ inscription.cycle.nom }} · {{ inscription.poste.titre }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
+            {% else %}
+              <span class="badge badge-warning">Non inscrit</span>
+              {% if membre.is_active %}<div style="font-size:0.75rem;"><a href="{% url 'personnel:inscription_create' membre.pk %}">Inscrire</a></div>{% endif %}
             {% endif %}
           </td>
           <td style="text-align:right;">

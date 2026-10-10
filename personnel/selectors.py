@@ -1,9 +1,11 @@
 """Sélecteurs du module personnel : requêtes partagées par la liste et ses exports."""
 import uuid
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 
-from .models import MembrePersonnel
+from parametres.models import AnneeScolaire
+
+from .models import InscriptionPersonnel, MembrePersonnel
 
 
 def identifiants_valides(ids):
@@ -46,3 +48,27 @@ def personnel_filtre(etablissement, query='', inclure_inactifs=False, ids=''):
             Q(matricule__icontains=query)
         )
     return personnel
+
+
+def annee_courante(etablissement):
+    """Année scolaire courante de l'établissement (None si aucune n'est marquée courante)."""
+    if not etablissement:
+        return None
+    return AnneeScolaire.objects.filter(etablissement=etablissement, est_courante=True).first()
+
+
+def avec_inscriptions_annee(personnel, annee):
+    """Précharge dans ``membre.inscriptions_annee`` les inscriptions actives de ``annee`` (cycle, poste).
+
+    Une seule requête supplémentaire par liste évaluée, quel que soit le nombre de membres ;
+    liste vide pour chaque membre si ``annee`` est None.
+    """
+    inscriptions = InscriptionPersonnel.objects.none()
+    if annee is not None:
+        inscriptions = (
+            InscriptionPersonnel.objects
+            .filter(annee_scolaire=annee, est_actif=True)
+            .select_related('cycle', 'poste')
+            .order_by('cycle__ordre', 'cycle__nom')
+        )
+    return personnel.prefetch_related(Prefetch('inscriptions', queryset=inscriptions, to_attr='inscriptions_annee'))

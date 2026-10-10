@@ -297,3 +297,87 @@ class TestInscriptionPersonnel:
         assert response.status_code == 302
         inscription.refresh_from_db()
         assert inscription.personnel == membre and inscription.heures_hebdomadaires == 12
+
+
+@pytest.mark.django_db
+class TestColonneInscriptionAnnuelle:
+    """Colonne « Inscription <année courante> » de la liste /personnel/."""
+
+    @pytest.fixture
+    def contexte(self, client):
+        etab = baker.make('etablissements.Etablissement', nom='Lycée Yelen', code='LY')
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True)
+        ancienne = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2025-2026', est_courante=False)
+        cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')
+        poste = baker.make('parametres.Poste', etablissement=etab, code='ENS', titre='Enseignant')
+        inscrit = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Zongo', prenom='Ali',
+                             is_active=True, cycles=[cycle])
+        non_inscrit = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Kabore', prenom='Awa',
+                                 is_active=True, cycles=[cycle])
+        baker.make('personnel.InscriptionPersonnel', personnel=inscrit, annee_scolaire=annee,
+                   cycle=cycle, poste=poste, est_actif=True)
+        # Ne comptent pas : inscription d'une année passée, inscription inactive de l'année courante
+        baker.make('personnel.InscriptionPersonnel', personnel=non_inscrit, annee_scolaire=ancienne,
+                   cycle=cycle, poste=poste, est_actif=True)
+        baker.make('personnel.InscriptionPersonnel', personnel=non_inscrit, annee_scolaire=annee,
+                   cycle=cycle, poste=poste, est_actif=False)
+        client.force_login(user)
+        return etab, annee, cycle, poste, inscrit, non_inscrit
+
+    @staticmethod
+    def ligne(html, membre):
+        """Fragment HTML de la ligne du tableau correspondant au membre (repéré par sa case à cocher)."""
+        lignes = [l for l in html.split('<tr>') if f'value="{membre.pk}"' in l]
+        assert len(lignes) == 1
+        return lignes[0]
+
+    def test_etat_par_membre(self, client, contexte):
+        _, _, _, _, inscrit, non_inscrit = contexte
+
+        html = client.get(reverse('personnel:personnel_list')).content.decode()
+
+        assert '<th style="width:170px;">Inscription 2026-2027</th>' in html
+        ligne_inscrit = self.ligne(html, inscrit)
+        assert 'badge-success">Inscrit' in ligne_inscrit and 'Secondaire · Enseignant' in ligne_inscrit
+        ligne_non_inscrit = self.ligne(html, non_inscrit)
+        assert 'badge-warning">Non inscrit' in ligne_non_inscrit
+        assert reverse('personnel:inscription_create', args=[non_inscrit.pk]) in ligne_non_inscrit
+
+    def test_sans_annee_courante(self, client, contexte):
+        _, annee, _, _, inscrit, _ = contexte
+        annee.est_courante = False
+        annee.save()
+
+        html = client.get(reverse('personnel:personnel_list')).content.decode()
+
+        assert 'Inscription annuelle</th>' in html
+        assert 'Non inscrit' not in html and 'badge-success">Inscrit' not in html
+        assert 'title="Aucune année scolaire courante"' in self.ligne(html, inscrit)
+
+    def test_recherche_htmx_conserve_la_colonne(self, client, contexte):
+        _, _, _, _, inscrit, _ = contexte
+
+        response = client.get(reverse('personnel:personnel_list') + '?q=zon', HTTP_HX_REQUEST='true')
+
+        html = response.content.decode()
+        assert response.status_code == 200 and '<html' not in html
+        assert 'Secondaire · Enseignant' in self.ligne(html, inscrit)
+
+    def test_aucune_requete_supplementaire_par_membre(self, client, contexte):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        etab, annee, cycle, poste, _, _ = contexte
+        url = reverse('personnel:personnel_list')
+
+        with CaptureQueriesContext(connection) as avant:
+            client.get(url)
+        for i in range(5):
+            membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom=f'Ouedraogo{i}',
+                                is_active=True, cycles=[cycle])
+            baker.make('personnel.InscriptionPersonnel', personnel=membre, annee_scolaire=annee,
+                       cycle=cycle, poste=poste, est_actif=True)
+        with CaptureQueriesContext(connection) as apres:
+            client.get(url)
+
+        assert len(apres) == len(avant)

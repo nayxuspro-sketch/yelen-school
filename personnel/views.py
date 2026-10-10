@@ -13,7 +13,7 @@ from .forms import (
     MembrePersonnelForm, InscriptionPersonnelForm,
     SalairePersonnelForm, CongePersonnelForm,
 )
-from .selectors import personnel_filtre
+from .selectors import annee_courante, avec_inscriptions_annee, personnel_filtre
 from parametres.models import AnneeScolaire, Cycle
 from core.utils import get_etablissement_context
 
@@ -40,6 +40,10 @@ def personnel_list(request):
             Q(matricule__icontains=query)
         )
 
+    # Colonne « Inscription annuelle » : inscriptions actives de l'année courante, préchargées
+    annee = annee_courante(etab)
+    personnel = avec_inscriptions_annee(personnel, annee)
+
     # Grouper par cycle
     cycles = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom') if etab else Cycle.objects.none()
     cycles_personnel = [
@@ -59,6 +63,7 @@ def personnel_list(request):
         'query': query,
         'show_all': show_all,
         'nb_inactifs': nb_inactifs.count(),
+        'annee_courante': annee,
     }
 
     if request.headers.get('HX-Request'):
