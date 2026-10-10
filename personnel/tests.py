@@ -203,6 +203,24 @@ class TestPersonnelListPdf:
         html = html_pour(f'?ids={inactif.pk}')
         assert 'KABORE' in html and 'ZONGO' not in html and '1 membre — Sélection' in html
 
+    def test_pdf_avec_licence_active(self, client, contexte, mocker):
+        """Régression : avec une licence active, le filigrane (filigrane_licence.html) lit
+        « etablissement » dans le contexte — son absence provoquait un 500 en production."""
+        from licences.models import Licence, StatutLicence, TypeLicence
+        etab, user, _, _ = contexte
+        licence = Licence(etablissement=etab, type_licence=TypeLicence.PREMIUM,
+                          statut=StatutLicence.ACTIVE, date_expiration=date.today() + timedelta(days=300))
+        licence.save()
+        client.force_login(user)
+        html_cls = mocker.patch('core.pdf.HTML')
+        html_cls.return_value.write_pdf.return_value = b'%PDF-1.7'
+
+        response = client.get(reverse('personnel:personnel_list_pdf'))
+
+        assert response.status_code == 200
+        html = html_cls.call_args.kwargs['string']
+        assert f'Licence PREMIUM — {licence.cle_licence} — Lycée Yelen' in html
+
     def test_bouton_pdf_sur_la_liste(self, client, contexte):
         etab, user, actif, inactif = contexte
         client.force_login(user)

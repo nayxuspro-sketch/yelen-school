@@ -161,6 +161,7 @@ def personnel_list_pdf(request):
 
     etab_context = get_etablissement_context(etab, request) if etab else {}
     context = {
+        'etablissement': etab,  # requis par le filigrane de licence (documents/pdf/partials/filigrane_licence.html)
         'membres': membres,
         'nb_total': len(membres),
         'nb_hommes': sum(1 for m in membres if m.genre == 'M'),

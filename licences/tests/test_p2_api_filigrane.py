@@ -216,6 +216,21 @@ class TestFiligranePDF:
         assert 'licence_info' in ctx
         assert ctx['licence_info']['type'] == 'PREMIUM'
 
+    def test_template_filigrane_tolere_un_contexte_sans_etablissement(self, etablissement, licence_active):
+        """Régression (500 sur /personnel/pdf/) : le partial ne doit pas exiger « etablissement »."""
+        from django.template.loader import render_to_string
+        from django.utils.html import escape
+        partial = 'documents/pdf/partials/filigrane_licence.html'
+        info = get_licence_info_for_pdf(None, etablissement)
+
+        html = render_to_string(partial, {'licence_info': info})
+        assert f'Licence PREMIUM — {licence_active.cle_licence} — {escape(etablissement.nom)}' in html
+
+        # Repli sur etablissement.nom si l'info licence ne porte pas le nom
+        html = render_to_string(partial, {'licence_info': {**info, 'etablissement_nom': ''},
+                                          'etablissement': etablissement})
+        assert f'PREMIUM - {escape(etablissement.nom)}' in html
+
     def test_template_filigrane_exists(self):
         from pathlib import Path
         p = Path('documents/templates/documents/pdf/partials/filigrane_licence.html')

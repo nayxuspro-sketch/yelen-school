@@ -32,10 +32,10 @@
 }
 </style>
 <div class="filigrane-licence">
-    {{ licence_info.type }} - {{ licence_info.etablissement_nom|default:etablissement.nom|default:"YELEN" }}
+    {{ licence_info.type }} - {% firstof licence_info.etablissement_nom etablissement.nom "YELEN" %}
 </div>
 <div class="bandeau-licence">
-    Licence {{ licence_info.type }} — {{ licence_info.cle_licence|default:"" }} — {{ licence_info.etablissement_nom|default:etablissement.nom|default:"" }} — Généré le {% now "d/m/Y H:i" %} — {{ licence_info.jours_restants }}j restants — YELEN SCHOOL v3.4 — Document officiel — Toute falsification expose à des poursuites
+    Licence {{ licence_info.type }} — {{ licence_info.cle_licence|default:"" }} — {% firstof licence_info.etablissement_nom etablissement.nom %} — Généré le {% now "d/m/Y H:i" %} — {{ licence_info.jours_restants }}j restants — YELEN SCHOOL v3.4 — Document officiel — Toute falsification expose à des poursuites
 </div>
 {% else %}
 {# Fallback si pas de licence_info (mode démo) — filigrane léger #}
