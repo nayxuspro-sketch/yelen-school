@@ -32,10 +32,11 @@
             </div>
         </div>
 
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>
+        {% endif %}
+
         {% for field in form %}
-        {% if field.name == 'personnel' %}
-        {# Champ personnel masqué — fixé automatiquement par la vue #}
-        {% else %}
         <div class="{% if field.field.widget.input_type == 'checkbox' %}d-flex align-center gap-3{% else %}form-group{% endif %}"
              style="{% if field.field.widget.input_type == 'checkbox' %}padding:0.5rem 0;{% endif %}">
             {% if field.field.widget.input_type == 'checkbox' %}
@@ -55,7 +56,6 @@
             <p class="input-error">{{ field.errors.0 }}</p>
             {% endif %}
         </div>
-        {% endif %}
         {% endfor %}
 
         <div class="d-flex justify-end gap-4" style="padding:1.5rem; background:var(--color-bg-card); border-top:1px solid var(--color-border);">

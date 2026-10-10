@@ -411,7 +411,8 @@ class InscriptionPersonnel(BaseModel):
         from django.core.exceptions import ValidationError
 
         # Vérifier qu'une seule inscription active par année × cycle
-        if self.est_actif:
+        # (ignoré si une FK obligatoire manque : le formulaire signale déjà le champ)
+        if self.est_actif and self.personnel_id and self.annee_scolaire_id and self.cycle_id:
             existing = InscriptionPersonnel.objects.filter(
                 personnel=self.personnel,
                 annee_scolaire=self.annee_scolaire,

@@ -227,3 +227,73 @@ class TestPersonnelListPdf:
         response = client.get(reverse('personnel:personnel_list') + '?tous=1')
         assert response.status_code == 200
         assert (reverse('personnel:personnel_list_pdf') + '?tous=1').encode() in response.content
+
+
+@pytest.mark.django_db
+class TestInscriptionPersonnel:
+    """Régression : le formulaire d'inscription (sans champ « personnel ») provoquait un 500
+    dans InscriptionPersonnel.clean() → aucune inscription possible, cartes de
+    /documents/personnel/ toujours « Inactif »."""
+
+    @pytest.fixture
+    def contexte(self, client):
+        etab = baker.make('etablissements.Etablissement', nom='Lycée Yelen', code='LY')
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Kabore', prenom='Gilbert')
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        poste = baker.make('parametres.Poste', etablissement=etab, code='ENS', titre='Enseignant')
+        cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')
+        client.force_login(user)
+        donnees = {'annee_scolaire': annee.pk, 'poste': poste.pk, 'cycle': cycle.pk,
+                   'est_actif': 'on', 'heures_hebdomadaires': '0', 'observations': ''}
+        return membre, annee, cycle, donnees
+
+    def test_inscription_enregistree_et_carte_active(self, client, contexte):
+        from personnel.models import InscriptionPersonnel
+        membre, annee, cycle, donnees = contexte
+
+        response = client.post(reverse('personnel:inscription_create', args=[membre.pk]), donnees)
+
+        assert response.status_code == 302
+        assert response['Location'] == reverse('personnel:detail', args=[membre.pk])
+        inscription = InscriptionPersonnel.objects.get()
+        assert (inscription.personnel, inscription.annee_scolaire, inscription.cycle) == (membre, annee, cycle)
+
+        page = client.get(reverse('documents:liste_personnel_selector')).content.decode()
+        assert 'badge-success">Actif' in page and 'Inactif' not in page
+
+    def test_champ_obligatoire_manquant_affiche_l_erreur(self, client, contexte):
+        from personnel.models import InscriptionPersonnel
+        membre, _, _, donnees = contexte
+        donnees['cycle'] = ''
+
+        response = client.post(reverse('personnel:inscription_create', args=[membre.pk]), donnees)
+
+        assert response.status_code == 200
+        assert 'Ce champ est obligatoire' in response.content.decode()
+        assert InscriptionPersonnel.objects.count() == 0
+
+    def test_doublon_refuse_avec_message(self, client, contexte):
+        from personnel.models import InscriptionPersonnel
+        membre, _, _, donnees = contexte
+        url = reverse('personnel:inscription_create', args=[membre.pk])
+        assert client.post(url, donnees).status_code == 302
+
+        response = client.post(url, donnees)
+
+        assert response.status_code == 200
+        assert 'déjà une inscription active pour Secondaire' in response.content.decode()
+        assert InscriptionPersonnel.objects.count() == 1
+
+    def test_modification_conserve_le_membre(self, client, contexte):
+        from personnel.models import InscriptionPersonnel
+        membre, _, _, donnees = contexte
+        client.post(reverse('personnel:inscription_create', args=[membre.pk]), donnees)
+        inscription = InscriptionPersonnel.objects.get()
+        donnees['heures_hebdomadaires'] = '12'
+
+        response = client.post(reverse('personnel:inscription_edit', args=[inscription.pk]), donnees)
+
+        assert response.status_code == 302
+        inscription.refresh_from_db()
+        assert inscription.personnel == membre and inscription.heures_hebdomadaires == 12

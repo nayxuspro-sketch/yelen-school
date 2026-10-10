@@ -3067,6 +3067,8 @@ Le document contient : en-tête de l'établissement, numéro d'ordre, matricule,
 
 **Interface :** La page affiche une grille de 4 cartes (responsive : 3 → 2 → 1 selon la largeur d'écran). Chaque carte représente un cycle scolaire avec un badge **Actif** (vert) ou **Inactif** (gris) selon la présence de personnel inscrit pour l'année sélectionnée.
 
+**Comment activer une carte :** une carte passe à **Actif** dès qu'au moins un membre du personnel possède une *inscription annuelle active* pour ce cycle et l'année scolaire sélectionnée. Les cartes ne se cliquent pas : l'inscription se fait dans le module Personnel — `Personnel → fiche du membre → Nouvelle inscription` → choisir l'année scolaire, le poste et le cycle → **Valider l'inscription**. Un doublon (même membre, même année, même cycle) est refusé avec un message explicite.
+
 **Étapes :**
 
 1. Clique sur **Documents** dans le menu

@@ -86,8 +86,9 @@ class InscriptionPersonnelForm(forms.ModelForm):
 
     class Meta:
         model = InscriptionPersonnel
+        # 'personnel' est fixé par la vue (instance), jamais saisi dans le formulaire
         fields = [
-            'personnel', 'annee_scolaire', 'poste', 'cycle',
+            'annee_scolaire', 'poste', 'cycle',
             'est_actif', 'date_debut', 'date_fin', 'observations',
             'heures_hebdomadaires'
         ]

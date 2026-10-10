@@ -282,11 +282,9 @@ def inscription_create(request, pk):
         return redirect('personnel:personnel_list')
     
     if request.method == 'POST':
-        form = InscriptionPersonnelForm(request.POST)
+        form = InscriptionPersonnelForm(request.POST, instance=InscriptionPersonnel(personnel=membre))
         if form.is_valid():
-            inscription = form.save(commit=False)
-            inscription.personnel = membre
-            inscription.save()
+            form.save()
             messages.success(request, f"Inscription enregistrée pour {membre.get_nom_complet()}.")
             return redirect('personnel:detail', pk=membre.pk)
     else:
