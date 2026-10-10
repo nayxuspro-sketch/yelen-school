@@ -100,3 +100,30 @@ class TestParametresViews:
         assert response.status_code == 200
         trigger.refresh_from_db()
         assert trigger.actif is True
+
+
+@pytest.mark.django_db
+class TestTarifFormMontantAutomatique:
+    """Régression : le montant de la rubrique ne se recopiait plus dans « Montant (FCFA) »
+    (script inline du partial bloqué par la CSP → mécanisme data-csp-fill-target)."""
+
+    def test_partial_sans_script_inline_et_attributs_de_recopie(self, client):
+        etab = baker.make(Etablissement, code='TARIF', nom='Lycée Yelen')
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, nom='Scolarité',
+                              code='SCOL', montant=25000, actif=True)
+        client.force_login(user)
+
+        response = client.get(reverse('parametres:tarif_create'), HTTP_HX_REQUEST='true')
+
+        html = response.content.decode()
+        assert response.status_code == 200
+        assert '<script' not in html, "script inline interdit par la CSP (script-src nonce)"
+        assert 'id="id_rubrique_tarif"' in html and 'data-csp-fill-target="id_montant_tarif"' in html
+        assert f'<option value="{rubrique.pk}"' in html and 'data-fill="25000' in html
+        assert 'id="id_montant_tarif"' in html
+
+    def test_gestionnaire_present_dans_csp_handlers(self):
+        from pathlib import Path
+        js = Path('static/js/csp_handlers.js').read_text(encoding='utf-8')
+        assert "addEventListener('change'" in js and 'cspFillTarget' in js and 'dataset.fill' in js

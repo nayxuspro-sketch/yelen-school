@@ -310,6 +310,19 @@
     }
   });
 
+  // ── Delegation change : data-csp-fill-target="id" ──────────────────
+  // Sur un <select>, recopie le data-fill de l'option choisie dans le champ cible
+  // (ex. montant d'une rubrique → champ Montant). Fonctionne pour le contenu injecté par HTMX.
+  document.addEventListener('change', function(e) {
+    var sel = e.target;
+    if (!sel || !sel.dataset || !sel.dataset.cspFillTarget) return;
+    var cible = document.getElementById(sel.dataset.cspFillTarget);
+    var opt = sel.options ? sel.options[sel.selectedIndex] : null;
+    if (!cible || !opt) return;
+    var valeur = opt.dataset.fill;
+    if (valeur) cible.value = valeur;
+  });
+
   // ── Expose helpers globaux pour compatibilité ───────────────────────
   window.cspCloseModal = closeModalById;
   window.cspShowModal = showModalById;

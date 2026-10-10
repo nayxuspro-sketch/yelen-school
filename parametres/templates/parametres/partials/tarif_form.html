@@ -67,11 +67,12 @@
 
         <div class="form-group">
           <label class="input-label">Rubrique <span style="color:#FF6B7A;">*</span></label>
-          <select name="rubrique" required class="input select" id="id_rubrique_tarif">
+          <select name="rubrique" required class="input select" id="id_rubrique_tarif"
+                  data-csp-fill-target="id_montant_tarif">
             <option value="">— Choisir —</option>
             {% for r in rubriques %}
             <option value="{{ r.pk }}"
-              data-montant="{{ r.montant|default:'' }}"
+              data-fill="{{ r.montant|default:'' }}"
               {% if tarif and tarif.rubrique_id == r.pk %}selected{% endif %}>{{ r.nom }}</option>
             {% endfor %}
           </select>
@@ -104,15 +105,3 @@
     </form>
   </div>
 </div>
-<script>
-(function() {
-  var sel = document.getElementById('id_rubrique_tarif');
-  var inp = document.getElementById('id_montant_tarif');
-  if (!sel || !inp) return;
-  sel.addEventListener('change', function() {
-    var opt = sel.options[sel.selectedIndex];
-    var m = opt ? opt.dataset.montant : '';
-    if (m) inp.value = m;
-  });
-})();
-</script>
