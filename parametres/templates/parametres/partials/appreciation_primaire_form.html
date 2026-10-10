@@ -35,6 +35,7 @@
                         <label class="input-label">Couleur</label>
                         <div class="d-flex align-center gap-2">
                             <input type="color" name="couleur" value="{{ appr.couleur|default:'#00A86B' }}" id="appr-color"
+                                data-csp-sync-target="appr-color-label"
                                 style="width:2.5rem; height:2.25rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-input); cursor:pointer; padding:2px;">
                             <span class="text-xs text-mono text-muted" id="appr-color-label">{{ appr.couleur|default:'#00A86B' }}</span>
                         </div>
@@ -60,8 +61,3 @@
         </form>
     </div>
 </div>
-<script>
-    document.getElementById('appr-color').addEventListener('input', function() {
-        document.getElementById('appr-color-label').textContent = this.value;
-    });
-</script>

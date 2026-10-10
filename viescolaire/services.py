@@ -45,6 +45,15 @@ class SeancePrevue:
     matiere_nom: str
     prof_nom: str
 
+    @property
+    def jour_nom(self) -> str:
+        """Libellé du jour (« Lundi »…) pour l'aperçu ; le numéro brut si inconnu."""
+        from .models import JourSemaine
+        try:
+            return str(JourSemaine(int(self.jour)).label)
+        except ValueError:
+            return str(self.jour)
+
 
 @dataclass
 class ResultatGeneration:

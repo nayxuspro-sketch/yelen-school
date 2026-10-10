@@ -127,3 +127,42 @@ class TestTarifFormMontantAutomatique:
         from pathlib import Path
         js = Path('static/js/csp_handlers.js').read_text(encoding='utf-8')
         assert "addEventListener('change'" in js and 'cspFillTarget' in js and 'dataset.fill' in js
+        assert "addEventListener('input'" in js and 'cspSyncTarget' in js and 'cspCountTarget' in js
+        assert "case 'insert-variable'" in js and 'window.insertVariable' not in js
+
+
+@pytest.mark.django_db
+class TestPartialsSansScriptInline:
+    """Même défaut que le tarif : scripts inline (sans nonce) et attributs on*= bloqués par la CSP,
+    remplacés par les attributs data-csp-* traités dans csp_handlers.js."""
+
+    @pytest.fixture
+    def client_etab(self, client):
+        etab = baker.make(Etablissement, code='CSP', nom='Lycée Yelen')
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        client.force_login(user)
+        return client
+
+    @pytest.mark.parametrize('nom_url, attendus', [
+        ('parametres:statut_create', ['id="couleur-picker"', 'data-csp-sync-target="couleur-text"',
+                                      'data-csp-sync-target="couleur-picker"']),
+        ('parametres:appreciation_create', ['id="appr-color"', 'data-csp-sync-target="appr-color-label"']),
+        ('parametres:appreciation_primaire_create', ['id="appr-color"', 'data-csp-sync-target="appr-color-label"']),
+    ])
+    def test_formulaires_couleur(self, client_etab, nom_url, attendus):
+        html = client_etab.get(reverse(nom_url), HTTP_HX_REQUEST='true').content.decode()
+
+        assert '<script' not in html and 'oninput=' not in html
+        for attendu in attendus:
+            assert attendu in html
+
+    def test_modele_message(self, client_etab):
+        html = client_etab.get(reverse('parametres:modele_message_form', kwargs={'type_msg': 'BULLETIN'})).content.decode()
+
+        assert '<script' not in html and 'oninput=' not in html
+        assert 'data-csp-count-target="count-BULLETIN"' in html
+        assert 'data-csp-action="insert-variable"' in html and 'data-insert-target="contenu-BULLETIN"' in html
+        # Compteur initialisé côté serveur avec la longueur du contenu par défaut
+        from parametres.models import ModeleMessage
+        longueur = len(ModeleMessage.DEFAUTS['BULLETIN'])
+        assert f'<span id="count-BULLETIN">{longueur}</span>' in html

@@ -5,7 +5,7 @@
     <label class="input-label" for="contenu-{{ type_msg }}">
       Contenu du message
       <span style="font-size:0.72rem; color:var(--color-text-muted); font-weight:400; margin-left:var(--space-2);">
-        (<span id="count-{{ type_msg }}">0</span> / 160 caractères)
+        (<span id="count-{{ type_msg }}">{{ modele.contenu_sms|default:defaut|length }}</span> / 160 caractères)
       </span>
     </label>
     <textarea
@@ -15,7 +15,7 @@
       class="input"
       style="width:100%; resize:vertical; font-family:inherit;"
       maxlength="320"
-      oninput="document.getElementById('count-{{ type_msg }}').textContent=this.value.length"
+      data-csp-count-target="count-{{ type_msg }}"
       >{{ modele.contenu_sms|default:defaut }}</textarea>
     <p style="font-size:0.75rem; color:var(--color-text-muted); margin-top:var(--space-2);">
       Variables disponibles :
@@ -38,19 +38,3 @@
     <button type="button" class="btn-outline" style="font-size:0.85rem;" data-csp-action="clear-form" data-form-id="form-{{ type_msg }}">Annuler</button></div>
 </form>
 
-<script>
-(function() {
-  var el = document.getElementById('contenu-{{ type_msg }}');
-  if (el) document.getElementById('count-{{ type_msg }}').textContent = el.value.length;
-})();
-
-function insertVariable(fieldId, variable) {
-  var el = document.getElementById(fieldId);
-  if (!el) return;
-  var start = el.selectionStart, end = el.selectionEnd;
-  el.value = el.value.substring(0, start) + variable + el.value.substring(end);
-  el.selectionStart = el.selectionEnd = start + variable.length;
-  el.focus();
-  document.getElementById('count-' + fieldId.replace('contenu-', '')).textContent = el.value.length;
-}
-</script>

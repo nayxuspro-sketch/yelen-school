@@ -214,10 +214,16 @@
           if (q && typeof window.fillQuestion === 'function') window.fillQuestion(q);
           break;
         case 'insert-variable':
-          var insertTarget = actionEl.dataset.insertTarget;
-          var insertVar = actionEl.dataset.insertVar;
-          if (insertTarget && insertVar && typeof window.insertVariable === 'function') {
-            window.insertVariable(insertTarget, insertVar);
+          // Insère la variable à la position du curseur du champ cible
+          var champ = document.getElementById(actionEl.dataset.insertTarget || '');
+          var variable = actionEl.dataset.insertVar;
+          if (champ && variable) {
+            var debut = champ.selectionStart == null ? champ.value.length : champ.selectionStart;
+            var fin = champ.selectionEnd == null ? debut : champ.selectionEnd;
+            champ.value = champ.value.substring(0, debut) + variable + champ.value.substring(fin);
+            champ.selectionStart = champ.selectionEnd = debut + variable.length;
+            champ.focus();
+            champ.dispatchEvent(new Event('input', { bubbles: true }));  // met à jour le compteur
           }
           break;
         case 'show-tab':
@@ -321,6 +327,30 @@
     if (!cible || !opt) return;
     var valeur = opt.dataset.fill;
     if (valeur) cible.value = valeur;
+  });
+
+  // ── Delegation input : data-csp-sync-target / data-csp-count-target ─
+  // - data-csp-sync-target="id"  : recopie la valeur saisie dans la cible
+  //   (champ → .value, autre élément → textContent) ; ex. sélecteur de couleur ↔ champ texte
+  // - data-csp-count-target="id" : affiche le nombre de caractères saisis dans la cible
+  document.addEventListener('input', function(e) {
+    var src = e.target;
+    if (!src || !src.dataset) return;
+    if (src.dataset.cspSyncTarget) {
+      var cible = document.getElementById(src.dataset.cspSyncTarget);
+      if (cible) {
+        if (cible.tagName === 'INPUT' || cible.tagName === 'TEXTAREA' || cible.tagName === 'SELECT') {
+          // Un <input type="color"> n'accepte qu'une couleur #rrggbb complète
+          if (cible.type !== 'color' || /^#[0-9a-fA-F]{6}$/.test(src.value)) cible.value = src.value;
+        } else {
+          cible.textContent = src.value;
+        }
+      }
+    }
+    if (src.dataset.cspCountTarget) {
+      var compteur = document.getElementById(src.dataset.cspCountTarget);
+      if (compteur) compteur.textContent = src.value.length;
+    }
   });
 
   // ── Expose helpers globaux pour compatibilité ───────────────────────

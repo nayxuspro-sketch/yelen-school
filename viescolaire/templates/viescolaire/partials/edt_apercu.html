@@ -69,15 +69,8 @@
             {% for seance in resultat.seances %}
             <tr>
               <td>
-                {% if forloop.first %}
-                  {% with seance.jour as j %}{{ j|stringformat:"s" }}{% endwith %}
-                {% endif %}
-                {# Afficher le jour seulement quand il change — on utilise un tag simple #}
-                <span class="edt-gen-day-cell"
-                      data-jour="{{ seance.jour }}">
-                  {% if forloop.first or seance.jour != resultat.seances|slice:":"|last|default:"0" %}
-                  {% endif %}
-                </span>
+                {# Nom du jour affiché seulement quand il change #}
+                <span class="edt-gen-day-cell">{% ifchanged seance.jour %}{{ seance.jour_nom }}{% endifchanged %}</span>
               </td>
               <td class="text-mono text-sm">{{ seance.heure_debut }}–{{ seance.heure_fin }}</td>
               <td class="fw-medium">{{ seance.matiere_nom }}</td>
@@ -117,21 +110,3 @@
   </div>
 </div>
 
-<script>
-(function() {
-  const rows = document.querySelectorAll('#edt-gen-modal tbody tr');
-  let lastJour = null;
-  const JOURS = {1:'Lundi',2:'Mardi',3:'Mercredi',4:'Jeudi',5:'Vendredi',6:'Samedi',7:'Dimanche'};
-  rows.forEach(function(row) {
-    const cell = row.querySelector('.edt-gen-day-cell');
-    if (!cell) return;
-    const jour = parseInt(cell.dataset.jour);
-    if (jour !== lastJour) {
-      cell.textContent = JOURS[jour] || jour;
-      lastJour = jour;
-    } else {
-      cell.textContent = '';
-    }
-  });
-})();
-</script>
