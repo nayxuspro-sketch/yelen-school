@@ -5522,6 +5522,12 @@ input::-webkit-strong-password-auto-fill-button {
 .ev-sec-body-last { border-bottom: none; }
 
 /* Hint sous un champ de formulaire */
+.form-error {
+  margin: var(--space-1) 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-danger, #DC2626);
+}
 .form-hint {
   font-size: 0.75rem;
   color: var(--color-text-muted);

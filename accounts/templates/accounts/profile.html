@@ -7,7 +7,8 @@
 {% if request.user.must_change_password %}
 <div class="alert alert-warning animate-fade-up" role="alert" style="max-width:900px; margin-bottom:var(--space-5);">
   <strong>Changement obligatoire :</strong>
-  remplacez le mot de passe temporaire avant d'utiliser les autres fonctions de YELEN SCHOOL.
+  remplacez le mot de passe temporaire avant d'utiliser les autres fonctions de YELEN SCHOOL
+  (bloc « Changer le mot de passe » ci-dessous — {{ pw_form.password1.help_text }}).
 </div>
 {% endif %}
 
@@ -91,20 +92,20 @@
       <div class="form-group">
         <label class="form-label">Mot de passe actuel</label>
         {{ pw_form.old_password }}
-        {% if pw_form.old_password.errors %}<p class="form-error">{{ pw_form.old_password.errors.0 }}</p>{% endif %}
+        {% for erreur in pw_form.old_password.errors %}<p class="form-error">{{ erreur }}</p>{% endfor %}
       </div>
 
       <div class="form-group">
         <label class="form-label">Nouveau mot de passe</label>
         {{ pw_form.password1 }}
-        {% if pw_form.password1.errors %}<p class="form-error">{{ pw_form.password1.errors.0 }}</p>{% endif %}
-        <p class="form-hint">Au moins 8 caractères.</p>
+        {% for erreur in pw_form.password1.errors %}<p class="form-error">{{ erreur }}</p>{% endfor %}
+        <p class="form-hint">{{ pw_form.password1.help_text }}</p>
       </div>
 
       <div class="form-group">
         <label class="form-label">Confirmer le nouveau mot de passe</label>
         {{ pw_form.password2 }}
-        {% if pw_form.password2.errors %}<p class="form-error">{{ pw_form.password2.errors.0 }}</p>{% endif %}
+        {% for erreur in pw_form.password2.errors %}<p class="form-error">{{ erreur }}</p>{% endfor %}
       </div>
 
       <div style="margin-top:var(--space-5);">

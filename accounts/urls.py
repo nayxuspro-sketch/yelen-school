@@ -2,6 +2,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from .forms import password_min_length
 app_name = 'accounts'
 
 urlpatterns = [
@@ -28,6 +29,7 @@ urlpatterns = [
         auth_views.PasswordResetConfirmView.as_view(
             template_name='accounts/password_reset_confirm.html',
             success_url='/accounts/reinitialiser/termine/',
+            extra_context={'longueur_min_mdp': password_min_length()},
         ),
         name='password_reset_confirm'),
     path('reinitialiser/termine/',

@@ -1,18 +1,46 @@
 from django import forms
 from django.contrib.auth.forms import PasswordResetForm as DjangoPasswordResetForm
-from django.contrib.auth.password_validation import validate_password
+from django.conf import settings
+from django.contrib.auth.password_validation import validate_password, password_validators_help_texts
 from django.utils import timezone
+from django.utils.functional import lazy
 
 from .models import User
 from core.models import RoleChoices
 from etablissements.models import Etablissement
 
 
+
+def password_min_length():
+    """Longueur minimale imposée par AUTH_PASSWORD_VALIDATORS (8 par défaut Django)."""
+    for validator in getattr(settings, 'AUTH_PASSWORD_VALIDATORS', []):
+        if validator.get('NAME', '').endswith('MinimumLengthValidator'):
+            return int(validator.get('OPTIONS', {}).get('min_length', 8))
+    return 8
+
+
+def password_help_text():
+    """Règles réelles (longueur, mots courants, similarité…) — une seule source de vérité."""
+    return ' '.join(str(texte) for texte in password_validators_help_texts())
+
+
+# Évalué au rendu (langue active), pas à l'import.
+password_help_text_lazy = lazy(password_help_text, str)
+
+
+def _password_widget():
+    return forms.PasswordInput(attrs={
+        'class': 'input',
+        'autocomplete': 'new-password',
+        'minlength': password_min_length(),
+    })
+
+
 class UserCreateForm(forms.ModelForm):
     password1 = forms.CharField(
         label="Mot de passe",
-        widget=forms.PasswordInput(attrs={'class': 'input', 'autocomplete': 'new-password'}),
-        help_text="Au moins 8 caractères.",
+        widget=_password_widget(),
+        help_text=password_help_text_lazy(),
     )
     password2 = forms.CharField(
         label="Confirmer le mot de passe",
@@ -164,8 +192,8 @@ class ChangeOwnPasswordForm(forms.Form):
     )
     password1 = forms.CharField(
         label="Nouveau mot de passe",
-        widget=forms.PasswordInput(attrs={'class': 'input', 'autocomplete': 'new-password'}),
-        help_text="Au moins 8 caractères.",
+        widget=_password_widget(),
+        help_text=password_help_text_lazy(),
     )
     password2 = forms.CharField(
         label="Confirmer le nouveau mot de passe",
@@ -228,8 +256,8 @@ class ParentCreateForm(forms.ModelForm):
     """Formulaire de création d'un compte parent avec liaison aux élèves."""
     password1 = forms.CharField(
         label="Mot de passe",
-        widget=forms.PasswordInput(attrs={'class': 'input', 'autocomplete': 'new-password'}),
-        help_text="Au moins 8 caractères.",
+        widget=_password_widget(),
+        help_text=password_help_text_lazy(),
     )
     password2 = forms.CharField(
         label="Confirmer le mot de passe",
@@ -306,8 +334,8 @@ class ParentCreateForm(forms.ModelForm):
 class SetPasswordForm(forms.Form):
     password1 = forms.CharField(
         label="Nouveau mot de passe",
-        widget=forms.PasswordInput(attrs={'class': 'input', 'autocomplete': 'new-password'}),
-        help_text="Au moins 8 caractères.",
+        widget=_password_widget(),
+        help_text=password_help_text_lazy(),
     )
     password2 = forms.CharField(
         label="Confirmer le nouveau mot de passe",
