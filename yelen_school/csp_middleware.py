@@ -8,6 +8,11 @@ Génère un nonce cryptographique par requête et l'injecte dans :
 La directive script-src remplace 'unsafe-inline' par 'nonce-{nonce}',
 ce qui bloque tout script inline non noncé (protection XSS renforcée).
 
+Styles : les éléments <style> exigent le nonce (style-src) ; les attributs
+style="…" sont autorisés (style-src-attr 'unsafe-inline') — un attribut de
+style ne peut pas exécuter de script, et les gabarits en comptent plus de
+2 500 (largeurs, couleurs, mises en page) qui seraient sinon ignorés.
+
 Usage dans les templates :
     <script nonce="{{ request.csp_nonce }}">...</script>
 """
@@ -47,7 +52,8 @@ class CSPNonceMiddleware:
             csp_parts = list(self._CSP_BASE) + [
                 f"script-src 'self' 'nonce-{nonce}'",
                 f"style-src 'self' 'nonce-{nonce}'",
-                f"script-src-attr 'none'",
+                "style-src-attr 'unsafe-inline'",
+                "script-src-attr 'none'",
             ]
             response['Content-Security-Policy'] = '; '.join(csp_parts)
 
