@@ -4,7 +4,7 @@ Issu du découpage mécanique de ``pedagogie/views.py`` (octobre 2026) : code in
 """
 
 try:
-    from weasyprint import HTML
+    from core.pdf import HTML
 except Exception:  # ImportError ou OSError (libpango/cairo absents)
     HTML = None
 

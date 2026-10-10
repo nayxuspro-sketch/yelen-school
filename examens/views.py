@@ -21,7 +21,7 @@ from .models import SessionExamen, CentreExamen, InscriptionExamen, SalleExamen,
 from .forms import SessionExamenForm, CentreExamenForm, SalleExamenForm
 
 try:
-    from weasyprint import HTML as WeasyHTML
+    from core.pdf import HTML as WeasyHTML
 except Exception:  # ImportError ou OSError (libpango/cairo absents)
     WeasyHTML = None
 

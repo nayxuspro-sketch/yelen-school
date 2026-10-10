@@ -358,7 +358,7 @@ def bulletin_vacation_pdf(request, bulletin_id):
     }
 
     try:
-        from weasyprint import HTML
+        from core.pdf import HTML
         html_string = render_to_string(
             'vacations/pdf/bulletin.html', context, request=request
         )

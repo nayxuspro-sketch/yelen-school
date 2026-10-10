@@ -477,7 +477,7 @@ def inventaire_classe_pdf(request, classe_pk):
         'today': date.today(),
     }).content.decode('utf-8')
 
-    from weasyprint import HTML as WP
+    from core.pdf import HTML as WP
     pdf = WP(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = (
@@ -519,7 +519,7 @@ def attributions_annee_pdf(request):
         'etab': etab,
     }).content.decode('utf-8')
 
-    from weasyprint import HTML as WP
+    from core.pdf import HTML as WP
     pdf = WP(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     annee_label = str(annee_sel).replace('/', '-') if annee_sel else 'export'
@@ -578,7 +578,7 @@ def non_rendus_pdf(request):
         'logo_url': etab_ctx.get('logo_url') or etab_ctx.get('etab_logo_url'),
     }).content.decode('utf-8')
 
-    from weasyprint import HTML as WP
+    from core.pdf import HTML as WP
     pdf = WP(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     annee_label = str(annee_sel).replace('/', '-') if annee_sel else 'export'

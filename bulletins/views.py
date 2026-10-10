@@ -345,7 +345,7 @@ from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 try:
-    from weasyprint import HTML
+    from core.pdf import HTML
 except Exception:  # ImportError ou OSError (libpango/cairo absents)
     HTML = None
 

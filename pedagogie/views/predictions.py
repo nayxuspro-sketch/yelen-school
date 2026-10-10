@@ -146,7 +146,7 @@ def risque_decrochage(request):
 def risque_decrochage_pdf(request):
     """Génère un PDF de la liste des élèves à risque de décrochage."""
     try:
-        from weasyprint import HTML
+        from core.pdf import HTML
     except ImportError:
         messages.error(request, "WeasyPrint n'est pas installé sur le serveur.")
         return redirect('pedagogie:risque_decrochage')

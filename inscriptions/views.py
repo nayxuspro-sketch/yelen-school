@@ -15,7 +15,7 @@ from parametres.models import AnneeScolaire, Classe
 from core.utils import get_etablissement_context
 
 try:
-    from weasyprint import HTML as _WeasyHTML
+    from core.pdf import HTML as _WeasyHTML
 except Exception:  # ImportError ou OSError (libpango/cairo absents)
     # Le serveur peut démarrer sans les bibliothèques système PDF ; les vues
     # concernées afficheront un message d'indisponibilité.

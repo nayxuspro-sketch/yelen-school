@@ -370,7 +370,7 @@ def audit_log_pdf(request):
     from datetime import datetime
 
     try:
-        from weasyprint import HTML as WeasyHTML
+        from core.pdf import HTML as WeasyHTML
     except ImportError:
         return HttpResponse("WeasyPrint non installé — impossible de générer le PDF.", status=503)
 
@@ -1062,12 +1062,13 @@ self.addEventListener('fetch', e => {
   if (url.origin !== STATIC_ORIGIN) return;
   if (BYPASS.some(p => url.pathname.startsWith(p))) return;
 
-  // Assets statiques : Cache First
+  // Assets statiques et fichiers /media/ (servis après connexion) : Cache First.
+  // Une réponse redirigée (session expirée → page de connexion) n'est jamais mise en cache.
   if (url.pathname.startsWith('/static/') || url.pathname.startsWith('/media/')) {
     e.respondWith(
       caches.match(e.request).then(cached => {
         const network = fetch(e.request).then(r => {
-          if (r.ok) caches.open(APP_CACHE).then(c => c.put(e.request, r.clone()));
+          if (r.ok && !r.redirected) caches.open(APP_CACHE).then(c => c.put(e.request, r.clone()));
           return r;
         });
         return cached || network;

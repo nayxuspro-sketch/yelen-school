@@ -403,7 +403,7 @@ def contrat_travail(request, pk):
 
     if request.GET.get('format') == 'pdf':
         try:
-            from weasyprint import HTML
+            from core.pdf import HTML
             html = render(request, 'personnel/pdf/contrat_travail.html', context)
             pdf = HTML(string=html.content.decode()).write_pdf()
             nom = f"{membre.nom}_{membre.prenom}".replace(' ', '_')
@@ -454,7 +454,7 @@ def badge_personnel(request, pk):
 
     if request.GET.get('format') == 'pdf':
         try:
-            from weasyprint import HTML
+            from core.pdf import HTML
             html = render(request, 'personnel/pdf/badge_personnel.html', context)
             pdf = HTML(string=html.content.decode()).write_pdf()
             nom = f"{membre.nom}_{membre.prenom}".replace(' ', '_')
@@ -573,7 +573,7 @@ def salaire_detail(request, pk):
 
     if request.GET.get('format') == 'pdf':
         try:
-            from weasyprint import HTML
+            from core.pdf import HTML
             from django.template.loader import render_to_string
             html_str = render_to_string('personnel/pdf/bulletin_salaire.html', context, request=request)
             pdf = HTML(string=html_str, base_url=request.build_absolute_uri('/')).write_pdf()
@@ -810,7 +810,7 @@ def conge_autorisation_pdf(request, pk):
     }
 
     try:
-        from weasyprint import HTML
+        from core.pdf import HTML
         from django.template.loader import render_to_string
         html_str = render_to_string(
             'personnel/pdf/autorisation_conge.html', context, request=request

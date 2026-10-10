@@ -159,7 +159,7 @@ def certificat_scolarite(request, inscription_id):
 
     if request.GET.get('format') == 'pdf':
         try:
-            from weasyprint import HTML
+            from core.pdf import HTML
             from django.template.loader import render_to_string
             from django.core.files.base import ContentFile
 
@@ -384,7 +384,7 @@ def liste_classe_pdf(request, classe_id):
 
     if request.GET.get('format') == 'pdf':
         try:
-            from weasyprint import HTML
+            from core.pdf import HTML
             html_content = render(request, 'documents/pdf/liste_classe.html', context)
             pdf = HTML(string=html_content.content.decode()).write_pdf()
 
@@ -573,7 +573,7 @@ def liste_personnel_pdf(request, cycle_id):
 
     if request.GET.get('format') == 'pdf':
         try:
-            from weasyprint import HTML
+            from core.pdf import HTML
             html_content = render(request, 'documents/pdf/liste_personnel.html', context)
             pdf = HTML(string=html_content.content.decode()).write_pdf()
 
@@ -651,7 +651,7 @@ def convocation_form(request):
             )
 
             if format_out == 'pdf':
-                from weasyprint import HTML
+                from core.pdf import HTML
                 from django.template.loader import render_to_string
                 from django.core.files.base import ContentFile
 
@@ -787,7 +787,7 @@ def circulaire_form(request):
             sig_membre = sig.get_membre_personnel() if sig else None
 
             if format_out == 'pdf':
-                from weasyprint import HTML
+                from core.pdf import HTML
                 from django.template.loader import render_to_string
 
                 from django.core.files.base import ContentFile
@@ -927,7 +927,7 @@ def attestation_non_redevabilite(request, inscription_id):
     context['document'] = doc
 
     if request.GET.get('format') == 'pdf':
-        from weasyprint import HTML
+        from core.pdf import HTML
         from django.template.loader import render_to_string
 
         from django.core.files.base import ContentFile

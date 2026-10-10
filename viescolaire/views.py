@@ -12,7 +12,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 try:
-    from weasyprint import HTML as WeasyHTML
+    from core.pdf import HTML as WeasyHTML
 except Exception:  # ImportError ou OSError (libpango/cairo absents)
     WeasyHTML = None
 from django.contrib import messages
