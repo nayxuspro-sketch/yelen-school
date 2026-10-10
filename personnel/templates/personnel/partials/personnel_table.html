@@ -1,6 +1,7 @@
 {% load static %}
 
-{% include 'partials/bulk_actions.html' with export_url='/personnel/csv/' %}
+{% url 'personnel:personnel_list_csv' as export_url %}
+{% include 'partials/bulk_actions.html' with export_url=export_url %}
 
 {% with all_groups=cycles_personnel %}
 
@@ -19,7 +20,7 @@
       <thead>
         <tr>
           <th style="width:40px;">
-            <input type="checkbox" class="bulk-checkbox" onchange="toggleBulkBar()">
+            <input type="checkbox" class="bulk-checkbox">
           </th>
           <th>Membre</th>
           <th style="width:155px;">Matricule</th>
@@ -34,7 +35,7 @@
         {% for membre in group.membres %}
         <tr>
           <td>
-            <input type="checkbox" class="bulk-checkbox" value="{{ membre.pk }}" onchange="toggleBulkBar()">
+            <input type="checkbox" class="bulk-checkbox" value="{{ membre.pk }}">
           </td>
           <td>
             <div class="d-flex align-center gap-3">
@@ -123,7 +124,7 @@
       <thead>
         <tr>
           <th style="width:40px;">
-            <input type="checkbox" class="bulk-checkbox" onchange="toggleBulkBar()">
+            <input type="checkbox" class="bulk-checkbox">
           </th>
           <th>Membre</th>
           <th style="width:155px;">Matricule</th>
@@ -138,7 +139,7 @@
         {% for membre in sans_cycle %}
         <tr>
           <td>
-            <input type="checkbox" class="bulk-checkbox" value="{{ membre.pk }}" onchange="toggleBulkBar()">
+            <input type="checkbox" class="bulk-checkbox" value="{{ membre.pk }}">
           </td>
           <td>
             <div class="d-flex align-center gap-3">

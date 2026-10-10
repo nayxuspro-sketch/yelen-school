@@ -10616,3 +10616,24 @@ body.offline-active { padding-top: 2rem; }
   width: 100%;
   margin-top: 0.25rem;
 }
+
+/* ─── Barre d'actions groupées (templates/partials/bulk_actions.html) ───────── */
+.bulk-actions-bar {
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.bulk-actions-inner,
+.bulk-actions-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.bulk-actions-inner {
+  justify-content: space-between;
+}
+.bulk-count {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}

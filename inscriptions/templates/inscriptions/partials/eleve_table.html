@@ -1,11 +1,12 @@
 {% load inscriptions_extras %}
-{% include 'partials/bulk_actions.html' with export_url='/inscriptions/csv/' %}
+{% url 'inscriptions:eleve_list_csv' as export_url %}
+{% include 'partials/bulk_actions.html' with export_url=export_url %}
 <div class="table-scroll">
   <table class="data-table">
     <thead>
       <tr>
         <th style="width:40px;">
-          <input type="checkbox" class="bulk-checkbox" onchange="toggleBulkBar()">
+          <input type="checkbox" class="bulk-checkbox">
         </th>
         <th>Élève</th>
         <th>Matricule</th>
@@ -19,7 +20,7 @@
       {% with inscription=inscriptions_courantes|get_item:eleve.pk %}
       <tr {% if inscription.statut == 'ABANDON' or not eleve.is_active %}style="opacity:0.55;"{% endif %}>
         <td>
-          <input type="checkbox" class="bulk-checkbox" value="{{ eleve.pk }}" onchange="toggleBulkBar()">
+          <input type="checkbox" class="bulk-checkbox" value="{{ eleve.pk }}">
         </td>
         <td>
           <div class="d-flex align-center gap-3">

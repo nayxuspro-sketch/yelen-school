@@ -29,7 +29,8 @@
   </div>
 </div>
 
-{% include 'partials/bulk_actions.html' with export_url='/accounts/csv/' %}
+{% url 'accounts:user_list_csv' as export_url %}
+{% include 'partials/bulk_actions.html' with export_url=export_url %}
 
 {# ── Filtres ── #}
 <form method="get"
@@ -67,7 +68,7 @@
       <thead>
         <tr>
           <th style="width:40px;">
-            <input type="checkbox" class="bulk-checkbox" onchange="toggleBulkBar()">
+            <input type="checkbox" class="bulk-checkbox">
           </th>
           <th>Utilisateur</th>
           <th>Rôle</th>
@@ -80,7 +81,7 @@
         {% for u in users %}
         <tr {% if not u.is_active %}style="opacity:0.5;"{% endif %}>
           <td>
-            <input type="checkbox" class="bulk-checkbox" value="{{ u.pk }}" onchange="toggleBulkBar()">
+            <input type="checkbox" class="bulk-checkbox" value="{{ u.pk }}">
           </td>
           <td>
             <div class="d-flex align-center gap-3">

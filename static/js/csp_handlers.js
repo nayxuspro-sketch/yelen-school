@@ -32,6 +32,30 @@
     }
   }
 
+  // Barre d'actions groupées (templates/partials/bulk_actions.html) :
+  // les cases .bulk-checkbox avec value sont les éléments ; une case sans value
+  // (en-tête de tableau) coche / décoche toutes celles de son tableau.
+  function bulkItems(racine) {
+    return (racine || document).querySelectorAll('.bulk-checkbox[value]');
+  }
+
+  function bulkRefresh() {
+    var bar = document.getElementById('bulk-actions-bar');
+    if (!bar) return;
+    var n = document.querySelectorAll('.bulk-checkbox[value]:checked').length;
+    var compteur = document.getElementById('bulk-count');
+    if (compteur) compteur.textContent = n + ' élément(s) sélectionné(s)';
+    bar.hidden = n === 0;
+  }
+
+  function bulkSetAll(racine, coche) {
+    bulkItems(racine).forEach(function(cb) { cb.checked = coche; });
+    document.querySelectorAll('.bulk-checkbox:not([value])').forEach(function(cb) {
+      if (!racine || racine.contains(cb)) cb.checked = coche;
+    });
+    bulkRefresh();
+  }
+
   // ── Delegation globale click ─────────────────────────────────────────
   document.addEventListener('click', function(e) {
     var target = e.target;
@@ -166,13 +190,15 @@
           if (typeof window.markAllPresent === 'function') window.markAllPresent();
           break;
         case 'bulk-select-all':
-          if (typeof window.bulkSelectAll === 'function') window.bulkSelectAll();
+          bulkSetAll(null, true);
           break;
         case 'bulk-deselect-all':
-          if (typeof window.bulkDeselectAll === 'function') window.bulkDeselectAll();
+          bulkSetAll(null, false);
           break;
         case 'bulk-export':
-          if (typeof window.exportSelected === 'function') window.exportSelected();
+          var ids = Array.prototype.map.call(document.querySelectorAll('.bulk-checkbox[value]:checked'),
+            function(cb) { return cb.value; }).join(',');
+          if (actionEl.dataset.exportUrl) window.location.href = actionEl.dataset.exportUrl + '?ids=' + ids;
           break;
         case 'copy-link':
           e.preventDefault();
@@ -321,10 +347,16 @@
   //   (remplace onchange="this.form.submit()", bloqué par script-src-attr 'none')
   // - data-csp-fill-target="id" : sur un <select>, recopie le data-fill de l'option choisie
   //   dans le champ cible (ex. montant d'une rubrique → champ Montant).
+  // - .bulk-checkbox : met à jour la barre d'actions groupées (case d'en-tête = tout cocher)
   // Fonctionne pour le contenu injecté par HTMX.
   document.addEventListener('change', function(e) {
     var sel = e.target;
     if (!sel || !sel.dataset) return;
+    if (sel.classList.contains('bulk-checkbox')) {
+      if (sel.hasAttribute('value')) bulkRefresh();
+      else bulkSetAll(sel.closest('table') || document, sel.checked);
+      return;
+    }
     if ('cspSubmitOnChange' in sel.dataset && sel.form) {
       if (typeof sel.form.requestSubmit === 'function') sel.form.requestSubmit();
       else sel.form.submit();

@@ -1,18 +1,22 @@
-{# ── Barre d'actions groupées (affichée si au moins 1 sélectionné) ── #}
-<div id="bulk-actions-bar" class="card bulk-actions-bar">
+{% comment %}
+Barre d'actions groupées : affichée dès qu'une case .bulk-checkbox (avec value) est cochée.
+Comportement dans static/js/csp_handlers.js (délégation, compatible HTMX) ;
+une case sans value (en-tête de tableau) coche / décoche toutes celles de son tableau.
+{% endcomment %}
+<div id="bulk-actions-bar" class="card bulk-actions-bar" hidden>
   <div class="bulk-actions-inner">
     <div class="bulk-actions-left">
       <span id="bulk-count" class="bulk-count">0 élément(s) sélectionné(s)</span>
-      <button type="button" id="bulk-select-all-btn" class="bulk-btn bulk-btn-select">
+      <button type="button" id="bulk-select-all-btn" class="btn-secondary btn-sm" data-csp-action="bulk-select-all">
         Tout sélectionner
       </button>
-      <button type="button" id="bulk-deselect-all-btn" class="bulk-btn bulk-btn-deselect">
+      <button type="button" id="bulk-deselect-all-btn" class="btn-secondary btn-sm" data-csp-action="bulk-deselect-all">
         Tout désélectionner
       </button>
     </div>
     <div class="bulk-actions-right">
       {% if export_url %}
-      <button type="button" id="bulk-export-btn" class="bulk-btn-export">
+      <button type="button" id="bulk-export-btn" class="btn-primary btn-sm" data-csp-action="bulk-export" data-export-url="{{ export_url }}">
         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
         </svg>
@@ -22,48 +26,3 @@
     </div>
   </div>
 </div>
-
-<script nonce="{{ request.csp_nonce }}">
-function toggleBulkBar() {
-  const checked = document.querySelectorAll('.bulk-checkbox:checked');
-  const bar = document.getElementById('bulk-actions-bar');
-  const count = document.getElementById('bulk-count');
-
-  if (checked.length > 0) {
-    bar.style.display = 'flex';
-    count.textContent = checked.length + ' élément(s) sélectionné(s)';
-  } else {
-    bar.style.display = 'none';
-  }
-}
-
-function bulkSelectAll() {
-  document.querySelectorAll('.bulk-checkbox').forEach(cb => cb.checked = true);
-  toggleBulkBar();
-}
-
-function bulkDeselectAll() {
-  document.querySelectorAll('.bulk-checkbox').forEach(cb => cb.checked = false);
-  toggleBulkBar();
-}
-
-{% if export_url %}
-function exportSelected() {
-  const checked = document.querySelectorAll('.bulk-checkbox:checked');
-  const ids = Array.from(checked).map(c => c.value).filter(v => v).join(',');
-  const url = '{{ export_url }}' + '?ids=' + ids;
-  window.location.href = url;
-}
-{% endif %}
-
-document.addEventListener('DOMContentLoaded', function() {
-  toggleBulkBar();
-  // A6 — CSP : remplacer onclick inline par addEventListener
-  const selAll = document.getElementById('bulk-select-all-btn');
-  if (selAll) selAll.addEventListener('click', bulkSelectAll);
-  const deselAll = document.getElementById('bulk-deselect-all-btn');
-  if (deselAll) deselAll.addEventListener('click', bulkDeselectAll);
-  const expBtn = document.getElementById('bulk-export-btn');
-  if (expBtn) expBtn.addEventListener('click', function() { if (typeof exportSelected === 'function') exportSelected(); });
-});
-</script>
