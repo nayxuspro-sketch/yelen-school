@@ -35,6 +35,10 @@ from .permissions import (
     FINANCE_WRITE_ROLES,
     FINANCE_APPROVER_ROLES,
 )
+from .selectors import (
+    RESULTATS_RECHERCHE_MAX, annee_de_reference, inscription_payable_ou_none,
+    rechercher_inscriptions_payables, terme_recherche_valide,
+)
 import re as _re
 
 
@@ -323,29 +327,38 @@ def paiement_list(request):
     return render(request, 'finances/paiement_list.html', context)
 
 @login_required
+def paiement_recherche_eleve(request):
+    """
+    Fragment HTMX du formulaire d'encaissement : élèves correspondant à la
+    recherche (20 au plus). Remplace l'ancien <select> qui embarquait toutes
+    les inscriptions de l'année (≈ 600 Ko de HTML pour 2 500 élèves).
+    """
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    etab = request.user.etablissement
+    terme = request.GET.get('q', '').strip()
+    annee = annee_de_reference(etab)
+    resultats = list(rechercher_inscriptions_payables(etab, annee, terme))
+    return render(request, 'finances/partials/paiement_recherche_eleve.html', {
+        'terme': terme,
+        'resultats': resultats,
+        'trop_court': not terme_recherche_valide(terme),
+        'limite': RESULTATS_RECHERCHE_MAX,
+        'tronque': len(resultats) >= RESULTATS_RECHERCHE_MAX,
+    })
+
+
+@login_required
 def paiement_create(request):
     """Enregistrement d'un paiement multi-rubriques."""
     _require_finance_role(request, FINANCE_WRITE_ROLES)
     etab = request.user.etablissement
-    
-    # Chercher d'abord l'année courante, sinon la plus récente
-    annee_courante = None
-    if etab:
-        annee_courante = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
-        if not annee_courante:
-            # Pas d'année courante - prendre la plus récente
-            annee_courante = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut').first()
-    
-    inscriptions = Inscription.objects.none()
-    if etab and annee_courante:
-        inscriptions = (
-            Inscription.objects
-            .select_related('eleve', 'classe', 'annee_scolaire', 'statut_eleve')
-            .filter(annee_scolaire=annee_courante, classe__etablissement=etab)
-            .exclude(est_exonere=True)
-            .exclude(statut='ABANDON')
-            .order_by('eleve__nom', 'eleve__prenom')
-        )
+    annee_courante = annee_de_reference(etab)
+
+    # L'élève est choisi via la recherche serveur (paiement_recherche_eleve) ;
+    # seule l'inscription retenue est renvoyée au gabarit.
+    inscription_selectionnee = inscription_payable_ou_none(
+        etab, annee_courante, (request.POST.get('inscription') or request.GET.get('inscription') or '').strip()
+    )
 
     if request.method == 'POST':
         inscription_id = request.POST.get('inscription', '').strip()
@@ -481,7 +494,7 @@ def paiement_create(request):
         ]
         return render(request, 'finances/paiement_form.html', {
             'title': "Encaisser un paiement",
-            'inscriptions': inscriptions,
+            'inscription_selectionnee': inscription_selectionnee,
             'mode_choices': ModePaiement.choices,
             'errors': errors,
             'post_data': request.POST,
@@ -492,7 +505,7 @@ def paiement_create(request):
     inscription_id = request.GET.get('inscription')
     return render(request, 'finances/paiement_form.html', {
         'title': "Encaisser un paiement",
-        'inscriptions': inscriptions,
+        'inscription_selectionnee': inscription_selectionnee,
         'mode_choices': ModePaiement.choices,
         'selected_inscription_id': inscription_id,
         'submitted_lines': [],

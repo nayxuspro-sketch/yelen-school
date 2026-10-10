@@ -1765,7 +1765,7 @@ Les points déduits sont définis pour chaque **type de sanction** dans `Paramè
 │  ← Encaisser un paiement                                       │
 ├──── Section 1 : Élève & Transaction ───────────────────────────┤
 │  Date de transaction *  : [26/04/2026]                         │
-│  Inscription *          : [▼ SAWADOGO Aminata — Tle A · Reg]   │
+│  Élève *  [🔍 sawad…] → SAWADOGO Aminata — Tle A  [Changer]    │
 │  ┌──[avatar]─ SAWADOGO Aminata · BF-2025-00042 ──────────────┐ │
 │  │  Total dû : 85 000  Déjà payé : 25 000  Reste : 60 000   │ │
 │  │  ████████░░░░░░░░░░░░░  29% payé · 60 000 FCFA restants   │ │
@@ -1793,8 +1793,8 @@ Les points déduits sont définis pour chaque **type de sanction** dans `Paramè
 **Étapes :**
 
 1. La date du jour est pré-remplie automatiquement
-2. Tape dans la **barre de recherche** pour filtrer les élèves par nom, prénom ou classe
-3. Sélectionne l'inscription → la **carte élève** apparaît immédiatement (nom, classe, matricule, statut tarifaire) ; la page défile vers la section rubriques et la situation financière se met à jour dès que l'API répond
+2. Tape au moins 2 caractères dans la **recherche d'élève** (nom, prénom, matricule ou classe ; plusieurs mots possibles : `traore 6e`). Le serveur renvoie les **20 premiers élèves payables** de l'année en cours — la liste complète des inscriptions n'est plus chargée dans la page (0,6 s et ~1 Mo économisés à chaque ouverture avec 2 500 élèves). La touche **Entrée** sélectionne le premier résultat.
+3. Clique sur l'élève → la **carte élève** apparaît immédiatement (nom, classe, matricule, statut tarifaire) ; la page défile vers la section rubriques et la situation financière se met à jour dès que l'API répond. Le bouton **Changer d'élève** rouvre la recherche. En arrivant depuis la fiche élève (`?inscription=…`), l'élève est déjà retenu.
 4. Les rubriques se chargent sous forme de **cartes cliquables** :
    - Rubriques **soldées** : grisées, non sélectionnables (badge "✓ Soldée")
    - Rubriques **en attente** : cliquables, affichent le reste à payer
@@ -5786,6 +5786,15 @@ l'application par navigateur à l'adresse `http://IP-DU-SERVEUR:8000`.
   toujours au format `{CODE_ETAB}-AAAA-NN` (numéro sur 2 chiffres minimum), et
   la liste des évaluations d'un enseignant ne montre plus que ses propres
   évaluations.
+- **Liste des évaluations (`Pédagogie → Évaluations`)** : la page est filtrée
+  par défaut sur le **trimestre en cours** (listes déroulantes *Classe* et
+  *Trimestre*, option *Tous les trimestres*) et **paginée par classe** (4 classes
+  par page, flèches ← → sous le tableau). Pour un établissement de 2 500 élèves
+  (≈ 6 000 évaluations par an), la page passe de 17 Mo / 2,5 s à ≈ 0,3 Mo /
+  0,1 s. La recherche par titre, classe ou matière reste instantanée.
+- **Formulaire d'encaissement** : l'élève est choisi par une **recherche
+  serveur** (20 résultats maximum) au lieu d'une liste déroulante de toutes les
+  inscriptions — voir § 9.1.
 
 Guide détaillé : [`docs/GUIDE_MODE_AUTONOME_SQLITE.md`](GUIDE_MODE_AUTONOME_SQLITE.md).
 

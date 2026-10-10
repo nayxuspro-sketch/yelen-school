@@ -1558,6 +1558,30 @@ select.input {
   padding-left: calc(var(--space-3) + 16px + var(--space-2));
 }
 
+/* Barre de filtres (recherche + listes déroulantes) des listes HTMX */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.filter-bar .search-wrapper { flex: 1 1 260px; max-width: 420px; }
+.filter-bar .select { flex: 0 1 220px; }
+
+/* Liste des évaluations (lignes compactes : ~6 000 évaluations/an) */
+.eval-date { font-family: var(--font-mono, monospace); font-size: .8rem; white-space: nowrap; color: var(--color-text-secondary); }
+.eval-sub { font-size: .72rem; color: var(--color-text-muted); }
+.eval-type { text-transform: uppercase; letter-spacing: .04em; }
+.eval-center { text-align: center; }
+.eval-notes { min-width: 110px; }
+.eval-progress { display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
+.eval-progress-bar { flex: 1; max-width: 60px; height: 5px; background: var(--color-border); border-radius: 3px; overflow: hidden; }
+.eval-progress-fill { height: 100%; background: var(--color-primary); border-radius: 3px; }
+.eval-progress-txt { font-size: .75rem; white-space: nowrap; color: var(--color-text-secondary); }
+.eval-progress-txt.is-complete { color: var(--color-success); }
+.eval-actions { text-align: right; white-space: nowrap; }
+.eval-actions .btn-icon { margin-left: var(--space-2); vertical-align: middle; }
+
 /* ── Tableau de données ───────────────────────────────────────── */
 
 .data-table {
@@ -6029,6 +6053,54 @@ input::-webkit-strong-password-auto-fill-button {
 }
 .pai-search-input:focus { border-color: var(--color-border-focus); }
 .pai-search-input::placeholder { color: var(--color-text-muted); }
+
+/* Recherche serveur d'élève (formulaire d'encaissement, HTMX) */
+.pai-resultats-wrap { margin-top: 0.35rem; }
+.pai-resultats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 18rem;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-input);
+}
+.pai-resultats li + li { border-top: 1px solid var(--color-border); }
+.pai-resultat {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.5rem 0.875rem;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  font: inherit;
+}
+.pai-resultat:hover,
+.pai-resultat:focus-visible { background: rgba(0,168,107,0.09); outline: none; }
+.pai-resultat-nom  { font-weight: 600; font-size: 0.9rem; }
+.pai-resultat-meta { font-size: 0.75rem; color: var(--color-text-muted); }
+.pai-resultats-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  padding: 0.4rem 0.25rem;
+}
+.pai-selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.875rem;
+  border: 1.5px solid rgba(0,168,107,0.5);
+  border-radius: var(--radius-md);
+  background: rgba(0,168,107,0.07);
+}
+.pai-selection-libelle { font-weight: 600; font-size: 0.9rem; color: var(--color-text-primary); }
 
 /* Carte élève (après sélection inscription) */
 .pai-eleve-card {

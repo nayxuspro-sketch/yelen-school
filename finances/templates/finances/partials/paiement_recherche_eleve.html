@@ -1,0 +1,29 @@
+{# Fragment HTMX — résultats de la recherche d'élève du formulaire d'encaissement #}
+{% if trop_court %}
+  <div class="pai-resultats-hint">Tapez au moins 2 caractères : nom, prénom, matricule ou classe.</div>
+{% elif resultats %}
+  <ul class="pai-resultats" role="listbox" aria-label="Élèves trouvés">
+    {% for insc in resultats %}
+    <li>
+      <button type="button" class="pai-resultat" role="option"
+              value="{{ insc.pk }}"
+              data-nom="{{ insc.eleve.nom }}"
+              data-prenom="{{ insc.eleve.prenom }}"
+              data-classe="{{ insc.classe.nom }}"
+              data-matricule="{{ insc.eleve.matricule|default:'' }}"
+              data-statut="{{ insc.statut_eleve.nom|default:'' }}"
+              data-statut-couleur="{{ insc.statut_eleve.couleur|default:'' }}">
+        <span class="pai-resultat-nom">{{ insc.eleve.nom|upper }} {{ insc.eleve.prenom }}</span>
+        <span class="pai-resultat-meta">
+          {{ insc.classe.nom }}{% if insc.eleve.matricule %} · {{ insc.eleve.matricule }}{% endif %}{% if insc.statut_eleve %} · {{ insc.statut_eleve.nom }}{% endif %}
+        </span>
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if tronque %}
+  <div class="pai-resultats-hint">{{ limite }} premiers résultats affichés — précisez le nom ou ajoutez la classe (ex. « traore 6e »).</div>
+  {% endif %}
+{% else %}
+  <div class="pai-resultats-hint">Aucun élève payable ne correspond à « {{ terme }} » pour l'année en cours.</div>
+{% endif %}

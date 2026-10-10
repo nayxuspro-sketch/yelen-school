@@ -28,7 +28,10 @@ class TestFinancesViews:
         url = reverse('finances:paiement_create')
         response = logged_in_client.get(url)
         assert response.status_code == 200
-        assert 'inscriptions' in response.context
+        # La liste complète des inscriptions n'est plus envoyée : l'élève est
+        # choisi via la recherche serveur (paiement_recherche_eleve).
+        assert 'inscriptions' not in response.context
+        assert response.context['inscription_selectionnee'] is None
         assert 'mode_choices' in response.context
 
     def test_paiement_create_avec_inscription_preselectionnee(self, logged_in_client, annee_active):

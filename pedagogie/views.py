@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from django.utils import timezone
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
@@ -554,28 +555,71 @@ def enseignement_update(request, pk):
 # ÉVALUATIONS & NOTES
 # ═══════════════════════════════════════════════════════════════════
 
-@login_required
-def evaluation_list(request):
-    """Liste des évaluations planifiées."""
-    from django.db.models import Count, Subquery, OuterRef
-    from inscriptions.models import Inscription
+# Nombre de classes affichées par page dans la liste des évaluations
+# (chaque classe regroupe toutes ses matières et évaluations : ~40 lignes
+# par classe et par trimestre).
+EVALUATIONS_CLASSES_PAR_PAGE = 4
 
-    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-    query = request.GET.get('q', '')
 
-    evaluations = (
-        Evaluation.objects
-        .filter(enseignement__annee_scolaire=annee_courante)
-        .select_related('enseignement__classe', 'enseignement__matiere', 'type_evaluation', 'trimestre')
-        .annotate(nb_notes=Count('notes'))
+def _trimestre_en_cours(trimestres):
+    """Trimestre dont les dates encadrent aujourd'hui (None si aucun)."""
+    aujourd_hui = timezone.localdate()
+    return next(
+        (t for t in trimestres if t.date_debut <= aujourd_hui <= t.date_fin),
+        None,
     )
 
+
+@login_required
+def evaluation_list(request):
+    """
+    Liste des évaluations planifiées, groupée classe → matière, paginée par
+    classe et filtrable (recherche, classe, trimestre). Un établissement de
+    2 500 élèves compte ~6 000 évaluations par an : seules celles des classes
+    de la page courante sont chargées.
+    """
+    from django.core.paginator import Paginator
+    from django.db.models import Count
+
+    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
+    query = request.GET.get('q', '').strip()
+    classe_id = request.GET.get('classe', '').strip()
+    # « trimestre » absent (premier affichage) → trimestre en cours ;
+    # « trimestre= » vide (choix explicite « Tous ») → toute l'année.
+    trimestre_id = request.GET.get('trimestre', '').strip()
+    trimestre_par_defaut = 'trimestre' not in request.GET
+
+    evaluations = Evaluation.objects.filter(enseignement__annee_scolaire=annee_courante)
+
     # Un enseignant ne voit que ses propres évaluations (cohérent avec le
-    # contrôle d'autorisation de evaluation_saisie) — et la page reste légère :
-    # ~150 lignes au lieu des ~6 000 de tout l'établissement.
+    # contrôle d'autorisation de evaluation_saisie).
     if request.user.role == 'ENSEIGNANT':
         evaluations = evaluations.filter(enseignement__personnel=filtre_enseignant(request.user))
 
+    # Listes des filtres : uniquement les classes/trimestres visibles par l'utilisateur
+    classes = (
+        Classe.objects
+        .filter(enseignements__evaluations__in=evaluations.values('pk'))
+        .distinct()
+        .order_by('nom')
+    )
+    trimestres = Trimestre.objects.filter(annee_scolaire=annee_courante).order_by('numero', 'nom')
+
+    classe_ids_valides = {str(c.pk) for c in classes}
+    if classe_id not in classe_ids_valides:
+        classe_id = ''
+    trimestres = list(trimestres)
+    trimestre_ids_valides = {str(t.pk) for t in trimestres}
+    if trimestre_par_defaut:
+        en_cours = _trimestre_en_cours(trimestres)
+        trimestre_id = str(en_cours.pk) if en_cours else ''
+    elif trimestre_id not in trimestre_ids_valides:
+        trimestre_id = ''
+
+    if classe_id:
+        evaluations = evaluations.filter(enseignement__classe_id=classe_id)
+    if trimestre_id:
+        evaluations = evaluations.filter(trimestre_id=trimestre_id)
     if query:
         evaluations = evaluations.filter(
             Q(titre__icontains=query) |
@@ -583,34 +627,47 @@ def evaluation_list(request):
             Q(enseignement__classe__nom__icontains=query)
         )
 
+    # Pagination par classe : les classes ayant au moins une évaluation filtrée
+    classes_filtrees = (
+        Classe.objects
+        .filter(enseignements__evaluations__in=evaluations.values('pk'))
+        .distinct()
+        .order_by('nom')
+    )
+    paginator = Paginator(classes_filtrees, EVALUATIONS_CLASSES_PAR_PAGE)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    classes_page = list(page_obj.object_list)
+    total_evaluations = evaluations.count()
+
     # Nombre d'élèves actifs par classe (pour la progression)
-    if annee_courante:
+    if annee_courante and classes_page:
         nb_eleves_map = {
             row['classe_id']: row['total']
             for row in Inscription.objects.filter(
                 annee_scolaire=annee_courante,
+                classe__in=classes_page,
             ).exclude(statut='ABANDON').values('classe_id').annotate(total=Count('id'))
         }
     else:
         nb_eleves_map = {}
 
-    # Attacher nb_eleves à chaque évaluation
-    evaluations = list(evaluations.order_by(
-        'enseignement__classe__nom',
-        'enseignement__matiere__nom',
-        'date_planifiee',
-    ))
+    evaluations = list(
+        evaluations
+        .filter(enseignement__classe__in=classes_page)
+        .select_related('enseignement__classe', 'enseignement__matiere', 'type_evaluation', 'trimestre')
+        .annotate(nb_notes=Count('notes'))
+        .order_by('enseignement__classe__nom', 'enseignement__matiere__nom', 'date_planifiee')
+    ) if classes_page else []
     for ev in evaluations:
         ev.nb_eleves = nb_eleves_map.get(ev.enseignement.classe_id, 0)
 
-    # Groupement : classe → matière → [évaluations]
-    groupes = {}
+    # Groupement : classe → matière → [évaluations], dans l'ordre de la page
+    groupes = {classe: {} for classe in classes_page}
     for ev in evaluations:
         classe = ev.enseignement.classe
         matiere = ev.enseignement.matiere
         groupes.setdefault(classe, {}).setdefault(matiere, []).append(ev)
 
-    # Convertir en liste ordonnée pour le template
     groupes_liste = [
         {
             'classe': classe,
@@ -621,18 +678,33 @@ def evaluation_list(request):
             'total': sum(len(evs) for evs in matieres.values()),
         }
         for classe, matieres in groupes.items()
+        if matieres
     ]
+
+    # Paramètres de filtre à conserver dans les liens de pagination
+    # (le trimestre retenu est explicité pour que la page 2 montre la même chose)
+    params = request.GET.copy()
+    params.pop('page', None)
+    params['trimestre'] = trimestre_id
 
     context = {
         'evaluation_list': evaluations,
         'groupes': groupes_liste,
         'query': query,
+        'classe_id': classe_id,
+        'trimestre_id': trimestre_id,
+        'classes': classes,
+        'trimestres': trimestres,
+        'page_obj': page_obj,
+        'total_evaluations': total_evaluations,
+        'params': params.urlencode(),
     }
 
     if request.headers.get('HX-Request'):
         return render(request, 'pedagogie/partials/evaluation_table.html', context)
 
     return render(request, 'pedagogie/evaluation_list.html', context)
+
 
 def _resolve_trimestre(periode):
     """

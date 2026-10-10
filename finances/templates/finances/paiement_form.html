@@ -62,33 +62,45 @@
                  value="{{ post_data.date_paiement|default:'' }}" required>
         </div>
 
-        {# Inscription — recherche + select + carte élève #}
+        {# Inscription — recherche serveur (HTMX) + élève retenu + carte élève #}
         <div class="form-group">
-          <label class="input-label">
-            Inscription <span class="required-star">*</span>
+          <label class="input-label" for="insc-search">
+            Élève <span class="required-star">*</span>
           </label>
-          <div class="pai-search-wrap">
-            <svg class="pai-search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
-            </svg>
-            <input type="text" id="insc-search" class="pai-search-input"
-                   placeholder="Filtrer par nom, prénom ou classe…" autocomplete="off">
+          <input type="hidden" name="inscription" id="id_inscription"
+                 value="{{ inscription_selectionnee.pk|default:'' }}">
+
+          {# Élève retenu (rempli côté serveur si présélection, sinon par JS) #}
+          <div id="insc-selection"
+               class="pai-selection{% if not inscription_selectionnee %} pai-hidden{% endif %}"
+               data-nom="{{ inscription_selectionnee.eleve.nom|default:'' }}"
+               data-prenom="{{ inscription_selectionnee.eleve.prenom|default:'' }}"
+               data-classe="{{ inscription_selectionnee.classe.nom|default:'' }}"
+               data-matricule="{{ inscription_selectionnee.eleve.matricule|default:'' }}"
+               data-statut="{{ inscription_selectionnee.statut_eleve.nom|default:'' }}"
+               data-statut-couleur="{{ inscription_selectionnee.statut_eleve.couleur|default:'' }}">
+            <span id="insc-selection-libelle" class="pai-selection-libelle">
+              {% if inscription_selectionnee %}{{ inscription_selectionnee.eleve.nom|upper }} {{ inscription_selectionnee.eleve.prenom }} — {{ inscription_selectionnee.classe.nom }}{% endif %}
+            </span>
+            <button type="button" id="insc-changer" class="btn-secondary btn-sm">Changer d'élève</button>
           </div>
-          <select name="inscription" id="id_inscription" class="input select" required>
-            <option value="">— Sélectionnez un élève —</option>
-            {% for insc in inscriptions %}
-            <option value="{{ insc.pk }}"
-              data-nom="{{ insc.eleve.nom }}"
-              data-prenom="{{ insc.eleve.prenom }}"
-              data-classe="{{ insc.classe.nom }}"
-              data-matricule="{{ insc.eleve.matricule|default:'' }}"
-              data-statut="{{ insc.statut_eleve.nom|default:'' }}"
-              data-statut-couleur="{{ insc.statut_eleve.couleur|default:'' }}"
-              {% if post_data.inscription == insc.pk|stringformat:"s" or selected_inscription_id == insc.pk|stringformat:"s" %}selected{% endif %}>
-              {{ insc.eleve.nom|upper }} {{ insc.eleve.prenom }} — {{ insc.classe.nom }}{% if insc.statut_eleve %} · {{ insc.statut_eleve.nom }}{% endif %}
-            </option>
-            {% endfor %}
-          </select>
+
+          {# Recherche : 20 résultats max renvoyés par le serveur, jamais la liste complète #}
+          <div id="insc-recherche" {% if inscription_selectionnee %}class="pai-hidden"{% endif %}>
+            <div class="pai-search-wrap">
+              <svg class="pai-search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+              </svg>
+              <input type="search" id="insc-search" name="q" class="pai-search-input"
+                     placeholder="Nom, prénom, matricule ou classe… (Entrée = premier résultat)"
+                     autocomplete="off"
+                     hx-get="{% url 'finances:paiement_recherche_eleve' %}"
+                     hx-trigger="input changed delay:300ms, search"
+                     hx-target="#insc-resultats"
+                     hx-sync="this:replace">
+            </div>
+            <div id="insc-resultats" class="pai-resultats-wrap" aria-live="polite"></div>
+          </div>
 
           {# ── Carte élève (peuplée par JS) ── #}
           <div id="pai-eleve-card" class="pai-eleve-card">
@@ -288,7 +300,13 @@
   'use strict';
 
   /* ── Références DOM ──────────────────────────────────────────────────────── */
-  var inscSelect   = document.getElementById('id_inscription');
+  var inscHidden   = document.getElementById('id_inscription');
+  var inscSelBox   = document.getElementById('insc-selection');
+  var inscSelLbl   = document.getElementById('insc-selection-libelle');
+  var inscChanger  = document.getElementById('insc-changer');
+  var inscRecherche = document.getElementById('insc-recherche');
+  var inscResultats = document.getElementById('insc-resultats');
+  var rubSection   = document.getElementById('rub-section');
   var modeSelect   = document.getElementById('id_mode_paiement');
   var refInput     = document.getElementById('id_reference');
   var refError     = document.getElementById('ref-error');
@@ -343,21 +361,42 @@
 
   var rubriquesData = [];
 
-  /* ── Filtre de recherche ─────────────────────────────────────────────────── */
-  inscSearch.addEventListener('input', function () {
-    var q = this.value.toLowerCase().trim();
-    Array.from(inscSelect.options).forEach(function (opt) {
-      if (!opt.value) return;
-      var match = !q || opt.text.toLowerCase().indexOf(q) !== -1;
-      opt.style.display = match ? '' : 'none';
-    });
-    if (inscSelect.value) {
-      var sel = inscSelect.options[inscSelect.selectedIndex];
-      if (sel && sel.style.display === 'none') {
-        inscSelect.value = '';
-        chargerRubriques('');
-      }
+  /* ── Sélection de l'élève (résultats HTMX) ───────────────────────────────── */
+  function selectionnerInscription(el) {
+    var id = el ? el.value : '';
+    inscHidden.value = id;
+    if (el) {
+      inscSelLbl.textContent = (el.dataset.nom || '').toUpperCase() + ' '
+        + (el.dataset.prenom || '') + ' — ' + (el.dataset.classe || '');
+      Object.keys(el.dataset).forEach(function (k) { inscSelBox.dataset[k] = el.dataset[k]; });
+      show(inscSelBox); hide(inscRecherche);
+    } else {
+      hide(inscSelBox); show(inscRecherche);
+      inscSearch.value = '';
+      inscResultats.innerHTML = '';
+      setTimeout(function () { inscSearch.focus(); }, 0);
     }
+    afficherCarteEleveDepuisOption(el);
+    chargerRubriques(id, null);
+    if (el && rubSection) {
+      setTimeout(function () {
+        rubSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+  }
+
+  inscResultats.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('button.pai-resultat');
+    if (btn) selectionnerInscription(btn);
+  });
+  inscChanger.addEventListener('click', function () { selectionnerInscription(null); });
+
+  /* Entrée dans la recherche : jamais de soumission, on prend le premier résultat */
+  inscSearch.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault();
+    var premier = inscResultats.querySelector('button.pai-resultat');
+    if (premier) selectionnerInscription(premier);
   });
 
   /* ── Affichage des états ─────────────────────────────────────────────────── */
@@ -689,18 +728,6 @@
       });
   }
 
-  var rubSection = document.getElementById('rub-section');
-
-  inscSelect.addEventListener('change', function () {
-    var val = this.value;
-    afficherCarteEleveDepuisOption(val ? this.options[this.selectedIndex] : null);
-    chargerRubriques(val, null);
-    if (val && rubSection) {
-      setTimeout(function () {
-        rubSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 80);
-    }
-  });
 
   /* ── Validation de la référence ──────────────────────────────────────────── */
   function validerReference() {
@@ -743,13 +770,10 @@
     document.getElementById('submitted-lines-data').textContent || '[]'
   );
   var preselectedId = '{{ selected_inscription_id|default:"" }}';
-
-  if (preselectedId && !inscSelect.value) inscSelect.value = preselectedId;
-  var idACharger = inscSelect.value || preselectedId;
+  var idACharger = inscHidden.value;   /* présélection (GET) ou re-rendu après erreur (POST) */
 
   if (idACharger) {
-    var selOpt = inscSelect.options[inscSelect.selectedIndex];
-    afficherCarteEleveDepuisOption(selOpt);
+    afficherCarteEleveDepuisOption({ value: idACharger, dataset: inscSelBox.dataset });
     var mode = submittedLines.length ? submittedLines : (preselectedId ? 'all' : null);
     chargerRubriques(idACharger, mode);
   } else {
