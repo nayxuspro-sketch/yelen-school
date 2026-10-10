@@ -30,7 +30,7 @@
   <form method="get" class="d-flex gap-4 flex-wrap" style="padding:var(--space-4); align-items:flex-end;">
     <div style="min-width:180px; flex:1;">
       <label class="input-label">Année scolaire</label>
-      <select name="annee" class="input select" onchange="this.form.submit()">
+      <select name="annee" class="input select" data-csp-submit-on-change>
         {% for a in annees %}
         <option value="{{ a.id }}" {% if a == annee_sel %}selected{% endif %}>{{ a.libelle }}</option>
         {% endfor %}
@@ -38,7 +38,7 @@
     </div>
     <div style="min-width:160px; flex:1;">
       <label class="input-label">Classe</label>
-      <select name="classe" class="input select" onchange="this.form.submit()">
+      <select name="classe" class="input select" data-csp-submit-on-change>
         <option value="">Toutes les classes</option>
         {% for c in classes %}
         <option value="{{ c.id }}" {% if c.id|stringformat:"s" == classe_id %}selected{% endif %}>{{ c.nom }}</option>
@@ -47,7 +47,7 @@
     </div>
     <div style="min-width:160px; flex:1;">
       <label class="input-label">Source</label>
-      <select name="source" class="input select" onchange="this.form.submit()">
+      <select name="source" class="input select" data-csp-submit-on-change>
         <option value="">Toutes sources</option>
         {% for val, lib in source_choices %}
         <option value="{{ val }}" {% if val == source_sel %}selected{% endif %}>{{ lib }}</option>

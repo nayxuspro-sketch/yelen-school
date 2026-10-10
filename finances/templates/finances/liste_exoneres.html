@@ -29,7 +29,7 @@
     <form method="get" action="{% url 'finances:liste_exoneres' %}" class="d-flex gap-4 flex-wrap">
       <div>
         <label class="input-label">Année scolaire</label>
-        <select name="annee" class="input" onchange="this.form.submit()">
+        <select name="annee" class="input" data-csp-submit-on-change>
           {% for a in annees %}
           <option value="{{ a.pk }}" {% if annee and annee.pk == a.pk %}selected{% endif %}>
             {{ a.libelle }}{% if a.est_courante %} ★{% endif %}

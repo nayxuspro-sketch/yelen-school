@@ -26,7 +26,7 @@
   <div class="dash-section-actions">
     {% if annees %}
     <form method="get" class="edt-toolbar">
-      <select name="annee_id" class="dash-input" onchange="this.form.submit()">
+      <select name="annee_id" class="dash-input" data-csp-submit-on-change>
         <option value="">— Année —</option>
         {% for a in annees %}
         <option value="{{ a.pk }}" {% if annee_selectionnee and a.pk == annee_selectionnee.pk %}selected{% endif %}>

@@ -26,7 +26,7 @@
 {# Filtres #}
 <div class="card animate-fade-up delay-1" style="padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5);">
   <form method="get" class="d-flex gap-3 flex-wrap align-center">
-    <select name="statut" class="input select" style="min-width:160px;" onchange="this.form.submit()">
+    <select name="statut" class="input select" style="min-width:160px;" data-csp-submit-on-change>
       <option value="">— Tous les statuts —</option>
       {% for val, label in statut_choices %}
       <option value="{{ val }}" {% if statut == val %}selected{% endif %}>{{ label }}</option>

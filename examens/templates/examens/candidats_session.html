@@ -44,7 +44,7 @@
 <div class="card animate-fade-up" style="padding:var(--space-4) var(--space-6); margin-bottom:var(--space-5);">
   <form method="get" class="d-flex align-center gap-4" style="flex-wrap:wrap;">
     <label class="fw-semibold" style="white-space:nowrap; font-size:0.9rem;">Filtrer par centre :</label>
-    <select name="centre" class="form-select" style="max-width:300px;" onchange="this.form.submit()">
+    <select name="centre" class="form-select" style="max-width:300px;" data-csp-submit-on-change>
       <option value="">— Tous les centres ({{ nb_total }} candidat{{ nb_total|pluralize }}) —</option>
       {% for c in centres %}
       <option value="{{ c.pk }}" {% if centre_selectionne and centre_selectionne.pk == c.pk %}selected{% endif %}>

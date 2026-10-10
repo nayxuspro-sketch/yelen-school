@@ -77,13 +77,13 @@
 {# Filtres #}
 <form method="get" class="filter-bar mb-5 animate-fade-up delay-1">
   <input type="hidden" name="statut" value="{{ statut }}">
-  <select name="annee" class="input select" onchange="this.form.submit()">
+  <select name="annee" class="input select" data-csp-submit-on-change>
     <option value="">— Année —</option>
     {% for a in annees %}
     <option value="{{ a.pk }}" {% if annee_sel and a.pk == annee_sel.pk %}selected{% endif %}>{{ a.libelle }}</option>
     {% endfor %}
   </select>
-  <select name="classe" class="input select" onchange="this.form.submit()">
+  <select name="classe" class="input select" data-csp-submit-on-change>
     <option value="">— Toutes classes —</option>
     {% for c in classes %}
     <option value="{{ c.pk }}" {% if classe_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>

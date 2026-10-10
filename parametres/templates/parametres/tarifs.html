@@ -30,7 +30,7 @@
     <form method="get" style="padding:1rem 1.25rem; display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
         <div class="form-group" style="margin:0; min-width:200px;">
             <label class="input-label">Année scolaire</label>
-            <select name="annee" class="input select" onchange="this.form.submit()">
+            <select name="annee" class="input select" data-csp-submit-on-change>
                 <option value="">— Toutes —</option>
                 {% for a in annees %}
                 <option value="{{ a.pk }}" {% if selected_annee == a.pk|stringformat:"s" %}selected{% endif %}>{{ a.libelle }}</option>
@@ -39,7 +39,7 @@
         </div>
         <div class="form-group" style="margin:0; min-width:200px;">
             <label class="input-label">Niveau</label>
-            <select name="niveau" class="input select" onchange="this.form.submit()">
+            <select name="niveau" class="input select" data-csp-submit-on-change>
                 <option value="">— Tous —</option>
                 {% for n in niveaux %}
                 <option value="{{ n }}" {% if selected_niveau == n %}selected{% endif %}>{{ n }}</option>

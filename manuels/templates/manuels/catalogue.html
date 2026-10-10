@@ -24,7 +24,7 @@
         <div class="d-flex gap-3 align-end">
           <div class="form-group flex-1">
             <label class="input-label">Cycle</label>
-            <select name="cycle" class="input select" onchange="this.form.submit()">
+            <select name="cycle" class="input select" data-csp-submit-on-change>
               <option value="">Tous les cycles</option>
               {% for val, lbl in cycles %}
               <option value="{{ val }}" {% if cycle_sel == val %}selected{% endif %}>{{ lbl }}</option>

@@ -17,7 +17,7 @@
     <div>
       <label class="input-label" style="font-size:.78rem;">Année</label>
       <select name="annee_id" class="input select" style="width:auto; min-width:150px;"
-              onchange="this.form.submit()">
+              data-csp-submit-on-change>
         {% for annee in annees %}
         <option value="{{ annee.pk }}"
           {% if annee == annee_selectionnee %}selected{% endif %}>
@@ -30,7 +30,7 @@
     <div>
       <label class="input-label" style="font-size:.78rem;">Type</label>
       <select name="type_id" class="input select" style="width:auto; min-width:170px;"
-              onchange="this.form.submit()">
+              data-csp-submit-on-change>
         <option value="">Tous les types</option>
         {% for t in types %}
         <option value="{{ t.pk }}" {% if type_id == t.pk|stringformat:"s" %}selected{% endif %}>

@@ -23,7 +23,7 @@
     <div class="card-body">
       <form method="get" id="annee-form">
         <div class="form-group">
-          <select name="annee" class="form-select" onchange="document.getElementById('annee-form').submit()">
+          <select name="annee" class="form-select" data-csp-submit-on-change>
             <option value="">— Choisir une année —</option>
             {% for a in annees %}
             <option value="{{ a.pk }}" {% if annee.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
@@ -48,7 +48,7 @@
       <form method="get" id="classe-form">
         <input type="hidden" name="annee" value="{{ annee.pk|default:'' }}">
         <div class="form-group">
-          <select name="classe" class="form-select" onchange="document.getElementById('classe-form').submit()">
+          <select name="classe" class="form-select" data-csp-submit-on-change>
             <option value="">— Choisir une classe —</option>
             {% for c in classes %}
             <option value="{{ c.pk }}" {% if classe.pk == c.pk %}selected{% endif %}>{{ c.nom }}</option>

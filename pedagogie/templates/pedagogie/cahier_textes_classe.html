@@ -43,7 +43,7 @@
     <form method="get" class="d-flex gap-3 align-end flex-wrap">
       <div class="form-group flex-1 min-w-150">
         <label class="input-label">Année scolaire</label>
-        <select name="annee" class="input select" onchange="this.form.submit()">
+        <select name="annee" class="input select" data-csp-submit-on-change>
           {% for a in annees %}
           <option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>
             {{ a.libelle }}{% if a.est_courante %} ★{% endif %}
@@ -53,7 +53,7 @@
       </div>
       <div class="form-group flex-1 min-w-150">
         <label class="input-label">Matière</label>
-        <select name="enseignement" class="input select" onchange="this.form.submit()">
+        <select name="enseignement" class="input select" data-csp-submit-on-change>
           <option value="">Toutes les matières</option>
           {% for ens in enseignements %}
           <option value="{{ ens.pk }}"

@@ -21,7 +21,7 @@
   <form method="get">
     <input type="hidden" name="mois" value="{{ mois }}">
     <input type="hidden" name="annee_cal" value="{{ annee_cal }}">
-    <select name="annee" onchange="this.form.submit()" class="input select cal-year-select">
+    <select name="annee" data-csp-submit-on-change class="input select cal-year-select">
       {% for a in annees %}
       <option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>
         {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}

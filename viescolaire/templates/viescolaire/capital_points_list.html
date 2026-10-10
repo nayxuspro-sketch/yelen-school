@@ -65,7 +65,7 @@
 
     <div style="flex:1; min-width:160px;">
       <label class="input-label">Année scolaire</label>
-      <select name="annee" class="input select" onchange="this.form.submit()">
+      <select name="annee" class="input select" data-csp-submit-on-change>
         {% for a in annees %}
         <option value="{{ a.id }}" {% if a == annee_sel %}selected{% endif %}>{{ a.libelle }}</option>
         {% endfor %}
@@ -74,7 +74,7 @@
 
     <div style="flex:1; min-width:160px;">
       <label class="input-label">Classe</label>
-      <select name="classe" class="input select" onchange="this.form.submit()">
+      <select name="classe" class="input select" data-csp-submit-on-change>
         <option value="">Toutes les classes</option>
         {% for c in classes %}
         <option value="{{ c.id }}" {% if c.id|stringformat:"s" == classe_id %}selected{% endif %}>{{ c.nom }}</option>

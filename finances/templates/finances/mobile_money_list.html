@@ -61,7 +61,7 @@
     <form method="get" class="d-flex gap-3 align-end flex-wrap">
       <div class="form-group flex-1 min-w-150">
         <label class="input-label">Statut</label>
-        <select name="statut" class="input select" onchange="this.form.submit()">
+        <select name="statut" class="input select" data-csp-submit-on-change>
           <option value="">Tous les statuts</option>
           <option value="EN_ATTENTE" {% if statut_filtre == 'EN_ATTENTE' %}selected{% endif %}>En attente</option>
           <option value="CONFIRME"   {% if statut_filtre == 'CONFIRME' %}selected{% endif %}>Confirmés</option>

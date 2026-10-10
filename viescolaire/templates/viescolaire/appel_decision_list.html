@@ -14,7 +14,7 @@
   <form method="get" class="d-flex gap-3 align-center flex-wrap">
     <div>
       <label class="input-label" style="font-size:.78rem;">Statut</label>
-      <select name="statut" class="input select" style="height:36px; font-size:.85rem;" onchange="this.form.submit()">
+      <select name="statut" class="input select" style="height:36px; font-size:.85rem;" data-csp-submit-on-change>
         <option value="">Tous</option>
         {% for val, lib in statut_choices %}
         <option value="{{ val }}" {% if statut_filter == val %}selected{% endif %}>{{ lib }}</option>

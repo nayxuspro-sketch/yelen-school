@@ -12,7 +12,7 @@
   <div style="display:flex; align-items:center; gap:var(--space-3);">
     <form method="get">
       <select name="annee_id" class="input select" style="width:auto; min-width:160px;"
-              onchange="this.form.submit()">
+              data-csp-submit-on-change>
         {% for annee in annees %}
         <option value="{{ annee.pk }}"{% if annee == annee_selectionnee %} selected{% endif %}>
           {{ annee }}

@@ -24,7 +24,7 @@
 <div class="bul-idx-filter-bar animate-fade-up delay-1">
   <form method="get" class="d-flex align-center gap-2">
     <label class="dash-form-label mb-0">Année scolaire</label>
-    <select name="annee" class="input bul-idx-year-select" onchange="this.form.submit()">
+    <select name="annee" class="input bul-idx-year-select" data-csp-submit-on-change>
       {% for a in annees %}
       <option value="{{ a.pk }}" {% if a == annee %}selected{% endif %}>{{ a.libelle }}</option>
       {% endfor %}

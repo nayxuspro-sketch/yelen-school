@@ -99,7 +99,7 @@
 
         <div class="form-group">
           <label for="id_classe" class="input-label">Classe</label>
-          <select name="classe" id="id_classe" class="input select" onchange="this.form.submit()">
+          <select name="classe" id="id_classe" class="input select" data-csp-submit-on-change>
             <option value="">— Toutes les classes —</option>
             {% regroup classes by cycle as classes_par_cycle %}
             {% for groupe in classes_par_cycle %}

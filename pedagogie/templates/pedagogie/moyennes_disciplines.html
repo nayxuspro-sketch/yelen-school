@@ -44,14 +44,14 @@
 
     <div class="form-group mb-0" style="flex:1; min-width:160px;">
       <label class="input-label">Période d'évaluation</label>
-      <select name="trimestre" id="id_trimestre" class="input select" style="width:100%;" onchange="this.form.submit()">
+      <select name="trimestre" id="id_trimestre" class="input select" style="width:100%;" data-csp-submit-on-change>
         {% include "pedagogie/partials/trimestre_options.html" %}
       </select>
     </div>
 
     <div class="form-group mb-0" style="flex:1; min-width:160px;">
       <label class="input-label">Classe</label>
-      <select name="classe" class="input select" style="width:100%;" onchange="this.form.submit()">
+      <select name="classe" class="input select" style="width:100%;" data-csp-submit-on-change>
         <option value="">— Choisir —</option>
         {% for c in classes %}
         <option value="{{ c.pk }}" {% if classe and classe.pk == c.pk %}selected{% endif %}>{{ c.nom }}</option>

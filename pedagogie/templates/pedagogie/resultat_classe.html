@@ -16,12 +16,12 @@
   </div>
   <div class="d-flex gap-2">
     <form method="get" class="d-flex align-center gap-2">
-      <select name="annee" onchange="this.form.submit()" class="input select" style="min-width:160px;">
+      <select name="annee" data-csp-submit-on-change class="input select" style="min-width:160px;">
         {% for a in annees %}
           <option value="{{ a.id }}" {% if a == annee_courante %}selected{% endif %}>{{ a.libelle }}</option>
         {% endfor %}
       </select>
-      <select name="trimestre" onchange="this.form.submit()" class="input select" style="min-width:160px;">
+      <select name="trimestre" data-csp-submit-on-change class="input select" style="min-width:160px;">
         {% for t in trimestres %}
           <option value="{{ t.id }}" {% if t == trimestre %}selected{% endif %}>{{ t.nom }}</option>
         {% endfor %}

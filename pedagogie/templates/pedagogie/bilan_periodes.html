@@ -25,7 +25,7 @@
 <div class="dash-info-row animate-fade-up delay-1" style="margin-bottom: 1.5rem;">
   <form method="get" id="form-annee" style="display: flex; align-items: center; gap: 0.75rem;">
     <label class="dash-form-label" style="margin: 0; white-space: nowrap;">Année scolaire</label>
-    <select name="annee" onchange="this.form.submit()" class="input" style="min-width: 200px;">
+    <select name="annee" data-csp-submit-on-change class="input" style="min-width: 200px;">
       {% for a in annees %}
       <option value="{{ a.pk }}" {% if a.pk == annee.pk %}selected{% endif %}>
         {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
