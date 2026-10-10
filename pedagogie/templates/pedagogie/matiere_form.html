@@ -6,7 +6,7 @@
 
 <div class="page-header animate-fade-up">
   <div>
-    <a href="{% url 'pedagogie:matiere_list' %}" class="btn-secondary btn-sm" style="margin-bottom:var(--space-3); display:inline-flex;">
+    <a href="{% url 'pedagogie:matiere_list' %}" class="btn-secondary btn-sm mat-retour">
       <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
@@ -23,12 +23,12 @@
 {% endif %}
 
 <!-- ── Informations de base ── -->
-<div class="card animate-fade-up delay-1" style="max-width:720px;">
+<div class="card animate-fade-up delay-1 mat-card-infos">
   <div class="card-header">
     <h2 class="card-title">Informations de base</h2>
-    <p class="text-sm text-muted" style="margin-top:.25rem;">
-      Le coefficient et le barème ici sont les <strong>valeurs par défaut</strong> utilisées
-      si aucune configuration spécifique n'est définie pour un cycle.
+    <p class="text-sm text-muted mat-card-intro">
+      Le coefficient et le barème ici sont les <strong>valeurs par défaut</strong>, utilisés
+      lorsqu'aucune configuration n'est définie pour le cycle, le niveau ou la série de la classe.
     </p>
   </div>
   <form method="post">
@@ -36,15 +36,15 @@
     <div class="form-grid-2">
       {% for field in form %}
       <div class="form-group {% if field.field.widget.input_type == 'checkbox' %}d-flex align-center gap-3{% endif %}"
-           {% if field.name == 'nom_complet' %}style="grid-column:1/-1;"{% endif %}>
+           {% if field.name == 'nom_complet' %}data-pleine-largeur{% endif %}>
         {% if field.field.widget.input_type == 'checkbox' %}
-          <label class="d-flex align-center gap-3" style="cursor:pointer;">
+          <label class="d-flex align-center gap-3 mat-case">
             {{ field }}
-            <span class="input-label" style="margin-bottom:0;">{{ field.label }}</span>
+            <span class="input-label">{{ field.label }}</span>
           </label>
         {% else %}
           <label for="{{ field.id_for_label }}" class="input-label">
-            {{ field.label }}{% if field.field.required %} <span style="color:#FF6B7A;">*</span>{% endif %}
+            {{ field.label }}{% if field.field.required %} <span class="required-star">*</span>{% endif %}
           </label>
           {{ field }}
           {% if field.errors %}<p class="input-error">{{ field.errors.0 }}</p>{% endif %}
@@ -53,8 +53,8 @@
       {% endfor %}
     </div>
 
-    <div class="divider" style="margin-top:var(--space-6);"></div>
-    <div class="d-flex justify-end gap-3" style="padding-top:var(--space-4);">
+    <div class="divider mat-divider"></div>
+    <div class="d-flex justify-end gap-3 mat-actions">
       <a href="{% url 'pedagogie:matiere_list' %}" class="btn-secondary">Annuler</a>
       <button type="submit" class="btn-primary">
         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -66,51 +66,98 @@
   </form>
 </div>
 
-<!-- ── Configuration par cycle ── -->
+<!-- ── Configuration par cycle et par niveau ── -->
 {% if matiere and cycles_config %}
-<div class="card animate-fade-up delay-2" style="max-width:860px; margin-top:var(--space-6);">
+<div class="card animate-fade-up delay-2 mat-card-config">
   <div class="card-header">
-    <h2 class="card-title">Configuration par cycle</h2>
-    <p class="text-sm text-muted" style="margin-top:.25rem;">
-      Définissez un coefficient et un barème spécifiques par cycle.
-      Les valeurs s'appliquent à toutes les classes de ce cycle.
-      Laissez le coefficient vide pour utiliser la valeur par défaut.
+    <h2 class="card-title">Configuration par cycle et par niveau</h2>
+    <p class="text-sm text-muted mat-card-intro">
+      Définissez un coefficient et un barème pour <strong>tout le cycle</strong>, puis affinez-les
+      par <strong>niveau</strong> (CM2, 6ème, …) et, au lycée, par <strong>série</strong> (Tle A, Tle D, …).
+      Priorité : niveau + série → niveau → cycle → valeurs par défaut de la matière.
+      Un coefficient vide signifie « hérite de la portée supérieure ».
     </p>
   </div>
 
   <div class="table-scroll">
-    <table class="data-table">
+    <table class="data-table cfg-table">
       <thead>
         <tr>
-          <th>Cycle</th>
+          <th>Portée</th>
           <th>Coefficient</th>
           <th>Barème (min → max)</th>
           <th>H/semaine</th>
-          <th style="text-align:center;">Obligatoire</th>
-          <th style="text-align:right;">Action</th>
+          <th class="td-center">Obligatoire</th>
+          <th class="td-right">Action</th>
         </tr>
       </thead>
-      <tbody id="cycles-config-body">
-        {% for entry in cycles_config %}
-          {% include "pedagogie/partials/cycle_config_row.html" with matiere=matiere cycle=entry.cycle config=entry.config form=entry.form %}
+      {% for groupe in cycles_config %}
+      <tbody id="cfg-cycle-{{ groupe.cycle.pk }}">
+        <tr class="cfg-groupe">
+          <th colspan="6">
+            {{ groupe.cycle.nom }}
+            <span class="cfg-groupe-info">{{ groupe.nb_portees }} niveau{{ groupe.nb_portees|pluralize:"x" }}{% if not groupe.nb_portees %} — aucune classe active dans ce cycle{% endif %}</span>
+          </th>
+        </tr>
+        {% for ligne in groupe.lignes %}
+          {% include "pedagogie/partials/cycle_config_row.html" with matiere=matiere cycle=groupe.cycle ligne=ligne %}
         {% endfor %}
       </tbody>
+      {% endfor %}
     </table>
   </div>
 
-  <div class="card-footer" style="padding:.75rem 1rem; font-size:.8rem; color:var(--color-text-secondary);">
-    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="vertical-align:middle; margin-right:.25rem;">
+  <div class="card-footer cfg-footer">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
     </svg>
-    Cliquez sur ✓ pour enregistrer chaque ligne. La corbeille supprime la configuration du cycle (le défaut sera alors utilisé).
+    Cliquez sur ✓ pour enregistrer chaque ligne. La corbeille supprime la configuration de la ligne : la valeur héritée s'applique alors.
+    Les niveaux et séries proviennent des classes actives (Paramètres → Classes).
   </div>
 </div>
 {% elif matiere %}
-<div class="card animate-fade-up delay-2" style="max-width:860px; margin-top:var(--space-6);">
-  <div class="card-body" style="text-align:center; padding:2rem; color:var(--color-text-secondary);">
+<div class="card animate-fade-up delay-2 mat-card-config">
+  <div class="card-body mat-vide">
     Aucun cycle actif trouvé. Configurez d'abord les cycles dans <a href="{% url 'parametres:cycles' %}">Paramètres → Cycles</a>.
   </div>
 </div>
 {% endif %}
+
+<style nonce="{{ request.csp_nonce }}">
+.mat-retour { margin-bottom: var(--space-3); display: inline-flex; }
+.mat-card-infos { max-width: 720px; }
+.mat-card-config { max-width: 1040px; margin-top: var(--space-6); }
+.mat-card-intro { margin-top: .25rem; }
+.mat-case { cursor: pointer; }
+.mat-case .input-label { margin-bottom: 0; }
+.mat-divider { margin-top: var(--space-6); }
+.mat-actions { padding-top: var(--space-4); }
+.mat-vide { text-align: center; padding: 2rem; color: var(--color-text-secondary); }
+[data-pleine-largeur] { grid-column: 1 / -1; }
+
+/* ── Tableau de configuration ── */
+.td-center { text-align: center; }
+.cfg-groupe th {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+  font-size: .8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: .5rem 1rem;
+}
+.cfg-groupe-info { margin-left: .5rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--color-text-muted); }
+.cfg-row--cycle td { background: rgba(255,255,255,.015); }
+.cfg-row:not(.cfg-row--cycle) .cfg-portee { padding-left: 2rem; }
+.cfg-portee { white-space: nowrap; }
+.cfg-cycle-libelle { margin-left: .4rem; font-weight: 600; }
+.cfg-niveau { font-weight: 600; margin-right: .4rem; }
+.cfg-input { width: 6.5rem; text-align: center; }
+.cfg-input--bareme { width: 5.5rem; }
+.cfg-table th, .cfg-table td { padding-left: .6rem; padding-right: .6rem; }
+.cfg-table td { padding-top: .45rem; padding-bottom: .45rem; }
+.cfg-footer { padding: .75rem 1rem; font-size: .8rem; color: var(--color-text-secondary); }
+.cfg-footer svg { vertical-align: middle; margin-right: .25rem; }
+</style>
 
 {% endblock %}

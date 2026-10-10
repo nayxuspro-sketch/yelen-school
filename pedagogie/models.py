@@ -84,8 +84,23 @@ class Matiere(BaseModel):
         return f"{self.code} - {self.nom}"
 
     def get_config_cycle(self, cycle):
-        """Retourne la configuration MatiereCycle pour ce cycle, ou None."""
-        return self.configurations_cycle.filter(cycle=cycle).first()
+        """Configuration « tout le cycle » (sans niveau ni série), ou None."""
+        return self.configurations_cycle.filter(cycle=cycle, niveau='', serie='').first()
+
+    def get_config_classe(self, classe):
+        """Configuration la plus précise applicable à une classe, ou None (défauts de la matière).
+
+        Priorité : niveau + série > niveau > tout le cycle.
+        """
+        if classe is None or classe.cycle_id is None:
+            return None
+        niveau = (classe.niveau or '').strip()
+        serie = classe.serie_bac or ''
+        configs = {(c.niveau, c.serie): c for c in self.configurations_cycle.filter(cycle_id=classe.cycle_id)}
+        for cle in ((niveau, serie), (niveau, ''), ('', '')):
+            if cle in configs:
+                return configs[cle]
+        return None
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -94,9 +109,10 @@ class Matiere(BaseModel):
 
 class MatiereCycle(BaseModel):
     """
-    Configuration spécifique d'une matière pour un cycle donné.
-    Permet d'avoir des coefficients et barèmes différents par cycle.
-    Ex : Mathématiques → Primaire (coeff=1, /20) vs Secondaire (coeff=3, /20)
+    Configuration spécifique d'une matière pour un cycle donné, affinable par niveau
+    et par série du bac. Permet d'avoir des coefficients et barèmes différents.
+    Ex : Mathématiques → Primaire (coeff=1) vs Secondaire (coeff=3) vs Secondaire · Tle · Série D (coeff=5)
+    Portée : niveau et série vides = tout le cycle ; série vide = toutes les séries du niveau.
     """
 
     matiere = models.ForeignKey(
@@ -108,6 +124,16 @@ class MatiereCycle(BaseModel):
         'parametres.Cycle', on_delete=models.CASCADE,
         related_name='matieres_configurees',
         verbose_name=_("Cycle")
+    )
+    niveau = models.CharField(
+        max_length=50, blank=True, default='',
+        verbose_name=_("Niveau"),
+        help_text=_("Vide = tout le cycle. Ex : CM2, 6ème, Tle")
+    )
+    serie = models.CharField(
+        max_length=10, blank=True, default='',
+        verbose_name=_("Série BAC"),
+        help_text=_("Vide = toutes les séries du niveau")
     )
     coefficient = models.DecimalField(
         max_digits=3, decimal_places=2,
@@ -138,11 +164,23 @@ class MatiereCycle(BaseModel):
     class Meta:
         verbose_name = _("Configuration matière/cycle")
         verbose_name_plural = _("Configurations matière/cycle")
-        unique_together = [['matiere', 'cycle']]
-        ordering = ['cycle__ordre', 'cycle__nom']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['matiere', 'cycle', 'niveau', 'serie'],
+                name='pedagogie_matierecycle_portee_unique',
+            ),
+        ]
+        ordering = ['cycle__ordre', 'cycle__nom', 'niveau', 'serie']
+
+    @property
+    def portee(self):
+        """Libellé de la portée : « Tout le cycle », « 6ème », « Tle · Série D »."""
+        if not self.niveau:
+            return 'Tout le cycle'
+        return f"{self.niveau} · Série {self.serie}" if self.serie else self.niveau
 
     def __str__(self):
-        return f"{self.matiere.code} – {self.cycle.nom} (coeff {self.coefficient})"
+        return f"{self.matiere.code} – {self.cycle.nom} · {self.portee} (coeff {self.coefficient})"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -169,33 +207,21 @@ class Enseignement(BaseModel):
         return f"{self.matiere.nom} - {self.classe.nom}"
     
     def get_coefficient(self):
-        """Coefficient effectif : enseignement > config cycle > matière (défaut)."""
+        """Coefficient effectif : enseignement > niveau + série > niveau > cycle > matière (défaut)."""
         if self.coefficient is not None:
             return self.coefficient
-        cycle = getattr(self.classe, 'cycle', None)
-        if cycle is not None:
-            config = self.matiere.get_config_cycle(cycle)
-            if config is not None:
-                return config.coefficient
-        return self.matiere.coefficient
+        config = self.matiere.get_config_classe(self.classe)
+        return config.coefficient if config is not None else self.matiere.coefficient
 
     def get_moy_max(self):
-        """Barème maximal effectif selon le cycle de la classe."""
-        cycle = getattr(self.classe, 'cycle', None)
-        if cycle is not None:
-            config = self.matiere.get_config_cycle(cycle)
-            if config is not None:
-                return config.moy_max
-        return self.matiere.moy_max
+        """Barème maximal effectif selon la classe (niveau + série > niveau > cycle > défaut)."""
+        config = self.matiere.get_config_classe(self.classe)
+        return config.moy_max if config is not None else self.matiere.moy_max
 
     def get_moy_min(self):
-        """Barème minimal effectif selon le cycle de la classe."""
-        cycle = getattr(self.classe, 'cycle', None)
-        if cycle is not None:
-            config = self.matiere.get_config_cycle(cycle)
-            if config is not None:
-                return config.moy_min
-        return self.matiere.moy_min
+        """Barème minimal effectif selon la classe (niveau + série > niveau > cycle > défaut)."""
+        config = self.matiere.get_config_classe(self.classe)
+        return config.moy_min if config is not None else self.matiere.moy_min
 
 
 # ═══════════════════════════════════════════════════════════════════

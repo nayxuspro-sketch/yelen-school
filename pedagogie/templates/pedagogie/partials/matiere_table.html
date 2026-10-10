@@ -18,7 +18,7 @@
         <th>Catégorie</th>
         <th>Coeff.</th>
         <th>Barème</th>
-        <th>Cycles configurés</th>
+        <th>Configurations (cycle · niveau)</th>
         <th class="td-right">Actions</th>
       </tr>
     </thead>
@@ -43,8 +43,8 @@
             <div class="d-flex flex-wrap gap-1">
               {% for cfg in configs %}
               <span class="badge badge-info"
-                    title="{{ cfg.cycle.nom }} : coeff {{ cfg.coefficient }}, barème {{ cfg.moy_min }}–{{ cfg.moy_max }}">
-                {{ cfg.cycle.nom }} ×{{ cfg.coefficient }}
+                    title="{{ cfg.cycle.nom }} · {{ cfg.portee }} : coeff {{ cfg.coefficient }}, barème {{ cfg.moy_min }}–{{ cfg.moy_max }}">
+                {{ cfg.cycle.nom }}{% if cfg.niveau %} · {{ cfg.portee }}{% endif %} ×{{ cfg.coefficient }}
               </span>
               {% endfor %}
             </div>
@@ -55,7 +55,7 @@
         </td>
         <td class="td-right">
           <div class="d-flex justify-end gap-2">
-            <a href="{% url 'pedagogie:matiere_update' matiere.pk %}" class="btn-icon" title="Modifier / Configurer cycles">
+            <a href="{% url 'pedagogie:matiere_update' matiere.pk %}" class="btn-icon" title="Modifier / Configurer par cycle et niveau">
               <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>

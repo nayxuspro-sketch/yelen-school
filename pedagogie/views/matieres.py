@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.db.models import Q
 from ..models import Matiere, MatiereCycle, Enseignement
 from ..forms import MatiereForm, MatiereCycleForm, EnseignementForm
+from ..selectors import configurations_matiere, ligne_configuration
 from parametres.models import AnneeScolaire, Cycle
 
 
@@ -33,16 +34,6 @@ def matiere_list(request):
         return render(request, 'pedagogie/partials/matiere_table.html', context)
         
     return render(request, 'pedagogie/matiere_list.html', context)
-
-
-def _build_cycles_config(matiere):
-    """Construit la liste des cycles avec leur config MatiereCycle (ou None)."""
-    cycles = Cycle.objects.filter(actif=True).order_by('ordre', 'nom')
-    configs = {c.cycle_id: c for c in matiere.configurations_cycle.all()} if matiere else {}
-    return [
-        {'cycle': cycle, 'config': configs.get(cycle.pk), 'form': MatiereCycleForm(instance=configs.get(cycle.pk))}
-        for cycle in cycles
-    ]
 
 
 @login_required
@@ -82,47 +73,40 @@ def matiere_update(request, pk):
         'form': form,
         'title': "Modifier la matière",
         'matiere': matiere,
-        'cycles_config': _build_cycles_config(matiere),
+        'cycles_config': configurations_matiere(matiere),
     })
 
 
 @login_required
 def matiere_cycle_save(request, matiere_pk, cycle_pk):
-    """Sauvegarde HTMX de la configuration d'une matière pour un cycle."""
+    """Sauvegarde HTMX de la configuration d'une matière pour une portée d'un cycle.
+
+    La portée est transmise par les champs ``niveau`` et ``serie`` (vides = tout le cycle).
+    Un coefficient vide ou le champ ``supprimer`` retire la configuration : la valeur héritée s'applique.
+    """
     matiere = get_object_or_404(Matiere, pk=matiere_pk)
     cycle = get_object_or_404(Cycle, pk=cycle_pk)
-    instance = MatiereCycle.objects.filter(matiere=matiere, cycle=cycle).first()
+    donnees = request.POST if request.method == 'POST' else request.GET
+    niveau = donnees.get('niveau', '').strip()[:50]
+    serie = donnees.get('serie', '').strip()[:10]
+    instance = MatiereCycle.objects.filter(matiere=matiere, cycle=cycle, niveau=niveau, serie=serie).first()
+    form = None
 
     if request.method == 'POST':
-        # Supprimer la config si le coefficient est vide
-        if not request.POST.get('coefficient', '').strip():
+        if donnees.get('supprimer') or not donnees.get('coefficient', '').strip():
             if instance:
                 instance.delete()
-            instance = None
-            form = MatiereCycleForm()
-            return render(request, 'pedagogie/partials/cycle_config_row.html', {
-                'cycle': cycle, 'config': None, 'form': form, 'matiere': matiere,
-            })
+        else:
+            form = MatiereCycleForm(request.POST, instance=instance)
+            if form.is_valid():
+                obj = form.save(commit=False)
+                obj.matiere, obj.cycle, obj.niveau, obj.serie = matiere, cycle, niveau, serie
+                obj.save()
+                form = None  # ligne réaffichée depuis la base
 
-        form = MatiereCycleForm(request.POST, instance=instance)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.matiere = matiere
-            obj.cycle = cycle
-            obj.save()
-            form = MatiereCycleForm(instance=obj)
-            return render(request, 'pedagogie/partials/cycle_config_row.html', {
-                'cycle': cycle, 'config': obj, 'form': form, 'matiere': matiere,
-            })
-
-        return render(request, 'pedagogie/partials/cycle_config_row.html', {
-            'cycle': cycle, 'config': instance, 'form': form, 'matiere': matiere,
-        })
-
-    # GET — renvoie la ligne en mode édition
-    form = MatiereCycleForm(instance=instance)
     return render(request, 'pedagogie/partials/cycle_config_row.html', {
-        'cycle': cycle, 'config': instance, 'form': form, 'matiere': matiere,
+        'matiere': matiere, 'cycle': cycle,
+        'ligne': ligne_configuration(matiere, cycle, niveau, serie, form=form),
     })
 
 

@@ -381,7 +381,7 @@ En mode **modification**, la section mot de passe est remplacée par une case à
 
 ### 6.1 Référentiel des Matières
 
-**À quoi ça sert :** Gérer la liste des matières enseignées dans l'établissement : code, nom, catégorie, coefficient par défaut, barème, et surcharges par cycle.
+**À quoi ça sert :** Gérer la liste des matières enseignées dans l'établissement : code, nom, catégorie, coefficient par défaut, barème, et surcharges par cycle, par niveau et par série du bac.
 
 **Accès :** `Pédagogie → Matières`
 
@@ -400,10 +400,31 @@ En mode **modification**, la section mot de passe est remplacée par une case à
 | **Catégorie** | Badge neutre (ex. Enseignement Général) |
 | **Coeff.** | Coefficient par défaut |
 | **Barème** | Plage min–max (ex. 0 — 20) |
-| **Cycles configurés** | Badges bleus pour chaque cycle avec surcharge de coefficient (ex. `Secondaire ×3`) ; *Défaut pour tous* si aucune surcharge |
+| **Portées configurées** | Badges bleus pour chaque surcharge de coefficient : cycle (`Secondaire ×3`), niveau (`Secondaire · 6ème ×4`) ou niveau + série (`Secondaire · Tle · Série D ×5`) ; *Défaut pour tous* si aucune surcharge |
 | **Actions** | Bouton modifier (crayon) |
 
 **Recherche :** Saisir dans le champ déclenche un filtrage HTMX après 500 ms sur le nom ou le code.
+
+#### 6.1.1 Configuration par cycle, par niveau et par série
+
+**Accès :** `Pédagogie → Matières → crayon` (fiche de la matière, carte **Configuration par cycle et par niveau**)
+
+La fiche d'une matière enregistrée affiche un tableau regroupé par cycle. Chaque cycle propose une ligne **Tout le cycle**, puis une ligne par **niveau** des classes actives du cycle (CP1, CP2 … CM2 ; 6ème … Tle), dans l'ordre pédagogique. Au lycée, un niveau qui comporte des classes de séries différentes est détaillé **par série** (`Tle · Série A`, `Tle · Série D`). Les niveaux et les séries proviennent des classes (`Paramètres → Classes`, champs *Niveau* et *Série BAC*) : aucun référentiel supplémentaire à saisir.
+
+| Colonne | Description |
+|---|---|
+| **Portée** | Tout le cycle, niveau, ou niveau + série |
+| **Coefficient** | Vide = valeur héritée (affichée en grisé) ; saisir une valeur pour surcharger |
+| **Barème (min → max)** | Barème de notation de la portée (ex. 0 → 20) |
+| **H/semaine** | Volume horaire hebdomadaire indicatif |
+| **Obligatoire** | Matière obligatoire pour cette portée |
+| **Action** | ✓ enregistre la ligne ; la corbeille (lignes configurées) supprime la surcharge, la valeur héritée s'applique à nouveau |
+
+**Ordre de priorité appliqué aux notes et aux bulletins :** coefficient propre à l'enseignement de la classe → niveau + série → niveau → tout le cycle → valeurs par défaut de la matière.
+
+Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4 ; Tle · Série D = 5. Une classe de 3ème applique 3, une 6ème B applique 4, une Tle A applique 3 et une Tle D applique 5.
+
+> Chaque ligne s'enregistre indépendamment (HTMX) : un message confirme l'enregistrement et la ligne reste modifiable sans recharger la page.
 
 ---
 

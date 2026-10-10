@@ -1,68 +1,72 @@
 {% comment %}
-Ligne de configuration matière × cycle.
-Variables : matiere, cycle, config (MatiereCycle|None), form (MatiereCycleForm)
+Ligne de configuration matière × portée (tout le cycle, niveau, ou niveau + série).
+Variables : matiere, cycle, ligne (voir pedagogie.selectors.ligne_configuration) :
+  niveau, serie, serie_label, cle, config (MatiereCycle|None), base (valeurs héritées), valeurs, form
+Les champs sont envoyés par les boutons (hx-include="closest tr") : pas de <form> dans un <tr>.
+Les décimaux sont rendus non localisés (« 3.5 », jamais « 3,50 ») : un champ type="number" rejette la virgule.
 {% endcomment %}
-<tr id="cycle-row-{{ cycle.pk }}" class="cycle-config-row">
-  <td class="fw-semibold">
-    <span class="badge badge-neutral" style="font-size:.75rem;">{{ cycle.nom }}</span>
+{% load l10n %}{% localize off %}
+<tr class="cfg-row{% if not ligne.niveau %} cfg-row--cycle{% endif %}" data-portee="{{ cycle.pk }}|{{ ligne.cle }}">
+  <td class="cfg-portee">
+    {% if ligne.niveau %}
+      <span class="cfg-niveau">{{ ligne.niveau }}</span>
+      {% if ligne.serie %}<span class="badge badge-neutral" title="{{ ligne.serie_label }}">Série {{ ligne.serie }}</span>{% endif %}
+    {% else %}
+      <span class="badge badge-neutral">{{ cycle.nom }}</span>
+      <span class="cfg-cycle-libelle">Tout le cycle</span>
+    {% endif %}
+    <input type="hidden" name="niveau" value="{{ ligne.niveau }}">
+    <input type="hidden" name="serie" value="{{ ligne.serie }}">
   </td>
 
-  <form hx-post="{% url 'pedagogie:matiere_cycle_save' matiere.pk cycle.pk %}"
-        hx-target="#cycle-row-{{ cycle.pk }}"
-        hx-swap="outerHTML"
-        style="display:contents;">
-    {% csrf_token %}
+  <td>
+    <input type="number" name="coefficient" step="0.01" min="0" max="9.99"
+           value="{% if ligne.config %}{{ ligne.config.coefficient|floatformat:"-2u" }}{% endif %}"
+           placeholder="{{ ligne.base.coefficient|floatformat:"-2u" }}"
+           class="input input-sm cfg-input"
+           title="Vide = valeur héritée ({{ ligne.base.coefficient|floatformat:"-2u" }})">
+    {% if ligne.form.coefficient.errors %}<p class="input-error">{{ ligne.form.coefficient.errors.0 }}</p>{% endif %}
+  </td>
 
-    <td>
-      <input type="number" name="coefficient" step="0.01" min="0" max="9.99"
-             value="{{ config.coefficient|default:'' }}"
-             placeholder="{{ matiere.coefficient }}"
-             class="input" style="width:5rem; text-align:center;"
-             title="Laisser vide pour utiliser le défaut ({{ matiere.coefficient }})">
-      {% if form.coefficient.errors %}
-        <p class="input-error">{{ form.coefficient.errors.0 }}</p>
+  <td>
+    <div class="d-flex align-center gap-1">
+      <input type="number" name="moy_min" step="0.01" min="0"
+             value="{{ ligne.valeurs.moy_min|floatformat:"-2u" }}" class="input input-sm cfg-input cfg-input--bareme">
+      <span class="text-muted">→</span>
+      <input type="number" name="moy_max" step="0.01" min="1"
+             value="{{ ligne.valeurs.moy_max|floatformat:"-2u" }}" class="input input-sm cfg-input cfg-input--bareme">
+    </div>
+    {% if ligne.form.moy_max.errors %}<p class="input-error">{{ ligne.form.moy_max.errors.0 }}</p>{% endif %}
+  </td>
+
+  <td>
+    <input type="number" name="heures_hebdomadaires" step="0.5" min="0"
+           value="{{ ligne.valeurs.heures_hebdomadaires|floatformat:"-2u" }}" class="input input-sm cfg-input">
+  </td>
+
+  <td class="td-center">
+    <input type="checkbox" name="est_obligatoire" {% if ligne.valeurs.est_obligatoire %}checked{% endif %}>
+  </td>
+
+  <td class="td-right">
+    <div class="d-flex justify-end gap-2">
+      <button type="button" class="btn-primary btn-sm" title="Enregistrer cette ligne" data-role="enregistrer"
+              hx-post="{% url 'pedagogie:matiere_cycle_save' matiere.pk cycle.pk %}"
+              hx-include="closest tr" hx-target="closest tr" hx-swap="outerHTML">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+        </svg>
+      </button>
+      {% if ligne.config %}
+      <button type="button" class="btn-secondary btn-sm" title="Supprimer cette configuration (la valeur héritée s'applique)" data-role="supprimer"
+              hx-post="{% url 'pedagogie:matiere_cycle_save' matiere.pk cycle.pk %}"
+              hx-include="closest tr" hx-vals='{"supprimer": "1"}' hx-target="closest tr" hx-swap="outerHTML">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </button>
       {% endif %}
-    </td>
-
-    <td>
-      <div class="d-flex align-center gap-1">
-        <input type="number" name="moy_min" step="0.01" min="0"
-               value="{{ config.moy_min|default:'0' }}"
-               class="input" style="width:4.5rem; text-align:center;">
-        <span class="text-muted">→</span>
-        <input type="number" name="moy_max" step="0.01" min="1"
-               value="{{ config.moy_max|default:'20' }}"
-               class="input" style="width:4.5rem; text-align:center;">
-      </div>
-    </td>
-
-    <td>
-      <input type="number" name="heures_hebdomadaires" step="0.5" min="0"
-             value="{{ config.heures_hebdomadaires|default:'0' }}"
-             class="input" style="width:4rem; text-align:center;">
-    </td>
-
-    <td style="text-align:center;">
-      <input type="checkbox" name="est_obligatoire"
-             {% if config == None or config.est_obligatoire %}checked{% endif %}>
-    </td>
-
-    <td style="text-align:right;">
-      <div class="d-flex justify-end gap-2">
-        <button type="submit" class="btn-primary btn-sm" title="Enregistrer">
-          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-          </svg>
-        </button>
-        {% if config %}
-        <button type="submit" name="coefficient" value=""
-                class="btn-secondary btn-sm" title="Supprimer la configuration">
-          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-          </svg>
-        </button>
-        {% endif %}
-      </div>
-    </td>
-  </form>
+    </div>
+  </td>
 </tr>
+{% endlocalize %}

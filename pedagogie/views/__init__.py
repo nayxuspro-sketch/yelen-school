@@ -27,7 +27,6 @@ from .resultats import (  # noqa: F401
 )
 from .matieres import (  # noqa: F401
     matiere_list,
-    _build_cycles_config,
     matiere_create,
     matiere_update,
     matiere_cycle_save,
