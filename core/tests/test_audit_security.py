@@ -1,5 +1,6 @@
 """Contrôles unitaires de l'audit ; les scénarios PostgreSQL sont séparés."""
 
+import pytest
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -94,3 +95,55 @@ def test_audit_hash_is_deterministic_for_same_payload():
     first = entry._hash_content()
     second = entry._hash_content()
     assert first == second
+
+
+# ── Entrées antérieures au chaînage (bases migrées depuis une version < 5.0) ──
+
+def _entree_sans_hash():
+    """Simule une entrée écrite avant core.0004 : hashes vides (écriture hors ORM métier)."""
+    entree = record_audit(action='UPDATE', changes={}, source='SYSTEM', object_id='legacy',
+                          app_label='finances', model_name='paiement', object_repr='ancien')
+    AuditLog._base_manager.filter(pk=entree.pk).update(entry_hash='', previous_hash='')
+    return entree
+
+
+@pytest.mark.django_db(transaction=True)
+def test_verification_tolere_les_entrees_anterieures_en_prefixe():
+    from core.audit import verify_audit_chain
+    for _ in range(3):
+        _entree_sans_hash()
+    record_audit(action='SECURITY', changes={'event': 'a'}, source='SYSTEM')
+    record_audit(action='SECURITY', changes={'event': 'b'}, source='SYSTEM')
+
+    resultat = verify_audit_chain()
+
+    assert resultat['ok'] is True
+    assert resultat['checked'] == 5
+    assert resultat['legacy'] == 3
+    assert resultat['invalid'] == []
+
+
+@pytest.mark.django_db(transaction=True)
+def test_entree_sans_hash_apres_le_debut_de_la_chaine_est_invalide():
+    from core.audit import verify_audit_chain
+    record_audit(action='SECURITY', changes={'event': 'a'}, source='SYSTEM')
+    intruse = _entree_sans_hash()
+
+    resultat = verify_audit_chain()
+
+    assert resultat['ok'] is False
+    assert resultat['legacy'] == 0
+    assert str(intruse.pk) in resultat['invalid']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_commande_signale_les_entrees_anterieures(capsys):
+    from django.core.management import call_command
+    _entree_sans_hash()
+    record_audit(action='SECURITY', changes={'event': 'a'}, source='SYSTEM')
+
+    call_command('verify_audit_chain')
+
+    sortie = capsys.readouterr().out
+    assert '1 entrée(s) chaînée(s)' in sortie
+    assert '1 entrée(s) antérieure(s) au chaînage' in sortie

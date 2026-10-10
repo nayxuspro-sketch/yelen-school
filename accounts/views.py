@@ -6,7 +6,7 @@ YELEN SCHOOL v3.4 - Authentification utilisateur
 
 from functools import wraps
 
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordResetView
 from django.contrib import messages
@@ -23,6 +23,9 @@ from django.views.decorators.http import require_POST
 from core.models import RoleChoices
 from .forms import UserCreateForm, UserUpdateForm, SetPasswordForm, ProfileUpdateForm, ChangeOwnPasswordForm, PasswordResetRateLimitedForm
 from .models import User
+from .services import (  # verrouillage et message unique : source unique
+    MAX_LOGIN_ATTEMPTS, LOCKOUT_DURATION_MINUTES, LOGIN_FAILURE_MESSAGE, authenticate_with_lockout,
+)
 from licences.models import Licence
 
 
@@ -44,8 +47,6 @@ class PasswordResetRateLimitedView(PasswordResetView):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-MAX_LOGIN_ATTEMPTS = 5
-LOCKOUT_DURATION_MINUTES = 15
 _LICENCE_ALERT_DAYS = 30
 
 
@@ -134,57 +135,25 @@ def login_view(request):
             messages.error(request, "Veuillez fournir votre identifiant et mot de passe.")
             return render(request, 'accounts/login.html')
 
-        user = authenticate(request, username=email, password=password)
-        if user is not None:
-            if user.locked_until and user.locked_until > timezone.now():
-                remaining_seconds = (user.locked_until - timezone.now()).seconds
-                remaining_minutes = remaining_seconds // 60 + 1
-                messages.error(
-                    request,
-                    f"Compte temporairement verrouillé. Réessayez dans {remaining_minutes} minute(s)."
-                )
-                return render(request, 'accounts/login.html')
+        # Verrouillage, compteur d'échecs et message unique : aucune différence
+        # observable entre compte inconnu, mot de passe faux et compte verrouillé.
+        user = authenticate_with_lockout(request, email, password)
+        if user is None:
+            messages.error(request, LOGIN_FAILURE_MESSAGE)
+            return render(request, 'accounts/login.html')
 
-            if user.failed_login_attempts > 0 or user.locked_until:
-                user.failed_login_attempts = 0
-                user.locked_until = None
-                user.save(update_fields=['failed_login_attempts', 'locked_until'])
+        if user.totp_enabled and user.totp_secret:
+            # Ne jamais laisser un identifiant utilisateur modifiable en
+            # clair dans la session intermédiaire de la double authentification.
+            request.session['_2fa_user_pk'] = TimestampSigner().sign(str(user.pk))
+            request.session['_2fa_next'] = request.GET.get('next', '')
+            return redirect('accounts:login_2fa')
 
-            if user.totp_enabled and user.totp_secret:
-                # Ne jamais laisser un identifiant utilisateur modifiable en
-                # clair dans la session intermédiaire de la double authentification.
-                request.session['_2fa_user_pk'] = TimestampSigner().sign(str(user.pk))
-                request.session['_2fa_next'] = request.GET.get('next', '')
-                return redirect('accounts:login_2fa')
-
-            login(request, user)
-            blocked = _check_licence_post_login(request, user, on_expired_redirect='accounts:login')
-            if blocked:
-                return blocked
-            return _redirect_after_login(request, user, request.GET.get('next', ''))
-        else:
-            messages.error(request, "Identifiant ou mot de passe incorrect.")
-
-            try:
-                user = User.objects.get(email__iexact=email)
-                user.failed_login_attempts += 1
-
-                if user.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
-                    user.locked_until = timezone.now() + timezone.timedelta(minutes=LOCKOUT_DURATION_MINUTES)
-                    user.save(update_fields=['failed_login_attempts', 'locked_until'])
-                    messages.error(
-                        request,
-                        f"Compte verrouillé après {MAX_LOGIN_ATTEMPTS} tentatives échouées. "
-                        f"Réessayez dans {LOCKOUT_DURATION_MINUTES} minutes."
-                    )
-                else:
-                    remaining = MAX_LOGIN_ATTEMPTS - user.failed_login_attempts
-                    messages.error(
-                        request,
-                        f"Identifiant ou mot de passe incorrect. Il vous reste {remaining} tentative(s)."
-                    )
-            except User.DoesNotExist:
-                pass
+        login(request, user)
+        blocked = _check_licence_post_login(request, user, on_expired_redirect='accounts:login')
+        if blocked:
+            return blocked
+        return _redirect_after_login(request, user, request.GET.get('next', ''))
 
     return render(request, 'accounts/login.html')
 

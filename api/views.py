@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.throttling import UserRateThrottle
 from .authentication import ExpiringTokenAuthentication
 from .permissions import EleveScopeAccess, role_utilisateur
-from django.contrib.auth import authenticate
+
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
@@ -89,23 +89,17 @@ class ObtenirTokenView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
-        # Ne pas révéler si l'email existe ou non
-        user = authenticate(request, username=username, password=password)
+        # Même politique que l'interface web : compteur d'échecs, verrouillage
+        # temporaire et réponse unique quelle que soit la cause (aucune
+        # indication sur l'existence ou l'état du compte).
+        from accounts.services import authenticate_with_lockout
+        user = authenticate_with_lockout(request, username, password)
         if user is None:
             return Response(
                 {'erreur': 'Identifiants invalides.'},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-        
-        # Vérifier si le compte est verrouillé
-        if hasattr(user, 'locked_until') and user.locked_until:
-            from django.utils import timezone
-            if user.locked_until > timezone.now():
-                return Response(
-                    {'erreur': 'Compte temporairement verrouillé. Réessayez plus tard.'},
-                    status=status.HTTP_423_LOCKED,
-                )
-        
+
         token, _ = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,

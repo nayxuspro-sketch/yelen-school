@@ -89,7 +89,15 @@ def record_audit(
 
 
 def verify_audit_chain(limit: int | None = None) -> dict:
-    """Vérifie la chaîne et retourne les entrées corrompues."""
+    """
+    Vérifie la chaîne et retourne les entrées corrompues.
+
+    Les entrées créées avant l'introduction du chaînage (migration
+    ``core.0004``) n'ont ni ``entry_hash`` ni ``previous_hash`` : elles sont
+    tolérées uniquement en préfixe de la chaîne et comptées dans ``legacy``.
+    Dès qu'une entrée chaînée existe, toute entrée ultérieure sans hash est
+    considérée comme invalide (insertion ou effacement de hash hors du code).
+    """
     from core.models import AuditLog
 
     queryset = AuditLog.objects.order_by('id')
@@ -97,8 +105,16 @@ def verify_audit_chain(limit: int | None = None) -> dict:
         queryset = queryset[:limit]
     previous = ''
     invalid = []
-    for entry in queryset:
-        if entry.previous_hash != previous or not entry.verifier_chaine():
+    legacy = 0
+    chain_started = False
+    checked = 0
+    for entry in queryset.iterator():
+        checked += 1
+        if not entry.entry_hash and not entry.previous_hash and not chain_started:
+            legacy += 1
+            continue
+        chain_started = True
+        if not entry.entry_hash or entry.previous_hash != previous or not entry.verifier_chaine():
             invalid.append(str(entry.pk))
         previous = entry.entry_hash
-    return {'ok': not invalid, 'checked': queryset.count(), 'invalid': invalid}
+    return {'ok': not invalid, 'checked': checked, 'legacy': legacy, 'invalid': invalid}
