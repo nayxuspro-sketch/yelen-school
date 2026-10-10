@@ -46,6 +46,17 @@ Voir [`docs/GUIDE_MODE_AUTONOME_SQLITE.md`](docs/GUIDE_MODE_AUTONOME_SQLITE.md).
 - Mode serveur (Docker, PostgreSQL, Redis) : [`docs/GUIDE_DEPLOIEMENT_WINDOWS.md`](docs/GUIDE_DEPLOIEMENT_WINDOWS.md)
 - Mode autonome (SQLite) : [`docs/GUIDE_MODE_AUTONOME_SQLITE.md`](docs/GUIDE_MODE_AUTONOME_SQLITE.md)
 
+## Développement et tests
+
+```bash
+pip install -r requirements/dev.txt      # base.txt (exécution) + pytest, model-bakery, coverage…
+python manage.py collectstatic --noinput # requis par les tests (manifeste des fichiers statiques)
+python -m pytest                         # PostgreSQL par défaut ; SQLite : DB_ENGINE=sqlite CACHE_BACKEND=database
+```
+
+`requirements/base.txt` ne contient que les dépendances d'exécution (Docker, mode autonome) ;
+les outils de test et de documentation sont dans `requirements/dev.txt`.
+
 ## Licence
 
 Usage interne — Établissements YELEN SCHOOL.

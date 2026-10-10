@@ -25,6 +25,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .models import Licence, LicenceAlert, LicenceAuditLog, StatutLicence
+from .boot_check import blocage_boot
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -81,6 +82,16 @@ class LicenceCheckMiddleware:
         Returns:
             HttpResponse
         """
+        # Mode strict : anomalie critique détectée au boot check → application arrêtée
+        blocage = blocage_boot()
+        if blocage:
+            return HttpResponse(
+                "Application indisponible : intégrité des licences compromise. "
+                "Contactez le support.",
+                status=503,
+                content_type='text/plain; charset=utf-8',
+            )
+
         # Vérifier si l'URL est exemptée
         if self._is_exempted_url(request.path):
             return self.get_response(request)

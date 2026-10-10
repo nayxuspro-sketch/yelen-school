@@ -22,14 +22,27 @@ for /f "tokens=2" %%v in ('python --version 2^>^&1') do set PYVER=%%v
 echo [OK] Python %PYVER%
 
 :: ------------------------------------------------------------------
-:: 2. Fichier .env
+:: 2. Fichier .env (cree au premier lancement : cle secrete + IP du serveur)
 :: ------------------------------------------------------------------
+set LANIP=
+for /f "tokens=2 delims=:" %%i in ('ipconfig ^| findstr /c:"IPv4" ^| findstr /v "127.0.0.1"') do if not defined LANIP set LANIP=%%i
+set LANIP=!LANIP: =!
 if not exist ".env" (
     copy /y ".env.autonome.example" ".env" >nul
     for /f "delims=" %%k in ('python -c "import secrets;print(secrets.token_urlsafe(64))"') do set NEWKEY=%%k
     powershell -NoProfile -Command "(Get-Content .env) -replace 'SECRET_KEY=CHANGEZ-MOI.*', 'SECRET_KEY=!NEWKEY!' | Set-Content .env"
-    echo [OK] Fichier .env cree a partir de .env.autonome.example ^(cle secrete generee^)
-    echo      Pensez a y renseigner ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS avec l'IP du serveur.
+    if defined LANIP powershell -NoProfile -Command "(Get-Content .env) -replace '192\.168\.1\.10', '!LANIP!' | Set-Content .env"
+    echo [OK] Fichier .env cree a partir de .env.autonome.example ^(cle secrete generee, IP serveur !LANIP!^)
+    echo      Si l'IP du serveur change, mettez a jour ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS dans .env.
+)
+
+:: Controle anti-copie : sans effet tant que SERVER_HARDWARE_UUID n'est pas defini dans .env
+if exist "installer\verifier-integrite-anti-copie.bat" (
+    call "installer\verifier-integrite-anti-copie.bat"
+    if errorlevel 1 (
+        echo [ERREUR] Controle d'integrite anti-copie echoue. Contactez l'editeur.
+        pause & exit /b 1
+    )
 )
 
 :: ------------------------------------------------------------------
@@ -66,8 +79,12 @@ findstr /i "ENSURE_ADMIN=true" .env >nul 2>&1 && python manage.py ensure_admin
 set PORT=8000
 set WEB_THREADS=8
 for /f "tokens=1,2 delims==" %%a in ('findstr /r "^PORT= ^WEB_THREADS=" .env') do set %%a=%%b
-for /f "tokens=2 delims=:" %%i in ('ipconfig ^| findstr /c:"IPv4"') do set LANIP=%%i
-set LANIP=!LANIP: =!
+
+:: Pare-feu Windows : regle entrante pour le port (necessite des droits administrateur)
+netsh advfirewall firewall show rule name="YELEN SCHOOL port !PORT!" >nul 2>&1
+if errorlevel 1 netsh advfirewall firewall add rule name="YELEN SCHOOL port !PORT!" dir=in action=allow protocol=TCP localport=!PORT! >nul 2>&1
+netsh advfirewall firewall show rule name="YELEN SCHOOL port !PORT!" >nul 2>&1
+if errorlevel 1 (echo [INFO] Pare-feu : autorisez le port !PORT! en entree [TCP], ou relancez ce script en administrateur) else (echo [OK] Pare-feu : port !PORT! autorise)
 
 echo [5/5] Demarrage du serveur web...
 echo.
@@ -77,7 +94,6 @@ echo.
 echo       http://!LANIP!:!PORT!
 echo.
 echo   Sur ce poste :   http://localhost:!PORT!
-echo   Pare-feu : autoriser le port !PORT! en entree ^(TCP^)
 echo   Laissez cette fenetre ouverte. Ctrl+C pour arreter.
 echo ============================================================
 echo.

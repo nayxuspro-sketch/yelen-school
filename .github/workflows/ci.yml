@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements/base.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements/*.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -51,7 +51,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-xlib-2.0-0
-          pip install -r requirements/base.txt
+          pip install -r requirements/dev.txt
 
       - name: Run migrations + static manifest
         run: |
@@ -93,7 +93,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-xlib-2.0-0
-          pip install -r requirements/base.txt
+          pip install -r requirements/dev.txt
       - name: Migrations + cache table + static manifest (SQLite)
         run: |
           python manage.py migrate --noinput

@@ -364,17 +364,23 @@ Pour les établissements scolaires ne disposant pas de Docker Desktop ou souhait
 - **Haute performance concurrente** : Activé en mode WAL (*Write-Ahead Logging*) via `core/db_sqlite.py` avec attente active de 30 secondes pour éliminer les erreurs de verrouillage.
 
 ### Procédure de lancement 1-Clic
-1. Lancez simplement le script à la racine :
+1. Lancez simplement le script à la racine (lanceur unique ; l'ancien `demarrer-sqlite.bat` a été
+   supprimé en octobre 2026) :
    ```cmd
-   demarrer-sqlite.bat
+   demarrer-autonome.bat
    ```
 2. Le script exécute automatiquement :
-   - L'auto-configuration du fichier `.env` (`DB_ENGINE=sqlite`, `SQLITE_PATH=data/yelen_school.sqlite3`, `CACHE_BACKEND=database`, `ALLOWED_HOSTS=*`).
-   - La vérification du bouclier anti-copie physique (`verifier-integrite-anti-copie.bat`).
-   - L'application des migrations et la collecte des fichiers statiques.
-   - L'ouverture automatique du port 8000 dans le pare-feu Windows.
-   - La détection de l'adresse IP locale du serveur affichée à l'écran pour les postes clients.
-   - Le démarrage du serveur multi-threads Waitress.
+   - Au premier lancement : création du `.env` depuis `.env.autonome.example` (`DB_ENGINE=sqlite`,
+     `CACHE_BACKEND=database`, `SECRET_KEY` générée, IP locale du serveur injectée dans
+     `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`), environnement Python `.venv` et dépendances.
+   - La vérification du bouclier anti-copie (`installer\verifier-integrite-anti-copie.bat`,
+     sans effet tant que `SERVER_HARDWARE_UUID` n'est pas défini dans `.env`).
+   - L'application des migrations, la table de cache, la collecte des fichiers statiques et
+     `ensure_admin` si `ENSURE_ADMIN=true`.
+   - L'ouverture du port (`PORT`, 8000 par défaut) dans le pare-feu Windows si le script est lancé
+     en administrateur ; sinon un rappel s'affiche.
+   - L'affichage de l'adresse `http://IP-SERVEUR:PORT` à communiquer aux postes clients.
+   - Le démarrage du serveur multi-threads Waitress (`WEB_THREADS`, 8 par défaut).
 
 
 ## 4. Utilisation quotidienne

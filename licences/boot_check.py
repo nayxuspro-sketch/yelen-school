@@ -22,6 +22,7 @@ import hashlib
 import inspect
 import logging
 import os
+import threading
 from pathlib import Path
 
 logger = logging.getLogger('licences.boot')
@@ -396,3 +397,74 @@ def _log_summary(result: dict):
             "[LICENCES BOOT] ANTI-TAMPER ÉCHEC — %s",
             '; '.join(result['antitamper']['issues']),
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Exécution différée : première requête HTTP servie (jamais dans AppConfig.ready)
+# ═══════════════════════════════════════════════════════════════════════════
+# Django déconseille toute requête SQL pendant l'initialisation des apps
+# (« Accessing the database during app initialization is discouraged ») : la
+# vérification tourne donc une seule fois par processus, à la première requête,
+# et jamais pour les commandes de gestion (migrate, showmigrations, shell…).
+
+_etat_boot = {'fait': False, 'blocage': None}
+_verrou_boot = threading.Lock()
+
+
+def blocage_boot():
+    """Message d'arrêt si la vérification stricte a échoué, sinon None."""
+    return _etat_boot['blocage']
+
+
+def reinitialiser_etat_boot():
+    """Réservé aux tests."""
+    _etat_boot['fait'] = False
+    _etat_boot['blocage'] = None
+
+
+def verifier_au_premier_appel(**_signal_kwargs):
+    """Récepteur du signal request_started : exécute le boot check une seule fois."""
+    if _etat_boot['fait']:
+        return
+    with _verrou_boot:
+        if _etat_boot['fait']:
+            return
+        _etat_boot['fait'] = True
+        _executer_boot_check()
+
+
+def _executer_boot_check():
+    from django.conf import settings
+
+    # Mode strict : enforcement + anti-tamper activés (désactivable pour débogage)
+    strict = bool(
+        getattr(settings, 'LICENSE_ENFORCEMENT', False)
+        and getattr(settings, 'LICENCE_ANTITAMPER_ENABLED', False)
+    )
+    if os.environ.get('LICENCE_DISABLE_STRICT_BOOT', 'false').lower() == 'true':
+        strict = False
+
+    try:
+        result = run_boot_check(strict=strict)
+    except RuntimeError as exc:
+        # Anomalie critique en mode strict : l'application refuse de servir (503)
+        logger.critical("[LICENCES BOOT] %s", exc)
+        _etat_boot['blocage'] = str(exc)
+        return
+    except Exception as exc:  # jamais bloquant hors mode strict
+        logger.error("[LICENCES BOOT] Erreur inattendue durant la vérification : %s", exc, exc_info=True)
+        return
+
+    if strict and not result['ok']:
+        critique = (
+            result['tampering'] or result['bail_expired']
+            or result['binding_invalid'] or not result['antitamper']['ok']
+        )
+        if critique:
+            message = (
+                "[LICENCES BOOT] Arrêt application — anomalies critiques : "
+                f"tampering={result['tampering']}, bail={result['bail_expired']}, "
+                f"binding={result['binding_invalid']}, antitamper={result['antitamper']['issues']}"
+            )
+            logger.critical(message)
+            _etat_boot['blocage'] = message

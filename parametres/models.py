@@ -38,6 +38,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from core.fields import URLFieldHTTPS
+
 
 # Importer BaseModel depuis core
 try:
@@ -145,7 +147,7 @@ class IdentiteEtablissement(BaseModel):
         verbose_name=_("Email")
     )
     
-    site_web = models.URLField(
+    site_web = URLFieldHTTPS(
         blank=True,
         default='',
         verbose_name=_("Site web")

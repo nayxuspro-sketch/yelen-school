@@ -110,11 +110,14 @@ Linux uniquement — bibliothèques pour la génération PDF :
 
 ## 3. Installation (10 minutes)
 
-> **Deux lanceurs coexistent depuis la fusion v5.0 (octobre 2026)** : `demarrer-autonome.bat`
-> (décrit ci-dessous) et `demarrer-sqlite.bat` (racine et `installer/`), qui fait la même chose
-> en ajoutant l'ouverture du port dans le pare-feu Windows et l'affichage de l'adresse réseau
-> local à communiquer aux autres postes. Les deux sont utilisables ; ils seront unifiés lors
-> des corrections à venir.
+> **Lanceur unique depuis la correction « dette technique » (octobre 2026)** :
+> `demarrer-autonome.bat` remplace les anciens `demarrer-sqlite.bat` (racine et `installer/`),
+> supprimés. Il reprend ce qu'ils apportaient : adresse IP du serveur pré-remplie dans
+> `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` à la création du `.env`, contrôle anti-copie
+> (`installer\verifier-integrite-anti-copie.bat`, sans effet tant que `SERVER_HARDWARE_UUID`
+> n'est pas défini) et ouverture du port dans le pare-feu Windows (règle « YELEN SCHOOL port
+> 8000 », créée si le script est lancé en administrateur ; sinon un rappel s'affiche).
+> Si un raccourci pointait vers `demarrer-sqlite.bat`, recréez-le vers `demarrer-autonome.bat`.
 
 
 1. Copier le dossier du projet sur le serveur, par ex. `C:\YELEN\yelen-school`
@@ -229,7 +232,7 @@ python manage.py loaddata export.json
 | Fichier | Rôle |
 |---|---|
 | `.env.autonome.example` | Modèle de configuration du mode autonome |
-| `demarrer-autonome.bat` / `.sh` | Installation + démarrage sans Docker |
+| `demarrer-autonome.bat` / `.sh` | Installation + démarrage sans Docker (lanceur unique : `.env`, anti-copie, pare-feu, Waitress) |
 | `core/db_sqlite.py` | PRAGMA SQLite (WAL…) appliqués à chaque connexion |
 | `core/management/commands/sauvegarde_sqlite.py` | Sauvegarde à chaud avec rotation |
 | `etablissements/migrations/0005_…` + `_compat.py` | Champ `cycles` portable (ArrayField → JSONField) |

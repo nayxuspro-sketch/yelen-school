@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 5.0
-version_guide: 3.3
-date_mise_a_jour: 09/10/2026 (fusion production ↔ GitHub, Django 5.2.17)
+version_guide: 3.4
+date_mise_a_jour: 10/10/2026 (corrections post-fusion : sécurité, performance, dette technique)
 modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, portail_parent, transferts, api_rest, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel, analyse_risque, sms_auto, sauvegarde_restauration, triggers_financiers, chaine_audit_crypto]
 modules_en_attente: [orientation_postbac, solar_guard]
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.0 — Septembre 2026 (Guide v3.3)
+### Version 5.0 — Octobre 2026 (Guide v3.4)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -6324,7 +6324,8 @@ est **l'unique source de vérité**. Elle fusionne :
 - le chantier GitHub : mode autonome SQLite (§32), durcissement sécurité, contrôle des
   licences, CI PostgreSQL + SQLite.
 - la branche `arena/01a0af51` (v5.0) : triggers financiers conditionnels, journal d'audit
-  chaîné, `demarrer-sqlite.bat` 1 clic (réseau local + pare-feu), outils éditeur anti-copie.
+  chaîné, lanceur 1 clic réseau local + pare-feu (fusionné depuis dans `demarrer-autonome.bat`),
+  outils éditeur anti-copie.
 
 ### 33.1 Ce qui change pour l'exploitation
 
@@ -6359,3 +6360,22 @@ conservé. Vérifier ensuite `docker compose -f docker-compose.client.yml logs -
 > Le dossier `C:\YELEN-SCHOOL` doit être un **clone git** (`git clone … C:\YELEN-SCHOOL`),
 > plus jamais une copie manuelle : c'est ce qui garantit qu'une correction appliquée sur
 > GitHub se retrouve à l'identique chez chaque client.
+
+### 33.3 Assainissement technique d'octobre 2026 (dette)
+
+Troisième et dernier volet des corrections post-fusion (après *sécurité* et *performance*).
+Aucun changement fonctionnel pour les utilisateurs ; ce qui change pour l'exploitation :
+
+| Point | Avant | Après |
+|-------|-------|-------|
+| Avertissement Django `RemovedInDjango60Warning` (URLField) | Émis à chaque démarrage et à chaque commande `manage.py`. | Supprimé : le champ *Site web* de l'établissement utilise `core.fields.URLFieldHTTPS` (comportement Django 6 — `https://` ajouté si le schéma manque — sans migration ni réglage déprécié). |
+| Avertissement « Accessing the database during app initialization » | Le contrôle d'intégrité des licences interrogeait la base dans `AppConfig.ready()`, y compris pour `showmigrations`, `verify_audit_chain`… | Le contrôle s'exécute **une seule fois, à la première requête HTTP** du processus (`licences/boot_check.py`). Les commandes `manage.py` ne le déclenchent plus ; `python manage.py check_licences --strict` reste le contrôle explicite. En mode strict (`LICENSE_ENFORCEMENT=true` et `LICENCE_ANTITAMPER_ENABLED=true`), une anomalie d'intégrité renvoie désormais **503 « Application indisponible : intégrité des licences compromise »** au lieu de faire planter le serveur ; `LICENCE_DISABLE_STRICT_BOOT=true` contourne ce contrôle (dépannage uniquement). |
+| Lanceur du mode autonome | Trois scripts (`demarrer-autonome.bat`, `demarrer-sqlite.bat` à la racine et dans `installer/`). | **Un seul** : `demarrer-autonome.bat` (IP du serveur pré-remplie dans `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` à la création du `.env`, contrôle anti-copie, règle de pare-feu « YELEN SCHOOL port 8000 » si lancé en administrateur). Recréer les raccourcis qui pointaient vers `demarrer-sqlite.bat`. |
+| Dépendances Python | Un seul `requirements/base.txt` mêlant exécution et outils de test. | `requirements/base.txt` = exécution (Docker, mode autonome : 54 paquets) ; `requirements/dev.txt` = `base.txt` + pytest, model-bakery, coverage, mammoth (CI, poste développeur). |
+| `.env.example` | Variables non documentées. | Ajout de `DB_ENGINE`, `SQLITE_PATH`, `CACHE_BACKEND`, `CACHE_DIR`, `SESSION_COOKIE_AGE`, `TOKEN_EXPIRY_HOURS`, options `LICENCE_*`, `SMS_MODEM_*`, `BACKUP_DIR` / `BACKUP_KEEP`, et de la règle des 12 caractères pour `INITIAL_ADMIN_PASSWORD`. |
+| Vues Finances et Pédagogie | Deux fichiers monolithiques (`finances/views.py` 3 684 lignes, `pedagogie/views.py` 3 157 lignes). | Deux paquets découpés par domaine, **code des vues inchangé** : `finances/views/` (`commun`, `paiements`, `etats`, `relances`, `echeanciers`, `bourses`, `mobile_money`, `budget`) et `pedagogie/views/` (`commun`, `resultats`, `matieres`, `evaluations`, `bulletins`, `predictions`, `cahier_textes`, `competences`). Les URLs et les autres applications continuent d'utiliser `finances.views.<nom>` / `pedagogie.views.<nom>` (ré-exports dans `__init__.py`). |
+
+Pour un développeur : `pip install -r requirements/dev.txt`, puis `python manage.py collectstatic --noinput`
+et `python -m pytest` (voir `README.md`, section *Développement et tests*).
+La version Word de ce guide se régénère depuis le Markdown :
+`python scripts/md_vers_docx.py docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` (table des matières mise à jour à l'ouverture dans Word).
