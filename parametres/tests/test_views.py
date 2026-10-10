@@ -1,4 +1,5 @@
 import re
+from decimal import Decimal
 
 import pytest
 from django.urls import reverse
@@ -281,3 +282,65 @@ class TestSignataireConfig:
         assert f'class="sc-panel sc-panel--active" id="cycle-{secondaire.id}"' in html
         # Le formulaire de la catégorie est pré-rempli avec le signataire enregistré
         assert f'<option value="{membre.id}"\n              selected>' in html
+
+
+@pytest.mark.django_db
+class TestFormulairesDecimauxNonLocalises:
+    """Un champ <input type="number"> rejette la virgule : un décimal rendu localisé (« 7,50 »)
+    laisse le champ vide à l'ouverture de la fenêtre d'édition et interdit l'enregistrement
+    (champ required) ou perd la valeur. Les valeurs doivent être rendues avec le point."""
+
+    @pytest.fixture
+    def contexte(self, client):
+        etab = baker.make(Etablissement, code='DEC', nom='Lycée Décimaux')
+        user = baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False)
+        client.force_login(user)
+        return {'client': client, 'etab': etab}
+
+    def _cas(self, etab):
+        from parametres.models import AppreciationMoyennePrimaire, AppreciationMoyenneSecondaire, RubriquePaiement
+        from pedagogie.models import TypeEvaluation
+        return [
+            ('parametres:appreciation_primaire_edit',
+             baker.make(AppreciationMoyennePrimaire, etablissement=etab, libelle='Bien', moy_min=Decimal('7.50'),
+                        moy_max=Decimal('8.50'), couleur='#00A86B', ordre=2),
+             {'moy_min': '7.50', 'moy_max': '8.50'},
+             {'libelle': 'Bien', 'couleur': '#00A86B', 'ordre': '2', 'actif': 'on'}),
+            ('parametres:appreciation_edit',
+             baker.make(AppreciationMoyenneSecondaire, etablissement=etab, libelle='Assez bien', moy_min=Decimal('12.50'),
+                        moy_max=Decimal('14.00'), couleur='#00A86B', ordre=3),
+             {'moy_min': '12.50', 'moy_max': '14'},
+             {'libelle': 'Assez bien', 'couleur': '#00A86B', 'ordre': '3', 'actif': 'on'}),
+            ('parametres:rubrique_edit',
+             baker.make(RubriquePaiement, etablissement=etab, nom='Cantine', code='CANT', montant=Decimal('52500.00'),
+                        ordre=4, obligatoire=False, actif=True),
+             {'montant': '52500'},
+             {'nom': 'Cantine', 'code': 'CANT', 'description': '', 'ordre': '4', 'actif': 'on'}),
+            ('parametres:type_evaluation_edit',
+             baker.make(TypeEvaluation, code='DEC-DV', nom='Devoir', coefficient=Decimal('1.50'),
+                        ponderation=Decimal('2.25'), nb_meilleures_notes=0, ordre=1),
+             {'coefficient': '1.50', 'ponderation': '2.25'},
+             {'code': 'DEC-DV', 'nom': 'Devoir', 'description': '', 'nb_meilleures_notes': '0', 'ordre': '1', 'est_visible': 'on'}),
+        ]
+
+    def test_valeurs_decimales_rendues_avec_le_point(self, contexte):
+        for nom_url, obj, attendus, _ in self._cas(contexte['etab']):
+            html = contexte['client'].get(reverse(nom_url, args=[obj.pk]), HTTP_HX_REQUEST='true').content.decode()
+            for champ, valeur in attendus.items():
+                motif = re.search(rf'name="{champ}"[^>]*value="([^"]*)"', html)
+                assert motif, f'{nom_url} : champ {champ} introuvable'
+                assert motif.group(1) == valeur, f'{nom_url} : {champ} rendu « {motif.group(1)} » au lieu de « {valeur} »'
+                assert ',' not in motif.group(1)
+
+    def test_aller_retour_sans_ressaisie(self, contexte):
+        """Ce que le navigateur renvoie tel quel (valeurs rendues) doit être accepté et conservé."""
+        for nom_url, obj, attendus, autres in self._cas(contexte['etab']):
+            html = contexte['client'].get(reverse(nom_url, args=[obj.pk]), HTTP_HX_REQUEST='true').content.decode()
+            donnees = dict(autres)
+            for champ in attendus:
+                donnees[champ] = re.search(rf'name="{champ}"[^>]*value="([^"]*)"', html).group(1)
+            reponse = contexte['client'].post(reverse(nom_url, args=[obj.pk]), donnees, HTTP_HX_REQUEST='true')
+            assert reponse.status_code == 204, f'{nom_url} : {reponse.content.decode()[:200]}'
+            obj.refresh_from_db()
+            for champ, valeur in attendus.items():
+                assert getattr(obj, champ) == Decimal(valeur), f'{nom_url} : {champ} modifié'

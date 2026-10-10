@@ -22,7 +22,7 @@
           </div>
           <div class="form-group">
             <label class="input-label">Montant (FCFA)</label>
-            <input type="number" name="montant" value="{{rubrique.montant|default:0}}" min="0" step="100" placeholder="Ex : 50000" class="input text-mono">
+            <input type="number" name="montant" value="{{rubrique.montant|default:0|floatformat:"-2u"}}" min="0" step="100" placeholder="Ex : 50000" class="input text-mono">
           </div>
         </div>
 
