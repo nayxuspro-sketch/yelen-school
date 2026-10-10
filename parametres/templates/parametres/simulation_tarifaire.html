@@ -31,7 +31,10 @@
       </div>
       <span style="font-weight:600; font-size:0.88rem;">Paramètres de simulation</span>
     </div>
-    <div style="padding:var(--space-5);">
+    <form hx-get="{% url 'parametres:tarif_simulation_resultat' %}" hx-trigger="change"
+          hx-target="#simulation-result" hx-swap="innerHTML" hx-indicator="#sim-chargement"
+          hx-sync="this:replace"
+          style="padding:var(--space-5);">
 
       <div class="form-group">
         <label class="input-label">Année scolaire</label>
@@ -68,7 +71,9 @@
         </select>
       </div>
 
-    </div>
+      <p id="sim-chargement" class="htmx-indicator text-muted" style="font-size:0.8rem; margin:var(--space-3) 0 0;">Calcul en cours…</p>
+
+    </form>
   </div>
 
   {# ── Zone résultat ── #}
@@ -86,62 +91,5 @@
   </div>
 
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const anneeSelect = document.getElementById('sim-annee');
-  const classeSelect = document.getElementById('sim-classe');
-  const statutSelect = document.getElementById('sim-statut');
-  
-  function updateResult() {
-    const annee = anneeSelect.value;
-    const classe = classeSelect.value;
-    const statut = statutSelect.value;
-    const target = document.getElementById('simulation-result');
-    
-    if (!annee || !classe || !statut) {
-      target.innerHTML = `<div class="card" style="padding:var(--space-8); text-align:center;">
-        <p style="color:var(--color-text-muted); font-size:0.9rem;">Sélectionnez une année, une classe et un statut<br>pour afficher la simulation des frais.</p>
-      </div>`;
-      return;
-    }
-    
-    // Afficher indicateur de chargement
-    target.innerHTML = `<div class="card" style="padding:var(--space-8); text-align:center;">
-      <div style="width:40px; height:40px; border:3px solid var(--color-border); border-top-color:var(--color-primary); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto;"></div>
-      <p style="color:var(--color-text-muted); margin-top:var(--space-3);">Chargement...</p>
-    </div>`;
-    
-      // Requête vers la vue
-    const url = "{% url 'parametres:tarif_simulation_resultat' %}?annee=" + annee + "&classe=" + classe + "&statut=" + statut;
-    
-    // Récupérer le token CSRF
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-    
-    fetch(url, {
-      headers: {
-        'X-CSRFToken': csrfToken,
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-      .then(response => response.text())
-      .then(html => {
-        target.innerHTML = html;
-      })
-      .catch(function(err) {
-        target.innerHTML = '<div class="alert alert-danger" style="margin:var(--space-4);"><span>Erreur: ' + err.message + '</span></div>';
-      });
-  }
-  
-  // Déclencher la mise à jour quand une sélection change
-  anneeSelect.addEventListener('change', updateResult);
-  classeSelect.addEventListener('change', updateResult);
-  statutSelect.addEventListener('change', updateResult);
-});
-</script>
-
-<style>
-@keyframes spin { to { transform: rotate(360deg); } }
-</style>
 
 {% endblock %}

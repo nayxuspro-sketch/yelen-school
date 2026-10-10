@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.urls import reverse
 from model_bakery import baker
@@ -166,3 +168,50 @@ class TestPartialsSansScriptInline:
         from parametres.models import ModeleMessage
         longueur = len(ModeleMessage.DEFAUTS['BULLETIN'])
         assert f'<span id="count-BULLETIN">{longueur}</span>' in html
+
+
+@pytest.mark.django_db
+class TestSimulationTarifaire:
+    """Régression : la page portait un <script> inline sans nonce (bloqué par la CSP) ;
+    le résultat ne s'affichait jamais. Les sélecteurs pilotent désormais HTMX directement."""
+
+    @pytest.fixture
+    def contexte(self, client):
+        etab = baker.make(Etablissement, code='SIM', nom='Lycée Yelen')
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True)
+        cycle = baker.make(Cycle, etablissement=etab, nom='Secondaire', code='SEC', actif=True)
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6ème A', actif=True)
+        statut = baker.make('parametres.StatutEleve', etablissement=etab, nom='Nouveau', actif=True)
+        rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, nom='Scolarité', code='SCOL', actif=True)
+        baker.make('parametres.TarifScolarite', etablissement=etab, cycle=cycle, classe=classe, statut_eleve=statut,
+                   rubrique=rubrique, annee_scolaire=annee, montant=75000, actif=True)
+        client.force_login(user)
+        return annee, classe, statut
+
+    def test_page_pilotee_par_htmx_sans_script_inline(self, client, contexte):
+        html = client.get(reverse('parametres:tarif_simulation')).content.decode()
+
+        # Page complète : un script/style inline (sans src=) doit porter le nonce CSP (ceux de base.html)
+        inline = [b for b in re.findall(r'<(?:script|style)\b[^>]*>', html) if 'src="' not in b]
+        assert inline and all('nonce="' in b for b in inline), [b for b in inline if 'nonce="' not in b]
+        assert f'hx-get="{reverse("parametres:tarif_simulation_resultat")}"' in html
+        assert 'hx-trigger="change"' in html and 'hx-target="#simulation-result"' in html
+        assert 'hx-sync="this:replace"' in html  # la dernière sélection l'emporte
+        for champ in ('name="annee"', 'name="classe"', 'name="statut"'):
+            assert champ in html
+        assert 'id="simulation-result"' in html
+
+    def test_resultat(self, client, contexte):
+        annee, classe, statut = contexte
+        url = reverse('parametres:tarif_simulation_resultat')
+
+        complet = client.get(url, {'annee': annee.pk, 'classe': classe.pk, 'statut': statut.pk}).content.decode()
+        assert '6ème A · Nouveau' in complet and 'Scolarité' in complet and '75000' in complet
+
+        incomplet = client.get(url, {'annee': annee.pk, 'classe': '', 'statut': statut.pk}).content.decode()
+        assert 'Sélectionnez une année, une classe et un statut' in incomplet
+
+        autre_etab = baker.make('parametres.AnneeScolaire', etablissement=baker.make(Etablissement, code='AUTRE'))
+        etranger = client.get(url, {'annee': autre_etab.pk, 'classe': classe.pk, 'statut': statut.pk}).content.decode()
+        assert 'introuvable' in etranger

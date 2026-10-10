@@ -1374,15 +1374,10 @@ def tarif_simulation(request):
 @login_required
 def tarif_simulation_resultat(request):
     """Partial HTMX : résultat de la simulation tarifaire."""
-    import logging
-    logger = logging.getLogger(__name__)
-    
     etab = _get_etab(request)
     classe_id = request.GET.get('classe', '').strip()
     statut_id = request.GET.get('statut', '').strip()
     annee_id = request.GET.get('annee', '').strip()
-    
-    logger.error(f"SIMULATION - classe={classe_id}, statut={statut_id}, annee={annee_id}, etab={etab}")
 
     if not (classe_id and statut_id and annee_id):
         return render(request, 'parametres/partials/simulation_result.html', {
@@ -1391,9 +1386,7 @@ def tarif_simulation_resultat(request):
 
     classe = Classe.objects.filter(pk=classe_id, etablissement=etab).first()
     statut = StatutEleve.objects.filter(pk=statut_id, etablissement=etab).first()
-    annee = AnneeScolaire.objects.filter(pk=annee_id).first()
-    
-    logger.error(f"SIMULATION - trouve: classe={classe}, statut={statut}, annee={annee}")
+    annee = AnneeScolaire.objects.filter(pk=annee_id, etablissement=etab).first()
 
     if not (classe and statut and annee):
         return render(request, 'parametres/partials/simulation_result.html', {
@@ -1406,8 +1399,6 @@ def tarif_simulation_resultat(request):
         .select_related('rubrique')
         .order_by('rubrique__ordre', 'rubrique__nom')
     )
-    
-    logger.error(f"SIMULATION - tarifs trouves: {tarifs.count()}")
 
     total = sum(t.montant for t in tarifs)
 
