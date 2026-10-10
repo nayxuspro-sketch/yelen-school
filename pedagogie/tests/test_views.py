@@ -27,6 +27,14 @@ class TestPedagogieViews:
         assert response.status_code == 200
         assert 'classes_groupes' in response.context
 
+    def test_enseignements_dans_le_menu_pedagogie(self, logged_in_client):
+        """L'entrée « Enseignements » de la barre latérale (retirée par erreur dans d402ea0) suit « Matières »."""
+        html = logged_in_client.get(reverse('pedagogie:matiere_list')).content.decode()
+        menu = html.split('id="pedagogie-submenu"')[1].split('</div>')[0]
+        lien = f'href="{reverse("pedagogie:enseignement_list")}" class="sb-item-submodern" data-url="/pedagogie/enseignements/"'
+        assert lien in menu
+        assert menu.index('>Matières<') < menu.index('>Enseignements<') < menu.index('>Évaluations<')
+
     def test_evaluation_list_view(self, logged_in_client):
         """Vérifie l'accès à la liste des évaluations."""
         baker.make('parametres.AnneeScolaire', est_courante=True)
