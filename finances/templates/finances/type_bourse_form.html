@@ -53,8 +53,7 @@
             <label for="code" class="input-label">Code <span class="required-star">*</span></label>
             <input type="text" id="code" name="code" class="input input-code" required
                    value="{{ instance.code|default:'' }}"
-                   placeholder="Ex : BNE"
-                   oninput="this.value=this.value.toUpperCase()">
+                   placeholder="Ex : BNE">
             <p class="input-hint">Identifiant court unique</p>
           </div>
         </div>
@@ -115,8 +114,7 @@
             <label class="choice-card-h type-red-option" data-val="{{ val }}">
               <input type="radio" name="type_reduction" value="{{ val }}"
                      {% if instance and instance.type_reduction == val %}checked
-                     {% elif not instance and val == 'POURCENTAGE' %}checked{% endif %}
-                     onchange="majValeur()">
+                     {% elif not instance and val == 'POURCENTAGE' %}checked{% endif %}>
               <div class="choice-card-h-icon">
                 {% if val == 'POURCENTAGE' %}%{% else %}₣{% endif %}
               </div>
@@ -140,8 +138,7 @@
             </label>
             <input type="number" id="valeur_reduction" name="valeur_reduction" class="input input-valeur" required
                    min="0.01" step="0.01"
-                   value="{{ instance.valeur_reduction|default:'' }}"
-                   oninput="majApercu()">
+                   value="{{ instance.valeur_reduction|default:'' }}">
             <p id="valeur-hint" class="input-hint"></p>
           </div>
 
@@ -151,8 +148,7 @@
             <div class="apercu-row apercu-label">
               Frais de
               <input id="ex-montant" type="number" value="50000"
-                     class="apercu-input"
-                     oninput="majApercu()"> FCFA
+                     class="apercu-input"> FCFA
             </div>
             <hr class="apercu-divider">
             <div class="apercu-row">
@@ -226,7 +222,7 @@
 
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 // ── Sélection visuelle sources ──────────────────────────────────────────
 document.querySelectorAll('.source-option').forEach(el => {
   el.addEventListener('click', () => {
@@ -243,6 +239,13 @@ document.querySelectorAll('.type-red-option').forEach(el => {
     majValeur();
   });
 });
+
+// ── Gestionnaires de saisie (la CSP interdit les attributs on*) ─────────
+document.getElementById('code').addEventListener('input', function () {
+  this.value = this.value.toUpperCase();
+});
+document.querySelectorAll('input[name=type_reduction]').forEach(r => r.addEventListener('change', majValeur));
+['valeur_reduction', 'ex-montant'].forEach(id => document.getElementById(id).addEventListener('input', majApercu));
 
 // ── Initialisation classes "selected" ──────────────────────────────────
 function initSelected() {

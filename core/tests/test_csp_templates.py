@@ -88,3 +88,18 @@ def test_apercus_images_et_bascule_examen_sans_inline():
         assert attendu in js, attendu
     css = (RACINE / 'static/css/yelen.css').read_text(encoding='utf-8')
     assert '.logo-dropzone:hover' in css
+
+
+def test_formulaires_bourses_sans_gestionnaire_inline():
+    """Les scripts des formulaires de bourse portent le nonce et câblent eux-mêmes leurs écouteurs."""
+    attendus = {
+        'finances/templates/finances/type_bourse_form.html': (
+            "addEventListener('change', majValeur)", "addEventListener('input', majApercu)", 'toUpperCase()'),
+        'finances/templates/finances/bourse_form.html': ("sel.addEventListener('change', calculerMontant)",),
+    }
+    for chemin, fragments in attendus.items():
+        html = (RACINE / chemin).read_text(encoding='utf-8')
+        assert not re.search(r'\son[a-z]+="', html), chemin
+        assert html.count('<script') == 1 and '<script nonce="{{ request.csp_nonce }}">' in html, chemin
+        for fragment in fragments:
+            assert fragment in html, (chemin, fragment)

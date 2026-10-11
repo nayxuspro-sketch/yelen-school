@@ -1,4 +1,6 @@
 import json
+import re
+
 import pytest
 from django.urls import reverse
 from model_bakery import baker
@@ -321,3 +323,37 @@ class TestPaiementListPagination:
         r3 = client.get(url, HTTP_HX_REQUEST='true')
         assert r3.status_code == 200
         assert 'Page 1 / 2' in r3.content.decode()
+
+
+@pytest.mark.django_db
+class TestFormulairesBoursesCSP:
+    """Formulaires de bourse : aucun gestionnaire on*, scripts inline noncés (sinon bloqués par la CSP)."""
+
+    @pytest.fixture
+    def client_finance(self, client):
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, role='SUPER_ADMIN'))
+        return client
+
+    @staticmethod
+    def _verifier_csp(html):
+        assert not re.search(r'\son[a-z]+="', html)
+        blocs = re.findall(r'<script(?![^>]*\ssrc=)[^>]*>', html)
+        assert blocs and all('nonce="' in bloc for bloc in blocs)
+
+    def test_type_bourse_form(self, client_finance):
+        response = client_finance.get(reverse('finances:type_bourse_create'))
+        assert response.status_code == 200
+        html = response.content.decode()
+        self._verifier_csp(html)
+        assert "addEventListener('change', majValeur)" in html
+
+    def test_bourse_form(self, client_finance):
+        inscription = baker.make('inscriptions.Inscription')
+        type_bourse = baker.make('finances.TypeBourse', etablissement=inscription.classe.etablissement, actif=True)
+        response = client_finance.get(reverse('finances:bourse_create', kwargs={'inscription_id': inscription.pk}))
+        assert response.status_code == 200
+        html = response.content.decode()
+        self._verifier_csp(html)
+        assert f'<option value="{type_bourse.pk}"' in html
+        assert "sel.addEventListener('change', calculerMontant)" in html

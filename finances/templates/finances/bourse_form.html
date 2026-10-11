@@ -40,7 +40,7 @@
         <label class="input-label" for="type_bourse">
           Type de bourse / aide <span class="required-star">*</span>
         </label>
-        <select name="type_bourse" id="type_bourse" class="input select" required onchange="calculerMontant()">
+        <select name="type_bourse" id="type_bourse" class="input select" required>
           <option value="">— Sélectionner un type —</option>
           {% for t in types_bourses %}
           <option value="{{ t.id }}"
@@ -135,7 +135,7 @@
 </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 let totalDu = 0;
 
 function calculerMontant() {
@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (td) totalDu = parseFloat(td) || 0;
 
   const sel = document.getElementById('type_bourse');
+  sel.addEventListener('change', calculerMontant);
   if (sel.value) calculerMontant();
 });
 </script>
