@@ -10659,3 +10659,8 @@ body.offline-active { padding-top: 2rem; }
   border-color: var(--color-primary);
   background: rgba(0, 168, 107, 0.05);
 }
+
+/* ─── Convocations — ligne d'élève à cocher (documents/convocation_form.html) ─── */
+.convocation-eleve:hover {
+  background: var(--color-bg-hover);
+}

@@ -103,3 +103,29 @@ def test_formulaires_bourses_sans_gestionnaire_inline():
         assert html.count('<script') == 1 and '<script nonce="{{ request.csp_nonce }}">' in html, chemin
         for fragment in fragments:
             assert fragment in html, (chemin, fragment)
+
+
+def test_selecteurs_de_classe_et_appels_sans_inline():
+    """Lot D : sélecteurs ?classe= en formulaire GET, scripts et styles de page noncés, écouteurs câblés."""
+    gabarits = {
+        'documents/templates/documents/convocation_form.html': ('class="convocation-eleve"',),
+        'viescolaire/templates/viescolaire/sanction_create.html': (),
+        'viescolaire/templates/viescolaire/appel_decision_traiter.html': (
+            "forEach(inp => inp.addEventListener('change', toggleNouvelleDecision))",),
+        'presences/templates/presences/appel_saisie.html': (
+            "document.getElementById('appel-form').addEventListener('change', updateCounts);",),
+    }
+    for chemin, fragments in gabarits.items():
+        html = (RACINE / chemin).read_text(encoding='utf-8')
+        assert not re.search(r'\son[a-z]+="', html), chemin
+        assert 'location.href' not in html, chemin
+        balises = re.findall(r'<(?:script|style)\b[^>]*>', html)
+        assert all('nonce="{{ request.csp_nonce }}"' in b for b in balises), (chemin, balises)
+        for fragment in fragments:
+            assert fragment in html, (chemin, fragment)
+    for chemin in ('documents/templates/documents/convocation_form.html',
+                   'viescolaire/templates/viescolaire/sanction_create.html'):
+        html = (RACINE / chemin).read_text(encoding='utf-8')
+        assert html.count('<form method="get"') == 1 and 'name="classe"' in html, chemin
+        assert 'data-csp-submit-on-change' in html, chemin
+    assert '.convocation-eleve:hover' in (RACINE / 'static/css/yelen.css').read_text(encoding='utf-8')

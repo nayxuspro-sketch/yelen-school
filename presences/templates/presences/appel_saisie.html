@@ -114,8 +114,7 @@
                        value="{{ val }}"
                        class="status-pill-radio"
                        {% if presence.statut == val %}checked{% endif %}
-                       {% if appel.est_clos %}disabled{% endif %}
-                       onchange="updateCounts()">
+                       {% if appel.est_clos %}disabled{% endif %}>
                 <label for="s_{{ presence.pk }}_{{ val }}" class="status-pill-label">{{ label }}</label>
                 {% endfor %}
               </div>
@@ -128,8 +127,7 @@
                        name="retard_{{ presence.pk }}"
                        value="{{ presence.minutes_retard }}"
                        min="0" max="180"
-                       {% if appel.est_clos %}disabled{% endif %}
-                       onchange="updateCounts()">
+                       {% if appel.est_clos %}disabled{% endif %}>
                 <span class="retard-unit">min</span>
               </div>
             </td>
@@ -169,7 +167,7 @@
   </div>
 </form>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 function markAllPresent() {
   document.querySelectorAll('.status-pill-radio[value="PRESENT"]').forEach(function(radio) {
     radio.checked = true;
@@ -186,6 +184,7 @@ function updateCounts() {
   document.getElementById('count-absent').textContent  = counts.ABSENT;
   document.getElementById('count-retard').textContent  = counts.RETARD;
 }
+document.getElementById('appel-form').addEventListener('change', updateCounts);
 </script>
 
 {% endblock %}

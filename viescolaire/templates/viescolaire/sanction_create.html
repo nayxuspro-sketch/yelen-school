@@ -23,14 +23,14 @@
     <div class="dash-card-body">
       <div class="form-group mb-0">
         <label class="dash-label">Sélectionner la classe de l'élève</label>
-        <div class="dash-select-wrapper max-w-sm">
-          <select onchange="location.href='?classe='+this.value" class="dash-input">
+        <form method="get" class="dash-select-wrapper max-w-sm">
+          <select name="classe" class="dash-input" data-csp-submit-on-change>
             <option value="">— Toutes les classes —</option>
             {% for cl in classes %}
             <option value="{{ cl.pk }}" {% if cl.pk|stringformat:"s" == classe_id %}selected{% endif %}>{{ cl.nom }}</option>
             {% endfor %}
           </select>
-        </div>
+        </form>
       </div>
     </div>
   </div>
@@ -194,7 +194,7 @@
   </form>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (function () {
   var pointsMap = {{ types_sanction_json|safe }};
   var sel = document.getElementById('id_type_sanction');

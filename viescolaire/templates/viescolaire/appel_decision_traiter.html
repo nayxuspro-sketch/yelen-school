@@ -93,8 +93,7 @@
                  class="issue-option" data-val="{{ val }}">
             <input type="radio" name="issue" value="{{ val }}" style="display:none;"
                    {% if appel.issue == val %}checked{% endif %}
-                   {% if appel.est_traite %}disabled{% endif %}
-                   onchange="toggleNouvelleDecision()">
+                   {% if appel.est_traite %}disabled{% endif %}>
             {% if val == 'MAINTENU' %}🔒 {{ lib }}
             {% elif val == 'MODIFIE' %}✏️ {{ lib }}
             {% else %}✗ {{ lib }}{% endif %}
@@ -150,7 +149,7 @@
 
 </div>
 
-<style>
+<style nonce="{{ request.csp_nonce }}">
 .statut-option:has(input:checked), .issue-option:has(input:checked) {
   border-color: var(--color-primary) !important;
   background: rgba(0,168,107,.07);
@@ -163,12 +162,13 @@
 }
 </style>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 function toggleNouvelleDecision() {
   const checked = document.querySelector('input[name="issue"]:checked');
   document.getElementById('nouvelle-decision-bloc').style.display =
     (checked && checked.value === 'MODIFIE') ? 'block' : 'none';
 }
+document.querySelectorAll('input[name="issue"]').forEach(inp => inp.addEventListener('change', toggleNouvelleDecision));
 
 // Sélection visuelle statut/issue
 ['statut-option', 'issue-option'].forEach(cls => {

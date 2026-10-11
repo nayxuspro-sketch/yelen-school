@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.urls import reverse
 from model_bakery import baker
@@ -68,3 +70,39 @@ class TestApercuEdtJours:
         assert '<script' not in html
         assert html.count('Lundi') == 1 and html.count('Mardi') == 1
         assert html.count('class="edt-gen-day-cell"') == 3
+
+
+@pytest.mark.django_db
+class TestPagesSansGestionnaireInline:
+    """Sanction et appel de décision : aucun attribut on*, scripts et styles de page noncés (CSP)."""
+
+    @staticmethod
+    def _verifier_csp(html):
+        assert not re.search(r'\son[a-z]+="', html)
+        balises = re.findall(r'<(?:script(?![^>]*\ssrc=)|style)\b[^>]*>', html)
+        assert balises and all('nonce="' in b for b in balises)
+
+    def test_sanction_create_selecteur_classe(self, client):
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+        classe = baker.make('parametres.Classe', etablissement=etab, actif=True)
+
+        response = client.get(reverse('viescolaire:sanction_create') + f'?classe={classe.pk}')
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        self._verifier_csp(html)
+        assert '<form method="get"' in html and 'name="classe"' in html and 'data-csp-submit-on-change' in html
+
+    def test_appel_decision_traiter_bascule_nouvelle_decision(self, client):
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', etablissement=etab))
+        classe = baker.make('parametres.Classe', etablissement=etab)
+        appel = baker.make('viescolaire.AppelDecision', decision_conseil__conseil__classe=classe)
+
+        response = client.get(reverse('viescolaire:appel_decision_traiter', kwargs={'appel_id': appel.pk}))
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        self._verifier_csp(html)
+        assert "addEventListener('change', toggleNouvelleDecision)" in html

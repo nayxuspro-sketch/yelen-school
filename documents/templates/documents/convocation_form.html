@@ -21,8 +21,8 @@
 <div class="card animate-fade-up delay-1" style="margin-bottom:1.25rem;">
   <div style="padding:1.25rem 1.5rem;">
     <label class="input-label">Filtrer par classe</label>
-    <div style="display:flex; gap:.75rem; margin-top:.5rem; flex-wrap:wrap;">
-      <select onchange="location.href='?classe='+this.value" class="input select" style="max-width:280px;">
+    <form method="get" style="display:flex; gap:.75rem; margin-top:.5rem; flex-wrap:wrap;">
+      <select name="classe" class="input select" style="max-width:280px;" data-csp-submit-on-change>
         <option value="">— Toutes les classes —</option>
         {% for cl in classes %}
         <option value="{{ cl.pk }}" {% if cl.pk|stringformat:"s" == classe_id %}selected{% endif %}>{{ cl.nom }}</option>
@@ -31,7 +31,7 @@
       {% if classe_id %}
       <a href="{% url 'documents:convocation_form' %}" class="btn-secondary" style="height:38px; padding:0 .9rem;">Effacer</a>
       {% endif %}
-    </div>
+    </form>
   </div>
 </div>
 
@@ -56,10 +56,9 @@
         </div>
         <div style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:.4rem;">
           {% for ins in inscriptions %}
-          <label style="display:flex; align-items:center; gap:.6rem; padding:.4rem .5rem; border-radius:6px;
-                        cursor:pointer; font-size:.88rem; transition:background .1s;"
-                 onmouseover="this.style.background='var(--color-bg-hover)'"
-                 onmouseout="this.style.background=''">
+          <label class="convocation-eleve"
+                 style="display:flex; align-items:center; gap:.6rem; padding:.4rem .5rem; border-radius:6px;
+                        cursor:pointer; font-size:.88rem; transition:background .1s;">
             <input type="checkbox" name="inscriptions" value="{{ ins.pk }}" class="eleve-cb">
             <span>{{ ins.eleve.nom|upper }} {{ ins.eleve.prenom }}</span>
           </label>
@@ -143,11 +142,5 @@
     </button>
   </div>
 </form>
-
-<script>
-function toggleAll(checked) {
-  document.querySelectorAll('.eleve-cb').forEach(cb => cb.checked = checked);
-}
-</script>
 
 {% endblock %}
