@@ -165,14 +165,7 @@
 </div>
 {% endif %}
 
-<script>
-function toggleEleve(header) {
-  var body = header.nextElementSibling;
-  body.style.display = body.style.display === 'none' ? 'block' : 'none';
-}
-</script>
-
-<style>
+<style nonce="{{ request.csp_nonce }}">
 .competences-eleve-card { border-left: 3px solid rgba(0,168,107,0.3); }
 .eleve-body { display:none; }
 .competences-eleve-card:first-of-type .eleve-body,

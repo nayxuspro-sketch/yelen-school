@@ -60,14 +60,14 @@
 
 </div>
 
-<style>
+<style nonce="{{ request.csp_nonce }}">
 @keyframes flash-green { 0%,100%{background:transparent} 50%{background:rgba(0,168,107,.15)} }
 @keyframes flash-red   { 0%,100%{background:transparent} 50%{background:rgba(239,68,68,.15)} }
 .flash-ok  { animation: flash-green .5s ease; }
 .flash-err { animation: flash-red .5s ease; }
 </style>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (function () {
   const APPEL_ID   = '{{ appel.pk }}';
   const API_URL    = '{% url "presences:api_qr_pointer" appel.pk %}';

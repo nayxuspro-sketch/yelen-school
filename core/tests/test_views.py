@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.urls import reverse
 from model_bakery import baker
@@ -16,3 +18,16 @@ class TestCoreViews:
         url = reverse('core:home')
         response = client.get(url)
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_assistant_sans_hx_on(client):
+    """L'assistant câble htmx:beforeRequest / afterRequest dans son script noncé (hx-on est évalué, donc bloqué)."""
+    client.force_login(baker.make('accounts.User', etablissement=baker.make('etablissements.Etablissement'),
+                                  is_superuser=True, role='SUPER_ADMIN'))
+
+    html = client.get(reverse('core:chatbot')).content.decode()
+
+    assert 'hx-on:' not in html
+    assert "form.addEventListener('htmx:beforeRequest', showLoading)" in html
+    assert all('nonce="' in b for b in re.findall(r'<script(?![^>]*\ssrc=)[^>]*>', html))

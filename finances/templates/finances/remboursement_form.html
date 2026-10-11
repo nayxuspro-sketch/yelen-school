@@ -113,7 +113,7 @@
 
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (function () {
   var input = document.getElementById('id_date_remboursement');
   if (input && !input.value) {

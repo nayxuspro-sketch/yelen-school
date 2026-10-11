@@ -183,7 +183,7 @@
 
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
   const selectAll = document.getElementById('select-all');
   if (selectAll) {
     selectAll.addEventListener('change', function () {

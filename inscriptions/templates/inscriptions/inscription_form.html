@@ -246,7 +246,7 @@
   </form>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
     const classeSelect = document.getElementById('id_classe');
     const niveauInput  = document.getElementById('id_niveau');
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const statutSelect = document.getElementById('id_statut_eleve');
     const codePaiementInput = document.getElementById('id_code_paiement');
 
-    window.updateNiveauAndCycle = function(selectEl) {
+    function updateNiveauAndCycle(selectEl) {
         const classeId = selectEl.value;
         if (!classeId) {
             niveauInput.value = '';
@@ -270,9 +270,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(r => r.json())
             .then(data => { cycleInput.value = data.cycle || ''; updateCodePaiementFromFields(); })
             .catch(() => { cycleInput.value = ''; });
-    };
+    }
 
-    window.updateCodePaiement = function() { updateCodePaiementFromFields(); };
+    if (classeSelect) classeSelect.addEventListener('change', function () { updateNiveauAndCycle(this); });
+    if (statutSelect) statutSelect.addEventListener('change', updateCodePaiementFromFields);
 
     function updateCodePaiementFromFields() {
         const niveau   = niveauInput.value;

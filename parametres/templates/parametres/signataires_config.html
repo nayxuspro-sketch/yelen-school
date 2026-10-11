@@ -17,8 +17,7 @@
         {% for cycle in cycles %}
             <div class="tab {% if forloop.first %}active{% endif %}"
                  hx-get="{% url 'parametres:signataires_list_detail' cycle.id %}"
-                 hx-target="#cycle-detail"
-                 hx-on::after-request="document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); this.classList.add('active');">
+                 hx-target="#cycle-detail">
                 {{ cycle.nom }}
             </div>
         {% endfor %}
@@ -50,7 +49,14 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
+    document.querySelectorAll('.tab').forEach(function(tab) {
+        tab.addEventListener('htmx:afterRequest', function() {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+        });
+    });
+
     document.body.addEventListener('htmx:afterSwap', function(evt) {
         if (evt.detail.target.id === 'modal-content') {
             document.getElementById('modal-container').style.display = 'flex';

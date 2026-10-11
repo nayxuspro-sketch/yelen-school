@@ -42,3 +42,17 @@ class TestInscriptionsViews:
         response = logged_in_client.get(url)
         assert response.status_code == 200
         assert 'form' in response.context
+
+
+@pytest.mark.django_db
+def test_formulaire_inscription_sans_onchange_genere(client):
+    """Le remplissage niveau / cycle / code de paiement repose sur des écouteurs, plus sur des onchange (CSP)."""
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True))
+    eleve = baker.make('inscriptions.Eleve')
+
+    html = client.get(reverse('inscriptions:inscription_create', kwargs={'pk': eleve.pk})).content.decode()
+
+    assert 'onchange=' not in html and 'window.update' not in html
+    assert "classeSelect.addEventListener('change'" in html
+    assert "statutSelect.addEventListener('change', updateCodePaiementFromFields)" in html

@@ -179,20 +179,3 @@
 </div>
 
 {% endblock %}
-
-{% block extra_head %}
-<script>
-function copyText(elemId, btn) {
-  var text = document.getElementById(elemId).textContent.trim();
-  navigator.clipboard.writeText(text).then(function () {
-    var orig = btn.textContent;
-    btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:4px;vertical-align:middle"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>Copié';
-    btn.classList.add('btn-copied');
-    setTimeout(function () {
-      btn.textContent = orig;
-      btn.classList.remove('btn-copied');
-    }, 2000);
-  });
-}
-</script>
-{% endblock %}

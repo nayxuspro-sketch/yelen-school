@@ -202,7 +202,7 @@
 </div>
 {% endif %}
 
-<style>
+<style nonce="{{ request.csp_nonce }}">
 .appel-date-header {
   display: flex;
   align-items: center;

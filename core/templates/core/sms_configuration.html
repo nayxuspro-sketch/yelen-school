@@ -213,7 +213,7 @@
   </form>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 function copierWebhook() {
   var url = document.getElementById('webhook-url');
   var btn = document.getElementById('btn-copy-url');
@@ -235,7 +235,7 @@ function copierWebhook() {
 }
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 document.getElementById('id_sms_backend').addEventListener('change', function() {
   var isHttp = this.value === 'http';
   var httpSection = document.getElementById('config-http');

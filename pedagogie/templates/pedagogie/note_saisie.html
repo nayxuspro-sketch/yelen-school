@@ -256,7 +256,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (function () {
   const bareme = parseFloat("{{ evaluation.bareme }}");
 

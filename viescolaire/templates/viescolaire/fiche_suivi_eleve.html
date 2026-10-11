@@ -408,7 +408,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 const TABS = ['presences', 'notes', 'sanctions', 'conseil', 'activites'];
 
 function afficherOnglet(id) {

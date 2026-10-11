@@ -95,9 +95,7 @@
     <form method="post" action="{% url 'core:chatbot' %}" id="chat-form"
           hx-post="{% url 'core:chatbot' %}"
           hx-target="#chat-messages"
-          hx-swap="innerHTML"
-          hx-on::before-request="showLoading()"
-          hx-on::after-request="afterResponse()">
+          hx-swap="innerHTML">
       {% csrf_token %}
       <div class="chat-input-wrap">
         <textarea name="message" id="chat-input" class="chat-input" rows="1"
@@ -118,7 +116,7 @@
 
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 function fillQuestion(text) {
   const input = document.getElementById('chat-input');
   input.value = text;
@@ -153,6 +151,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const input = document.getElementById('chat-input');
   if (!input) return;
 
+  const form = document.getElementById('chat-form');
+  form.addEventListener('htmx:beforeRequest', showLoading);
+  form.addEventListener('htmx:afterRequest', afterResponse);
   input.addEventListener('input', () => autoResize(input));
   input.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {

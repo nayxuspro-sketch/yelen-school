@@ -129,3 +129,36 @@ def test_selecteurs_de_classe_et_appels_sans_inline():
         assert html.count('<form method="get"') == 1 and 'name="classe"' in html, chemin
         assert 'data-csp-submit-on-change' in html, chemin
     assert '.convocation-eleve:hover' in (RACINE / 'static/css/yelen.css').read_text(encoding='utf-8')
+
+
+# Gabarits PDF (WeasyPrint, sans CSP) et gabarits jamais rendus : hors du périmètre du garde-fou ci-dessous.
+_HORS_CSP = (
+    '/pdf/', '_pdf.html', 'bulletin_base.html', 'static/img/',
+    'templates/500.html',                                 # rendu sans request : pas de nonce possible
+    'core/templates/core/base01.html', 'templates/base.html',  # orphelins (aucun render/extends)
+    'templates/bulletins/bulletin_annuel.html', 'core/partials/header_etablissement.html',
+)
+_BALISE = re.compile(r'<(script|style)\b([^>]*)>', re.I)
+
+
+def test_scripts_et_styles_de_page_portent_le_nonce():
+    """Tout <script> inline ou <style> d'un gabarit servi doit porter le nonce, sinon la CSP le bloque."""
+    fautifs = []
+    for chemin in _gabarits():
+        rel = chemin.relative_to(RACINE).as_posix()
+        if any(motif in rel for motif in _HORS_CSP):
+            continue
+        html = chemin.read_text(encoding='utf-8')
+        for balise, attrs in _BALISE.findall(html):
+            if balise.lower() == 'script' and ('src=' in attrs or 'application/json' in attrs):
+                continue
+            if 'nonce="{{ request.csp_nonce }}"' not in attrs:
+                fautifs.append(f'{rel} : <{balise}{attrs}>')
+        if 'hx-on:' in html:
+            fautifs.append(f'{rel} : hx-on (évalué, interdit par la CSP)')
+    assert not fautifs, '\n'.join(fautifs)
+
+
+def test_aucun_gestionnaire_inline_genere_par_les_formulaires():
+    for py in RACINE.glob('*/forms.py'):
+        assert not re.search(r"""['"]on[a-z]+['"]\s*:""", py.read_text(encoding='utf-8')), py.name

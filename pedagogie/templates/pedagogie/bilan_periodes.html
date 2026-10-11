@@ -166,7 +166,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<style>
+<style nonce="{{ request.csp_nonce }}">
 .dash-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
 .dash-info-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .dash-form-label { font-size: 0.8125rem; color: var(--color-text-muted); white-space: nowrap; }
@@ -205,134 +205,6 @@
 .dash-legend-good { background: var(--color-note-excellent); }
 .dash-legend-mid { background: var(--color-gold); }
 .dash-legend-bad { background: var(--color-note-insuffisant); }
-</style>
-<script>
-// Note: L'analyse IA fonctionne 100% hors ligne - pas de connexion Internet nécessaire
-// On garde la détection pour info visuelle seulement
-function majEtatConnexion() {
-  const online = navigator.onLine;
-  const badge  = document.getElementById('badge-offline');
-  if (badge) {
-    badge.style.display = online ? 'none' : 'flex';
-  }
-}
-window.addEventListener('online',  majEtatConnexion);
-window.addEventListener('offline', majEtatConnexion);
-document.addEventListener('DOMContentLoaded', majEtatConnexion);
-
-// Ajouter écouteur sur le bouton IA
-document.addEventListener('DOMContentLoaded', function() {
-  var btnIa = document.getElementById('btn-ia');
-  if (btnIa) {
-    btnIa.addEventListener('click', function(e) {
-      console.log('Bouton cliqué!');
-      genererAnalyseIA();
-    });
-  }
-});
-
-function rendreAnalyseIA(cle, analyse) {
-  const zone = document.getElementById('ia-' + cle);
-  if (!zone) {
-    console.warn('Zone IA non trouvée:', cle);
-    return;
-  }
-
-  const recos = (analyse.recommandations || [])
-    .map(r => `<li>${r}</li>`)
-    .join('');
-
-  zone.innerHTML = `
-    <div class="dash-ia-card">
-      <div class="dash-ia-title">Analyse IA</div>
-      <p class="dash-ia-text">${analyse.commentaire || ''}</p>
-      ${recos ? `<div class="dash-ia-recos"><strong>Recommandations :</strong><ul>${recos}</ul></div>` : ''}
-    </div>`;
-  zone.style.display = 'block';
-  
-  zone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-let commentairesGeneres = {};
-
-async function genererAnalyseIA() {
-  const btn    = document.getElementById('btn-ia');
-  const label  = document.getElementById('btn-ia-label');
-  const errDiv = document.getElementById('ia-erreur');
-  const sepIa  = document.getElementById('sep-ia');
-  const jsonEl = document.getElementById('stats-json');
-  
-  errDiv.style.display = 'none';
-  errDiv.textContent = '';
-
-  if (!jsonEl || !jsonEl.textContent.trim()) {
-    errDiv.textContent = 'Aucune donnée disponible';
-    errDiv.style.display = 'inline';
-    return;
-  }
-
-  let stats = [];
-  try {
-    stats = JSON.parse(jsonEl.textContent);
-  } catch(e) {
-    errDiv.textContent = 'Erreur de parsing: ' + e.message;
-    errDiv.style.display = 'inline';
-    return;
-  }
-
-  if (!stats || stats.length === 0) {
-    errDiv.textContent = 'Aucune donnée à analyser';
-    errDiv.style.display = 'inline';
-    return;
-  }
-
-  btn.disabled = true;
-  label.textContent = 'Génération...';
-
-  const csrfToken = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('csrftoken='))
-    ?.split('=')[1] || '';
-
-  try {
-    const resp = await fetch('{% url "pedagogie:generer_commentaires_bilan" %}', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken,
-      },
-      body: JSON.stringify({ stats }),
-    });
-
-    const json = await resp.json();
-
-    if (!resp.ok || json.erreur) {
-      throw new Error(json.erreur || `Erreur HTTP ${resp.status}`);
-    }
-
-    if (!json.commentaires) {
-      throw new Error('Aucun commentaire');
-    }
-
-    commentairesGeneres = json.commentaires;
-
-    for (const [cle, analyse] of Object.entries(commentairesGeneres)) {
-      rendreAnalyseIA(cle, analyse);
-    }
-
-    document.getElementById('input-commentaires').value = JSON.stringify(commentairesGeneres);
-    label.textContent = 'Analyse générée';
-    sepIa.style.display = 'block';
-
-  } catch(e) {
-    errDiv.textContent = 'Erreur: ' + e.message;
-    errDiv.style.display = 'inline';
-    label.textContent = 'Analyser avec l\'IA';
-    btn.disabled = false;
-  }
-}
-</script>
-<style>
 .dash-ia-card { padding: 0.75rem 1rem; border-left: 3px solid var(--color-primary); background: rgba(0,168,107,0.08); border-radius: 0 6px 6px 0; font-size: 0.85rem; animation: dashIaFadeIn 0.4s ease both; }
 .dash-ia-title { font-weight: 700; color: var(--color-primary); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
 .dash-ia-text { margin: 0 0 0.5rem; color: var(--color-text-primary); line-height: 1.5; }

@@ -128,12 +128,8 @@ class InscriptionForm(forms.ModelForm):
             self.fields['classe'].queryset = Classe.objects.none()
             self.fields['statut_eleve'].queryset = StatutEleve.objects.none()
 
-        self.fields['classe'].widget.attrs.update({
-            'class': 'input select', 'onchange': 'updateNiveauAndCycle(this)',
-        })
-        self.fields['statut_eleve'].widget.attrs.update({
-            'class': 'input select', 'onchange': 'updateCodePaiement(this)',
-        })
+        self.fields['classe'].widget.attrs.update({'class': 'input select'})
+        self.fields['statut_eleve'].widget.attrs.update({'class': 'input select'})
 
         if self.instance and self.instance.pk:
             try:

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Page introuvable — YELEN SCHOOL</title>
   <link rel="stylesheet" href="{% static_v 'css/yelen.css' %}">
-  <style>
+  <style nonce="{{ request.csp_nonce }}">
     body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--color-bg); }
     .error-card {
       text-align: center;

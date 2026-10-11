@@ -2,8 +2,8 @@
 
 {% block title %}Circulaire — YELEN SCHOOL{% endblock %}
 
-{% block extra_css %}
-<style>
+{% block extra_head %}
+<style nonce="{{ request.csp_nonce }}">
   .circulaire-grid {
     display: grid;
     grid-template-columns: 1fr 340px;

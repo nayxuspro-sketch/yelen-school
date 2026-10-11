@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hors ligne — YELEN SCHOOL</title>
   <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
-  <style>
+  <style nonce="{{ request.csp_nonce }}">
     body { display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
     .offline-card {
       max-width: 420px; width: 90%;
@@ -70,7 +70,7 @@
 
   </div>
 
-  <script>
+  <script nonce="{{ request.csp_nonce }}">
   (function () {
     var dot  = document.getElementById('status-dot');
     var text = document.getElementById('status-text');

@@ -24,21 +24,8 @@
 <div id="modal-container"></div>
 
 {% include 'parametres/partials/cycle_tree.html' %}
-<script>
-function toggleCycle(header) {
-    const content = header.nextElementSibling;
-    const chevron = header.querySelector('.cycle-chevron');
-    if (content.style.display === 'none') {
-        content.style.display = 'block';
-        chevron.style.transform = 'rotate(90deg)';
-    } else {
-        content.style.display = 'none';
-        chevron.style.transform = 'rotate(0deg)';
-    }
-}
-</script>
 
-<style>
+<style nonce="{{ request.csp_nonce }}">
 .cycle-header:hover { opacity: 0.95; }
 </style>
 {% endblock %}

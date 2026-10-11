@@ -80,4 +80,10 @@
   </div>
 </div>
 
+<script nonce="{{ request.csp_nonce }}">
+  document.body.addEventListener('bulletinUpdated', function () {
+    document.getElementById('bulletin-modal').style.display = 'none';
+  });
+</script>
+
 {% endblock %}

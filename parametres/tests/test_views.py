@@ -21,6 +21,9 @@ class TestParametresViews:
         response = logged_in_client.get(url)
         assert response.status_code == 200
         assert 'cycles' in response.context
+        # Onglet actif et modale : écouteurs dans le script noncé, plus de hx-on (évalué, bloqué par la CSP)
+        html = response.content.decode()
+        assert 'hx-on:' not in html and "tab.addEventListener('htmx:afterRequest'" in html
 
     def test_cycle_list_htmx_response_refreshes_tree(self, client):
         etablissement = baker.make(
