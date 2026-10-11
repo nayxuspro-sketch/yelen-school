@@ -348,13 +348,40 @@
   // - data-csp-fill-target="id" : sur un <select>, recopie le data-fill de l'option choisie
   //   dans le champ cible (ex. montant d'une rubrique → champ Montant).
   // - .bulk-checkbox : met à jour la barre d'actions groupées (case d'en-tête = tout cocher)
+  // - data-csp-toggle-target="id" : sur une case à cocher, affiche (cochée) ou masque la cible
+  // - data-csp-preview-image="id" : sur un <input type="file">, affiche le fichier choisi dans <img id> ;
+  //   data-preview-reveal="id,…" éléments à afficher, data-preview-conceal="id,…" éléments à masquer
   // Fonctionne pour le contenu injecté par HTMX.
+  function parIds(liste, fn) {
+    (liste || '').split(',').forEach(function(id) {
+      var el = id.trim() && document.getElementById(id.trim());
+      if (el) fn(el);
+    });
+  }
+
   document.addEventListener('change', function(e) {
     var sel = e.target;
     if (!sel || !sel.dataset) return;
     if (sel.classList.contains('bulk-checkbox')) {
       if (sel.hasAttribute('value')) bulkRefresh();
       else bulkSetAll(sel.closest('table') || document, sel.checked);
+      return;
+    }
+    if (sel.dataset.cspToggleTarget) {
+      var cible = document.getElementById(sel.dataset.cspToggleTarget);
+      if (cible) cible.style.display = sel.checked ? '' : 'none';
+      return;
+    }
+    if (sel.dataset.cspPreviewImage) {
+      if (!sel.files || !sel.files[0]) return;
+      var lecteur = new FileReader();
+      lecteur.onload = function(ev) {
+        var img = document.getElementById(sel.dataset.cspPreviewImage);
+        if (img) { img.src = ev.target.result; img.style.display = ''; }
+        parIds(sel.dataset.previewReveal, function(el) { el.style.display = ''; });
+        parIds(sel.dataset.previewConceal, function(el) { el.style.display = 'none'; });
+      };
+      lecteur.readAsDataURL(sel.files[0]);
       return;
     }
     if ('cspSubmitOnChange' in sel.dataset && sel.form) {

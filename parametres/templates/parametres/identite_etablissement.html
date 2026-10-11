@@ -176,7 +176,7 @@
                     </div>
                     {% endif %}
                     <div class="flex-1">
-                        <input type="file" name="logo" accept="image/*" class="input" onchange="previewImage(this, 'logo-preview', 'logo-preview-container')">
+                        <input type="file" name="logo" accept="image/*" class="input" data-csp-preview-image="logo-preview" data-preview-reveal="logo-preview-container">
                         <p class="text-xs text-muted mt-2">Formats: PNG, JPG. 300×300px minimum</p>
                     </div>
                 </div>
@@ -197,7 +197,7 @@
                     </div>
                     {% endif %}
                     <div class="flex-1">
-                        <input type="file" name="signature_directeur" accept="image/*" class="input" onchange="previewImage(this, 'signature-preview', 'signature-preview-container')">
+                        <input type="file" name="signature_directeur" accept="image/*" class="input" data-csp-preview-image="signature-preview" data-preview-reveal="signature-preview-container">
                         <p class="text-xs text-muted mt-2">Image PNG transparente</p>
                     </div>
                 </div>
@@ -218,7 +218,7 @@
                     </div>
                     {% endif %}
                     <div class="flex-1">
-                        <input type="file" name="cachet_etablissement" accept="image/*" class="input" onchange="previewImage(this, 'cachet-preview', 'cachet-preview-container')">
+                        <input type="file" name="cachet_etablissement" accept="image/*" class="input" data-csp-preview-image="cachet-preview" data-preview-reveal="cachet-preview-container">
                         <p class="text-xs text-muted mt-2">Image PNG transparente (cachet rond)</p>
                     </div>
                 </div>
@@ -254,19 +254,4 @@
         </div>
     </form>
 </div>
-
-<script>
-function previewImage(input, imgId, containerId) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            var img = document.getElementById(imgId);
-            var container = document.getElementById(containerId);
-            img.src = e.target.result;
-            container.style.display = 'flex';
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-</script>
 {% endblock %}

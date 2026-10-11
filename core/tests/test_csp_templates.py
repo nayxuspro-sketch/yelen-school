@@ -60,3 +60,31 @@ def test_barre_actions_groupees_sans_script_ni_gestionnaire_inline():
     for attendu in ("case 'bulk-select-all':", "case 'bulk-deselect-all':", "case 'bulk-export':",
                     "sel.classList.contains('bulk-checkbox')", "'.bulk-checkbox[value]:checked'"):
         assert attendu in js, attendu
+
+
+# ── Aperçus d'images et champs conditionnels (lot B) ─────────────────────────────────────
+# identite_etablissement.html et etablissements/detail.html embarquaient un <script> sans nonce
+# (previewImage jamais définie) et des onchange / onmouseover inline ; classe_form.html basculait
+# les champs d'examen par un onchange. Tout passe par csp_handlers.js (data-csp-preview-image,
+# data-csp-toggle-target) et par le CSS (.logo-dropzone:hover).
+
+def test_apercus_images_et_bascule_examen_sans_inline():
+    fichiers = {
+        'parametres/templates/parametres/identite_etablissement.html': 3,
+        'etablissements/templates/etablissements/detail.html': 1,
+    }
+    for chemin, nb in fichiers.items():
+        html = (RACINE / chemin).read_text(encoding='utf-8')
+        assert '<script' not in html and 'previewImage' not in html, chemin
+        assert not re.search(r'\son[a-z]+="', html), chemin
+        assert html.count('data-csp-preview-image="') == nb, chemin
+
+    classe_form = (RACINE / 'parametres/templates/parametres/partials/classe_form.html').read_text(encoding='utf-8')
+    assert 'data-csp-toggle-target="exam-fields"' in classe_form and 'onchange=' not in classe_form
+
+    js = (RACINE / 'static/js/csp_handlers.js').read_text(encoding='utf-8')
+    for attendu in ('sel.dataset.cspToggleTarget', 'sel.dataset.cspPreviewImage', 'sel.dataset.previewReveal',
+                    'sel.dataset.previewConceal'):
+        assert attendu in js, attendu
+    css = (RACINE / 'static/css/yelen.css').read_text(encoding='utf-8')
+    assert '.logo-dropzone:hover' in css

@@ -39,7 +39,7 @@
                 <label class="d-flex align-center gap-3 mb-4" style="cursor:pointer;">
                     <input type="checkbox" name="est_classe_examen" id="est-exam" {% if classe.est_classe_examen %}checked{% endif %}
                         style="width:1rem; height:1rem; accent-color:var(--color-primary);"
-                        onchange="document.getElementById('exam-fields').style.display=this.checked?'grid':'none'">
+                        data-csp-toggle-target="exam-fields">
                     <span class="text-sm text-secondary">Classe d'examen officiel (CEP / BEPC / BAC)</span>
                 </label>
 

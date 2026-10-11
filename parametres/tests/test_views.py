@@ -160,6 +160,23 @@ class TestPartialsSansScriptInline:
         for attendu in attendus:
             assert attendu in html
 
+    def test_identite_etablissement_apercus(self, client_etab):
+        html = client_etab.get(reverse('parametres:identite_etablissement')).content.decode()
+
+        assert 'previewImage' not in html and 'onchange=' not in html
+        for champ, img in (('logo', 'logo'), ('signature_directeur', 'signature'), ('cachet_etablissement', 'cachet')):
+            assert f'name="{champ}" accept="image/*" class="input" data-csp-preview-image="{img}-preview" ' \
+                   f'data-preview-reveal="{img}-preview-container"' in html, champ
+        # Seuls les blocs <script> noncés de la page de base subsistent
+        assert all('nonce="' in balise for balise in re.findall(r'<script(?![^>]*\ssrc=)[^>]*>', html))
+
+    def test_formulaire_classe_bascule_examen(self, client_etab):
+        html = client_etab.get(reverse('parametres:classe_create'), HTTP_HX_REQUEST='true').content.decode()
+
+        assert '<script' not in html and 'onchange=' not in html
+        assert 'id="est-exam"' in html and 'data-csp-toggle-target="exam-fields"' in html
+        assert 'id="exam-fields" class="form-grid-2" style="display:none;"' in html
+
     def test_modele_message(self, client_etab):
         html = client_etab.get(reverse('parametres:modele_message_form', kwargs={'type_msg': 'BULLETIN'})).content.decode()
 
