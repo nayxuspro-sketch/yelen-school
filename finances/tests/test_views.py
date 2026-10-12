@@ -290,6 +290,18 @@ class TestSituationsFinancieresEnLot:
         assert client.get(reverse('finances:liste_redevables')).status_code == 200
         assert client.get(reverse('finances:liste_redevables_pdf')).status_code == 200
 
+    def test_bilan_encaissements_et_pdf(self, jeu, client):
+        """Le bilan regroupe les paiements par jour : date_paiement est un DateField,
+        TruncDate le faisait échouer sous SQLite (mode autonome)."""
+        _, inscriptions = jeu
+        etab = inscriptions[0].classe.etablissement
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab)
+        client.force_login(user)
+        reponse = client.get(reverse('finances:bilan_encaissements'))
+        assert reponse.status_code == 200
+        assert len(reponse.context['par_jour']) == 1  # cinq paiements du jour regroupés
+        assert client.get(reverse('finances:bilan_encaissements_pdf')).status_code == 200
+
 
 @pytest.mark.django_db
 class TestPaiementListPagination:

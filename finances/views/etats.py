@@ -5,9 +5,8 @@ Issu du découpage mécanique de ``finances/views.py`` (octobre 2026) : code inc
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Sum, Count, Q
+from django.db.models import F, Sum, Count, Q
 from django.core.exceptions import ValidationError
-from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -244,8 +243,7 @@ def bilan_encaissements(request):
             'date': row['jour'],
         }
         for row in paiements
-        .annotate(jour=TruncDate('date_paiement'))
-        .values('jour')
+        .values(jour=F('date_paiement'))  # DateField : TruncDate échoue sous SQLite
         .annotate(count=Count('id'), total=Sum('montant'))
         .order_by('-jour')
     }
@@ -350,8 +348,7 @@ def bilan_encaissements_pdf(request):
             'date': row['jour'],
         }
         for row in paiements
-        .annotate(jour=TruncDate('date_paiement'))
-        .values('jour')
+        .values(jour=F('date_paiement'))  # DateField : TruncDate échoue sous SQLite
         .annotate(count=Count('id'), total=Sum('montant'))
         .order_by('-jour')
     }
