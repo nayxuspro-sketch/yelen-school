@@ -16,7 +16,6 @@ Version: 1.1 - Corrigée
 
 import hashlib
 import hmac
-import uuid
 from datetime import date, datetime, time, timedelta, timezone as dt_timezone
 from typing import Dict, List, Optional
 
@@ -36,33 +35,7 @@ User = get_user_model()
 # MODÈLE DE BASE
 # ═══════════════════════════════════════════════════════════════════
 
-# Essayer d'importer BaseModel depuis core, sinon le définir localement
-try:
-    from core.models import BaseModel
-except ImportError:
-    # Si core.models n'existe pas encore, définir BaseModel ici temporairement
-    # NOTE: Ce modèle devrait être déplacé vers core/models.py pour être partagé
-    class BaseModel(models.Model):
-        """Modèle abstrait de base pour tous les modèles de l'application."""
-        
-        id = models.UUIDField(
-            primary_key=True,
-            default=uuid.uuid4,
-            editable=False,
-            verbose_name=_("Identifiant unique")
-        )
-        created_at = models.DateTimeField(
-            auto_now_add=True,
-            verbose_name=_("Date de création")
-        )
-        updated_at = models.DateTimeField(
-            auto_now=True,
-            verbose_name=_("Date de modification")
-        )
-        
-        class Meta:
-            abstract = True
-            ordering = ['-created_at']
+from core.models import BaseModel
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -214,13 +187,6 @@ class Licence(BaseModel):
         verbose_name=_("Établissement"),
         help_text=_("Établissement associé à cette licence")
     )
-    
-    # ALTERNATIVE SI etablissements n'existe pas encore :
-    # etablissement_id = models.UUIDField(
-    #     verbose_name=_("ID Établissement (temporaire)"),
-    #     help_text=_("Sera remplacé par FK vers etablissements.Etablissement"),
-    #     unique=True
-    # )
     
     # Informations de la licence
     cle_licence = models.CharField(
