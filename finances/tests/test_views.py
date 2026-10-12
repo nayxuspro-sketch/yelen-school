@@ -514,3 +514,35 @@ class TestDepenseForm:
         assert reponse.status_code == 200
         assert 'Aucun budget défini pour la catégorie « Fournitures » (2026-2027).' in reponse.content.decode()
         assert Depense.objects.count() == 0
+
+
+@pytest.mark.django_db
+class TestDepenseSuppression:
+    """La suppression (brouillon) et l'annulation (validée) exigent un motif : la liste doit le demander
+    (data-csp-prompt-submit) et l'envoyer, sinon l'action échoue silencieusement."""
+
+    @pytest.fixture
+    def depense(self, client):
+        etab = baker.make('etablissements.Etablissement')
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab)
+        client.force_login(user)
+        annee = baker.make('parametres.AnneeScolaire', est_courante=True, etablissement=etab)
+        return baker.make('finances.Depense', annee_scolaire=annee, statut='BROUILLON', montant=1000)
+
+    def test_liste_demande_le_motif(self, depense, client):
+        html = client.get(reverse('finances:depense_list')).content.decode()
+        bloc = html.split(reverse('finances:depense_delete', args=[depense.pk]))[1].split('</form>')[0]
+        assert 'data-csp-prompt-submit="Supprimer cette dépense ? Indiquez le motif :"' in html
+        assert '<input type="hidden" name="motif">' in bloc
+        assert 'data-csp-confirm-submit' not in html
+
+    def test_suppression_avec_motif(self, depense, client):
+        reponse = client.post(reverse('finances:depense_delete', args=[depense.pk]), {'motif': 'Saisie en double'})
+        assert reponse.status_code == 302
+        depense.refresh_from_db()
+        assert (depense.statut, depense.motif_annulation) == ('ANNULEE', 'Saisie en double')
+
+    def test_suppression_sans_motif_refusee(self, depense, client):
+        client.post(reverse('finances:depense_delete', args=[depense.pk]), {})
+        depense.refresh_from_db()
+        assert depense.statut == 'BROUILLON'

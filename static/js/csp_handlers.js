@@ -337,14 +337,40 @@
     }
   });
 
-  // ── Delegation submit pour confirm ─────────────────────────────────
+  // ── Delegation submit pour confirm / prompt ────────────────────────
+  // - data-csp-confirm-submit="message" : confirm avant soumission
+  // - data-csp-prompt-submit="question" : demande un motif, le place dans le champ
+  //   data-prompt-field (défaut « motif ») et bloque la soumission s'il est vide
   document.addEventListener('submit', function(e) {
     var form = e.target;
     var confirmMsg = form.dataset.cspConfirmSubmit;
     if (confirmMsg) {
       if (!confirm(confirmMsg)) {
         e.preventDefault();
+        return;
       }
+    }
+    var promptMsg = form.dataset.cspPromptSubmit;
+    if (promptMsg) {
+      var reponse = prompt(promptMsg);
+      if (reponse === null) {
+        e.preventDefault();
+        return;
+      }
+      if (!reponse.trim()) {
+        alert('Le motif est obligatoire.');
+        e.preventDefault();
+        return;
+      }
+      var nomChamp = form.dataset.promptField || 'motif';
+      var champ = form.querySelector('input[name="' + nomChamp + '"]');
+      if (!champ) {
+        champ = document.createElement('input');
+        champ.type = 'hidden';
+        champ.name = nomChamp;
+        form.appendChild(champ);
+      }
+      champ.value = reponse.trim();
     }
   });
 
