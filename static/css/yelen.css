@@ -1466,6 +1466,11 @@ button {
   font-weight: 700;
 }
 
+.input-label.required::after {
+  content: " *";
+  color: var(--color-danger);
+}
+
 .input-error {
   font-size: var(--text-xs);
   color: #FF6B7A;

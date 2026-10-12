@@ -194,6 +194,10 @@ def depense_form(request, pk=None):
 
         if not libelle:
             error = "Le libellé est obligatoire."
+        elif not beneficiaire:
+            error = "Le bénéficiaire est obligatoire."
+        elif not reference:
+            error = "La référence / n° de pièce est obligatoire."
 
         if not error:
             categorie = get_object_or_404(CategorieDepense, pk=cat_id, etablissement=etab)

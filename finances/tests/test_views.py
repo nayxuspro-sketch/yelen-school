@@ -443,3 +443,45 @@ class TestRecuPaiementPdf:
         assert len(pages) == 1
         # A5 paysage : 210 × 148 mm, soit 793,7 × 559,4 px CSS (WeasyPrint)
         assert round(pages[0].width) == 794 and round(pages[0].height) == 559
+
+
+@pytest.mark.django_db
+class TestDepenseForm:
+    """Bénéficiaire et référence / n° de pièce sont obligatoires (navigateur et serveur)."""
+
+    @pytest.fixture
+    def contexte(self, client):
+        etab = baker.make('etablissements.Etablissement')
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab)
+        client.force_login(user)
+        annee = baker.make('parametres.AnneeScolaire', est_courante=True, etablissement=etab)
+        categorie = baker.make('finances.CategorieDepense', etablissement=etab, actif=True)
+        return {
+            'libelle': 'Achat de craies', 'montant': '15000', 'categorie': str(categorie.pk),
+            'annee_scolaire': str(annee.pk), 'date_depense': '2026-10-12', 'mode_paiement': 'ESPECES',
+            'beneficiaire': 'Librairie Centrale', 'reference': 'FAC-2026-017',
+        }
+
+    def test_formulaire_marque_les_champs_requis(self, contexte, client):
+        html = client.get(reverse('finances:depense_create')).content.decode()
+        assert re.search(r'name="beneficiaire"[^>]*\brequired\b', html)
+        assert re.search(r'name="reference"[^>]*\brequired\b', html)
+
+    @pytest.mark.parametrize('champ, message', [
+        ('beneficiaire', 'Le bénéficiaire est obligatoire.'),
+        ('reference', 'La référence / n° de pièce est obligatoire.'),
+    ])
+    def test_refus_sans_beneficiaire_ou_reference(self, contexte, client, champ, message):
+        from finances.models import Depense
+        donnees = {**contexte, champ: '   '}
+        reponse = client.post(reverse('finances:depense_create'), donnees)
+        assert reponse.status_code == 200
+        assert message in reponse.content.decode()
+        assert Depense.objects.count() == 0
+
+    def test_creation_complete(self, contexte, client):
+        from finances.models import Depense
+        reponse = client.post(reverse('finances:depense_create'), contexte)
+        assert reponse.status_code == 302
+        depense = Depense.objects.get()
+        assert (depense.beneficiaire, depense.reference) == ('Librairie Centrale', 'FAC-2026-017')

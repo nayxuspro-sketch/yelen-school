@@ -90,15 +90,15 @@
           </div>
 
           <div class="form-group">
-            <label class="input-label">Bénéficiaire</label>
+            <label class="input-label required">Bénéficiaire</label>
             <input type="text" name="beneficiaire" value="{{ instance.beneficiaire|default:'' }}"
-                   class="input" placeholder="Fournisseur, prestataire…">
+                   class="input" placeholder="Fournisseur, prestataire…" required>
           </div>
 
           <div class="form-group">
-            <label class="input-label">Référence / N° pièce</label>
+            <label class="input-label required">Référence / N° pièce</label>
             <input type="text" name="reference" value="{{ instance.reference|default:'' }}"
-                   class="input" placeholder="N° facture, reçu…">
+                   class="input" placeholder="N° facture, reçu…" required>
           </div>
 
           <div class="form-group col-span-2">
