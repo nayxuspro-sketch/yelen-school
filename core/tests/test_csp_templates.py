@@ -135,8 +135,6 @@ def test_selecteurs_de_classe_et_appels_sans_inline():
 _HORS_CSP = (
     '/pdf/', '_pdf.html', 'bulletin_base.html', 'static/img/',
     'templates/500.html',                                 # rendu sans request : pas de nonce possible
-    'core/templates/core/base01.html', 'templates/base.html',  # orphelins (aucun render/extends)
-    'templates/bulletins/bulletin_annuel.html', 'core/partials/header_etablissement.html',
 )
 _BALISE = re.compile(r'<(script|style)\b([^>]*)>', re.I)
 
