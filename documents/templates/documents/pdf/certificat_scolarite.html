@@ -229,6 +229,11 @@ body {
             <strong>{{ eleve.get_nom_complet }}</strong>,
             né(e) le <strong>{{ eleve.date_naissance|date:"d F Y" }}</strong>
             à <strong>{{ eleve.lieu_naissance }}</strong>,
+            {% if eleve.nom_pere and eleve.nom_mere %}
+            de <strong>{{ eleve.nom_pere|upper }}</strong> et de <strong>{{ eleve.nom_mere|upper }}</strong>,
+            {% elif eleve.nom_pere or eleve.nom_mere %}
+            de <strong>{{ eleve.nom_pere|default:eleve.nom_mere|upper }}</strong>,
+            {% endif %}
             de nationalité <strong>{{ eleve.nationalite }}</strong>,
         </p>
         <p>
