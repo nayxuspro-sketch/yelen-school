@@ -135,7 +135,7 @@ class Document(BaseModel):
         return f"{self.type_document.libelle}{v} — {destinataire} — {self.annee_scolaire}"
 
     def save(self, *args, **kwargs):
-        if not self.pk:
+        if self._state.adding:  # la clé UUID est pré-remplie : `not self.pk` serait toujours faux
             self._compute_version()
             self._generate_numero()
         super().save(*args, **kwargs)

@@ -1,3 +1,4 @@
+import datetime
 import re
 
 import pytest
@@ -114,3 +115,29 @@ def test_certificat_pdf_format_a5_portrait(client, mocker):
     assert re.search(r'@page\s*\{\s*size:\s*A5 portrait;', css)
     assert 'width: 14.8cm;' in css and 'height: 21cm;' in css
     assert 'Format A5 portrait' in client.get(url).content.decode()
+
+
+@pytest.mark.django_db
+def test_document_numero_et_version_generes_a_la_creation(client, mocker):
+    """La clé primaire UUID est pré-remplie : le test `not self.pk` ne déclenchait jamais la numérotation
+    (« N° — » sur chaque certificat)."""
+    from documents.models import Document
+
+    etab = baker.make('etablissements.Etablissement')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
+    inscription = baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee)
+    from parametres.models import TypeDocument
+    type_doc, _ = TypeDocument.objects.get_or_create(code='CERT_SCOL', defaults={'libelle': 'Certificat', 'categorie': 'SCOLARITE'})
+    annee_civile = datetime.date.today().year
+
+    premier = Document.objects.create(type_document=type_doc, annee_scolaire=annee, inscription=inscription)
+    second = Document.objects.create(type_document=type_doc, annee_scolaire=annee, inscription=inscription)
+    assert (premier.numero_document, premier.version) == (f'CERT_SCOL-{annee_civile}-00001', 1)
+    assert (second.numero_document, second.version) == (f'CERT_SCOL-{annee_civile}-00002', 2)
+
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    html_cls = mocker.patch('core.pdf.HTML')
+    html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+    client.get(reverse('documents:certificat_scolarite', kwargs={'inscription_id': inscription.pk}) + '?format=pdf')
+    assert f'N° CERT_SCOL-{annee_civile}-00003' in html_cls.call_args.kwargs['string']
