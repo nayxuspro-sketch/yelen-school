@@ -32,7 +32,7 @@ $trigger = New-ScheduledTaskTrigger -Daily -At ([datetime]::ParseExact($Time, 'H
 # Docker Desktop est généralement disponible dans la session de l'utilisateur
 # connecté, pas dans une session système sans profil Docker.
 $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-$principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType InteractiveToken -RunLevel Highest
+$principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType Interactive -RunLevel Highest
 
 Register-ScheduledTask `
     -TaskName $TaskName `

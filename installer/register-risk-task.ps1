@@ -29,7 +29,7 @@ $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$AnalysisScript`" -TaskLog `"$LogFile`""
 $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
 $trigger = New-ScheduledTaskTrigger -Daily -At ([datetime]::ParseExact($Time, 'HH:mm', $null))
-$principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType InteractiveToken -RunLevel Highest
+$principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType Interactive -RunLevel Highest
 
 Register-ScheduledTask `
     -TaskName $TaskName `
