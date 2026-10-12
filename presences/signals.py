@@ -6,6 +6,8 @@ from django.dispatch import receiver
 @receiver(post_save, sender='presences.Presence')
 def presence_post_save(sender, instance, created, **kwargs):
     """Notifie les parents si statut = ABSENT ou RETARD."""
+    if kwargs.get('raw'):  # chargement de données (loaddata) : rien à notifier
+        return
     if instance.statut == 'ABSENT':
         from core.notifications import notifier_absence
         notifier_absence(instance)

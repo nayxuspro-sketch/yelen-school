@@ -6,6 +6,6 @@ from django.dispatch import receiver
 @receiver(post_save, sender='viescolaire.SanctionDisciplinaire')
 def sanction_post_save(sender, instance, created, **kwargs):
     """Notifie les parents à la création d'une sanction."""
-    if created:
+    if created and not kwargs.get('raw'):  # raw : chargement de données (loaddata)
         from core.notifications import notifier_sanction
         notifier_sanction(instance)

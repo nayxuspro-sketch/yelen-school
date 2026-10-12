@@ -199,18 +199,59 @@ service avec **NSSM** (`nssm install YelenSchool`) pointant sur
 
 ## 7. Passer de SQLite à PostgreSQL (si l'établissement grandit)
 
-Au-delà de ~50 utilisateurs réellement simultanés ou pour un serveur central
-multi-établissements, migrer vers PostgreSQL :
+Au-delà de 4 000 élèves ou de 60 postes simultanés (ou pour un serveur central
+multi-établissements), basculez vers le mode serveur PostgreSQL
+(`GUIDE_DEPLOIEMENT_WINDOWS.md`). Deux commandes assurent un transfert intégral et
+contrôlé : `exporter_donnees` (archive ZIP) puis `importer_donnees` (base vierge).
 
-```bash
-# 1. Export depuis SQLite
-DB_ENGINE=sqlite python manage.py dumpdata --natural-foreign --natural-primary \
-    --exclude contenttypes --exclude auth.permission --exclude sessions \
-    --exclude admin.logentry -o export.json
-# 2. Import dans PostgreSQL (après .env en mode postgresql + migrate)
-python manage.py migrate
-python manage.py loaddata export.json
-```
+Transféré : toutes les données — élèves, inscriptions, finances, notes, documents,
+utilisateurs et mots de passe, licences, journal d'audit avec sa chaîne de hachage
+intacte — identifiants et horodatages inchangés. Non transféré : les sessions
+(chacun se reconnecte) et le cache. Les mêmes commandes servent pour changer de
+serveur ou revenir en mode autonome.
+
+### 7.1 Sur l'installation SQLite (source)
+
+1. Arrêter YELEN SCHOOL (fermer la fenêtre `demarrer-autonome.bat` ou arrêter la
+   tâche planifiée) : l'export refuse une base modifiée pendant l'opération.
+2. Exporter :
+   ```cmd
+   cd /d C:\YELEN\yelen-school
+   .venv\Scripts\python manage.py exporter_donnees C:\YELEN\transfert.zip
+   ```
+   Environ 3 min et une archive de 160 Mo pour 2 500 élèves sur 5 ans (base de 880 Mo).
+3. Relever dans `.env` la `SECRET_KEY` et, si présentes, `LICENCE_SIGNING_KEY` /
+   `LICENCE_PUBLIC_KEY` : elles doivent être **reportées à l'identique** dans le `.env`
+   de la cible (données chiffrées, signatures des licences) — l'import le vérifie.
+4. Conserver le dossier `media\` (photos, documents) pour l'étape 7.2.
+
+### 7.2 Sur l'installation PostgreSQL (cible)
+
+1. Installer le mode serveur (`GUIDE_DEPLOIEMENT_WINDOWS.md` §2) **sans démarrer
+   l'application** : `.env` avec les clés relevées en 7.1 et `ENSURE_ADMIN=false`
+   (les comptes sont importés), puis `docker compose -f docker-compose.client.yml build`.
+2. Importer (la base est créée et migrée, puis remplie — environ 4 min pour
+   1,9 million d'objets, soit 2 500 élèves sur 5 ans, sur une machine à 2 cœurs) :
+   ```cmd
+   cd /d C:\YELEN-SCHOOL
+   docker compose -f docker-compose.client.yml run --rm -v C:\YELEN\transfert.zip:/tmp/transfert.zip web python manage.py importer_donnees /tmp/transfert.zip
+   ```
+   Contrôles préalables (même version, mêmes clés, base vierge), import atomique,
+   puis effectifs affichés modèle par modèle : au moindre écart, rien n'est conservé.
+3. Démarrer, copier les médias, vérifier les licences :
+   ```cmd
+   docker compose -f docker-compose.client.yml up -d
+   docker compose -f docker-compose.client.yml cp C:\YELEN\yelen-school\media\. web:/app/media/
+   docker compose -f docker-compose.client.yml exec web python manage.py check_licences
+   ```
+4. Se connecter avec les comptes habituels, contrôler un élève, un reçu et un
+   bulletin ; programmer la sauvegarde PostgreSQL (guide Windows §5–§6). Supprimer
+   `transfert.zip` (il contient toutes les données) ; garder `data\yelen_school.sqlite3`
+   comme sauvegarde de repli.
+
+Si l'import répond « Base cible non vide », l'application a déjà tourné sur la
+cible : `docker compose -f docker-compose.client.yml down -v` (base vierge), puis
+reprendre à l'étape 2.
 
 ---
 
@@ -235,6 +276,7 @@ python manage.py loaddata export.json
 | `demarrer-autonome.bat` / `.sh` | Installation + démarrage sans Docker (lanceur unique : `.env`, anti-copie, pare-feu, Waitress) |
 | `core/db_sqlite.py` | PRAGMA SQLite (WAL…) appliqués à chaque connexion |
 | `core/management/commands/sauvegarde_sqlite.py` | Sauvegarde à chaud avec rotation |
+| `core/management/commands/exporter_donnees.py` / `importer_donnees.py` | Transfert intégral et contrôlé vers PostgreSQL (§7) — format `jsonl_us` de `core/serialisation.py` |
 | `etablissements/migrations/0005_…` + `_compat.py` | Champ `cycles` portable (ArrayField → JSONField) |
 | `scripts/seed_charge.py` | Jeu de données réaliste pour tests : `--eleves 2500 --annees 5` |
 | `scripts/charge_20_navigateurs.py` | Test de charge de bout en bout : `--users 40 --duree 120 --reflexion 5-15` (pause humaine entre deux clics ; `0-0` = stress) |

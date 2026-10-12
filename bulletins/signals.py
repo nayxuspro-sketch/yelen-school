@@ -18,6 +18,8 @@ def bulletin_pre_save(sender, instance, **kwargs):
 @receiver(post_save, sender='bulletins.Bulletin')
 def bulletin_post_save(sender, instance, created, **kwargs):
     """Notifie les parents si le bulletin vient d'être publié."""
+    if kwargs.get('raw'):  # chargement de données (loaddata) : rien à notifier
+        return
     ancien = getattr(instance, '_ancien_publie', False)
     if not ancien and instance.est_publie:
         from core.notifications import notifier_bulletin_publie

@@ -382,6 +382,9 @@ Pour les établissements scolaires ne disposant pas de Docker Desktop ou souhait
    - L'affichage de l'adresse `http://IP-SERVEUR:PORT` à communiquer aux postes clients.
    - Le démarrage du serveur multi-threads Waitress (`WEB_THREADS`, 8 par défaut).
 
+Pour passer ensuite au mode PostgreSQL en conservant toutes les données :
+`GUIDE_MODE_AUTONOME_SQLITE.md` §7 (`exporter_donnees` / `importer_donnees`).
+
 
 ## 4. Utilisation quotidienne
 

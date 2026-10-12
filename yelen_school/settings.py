@@ -334,6 +334,10 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Format d'export des données (exporter_donnees / importer_donnees) : JSON Lines
+# conservant les microsecondes (chaîne d'audit, signatures de licences).
+SERIALIZATION_MODULES = {'jsonl_us': 'core.serialisation'}
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
