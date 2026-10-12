@@ -95,3 +95,22 @@ class TestCertificatScolariteFiliation:
         eleve.nom_mere = ''
         eleve.save()
         assert self._filiation(client.get(url).content.decode()) == ''
+
+
+@pytest.mark.django_db
+def test_certificat_pdf_format_a5_portrait(client, mocker):
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
+    inscription = baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee)
+    html_cls = mocker.patch('core.pdf.HTML')
+    html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+
+    url = reverse('documents:certificat_scolarite', kwargs={'inscription_id': inscription.pk})
+    assert client.get(url + '?format=pdf').status_code == 200
+
+    css = html_cls.call_args.kwargs['string']
+    assert re.search(r'@page\s*\{\s*size:\s*A5 portrait;', css)
+    assert 'width: 14.8cm;' in css and 'height: 21cm;' in css
+    assert 'Format A5 portrait' in client.get(url).content.decode()
