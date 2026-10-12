@@ -11,6 +11,7 @@ from django.db.models import Sum, Q
 from django.http import HttpResponse
 from decimal import Decimal, InvalidOperation
 import io
+import json
 from ..models import Paiement, ModePaiement, CategorieDepense, BudgetAnnuel, Depense, StatutDepense
 from parametres.models import AnneeScolaire
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES, FINANCE_APPROVER_ROLES
@@ -160,6 +161,32 @@ def depense_list(request):
     })
 
 
+def _budgets_par_annee(annees, categories):
+    """{annee_id: {categorie_id: montant_prevu}} — transmis au formulaire pour le contrôle côté navigateur."""
+    budgets = {}
+    lignes = BudgetAnnuel.objects.filter(annee_scolaire__in=annees, categorie__in=categories)
+    for annee_id, categorie_id, montant in lignes.values_list('annee_scolaire_id', 'categorie_id', 'montant_prevu'):
+        budgets.setdefault(str(annee_id), {})[str(categorie_id)] = float(montant)
+    return budgets
+
+
+def _erreur_depassement_budget(montant, categorie, annee):
+    """Message d'erreur si le montant dépasse le budget prévu de la catégorie pour l'année, sinon None."""
+    plafond = (
+        BudgetAnnuel.objects.filter(annee_scolaire=annee, categorie=categorie)
+        .values_list('montant_prevu', flat=True).first()
+    ) or Decimal('0')
+    if plafond <= 0:
+        return f"Aucun budget défini pour la catégorie « {categorie.nom} » ({annee.libelle})."
+    if montant > plafond:
+        prevu = f"{plafond:,.0f}".replace(',', '\u202f')
+        return (
+            f"Montant supérieur au budget de la catégorie « {categorie.nom} » pour {annee.libelle} : "
+            f"{prevu} FCFA prévus."
+        )
+    return None
+
+
 @login_required
 def depense_form(request, pk=None):
     _require_finance_role(request, FINANCE_WRITE_ROLES)
@@ -202,6 +229,9 @@ def depense_form(request, pk=None):
         if not error:
             categorie = get_object_or_404(CategorieDepense, pk=cat_id, etablissement=etab)
             annee = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
+            error = _erreur_depassement_budget(montant, categorie, annee)
+
+        if not error:
             if instance:
                 instance.libelle = libelle
                 instance.montant = montant
@@ -237,6 +267,7 @@ def depense_form(request, pk=None):
         'modes': ModePaiement.choices,
         'error': error,
         'today': _date.today().isoformat(),
+        'budgets_json': json.dumps(_budgets_par_annee(annees, categories)),
     })
 
 

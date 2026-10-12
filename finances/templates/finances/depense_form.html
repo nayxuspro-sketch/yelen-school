@@ -25,7 +25,7 @@
 
   <div class="card animate-fade-up delay-1">
     <div class="card-body">
-      <form method="post">
+      <form method="post" id="depense-form" data-budgets="{{ budgets_json }}">
         {% csrf_token %}
 
         <div class="form-grid-2">
@@ -38,7 +38,7 @@
 
           <div class="form-group">
             <label class="input-label required">Catégorie</label>
-            <select name="categorie" class="input select" required>
+            <select name="categorie" id="id_categorie" class="input select" required>
               <option value="">— Choisir —</option>
               {% for cat in categories %}
               <option value="{{ cat.pk }}"
@@ -55,7 +55,7 @@
 
           <div class="form-group">
             <label class="input-label required">Année scolaire</label>
-            <select name="annee_scolaire" class="input select" required>
+            <select name="annee_scolaire" id="id_annee_scolaire" class="input select" required>
               {% for a in annees %}
               <option value="{{ a.pk }}"
                 {% if instance and instance.annee_scolaire_id == a.pk %}selected
@@ -68,9 +68,10 @@
 
           <div class="form-group">
             <label class="input-label required">Montant (FCFA)</label>
-            <input type="number" name="montant" min="1" step="1"
+            <input type="number" name="montant" id="id_montant" min="1" step="1"
                    value="{{ instance.montant|floatformat:0|default:'' }}"
                    class="input" placeholder="Ex : 150000" required>
+            <p class="input-error" id="montant-erreur" hidden></p>
           </div>
 
           <div class="form-group">
@@ -121,4 +122,54 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ request.csp_nonce }}">
+(function () {
+  'use strict';
+  /* Contrôle budgétaire : un montant supérieur au budget prévu de la catégorie (année sélectionnée)
+     affiche le message sous le champ et grise les autres champs ainsi que le bouton Enregistrer.
+     La même règle est appliquée côté serveur (_erreur_depassement_budget). */
+  var form = document.getElementById('depense-form');
+  if (!form) return;
+  var budgets = JSON.parse(form.getAttribute('data-budgets') || '{}');
+  var montant = document.getElementById('id_montant');
+  var categorie = document.getElementById('id_categorie');
+  var annee = document.getElementById('id_annee_scolaire');
+  var erreur = document.getElementById('montant-erreur');
+  var autres = Array.prototype.filter.call(
+    form.querySelectorAll('input, select, textarea, button'),
+    function (el) { return el !== montant && el.type !== 'hidden'; }
+  );
+
+  function libelle(select) {
+    var option = select.options[select.selectedIndex];
+    return option ? option.text.trim() : '';
+  }
+
+  function controler() {
+    var valeur = parseFloat(montant.value);
+    var message = '';
+    if (valeur > 0 && categorie.value && annee.value) {
+      var plafond = Number((budgets[annee.value] || {})[categorie.value] || 0);
+      var nomCategorie = libelle(categorie).replace(/\s*\([^)]*\)$/, '');
+      if (plafond <= 0) {
+        message = 'Aucun budget défini pour la catégorie « ' + nomCategorie + ' » (' + libelle(annee) + ').';
+      } else if (valeur > plafond) {
+        message = 'Montant supérieur au budget de la catégorie « ' + nomCategorie + ' » pour ' + libelle(annee) +
+          ' : ' + plafond.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' FCFA prévus.';
+      }
+    }
+    erreur.textContent = message;
+    erreur.hidden = !message;
+    autres.forEach(function (el) { el.disabled = Boolean(message); });
+  }
+
+  montant.addEventListener('input', controler);
+  categorie.addEventListener('change', controler);
+  annee.addEventListener('change', controler);
+  controler();
+})();
+</script>
 {% endblock %}

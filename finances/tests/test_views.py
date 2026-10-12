@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 from django.urls import reverse
+from django.utils.html import escape
 from model_bakery import baker
 
 
@@ -454,8 +455,9 @@ class TestDepenseForm:
         etab = baker.make('etablissements.Etablissement')
         user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab)
         client.force_login(user)
-        annee = baker.make('parametres.AnneeScolaire', est_courante=True, etablissement=etab)
-        categorie = baker.make('finances.CategorieDepense', etablissement=etab, actif=True)
+        annee = baker.make('parametres.AnneeScolaire', est_courante=True, etablissement=etab, libelle='2026-2027')
+        categorie = baker.make('finances.CategorieDepense', etablissement=etab, actif=True, nom='Fournitures')
+        baker.make('finances.BudgetAnnuel', annee_scolaire=annee, categorie=categorie, montant_prevu=Decimal('250000'))
         return {
             'libelle': 'Achat de craies', 'montant': '15000', 'categorie': str(categorie.pk),
             'annee_scolaire': str(annee.pk), 'date_depense': '2026-10-12', 'mode_paiement': 'ESPECES',
@@ -485,3 +487,30 @@ class TestDepenseForm:
         assert reponse.status_code == 302
         depense = Depense.objects.get()
         assert (depense.beneficiaire, depense.reference) == ('Librairie Centrale', 'FAC-2026-017')
+
+    def test_budgets_transmis_au_navigateur(self, contexte, client):
+        """Le formulaire embarque {annee: {categorie: montant prévu}} pour le contrôle côté client."""
+        html = client.get(reverse('finances:depense_create')).content.decode()
+        attendu = f'"{contexte["annee_scolaire"]}": {{"{contexte["categorie"]}": 250000.0}}'
+        assert escape(attendu) in html
+        assert 'id="montant-erreur"' in html and '<script nonce="' in html
+
+    def test_refus_montant_superieur_au_budget(self, contexte, client):
+        from finances.models import Depense
+        reponse = client.post(reverse('finances:depense_create'), {**contexte, 'montant': '250001'})
+        assert reponse.status_code == 200
+        assert 'Montant supérieur au budget de la catégorie « Fournitures » pour 2026-2027 : 250\u202f000 FCFA prévus.' in reponse.content.decode()
+        assert Depense.objects.count() == 0
+
+    def test_montant_egal_au_budget_accepte(self, contexte, client):
+        from finances.models import Depense
+        assert client.post(reverse('finances:depense_create'), {**contexte, 'montant': '250000'}).status_code == 302
+        assert Depense.objects.count() == 1
+
+    def test_refus_sans_budget_defini(self, contexte, client):
+        from finances.models import BudgetAnnuel, Depense
+        BudgetAnnuel.objects.update(montant_prevu=0)
+        reponse = client.post(reverse('finances:depense_create'), contexte)
+        assert reponse.status_code == 200
+        assert 'Aucun budget défini pour la catégorie « Fournitures » (2026-2027).' in reponse.content.decode()
+        assert Depense.objects.count() == 0

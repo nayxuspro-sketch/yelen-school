@@ -1277,6 +1277,14 @@ button {
   color: white;
 }
 
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  filter: grayscale(0.6);
+}
+
 .btn-secondary {
   background: transparent;
   color: var(--color-text-secondary);
