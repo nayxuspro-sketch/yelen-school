@@ -142,12 +142,6 @@ urlpatterns = [
     path('localisations/<uuid:pk>/edit/', views.localisation_form, name='localisation_edit'),
     path('localisations/<uuid:pk>/delete/', views.localisation_delete, name='localisation_delete'),
 
-    # Co-signataires (à implémenter)
-    # path('signataires/<uuid:signataire_pk>/cosignataires/', views.cosignataire_list, name='cosignataire_list'),
-    # path('signataires/<uuid:signataire_pk>/cosignataires/create/', views.cosignataire_form, name='cosignataire_create'),
-    # path('signataires/<uuid:signataire_pk>/cosignataires/<uuid:pk>/edit/', views.cosignataire_form, name='cosignataire_edit'),
-    # path('cosignataires/<uuid:pk>/delete/', views.cosignataire_delete, name='cosignataire_delete'),
-
     # SMS automatiques
     path('sms-auto/', views.sms_auto_config, name='sms_auto_config'),
     path('sms-auto/<uuid:pk>/toggle/', views.sms_auto_toggle, name='sms_auto_toggle'),

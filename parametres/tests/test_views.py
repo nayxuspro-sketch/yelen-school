@@ -25,6 +25,20 @@ class TestParametresViews:
         html = response.content.decode()
         assert 'hx-on:' not in html and "tab.addEventListener('htmx:afterRequest'" in html
 
+    def test_signataires_list_detail_avec_signataire_configure(self, logged_in_client):
+        """Le détail d'un cycle se rend quand un signataire est configuré (le bouton Co-sign. visait des routes supprimées)."""
+        etab = baker.make('etablissements.Etablissement')
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        cycle = baker.make('parametres.Cycle', etablissement=etab)
+        type_document = baker.make('parametres.TypeDocument', cycle=cycle, actif=True)
+        baker.make('parametres.SignataireDocument', cycle=cycle, annee_scolaire=annee, type_document=type_document)
+
+        response = logged_in_client.get(reverse('parametres:signataires_list_detail', kwargs={'cycle_id': cycle.pk}))
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert 'Modifier' in html and 'cosignataire' not in html
+
     def test_cycle_list_htmx_response_refreshes_tree(self, client):
         etablissement = baker.make(
             Etablissement,

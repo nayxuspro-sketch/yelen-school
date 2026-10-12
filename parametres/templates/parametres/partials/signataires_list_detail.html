@@ -42,14 +42,6 @@
                                 hx-target="#modal-content">
                             {% if doc.signataire %}Modifier{% else %}Configurer{% endif %}
                         </button>
-                        {% if doc.signataire %}
-                        <button class="btn-secondary btn-sm" title="Gérer les co-signataires"
-                                hx-get="{% url 'parametres:cosignataire_list' doc.signataire.pk %}"
-                                hx-target="#modal-content"
-                                hx-swap="innerHTML">
-                            Co-sign.
-                        </button>
-                        {% endif %}
                     </div>
                 </td>
             </tr>
