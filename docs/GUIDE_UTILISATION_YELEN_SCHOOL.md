@@ -3441,6 +3441,33 @@ existants ; chaque sauvegarde officielle ré-signe automatiquement en v2.
 > production (voir `.env.example` et `.env.autonome.example`). En mode
 > démonstration sans licence, laisser `false`.
 
+**Check-list avant d'activer le contrôle (`false` → `true`) :** le contrôle
+s'applique à **tous** les comptes, super-administrateur et `/admin/` compris ;
+seules les pages de connexion et `/licences/…` restent accessibles. Vérifier
+donc, contrôle encore désactivé (commandes à lancer dans le conteneur `web`,
+ou directement avec `python manage.py …` en mode autonome) :
+
+1. `python manage.py check_licences` → la licence de l'établissement doit
+   apparaître **valide** (signature et date). Une signature invalide
+   (base restaurée avec une autre `SECRET_KEY`, par exemple) se corrige par
+   une sauvegarde officielle de la licence (`licence.save()`), qui ré-signe.
+2. Aucun compte actif sans établissement, sinon il serait renvoyé en boucle
+   vers `/accounts/profile/` :
+   `python manage.py shell -c "from accounts.models import User; print(list(User.objects.filter(is_active=True, etablissement__isnull=True).values_list('email', flat=True)))"`
+   → la liste doit être vide (sinon rattacher ces comptes à l'établissement).
+3. Passer `LICENSE_ENFORCEMENT=true` dans `.env`, redémarrer le service
+   `web`, se connecter : l'accueil et `Licences → Mon abonnement` doivent
+   s'afficher normalement. Au-delà de la limite d'élèves du niveau de licence,
+   l'application n'est **pas** bloquée : un avertissement s'affiche en haut
+   de page, actualisé toutes les heures.
+4. Retour arrière : remettre `LICENSE_ENFORCEMENT=false` et redémarrer `web`.
+
+Le message de démarrage « ANTI-TAMPER … fallback SECRET_KEY seul » signale
+simplement qu'aucune clé `LICENCE_SIGNING_KEY` / `LICENCE_PUBLIC_KEY` dédiée
+n'est configurée : la signature s'appuie alors sur `SECRET_KEY`. Pour ajouter
+une clé dédiée plus tard : contrôle désactivé, renseigner la clé dans `.env`,
+redémarrer, ré-signer la licence (`licence.save()`), puis réactiver le contrôle.
+
 
 **Verrouillage matériel anti-copie (Hardware Machine Binding) :**
 
