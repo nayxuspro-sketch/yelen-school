@@ -234,13 +234,12 @@
     <div class="entete-type">
       {% if identite %}{{ identite.get_type_etablissement_display }}{% else %}Établissement scolaire{% endif %}
     </div>
-    <div class="entete-contact">
-      {% if identite %}
-        {% if identite.adresse %}{{ identite.adresse }}{% endif %}
-        {% if identite.telephone %} · Tél. : {{ identite.telephone }}{% endif %}
-        {% if identite.email %} · {{ identite.email }}{% endif %}
-      {% endif %}
-    </div>
+    {% if identite %}
+    <div class="entete-contact">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
+    {% if identite.telephone or identite.email %}
+    <div class="entete-contact">{% if identite.telephone %}Tél. : {{ identite.telephone }}{% endif %}{% if identite.telephone and identite.email %} · {% endif %}{{ identite.email|default:"" }}</div>
+    {% endif %}
+    {% endif %}
   </div>
 </div>
 

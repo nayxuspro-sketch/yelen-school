@@ -111,9 +111,10 @@
     {% if etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo">{% endif %}
   </div>
   <div class="header-text">
-    <div class="header-etab">{% if identite %}{{ identite.nom_complet|default:identite.nom }}{% elif etablissement %}{{ etablissement.nom }}{% else %}YELEN SCHOOL{% endif %}</div>
+    <div class="header-etab">{% if identite %}{{ identite.nom_etablissement }}{% elif etablissement %}{{ etablissement.nom }}{% else %}YELEN SCHOOL{% endif %}</div>
     {% if identite %}
-    <div class="header-sub">{{ identite.adresse|default:"" }}{% if identite.telephone %} — Tél. {{ identite.telephone }}{% endif %}</div>
+    <div class="header-sub">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
+    {% if identite.telephone %}<div class="header-sub">Tél. : {{ identite.telephone }}</div>{% endif %}
     {% endif %}
   </div>
   <div class="header-right">

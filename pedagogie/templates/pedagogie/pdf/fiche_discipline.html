@@ -213,13 +213,12 @@ tfoot td.tf-low { color: #000; font-style: italic; }
     <div class="hdr-school">
       {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}
     </div>
-    <div class="hdr-meta">
-      {% if identite %}
-        {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
-        {% if identite.telephone %} &nbsp;&middot;&nbsp; Tél : {{ identite.telephone }}{% endif %}
-        {% if identite.email %} &nbsp;&middot;&nbsp; {{ identite.email }}{% endif %}
-      {% endif %}
-    </div>
+    {% if identite %}
+    <div class="hdr-meta">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
+    {% if identite.telephone or identite.email %}
+    <div class="hdr-meta">{% if identite.telephone %}Tél : {{ identite.telephone }}{% endif %}{% if identite.telephone and identite.email %} &nbsp;&middot;&nbsp; {% endif %}{{ identite.email|default:"" }}</div>
+    {% endif %}
+    {% endif %}
   </div>
   <div class="hdr-right">
     {% if logo_url %}<img src="{{ logo_url }}" alt="Logo">

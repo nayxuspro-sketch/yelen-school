@@ -154,8 +154,9 @@
   <div class="entete-info">
     {% if identite %}
       <div class="pays">{{ identite.pays|default:"Burkina Faso" }}</div>
-      <div class="nom">{{ identite.nom }}</div>
-      <div class="ville">{{ identite.ville }}{% if identite.telephone %} · Tél. {{ identite.telephone }}{% endif %}</div>
+      <div class="nom">{{ identite.nom_etablissement }}</div>
+      <div class="ville">{{ identite.ville }}</div>
+      {% if identite.telephone %}<div class="ville">Tél. : {{ identite.telephone }}</div>{% endif %}
     {% else %}
       <div class="nom">Établissement</div>
     {% endif %}

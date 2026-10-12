@@ -84,11 +84,8 @@
                 <p class="pdf-etab-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>
                 {% endif %}
                 {% if identite %}
-                <p class="pdf-etab-info">
-                    {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
-                    {% if identite.ville %}, {{ identite.ville }}{% endif %}
-                    {% if identite.telephone %} — Tél : {{ identite.telephone }}{% endif %}
-                </p>
+                <p class="pdf-etab-info">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</p>
+                {% if identite.telephone %}<p class="pdf-etab-info">Tél : {{ identite.telephone }}</p>{% endif %}
                 {% endif %}
             </div>
         </div>

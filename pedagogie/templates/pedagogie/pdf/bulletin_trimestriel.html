@@ -259,11 +259,8 @@ html, body {
     <div>
         <div class="bul-school-name">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</div>
         {% if identite.devise %}<div class="bul-school-sub">{{ identite.devise }}</div>{% endif %}
-        <div class="bul-school-sub">
-            {% if identite.telephone %}Tél : {{ identite.telephone }}{% endif %}
-            {% if identite.telephone and identite.adresse_complete %} · {% endif %}
-            {% if identite.adresse_complete %}{{ identite.adresse_complete }}{% endif %}
-        </div>
+        {% if identite.adresse_complete %}<div class="bul-school-sub">{{ identite.adresse_complete }}</div>{% endif %}
+        {% if identite.telephone %}<div class="bul-school-sub">Tél : {{ identite.telephone }}</div>{% endif %}
     </div>
 </div>
 

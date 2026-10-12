@@ -212,10 +212,8 @@
     <div class="header-center">
       {% if identite %}
       <div class="etab-nom">{{ identite.nom_etablissement }}</div>
-      <div class="etab-info">
-        {% if identite.adresse %}{{ identite.adresse }}{% endif %}
-        {% if identite.telephone %} — Tél: {{ identite.telephone }}{% endif %}
-      </div>
+      <div class="etab-info">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
+      {% if identite.telephone %}<div class="etab-info">Tél : {{ identite.telephone }}</div>{% endif %}
       {% endif %}
     </div>
     <div class="header-right"></div>
