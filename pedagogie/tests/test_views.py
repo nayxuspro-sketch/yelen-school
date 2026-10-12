@@ -1,5 +1,7 @@
-import pytest
+import re
 from decimal import Decimal
+
+import pytest
 from django.urls import reverse
 from model_bakery import baker
 from pedagogie.models import Matiere, Note
@@ -100,3 +102,31 @@ def test_competences_saisie_affiche_la_grille(client):
 
     assert response.status_code == 200
     assert f'"inscription": "{inscription.pk}", "competence": "{competence.pk}"' in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_evaluation_saisie_affiche_les_notes_existantes_non_localisees(client):
+    """Les notes (Decimal) étaient rendues « 12,50 » dans des <input type="number"> : le navigateur
+    rejetait la valeur et toute note déjà saisie apparaissait vide à la réouverture."""
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, role='SUPER_ADMIN'))
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
+    ens = baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe)
+    evaluation = baker.make('pedagogie.Evaluation', enseignement=ens, bareme=Decimal('20.00'))
+    notee, zero, absent = baker.make('inscriptions.Inscription', annee_scolaire=annee, classe=classe, _quantity=3)
+    baker.make('pedagogie.Note', inscription=notee, evaluation=evaluation, valeur=Decimal('12.50'))
+    baker.make('pedagogie.Note', inscription=zero, evaluation=evaluation, valeur=Decimal('0.00'))
+    baker.make('pedagogie.Note', inscription=absent, evaluation=evaluation, valeur=Decimal('0.00'), observation='ABS')
+
+    html = client.get(reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk})).content.decode()
+
+    def valeur(prefixe, inscription):
+        return re.search(rf'id="{prefixe}-{inscription.pk}"[^>]*\bvalue="([^"]*)"', html).group(1)
+
+    for prefixe in ('note', 'mnote'):
+        assert valeur(prefixe, notee) == '12.50'
+        assert valeur(prefixe, zero) == '0'
+        assert valeur(prefixe, absent) == ''
+    assert set(re.findall(r'\bmax="([^"]*)"', html)) == {'20'}
+    assert 'parseFloat("20")' in html

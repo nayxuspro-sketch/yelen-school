@@ -42,7 +42,7 @@
             <td>
               <input type="number"
                      name="moyenne_{{ candidat.pk }}"
-                     value="{{ candidat.moyenne_examen|default:'' }}"
+                     value="{{ candidat.moyenne_examen|floatformat:"-2u" }}"
                      step="0.01" min="0" max="20"
                      class="input"
                      style="width:80px; text-align:center;">

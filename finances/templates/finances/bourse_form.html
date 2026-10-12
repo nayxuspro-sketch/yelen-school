@@ -66,7 +66,7 @@
         </label>
         <input type="number" id="montant_accorde" name="montant_accorde" class="input"
                min="1" step="1" required
-               value="{{ bourse.montant_accorde|default:'' }}"
+               value="{{ bourse.montant_accorde|floatformat:"-2u" }}"
                placeholder="Ex : 25 000">
         <p class="input-hint">Calculé automatiquement selon le type ; modifiable si besoin.</p>
       </div>

@@ -1,5 +1,6 @@
 import json
 import re
+from decimal import Decimal
 
 import pytest
 from django.urls import reverse
@@ -357,3 +358,15 @@ class TestFormulairesBoursesCSP:
         self._verifier_csp(html)
         assert f'<option value="{type_bourse.pk}"' in html
         assert "sel.addEventListener('change', calculerMontant)" in html
+
+    def test_bourse_edit_affiche_le_montant_non_localise(self, client_finance):
+        bourse = baker.make('finances.BourseEleve', montant_accorde=Decimal('25000.00'))
+        html = client_finance.get(reverse('finances:bourse_edit', kwargs={'bourse_id': bourse.pk})).content.decode()
+        assert re.search(r'id="montant_accorde"[^>]*\bvalue="25000"', html)
+
+    def test_type_bourse_edit_affiche_la_valeur_non_localisee(self, client):
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, role='SUPER_ADMIN'))
+        type_bourse = baker.make('finances.TypeBourse', etablissement=etab, valeur_reduction=Decimal('12.50'))
+        html = client.get(reverse('finances:type_bourse_edit', kwargs={'type_id': type_bourse.pk})).content.decode()
+        assert re.search(r'id="valeur_reduction"[^>]*\bvalue="12\.50"', html)

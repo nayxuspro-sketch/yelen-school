@@ -76,7 +76,7 @@
 
 <form method="post" id="form-saisie">
   {% csrf_token %}
-  <input type="hidden" name="bareme" value="{{ evaluation.bareme }}">
+  <input type="hidden" name="bareme" value="{{ evaluation.bareme|floatformat:"-2u" }}">
 
   {# ════════ DESKTOP (≥ 768px) ════════ #}
   <div class="note-table-card animate-fade-up delay-2 ns-desktop">
@@ -109,9 +109,9 @@
                      class="dash-input note-input note-input-num"
                      name="note_{{ item.inscription.id }}"
                      id="note-{{ item.inscription.pk }}"
-                     step="0.25" min="0" max="{{ evaluation.bareme }}"
+                     step="0.25" min="0" max="{{ evaluation.bareme|floatformat:"-2u" }}"
                      inputmode="decimal"
-                     value="{{ item.note.valeur|default:'' }}"
+                     value="{% if not item.est_absent %}{{ item.note.valeur|floatformat:"-2u" }}{% endif %}"
                      placeholder="—"
                      data-row="{{ item.inscription.pk }}"
                      {% if item.est_dispense %}disabled{% endif %}>
@@ -174,9 +174,9 @@
                  class="dash-input note-input note-input-num note-input-mobile"
                  name="note_{{ item.inscription.id }}"
                  id="mnote-{{ item.inscription.pk }}"
-                 step="0.25" min="0" max="{{ evaluation.bareme }}"
+                 step="0.25" min="0" max="{{ evaluation.bareme|floatformat:"-2u" }}"
                  inputmode="decimal"
-                 value="{{ item.note.valeur|default:'' }}"
+                 value="{% if not item.est_absent %}{{ item.note.valeur|floatformat:"-2u" }}{% endif %}"
                  placeholder="—"
                  data-row="{{ item.inscription.pk }}"
                  {% if item.est_dispense %}disabled{% endif %}>
@@ -258,7 +258,7 @@
 {% block extra_js %}
 <script nonce="{{ request.csp_nonce }}">
 (function () {
-  const bareme = parseFloat("{{ evaluation.bareme }}");
+  const bareme = parseFloat("{{ evaluation.bareme|floatformat:"-2u" }}");
 
   function mobileRowId(pk) {
     return document.getElementById('mrow-' + pk);
