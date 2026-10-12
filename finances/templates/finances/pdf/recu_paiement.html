@@ -4,13 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <style>
+        /* Reçu A5 paysage (210 × 148 mm) : tout le contenu tient sur une page. */
         @page {
-            size: A4 portrait;
-            margin: 10mm 12mm;
+            size: A5 landscape;
+            margin: 7mm 9mm;
         }
         body {
             font-family: "DejaVu Sans", sans-serif;
-            font-size: 9pt;
+            font-size: 8.5pt;
             color: #111;
             margin: 0;
             padding: 0;
@@ -21,82 +22,84 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding-bottom: 8px;
-            border-bottom: 2.5px solid #111;
-            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #111;
+            margin-bottom: 6px;
         }
-        .header-left { display: flex; align-items: center; gap: 10px; }
-        .pdf-logo { width: 48px; height: 48px; object-fit: contain; filter: grayscale(100%); }
-        .etab-nom  { font-size: 13pt; font-weight: bold; color: #111; margin: 0 0 2px; }
-        .etab-agrement { font-size: 7.5pt; color: #444; font-style: italic; margin: 1px 0; }
-        .etab-info { font-size: 7.5pt; color: #444; margin: 1px 0; }
+        .header-left { display: flex; align-items: center; gap: 8px; }
+        .pdf-logo { width: 38px; height: 38px; object-fit: contain; filter: grayscale(100%); }
+        .etab-nom  { font-size: 12pt; font-weight: bold; color: #111; margin: 0 0 1px; }
+        .etab-agrement { font-size: 7pt; color: #444; font-style: italic; margin: 1px 0; }
+        .etab-info { font-size: 7pt; color: #444; margin: 1px 0; }
         .header-right { text-align: right; }
         .doc-badge {
             background: #fff;
             border: 1.5px solid #111;
-            padding: 4px 12px;
+            padding: 3px 10px;
             border-radius: 4px;
             display: inline-block;
         }
-        .doc-badge h2 { margin: 0; font-size: 11pt; text-transform: uppercase; letter-spacing: .5px; color: #111; }
-        .doc-meta { font-size: 7pt; color: #555; margin-top: 4px; line-height: 1.5; }
+        .doc-badge h2 { margin: 0; font-size: 10pt; text-transform: uppercase; letter-spacing: .5px; color: #111; }
+        .doc-meta { font-size: 6.5pt; color: #555; margin-top: 3px; line-height: 1.4; }
 
         /* ─── Infos élève ─── */
         .eleve-section {
             display: flex;
             gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             background: #f8f8f8;
             border: 1px solid #ccc;
             border-radius: 4px;
-            padding: 8px 10px;
+            padding: 4px 8px;
         }
-        .eleve-cols { flex: 1; display: flex; gap: 16px; }
+        .eleve-cols { flex: 1; display: flex; gap: 12px; }
         .eleve-col  { flex: 1; }
-        .lbl { font-size: 7pt; color: #555; text-transform: uppercase; margin-bottom: 1px; }
+        .eleve-col:first-child { flex: 1.8; }
+        .lbl { font-size: 6.5pt; color: #555; text-transform: uppercase; margin-bottom: 1px; }
         .val {
-            font-size: 9.5pt; font-weight: bold;
-            border-bottom: 1px dashed #bbb; padding-bottom: 2px; margin-bottom: 6px;
+            font-size: 9pt; font-weight: bold;
+            border-bottom: 1px dashed #bbb; padding-bottom: 1px; margin-bottom: 4px;
             color: #111;
         }
         .val.mono { font-family: monospace; color: #111; }
         .qr-zone { text-align: center; border-left: 1px dashed #ccc; padding-left: 8px; }
-        .qr-zone small { font-size: 6pt; color: #888; display: block; margin-top: 2px; }
+        .qr-zone img { width: 17mm; height: 17mm; margin: 0 auto; }
+        .qr-zone small { font-size: 6pt; color: #888; display: block; margin-top: 1px; }
 
         /* ─── Résumé 3 blocs ─── */
         .resume {
             display: flex;
             gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
         .r-box {
             flex: 1; text-align: center;
-            padding: 7px 6px; border-radius: 4px;
+            padding: 4px 6px; border-radius: 4px;
             border: 1pt solid #bbb;
         }
         /* Hiérarchie par bordure gauche : du (neutre) · paye (fort) · reste (grisé) */
         .r-box.du    { background: #fff;  border-left: 2pt solid #555; }
         .r-box.paye  { background: #fff;  border-left: 3.5pt solid #111; }
         .r-box.reste { background: #ebebeb; border-left: 2pt solid #555; }
-        .r-lbl { font-size: 7pt; text-transform: uppercase; color: #555; margin-bottom: 3px; }
-        .r-val { font-size: 13pt; font-weight: bold; line-height: 1; color: #111; }
-        .r-box.paye .r-val { font-size: 14pt; }
-        .r-val span { font-size: 8pt; font-weight: normal; }
+        .r-lbl { font-size: 6.5pt; text-transform: uppercase; color: #555; margin-bottom: 2px; }
+        .r-val { font-size: 11.5pt; font-weight: bold; line-height: 1; color: #111; }
+        .r-box.paye .r-val { font-size: 12.5pt; }
+        .r-val span { font-size: 7.5pt; font-weight: normal; }
 
         /* ─── Tableau rubriques ─── */
         table { width: 100%; border-collapse: collapse; }
         th {
             background: #111; color: #fff;
-            padding: 5px 8px; font-size: 8pt; text-transform: uppercase;
+            padding: 3px 6px; font-size: 7.5pt; text-transform: uppercase;
         }
         th.r { text-align: right; }
         th.c { text-align: center; }
-        td { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; font-size: 8.5pt; vertical-align: middle; }
+        td { padding: 1px 6px; border-bottom: 1px solid #e0e0e0; font-size: 8pt; vertical-align: middle; }
         td.r { text-align: right; font-weight: bold; }
         td.c { text-align: center; }
         tr:nth-child(even) { background: #f4f4f4; }
         .total-row td {
-            font-weight: bold; font-size: 9pt;
+            font-weight: bold; font-size: 8.5pt;
             border-top: 2px solid #111;
             border-bottom: 2px solid #111;
             background: #fff;
@@ -105,30 +108,32 @@
         .badge-ok {
             background: #fff; color: #111;
             border: 1px solid #555; border-radius: 8px;
-            padding: 1px 7px; font-size: 7.5pt; font-weight: bold;
+            padding: 0 6px; font-size: 7pt; font-weight: bold;
         }
         .badge-reste {
             background: #ddd; color: #111;
             border: 1px solid #888; border-radius: 8px;
-            padding: 1px 7px; font-size: 7.5pt; font-style: italic;
+            padding: 0 6px; font-size: 7pt; font-style: italic;
         }
-        .empty { text-align: center; color: #777; font-style: italic; padding: 14px; }
+        .empty { text-align: center; color: #777; font-style: italic; padding: 8px; }
 
         /* ─── Pied de page ─── */
         .footer {
-            margin-top: 12px;
+            margin-top: 6px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding-top: 8px;
+            padding-top: 4px;
             border-top: 1px solid #ccc;
         }
-        .footer-info { font-size: 7.5pt; color: #666; line-height: 1.6; }
-        .sig-zone { text-align: center; }
-        .sig-line {
-            margin-top: 22px; border-top: 1px solid #444;
-            padding-top: 3px; font-size: 8pt; color: #444;
-        }
+        .footer-info { font-size: 7pt; color: #666; line-height: 1.5; }
+        /* Bloc signataire compacté pour le format A5 (prime sur les styles injectés par signataire_auto). */
+        .footer .sig-zone { margin-top: 0; text-align: right; }
+        .footer .msig-zone { margin-top: 0; }
+        .footer .msig-date { font-size: 8pt; margin-bottom: 2pt; }
+        .footer .msig-fonction { font-size: 8pt; }
+        .footer .msig-name { font-size: 9pt; margin-top: 7mm; }
+        .footer .msig-honors { font-size: 7pt; }
     </style>
 </head>
 <body>
@@ -142,8 +147,7 @@
             <p class="etab-nom">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</p>
             {% if identite and identite.numero_agrement_mena %}
             <p class="etab-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>{% endif %}
-            <p class="etab-info">{% if identite %}{{ identite.adresse_complete|default:etablissement.adresse|default:"Burkina Faso" }}{% else %}{{ etablissement.adresse|default:"Burkina Faso" }}{% endif %}</p>
-            <p class="etab-info">{% if identite %}Tél : {{ identite.telephone }}{% else %}Tél : {{ etablissement.telephone|default:"—" }}{% endif %}</p>
+            <p class="etab-info">{% if identite %}{{ identite.adresse_complete|default:etablissement.adresse|default:"Burkina Faso" }} · Tél : {{ identite.telephone }}{% else %}{{ etablissement.adresse|default:"Burkina Faso" }} · Tél : {{ etablissement.telephone|default:"—" }}{% endif %}</p>
         </div>
     </div>
     <div class="header-right">
@@ -171,9 +175,6 @@
             <div class="val">{{ inscription.classe.nom }}</div>
             <div class="lbl">Année scolaire</div>
             <div class="val">{{ inscription.annee_scolaire.libelle }}</div>
-            {% if paiement.statut_eleve %}
-            <div class="lbl">Statut</div>
-            <div class="val">{{ paiement.statut_eleve.nom }}</div>{% endif %}
         </div>
         <div class="eleve-col">
             <div class="lbl">Mode de paiement</div>
@@ -181,6 +182,11 @@
             <div class="lbl">Date du versement</div>
             <div class="val">{{ paiement.date_paiement|date:"d/m/Y" }}</div>
         </div>
+        {% if paiement.statut_eleve %}
+        <div class="eleve-col">
+            <div class="lbl">Statut</div>
+            <div class="val">{{ paiement.statut_eleve.nom }}</div>
+        </div>{% endif %}
     </div>
     <div class="qr-zone">
         {% qr_eleve inscription.eleve.matricule inscription.eleve.nom inscription.eleve.prenom etab_nom 'grand' adresse=identite.adresse ville=identite.ville telephone=identite.telephone %}
@@ -193,15 +199,15 @@
 <div class="resume">
     <div class="r-box du">
         <div class="r-lbl">Total Dû</div>
-        <div class="r-val">{{ total_du }} <span>FCFA</span></div>
+        <div class="r-val">{{ total_du|floatformat:0 }} <span>FCFA</span></div>
     </div>
     <div class="r-box paye">
         <div class="r-lbl">Total Versé</div>
-        <div class="r-val">{{ total_paye }} <span>FCFA</span></div>
+        <div class="r-val">{{ total_paye|floatformat:0 }} <span>FCFA</span></div>
     </div>
     <div class="r-box reste">
         <div class="r-lbl">Reste à Payer</div>
-        <div class="r-val">{{ reste_total }} <span>FCFA</span></div>
+        <div class="r-val">{{ reste_total|floatformat:0 }} <span>FCFA</span></div>
     </div>
 </div>
 
@@ -220,9 +226,9 @@
         {% for ligne in lignes_rubriques %}
         <tr>
             <td>{{ ligne.rubrique.nom|default:"Divers" }}</td>
-            <td class="r">{% if ligne.montant_du %}{{ ligne.montant_du }}{% else %}—{% endif %}</td>
-            <td class="r">{{ ligne.verse }}</td>
-            <td class="r">{% if ligne.reste %}{{ ligne.reste }}{% else %}0{% endif %}</td>
+            <td class="r">{% if ligne.montant_du %}{{ ligne.montant_du|floatformat:0 }}{% else %}—{% endif %}</td>
+            <td class="r">{{ ligne.verse|floatformat:0 }}</td>
+            <td class="r">{% if ligne.reste %}{{ ligne.reste|floatformat:0 }}{% else %}0{% endif %}</td>
             <td class="c">
                 {% if ligne.reste == 0 or not ligne.reste %}
                     <span class="badge-ok">✓ Soldé</span>
@@ -237,9 +243,9 @@
         {% if lignes_rubriques %}
         <tr class="total-row">
             <td>TOTAL</td>
-            <td class="r">{{ total_du }} FCFA</td>
-            <td class="r">{{ total_paye }} FCFA</td>
-            <td class="r">{{ reste_total }} FCFA</td>
+            <td class="r">{{ total_du|floatformat:0 }} FCFA</td>
+            <td class="r">{{ total_paye|floatformat:0 }} FCFA</td>
+            <td class="r">{{ reste_total|floatformat:0 }} FCFA</td>
             <td class="c">
                 {% if reste_total == 0 %}<span class="badge-ok">✓ Soldé</span>
                 {% else %}<span class="badge-reste">En cours</span>{% endif %}

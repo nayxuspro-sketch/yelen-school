@@ -369,3 +369,65 @@ class TestFormulairesBoursesCSP:
         type_bourse = baker.make('finances.TypeBourse', etablissement=etab, valeur_reduction=Decimal('12.50'))
         html = client.get(reverse('finances:type_bourse_edit', kwargs={'type_id': type_bourse.pk})).content.decode()
         assert re.search(r'id="valeur_reduction"[^>]*\bvalue="12\.50"', html)
+
+
+@pytest.mark.django_db
+class TestRecuPaiementPdf:
+    """Le reçu de paiement est un A5 paysage dont tout le contenu tient sur une
+    page, même chargé (9 rubriques tarifées, statut, référence, observation,
+    agrément, signataire avec titre honorifique)."""
+
+    def test_a5_paysage_une_page(self, client, mocker):
+        import core.pdf
+        from decimal import Decimal
+        from parametres.models import TypeDocument
+
+        documents = []
+
+        class HTMLEspion(core.pdf.HTML):
+            def write_pdf(self, target=None, **kwargs):
+                document = self.render()
+                documents.append(document)
+                return document.write_pdf(target, **kwargs)
+
+        mocker.patch('finances.views.paiements.WeasyHTML', HTMLEspion)
+
+        etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR')
+        baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='COMPLEXE SCOLAIRE LE SAVOIR',
+                   numero_agrement_mena='2019-0456/MENAPLN/SG/DGESS', adresse_complete='Secteur 15, Ouaga 2000, Ouagadougou',
+                   ville='Ouagadougou', telephone='+226 25 36 47 58')
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab)
+        client.force_login(user)
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True, libelle='2026-2027')
+        cycle = baker.make('parametres.Cycle', etablissement=etab)
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, niveau='TLE', nom='Terminale D')
+        statut = baker.make('parametres.StatutEleve', etablissement=etab, nom='Non affecté')
+        rubriques = []
+        for i in range(9):
+            rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, actif=True, code=f'R{i}', ordre=i,
+                                  nom=f'Scolarité tranche {i + 1}')
+            baker.make('parametres.TarifScolarite', etablissement=etab, classe=classe, annee_scolaire=annee,
+                       statut_eleve=statut, rubrique=rubrique, montant=Decimal('25000'), actif=True)
+            rubriques.append(rubrique)
+        eleve = baker.make('inscriptions.Eleve', nom='OUEDRAOGO', prenom='Abdoul Rasmané', matricule='LS-2026-01457')
+        inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee, statut_eleve=statut)
+        for rubrique in rubriques[:2]:
+            baker.make('finances.Paiement', inscription=inscription, rubrique=rubrique, statut_eleve=statut, montant=Decimal('25000'))
+        paiement = baker.make('finances.Paiement', inscription=inscription, rubrique=rubriques[2], statut_eleve=statut,
+                              montant=Decimal('10000'), reference='MM-778812', numero_recu='REC-2026-003',
+                              observation='Versement partiel, solde attendu avant le 30/11/2026.')
+        type_doc, _ = TypeDocument.objects.get_or_create(code='RECU_PAIEMENT', defaults={'nom': 'Reçu de paiement', 'actif': True})
+        membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Salimata')
+        baker.make('parametres.SignataireDocument', cycle=cycle, type_document=type_doc, annee_scolaire=annee,
+                   membre_personnel_id=membre.id, fonction="L'Intendante",
+                   titres_honorifiques=["Chevalier de l'Ordre du Mérite"], actif=True)
+
+        response = client.get(reverse('finances:recu_pdf', args=[paiement.id]))
+
+        assert response.status_code == 200
+        assert response.content.startswith(b'%PDF')
+        assert len(documents) == 1
+        pages = documents[0].pages
+        assert len(pages) == 1
+        # A5 paysage : 210 × 148 mm, soit 793,7 × 559,4 px CSS (WeasyPrint)
+        assert round(pages[0].width) == 794 and round(pages[0].height) == 559

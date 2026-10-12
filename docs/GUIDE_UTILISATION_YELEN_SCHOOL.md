@@ -2220,7 +2220,7 @@ Sélectionne la période pour obtenir le rapport de tous les paiements :
 
 ### 9.6 Imprimer un Reçu de Paiement (PDF)
 
-**À quoi ça sert :** Génère un reçu officiel en PDF récapitulant toutes les rubriques payées pour l'inscription de l'élève. Optimisé pour l'impression en noir et blanc.
+**À quoi ça sert :** Génère un reçu officiel en PDF récapitulant toutes les rubriques payées pour l'inscription de l'élève. Format **A5 paysage**, tout le contenu sur une seule page (vérifié jusqu'à 9 rubriques tarifées) ; optimisé pour l'impression en noir et blanc.
 
 **Accès :** `Finances → [nom de l'élève] → Imprimer le reçu`
 
