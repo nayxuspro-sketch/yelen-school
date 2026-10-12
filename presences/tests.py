@@ -51,3 +51,21 @@ def test_appel_saisie_compteurs_sans_inline(client):
     assert f'id="s_{presence.pk}_PRESENT"' in html and 'data-csp-action="mark-all-present"' in html
     assert "document.getElementById('appel-form').addEventListener('change', updateCounts);" in html
     assert all('nonce="' in b for b in re.findall(r'<script(?![^>]*\ssrc=)[^>]*>', html))
+
+
+@pytest.mark.django_db
+def test_appel_print_boutons_imprimer_et_retour_operationnels(client):
+    """Page autonome : le bouton « Imprimer » (data-csp-action) exige csp_handlers.js ;
+    « Retour » ne doit pas reposer sur javascript: (bloqué par la CSP, et sans historique dans un nouvel onglet)."""
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab))
+    baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+
+    response = client.get(reverse('presences:appel_print') + '?date_debut=2026-01-05')
+
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert 'data-csp-action="print"' in html
+    assert re.search(r'<script nonce="[^"]+" src="/static/js/csp_handlers[^"]*\.js"></script>', html)
+    assert 'javascript:' not in html
+    assert f'href="{reverse("presences:appel_list")}?date_debut=2026-01-05"' in html

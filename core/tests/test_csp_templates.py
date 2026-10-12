@@ -24,6 +24,18 @@ def test_aucune_soumission_de_formulaire_dans_un_onchange_inline():
     assert fautifs == [], fautifs
 
 
+def test_page_autonome_utilisant_data_csp_charge_csp_handlers():
+    """Une page complète (hors base.html) qui s'appuie sur des attributs data-csp-* doit charger
+    csp_handlers.js, sinon ses boutons sont inertes (ex. « Imprimer » de la liste des appels)."""
+    fautifs = [
+        str(f.relative_to(RACINE))
+        for f in _gabarits()
+        for s in [f.read_text(encoding='utf-8')]
+        if '<!DOCTYPE' in s and 'data-csp-' in s and 'csp_handlers.js' not in s
+    ]
+    assert fautifs == [], fautifs
+
+
 def test_data_csp_submit_on_change_toujours_dans_un_formulaire():
     occurrences, hors_formulaire = 0, []
     for f in _gabarits():
