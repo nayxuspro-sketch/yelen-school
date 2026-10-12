@@ -18,7 +18,6 @@ En cas d'anomalie :
   - Si LICENCE_ANTITAMPER_ENABLED + LICENSE_ENFORCEMENT + strict → RuntimeError (arrêt app)
 """
 
-import hashlib
 import inspect
 import logging
 import os

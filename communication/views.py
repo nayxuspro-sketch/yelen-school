@@ -328,8 +328,7 @@ def webhook_incoming_sms(request):
     import hmac
     import json
     import re
-    from django.views.decorators.csrf import csrf_exempt
-    from django.http import JsonResponse, HttpResponse
+    from django.http import JsonResponse
     from django.conf import settings
     from django.core.cache import cache
     from django.utils.crypto import constant_time_compare

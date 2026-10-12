@@ -379,7 +379,6 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
 
 def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
     """Construit le contexte pour le bulletin annuel."""
-    from django.db.models import Max, Min, Avg
     from datetime import date as _date
     from parametres.models import TypeDocument, SignataireDocument
     from decimal import Decimal

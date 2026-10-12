@@ -12,10 +12,8 @@ Auteur: YELEN SCHOOL Team
 Date: Mars 2026
 """
 
-from datetime import timedelta
 from typing import Callable
 
-from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse

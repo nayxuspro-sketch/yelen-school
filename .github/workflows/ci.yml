@@ -53,6 +53,9 @@ jobs:
           sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-xlib-2.0-0
           pip install -r requirements/dev.txt
 
+      - name: Lint (ruff, règles pyflakes)
+        run: ruff check .
+
       - name: Run migrations + static manifest
         run: |
           python manage.py migrate --noinput

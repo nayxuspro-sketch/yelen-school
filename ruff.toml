@@ -1,0 +1,6 @@
+# Garde-fou statique (CI) : règles pyflakes uniquement — imports/variables inutilisés, noms indéfinis,
+# redéfinitions. Les ré-exports volontaires portent « # noqa: F401 ».
+extend-exclude = ["migrations", ".claude", "staticfiles"]
+
+[lint]
+select = ["F"]

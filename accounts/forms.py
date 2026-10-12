@@ -282,7 +282,7 @@ class ParentCreateForm(forms.ModelForm):
 
     def __init__(self, *args, etablissement=None, **kwargs):
         super().__init__(*args, **kwargs)
-        from inscriptions.models import Eleve, Inscription
+        from inscriptions.models import Eleve
         from parametres.models import AnneeScolaire
         
         annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()

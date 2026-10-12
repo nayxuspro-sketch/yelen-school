@@ -1,7 +1,5 @@
 from django import forms
-from django.utils.translation import gettext_lazy as _
-from .models import FraisScolarite, Paiement, ModePaiement, TypeFrais, Echeancier
-from inscriptions.models import Inscription
+from .models import FraisScolarite, Paiement, ModePaiement, Echeancier
 from parametres.models import RubriquePaiement
 
 class FraisScolariteForm(forms.ModelForm):

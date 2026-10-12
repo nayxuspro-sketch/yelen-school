@@ -24,9 +24,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.cache import cache_page
 
 from .models import Licence, FEATURE_FLAGS
 

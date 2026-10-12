@@ -109,7 +109,6 @@ def eleve_list_csv(request):
     """Export CSV de la liste des eleves (memes filtres qu'eleve_list)."""
     import csv
     from core.models import AuditLog
-    from django.utils import timezone
     
     # Vérification de rôle - seuls certains rôles peuvent exporter
     from core.models import RoleChoices

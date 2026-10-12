@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.conf import settings
 from django.db.models import Sum, Count, Q
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
@@ -496,7 +495,6 @@ def notification_marquer_lu(request, pk):
 def notifications_marquer_tout_lu(request):
     """Marque toutes les notifications comme lues."""
     from core.models import Notification
-    from django.views.decorators.http import require_POST
     Notification.objects.filter(destinataire=request.user, lu=False).update(lu=True)
     return redirect('core:notifications_list')
 
@@ -820,7 +818,7 @@ def sms_configuration(request):
                 for var in SMS_VARS:
                     if not found[var]:
                         if var == 'SMS_HTTP_URL' and not any(l.strip().startswith('#') and 'HTTP' in l for l in new_lines):
-                            new_lines.append(f'# Backend HTTP — app Android "SMS Gateway"')
+                            new_lines.append('# Backend HTTP — app Android "SMS Gateway"')
                         new_lines.append(f'{var}={form_values[var]}')
 
                 env_file.write_text('\n'.join(new_lines), encoding='utf-8')
@@ -862,7 +860,6 @@ def reunion_parents(request):
     if request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR', 'SECRETAIRE'):
         return HttpResponseForbidden("Accès non autorisé.")
 
-    from etablissements.models import Etablissement
     etab = getattr(request.user, 'etablissement', None)
 
     if request.method == 'POST':
@@ -875,7 +872,7 @@ def reunion_parents(request):
         if not (date and heure and lieu and objet):
             messages.error(request, "Veuillez remplir tous les champs obligatoires.")
         else:
-            from inscriptions.models import Eleve, Inscription
+            from inscriptions.models import Eleve
             from parametres.models import AnneeScolaire
 
             annee = AnneeScolaire.objects.filter(est_courante=True).first()

@@ -15,13 +15,11 @@ Date: Mars 2026
 """
 
 from datetime import timedelta
-from typing import List
 
 from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
-from django.db.models import Q, Count
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect, render
+from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -34,7 +32,6 @@ from .models import (
     LicenceAlert,
     TypeLicence,
     StatutLicence,
-    FEATURE_FLAGS,
     LIMITES_LICENCES,
 )
 
@@ -496,7 +493,6 @@ class LicenceAdmin(admin.ModelAdmin):
     def export_csv(self, request, queryset):
         """Exporte les licences en CSV."""
         import csv
-        from django.http import HttpResponse
         
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="licences_export.csv"'

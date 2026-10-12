@@ -1,9 +1,8 @@
 from datetime import date, timedelta
 
 from django import forms
-from django.utils import timezone
 
-from .models import Licence, TypeLicence, StatutLicence
+from .models import Licence
 
 
 class LicenceForm(forms.ModelForm):

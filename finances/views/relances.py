@@ -288,7 +288,6 @@ def relance_paiement_pdf(request):
 def relance_sms(request):
     """Envoie des SMS de relance paiement aux parents des élèves redevables."""
     _require_finance_role(request, FINANCE_WRITE_ROLES)
-    from core.notifications import notifier_relance_paiement
 
     etab = request.user.etablissement
     if not etab:

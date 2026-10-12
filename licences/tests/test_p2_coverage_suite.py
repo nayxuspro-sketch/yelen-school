@@ -7,8 +7,7 @@ Objectif : couverture ≥ 80 % sur l'app `licences`.
 """
 import json
 from datetime import date, timedelta
-from io import BytesIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from urllib.error import URLError
 
 import pytest

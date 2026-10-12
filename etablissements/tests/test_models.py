@@ -62,12 +62,7 @@ class TestEtablissementModel(TestCase):
 
     def test_pays_default_value(self):
         """Vérifie que le pays par défaut est bien le Burkina Faso."""
-        # On ne passe pas la valeur pays lors de la création
-        etab = baker.make(Etablissement, pays="")
-        
-        # Puisque baker.make peut forcer des champs, testons à la création classique ou 
-        # forçons None pour voir. En général baker.make remplit intelligemment,
-        # donc on vérifie via object.create() pour les valeurs par défaut au niveau BDD.
+        # Création classique (sans baker) pour observer la valeur par défaut du champ.
         etab_default = Etablissement.objects.create(
             nom="Ecole Privée",
             code="EP-01",

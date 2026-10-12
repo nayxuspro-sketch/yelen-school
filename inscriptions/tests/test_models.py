@@ -1,7 +1,6 @@
 import pytest
 from datetime import date, timedelta
 from model_bakery import baker
-from inscriptions.models import Eleve, Inscription, StatutInscriptionChoices
 
 @pytest.mark.django_db
 class TestEleveModel:

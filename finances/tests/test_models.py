@@ -1,7 +1,5 @@
 import pytest
 from model_bakery import baker
-from django.core.exceptions import ValidationError
-from finances.models import Paiement, TypeFrais
 
 @pytest.mark.django_db
 class TestFinancesModels:

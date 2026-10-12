@@ -27,17 +27,13 @@ Le serveur éditeur (LICENCE_HEARTBEAT_URL) doit répondre JSON :
 }
 """
 
-import hashlib
-import hmac
 import json
 import logging
-from datetime import timedelta
-from typing import Dict, Optional
+from typing import Dict
 from urllib import request as urllib_request
 from urllib.error import URLError, HTTPError
 
 from django.conf import settings
-from django.utils import timezone
 
 logger = logging.getLogger('licences.heartbeat')
 
@@ -129,7 +125,7 @@ def send_heartbeat(licence, timeout: int = 10) -> Dict:
         statut_resp = data.get('statut', '').upper()
         if statut_resp == 'REVOQUEE':
             # Révocation distante → marquer licence révoquée localement
-            from licences.models import StatutLicence, LicenceAuditLog
+            from licences.models import LicenceAuditLog
             from django.utils import timezone as tz
             licence.statut = 'REVOQUEE'
             licence.notes_interne += f"\n[{tz.now()}] Révoquée par serveur éditeur (heartbeat)"
@@ -160,7 +156,6 @@ def send_heartbeat(licence, timeout: int = 10) -> Dict:
             }
 
         if statut_resp == 'EXPIREE':
-            from licences.models import StatutLicence
             from licences.models import Licence as L
             L.objects.filter(pk=licence.pk).update(statut='EXPIREE')
             logger.warning("[HEARTBEAT] Licence %s expirée selon serveur éditeur", licence.cle_licence)

@@ -101,7 +101,6 @@ class TestCompteurs:
         assert compter_eleves(etab) == 2
 
     def test_enseignants_catégorie_enseignement(self, etab_annee, cycle):
-        from personnel.models import InscriptionPersonnel, MembrePersonnel
         etab, annee = etab_annee
         poste_ens = baker.make('parametres.Poste', etablissement=etab, code='ENS', titre='Enseignant', categorie='ENSEIGNEMENT')
         poste_adm = baker.make('parametres.Poste', etablissement=etab, code='SECR', titre='Secrétaire', categorie='ADMINISTRATION')

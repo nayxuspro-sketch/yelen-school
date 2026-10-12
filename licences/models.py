@@ -475,7 +475,6 @@ class Licence(BaseModel):
         if pub is None:
             return False
         try:
-            import binascii
             # Support hex ou base64
             sig_str = self.signature_ed25519.strip()
             try:
@@ -518,12 +517,7 @@ class Licence(BaseModel):
         return False
     
     def _verifier_limites(self) -> None:
-        """Vérifie que l'établissement respecte les limites de la licence."""
-        limites = LIMITES_LICENCES[self.type_licence]
-        
-        # Ces vérifications seront complétées quand les modules élèves/personnel existeront
-        # Pour l'instant, on définit juste la structure
-        pass
+        """Point d'extension : contrôle des limites (LIMITES_LICENCES) à la sauvegarde — non appliqué pour l'instant."""
     
     def est_active(self) -> bool:
         """

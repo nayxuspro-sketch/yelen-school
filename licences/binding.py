@@ -13,11 +13,13 @@ Utilisé pour générer automatiquement les attributs :
 - platform data
 """
 
-import hashlib
 import platform
 import socket
 import uuid
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict
+
+if TYPE_CHECKING:
+    from .models import LicenceActivation
 
 
 def get_mac_address() -> str:

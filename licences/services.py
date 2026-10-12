@@ -7,7 +7,6 @@
 # Portable PostgreSQL / SQLite (aucune fonctionnalité spécifique moteur).
 from __future__ import annotations
 
-from typing import Optional
 
 
 def _annee_courante(etablissement):

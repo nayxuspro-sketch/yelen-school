@@ -85,7 +85,7 @@ class TestApiRbac:
 
     def test_parent_liste_uniquement_ses_enfants(self, client, etab_a):
         enfant = self._eleve_inscrit(etab_a)
-        autre = self._eleve_inscrit(etab_a)
+        self._eleve_inscrit(etab_a)  # un autre élève, qui ne doit pas apparaître
         parent = baker.make('accounts.User', role='PARENT', etablissement=etab_a)
         parent.eleves_lies.add(enfant)
 

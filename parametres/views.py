@@ -1,9 +1,7 @@
 from collections import defaultdict
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
-from django import db
-from django.db import models
 from django.db.models.deletion import ProtectedError
 from django.core.paginator import Paginator
 from django.core.management import call_command
@@ -1501,7 +1499,7 @@ def type_evaluation_delete(request, pk):
 @login_required
 def calendrier(request):
     """Vue principale du calendrier scolaire — affichage mensuel."""
-    from datetime import date, timedelta
+    from datetime import timedelta
     import calendar as cal
 
     etab = _get_etab(request)

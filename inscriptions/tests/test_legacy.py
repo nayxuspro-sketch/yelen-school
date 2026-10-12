@@ -10,7 +10,6 @@ Version: 3.4
 
 from datetime import date
 from django.test import TestCase
-from django.core.exceptions import ValidationError
 
 from inscriptions.models import Eleve, Inscription, GenreChoices, StatutInscriptionChoices
 

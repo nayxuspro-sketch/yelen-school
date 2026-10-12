@@ -9,18 +9,13 @@ Endpoints :
 - GET /licences/api/audit/ → audit logs centralisés (staff éditeur)
 """
 
-from django.conf import settings
-from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authtoken.models import Token
 
 from api.authentication import ExpiringTokenAuthentication
-from api.permissions import EleveScopeAccess
-from core.models import RoleChoices
-from .models import Licence, LicenceAuditLog, StatutLicence
+from .models import Licence, LicenceAuditLog
 
 
 def _get_licence_for_user(user):

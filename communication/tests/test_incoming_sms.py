@@ -6,10 +6,6 @@ from unittest.mock import patch
 from django.urls import reverse
 from model_bakery import baker
 from communication.models import IncomingSMSLog
-from inscriptions.models import Eleve, Inscription
-from pedagogie.models import MoyenneGenerale, Trimestre
-from presences.models import Presence
-from finances.models import FraisScolarite, Echeancier, Paiement
 
 @pytest.mark.django_db
 class TestIncomingSMSWebhook:

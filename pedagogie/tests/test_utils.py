@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 from model_bakery import baker
 from pedagogie.utils import CalculateurMoyenne
-from pedagogie.models import Resultat, MoyenneGenerale, Note, Evaluation, TypeEvaluation
+from pedagogie.models import MoyenneGenerale
 
 @pytest.mark.django_db
 class TestCalculateurMoyenne:

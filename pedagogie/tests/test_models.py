@@ -1,7 +1,6 @@
 import pytest
 from django.core.exceptions import ValidationError
 from model_bakery import baker
-from pedagogie.models import Note, Trimestre, TypeEvaluation
 
 @pytest.mark.django_db
 class TestPedagogieModels:
@@ -32,7 +31,6 @@ class TestPedagogieModels:
 
     def test_matiere_str(self):
         """Vérifie la représentation textuelle d'une matière."""
-        classe = baker.make('parametres.Classe', nom="6ème A")
         matiere = baker.make('pedagogie.Matiere', nom="Mathématiques", code="MATH")
         assert "Mathématiques" in str(matiere)
         assert "MATH" in str(matiere)

@@ -102,7 +102,7 @@ class TestServiceAutoGenererAnneeScolaire(unittest.TestCase):
                     mock_as.objects.create.return_value = nouvelle
 
                     from parametres.services import auto_generer_annee_scolaire
-                    result = auto_generer_annee_scolaire()
+                    auto_generer_annee_scolaire()
 
         mock_as.objects.filter.assert_any_call(
             etablissement=mock_etab, est_courante=True

@@ -185,7 +185,6 @@ def conseil_pv_pdf(request, conseil_id):
         })
 
     # Statistiques récapitulatives
-    from django.db.models import Count
     stats_decisions = {}
     for val, label in DecisionConseil.DecisionChoices.choices:
         stats_decisions[val] = {
@@ -1071,7 +1070,6 @@ def fiche_suivi_eleve(request, inscription_id):
     Vue unifiee : presences + notes + sanctions + retards + activites
     pour un eleve donne (scope : une inscription = annee + eleve + classe).
     """
-    from django.db.models import Count, Q
     from presences.models import Presence
     from pedagogie.models import Resultat
 
@@ -1253,7 +1251,7 @@ def _calcul_capital_points(inscription, config):
     Les sanctions avec points < 0 retirent, points > 0 ajoutent.
     """
     from decimal import Decimal
-    from django.db.models import Sum, Q
+    from django.db.models import Sum
 
     agg = (
         SanctionDisciplinaire.objects

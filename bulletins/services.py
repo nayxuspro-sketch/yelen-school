@@ -12,7 +12,6 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import models
-from django.db.models import Avg, Max, Min
 
 from pedagogie.models import Resultat, Trimestre
 

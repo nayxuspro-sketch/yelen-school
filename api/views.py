@@ -12,11 +12,10 @@ from .authentication import ExpiringTokenAuthentication
 from .permissions import EleveScopeAccess, role_utilisateur
 
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
 
 from inscriptions.models import Eleve, Inscription
 from parametres.models import AnneeScolaire, PeriodeEvaluation
-from pedagogie.models import MoyenneGenerale, Resultat
+from pedagogie.models import MoyenneGenerale
 from finances.models import Paiement
 from presences.models import Presence
 from bulletins.models import Bulletin

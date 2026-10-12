@@ -4,7 +4,7 @@ Pour atteindre 80% couverture licences
 """
 import pytest
 from datetime import date, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from django.utils import timezone
 from model_bakery import baker
 
@@ -32,7 +32,6 @@ def test_binding_collect():
 
 def test_heartbeat_payload_generation(etablissement=None):
     from licences.models import Licence, TypeLicence, StatutLicence
-    from datetime import date, timedelta
     etab = baker.make('etablissements.Etablissement', nom="Test HB")
     lic = Licence(
         etablissement=etab,
@@ -49,7 +48,6 @@ def test_heartbeat_payload_generation(etablissement=None):
 
 def test_heartbeat_record_success_failure():
     from licences.models import Licence, TypeLicence, StatutLicence
-    from datetime import date, timedelta
     etab = baker.make('etablissements.Etablissement', nom="Test HB2")
     lic = Licence(
         etablissement=etab,
@@ -79,7 +77,6 @@ def test_heartbeat_record_success_failure():
 
 def test_licence_activation_fingerprint():
     from licences.models import Licence, LicenceActivation, TypeLicence, StatutLicence
-    from datetime import date, timedelta
     etab = baker.make('etablissements.Etablissement', nom="Test Bind")
     lic = Licence(
         etablissement=etab,
@@ -132,7 +129,6 @@ def test_check_licences_command():
 
 def test_heartbeat_verify_response():
     from licences.models import Licence, TypeLicence, StatutLicence
-    from datetime import date, timedelta
     import hmac, hashlib
     from django.conf import settings
     etab = baker.make('etablissements.Etablissement', nom="Test HB Verify")
@@ -165,7 +161,6 @@ def test_heartbeat_verify_response():
 def test_heartbeat_send_no_url():
     from licences.models import Licence, TypeLicence, StatutLicence
     from licences.heartbeat import send_heartbeat, check_all_heartbeats
-    from datetime import date, timedelta
     etab = baker.make('etablissements.Etablissement', nom="Test HB NoURL")
     lic = Licence(
         etablissement=etab,
@@ -188,8 +183,6 @@ def test_heartbeat_send_no_url():
 def test_heartbeat_send_failure_mock():
     from licences.models import Licence, TypeLicence, StatutLicence
     from licences.heartbeat import send_heartbeat
-    from datetime import date, timedelta
-    from unittest.mock import patch
     from urllib.error import URLError
     etab = baker.make('etablissements.Etablissement', nom="Test HB Fail")
     lic = Licence(

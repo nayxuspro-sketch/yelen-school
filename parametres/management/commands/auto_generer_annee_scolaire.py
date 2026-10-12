@@ -47,7 +47,6 @@ class Command(BaseCommand):
         dry_run = options.get('dry_run', False)
 
         if dry_run:
-            from datetime import date
             from django.utils import timezone
             from etablissements.models import Etablissement
             from parametres.models import AnneeScolaire
@@ -65,7 +64,7 @@ class Command(BaseCommand):
                 return
 
             libelle = f"{an}-{an + 1}"
-            self.stdout.write(f"--- Simulation ---")
+            self.stdout.write("--- Simulation ---")
             self.stdout.write(f"Date         : {today}")
             self.stdout.write(f"Libellé      : {libelle}")
             self.stdout.write(f"Date début   : {an}-10-01")

@@ -79,7 +79,6 @@ class TestSalairePersonnelModel:
 @pytest.mark.django_db
 class TestCongePersonnelModel:
     def test_calcul_jours_ouvrables_semaine_complete(self):
-        from personnel.models import CongePersonnel
         # Lundi au samedi = 6 jours ouvrables
         etab = baker.make('etablissements.Etablissement', code='BK')
         membre = baker.make('personnel.MembrePersonnel', etablissement=etab, matricule='')
@@ -92,7 +91,6 @@ class TestCongePersonnelModel:
         assert conge._calcul_jours_ouvrables() == 6
 
     def test_calcul_jours_ouvrables_exclut_dimanche(self):
-        from personnel.models import CongePersonnel
         # Samedi + dimanche + lundi = 2 jours ouvrables (sam + lun)
         etab = baker.make('etablissements.Etablissement', code='BK')
         membre = baker.make('personnel.MembrePersonnel', etablissement=etab, matricule='')

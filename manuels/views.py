@@ -409,7 +409,6 @@ def facturer_non_rendu(request, pk):
 
 def _notifier_parents_manuel_non_rendu(eleve, manuel, etab):
     """Envoie un SMS aux parents d'un élève pour signaler la facturation d'un manuel non rendu."""
-    from django.conf import settings
     from core.notifications import creer_notification
     from core.tasks import envoyer_sms_async
 

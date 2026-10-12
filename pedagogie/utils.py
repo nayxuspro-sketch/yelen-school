@@ -1,6 +1,5 @@
 from decimal import Decimal, ROUND_HALF_UP
-from django.db.models import Avg, Sum, Q
-from .models import Resultat, MoyenneGenerale, Note, Evaluation, TypeEvaluation
+from .models import Resultat, MoyenneGenerale, Note, Evaluation
 
 class CalculateurMoyenne:
     """Service pour le calcul automatique des moyennes et des rangs."""
@@ -157,14 +156,7 @@ class CalculateurMoyenne:
     def calculer_rangs(cls, classe, trimestre):
         """Calcule et met à jour les rangs pour une classe entière."""
         
-        # 1. Calculer d'abord toutes les moyennes individuelles
-        from inscriptions.models import Inscription
-        inscriptions = Inscription.objects.filter(classe=classe, statut='ACTIF')
-        
-        # On s'assure que les enseignants ont leurs résultats calculés
-        # Dans un vrai flux, on appellerait ça séparément ou on bouclerait
-        
-        # 2. Récupérer les moyennes générales triées
+        # 1. Récupérer les moyennes générales triées (calculées en amont)
         moyennes = MoyenneGenerale.objects.filter(
             inscription__classe=classe,
             trimestre=trimestre

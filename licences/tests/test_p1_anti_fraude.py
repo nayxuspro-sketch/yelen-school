@@ -11,15 +11,11 @@ Tests P1 — anti-fraude définitive :
 import hashlib
 import hmac
 from datetime import date, timedelta
-from unittest.mock import patch
 
 import pytest
-from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.test import RequestFactory, override_settings
 from django.utils import timezone
 
-from etablissements.models import Etablissement
 from licences.models import Licence, LicenceActivation, StatutLicence, TypeLicence
 
 
@@ -55,7 +51,6 @@ class TestEd25519P1:
     def test_verifier_signature_priorise_ed25519_si_present_et_valide(self, etablissement):
         # Génère une paire Ed25519 via cryptography
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-        import base64
 
         priv = Ed25519PrivateKey.generate()
         pub = priv.public_key()

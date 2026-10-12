@@ -1,6 +1,6 @@
 from django import forms
 from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel
-from parametres.models import Cycle, TitreFonction, TitreHonorifiquePersonnel
+from parametres.models import TitreFonction, TitreHonorifiquePersonnel
 from core.validators import validate_image_upload
 
 # Import pour le chiffrement

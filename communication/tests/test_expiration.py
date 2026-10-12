@@ -88,7 +88,6 @@ class TestJustificatifSecurise:
     """S4 — justificatifs servis via vue authentifiée, pas via /media/ direct."""
 
     def test_sans_auth_redirige_login(self, client):
-        from communication.models import MessageParent, ReponseParent
         msg = baker.make('communication.MessageParent')
         reponse = baker.make('communication.ReponseParent', message=msg)
         url = reverse('communication:justificatif_download', kwargs={'pk': reponse.pk})

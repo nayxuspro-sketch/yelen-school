@@ -267,7 +267,6 @@ class BulletinVacation(BaseModel):
 
     def calculer_totaux(self):
         """Recalcule total_heures et montant_total depuis les HeureVacation."""
-        from django.db.models import Sum
         heures = HeureVacation.objects.filter(
             contrat__personnel=self.personnel,
             contrat__annee_scolaire=self.annee_scolaire,

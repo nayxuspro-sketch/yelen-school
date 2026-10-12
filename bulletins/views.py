@@ -341,16 +341,12 @@ def bulletins_classe_publier(request, class_id, trimestre_id):
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponse
 from django.template.loader import render_to_string
 try:
     from core.pdf import HTML
 except Exception:  # ImportError ou OSError (libpango/cairo absents)
     HTML = None
 
-from inscriptions.models import Inscription
-from parametres.models import AnneeScolaire
 
 
 class BulletinAnnuelIndexView(LoginRequiredMixin, View):
@@ -543,7 +539,6 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
 
 def bulletin_parent_consulter(request, token):
     """Page publique permettant au parent de consulter et signer le bulletin."""
-    from django.utils import timezone as tz
     bulletin = get_object_or_404(Bulletin, token_signature=token)
 
     # S3 — expiration du lien public : token_valide vérifié AVANT toute divulgation

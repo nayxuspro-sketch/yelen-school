@@ -24,7 +24,7 @@ from core.models import RoleChoices
 from .forms import UserCreateForm, UserUpdateForm, SetPasswordForm, ProfileUpdateForm, ChangeOwnPasswordForm, PasswordResetRateLimitedForm
 from .models import User
 from .services import (  # verrouillage et message unique : source unique
-    MAX_LOGIN_ATTEMPTS, LOCKOUT_DURATION_MINUTES, LOGIN_FAILURE_MESSAGE, authenticate_with_lockout,
+    LOGIN_FAILURE_MESSAGE, authenticate_with_lockout,
 )
 from licences.models import Licence
 

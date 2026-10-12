@@ -9,7 +9,6 @@ Méthode : XOR cipher avec clé dérivée (pour développement) + Hash pour vér
 
 import base64
 import hashlib
-import os
 from django.conf import settings
 
 

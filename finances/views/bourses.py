@@ -30,7 +30,6 @@ def bourse_create(request, inscription_id):
     etab = inscription.classe.etablissement
 
     types_bourses = TypeBourse.objects.filter(etablissement=etab, actif=True).order_by('nom')
-    from parametres.models import RubriquePaiement
     rubriques = RubriquePaiement.objects.filter(etablissement=etab, actif=True).order_by('ordre', 'nom')
 
     if request.method == 'POST':
@@ -111,7 +110,6 @@ def bourse_edit(request, bourse_id):
     etab = inscription.classe.etablissement
 
     types_bourses = TypeBourse.objects.filter(etablissement=etab, actif=True).order_by('nom')
-    from parametres.models import RubriquePaiement
     rubriques = RubriquePaiement.objects.filter(etablissement=etab, actif=True).order_by('ordre', 'nom')
 
     if request.method == 'POST':
@@ -312,7 +310,6 @@ def type_bourse_form(request, type_id=None):
     etab = request.user.etablissement
     instance = get_object_or_404(TypeBourse, pk=type_id, etablissement=etab) if type_id else None
 
-    from parametres.models import RubriquePaiement
     rubriques = RubriquePaiement.objects.filter(etablissement=etab, actif=True).order_by('ordre', 'nom')
     from ..models import SourceBourse
 

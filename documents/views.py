@@ -307,7 +307,7 @@ def liste_classe_pdf(request, classe_id):
             else:
                 nb_sd_f = nb_sd_f + 1
             continue
-        age = (_dt.date.today() - dn).days // 365
+        age = (today - dn).days // 365
         for idx, (min_a, max_a, _lbl) in enumerate(AGE_BRACKETS):
             if min_a <= age <= max_a:
                 if genre == 'M':
@@ -415,7 +415,7 @@ def liste_classe_pdf(request, classe_id):
 @login_required
 def liste_personnel_selector(request):
     """Sélection du cycle pour la liste du personnel avec année scolaire."""
-    from personnel.models import MembrePersonnel, InscriptionPersonnel
+    from personnel.models import InscriptionPersonnel
     from parametres.models import AnneeScolaire
 
     etab = getattr(request.user, 'etablissement', None)

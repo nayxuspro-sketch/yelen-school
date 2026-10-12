@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
-from ..models import Enseignement, Evaluation, Note, Resultat, Trimestre
+from ..models import Evaluation, Note, Resultat, Trimestre
 from ..forms import EvaluationForm
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription
@@ -223,7 +223,7 @@ def evaluation_update(request, pk):
             evaluation = form.save(commit=False)
             evaluation.trimestre = _resolve_trimestre(form.cleaned_data['periode'])
             evaluation.save()
-            messages.success(request, f"Évaluation mise à jour.")
+            messages.success(request, "Évaluation mise à jour.")
             return redirect('pedagogie:evaluation_list')
     else:
         form = EvaluationForm(instance=evaluation)

@@ -5,7 +5,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'yelen_school.settings')
 django.setup()
 
 from etablissements.models import Etablissement
-from parametres.models import AnneeScolaire, Cycle, TypeDocument
+from parametres.models import AnneeScolaire, Cycle
 from personnel.models import MembrePersonnel
 from datetime import date
 

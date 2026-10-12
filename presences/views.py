@@ -16,7 +16,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from parametres.models import Classe, AnneeScolaire, Cycle
 from inscriptions.models import Inscription
-from personnel.models import MembrePersonnel
 from pedagogie.models import Matiere
 from .models import Appel, Presence, Justification
 

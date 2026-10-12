@@ -461,7 +461,7 @@ def tableau_bord_budget(request):
 def tableau_bord_budget_xlsx(request):
     _require_finance_role(request, FINANCE_VIEW_ROLES)
     import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment, numbers
+    from openpyxl.styles import Font, PatternFill, Alignment
     from openpyxl.utils import get_column_letter
 
     etab, annee_courante = _etab_and_annee(request)

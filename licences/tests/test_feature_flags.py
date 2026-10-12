@@ -129,7 +129,7 @@ class TestFeatureFlagsOn:
         etab = baker.make('etablissements.Etablissement')
         user = baker.make('accounts.User', is_superuser=False,
                           etablissement=etab, role='DIRECTEUR_RESEAU')
-        licence = baker.make(
+        baker.make(
             'licences.Licence',
             etablissement=etab,
             type_licence='RESEAU',

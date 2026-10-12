@@ -4,7 +4,6 @@ Tests P2 — LicenceAuditLog centralisation + filigrane PDF + IsLicenseActive AP
 
 import pytest
 from datetime import date, timedelta
-from django.test import RequestFactory, override_settings
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient, force_authenticate, APIRequestFactory
 from rest_framework.authtoken.models import Token

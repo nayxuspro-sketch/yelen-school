@@ -1,7 +1,6 @@
 from django import forms
-from .models import Matiere, MatiereCycle, Enseignement, Evaluation, TypeEvaluation, Trimestre, Note
-from parametres.models import Classe, AnneeScolaire, PeriodeEvaluation
-from personnel.models import MembrePersonnel
+from .models import Matiere, MatiereCycle, Enseignement, Evaluation, Note
+from parametres.models import PeriodeEvaluation
 
 def _apply_yelen_classes(fields):
     """Apply yelen.css dash-input class to all form fields."""
