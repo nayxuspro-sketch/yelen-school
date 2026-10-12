@@ -31,9 +31,10 @@
       Une erreur inattendue s'est produite. Veuillez réessayer ou contacter l'administrateur si le problème persiste.
     </p>
     <div class="error-actions">
-      <a href="javascript:history.back()" class="btn btn-secondary">← Retour</a>
+      <a href="/" data-csp-action="history-back" class="btn btn-secondary">← Retour</a>
       <a href="/" class="btn btn-primary">Accueil</a>
     </div>
   </div>
+  <script src="{% static_v 'js/csp_handlers.js' %}"></script>
 </body>
 </html>

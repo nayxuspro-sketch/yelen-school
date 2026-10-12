@@ -36,6 +36,19 @@ def test_page_autonome_utilisant_data_csp_charge_csp_handlers():
     assert fautifs == [], fautifs
 
 
+def test_aucune_url_javascript_ni_ressource_externe():
+    """La CSP bloque les URL javascript: (script-src sans 'unsafe-inline') et les feuilles, scripts et
+    polices tiers (style-src/script-src/font-src 'self') ; hors ligne, WeasyPrint attendrait en vain."""
+    motif = re.compile(r'javascript:|<(?:link|script)\b[^>]*(?:href|src)="https?://|@import\s+url\(["\']?https?://')
+    fautifs = [
+        f"{f.relative_to(RACINE)}:{s[:m.start()].count(chr(10)) + 1}"
+        for f in _gabarits()
+        for s in [f.read_text(encoding='utf-8')]
+        for m in motif.finditer(s)
+    ]
+    assert fautifs == [], fautifs
+
+
 def test_data_csp_submit_on_change_toujours_dans_un_formulaire():
     occurrences, hors_formulaire = 0, []
     for f in _gabarits():

@@ -31,9 +31,10 @@
       La page que vous cherchez n'existe pas ou a été déplacée.
     </p>
     <div class="error-actions">
-      <a href="javascript:history.back()" class="btn btn-secondary">← Retour</a>
+      <a href="/" data-csp-action="history-back" class="btn btn-secondary">← Retour</a>
       <a href="/" class="btn btn-primary">Accueil</a>
     </div>
   </div>
+  <script nonce="{{ request.csp_nonce }}" src="{% static_v 'js/csp_handlers.js' %}"></script>
 </body>
 </html>

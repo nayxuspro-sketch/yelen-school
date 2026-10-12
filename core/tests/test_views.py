@@ -1,6 +1,7 @@
 import re
 
 import pytest
+from django.template.loader import render_to_string
 from django.urls import reverse
 from model_bakery import baker
 
@@ -31,3 +32,17 @@ def test_assistant_sans_hx_on(client):
     assert 'hx-on:' not in html
     assert "form.addEventListener('htmx:beforeRequest', showLoading)" in html
     assert all('nonce="' in b for b in re.findall(r'<script(?![^>]*\ssrc=)[^>]*>', html))
+
+
+@pytest.mark.django_db
+def test_pages_erreur_bouton_retour_sans_javascript_url(client):
+    """404/500 : « ← Retour » passe par data-csp-action (javascript: est bloqué par la CSP) ; la page 500,
+    rendue sans request, doit charger csp_handlers.js sans nonce (script-src 'self')."""
+    html_404 = client.get('/page-inexistante/').content.decode()
+    assert '<a href="/" data-csp-action="history-back"' in html_404
+    assert re.search(r'<script nonce="[^"]+" src="/static/js/csp_handlers[^"]*\.js[^"]*"></script>', html_404)
+
+    html_500 = render_to_string('500.html')
+    assert '<a href="/" data-csp-action="history-back"' in html_500
+    assert re.search(r'<script src="/static/js/csp_handlers[^"]*\.js[^"]*"></script>', html_500)
+    assert 'javascript:' not in html_404 + html_500

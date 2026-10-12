@@ -122,6 +122,12 @@
           e.preventDefault();
           window.print();
           break;
+        case 'history-back':
+          // Retour à la page précédente ; sans historique (nouvel onglet), suit le href de repli.
+          e.preventDefault();
+          if (window.history.length > 1) window.history.back();
+          else window.location.href = actionEl.getAttribute('href') || '/';
+          break;
         case 'close-modal':
           e.preventDefault();
           // Ferme le modal le plus proche ou modal-container

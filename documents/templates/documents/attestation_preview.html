@@ -20,7 +20,7 @@
     {% else %}
     <a href="?format=pdf" class="btn btn-secondary">Générer quand même</a>
     {% endif %}
-    <a href="javascript:history.back()" class="btn btn-secondary">Retour</a>
+    <a href="{% url 'documents:document_list' %}" data-csp-action="history-back" class="btn btn-secondary">Retour</a>
   </div>
 </div>
 

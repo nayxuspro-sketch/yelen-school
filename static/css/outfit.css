@@ -1,0 +1,4 @@
+/* Police Outfit servie localement (static/fonts) : aucune dépendance à Internet, conforme à la CSP (font-src 'self'). */
+@font-face { font-family: 'Outfit'; font-weight: 400; font-display: swap; src: url('../fonts/Outfit-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Outfit'; font-weight: 600; font-display: swap; src: url('../fonts/Outfit-SemiBold.ttf') format('truetype'); }
+@font-face { font-family: 'Outfit'; font-weight: 700; font-display: swap; src: url('../fonts/Outfit-Bold.ttf') format('truetype'); }
