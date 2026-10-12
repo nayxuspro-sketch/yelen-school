@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Restaure une sauvegarde PostgreSQL et médias locale de YELEN SCHOOL.
@@ -56,9 +56,13 @@ function Invoke-DockerRestoreFromFile {
         $inputStream = [System.IO.File]::OpenRead($InputFile)
         try {
             $inputStream.CopyTo($process.StandardInput.BaseStream)
+        } catch [System.IO.IOException] {
+            # pg_restore ferme son entrée dès qu'il a lu ce dont il a besoin, avant
+            # la fin d'une archive custom : le tube est rompu alors que l'import a
+            # réussi. Seul le code de sortie fait foi.
         } finally {
             $inputStream.Dispose()
-            $process.StandardInput.Close()
+            try { $process.StandardInput.Close() } catch [System.IO.IOException] { }
         }
         $process.WaitForExit()
         $errorOutput = $errorTask.Result
@@ -81,7 +85,8 @@ $dbName = Get-DotEnvValue 'DB_NAME'
 $dbUser = Get-DotEnvValue 'DB_USER'
 if ([string]::IsNullOrWhiteSpace($dbName)) { $dbName = 'yelen_school_db' }
 if ([string]::IsNullOrWhiteSpace($dbUser)) { $dbUser = 'yelen_user' }
-$mediaFile = [System.IO.Path]::ChangeExtension($BackupFile, $null) + '_media.tar.gz'
+# ChangeExtension($BackupFile, $null) laisse un point final sous PowerShell ($null devient '') : le nom est reconstruit.
+$mediaFile = [System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($BackupFile), [System.IO.Path]::GetFileNameWithoutExtension($BackupFile) + '_media.tar.gz')
 
 if (-not $Yes) {
     Write-Host 'ATTENTION : cette opération remplace toutes les données de la base et des médias.' -ForegroundColor Yellow
@@ -89,20 +94,36 @@ if (-not $Yes) {
     if ($confirmation -cne 'RESTAURER') { Fail 'Restauration annulée.' }
 }
 
-Write-Host '[1/5] Arrêt de l’application...' -ForegroundColor Cyan
+Write-Host '[1/5] Arrêt de l''application...' -ForegroundColor Cyan
 & docker compose -f $ComposeFile stop web
-if ($LASTEXITCODE -ne 0) { Fail 'Impossible d’arrêter le service web.' }
+if ($LASTEXITCODE -ne 0) { Fail 'Impossible d''arrêter le service web.' }
 
+# Le dump est importé dans une base temporaire, puis les bases sont permutées
+# par renommage : un dump illisible laisse la base actuelle intacte, et la base
+# remplacée reste disponible sous <DB_NAME>_avant_restauration.
+$dbRestore = "${dbName}_restauration"
+$dbPrevious = "${dbName}_avant_restauration"
 try {
-    Write-Host '[2/5] Reconstruction de la base PostgreSQL...' -ForegroundColor Cyan
-    & docker compose -f $ComposeFile exec -T db dropdb --if-exists -U $dbUser $dbName
-    if ($LASTEXITCODE -ne 0) { Fail 'Impossible de supprimer la base actuelle.' }
-    & docker compose -f $ComposeFile exec -T db createdb -U $dbUser -O $dbUser $dbName
-    if ($LASTEXITCODE -ne 0) { Fail 'Impossible de créer la base restaurée.' }
+    Write-Host '[2/5] Import de la base PostgreSQL dans une base temporaire...' -ForegroundColor Cyan
+    & docker compose -f $ComposeFile exec -T db dropdb --if-exists -U $dbUser $dbRestore
+    if ($LASTEXITCODE -ne 0) { Fail 'Impossible de préparer la base temporaire.' }
+    & docker compose -f $ComposeFile exec -T db createdb -U $dbUser -O $dbUser $dbRestore
+    if ($LASTEXITCODE -ne 0) { Fail 'Impossible de créer la base temporaire.' }
 
-    $dbArguments = "compose -f `"$ComposeFile`" exec -T db pg_restore -U $dbUser -d $dbName --no-owner --no-privileges --exit-on-error -"
-    Write-Host '[3/5] Import de la base PostgreSQL...' -ForegroundColor Cyan
-    Invoke-DockerRestoreFromFile $dbArguments $BackupFile
+    # pg_restore lit l'entrée standard quand aucun fichier n'est indiqué ("-" n'est pas reconnu).
+    $dbArguments = "compose -f `"$ComposeFile`" exec -T db pg_restore -U $dbUser -d $dbRestore --no-owner --no-privileges --exit-on-error"
+    try {
+        Invoke-DockerRestoreFromFile $dbArguments $BackupFile
+    } catch {
+        & docker compose -f $ComposeFile exec -T db dropdb --if-exists -U $dbUser $dbRestore
+        throw "Import impossible, la base actuelle est inchangée : $($_.Exception.Message)"
+    }
+
+    Write-Host "[3/5] Bascule vers la base restaurée (base remplacée conservée sous $dbPrevious)..." -ForegroundColor Cyan
+    & docker compose -f $ComposeFile exec -T db dropdb --if-exists -U $dbUser $dbPrevious
+    if ($LASTEXITCODE -ne 0) { Fail "Impossible de supprimer la copie précédente $dbPrevious." }
+    & docker compose -f $ComposeFile exec -T db psql -U $dbUser -d postgres -q -v ON_ERROR_STOP=1 -c "ALTER DATABASE $dbName RENAME TO $dbPrevious; ALTER DATABASE $dbRestore RENAME TO $dbName;"
+    if ($LASTEXITCODE -ne 0) { Fail 'La bascule a échoué (une session est encore ouverte sur la base ?). La base actuelle est inchangée.' }
 
     & docker compose -f $ComposeFile up -d web | Out-Host
     if ($LASTEXITCODE -ne 0) { Fail 'Impossible de redémarrer le service web.' }
@@ -137,4 +158,4 @@ try {
 }
 
 Write-Host '[OK] Restauration terminée et contrôle /health/ réussi.' -ForegroundColor Green
-Write-Host 'Vérifiez aussi la connexion et quelques données dans l’application.'
+Write-Host 'Vérifiez aussi la connexion et quelques données dans l''application.'

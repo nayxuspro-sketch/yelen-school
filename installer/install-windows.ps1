@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Installe et démarre YELEN SCHOOL en local sous Windows.
@@ -299,7 +299,7 @@ if (Test-Path $FirewallScript) {
         Write-Host '[OK] Configuration du pare-feu Windows pour le réseau local...' -ForegroundColor Cyan
         & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $httpPortNumber
         if ($LASTEXITCODE -ne 0) {
-            Write-Host '[AVERTISSEMENT] Le pare-feu n’a pas été configuré. L’application restera accessible localement, mais l’accès depuis les autres postes peut être bloqué.' -ForegroundColor Yellow
+            Write-Host '[AVERTISSEMENT] Le pare-feu n''a pas été configuré. L''application restera accessible localement, mais l''accès depuis les autres postes peut être bloqué.' -ForegroundColor Yellow
             Write-Host 'Relancez demarrage.bat et acceptez la demande UAC pour autoriser le réseau local.' -ForegroundColor Yellow
         }
     } else {

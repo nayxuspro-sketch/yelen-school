@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Programme l'analyse quotidienne du risque de décrochage sous Windows.

@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Programme une sauvegarde quotidienne de YELEN SCHOOL sous Windows.
@@ -25,7 +25,8 @@ if (-not (Test-Path $BackupScript)) {
 }
 
 New-Item -ItemType Directory -Path $BackupDirectory -Force | Out-Null
-$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$BackupScript`" -OutputDirectory `"$BackupDirectory`" *> `"$LogFile`""
+# Avec -File, « *> » serait transmis au script comme simple argument ; la redirection n'existe qu'avec -Command.
+$arguments = "-NoProfile -ExecutionPolicy Bypass -Command `"try { & '$BackupScript' -OutputDirectory '$BackupDirectory' *> '$LogFile' } catch { Add-Content -LiteralPath '$LogFile' -Value ('[ERREUR] ' + `$_); exit 1 }`""
 $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
 $trigger = New-ScheduledTaskTrigger -Daily -At ([datetime]::ParseExact($Time, 'HH:mm', $null))
 # Docker Desktop est généralement disponible dans la session de l'utilisateur

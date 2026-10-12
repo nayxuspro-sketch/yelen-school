@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Exécute l'analyse quotidienne du risque de décrochage dans Docker.

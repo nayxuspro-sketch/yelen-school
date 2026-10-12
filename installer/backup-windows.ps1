@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Sauvegarde la base PostgreSQL et les médias locaux de YELEN SCHOOL.
@@ -75,7 +75,7 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 & docker info *> $null
 if ($LASTEXITCODE -ne 0) { Fail 'Docker ne fonctionne pas.' }
 if (-not (Test-Path $ComposeFile)) { Fail "Fichier introuvable : $ComposeFile" }
-if (-not (Test-Path $EnvFile)) { Fail '.env est introuvable. Lancez d’abord l’installation locale.' }
+if (-not (Test-Path $EnvFile)) { Fail '.env est introuvable. Lancez d''abord l''installation locale.' }
 
 $dbName = Get-DotEnvValue 'DB_NAME'
 $dbUser = Get-DotEnvValue 'DB_USER'
@@ -121,7 +121,7 @@ Get-ChildItem -Path $OutputDirectory -Filter 'yelen_school_*.dump' -File |
     Select-Object -Skip $Keep |
     ForEach-Object {
         Remove-Item -Force $_.FullName
-        $oldMedia = [System.IO.Path]::ChangeExtension($_.FullName, $null) + '_media.tar.gz'
+        $oldMedia = [System.IO.Path]::Combine($_.DirectoryName, $_.BaseName + '_media.tar.gz')
         if (Test-Path $oldMedia) { Remove-Item -Force $oldMedia }
     }
 

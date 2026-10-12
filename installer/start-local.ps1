@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Démarre les services locaux YELEN SCHOOL après l'ouverture de session Windows.
@@ -189,7 +189,7 @@ try {
         if (Test-Path $FirewallScript) {
             & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $selectedPort
             if ($LASTEXITCODE -ne 0) {
-                Write-StartupLog 'AVERTISSEMENT : le pare-feu n’a pas été actualisé.'
+                Write-StartupLog 'AVERTISSEMENT : le pare-feu n''a pas été actualisé.'
             }
         } else {
             Write-StartupLog 'AVERTISSEMENT : script de configuration du pare-feu introuvable.'

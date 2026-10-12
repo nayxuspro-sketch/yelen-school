@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Exécute les déclencheurs SMS automatiques de YELEN SCHOOL.

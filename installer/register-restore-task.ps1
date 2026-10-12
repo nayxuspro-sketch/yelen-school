@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Programme une restauration unique PostgreSQL et médias de YELEN SCHOOL.
@@ -40,13 +40,13 @@ if (-not [System.IO.Path]::IsPathRooted($BackupFile)) {
     $BackupFile = Join-Path $Root $BackupFile
 }
 $BackupFile = [System.IO.Path]::GetFullPath($BackupFile)
-$MediaFile = [System.IO.Path]::ChangeExtension($BackupFile, $null) + '_media.tar.gz'
+$MediaFile = [System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($BackupFile), [System.IO.Path]::GetFileNameWithoutExtension($BackupFile) + '_media.tar.gz')
 
 if (-not (Get-Command Register-ScheduledTask -ErrorAction SilentlyContinue)) {
     Fail 'Le module ScheduledTasks est indisponible sur cette version de Windows.'
 }
 if (-not (Test-Path $ComposeFile)) { Fail "Fichier introuvable : $ComposeFile" }
-if (-not (Test-Path $EnvFile)) { Fail '.env est introuvable. Lancez d’abord l’installation locale.' }
+if (-not (Test-Path $EnvFile)) { Fail '.env est introuvable. Lancez d''abord l''installation locale.' }
 if (-not (Test-Path $RestoreScript)) { Fail "Script introuvable : $RestoreScript" }
 if (-not (Test-Path $BackupFile)) { Fail "Dump introuvable : $BackupFile" }
 if ((Get-Item $BackupFile).Length -eq 0) { Fail "Dump vide : $BackupFile" }
@@ -62,7 +62,8 @@ if ($runAt -le (Get-Date)) {
 
 # La restauration est volontairement une tâche unique : une restauration
 # quotidienne pourrait écraser les nouvelles données de l'établissement.
-$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$RestoreScript`" -BackupFile `"$BackupFile`" -Yes *> `"$LogFile`""
+# Avec -File, « *> » serait transmis au script comme simple argument ; la redirection n'existe qu'avec -Command.
+$arguments = "-NoProfile -ExecutionPolicy Bypass -Command `"try { & '$RestoreScript' -BackupFile '$BackupFile' -Yes *> '$LogFile' } catch { Add-Content -LiteralPath '$LogFile' -Value ('[ERREUR] ' + `$_); exit 1 }`""
 $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
 $trigger = New-ScheduledTaskTrigger -Once -At $runAt
 $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name

@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Programme le démarrage automatique de YELEN SCHOOL à l'ouverture de session Windows.
@@ -33,10 +33,10 @@ Register-ScheduledTask `
     -Action $action `
     -Trigger $trigger `
     -Principal $principal `
-    -Description 'Démarre automatiquement Docker et YELEN SCHOOL à l’ouverture de session' `
+    -Description 'Démarre automatiquement Docker et YELEN SCHOOL à l''ouverture de session' `
     -Force | Out-Null
 
 Write-Host '[OK] Démarrage automatique programmé.' -ForegroundColor Green
 Write-Host "Tâche : $TaskName"
-Write-Host 'La tâche s’exécutera à la prochaine ouverture de session Windows.'
+Write-Host 'La tâche s''exécutera à la prochaine ouverture de session Windows.'
 Write-Host "Journal : $LogDirectory\startup.log"

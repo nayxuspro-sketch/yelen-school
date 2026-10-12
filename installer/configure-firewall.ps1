@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Autorise l'accès réseau local à YELEN SCHOOL dans le pare-feu Windows.
@@ -58,7 +58,7 @@ function Invoke-Elevated {
 
 try {
     if (-not (Test-IsAdministrator)) {
-        Write-Host '[INFO] Une confirmation UAC est nécessaire pour autoriser l’accès réseau local.' -ForegroundColor Yellow
+        Write-Host '[INFO] Une confirmation UAC est nécessaire pour autoriser l''accès réseau local.' -ForegroundColor Yellow
         exit (Invoke-Elevated)
     }
 

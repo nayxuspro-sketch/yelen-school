@@ -578,7 +578,7 @@ La passerelle qui appelle le webhook entrant doit envoyer `X-SMS-Token` avec la 
 
 ### 6.4 Contrôle des sauvegardes
 
-Les sorties de la tâche de sauvegarde sont écrites dans `backups\backup.log` si la tâche est lancée par le script fourni. Surveiller régulièrement :
+Les sorties de la tâche de sauvegarde sont écrites dans `backups\backup.log` si la tâche est lancée par le script fourni (le fichier est réécrit à chaque exécution ; en cas d'échec, la dernière ligne commence par `[ERREUR]`). Surveiller régulièrement :
 
 - la date de modification de la dernière paire ;
 - la taille du dump et de l'archive médias ;
@@ -621,9 +621,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 Le script :
 
 1. arrête le service web pour empêcher les écritures pendant la reconstruction ;
-2. recrée la base PostgreSQL et importe le dump ;
-3. redémarre le service web ;
-4. restaure l'archive médias associée lorsqu'elle existe ;
+2. importe le dump dans une base temporaire `<DB_NAME>_restauration` : un dump illisible ou incomplet laisse la base actuelle intacte ;
+3. permute les deux bases par renommage ; la base remplacée est conservée sous `<DB_NAME>_avant_restauration` jusqu'à la restauration suivante ;
+4. redémarre le service web, puis restaure l'archive médias associée lorsqu'elle existe ;
 5. exécute `manage.py check`, puis attend un endpoint `/health/` indiquant que PostgreSQL et Redis répondent ;
 6. garantit une tentative de redémarrage du service web même en cas d'erreur.
 
@@ -670,7 +670,17 @@ docker compose -f docker-compose.client.yml ps
 docker compose -f docker-compose.client.yml logs --tail=150 db web
 ```
 
-Si la base a été recréée mais que l'import a échoué, relancer la restauration avec une autre paire valide. Le service web est remis en route automatiquement, mais l'application ne doit être déclarée opérationnelle qu'après vérification de la base.
+Si l'import du dump échoue, la base actuelle n'a pas été modifiée : relancer la restauration avec une autre paire valide. Le service web est remis en route automatiquement, mais l'application ne doit être déclarée opérationnelle qu'après vérification de la base.
+
+Si la restauration a réussi mais que les données restaurées ne conviennent pas, la base précédente est encore disponible sous `<DB_NAME>_avant_restauration` ; pour y revenir (noms par défaut) :
+
+```powershell
+docker compose -f docker-compose.client.yml stop web
+docker compose -f docker-compose.client.yml exec -T db psql -U yelen_user -d postgres -c "ALTER DATABASE yelen_school_db RENAME TO yelen_school_db_restauree; ALTER DATABASE yelen_school_db_avant_restauration RENAME TO yelen_school_db;"
+docker compose -f docker-compose.client.yml up -d web
+```
+
+Une fois la restauration validée, cette copie peut être supprimée pour libérer l'espace disque : `docker compose -f docker-compose.client.yml exec -T db dropdb --if-exists -U yelen_user yelen_school_db_avant_restauration`.
 
 ---
 

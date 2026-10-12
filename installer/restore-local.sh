@@ -50,14 +50,28 @@ restart_web() {
 }
 trap restart_web EXIT
 
-echo '[1/5] Suppression de la base actuelle...'
-docker compose -f "$COMPOSE_FILE" exec -T db dropdb --if-exists -U "$DB_USER" "$DB_NAME"
-docker compose -f "$COMPOSE_FILE" exec -T db createdb -U "$DB_USER" -O "$DB_USER" "$DB_NAME"
+# Le dump est importé dans une base temporaire, puis les bases sont permutées
+# par renommage : un dump illisible laisse la base actuelle intacte, et la base
+# remplacée reste disponible sous <DB_NAME>_avant_restauration.
+DB_RESTORE="${DB_NAME}_restauration"
+DB_PREVIOUS="${DB_NAME}_avant_restauration"
 
-echo '[2/5] Restauration de la base PostgreSQL...'
-if ! cat "$BACKUP_FILE" | docker compose -f "$COMPOSE_FILE" exec -T db \
-    pg_restore -U "$DB_USER" -d "$DB_NAME" --no-owner --no-privileges --exit-on-error -; then
-    fail 'La restauration PostgreSQL a échoué. La base doit être restaurée depuis une autre sauvegarde valide.'
+echo '[1/5] Import de la base PostgreSQL dans une base temporaire...'
+docker compose -f "$COMPOSE_FILE" exec -T db dropdb --if-exists -U "$DB_USER" "$DB_RESTORE"
+docker compose -f "$COMPOSE_FILE" exec -T db createdb -U "$DB_USER" -O "$DB_USER" "$DB_RESTORE"
+# pg_restore lit l'entrée standard quand aucun fichier n'est indiqué ("-" n'est pas reconnu)
+# et la ferme avant la fin de l'archive : redirection directe, sans « cat | » (SIGPIPE).
+if ! docker compose -f "$COMPOSE_FILE" exec -T db \
+    pg_restore -U "$DB_USER" -d "$DB_RESTORE" --no-owner --no-privileges --exit-on-error < "$BACKUP_FILE"; then
+    docker compose -f "$COMPOSE_FILE" exec -T db dropdb --if-exists -U "$DB_USER" "$DB_RESTORE"
+    fail 'Import impossible, la base actuelle est inchangée. Utilisez une autre sauvegarde valide.'
+fi
+
+echo "[2/5] Bascule vers la base restaurée (base remplacée conservée sous $DB_PREVIOUS)..."
+docker compose -f "$COMPOSE_FILE" exec -T db dropdb --if-exists -U "$DB_USER" "$DB_PREVIOUS"
+if ! docker compose -f "$COMPOSE_FILE" exec -T db psql -U "$DB_USER" -d postgres -q -v ON_ERROR_STOP=1 \
+    -c "ALTER DATABASE $DB_NAME RENAME TO $DB_PREVIOUS; ALTER DATABASE $DB_RESTORE RENAME TO $DB_NAME;"; then
+    fail 'La bascule a échoué (une session est encore ouverte sur la base ?). La base actuelle est inchangée.'
 fi
 
 echo '[3/5] Redémarrage du service web...'
@@ -65,8 +79,8 @@ docker compose -f "$COMPOSE_FILE" up -d web >/dev/null
 
 if [[ -f "$MEDIA_BACKUP_FILE" ]]; then
     echo '[4/5] Restauration des médias...'
-    if ! cat "$MEDIA_BACKUP_FILE" | docker compose -f "$COMPOSE_FILE" exec -T web \
-        python /app/installer/media_archive.py restore; then
+    if ! docker compose -f "$COMPOSE_FILE" exec -T web \
+        python /app/installer/media_archive.py restore < "$MEDIA_BACKUP_FILE"; then
         fail 'La restauration des médias a échoué.'
     fi
 else

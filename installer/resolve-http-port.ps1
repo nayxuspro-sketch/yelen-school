@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <##
 .SYNOPSIS
     Sélectionne un port HTTP local libre pour YELEN SCHOOL.
