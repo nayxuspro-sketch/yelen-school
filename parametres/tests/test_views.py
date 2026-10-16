@@ -193,6 +193,14 @@ class TestPartialsSansScriptInline:
         assert '<label class="input-label">N° Agrément</label>' in html
         assert 'Agrément MENA' not in html
 
+    def test_formulaire_tarif_montant_lisible(self, client_etab):
+        html = client_etab.get(reverse('parametres:tarif_create'), HTTP_HX_REQUEST='true').content.decode()
+
+        champ = re.search(r'<input[^>]*id="id_montant_tarif"[^>]*>', html).group(0)
+        assert 'readonly' in champ and 'class="input text-mono"' in champ
+        # Un fond clair forcé masquait la valeur (texte clair du thème sur fond clair)
+        assert 'background:' not in champ
+
     def test_formulaire_classe_bascule_examen(self, client_etab):
         html = client_etab.get(reverse('parametres:classe_create'), HTTP_HX_REQUEST='true').content.decode()
 
