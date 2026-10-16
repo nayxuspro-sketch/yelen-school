@@ -6,9 +6,26 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from django.utils.dateparse import parse_date, parse_time
 from ..models import Enseignement, CahierTextes
 from parametres.models import AnneeScolaire, Classe
 from core.utils import filtre_enseignant
+
+
+def _date_ou_none(valeur):
+    """« AAAA-MM-JJ » → date ; None si vide ou invalide."""
+    try:
+        return parse_date(valeur or '')
+    except ValueError:
+        return None
+
+
+def _heure_ou_none(valeur):
+    """« HH:MM » → time ; None si vide ou invalide."""
+    try:
+        return parse_time(valeur or '')
+    except ValueError:
+        return None
 
 
 @login_required
@@ -111,17 +128,18 @@ def cahier_textes_create(request):
 
     if request.method == 'POST':
         enseignement_id = request.POST.get('enseignement')
-        date = request.POST.get('date')
-        heure_debut = request.POST.get('heure_debut') or None
-        heure_fin = request.POST.get('heure_fin') or None
+        # Objets date/time (et non chaînes) : le journal d'audit appelle str(entrée) dès la création
+        date = _date_ou_none(request.POST.get('date'))
+        heure_debut = _heure_ou_none(request.POST.get('heure_debut'))
+        heure_fin = _heure_ou_none(request.POST.get('heure_fin'))
         contenu = request.POST.get('contenu', '').strip()
         devoirs = request.POST.get('devoirs', '').strip()
-        date_remise = request.POST.get('date_remise_devoirs') or None
+        date_remise = _date_ou_none(request.POST.get('date_remise_devoirs'))
 
         if not enseignement_id or not date or not contenu:
             messages.error(request, "L'enseignement, la date et le contenu sont obligatoires.")
         else:
-            enseignement = get_object_or_404(Enseignement, pk=enseignement_id)
+            enseignement = get_object_or_404(enseignements, pk=enseignement_id)
             CahierTextes.objects.create(
                 enseignement=enseignement,
                 date=date,
@@ -133,7 +151,7 @@ def cahier_textes_create(request):
                 redige_par=request.user,
             )
             messages.success(request, "Entrée ajoutée au cahier de textes.")
-            return redirect('pedagogie:cahier_textes_classe', classe_id=classe.pk)
+            return redirect('pedagogie:cahier_textes_classe', classe_id=enseignement.classe_id)
 
     return render(request, 'pedagogie/cahier_textes_form.html', {
         'classe': classe,
@@ -158,11 +176,11 @@ def cahier_textes_update(request, pk):
         enseignements = enseignements.filter(personnel=filtre_enseignant(request.user))
 
     if request.method == 'POST':
-        heure_debut = request.POST.get('heure_debut') or None
-        heure_fin = request.POST.get('heure_fin') or None
+        heure_debut = _heure_ou_none(request.POST.get('heure_debut'))
+        heure_fin = _heure_ou_none(request.POST.get('heure_fin'))
         contenu = request.POST.get('contenu', '').strip()
         devoirs = request.POST.get('devoirs', '').strip()
-        date_remise = request.POST.get('date_remise_devoirs') or None
+        date_remise = _date_ou_none(request.POST.get('date_remise_devoirs'))
 
         if not contenu:
             messages.error(request, "Le contenu du cours est obligatoire.")

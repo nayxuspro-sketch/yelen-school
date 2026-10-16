@@ -130,3 +130,46 @@ def test_evaluation_saisie_affiche_les_notes_existantes_non_localisees(client):
         assert valeur(prefixe, absent) == ''
     assert set(re.findall(r'\bmax="([^"]*)"', html)) == {'20'}
     assert 'parseFloat("20")' in html
+
+
+@pytest.mark.django_db
+class TestCahierTextesCreate:
+    """Création d'une entrée du cahier de textes avec le journal d'audit actif (production) :
+    les champs date/heure doivent être des objets typés, car l'audit appelle str(entrée)."""
+
+    @pytest.fixture
+    def contexte(self, client):
+        from core.signals import disable_audit, enable_audit
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', etablissement=etab, role='SUPER_ADMIN'))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
+        enseignement = baker.make('pedagogie.Enseignement', classe=classe, annee_scolaire=annee, est_actif=True)
+        enable_audit()
+        yield classe, enseignement
+        disable_audit()
+
+    def test_creation_journalisee(self, contexte, client):
+        import datetime
+        from core.models import AuditLog
+        from pedagogie.models import CahierTextes
+        classe, enseignement = contexte
+        url = reverse('pedagogie:cahier_textes_create') + f'?classe={classe.pk}'
+        reponse = client.post(url, {
+            'enseignement': str(enseignement.pk), 'date': '2026-10-16', 'heure_debut': '08:00',
+            'heure_fin': '10:00', 'contenu': 'Les fractions', 'devoirs': 'Exercices 1 à 5',
+            'date_remise_devoirs': '2026-10-20',
+        })
+        assert reponse.status_code == 302
+        entree = CahierTextes.objects.get()
+        assert (entree.date, entree.heure_debut, entree.date_remise_devoirs) == (
+            datetime.date(2026, 10, 16), datetime.time(8, 0), datetime.date(2026, 10, 20))
+        assert AuditLog.objects.filter(model_name='cahiertextes', action='CREATE').exists()
+
+    def test_date_invalide_refusee_sans_erreur_serveur(self, contexte, client):
+        from pedagogie.models import CahierTextes
+        classe, enseignement = contexte
+        url = reverse('pedagogie:cahier_textes_create') + f'?classe={classe.pk}'
+        reponse = client.post(url, {'enseignement': str(enseignement.pk), 'date': '16/10/2026', 'contenu': 'Cours'})
+        assert reponse.status_code == 200
+        assert CahierTextes.objects.count() == 0
