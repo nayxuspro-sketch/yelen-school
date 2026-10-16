@@ -57,13 +57,13 @@
                 </td>
                 <td style="text-align:center;">{{ ligne.stats.nb_eleves }}</td>
                 <td style="text-align:center; font-weight:700;">
-                    {% if ligne.stats.moy_classe %}{{ ligne.stats.moy_classe }}/20{% else %}—{% endif %}
+                    {% if ligne.stats.moy_classe %}{{ ligne.stats.moy_classe|floatformat:2 }}/20{% else %}—{% endif %}
                 </td>
                 <td style="text-align:center; font-weight:600;">
-                    {% if ligne.stats.moy_max %}{{ ligne.stats.moy_max }}/20{% else %}—{% endif %}
+                    {% if ligne.stats.moy_max %}{{ ligne.stats.moy_max|floatformat:2 }}/20{% else %}—{% endif %}
                 </td>
                 <td style="text-align:center; font-weight:600;">
-                    {% if ligne.stats.moy_min %}{{ ligne.stats.moy_min }}/20{% else %}—{% endif %}
+                    {% if ligne.stats.moy_min %}{{ ligne.stats.moy_min|floatformat:2 }}/20{% else %}—{% endif %}
                 </td>
                 <td style="text-align:center; font-size:9pt;">
                     {{ ligne.stats.nb_admis }}/{{ ligne.stats.nb_eleves }}

@@ -122,13 +122,13 @@
             </td>
             <td class="dash-td-center">{{ ligne.stats.nb_eleves }}</td>
             <td class="dash-td-center dash-moyenne {% if ligne.stats.moy_classe and ligne.stats.moy_classe >= 10 %}dash-moyenne-good{% elif ligne.stats.moy_classe %}dash-moyenne-bad{% endif %}">
-              {% if ligne.stats.moy_classe %}{{ ligne.stats.moy_classe }}{% else %}—{% endif %}
+              {% if ligne.stats.moy_classe %}{{ ligne.stats.moy_classe|floatformat:2 }}{% else %}—{% endif %}
             </td>
             <td class="dash-td-center dash-td-success">
-              {% if ligne.stats.moy_max %}{{ ligne.stats.moy_max }}{% else %}—{% endif %}
+              {% if ligne.stats.moy_max %}{{ ligne.stats.moy_max|floatformat:2 }}{% else %}—{% endif %}
             </td>
             <td class="dash-td-center dash-td-danger">
-              {% if ligne.stats.moy_min %}{{ ligne.stats.moy_min }}{% else %}—{% endif %}
+              {% if ligne.stats.moy_min %}{{ ligne.stats.moy_min|floatformat:2 }}{% else %}—{% endif %}
             </td>
             <td class="dash-td-center">
               {% if ligne.stats.taux is not None %}

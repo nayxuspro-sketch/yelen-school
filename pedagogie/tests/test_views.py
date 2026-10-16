@@ -173,3 +173,28 @@ class TestCahierTextesCreate:
         reponse = client.post(url, {'enseignement': str(enseignement.pk), 'date': '16/10/2026', 'contenu': 'Cours'})
         assert reponse.status_code == 200
         assert CahierTextes.objects.count() == 0
+
+
+@pytest.mark.django_db
+class TestBilanPeriodesPdf:
+    """PDF du bilan des périodes : moyennes à deux décimales et intitulé de la colonne des admis."""
+
+    def test_moyennes_a_deux_decimales(self, client, mocker):
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', etablissement=etab, role='SUPER_ADMIN'))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
+        trimestre = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=1)
+        for moyenne in (Decimal('17.00'), Decimal('12.50')):
+            inscription = baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee)
+            baker.make('pedagogie.MoyenneGenerale', inscription=inscription, trimestre=trimestre, moyenne=moyenne)
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+
+        reponse = client.get(reverse('pedagogie:bilan_pdf'))
+
+        assert reponse.status_code == 200
+        html = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', weasy.call_args.kwargs['string']))
+        assert 'Ayant obtenu la moyenne' in html
+        for valeur in ('14,75/20', '17,00/20', '12,50/20'):
+            assert valeur in html
