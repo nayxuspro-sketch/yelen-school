@@ -191,7 +191,7 @@ body {
                 {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ annee_scolaire.etablissement }}{% endif %}
             </div>
             {% if identite and identite.numero_agrement_mena %}
-            <div class="entete-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</div>
+            <div class="entete-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</div>
             {% endif %}
             {% if identite %}
             <div class="entete-type">{{ identite.get_type_etablissement_display }}</div>

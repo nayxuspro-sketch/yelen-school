@@ -187,6 +187,12 @@ class TestPartialsSansScriptInline:
         # Seuls les blocs <script> noncés de la page de base subsistent
         assert all('nonce="' in balise for balise in re.findall(r'<script(?![^>]*\ssrc=)[^>]*>', html))
 
+    def test_identite_etablissement_libelle_agrement(self, client_etab):
+        html = client_etab.get(reverse('parametres:identite_etablissement')).content.decode()
+
+        assert '<label class="input-label">N° Agrément</label>' in html
+        assert 'Agrément MENA' not in html
+
     def test_formulaire_classe_bascule_examen(self, client_etab):
         html = client_etab.get(reverse('parametres:classe_create'), HTTP_HX_REQUEST='true').content.decode()
 

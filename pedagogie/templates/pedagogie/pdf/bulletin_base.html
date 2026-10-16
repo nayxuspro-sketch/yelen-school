@@ -146,7 +146,7 @@
         <div class="school-info">
             <h1>{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</h1>
             {% if identite and identite.numero_agrement_mena %}
-            <p style="font-style:italic;">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>
+            <p style="font-style:italic;">N° Agrément : {{ identite.numero_agrement_mena }}</p>
             {% endif %}
             <p>{% if identite %}{{ identite.adresse_complete|default:etablissement.adresse|default:"Burkina Faso" }}{% else %}Burkina Faso{% endif %}</p>
             <p>{% if identite and identite.telephone %}{% if identite.email %}{{ identite.email }} · {% endif %}Tél : {{ identite.telephone }}{% endif %}</p>

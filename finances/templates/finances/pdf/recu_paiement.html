@@ -146,7 +146,7 @@
         <div>
             <p class="etab-nom">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</p>
             {% if identite and identite.numero_agrement_mena %}
-            <p class="etab-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>{% endif %}
+            <p class="etab-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>{% endif %}
             <p class="etab-info">{% if identite %}{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}{% else %}{{ etablissement.adresse|default:"Burkina Faso" }}{% endif %}</p>
             <p class="etab-info">Tél : {% if identite %}{{ identite.telephone }}{% else %}{{ etablissement.telephone|default:"—" }}{% endif %}</p>
         </div>

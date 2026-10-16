@@ -72,7 +72,7 @@
             <div>
                 <h1 class="pdf-etab-nom">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom }}{% endif %}</h1>
                 {% if identite and identite.numero_agrement_mena %}
-                <p class="pdf-etab-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>
+                <p class="pdf-etab-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>
                 {% endif %}
                 {% if identite %}
                 <p class="pdf-etab-info">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</p>

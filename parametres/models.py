@@ -106,7 +106,7 @@ class IdentiteEtablissement(BaseModel):
     numero_agrement_mena = models.CharField(
         max_length=50,
         unique=True,
-        verbose_name=_("N° Agrément MENA"),
+        verbose_name=_("N° Agrément"),
         help_text=_("Numéro officiel d'agrément du Ministère")
     )
     

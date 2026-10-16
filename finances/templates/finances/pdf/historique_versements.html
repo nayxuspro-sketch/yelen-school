@@ -83,7 +83,7 @@
             <div>
                 <p class="pdf-etab-nom">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</p>
                 {% if identite and identite.numero_agrement_mena %}
-                <p class="pdf-etab-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>
+                <p class="pdf-etab-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>
                 {% endif %}
                 <p class="pdf-etab-info">{% if identite %}{{ identite.adresse_complete|default:etablissement.adresse|default:"Burkina Faso" }}{% else %}{{ etablissement.adresse|default:"Burkina Faso" }}{% endif %}</p>
                 <p class="pdf-etab-info">{% if identite %}Tél : {{ identite.telephone }}{% else %}Tél : {{ etablissement.telephone|default:"—" }}{% endif %}</p>

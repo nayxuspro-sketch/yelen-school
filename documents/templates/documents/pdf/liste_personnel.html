@@ -90,7 +90,7 @@
                 </div>
                 {% if identite %}
                 {% if identite.numero_agrement_mena %}
-                <div class="agrement">N° Agrément MENA: {{ identite.numero_agrement_mena }}</div>
+                <div class="agrement">N° Agrément: {{ identite.numero_agrement_mena }}</div>
                 {% endif %}
                 <div class="contact">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
                 {% if identite.telephone %}<div class="contact">Tél : {{ identite.telephone }}</div>{% endif %}

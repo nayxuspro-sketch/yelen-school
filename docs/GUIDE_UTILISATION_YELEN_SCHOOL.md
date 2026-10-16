@@ -874,7 +874,7 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 **À quoi ça sert :** Configurer les informations officielles de l'établissement — nom, adresse, contacts, logo, signature et cachet — qui apparaîtront sur tous les documents PDF (certificats, bulletins, attestations).
 
 **Champs principaux :**
-- **Informations officielles** : nom, sigle, type (public/privé/confessionnel), numéro et date d'agrément MENA
+- **Informations officielles** : nom, sigle, type (public/privé/confessionnel), numéro et date d'agrément
 - **Adresse complète** : rue/quartier, ville, province, région
 - **Contact** : téléphone, email, site web, nom du directeur
 - **Éléments graphiques** : logo (PNG/JPG ≥ 300×300px), signature du directeur (PNG transparent), cachet officiel
@@ -2226,7 +2226,7 @@ Sélectionne la période pour obtenir le rapport de tous les paiements :
 
 Le reçu PDF contient :
 
-- En-tête : logo (converti en niveaux de gris), nom de l'établissement, N° agrément MENA, adresse, téléphone
+- En-tête : logo (converti en niveaux de gris), nom de l'établissement, N° agrément, adresse, téléphone
 - Informations de l'élève : nom, matricule, classe, année scolaire, mode et date de paiement
 - **QR code de l'élève** (lisible sans connexion) — contient : matricule, nom/prénom, établissement, ville, téléphone, adresse
 - Résumé financier en 3 blocs différenciés par épaisseur de bordure gauche :

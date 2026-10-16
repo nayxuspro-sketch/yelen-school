@@ -224,7 +224,7 @@ tbody tr:nth-child(even) td { background: #f2f2f2; }
         {% if identite %}{{ identite.nom_etablissement }}{% elif etab %}{{ etab.nom }}{% endif %}
       </div>
       {% if identite and identite.numero_agrement_mena %}
-      <div class="entete-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</div>
+      <div class="entete-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</div>
       {% endif %}
       {% if identite %}
       <div class="entete-type">{{ identite.get_type_etablissement_display }}</div>

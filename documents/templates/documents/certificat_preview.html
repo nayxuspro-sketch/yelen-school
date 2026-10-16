@@ -84,7 +84,7 @@
             {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement }}{% endif %}
           </p>
           {% if identite and identite.numero_agrement_mena %}
-          <p class="doc-cert-etab-agrement">N° Agrément MENA : {{ identite.numero_agrement_mena }}</p>
+          <p class="doc-cert-etab-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>
           {% endif %}
           {% if identite %}
           <p class="doc-cert-etab-type">{{ identite.get_type_etablissement_display }}</p>

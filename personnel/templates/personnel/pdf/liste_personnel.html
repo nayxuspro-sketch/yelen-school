@@ -87,7 +87,7 @@
   <div class="header-text">
     <div class="header-etab">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etab_nom }}{% endif %}</div>
     {% if identite %}
-    {% if identite.numero_agrement_mena %}<div class="header-sub">N° Agrément MENA : {{ identite.numero_agrement_mena }}</div>{% endif %}
+    {% if identite.numero_agrement_mena %}<div class="header-sub">N° Agrément : {{ identite.numero_agrement_mena }}</div>{% endif %}
     <div class="header-sub">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
     {% if identite.telephone %}<div class="header-sub">Tél. : {{ identite.telephone }}</div>{% endif %}
     {% endif %}
