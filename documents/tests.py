@@ -141,3 +141,33 @@ def test_document_numero_et_version_generes_a_la_creation(client, mocker):
     html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
     client.get(reverse('documents:certificat_scolarite', kwargs={'inscription_id': inscription.pk}) + '?format=pdf')
     assert f'N° CERT_SCOL-{annee_civile}-00003' in html_cls.call_args.kwargs['string']
+
+
+@pytest.mark.django_db
+def test_liste_classe_effectif_par_genre(client, mocker):
+    """Sous la liste alphabétique, un tableau donne le nombre d'élèves par genre et l'effectif total
+    (prévisualisation HTML et PDF)."""
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
+    for genre in ('M', 'M', 'F', 'M', 'F'):
+        eleve = baker.make('inscriptions.Eleve', genre=genre, date_naissance=datetime.date(2010, 1, 1))
+        baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee)
+    url = reverse('documents:liste_classe_pdf', kwargs={'classe_id': classe.pk})
+
+    def effectifs(html):
+        html = re.sub(r'<!--.*?-->', '', html, flags=re.S)
+        bloc = html.split('Effectif par genre')[1].split('</table>')[0]
+        return [re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', ligne)).strip()
+                for ligne in re.findall(r'<tr[^>]*>(.*?)</tr>', bloc, re.S)][1:]
+
+    attendu = ['Garçons 3', 'Filles 2', 'EFFECTIF TOTAL 5']
+    apercu = client.get(url)
+    assert apercu.status_code == 200
+    assert effectifs(apercu.content.decode()) == attendu
+
+    html_cls = mocker.patch('core.pdf.HTML')
+    html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+    assert client.get(url + '?format=pdf').status_code == 200
+    assert effectifs(html_cls.call_args.kwargs['string']) == attendu
