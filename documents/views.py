@@ -21,6 +21,7 @@ from inscriptions.models import Inscription
 
 from .models import Document
 from core.utils import get_etablissement_context
+from core.statistiques import statistiques_eleves
 from core.models import RoleChoices
 
 # P2 — filigrane PDF avec licence
@@ -274,62 +275,10 @@ def liste_classe_pdf(request, classe_id):
     # Évaluer le queryset une seule fois pour les calculs
     inscriptions_list = list(inscriptions)
 
-    nb_total   = len(inscriptions_list)
-    nb_garcons = sum(1 for i in inscriptions_list if i.eleve.genre == 'M')
-    nb_filles  = sum(1 for i in inscriptions_list if i.eleve.genre == 'F')
-
-    # Répartition des âges par genre
-    import datetime as _dt
-    today = _dt.date.today()
-
-    AGE_BRACKETS = [
-        ( 0,  5, "≤ 5 ans"),
-        ( 6,  8, "6 – 8 ans"),
-        ( 9, 11, "9 – 11 ans"),
-        (12, 14, "12 – 14 ans"),
-        (15, 17, "15 – 17 ans"),
-        (18, 20, "18 – 20 ans"),
-        (21, 999, "> 20 ans"),
-    ]
-
-    n = len(AGE_BRACKETS)
-    cg = [0] * n   # garçons par tranche (indexé comme AGE_BRACKETS)
-    cf = [0] * n   # filles  par tranche
-    nb_sd_g = 0
-    nb_sd_f = 0
-
-    for ins in inscriptions_list:
-        dn = ins.eleve.date_naissance
-        genre = ins.eleve.genre
-        if not dn:
-            if genre == 'M':
-                nb_sd_g = nb_sd_g + 1
-            else:
-                nb_sd_f = nb_sd_f + 1
-            continue
-        age = (today - dn).days // 365
-        for idx, (min_a, max_a, _lbl) in enumerate(AGE_BRACKETS):
-            if min_a <= age <= max_a:
-                if genre == 'M':
-                    cg[idx] = cg[idx] + 1
-                else:
-                    cf[idx] = cf[idx] + 1
-                break
-
-    repartition_ages = []
-    for idx, (_min, _max, lbl) in enumerate(AGE_BRACKETS):
-        g = int(cg[idx])
-        f = int(cf[idx])
-        if g + f > 0:
-            repartition_ages.append({'label': lbl, 'garcons': g, 'filles': f, 'total': g + f})
-    nb_sd = nb_sd_g + nb_sd_f
-    if nb_sd:
-        repartition_ages.append({
-            'label': 'Sans date de naissance',
-            'garcons': nb_sd_g,
-            'filles': nb_sd_f,
-            'total': nb_sd,
-        })
+    # Effectif par genre et répartition des âges (aide partagée avec la liste des élèves)
+    stats = statistiques_eleves((i.eleve.genre, i.eleve.date_naissance) for i in inscriptions_list)
+    nb_total, nb_garcons, nb_filles = (stats['effectif'][k] for k in ('total', 'garcons', 'filles'))
+    repartition_ages = stats['tranches']
 
     # Signataire — cherche par cycle + code TypeDocument contenant "liste" et "classe"
     # Couvre : 'Liste_classe_sec', 'Liste-classe', 'liste_classe_prim', etc.

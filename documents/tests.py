@@ -152,22 +152,25 @@ def test_liste_classe_effectif_par_genre(client, mocker):
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
     for genre in ('M', 'M', 'F', 'M', 'F'):
-        eleve = baker.make('inscriptions.Eleve', genre=genre, date_naissance=datetime.date(2010, 1, 1))
+        eleve = baker.make('inscriptions.Eleve', genre=genre, date_naissance=datetime.date(datetime.date.today().year - 16, 1, 1))
         baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee)
     url = reverse('documents:liste_classe_pdf', kwargs={'classe_id': classe.pk})
 
-    def effectifs(html):
+    def lignes(html, titre):
         html = re.sub(r'<!--.*?-->', '', html, flags=re.S)
-        bloc = html.split('Effectif par genre')[1].split('</table>')[0]
+        bloc = html.split(titre)[1].split('</table>')[0]
         return [re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', ligne)).strip()
                 for ligne in re.findall(r'<tr[^>]*>(.*?)</tr>', bloc, re.S)][1:]
 
-    attendu = ['Garçons 3', 'Filles 2', 'EFFECTIF TOTAL 5']
+    genre_attendu = ['Garçons 3', 'Filles 2', 'EFFECTIF TOTAL 5']
+    ages_attendu = ['15 – 17 ans 3 2 5', 'TOTAL 3 2 5']
     apercu = client.get(url)
     assert apercu.status_code == 200
-    assert effectifs(apercu.content.decode()) == attendu
+    assert lignes(apercu.content.decode(), 'Effectif par genre') == genre_attendu
+    assert lignes(apercu.content.decode(), 'Répartition des âges par genre') == ages_attendu
 
     html_cls = mocker.patch('core.pdf.HTML')
     html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
     assert client.get(url + '?format=pdf').status_code == 200
-    assert effectifs(html_cls.call_args.kwargs['string']) == attendu
+    assert lignes(html_cls.call_args.kwargs['string'], 'Effectif par genre') == genre_attendu
+    assert lignes(html_cls.call_args.kwargs['string'], 'Répartition des âges par genre') == ages_attendu

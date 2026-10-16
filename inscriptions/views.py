@@ -13,6 +13,7 @@ from .models import Eleve, Inscription, EvenementParcours, TransfertEleve
 from .forms import EleveForm, InscriptionForm, TransfertClasseForm
 from parametres.models import AnneeScolaire, Classe
 from core.utils import get_etablissement_context
+from core.statistiques import statistiques_eleves
 
 try:
     from core.pdf import HTML as _WeasyHTML
@@ -69,6 +70,13 @@ def eleve_list(request):
         elif statut_filter == 'inactif':
             eleves = eleves.filter(is_active=False)
 
+    # Statistiques sur l'ensemble filtré (toutes pages) : un seul parcours (pk, genre, date)
+    stats = statistiques_eleves(
+        (genre, date_naissance)
+        for _pk, genre, date_naissance
+        in eleves.order_by().values_list('pk', 'genre', 'date_naissance').distinct()
+    )
+
     paginator = Paginator(eleves, 50)
     page_obj = paginator.get_page(page_number)
 
@@ -96,6 +104,7 @@ def eleve_list(request):
         'statut_filter': statut_filter,
         'classes': classes,
         'inscriptions_courantes': inscriptions_courantes,
+        'stats': stats,
     }
 
     if request.headers.get('HX-Request'):

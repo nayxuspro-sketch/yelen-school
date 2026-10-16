@@ -55,3 +55,36 @@ def test_formulaire_inscription_sans_onchange_genere(client):
     assert 'onchange=' not in html and 'window.update' not in html
     assert "classeSelect.addEventListener('change'" in html
     assert "statutSelect.addEventListener('change', updateCodePaiementFromFields)" in html
+
+
+@pytest.mark.django_db
+class TestEleveListStatistiques:
+    """Sous la liste des élèves : effectif par genre et répartition des âges, calculés sur
+    l'ensemble filtré (toutes pages), aussi dans la réponse HTMX."""
+
+    @staticmethod
+    def _lignes(html, titre):
+        import re
+        bloc = html.split(titre)[1].split('</table>')[0]
+        return [re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', ligne)).strip()
+                for ligne in re.findall(r'<tr[^>]*>(.*?)</tr>', bloc, re.S)][1:]
+
+    def test_tableaux_sous_la_liste(self, client):
+        import datetime
+        aujourd_hui = datetime.date.today()
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', is_superuser=True, etablissement=etab))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
+        autre = baker.make('parametres.Classe', etablissement=etab, cycle=classe.cycle)
+        for genre, age, cl in (('M', 7, classe), ('M', 10, classe), ('F', 10, classe), ('F', 16, classe), ('M', 16, autre)):
+            eleve = baker.make('inscriptions.Eleve', genre=genre, date_naissance=datetime.date(aujourd_hui.year - age, 1, 1))
+            baker.make('inscriptions.Inscription', eleve=eleve, classe=cl, annee_scolaire=annee)
+
+        html = client.get(reverse('inscriptions:eleve_list')).content.decode()
+        assert self._lignes(html, 'Effectif par genre') == ['Garçons 3', 'Filles 2', 'EFFECTIF TOTAL 5']
+        assert self._lignes(html, 'Répartition des âges par genre') == [
+            '6 – 8 ans 1 0 1', '9 – 11 ans 1 1 2', '15 – 17 ans 1 1 2', 'TOTAL 3 2 5']
+
+        partiel = client.get(reverse('inscriptions:eleve_list'), {'classe': classe.pk}, HTTP_HX_REQUEST='true').content.decode()
+        assert self._lignes(partiel, 'Effectif par genre') == ['Garçons 2', 'Filles 2', 'EFFECTIF TOTAL 4']

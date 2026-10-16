@@ -136,3 +136,70 @@
   {% endif %}
 </div>
 {% endif %}
+
+{% if stats.effectif.total %}
+<div class="stats-eleves" style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); gap:var(--space-6); margin-top:var(--space-6);">
+  <div>
+    <h2 style="font-size:0.95rem; font-weight:600; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:.08em; margin-bottom:var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+      Effectif par genre
+    </h2>
+    <table class="data-table" style="table-layout:fixed;">
+      <thead>
+        <tr>
+          <th>Genre</th>
+          <th style="width:140px; text-align:center;">Nombre d'élèves</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fw-medium">Garçons</td>
+          <td style="text-align:center;">{{ stats.effectif.garcons }}</td>
+        </tr>
+        <tr>
+          <td class="fw-medium">Filles</td>
+          <td style="text-align:center;">{{ stats.effectif.filles }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr style="border-top:2px solid var(--color-primary); background:var(--color-primary-ambient);">
+          <td class="fw-bold" style="color:var(--color-primary);">EFFECTIF TOTAL</td>
+          <td style="text-align:center;" class="fw-bold text-primary">{{ stats.effectif.total }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div>
+    <h2 style="font-size:0.95rem; font-weight:600; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:.08em; margin-bottom:var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--color-border);">
+      Répartition des âges par genre
+    </h2>
+    <table class="data-table" style="table-layout:fixed;">
+      <thead>
+        <tr>
+          <th>Tranche d'âge</th>
+          <th style="width:110px; text-align:center;">Garçons</th>
+          <th style="width:110px; text-align:center;">Filles</th>
+          <th style="width:110px; text-align:center;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in stats.tranches %}
+        <tr>
+          <td class="fw-medium">{{ ligne.label }}</td>
+          <td style="text-align:center;">{{ ligne.garcons }}</td>
+          <td style="text-align:center;">{{ ligne.filles }}</td>
+          <td style="text-align:center;" class="fw-bold">{{ ligne.total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="border-top:2px solid var(--color-primary); background:var(--color-primary-ambient);">
+          <td class="fw-bold" style="color:var(--color-primary);">TOTAL</td>
+          <td style="text-align:center;" class="fw-bold text-primary">{{ stats.effectif.garcons }}</td>
+          <td style="text-align:center;" class="fw-bold text-primary">{{ stats.effectif.filles }}</td>
+          <td style="text-align:center;" class="fw-bold text-primary">{{ stats.effectif.total }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endif %}
