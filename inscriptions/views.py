@@ -434,8 +434,10 @@ def eleve_list_pdf(request):
     filtre_statut = filtre_statut_labels.get(statut_filter, '')
 
     rows = []
+    couples = []  # (genre, date de naissance) pour les tableaux statistiques
     for eleve in eleves:
         insc = inscriptions_index.get(str(eleve.pk))
+        couples.append((eleve.genre, eleve.date_naissance))
         rows.append({
             'matricule': eleve.matricule or '',
             'nom': eleve.nom.upper(),
@@ -456,6 +458,7 @@ def eleve_list_pdf(request):
         'filtre_statut': filtre_statut,
         'date_edition': _date.today().strftime('%d/%m/%Y'),
         'identite': ctx_etab.get('identite'),
+        'stats': statistiques_eleves(couples),
     })
 
     pdf = _WeasyHTML(string=html_str, base_url=request.build_absolute_uri('/')).write_pdf()

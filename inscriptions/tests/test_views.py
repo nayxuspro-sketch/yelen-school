@@ -69,7 +69,7 @@ class TestEleveListStatistiques:
         return [re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', ligne)).strip()
                 for ligne in re.findall(r'<tr[^>]*>(.*?)</tr>', bloc, re.S)][1:]
 
-    def test_tableaux_sous_la_liste(self, client):
+    def test_tableaux_sous_la_liste(self, client, mocker):
         import datetime
         aujourd_hui = datetime.date.today()
         etab = baker.make('etablissements.Etablissement')
@@ -88,3 +88,11 @@ class TestEleveListStatistiques:
 
         partiel = client.get(reverse('inscriptions:eleve_list'), {'classe': classe.pk}, HTTP_HX_REQUEST='true').content.decode()
         assert self._lignes(partiel, 'Effectif par genre') == ['Garçons 2', 'Filles 2', 'EFFECTIF TOTAL 4']
+
+        rendu = mocker.patch('inscriptions.views._WeasyHTML')
+        rendu.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+        assert client.get(reverse('inscriptions:eleve_list_pdf'), {'classe': classe.pk}).status_code == 200
+        html_pdf = rendu.call_args.kwargs['string']
+        assert self._lignes(html_pdf, 'Effectif par genre') == ['Garçons 2', 'Filles 2', 'EFFECTIF TOTAL 4']
+        assert self._lignes(html_pdf, 'Répartition des âges par genre') == [
+            '6 – 8 ans 1 0 1', '9 – 11 ans 1 1 2', '15 – 17 ans 0 1 1', 'TOTAL 2 2 4']

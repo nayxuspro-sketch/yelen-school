@@ -95,6 +95,25 @@
   .badge-active { background: #d1fae5; color: #065f46; }
   .badge-abandon { background: #fee2e2; color: #991b1b; }
 
+  /* ── Tableaux statistiques ── */
+  .stats { display: flex; gap: 10mm; margin-top: 10mm; page-break-inside: avoid; }
+  .stats-bloc { flex: 1; }
+  .stats-bloc.genre { flex: 0 0 62mm; }
+  .stats-titre {
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #111827;
+    margin-bottom: 4px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #9ca3af;
+  }
+  .stats table { width: 100%; }
+  .stats th.center, .stats td.center { text-align: center; }
+  .stats thead th.center { width: 20mm; }
+  .stats tr.total-row td { background-color: #111827; color: #fff; font-weight: 700; }
+
   /* ── Pied de page ── */
   .footer {
     margin-top: 12px;
@@ -165,6 +184,65 @@
     {% endfor %}
   </tbody>
 </table>
+
+{% if stats.effectif.total %}
+<div class="stats">
+  <div class="stats-bloc genre">
+    <div class="stats-titre">Effectif par genre</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Genre</th>
+          <th class="center">Nombre d'élèves</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Garçons</td>
+          <td class="center">{{ stats.effectif.garcons }}</td>
+        </tr>
+        <tr>
+          <td>Filles</td>
+          <td class="center">{{ stats.effectif.filles }}</td>
+        </tr>
+        <tr class="total-row">
+          <td>EFFECTIF TOTAL</td>
+          <td class="center">{{ stats.effectif.total }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="stats-bloc">
+    <div class="stats-titre">Répartition des âges par genre</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Tranche d'âge</th>
+          <th class="center">Garçons</th>
+          <th class="center">Filles</th>
+          <th class="center">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in stats.tranches %}
+        <tr>
+          <td>{{ ligne.label }}</td>
+          <td class="center">{{ ligne.garcons }}</td>
+          <td class="center">{{ ligne.filles }}</td>
+          <td class="center"><strong>{{ ligne.total }}</strong></td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+          <td>TOTAL</td>
+          <td class="center">{{ stats.effectif.garcons }}</td>
+          <td class="center">{{ stats.effectif.filles }}</td>
+          <td class="center">{{ stats.effectif.total }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
 
 <div class="footer">
   <span>Édité le {{ date_edition }}</span>
