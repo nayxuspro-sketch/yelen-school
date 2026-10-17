@@ -99,6 +99,15 @@ class User(AbstractUser, BaseModel):
         verbose_name='Rôle',
         help_text='Rôle RBAC déterminant les permissions.',
     )
+    role_personnalise = models.ForeignKey(
+        'parametres.RolePersonnalise',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='utilisateurs',
+        verbose_name='Rôle personnalisé',
+        help_text="Rôle créé par le Super Admin ; « Rôle » reste alors son rôle de référence.",
+    )
     etablissement = models.ForeignKey(
         'etablissements.Etablissement',
         on_delete=models.SET_NULL,
@@ -173,7 +182,16 @@ class User(AbstractUser, BaseModel):
         ordering = ['last_name', 'first_name']
 
     def __str__(self) -> str:
-        return f'{self.get_full_name()} ({self.get_role_display()})'
+        return f'{self.get_full_name()} ({self.role_libelle})'
+
+    @property
+    def role_effectif(self):
+        """Code de rôle utilisé par la matrice des droits d'accès."""
+        return self.role_personnalise.code if self.role_personnalise_id else self.role
+
+    @property
+    def role_libelle(self):
+        return self.role_personnalise.libelle if self.role_personnalise_id else self.get_role_display()
 
     # ── Méthodes de vérification de rôle ──
 

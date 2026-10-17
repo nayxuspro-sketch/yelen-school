@@ -249,3 +249,116 @@ class TestAdministrationParLeSuperAdmin:
         assert 'id="finances-toggle"' in html and 'id="inscriptions-toggle"' in html
         assert 'data-url="/inscriptions/reinscription/"' in html and 'data-url="/inscriptions/"' not in html
         assert 'id="bulletins-toggle"' not in html
+
+
+@pytest.mark.django_db
+class TestRolesPersonnalises:
+    """Rôles créés par le Super Admin : colonne de la matrice, héritage de la référence, affectation aux utilisateurs."""
+
+    def _creer(self, client, etab, libelle='Surveillant général', base='AVS'):
+        _client_role(client, etab, 'SUPER_ADMIN')
+        return client.post(reverse('parametres:role_personnalise_create'), {'libelle': libelle, 'base': base})
+
+    def test_creation_code_derive_et_colonne_dans_la_matrice(self, client, etab):
+        from parametres.models import RolePersonnalise
+
+        assert self._creer(client, etab).status_code == 302
+        role = RolePersonnalise.objects.get()
+        assert (role.code, role.base, role.libelle) == ('SURVEILLANT_GENERAL', 'AVS', 'Surveillant général')
+        html = client.get(reverse('parametres:droits_acces')).content.decode()
+        assert 'Surveillant général' in html and 'réf. Agent de Vie Scolaire' in html
+        assert 'value="SURVEILLANT_GENERAL:viescolaire:/viescolaire/sanctions/:prononcer"' in html
+        assert html.count('name="droit"') == (len(droits.ROLES_CONFIGURABLES) + 1) * NB_CASES
+
+    def test_code_en_conflit_refuse(self, client, etab):
+        from parametres.models import RolePersonnalise
+        self._creer(client, etab, libelle='Enseignant', base='ENSEIGNANT')           # code intégré
+        self._creer(client, etab, libelle='Caisse', base='COMPTABLE')
+        self._creer(client, etab, libelle='CAISSE', base='SECRETAIRE')               # même code
+        assert list(RolePersonnalise.objects.values_list('code', flat=True)) == ['CAISSE']
+        assert 'existe déjà' in client.get(reverse('parametres:droits_acces')).content.decode()
+
+    def test_reserve_au_super_admin(self, client, etab):
+        _client_role(client, etab, 'DIRECTEUR')
+        assert client.post(reverse('parametres:role_personnalise_create'), {'libelle': 'X', 'base': 'AVS'}).status_code == 403
+
+    def test_herite_de_sa_reference_puis_s_en_detache(self, client, etab):
+        from parametres.models import DroitAcces, RolePersonnalise
+        self._creer(client, etab, libelle='Caissier', base='SECRETAIRE')
+        role = RolePersonnalise.objects.get()
+        baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        caissier = baker.make('accounts.User', etablissement=etab, role='SECRETAIRE', role_personnalise=role,
+                              must_change_password=False)
+        assert caissier.role_effectif == 'CAISSIER' and caissier.role_libelle == 'Caissier'
+        client.force_login(caissier)
+
+        # Comme une secrétaire : consultation des paiements oui, encaissement non
+        assert client.get(reverse('finances:paiement_list')).status_code == 200
+        assert client.get(reverse('finances:paiement_recherche_eleve'), {'q': 'x'}).url == '/'
+
+        # Droits propres : encaissement ouvert, Pédagogie fermée — la secrétaire n'en est pas affectée
+        DroitAcces.objects.create(role='CAISSIER', module='finances', fonctionnalite='/finances/paiements/',
+                                  action='encaisser', autorise=True)
+        DroitAcces.objects.create(role='CAISSIER', module='pedagogie', autorise=False)
+        droits.invalider_cache()
+        assert client.get(reverse('finances:paiement_recherche_eleve'), {'q': 'x'}).status_code == 200
+        assert client.get(reverse('pedagogie:matiere_list')).url == '/'
+        assert 'id="pedagogie-toggle"' not in client.get('/').content.decode()
+        secretaire = _client_role(client.__class__(), etab, 'SECRETAIRE')
+        assert secretaire.get(reverse('pedagogie:matiere_list')).status_code == 200
+        assert secretaire.get(reverse('finances:paiement_recherche_eleve'), {'q': 'x'}).url == '/'
+
+    def test_enregistrement_de_la_matrice_couvre_le_nouveau_role(self, client, etab):
+        from parametres.models import DroitAcces
+        self._creer(client, etab)
+        coches = [f'{role.code}:{module}:{prefixe}:{action}'
+                  for role in droits.roles_configurables() for module, prefixe, action in droits.cles_matrice()]
+        coches.remove('SURVEILLANT_GENERAL:viescolaire:/viescolaire/sanctions/:')
+
+        client.post(reverse('parametres:droits_acces'), {'droit': coches})
+
+        assert DroitAcces.objects.filter(role='SURVEILLANT_GENERAL').count() == NB_CASES
+        effectif = droits.matrice_effective()
+        assert '/viescolaire/sanctions/' not in effectif['SURVEILLANT_GENERAL']['fonctionnalites']['viescolaire']
+        assert '/viescolaire/sanctions/' in effectif['AVS']['fonctionnalites']['viescolaire']
+
+    def test_suppression_protegee_puis_possible(self, client, etab):
+        from parametres.models import DroitAcces, RolePersonnalise
+        self._creer(client, etab)
+        role = RolePersonnalise.objects.get()
+        DroitAcces.objects.create(role=role.code, module='finances', autorise=True)
+        porteur = baker.make('accounts.User', etablissement=etab, role='AVS', role_personnalise=role)
+
+        client.post(reverse('parametres:role_personnalise_delete', kwargs={'pk': role.pk}))
+        assert RolePersonnalise.objects.filter(pk=role.pk).exists()
+        assert 'le portent encore' in client.get(reverse('parametres:droits_acces')).content.decode()
+
+        porteur.role_personnalise = None
+        porteur.save(update_fields=['role_personnalise'])
+        client.post(reverse('parametres:role_personnalise_delete', kwargs={'pk': role.pk}))
+        assert not RolePersonnalise.objects.exists() and not DroitAcces.objects.filter(role=role.code).exists()
+
+    def test_formulaire_utilisateur_propose_et_applique_le_role(self, client, etab):
+        from accounts.models import User
+        from parametres.models import RolePersonnalise
+        self._creer(client, etab, libelle='Caissier', base='COMPTABLE')
+        role = RolePersonnalise.objects.get()
+
+        html = client.get(reverse('accounts:user_create')).content.decode()
+        assert '<optgroup label="Rôles personnalisés">' in html and '<option value="CAISSIER">Caissier</option>' in html
+        donnees = {'last_name': 'Zongo', 'first_name': 'Awa', 'email': 'awa@ecole.bf', 'telephone': '',
+                   'role': 'CAISSIER', 'etablissement': etab.pk,
+                   'password1': 'MotDePasse!2026xyz', 'password2': 'MotDePasse!2026xyz'}
+        assert client.post(reverse('accounts:user_create'), donnees).status_code == 302
+        awa = User.objects.get(email='awa@ecole.bf')
+        assert awa.role == 'COMPTABLE' and awa.role_personnalise == role
+
+        html = client.get(reverse('accounts:user_update', kwargs={'pk': awa.pk})).content.decode()
+        assert '<option value="CAISSIER" selected>Caissier</option>' in html
+        donnees = {'last_name': 'Zongo', 'first_name': 'Awa', 'email': 'awa@ecole.bf', 'telephone': '',
+                   'role': 'SECRETAIRE', 'etablissement': etab.pk, 'is_active': 'on'}
+        assert client.post(reverse('accounts:user_update', kwargs={'pk': awa.pk}), donnees).status_code == 302
+        awa.refresh_from_db()
+        assert awa.role == 'SECRETAIRE' and awa.role_personnalise is None
+        liste = client.get(reverse('accounts:user_list'), {'role': 'CAISSIER'}).content.decode()
+        assert 'awa@ecole.bf' not in liste

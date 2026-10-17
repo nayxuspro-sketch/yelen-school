@@ -98,7 +98,7 @@
               {% elif u.role == 'DIRECTEUR' %}badge-warning
               {% elif u.role == 'COMPTABLE' %}badge-success
               {% else %}badge-neutral{% endif %}">
-              {{ u.get_role_display }}
+              {{ u.role_libelle }}
             </span>
           </td>
           <td class="text-secondary">{{ u.etablissement|default:"—" }}</td>

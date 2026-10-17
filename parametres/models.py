@@ -1863,6 +1863,33 @@ class DeclencheurSMS(BaseModel):
 # DROITS D'ACCÈS AUX MODULES PAR RÔLE
 # ═══════════════════════════════════════════════════════════════════
 
+class RolePersonnalise(BaseModel):
+    """Rôle créé par le Super Admin (voir ``parametres.droits``).
+
+    ``base`` est le rôle intégré de référence : il fixe le comportement métier
+    (tableau de bord, périmètre d'un enseignant…) et sert de valeur initiale aux
+    droits d'accès ; la matrice règle ensuite les droits du rôle lui-même.
+    Un utilisateur de ce rôle porte ``role = base`` et ``role_personnalise = ce rôle``.
+    """
+
+    code = models.CharField(max_length=30, unique=True, verbose_name=_("Code"))
+    libelle = models.CharField(max_length=60, unique=True, verbose_name=_("Libellé"))
+    base = models.CharField(max_length=20, verbose_name=_("Rôle de référence"))
+
+    class Meta:
+        verbose_name = _("Rôle personnalisé")
+        verbose_name_plural = _("Rôles personnalisés")
+        ordering = ['libelle']
+
+    def __str__(self):
+        return self.libelle
+
+    @property
+    def base_libelle(self):
+        from core.models import RoleChoices
+        return RoleChoices(self.base).label
+
+
 class DroitAcces(BaseModel):
     """Accès d'un rôle du personnel à un module (voir ``parametres.droits``).
 

@@ -7,6 +7,8 @@ urlpatterns = [
     # Index
     path('', views.parametres_index, name='index'),
     path('droits-acces/', views.droits_acces, name='droits_acces'),
+    path('droits-acces/roles/nouveau/', views.role_personnalise_create, name='role_personnalise_create'),
+    path('droits-acces/roles/<uuid:pk>/supprimer/', views.role_personnalise_delete, name='role_personnalise_delete'),
 
     # Années scolaires
     path('annees/', views.annee_list, name='annee_list'),

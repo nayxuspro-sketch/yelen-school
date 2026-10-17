@@ -8,6 +8,7 @@ from django.utils.functional import lazy
 from .models import User
 from core.models import RoleChoices
 from etablissements.models import Etablissement
+from parametres.droits import affecter_role, choix_roles
 
 
 
@@ -36,6 +37,20 @@ def _password_widget():
     })
 
 
+def _champ_role():
+    return forms.ChoiceField(label='Rôle', widget=forms.Select(attrs={'class': 'input select'}))
+
+
+def _configurer_role(form, current_user):
+    """Choix : rôles intégrés (sans Super Admin hors Super Admin) puis rôles personnalisés ; valeur = code."""
+    exclure_super = bool(current_user) and current_user.role != RoleChoices.SUPER_ADMIN
+    choix = choix_roles(exclure_super_admin=exclure_super)
+    integres = [c for c in choix if c[0] in RoleChoices.values]
+    personnalises = [c for c in choix if c[0] not in RoleChoices.values]
+    form.fields['role'].choices = integres + ([('Rôles personnalisés', personnalises)] if personnalises else [])
+    form.initial.setdefault('role', form.instance.role_effectif)
+
+
 class UserCreateForm(forms.ModelForm):
     password1 = forms.CharField(
         label="Mot de passe",
@@ -47,15 +62,16 @@ class UserCreateForm(forms.ModelForm):
         widget=forms.PasswordInput(attrs={'class': 'input', 'autocomplete': 'new-password'}),
     )
 
+    role = _champ_role()
+
     class Meta:
         model = User
-        fields = ['last_name', 'first_name', 'email', 'telephone', 'role', 'etablissement']
+        fields = ['last_name', 'first_name', 'email', 'telephone', 'etablissement']
         widgets = {
             'last_name':    forms.TextInput(attrs={'class': 'input'}),
             'first_name':   forms.TextInput(attrs={'class': 'input'}),
             'email':        forms.EmailInput(attrs={'class': 'input', 'autocomplete': 'email'}),
             'telephone':    forms.TextInput(attrs={'class': 'input'}),
-            'role':         forms.Select(attrs={'class': 'input select'}),
             'etablissement': forms.Select(attrs={'class': 'input select'}),
         }
 
@@ -63,13 +79,11 @@ class UserCreateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['last_name'].required = True
         self.fields['first_name'].required = True
+        _configurer_role(self, current_user)
         self._configure_for_user(current_user)
 
     def _configure_for_user(self, current_user):
         if current_user and current_user.role != RoleChoices.SUPER_ADMIN:
-            self.fields['role'].choices = [
-                c for c in RoleChoices.choices if c[0] != RoleChoices.SUPER_ADMIN
-            ]
             self.fields['etablissement'].queryset = Etablissement.objects.filter(
                 pk=current_user.etablissement_id
             )
@@ -100,21 +114,23 @@ class UserCreateForm(forms.ModelForm):
         user = super().save(commit=False)
         user.username = self.cleaned_data['email']
         user.set_password(self.cleaned_data['password1'])
+        affecter_role(user, self.cleaned_data['role'])
         if commit:
             user.save()
         return user
 
 
 class UserUpdateForm(forms.ModelForm):
+    role = _champ_role()
+
     class Meta:
         model = User
-        fields = ['last_name', 'first_name', 'email', 'telephone', 'role', 'etablissement', 'is_active']
+        fields = ['last_name', 'first_name', 'email', 'telephone', 'etablissement', 'is_active']
         widgets = {
             'last_name':    forms.TextInput(attrs={'class': 'input'}),
             'first_name':   forms.TextInput(attrs={'class': 'input'}),
             'email':        forms.EmailInput(attrs={'class': 'input'}),
             'telephone':    forms.TextInput(attrs={'class': 'input'}),
-            'role':         forms.Select(attrs={'class': 'input select'}),
             'etablissement': forms.Select(attrs={'class': 'input select'}),
         }
 
@@ -122,10 +138,8 @@ class UserUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['last_name'].required = True
         self.fields['first_name'].required = True
+        _configurer_role(self, current_user)
         if current_user and current_user.role != RoleChoices.SUPER_ADMIN:
-            self.fields['role'].choices = [
-                c for c in RoleChoices.choices if c[0] != RoleChoices.SUPER_ADMIN
-            ]
             self.fields['etablissement'].queryset = Etablissement.objects.filter(
                 pk=current_user.etablissement_id
             )
@@ -144,6 +158,7 @@ class UserUpdateForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.username = user.email
+        affecter_role(user, self.cleaned_data['role'])
         if commit:
             user.save()
         return user

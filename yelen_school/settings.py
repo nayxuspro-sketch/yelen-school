@@ -424,6 +424,7 @@ TOKEN_EXPIRY_HOURS = int(os.environ.get('TOKEN_EXPIRY_HOURS', '24'))
 # Limites upload — prévention DoS
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024   # 5 Mo en mémoire
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 Mo max par requête
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000  # matrice des droits : une case par (rôle × fonctionnalité/action), > 1 000 par défaut
 
 # ── LOGGING ────────────────────────────────────────────────────────────────────
 LOG_DIR = BASE_DIR / 'logs'

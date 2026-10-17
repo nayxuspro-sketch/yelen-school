@@ -1,5 +1,7 @@
 from django import forms
+from django.utils.text import slugify
 
+from core.models import RoleChoices
 from pedagogie.models import TypeEvaluation
 from personnel.models import MembrePersonnel
 
@@ -8,7 +10,7 @@ from .models import (
     StatutEleve, RubriquePaiement, AppreciationMoyenneSecondaire,
     AppreciationMoyennePrimaire, CategorieDiscipline, Discipline,
     PeriodeEvaluation, TypeSanction, TitreFonction, TitreHonorifiquePersonnel,
-    EvenementCalendrier, IdentiteEtablissement,
+    EvenementCalendrier, IdentiteEtablissement, RolePersonnalise,
 )
 
 
@@ -245,3 +247,39 @@ class SignataireForm(forms.Form):
                 .filter(etablissement=etablissement, is_active=True)
                 .order_by('nom', 'prenom')
             )
+
+
+class RolePersonnaliseForm(forms.ModelForm):
+    """Nouveau rôle : libellé et rôle de référence ; le code est dérivé du libellé."""
+
+    class Meta:
+        model = RolePersonnalise
+        fields = ['libelle', 'base']
+        widgets = {
+            'libelle': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ex. Surveillant général', 'maxlength': 60}),
+            'base': forms.Select(attrs={'class': 'input select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .droits import ROLES_CONFIGURABLES
+        self.fields['base'].widget.choices = [(r.value, r.label) for r in ROLES_CONFIGURABLES]
+        self.fields['base'].help_text = ("Comportement métier (tableau de bord, périmètre d'un enseignant…) "
+                                         "et droits de départ du nouveau rôle.")
+
+    def clean_base(self):
+        from .droits import ROLES_CONFIGURABLES
+        base = self.cleaned_data['base']
+        if base not in {r.value for r in ROLES_CONFIGURABLES}:
+            raise forms.ValidationError("Rôle de référence inconnu.")
+        return base
+
+    def clean_libelle(self):
+        libelle = ' '.join(self.cleaned_data['libelle'].split())
+        code = slugify(libelle).replace('-', '_').upper()[:30].strip('_')
+        if not code:
+            raise forms.ValidationError("Le libellé doit contenir des lettres ou des chiffres.")
+        if code in RoleChoices.values or RolePersonnalise.objects.filter(code=code).exists():
+            raise forms.ValidationError(f"Un rôle de code « {code} » existe déjà.")
+        self.instance.code = code
+        return libelle

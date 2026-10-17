@@ -21,6 +21,7 @@ from datetime import timedelta
 from django.views.decorators.http import require_POST
 
 from core.models import RoleChoices
+from parametres.droits import choix_roles
 from .forms import UserCreateForm, UserUpdateForm, SetPasswordForm, ProfileUpdateForm, ChangeOwnPasswordForm, PasswordResetRateLimitedForm
 from .models import User
 from .services import (  # verrouillage et message unique : source unique
@@ -318,6 +319,13 @@ def profile_change_password(request):
 
 # ── Gestion des utilisateurs ─────────────────────────────────────────────────
 
+def _filtrer_par_role(users, code):
+    """Filtre par rôle intégré (hors rôles personnalisés qui s'y réfèrent) ou par rôle personnalisé."""
+    if code in RoleChoices.values:
+        return users.filter(role=code, role_personnalise__isnull=True)
+    return users.filter(role_personnalise__code=code)
+
+
 @_admin_required
 def user_list(request):
     """Liste des utilisateurs avec recherche et filtre par rôle."""
@@ -325,7 +333,7 @@ def user_list(request):
     role_filter = request.GET.get('role', '')
     page_number = request.GET.get('page', 1)
 
-    users = User.objects.select_related('etablissement').order_by('last_name', 'first_name')
+    users = User.objects.select_related('etablissement', 'role_personnalise').order_by('last_name', 'first_name')
 
     if request.user.role != RoleChoices.SUPER_ADMIN:
         users = users.filter(etablissement=request.user.etablissement)
@@ -337,7 +345,7 @@ def user_list(request):
             Q(email__icontains=query)
         )
     if role_filter:
-        users = users.filter(role=role_filter)
+        users = _filtrer_par_role(users, role_filter)
 
     paginator = Paginator(users, 25)
     page_obj = paginator.get_page(page_number)
@@ -347,7 +355,7 @@ def user_list(request):
         'page_obj': page_obj,
         'query': query,
         'role_filter': role_filter,
-        'roles': RoleChoices.choices,
+        'roles': choix_roles(),
     })
 
 
@@ -503,7 +511,7 @@ def user_list_csv(request):
     role_filter = request.GET.get('role', '')
     ids = request.GET.get('ids', '')
 
-    users = User.objects.select_related('etablissement').order_by('last_name', 'first_name')
+    users = User.objects.select_related('etablissement', 'role_personnalise').order_by('last_name', 'first_name')
 
     if request.user.role != RoleChoices.SUPER_ADMIN:
         users = users.filter(etablissement=request.user.etablissement)
@@ -520,7 +528,7 @@ def user_list_csv(request):
                 Q(email__icontains=query)
             )
         if role_filter:
-            users = users.filter(role=role_filter)
+            users = _filtrer_par_role(users, role_filter)
 
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="utilisateurs.csv"'
@@ -534,7 +542,7 @@ def user_list_csv(request):
             u.last_name or '',
             u.first_name or '',
             u.email,
-            u.get_role_display() if hasattr(u, 'get_role_display') else str(u.role),
+            u.role_libelle,
             str(u.etablissement) if u.etablissement else '',
             'Oui' if u.is_active else 'Non',
         ])

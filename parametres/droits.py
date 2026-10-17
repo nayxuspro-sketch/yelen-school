@@ -22,6 +22,12 @@ Une action ou une fonctionnalité dont l'accès historique était plus restreint
 que celui de son module porte ses propres rôles par défaut (``roles=``) : ils
 remplacent les étapes 2 à 4, de sorte que le déploiement ne change rien.
 
+Rôles personnalisés (``parametres.models.RolePersonnalise``) : créés par le
+Super Admin sur un rôle intégré de référence (``base``). Tant qu'un droit n'est
+pas enregistré pour le rôle personnalisé, il vaut celui de sa référence ; un
+utilisateur de ce rôle porte ``role = base`` (comportement métier inchangé) et
+la matrice le reconnaît par ``User.role_effectif`` (le code du rôle personnalisé).
+
 Le Super Admin dispose de tous les accès ; PARENT et ÉLÈVE restent confinés à
 leurs portails par ``RoleAccessMiddleware``.
 """
@@ -296,6 +302,32 @@ ROLES_CONFIGURABLES = (
 )
 
 _TOUS = frozenset(ROLES_CONFIGURABLES)
+
+RoleConfigurable = namedtuple('RoleConfigurable', 'code libelle base')  # base : None pour un rôle intégré
+
+
+def roles_configurables():
+    """Colonnes de la matrice : rôles intégrés du personnel puis rôles personnalisés."""
+    from .models import RolePersonnalise
+    integres = [RoleConfigurable(r.value, r.label, None) for r in ROLES_CONFIGURABLES]
+    return integres + [RoleConfigurable(r.code, r.libelle, r.base) for r in RolePersonnalise.objects.order_by('libelle')]
+
+
+def choix_roles(exclure_super_admin=False):
+    """Choix (code, libellé) d'un rôle d'utilisateur : rôles intégrés puis rôles personnalisés."""
+    from .models import RolePersonnalise
+    integres = [c for c in RoleChoices.choices if not (exclure_super_admin and c[0] == RoleChoices.SUPER_ADMIN)]
+    return integres + [(r.code, r.libelle) for r in RolePersonnalise.objects.order_by('libelle')]
+
+
+def affecter_role(user, code):
+    """Applique un code de rôle (intégré ou personnalisé) à ``user`` ; ``role`` reste le rôle de référence."""
+    from .models import RolePersonnalise
+    if code in RoleChoices.values:
+        user.role, user.role_personnalise = code, None
+    else:
+        role = RolePersonnalise.objects.get(code=code)
+        user.role, user.role_personnalise = role.base, role
 # Comportement historique : tous les modules ouverts au personnel, sauf les
 # finances (fermées aux enseignants et AVS) et les paramètres (direction).
 DEFAUTS = {
@@ -318,35 +350,41 @@ def matrice_effective():
             in DroitAcces.objects.values_list('role', 'module', 'fonctionnalite', 'action', 'autorise')
         }
 
+        roles = roles_configurables()
+        bases = {r.code: r.base for r in roles if r.base}
+
         def autorise(role, module, f, a=None):
+            base = bases.get(role)  # rôle personnalisé : à défaut d'enregistrement propre, valeur de sa référence
             if a is not None:
-                cle = (role.value, module.code, f.prefixe, a.code)
+                cle = (role, module.code, f.prefixe, a.code)
                 if cle in explicites:
                     return explicites[cle]
                 if a.roles is not None:
-                    return role in a.roles
-            cle = (role.value, module.code, f.prefixe, '')
+                    return autorise(base, module, f, a) if base else role in a.roles
+            cle = (role, module.code, f.prefixe, '')
             if cle in explicites:
                 return explicites[cle]
             if f.roles is not None:
-                return role in f.roles
-            cle = (role.value, module.code, '', '')
+                return autorise(base, module, f) if base else role in f.roles
+            cle = (role, module.code, '', '')
             if cle in explicites:
                 return explicites[cle]
+            if base:
+                return autorise(base, module, f, a)
             return role in DEFAUTS.get(module.code, _TOUS)
 
         matrice = {}
-        for role in ROLES_CONFIGURABLES:
+        for role in roles:
             fonctionnalites = {
-                module.code: frozenset(f.prefixe for f in module.fonctionnalites if autorise(role, module, f))
+                module.code: frozenset(f.prefixe for f in module.fonctionnalites if autorise(role.code, module, f))
                 for module in MODULES
             }
             actions = frozenset(
                 (module.code, f.prefixe, a.code)
                 for module in MODULES for f in module.fonctionnalites for a in f.actions
-                if autorise(role, module, f, a)
+                if autorise(role.code, module, f, a)
             )
-            matrice[role.value] = {'fonctionnalites': fonctionnalites, 'actions': actions}
+            matrice[role.code] = {'fonctionnalites': fonctionnalites, 'actions': actions}
         cache.set(CLE_CACHE, matrice, DUREE_CACHE)
     return matrice
 
@@ -360,7 +398,8 @@ def _est_super(user):
 
 
 def _droits_role(user):
-    return matrice_effective().get(getattr(user, 'role', None), {'fonctionnalites': {}, 'actions': frozenset()})
+    code = getattr(user, 'role_effectif', None) or getattr(user, 'role', None)
+    return matrice_effective().get(code, {'fonctionnalites': {}, 'actions': frozenset()})
 
 
 def fonctionnalites_autorisees(user):
@@ -465,7 +504,7 @@ def enregistrer_matrice(coches, utilisateur):
 
     existants = {(d.role, d.module, d.fonctionnalite, d.action): d for d in DroitAcces.objects.exclude(fonctionnalite='')}
     nouveaux = []
-    for role in (r.value for r in ROLES_CONFIGURABLES):
+    for role in (r.code for r in roles_configurables()):
         for module, prefixe, action in cles_matrice():
             autorise = f'{role}:{module}:{prefixe}:{action}' in coches
             droit = existants.get((role, module, prefixe, action))
