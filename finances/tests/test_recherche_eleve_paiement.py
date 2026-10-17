@@ -100,7 +100,8 @@ class TestRechercheEleve:
         user = baker.make('accounts.User', role='ENSEIGNANT', etablissement=etab)
         client.force_login(user)
         response = client.get(reverse(URL_RECHERCHE), {'q': 'traore'})
-        assert response.status_code == 403
+        # Refus par la matrice des droits d'accès (module Finances fermé aux enseignants)
+        assert response.status_code == 302 and response.url == '/'
 
 
 @pytest.mark.django_db

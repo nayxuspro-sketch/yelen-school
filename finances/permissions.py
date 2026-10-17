@@ -3,7 +3,9 @@ Rôles autorisés sur le module Finances.
 
 Ces ensembles sont consommés par ``finances.views._require_finance_role`` :
 
-- ``FINANCE_VIEW_ROLES``     : consultation (situations, listes, reçus, états) ;
+- ``FINANCE_VIEW_ROLES``     : consultation (situations, listes, reçus, états) —
+  valeur par défaut de la matrice des droits d'accès (``parametres.droits``),
+  que le Super Admin peut ajuster ;
 - ``FINANCE_WRITE_ROLES``    : saisie (paiements, échéanciers, bourses, dépenses) ;
 - ``FINANCE_APPROVER_ROLES`` : actes engageant l'établissement (remboursements,
   validation / annulation de dépenses) — réservés à la direction afin de

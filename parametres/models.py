@@ -1857,3 +1857,28 @@ class DeclencheurSMS(BaseModel):
     def __str__(self):
         statut = "✅" if self.actif else "⏸"
         return f"{statut} {self.get_type_declencheur_display()} — {self.etablissement}"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# DROITS D'ACCÈS AUX MODULES PAR RÔLE
+# ═══════════════════════════════════════════════════════════════════
+
+class DroitAcces(BaseModel):
+    """Accès d'un rôle du personnel à un module (voir ``parametres.droits``).
+
+    Matrice gérée par le Super Admin ; un couple (rôle, module) absent prend la
+    valeur par défaut définie dans ``parametres.droits.DEFAUTS``.
+    """
+
+    role = models.CharField(max_length=30, verbose_name=_("Rôle"))
+    module = models.CharField(max_length=30, verbose_name=_("Module"))
+    autorise = models.BooleanField(default=True, verbose_name=_("Accès autorisé"))
+
+    class Meta:
+        verbose_name = _("Droit d'accès")
+        verbose_name_plural = _("Droits d'accès")
+        unique_together = [('role', 'module')]
+        ordering = ['role', 'module']
+
+    def __str__(self):
+        return f"{self.role} → {self.module} : {'autorisé' if self.autorise else 'refusé'}"

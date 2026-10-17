@@ -51,6 +51,7 @@ class TestParametresViews:
             username='cycle-test',
             email='cycle-test@example.test',
             etablissement=etablissement,
+            role='DIRECTEUR',
         )
         cycle = baker.make(
             Cycle,
@@ -129,7 +130,7 @@ class TestTarifFormMontantAutomatique:
 
     def test_partial_sans_script_inline_et_attributs_de_recopie(self, client):
         etab = baker.make(Etablissement, code='TARIF', nom='Lycée Yelen')
-        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
         rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, nom='Scolarité',
                               code='SCOL', montant=25000, actif=True)
         client.force_login(user)
@@ -160,7 +161,7 @@ class TestPartialsSansScriptInline:
     @pytest.fixture
     def client_etab(self, client):
         etab = baker.make(Etablissement, code='CSP', nom='Lycée Yelen')
-        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
         client.force_login(user)
         return client
 
@@ -228,7 +229,7 @@ class TestSimulationTarifaire:
     @pytest.fixture
     def contexte(self, client):
         etab = baker.make(Etablissement, code='SIM', nom='Lycée Yelen')
-        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True)
         cycle = baker.make(Cycle, etablissement=etab, nom='Secondaire', code='SEC', actif=True)
         classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6ème A', actif=True)

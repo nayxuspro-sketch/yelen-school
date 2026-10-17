@@ -367,6 +367,7 @@ class TestColonneInscriptionAnnuelle:
         from django.test.utils import CaptureQueriesContext
         etab, annee, cycle, poste, _, _ = contexte
         url = reverse('personnel:personnel_list')
+        client.get(url)  # amorce les caches (droits d'accès) indépendants du nombre de membres
 
         with CaptureQueriesContext(connection) as avant:
             client.get(url)

@@ -142,10 +142,13 @@
       </a>
 
       {# ── SCOLARITÉ ── #}
+      {% if droits_scolarite %}
       <div class="sb-sep-modern"></div>
       <span class="sb-section-modern">Scolarité</span>
+      {% endif %}
 
       {# Inscriptions #}
+      {% if 'inscriptions' in droits_modules %}
       <button class="accordion-toggle" id="inscriptions-toggle" data-submenu="inscriptions-submenu" data-chevron="inscriptions-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -164,8 +167,10 @@
         <a href="{% url 'inscriptions:eleve_list' %}" class="sb-item-submodern" data-url="/inscriptions/"><span class="sub-item-dot"></span>Élèves</a>
         <a href="{% url 'inscriptions:reinscription_list' %}" class="sb-item-submodern" data-url="/inscriptions/reinscription/"><span class="sub-item-dot"></span>Réinscription</a>
       </div>
+      {% endif %}
 
       {# Pédagogie #}
+      {% if 'pedagogie' in droits_modules %}
       <button class="accordion-toggle" id="pedagogie-toggle" data-submenu="pedagogie-submenu" data-chevron="pedagogie-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -191,8 +196,10 @@
         <a href="{% url 'pedagogie:prediction_index' %}" class="sb-item-submodern" data-url="/pedagogie/predictions/"><span class="sub-item-dot"></span>Prédictions examens</a>
         <a href="{% url 'pedagogie:competences_index' %}" class="sb-item-submodern" data-url="/pedagogie/competences/"><span class="sub-item-dot"></span>Bulletins compétences</a>
       </div>
+      {% endif %}
 
       {# Bulletins #}
+      {% if 'bulletins' in droits_modules %}
       <button class="accordion-toggle" id="bulletins-toggle" data-submenu="bulletins-submenu" data-chevron="bulletins-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -208,8 +215,10 @@
         <a href="{% url 'bulletins:index' %}" class="sb-item-submodern" data-url="/bulletins/"><span class="sub-item-dot"></span>Bulletins trimestriels</a>
         <a href="{% url 'bulletins:bulletin_annuel_index' %}" class="sb-item-submodern" data-url="/bulletins/annuel/"><span class="sub-item-dot"></span>Bulletin annuel</a>
       </div>
+      {% endif %}
 
       {# Présences #}
+      {% if 'presences' in droits_modules %}
       <button class="accordion-toggle" id="presences-toggle" data-submenu="presences-submenu" data-chevron="presences-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -226,8 +235,10 @@
         <a href="{% url 'presences:appel_list' %}" class="sb-item-submodern" data-url="/presences/"><span class="sub-item-dot"></span>Appels</a>
         <a href="{% url 'presences:justification_list' %}" class="sb-item-submodern" data-url="/presences/justifications/"><span class="sub-item-dot"></span>Justifications</a>
       </div>
+      {% endif %}
 
       {# Examens #}
+      {% if 'examens' in droits_modules %}
       <button class="accordion-toggle" id="examens-toggle" data-submenu="examens-submenu" data-chevron="examens-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -243,8 +254,10 @@
       <div id="examens-submenu" class="sb-submenu-modern">
         <a href="{% url 'examens:session_list' %}" class="sb-item-submodern" data-url="/examens/"><span class="sub-item-dot"></span>Sessions d'examens</a>
       </div>
+      {% endif %}
 
       {# Vie Scolaire #}
+      {% if 'viescolaire' in droits_modules %}
       <button class="accordion-toggle" id="viescolaire-toggle" data-submenu="viescolaire-submenu" data-chevron="viescolaire-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -271,12 +284,16 @@
         <a href="{% url 'viescolaire:activite_list' %}" class="sb-item-submodern" data-url="/viescolaire/activites/"><span class="sub-item-dot"></span>Activités parascolaires</a>
         <a href="{% url 'viescolaire:capital_points_list' %}" class="sb-item-submodern" data-url="/viescolaire/discipline/capital/"><span class="sub-item-dot"></span>Capital points discipline</a>
       </div>
+      {% endif %}
 
       {# ── ADMINISTRATION ── #}
+      {% if droits_administration %}
       <div class="sb-sep-modern"></div>
       <span class="sb-section-modern">Administration</span>
+      {% endif %}
 
       {# Personnel #}
+      {% if 'personnel' in droits_modules %}
       <button class="accordion-toggle" id="personnel-toggle" data-submenu="personnel-submenu" data-chevron="personnel-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -294,8 +311,10 @@
         <a href="{% url 'personnel:salaire_list' %}" class="sb-item-submodern" data-url="/personnel/salaires/"><span class="sub-item-dot"></span>Salaires</a>
         <a href="{% url 'personnel:conge_list' %}" class="sb-item-submodern" data-url="/personnel/conges/"><span class="sub-item-dot"></span>Congés</a>
       </div>
+      {% endif %}
 
       {# Finances #}
+      {% if 'finances' in droits_modules %}
       <button class="accordion-toggle" id="finances-toggle" data-submenu="finances-submenu" data-chevron="finances-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -321,8 +340,10 @@
         <a href="{% url 'finances:tableau_bord_budget' %}" class="sb-item-submodern" data-url="/finances/budget/tresorerie/"><span class="sub-item-dot"></span>Trésorerie</a>
         <a href="{% url 'finances:budget_previsionnel' %}" class="sb-item-submodern" data-url="/finances/budget/"><span class="sub-item-dot"></span>Budget prévisionnel</a>
       </div>
+      {% endif %}
 
       {# Vacations #}
+      {% if 'vacations' in droits_modules %}
       <button class="accordion-toggle" id="vacations-toggle" data-submenu="vacations-submenu" data-chevron="vacations-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -341,8 +362,10 @@
         <a href="{% url 'vacations:contrat_list' %}" class="sb-item-submodern" data-url="/vacations/"><span class="sub-item-dot"></span>Contrats</a>
         <a href="{% url 'vacations:bulletin_list' %}" class="sb-item-submodern" data-url="/vacations/bulletins/"><span class="sub-item-dot"></span>Bulletins de vacation</a>
       </div>
+      {% endif %}
 
       {# Communication bidirectionnelle #}
+      {% if 'communication' in droits_modules %}
       <button class="accordion-toggle" id="communication-toggle" data-submenu="communication-submenu" data-chevron="communication-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -358,8 +381,10 @@
         <a href="{% url 'communication:message_list' %}" class="sb-item-submodern" data-url="/communication/"><span class="sub-item-dot"></span>Messages parents</a>
         <a href="{% url 'communication:sms_direct' %}" class="sb-item-submodern" data-url="/communication/sms-direct/"><span class="sub-item-dot"></span>SMS Direct</a>
       </div>
+      {% endif %}
 
       {# Manuels scolaires #}
+      {% if 'manuels' in droits_modules %}
       <button class="accordion-toggle" id="manuels-toggle" data-submenu="manuels-submenu" data-chevron="manuels-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -377,8 +402,10 @@
         <a href="{% url 'manuels:attributions_list' %}" class="sb-item-submodern" data-url="/manuels/attributions/"><span class="sub-item-dot"></span>Attributions</a>
         <a href="{% url 'manuels:non_rendus' %}" class="sb-item-submodern" data-url="/manuels/non-rendus/"><span class="sub-item-dot"></span>Non rendus</a>
       </div>
+      {% endif %}
 
       {# Documents #}
+      {% if 'documents' in droits_modules %}
       <button class="accordion-toggle" id="documents-toggle" data-submenu="documents-submenu" data-chevron="documents-chevron" type="button">
         <span class="accordion-label">
           <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -399,11 +426,14 @@
         <a href="{% url 'documents:liste_personnel_selector' %}" class="sb-item-submodern" data-url="/documents/personnel/"><span class="sub-item-dot"></span>Liste du personnel</a>
         <a href="{% url 'documents:convocation_form' %}" class="sb-item-submodern" data-url="/documents/convocations/"><span class="sub-item-dot"></span>Convocations</a>
         <a href="{% url 'documents:circulaire_form' %}" class="sb-item-submodern" data-url="/documents/circulaires/"><span class="sub-item-dot"></span>Circulaires</a>
+        {% if 'parametres' in droits_modules %}
         <a href="{% url 'parametres:signataire_formulaire' %}" class="sb-item-submodern" data-url="/parametres/signataires/formulaire/"><span class="sub-item-dot"></span>Signataires</a>
+        {% endif %}
       </div>
+      {% endif %}
 
       {# ── CONFIGURATION ── #}
-      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' or user.role == 'CENSEUR' %}
+      {% if 'parametres' in droits_modules %}
       <div class="sb-sep-modern"></div>
       <span class="sb-section-modern">Configuration</span>
 
@@ -446,6 +476,9 @@
         <a href="{% url 'parametres:type_sanction_list' %}" class="sb-item-submodern" data-url="/parametres/types-sanctions/"><span class="sub-item-dot"></span>Types Sanctions</a>
         <a href="{% url 'parametres:titre_fonction_list' %}" class="sb-item-submodern" data-url="/parametres/titres-fonctions/"><span class="sub-item-dot"></span>Titres Fonctions</a>
         <a href="{% url 'parametres:titre_honorifique_list' %}" class="sb-item-submodern" data-url="/parametres/titres-honorifiques/"><span class="sub-item-dot"></span>Titres Honorifiques</a>
+        {% if user.role == 'SUPER_ADMIN' %}
+        <a href="{% url 'parametres:droits_acces' %}" class="sb-item-submodern" data-url="/parametres/droits-acces/"><span class="sub-item-dot"></span>Droits d'accès</a>
+        {% endif %}
       </div>
       {% endif %}
 

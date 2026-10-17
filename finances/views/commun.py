@@ -13,6 +13,8 @@ except Exception:  # ImportError ou OSError (libpango/cairo absents)
     WeasyHTML = None
 from ..models import Paiement, Remboursement, BourseEleve
 from parametres.models import TarifScolarite
+from parametres.droits import peut_acceder
+from ..permissions import FINANCE_VIEW_ROLES
 from core.models import RoleChoices
 import re as _re
 
@@ -97,6 +99,11 @@ def _situations_financieres_en_lot(inscriptions):
 
 
 def _require_finance_role(request, roles):
+    """Consultation : accès au module selon la matrice des droits ; actes : rôles fixes."""
+    if roles is FINANCE_VIEW_ROLES:
+        if not peut_acceder(request.user, 'finances'):
+            raise PermissionDenied("Module Finances non autorisé pour ce rôle.")
+        return
     if getattr(request.user, 'role', None) not in roles:
         raise PermissionDenied("Action financière non autorisée pour ce rôle.")
 

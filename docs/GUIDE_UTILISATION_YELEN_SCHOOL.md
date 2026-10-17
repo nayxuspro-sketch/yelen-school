@@ -36,6 +36,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [2.15 Calendrier Scolaire](#215-calendrier-scolaire)
   - [2.16 Modèles de Messages SMS](#216-modèles-de-messages-sms)
   - [2.18 Localisations des Postes](#218-localisations-des-postes)
+  - [2.19 Droits d'accès par rôle](#219-droits-daccès-par-rôle)
 - [3. Enregistrement des Élèves](#3-enregistrement-des-élèves)
   - [3.8 Page Profil Élève — Vue d'ensemble](#38-page-profil-élève--vue-densemble)
 - [4. Inscription et Réinscription](#4-inscription-et-réinscription)
@@ -168,6 +169,8 @@ YELEN SCHOOL est développé par et pour le contexte burkinabè. Il respecte les
 | **Comptable** | Gestionnaire financier | Finances uniquement |
 | **Agent de Vie Scolaire (AVS)** | Surveillance et discipline | Présences, vie scolaire |
 | **Parent** | Père ou mère d'élève | Portail parent et consultation autorisée |
+
+> **Accès configurables :** l'accès de chaque rôle du personnel aux modules est réglé par le Super Admin dans `Paramètres → Droits d'accès` (section 2.19).
 
 ---
 
@@ -952,6 +955,22 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 **Prise en compte immédiate (sans redémarrage) :** Depuis la version avec cache runtime, les modifications de configuration SMS sont appliquées immédiatement après le clic sur "Enregistrer". Le système stocke les valeurs dans un cache mémoire (via `get_sms_val()` / `set_sms_config_runtime()`) et les persist dans le fichier `.env`. Aucun redémarrage du serveur ni du conteneur Docker n'est nécessaire.
 
 **Design :** Page modernisée avec cartes premium, icônes param-icon colorées par section, toggle-switch iOS-style, et classes CSS exclusives du design system (zéro style inline).
+
+---
+
+### 2.19 Droits d'accès par rôle
+
+> **Accès :** `Paramètres → Droits d'accès` (carte de la page Paramètres ou menu `Configuration → Droits d'accès`)
+>
+> **Qui peut accéder :** SUPER_ADMIN uniquement
+
+**À quoi ça sert :** Décider, module par module, ce que chaque rôle du personnel peut ouvrir. Un module non coché disparaît du menu du rôle et toutes ses pages lui sont refusées (retour au tableau de bord avec un message « Accès au module « … » non autorisé pour votre rôle »).
+
+**La matrice :** une ligne par module — Inscriptions, Pédagogie, Bulletins, Présences, Examens, Vie scolaire, Personnel, Finances, Vacations, Communication, Manuels scolaires, Documents, Paramètres — et une colonne par rôle : Directeur Réseau, Directeur / Proviseur, Censeur, Secrétaire, Comptable, Enseignant, Agent de Vie Scolaire. Cochez, puis **Enregistrer** : la modification s'applique immédiatement, sans redémarrage, et chaque changement est journalisé dans l'audit.
+
+**Valeurs par défaut (à la première ouverture) :** tous les modules sont ouverts à tous les rôles du personnel, sauf **Finances** (fermé aux enseignants et AVS) et **Paramètres** (réservé au Directeur / Proviseur et au Censeur). Elles reproduisent le fonctionnement antérieur ; le tableau de la section 0.3 décrit la répartition recommandée que le Super Admin peut appliquer depuis cette page.
+
+**Hors matrice :** le Super Admin garde tous les accès ; les parents et les élèves restent limités à leur portail ; la gestion des utilisateurs, le journal d'audit, la configuration SMS et les licences restent réservés à la direction. Dans le module Finances, la saisie et la validation (paiements, dépenses, remboursements) restent de plus limitées aux rôles comptable et direction, quelle que soit la matrice.
 
 ---
 

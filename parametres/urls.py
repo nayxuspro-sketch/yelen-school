@@ -6,6 +6,7 @@ app_name = 'parametres'
 urlpatterns = [
     # Index
     path('', views.parametres_index, name='index'),
+    path('droits-acces/', views.droits_acces, name='droits_acces'),
 
     # Années scolaires
     path('annees/', views.annee_list, name='annee_list'),

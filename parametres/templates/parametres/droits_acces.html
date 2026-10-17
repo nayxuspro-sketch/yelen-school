@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+
+{% block title %}Droits d'accès — Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <a href="{% url 'parametres:index' %}"
+       style="font-size:0.8rem; color:var(--color-text-muted); text-decoration:none; display:flex; align-items:center; gap:4px; margin-bottom:var(--space-1);">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Paramètres
+    </a>
+    <h1 class="page-title">Droits d'accès par rôle</h1>
+    <p class="page-subtitle">Cochez les modules accessibles à chaque rôle du personnel</p>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5); background:var(--color-bg-subtle);">
+  <div style="font-size:0.85rem; color:var(--color-text-secondary); line-height:1.6;">
+    Un module non coché disparaît du menu du rôle et ses pages lui sont refusées.
+    Le <strong>Super Admin</strong> conserve tous les accès ; les <strong>parents</strong> et <strong>élèves</strong>
+    restent limités à leur portail. La gestion des utilisateurs, le journal d'audit et les licences
+    restent réservés à la direction. Les modifications s'appliquent dès l'enregistrement.
+  </div>
+</div>
+
+<form method="post" class="animate-fade-up delay-2">
+  {% csrf_token %}
+  <div class="card" style="overflow-x:auto;">
+    <table class="data-table" id="matrice-droits">
+      <thead>
+        <tr>
+          <th>Module</th>
+          {% for code, libelle in roles %}
+          <th style="text-align:center;">{{ libelle }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes %}
+        {% ifchanged ligne.module.section %}
+        <tr>
+          <td colspan="{{ roles|length|add:1 }}" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--color-text-muted); background:var(--color-bg-subtle);">
+            {{ ligne.module.section }}
+          </td>
+        </tr>
+        {% endifchanged %}
+        <tr>
+          <td style="font-weight:600;">{{ ligne.module.libelle }}</td>
+          {% for role, autorise in ligne.cases %}
+          <td style="text-align:center;">
+            <input type="checkbox" name="droit" value="{{ role }}:{{ ligne.module.code }}"
+                   aria-label="{{ ligne.module.libelle }} — {{ role }}"
+                   {% if autorise %}checked{% endif %}
+                   style="width:1.1rem; height:1.1rem; accent-color:var(--color-primary); cursor:pointer;">
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex; justify-content:flex-end; gap:var(--space-3); margin-top:var(--space-4);">
+    <button type="submit" class="btn-primary">Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

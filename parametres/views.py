@@ -1185,6 +1185,31 @@ def type_sanction_form(request, pk=None):
     return render(request, 'parametres/partials/type_sanction_form.html', {'type_sanction': type_sanction})
 
 
+# ─── DROITS D'ACCÈS PAR RÔLE ──────────────────────────────────────
+
+@login_required
+def droits_acces(request):
+    """Matrice rôles × modules, réservée au Super Admin."""
+    from core.models import RoleChoices
+    from . import droits
+
+    if request.user.role != RoleChoices.SUPER_ADMIN:
+        return HttpResponseForbidden("Accès réservé au Super Admin.")
+
+    if request.method == 'POST':
+        droits.enregistrer_matrice(set(request.POST.getlist('droit')), request.user)
+        messages.success(request, "Droits d'accès enregistrés.")
+        return redirect('parametres:droits_acces')
+
+    matrice = droits.matrice_effective()
+    roles = [(role.value, role.label) for role in droits.ROLES_CONFIGURABLES]
+    lignes = [{
+        'module': module,
+        'cases': [(role.value, module.code in matrice[role.value]) for role in droits.ROLES_CONFIGURABLES],
+    } for module in droits.MODULES]
+    return render(request, 'parametres/droits_acces.html', {'roles': roles, 'lignes': lignes})
+
+
 # ─── TITRES FONCTIONS ─────────────────────────────────────────────
 
 @login_required
