@@ -7,8 +7,9 @@ qui ne leur sont pas explicitement destinées, et les redirige vers leur portail
 Rôle PARENT  → accès limité à : /accounts/, /portail/parent/, /notifications/
 Rôle ÉLÈVE   → accès limité à : /accounts/, /portail/eleve/, /notifications/
 
-Pour les autres rôles, l'accès aux modules (espace de noms d'URL) suit la
-matrice des droits d'accès administrée par le Super Admin (``parametres.droits``).
+Pour les autres rôles, l'accès aux modules (espace de noms d'URL) et à leurs
+fonctionnalités (préfixes d'URL du menu) suit la matrice des droits d'accès
+administrée par le Super Admin (``parametres.droits``).
 """
 
 from django.contrib import messages
@@ -16,7 +17,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
 
 from core.models import RoleChoices
-from parametres.droits import CODES_MODULES, libelle_module, modules_autorises_requete
+from parametres.droits import CODES_MODULES, acces_autorise, libelle_module
 
 
 # Préfixes autorisés communs aux deux rôles restreints
@@ -72,7 +73,7 @@ class RoleAccessMiddleware:
         ):
             return None
         module = request.resolver_match.app_name if request.resolver_match else None
-        if module not in CODES_MODULES or module in modules_autorises_requete(request):
+        if module not in CODES_MODULES or acces_autorise(request, module, request.path_info):
             return None
         if request.headers.get('HX-Request'):
             return HttpResponseForbidden("Module non autorisé pour votre rôle.")

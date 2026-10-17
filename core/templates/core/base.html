@@ -164,8 +164,12 @@
         </svg>
       </button>
       <div id="inscriptions-submenu" class="sb-submenu-modern">
+        {% if '/inscriptions/' in droits_fonctionnalites %}
         <a href="{% url 'inscriptions:eleve_list' %}" class="sb-item-submodern" data-url="/inscriptions/"><span class="sub-item-dot"></span>Élèves</a>
+        {% endif %}
+        {% if '/inscriptions/reinscription/' in droits_fonctionnalites %}
         <a href="{% url 'inscriptions:reinscription_list' %}" class="sb-item-submodern" data-url="/inscriptions/reinscription/"><span class="sub-item-dot"></span>Réinscription</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -185,16 +189,36 @@
         </svg>
       </button>
       <div id="pedagogie-submenu" class="sb-submenu-modern">
+        {% if '/pedagogie/cahier-textes/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:cahier_textes_index' %}" class="sb-item-submodern" data-url="/pedagogie/cahier-textes/"><span class="sub-item-dot"></span>Cahier de textes</a>
+        {% endif %}
+        {% if '/pedagogie/matieres/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:matiere_list' %}" class="sb-item-submodern" data-url="/pedagogie/matieres/"><span class="sub-item-dot"></span>Matières</a>
+        {% endif %}
+        {% if '/pedagogie/enseignements/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:enseignement_list' %}" class="sb-item-submodern" data-url="/pedagogie/enseignements/"><span class="sub-item-dot"></span>Enseignements</a>
+        {% endif %}
+        {% if '/pedagogie/evaluations/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:evaluation_list' %}" class="sb-item-submodern" data-url="/pedagogie/evaluations/"><span class="sub-item-dot"></span>Évaluations</a>
+        {% endif %}
+        {% if '/pedagogie/releve-notes/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:releve_notes' %}" class="sb-item-submodern" data-url="/pedagogie/releve-notes/"><span class="sub-item-dot"></span>Relevé de notes</a>
+        {% endif %}
+        {% if '/pedagogie/resultats/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:classe_result_list' %}" class="sb-item-submodern" data-url="/pedagogie/resultats/"><span class="sub-item-dot"></span>Résultats</a>
+        {% endif %}
+        {% if '/pedagogie/resultats/moyennes-disciplines/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:moyennes_disciplines' %}" class="sb-item-submodern" data-url="/pedagogie/resultats/moyennes-disciplines/"><span class="sub-item-dot"></span>Moyennes par discipline</a>
+        {% endif %}
+        {% if '/pedagogie/risque-decrochage/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:risque_decrochage' %}" class="sb-item-submodern" data-url="/pedagogie/risque-decrochage/"><span class="sub-item-dot"></span>Risque de décrochage</a>
+        {% endif %}
+        {% if '/pedagogie/predictions/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:prediction_index' %}" class="sb-item-submodern" data-url="/pedagogie/predictions/"><span class="sub-item-dot"></span>Prédictions examens</a>
+        {% endif %}
+        {% if '/pedagogie/competences/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:competences_index' %}" class="sb-item-submodern" data-url="/pedagogie/competences/"><span class="sub-item-dot"></span>Bulletins compétences</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -212,8 +236,12 @@
         </svg>
       </button>
       <div id="bulletins-submenu" class="sb-submenu-modern">
+        {% if '/bulletins/' in droits_fonctionnalites %}
         <a href="{% url 'bulletins:index' %}" class="sb-item-submodern" data-url="/bulletins/"><span class="sub-item-dot"></span>Bulletins trimestriels</a>
+        {% endif %}
+        {% if '/bulletins/annuel/' in droits_fonctionnalites %}
         <a href="{% url 'bulletins:bulletin_annuel_index' %}" class="sb-item-submodern" data-url="/bulletins/annuel/"><span class="sub-item-dot"></span>Bulletin annuel</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -232,8 +260,12 @@
         </svg>
       </button>
       <div id="presences-submenu" class="sb-submenu-modern">
+        {% if '/presences/' in droits_fonctionnalites %}
         <a href="{% url 'presences:appel_list' %}" class="sb-item-submodern" data-url="/presences/"><span class="sub-item-dot"></span>Appels</a>
+        {% endif %}
+        {% if '/presences/justifications/' in droits_fonctionnalites %}
         <a href="{% url 'presences:justification_list' %}" class="sb-item-submodern" data-url="/presences/justifications/"><span class="sub-item-dot"></span>Justifications</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -252,7 +284,9 @@
         </svg>
       </button>
       <div id="examens-submenu" class="sb-submenu-modern">
+        {% if '/examens/' in droits_fonctionnalites %}
         <a href="{% url 'examens:session_list' %}" class="sb-item-submodern" data-url="/examens/"><span class="sub-item-dot"></span>Sessions d'examens</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -273,16 +307,32 @@
         </svg>
       </button>
       <div id="viescolaire-submenu" class="sb-submenu-modern">
+        {% if '/viescolaire/fiches-suivi/' in droits_fonctionnalites %}
         <a href="{% url 'viescolaire:fiches_suivi_list' %}" class="sb-item-submodern" data-url="/viescolaire/fiches-suivi/"><span class="sub-item-dot"></span>Fiches de suivi</a>
+        {% endif %}
+        {% if '/viescolaire/emploi-du-temps/' in droits_fonctionnalites %}
         <a href="{% url 'viescolaire:emploi_du_temps_index' %}" class="sb-item-submodern" data-url="/viescolaire/emploi-du-temps/"><span class="sub-item-dot"></span>Emploi du temps</a>
+        {% endif %}
         {% comment %}
+        {% if '/viescolaire/emploi-du-temps/professeur/' in droits_fonctionnalites %}
         <a href="{% url 'viescolaire:emploi_du_temps_prof_index' %}" class="sb-item-submodern" data-url="/viescolaire/emploi-du-temps/professeur/"><span class="sub-item-dot"></span>Par professeur</a>
+        {% endif %}
         {% endcomment %}
+        {% if '/viescolaire/conseils/' in droits_fonctionnalites %}
         <a href="{% url 'viescolaire:conseil_list' %}" class="sb-item-submodern" data-url="/viescolaire/conseils/"><span class="sub-item-dot"></span>Conseils de classe</a>
+        {% endif %}
+        {% if '/viescolaire/appels-decision/' in droits_fonctionnalites %}
         <a href="{% url 'viescolaire:appel_decision_list' %}" class="sb-item-submodern" data-url="/viescolaire/appels-decision/"><span class="sub-item-dot"></span>Appels de décision</a>
+        {% endif %}
+        {% if '/viescolaire/sanctions/' in droits_fonctionnalites %}
         <a href="{% url 'viescolaire:sanction_list' %}" class="sb-item-submodern" data-url="/viescolaire/sanctions/"><span class="sub-item-dot"></span>Sanctions disciplinaires</a>
+        {% endif %}
+        {% if '/viescolaire/activites/' in droits_fonctionnalites %}
         <a href="{% url 'viescolaire:activite_list' %}" class="sb-item-submodern" data-url="/viescolaire/activites/"><span class="sub-item-dot"></span>Activités parascolaires</a>
+        {% endif %}
+        {% if '/viescolaire/discipline/capital/' in droits_fonctionnalites %}
         <a href="{% url 'viescolaire:capital_points_list' %}" class="sb-item-submodern" data-url="/viescolaire/discipline/capital/"><span class="sub-item-dot"></span>Capital points discipline</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -307,9 +357,15 @@
         </svg>
       </button>
       <div id="personnel-submenu" class="sb-submenu-modern">
+        {% if '/personnel/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:personnel_list' %}" class="sb-item-submodern" data-url="/personnel/"><span class="sub-item-dot"></span>Liste du personnel</a>
+        {% endif %}
+        {% if '/personnel/salaires/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:salaire_list' %}" class="sb-item-submodern" data-url="/personnel/salaires/"><span class="sub-item-dot"></span>Salaires</a>
+        {% endif %}
+        {% if '/personnel/conges/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:conge_list' %}" class="sb-item-submodern" data-url="/personnel/conges/"><span class="sub-item-dot"></span>Congés</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -328,17 +384,39 @@
         </svg>
       </button>
       <div id="finances-submenu" class="sb-submenu-modern">
+        {% if '/finances/paiements/' in droits_fonctionnalites %}
         <a href="{% url 'finances:paiement_list' %}" class="sb-item-submodern" data-url="/finances/paiements/"><span class="sub-item-dot"></span>Paiements</a>
+        {% endif %}
+        {% if '/finances/redevables/' in droits_fonctionnalites %}
         <a href="{% url 'finances:liste_redevables' %}" class="sb-item-submodern" data-url="/finances/redevables/"><span class="sub-item-dot"></span>Redevables</a>
+        {% endif %}
+        {% if '/finances/exoneres/' in droits_fonctionnalites %}
         <a href="{% url 'finances:liste_exoneres' %}" class="sb-item-submodern" data-url="/finances/exoneres/"><span class="sub-item-dot"></span>Exonérés</a>
+        {% endif %}
+        {% if '/finances/bourses/' in droits_fonctionnalites %}
         <a href="{% url 'finances:boursiers_list' %}" class="sb-item-submodern" data-url="/finances/bourses/"><span class="sub-item-dot"></span>Bourses &amp; Aides</a>
+        {% endif %}
+        {% if '/finances/relances/' in droits_fonctionnalites %}
         <a href="{% url 'finances:relance_paiement' %}" class="sb-item-submodern" data-url="/finances/relances/"><span class="sub-item-dot"></span>Relances</a>
+        {% endif %}
+        {% if '/finances/relances/historique/' in droits_fonctionnalites %}
         <a href="{% url 'finances:historique_relances' %}" class="sb-item-submodern" data-url="/finances/relances/historique/"><span class="sub-item-dot"></span>Historique relances</a>
+        {% endif %}
+        {% if '/finances/bilan/encaissements/' in droits_fonctionnalites %}
         <a href="{% url 'finances:bilan_encaissements' %}" class="sb-item-submodern" data-url="/finances/bilan/encaissements/"><span class="sub-item-dot"></span>Bilan encaissements</a>
+        {% endif %}
+        {% if '/finances/mobile-money/' in droits_fonctionnalites %}
         <a href="{% url 'finances:mobile_money_list' %}" class="sb-item-submodern" data-url="/finances/mobile-money/"><span class="sub-item-dot"></span>Mobile Money</a>
+        {% endif %}
+        {% if '/finances/depenses/' in droits_fonctionnalites %}
         <a href="{% url 'finances:depense_list' %}" class="sb-item-submodern" data-url="/finances/depenses/"><span class="sub-item-dot"></span>Dépenses</a>
+        {% endif %}
+        {% if '/finances/budget/tresorerie/' in droits_fonctionnalites %}
         <a href="{% url 'finances:tableau_bord_budget' %}" class="sb-item-submodern" data-url="/finances/budget/tresorerie/"><span class="sub-item-dot"></span>Trésorerie</a>
+        {% endif %}
+        {% if '/finances/budget/' in droits_fonctionnalites %}
         <a href="{% url 'finances:budget_previsionnel' %}" class="sb-item-submodern" data-url="/finances/budget/"><span class="sub-item-dot"></span>Budget prévisionnel</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -359,8 +437,12 @@
         </svg>
       </button>
       <div id="vacations-submenu" class="sb-submenu-modern">
+        {% if '/vacations/' in droits_fonctionnalites %}
         <a href="{% url 'vacations:contrat_list' %}" class="sb-item-submodern" data-url="/vacations/"><span class="sub-item-dot"></span>Contrats</a>
+        {% endif %}
+        {% if '/vacations/bulletins/' in droits_fonctionnalites %}
         <a href="{% url 'vacations:bulletin_list' %}" class="sb-item-submodern" data-url="/vacations/bulletins/"><span class="sub-item-dot"></span>Bulletins de vacation</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -378,8 +460,12 @@
         </svg>
       </button>
       <div id="communication-submenu" class="sb-submenu-modern">
+        {% if '/communication/' in droits_fonctionnalites %}
         <a href="{% url 'communication:message_list' %}" class="sb-item-submodern" data-url="/communication/"><span class="sub-item-dot"></span>Messages parents</a>
+        {% endif %}
+        {% if '/communication/sms-direct/' in droits_fonctionnalites %}
         <a href="{% url 'communication:sms_direct' %}" class="sb-item-submodern" data-url="/communication/sms-direct/"><span class="sub-item-dot"></span>SMS Direct</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -398,9 +484,15 @@
         </svg>
       </button>
       <div id="manuels-submenu" class="sb-submenu-modern">
+        {% if '/manuels/' in droits_fonctionnalites %}
         <a href="{% url 'manuels:catalogue' %}" class="sb-item-submodern" data-url="/manuels/"><span class="sub-item-dot"></span>Catalogue</a>
+        {% endif %}
+        {% if '/manuels/attributions/' in droits_fonctionnalites %}
         <a href="{% url 'manuels:attributions_list' %}" class="sb-item-submodern" data-url="/manuels/attributions/"><span class="sub-item-dot"></span>Attributions</a>
+        {% endif %}
+        {% if '/manuels/non-rendus/' in droits_fonctionnalites %}
         <a href="{% url 'manuels:non_rendus' %}" class="sb-item-submodern" data-url="/manuels/non-rendus/"><span class="sub-item-dot"></span>Non rendus</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -422,11 +514,19 @@
         </svg>
       </button>
       <div id="documents-submenu" class="sb-submenu-modern">
+        {% if '/documents/listes/' in droits_fonctionnalites %}
         <a href="{% url 'documents:liste_classes_selector' %}" class="sb-item-submodern" data-url="/documents/listes/"><span class="sub-item-dot"></span>Listes de classes</a>
+        {% endif %}
+        {% if '/documents/personnel/' in droits_fonctionnalites %}
         <a href="{% url 'documents:liste_personnel_selector' %}" class="sb-item-submodern" data-url="/documents/personnel/"><span class="sub-item-dot"></span>Liste du personnel</a>
+        {% endif %}
+        {% if '/documents/convocations/' in droits_fonctionnalites %}
         <a href="{% url 'documents:convocation_form' %}" class="sb-item-submodern" data-url="/documents/convocations/"><span class="sub-item-dot"></span>Convocations</a>
+        {% endif %}
+        {% if '/documents/circulaires/' in droits_fonctionnalites %}
         <a href="{% url 'documents:circulaire_form' %}" class="sb-item-submodern" data-url="/documents/circulaires/"><span class="sub-item-dot"></span>Circulaires</a>
-        {% if 'parametres' in droits_modules %}
+        {% endif %}
+        {% if '/parametres/signataires/formulaire/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:signataire_formulaire' %}" class="sb-item-submodern" data-url="/parametres/signataires/formulaire/"><span class="sub-item-dot"></span>Signataires</a>
         {% endif %}
       </div>
@@ -450,32 +550,80 @@
         </svg>
       </button>
       <div id="params-submenu" class="sb-submenu-modern">
+        {% if '/parametres/etablissement/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:etablissement' %}" class="sb-item-submodern" data-url="/parametres/etablissement/"><span class="sub-item-dot"></span>Établissement</a>
+        {% endif %}
+        {% if '/parametres/identite-etablissement/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:identite_etablissement' %}" class="sb-item-submodern" data-url="/parametres/identite-etablissement/"><span class="sub-item-dot"></span>Identité établissement</a>
+        {% endif %}
+        {% if '/parametres/annees/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:annee_list' %}" class="sb-item-submodern" data-url="/parametres/annees/"><span class="sub-item-dot"></span>Années scolaires</a>
+        {% endif %}
+        {% if '/parametres/calendrier/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:calendrier' %}" class="sb-item-submodern" data-url="/parametres/calendrier/"><span class="sub-item-dot"></span>Calendrier scolaire</a>
+        {% endif %}
+        {% if '/parametres/modeles-messages/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:modeles_messages' %}" class="sb-item-submodern" data-url="/parametres/modeles-messages/"><span class="sub-item-dot"></span>Modèles de messages</a>
+        {% endif %}
         {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' %}
+        {% if '/parametres/sms-auto/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:sms_auto_config' %}" class="sb-item-submodern" data-url="/parametres/sms-auto/"><span class="sub-item-dot"></span>SMS automatiques</a>
         {% endif %}
+        {% endif %}
+        {% if '/parametres/cycles/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:cycle_list' %}" class="sb-item-submodern" data-url="/parametres/cycles/"><span class="sub-item-dot"></span>Cycles</a>
+        {% endif %}
+        {% if '/parametres/classes/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:classe_list' %}" class="sb-item-submodern" data-url="/parametres/classes/"><span class="sub-item-dot"></span>Classes</a>
+        {% endif %}
+        {% if '/parametres/postes/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:poste_list' %}" class="sb-item-submodern" data-url="/parametres/postes/"><span class="sub-item-dot"></span>Postes</a>
+        {% endif %}
+        {% if '/parametres/statuts/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:statut_list' %}" class="sb-item-submodern" data-url="/parametres/statuts/"><span class="sub-item-dot"></span>Statuts élèves</a>
+        {% endif %}
+        {% if '/parametres/rubriques/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:rubrique_list' %}" class="sb-item-submodern" data-url="/parametres/rubriques/"><span class="sub-item-dot"></span>Rubriques paiement</a>
+        {% endif %}
+        {% if '/parametres/tarifs/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:tarif_list' %}" class="sb-item-submodern" data-url="/parametres/tarifs/"><span class="sub-item-dot"></span>Tarifs de scolarité</a>
+        {% endif %}
+        {% if '/parametres/disciplines/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:discipline_list' %}" class="sb-item-submodern" data-url="/parametres/disciplines/"><span class="sub-item-dot"></span>Disciplines</a>
+        {% endif %}
+        {% if '/parametres/categories-disciplines/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:categorie_discipline_list' %}" class="sb-item-submodern" data-url="/parametres/categories-disciplines/"><span class="sub-item-dot"></span>Catégories disciplines</a>
+        {% endif %}
+        {% if '/parametres/periodes/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:periode_list' %}" class="sb-item-submodern" data-url="/parametres/periodes/"><span class="sub-item-dot"></span>Périodes</a>
+        {% endif %}
+        {% if '/parametres/appreciations/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:appreciation_list' %}" class="sb-item-submodern" data-url="/parametres/appreciations/"><span class="sub-item-dot"></span>Appréciation Secondaire</a>
+        {% endif %}
+        {% if '/parametres/appreciations-primaire/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:appreciation_primaire_list' %}" class="sb-item-submodern" data-url="/parametres/appreciations-primaire/"><span class="sub-item-dot"></span>Appréciation Primaire</a>
+        {% endif %}
+        {% if '/parametres/signataires/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:signataires_list' %}" class="sb-item-submodern" data-url="/parametres/signataires/"><span class="sub-item-dot"></span>Signataires</a>
+        {% endif %}
+        {% if '/parametres/signataires/configurer/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:signataire_config' %}" class="sb-item-submodern" data-url="/parametres/signataires/configurer/"><span class="sub-item-dot"></span>Configurer signataires</a>
+        {% endif %}
+        {% if '/parametres/types-evaluations/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:type_evaluation_list' %}" class="sb-item-submodern" data-url="/parametres/types-evaluations/"><span class="sub-item-dot"></span>Types d'évaluation</a>
+        {% endif %}
+        {% if '/parametres/types-documents/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:type_document_list' %}" class="sb-item-submodern" data-url="/parametres/types-documents/"><span class="sub-item-dot"></span>Types Documents</a>
+        {% endif %}
+        {% if '/parametres/types-sanctions/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:type_sanction_list' %}" class="sb-item-submodern" data-url="/parametres/types-sanctions/"><span class="sub-item-dot"></span>Types Sanctions</a>
+        {% endif %}
+        {% if '/parametres/titres-fonctions/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:titre_fonction_list' %}" class="sb-item-submodern" data-url="/parametres/titres-fonctions/"><span class="sub-item-dot"></span>Titres Fonctions</a>
+        {% endif %}
+        {% if '/parametres/titres-honorifiques/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:titre_honorifique_list' %}" class="sb-item-submodern" data-url="/parametres/titres-honorifiques/"><span class="sub-item-dot"></span>Titres Honorifiques</a>
+        {% endif %}
         {% if user.role == 'SUPER_ADMIN' %}
         <a href="{% url 'parametres:droits_acces' %}" class="sb-item-submodern" data-url="/parametres/droits-acces/"><span class="sub-item-dot"></span>Droits d'accès</a>
         {% endif %}

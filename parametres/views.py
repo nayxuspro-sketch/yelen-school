@@ -1189,7 +1189,7 @@ def type_sanction_form(request, pk=None):
 
 @login_required
 def droits_acces(request):
-    """Matrice rôles × modules, réservée au Super Admin."""
+    """Matrice rôles × fonctionnalités de chaque module, réservée au Super Admin."""
     from core.models import RoleChoices
     from . import droits
 
@@ -1203,11 +1203,15 @@ def droits_acces(request):
 
     matrice = droits.matrice_effective()
     roles = [(role.value, role.label) for role in droits.ROLES_CONFIGURABLES]
-    lignes = [{
+    blocs = [{
         'module': module,
-        'cases': [(role.value, module.code in matrice[role.value]) for role in droits.ROLES_CONFIGURABLES],
+        'roles': [role.value for role in droits.ROLES_CONFIGURABLES],
+        'lignes': [{
+            'fonctionnalite': f,
+            'cases': [(role.value, f.prefixe in matrice[role.value][module.code]) for role in droits.ROLES_CONFIGURABLES],
+        } for f in module.fonctionnalites],
     } for module in droits.MODULES]
-    return render(request, 'parametres/droits_acces.html', {'roles': roles, 'lignes': lignes})
+    return render(request, 'parametres/droits_acces.html', {'roles': roles, 'blocs': blocs})
 
 
 # ─── TITRES FONCTIONS ─────────────────────────────────────────────

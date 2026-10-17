@@ -1872,13 +1872,18 @@ class DroitAcces(BaseModel):
 
     role = models.CharField(max_length=30, verbose_name=_("Rôle"))
     module = models.CharField(max_length=30, verbose_name=_("Module"))
+    fonctionnalite = models.CharField(
+        max_length=60, blank=True, default='', verbose_name=_("Fonctionnalité"),
+        help_text=_("Préfixe d'URL de l'entrée de menu ; vide = droit sur le module entier."),
+    )
     autorise = models.BooleanField(default=True, verbose_name=_("Accès autorisé"))
 
     class Meta:
         verbose_name = _("Droit d'accès")
         verbose_name_plural = _("Droits d'accès")
-        unique_together = [('role', 'module')]
-        ordering = ['role', 'module']
+        unique_together = [('role', 'module', 'fonctionnalite')]
+        ordering = ['role', 'module', 'fonctionnalite']
 
     def __str__(self):
-        return f"{self.role} → {self.module} : {'autorisé' if self.autorise else 'refusé'}"
+        cible = f"{self.module} {self.fonctionnalite}".strip()
+        return f"{self.role} → {cible} : {'autorisé' if self.autorise else 'refusé'}"

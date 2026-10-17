@@ -13,13 +13,15 @@
       Paramètres
     </a>
     <h1 class="page-title">Droits d'accès par rôle</h1>
-    <p class="page-subtitle">Cochez les modules accessibles à chaque rôle du personnel</p>
+    <p class="page-subtitle">Cochez, module par module, les fonctionnalités accessibles à chaque rôle du personnel</p>
   </div>
 </div>
 
 <div class="card animate-fade-up delay-1" style="padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5); background:var(--color-bg-subtle);">
   <div style="font-size:0.85rem; color:var(--color-text-secondary); line-height:1.6;">
-    Un module non coché disparaît du menu du rôle et ses pages lui sont refusées.
+    Une fonctionnalité non cochée disparaît du menu du rôle et ses pages lui sont refusées ;
+    un module dont aucune fonctionnalité n'est cochée disparaît entièrement.
+    La case de la ligne du module coche ou décoche toutes ses fonctionnalités pour le rôle.
     Le <strong>Super Admin</strong> conserve tous les accès ; les <strong>parents</strong> et <strong>élèves</strong>
     restent limités à leur portail. La gestion des utilisateurs, le journal d'audit et les licences
     restent réservés à la direction. Les modifications s'appliquent dès l'enregistrement.
@@ -32,32 +34,45 @@
     <table class="data-table" id="matrice-droits">
       <thead>
         <tr>
-          <th>Module</th>
+          <th>Module / fonctionnalité</th>
           {% for code, libelle in roles %}
           <th style="text-align:center;">{{ libelle }}</th>
           {% endfor %}
         </tr>
       </thead>
       <tbody>
-        {% for ligne in lignes %}
-        {% ifchanged ligne.module.section %}
+        {% for bloc in blocs %}
+        {% ifchanged bloc.module.section %}
         <tr>
           <td colspan="{{ roles|length|add:1 }}" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--color-text-muted); background:var(--color-bg-subtle);">
-            {{ ligne.module.section }}
+            {{ bloc.module.section }}
           </td>
         </tr>
         {% endifchanged %}
-        <tr>
-          <td style="font-weight:600;">{{ ligne.module.libelle }}</td>
-          {% for role, autorise in ligne.cases %}
+        <tr style="background:var(--color-bg-hover);">
+          <td style="font-weight:700;">{{ bloc.module.libelle }}</td>
+          {% for role in bloc.roles %}
           <td style="text-align:center;">
-            <input type="checkbox" name="droit" value="{{ role }}:{{ ligne.module.code }}"
-                   aria-label="{{ ligne.module.libelle }} — {{ role }}"
-                   {% if autorise %}checked{% endif %}
+            <input type="checkbox" data-groupe-maitre="{{ bloc.module.code }}:{{ role }}"
+                   aria-label="{{ bloc.module.libelle }} — tout pour {{ role }}"
                    style="width:1.1rem; height:1.1rem; accent-color:var(--color-primary); cursor:pointer;">
           </td>
           {% endfor %}
         </tr>
+        {% for ligne in bloc.lignes %}
+        <tr>
+          <td style="padding-left:2rem; color:var(--color-text-secondary);">{{ ligne.fonctionnalite.libelle }}</td>
+          {% for role, autorise in ligne.cases %}
+          <td style="text-align:center;">
+            <input type="checkbox" name="droit" value="{{ role }}:{{ bloc.module.code }}:{{ ligne.fonctionnalite.prefixe }}"
+                   data-groupe="{{ bloc.module.code }}:{{ role }}"
+                   aria-label="{{ ligne.fonctionnalite.libelle }} — {{ role }}"
+                   {% if autorise %}checked{% endif %}
+                   style="width:1rem; height:1rem; accent-color:var(--color-primary); cursor:pointer;">
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
         {% endfor %}
       </tbody>
     </table>
@@ -67,4 +82,28 @@
     <button type="submit" class="btn-primary">Enregistrer</button>
   </div>
 </form>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ request.csp_nonce }}">
+(function () {
+  // Case « module » : coche/décoche toutes les fonctionnalités du module pour le rôle,
+  // et reflète leur état (cochée, partielle, décochée).
+  document.querySelectorAll('[data-groupe-maitre]').forEach(function (maitre) {
+    var cases = document.querySelectorAll('[data-groupe="' + maitre.dataset.groupeMaitre + '"]');
+    var refleter = function () {
+      var cochees = 0;
+      cases.forEach(function (c) { if (c.checked) cochees += 1; });
+      maitre.checked = cochees === cases.length;
+      maitre.indeterminate = cochees > 0 && cochees < cases.length;
+    };
+    maitre.addEventListener('change', function () {
+      cases.forEach(function (c) { c.checked = maitre.checked; });
+      refleter();
+    });
+    cases.forEach(function (c) { c.addEventListener('change', refleter); });
+    refleter();
+  });
+})();
+</script>
 {% endblock %}
