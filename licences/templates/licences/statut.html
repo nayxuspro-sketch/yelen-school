@@ -17,7 +17,7 @@
       <p>{% if etab %}{{ etab.nom }}{% else %}Paramètres de service établissement{% endif %}</p>
     </div>
   </div>
-  {% if user.is_superuser %}
+  {% if user.est_super_admin %}
   <div class="dash-section-actions">
     <a href="{% url 'licences:gestion' %}" class="dash-btn dash-btn-secondary">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">

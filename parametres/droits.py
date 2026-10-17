@@ -394,7 +394,7 @@ def invalider_cache():
 
 
 def _est_super(user):
-    return getattr(user, 'role', None) == RoleChoices.SUPER_ADMIN or getattr(user, 'is_superuser', False)
+    return getattr(user, 'est_super_admin', False)
 
 
 def _droits_role(user):

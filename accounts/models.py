@@ -193,6 +193,11 @@ class User(AbstractUser, BaseModel):
     def role_libelle(self):
         return self.role_personnalise.libelle if self.role_personnalise_id else self.get_role_display()
 
+    @property
+    def est_super_admin(self) -> bool:
+        """Super Admin applicatif : rôle SUPER_ADMIN ou superuser Django."""
+        return self.role == RoleChoices.SUPER_ADMIN or self.is_superuser
+
     # ── Méthodes de vérification de rôle ──
 
     def is_directeur(self) -> bool:

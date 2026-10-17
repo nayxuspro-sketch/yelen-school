@@ -17,9 +17,10 @@ from .models import Licence, StatutLicence, LIMITES_LICENCES, TypeLicence, FEATU
 # (éditeur). Le superuser d'une école ne peut pas forger de licences, mais le
 # staff éditeur (is_staff) peut gérer les licences via cette interface.
 
-def _superuser_required(view_func):
-    """Legacy : garde superuser (conservé pour compat, redirige vers staff)."""
-    return user_passes_test(lambda u: u.is_staff, login_url='/')(view_func)
+def _super_admin_required(view_func):
+    """Volet « Système » (Mon abonnement, Licences) : Super Admin requis
+    (rôle SUPER_ADMIN ou superuser Django)."""
+    return user_passes_test(lambda u: u.est_super_admin, login_url='/')(view_func)
 
 
 def _staff_required(view_func):
@@ -55,6 +56,7 @@ def _enrich(lic):
 # ── Liste / tableau de bord ───────────────────────────────────────────────────
 
 @login_required
+@_super_admin_required
 def gestion_licences(request):
     """Tableau de bord licences. Superusers : toutes. Autres : la leur."""
     if request.user.is_superuser:
@@ -195,7 +197,7 @@ def activer(request):
     return render(request, 'licences/activer.html', {
         'etab': etab,
         'licence': licence,
-        'is_superuser': request.user.is_superuser,
+        'est_super_admin': request.user.est_super_admin,
         'limites': LIMITES_LICENCES,
     })
 
@@ -218,8 +220,9 @@ def renouveler(request):
 
 
 @login_required
+@_super_admin_required
 def statut_licence(request):
-    """Page de statut de licence accessible à tout utilisateur authentifié."""
+    """Page « Mon abonnement » — Super Admin uniquement."""
     etab, licence = _get_licence(request.user)
     jours_restants = licence.jours_restants() if licence else None
     est_expiree = (

@@ -974,7 +974,7 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 **Rôles personnalisés :** en haut de la page, le Super Admin crée de nouveaux rôles (ex. « Surveillant général », « Caissier ») en indiquant un libellé et un **rôle de référence** parmi les sept rôles du personnel. Le rôle de référence fixe le comportement métier (tableau de bord, périmètre d'un enseignant limité à ses classes…) et les droits de départ ; le nouveau rôle devient aussitôt une colonne de la matrice, où ses droits se règlent ensuite indépendamment de sa référence. Il est proposé dans le champ « Rôle » de la fiche utilisateur (groupe « Rôles personnalisés ») et affiché dans la liste des utilisateurs, qui peut le filtrer. Un rôle ne peut être supprimé que lorsqu'aucun utilisateur ne le porte ; sa suppression efface ses droits enregistrés.
 
-**Hors matrice :** le Super Admin garde tous les accès ; les parents et les élèves restent limités à leur portail ; la gestion des utilisateurs, le journal d'audit, la configuration SMS et les licences restent réservés à la direction. Tout le reste suit la matrice : un droit coché n'est jamais contredit par l'application.
+**Hors matrice :** le Super Admin garde tous les accès ; les parents et les élèves restent limités à leur portail ; la gestion des utilisateurs, le journal d'audit et la configuration SMS restent réservés à la direction ; le volet « Système » (Mon abonnement, Licences) est réservé au Super Admin. Tout le reste suit la matrice : un droit coché n'est jamais contredit par l'application.
 
 ---
 
