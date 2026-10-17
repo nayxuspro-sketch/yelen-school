@@ -11,7 +11,7 @@ from ..models import Evaluation, Note, Resultat, Trimestre
 from ..forms import EvaluationForm
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription
-from core.utils import filtre_enseignant
+from core.utils import filtre_enseignant, get_membre_personnel
 # Nombre de classes affichées par page dans la liste des évaluations
 # (chaque classe regroupe toutes ses matières et évaluations : ~40 lignes
 # par classe et par trimestre).
@@ -185,11 +185,34 @@ def _resolve_trimestre(periode):
     return trimestre
 
 
+def _refus_enseignant(request, enseignement):
+    """Motif pour lequel un enseignant ne peut pas intervenir sur ``enseignement`` (None si autorisé)."""
+    if request.user.role != 'ENSEIGNANT':
+        return None
+    membre = get_membre_personnel(request.user)
+    if membre is None:
+        return (f"aucune fiche du personnel ne porte l'adresse de votre compte ({request.user.email}) ; "
+                "l'administration doit la renseigner sur votre fiche (Personnel) pour vous relier à vos enseignements.")
+    if enseignement.personnel_id != membre.pk:
+        return (f"l'enseignement {enseignement.matiere.nom} — {enseignement.classe.nom} ne vous est pas attribué "
+                "(Pédagogie › Enseignements) ; seul l'enseignant titulaire peut y intervenir.")
+    return None
+
+
+def _formulaire_evaluation(request, *args, **kwargs):
+    """``EvaluationForm`` ; un enseignant ne peut viser que ses propres enseignements."""
+    form = EvaluationForm(*args, **kwargs)
+    if request.user.role == 'ENSEIGNANT':
+        form.fields['enseignement'].queryset = form.fields['enseignement'].queryset.filter(
+            personnel=filtre_enseignant(request.user))
+    return form
+
+
 @login_required
 def evaluation_create(request):
     """Création d'une nouvelle évaluation."""
     if request.method == 'POST':
-        form = EvaluationForm(request.POST)
+        form = _formulaire_evaluation(request, request.POST)
         if form.is_valid():
             evaluation = form.save(commit=False)
             evaluation.trimestre = _resolve_trimestre(form.cleaned_data['periode'])
@@ -197,7 +220,7 @@ def evaluation_create(request):
             messages.success(request, f"Évaluation '{evaluation.titre}' planifiée.")
             return redirect('pedagogie:evaluation_list')
     else:
-        form = EvaluationForm()
+        form = _formulaire_evaluation(request)
 
     return render(request, 'pedagogie/evaluation_form.html', {
         'form': form,
@@ -216,9 +239,13 @@ def evaluation_update(request, pk):
     if etab and evaluation.enseignement.classe.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé. Cette évaluation n'appartient pas à votre établissement.")
         return redirect('pedagogie:evaluation_list')
-    
+    refus = _refus_enseignant(request, evaluation.enseignement)
+    if refus:
+        messages.error(request, f"Modification refusée : {refus}")
+        return redirect('pedagogie:evaluation_list')
+
     if request.method == 'POST':
-        form = EvaluationForm(request.POST, instance=evaluation)
+        form = _formulaire_evaluation(request, request.POST, instance=evaluation)
         if form.is_valid():
             evaluation = form.save(commit=False)
             evaluation.trimestre = _resolve_trimestre(form.cleaned_data['periode'])
@@ -226,7 +253,7 @@ def evaluation_update(request, pk):
             messages.success(request, "Évaluation mise à jour.")
             return redirect('pedagogie:evaluation_list')
     else:
-        form = EvaluationForm(instance=evaluation)
+        form = _formulaire_evaluation(request, instance=evaluation)
 
     return render(request, 'pedagogie/evaluation_form.html', {
         'form': form,
@@ -255,16 +282,10 @@ def evaluation_saisie(request, pk):
     enseignement = evaluation.enseignement
     trimestre = evaluation.trimestre
 
-    # Vérification de sécurité - vérifier que l'enseignant enseigne cette matière
-    if request.user.role == 'ENSEIGNANT':
-        from pedagogie.models import Enseignement
-        authorized = Enseignement.objects.filter(
-            id=enseignement.pk,
-            personnel=filtre_enseignant(request.user)
-        ).exists()
-        if not authorized and getattr(classe, 'professeur_principal_id', None) != getattr(filtre_enseignant(request.user), 'pk', object()):
-            messages.error(request, "Vous n'êtes pas autorisé à saisir les notes de cette évaluation.")
-            return redirect('pedagogie:evaluation_list')
+    refus = _refus_enseignant(request, enseignement)
+    if refus:
+        messages.error(request, f"Saisie des notes refusée : {refus}")
+        return redirect('pedagogie:evaluation_list')
 
     inscriptions = Inscription.objects.filter(
         classe=classe,
@@ -404,6 +425,8 @@ def saisie_rapide_classe(request, class_id):
         .annotate(nb_notes=Count('notes'))
         .order_by('trimestre__numero', 'enseignement__matiere__nom', '-date_planifiee')
     )
+    if request.user.role == 'ENSEIGNANT':
+        evaluations = evaluations.filter(enseignement__personnel=filtre_enseignant(request.user))
 
     # Grouper par matière
     from collections import defaultdict
@@ -421,6 +444,10 @@ def saisie_rapide_classe(request, class_id):
 
 @login_required
 def saisie_classe_select(request):
-    """Sélection de la classe pour la saisie des notes."""
-    classes = Classe.objects.all().order_by('cycle__ordre', 'nom')
+    """Sélection de la classe pour la saisie des notes (ses classes de l'année pour un enseignant)."""
+    classes = Classe.objects.all()
+    if request.user.role == 'ENSEIGNANT':
+        classes = classes.filter(enseignements__personnel=filtre_enseignant(request.user),
+                                 enseignements__annee_scolaire__est_courante=True).distinct()
+    classes = classes.order_by('cycle__ordre', 'nom')
     return render(request, 'pedagogie/saisie_classe_select.html', {'classes': classes})

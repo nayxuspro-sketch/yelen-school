@@ -18,6 +18,9 @@ Résolution d'un droit (rôle, module, fonctionnalité[, action]) :
   3. sinon enregistrement du module (``fonctionnalite=''``, historique) ;
   4. sinon valeur par défaut (``DEFAUTS``), qui reproduit le comportement
      antérieur de l'application.
+Une action ou une fonctionnalité dont l'accès historique était plus restreint
+que celui de son module porte ses propres rôles par défaut (``roles=``) : ils
+remplacent les étapes 2 à 4, de sorte que le déploiement ne change rien.
 
 Le Super Admin dispose de tous les accès ; PARENT et ÉLÈVE restent confinés à
 leurs portails par ``RoleAccessMiddleware``.
@@ -27,18 +30,25 @@ from collections import namedtuple
 from django.core.cache import cache
 
 from core.models import RoleChoices
+from finances.permissions import FINANCE_APPROVER_ROLES, FINANCE_WRITE_ROLES
 
-Action = namedtuple('Action', 'code libelle url_names')
-Fonctionnalite = namedtuple('Fonctionnalite', 'prefixe libelle prefixes actions')
+Action = namedtuple('Action', 'code libelle url_names roles')
+Fonctionnalite = namedtuple('Fonctionnalite', 'prefixe libelle prefixes actions roles')
 Module = namedtuple('Module', 'code libelle section fonctionnalites')
 
+# Rôles historiques des actes restreints (cf. finances.permissions et anciens contrôles codés en dur)
+_DIRECTION = frozenset({RoleChoices.DIRECTEUR, RoleChoices.CENSEUR})
+_SECRETARIAT = _DIRECTION | {RoleChoices.SECRETAIRE, RoleChoices.COMPTABLE}
+_FINANCE_SAISIE = frozenset(FINANCE_WRITE_ROLES)
+_FINANCE_APPROBATION = frozenset(FINANCE_APPROVER_ROLES)
 
-def _a(code, libelle, *url_names):
-    return Action(code, libelle, url_names)
+
+def _a(code, libelle, *url_names, roles=None):
+    return Action(code, libelle, url_names, roles)
 
 
-def _f(prefixe, libelle, *autres, actions=()):
-    return Fonctionnalite(prefixe, libelle, (prefixe, *autres), tuple(actions))
+def _f(prefixe, libelle, *autres, actions=(), roles=None):
+    return Fonctionnalite(prefixe, libelle, (prefixe, *autres), tuple(actions), roles)
 
 
 SECTION_SCOLARITE = 'Scolarité'
@@ -52,8 +62,10 @@ MODULES = (
                'eleve_create', 'eleve_update', 'inscription_create', 'inscription_update',
                'transfert_classe', 'marquer_abandon', 'eleve_import', 'eleve_import_template'),
             _a('supprimer', 'Supprimer un élève', 'eleve_delete', 'evenement_supprimer'),
-            _a('transferts', 'Transferts inter-établissements : demander, approuver, refuser',
-               'transfert_inter_demander', 'transfert_inter_approuver', 'transfert_inter_refuser'),
+            _a('exporter', 'Exporter la liste des élèves (CSV / Excel)', 'eleve_list_csv', 'eleve_list_xlsx', roles=_SECRETARIAT),
+            _a('transferts', 'Demander un transfert inter-établissements', 'transfert_inter_demander'),
+            _a('transferts_decider', 'Approuver / refuser un transfert', 'transfert_inter_approuver', 'transfert_inter_refuser',
+               roles=frozenset({RoleChoices.DIRECTEUR})),
         )),
         _f('/inscriptions/reinscription/', 'Réinscription', actions=(
             _a('reinscrire', 'Réinscrire un élève', 'reinscrire_eleve'),
@@ -126,7 +138,7 @@ MODULES = (
             _a('traiter', 'Traiter un appel', 'appel_decision_traiter'),
         )),
         _f('/viescolaire/sanctions/', 'Sanctions disciplinaires', actions=(
-            _a('prononcer', 'Prononcer une sanction', 'sanction_create'),
+            _a('prononcer', 'Prononcer une sanction', 'sanction_create', roles=_SECRETARIAT - {RoleChoices.COMPTABLE} | {RoleChoices.AVS}),
             _a('supprimer', 'Supprimer une sanction', 'sanction_delete'),
         )),
         _f('/viescolaire/activites/', 'Activités parascolaires', actions=(
@@ -156,34 +168,38 @@ MODULES = (
     )),
     Module('finances', 'Finances', SECTION_ADMINISTRATION, (
         _f('/finances/paiements/', 'Paiements', '/finances/situation/', '/finances/echeancier/', '/finances/echeanciers/', actions=(
-            _a('encaisser', 'Encaisser un paiement', 'paiement_create', 'paiement_recherche_eleve', 'paiement_confirmation'),
-            _a('rembourser', 'Rembourser / annuler un remboursement', 'remboursement_create', 'remboursement_delete'),
-            _a('echeanciers', 'Créer / modifier / supprimer un échéancier', 'echeancier_create', 'echeancier_edit', 'echeancier_delete'),
+            _a('encaisser', 'Encaisser un paiement', 'paiement_create', 'paiement_recherche_eleve', 'paiement_confirmation',
+               'api_rubriques', roles=_FINANCE_SAISIE),
+            _a('rembourser', 'Rembourser / annuler un remboursement', 'remboursement_create', 'remboursement_delete',
+               roles=_FINANCE_APPROBATION),
+            _a('echeanciers', 'Créer / modifier / supprimer un échéancier', 'echeancier_create', 'echeancier_edit', 'echeancier_delete',
+               roles=_FINANCE_SAISIE),
         )),
         _f('/finances/redevables/', 'Redevables'),
         _f('/finances/exoneres/', 'Exonérés'),
         _f('/finances/bourses/', 'Bourses & Aides', '/finances/types-bourses/', actions=(
-            _a('attribuer', 'Attribuer / modifier une bourse', 'bourse_create', 'bourse_edit', 'api_calculer_bourse'),
-            _a('supprimer', 'Supprimer une bourse', 'bourse_delete'),
-            _a('types', 'Gérer les types de bourses', 'type_bourse_create', 'type_bourse_edit', 'type_bourse_delete'),
+            _a('attribuer', 'Attribuer / modifier une bourse', 'bourse_create', 'bourse_edit', 'api_calculer_bourse', roles=_FINANCE_SAISIE),
+            _a('supprimer', 'Supprimer une bourse', 'bourse_delete', roles=_FINANCE_SAISIE),
+            _a('types', 'Gérer les types de bourses', 'type_bourse_create', 'type_bourse_edit', 'type_bourse_delete', roles=_FINANCE_SAISIE),
         )),
         _f('/finances/relances/', 'Relances', actions=(
-            _a('sms', 'Envoyer les relances par SMS', 'relance_sms'),
+            _a('sms', 'Envoyer les relances par SMS', 'relance_sms', roles=_FINANCE_SAISIE),
         )),
         _f('/finances/relances/historique/', 'Historique relances'),
         _f('/finances/bilan/encaissements/', 'Bilan encaissements'),
         _f('/finances/mobile-money/', 'Mobile Money', actions=(
-            _a('initier', 'Initier une demande de paiement', 'mobile_money_create'),
-            _a('traiter', 'Confirmer / annuler une transaction', 'mobile_money_confirmer', 'mobile_money_annuler'),
+            _a('initier', 'Initier une demande de paiement', 'mobile_money_create', roles=_FINANCE_SAISIE),
+            _a('traiter', 'Confirmer / annuler une transaction', 'mobile_money_confirmer', 'mobile_money_annuler', roles=_FINANCE_SAISIE),
         )),
         _f('/finances/depenses/', 'Dépenses', '/finances/categories-depenses/', actions=(
-            _a('saisir', 'Saisir / modifier une dépense', 'depense_create', 'depense_edit'),
-            _a('valider', 'Valider / annuler une dépense', 'depense_valider', 'depense_annuler', 'depense_delete'),
+            _a('saisir', 'Saisir / modifier / supprimer une dépense', 'depense_create', 'depense_edit', 'depense_delete',
+               roles=_FINANCE_SAISIE),
+            _a('valider', 'Valider / annuler une dépense', 'depense_valider', 'depense_annuler', roles=_FINANCE_APPROBATION),
             _a('categories', 'Gérer les catégories de dépenses',
-               'categorie_depense_create', 'categorie_depense_edit', 'categorie_depense_delete'),
+               'categorie_depense_create', 'categorie_depense_edit', 'categorie_depense_delete', roles=_FINANCE_SAISIE),
         )),
         _f('/finances/budget/tresorerie/', 'Trésorerie'),
-        _f('/finances/budget/', 'Budget prévisionnel'),
+        _f('/finances/budget/', 'Budget prévisionnel', roles=_FINANCE_SAISIE),
     )),
     Module('vacations', 'Vacations', SECTION_ADMINISTRATION, (
         _f('/vacations/', 'Contrats', actions=(
@@ -302,12 +318,21 @@ def matrice_effective():
             in DroitAcces.objects.values_list('role', 'module', 'fonctionnalite', 'action', 'autorise')
         }
 
-        def autorise(role, module, fonctionnalite, action=''):
-            for cle in ((role.value, module.code, fonctionnalite.prefixe, action),
-                        (role.value, module.code, fonctionnalite.prefixe, ''),
-                        (role.value, module.code, '', '')):
+        def autorise(role, module, f, a=None):
+            if a is not None:
+                cle = (role.value, module.code, f.prefixe, a.code)
                 if cle in explicites:
                     return explicites[cle]
+                if a.roles is not None:
+                    return role in a.roles
+            cle = (role.value, module.code, f.prefixe, '')
+            if cle in explicites:
+                return explicites[cle]
+            if f.roles is not None:
+                return role in f.roles
+            cle = (role.value, module.code, '', '')
+            if cle in explicites:
+                return explicites[cle]
             return role in DEFAUTS.get(module.code, _TOUS)
 
         matrice = {}
@@ -319,7 +344,7 @@ def matrice_effective():
             actions = frozenset(
                 (module.code, f.prefixe, a.code)
                 for module in MODULES for f in module.fonctionnalites for a in f.actions
-                if autorise(role, module, f, a.code)
+                if autorise(role, module, f, a)
             )
             matrice[role.value] = {'fonctionnalites': fonctionnalites, 'actions': actions}
         cache.set(CLE_CACHE, matrice, DUREE_CACHE)

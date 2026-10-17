@@ -48,6 +48,35 @@ class TestValeursParDefaut:
         assert ('finances', '/finances/paiements/', 'encaisser') in actions['COMPTABLE']
         assert droits.actions_autorisees(baker.prepare('accounts.User', role='SUPER_ADMIN')) == droits.TOUTES_ACTIONS
 
+    def test_actes_restreints_gardent_leurs_roles_historiques(self):
+        """Saisie / approbation financières, exports, transferts, sanctions : mêmes rôles qu'avant la matrice."""
+        effectif = droits.matrice_effective()
+        actions = {role: d['actions'] for role, d in effectif.items()}
+
+        assert ('finances', '/finances/paiements/', 'encaisser') not in actions['SECRETAIRE']
+        assert ('finances', '/finances/paiements/', 'rembourser') not in actions['COMPTABLE']
+        assert ('finances', '/finances/paiements/', 'rembourser') in actions['DIRECTEUR_RESEAU']
+        assert ('finances', '/finances/depenses/', 'valider') not in actions['COMPTABLE']
+        assert '/finances/budget/' not in effectif['SECRETAIRE']['fonctionnalites']['finances']
+        assert '/finances/budget/' in effectif['COMPTABLE']['fonctionnalites']['finances']
+        assert ('inscriptions', '/inscriptions/', 'exporter') not in actions['ENSEIGNANT']
+        assert ('inscriptions', '/inscriptions/', 'transferts_decider') not in actions['CENSEUR']
+        assert ('inscriptions', '/inscriptions/', 'transferts_decider') in actions['DIRECTEUR']
+        assert ('viescolaire', '/viescolaire/sanctions/', 'prononcer') not in actions['ENSEIGNANT']
+        assert ('viescolaire', '/viescolaire/sanctions/', 'prononcer') in actions['AVS']
+
+    def test_acte_restreint_ne_s_ouvre_que_par_sa_propre_case(self):
+        """Cocher la fonctionnalité (ou le module) n'ouvre pas un acte restreint ; seule sa case le fait."""
+        from parametres.models import DroitAcces
+        DroitAcces.objects.create(role='SECRETAIRE', module='finances', autorise=True)
+        DroitAcces.objects.create(role='SECRETAIRE', module='finances', fonctionnalite='/finances/paiements/', autorise=True)
+        assert ('finances', '/finances/paiements/', 'encaisser') not in droits.matrice_effective()['SECRETAIRE']['actions']
+
+        droits.invalider_cache()
+        DroitAcces.objects.create(role='SECRETAIRE', module='finances', fonctionnalite='/finances/paiements/',
+                                  action='encaisser', autorise=True)
+        assert ('finances', '/finances/paiements/', 'encaisser') in droits.matrice_effective()['SECRETAIRE']['actions']
+
     def test_cible_d_une_action_par_nom_d_url(self):
         """Une action est reconnue par son nom d'URL, même hors du préfixe de sa fonctionnalité."""
         assert droits.cible('finances', '/finances/remboursements/x/annuler/', 'remboursement_delete') == ('/finances/paiements/', 'rembourser')
@@ -72,13 +101,16 @@ class TestValeursParDefaut:
         from parametres.models import DroitAcces
         DroitAcces.objects.create(role='ENSEIGNANT', module='finances', autorise=True)
         DroitAcces.objects.create(role='ENSEIGNANT', module='finances', fonctionnalite='/finances/depenses/', autorise=False)
+        DroitAcces.objects.create(role='ENSEIGNANT', module='pedagogie', autorise=False)
+        DroitAcces.objects.create(role='ENSEIGNANT', module='pedagogie', fonctionnalite='/pedagogie/matieres/', autorise=True)
 
         effectif = droits.matrice_effective()['ENSEIGNANT']
         finances = effectif['fonctionnalites']['finances']
 
         assert '/finances/paiements/' in finances and '/finances/depenses/' not in finances
-        assert ('finances', '/finances/paiements/', 'encaisser') in effectif['actions']       # hérité du module
-        assert ('finances', '/finances/depenses/', 'saisir') not in effectif['actions']       # hérité de la fonctionnalité
+        assert ('finances', '/finances/paiements/', 'encaisser') not in effectif['actions']   # acte restreint : règle propre
+        assert ('pedagogie', '/pedagogie/evaluations/', 'saisir_notes') not in effectif['actions']  # hérité du module
+        assert ('pedagogie', '/pedagogie/matieres/', 'gerer') in effectif['actions']          # hérité de la fonctionnalité
 
 
 @pytest.mark.django_db
@@ -139,6 +171,28 @@ class TestApplicationDesDroits:
         assert 'Accès à « Saisir les notes » (Pédagogie › Évaluations) non autorisé' in client.get('/').content.decode()
         assert client.get(reverse('pedagogie:saisie_classe_select'), HTTP_HX_REQUEST='true').status_code == 403
         assert client.get(reverse('pedagogie:evaluation_create')).status_code == 200           # action voisine conservée
+
+    def test_acte_restreint_suit_la_matrice_et_non_plus_le_code(self, client, etab):
+        """Les anciens contrôles de rôle codés en dur s'effacent devant la matrice (défauts identiques)."""
+        from parametres.models import DroitAcces
+        baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        secretaire = _client_role(client, etab, 'SECRETAIRE')
+        refus = secretaire.get(reverse('finances:paiement_recherche_eleve'), {'q': 'x'})
+        assert refus.status_code == 302 and refus.url == '/'
+        assert 'Accès à « Encaisser un paiement » (Finances › Paiements) non autorisé' in secretaire.get('/').content.decode()
+        assert secretaire.get(reverse('inscriptions:eleve_list_csv')).status_code == 200
+        assert secretaire.post(reverse('inscriptions:transfert_inter_approuver', kwargs={'pk': etab.pk})).url == '/'
+
+        DroitAcces.objects.create(role='SECRETAIRE', module='finances', fonctionnalite='/finances/paiements/',
+                                  action='encaisser', autorise=True)
+        droits.invalider_cache()
+        assert secretaire.get(reverse('finances:paiement_recherche_eleve'), {'q': 'x'}).status_code == 200
+
+        enseignant = _client_role(client.__class__(), etab, 'ENSEIGNANT')
+        assert enseignant.get(reverse('inscriptions:eleve_list_csv')).url == '/'
+        assert enseignant.get(reverse('viescolaire:sanction_create')).url == '/'
+        super_admin = _client_role(client.__class__(), etab, 'SUPER_ADMIN')
+        assert super_admin.get(reverse('viescolaire:sanction_create')).status_code == 200      # n'était plus accepté
 
     def test_action_exige_sa_fonctionnalite(self, client, etab):
         """Une action cochée reste refusée tant que sa fonctionnalité ne l'est pas."""

@@ -43,10 +43,14 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/>
         </svg>
       </div>
+      {% if request.user.role == 'ENSEIGNANT' %}
+      <p class="empty-state-text">Aucun enseignement ne vous est attribué pour l'année en cours (Pédagogie › Enseignements) ; vérifiez aussi que l'adresse e-mail de votre fiche du personnel est celle de votre compte.</p>
+      {% else %}
       <p class="empty-state-text">Aucune classe configurée.</p>
-      <a href="{% url 'parametres:classes' %}" class="btn-secondary" style="margin-top:var(--space-4);">
+      <a href="{% url 'parametres:classe_list' %}" class="btn-secondary" style="margin-top:var(--space-4);">
         Configurer les classes
       </a>
+      {% endif %}
     </div>
   </div>
   {% endfor %}

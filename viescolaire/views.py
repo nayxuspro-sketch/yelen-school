@@ -22,6 +22,7 @@ from parametres.models import AnneeScolaire, Classe, TypeSanction, SignataireDoc
 from pedagogie.models import Trimestre, Enseignement, MoyenneGenerale
 from inscriptions.models import Inscription
 from core.utils import get_etablissement_context
+from parametres.droits import autorise_url
 from .models import (
     ConseilClasse, DecisionConseil, AppelDecision,
     SanctionDisciplinaire,
@@ -293,11 +294,7 @@ def sanction_list(request):
 @login_required
 def sanction_create(request):
     """Enregistrer une nouvelle sanction disciplinaire."""
-    # Vérification de rôle - seul le personnel autorisé peut créer des sanctions
-    from core.models import RoleChoices
-    if request.user.role not in (
-        RoleChoices.DIRECTEUR, RoleChoices.CENSEUR, RoleChoices.AVS, RoleChoices.SECRETAIRE
-    ):
+    if not autorise_url(request, 'viescolaire:sanction_create'):
         messages.error(request, "Vous n'êtes pas autorisé à enregistrer des sanctions.")
         return redirect('viescolaire:sanction_list')
     

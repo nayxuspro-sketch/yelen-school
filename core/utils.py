@@ -1,5 +1,4 @@
-
-
+import uuid
 def get_membre_personnel(user):
     """Retourne la fiche MembrePersonnel liée à un utilisateur (ou None).
 
@@ -23,14 +22,18 @@ def get_membre_personnel(user):
     return membre
 
 
+AUCUNE_FICHE = uuid.UUID(int=0)  # identifiant qui ne correspond à aucune fiche du personnel
+
+
 def filtre_enseignant(user):
     """Valeur à utiliser dans `Enseignement.objects.filter(personnel=...)` pour
     restreindre aux enseignements de l'utilisateur.
 
-    Renvoie la fiche MembrePersonnel, ou None si l'utilisateur n'en a pas
-    (dans ce cas, `filter(personnel=None)` ne renvoie rien : sécurité par défaut).
+    Renvoie la fiche MembrePersonnel, ou ``AUCUNE_FICHE`` si l'utilisateur n'en
+    a pas : le filtre ne renvoie alors rien (sécurité par défaut — avec ``None``
+    il renverrait les enseignements sans enseignant, le champ étant nullable).
     """
-    return get_membre_personnel(user)
+    return get_membre_personnel(user) or AUCUNE_FICHE
 
 
 def get_etablissement_context(etablissement, request=None):

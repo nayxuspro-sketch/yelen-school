@@ -14,6 +14,7 @@ from .forms import EleveForm, InscriptionForm, TransfertClasseForm
 from parametres.models import AnneeScolaire, Classe
 from core.utils import get_etablissement_context
 from core.statistiques import statistiques_eleves
+from parametres.droits import autorise_url
 
 try:
     from core.pdf import HTML as _WeasyHTML
@@ -119,12 +120,7 @@ def eleve_list_csv(request):
     import csv
     from core.models import AuditLog
     
-    # Vérification de rôle - seuls certains rôles peuvent exporter
-    from core.models import RoleChoices
-    if request.user.role not in (
-        RoleChoices.SUPER_ADMIN, RoleChoices.DIRECTEUR, RoleChoices.CENSEUR,
-        RoleChoices.SECRETAIRE, RoleChoices.COMPTABLE
-    ):
+    if not autorise_url(request, 'inscriptions:eleve_list_csv'):
         messages.error(request, "Vous n'êtes pas autorisé à exporter la liste des élèves.")
         return redirect('inscriptions:eleve_list')
     
@@ -258,12 +254,8 @@ def eleve_list_csv(request):
 def eleve_list_xlsx(request):
     """Export Excel de la liste des élèves (mêmes filtres qu'eleve_list)."""
     from core.excel import ExcelExport
-    from core.models import RoleChoices
 
-    if request.user.role not in (
-        RoleChoices.SUPER_ADMIN, RoleChoices.DIRECTEUR, RoleChoices.CENSEUR,
-        RoleChoices.SECRETAIRE, RoleChoices.COMPTABLE,
-    ):
+    if not autorise_url(request, 'inscriptions:eleve_list_xlsx'):
         messages.error(request, "Vous n'êtes pas autorisé à exporter la liste des élèves.")
         return redirect('inscriptions:eleve_list')
 
@@ -1175,7 +1167,7 @@ def transfert_inter_detail(request, pk):
         'total_paye': total_paye,
         'total_du': total_du,
         'inscriptions_historique': inscriptions_historique,
-        'can_approve': request.user.role in ('SUPER_ADMIN', 'DIRECTEUR'),
+        'can_approve': autorise_url(request, 'inscriptions:transfert_inter_approuver'),
     })
 
 
@@ -1183,7 +1175,7 @@ def transfert_inter_detail(request, pk):
 @require_POST
 def transfert_inter_approuver(request, pk):
     """Approuve un transfert : marque l'inscription ABANDON + crée EvenementParcours."""
-    if not hasattr(request.user, 'role') or request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR'):
+    if not autorise_url(request, 'inscriptions:transfert_inter_approuver'):
         messages.error(request, "Vous n'avez pas les droits pour approuver un transfert.")
         return redirect('inscriptions:transfert_inter_detail', pk=pk)
 
@@ -1240,7 +1232,7 @@ def transfert_inter_approuver(request, pk):
 @require_POST
 def transfert_inter_refuser(request, pk):
     """Refuse un transfert."""
-    if not hasattr(request.user, 'role') or request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR'):
+    if not autorise_url(request, 'inscriptions:transfert_inter_refuser'):
         messages.error(request, "Vous n'avez pas les droits pour refuser un transfert.")
         return redirect('inscriptions:transfert_inter_detail', pk=pk)
 
