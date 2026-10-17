@@ -419,3 +419,45 @@ class TestAppreciationsPasDeCentieme:
         assert reponse.status_code == 204, reponse.content.decode()[:200]
         appr = apps.get_model(modele).objects.get(libelle='Très bien')
         assert (appr.moy_min, appr.moy_max) == (Decimal(bornes[0]), Decimal(bornes[1]))
+
+
+@pytest.mark.django_db
+class TestTypeSanctionForm:
+    """Le formulaire doit présenter tous les champs attendus par TypeSanctionForm (points_defaut, actif)."""
+
+    @pytest.fixture
+    def client_admin(self, client):
+        etab = baker.make(Etablissement)
+        client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
+        return client
+
+    def test_creation(self, client_admin):
+        from parametres.models import TypeSanction
+
+        html = client_admin.get(reverse('parametres:type_sanction_create'), HTTP_HX_REQUEST='true').content.decode()
+        assert re.search(r'name="points_defaut"[^>]*value="0"', html)
+        assert re.search(r'name="actif"[^>]*checked', html)
+
+        reponse = client_admin.post(reverse('parametres:type_sanction_create'), {
+            'code': 'RETENUE', 'libelle': 'Retenue', 'description': '', 'points_defaut': '-2', 'actif': 'on',
+        }, HTTP_HX_REQUEST='true')
+
+        assert reponse.status_code == 204, reponse.content.decode()[:200]
+        type_sanction = TypeSanction.objects.get(code='RETENUE')
+        assert type_sanction.actif is True
+        assert type_sanction.points_defaut == Decimal('-2')
+
+    def test_modification_conserve_les_points(self, client_admin):
+        from parametres.models import TypeSanction
+
+        type_sanction = baker.make(TypeSanction, code='BLAME', libelle='Blâme', points_defaut=Decimal('-1.50'))
+        html = client_admin.get(reverse('parametres:type_sanction_edit', args=[type_sanction.pk]), HTTP_HX_REQUEST='true').content.decode()
+        assert re.search(r'name="points_defaut"[^>]*value="-1.50"', html)
+
+        reponse = client_admin.post(reverse('parametres:type_sanction_edit', args=[type_sanction.pk]), {
+            'code': 'BLAME', 'libelle': 'Blâme', 'description': '', 'points_defaut': '-1.50',
+        }, HTTP_HX_REQUEST='true')
+
+        assert reponse.status_code == 204, reponse.content.decode()[:200]
+        type_sanction.refresh_from_db()
+        assert type_sanction.actif is False and type_sanction.points_defaut == Decimal('-1.50')
