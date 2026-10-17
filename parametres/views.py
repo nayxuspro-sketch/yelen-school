@@ -1189,7 +1189,7 @@ def type_sanction_form(request, pk=None):
 
 @login_required
 def droits_acces(request):
-    """Matrice rôles × fonctionnalités de chaque module, réservée au Super Admin."""
+    """Matrice rôles × fonctionnalités (et actions) de chaque module, réservée au Super Admin."""
     from core.models import RoleChoices
     from . import droits
 
@@ -1202,16 +1202,23 @@ def droits_acces(request):
         return redirect('parametres:droits_acces')
 
     matrice = droits.matrice_effective()
-    roles = [(role.value, role.label) for role in droits.ROLES_CONFIGURABLES]
+    roles = [role.value for role in droits.ROLES_CONFIGURABLES]
+
+    def ligne(module, f, action=None):
+        if action is None:
+            cases = [(role, f.prefixe in matrice[role]['fonctionnalites'][module.code]) for role in roles]
+            return {'libelle': f.libelle, 'cle': f'{module.code}:{f.prefixe}:', 'niveau': 1, 'cases': cases}
+        cases = [(role, (module.code, f.prefixe, action.code) in matrice[role]['actions']) for role in roles]
+        return {'libelle': action.libelle, 'cle': f'{module.code}:{f.prefixe}:{action.code}', 'niveau': 2, 'cases': cases}
+
     blocs = [{
         'module': module,
-        'roles': [role.value for role in droits.ROLES_CONFIGURABLES],
-        'lignes': [{
-            'fonctionnalite': f,
-            'cases': [(role.value, f.prefixe in matrice[role.value][module.code]) for role in droits.ROLES_CONFIGURABLES],
-        } for f in module.fonctionnalites],
+        'roles': roles,
+        'lignes': [ligne(module, f, a) for f in module.fonctionnalites for a in (None, *f.actions)],
     } for module in droits.MODULES]
-    return render(request, 'parametres/droits_acces.html', {'roles': roles, 'blocs': blocs})
+    return render(request, 'parametres/droits_acces.html', {
+        'roles': [(role.value, role.label) for role in droits.ROLES_CONFIGURABLES], 'blocs': blocs,
+    })
 
 
 # ─── TITRES FONCTIONS ─────────────────────────────────────────────

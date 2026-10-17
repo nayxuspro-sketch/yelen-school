@@ -6,7 +6,7 @@ def droits_acces(request):
     user = getattr(request, 'user', None)
     if user is None or not user.is_authenticated:
         return {}
-    modules, fonctionnalites = droits_requete(request)
+    modules, fonctionnalites, _ = droits_requete(request)
     return {
         'droits_modules': modules,
         'droits_fonctionnalites': fonctionnalites,

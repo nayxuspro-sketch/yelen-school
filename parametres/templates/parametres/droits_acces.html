@@ -13,7 +13,7 @@
       Paramètres
     </a>
     <h1 class="page-title">Droits d'accès par rôle</h1>
-    <p class="page-subtitle">Cochez, module par module, les fonctionnalités accessibles à chaque rôle du personnel</p>
+    <p class="page-subtitle">Cochez, module par module, les fonctionnalités et actions accessibles à chaque rôle du personnel</p>
   </div>
 </div>
 
@@ -21,7 +21,9 @@
   <div style="font-size:0.85rem; color:var(--color-text-secondary); line-height:1.6;">
     Une fonctionnalité non cochée disparaît du menu du rôle et ses pages lui sont refusées ;
     un module dont aucune fonctionnalité n'est cochée disparaît entièrement.
-    La case de la ligne du module coche ou décoche toutes ses fonctionnalités pour le rôle.
+    Les lignes « ↳ » sont les actions d'une fonctionnalité (saisie, validation, suppression…) :
+    une action n'est accessible que si sa fonctionnalité l'est.
+    La case de la ligne du module coche ou décoche tout le module pour le rôle.
     Le <strong>Super Admin</strong> conserve tous les accès ; les <strong>parents</strong> et <strong>élèves</strong>
     restent limités à leur portail. La gestion des utilisateurs, le journal d'audit et les licences
     restent réservés à la direction. Les modifications s'appliquent dès l'enregistrement.
@@ -61,14 +63,18 @@
         </tr>
         {% for ligne in bloc.lignes %}
         <tr>
-          <td style="padding-left:2rem; color:var(--color-text-secondary);">{{ ligne.fonctionnalite.libelle }}</td>
+          {% if ligne.niveau == 1 %}
+          <td style="padding-left:2rem; color:var(--color-text-primary); font-weight:500;">{{ ligne.libelle }}</td>
+          {% else %}
+          <td style="padding-left:3.5rem; color:var(--color-text-secondary); font-size:0.85em;">↳ {{ ligne.libelle }}</td>
+          {% endif %}
           {% for role, autorise in ligne.cases %}
           <td style="text-align:center;">
-            <input type="checkbox" name="droit" value="{{ role }}:{{ bloc.module.code }}:{{ ligne.fonctionnalite.prefixe }}"
+            <input type="checkbox" name="droit" value="{{ role }}:{{ ligne.cle }}"
                    data-groupe="{{ bloc.module.code }}:{{ role }}"
-                   aria-label="{{ ligne.fonctionnalite.libelle }} — {{ role }}"
+                   aria-label="{{ ligne.libelle }} — {{ role }}"
                    {% if autorise %}checked{% endif %}
-                   style="width:1rem; height:1rem; accent-color:var(--color-primary); cursor:pointer;">
+                   style="width:{% if ligne.niveau == 1 %}1rem{% else %}0.85rem{% endif %}; height:{% if ligne.niveau == 1 %}1rem{% else %}0.85rem{% endif %}; accent-color:var(--color-primary); cursor:pointer;">
           </td>
           {% endfor %}
         </tr>
