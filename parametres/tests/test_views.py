@@ -392,3 +392,30 @@ class TestFormulairesDecimauxNonLocalises:
             obj.refresh_from_db()
             for champ, valeur in attendus.items():
                 assert getattr(obj, champ) == Decimal(valeur), f'{nom_url} : {champ} modifié'
+
+
+@pytest.mark.django_db
+class TestAppreciationsPasDeCentieme:
+    """Les bornes des appréciations se saisissent au centième (ex. 17,99), pas au demi-point."""
+
+    @pytest.mark.parametrize('nom_url, modele, bornes', [
+        ('parametres:appreciation_create', 'parametres.AppreciationMoyenneSecondaire', ('16', '17.99')),
+        ('parametres:appreciation_primaire_create', 'parametres.AppreciationMoyennePrimaire', ('8', '8.99')),
+    ])
+    def test_bornes_au_centieme(self, client, nom_url, modele, bornes):
+        from django.apps import apps
+        etab = baker.make(Etablissement)
+        client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
+
+        html = client.get(reverse(nom_url), HTTP_HX_REQUEST='true').content.decode()
+        for champ in ('moy_min', 'moy_max'):
+            assert re.search(rf'name="{champ}"[^>]*step="0.01"', html), champ
+
+        reponse = client.post(reverse(nom_url), {
+            'libelle': 'Très bien', 'moy_min': bornes[0], 'moy_max': bornes[1],
+            'couleur': '#00A86B', 'ordre': '1', 'actif': 'on',
+        }, HTTP_HX_REQUEST='true')
+
+        assert reponse.status_code == 204, reponse.content.decode()[:200]
+        appr = apps.get_model(modele).objects.get(libelle='Très bien')
+        assert (appr.moy_min, appr.moy_max) == (Decimal(bornes[0]), Decimal(bornes[1]))
