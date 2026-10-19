@@ -138,11 +138,12 @@
       {% if form.password1 %}
       <div class="eval-form-section{% if not form.is_active %} eval-form-section-last{% endif %}">
         <div class="eval-form-section-label">Mot de passe</div>
+        <p class="form-hint" style="margin-bottom:var(--space-3);">Facultatif : laissé vide, l'utilisateur créera lui-même son mot de passe à sa première connexion (adresse e-mail seule).</p>
         <div class="form-grid-2">
 
           <div class="form-group">
             <label for="{{ form.password1.id_for_label }}" class="input-label">
-              {{ form.password1.label }} <span class="text-danger">*</span>
+              {{ form.password1.label }}
             </label>
             {{ form.password1 }}
             {% if form.password1.help_text %}
@@ -155,7 +156,7 @@
 
           <div class="form-group">
             <label for="{{ form.password2.id_for_label }}" class="input-label">
-              {{ form.password2.label }} <span class="text-danger">*</span>
+              {{ form.password2.label }}
             </label>
             {{ form.password2 }}
             {% if form.password2.errors %}

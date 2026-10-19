@@ -171,7 +171,7 @@
           </div>
           <div>
             <span class="card-title">Mot de passe</span>
-            <p class="card-header-sub">Définissez le mot de passe initial du compte</p>
+            <p class="card-header-sub">Facultatif : laissé vide, le parent créera lui-même son mot de passe à sa première connexion (adresse e-mail seule)</p>
           </div>
         </div>
       </div>
@@ -191,7 +191,7 @@
 
           <div class="form-group">
             <label for="{{ form.password1.id_for_label }}" class="input-label">
-              {{ form.password1.label }} <span class="required-star">*</span>
+              {{ form.password1.label }}
             </label>
             {{ form.password1 }}
             {% if form.password1.help_text %}
@@ -204,7 +204,7 @@
 
           <div class="form-group">
             <label for="{{ form.password2.id_for_label }}" class="input-label">
-              {{ form.password2.label }} <span class="required-star">*</span>
+              {{ form.password2.label }}
             </label>
             {{ form.password2 }}
             {% if form.password2.errors %}

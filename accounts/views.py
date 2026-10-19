@@ -123,6 +123,9 @@ def _redirect_after_login(request, user, next_url=''):
     return redirect('core:home')
 
 
+CLE_PREMIERE_CONNEXION = '_premiere_connexion_pk'
+
+
 def login_view(request):
     """Connexion utilisateur — étape 1 : email + mot de passe."""
     if request.user.is_authenticated:
@@ -131,6 +134,12 @@ def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('username', '').strip().lower()
         password = request.POST.get('password', '').strip()
+
+        # Compte créé sans mot de passe : l'utilisateur le crée lui-même.
+        compte = User.objects.filter(email__iexact=email, is_active=True).first() if email else None
+        if compte is not None and not compte.has_usable_password():
+            request.session[CLE_PREMIERE_CONNEXION] = TimestampSigner().sign(str(compte.pk))
+            return redirect('accounts:premiere_connexion')
 
         if not email or not password:
             messages.error(request, "Veuillez fournir votre identifiant et mot de passe.")
@@ -196,6 +205,36 @@ def login_2fa(request):
         messages.error(request, "Code incorrect ou expiré. Réessayez.")
 
     return render(request, 'accounts/login_2fa.html', {'email': user.email})
+
+
+def premiere_connexion(request):
+    """Première connexion d'un compte créé sans mot de passe : l'utilisateur le crée lui-même."""
+    signe = request.session.get(CLE_PREMIERE_CONNEXION)
+    if not signe:
+        return redirect('accounts:login')
+    try:
+        # Identité portée par la session (signée, 10 minutes), jamais par l'URL.
+        user = User.objects.get(pk=TimestampSigner().unsign(signe, max_age=600), is_active=True)
+    except (BadSignature, SignatureExpired, User.DoesNotExist):
+        user = None
+    if user is None or user.has_usable_password():
+        request.session.pop(CLE_PREMIERE_CONNEXION, None)
+        return redirect('accounts:login')
+
+    form = SetPasswordForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user.set_password(form.cleaned_data['password1'])
+        user.must_change_password = False
+        user.save(update_fields=['password', 'must_change_password'])
+        del request.session[CLE_PREMIERE_CONNEXION]
+        login(request, user)
+        messages.success(request, "Votre mot de passe est créé. Bienvenue !")
+        blocked = _check_licence_post_login(request, user, on_expired_redirect='accounts:login')
+        if blocked:
+            return blocked
+        return _redirect_after_login(request, user)
+
+    return render(request, 'accounts/premiere_connexion.html', {'form': form, 'email': user.email})
 
 
 @require_POST

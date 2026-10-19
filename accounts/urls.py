@@ -9,6 +9,7 @@ urlpatterns = [
     # Authentification
     path('login/',      views.login_view,  name='login'),
     path('login/2fa/',  views.login_2fa,   name='login_2fa'),
+    path('login/premiere-connexion/', views.premiere_connexion, name='premiere_connexion'),
     path('logout/',     views.logout_view, name='logout'),
 
     # Mot de passe oublié — réinitialisation par email avec limitation de débit

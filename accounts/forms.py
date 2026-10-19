@@ -54,11 +54,13 @@ def _configurer_role(form, current_user):
 class UserCreateForm(forms.ModelForm):
     password1 = forms.CharField(
         label="Mot de passe",
+        required=False,
         widget=_password_widget(),
         help_text=password_help_text_lazy(),
     )
     password2 = forms.CharField(
         label="Confirmer le mot de passe",
+        required=False,
         widget=forms.PasswordInput(attrs={'class': 'input', 'autocomplete': 'new-password'}),
     )
 
@@ -101,7 +103,7 @@ class UserCreateForm(forms.ModelForm):
         cleaned_data = super().clean()
         p1 = cleaned_data.get('password1', '')
         p2 = cleaned_data.get('password2', '')
-        if p1 and p2 and p1 != p2:
+        if p1 != p2:
             self.add_error('password2', "Les mots de passe ne correspondent pas.")
         if p1:
             try:
@@ -113,7 +115,11 @@ class UserCreateForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.username = self.cleaned_data['email']
-        user.set_password(self.cleaned_data['password1'])
+        if self.cleaned_data['password1']:
+            user.set_password(self.cleaned_data['password1'])
+        else:
+            # Sans mot de passe : l'utilisateur le crée à sa première connexion.
+            user.set_unusable_password()
         affecter_role(user, self.cleaned_data['role'])
         if commit:
             user.save()
@@ -271,11 +277,13 @@ class ParentCreateForm(forms.ModelForm):
     """Formulaire de création d'un compte parent avec liaison aux élèves."""
     password1 = forms.CharField(
         label="Mot de passe",
+        required=False,
         widget=_password_widget(),
         help_text=password_help_text_lazy(),
     )
     password2 = forms.CharField(
         label="Confirmer le mot de passe",
+        required=False,
         widget=forms.PasswordInput(attrs={'class': 'input', 'autocomplete': 'new-password'}),
     )
     eleves = forms.ModelMultipleChoiceField(
@@ -324,7 +332,7 @@ class ParentCreateForm(forms.ModelForm):
         cleaned_data = super().clean()
         p1 = cleaned_data.get('password1', '')
         p2 = cleaned_data.get('password2', '')
-        if p1 and p2 and p1 != p2:
+        if p1 != p2:
             self.add_error('password2', "Les mots de passe ne correspondent pas.")
         if p1:
             try:
@@ -339,7 +347,11 @@ class ParentCreateForm(forms.ModelForm):
         user.email = self.cleaned_data['email'].lower()
         user.role = 'PARENT'
         user.etablissement = self.etablissement
-        user.set_password(self.cleaned_data['password1'])
+        if self.cleaned_data['password1']:
+            user.set_password(self.cleaned_data['password1'])
+        else:
+            # Sans mot de passe : l'utilisateur le crée à sa première connexion.
+            user.set_unusable_password()
         if commit:
             user.save()
             user.eleves_lies.set(self.cleaned_data.get('eleves', []))

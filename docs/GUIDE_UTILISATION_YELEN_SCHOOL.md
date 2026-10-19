@@ -311,7 +311,9 @@ Le formulaire est organisé en 4 sections à **2 colonnes côte à côte** :
 | **Identité** | Nom ★ | Prénom ★ |
 | **Contact** | Email ★ | Téléphone |
 | **Accès** | Rôle ★ | Établissement |
-| **Mot de passe** | Mot de passe ★ | Confirmer ★ |
+| **Mot de passe** | Mot de passe (facultatif) | Confirmer |
+
+**Première connexion sans mot de passe :** si la section mot de passe est laissée vide, le compte est créé sans mot de passe. À sa première connexion, l'utilisateur saisit uniquement son adresse e-mail (mot de passe vide) : l'application lui demande alors de créer son mot de passe (même politique de robustesse) et l'ouvre directement. Ce parcours n'est proposé qu'aux comptes dont le mot de passe n'a jamais été défini.
 
 En mode **modification**, la section mot de passe est remplacée par une case à cocher **Compte actif** (pour activer / désactiver un compte sans le supprimer).
 
