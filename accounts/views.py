@@ -503,6 +503,15 @@ def user_set_password(request, pk):
         messages.error(request, "Accès non autorisé.")
         return redirect('accounts:user_list')
 
+    if request.method == 'POST' and request.POST.get('action') == 'reinitialiser':
+        # Retour à l'état « première connexion » : l'utilisateur créera lui-même son mot de passe.
+        edited_user.set_unusable_password()
+        edited_user.must_change_password = False
+        edited_user.save(update_fields=['password', 'must_change_password'])
+        messages.success(request, f"Mot de passe de {edited_user.get_full_name()} réinitialisé : "
+                                  "il le créera lui-même à sa prochaine connexion (adresse e-mail seule).")
+        return redirect('accounts:user_list')
+
     if request.method == 'POST':
         form = SetPasswordForm(request.POST)
         if form.is_valid():

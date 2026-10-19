@@ -80,3 +80,32 @@ class TestPremiereConnexion:
         reponse = client.post(reverse('accounts:login'), {'username': 'ali@ecole.bf', 'password': ''})
         assert reponse.status_code == 200
         assert client.session.get('_premiere_connexion_pk') is None
+
+
+@pytest.mark.django_db
+class TestReinitialisationParAdmin:
+    def test_super_admin_reinitialise_puis_premiere_connexion(self, client, etab):
+        user = baker.make(User, etablissement=etab, email='ali@ecole.bf', role='SECRETAIRE')
+        user.set_password(MDP)
+        user.save()
+        client.force_login(baker.make(User, etablissement=etab, role='SUPER_ADMIN', must_change_password=False))
+
+        reponse = client.post(reverse('accounts:user_set_password', args=[user.pk]), {'action': 'reinitialiser'})
+        assert reponse.status_code == 302 and reponse.url == reverse('accounts:user_list')
+        user.refresh_from_db()
+        assert not user.has_usable_password()
+        assert 'Mot de passe à créer' in client.get(reverse('accounts:user_list')).content.decode()
+
+        client.logout()
+        reponse = client.post(reverse('accounts:login'), {'username': 'ali@ecole.bf', 'password': MDP})
+        assert reponse.status_code == 302 and reponse.url == reverse('accounts:premiere_connexion')
+
+    def test_directeur_autre_etablissement_refuse(self, client, etab):
+        user = baker.make(User, etablissement=etab, email='ali@ecole.bf')
+        user.set_password(MDP)
+        user.save()
+        client.force_login(baker.make(User, etablissement=baker.make(Etablissement), role='DIRECTEUR',
+                                      must_change_password=False))
+        client.post(reverse('accounts:user_set_password', args=[user.pk]), {'action': 'reinitialiser'})
+        user.refresh_from_db()
+        assert user.check_password(MDP)

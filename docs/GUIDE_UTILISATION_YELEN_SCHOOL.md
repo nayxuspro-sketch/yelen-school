@@ -317,6 +317,8 @@ Le formulaire est organisé en 4 sections à **2 colonnes côte à côte** :
 
 **Première connexion sans mot de passe :** si la section mot de passe est laissée vide, le compte est créé sans mot de passe. À sa première connexion, l'utilisateur saisit uniquement son adresse e-mail (mot de passe vide) : l'application lui demande alors de créer son mot de passe (même politique de robustesse) et l'ouvre directement. Ce parcours n'est proposé qu'aux comptes dont le mot de passe n'a jamais été défini.
 
+**Réinitialisation par l'administrateur :** dans `Utilisateurs → Changer le mot de passe`, le Super Admin ou le Directeur peut soit saisir un nouveau mot de passe, soit cliquer sur **Réinitialiser le mot de passe** : le mot de passe actuel est supprimé et l'utilisateur crée lui-même le nouveau à sa prochaine connexion (adresse e-mail seule). La liste des utilisateurs signale ces comptes par le badge « Mot de passe à créer ».
+
 **Mon profil (tous les rôles) :** un clic sur le bloc utilisateur en haut du menu latéral (avatar, nom, e-mail) ouvre *Mon profil* (`/accounts/profile/`), où chaque utilisateur met à jour ses informations et **change lui-même son mot de passe** (mot de passe actuel + nouveau + confirmation, même politique de robustesse).
 
 En mode **modification**, la section mot de passe est remplacée par une case à cocher **Compte actif** (pour activer / désactiver un compte sans le supprimer).

@@ -108,6 +108,9 @@
             {% else %}
             <span class="badge badge-neutral">Inactif</span>
             {% endif %}
+            {% if not u.has_usable_password %}
+            <span class="badge badge-warning" title="L'utilisateur créera son mot de passe à sa prochaine connexion">Mot de passe à créer</span>
+            {% endif %}
           </td>
           <td style="text-align:right;">
             <div class="d-flex justify-end gap-2">
