@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Liste du personnel — {{ etab_nom }}</title>
+<title>{{ titre }} — {{ etab_nom }}</title>
 <style>
   @page {
     size: A4 landscape;
@@ -98,7 +98,7 @@
   </div>
 </div>
 
-<div class="doc-title">Liste du personnel</div>
+<div class="doc-title">{{ titre }}</div>
 <div class="doc-subtitle">{{ nb_total }} membre{{ nb_total|pluralize }} — {% if selection %}Sélection{% elif show_all %}Actifs et inactifs{% else %}Actifs{% endif %}{% if query %} — Recherche : « {{ query }} »{% endif %}</div>
 
 <table>

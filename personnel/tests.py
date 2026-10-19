@@ -201,6 +201,19 @@ class TestPersonnelListPdf:
         html = html_pour(f'?ids={inactif.pk}')
         assert 'KABORE' in html and 'ZONGO' not in html and '1 membre — Sélection' in html
 
+    def test_titre_porte_l_annee_scolaire_courante(self, client, contexte, mocker):
+        etab, user, actif, inactif = contexte
+        client.force_login(user)
+        html_cls = mocker.patch('core.pdf.HTML')
+        html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+
+        assert client.get(reverse('personnel:personnel_list_pdf')).status_code == 200
+        assert '<div class="doc-title">Liste du personnel</div>' in html_cls.call_args.kwargs['string']
+
+        baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True)
+        assert client.get(reverse('personnel:personnel_list_pdf')).status_code == 200
+        assert 'Liste du personnel – Année scolaire 2026-2027' in html_cls.call_args.kwargs['string']
+
     def test_pdf_avec_licence_active(self, client, contexte, mocker):
         """Régression : avec une licence active, le filigrane (filigrane_licence.html) lit
         « etablissement » dans le contexte — son absence provoquait un 500 en production."""

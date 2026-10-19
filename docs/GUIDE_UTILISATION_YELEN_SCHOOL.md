@@ -1003,7 +1003,8 @@ affiche « — ».
 
 **Exports :** les trois boutons **CSV**, **Excel** et **PDF** en haut à droite exportent
 **exactement la liste affichée** (mêmes filtres : recherche et inactifs). La barre d'actions
-groupées (cases à cocher) exporte la sélection.
+groupées (cases à cocher) exporte la sélection. Le PDF et l'Excel sont titrés
+« Liste du personnel – Année scolaire <année courante> » (sans année courante : « Liste du personnel »).
 
 | Format | Contenu | Usage |
 |---|---|---|

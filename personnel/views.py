@@ -114,6 +114,12 @@ def personnel_list_csv(request):
     return response
 
 
+def titre_liste_personnel(etab):
+    """Titre des exports : « Liste du personnel – Année scolaire <année courante> »."""
+    annee = annee_courante(etab)
+    return f"Liste du personnel – Année scolaire {annee}" if annee else "Liste du personnel"
+
+
 @login_required
 @requires_licence_feature('gestion_personnel')
 def personnel_list_xlsx(request):
@@ -128,7 +134,7 @@ def personnel_list_xlsx(request):
     nom_fichier = f"personnel{'_' + etab.code if etab else ''}.xlsx"
 
     wb = ExcelExport("Personnel")
-    wb.add_title("Liste du personnel", subtitle=etab.nom if etab else '')
+    wb.add_title(titre_liste_personnel(etab), subtitle=etab.nom if etab else '')
     wb.add_header(['Matricule', 'Nom', 'Prénom', 'Genre', 'Date de naissance', 'Téléphone', 'Email', 'Fonction', 'Cycles', 'Actif'])
 
     for m in personnel:
@@ -176,6 +182,7 @@ def personnel_list_pdf(request):
         'show_all': show_all,
         'selection': bool(ids),
         'etab_nom': etab.nom if etab else 'YELEN SCHOOL',
+        'titre': titre_liste_personnel(etab),
         'date_edition': timezone.localtime().strftime('%d/%m/%Y à %H:%M'),
         'identite': etab_context.get('identite'),
         'logo_url': etab_context.get('logo_url') or etab_context.get('etab_logo_url'),
