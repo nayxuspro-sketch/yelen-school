@@ -58,14 +58,14 @@
 
     {# ── Utilisateur ── #}
     {% if user.is_authenticated %}
-    <div class="sb-user-modern">
+    <a href="{% url 'accounts:profile' %}" class="sb-user-modern" title="Mon profil — informations et mot de passe">
       <div class="sb-avatar-modern">{{ user.get_full_name|default:user.username|first|upper }}</div>
       <div class="sb-user-details">
         <span class="sb-user-name">{{ user.get_full_name|default:user.username }}</span>
         <span class="sb-user-email">{{ user.email }}</span>
       </div>
       <div class="sb-online-dot"></div>
-    </div>
+    </a>
     {% endif %}
 
     {# ── Recherche ── #}
