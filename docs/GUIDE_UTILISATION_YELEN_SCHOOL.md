@@ -292,6 +292,8 @@ Une fois connecté, le tableau de bord s'adapte à ton rôle :
 
 ![Tableau de bord YELEN SCHOOL](screenshots/02-dashboard.png)
 
+**Tableau de bord — Enseignant :** les compteurs « Enseignements » et le tableau **Évaluations récentes** (évaluation, classe, matière, date prévue, statut) ne portent que sur ses propres enseignements (fiche du personnel reliée par e-mail, voir §2.19).
+
 ---
 
 ### 1.6 Gestion des Comptes Utilisateurs

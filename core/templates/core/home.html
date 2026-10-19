@@ -323,14 +323,15 @@
   </div>
   <div class="table-scroll">
     <table class="data-table">
-      <thead><tr><th>Classe</th><th>Matière</th><th>Date</th><th>Statut</th></tr></thead>
+      <thead><tr><th>Évaluation</th><th>Classe</th><th>Matière</th><th>Date prévue</th><th>Statut</th></tr></thead>
       <tbody>
         {% for ev in evaluations_recentes %}
         <tr>
-          <td>{{ ev.classe.nom }}</td>
-          <td>{{ ev.matiere.nom }}</td>
-          <td>{{ ev.date_evaluation|date:"d/m/Y" }}</td>
-          <td><span class="badge badge-{% if ev.statut == 'PUBLIEE' %}success{% elif ev.statut == 'BROUILLON' %}warning{% else %}info{% endif %}">{{ ev.get_statut_display }}</span></td>
+          <td>{{ ev.titre }}</td>
+          <td>{{ ev.enseignement.classe.nom }}</td>
+          <td>{{ ev.enseignement.matiere.nom }}</td>
+          <td>{{ ev.date_planifiee|date:"d/m/Y" }}</td>
+          <td><span class="badge badge-{% if ev.statut == 'TERMINEE' %}success{% elif ev.statut == 'EN_COURS' %}warning{% elif ev.statut == 'ANNULEE' %}danger{% else %}info{% endif %}">{{ ev.get_statut_display }}</span></td>
         </tr>
         {% endfor %}
       </tbody>

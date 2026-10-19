@@ -134,24 +134,21 @@ def home(request):
 
     # ── ENSEIGNANT ────────────────────────────────────────────────────
     elif role == 'ENSEIGNANT':
+        from core.utils import filtre_enseignant
         from pedagogie.models import Enseignement, Evaluation, Resultat
 
-        context['nb_issements'] = Enseignement.objects.filter(
-            annee_scolaire=annee_courante, est_actif=True
-        ).count() if annee_courante else 0
+        # Périmètre de l'enseignant : ses enseignements (fiche du personnel reliée par e-mail).
+        mes_enseignements = Enseignement.objects.filter(
+            annee_scolaire=annee_courante, est_actif=True, personnel=filtre_enseignant(request.user),
+        ) if annee_courante else Enseignement.objects.none()
+        context['nb_enseignements'] = mes_enseignements.count()
 
-        evaluations_recentes = []
-        if annee_courante:
-            try:
-                evaluations_recentes = (
-                    Evaluation.objects
-                    .filter(trimestre__annee_scolaire=annee_courante)
-                    .select_related('trimestre', 'type_evaluation')
-                    .order_by('-date_planifiee')[:5]
-                )
-            except Exception:
-                pass
-        context['evaluations_recentes'] = evaluations_recentes
+        context['evaluations_recentes'] = list(
+            Evaluation.objects
+            .filter(enseignement__in=mes_enseignements)
+            .select_related('enseignement__classe', 'enseignement__matiere')
+            .order_by('-date_planifiee')[:5]
+        )
 
         context['nb_evaluations_annee'] = 0
         if annee_courante:
