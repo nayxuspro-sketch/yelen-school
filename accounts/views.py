@@ -127,6 +127,16 @@ def _redirect_after_login(request, user, next_url=''):
 CLE_PREMIERE_CONNEXION = '_premiere_connexion_pk'
 
 
+def _contexte_heure_serveur():
+    """Heure du serveur affichée sur les écrans TOTP : le code dépend de l'horloge (tolérance ±30 s)."""
+    maintenant = timezone.localtime()
+    return {
+        'heure_serveur': maintenant,
+        'heure_serveur_ms': int(maintenant.timestamp() * 1000),
+        'fuseau_serveur': settings.TIME_ZONE,
+    }
+
+
 def login_view(request):
     """Connexion utilisateur — étape 1 : email + mot de passe."""
     if request.user.is_authenticated:
@@ -205,7 +215,7 @@ def login_2fa(request):
             return _redirect_after_login(request, user, next_url)
         messages.error(request, "Code incorrect ou expiré. Réessayez.")
 
-    return render(request, 'accounts/login_2fa.html', {'email': user.email})
+    return render(request, 'accounts/login_2fa.html', {'email': user.email, **_contexte_heure_serveur()})
 
 
 def premiere_connexion(request):
@@ -295,6 +305,7 @@ def totp_setup(request):
         'signed_secret': signed_secret,
         'qr_b64': qr_b64,
         'obligatoire': settings.TWO_FACTOR_REQUIRED and user.two_factor_obligatoire,
+        **_contexte_heure_serveur(),
     })
 
 

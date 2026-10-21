@@ -164,3 +164,19 @@ class TestSessionCaisse:
         self._connecter(client, etab, 'SECRETAIRE')
         assert client.session.get_expiry_age() == settings.SESSION_COOKIE_AGE
         assert 'js/inactivite' not in client.get(reverse('accounts:profile')).content.decode()
+
+
+# ── 4. Heure du serveur sur les écrans TOTP ──────────────────────────────────
+
+def test_heure_serveur_affichee_sur_les_ecrans_totp(client, etab, settings):
+    settings.TWO_FACTOR_REQUIRED = True
+    secret = pyotp.random_base32()
+    directeur = _utilisateur(etab, 'DIRECTEUR', email='dir@ecole.bf', totp_enabled=True, totp_secret=secret)
+    directeur.set_password(MDP)
+    directeur.save()
+    assert client.post(reverse('accounts:login'), {'username': directeur.email, 'password': MDP}).url == reverse('accounts:login_2fa')
+    for url in (reverse('accounts:login_2fa'),):
+        contenu = client.get(url).content.decode()
+        assert 'id="heure-serveur"' in contenu and 'js/heure_serveur' in contenu and 'data-fuseau="Africa/Ouagadougou"' in contenu
+    client.force_login(_utilisateur(etab, 'DIRECTEUR', email='dir2@ecole.bf'))
+    assert 'id="heure-serveur"' in client.get(reverse('accounts:totp_setup')).content.decode()

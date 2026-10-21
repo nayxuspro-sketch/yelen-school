@@ -1,0 +1,8 @@
+{% load static %}
+{# Heure du serveur, mise à jour chaque seconde (static/js/heure_serveur.js) : à comparer avec le téléphone. #}
+<p class="form-hint" style="margin-top:6px;">
+  Heure du serveur : <strong id="heure-serveur">{{ heure_serveur|date:"H:i:s" }}</strong> —
+  si votre téléphone affiche plus de 30 s d'écart, corrigez l'heure du serveur.
+</p>
+<script nonce="{{ request.csp_nonce }}" src="{% static 'js/heure_serveur.js' %}"
+        data-ms="{{ heure_serveur_ms }}" data-fuseau="{{ fuseau_serveur }}"></script>
