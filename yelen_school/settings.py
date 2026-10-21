@@ -104,6 +104,13 @@ try:
 except Exception:
     pass
 
+# ── HTTPS réseau local (service proxy Caddy, activé par installer/activer-https.ps1) ──
+# Le proxy termine le TLS et transmet X-Forwarded-Proto : Django traite ces requêtes
+# comme sécurisées ; les cookies ne circulent alors plus qu'en HTTPS.
+_YELEN_HTTPS = os.environ.get('YELEN_HTTPS', 'false').lower() == 'true'
+if _YELEN_HTTPS:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Indique à Django qu'il est derrière un proxy HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -406,7 +413,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Session - sécurité production
-SESSION_COOKIE_SECURE = not DEBUG and _SECURE_SSL_REDIRECT
+SESSION_COOKIE_SECURE = (not DEBUG and _SECURE_SSL_REDIRECT) or _YELEN_HTTPS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -414,7 +421,7 @@ SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '3600'))  # 1 heur
 SESSION_SAVE_EVERY_REQUEST = True
 
 # CSRF
-CSRF_COOKIE_SECURE = not DEBUG and _SECURE_SSL_REDIRECT
+CSRF_COOKIE_SECURE = (not DEBUG and _SECURE_SSL_REDIRECT) or _YELEN_HTTPS
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 

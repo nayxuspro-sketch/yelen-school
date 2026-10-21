@@ -1,0 +1,12 @@
+# Terminaison TLS de YELEN SCHOOL sur le réseau local (service « proxy », profil https).
+# Certificats générés par installer/generer-certificats.py (autorité locale YELEN SCHOOL).
+{
+	auto_https off
+	admin off
+}
+
+:443 {
+	tls /certs/yelen-serveur.crt /certs/yelen-serveur.key
+	encode gzip
+	reverse_proxy web:8000
+}

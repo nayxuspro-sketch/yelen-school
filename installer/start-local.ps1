@@ -217,7 +217,13 @@ try {
     if ($OpenBrowser) {
         $port = Get-DotEnvValue 'YELEN_HTTP_PORT'
         if ([string]::IsNullOrWhiteSpace($port)) { $port = '8000' }
-        Start-Process "http://127.0.0.1:$port/accounts/login/"
+        $url = "http://127.0.0.1:$port/accounts/login/"
+        if ((Get-DotEnvValue 'YELEN_HTTPS') -eq 'true') {
+            $httpsPort = Get-DotEnvValue 'YELEN_HTTPS_PORT'
+            if ([string]::IsNullOrWhiteSpace($httpsPort)) { $httpsPort = '8443' }
+            $url = "https://127.0.0.1:$httpsPort/accounts/login/"
+        }
+        Start-Process $url
     }
 } catch {
     Write-StartupLog "ERREUR : $($_.Exception.Message)"

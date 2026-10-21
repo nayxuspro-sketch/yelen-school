@@ -46,11 +46,13 @@ services:
       # chaque démarrage (liaison de la licence) — jamais stockée dans .env.
       YELEN_HOST_ID: ${YELEN_HOST_ID:-}
     ports:
-      - "${YELEN_HTTP_PORT:-8000}:8000"
+      # YELEN_WEB_BIND=127.0.0.1 ferme l'accès HTTP depuis le réseau (après activation du HTTPS).
+      - "${YELEN_WEB_BIND:-0.0.0.0}:${YELEN_HTTP_PORT:-8000}:8000"
     volumes:
       - yelen_media:/app/media
       - yelen_staticfiles:/app/staticfiles
       - yelen_logs:/app/logs
+      - ./certs:/app/certs
     depends_on:
       db:
         condition: service_healthy
@@ -65,9 +67,28 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  # HTTPS sur le réseau local (optionnel) : activé par installer\activer-https.ps1,
+  # qui génère les certificats dans certs\ et inscrit COMPOSE_PROFILES=https dans .env.
+  proxy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    ports:
+      - "${YELEN_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./installer/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
+      - yelen_caddy_data:/data
+      - yelen_caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   yelen_postgres_data:
   yelen_redis_data:
   yelen_media:
   yelen_staticfiles:
   yelen_logs:
+  yelen_caddy_data:
+  yelen_caddy_config:

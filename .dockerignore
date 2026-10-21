@@ -22,3 +22,4 @@ _count_*.py
 _gen_*.py
 _verify_*.py
 _find_*.py
+certs/
