@@ -4760,6 +4760,62 @@ input::-webkit-strong-password-auto-fill-button {
   .appel-form-actions .btn-secondary { justify-content: center; min-height: 44px; }
 }
 
+/* Tableau de bord direction (pilotage) */
+.pil-print-title { display: none; }
+.pil-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.875rem; margin-bottom: 1.5rem; }
+.pil-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg-card);
+}
+.pil-kpi-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); }
+.pil-kpi-value { font-size: 1.625rem; font-weight: 800; line-height: 1.1; color: var(--color-text-primary); }
+.pil-kpi-sub { font-size: 0.75rem; color: var(--color-text-muted); }
+.pil-vert { color: var(--color-primary-light); }
+.pil-orange { color: #F59E0B; }
+.pil-rouge { color: #FF6B7A; }
+.pil-bar { display: block; width: 100%; height: 6px; border-radius: 3px; background: var(--color-border); overflow: hidden; }
+.pil-bar-fill { display: block; height: 100%; border-radius: 3px; background: var(--color-primary); }
+.pil-bar-fill.is-orange { background: #F59E0B; }
+.pil-bar-fill.is-rouge { background: #DC3545; }
+.pil-mini { display: inline-flex; align-items: center; gap: 0.5rem; }
+.pil-mini .pil-bar { width: 56px; }
+.pil-table th, .pil-table td { padding: 0.5rem 0.625rem; font-size: 0.8125rem; }
+.pil-table tfoot td { border-top: 2px solid var(--color-border); }
+.pil-faits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin: 0.75rem 0 0.25rem; }
+.pil-faits dt { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); }
+.pil-faits dd { margin: 0; font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); }
+.pil-subtitle { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); margin: 1rem 0 0.375rem; }
+.pil-niveaux { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.pil-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.5rem 0 0; }
+
+@media (max-width: 1024px) { .pil-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .pil-kpis, .pil-faits { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+@media print {
+  .pil-print-title { display: block; font-size: 13px; color: #444; margin: 0 0 10px; }
+  .pil-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+  .pil-kpi { padding: 6px 8px; }
+  .pil-kpi-value { font-size: 1.125rem; }
+  .pil-kpi, .dash-grid-2col > .card, .pil-table .table-wrapper, .card .table-wrapper {
+    border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; break-inside: avoid;
+  }
+  .pil-kpi-value, .pil-faits dd, .pil-table td, .pil-table th, .card-title, .pil-vert, .pil-orange, .pil-rouge { color: #000 !important; }
+  .pil-table td, .pil-table th { border-color: #ddd !important; background: #fff !important; }
+  .pil-bar { background: #e5e5e5; }
+  .dash-grid-2col { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .dash-grid-2col > .card { padding: 8px 10px !important; }
+  .pil-table { width: 100%; table-layout: auto; }
+  .pil-table th, .pil-table td { padding: 2px 4px; font-size: 9px; white-space: normal; }
+  .pil-table th { text-transform: none; letter-spacing: 0; }
+  .pil-mini .pil-bar { display: none; }
+  .pil-kpi-sub, .pil-note, .pil-faits dt { font-size: 9px; }
+}
+
 /* Ligne tableau vide */
 .appel-empty-row td {
   text-align: center;

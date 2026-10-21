@@ -1,0 +1,13 @@
+{% extends "core/base.html" %}
+
+{% block title %}Accès refusé — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="dash-card animate-fade-up">
+  <div class="dash-empty-state">
+    <h3 class="dash-empty-title">Accès refusé</h3>
+    <p class="dash-empty-text">{{ message|default:"Vous n'avez pas accès à cette page." }}</p>
+    <a href="/" class="btn-secondary mt-2 inline-flex">Retour au tableau de bord</a>
+  </div>
+</div>
+{% endblock %}

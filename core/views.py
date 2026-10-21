@@ -66,7 +66,7 @@ def home(request):
         context['total_eleves'] = Eleve.objects.filter(
             inscriptions__annee_scolaire=annee_courante
         ).distinct().count() if annee_courante else Eleve.objects.count()
-        context['total_personnel'] = MembrePersonnel.objects.count()
+        context['total_personnel'] = MembrePersonnel.objects.filter(etablissement=etab).count()
 
         qs_fin = (
             Paiement.objects.filter(inscription__annee_scolaire=annee_courante)
@@ -76,7 +76,7 @@ def home(request):
         context['nb_paiements'] = qs_fin.count()
 
         context['nb_absences_aujourd_hui'] = Presence.objects.filter(
-            statut='ABSENT', appel__date=timezone.now().date()
+            statut='ABSENT', appel__date=timezone.now().date(), appel__classe__etablissement=etab,
         ).count()
         context['nb_justifications_attente'] = Justification.objects.filter(
             statut='EN_ATTENTE',
@@ -291,6 +291,31 @@ def recherche_globale(request):
     resultats = [r for r in resultats if r['items']]
 
     return render(request, 'core/partials/recherche_resultats.html', {'resultats': resultats, 'q': q})
+
+
+@login_required
+def pilotage(request):
+    """Tableau de bord direction : recouvrement, impayés par classe, effectifs, absences, élèves à risque."""
+    from django.core.exceptions import ValidationError
+    from core.pilotage import ROLES_PILOTAGE, tableau_de_bord
+
+    if request.user.role not in ROLES_PILOTAGE and not request.user.is_superuser:
+        return render(request, 'core/access_denied.html', {
+            'message': "Le tableau de bord direction est réservé à la direction.",
+        })
+    etab = request.user.etablissement
+    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut') if etab else AnneeScolaire.objects.none()
+    annee = None
+    if request.GET.get('annee_id'):
+        try:
+            annee = annees.filter(pk=request.GET['annee_id']).first()
+        except (ValueError, ValidationError):
+            annee = None
+    annee = annee or annees.filter(est_courante=True).first() or annees.first()
+    context = {'annees': annees, 'annee_selectionnee': annee}
+    if annee is not None:
+        context.update(tableau_de_bord(etab, annee))
+    return render(request, 'core/pilotage.html', context)
 
 
 @login_required

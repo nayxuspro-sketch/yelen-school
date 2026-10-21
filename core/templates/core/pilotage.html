@@ -1,0 +1,211 @@
+{% extends "core/base.html" %}
+{% load humanize %}
+
+{% block title %}Tableau de bord direction — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Tableau de bord direction</h1>
+      <p>Recouvrement, impayés par classe, effectifs, absences et élèves à risque — en une page</p>
+    </div>
+  </div>
+  <div class="dash-section-actions">
+    {% if annees %}
+    <form method="get" class="edt-toolbar">
+      <select name="annee_id" class="dash-input" data-csp-submit-on-change>
+        {% for a in annees %}
+        <option value="{{ a.pk }}" {% if annee_selectionnee and a.pk == annee_selectionnee.pk %}selected{% endif %}>{{ a.libelle }}{% if a.est_courante %} ★{% endif %}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% endif %}
+    {% if annee_selectionnee %}
+    <button type="button" class="btn-secondary" data-csp-action="print">Imprimer</button>
+    {% endif %}
+  </div>
+</div>
+
+{% if not annee_selectionnee %}
+<div class="dash-card animate-fade-up">
+  <div class="dash-empty-state">
+    <h3 class="dash-empty-title">Aucune année scolaire</h3>
+    <p class="dash-empty-text">Créez une année scolaire dans Paramètres pour afficher les indicateurs.</p>
+  </div>
+</div>
+{% else %}
+
+<p class="pil-print-title">{{ request.user.etablissement.nom }} — {{ annee_selectionnee.libelle }} — situation au {% now "d/m/Y" %}</p>
+
+{# ── Indicateurs clés ── #}
+<div class="pil-kpis animate-fade-up">
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Recouvrement</span>
+    <span class="pil-kpi-value {% if recouvrement.taux < 50 %}pil-rouge{% elif recouvrement.taux < 80 %}pil-orange{% else %}pil-vert{% endif %}">{{ recouvrement.taux|floatformat:0 }} %</span>
+    <div class="pil-bar"><div class="pil-bar-fill" style="width:{{ recouvrement.taux|floatformat:0 }}%"></div></div>
+    <span class="pil-kpi-sub">{{ recouvrement.encaisse|floatformat:0|intcomma }} / {{ recouvrement.attendu|floatformat:0|intcomma }} FCFA</span>
+  </div>
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Impayés</span>
+    <span class="pil-kpi-value pil-rouge">{{ recouvrement.reste|floatformat:0|intcomma }}</span>
+    <span class="pil-kpi-sub">FCFA · {{ recouvrement.redevables }} élève{{ recouvrement.redevables|pluralize }} redevable{{ recouvrement.redevables|pluralize }}</span>
+  </div>
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Effectifs</span>
+    <span class="pil-kpi-value">{{ effectifs.total }}</span>
+    <span class="pil-kpi-sub">{{ effectifs.garcons }} G · {{ effectifs.filles }} F · {{ effectifs.classes }} classe{{ effectifs.classes|pluralize }} · remplissage {{ effectifs.taux_remplissage|floatformat:0 }} %</span>
+  </div>
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Absences (30 jours)</span>
+    <span class="pil-kpi-value {% if absences.taux_30j >= 10 %}pil-rouge{% elif absences.taux_30j >= 5 %}pil-orange{% endif %}">{{ absences.trente_jours }}</span>
+    <span class="pil-kpi-sub">aujourd'hui {{ absences.aujourdhui }} · 7 jours {{ absences.sept_jours }} · taux {{ absences.taux_30j|floatformat:1 }} %</span>
+  </div>
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Élèves à risque</span>
+    <span class="pil-kpi-value {% if risque.niveaux.0.nb %}pil-rouge{% elif risque.niveaux.1.nb %}pil-orange{% endif %}">{{ risque.prioritaires_nb }}</span>
+    <span class="pil-kpi-sub">{{ risque.niveaux.0.nb }} critique{{ risque.niveaux.0.nb|pluralize }} · {{ risque.niveaux.1.nb }} élevé{{ risque.niveaux.1.nb|pluralize }} · {{ risque.niveaux.2.nb }} modéré{{ risque.niveaux.2.nb|pluralize }}</span>
+  </div>
+</div>
+
+<div class="dash-grid-2col animate-fade-up delay-1">
+
+  {# ── Impayés par classe ── #}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Impayés par classe</span>
+      <a href="{% url 'finances:liste_redevables' %}" class="text-sm no-print">Liste des redevables →</a>
+    </div>
+    {% if recouvrement.sans_tarif %}
+    <p class="pil-note">{{ recouvrement.sans_tarif }} inscription{{ recouvrement.sans_tarif|pluralize }} sans tarif applicable (statut élève ou grille tarifaire manquants) : montant attendu nul.</p>
+    {% endif %}
+    <div class="table-wrapper">
+      <table class="data-table pil-table">
+        <thead>
+          <tr><th>Classe</th><th class="td-right">Effectif</th><th class="td-right">Redevables</th><th class="td-right">Reste à payer</th><th class="td-right">Recouvrement</th></tr>
+        </thead>
+        <tbody>
+          {% for l in impayes %}
+          <tr>
+            <td class="fw-semibold">{{ l.classe.nom }}</td>
+            <td class="td-right">{{ l.effectif }}</td>
+            <td class="td-right">{{ l.redevables }}</td>
+            <td class="td-right {% if l.reste %}pil-rouge fw-semibold{% endif %}">{{ l.reste|floatformat:0|intcomma }}</td>
+            <td class="td-right">
+              <span class="pil-mini"><span class="pil-bar"><span class="pil-bar-fill {% if l.taux < 50 %}is-rouge{% elif l.taux < 80 %}is-orange{% endif %}" style="width:{{ l.taux|floatformat:0 }}%"></span></span>{{ l.taux|floatformat:0 }} %</span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted">Aucune inscription active.</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if impayes %}
+        <tfoot>
+          <tr class="fw-semibold"><td>Total</td><td class="td-right">{{ effectifs.total }}</td><td class="td-right">{{ recouvrement.redevables }}</td><td class="td-right pil-rouge">{{ recouvrement.reste|floatformat:0|intcomma }}</td><td class="td-right">{{ recouvrement.taux|floatformat:0 }} %</td></tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+
+  {# ── Effectifs ── #}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Effectifs par cycle</span>
+      <span class="badge badge-neutral">{{ effectifs.total }} élève{{ effectifs.total|pluralize }}</span>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table pil-table">
+        <thead><tr><th>Cycle</th><th class="td-right">Classes</th><th class="td-right">G</th><th class="td-right">F</th><th class="td-right">Total</th></tr></thead>
+        <tbody>
+          {% for c in effectifs.cycles %}
+          <tr><td class="fw-semibold">{{ c.cycle.nom }}</td><td class="td-right">{{ c.classes }}</td><td class="td-right">{{ c.garcons }}</td><td class="td-right">{{ c.filles }}</td><td class="td-right fw-semibold">{{ c.total }}</td></tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted">Aucune inscription active.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <dl class="pil-faits">
+      <div><dt>Redoublants</dt><dd>{{ effectifs.redoublants }}</dd></div>
+      <div><dt>Abandons</dt><dd class="{% if effectifs.abandons %}pil-rouge{% endif %}">{{ effectifs.abandons }}</dd></div>
+      <div><dt>Capacité (places)</dt><dd>{{ effectifs.capacite }}</dd></div>
+      <div><dt>Remplissage</dt><dd>{{ effectifs.taux_remplissage|floatformat:0 }} %</dd></div>
+    </dl>
+  </div>
+
+  {# ── Absences ── #}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Absences</span>
+      <a href="{% url 'presences:bilan_annuel' %}" class="text-sm no-print">Bilan annuel →</a>
+    </div>
+    <dl class="pil-faits">
+      <div><dt>Aujourd'hui</dt><dd>{{ absences.aujourdhui }}</dd></div>
+      <div><dt>7 jours</dt><dd>{{ absences.sept_jours }}</dd></div>
+      <div><dt>30 jours</dt><dd>{{ absences.trente_jours }}</dd></div>
+      <div><dt>Justifications en attente</dt><dd class="{% if absences.justifications_attente %}pil-orange{% endif %}">{{ absences.justifications_attente }}</dd></div>
+    </dl>
+    <h4 class="pil-subtitle">Classes les plus touchées (30 jours)</h4>
+    <table class="data-table pil-table">
+      <thead><tr><th>Classe</th><th class="td-right">Absences</th><th class="td-right">Élèves concernés</th></tr></thead>
+      <tbody>
+        {% for c in absences.classes %}
+        <tr><td>{{ c.appel__classe__nom }}</td><td class="td-right fw-semibold">{{ c.nb }}</td><td class="td-right">{{ c.eleves }}</td></tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-center text-muted">Aucune absence relevée sur 30 jours.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <h4 class="pil-subtitle">Élèves les plus absents (année)</h4>
+    <table class="data-table pil-table">
+      <thead><tr><th>Élève</th><th>Classe</th><th class="td-right">Absences</th></tr></thead>
+      <tbody>
+        {% for e in absences.eleves %}
+        <tr><td>{{ e.inscription__eleve__nom|upper }} {{ e.inscription__eleve__prenom }}</td><td>{{ e.inscription__classe__nom }}</td><td class="td-right fw-semibold">{{ e.nb }}</td></tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-center text-muted">Aucune absence relevée cette année.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── Élèves à risque ── #}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Élèves à risque de décrochage</span>
+      <a href="{% url 'pedagogie:risque_decrochage' %}" class="text-sm no-print">Analyse détaillée →</a>
+    </div>
+    <div class="pil-niveaux">
+      {% for n in risque.niveaux %}
+      <span class="badge {% if n.code == 'CRITIQUE' %}badge-danger{% elif n.code == 'ELEVE' %}badge-warning{% elif n.code == 'MODERE' %}badge-neutral{% else %}badge-success{% endif %}">{{ n.libelle }} : {{ n.nb }}</span>
+      {% endfor %}
+    </div>
+    <table class="data-table pil-table">
+      <thead><tr><th>Élève</th><th>Classe</th><th class="td-right">Score</th><th>Facteur principal</th></tr></thead>
+      <tbody>
+        {% for r in risque.prioritaires %}
+        <tr>
+          <td class="fw-semibold">{{ r.inscription.eleve.nom|upper }} {{ r.inscription.eleve.prenom }}</td>
+          <td>{{ r.inscription.classe.nom }}</td>
+          <td class="td-right"><span class="badge {% if r.niveau == 'CRITIQUE' %}badge-danger{% else %}badge-warning{% endif %}">{{ r.score }}/100</span></td>
+          <td class="text-sm">{{ r.facteurs.0.libelle|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted">{% if risque.date_calcul %}Aucun élève en risque élevé ou critique.{% else %}Aucune analyse calculée — lancez-la depuis l'analyse détaillée.{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if risque.date_calcul %}<p class="pil-note">Dernier calcul : {{ risque.date_calcul|date:"d/m/Y H:i" }}</p>{% endif %}
+  </div>
+
+</div>
+{% endif %}
+
+{% endblock %}

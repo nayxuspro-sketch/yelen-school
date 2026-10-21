@@ -20,6 +20,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 - [0. Introduction](#0-introduction)
 - [1. Connexion et Tableau de Bord](#1-connexion-et-tableau-de-bord)
+  - [1.4 Tableau de bord direction (Pilotage)](#14-tableau-de-bord-direction-pilotage)
   - [1.6 Gestion des Comptes Utilisateurs](#16-gestion-des-comptes-utilisateurs)
   - [1.7 Double Authentification (2FA) — Activer la Sécurité Renforcée](#17-double-authentification-2fa--activer-la-sécurité-renforcée)
   - [1.8 Se Connecter avec la 2FA Activée](#18-se-connecter-avec-la-2fa-activée)
@@ -297,6 +298,47 @@ Une fois connecté, le tableau de bord s'adapte à ton rôle :
 ![Tableau de bord YELEN SCHOOL](screenshots/02-dashboard.png)
 
 **Tableau de bord — Enseignant :** les compteurs « Enseignements » et le tableau **Évaluations récentes** (évaluation, classe, matière, date prévue, statut) ne portent que sur ses propres enseignements (fiche du personnel reliée par e-mail, voir §2.19).
+
+---
+
+### 1.4 Tableau de bord direction (Pilotage)
+
+**À quoi ça sert :** une seule page, imprimable sur une feuille A4, qui donne au promoteur ou au chef d'établissement la situation de l'école : recouvrement, impayés par classe, effectifs, absences et élèves à risque.
+
+**Accès :** menu `Pilotage` (sous *Tableau de bord*) ou carte **Encaissements · Pilotage** de l'accueil — réservé aux rôles Super Admin, Directeur Réseau, Directeur / Proviseur et Censeur. Adresse : `/pilotage/`.
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Tableau de bord direction                    [2026-2027 ★] [Imprimer]│
+├────────────┬────────────┬───────────┬───────────────┬────────────────┤
+│RECOUVREMENT│ IMPAYÉS    │ EFFECTIFS │ ABSENCES (30j)│ ÉLÈVES À RISQUE│
+│  60 %      │ 6 156 250  │  152      │  83           │  6             │
+│ ████████░░ │ FCFA · 88  │ 76 G·76 F │ aujourd'hui 8 │ 4 critiques    │
+│ 9,1 M/15,3M│ redevables │ 5 classes │ taux 5,5 %    │ 2 élevés       │
+├────────────┴────────────┴─┬─────────┴───────────────┴────────────────┤
+│ Impayés par classe        │ Effectifs par cycle                      │
+│ 5e B  34  25  1 593 750 45%│ Post-primaire 3 cl. 51 G 51 F 102       │
+│ 2nde A 28 16  1 380 000 59%│ Secondaire    2 cl. 25 G 25 F  50       │
+│ …                         │ Redoublants · Abandons · Capacité        │
+├───────────────────────────┼──────────────────────────────────────────┤
+│ Absences                  │ Élèves à risque de décrochage            │
+│ aujourd'hui · 7 j · 30 j  │ Critique 4 · Élevé 2 · Modéré 9          │
+│ classes les plus touchées │ OUEDRAOGO Awa  6e A  92/100  Absences…   │
+│ élèves les plus absents   │ …                                        │
+└───────────────────────────┴──────────────────────────────────────────┘
+```
+
+**Définitions (identiques aux états Finances et Présences) :**
+
+- **Recouvrement** = (attendu − reste à payer) / attendu. *Attendu* = Σ des tarifs applicables à chaque inscription active (grille `Paramètres → Tarifs`, selon le statut de l'élève, bourses déduites) ; *encaissé* = paiements − remboursements ; *reste* par élève = max(attendu − payé, 0), comme dans `Finances → Liste des redevables`. Les inscriptions sans statut d'élève ou sans tarif comptent 0 : la page le signale.
+- **Impayés par classe** : classes triées du reste le plus élevé au plus faible, avec effectif, nombre de redevables et taux de recouvrement de la classe ; lien vers la liste nominative des redevables.
+- **Effectifs** : inscriptions actives (abandons exclus et comptés à part), garçons / filles, redoublants, par cycle ; **remplissage** = effectif / Σ des capacités maximales des classes.
+- **Absences** : statut *Absent* des appels de l'établissement — aujourd'hui, 7 jours, 30 jours ; **taux** = absences / pointages relevés sur 30 jours ; classes les plus touchées (30 jours), élèves les plus absents (année), justifications en attente.
+- **Élèves à risque** : résultat de l'analyse de décrochage (§6.10) — compteurs par niveau et les dix scores les plus élevés (critique, élevé) avec leur facteur principal. Si aucune analyse n'a été calculée, la page invite à la lancer.
+
+Le sélecteur d'année permet de revoir une année passée. **Imprimer** produit la page sur une feuille A4 (en-tête « établissement — année — situation au jj/mm/aaaa »).
+
+**Cas concret :** Avant la réunion du conseil d'administration, le promoteur ouvre *Pilotage* : recouvrement 60 % à mi-trimestre, 6,1 M FCFA d'impayés concentrés sur la 5e B et la 2nde A, 83 absences sur 30 jours dont 32 en 3e C, 4 élèves en risque critique. Il imprime la page et demande au comptable une campagne de relances ciblée sur ces deux classes (§9.11 et §9.14).
 
 ---
 
