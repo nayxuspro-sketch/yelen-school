@@ -248,6 +248,7 @@ MODULES = (
         _f('/documents/personnel/', 'Liste du personnel'),
         _f('/documents/convocations/', 'Convocations'),
         _f('/documents/circulaires/', 'Circulaires'),
+        _f('/documents/statistiques-officielles/', 'Statistiques officielles'),
     )),
     Module('parametres', 'Paramètres', SECTION_CONFIGURATION, (
         _f('/parametres/etablissement/', 'Établissement'),

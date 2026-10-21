@@ -1,0 +1,198 @@
+{% extends "core/base.html" %}
+
+{% block title %}Statistiques officielles — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="dash-section-header animate-fade-up">
+  <div class="dash-section-title">
+    <div class="dash-section-icon dash-section-icon-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Statistiques officielles</h1>
+      <p>Tableaux du questionnaire statistique du ministère (DGESS) : rentrée et fin d'année, par niveau et par sexe</p>
+    </div>
+  </div>
+  <div class="dash-section-actions">
+    {% if annees %}
+    <form method="get" class="edt-toolbar">
+      <select name="annee_id" class="dash-input" data-csp-submit-on-change>
+        {% for a in annees %}
+        <option value="{{ a.pk }}" {% if annee_selectionnee and a.pk == annee_selectionnee.pk %}selected{% endif %}>{{ a.libelle }}{% if a.est_courante %} ★{% endif %}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% endif %}
+    {% if annee_selectionnee %}
+    <a href="{% url 'documents:statistiques_officielles' %}?annee_id={{ annee_selectionnee.pk }}&amp;format=xlsx" class="btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Exporter (Excel)
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{% if not annee_selectionnee %}
+<div class="dash-card animate-fade-up">
+  <div class="dash-empty-state">
+    <h3 class="dash-empty-title">Aucune année scolaire</h3>
+    <p class="dash-empty-text">Créez une année scolaire dans Paramètres pour produire les statistiques.</p>
+  </div>
+</div>
+{% else %}
+
+<!-- Rentrée -->
+<div class="card animate-fade-up delay-1">
+  <div class="card-header">
+    <span class="card-title">Rentrée {{ annee_selectionnee.libelle }} — élèves et redoublants par niveau</span>
+    <span class="badge badge-neutral">{{ rentree.total.effectif.T }} élève{{ rentree.total.effectif.T|pluralize }}</span>
+  </div>
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th rowspan="2">Cycle</th><th rowspan="2">Niveau</th><th rowspan="2" class="td-right">Divisions</th>
+          <th colspan="3" class="text-center">Effectif</th><th colspan="3" class="text-center">Redoublants</th><th colspan="3" class="text-center">Nouveaux entrants</th>
+        </tr>
+        <tr>
+          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in rentree.lignes %}
+        <tr>
+          <td>{{ l.cycle|default:"—" }}</td><td class="fw-semibold">{{ l.niveau }}</td><td class="td-right">{{ l.divisions }}</td>
+          <td class="td-right">{{ l.effectif.M }}</td><td class="td-right">{{ l.effectif.F }}</td><td class="td-right fw-semibold">{{ l.effectif.T }}</td>
+          <td class="td-right">{{ l.redoublants.M }}</td><td class="td-right">{{ l.redoublants.F }}</td><td class="td-right fw-semibold">{{ l.redoublants.T }}</td>
+          <td class="td-right">{{ l.nouveaux.M }}</td><td class="td-right">{{ l.nouveaux.F }}</td><td class="td-right fw-semibold">{{ l.nouveaux.T }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="12" class="text-center text-muted">Aucune inscription pour cette année.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if rentree.lignes %}
+      <tfoot>
+        <tr class="fw-semibold">
+          <td colspan="3">Total</td>
+          <td class="td-right">{{ rentree.total.effectif.M }}</td><td class="td-right">{{ rentree.total.effectif.F }}</td><td class="td-right">{{ rentree.total.effectif.T }}</td>
+          <td class="td-right">{{ rentree.total.redoublants.M }}</td><td class="td-right">{{ rentree.total.redoublants.F }}</td><td class="td-right">{{ rentree.total.redoublants.T }}</td>
+          <td class="td-right">{{ rentree.total.nouveaux.M }}</td><td class="td-right">{{ rentree.total.nouveaux.F }}</td><td class="td-right">{{ rentree.total.nouveaux.T }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+<!-- Âges -->
+{% if rentree.ages %}
+<div class="card animate-fade-up delay-2">
+  <div class="card-header">
+    <span class="card-title">Répartition par âge et par sexe</span>
+    <span class="text-xs text-muted">Âge = année de la rentrée − année de naissance</span>
+  </div>
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th rowspan="2">Âge</th>
+          {% for niveau in rentree.niveaux %}<th colspan="2" class="text-center">{{ niveau }}</th>{% endfor %}
+          <th colspan="3" class="text-center">Total</th>
+        </tr>
+        <tr>
+          {% for niveau in rentree.niveaux %}<th class="td-right">G</th><th class="td-right">F</th>{% endfor %}
+          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in rentree.ages %}
+        <tr>
+          <td class="fw-semibold">{{ l.age }}</td>
+          {% for c in l.colonnes %}<td class="td-right">{{ c.M }}</td><td class="td-right">{{ c.F }}</td>{% endfor %}
+          <td class="td-right">{{ l.total.M }}</td><td class="td-right">{{ l.total.F }}</td><td class="td-right fw-semibold">{{ l.total.T }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Fin d'année -->
+<div class="card animate-fade-up delay-3">
+  <div class="card-header">
+    <span class="card-title">Fin d'année {{ annee_selectionnee.libelle }} — abandons et décisions des conseils de classe</span>
+    <span class="badge badge-neutral">{{ fin_annee.total.fin_annee.T }} présent{{ fin_annee.total.fin_annee.T|pluralize }} en fin d'année</span>
+  </div>
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th rowspan="2">Niveau</th>
+          <th colspan="3" class="text-center">Inscrits</th><th colspan="3" class="text-center">Abandons</th><th colspan="3" class="text-center">Fin d'année</th>
+          {% for cle, libelle in fin_annee.decisions %}<th colspan="3" class="text-center">{{ libelle }}</th>{% endfor %}
+        </tr>
+        <tr>
+          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          {% for cle, libelle in fin_annee.decisions %}<th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in fin_annee.lignes %}
+        <tr>
+          <td class="fw-semibold">{{ l.niveau }}</td>
+          <td class="td-right">{{ l.inscrits.M }}</td><td class="td-right">{{ l.inscrits.F }}</td><td class="td-right fw-semibold">{{ l.inscrits.T }}</td>
+          <td class="td-right">{{ l.abandons.M }}</td><td class="td-right">{{ l.abandons.F }}</td><td class="td-right fw-semibold">{{ l.abandons.T }}</td>
+          <td class="td-right">{{ l.fin_annee.M }}</td><td class="td-right">{{ l.fin_annee.F }}</td><td class="td-right fw-semibold">{{ l.fin_annee.T }}</td>
+          <td class="td-right">{{ l.passage.M }}</td><td class="td-right">{{ l.passage.F }}</td><td class="td-right fw-semibold">{{ l.passage.T }}</td>
+          <td class="td-right">{{ l.redoublement.M }}</td><td class="td-right">{{ l.redoublement.F }}</td><td class="td-right fw-semibold">{{ l.redoublement.T }}</td>
+          <td class="td-right">{{ l.orientation.M }}</td><td class="td-right">{{ l.orientation.F }}</td><td class="td-right fw-semibold">{{ l.orientation.T }}</td>
+          <td class="td-right">{{ l.exclusion.M }}</td><td class="td-right">{{ l.exclusion.F }}</td><td class="td-right fw-semibold">{{ l.exclusion.T }}</td>
+          <td class="td-right">{{ l.sans_decision.M }}</td><td class="td-right">{{ l.sans_decision.F }}</td><td class="td-right fw-semibold">{{ l.sans_decision.T }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="25" class="text-center text-muted">Aucune inscription pour cette année.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if fin_annee.examens %}
+  <div class="card-header"><span class="card-title">Résultats aux examens officiels</span></div>
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th rowspan="2">Examen</th><th rowspan="2">Session</th>
+          <th colspan="3" class="text-center">Inscrits</th><th colspan="3" class="text-center">Présents</th><th colspan="3" class="text-center">Admis</th><th colspan="3" class="text-center">Taux de réussite (%)</th>
+        </tr>
+        <tr>
+          {% for _ in "1234" %}<th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in fin_annee.examens %}
+        <tr>
+          <td class="fw-semibold">{{ e.session.get_type_examen_display }}</td><td>{{ e.session.libelle }}</td>
+          <td class="td-right">{{ e.inscrits.M }}</td><td class="td-right">{{ e.inscrits.F }}</td><td class="td-right fw-semibold">{{ e.inscrits.T }}</td>
+          <td class="td-right">{{ e.presents.M }}</td><td class="td-right">{{ e.presents.F }}</td><td class="td-right fw-semibold">{{ e.presents.T }}</td>
+          <td class="td-right">{{ e.admis.M }}</td><td class="td-right">{{ e.admis.F }}</td><td class="td-right fw-semibold">{{ e.admis.T }}</td>
+          <td class="td-right">{{ e.taux.M|default_if_none:"—" }}</td><td class="td-right">{{ e.taux.F|default_if_none:"—" }}</td><td class="td-right fw-semibold">{{ e.taux.T|default_if_none:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}

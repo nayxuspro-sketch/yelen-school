@@ -85,6 +85,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 - [20. Portail Parent PWA](#20-portail-parent-pwa)
 - [21. Signature Électronique des Bulletins](#21-signature-électronique-des-bulletins)
   - [10.5 Liste des Candidats — Filtre par Centre](#105-liste-des-candidats--filtre-par-centre)
+  - [10.6 Fichier d'inscription des candidats (Excel)](#106-fichier-dinscription-des-candidats-excel)
 - [11. Vacations](#11-vacations)
   - [11.3 Générer un Bulletin de Vacation](#113-générer-un-bulletin-de-vacation)
 - [12. Documents Administratifs](#12-documents-administratifs)
@@ -101,6 +102,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [12.11 Convocations](#1211-convocations)
   - [12.12 Circulaires](#1212-circulaires)
   - [12.13 Attestation de Non-Redevabilité](#1213-attestation-de-non-redevabilité)
+  - [12.14 Statistiques officielles](#1214-statistiques-officielles-rentrée-et-fin-dannée)
 - [13. Gestion des Licences](#13-gestion-des-licences-super-admin-uniquement)
 - [14. Statistiques et Rapports](#14-statistiques-et-rapports)
   - [14.4 Emploi du Temps](#144-emploi-du-temps)
@@ -2907,6 +2909,16 @@ Après la saisie, le système calcule automatiquement :
 
 **Cas concret :** Le BAC 2026 a 3 centres (C2026-001 Lycée Zinda, C2026-002 Lycée Philippe Zinda Kaboré, C2026-003 Lycée Bogodogo). Le secrétaire sélectionne « C2026-002 » pour imprimer uniquement la liste des candidats du Lycée Philippe Zinda Kaboré — le PDF généré ne contient que ces élèves.
 
+### 10.6 Fichier d'inscription des candidats (Excel)
+
+**À quoi ça sert :** Produire en un clic le fichier des candidats d'une session avec l'état civil et la scolarité demandés par les services des examens (CEP : DGEC ; BEPC et BAC : OCECOS), pour l'inscription en ligne ou le dépôt à la direction provinciale.
+
+**Accès :** `Examens → [session] → Liste des candidats → Fichier d'inscription (Excel)` (respecte le filtre par centre).
+
+**Colonnes :** N°, Matricule, Nom (en majuscules), Prénom(s), Sexe (M/F), Date de naissance (JJ/MM/AAAA), Lieu de naissance, Nationalité, Classe, Examen, Série (BAC), Statut candidat (Officiel), Redoublant, Nom du père, Nom de la mère, Téléphone parent / tuteur, Établissement d'origine, Centre d'examen, N° de table.
+
+> Les données viennent de la fiche élève : vérifiez avant l'export les dates et lieux de naissance (conformes à l'acte de naissance) et la série de la classe de Terminale. Si votre service des examens fournit un canevas différent, les colonnes se recopient dans son ordre.
+
 ---
 
 ## 11. VACATIONS
@@ -3442,6 +3454,20 @@ Le PDF généré certifie que l'élève **ne doit rien** à l'établissement. Si
 > **Point d'attention :** Cette attestation ne peut être délivrée que si **toutes les rubriques** de l'année scolaire sont soldées à zéro. En cas de reste à payer, le document indique le montant restant dû sans valeur certificatrice.
 
 **Cas concret :** En fin d'année, Mme SAWADOGO se présente au secrétariat du Lycée Zinda pour récupérer le bulletin de sa fille. La secrétaire vérifie la situation financière, constate que tout est réglé, génère l'attestation en PDF et la remet à la famille.
+
+### 12.14 Statistiques officielles (rentrée et fin d'année)
+
+**À quoi ça sert :** Remplir le questionnaire statistique du ministère (DGESS) sans recompter à la main : effectifs par niveau et par sexe, redoublants, nouveaux entrants, répartition par âge, abandons, décisions des conseils de classe et résultats aux examens officiels.
+
+**Accès :** `Documents → Statistiques officielles` (Super Admin, Directeur, Censeur, Secrétaire, Comptable). Choisir l'année scolaire, puis **Exporter (Excel)** : classeur à trois feuilles « Rentrée », « Âges », « Fin d'année ».
+
+| Tableau | Contenu | Source dans YELEN |
+|---------|---------|-------------------|
+| Rentrée | Par niveau : divisions, effectif G/F/T, redoublants, nouveaux entrants | Inscriptions de l'année (abandons ultérieurs compris) ; redoublant = case « Redoublant » de l'inscription ; nouvel entrant = aucune inscription antérieure dans l'établissement |
+| Âges | Élèves par âge, par niveau et par sexe | Âge = année de la rentrée − année de naissance (convention des annuaires statistiques) |
+| Fin d'année | Par niveau : inscrits, abandons, effectif de fin d'année, passage (rachat compris), redoublement, réorientation, exclusion, sans décision ; par session d'examen : inscrits, présents, admis, taux de réussite | Statut « Abandon » des inscriptions, dernière décision du conseil de classe, résultats saisis dans Examens |
+
+> Les niveaux suivent l'ordre officiel (maternelle → terminale) quel que soit le nom des classes. Pour que les redoublants soient exacts, cocher « Redoublant » à l'inscription ; pour la fin d'année, saisir les décisions des conseils de classe (Vie scolaire) et les résultats d'examen (Examens).
 
 ---
 

@@ -503,6 +503,46 @@ def candidats_session(request, session_id):
     })
 
 
+COLONNES_CANDIDATS = [
+    'N°', 'Matricule', 'Nom', 'Prénom(s)', 'Sexe', 'Date de naissance', 'Lieu de naissance', 'Nationalité',
+    'Classe', 'Examen', 'Série', 'Statut candidat', 'Redoublant', 'Nom du père', 'Nom de la mère',
+    'Téléphone parent / tuteur', "Établissement d'origine", "Centre d'examen", 'N° de table',
+]
+
+
+@login_required
+@requires_licence_feature('examens_officiels')
+def candidats_session_xlsx(request, session_id):
+    """Fichier d'inscription des candidats (Excel) : état civil et scolarité demandés par les services
+    des examens (CEP : DGEC ; BEPC / BAC : OCECOS), prêt à être recopié ou importé."""
+    from core.excel import ExcelExport
+
+    etab = getattr(request.user, 'etablissement', None)
+    session = get_object_or_404(SessionExamen.objects.select_related('annee_scolaire'), pk=session_id)
+    if etab and session.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('examens:session_list')
+    centre_id = request.GET.get('centre', '')
+    candidats = _candidats_qs(session, centre_id or None).order_by(
+        'inscription__classe__nom', 'inscription__eleve__nom', 'inscription__eleve__prenom',
+    )
+
+    wb = ExcelExport("Candidats")
+    wb.add_title(f"Fichier d'inscription des candidats — {session.libelle}",
+                 f"{session.annee_scolaire.etablissement.nom} · {session.annee_scolaire.libelle} · {session.get_type_examen_display()}")
+    wb.add_header(COLONNES_CANDIDATS)
+    for numero, candidat in enumerate(candidats, 1):
+        inscription, eleve, classe = candidat.inscription, candidat.inscription.eleve, candidat.inscription.classe
+        wb.add_row([
+            numero, eleve.matricule, eleve.nom.upper(), eleve.prenom, eleve.genre,
+            eleve.date_naissance.strftime('%d/%m/%Y'), eleve.lieu_naissance, eleve.nationalite,
+            classe.nom, session.type_examen, classe.serie_bac, 'Officiel', 'Oui' if inscription.est_redoublant else 'Non',
+            eleve.nom_pere, eleve.nom_mere, eleve.telephone_parent or eleve.tuteur_telephone, eleve.etablissement_origine,
+            candidat.centre.nom if candidat.centre else '', candidat.numero_table,
+        ])
+    return wb.response(f"Candidats_{session.type_examen}_{session.annee_scolaire.libelle}.xlsx".replace('/', '-').replace(' ', '_'))
+
+
 @login_required
 @requires_licence_feature('examens_officiels')
 def candidats_session_pdf(request, session_id):

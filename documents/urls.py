@@ -19,4 +19,5 @@ urlpatterns = [
 
     # Attestations
     path('attestation/<uuid:inscription_id>/', views.attestation_non_redevabilite, name='attestation_non_redevabilite'),
+    path('statistiques-officielles/', views.statistiques_officielles, name='statistiques_officielles'),
 ]

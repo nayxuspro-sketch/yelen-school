@@ -526,6 +526,9 @@
         {% if '/documents/circulaires/' in droits_fonctionnalites %}
         <a href="{% url 'documents:circulaire_form' %}" class="sb-item-submodern" data-url="/documents/circulaires/"><span class="sub-item-dot"></span>Circulaires</a>
         {% endif %}
+        {% if '/documents/statistiques-officielles/' in droits_fonctionnalites %}
+        <a href="{% url 'documents:statistiques_officielles' %}" class="sb-item-submodern" data-url="/documents/statistiques-officielles/"><span class="sub-item-dot"></span>Statistiques officielles</a>
+        {% endif %}
         {% if '/parametres/signataires/formulaire/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:signataire_formulaire' %}" class="sb-item-submodern" data-url="/parametres/signataires/formulaire/"><span class="sub-item-dot"></span>Signataires</a>
         {% endif %}

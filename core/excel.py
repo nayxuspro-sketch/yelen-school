@@ -102,6 +102,14 @@ class ExcelExport:
             cell.font = Font(bold=True, size=10, color=_COLOR_PRIMARY)
         self._row += 1
 
+    def new_sheet(self, titre: str):
+        """Clôt la feuille courante (largeurs, en-tête figé) et en ouvre une nouvelle."""
+        self.auto_width()
+        self.ws.freeze_panes = self.ws.cell(row=2, column=1)
+        self.ws = self.wb.create_sheet(titre[:31])
+        self._row = 1
+        self._ncols = 0
+
     def auto_width(self, min_width: int = 10, max_width: int = 50):
         """Ajuste la largeur des colonnes automatiquement."""
         for col_idx in range(1, self._ncols + 1):

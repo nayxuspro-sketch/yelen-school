@@ -16,6 +16,7 @@ urlpatterns = [
     # Liste des candidats
     path('<uuid:session_id>/candidats/', views.candidats_session, name='candidats_session'),
     path('<uuid:session_id>/candidats/pdf/', views.candidats_session_pdf, name='candidats_session_pdf'),
+    path('<uuid:session_id>/candidats/xlsx/', views.candidats_session_xlsx, name='candidats_session_xlsx'),
 
     # Saisie des résultats
     path('<uuid:session_id>/resultats/', views.saisie_resultats, name='saisie_resultats'),
