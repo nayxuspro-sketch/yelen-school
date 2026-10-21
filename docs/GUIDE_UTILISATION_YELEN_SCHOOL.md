@@ -3499,24 +3499,27 @@ simplement qu'aucune clé `LICENCE_SIGNING_KEY` / `LICENCE_PUBLIC_KEY` dédiée
 n'est configurée : la signature s'appuie alors sur `SECRET_KEY`. Pour ajouter
 une clé dédiée plus tard : contrôle désactivé, renseigner la clé dans `.env`,
 redémarrer, ré-signer la licence (`licence.save()`), puis réactiver le contrôle.
+Dès que `LICENCE_PUBLIC_KEY` est renseignée, ré-signer côté école n'est plus
+possible : seul un code de licence émis par l'éditeur est accepté (§13.2).
 
 
-**Verrouillage matériel anti-copie (Hardware Machine Binding) :**
+**Licence signée par l'éditeur et liée au serveur (anti-copie) :**
 
-YELEN SCHOOL intègre un mécanisme d'ancrage matériel empêchant le clonage ou la copie illicite de l'application sur un autre ordinateur :
-- **Empreinte machine multi-attributs** : le système calcule une empreinte unique basée sur l'UUID matériel de la carte mère, l'identifiant du processeur (CPU ID), le numéro de série du disque dur et l'adresse MAC.
-- **Contrôle d'intégrité au boot & démarrage** : à chaque démarrage de l'application (via `demarrage.bat` et le script `installer/verifier-integrite-anti-copie.bat`), l'empreinte physique actuelle du PC est comparée à celle enregistrée et signée lors du déploiement.
-- **Blocage anti-piratage** : si le dossier de l'application est copié ou déplacé sur un autre ordinateur, le démarrage est immédiatement interrompu avec le message :
-  ```text
-  ================================================================
-    ⛔ VIOLATION DE LICENCE : COPIE ILLICITE DÉTECTÉE
-  ================================================================
-  Cette copie de YELEN SCHOOL a été déplacée sur une autre machine.
-  L'application est protégée et ne peut s'exécuter que sur le
-  serveur physique autorisé lors du déploiement officiel.
-  ================================================================
-  ```
-- **Procédure de transfert officiel** : en cas de changement légitime de serveur par l'établissement (panne matérielle, renouvellement de parc), le technicien éditeur ré-enrôle la nouvelle machine avec les outils officiels de déploiement.
+- **Code de licence signé** : la licence est un code `YELEN3.…` signé Ed25519 avec la clé privée
+  de l'éditeur ; l'application ne détient que la clé publique (`LICENCE_PUBLIC_KEY`). Avec cette
+  clé configurée, aucune licence créée ou modifiée localement n'est reconnue.
+- **Liaison au serveur** : le code porte l'empreinte du serveur (identifiant calculé à chaque
+  démarrage par le script de démarrage Windows, transmis au conteneur, jamais stocké dans un
+  fichier). Avec `LICENCE_BINDING_ENABLED=true`, le dossier copié sur une autre machine — même avec
+  sa base de données — est refusé : message « licence émise pour un autre serveur », renvoi vers la
+  page d'activation, événement `TENTATIVE_FRAUDE` dans l'historique ; avec
+  `LICENCE_ANTITAMPER_ENABLED=true`, l'application entière répond 503 (hors connexion et activation).
+- **Changement légitime de serveur** (panne, renouvellement, réinstallation de Windows) : la page
+  `Licences → Activer` affiche le nouvel identifiant ; l'éditeur émet un nouveau code, le Super Admin
+  le colle (§13.2). Données et comptes sont conservés.
+- **Verrouillage du serveur Windows** (permissions NTFS, `.env`, partages, audit, BitLocker) :
+  `installer\outils-editeur\verrouiller-serveur.bat`, procédure complète dans
+  `docs/GUIDE_DEPLOIEMENT_WINDOWS.md` §3.5.
 
 
 ### 13.Guide Page Guide d'utilisation (`/licences/guide/`)
@@ -3615,35 +3618,43 @@ Pour les congrégations religieuses, les fondations et les réseaux d'écoles.
 
 ### 13.2 Activer une Licence
 
-**Accès :** `Licences → Activer une licence`
+**Accès :** `Licences → Mon abonnement → Activer un code de licence` (page `/licences/activer/`,
+aussi proposée automatiquement quand l'établissement n'a pas de licence valide). Lecture pour tous
+les comptes, saisie réservée au **Super Admin**.
 
 **Étapes :**
 
-1. Clique sur **Licences** dans le menu
-2. Clique sur **Activer une nouvelle licence**
-3. Saisis la **clé de licence** fournie par l'éditeur
-4. Clique sur **Valider**
+1. Sur la page, relever les deux **Identifiants de ce serveur** : *Établissement* et *Identifiant
+   du serveur* (sélection puis copie), et les transmettre à l'éditeur.
+2. L'éditeur renvoie un **code de licence** (une ligne commençant par `YELEN3.`), établi pour cet
+   établissement et ce serveur, avec le niveau et la date d'expiration convenus.
+3. Coller le code dans **Code de licence reçu de l'éditeur** → **Activer la licence**.
+4. Retour sur `Mon abonnement` : « Licence … activée jusqu'au … ». La licence précédente est
+   remplacée ; l'activation est tracée dans l'historique (`ACTIVATION`).
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  🔑 Activation de Licence                                    │
+│  🔑 Activation du Service                                    │
 ├──────────────────────────────────────────────────────────────┤
-│  Clé de licence *       : [YELEN-PREM-2026-XXXXX-XXXXX____] │
-│  Établissement *        : [▼ Lycée Zinda — Ouagadougou____]  │
+│  Identifiants de ce serveur                                  │
+│    Établissement — Lycée Zinda (LZ)                          │
+│    3f2a9c1e-…-…                                              │
+│    Identifiant du serveur                                    │
+│    9b4e…c71a  (64 caractères)                                │
 │                                                              │
-│              [ Annuler ]    [ ✅ Activer ]                   │
+│  Code de licence reçu de l'éditeur                           │
+│  [ YELEN3.eyJjbGUiOi…  ]                                     │
+│                      [ ✅ Activer la licence ]               │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Message succès :**
-```
-╔══════════════════════════════════════════════════════╗
-║  ✅ Licence activée avec succès                      ║
-║  Niveau : PREMIUM                                    ║
-║  Établissement : Lycée Zinda — Ouagadougou           ║
-║  Valide jusqu'au : 31/08/2027                        ║
-╚══════════════════════════════════════════════════════╝
-```
+**Refus possibles (message « Activation refusée : … ») :** code illisible ou signature invalide
+(code altéré ou clé publique différente), code émis pour un autre établissement ou un autre serveur,
+code déjà expiré, `LICENCE_PUBLIC_KEY` non configurée sur le serveur.
+
+> Si la page indique « Identifiant calculé par l'application (variable YELEN_HOST_ID absente) »,
+> l'application a été démarrée sans le script de démarrage Windows : relancer
+> `installer\start-local.ps1` (ou `demarrage.bat`) avant de relever l'identifiant.
 
 ---
 
@@ -6458,9 +6469,12 @@ est **l'unique source de vérité**. Elle fusionne :
 cd /d C:\YELEN-SCHOOL
 git pull origin main
 docker compose -f docker-compose.client.yml build
-docker compose -f docker-compose.client.yml up -d
+powershell -NoProfile -ExecutionPolicy Bypass -File installer\start-local.ps1
 docker compose -f docker-compose.client.yml exec web python manage.py migrate
 ```
+
+(`start-local.ps1` exécute `docker compose up -d` après avoir transmis l'empreinte du serveur au
+conteneur `web` — indispensable quand la licence est liée au serveur, §13.A.)
 
 Les données vivent dans les volumes nommés (`yelen_postgres_data`, `yelen_media`, …) :
 reconstruire l'image ne les touche pas. Le fichier `.env` n'est pas versionné et doit être
@@ -6479,7 +6493,7 @@ Aucun changement fonctionnel pour les utilisateurs ; ce qui change pour l'exploi
 |-------|-------|-------|
 | Avertissement Django `RemovedInDjango60Warning` (URLField) | Émis à chaque démarrage et à chaque commande `manage.py`. | Supprimé : le champ *Site web* de l'établissement utilise `core.fields.URLFieldHTTPS` (comportement Django 6 — `https://` ajouté si le schéma manque — sans migration ni réglage déprécié). |
 | Avertissement « Accessing the database during app initialization » | Le contrôle d'intégrité des licences interrogeait la base dans `AppConfig.ready()`, y compris pour `showmigrations`, `verify_audit_chain`… | Le contrôle s'exécute **une seule fois, à la première requête HTTP** du processus (`licences/boot_check.py`). Les commandes `manage.py` ne le déclenchent plus ; `python manage.py check_licences --strict` reste le contrôle explicite. En mode strict (`LICENSE_ENFORCEMENT=true` et `LICENCE_ANTITAMPER_ENABLED=true`), une anomalie d'intégrité renvoie désormais **503 « Application indisponible : intégrité des licences compromise »** au lieu de faire planter le serveur ; `LICENCE_DISABLE_STRICT_BOOT=true` contourne ce contrôle (dépannage uniquement). |
-| Lanceur du mode autonome | Trois scripts (`demarrer-autonome.bat`, `demarrer-sqlite.bat` à la racine et dans `installer/`). | **Un seul** : `demarrer-autonome.bat` (IP du serveur pré-remplie dans `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` à la création du `.env`, contrôle anti-copie, règle de pare-feu « YELEN SCHOOL port 8000 » si lancé en administrateur). Recréer les raccourcis qui pointaient vers `demarrer-sqlite.bat`. |
+| Lanceur du mode autonome | Trois scripts (`demarrer-autonome.bat`, `demarrer-sqlite.bat` à la racine et dans `installer/`). | **Un seul** : `demarrer-autonome.bat` (IP du serveur pré-remplie dans `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` à la création du `.env`, empreinte du serveur pour la licence, règle de pare-feu « YELEN SCHOOL port 8000 » si lancé en administrateur). Recréer les raccourcis qui pointaient vers `demarrer-sqlite.bat`. |
 | Dépendances Python | Un seul `requirements/base.txt` mêlant exécution et outils de test. | `requirements/base.txt` = exécution (Docker, mode autonome : 54 paquets) ; `requirements/dev.txt` = `base.txt` + pytest, model-bakery, coverage, mammoth (CI, poste développeur). |
 | `.env.example` | Variables non documentées. | Ajout de `DB_ENGINE`, `SQLITE_PATH`, `CACHE_BACKEND`, `CACHE_DIR`, `SESSION_COOKIE_AGE`, `TOKEN_EXPIRY_HOURS`, options `LICENCE_*`, `SMS_MODEM_*`, `BACKUP_DIR` / `BACKUP_KEEP`, et de la règle des 12 caractères pour `INITIAL_ADMIN_PASSWORD`. |
 | Vues Finances et Pédagogie | Deux fichiers monolithiques (`finances/views.py` 3 684 lignes, `pedagogie/views.py` 3 157 lignes). | Deux paquets découpés par domaine, **code des vues inchangé** : `finances/views/` (`commun`, `paiements`, `etats`, `relances`, `echeanciers`, `bourses`, `mobile_money`, `budget`) et `pedagogie/views/` (`commun`, `resultats`, `matieres`, `evaluations`, `bulletins`, `predictions`, `cahier_textes`, `competences`). Les URLs et les autres applications continuent d'utiliser `finances.views.<nom>` / `pedagogie.views.<nom>` (ré-exports dans `__init__.py`). |

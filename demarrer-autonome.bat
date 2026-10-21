@@ -36,15 +36,6 @@ if not exist ".env" (
     echo      Si l'IP du serveur change, mettez a jour ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS dans .env.
 )
 
-:: Controle anti-copie : sans effet tant que SERVER_HARDWARE_UUID n'est pas defini dans .env
-if exist "installer\verifier-integrite-anti-copie.bat" (
-    call "installer\verifier-integrite-anti-copie.bat"
-    if errorlevel 1 (
-        echo [ERREUR] Controle d'integrite anti-copie echoue. Contactez l'editeur.
-        pause & exit /b 1
-    )
-)
-
 :: ------------------------------------------------------------------
 :: 3. Environnement virtuel + dependances
 :: ------------------------------------------------------------------
@@ -85,6 +76,11 @@ netsh advfirewall firewall show rule name="YELEN SCHOOL port !PORT!" >nul 2>&1
 if errorlevel 1 netsh advfirewall firewall add rule name="YELEN SCHOOL port !PORT!" dir=in action=allow protocol=TCP localport=!PORT! >nul 2>&1
 netsh advfirewall firewall show rule name="YELEN SCHOOL port !PORT!" >nul 2>&1
 if errorlevel 1 (echo [INFO] Pare-feu : autorisez le port !PORT! en entree [TCP], ou relancez ce script en administrateur) else (echo [OK] Pare-feu : port !PORT! autorise)
+
+:: Empreinte du serveur (liaison de la licence) : calculee a chaque demarrage, jamais ecrite dans .env
+set "YELEN_HOST_ID="
+for /f "usebackq delims=" %%H in (`powershell -NoProfile -ExecutionPolicy Bypass -File "installer\yelen-hostid.ps1"`) do set "YELEN_HOST_ID=%%H"
+if not defined YELEN_HOST_ID echo [INFO] Empreinte du serveur indisponible : liaison de licence par les attributs locaux
 
 echo [5/5] Demarrage du serveur web...
 echo.

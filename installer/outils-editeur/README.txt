@@ -1,28 +1,38 @@
-GUIDE D'UTILISATION DE LA TROUSSE D'OUTILS ANTI-COPIE (ÉDITEUR)
+OUTILS ÉDITEUR — VERROUILLAGE DU SERVEUR CLIENT
 ========================================================================
 
-Ce dossier contient les outils d'enrôlement et de verrouillage matériel à conserver
-SUR VOTRE CLÉ USB TECHNIQUE D'INSTALLATEUR, et à NE PAS LAISSER sur le PC du client.
+Couche « système » de la protection anti-copie. La protection principale est la
+licence signée par l'éditeur et liée au serveur (docs/GUIDE_DEPLOIEMENT_WINDOWS.md
+§3.5) : sans elle, verrouiller le dossier ne sert qu'à gêner la copie.
 
-FICHIERS INCLUS :
------------------
-1. activer-binding-materiel.bat
-   - À exécuter en tant qu'administrateur chez le client lors du déploiement.
-   - Lit l'UUID de la carte mère, le processeur et le disque système.
-   - Injecte ces valeurs dans le fichier .env du client avec LICENSE_ENFORCEMENT=true.
-   - Rend le serveur incapable de tourner sur un autre ordinateur.
+FICHIERS :
+----------
+1. verrouiller-serveur.bat / verrouiller-serveur.ps1
+   - Clic droit > Exécuter en tant qu'administrateur, après activation de la licence.
+   - Permissions NTFS : héritage supprimé, contrôle total réservé à SYSTEM, aux
+     Administrateurs et au compte qui exécute le script (celui qui démarre Docker
+     Desktop) ; option -ComptesAutorises "PC\compte" pour en ajouter.
+   - Fichier .env protégé explicitement.
+   - Partages réseau exposant le dossier supprimés.
+   - Audit NTFS : accès refusés au dossier et lectures du .env journalisés
+     (Observateur d'événements > Sécurité, événement 4663).
+   - État BitLocker vérifié (recommandation, pas d'activation automatique).
+   - Liste des administrateurs locaux affichée : le personnel doit utiliser des
+     comptes Windows standards.
+   - Groupes désignés par SID : fonctionne sur Windows en français et en anglais.
 
-2. verrouiller-dossier-anti-copie.bat
-   - À exécuter en tant qu'administrateur après l'installation.
-   - Supprime les droits de lecture/copie pour les utilisateurs standards, invités et tout le monde.
-   - Réserve l'accès exclusivement au groupe "Administrateurs" et au "Système" Windows.
-   - Masque et surprotège le fichier .env (attrib +h +s).
+2. deverrouiller-serveur.bat / deverrouiller-serveur.ps1
+   - Pour une maintenance sur site : rétablit l'héritage des permissions et
+     retire les règles d'audit. Ré-exécuter verrouiller-serveur.bat avant de partir.
 
-PROCÉDURE CHEZ LE CLIENT :
---------------------------
-1. Branchez votre clé USB contenant ce dossier "outils-editeur".
-2. Clic droit sur "activer-binding-materiel.bat" > Exécuter en tant qu'administrateur.
-3. Clic droit sur "verrouiller-dossier-anti-copie.bat" > Exécuter en tant qu'administrateur.
-4. Lancez "demarrage.bat" pour tester le bon fonctionnement de l'application.
-5. Débranchez votre clé USB : la machine cliente est sécurisée sans qu'aucun script
-   d'enrôlement ne reste accessible localement.
+PROCÉDURE CHEZ LE CLIENT (résumé) :
+-----------------------------------
+1. Licence : LICENCE_PUBLIC_KEY dans .env, démarrage par demarrage.bat ou
+   installer\start-local.ps1, identifiants relevés sur Licences > Activer, code
+   YELEN3 émis par l'éditeur (manage.py emettre_licence) et collé par le Super Admin.
+2. .env : LICENSE_ENFORCEMENT=true, LICENCE_BINDING_ENABLED=true
+   (+ LICENCE_ANTITAMPER_ENABLED=true), redémarrage par start-local.ps1.
+3. verrouiller-serveur.bat en administrateur.
+
+Ces scripts peuvent rester sur le serveur : ils n'ont d'effet qu'avec des droits
+d'administrateur, qui permettent de toute façon de modifier les permissions.

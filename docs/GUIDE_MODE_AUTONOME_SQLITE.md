@@ -113,9 +113,9 @@ Linux uniquement — bibliothèques pour la génération PDF :
 > **Lanceur unique depuis la correction « dette technique » (octobre 2026)** :
 > `demarrer-autonome.bat` remplace les anciens `demarrer-sqlite.bat` (racine et `installer/`),
 > supprimés. Il reprend ce qu'ils apportaient : adresse IP du serveur pré-remplie dans
-> `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` à la création du `.env`, contrôle anti-copie
-> (`installer\verifier-integrite-anti-copie.bat`, sans effet tant que `SERVER_HARDWARE_UUID`
-> n'est pas défini) et ouverture du port dans le pare-feu Windows (règle « YELEN SCHOOL port
+> `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` à la création du `.env`, empreinte du serveur pour la
+> liaison de la licence (`installer\yelen-hostid.ps1` → variable `YELEN_HOST_ID`, voir guide de
+> déploiement §3.5) et ouverture du port dans le pare-feu Windows (règle « YELEN SCHOOL port
 > 8000 », créée si le script est lancé en administrateur ; sinon un rappel s'affiche).
 > Si un raccourci pointait vers `demarrer-sqlite.bat`, recréez-le vers `demarrer-autonome.bat`.
 

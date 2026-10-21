@@ -21,7 +21,7 @@
 2. [Installation initiale](#2-installation-initiale)
 3. [Configuration et premier accès](#3-configuration-et-premier-accès)
    - [Validation après installation](#34-validation-après-installation)
-   - [3.5 Verrouillage matériel et protection anti-copie](#35-verrouillage-matériel-et-protection-anti-copie-procédure-éditeur)
+   - [3.5 Licence signée, liaison au serveur et verrouillage du dossier](#35-licence-signée-liaison-au-serveur-et-verrouillage-du-dossier-procédure-éditeur)
 4. [Utilisation quotidienne](#4-utilisation-quotidienne)
 5. [Sauvegardes PostgreSQL et médias](#5-sauvegardes-postgresql-et-médias)
 6. [Programmation automatique](#6-programmation-automatique)
@@ -317,39 +317,84 @@ Cette commande ne doit rien retourner. Ne pas publier PostgreSQL ni Redis sur le
 
 ---
 
-## 3.5 Verrouillage matériel et protection anti-copie (Procédure Éditeur)
+## 3.5 Licence signée, liaison au serveur et verrouillage du dossier (Procédure Éditeur)
 
-> **Règle absolue :** Cette étape est réalisée **exclusivement par le technicien/éditeur** lors du déploiement chez le client, à partir de sa propre clé USB d'installation. Les scripts d'enrôlement et d'administration (`activer-binding-materiel.bat`, `verrouiller-dossier-anti-copie.bat` et `deverrouiller-dossier-anti-copie.bat`) ne doivent **jamais** être laissés sur la machine du client après votre départ.
+> Trois couches complémentaires. Seule la première rend une copie **inutilisable** ; les deux
+> autres rendent la copie difficile et laissent des traces.
 
-### Objectifs de sécurité
-1. **Lier l'installation au matériel physique du client** : l'application est ancrée à l'UUID de la carte mère, au CPU et au numéro de série du disque dur. Si un tiers copie le dossier `C:\YELEN-SCHOOL` et sa base de données sur un autre ordinateur, le script `installer\verifier-integrite-anti-copie.bat` (exécuté par `demarrage.bat`) bloque immédiatement le démarrage (`⛔ VIOLATION DE LICENCE : COPIE ILLICITE DÉTECTÉE`).
-2. **Verrouiller les permissions Windows (NTFS)** : empêcher les utilisateurs réguliers, les comptes invités ou une clé USB branchée sans privilège Administrateur de copier ou de lire le dossier de déploiement et les fichiers sensibles (`.env`).
-3. **Capacité de maintenance réservée à l'Éditeur** : pouvoir reprendre temporairement le contrôle complet en écriture et modification pour injecter des correctifs ou mises à jour via un mot de passe maître confidentiel.
+| Couche | Mécanisme | Protège contre |
+|---|---|---|
+| 1. Licence signée et liée au serveur | code de licence `YELEN3` signé Ed25519 (clé privée chez l'éditeur seulement), lié à l'empreinte du serveur (`YELEN_HOST_ID`, calculée à chaque démarrage par `installer\yelen-hostid.ps1`) ; `.env` : `LICENCE_PUBLIC_KEY`, `LICENSE_ENFORCEMENT=true`, `LICENCE_BINDING_ENABLED=true` | copie du dossier **et** des données sur une autre machine, modification de la licence en base |
+| 2. Verrouillage du serveur | `installer\outils-editeur\verrouiller-serveur.bat` : permissions NTFS, `.env`, partages réseau, audit NTFS, état BitLocker, rappel des comptes administrateurs | personnel non administrateur, clé USB, lecture du `.env` |
+| 3. Chiffrement du disque | BitLocker (recommandé par le script, activé par le client) | disque extrait ou démarré sur un autre système |
 
-### Procédure sur site (depuis la clé USB Éditeur)
+### 3.5.1 Côté éditeur, une seule fois : la paire de clés
 
-1. Branchez votre clé USB contenant le dossier `outils-editeur\` (archive `outils-editeur-anti-copie.zip` extraite sur votre clé).
-2. **Étape 1 — Liaison matérielle** :
-   - Clic droit sur `activer-binding-materiel.bat` > **Exécuter en tant qu'administrateur**.
-   - Le script extrait les identifiants physiques du PC client et les enregistre dans le fichier `.env` avec `LICENSE_ENFORCEMENT=true` et `LICENCE_ANTITAMPER_ENABLED=true`.
-3. **Étape 2 — Verrouillage des droits NTFS** :
-   - Clic droit sur `verrouiller-dossier-anti-copie.bat` > **Exécuter en tant qu'administrateur**.
-   - Le script supprime l'héritage Windows, retire les droits aux utilisateurs réguliers/invités, réserve le contrôle total au compte Système et Administrateurs locaux, puis masque et surprotège `.env`.
-4. **Étape 3 — Test de lancement** :
-   - Lancez `demarrage.bat` pour vérifier le bon démarrage de YELEN SCHOOL.
-5. **Étape 4 — Retrait sécurisé** :
-   - Débranchez votre clé USB.
-   - Vérifiez que seuls les scripts d'exploitation (`demarrage.bat`, `backup-windows.bat`, `verifier-integrite-anti-copie.bat`) restent sur la machine cliente.
+```powershell
+docker compose -f docker-compose.client.yml exec web python manage.py generate_licence_keys
+```
 
-### Procédure de maintenance ultérieure (Déverrouillage Éditeur)
+(sur votre environnement de test ou votre poste). `LICENCE_PRIVATE_KEY` reste **chez l'éditeur**
+(gestionnaire de mots de passe, jamais sur un serveur client) ; `LICENCE_PUBLIC_KEY` va dans le
+`.env` de chaque client.
 
-Si vous devez effectuer une mise à jour manuelle, remplacer du code ou intervenir sur la configuration locale du client :
-1. Branchez votre clé USB éditeur.
-2. Clic droit sur `deverrouiller-dossier-anti-copie.bat` > **Exécuter en tant qu'administrateur**.
-3. Saisissez votre **Code Maître Éditeur** confidentiel (défini dans le script).
-4. Le script réassigne la propriété (`takeown`) et réinitialise les permissions NTFS (`icacls /reset` puis permissions d'écriture complètes).
-5. Procédez à vos modifications ou mises à jour de code.
-6. **Important** : Avant de quitter le site ou de clore votre intervention, ré-exécutez toujours `verrouiller-dossier-anti-copie.bat` en tant qu'administrateur pour réactiver le bouclier NTFS.
+### 3.5.2 Chez le client : préparer le serveur
+
+1. `.env` : ajouter `LICENCE_PUBLIC_KEY=<clé publique>` ; laisser `LICENSE_ENFORCEMENT=false` pour l'instant.
+2. Démarrer avec `demarrage.bat` ou `powershell -NoProfile -ExecutionPolicy Bypass -File installer\start-local.ps1` :
+   le script calcule l'empreinte du serveur et la transmet au conteneur `web` (elle n'est jamais écrite
+   dans `.env`). Sur une installation existante : `docker compose -f docker-compose.client.yml build`
+   puis `start-local.ps1`.
+3. Connexion Super Admin → `Licences → Mon abonnement → Activer un code de licence` : relever
+   **Identifiant établissement** et **Identifiant du serveur** (page `/licences/activer/`). Si la page
+   signale « variable YELEN_HOST_ID absente », les conteneurs ont été lancés sans le script : relancer
+   `start-local.ps1`.
+
+### 3.5.3 Côté éditeur : émettre le code de licence
+
+```cmd
+docker compose -f docker-compose.client.yml exec -e LICENCE_PRIVATE_KEY=<clé privée> web python manage.py emettre_licence --etablissement <identifiant établissement> --type PREMIUM --expiration 2027-09-16 --empreinte <identifiant du serveur>
+```
+
+(depuis votre environnement de test ; `--cle YELEN-XXXX-XXXX-XXXX` pour conserver la clé déjà
+attribuée, `--empreinte` omis pour une licence non liée). La commande n'écrit rien en base : elle
+affiche une ligne `YELEN3.…` à transmettre au client (courriel, fichier texte, clé USB).
+
+### 3.5.4 Chez le client : activer, durcir, verrouiller
+
+1. Coller le code dans `Licences → Activer` → « Licence … activée jusqu'au … ». La licence
+   précédente (HMAC) est remplacée.
+2. `.env` : `LICENSE_ENFORCEMENT=true` et `LICENCE_BINDING_ENABLED=true` ; `LICENCE_ANTITAMPER_ENABLED=true`
+   pour qu'une anomalie (licence falsifiée ou d'un autre serveur) bloque toute l'application
+   (réponse 503) hors connexion et page d'activation. Redémarrer avec `start-local.ps1`.
+3. Vérifier : accueil et `Mon abonnement` normaux ;
+   `docker compose -f docker-compose.client.yml exec web python manage.py check_licences` → licence valide.
+4. Clic droit sur `installer\outils-editeur\verrouiller-serveur.bat` → **Exécuter en tant
+   qu'administrateur**. Le script conserve le contrôle total à SYSTEM, aux Administrateurs et au
+   compte qui l'exécute (celui qui démarre Docker Desktop) ; `-ComptesAutorises "PC\compte"` pour en
+   ajouter. Il affiche l'état BitLocker et la liste des administrateurs locaux : donner au personnel
+   des comptes Windows **standards**.
+
+### 3.5.5 Effet d'une copie
+
+Dossier et volumes copiés sur un autre PC : l'empreinte diffère → licence refusée (« émise pour un
+autre serveur »), redirection vers la page d'activation, événement `TENTATIVE_FRAUDE` dans le journal
+des licences ; avec `LICENCE_ANTITAMPER_ENABLED=true`, 503 sur toute l'application. Toute modification
+de la licence en base (type, dates, établissement) invalide la signature. Sans la clé privée, aucun
+code de licence ne peut être produit.
+
+**Limite à connaître :** le dossier contient les sources ; un technicien disposant des droits
+administrateur peut désactiver les contrôles dans `.env` ou dans le code. La protection vise la copie
+« clé en main » (dossier + données) par le personnel ou un prestataire ; le verrouillage NTFS et
+BitLocker limitent l'accès aux fichiers, le journal d'audit et le contrat de licence font le reste.
+
+### 3.5.6 Changement légitime de serveur, maintenance
+
+- Nouveau PC, Windows réinstallé ou disque système remplacé → nouvel identifiant de serveur, affiché
+  sur la page d'activation ; l'éditeur émet un nouveau code (`--cle` identique), le client le colle.
+  Rien d'autre à faire : données et comptes sont conservés.
+- Maintenance sur site : `deverrouiller-serveur.bat` (administrateur) → intervention →
+  `verrouiller-serveur.bat` avant de partir.
 
 ---
 
@@ -373,8 +418,8 @@ Pour les établissements scolaires ne disposant pas de Docker Desktop ou souhait
    - Au premier lancement : création du `.env` depuis `.env.autonome.example` (`DB_ENGINE=sqlite`,
      `CACHE_BACKEND=database`, `SECRET_KEY` générée, IP locale du serveur injectée dans
      `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`), environnement Python `.venv` et dépendances.
-   - La vérification du bouclier anti-copie (`installer\verifier-integrite-anti-copie.bat`,
-     sans effet tant que `SERVER_HARDWARE_UUID` n'est pas défini dans `.env`).
+   - Le calcul de l'empreinte du serveur (`installer\yelen-hostid.ps1`, variable `YELEN_HOST_ID`)
+     pour la liaison de la licence (§3.5).
    - L'application des migrations, la table de cache, la collecte des fichiers statiques et
      `ensure_admin` si `ENSURE_ADMIN=true`.
    - L'ouverture du port (`PORT`, 8000 par défaut) dans le pare-feu Windows si le script est lancé
@@ -392,7 +437,8 @@ Pour passer ensuite au mode PostgreSQL en conservant toutes les données :
 
 ```powershell
 # Démarrer ou remettre les trois services en arrière-plan
-docker compose -f docker-compose.client.yml up -d
+# (calcule l'empreinte du serveur pour la licence, puis docker compose up -d)
+powershell -NoProfile -ExecutionPolicy Bypass -File installer\start-local.ps1
 
 # Vérifier l'état et les healthchecks
 docker compose -f docker-compose.client.yml ps
@@ -709,8 +755,12 @@ Si l'équipe fournit une autre branche ou une archive, suivre ses notes de versi
 ### 8.3 Reconstruire sans effacer les volumes
 
 ```powershell
-docker compose -f docker-compose.client.yml up -d --build
+docker compose -f docker-compose.client.yml build
+powershell -NoProfile -ExecutionPolicy Bypass -File installer\start-local.ps1
 ```
+
+(`start-local.ps1` transmet l'empreinte du serveur au conteneur `web` ; un `up -d` lancé sans lui
+laisse `YELEN_HOST_ID` vide et la licence liée au serveur est refusée — §3.5.)
 
 `entrypoint.sh` applique les migrations et collecte les fichiers statiques au démarrage. Vérifier ensuite :
 
