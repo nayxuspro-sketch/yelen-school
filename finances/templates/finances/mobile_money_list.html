@@ -135,6 +135,7 @@
             <span class="fw-semibold color-primary">{{ d.reference }}</span>
             {% if d.lien_paiement %}<br><span class="badge badge-info" title="{{ d.message_passerelle }}">Lien en ligne</span>{% endif %}
             {% if d.message_passerelle and d.statut == 'EN_ATTENTE' %}<br><span class="text-xs text-muted">{{ d.message_passerelle }}{% if d.verifie_le %} — {{ d.verifie_le|date:"d/m H:i" }}{% endif %}</span>{% endif %}
+            {% if d.nb_relances %}<br><span class="text-xs text-muted">Relancé {{ d.nb_relances }} fois — {{ d.relance_le|date:"d/m H:i" }}</span>{% endif %}
           </td>
           <td>{{ d.inscription.eleve.nom }} {{ d.inscription.eleve.prenom }}</td>
           <td>{{ d.inscription.classe.nom }}</td>
@@ -165,6 +166,21 @@
               </form>
               {% endif %}
               {% if d.statut == 'EN_ATTENTE' %}
+              <!-- Avis de paiement (QR code + étapes *144#) -->
+              <a href="{% url 'finances:mobile_money_avis_pdf' d.pk %}" class="btn-icon" title="Avis de paiement PDF" target="_blank">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+              </a>
+              <!-- Relancer le parent par SMS -->
+              <form method="post" action="{% url 'finances:mobile_money_relancer' d.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon" title="Relancer le parent par SMS" data-csp-confirm="Renvoyer le SMS de paiement au {{ d.telephone }} ?" >
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                </button>
+              </form>
               <!-- Confirmer -->
               <button type="button" class="btn-icon"
                       title="Confirmer le paiement" data-csp-modal-open="modal-confirmer-{{ d.pk }}" >

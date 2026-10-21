@@ -15,10 +15,11 @@ from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
+from django.db.models import Q
 from django.db import transaction
 from django.utils import timezone
 
-from .models import DemandePaiementMobile, ModePaiement, Paiement
+from .models import CanalRelance, DemandePaiementMobile, HistoriqueRelance, ModePaiement, Paiement
 
 EN_ATTENTE = DemandePaiementMobile.StatutChoices.EN_ATTENTE
 CONFIRME = DemandePaiementMobile.StatutChoices.CONFIRME
@@ -77,11 +78,16 @@ def _sans_accents(texte):
     return unicodedata.normalize('NFKD', texte).encode('ascii', 'ignore').decode()
 
 
+def montant_eligible(montant):
+    """CinetPay n'accepte qu'un montant entier, multiple de 5, de 100 FCFA au moins."""
+    return montant == int(montant) and int(montant) >= 100 and int(montant) % 5 == 0
+
+
 def creer_lien(demande):
     """Crée le lien de paiement CinetPay (Mobile Money, XOF) de la demande et l'enregistre."""
-    montant = int(demande.montant)
-    if montant != demande.montant or montant < 100 or montant % 5:
+    if not montant_eligible(demande.montant):
         raise ErreurPasserelle("le montant doit être un multiple de 5 d'au moins 100 FCFA")
+    montant = int(demande.montant)
     eleve = demande.inscription.eleve
     rubrique = demande.rubrique.nom if demande.rubrique else 'Scolarite'
     reponse = _appeler('/payment', {
@@ -162,12 +168,13 @@ def verifier_paiement(demande, utilisateur=None):
 
 
 def verifier_en_attente(etablissement=None, utilisateur=None, limite=50, jours=7):
-    """Vérifie les demandes en attente munies d'un lien (créées depuis moins de ``jours`` jours).
+    """Vérifie les demandes en attente munies d'un lien (créées ou relancées depuis moins de ``jours`` jours).
     Renvoie le décompte par état."""
     if not cinetpay_configure():
         return {}
+    depuis = timezone.now() - timedelta(days=jours)
     demandes = DemandePaiementMobile.objects.filter(
-        statut=EN_ATTENTE, created_at__gte=timezone.now() - timedelta(days=jours),
+        Q(created_at__gte=depuis) | Q(relance_le__gte=depuis), statut=EN_ATTENTE,
     ).exclude(lien_paiement='').order_by('created_at')
     if etablissement is not None:
         demandes = demandes.filter(inscription__classe__etablissement=etablissement)
@@ -188,3 +195,69 @@ def _sms_recu(demande, paiement):
         )
     except Exception:
         pass
+
+
+# ── Relances ───────────────────────────────────────────────────────────────
+
+def demande_pour_relance(inscription, rubrique, montant, telephone, utilisateur):
+    """Demande en attente munie d'un lien pour cette créance : réutilisée si récente, sinon créée.
+    Renvoie (demande, créée) ; (None, False) si la passerelle n'est pas configurée ou si le montant
+    n'est pas éligible ; propage ErreurPasserelle (demande supprimée) si le lien ne peut pas être créé."""
+    if not cinetpay_configure() or not montant_eligible(montant):
+        return None, False
+    demande = DemandePaiementMobile.objects.filter(
+        inscription=inscription, rubrique=rubrique, montant=montant, statut=EN_ATTENTE,
+        created_at__gte=timezone.now() - timedelta(days=7),
+    ).exclude(lien_paiement='').order_by('-created_at').first()
+    if demande is not None:
+        return demande, False
+    demande = DemandePaiementMobile.objects.create(
+        inscription=inscription, rubrique=rubrique, montant=montant, telephone=telephone, cree_par=utilisateur,
+    )
+    try:
+        creer_lien(demande)
+    except ErreurPasserelle:
+        demande.delete()
+        raise
+    return demande, True
+
+
+def enregistrer_relance(demande, utilisateur, succes=True, historique=True):
+    """Compte la relance sur la demande et, sauf si l'appelant la trace déjà, l'ajoute à l'historique des relances."""
+    demande.nb_relances += 1
+    demande.relance_le = timezone.now()
+    demande.save(update_fields=['nb_relances', 'relance_le', 'updated_at'])
+    if historique:
+        HistoriqueRelance.objects.create(
+            inscription=demande.inscription, rubrique=demande.rubrique, canal=CanalRelance.SMS,
+            montant_reclame=demande.montant, envoye_par=utilisateur, date_relance=timezone.localdate(),
+            succes=succes, detail=demande.telephone,
+        )
+
+
+def relancer_avec_lien(envois, utilisateur):
+    """Envoie les SMS d'une campagne de relance en y ajoutant un lien de paiement (exécuté hors requête).
+    ``envois`` : dicts inscription, rubrique, montant, telephone, message. Au premier échec de la
+    passerelle, les SMS suivants partent sans lien. Renvoie le nombre de SMS munis d'un lien."""
+    from core.sms import envoyer_sms
+
+    avec_lien, passerelle_active = 0, True
+    for envoi in envois:
+        demande, creee = None, False
+        if passerelle_active:
+            try:
+                demande, creee = demande_pour_relance(envoi['inscription'], envoi['rubrique'], envoi['montant'],
+                                                      envoi['telephone'], utilisateur)
+            except ErreurPasserelle:
+                passerelle_active = False
+        if demande is None:
+            envoyer_sms(envoi['telephone'], envoi['message'])
+            continue
+        ok, _ = envoyer_sms(envoi['telephone'], f"{envoi['message']}\nPayer en ligne: {demande.lien_paiement}", limite=320)
+        if not creee:
+            enregistrer_relance(demande, utilisateur, succes=ok, historique=False)
+        elif ok:
+            demande.sms_envoye = True
+            demande.save(update_fields=['sms_envoye'])
+        avec_lien += 1
+    return avec_lien

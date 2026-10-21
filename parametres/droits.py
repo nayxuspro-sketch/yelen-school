@@ -195,7 +195,7 @@ MODULES = (
         _f('/finances/bilan/encaissements/', 'Bilan encaissements'),
         _f('/finances/mobile-money/', 'Mobile Money', actions=(
             _a('initier', 'Initier une demande de paiement', 'mobile_money_create', roles=_FINANCE_SAISIE),
-            _a('traiter', 'Confirmer / annuler / vérifier une transaction', 'mobile_money_confirmer', 'mobile_money_annuler', 'mobile_money_verifier', roles=_FINANCE_SAISIE),
+            _a('traiter', 'Confirmer / annuler / vérifier / relancer une transaction', 'mobile_money_confirmer', 'mobile_money_annuler', 'mobile_money_verifier', 'mobile_money_relancer', roles=_FINANCE_SAISIE),
             _a('importer', 'Importer un relevé Orange Money / Moov Money', 'releve_import', roles=_FINANCE_SAISIE),
             _a('rapprocher', 'Rapprocher un relevé (valider, affecter, exclure)', 'releve_valider', 'releve_ligne_affecter', 'releve_ligne_ignorer', roles=_FINANCE_SAISIE),
         )),

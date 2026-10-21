@@ -441,6 +441,8 @@ class DemandePaiementMobile(BaseModel):
     jeton_paiement = models.CharField(max_length=200, blank=True, verbose_name=_("Jeton de paiement"))
     verifie_le = models.DateTimeField(null=True, blank=True, verbose_name=_("Dernière vérification"))
     message_passerelle = models.CharField(max_length=255, blank=True, verbose_name=_("État passerelle"))
+    relance_le = models.DateTimeField(null=True, blank=True, verbose_name=_("Dernière relance"))
+    nb_relances = models.PositiveSmallIntegerField(default=0, verbose_name=_("Relances envoyées"))
     cree_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

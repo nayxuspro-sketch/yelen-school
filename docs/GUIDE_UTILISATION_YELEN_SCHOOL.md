@@ -2714,6 +2714,12 @@ Quand l'école dispose d'un compte marchand CinetPay (Orange Money et Moov Money
 
 > Le tableau de bord affiche, sous la référence, le badge **Lien en ligne** et le dernier état connu de la passerelle avec l'heure de vérification.
 
+**Avis de paiement, QR code et relances :**
+
+- **Avis de paiement (icône imprimante)** : A5 à remettre au parent ou à montrer à l'écran du guichet — montant, référence, **QR code du lien de paiement** (le parent le scanne avec l'appareil photo de son téléphone et paie sur place par Orange Money ou Moov Money) et étapes `*144#`. Ce n'est pas un reçu : le reçu est délivré après confirmation. Le QR code figure aussi sur la page parent.
+- **Relancer le parent (icône enveloppe)** : renvoie le SMS de la demande en attente (lien ou instructions `*144#`). Le nombre de relances et la date de la dernière s'affichent sous la référence ; chaque relance est tracée dans **Historique relances**. Une demande relancée est de nouveau vérifiée automatiquement pendant 7 jours.
+- **Campagne de relances (Finances → Relances → SMS)** : quand le paiement en ligne est configuré, chaque SMS de relance se termine par `Payer en ligne : <lien>` (2 segments). YELEN crée la demande Mobile Money correspondante au reste dû (ou réutilise la demande identique de moins de 7 jours) ; les liens sont créés en arrière-plan après l'envoi de la campagne. Si la passerelle ne répond pas ou si le reste dû n'est pas un multiple de 5 FCFA, le SMS part sans lien.
+
 
 ### 9.15 Relevés Mobile Money et rapprochement
 

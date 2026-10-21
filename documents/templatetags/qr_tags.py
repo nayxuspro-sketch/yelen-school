@@ -91,3 +91,13 @@ def qr_personnel(matricule, nom, prenom, etab_nom, taille='petit', adresse='', v
         f'<img src="{uri}" width="{px}" height="{px}" alt="QR {matricule}" '
         f'style="display:block; image-rendering:pixelated;">'
     )
+
+
+@register.simple_tag
+def qr_lien(url, px=120):
+    """QR code d'un lien (paiement en ligne) à scanner avec l'appareil photo du téléphone."""
+    uri = _build_qr_data_uri(url, 4)
+    return mark_safe(
+        f'<img src="{uri}" width="{px}" height="{px}" alt="QR code du lien de paiement" '
+        f'style="display:block; image-rendering:pixelated;">'
+    )

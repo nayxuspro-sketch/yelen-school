@@ -6,14 +6,16 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
-from django.db import transaction
+from django.db import connections, transaction
 from django.db.models import Sum, Q
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from decimal import Decimal
 import io
+import threading
 from ..models import Paiement
+from ..paiements_mobiles import cinetpay_configure, relancer_avec_lien
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, TarifScolarite, RubriquePaiement
 from core.utils import get_etablissement_context
@@ -313,6 +315,7 @@ def relance_sms(request):
 
     nb_envoyes = 0
     nb_sans_numero = 0
+    envois = []
 
     from parametres.models import ModeleMessage
     from core.tasks import envoyer_sms_async
@@ -353,7 +356,7 @@ def relance_sms(request):
         except Exception:
             sms_msg = f"Bonjour, votre enfant {eleve.nom} {eleve.prenom} a un reste à payer de {reste:,.0f} F pour la rubro {rubrique.nom}. Merci de regler au plus vite. {etab.nom}"
 
-        envoyer_sms_async(numero, sms_msg)
+        envois.append({'inscription': inscr, 'rubrique': rubrique, 'montant': reste, 'telephone': numero, 'message': sms_msg})
         nb_envoyes += 1
 
         from ..models import HistoriqueRelance, CanalRelance
@@ -369,14 +372,32 @@ def relance_sms(request):
             detail=numero,
         )
 
+    # Avec la passerelle, chaque SMS reçoit un lien de paiement : création des liens hors requête.
+    avec_lien = bool(envois) and cinetpay_configure()
+    if avec_lien:
+        _en_arriere_plan(relancer_avec_lien, envois, request.user)
+    else:
+        for envoi in envois:
+            envoyer_sms_async(envoi['telephone'], envoi['message'])
+
     if nb_envoyes:
-        messages.success(request, f"{nb_envoyes} SMS de relance envoyé(s).")
+        messages.success(request, f"{nb_envoyes} SMS de relance envoyé(s)." + (" Lien de paiement en ligne inclus." if avec_lien else ""))
     if nb_sans_numero:
         messages.warning(request, f"{nb_sans_numero} élève(s) sans numéro valide — non contacté(s).")
     if not nb_envoyes and not nb_sans_numero:
         messages.info(request, "Aucun élève redevable trouvé pour cette sélection.")
 
     return redirect('finances:relance_paiement')
+
+
+def _en_arriere_plan(fonction, *args):
+    """Exécute ``fonction`` dans un fil dédié (sa connexion à la base est refermée à la fin)."""
+    def _executer():
+        try:
+            fonction(*args)
+        finally:
+            connections.close_all()
+    threading.Thread(target=_executer, daemon=True).start()
 
 
 @login_required

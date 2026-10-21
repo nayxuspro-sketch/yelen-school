@@ -9,7 +9,11 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Q, Sum
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from django.utils import timezone
 from decimal import Decimal, InvalidOperation
+import io
 from ..models import (
     Paiement, ModePaiement, DemandePaiementMobile, LigneReleve, OperateurMobileMoney, ReleveMobileMoney,
 )
@@ -17,12 +21,14 @@ from ..releves import (
     FichierInvalide, STATUTS_A_TRAITER, affecter_ligne, ignorer_ligne, importer_releve, valider_lignes,
 )
 from ..paiements_mobiles import (
-    ErreurPasserelle, cinetpay_configure, confirmer_demande, creer_lien, verifier_en_attente, verifier_paiement,
+    ErreurPasserelle, cinetpay_configure, confirmer_demande, creer_lien, enregistrer_relance, verifier_en_attente,
+    verifier_paiement,
 )
 from inscriptions.models import Inscription
 from parametres.models import RubriquePaiement
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
-from .commun import _numero_valide, _require_finance_role, _require_same_establishment
+from core.utils import get_etablissement_context
+from .commun import WeasyHTML, _numero_valide, _require_finance_role, _require_same_establishment
 
 
 @login_required
@@ -273,8 +279,57 @@ def _envoyer_sms_mobile_money(demande, request):
         if ok:
             demande.sms_envoye = True
             demande.save(update_fields=['sms_envoye'])
+        return ok
     except Exception:
-        pass
+        return False
+
+
+@login_required
+@require_POST
+def mobile_money_relancer(request, pk):
+    """Renvoie au parent le SMS d'une demande en attente (lien de paiement ou instructions *144#)."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    demande = get_object_or_404(DemandePaiementMobile.objects.select_related('inscription__classe', 'inscription__eleve'), pk=pk)
+    _require_same_establishment(request, demande.inscription)
+    if demande.statut != DemandePaiementMobile.StatutChoices.EN_ATTENTE:
+        messages.error(request, "Seule une demande en attente peut être relancée.")
+        return redirect('finances:mobile_money_list')
+    ok = _envoyer_sms_mobile_money(demande, request)
+    enregistrer_relance(demande, request.user, succes=ok)
+    if ok:
+        messages.success(request, f"Relance envoyée au {demande.telephone} pour la demande {demande.reference}.")
+    else:
+        messages.warning(request, f"Relance de {demande.reference} : SMS non envoyé (passerelle SMS indisponible).")
+    return redirect('finances:mobile_money_list')
+
+
+@login_required
+def mobile_money_avis_pdf(request, pk):
+    """Avis de paiement A5 à remettre au parent : montant, référence, QR code du lien, étapes *144#."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
+    if WeasyHTML is None:
+        messages.error(request, "WeasyPrint n'est pas installé.")
+        return redirect('finances:mobile_money_list')
+    demande = get_object_or_404(
+        DemandePaiementMobile.objects.select_related('inscription__classe__etablissement', 'inscription__eleve', 'rubrique'), pk=pk,
+    )
+    _require_same_establishment(request, demande.inscription)
+    etablissement = demande.inscription.classe.etablissement
+    etab_context = get_etablissement_context(etablissement, request)
+    html_string = render_to_string('finances/pdf/avis_paiement_mobile.html', {
+        'demande': demande,
+        'inscription': demande.inscription,
+        'etablissement': etablissement,
+        'identite': etab_context.get('identite'),
+        'logo_url': etab_context.get('logo_url'),
+        'etab_logo_url': etab_context.get('etab_logo_url'),
+        'now': timezone.now(),
+    }, request=request)
+    buffer = io.BytesIO()
+    WeasyHTML(string=html_string).write_pdf(buffer)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="Avis_{demande.reference}.pdf"'
+    return response
 
 
 # ── Relevés Mobile Money : import et rapprochement (circuit hors ligne) ─────

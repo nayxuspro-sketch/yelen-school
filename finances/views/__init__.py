@@ -68,6 +68,8 @@ from .mobile_money import (  # noqa: F401
     mobile_money_annuler,
     mobile_money_confirmation_parent,
     mobile_money_verifier,
+    mobile_money_relancer,
+    mobile_money_avis_pdf,
     _envoyer_sms_mobile_money,
     releve_list,
     releve_import,
