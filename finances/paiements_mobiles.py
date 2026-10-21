@@ -124,7 +124,7 @@ def verifier_paiement(demande, utilisateur=None):
     libelle = f"{code} {reponse.get('message', '')}".strip()
     with transaction.atomic():
         demande = (
-            DemandePaiementMobile.objects.select_for_update()
+            DemandePaiementMobile.objects.select_for_update(of=('self',))
             .select_related('inscription__eleve', 'inscription__statut_eleve', 'rubrique').get(pk=demande.pk)
         )
         if demande.statut != EN_ATTENTE:
