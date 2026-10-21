@@ -1,0 +1,112 @@
+{% extends "core/base.html" %}
+{% load droits_tags %}
+
+{% block title %}Relevés Mobile Money — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Relevés Mobile Money</h1>
+    <p class="page-subtitle">Rapprochement des encaissements Orange Money / Moov Money</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'finances:mobile_money_list' %}" class="btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Demandes
+    </a>
+    {% if request|autorise_url:'finances:releve_import' %}
+    <a href="{% url 'finances:releve_import' %}" class="btn-primary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+      </svg>
+      Importer un relevé
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card mb-4 animate-fade-up delay-1">
+  <div class="card-header">
+    <span class="card-title">Relevés importés</span>
+    <span class="badge badge-neutral">{{ releves|length }}</span>
+  </div>
+  {% if releves %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Importé le</th>
+          <th>Opérateur</th>
+          <th>Fichier</th>
+          <th class="td-right">Transactions</th>
+          <th class="td-right">Montant</th>
+          <th class="td-right">À traiter</th>
+          <th>Par</th>
+          <th class="td-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in releves %}
+        <tr>
+          <td>{{ r.created_at|date:"d/m/Y H:i" }}</td>
+          <td>{{ r.get_operateur_display }}</td>
+          <td class="text-xs text-muted">{{ r.nom_fichier }}</td>
+          <td class="td-right">{{ r.nb_lignes }}</td>
+          <td class="td-right fw-semibold">{{ r.total|default:0|floatformat:0 }} FCFA</td>
+          <td class="td-right">
+            {% if r.nb_a_traiter %}<span class="badge badge-warning">{{ r.nb_a_traiter }}</span>{% else %}<span class="badge badge-success">0</span>{% endif %}
+          </td>
+          <td class="text-secondary">{{ r.importe_par.get_full_name|default:"—" }}</td>
+          <td class="td-right">
+            <a href="{% url 'finances:releve_detail' r.pk %}" class="btn-secondary">Rapprocher</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-muted text-sm">Aucun relevé importé. Télécharger le relevé depuis l'espace marchand de l'opérateur, puis l'importer ici.</div>
+  {% endif %}
+</div>
+
+<div class="card animate-fade-up delay-2">
+  <div class="card-header">
+    <span class="card-title">Paiements Mobile Money saisis au guichet, en attente de relevé</span>
+    <span class="badge {% if nb_a_rapprocher %}badge-warning{% else %}badge-success{% endif %}">{{ nb_a_rapprocher }}</span>
+  </div>
+  {% if a_rapprocher %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Reçu</th>
+          <th>Élève</th>
+          <th>Classe</th>
+          <th>N° de transaction</th>
+          <th class="td-right">Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in a_rapprocher %}
+        <tr>
+          <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
+          <td class="text-mono text-xs">{{ p.numero_recu }}</td>
+          <td>{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
+          <td>{{ p.inscription.classe.nom }}</td>
+          <td class="text-mono text-xs">{{ p.reference|default:"—" }}</td>
+          <td class="td-right fw-semibold">{{ p.montant|floatformat:0 }} FCFA</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body text-xs text-muted">Ces paiements seront confirmés automatiquement dès qu'un relevé contenant leur n° de transaction sera importé.</div>
+  {% else %}
+  <div class="card-body text-muted text-sm">Tous les paiements Mobile Money saisis au guichet sont confirmés par un relevé.</div>
+  {% endif %}
+</div>
+{% endblock %}

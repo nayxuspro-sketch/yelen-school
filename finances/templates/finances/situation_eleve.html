@@ -353,7 +353,7 @@
               <tr>
                 <td class="text-secondary">{{ p.date_paiement|date:"d M Y" }}</td>
                 <td class="fw-medium">{{ p.rubrique.nom|default:"—" }}</td>
-                <td class="text-secondary">{{ p.get_mode_paiement_display }}</td>
+                <td class="text-secondary">{{ p.get_mode_paiement_display }}{% if p.mode_paiement == 'MOBILE_MONEY' %} {% if p.ligne_releve %}<span class="badge badge-success" title="Confirmé par le relevé {{ p.ligne_releve.get_operateur_display }}">Rapproché</span>{% else %}<span class="badge badge-warning" title="En attente de confirmation par un relevé Mobile Money">À rapprocher</span>{% endif %}{% endif %}</td>
                 <td class="text-mono text-xs text-muted">{{ p.reference|default:"—" }}</td>
                 <td class="td-right fw-bold color-success">{{ p.montant }} <span class="text-muted">FCFA</span></td>
                 <td class="td-narrow">

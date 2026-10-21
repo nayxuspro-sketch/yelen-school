@@ -196,6 +196,8 @@ MODULES = (
         _f('/finances/mobile-money/', 'Mobile Money', actions=(
             _a('initier', 'Initier une demande de paiement', 'mobile_money_create', roles=_FINANCE_SAISIE),
             _a('traiter', 'Confirmer / annuler une transaction', 'mobile_money_confirmer', 'mobile_money_annuler', roles=_FINANCE_SAISIE),
+            _a('importer', 'Importer un relevé Orange Money / Moov Money', 'releve_import', roles=_FINANCE_SAISIE),
+            _a('rapprocher', 'Rapprocher un relevé (valider, affecter, exclure)', 'releve_valider', 'releve_ligne_affecter', 'releve_ligne_ignorer', roles=_FINANCE_SAISIE),
         )),
         _f('/finances/depenses/', 'Dépenses', '/finances/categories-depenses/', actions=(
             _a('saisir', 'Saisir / modifier / supprimer une dépense', 'depense_create', 'depense_edit', 'depense_delete',

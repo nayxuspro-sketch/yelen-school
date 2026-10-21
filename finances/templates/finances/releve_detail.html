@@ -1,0 +1,160 @@
+{% extends "core/base.html" %}
+{% load droits_tags %}
+
+{% block title %}Rapprochement — {{ releve }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Rapprochement {{ releve.get_operateur_display }}</h1>
+    <p class="page-subtitle">
+      {{ releve.nom_fichier }} — importé le {{ releve.created_at|date:"d/m/Y H:i" }}
+      {% if releve.importe_par %}par {{ releve.importe_par.get_full_name }}{% endif %}
+      {% if releve.rubrique %}— rubrique : {{ releve.rubrique.nom }}{% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'finances:releve_list' %}" class="btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Relevés
+    </a>
+  </div>
+</div>
+
+<div class="stats-grid animate-fade-up delay-1">
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ totaux.total|default:0|floatformat:0 }} <span class="text-sm text-muted">FCFA</span></div>
+      <div class="stat-label">{{ nb_lignes }} transaction(s) — frais {{ totaux.frais|default:0|floatformat:0 }} FCFA</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card-accent" style="--accent-color: var(--color-success);">
+    <div>
+      <div class="stat-value">{{ totaux.rapproche|default:0|floatformat:0 }} <span class="text-sm text-muted">FCFA</span></div>
+      <div class="stat-label">Rapproché — {{ totaux.nb_rapproche }} transaction(s)</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card-accent" style="--accent-color: var(--color-warning);">
+    <div>
+      <div class="stat-value">{{ totaux.a_traiter|default:0|floatformat:0 }} <span class="text-sm text-muted">FCFA</span></div>
+      <div class="stat-label">À traiter — {{ totaux.nb_a_traiter }} transaction(s)</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card-accent" style="--accent-color: var(--color-danger);">
+    <div>
+      <div class="stat-value">{{ totaux.ignore|default:0|floatformat:0 }} <span class="text-sm text-muted">FCFA</span></div>
+      <div class="stat-label">Exclu — {{ totaux.nb_ignore }} transaction(s)</div>
+    </div>
+  </div>
+</div>
+
+<p class="text-xs text-muted mb-3 animate-fade-up delay-2">
+  Lecture du fichier : {{ releve.nb_lignes_fichier }} ligne(s), {{ releve.nb_doublons }} déjà importée(s), {{ releve.nb_rejets }} ignorée(s) (débits, totaux, lignes illisibles).
+</p>
+
+{% with peut_rapprocher=request|autorise_url:'finances:releve_valider' %}
+<div class="card animate-fade-up delay-2">
+  <div class="card-header">
+    <span class="card-title">Transactions</span>
+    {% if peut_rapprocher and totaux.nb_a_traiter %}
+    <form id="form-valider" method="post" action="{% url 'finances:releve_valider' releve.pk %}"
+          data-csp-confirm-submit="Enregistrer un paiement Mobile Money (avec reçu) pour chaque ligne cochée ?">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Valider les lignes cochées
+      </button>
+    </form>
+    {% endif %}
+  </div>
+  {% if lignes %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="td-narrow"></th>
+          <th>Date</th>
+          <th>N° de transaction</th>
+          <th>Payeur</th>
+          <th>Motif</th>
+          <th class="td-right">Montant</th>
+          <th>Élève</th>
+          <th>Statut</th>
+          {% if peut_rapprocher %}<th class="td-right">Actions</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in lignes %}
+        <tr>
+          <td class="td-narrow">
+            {% if peut_rapprocher and l.inscription and l.statut == 'PROPOSE' or peut_rapprocher and l.inscription and l.statut == 'A_CONFIRMER' %}
+            <input type="checkbox" name="lignes" value="{{ l.pk }}" form="form-valider"
+                   {% if l.statut == 'PROPOSE' %}checked{% endif %} aria-label="Valider {{ l.numero_transaction }}">
+            {% endif %}
+          </td>
+          <td class="text-secondary text-xs">{{ l.date_operation|date:"d/m/Y H:i" }}</td>
+          <td class="text-mono text-xs">{{ l.numero_transaction }}</td>
+          <td class="text-xs">{{ l.nom_payeur }}{% if l.telephone_payeur %}<br><span class="text-muted">{{ l.telephone_payeur }}</span>{% endif %}</td>
+          <td class="text-xs">{{ l.motif|default:"—" }}</td>
+          <td class="td-right fw-semibold">{{ l.montant|floatformat:0 }} FCFA</td>
+          <td>
+            {% if l.inscription %}
+              <a href="{% url 'finances:situation_eleve' l.inscription.pk %}">{{ l.inscription.eleve.nom }} {{ l.inscription.eleve.prenom }}</a>
+              <span class="text-xs text-muted">{{ l.inscription.classe.nom }}</span>
+              {% if l.methode %}<br><span class="text-xs text-muted">{{ l.get_methode_display }}</span>{% endif %}
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td>
+            {% if l.statut == 'RAPPROCHE' %}
+              <span class="badge badge-success">Rapproché</span>
+              {% if l.paiement %}<br><span class="text-xs text-mono text-muted">{{ l.paiement.numero_recu }}</span>{% endif %}
+            {% elif l.statut == 'PROPOSE' %}<span class="badge badge-info">Proposé</span>
+            {% elif l.statut == 'A_CONFIRMER' %}<span class="badge badge-warning">À confirmer</span>
+            {% elif l.statut == 'IGNORE' %}<span class="badge badge-neutral">Exclu</span>{% if l.motif_ignore %}<br><span class="text-xs text-muted">{{ l.motif_ignore }}</span>{% endif %}
+            {% else %}<span class="badge badge-danger">Non identifié</span>{% endif %}
+          </td>
+          {% if peut_rapprocher %}
+          <td class="td-right">
+            {% if l.statut != 'RAPPROCHE' %}
+            <div class="d-flex gap-2 justify-end">
+              <form method="post" action="{% url 'finances:releve_ligne_affecter' l.pk %}" class="d-flex gap-2">
+                {% csrf_token %}
+                <input type="text" name="matricule" class="input" placeholder="Matricule" required aria-label="Matricule de l'élève" style="width: 9rem;">
+                <button type="submit" class="btn-secondary" title="Affecter à cet élève">Affecter</button>
+              </form>
+              {% if l.statut != 'IGNORE' %}
+              <form method="post" action="{% url 'finances:releve_ligne_ignorer' l.pk %}"
+                    data-csp-prompt-submit="Motif d'exclusion de la transaction {{ l.numero_transaction }} :">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon btn-icon-danger" title="Exclure du rapprochement">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+            {% elif l.paiement %}
+            <a href="{% url 'finances:recu_pdf' l.paiement.pk %}" class="btn-icon" title="Reçu PDF" target="_blank">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+            </a>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-muted text-sm">Aucune transaction nouvelle dans ce relevé.</div>
+  {% endif %}
+</div>
+{% endwith %}
+{% endblock %}

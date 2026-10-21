@@ -72,6 +72,12 @@ urlpatterns = [
     path('mobile-money/<uuid:pk>/confirmer/', views.mobile_money_confirmer, name='mobile_money_confirmer'),
     path('mobile-money/<uuid:pk>/annuler/', views.mobile_money_annuler, name='mobile_money_annuler'),
     path('payer/<str:token>/', views.mobile_money_confirmation_parent, name='mobile_money_confirmation_parent'),
+    path('mobile-money/releves/', views.releve_list, name='releve_list'),
+    path('mobile-money/releves/importer/', views.releve_import, name='releve_import'),
+    path('mobile-money/releves/<uuid:pk>/', views.releve_detail, name='releve_detail'),
+    path('mobile-money/releves/<uuid:pk>/valider/', views.releve_valider, name='releve_valider'),
+    path('mobile-money/releves/lignes/<uuid:pk>/affecter/', views.releve_ligne_affecter, name='releve_ligne_affecter'),
+    path('mobile-money/releves/lignes/<uuid:pk>/ignorer/', views.releve_ligne_ignorer, name='releve_ligne_ignorer'),
 
     # ── Budget & Dépenses ──────────────────────────────────────────────────
     path('depenses/', views.depense_list, name='depense_list'),

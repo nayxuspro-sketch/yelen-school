@@ -131,7 +131,7 @@ def _calcul_situation_financiere(inscription):
     - Reste     : Total DÛ net – Total payé (jamais négatif pour le reste affiché).
     """
     etablissement = inscription.classe.etablissement
-    paiements = Paiement.objects.filter(inscription=inscription).select_related('rubrique')
+    paiements = Paiement.objects.filter(inscription=inscription).select_related('rubrique', 'ligne_releve')
     total_verse = paiements.aggregate(s=Sum('montant'))['s'] or Decimal('0')
     total_rembourse = (
         Remboursement.objects

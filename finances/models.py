@@ -664,3 +664,90 @@ class Depense(BaseModel):
 
     def __str__(self):
         return f"{self.numero_depense} — {self.libelle} ({self.montant} FCFA)"
+
+
+class OperateurMobileMoney(models.TextChoices):
+    ORANGE = 'ORANGE', _('Orange Money')
+    MOOV = 'MOOV', _('Moov Money')
+    AUTRE = 'AUTRE', _('Autre (agrégateur, banque)')
+
+
+class ReleveMobileMoney(BaseModel):
+    """Relevé marchand Orange Money / Moov Money importé pour rapprochement (hors ligne)."""
+
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement', on_delete=models.CASCADE,
+        related_name='releves_mobile_money', verbose_name=_("Établissement"),
+    )
+    operateur = models.CharField(max_length=10, choices=OperateurMobileMoney.choices, verbose_name=_("Opérateur"))
+    nom_fichier = models.CharField(max_length=255, verbose_name=_("Fichier importé"))
+    rubrique = models.ForeignKey(
+        'parametres.RubriquePaiement', on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name=_("Rubrique des paiements créés"),
+    )
+    importe_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        related_name='releves_mobile_money_importes', verbose_name=_("Importé par"),
+    )
+    nb_lignes_fichier = models.PositiveIntegerField(default=0, verbose_name=_("Lignes lues"))
+    nb_doublons = models.PositiveIntegerField(default=0, verbose_name=_("Transactions déjà importées"))
+    nb_rejets = models.PositiveIntegerField(default=0, verbose_name=_("Lignes rejetées"))
+
+    class Meta:
+        verbose_name = _("Relevé Mobile Money")
+        verbose_name_plural = _("Relevés Mobile Money")
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Relevé {self.get_operateur_display()} du {self.created_at:%d/%m/%Y} ({self.nom_fichier})"
+
+
+class LigneReleve(BaseModel):
+    """Transaction d'un relevé Mobile Money et son rapprochement avec un paiement."""
+
+    class Statut(models.TextChoices):
+        PROPOSE = 'PROPOSE', _('Rapprochement proposé')
+        A_CONFIRMER = 'A_CONFIRMER', _('À confirmer')
+        NON_IDENTIFIE = 'NON_IDENTIFIE', _('Non identifié')
+        RAPPROCHE = 'RAPPROCHE', _('Rapproché')
+        IGNORE = 'IGNORE', _('Ignoré')
+
+    class Methode(models.TextChoices):
+        TRANSACTION = 'TRANSACTION', _('N° de transaction d’un paiement saisi au guichet')
+        DEMANDE = 'DEMANDE', _('Référence d’une demande Mobile Money')
+        MATRICULE = 'MATRICULE', _('Matricule présent dans le motif')
+        TELEPHONE = 'TELEPHONE', _('Téléphone du tuteur et montant restant dû')
+        MANUEL = 'MANUEL', _('Affectation manuelle')
+
+    releve = models.ForeignKey(ReleveMobileMoney, on_delete=models.CASCADE, related_name='lignes')
+    operateur = models.CharField(max_length=10, choices=OperateurMobileMoney.choices)
+    numero_transaction = models.CharField(max_length=64, verbose_name=_("N° de transaction"))
+    date_operation = models.DateTimeField(verbose_name=_("Date de l'opération"))
+    montant = models.DecimalField(max_digits=12, decimal_places=2, verbose_name=_("Montant reçu (FCFA)"))
+    frais = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name=_("Frais (FCFA)"))
+    telephone_payeur = models.CharField(max_length=20, blank=True, verbose_name=_("Téléphone du payeur"))
+    nom_payeur = models.CharField(max_length=120, blank=True, verbose_name=_("Nom du payeur"))
+    motif = models.CharField(max_length=255, blank=True, verbose_name=_("Motif / libellé"))
+    statut = models.CharField(max_length=15, choices=Statut.choices, default=Statut.NON_IDENTIFIE)
+    methode = models.CharField(max_length=12, choices=Methode.choices, blank=True, verbose_name=_("Méthode"))
+    inscription = models.ForeignKey(
+        Inscription, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='lignes_releve', verbose_name=_("Élève proposé"),
+    )
+    paiement = models.OneToOneField(
+        Paiement, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='ligne_releve', verbose_name=_("Paiement rapproché"),
+    )
+    motif_ignore = models.CharField(max_length=255, blank=True, verbose_name=_("Motif d'exclusion"))
+
+    class Meta:
+        verbose_name = _("Ligne de relevé Mobile Money")
+        verbose_name_plural = _("Lignes de relevé Mobile Money")
+        ordering = ['date_operation', 'numero_transaction']
+        constraints = [
+            models.UniqueConstraint(fields=['operateur', 'numero_transaction'], name='ligne_releve_transaction_unique'),
+            models.CheckConstraint(condition=models.Q(montant__gt=0), name='ligne_releve_montant_positif'),
+        ]
+
+    def __str__(self):
+        return f"{self.numero_transaction} — {self.montant} FCFA"

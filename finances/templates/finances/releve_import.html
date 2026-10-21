@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+
+{% block title %}Importer un relevé Mobile Money — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Importer un relevé Mobile Money</h1>
+    <p class="page-subtitle">Relevé marchand Orange Money / Moov Money (CSV ou Excel) — aucune connexion Internet nécessaire</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'finances:releve_list' %}" class="btn-secondary">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Relevés
+    </a>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="max-width: 720px;">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group mb-4">
+        <label class="input-label" for="id_operateur">Opérateur <span style="color:var(--color-danger);">*</span></label>
+        <select name="operateur" id="id_operateur" class="input select" required>
+          {% for code, libelle in operateurs %}
+          <option value="{{ code }}">{{ libelle }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group mb-4">
+        <label class="input-label" for="id_fichier">Fichier du relevé <span style="color:var(--color-danger);">*</span></label>
+        <input type="file" name="fichier" id="id_fichier" class="input" required accept=".csv,.txt,.xlsx,.xlsm">
+        <p class="text-xs text-muted mt-2">
+          Export de l'espace marchand tel quel, ou fichier préparé avec les colonnes
+          <strong>Transaction ; Date ; Montant ; Frais ; Téléphone ; Nom ; Motif</strong> (5 Mo maximum).
+          Les transactions déjà importées sont ignorées : un même relevé peut être importé plusieurs fois sans doublon.
+        </p>
+      </div>
+      <div class="form-group mb-4">
+        <label class="input-label" for="id_rubrique">Rubrique des paiements créés</label>
+        <select name="rubrique" id="id_rubrique" class="input select">
+          <option value="">— Sans rubrique —</option>
+          {% for r in rubriques %}
+          <option value="{{ r.pk }}">{{ r.nom }}</option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-muted mt-2">Appliquée aux paiements créés lors de la validation (le reste à payer de la rubrique est contrôlé).</p>
+      </div>
+      <div class="d-flex gap-3 justify-end">
+        <button type="submit" class="btn-primary">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          Importer et rapprocher
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

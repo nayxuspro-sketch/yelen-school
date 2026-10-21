@@ -80,6 +80,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [9.12 Élèves Exonérés de Paiement](#912-élèves-exonérés-de-paiement)
   - [9.13 Bourses et Aides Financières](#913-bourses-et-aides-financières)
   - [9.14 Paiements Mobile Money](#914-paiements-mobile-money-orange-money)
+  - [9.15 Relevés Mobile Money et rapprochement](#915-relevés-mobile-money-et-rapprochement)
 - [10. Examens](#10-examens)
 - [20. Portail Parent PWA](#20-portail-parent-pwa)
 - [21. Signature Électronique des Bulletins](#21-signature-électronique-des-bulletins)
@@ -2701,6 +2702,42 @@ Chaque SMS inclut un lien personnel `https://[école]/finances/payer/[token]/`. 
 ```
 
 > **Note technique :** Aucun abonnement ni API payante n'est requis. Le flux repose uniquement sur le module SMS interne de YELEN SCHOOL et le service USSD `*144#` disponible gratuitement sur tout numéro Orange Burkina Faso.
+
+
+### 9.15 Relevés Mobile Money et rapprochement
+
+**À quoi ça sert :** Enregistrer, sans connexion Internet sur le serveur, les paiements reçus sur le **numéro marchand** Orange Money / Moov Money de l'école : le relevé téléchargé depuis l'espace marchand est importé, chaque transaction est rapprochée d'un élève, puis les paiements, reçus et SMS sont créés en lot. Les paiements Mobile Money saisis au guichet restent « **À rapprocher** » tant qu'un relevé ne les a pas confirmés : un faux SMS de confirmation est ainsi détecté au plus tard au rapprochement.
+
+**Qui peut accéder :** consultation = accès au module Finances ; actes « Importer un relevé » et « Rapprocher un relevé » = Directeur, Censeur, Comptable (droits d'accès → Mobile Money).
+
+**Accès :** `Finances → Mobile Money → Relevés et rapprochement`
+
+**Au guichet :** quand un parent paie par Mobile Money sur place, enregistrer l'encaissement normalement avec le mode *Mobile Money* et le **n° de transaction** du SMS de confirmation (obligatoire). La fiche financière affiche le badge **À rapprocher**, puis **Rapproché** dès qu'un relevé contenant ce n° est importé.
+
+**Importer un relevé :**
+
+1. Télécharger le relevé (CSV ou Excel) depuis l'espace marchand de l'opérateur, sur n'importe quel poste connecté, et l'apporter au serveur (clé USB, partage réseau).
+2. `Relevés et rapprochement → Importer un relevé` : choisir l'opérateur, le fichier et, si souhaité, la rubrique à affecter aux paiements créés.
+3. Les colonnes sont reconnues par leurs en-têtes, quel que soit l'ordre (export marchand tel quel). À défaut, préparer un fichier avec les en-têtes `Transaction ; Date ; Montant ; Frais ; Téléphone ; Nom ; Motif` — seules les trois premières sont obligatoires.
+4. Les débits, lignes de total et transactions déjà importées sont ignorés : un même relevé peut être importé plusieurs fois sans créer de doublon.
+
+**Rapprochement automatique (à l'import) :**
+
+| Niveau | Règle | Résultat |
+|---|---|---|
+| 1 | N° de transaction d'un paiement Mobile Money saisi au guichet (même montant) | **Rapproché** immédiatement |
+| 2 | Référence d'une demande Mobile Money (`MM-AAAA-NNNN`) dans le motif | **Proposé** (demande confirmée à la validation) |
+| 3 | Matricule de l'élève dans le motif | **Proposé** |
+| 4 | Téléphone du payeur = téléphone d'un seul tuteur, montant ≤ reste à payer | **À confirmer** |
+| — | Aucun indice, ou plusieurs enfants pour le même téléphone | **Non identifié** |
+
+**Écran de rapprochement :** totaux du relevé (montant, frais, rapproché, à traiter, exclu) puis les transactions, les lignes à traiter en premier.
+
+- **Valider les lignes cochées** : crée un paiement Mobile Money par ligne (date de l'opération, n° de transaction, rubrique choisie), avec reçu et SMS au payeur. Les lignes *Proposé* sont cochées d'avance, les lignes *À confirmer* sont à cocher après vérification. Le reste à payer de la rubrique est contrôlé comme au guichet.
+- **Affecter** : saisir le matricule de l'élève pour une ligne non identifiée (ou corriger une proposition) ; la ligne passe en *Proposé*.
+- **Exclure** : écarter une transaction étrangère aux frais de scolarité (motif obligatoire, conservé).
+
+> **Conseil :** demander aux parents d'indiquer le **matricule** de l'élève dans le motif du paiement marchand ; la transaction est alors proposée automatiquement. Importer le relevé chaque semaine, et la veille de toute clôture de caisse.
 
 ---
 

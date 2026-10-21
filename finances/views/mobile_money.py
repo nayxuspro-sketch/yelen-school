@@ -7,10 +7,16 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.db import transaction
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
-from ..models import Paiement, ModePaiement, DemandePaiementMobile
+from ..models import (
+    Paiement, ModePaiement, DemandePaiementMobile, LigneReleve, OperateurMobileMoney, ReleveMobileMoney,
+)
+from ..releves import (
+    FichierInvalide, STATUTS_A_TRAITER, affecter_ligne, ignorer_ligne, importer_releve, valider_lignes,
+)
 from inscriptions.models import Inscription
 from parametres.models import RubriquePaiement
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
@@ -236,3 +242,141 @@ def _envoyer_sms_mobile_money(demande, request):
             demande.save(update_fields=['sms_envoye'])
     except Exception:
         pass
+
+
+# ── Relevés Mobile Money : import et rapprochement (circuit hors ligne) ─────
+
+def _verifier_etablissement(request, etablissement_id):
+    """Même règle que _require_same_establishment, pour un relevé."""
+    from core.models import RoleChoices
+    if getattr(request.user, 'role', None) == RoleChoices.SUPER_ADMIN:
+        return
+    if request.user.etablissement_id is None or etablissement_id != request.user.etablissement_id:
+        raise PermissionDenied("Cette opération concerne un autre établissement.")
+
+
+@login_required
+def releve_list(request):
+    """Relevés importés et paiements Mobile Money saisis au guichet non encore confirmés par un relevé."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
+    etab = getattr(request.user, 'etablissement', None)
+    releves = ReleveMobileMoney.objects.select_related('importe_par', 'rubrique').annotate(
+        nb_lignes=Count('lignes'),
+        total=Sum('lignes__montant'),
+        nb_a_traiter=Count('lignes', filter=Q(lignes__statut__in=STATUTS_A_TRAITER)),
+    )
+    a_rapprocher = Paiement.objects.filter(
+        mode_paiement=ModePaiement.MOBILE_MONEY, ligne_releve__isnull=True,
+    ).select_related('inscription__eleve', 'inscription__classe').order_by('-date_paiement', '-created_at')
+    if etab is not None:
+        releves = releves.filter(etablissement=etab)
+        a_rapprocher = a_rapprocher.filter(inscription__classe__etablissement=etab)
+    return render(request, 'finances/releve_list.html', {
+        'releves': releves,
+        'a_rapprocher': a_rapprocher[:50],
+        'nb_a_rapprocher': a_rapprocher.count(),
+    })
+
+
+@login_required
+def releve_import(request):
+    """Import d'un relevé marchand Orange Money / Moov Money (CSV ou Excel)."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    etab = getattr(request.user, 'etablissement', None)
+    if etab is None:
+        messages.error(request, "L'import d'un relevé nécessite un compte rattaché à un établissement.")
+        return redirect('finances:releve_list')
+    rubriques = RubriquePaiement.objects.filter(etablissement=etab, actif=True).order_by('ordre', 'nom')
+    if request.method == 'POST':
+        operateur = request.POST.get('operateur', '')
+        fichier = request.FILES.get('fichier')
+        try:
+            rubrique = rubriques.filter(pk=request.POST.get('rubrique')).first() if request.POST.get('rubrique') else None
+        except (ValueError, ValidationError):
+            rubrique = None
+        if operateur not in OperateurMobileMoney.values or fichier is None:
+            messages.error(request, "Choisir l'opérateur et le fichier du relevé.")
+        else:
+            try:
+                releve = importer_releve(etab, operateur, fichier, request.user, rubrique)
+            except FichierInvalide as exc:
+                messages.error(request, str(exc))
+            else:
+                nb = releve.lignes.count()
+                messages.success(
+                    request,
+                    f"Relevé importé : {nb} transaction(s) nouvelle(s), {releve.nb_doublons} déjà connue(s), "
+                    f"{releve.nb_rejets} ligne(s) ignorée(s) (débits, totaux, lignes illisibles)."
+                )
+                return redirect('finances:releve_detail', pk=releve.pk)
+    return render(request, 'finances/releve_import.html', {
+        'rubriques': rubriques,
+        'operateurs': OperateurMobileMoney.choices,
+    })
+
+
+@login_required
+def releve_detail(request, pk):
+    """Écran de rapprochement d'un relevé : totaux, lignes à traiter, validation."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
+    releve = get_object_or_404(ReleveMobileMoney.objects.select_related('rubrique', 'importe_par'), pk=pk)
+    _verifier_etablissement(request, releve.etablissement_id)
+    Statut = LigneReleve.Statut
+    lignes = releve.lignes.select_related('inscription__eleve', 'inscription__classe', 'paiement')
+    totaux = lignes.aggregate(
+        total=Sum('montant'), frais=Sum('frais'),
+        rapproche=Sum('montant', filter=Q(statut=Statut.RAPPROCHE)),
+        a_traiter=Sum('montant', filter=Q(statut__in=STATUTS_A_TRAITER)),
+        ignore=Sum('montant', filter=Q(statut=Statut.IGNORE)),
+        nb_rapproche=Count('pk', filter=Q(statut=Statut.RAPPROCHE)),
+        nb_a_traiter=Count('pk', filter=Q(statut__in=STATUTS_A_TRAITER)),
+        nb_ignore=Count('pk', filter=Q(statut=Statut.IGNORE)),
+    )
+    ordre = {Statut.PROPOSE: 0, Statut.A_CONFIRMER: 1, Statut.NON_IDENTIFIE: 2, Statut.RAPPROCHE: 3, Statut.IGNORE: 4}
+    return render(request, 'finances/releve_detail.html', {
+        'releve': releve,
+        'lignes': sorted(lignes, key=lambda l: (ordre[l.statut], l.date_operation)),
+        'totaux': totaux,
+        'nb_lignes': len(lignes),
+    })
+
+
+@login_required
+@require_POST
+def releve_valider(request, pk):
+    """Crée les paiements des lignes cochées (proposées / à confirmer)."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    releve = get_object_or_404(ReleveMobileMoney.objects.select_related('rubrique'), pk=pk)
+    _verifier_etablissement(request, releve.etablissement_id)
+    crees, erreurs = valider_lignes(releve, request.POST.getlist('lignes'), request.user)
+    if crees:
+        messages.success(request, f"{crees} paiement(s) Mobile Money enregistré(s) avec reçu.")
+    elif not erreurs:
+        messages.info(request, "Aucune ligne cochée à valider.")
+    for erreur in erreurs:
+        messages.error(request, erreur)
+    return redirect('finances:releve_detail', pk=releve.pk)
+
+
+@login_required
+@require_POST
+def releve_ligne_affecter(request, pk):
+    """Affecte manuellement une transaction à un élève (matricule)."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    ligne = get_object_or_404(LigneReleve.objects.select_related('releve'), pk=pk)
+    _verifier_etablissement(request, ligne.releve.etablissement_id)
+    ok, message = affecter_ligne(ligne, request.POST.get('matricule', ''), request.user)
+    (messages.success if ok else messages.error)(request, message)
+    return redirect('finances:releve_detail', pk=ligne.releve_id)
+
+
+@login_required
+@require_POST
+def releve_ligne_ignorer(request, pk):
+    """Exclut une transaction du rapprochement (motif obligatoire)."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    ligne = get_object_or_404(LigneReleve.objects.select_related('releve'), pk=pk)
+    _verifier_etablissement(request, ligne.releve.etablissement_id)
+    ok, message = ignorer_ligne(ligne, request.POST.get('motif', ''), request.user)
+    (messages.success if ok else messages.error)(request, message)
+    return redirect('finances:releve_detail', pk=ligne.releve_id)
