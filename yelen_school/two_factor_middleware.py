@@ -1,4 +1,6 @@
 """Impose la double authentification aux rôles sensibles avant tout accès à l'application."""
+from urllib.parse import urlparse
+
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -37,6 +39,10 @@ class ForceTwoFactorMiddleware:
         ):
             url = reverse('accounts:totp_setup')
             if request.headers.get('HX-Request') == 'true':
+                # Requête HTMX émise depuis la page d'activation (badge de notifications…) :
+                # réponse vide, sinon HX-Redirect rechargerait la page en boucle.
+                if urlparse(request.headers.get('HX-Current-URL', '')).path == url:
+                    return HttpResponse(status=204)
                 return HttpResponse(status=204, headers={'HX-Redirect': url})
             return redirect(url)
         return self.get_response(request)

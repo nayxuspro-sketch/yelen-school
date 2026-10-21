@@ -37,9 +37,18 @@ class TestDeuxFacteursObligatoires:
 
     def test_htmx_recoit_hx_redirect(self, client, etab):
         client.force_login(_utilisateur(etab, 'DIRECTEUR'))
-        reponse = client.get(reverse('core:home'), HTTP_HX_REQUEST='true')
+        reponse = client.get(reverse('core:home'), HTTP_HX_REQUEST='true',
+                             HTTP_HX_CURRENT_URL='http://testserver/accounts/profile/')
         assert reponse.status_code == 204
         assert reponse['HX-Redirect'] == reverse('accounts:totp_setup')
+
+    def test_htmx_depuis_la_page_d_activation_sans_rechargement(self, client, etab):
+        """Le badge de notifications de la page d'activation ne doit pas provoquer de boucle de rechargement."""
+        client.force_login(_utilisateur(etab, 'DIRECTEUR'))
+        reponse = client.get(reverse('core:notifications_badge'), HTTP_HX_REQUEST='true',
+                             HTTP_HX_CURRENT_URL='http://testserver' + reverse('accounts:totp_setup'))
+        assert reponse.status_code == 204
+        assert 'HX-Redirect' not in reponse
 
     def test_activation_et_deconnexion_restent_accessibles(self, client, etab):
         client.force_login(_utilisateur(etab, 'DIRECTEUR'))
