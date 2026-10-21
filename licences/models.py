@@ -240,6 +240,23 @@ class Licence(BaseModel):
         verbose_name=_("Signature Ed25519"),
         help_text=_("Signature asymétrique Ed25519 — clé privée chez éditeur, publique dans app")
     )
+    # Jeton hors ligne v3 (licences/jeton.py) : émis et signé par l'éditeur,
+    # seule preuve de validité lorsque LICENCE_PUBLIC_KEY est configurée.
+    jeton_signe = models.TextField(
+        blank=True,
+        default='',
+        editable=False,
+        verbose_name=_("Jeton de licence signé"),
+        help_text=_("Code de licence YELEN3 émis par l'éditeur (signature Ed25519)")
+    )
+    empreinte_serveur = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        editable=False,
+        verbose_name=_("Empreinte du serveur autorisé"),
+        help_text=_("Identifiant du serveur auquel la licence est liée (vide = non liée)")
+    )
     
     # Métadonnées
     notes_interne = models.TextField(
@@ -454,28 +471,47 @@ class Licence(BaseModel):
         except Exception:
             return False
 
+    def verifier_jeton(self) -> bool:
+        """Jeton v3 : signature Ed25519 de l'éditeur valide ET payload identique à cette licence."""
+        if not self.jeton_signe:
+            return False
+        from .jeton import JetonInvalide, charger_cle_publique, payload_correspond, verifier_jeton
+        try:
+            payload = verifier_jeton(
+                self.jeton_signe,
+                charger_cle_publique(getattr(settings, 'LICENCE_PUBLIC_KEY', '')),
+            )
+        except JetonInvalide:
+            return False
+        return payload_correspond(payload, self)
+
+    def liee_a_ce_serveur(self) -> bool:
+        """Licence utilisable sur le serveur courant (non liée, ou empreinte identique)."""
+        if not self.empreinte_serveur:
+            return True
+        from .binding import empreinte_serveur
+        return hmac.compare_digest(self.empreinte_serveur, empreinte_serveur())
+
     def verifier_signature(self) -> bool:
         """
         Vérifie l'intégrité de la licence.
 
-        Ordre P1 :
-        1. Ed25519 si signature_ed25519 présente + LICENCE_PUBLIC_KEY configurée
-           → clé privée jamais dans l'app, forger impossible même avec .env/base
-        2. Fallback HMAC v2/v1 avec LICENCE_SIGNING_KEY (transition)
+        Mode strict (LICENCE_PUBLIC_KEY configurée — production) : seule une
+        signature de l'éditeur fait foi — jeton v3 (verifier_jeton) ou
+        signature Ed25519 v2 (verifier_signature_ed25519). Aucun repli HMAC :
+        la clé HMAC vit dans le .env de l'école et ne prouve rien.
+
+        Mode démonstration (sans clé publique) : HMAC v2/v1 (LICENCE_SIGNING_KEY
+        ou SECRET_KEY), Ed25519 acceptée si présente.
 
         Returns:
             bool: True si signature valide
         """
-        # 1. Ed25519 prioritaire (P1)
-        if self.signature_ed25519:
-            if self.verifier_signature_ed25519():
-                return True
-            # Si Ed25519 présente mais invalide → fraude, on ne fallback pas vers HMAC
-            # (évite downgrade attack) sauf si pas de clé publique configurée (mode dev)
-            if getattr(settings, 'LICENCE_PUBLIC_KEY', ''):
-                return False
+        if getattr(settings, 'LICENCE_PUBLIC_KEY', ''):
+            return self.verifier_jeton() or self.verifier_signature_ed25519()
 
-        # 2. Fallback HMAC legacy (transition)
+        if self.signature_ed25519 and self.verifier_signature_ed25519():
+            return True
         stockee = self.signature_hmac or ''
         for message in (self._message_signature_v2(), self._message_signature_v1()):
             if hmac.compare_digest(stockee, self._signer(message)):
@@ -496,6 +532,7 @@ class Licence(BaseModel):
             self.statut == StatutLicence.ACTIVE
             and self.date_expiration >= timezone.now().date()
             and self.verifier_signature()
+            and (not getattr(settings, 'LICENCE_BINDING_ENABLED', False) or self.liee_a_ce_serveur())
         )
     
     def jours_restants(self) -> int:

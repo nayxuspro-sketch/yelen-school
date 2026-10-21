@@ -13,6 +13,8 @@ Utilisé pour générer automatiquement les attributs :
 - platform data
 """
 
+import hashlib
+import os
 import platform
 import socket
 import uuid
@@ -139,6 +141,31 @@ def collect_machine_fingerprint() -> Dict[str, str]:
         'platform_data': get_platform_data(),
         'ip_address': '',  # rempli à l'activation via request
     }
+
+
+# ── Empreinte du serveur (liaison licence ↔ machine) ───────────────────────
+# En déploiement Docker (Windows), l'hôte calcule l'identifiant et l'injecte
+# dans le conteneur via la variable YELEN_HOST_ID (installer/yelen-hostid.ps1) :
+# les attributs vus depuis le conteneur changent à chaque reconstruction.
+# Sans injection (installation native), l'identifiant dérive des attributs
+# matériels stables de la machine.
+VARIABLE_EMPREINTE = 'YELEN_HOST_ID'
+
+
+def empreinte_injectee() -> str:
+    """Empreinte transmise par l'hôte (YELEN_HOST_ID), normalisée ; '' si absente."""
+    return ''.join(os.environ.get(VARIABLE_EMPREINTE, '').split()).lower()
+
+
+def empreinte_serveur() -> str:
+    """Identifiant stable du serveur courant (SHA-256 hexadécimal, 64 caractères)."""
+    injectee = empreinte_injectee()
+    if injectee:
+        return injectee
+    attributs = '|'.join((get_system_uuid(), get_cpu_id(), get_disk_serial()))
+    if attributs.strip('|') == '':
+        return ''
+    return hashlib.sha256(attributs.encode('utf-8')).hexdigest()
 
 
 def create_activation_for_licence(licence, request=None, mode='ONLINE') -> 'LicenceActivation':

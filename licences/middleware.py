@@ -80,9 +80,11 @@ class LicenceCheckMiddleware:
         Returns:
             HttpResponse
         """
-        # Mode strict : anomalie critique détectée au boot check → application arrêtée
+        # Mode strict : anomalie critique détectée au boot check → application arrêtée.
+        # Seules la connexion et la page d'activation restent servies : un code
+        # de licence signé par l'éditeur est l'unique voie de déblocage.
         blocage = blocage_boot()
-        if blocage:
+        if blocage and not self._is_url_deblocage(request.path):
             return HttpResponse(
                 "Application indisponible : intégrité des licences compromise. "
                 "Contactez le support.",
@@ -162,6 +164,12 @@ class LicenceCheckMiddleware:
                 return True
         return False
     
+    URLS_DEBLOCAGE = ('/accounts/login/', '/accounts/logout/', '/licences/activer/', '/static/')
+
+    def _is_url_deblocage(self, path: str) -> bool:
+        """URL servie malgré un blocage au démarrage (connexion + activation)."""
+        return any(path.startswith(prefixe) for prefixe in self.URLS_DEBLOCAGE)
+
     def _check_licence(self, request: HttpRequest, licence: Licence) -> tuple:
         """
         Vérifie la validité complète de la licence — P1 avec bail offline + binding.
@@ -209,27 +217,22 @@ class LicenceCheckMiddleware:
         except Exception:
             pass
 
-        # 1c. Vérifier binding machine si activé — P1
-        try:
-            from django.conf import settings as _s
-            if getattr(_s, 'LICENCE_BINDING_ENABLED', False):
-                from .models import LicenceActivation
-                activations = LicenceActivation.objects.filter(licence=licence, est_active=True)
-                for act in activations:
-                    if not act.verify_fingerprint():
-                        self._log_audit(
-                            licence,
-                            'TENTATIVE_FRAUDE',
-                            f"Binding machine invalide — activation {act.id} empreinte {act.machine_fingerprint}",
-                            request
-                        )
-                        messages.error(
-                            request,
-                            _("🚫 Empreinte machine invalide — activation suspecte détectée. Contactez le support.")
-                        )
-                        return False, redirect('licences:support')
-        except Exception:
-            pass
+        # 1c. Liaison au serveur : la licence (jeton signé) ne vaut que sur
+        # le serveur dont l'empreinte a été déclarée à l'éditeur.
+        from django.conf import settings as _s
+        if getattr(_s, 'LICENCE_BINDING_ENABLED', False) and not licence.liee_a_ce_serveur():
+            self._log_audit(
+                licence,
+                'TENTATIVE_FRAUDE',
+                f"Licence liée à un autre serveur — empreinte attendue {licence.empreinte_serveur[:16]}…",
+                request
+            )
+            messages.error(
+                request,
+                _("🚫 Cette licence a été émise pour un autre serveur. "
+                  "Contactez le support pour obtenir un code de licence pour ce serveur.")
+            )
+            return False, redirect('licences:activer')
 
         # 2. Vérifier l'expiration
         if licence.date_expiration < timezone.now().date():

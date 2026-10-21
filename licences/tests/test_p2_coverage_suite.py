@@ -274,16 +274,14 @@ class TestBootCheck:
         res = run_boot_check()
         assert lic.cle_licence in res['bail_expired']
 
-    def test_binding_invalid_detected(self, settings):
-        from licences.binding import create_activation_for_licence
+    def test_binding_invalid_detected(self, settings, monkeypatch):
         from licences.boot_check import run_boot_check
-        from licences.models import LicenceActivation
         settings.LICENCE_BINDING_ENABLED = True
+        monkeypatch.setenv('YELEN_HOST_ID', 'b' * 64)
         lic = _licence()
-        act = create_activation_for_licence(lic)
-        LicenceActivation.objects.filter(pk=act.pk).update(hostname='machine-pirate')
+        Licence.objects.filter(pk=lic.pk).update(empreinte_serveur='a' * 64)
         res = run_boot_check()
-        assert any(s.startswith(lic.cle_licence) for s in res['binding_invalid'])
+        assert lic.cle_licence in res['binding_invalid']
 
     def test_strict_raises_when_enforced(self, settings):
         from licences.boot_check import run_boot_check

@@ -117,3 +117,87 @@ def get_usage_limites(licence) -> dict:
         'limites': limites,
         'depassements': depassements,
     }
+
+
+# ── Activation hors ligne par jeton signé (v3) ──────────────────────────────
+
+def activer_jeton(texte: str, etablissement, acteur=None, ip_address=None):
+    """
+    Active la licence de l'établissement à partir d'un code de licence YELEN3
+    émis par l'éditeur : signature Ed25519 vérifiée avec LICENCE_PUBLIC_KEY,
+    établissement et serveur contrôlés, puis licence créée ou remplacée.
+
+    Args:
+        texte: jeton tel que collé par l'administrateur
+        etablissement: établissement de l'utilisateur connecté
+        acteur: utilisateur ayant saisi le code (journal d'audit)
+        ip_address: adresse IP du client (journal d'audit)
+
+    Returns:
+        licences.Licence activée
+
+    Raises:
+        licences.jeton.JetonInvalide: code illisible, signature fausse,
+            établissement ou serveur différent, licence déjà expirée.
+    """
+    from datetime import date, datetime
+
+    from django.conf import settings
+    from django.db import IntegrityError, transaction
+    from django.utils import timezone
+
+    from .binding import empreinte_serveur
+    from .jeton import JetonInvalide, charger_cle_publique, normaliser_jeton, verifier_jeton
+    from .models import Licence, LicenceAuditLog, StatutLicence, TypeLicence
+
+    payload = verifier_jeton(texte, charger_cle_publique(getattr(settings, 'LICENCE_PUBLIC_KEY', '')))
+
+    if payload['etablissement'] != str(etablissement.pk):
+        raise JetonInvalide("Ce code de licence a été émis pour un autre établissement.")
+    if payload['type'] not in TypeLicence.values:
+        raise JetonInvalide("Type de licence inconnu.")
+    try:
+        expiration = date.fromisoformat(payload['date_expiration'])
+        activation = datetime.fromisoformat(payload['date_activation'])
+    except (TypeError, ValueError) as exc:
+        raise JetonInvalide("Dates du code de licence invalides.") from exc
+    if timezone.is_naive(activation):
+        activation = timezone.make_aware(activation, timezone.get_default_timezone())
+    if expiration < timezone.now().date():
+        raise JetonInvalide(
+            f"Ce code de licence est déjà expiré (le {expiration.strftime('%d/%m/%Y')})."
+        )
+    attendue = payload['empreinte_serveur']
+    if attendue and attendue != empreinte_serveur():
+        raise JetonInvalide("Ce code de licence a été émis pour un autre serveur.")
+
+    try:
+        with transaction.atomic():
+            licence = Licence.objects.filter(etablissement=etablissement).first()
+            if licence is None:
+                licence = Licence(etablissement=etablissement)
+            licence.cle_licence = payload['cle']
+            licence.type_licence = payload['type']
+            licence.date_expiration = expiration
+            licence.date_activation = activation
+            licence.statut = StatutLicence.ACTIVE
+            licence.jeton_signe = normaliser_jeton(texte)
+            licence.empreinte_serveur = attendue
+            licence.signature_ed25519 = ''
+            licence.save()
+    except IntegrityError as exc:
+        raise JetonInvalide("Cette clé de licence est déjà utilisée par un autre établissement.") from exc
+
+    LicenceAuditLog.objects.create(
+        licence=licence,
+        action='ACTIVATION',
+        description=(
+            f"Activation par code de licence signé — {licence.type_licence}, "
+            f"expire le {expiration.strftime('%d/%m/%Y')}, "
+            f"serveur {attendue[:16] + '…' if attendue else 'non lié'}"
+        ),
+        acteur_user=acteur if (acteur is not None and acteur.is_authenticated) else None,
+        acteur_systeme=acteur is None,
+        ip_address=ip_address,
+    )
+    return licence

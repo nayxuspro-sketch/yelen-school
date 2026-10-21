@@ -24,39 +24,83 @@
             <p style="color: var(--color-text-secondary); margin: 0; font-size: 15px; letter-spacing: 0.5px;">Propulsez votre établissement dans l'ère numérique</p>
         </div>
 
-        {% if licence %}
-            <div style="background: rgba(0, 168, 107, 0.1); border: 1px solid rgba(0, 168, 107, 0.2); border-radius: 16px; padding: 30px; margin-bottom: 40px; text-align: center;">
-                <div style="width: 50px; height: 50px; background: var(--color-primary); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                    <svg width="30" height="30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+        {% if messages %}
+            {% for message in messages %}
+            <div style="border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; font-size: 14px; line-height: 1.5; {% if message.tags == 'error' %}background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #FCA5A5;{% else %}background: rgba(0, 168, 107, 0.12); border: 1px solid rgba(0, 168, 107, 0.35); color: #6EE7B7;{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if not motif_invalide %}
+            <div style="background: rgba(0, 168, 107, 0.1); border: 1px solid rgba(0, 168, 107, 0.2); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+                <div style="width: 50px; height: 50px; background: var(--color-primary); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <svg width="30" height="30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                 </div>
-                <h3 style="color: #FFF; margin-bottom: 10px;">Licence Détectée</h3>
+                <h3 style="color: #FFF; margin-bottom: 10px;">Licence active</h3>
                 <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 25px;">
                     Une licence valide est associée à l'entité <strong>{{ etab.nom }}</strong>.
                 </p>
-                
-                <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px; display: grid; gap: 12px; text-align: left; margin-bottom: 30px;">
+                <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px; display: grid; gap: 12px; text-align: left;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 12px; color: var(--color-text-muted);">Référence d'activation</span>
-                        <code style="color: var(--color-primary-light); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; font-family: 'DejaVu Sans Mono';">{{ licence.cle_licence }}</code>
+                        <code style="color: var(--color-primary-light); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; font-size: 12px;">{{ licence.cle_licence }}</code>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 12px; color: var(--color-text-muted);">Package</span>
                         <span style="color: #FFF; font-weight: 700; font-size: 13px;">{{ licence.get_type_licence_display }}</span>
                     </div>
-                </div>
-
-                <div style="display: flex; gap: 15px;">
-                    {% if est_super_admin %}
-                    <a href="{% url 'licences:gestion' %}" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 48px;">Finaliser l'Installation</a>
-                    {% endif %}
-                    <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
-                        {% csrf_token %}
-                        <button type="submit" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center; height: 48px; border:none; cursor:pointer; font-family:inherit; font-size:13px;">Sortie</button>
-                    </form>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12px; color: var(--color-text-muted);">Expire le</span>
+                        <span style="color: #FFF; font-weight: 700; font-size: 13px;">{{ licence.date_expiration|date:"d/m/Y" }}</span>
+                    </div>
                 </div>
             </div>
         {% else %}
-            <div style="margin-bottom: 45px;">
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 24px 30px; margin-bottom: 30px;">
+                <h3 style="color: #FCD34D; margin: 0 0 8px; font-size: 17px;">Licence à activer</h3>
+                <p style="color: var(--color-text-secondary); font-size: 14px; margin: 0;">{{ motif_invalide }}</p>
+            </div>
+        {% endif %}
+
+        {# ── Identifiants à transmettre à l'éditeur ── #}
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px 30px; margin-bottom: 30px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--color-text-muted); font-weight: 600; margin-bottom: 16px;">Identifiants de ce serveur</div>
+            <p style="color: var(--color-text-secondary); font-size: 13px; margin: 0 0 16px;">
+                Transmettez ces deux identifiants à l'éditeur : le code de licence est établi pour cet établissement et pour ce serveur uniquement.
+            </p>
+            <div style="display: grid; gap: 12px;">
+                <div>
+                    <div style="font-size: 12px; color: var(--color-text-muted); margin-bottom: 4px;">Établissement — {{ etab.nom }}{% if etab.code %} ({{ etab.code }}){% endif %}</div>
+                    <code id="identifiant-etablissement" style="display: block; color: var(--color-primary-light); background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 8px; font-size: 13px; word-break: break-all; user-select: all;">{{ etab.pk }}</code>
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: var(--color-text-muted); margin-bottom: 4px;">Identifiant du serveur</div>
+                    <code id="identifiant-serveur" style="display: block; color: var(--color-primary-light); background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 8px; font-size: 13px; word-break: break-all; user-select: all;">{{ empreinte_serveur|default:"indisponible" }}</code>
+                    {% if not empreinte_injectee %}
+                    <p style="color: #FCD34D; font-size: 12px; margin: 8px 0 0;">Identifiant calculé par l'application (variable YELEN_HOST_ID absente). Sur un serveur Windows, démarrez YELEN SCHOOL avec <code>demarrage.bat</code> ou <code>installer\start-local.ps1</code> pour obtenir l'identifiant officiel du serveur.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# ── Saisie du code de licence (Super Admin) ── #}
+        {% if est_super_admin %}
+            <form method="post" action="{% url 'licences:activer' %}" style="margin: 0 0 30px;">
+                {% csrf_token %}
+                <label for="jeton" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--color-text-muted); font-weight: 600; margin-bottom: 10px;">Code de licence reçu de l'éditeur</label>
+                {% if not cle_publique_configuree %}
+                <p style="color: #FCD34D; font-size: 13px; margin: 0 0 10px;">La clé publique de l'éditeur (LICENCE_PUBLIC_KEY) n'est pas configurée sur ce serveur : l'activation par code est indisponible.</p>
+                {% endif %}
+                <textarea id="jeton" name="jeton" rows="5" required placeholder="YELEN3.…" spellcheck="false" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #FFF; font-family: monospace; font-size: 12px; padding: 12px; resize: vertical;"></textarea>
+                <button type="submit" class="dash-btn dash-btn-primary" style="width: 100%; justify-content: center; height: 50px; margin-top: 14px; font-weight: 700; border: none; cursor: pointer;" {% if not cle_publique_configuree %}disabled{% endif %}>Activer la licence</button>
+            </form>
+        {% else %}
+            <p style="color: var(--color-text-secondary); font-size: 13px; margin: 0 0 30px;">Seul le Super Admin de l'établissement peut saisir un code de licence.</p>
+        {% endif %}
+
+        {% if motif_invalide %}
+            <div style="margin-bottom: 30px;">
                 <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px;">
                     <div style="height: 1px; flex: 1; background: linear-gradient(to right, transparent, rgba(255,255,255,0.1));"></div>
                     <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--color-text-muted); font-weight: 600;">Plans Disponibles</span>
@@ -86,15 +130,19 @@
                     </div>
                 </div>
             </div>
-
-            <div style="display: flex; gap: 15px;">
-                <a href="mailto:support@yelenschool.bf" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 50px; font-weight: 700; background: var(--color-primary); box-shadow: 0 4px 15px rgba(0,168,107,0.3);">Commander une Licence</a>
-                <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
-                    {% csrf_token %}
-                    <button type="submit" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center; height: 50px; border:none; cursor:pointer; font-family:inherit; font-size:13px;">Déconnexion</button>
-                </form>
-            </div>
         {% endif %}
+
+        <div style="display: flex; gap: 15px;">
+            {% if not motif_invalide and est_super_admin %}
+            <a href="{% url 'licences:statut' %}" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 48px;">Mon abonnement</a>
+            {% else %}
+            <a href="mailto:support@yelenschool.bf" class="dash-btn dash-btn-primary" style="flex: 1.5; justify-content: center; height: 48px; font-weight: 700;">Contacter le support</a>
+            {% endif %}
+            <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="dash-btn dash-btn-secondary" style="flex: 1; justify-content: center; height: 48px; border:none; cursor:pointer; font-family:inherit; font-size:13px;">Déconnexion</button>
+            </form>
+        </div>
 
     </div>
 

@@ -15,6 +15,7 @@ $ComposeFile = Join-Path $Root 'docker-compose.client.yml'
 $EnvFile = Join-Path $Root '.env'
 $FirewallScript = Join-Path $PSScriptRoot 'configure-firewall.ps1'
 $PortSelectorScript = Join-Path $PSScriptRoot 'resolve-http-port.ps1'
+$HostIdScript = Join-Path $PSScriptRoot 'yelen-hostid.ps1'
 $LogDirectory = Join-Path $Root 'logs'
 $LogFile = Join-Path $LogDirectory 'startup.log'
 
@@ -197,6 +198,13 @@ try {
     } else {
         Write-StartupLog "Port HTTP conservé : $selectedPort ; règle pare-feu inchangée."
     }
+
+    # Empreinte du serveur transmise au conteneur (liaison de la licence).
+    if (-not (Test-Path $HostIdScript)) {
+        throw "Script d'empreinte serveur introuvable : $HostIdScript"
+    }
+    . $HostIdScript
+    $env:YELEN_HOST_ID = Get-YelenHostId
 
     Set-Location $Root
     Write-StartupLog 'Démarrage des services YELEN SCHOOL...'

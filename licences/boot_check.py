@@ -161,7 +161,7 @@ def run_boot_check(strict: bool = False) -> dict:
                 'id', 'cle_licence', 'type_licence',
                 'date_expiration', 'statut', 'signature_hmac', 'signature_ed25519',
                 'dernier_heartbeat', 'bail_offline_expire_le', 'heartbeat_failures',
-                'etablissement_id', 'date_activation',
+                'etablissement_id', 'date_activation', 'jeton_signe', 'empreinte_serveur',
             )
         )
         result['total'] = len(licences)
@@ -281,28 +281,24 @@ def _verifier_licence(licence, timezone, Licence, StatutLicence, result):
     except Exception as exc:
         logger.warning("[LICENCES BOOT] Erreur vérif bail offline %s : %s", licence.cle_licence, exc)
 
-    # ── 4. Vérification binding machine (si activé) ────────────────────────
+    # ── 4. Liaison au serveur (si activée) : empreinte du jeton ≠ serveur ──
     try:
         from django.conf import settings as _s
-        if getattr(_s, 'LICENCE_BINDING_ENABLED', False):
-            # Vérifier les activations actives
-            from .models import LicenceActivation
-            activations = LicenceActivation.objects.filter(licence=licence, est_active=True)
-            for act in activations:
-                if not act.verify_fingerprint():
-                    result['binding_invalid'].append(f"{licence.cle_licence}@{act.hostname}")
-                    result['ok'] = False
-                    logger.critical(
-                        "[LICENCES BOOT] BINDING INVALIDE — Licence %s activation %s : empreinte invalide",
-                        licence.cle_licence, act.id
-                    )
-                    _audit_systeme(licence, 'TENTATIVE_FRAUDE',
-                                   f"Boot check : binding machine invalide pour activation {act.id}")
+        if getattr(_s, 'LICENCE_BINDING_ENABLED', False) and not licence.liee_a_ce_serveur():
+            result['binding_invalid'].append(licence.cle_licence)
+            result['ok'] = False
+            logger.critical(
+                "[LICENCES BOOT] LIAISON SERVEUR INVALIDE — Licence %s émise pour un autre serveur",
+                licence.cle_licence
+            )
+            _audit_systeme(licence, 'TENTATIVE_FRAUDE',
+                           "Boot check : licence liée à un autre serveur")
     except Exception as exc:
-        logger.warning("[LICENCES BOOT] Erreur vérif binding %s : %s", licence.cle_licence, exc)
+        logger.warning("[LICENCES BOOT] Erreur vérif liaison serveur %s : %s", licence.cle_licence, exc)
 
     # ── 5. Tout est sain ───────────────────────────────────────────────────
-    if licence.cle_licence not in result['tampering'] and licence.cle_licence not in result['expirees'] and licence.cle_licence not in result['bail_expired']:
+    anomalies = (result['tampering'], result['expirees'], result['bail_expired'], result['binding_invalid'])
+    if all(licence.cle_licence not in liste for liste in anomalies):
         result['valides'] += 1
 
     logger.debug(

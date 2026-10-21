@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 
 import hashlib
@@ -191,12 +192,59 @@ def licence_revoquer(request, pk):
 
 # ── Pages informatives (middleware redirect) ──────────────────────────────────
 
+def _motif_licence_invalide(licence):
+    """Raison pour laquelle la licence n'est pas utilisable (None si valide)."""
+    if licence is None:
+        return "Aucune licence n'est enregistrée pour cet établissement."
+    if not licence.verifier_signature():
+        return "La licence enregistrée n'est pas reconnue : un code de licence signé par l'éditeur est requis."
+    if getattr(settings, 'LICENCE_BINDING_ENABLED', False) and not licence.liee_a_ce_serveur():
+        return "La licence a été émise pour un autre serveur."
+    if licence.date_expiration < date.today():
+        return f"La licence a expiré le {licence.date_expiration.strftime('%d/%m/%Y')}."
+    if licence.statut != StatutLicence.ACTIVE:
+        return f"Statut de la licence : {licence.get_statut_display()}."
+    return None
+
+
 @login_required
 def activer(request):
+    """Page d'activation : identifiants du serveur + saisie du code de licence (Super Admin)."""
+    from .binding import empreinte_injectee, empreinte_serveur
+
     etab, licence = _get_licence(request.user)
+    if request.method == 'POST':
+        if not request.user.est_super_admin:
+            return HttpResponseForbidden("Activation réservée au Super Admin.")
+        if etab is None:
+            messages.error(request, "Votre compte n'est rattaché à aucun établissement.")
+            return redirect('licences:activer')
+        from .boot_check import reinitialiser_etat_boot
+        from .jeton import JetonInvalide
+        from .services import activer_jeton
+        try:
+            licence = activer_jeton(
+                request.POST.get('jeton', ''), etab,
+                acteur=request.user, ip_address=request.META.get('REMOTE_ADDR') or None,
+            )
+        except JetonInvalide as exc:
+            messages.error(request, f"Activation refusée : {exc}")
+            return redirect('licences:activer')
+        reinitialiser_etat_boot()
+        messages.success(
+            request,
+            f"Licence {licence.get_type_licence_display()} activée "
+            f"jusqu'au {licence.date_expiration.strftime('%d/%m/%Y')}."
+        )
+        return redirect('licences:statut')
+
     return render(request, 'licences/activer.html', {
         'etab': etab,
         'licence': licence,
+        'motif_invalide': _motif_licence_invalide(licence),
+        'empreinte_serveur': empreinte_serveur(),
+        'empreinte_injectee': bool(empreinte_injectee()),
+        'cle_publique_configuree': bool(getattr(settings, 'LICENCE_PUBLIC_KEY', '')),
         'est_super_admin': request.user.est_super_admin,
         'limites': LIMITES_LICENCES,
     })

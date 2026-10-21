@@ -56,8 +56,13 @@ def test_mode_strict_anomalie_critique_bloque_l_application(monkeypatch, setting
     assert 'YLN-TEST' in boot_check.blocage_boot()
 
     settings.MIDDLEWARE = list(settings.MIDDLEWARE) + ['licences.middleware.LicenceCheckMiddleware']
-    response = client.get('/accounts/login/')
+    response = client.get('/')
     assert response.status_code == 503
+    # Connexion et activation restent servies : seul un code de licence signé débloque.
+    assert client.get('/accounts/login/').status_code == 200
+    reponse_activation = client.get('/licences/activer/')
+    assert reponse_activation.status_code == 302
+    assert reponse_activation.url.startswith('/accounts/login/')
 
 
 @pytest.mark.django_db

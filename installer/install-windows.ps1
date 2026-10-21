@@ -26,6 +26,7 @@ $Root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $ComposeFile = Join-Path $Root 'docker-compose.client.yml'
 $FirewallScript = Join-Path $PSScriptRoot 'configure-firewall.ps1'
 $PortSelectorScript = Join-Path $PSScriptRoot 'resolve-http-port.ps1'
+$HostIdScript = Join-Path $PSScriptRoot 'yelen-hostid.ps1'
 $EnvFile = Join-Path $Root '.env'
 
 function Stop-Installation {
@@ -308,6 +309,13 @@ if (Test-Path $FirewallScript) {
 } else {
     Write-Host '[AVERTISSEMENT] Script de configuration du pare-feu introuvable : accès réseau local non configuré.' -ForegroundColor Yellow
 }
+
+# Empreinte du serveur transmise au conteneur (liaison de la licence).
+if (-not (Test-Path $HostIdScript)) {
+    Stop-Installation "Script d'empreinte serveur introuvable : $HostIdScript"
+}
+. $HostIdScript
+$env:YELEN_HOST_ID = Get-YelenHostId
 
 Set-Location $Root
 Write-Host '[1/3] Construction et démarrage des services...' -ForegroundColor Cyan
