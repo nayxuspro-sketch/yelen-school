@@ -18,6 +18,12 @@
     </div>
     <div style="padding:var(--space-6);">
 
+      {% if obligatoire %}
+      <div style="margin-bottom:var(--space-5); background:#fef3c7; border:1px solid #f59e0b; border-radius:6px;
+                  padding:0.65rem 1rem; color:#92400e; font-size:0.875rem; font-weight:500;">
+        La double authentification est obligatoire pour votre rôle : activez-la pour accéder à l'application.
+      </div>
+      {% endif %}
       {% if messages %}
       <div style="margin-bottom:var(--space-5);">
         {% for message in messages %}
@@ -91,10 +97,17 @@
             </div>
 
             <div style="display:flex; gap:var(--space-3); margin-top:var(--space-4);">
+              {% if obligatoire %}
+              <button type="submit" form="form-deconnexion" class="btn-secondary" style="flex:1; justify-content:center;">Se déconnecter</button>
+              {% else %}
               <a href="{% url 'accounts:profile' %}" class="btn-secondary" style="flex:1; text-align:center;">Annuler</a>
+              {% endif %}
               <button type="submit" class="btn-primary" style="flex:1; justify-content:center;">Activer la 2FA</button>
             </div>
           </form>
+          {% if obligatoire %}
+          <form id="form-deconnexion" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}</form>
+          {% endif %}
         </div>
       </div>
 

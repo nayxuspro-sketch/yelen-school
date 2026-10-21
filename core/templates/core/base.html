@@ -1025,6 +1025,11 @@
   </script>
   {# ── CSP compat handlers (A6) — remplace onclick inline bloqués par script-src-attr 'none' ── #}
   <script nonce="{{ request.csp_nonce }}" src="{% static 'js/csp_handlers.js' %}"></script>
+  {% if request.user.is_authenticated and request.user.role == 'COMPTABLE' %}
+  {# ── Caisse : déconnexion automatique après inactivité (durée = expiration de session) ── #}
+  <script nonce="{{ request.csp_nonce }}" src="{% static 'js/inactivite.js' %}"
+          data-secondes="{{ request.session.get_expiry_age }}" data-logout="{% url 'accounts:logout' %}"></script>
+  {% endif %}
   {% block extra_js %}{% endblock %}
 
   {# ── PWA : Service Worker + détection réseau + install prompt ── #}

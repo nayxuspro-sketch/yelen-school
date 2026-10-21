@@ -17,3 +17,9 @@ def disable_audit_for_tests():
     yield
     from core.signals import enable_audit
     enable_audit()
+
+
+@pytest.fixture(autouse=True)
+def two_factor_non_obligatoire(settings):
+    """Les tests existants connectent des Super Admin/Directeurs sans TOTP ; les tests dédiés réactivent l'obligation."""
+    settings.TWO_FACTOR_REQUIRED = False

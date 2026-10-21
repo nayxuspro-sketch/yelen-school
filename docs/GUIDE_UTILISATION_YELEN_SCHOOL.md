@@ -323,6 +323,12 @@ Le formulaire est organisé en 4 sections à **2 colonnes côte à côte** :
 
 En mode **modification**, la section mot de passe est remplacée par une case à cocher **Compte actif** (pour activer / désactiver un compte sans le supprimer).
 
+**Règles de sécurité des comptes :**
+
+- **Double authentification obligatoire** pour le Super Admin et le Directeur / Proviseur : dès la première connexion suivant l'attribution du rôle, l'application n'ouvre que la page *Activer la 2FA* (application d'authentification sur téléphone : Google Authenticator, Microsoft Authenticator, Aegis…) jusqu'à l'activation. Ces rôles ne peuvent pas la désactiver. Téléphone perdu ou changé : dans `Utilisateurs → Changer le mot de passe`, un administrateur clique sur **Réinitialiser la double authentification** ; l'utilisateur la configure de nouveau à sa prochaine connexion.
+- **Un seul Super Admin par établissement** : la création, la modification ou la réactivation d'un second compte Super Admin actif est refusée (« Un seul Super Admin par établissement : … détient déjà ce rôle »). Pour transmettre le rôle, rétrograder d'abord le titulaire actuel.
+- **Caisse** : la session d'un Comptable expire après **15 minutes d'inactivité** ; un bandeau rouge prévient 60 secondes avant la déconnexion automatique, et tout mouvement de souris ou frappe clavier remet le compteur à zéro.
+
 **Rôles disponibles :**
 
 | Rôle | Accès |
@@ -6453,6 +6459,9 @@ est **l'unique source de vérité**. Elle fusionne :
 | Version Django | 5.2.17 partout (image Docker, mode autonome, CI). |
 | Webhook SMS entrant | Authentification unifiée : IP autorisées (`SMS_ALLOWED_IPS`), 60 requêtes/min/IP, signature HMAC-SHA256 **obligatoire** dans `X-SMS-Signature` dès qu'un secret est défini (`SMS_WEBHOOK_HMAC_SECRET` ou `SMS_WEBHOOK_SECRET`), sinon jeton `SMS_WEBHOOK_TOKEN` comparé en temps constant. Sans aucun secret hors `DEBUG`, le webhook répond **503**. |
 | Double authentification | Le jeton de session 2FA expire après **5 minutes** (`TimestampSigner`). |
+| 2FA obligatoire | Super Admin et Directeur : accès bloqué sur la page d'activation TOTP tant que la 2FA n'est pas active ; désactivation impossible ; réinitialisation par un administrateur depuis la fiche utilisateur. Suspendue par `TWO_FACTOR_REQUIRED=false`. |
+| Super Admin unique | Un seul compte Super Admin actif par établissement (formulaires, réactivation et `createsuperuser`). |
+| Session de caisse | Comptable : expiration après `CAISSE_INACTIVITE_MINUTES` (15) minutes sans requête, et déconnexion automatique du poste inactif (bandeau d'alerte 60 s avant). |
 | Bulletins PDF | Si WeasyPrint est absent du poste, l'export répond 503 avec un message clair au lieu de planter. |
 | Journal Nginx | Les en-têtes `Authorization` et les paramètres d'URL ne sont jamais journalisés. |
 | Rôles du module Finances | Consultation : Super Admin, Directeur Réseau, Directeur, Censeur, Comptable, Secrétaire. Saisie (paiements, échéanciers, bourses, dépenses) : Super Admin, Directeur, Censeur, Comptable. Approbation (remboursements, validation / annulation de dépenses) : Super Admin, Directeur Réseau, Directeur, Censeur — le comptable saisit, la direction approuve (`finances/permissions.py`). Les autres rôles reçoivent une erreur 403. |

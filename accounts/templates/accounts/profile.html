@@ -134,6 +134,12 @@
       Votre compte est protégé par une application d'authentification TOTP.
       Un code à 6 chiffres vous sera demandé à chaque connexion.
     </p>
+    {% if request.user.two_factor_obligatoire %}
+    <p style="font-size:0.85rem; color:#92400e; margin:0;">
+      Obligatoire pour votre rôle : la désactivation n'est pas possible. En cas de téléphone perdu,
+      un administrateur peut la réinitialiser depuis la fiche utilisateur.
+    </p>
+    {% else %}
     <form method="post" action="{% url 'accounts:totp_disable' %}"
           style="display:flex; align-items:flex-end; gap:var(--space-3);">
       {% csrf_token %}
@@ -148,6 +154,7 @@
         Désactiver
       </button>
     </form>
+    {% endif %}
     {% else %}
     <p style="font-size:0.9rem; color:var(--color-text-muted); margin-bottom:var(--space-4);">
       La double authentification ajoute une couche de sécurité supplémentaire.

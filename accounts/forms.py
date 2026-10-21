@@ -41,6 +41,24 @@ def _champ_role():
     return forms.ChoiceField(label='Rôle', widget=forms.Select(attrs={'class': 'input select'}))
 
 
+def _verifier_super_admin_unique(form):
+    """Un seul Super Admin actif par établissement : erreur sur le champ rôle sinon."""
+    code = form.cleaned_data.get('role')
+    etablissement = form.cleaned_data.get('etablissement')
+    if not code or etablissement is None or not form.cleaned_data.get('is_active', True):
+        return
+    if code in RoleChoices.values:
+        base = code
+    else:
+        from parametres.models import RolePersonnalise
+        base = RolePersonnalise.objects.filter(code=code).values_list('base', flat=True).first()
+    if base != RoleChoices.SUPER_ADMIN:
+        return
+    autre = User.autre_super_admin(etablissement, exclude_pk=form.instance.pk)
+    if autre is not None:
+        form.add_error('role', f"Un seul Super Admin par établissement : {autre.get_full_name()} ({autre.email}) détient déjà ce rôle.")
+
+
 def _configurer_role(form, current_user):
     """Choix : rôles intégrés (sans Super Admin hors Super Admin) puis rôles personnalisés ; valeur = code."""
     exclure_super = bool(current_user) and current_user.role != RoleChoices.SUPER_ADMIN
@@ -110,6 +128,7 @@ class UserCreateForm(forms.ModelForm):
                 validate_password(p1)
             except forms.ValidationError as e:
                 self.add_error('password1', e)
+        _verifier_super_admin_unique(self)
         return cleaned_data
 
     def save(self, commit=True):
@@ -160,6 +179,11 @@ class UserUpdateForm(forms.ModelForm):
         if qs.exists():
             raise forms.ValidationError("Cette adresse email est déjà utilisée.")
         return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        _verifier_super_admin_unique(self)
+        return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)

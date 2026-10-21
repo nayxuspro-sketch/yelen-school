@@ -227,6 +227,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     # Force le remplacement du mot de passe initial avant l'accès aux modules.
     'yelen_school.password_middleware.ForcePasswordChangeMiddleware',
+    # Impose l'activation de la double authentification aux Super Admin et Directeurs.
+    'yelen_school.two_factor_middleware.ForceTwoFactorMiddleware',
     # CSP nonces — doit être APRÈS AuthenticationMiddleware
     'yelen_school.csp_middleware.CSPNonceMiddleware',
     # Restriction rôles PARENT/ÉLÈVE — doit être APRÈS AuthenticationMiddleware
@@ -419,6 +421,11 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '3600'))  # 1 heure
 SESSION_SAVE_EVERY_REQUEST = True
+
+# Double authentification obligatoire (Super Admin, Directeur) — TWO_FACTOR_REQUIRED=false la suspend.
+TWO_FACTOR_REQUIRED = os.environ.get('TWO_FACTOR_REQUIRED', 'true').lower() == 'true'
+# Caisse (rôle Comptable) : déconnexion automatique après inactivité.
+CAISSE_INACTIVITE_MINUTES = int(os.environ.get('CAISSE_INACTIVITE_MINUTES', '15'))
 
 # CSRF
 CSRF_COOKIE_SECURE = (not DEBUG and _SECURE_SSL_REDIRECT) or _YELEN_HTTPS

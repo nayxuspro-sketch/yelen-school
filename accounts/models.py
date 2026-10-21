@@ -62,6 +62,9 @@ class UserManager(DjangoUserManager):
             raise ValueError('Un superuser doit avoir is_staff=True.')
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Un superuser doit avoir is_superuser=True.')
+        autre = self.model.autre_super_admin(extra_fields.get('etablissement'))
+        if autre is not None:
+            raise ValueError(f'Un seul Super Admin par établissement : {autre.email} détient déjà ce rôle.')
 
         return super().create_user(
             username=username,
@@ -197,6 +200,24 @@ class User(AbstractUser, BaseModel):
     def est_super_admin(self) -> bool:
         """Super Admin applicatif : rôle SUPER_ADMIN ou superuser Django."""
         return self.role == RoleChoices.SUPER_ADMIN or self.is_superuser
+
+    @property
+    def two_factor_obligatoire(self) -> bool:
+        """La double authentification est imposée aux Super Admin et aux Directeurs."""
+        return self.est_super_admin or self.role == RoleChoices.DIRECTEUR
+
+    @classmethod
+    def autre_super_admin(cls, etablissement, exclude_pk=None):
+        """Super Admin actif déjà rattaché à ``etablissement`` (un seul par établissement), sinon None.
+
+        Les comptes sans établissement (compte technique de l'éditeur) ne sont pas concernés.
+        """
+        if etablissement is None:
+            return None
+        qs = cls.objects.filter(etablissement=etablissement, role=RoleChoices.SUPER_ADMIN, is_active=True)
+        if exclude_pk is not None:
+            qs = qs.exclude(pk=exclude_pk)
+        return qs.order_by('date_joined').first()
 
     # ── Méthodes de vérification de rôle ──
 

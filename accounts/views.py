@@ -6,6 +6,7 @@ YELEN SCHOOL v3.4 - Authentification utilisateur
 
 from functools import wraps
 
+from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordResetView
@@ -293,6 +294,7 @@ def totp_setup(request):
     return render(request, 'accounts/totp_setup.html', {
         'signed_secret': signed_secret,
         'qr_b64': qr_b64,
+        'obligatoire': settings.TWO_FACTOR_REQUIRED and user.two_factor_obligatoire,
     })
 
 
@@ -305,6 +307,9 @@ def totp_disable(request):
     import pyotp
     user = request.user
     if not user.totp_enabled:
+        return redirect('accounts:profile')
+    if settings.TWO_FACTOR_REQUIRED and user.two_factor_obligatoire:
+        messages.error(request, "La double authentification est obligatoire pour votre rôle : elle ne peut pas être désactivée.")
         return redirect('accounts:profile')
 
     code = request.POST.get('code', '').strip().replace(' ', '')
@@ -503,6 +508,15 @@ def user_set_password(request, pk):
         messages.error(request, "Accès non autorisé.")
         return redirect('accounts:user_list')
 
+    if request.method == 'POST' and request.POST.get('action') == 'reinitialiser_2fa':
+        # Téléphone perdu : la 2FA est retirée, l'utilisateur la réactive à sa prochaine connexion.
+        edited_user.totp_secret = ''
+        edited_user.totp_enabled = False
+        edited_user.save(update_fields=['totp_secret', 'totp_enabled'])
+        messages.success(request, f"Double authentification de {edited_user.get_full_name()} réinitialisée : "
+                                  "il la configurera de nouveau à sa prochaine connexion.")
+        return redirect('accounts:user_list')
+
     if request.method == 'POST' and request.POST.get('action') == 'reinitialiser':
         # Retour à l'état « première connexion » : l'utilisateur créera lui-même son mot de passe.
         edited_user.set_unusable_password()
@@ -543,6 +557,12 @@ def user_toggle_active(request, pk):
     if not _can_manage(request.user, edited_user):
         messages.error(request, "Accès non autorisé.")
         return redirect('accounts:user_list')
+
+    if not edited_user.is_active and edited_user.role == RoleChoices.SUPER_ADMIN:
+        autre = User.autre_super_admin(edited_user.etablissement, exclude_pk=edited_user.pk)
+        if autre is not None:
+            messages.error(request, f"Un seul Super Admin par établissement : {autre.get_full_name()} détient déjà ce rôle.")
+            return redirect('accounts:user_list')
 
     edited_user.is_active = not edited_user.is_active
     edited_user.save(update_fields=['is_active'])
