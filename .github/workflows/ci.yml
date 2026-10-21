@@ -57,7 +57,9 @@ jobs:
         run: ruff check .
       - name: Audit des dépendances (pip-audit)
         run: |
-          pip install pip-audit
+          # setuptools/pip préinstallés par le runner ne font pas partie du projet : on les met à jour
+          # pour que l'audit ne signale que les dépendances de requirements/.
+          pip install --upgrade pip setuptools pip-audit
           pip-audit --progress-spinner off
 
       - name: Run migrations + static manifest
