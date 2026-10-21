@@ -679,6 +679,8 @@ Pour le faire surveiller automatiquement, faire un clic droit sur `programmer-su
 
 Les SMS utilisent la passerelle déjà configurée (`SMS_HTTP_URL`, `SMS_HTTP_USER`, `SMS_HTTP_PASSWORD`) et partent vers les numéros de la clé `ALERTE_SMS_NUMEROS` du `.env` (séparés par des virgules, format international : `+22670000000,+22676000000`). Sans cette clé, la surveillance relance les services et journalise, sans SMS. Journal : `logs\surveillance.log` ; dernier état : `logs\surveillance.json`.
 
+La tâche s'exécute en arrière-plan (« Exécuter même si l'utilisateur n'est pas connecté », sans mot de passe enregistré) : aucune fenêtre n'apparaît. Une tâche enregistrée avant cette version s'exécutait dans la session ouverte et faisait apparaître une fenêtre PowerShell toutes les 5 minutes : relancer `programmer-surveillance.bat` en tant qu'administrateur pour la remplacer.
+
 ---
 
 ## 7. Restauration après incident
