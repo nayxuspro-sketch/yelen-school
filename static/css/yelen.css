@@ -4705,6 +4705,61 @@ input::-webkit-strong-password-auto-fill-button {
   color: var(--color-text-muted);
 }
 
+/* Mes cours (accueil enseignant, smartphone) */
+.mc-section-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 1.25rem 0 0.625rem;
+}
+
+.mc-list { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+.mc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg-card, rgba(255, 255, 255, 0.03));
+}
+
+.mc-classe { font-size: 1.0625rem; font-weight: 700; color: var(--color-text-primary); }
+.mc-matiere { font-weight: 600; color: var(--color-primary); }
+.mc-meta { font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 0.125rem; }
+.mc-badge { display: inline-block; margin-top: 0.5rem; }
+
+.mc-card-actions { display: flex; gap: 0.625rem; }
+.mc-card-actions form { flex: 1; display: flex; }
+.mc-card-actions .btn-primary,
+.mc-card-actions .btn-secondary { flex: 1; justify-content: center; min-height: 44px; }
+.mc-card-actions form .btn-primary { width: 100%; }
+
+.mc-hint { font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 1.25rem; }
+
+/* Appel sur smartphone : une carte par élève, 4 boutons tactiles */
+@media (max-width: 640px) {
+  .dash-appel-header { flex-wrap: wrap; }
+  .appel-header-actions { width: 100%; }
+  .appel-stats { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+  .appel-stat-card { padding: 0.75rem; }
+  .appel-stat-icon { display: none; }
+  .appel-table thead { display: none; }
+  .appel-table tr { display: block; padding: 0.625rem 0; border-bottom: 1px solid var(--color-border); }
+  .appel-table td { display: block; border: none; padding: 0.25rem 0.75rem; }
+  .appel-table td.col-statut { text-align: left; }
+  .status-pills-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.375rem; width: 100%; }
+  .status-pill-label { justify-content: center; padding: 0.625rem 0.25rem; font-size: 0.75rem; }
+  .appel-table td.col-retard { text-align: left; }
+  .appel-form-footer { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .appel-form-actions { flex-direction: column; }
+  .appel-form-actions .btn-primary,
+  .appel-form-actions .btn-secondary { justify-content: center; min-height: 44px; }
+}
+
 /* Ligne tableau vide */
 .appel-empty-row td {
   text-align: center;
@@ -6226,7 +6281,6 @@ input::-webkit-strong-password-auto-fill-button {
   .form-grid-2,
   .form-grid-3,
   .outils-audit-grid,
-  .appel-stats,
   .edt-form-grid,
   .note-stats {
     grid-template-columns: 1fr;

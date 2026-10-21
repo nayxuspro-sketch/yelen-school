@@ -8,6 +8,7 @@ urlpatterns = [
     path('imprimer/', views.appel_print, name='appel_print'),
     path('csv/', views.appel_csv, name='appel_csv'),
     path('classes/', views.classe_select, name='classe_select'),
+    path('mes-cours/', views.mes_cours, name='mes_cours'),
     path('appel/classe/<uuid:classe_id>/', views.appel_create, name='appel_create'),
     path('appel/<uuid:appel_id>/saisie/', views.appel_saisie, name='appel_saisie'),
     path('eleve/<uuid:inscription_id>/bilan/', views.bilan_eleve, name='bilan_eleve'),

@@ -160,7 +160,7 @@
     </div>
     {% else %}
     <div class="appel-clos-banner">
-      Séance clôturée — Archivé en lecture seule.
+      Séance clôturée — Archivé en lecture seule.{% if nb_familles_informees %} {{ nb_familles_informees }} famille(s) informée(s) par SMS.{% endif %}
     </div>
     {% endif %}
 

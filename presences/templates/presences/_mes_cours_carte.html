@@ -1,0 +1,33 @@
+{% with ens=c.enseignement appel=c.appel seance=c.seance %}
+<div class="mc-card">
+  <div class="mc-card-main">
+    <div class="mc-classe">{{ ens.classe.nom }}</div>
+    <div class="mc-matiere">{{ ens.matiere.nom }}</div>
+    <div class="mc-meta">
+      {% if seance %}{{ seance.heure_debut|time:"H:i" }} – {{ seance.heure_fin|time:"H:i" }}{% if seance.salle %} · {{ seance.salle }}{% endif %}{% else %}Pas de séance prévue aujourd'hui{% endif %}
+    </div>
+    {% if appel %}
+    <span class="badge {% if appel.est_clos %}badge-success{% else %}badge-warning{% endif %} mc-badge">
+      {% if appel.est_clos %}Appel clôturé{% else %}Appel en brouillon{% endif %} · {{ appel.nb_absents }} absent(s)
+    </span>
+    {% endif %}
+  </div>
+  <div class="mc-card-actions">
+    {% if appel %}
+    <a href="{% url 'presences:appel_saisie' appel.pk %}" class="{% if appel.est_clos %}btn-secondary{% else %}btn-primary{% endif %}">{% if appel.est_clos %}Voir l'appel{% else %}Reprendre l'appel{% endif %}</a>
+    {% else %}
+    <form method="post" action="{% url 'presences:appel_create' ens.classe_id %}">
+      {% csrf_token %}
+      <input type="hidden" name="date" value="{{ aujourdhui|date:'Y-m-d' }}">
+      <input type="hidden" name="matiere" value="{{ ens.matiere_id }}">
+      {% if seance %}
+      <input type="hidden" name="heure_debut" value="{{ seance.heure_debut|time:'H:i' }}">
+      <input type="hidden" name="heure_fin" value="{{ seance.heure_fin|time:'H:i' }}">
+      {% endif %}
+      <button type="submit" class="btn-primary">Faire l'appel</button>
+    </form>
+    {% endif %}
+    <a href="{% url 'pedagogie:evaluation_list' %}?classe={{ ens.classe_id }}" class="btn-secondary">Notes</a>
+  </div>
+</div>
+{% endwith %}

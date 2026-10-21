@@ -1012,6 +1012,10 @@ def app_manifest(request):
             {"src": "/pwa/icon/512/", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable"},
         ],
         "categories": ["education", "productivity"],
+        "shortcuts": [
+            {"name": "Mes cours — faire l'appel", "short_name": "Appel", "url": "/presences/mes-cours/"},
+            {"name": "Saisir des notes", "short_name": "Notes", "url": "/pedagogie/evaluations/"},
+        ],
     }
     return JsonResponse(manifest)
 

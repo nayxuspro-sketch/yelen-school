@@ -113,7 +113,7 @@ MODULES = (
     )),
     Module('presences', 'Présences', SECTION_SCOLARITE, (
         _f('/presences/', 'Appels', actions=(
-            _a('faire_appel', "Faire l'appel", 'classe_select', 'appel_create', 'appel_saisie', 'qr_scanner', 'api_qr_pointer'),
+            _a('faire_appel', "Faire l'appel", 'mes_cours', 'classe_select', 'appel_create', 'appel_saisie', 'qr_scanner', 'api_qr_pointer'),
         )),
         _f('/presences/justifications/', 'Justifications', actions=(
             _a('enregistrer', 'Enregistrer une justification', 'justification_create'),

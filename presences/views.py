@@ -16,8 +16,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from parametres.models import Classe, AnneeScolaire, Cycle
 from inscriptions.models import Inscription
-from pedagogie.models import Matiere
+from core.utils import filtre_enseignant, get_membre_personnel
+from pedagogie.models import Enseignement, Matiere
+from viescolaire.models import SeanceCours
 from .models import Appel, Presence, Justification
+from .services import notifier_parents_appel
 
 
 def _get_annee_courante(etablissement):
@@ -273,6 +276,7 @@ def appel_create(request, classe_id):
             date=date_appel,
             heure_debut=request.POST.get('heure_debut') or None,
             heure_fin=request.POST.get('heure_fin') or None,
+            effectue_par=get_membre_personnel(request.user),
         )
 
         inscriptions = Inscription.objects.filter(
@@ -301,7 +305,7 @@ def appel_saisie(request, appel_id):
     """Saisie des présences pour un appel."""
     appel = get_object_or_404(
         Appel.objects.select_related('classe', 'matiere'),
-        pk=appel_id
+        pk=appel_id, classe__etablissement=_get_etab(request),
     )
 
     if appel.est_clos:
@@ -322,7 +326,9 @@ def appel_saisie(request, appel_id):
         if request.POST.get('clore'):
             appel.est_clos = True
             appel.save(update_fields=['est_clos'])
-            messages.success(request, "Appel clôturé avec succès.")
+            nb_familles = notifier_parents_appel(appel)
+            messages.success(request, "Appel clôturé avec succès." + (
+                f" {nb_familles} famille(s) informée(s) par SMS (absences et retards)." if nb_familles else ""))
             return redirect('presences:appel_list')
 
         messages.success(request, "Présences enregistrées.")
@@ -332,6 +338,48 @@ def appel_saisie(request, appel_id):
         'appel': appel,
         'presences': presences,
         'statuts': Presence.StatutChoices.choices,
+        'nb_familles_informees': presences.filter(parents_notifies_le__isnull=False).count(),
+    })
+
+
+@login_required
+def mes_cours(request):
+    """Accueil enseignant (smartphone) : séances du jour → appel en un geste, accès aux notes."""
+    etab = _get_etab(request)
+    annee = _get_annee_courante(etab)
+    aujourdhui = date.today()
+
+    enseignements = Enseignement.objects.filter(
+        annee_scolaire=annee, est_actif=True, personnel=filtre_enseignant(request.user),
+    ).select_related('classe', 'matiere').order_by('classe__nom', 'matiere__nom') if annee else Enseignement.objects.none()
+
+    appels_du_jour = {
+        (a.classe_id, a.matiere_id): a
+        for a in Appel.objects.filter(date=aujourdhui, classe__in=[e.classe_id for e in enseignements])
+    }
+
+    def _cours(ens, seance=None):
+        return {
+            'enseignement': ens,
+            'seance': seance,
+            'appel': appels_du_jour.get((ens.classe_id, ens.matiere_id)),
+        }
+
+    seances = (
+        SeanceCours.objects
+        .filter(enseignement__in=enseignements, jour=aujourdhui.isoweekday())
+        .select_related('enseignement__classe', 'enseignement__matiere')
+        .order_by('heure_debut')
+    )
+    cours_du_jour = [_cours(seance.enseignement, seance) for seance in seances]
+    deja = {c['enseignement'].pk for c in cours_du_jour}
+    autres_cours = [_cours(ens) for ens in enseignements if ens.pk not in deja]
+
+    return render(request, 'presences/mes_cours.html', {
+        'aujourdhui': aujourdhui,
+        'cours_du_jour': cours_du_jour,
+        'autres_cours': autres_cours,
+        'a_une_fiche': get_membre_personnel(request.user) is not None,
     })
 
 

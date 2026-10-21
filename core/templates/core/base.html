@@ -1,4 +1,4 @@
-{% load static static_v %}
+{% load static static_v droits_tags %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -262,6 +262,7 @@
       <div id="presences-submenu" class="sb-submenu-modern">
         {% if '/presences/' in droits_fonctionnalites %}
         <a href="{% url 'presences:appel_list' %}" class="sb-item-submodern" data-url="/presences/"><span class="sub-item-dot"></span>Appels</a>
+        {% if request|autorise_url:'presences:mes_cours' %}<a href="{% url 'presences:mes_cours' %}" class="sb-item-submodern" data-url="/presences/mes-cours/"><span class="sub-item-dot"></span>Mes cours</a>{% endif %}
         {% endif %}
         {% if '/presences/justifications/' in droits_fonctionnalites %}
         <a href="{% url 'presences:justification_list' %}" class="sb-item-submodern" data-url="/presences/justifications/"><span class="sub-item-dot"></span>Justifications</a>

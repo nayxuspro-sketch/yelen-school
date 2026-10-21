@@ -62,6 +62,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [7.3 Justifications d'absences](#73-justifications-dabsences)
   - [7.4 Bilan des présences par élève](#74-bilan-des-présences-par-élève)
   - [7.5 Pointage par QR Code](#75-pointage-par-qr-code)
+  - [7.8 Appel depuis le smartphone (Mes cours) et SMS d'absence](#78-appel-depuis-le-smartphone-mes-cours-et-sms-dabsence)
 - [8. Vie Scolaire](#8-vie-scolaire)
   - [8.2 Activités Parascolaires](#82-activités-parascolaires)
   - [8.3 Participation des Élèves](#83-participation-des-élèves-aux-activités)
@@ -1183,7 +1184,9 @@ Pour chaque élève, une rangée propose :
 - **Enregistrer le brouillon** — sauvegarde sans clôturer (modifiable)
 - **Clôturer la séance** — archive définitivement l'appel (irréversible)
 
-> Un appel clôturé passe en lecture seule. La bannière "Séance clôturée" remplace les boutons d'action.
+> Un appel clôturé passe en lecture seule. La bannière "Séance clôturée" remplace les boutons d'action et rappelle le nombre de familles informées par SMS.
+
+> **SMS aux parents :** c'est la **clôture** qui déclenche l'envoi des SMS d'absence et de retard (voir 7.8). Un brouillon n'envoie rien : tu peux corriger un statut sans alerter une famille à tort.
 
 ---
 
@@ -1481,6 +1484,57 @@ La page d'impression s'ouvre dans un nouvel onglet et reprend automatiquement le
 ```
 
 **Cas concret :** Le Censeur veut un rapport hebdomadaire des présences. Il filtre du lundi au vendredi, clique sur l'icône imprimante : la page affiche d'abord le total de la semaine (ex : 312 présences, 21 absences), puis le détail journalier par classe et par matière. Il imprime et archive.
+
+---
+
+### 7.8 Appel depuis le smartphone (Mes cours) et SMS d'absence
+
+**À quoi ça sert :** l'enseignant fait l'appel et saisit ses notes depuis son téléphone, en classe, sans passer par un ordinateur. Les parents des absents sont prévenus par SMS le jour même.
+
+**Accès :** `Présences → Mes cours` (`/presences/mes-cours/`), également depuis la carte **Mes cours** du tableau de bord enseignant et le raccourci « Appel » de l'icône de l'application installée (appui long sur Android).
+
+**Prérequis :** la fiche du personnel de l'enseignant porte la **même adresse e-mail** que son compte (c'est ce lien qui retrouve ses enseignements). Les séances du jour proviennent de l'emploi du temps (`Vie scolaire → Emploi du temps`) ; sans emploi du temps, tous les cours de l'année restent proposés.
+
+**Installer l'application sur le téléphone :** ouvrir l'adresse de YELEN SCHOOL dans Chrome (Android) ou Safari (iPhone), puis **Installer l'application** (bandeau en bas du menu) ou *Ajouter à l'écran d'accueil*. L'installation en vrai « plein écran » exige une adresse `https://` (voir le guide de déploiement, HTTPS local) ; en `http://`, l'application s'utilise normalement dans le navigateur.
+
+**La page Mes cours :**
+
+```
+┌──────────────────────────────────────────────┐
+│  Mes cours                                   │
+│  Mercredi 21 octobre 2026                    │
+│                                              │
+│  AUJOURD'HUI                                 │
+│  ┌──────────────────────────────────────┐    │
+│  │ 6e A                                 │    │
+│  │ Mathématiques                        │    │
+│  │ 08:00 – 10:00 · S2                   │    │
+│  │ [ Faire l'appel ]      [ Notes ]     │    │
+│  └──────────────────────────────────────┘    │
+│  ┌──────────────────────────────────────┐    │
+│  │ 5e B · Physique-Chimie · 10:00–12:00 │    │
+│  │ Appel en brouillon · 2 absent(s)     │    │
+│  │ [ Reprendre l'appel ]  [ Notes ]     │    │
+│  └──────────────────────────────────────┘    │
+│                                              │
+│  AUTRES COURS                                │
+│  │ 3e C · Histoire-Géo — pas de séance  │    │
+└──────────────────────────────────────────────┘
+```
+
+- **Faire l'appel** crée l'appel du jour en un geste (date, matière et horaires de la séance déjà remplis) et ouvre la saisie : une carte par élève avec 4 boutons tactiles `Présent · Absent · En retard · Excusé`, le champ minutes de retard, et les compteurs en haut. Le **Scanner QR** (7.5) reste disponible.
+- Si l'appel du jour existe déjà, la carte affiche son état (**brouillon** ou **clôturé**) et le nombre d'absents ; le bouton devient **Reprendre l'appel** / **Voir l'appel**.
+- **Notes** ouvre la liste des évaluations de la classe (`Pédagogie → Évaluations`, filtrée) ; la saisie des notes (`Pédagogie → Saisie des notes`) est elle aussi adaptée au téléphone.
+
+**SMS automatique d'absence — règles :**
+
+1. L'envoi se fait **à la clôture** de l'appel (bouton *Clôturer la séance*), jamais sur un simple brouillon.
+2. Un SMS part pour chaque élève **Absent** (modèle `ABSENCE`) ou **En retard** (modèle `RETARD`) vers le numéro du parent (téléphone parent, sinon tuteur, sinon urgence). Les élèves *Excusés* ne génèrent rien.
+3. Chaque présence n'est notifiée **qu'une seule fois** (horodatage « Parents notifiés le ») : rouvrir ou re-clôturer un appel ne renvoie pas de SMS.
+4. Le message de confirmation indique le nombre de familles informées ; la bannière de l'appel clôturé le rappelle.
+5. Les modèles de texte se personnalisent dans `Paramètres → Modèles de messages` (variables `{nom_eleve}`, `{date}`, `{matiere}`, `{etablissement}`) ; l'envoi suppose la passerelle SMS activée (2.17 Configuration SMS). SMS désactivés : les parents disposant d'un compte reçoivent tout de même la notification interne.
+
+**Cas concret :** À 8 h, M. Zongo ouvre *Mes cours* sur son téléphone, touche **Faire l'appel** sur « 6e A · Mathématiques », marque deux absents, puis **Clôturer la séance**. À 8 h 05, les deux familles ont reçu : « Bonjour, votre enfant OUEDRAOGO AWA a été absent(e) le 21/10/2026 en Mathématiques. Contactez LE SAVOIR pour régularisation. »
 
 ---
 

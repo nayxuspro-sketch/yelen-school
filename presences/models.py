@@ -163,6 +163,13 @@ class Presence(BaseModel):
         verbose_name=_("Observations")
     )
 
+    parents_notifies_le = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Parents notifiés le"),
+        help_text=_("Date d'envoi du SMS d'absence ou de retard aux parents (à la clôture de l'appel)")
+    )
+
     class Meta:
         verbose_name = _("Présence")
         verbose_name_plural = _("Présences")
