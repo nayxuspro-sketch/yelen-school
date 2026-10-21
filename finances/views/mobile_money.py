@@ -9,13 +9,15 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Q, Sum
-from django.utils import timezone
 from decimal import Decimal, InvalidOperation
 from ..models import (
     Paiement, ModePaiement, DemandePaiementMobile, LigneReleve, OperateurMobileMoney, ReleveMobileMoney,
 )
 from ..releves import (
     FichierInvalide, STATUTS_A_TRAITER, affecter_ligne, ignorer_ligne, importer_releve, valider_lignes,
+)
+from ..paiements_mobiles import (
+    ErreurPasserelle, cinetpay_configure, confirmer_demande, creer_lien, verifier_en_attente, verifier_paiement,
 )
 from inscriptions.models import Inscription
 from parametres.models import RubriquePaiement
@@ -52,6 +54,8 @@ def mobile_money_list(request):
         'confirme': confirme,
         'annule': annule,
         'StatutChoices': DemandePaiementMobile.StatutChoices,
+        'cinetpay_actif': cinetpay_configure(),
+        'nb_liens_en_attente': counts.filter(statut='EN_ATTENTE').exclude(lien_paiement='').count(),
     })
     return render(request, 'finances/mobile_money_list.html', ctx)
 
@@ -126,9 +130,22 @@ def mobile_money_create(request):
                             cree_par=request.user,
                         )
 
+                        lien = ''
+                        if cinetpay_configure():
+                            try:
+                                lien = creer_lien(demande)
+                            except ErreurPasserelle as exc:
+                                messages.warning(
+                                    request,
+                                    f"Lien de paiement en ligne indisponible ({exc}) : SMS d'instructions *144# envoyé à la place.",
+                                )
                         _envoyer_sms_mobile_money(demande, request)
 
-                        messages.success(request, f"Demande {demande.reference} créée. SMS envoyé au {telephone}.")
+                        messages.success(
+                            request,
+                            f"Demande {demande.reference} créée. SMS envoyé au {telephone}."
+                            + (" Lien de paiement en ligne inclus." if lien else "")
+                        )
                         return redirect('finances:situation_eleve', inscription_id=insc.pk)
 
     ctx.update({
@@ -157,26 +174,8 @@ def mobile_money_confirmer(request, pk):
             messages.warning(request, "Cette demande ne peut plus être confirmée.")
             return redirect('finances:mobile_money_list')
 
-        paiement = Paiement(
-            inscription=demande.inscription,
-            rubrique=demande.rubrique,
-            montant=demande.montant,
-            mode_paiement=ModePaiement.MOBILE_MONEY,
-            reference=reference_transaction or demande.reference,
-            encaisse_par=request.user,
-            statut_eleve=demande.inscription.statut_eleve,
-        )
-        paiement._audit_reason = "Confirmation manuelle d'une réception Mobile Money"
-        paiement.save()
-        demande._audit_reason = "Confirmation manuelle d'une réception Mobile Money"
-        demande.statut = DemandePaiementMobile.StatutChoices.CONFIRME
-        demande.confirme_le = timezone.now()
-        demande.confirme_par = request.user
-        demande.paiement = paiement
-        demande.updated_by = request.user
-        demande.save(update_fields=[
-            'statut', 'confirme_le', 'confirme_par', 'paiement', 'updated_by', 'updated_at'
-        ])
+        confirmer_demande(demande, request.user, reference_transaction,
+                          "Confirmation manuelle d'une réception Mobile Money")
 
     messages.success(request, f"Paiement {demande.reference} confirmé. Reçu généré.")
     return redirect('finances:situation_eleve', inscription_id=demande.inscription.pk)
@@ -211,6 +210,31 @@ def mobile_money_annuler(request, pk):
     return redirect('finances:mobile_money_list')
 
 
+@login_required
+@require_POST
+def mobile_money_verifier(request, pk=None):
+    """Vérification active auprès de CinetPay : une demande, ou toutes celles en attente munies d'un lien."""
+    _require_finance_role(request, FINANCE_WRITE_ROLES)
+    if not cinetpay_configure():
+        messages.error(request, "Paiement en ligne non configuré (CINETPAY_API_KEY, CINETPAY_SITE_ID, CINETPAY_URL_PUBLIQUE).")
+        return redirect('finances:mobile_money_list')
+    if pk is None:
+        bilan = verifier_en_attente(getattr(request.user, 'etablissement', None), request.user)
+        messages.info(request, (
+            f"Vérification terminée : {bilan.get('CONFIRME', 0)} confirmé(s), {bilan.get('EN_ATTENTE', 0)} en attente, "
+            f"{bilan.get('REFUSE', 0)} refusé(s), {bilan.get('ERREUR', 0)} erreur(s)."
+        ))
+        return redirect('finances:mobile_money_list')
+    demande = get_object_or_404(DemandePaiementMobile.objects.select_related('inscription__classe'), pk=pk)
+    _require_same_establishment(request, demande.inscription)
+    if not demande.lien_paiement:
+        messages.error(request, "Cette demande n'a pas de lien de paiement en ligne.")
+        return redirect('finances:mobile_money_list')
+    etat, message = verifier_paiement(demande, request.user)
+    {'CONFIRME': messages.success, 'EN_ATTENTE': messages.info, 'REFUSE': messages.warning}.get(etat, messages.error)(request, message)
+    return redirect('finances:mobile_money_list')
+
+
 def mobile_money_confirmation_parent(request, token):
     """Page publique accessible par le parent via le lien SMS (sans connexion requise)."""
     demande = get_object_or_404(DemandePaiementMobile, token=token)
@@ -228,15 +252,24 @@ def _envoyer_sms_mobile_money(demande, request):
         from core.sms import envoyer_sms
         lien = request.build_absolute_uri(f"/finances/payer/{demande.token}/")
         eleve = demande.inscription.eleve
-        message = (
-            f"YELEN SCHOOL - Paiement {demande.reference}\n"
-            f"Eleve: {eleve.nom} {eleve.prenom}\n"
-            f"Montant: {int(demande.montant)} FCFA\n"
-            f"Composez *144# > Paiement marchand > "
-            f"confirmez ref: {demande.reference}\n"
-            f"Details: {lien}"
-        )
-        ok, _ = envoyer_sms(demande.telephone, message)
+        if demande.lien_paiement:
+            message = (
+                f"YELEN SCHOOL - Paiement {demande.reference}\n"
+                f"Eleve: {eleve.nom} {eleve.prenom}\n"
+                f"Montant: {int(demande.montant)} FCFA\n"
+                f"Payer par Orange Money ou Moov Money: {demande.lien_paiement}"
+            )
+            ok, _ = envoyer_sms(demande.telephone, message, limite=320)
+        else:
+            message = (
+                f"YELEN SCHOOL - Paiement {demande.reference}\n"
+                f"Eleve: {eleve.nom} {eleve.prenom}\n"
+                f"Montant: {int(demande.montant)} FCFA\n"
+                f"Composez *144# > Paiement marchand > "
+                f"confirmez ref: {demande.reference}\n"
+                f"Details: {lien}"
+            )
+            ok, _ = envoyer_sms(demande.telephone, message)
         if ok:
             demande.sms_envoye = True
             demande.save(update_fields=['sms_envoye'])

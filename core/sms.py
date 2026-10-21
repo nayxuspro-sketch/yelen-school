@@ -247,7 +247,7 @@ def _envoyer_serial(numero: str, message: str) -> tuple:
 
 # ── Point d'entrée principal ──────────────────────────────────────────────────
 
-def envoyer_sms(numero: str, message: str) -> tuple:
+def envoyer_sms(numero: str, message: str, limite: int = 160) -> tuple:
     """
     Envoie un SMS via le backend configuré (HTTP ou série).
 
@@ -265,8 +265,8 @@ def envoyer_sms(numero: str, message: str) -> tuple:
 
     numero = _normaliser_numero(numero)
 
-    if len(message) > 160:
-        message = message[:157] + '...'
+    if len(message) > limite:
+        message = message[:limite - 3] + '...'
 
     backend = str(get_sms_val('SMS_BACKEND')).lower()
 

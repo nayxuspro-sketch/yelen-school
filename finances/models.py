@@ -436,6 +436,11 @@ class DemandePaiementMobile(BaseModel):
     )
     sms_envoye = models.BooleanField(default=False, verbose_name=_("SMS envoyé"))
     observations = models.TextField(blank=True, verbose_name=_("Observations"))
+    # Paiement en ligne (CinetPay) : lien envoyé au parent, vérifié activement par le serveur.
+    lien_paiement = models.URLField(max_length=300, blank=True, verbose_name=_("Lien de paiement"))
+    jeton_paiement = models.CharField(max_length=200, blank=True, verbose_name=_("Jeton de paiement"))
+    verifie_le = models.DateTimeField(null=True, blank=True, verbose_name=_("Dernière vérification"))
+    message_passerelle = models.CharField(max_length=255, blank=True, verbose_name=_("État passerelle"))
     cree_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

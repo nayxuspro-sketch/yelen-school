@@ -681,6 +681,12 @@ Les SMS utilisent la passerelle déjà configurée (`SMS_HTTP_URL`, `SMS_HTTP_US
 
 La tâche s'exécute en arrière-plan (« Exécuter même si l'utilisateur n'est pas connecté », sans mot de passe enregistré) : aucune fenêtre n'apparaît. Une tâche enregistrée avant cette version s'exécutait dans la session ouverte et faisait apparaître une fenêtre PowerShell toutes les 5 minutes : relancer `programmer-surveillance.bat` en tant qu'administrateur pour la remplacer.
 
+### 6.6 Paiements Mobile Money en ligne (CinetPay, optionnel)
+
+Renseigner dans `.env` les clés du compte marchand CinetPay : `CINETPAY_API_KEY`, `CINETPAY_SITE_ID` et `CINETPAY_URL_PUBLIQUE` (page publique de l'école affichée au parent après paiement), puis relancer `installer\start-local.ps1`. Sans ces clés, la fonction est inactive et les demandes Mobile Money fonctionnent comme avant (SMS d'instructions `*144#`).
+
+Pour confirmer automatiquement les paiements reçus, faire un clic droit sur `programmer-verification-paiements.bat`, puis **Exécuter en tant qu'administrateur**. La tâche `YELEN SCHOOL - Paiements Mobile Money en ligne` exécute `installer\verifier-paiements-mobiles.ps1` toutes les 10 minutes, en arrière-plan ; elle se termine sans rien faire si Docker est arrêté ou si `CINETPAY_API_KEY` est vide. Journal : `logs\paiements-en-ligne.log`.
+
 ---
 
 ## 7. Restauration après incident

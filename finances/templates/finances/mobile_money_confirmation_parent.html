@@ -159,6 +159,16 @@
           <span class="info-value">{{ demande.created_at|date:"d/m/Y à H\hi" }}</span>
         </div>
 
+        {% if demande.statut == 'EN_ATTENTE' and demande.lien_paiement %}
+        <div class="steps">
+          <div class="steps-title">Payer en ligne (Orange Money ou Moov Money)</div>
+          <a href="{{ demande.lien_paiement }}" rel="noopener"
+             style="display:block;text-align:center;padding:14px 18px;border-radius:10px;background:#ff7900;color:#fff;font-weight:700;text-decoration:none;">
+            Payer {{ demande.montant|floatformat:0 }} FCFA maintenant
+          </a>
+          <p style="margin:10px 0 0;font-size:13px;color:#555;">Le lien ouvre la page de paiement sécurisée CinetPay ; l'école est informée automatiquement.</p>
+        </div>
+        {% endif %}
         {% if demande.statut == 'EN_ATTENTE' %}
         <div class="steps">
           <div class="steps-title">Comment payer via Orange Money</div>

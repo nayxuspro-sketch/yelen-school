@@ -2703,6 +2703,17 @@ Chaque SMS inclut un lien personnel `https://[école]/finances/payer/[token]/`. 
 
 > **Note technique :** Aucun abonnement ni API payante n'est requis. Le flux repose uniquement sur le module SMS interne de YELEN SCHOOL et le service USSD `*144#` disponible gratuitement sur tout numéro Orange Burkina Faso.
 
+**Paiement en ligne (lien CinetPay, optionnel) :**
+
+Quand l'école dispose d'un compte marchand CinetPay (Orange Money et Moov Money Burkina) et que le serveur a accès à Internet, chaque demande reçoit en plus un **lien de paiement** : le parent paie depuis son téléphone sans se déplacer, sans référence à recopier.
+
+1. Dans `.env` : `CINETPAY_API_KEY`, `CINETPAY_SITE_ID` et `CINETPAY_URL_PUBLIQUE` (site web ou page Facebook de l'école, affichée au parent après le paiement), puis redémarrer les services.
+2. À la création d'une demande, YELEN crée le lien (montant multiple de 5, 100 FCFA minimum) et l'envoie par SMS (2 segments). Si Internet est coupé à cet instant, le SMS d'instructions `*144#` part à la place et un avertissement s'affiche.
+3. Le serveur de l'école n'étant pas joignable depuis Internet, c'est lui qui **vérifie** les paiements auprès de CinetPay : bouton **Vérifier les paiements en ligne** (toutes les demandes en attente munies d'un lien) ou icône ↻ d'une demande. Pour une vérification automatique toutes les 10 minutes, lancer une fois `programmer-verification-paiements.bat` en tant qu'administrateur (tâche en arrière-plan, journal `logs\\paiements-en-ligne.log`).
+4. Paiement **accepté** → paiement enregistré avec le n° d'opération Orange/Moov comme référence, reçu PDF, SMS de reçu au parent ; le relevé marchand importé ensuite (section 9.15) le retrouve automatiquement. Paiement **refusé ou annulé** sur la passerelle → demande annulée avec le motif (créer une nouvelle demande). Montant reçu différent → signalé, à traiter manuellement.
+
+> Le tableau de bord affiche, sous la référence, le badge **Lien en ligne** et le dernier état connu de la passerelle avec l'heure de vérification.
+
 
 ### 9.15 Relevés Mobile Money et rapprochement
 

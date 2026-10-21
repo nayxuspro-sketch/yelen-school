@@ -9,6 +9,17 @@
     <p class="page-subtitle">Suivi des demandes Orange Money</p>
   </div>
   <div class="page-actions">
+    {% if cinetpay_actif and nb_liens_en_attente %}
+    <form method="post" action="{% url 'finances:mobile_money_verifier' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary" title="Interroger la passerelle pour toutes les demandes en attente munies d'un lien">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Vérifier les paiements en ligne ({{ nb_liens_en_attente }})
+      </button>
+    </form>
+    {% endif %}
     <a href="{% url 'finances:releve_list' %}" class="btn-secondary">
       <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -120,7 +131,11 @@
       <tbody>
         {% for d in demandes %}
         <tr>
-          <td><span class="fw-semibold color-primary">{{ d.reference }}</span></td>
+          <td>
+            <span class="fw-semibold color-primary">{{ d.reference }}</span>
+            {% if d.lien_paiement %}<br><span class="badge badge-info" title="{{ d.message_passerelle }}">Lien en ligne</span>{% endif %}
+            {% if d.message_passerelle and d.statut == 'EN_ATTENTE' %}<br><span class="text-xs text-muted">{{ d.message_passerelle }}{% if d.verifie_le %} — {{ d.verifie_le|date:"d/m H:i" }}{% endif %}</span>{% endif %}
+          </td>
           <td>{{ d.inscription.eleve.nom }} {{ d.inscription.eleve.prenom }}</td>
           <td>{{ d.inscription.classe.nom }}</td>
           <td>{% if d.rubrique %}{{ d.rubrique.nom }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
@@ -138,6 +153,17 @@
           <td><span class="text-xs text-muted">{{ d.created_at|date:"d/m/Y" }}</span></td>
           <td class="td-right">
             <div class="d-flex gap-2 justify-end">
+              {% if d.statut == 'EN_ATTENTE' and d.lien_paiement and cinetpay_actif %}
+              <!-- Vérifier auprès de la passerelle -->
+              <form method="post" action="{% url 'finances:mobile_money_verifier' d.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon" title="Vérifier le paiement en ligne">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
+              </form>
+              {% endif %}
               {% if d.statut == 'EN_ATTENTE' %}
               <!-- Confirmer -->
               <button type="button" class="btn-icon"

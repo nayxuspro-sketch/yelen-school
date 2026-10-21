@@ -363,6 +363,16 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
+# ── Mobile Money en ligne (CinetPay) : lien de paiement quand Internet est disponible ──
+# Le serveur n'étant pas joignable depuis Internet, YELEN vérifie lui-même chaque paiement
+# (API de contrôle) : CINETPAY_URL_PUBLIQUE sert de page de retour pour le parent et d'URL
+# de notification déclarée, sans traitement côté YELEN.
+CINETPAY_API_KEY = os.environ.get('CINETPAY_API_KEY', '')
+CINETPAY_SITE_ID = os.environ.get('CINETPAY_SITE_ID', '')
+CINETPAY_URL_PUBLIQUE = os.environ.get('CINETPAY_URL_PUBLIQUE', '')
+CINETPAY_URL_API = os.environ.get('CINETPAY_URL_API', 'https://api-checkout.cinetpay.com/v2')
+CINETPAY_TIMEOUT = int(os.environ.get('CINETPAY_TIMEOUT', '20'))
+
 # ── SMS ────────────────────────────────────────────────────────────────────
 # SMS_BACKEND = 'http'   → passerelle WiFi locale (app Android "SMS Gateway")
 # SMS_BACKEND = 'serial' → modem GSM USB ou Bluetooth SPP (AT commands)
