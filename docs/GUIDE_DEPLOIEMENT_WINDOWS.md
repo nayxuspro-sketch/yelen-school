@@ -503,7 +503,7 @@ backups\yelen_school_YYYYMMDD_HHMMSS.dump
 backups\yelen_school_YYYYMMDD_HHMMSS_media.tar.gz
 ```
 
-Le fichier `.dump` est un dump PostgreSQL au format custom. L'archive `_media.tar.gz` contient les fichiers téléversés dans `/app/media`. Les deux fichiers constituent une seule sauvegarde : les copier et les conserver ensemble.
+Le fichier `.dump` est un dump PostgreSQL au format custom. L'archive `_media.tar.gz` contient les fichiers téléversés dans `/app/media`. Les deux fichiers constituent une seule sauvegarde : les copier et les conserver ensemble. Lorsque le chiffrement est activé (§5.4), les deux fichiers portent le suffixe `.enc`.
 
 Un fichier temporaire `.part` est utilisé pendant chaque export. En cas d'échec, le script supprime les fichiers incomplets et ne laisse pas croire qu'une sauvegarde est valide.
 
@@ -516,7 +516,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File .\installer\backup-windows.ps1 -Keep 60
 ```
 
-La rétention locale ne remplace pas une copie externe. Après la sauvegarde, copier au minimum la paire la plus récente vers un disque USB, un NAS ou un autre ordinateur. Vérifier que les deux noms ont exactement le même horodatage.
+La rétention locale ne remplace pas une copie externe. Pour automatiser la copie hors machine, indiquer dans `.env` un dossier sur un disque externe, un NAS ou un autre ordinateur :
+
+```text
+YELEN_BACKUP_OFFSITE=E:\Sauvegardes-YELEN
+```
+
+Après chaque sauvegarde, la paire y est copiée et la même rétention (`-Keep`) y est appliquée. Si le dossier est inaccessible (disque débranché), la sauvegarde locale reste valide et le script affiche `[AVERTISSEMENT] Copie hors site impossible`. Sans cette clé, copier à la main au minimum la paire la plus récente ; vérifier que les deux noms ont exactement le même horodatage.
 
 Ne pas inclure `.env` dans une copie non chiffrée. Si `.env` est copié pour la reprise, le protéger comme un mot de passe.
 
@@ -531,6 +537,32 @@ Get-ChildItem .\backups\yelen_school_*.dump, .\backups\yelen_school_*_media.tar.
 ```
 
 La vérification complète consiste à restaurer la paire sur une installation de test, au moins une fois par trimestre. Ne pas tester une restauration destructive sur la machine de production sans sauvegarde récente supplémentaire.
+
+### 5.4 Chiffrement des sauvegardes
+
+Les sauvegardes contiennent toutes les données personnelles de l'établissement. Pour les chiffrer, ajouter dans `.env` une phrase secrète d'au moins 12 caractères (lettres, chiffres, tirets ; éviter les guillemets et le `#`) :
+
+```text
+YELEN_BACKUP_PASSPHRASE=une-phrase-longue-et-personnelle-2026
+```
+
+Dès la sauvegarde suivante, les deux fichiers sont chiffrés en AES-256 (`.dump.enc`, `_media.tar.gz.enc`), sur la machine, avant toute copie hors site. Sans cette clé, le script sauvegarde en clair et l'indique par `[AVERTISSEMENT] … sauvegarde EN CLAIR`.
+
+> **La phrase secrète ne peut pas être retrouvée.** La noter sur un support conservé hors du serveur (coffre de la direction, gestionnaire de mots de passe). Sans elle, les sauvegardes chiffrées sont définitivement illisibles. Changer la phrase ne rechiffre pas les anciennes sauvegardes : conserver l'ancienne phrase tant que des fichiers chiffrés avec elle existent.
+
+Pour relire un fichier sans passer par la restauration (contrôle, transfert vers un autre logiciel), sur un poste Windows disposant du dossier `installer\` :
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\installer\dechiffrer-sauvegarde.ps1 C:\YELEN-SAUVEGARDES\yelen_school_20261101_220000.dump.enc
+```
+
+Le format est celui d'OpenSSL ; sur toute autre machine :
+
+```bash
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -md sha256 \
+  -in yelen_school_20261101_220000.dump.enc -out yelen_school_20261101_220000.dump
+```
 
 ---
 
@@ -663,6 +695,8 @@ yelen_school_20260914_220000_media.tar.gz
 ```
 
 Le nom de l'archive médias doit être obtenu en ajoutant `_media.tar.gz` au nom du dump sans son suffixe `.dump`. Si l'archive médias est absente, la base sera restaurée mais les fichiers téléversés ne le seront pas ; le script affiche un avertissement.
+
+Pour une paire chiffrée (`.dump.enc` + `_media.tar.gz.enc`), la phrase secrète est lue dans `.env` (`YELEN_BACKUP_PASSPHRASE`). Sur une autre machine, la passer avec `-Passphrase "…"`. Le script vérifie la phrase avant d'arrêter l'application : une phrase incorrecte s'arrête sur `Phrase secrète incorrecte ou fichier altéré : la base actuelle est inchangée`.
 
 ### 7.2 Restaurer sous Windows
 

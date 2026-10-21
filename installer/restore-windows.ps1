@@ -3,21 +3,28 @@
 .SYNOPSIS
     Restaure une sauvegarde PostgreSQL et médias locale de YELEN SCHOOL.
 
+.DESCRIPTION
+    Accepte une sauvegarde en clair (.dump) ou chiffrée (.dump.enc). La phrase
+    secrète est lue dans .env (YELEN_BACKUP_PASSPHRASE) ou passée avec -Passphrase
+    (restauration sur une autre machine).
+
 .EXAMPLE
-    .\installer\restore-windows.ps1 .\backups\yelen_school_20260914_220000.dump
+    .\installer\restore-windows.ps1 .\backups\yelen_school_20260914_220000.dump.enc
 #>
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$BackupFile,
-    [switch]$Yes
+    [switch]$Yes,
+    [string]$Passphrase = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $Root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $ComposeFile = Join-Path $Root 'docker-compose.client.yml'
 $EnvFile = Join-Path $Root '.env'
+. (Join-Path $PSScriptRoot 'yelen-crypto.ps1')
 if (-not [System.IO.Path]::IsPathRooted($BackupFile)) {
     $BackupFile = Join-Path $Root $BackupFile
 }
@@ -37,7 +44,8 @@ function Get-DotEnvValue {
 function Invoke-DockerRestoreFromFile {
     param(
         [string]$Arguments,
-        [string]$InputFile
+        [string]$InputFile,
+        [string]$Passphrase = ''
     )
 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -53,15 +61,18 @@ function Invoke-DockerRestoreFromFile {
         if (-not $process.Start()) { Fail 'Impossible de démarrer Docker pour la restauration.' }
         # Lire stderr en parallèle évite un blocage pendant l'envoi du dump.
         $errorTask = $process.StandardError.ReadToEndAsync()
-        $inputStream = [System.IO.File]::OpenRead($InputFile)
+        $fileStream = [System.IO.File]::OpenRead($InputFile)
+        $inputStream = $fileStream
         try {
+            if ($Passphrase) { $inputStream = Open-YelenDecryptStream $fileStream $Passphrase }
             $inputStream.CopyTo($process.StandardInput.BaseStream)
         } catch [System.IO.IOException] {
             # pg_restore ferme son entrée dès qu'il a lu ce dont il a besoin, avant
             # la fin d'une archive custom : le tube est rompu alors que l'import a
             # réussi. Seul le code de sortie fait foi.
         } finally {
-            $inputStream.Dispose()
+            try { $inputStream.Dispose() } catch [System.Security.Cryptography.CryptographicException] { }
+            $fileStream.Dispose()
             try { $process.StandardInput.Close() } catch [System.IO.IOException] { }
         }
         $process.WaitForExit()
@@ -85,8 +96,21 @@ $dbName = Get-DotEnvValue 'DB_NAME'
 $dbUser = Get-DotEnvValue 'DB_USER'
 if ([string]::IsNullOrWhiteSpace($dbName)) { $dbName = 'yelen_school_db' }
 if ([string]::IsNullOrWhiteSpace($dbUser)) { $dbUser = 'yelen_user' }
-# ChangeExtension($BackupFile, $null) laisse un point final sous PowerShell ($null devient '') : le nom est reconstruit.
-$mediaFile = [System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($BackupFile), [System.IO.Path]::GetFileNameWithoutExtension($BackupFile) + '_media.tar.gz')
+$encrypted = $BackupFile -match '\.enc$'
+if ($encrypted) {
+    if (-not $Passphrase) { $Passphrase = Get-DotEnvValue 'YELEN_BACKUP_PASSPHRASE' }
+    if (-not $Passphrase) { Fail 'Sauvegarde chiffrée : renseignez YELEN_BACKUP_PASSPHRASE dans .env ou utilisez -Passphrase.' }
+    if (-not (Test-YelenEncryptedFile $BackupFile $Passphrase ([Text.Encoding]::ASCII.GetBytes('PGDMP')))) {
+        Fail 'Phrase secrète incorrecte ou fichier altéré : la base actuelle est inchangée.'
+    }
+} else {
+    $Passphrase = ''
+}
+$stem = [System.IO.Path]::GetFileName($BackupFile) -replace '\.dump(\.enc)?$', ''
+$mediaFile = Join-Path ([System.IO.Path]::GetDirectoryName($BackupFile)) ($stem + '_media.tar.gz' + $(if ($encrypted) { '.enc' } else { '' }))
+if ($encrypted -and (Test-Path $mediaFile) -and -not (Test-YelenEncryptedFile $mediaFile $Passphrase ([byte[]](0x1f, 0x8b)))) {
+    Fail "Archive médias chiffrée illisible avec cette phrase secrète : $mediaFile"
+}
 
 if (-not $Yes) {
     Write-Host 'ATTENTION : cette opération remplace toutes les données de la base et des médias.' -ForegroundColor Yellow
@@ -113,7 +137,7 @@ try {
     # pg_restore lit l'entrée standard quand aucun fichier n'est indiqué ("-" n'est pas reconnu).
     $dbArguments = "compose -f `"$ComposeFile`" exec -T db pg_restore -U $dbUser -d $dbRestore --no-owner --no-privileges --exit-on-error"
     try {
-        Invoke-DockerRestoreFromFile $dbArguments $BackupFile
+        Invoke-DockerRestoreFromFile $dbArguments $BackupFile $Passphrase
     } catch {
         & docker compose -f $ComposeFile exec -T db dropdb --if-exists -U $dbUser $dbRestore
         throw "Import impossible, la base actuelle est inchangée : $($_.Exception.Message)"
@@ -131,7 +155,7 @@ try {
     if (Test-Path $mediaFile) {
         $mediaArguments = "compose -f `"$ComposeFile`" exec -T web python /app/installer/media_archive.py restore"
         Write-Host '[4/5] Import des médias...' -ForegroundColor Cyan
-        Invoke-DockerRestoreFromFile $mediaArguments $mediaFile
+        Invoke-DockerRestoreFromFile $mediaArguments $mediaFile $Passphrase
     } else {
         Write-Host "[AVERTISSEMENT] Archive médias absente : $mediaFile" -ForegroundColor Yellow
         Write-Host 'La base est restaurée, mais les fichiers téléversés ne le sont pas.' -ForegroundColor Yellow
