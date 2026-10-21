@@ -55,6 +55,10 @@ jobs:
 
       - name: Lint (ruff, règles pyflakes)
         run: ruff check .
+      - name: Audit des dépendances (pip-audit)
+        run: |
+          pip install pip-audit
+          pip-audit --progress-spinner off
 
       - name: Run migrations + static manifest
         run: |

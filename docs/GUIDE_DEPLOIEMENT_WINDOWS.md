@@ -634,6 +634,19 @@ Les sorties de la tâche de sauvegarde sont écrites dans `backups\backup.log` s
 - l'espace libre du disque ;
 - la présence d'une copie hors machine.
 
+### 6.5 Surveillance automatique et alerte SMS
+
+Le point `http://<serveur>:<port>/health/` répond `200` quand la base et le cache fonctionnent, `503` sinon ; c'est lui que Docker utilise pour déclarer le conteneur `web` sain.
+
+Pour le faire surveiller automatiquement, faire un clic droit sur `programmer-surveillance.bat` (racine du dossier), puis **Exécuter en tant qu'administrateur**. La tâche `YELEN SCHOOL - Surveillance et alerte SMS` exécute `installer\surveiller-yelen.ps1` toutes les 5 minutes :
+
+1. interrogation de `/health/` ;
+2. après deux échecs consécutifs, relance des services avec `installer\start-local.ps1` ;
+3. si l'application reste indisponible, **un** SMS d'alerte (puis un SMS de retour à la normale) ;
+4. un SMS par jour si aucune sauvegarde `backups\yelen_school_*.dump*` n'a moins de 36 heures.
+
+Les SMS utilisent la passerelle déjà configurée (`SMS_HTTP_URL`, `SMS_HTTP_USER`, `SMS_HTTP_PASSWORD`) et partent vers les numéros de la clé `ALERTE_SMS_NUMEROS` du `.env` (séparés par des virgules, format international : `+22670000000,+22676000000`). Sans cette clé, la surveillance relance les services et journalise, sans SMS. Journal : `logs\surveillance.log` ; dernier état : `logs\surveillance.json`.
+
 ---
 
 ## 7. Restauration après incident

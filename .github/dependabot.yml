@@ -1,0 +1,16 @@
+# Mises à jour automatiques des dépendances : une PR par paquet, chaque lundi.
+# La CI (tests + pip-audit) valide chaque proposition avant fusion.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/requirements"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: ["dépendances"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: ["dépendances"]
