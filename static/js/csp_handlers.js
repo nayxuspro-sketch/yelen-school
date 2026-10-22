@@ -312,27 +312,13 @@
       return;
     }
 
-    // 10. data-csp-href="url" ou template
+    // 10. data-csp-href="url" (ligne cliquable) — l'URL vient du gabarit ({% url %}), jamais du JS.
+    //     Un lien ou un bouton à l'intérieur de la ligne garde son propre comportement.
     var hrefEl = target.closest('[data-csp-href]');
-    if (hrefEl && !hrefEl.closest('a')) {
-      // Seulement si ce n'est pas déjà un lien
+    if (hrefEl && !target.closest('a, button')) {
       e.preventDefault();
       var href = hrefEl.dataset.cspHref;
       if (href) window.location.href = href;
-      return;
-    }
-
-    // 11. data-csp-href-template pour les cas avec {% url %}
-    var hrefTpl = target.closest('[data-csp-href-template]');
-    if (hrefTpl) {
-      e.preventDefault();
-      var tpl = hrefTpl.dataset.cspHrefTemplate;
-      var inscrId = hrefTpl.dataset.inscrId;
-      if (tpl === 'fiche_suivi_eleve' && inscrId) {
-        window.location.href = '/viescolaire/fiche-suivi/' + inscrId + '/';
-      } else if (tpl === 'fiche_suivi_eleve_sanctions' && inscrId) {
-        window.location.href = '/viescolaire/fiche-suivi/' + inscrId + '/#sanctions';
-      }
       return;
     }
   });

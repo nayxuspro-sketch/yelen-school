@@ -389,3 +389,41 @@ class TestRetraitSeance:
         assert client.post(reverse('viescolaire:seance_delete', args=[lundi.pk]), {'retour': 'prof'}).status_code in (302, 403)
         assert SeanceCours.objects.count() == 3
         droits.invalider_cache()
+
+
+@pytest.mark.django_db
+class TestFicheSuivi:
+    """Accès à la fiche de suivi depuis les listes (ligne cliquable et bouton) et isolation par établissement."""
+
+    @pytest.fixture
+    def ecole(self, client):
+        from datetime import date
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab), actif=True)
+        eleve = baker.make('inscriptions.Eleve', nom='SAWADOGO', prenom='Aïcha', date_naissance=date(2012, 5, 3))
+        inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee)
+        return {'etab': etab, 'annee': annee, 'inscription': inscription}
+
+    def test_listes_pointent_vers_la_fiche(self, client, ecole):
+        url = reverse('viescolaire:fiche_suivi_eleve', args=[ecole['inscription'].pk])
+        html = client.get(reverse('viescolaire:fiches_suivi_list')).content.decode()
+        assert f'data-csp-href="{url}"' in html and f'<a href="{url}"' in html
+        html = client.get(reverse('viescolaire:capital_points_list')).content.decode()
+        assert f'data-csp-href="{url}#sanctions"' in html and f'<a href="{url}#sanctions"' in html
+        reponse = client.get(url)
+        assert reponse.status_code == 200 and 'SAWADOGO' in reponse.content.decode()
+
+    def test_aucune_url_de_fiche_codee_en_dur(self):
+        """L'ancienne navigation JS forgeait /viescolaire/fiche-suivi/<id>/ (route inexistante → 404)."""
+        from pathlib import Path
+        racine = Path(__file__).resolve().parents[1]
+        assert 'fiche-suivi' not in (racine / 'static/js/csp_handlers.js').read_text(encoding='utf-8')
+        assert not [f for f in racine.rglob('*.html') if 'staticfiles' not in f.parts
+                    and 'data-csp-href-template' in f.read_text(encoding='utf-8')]
+
+    def test_isolation_etablissement(self, client, ecole):
+        from datetime import date
+        autre = baker.make('inscriptions.Inscription', eleve=baker.make('inscriptions.Eleve', date_naissance=date(2012, 1, 1)))
+        assert client.get(reverse('viescolaire:fiche_suivi_eleve', args=[autre.pk])).status_code == 404

@@ -1118,6 +1118,7 @@ def fiche_suivi_eleve(request, inscription_id):
             'eleve', 'classe', 'annee_scolaire', 'statut_eleve'
         ),
         pk=inscription_id,
+        classe__etablissement=_get_etab(request),
     )
 
     # ── 1. Presences ──────────────────────────────────────────────────────────
