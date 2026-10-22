@@ -1,0 +1,102 @@
+{% extends "core/base.html" %}
+{% load humanize %}
+
+{% block title %}Abonner une classe — {{ service.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="form-page-wrap">
+
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-4">
+      <a href="{% url 'finances:abonnes_list' service.pk %}" class="btn-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="page-title">Abonner une classe — {{ service.nom }}</h1>
+        <p class="page-subtitle">Choisissez la classe, la formule et cochez les élèves{% if annee %} — {{ annee.libelle }}{% endif %}</p>
+      </div>
+    </div>
+  </div>
+
+  <form method="get" class="card animate-fade-up delay-1 mb-5">
+    <div class="form-body d-flex gap-3 align-center">
+      <select name="classe" class="input select" style="max-width:20rem;" required>
+        <option value="">— Classe —</option>
+        {% for c in classes %}<option value="{{ c.pk }}" {% if classe and classe.pk == c.pk %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn-secondary">Afficher les élèves</button>
+    </div>
+  </form>
+
+  {% if classe %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="classe" value="{{ classe.pk }}">
+    <input type="hidden" name="valider" value="1">
+    <div class="card animate-fade-up delay-2 mb-5">
+      <div class="form-body">
+        <div class="form-grid-3 mb-4">
+          <div class="form-group">
+            <label for="formule" class="input-label">Formule <span class="required-star">*</span></label>
+            <select id="formule" name="formule" class="input select" required>
+              <option value="">— Choisir —</option>
+              {% for f in formules %}<option value="{{ f.pk }}" {% if formule_id == f.pk|stringformat:'s' %}selected{% endif %}>{{ f.libelle }} — {{ f.montant|floatformat:0|intcomma }} FCFA</option>{% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="date_debut" class="input-label">Début <span class="required-star">*</span></label>
+            <input type="date" id="date_debut" name="date_debut" class="input" required value="{{ date_debut }}">
+          </div>
+          <div class="form-group">
+            <label for="date_fin" class="input-label">Fin <span class="required-star">*</span></label>
+            <input type="date" id="date_fin" name="date_fin" class="input" required value="{{ date_fin }}">
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:2.5rem;"><input type="checkbox" id="tout-cocher" title="Tout cocher / décocher" checked></th>
+                <th>Élève</th>
+                <th>Matricule</th>
+                <th>Situation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ins in eleves %}
+              <tr>
+                <td>{% if not ins.deja_abonne %}<input type="checkbox" name="inscriptions" value="{{ ins.pk }}" checked>{% endif %}</td>
+                <td class="fw-medium">{{ ins.eleve.nom }} {{ ins.eleve.prenom }}</td>
+                <td><code class="text-sm">{{ ins.eleve.matricule }}</code></td>
+                <td>{% if ins.deja_abonne %}<span class="badge badge-success">Déjà abonné</span>{% else %}<span class="text-secondary text-sm">À abonner</span>{% endif %}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-secondary text-sm">Aucun élève inscrit dans cette classe.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions animate-fade-up delay-3">
+      <a href="{% url 'finances:abonnes_list' service.pk %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary" {% if not nb_restants %}disabled{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Abonner les élèves cochés
+      </button>
+    </div>
+  </form>
+  <script nonce="{{ request.csp_nonce }}">
+    document.getElementById('tout-cocher').addEventListener('change', function () {
+      document.querySelectorAll('input[name="inscriptions"]').forEach(function (c) { c.checked = this.checked; }, this);
+    });
+  </script>
+  {% endif %}
+</div>
+{% endblock %}

@@ -194,6 +194,12 @@ MODULES = (
             _a('supprimer', 'Supprimer une bourse', 'bourse_delete', roles=_FINANCE_SAISIE),
             _a('types', 'Gérer les types de bourses', 'type_bourse_create', 'type_bourse_edit', 'type_bourse_delete', roles=_FINANCE_SAISIE),
         )),
+        _f('/finances/services/', 'Services annexes (cantine, transport, internat)', actions=(
+            _a('configurer', 'Créer / modifier les services et leurs formules', 'service_create', 'service_edit',
+               'formule_create', 'formule_edit', roles=_FINANCE_SAISIE),
+            _a('abonner', 'Abonner un élève ou une classe, modifier / annuler un abonnement', 'abonnement_create',
+               'abonnement_edit', 'abonnement_annuler', 'abonnement_classe', roles=_FINANCE_SAISIE),
+        )),
         _f('/finances/relances/', 'Relances', actions=(
             _a('sms', 'Envoyer les relances par SMS', 'relance_sms', roles=_FINANCE_SAISIE),
         )),

@@ -63,6 +63,18 @@ urlpatterns = [
     path('types-bourses/<uuid:type_id>/modifier/', views.type_bourse_form, name='type_bourse_edit'),
     path('types-bourses/<uuid:type_id>/supprimer/', views.type_bourse_delete, name='type_bourse_delete'),
 
+    # Services annexes facturés (cantine, transport, internat)
+    path('services/', views.service_list, name='service_list'),
+    path('services/nouveau/', views.service_form, name='service_create'),
+    path('services/<uuid:pk>/modifier/', views.service_form, name='service_edit'),
+    path('services/<uuid:service_id>/formules/nouvelle/', views.formule_form, name='formule_create'),
+    path('services/formules/<uuid:pk>/modifier/', views.formule_form, name='formule_edit'),
+    path('services/<uuid:pk>/abonnes/', views.abonnes_list, name='abonnes_list'),
+    path('services/<uuid:pk>/abonner-classe/', views.abonnement_classe, name='abonnement_classe'),
+    path('services/abonnements/nouveau/<uuid:inscription_id>/', views.abonnement_form, name='abonnement_create'),
+    path('services/abonnements/<uuid:pk>/modifier/', views.abonnement_form, name='abonnement_edit'),
+    path('services/abonnements/<uuid:pk>/annuler/', views.abonnement_annuler, name='abonnement_annuler'),
+
     # API AJAX
     path('api/bourse/calculer/', views.api_calculer_bourse, name='api_calculer_bourse'),
 

@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if formule %}Modifier{% else %}Nouvelle{% endif %} formule — {{ service.nom }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="form-page-wrap">
+
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-4">
+      <a href="{% url 'finances:service_list' %}" class="btn-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="page-title">{% if formule %}Modifier la formule{% else %}Nouvelle formule{% endif %} — {{ service.nom }}</h1>
+        <p class="page-subtitle">Tarif {{ service.get_periodicite_display|lower }} appliqué aux abonnés de cette formule</p>
+      </div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="card animate-fade-up delay-1 mb-5">
+      <div class="form-body">
+        <div class="form-grid-2-1 mb-4">
+          <div class="form-group">
+            <label for="libelle" class="input-label">Libellé <span class="required-star">*</span></label>
+            <input type="text" id="libelle" name="libelle" class="input" required maxlength="100" autofocus
+                   value="{{ valeurs.libelle }}"
+                   placeholder="Ex : Déjeuner 5 j/7, Zone 2 aller-retour, Pension complète">
+          </div>
+          <div class="form-group">
+            <label for="montant" class="input-label">Tarif {{ service.get_periodicite_display|lower }} (FCFA) <span class="required-star">*</span></label>
+            <input type="number" id="montant" name="montant" class="input" required min="1" step="1"
+                   value="{{ valeurs.montant }}">
+          </div>
+        </div>
+        <label class="checkbox-block" for="actif">
+          <input type="checkbox" name="actif" id="actif" class="checkbox-block-input"
+                 {% if valeurs.actif %}checked{% endif %}>
+          <div>
+            <div class="checkbox-block-title">Formule active</div>
+            <p class="checkbox-block-sub">Modifier le tarif ne change pas les abonnements déjà souscrits (montant figé à la souscription).</p>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions animate-fade-up delay-2">
+      <a href="{% url 'finances:service_list' %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        {% if formule %}Enregistrer{% else %}Créer la formule{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

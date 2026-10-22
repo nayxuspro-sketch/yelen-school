@@ -103,6 +103,7 @@ def tableau_de_bord(etab, annee, aujourdhui=None):
         'aujourdhui': absences.filter(appel__date=aujourdhui).count(),
         'sept_jours': absences.filter(appel__date__gte=aujourdhui - timedelta(days=6), appel__date__lte=aujourdhui).count(),
         'trente_jours': absences_30j.count(),
+        'pointages_30j': pointages_30j,
         'taux_30j': _taux(absences_30j.count(), pointages_30j),
         'justifications_attente': Justification.objects.filter(
             statut='EN_ATTENTE', inscription__annee_scolaire=annee, inscription__classe__etablissement=etab,
@@ -135,3 +136,39 @@ def tableau_de_bord(etab, annee, aujourdhui=None):
         'recouvrement': recouvrement, 'impayes': impayes, 'effectifs': effectifs,
         'absences': absences_resume, 'risque': risque,
     }
+
+
+# Indicateurs additionnés d'un site à l'autre pour la ligne « Total réseau » ; les taux sont recalculés sur ces sommes.
+_CUMULS_RESEAU = (
+    ('effectifs', ('total', 'garcons', 'filles', 'classes', 'capacite')),
+    ('recouvrement', ('attendu', 'encaisse', 'reste', 'redevables')),
+    ('absences', ('trente_jours', 'pointages_30j', 'justifications_attente')),
+    ('risque', ('prioritaires_nb',)),
+)
+
+
+def tableau_reseau(etablissements, aujourdhui=None):
+    """Vue consolidée d'un groupe scolaire : une ligne d'indicateurs par site (année courante) et les totaux.
+
+    Chaque site est calculé par ``tableau_de_bord`` avec ses propres tarifs, classes et année courante ;
+    les taux du total (remplissage, recouvrement, absentéisme) sont pondérés par les volumes, pas moyennés.
+    """
+    from parametres.models import AnneeScolaire
+
+    lignes = []
+    totaux = {bloc: dict.fromkeys(cles, 0) for bloc, cles in _CUMULS_RESEAU}
+    for etab in etablissements:
+        annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+        ligne = {'etablissement': etab, 'annee': annee}
+        if annee is not None:
+            ligne.update(tableau_de_bord(etab, annee, aujourdhui))
+            for bloc, cles in _CUMULS_RESEAU:
+                for cle in cles:
+                    totaux[bloc][cle] += ligne[bloc][cle]
+        lignes.append(ligne)
+    totaux['effectifs']['taux_remplissage'] = _taux(totaux['effectifs']['total'], totaux['effectifs']['capacite'])
+    totaux['recouvrement']['taux'] = _taux(
+        totaux['recouvrement']['attendu'] - totaux['recouvrement']['reste'], totaux['recouvrement']['attendu'])
+    totaux['absences']['taux_30j'] = _taux(totaux['absences']['trente_jours'], totaux['absences']['pointages_30j'])
+    totaux['sites'] = sum(1 for l in lignes if l['annee'] is not None)
+    return {'lignes': lignes, 'totaux': totaux}

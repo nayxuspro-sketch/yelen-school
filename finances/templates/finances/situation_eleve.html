@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load droits_tags %}
 
 {% block title %}Situation financière — {{ inscription.eleve.nom }} — YELEN SCHOOL{% endblock %}
 
@@ -127,8 +128,8 @@
         <div class="sit-body">
           {% for f in frais_details %}
           <div class="sit-row">
-            <span class="sit-row-lbl" title="{{ f.rubrique.nom }}">{{ f.rubrique.nom }}</span>
-            <span class="sit-row-val">{{ f.montant }} <small class="text-muted">FCFA</small></span>
+            <span class="sit-row-lbl" title="{{ f.libelle|default:f.rubrique.nom }}">{{ f.libelle|default:f.rubrique.nom }}</span>
+            <span class="sit-row-val">{{ f.montant|floatformat:0 }} <small class="text-muted">FCFA</small></span>
           </div>
           {% empty %}
           <p class="text-muted text-center text-sm">Aucun tarif configuré pour ce profil.</p>
@@ -189,6 +190,59 @@
             <span class="color-primary">− {{ total_reduction|floatformat:0 }} FCFA</span>
           </div>
           {% endif %}
+        </div>
+      </div>
+
+      {# Services annexes (cantine, transport, internat) #}
+      <div class="card mb-4">
+        <div class="pai-sec-hd">
+          <div class="pai-sec-hd-left">
+            <div class="pai-sec-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <span class="pai-sec-title">Services annexes</span>
+          </div>
+          {% if request|autorise_url:'finances:abonnement_create' %}
+          <a href="{% url 'finances:abonnement_create' inscription.id %}" class="btn-icon" title="Abonner à un service (cantine, transport, internat)">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </a>
+          {% endif %}
+        </div>
+        <div class="sit-body">
+          {% for a in abonnements %}
+          <div class="sit-row">
+            <div class="min-w-0 flex-1">
+              <div class="sit-row-lbl fw-medium" title="{{ a.formule.service.nom }}">{{ a.formule.service.nom }} — {{ a.formule.libelle }}</div>
+              <div class="sit-row-sub">{{ a.periodes_libelle }}</div>
+            </div>
+            <div class="sit-row-actions">
+              <span class="sit-row-val">{{ a.montant_total|floatformat:0 }} F</span>
+              {% if request|autorise_url:'finances:abonnement_edit' %}
+              <a href="{% url 'finances:abonnement_edit' a.id %}" class="btn-icon" title="Modifier">
+                <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </a>
+              {% endif %}
+              {% if request|autorise_url:'finances:abonnement_annuler' %}
+              <form method="post" action="{% url 'finances:abonnement_annuler' a.id %}" data-csp-confirm-submit="Annuler cet abonnement ? Le montant ne sera plus dû." class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon text-danger" title="Annuler l'abonnement">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted text-center text-sm">Aucun abonnement (cantine, transport, internat).</p>
+          {% endfor %}
         </div>
       </div>
 

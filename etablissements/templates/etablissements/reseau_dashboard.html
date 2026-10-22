@@ -1,103 +1,148 @@
 {% extends "core/base.html" %}
 {% load humanize %}
 
-{% block title %}Dashboard Réseau{% endblock %}
+{% block title %}Réseau — vue consolidée — YELEN SCHOOL{% endblock %}
 
 {% block content %}
 <div class="page-header animate-fade-up">
   <div>
-    <h1 class="page-title">Dashboard Réseau</h1>
+    <h1 class="page-title">Réseau — vue consolidée</h1>
     <p class="page-subtitle">
-      {% if groupe_filtre %}{{ groupe_filtre.nom }}{% else %}Vue consolidée — tous les établissements{% endif %}
+      {% if groupe_filtre %}{{ groupe_filtre.nom }}{% else %}Tous les établissements{% endif %}
+      — {{ totaux.sites }} site{{ totaux.sites|pluralize }} · année courante de chaque établissement · situation au {% now "d/m/Y" %}
     </p>
   </div>
-  {% if request.user.role == 'SUPER_ADMIN' %}
-  <a href="{% url 'etablissements:groupe_list' %}" class="btn-secondary">
-    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px; vertical-align:middle;">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-    </svg>
-    Gérer les groupes
-  </a>
-  {% endif %}
-</div>
-
-{# Stats globales #}
-<div class="stats-grid animate-fade-up" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); margin-bottom:var(--space-5);">
-  <div class="stat-card">
-    <div class="stat-icon stat-icon-blue">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-    </div>
-    <div><div class="stat-value">{{ stats_par_etab|length }}</div><div class="stat-label">Établissements</div></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon stat-icon-blue">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-    </div>
-    <div><div class="stat-value">{{ total_eleves }}</div><div class="stat-label">Élèves inscrits</div></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon stat-icon-green">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    </div>
-    <div>
-      <div class="stat-value" style="color:#10b981; font-size:0.9rem;">{{ total_encaisse|floatformat:0 }}<span style="font-size:0.6rem; color:var(--color-text-muted);"> FCFA</span></div>
-      <div class="stat-label">Encaissé (année en cours)</div>
-    </div>
+  <div class="d-flex gap-3 align-center">
+    {% if groupes %}
+    <form method="get" class="d-flex gap-2">
+      <select name="groupe" class="input select" data-csp-submit-on-change>
+        <option value="">Tous les établissements</option>
+        {% for g in groupes %}<option value="{{ g.pk }}" {% if groupe_filtre and groupe_filtre.pk == g.pk %}selected{% endif %}>{{ g.nom }}</option>{% endfor %}
+      </select>
+    </form>
+    {% endif %}
+    {% if lignes %}
+    <a href="?groupe={{ groupe_filtre.pk|default:'' }}&amp;format=xlsx" class="btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      Excel
+    </a>
+    {% endif %}
+    {% if request.user.role == 'SUPER_ADMIN' %}
+    <a href="{% url 'etablissements:groupe_list' %}" class="btn-secondary">Gérer les groupes</a>
+    {% endif %}
   </div>
 </div>
 
-{# Tableau par établissement #}
-{% if stats_par_etab %}
-<div class="card animate-fade-up delay-1" style="overflow:hidden; padding:0;">
-  <div class="table-scroll">
+{% if lignes %}
+{# ── Indicateurs consolidés ── #}
+<div class="pil-kpis animate-fade-up">
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Recouvrement réseau</span>
+    <span class="pil-kpi-value {% if totaux.recouvrement.taux < 50 %}pil-rouge{% elif totaux.recouvrement.taux < 80 %}pil-orange{% else %}pil-vert{% endif %}">{{ totaux.recouvrement.taux|floatformat:0 }} %</span>
+    <div class="pil-bar"><div class="pil-bar-fill" style="width:{{ totaux.recouvrement.taux|floatformat:0 }}%"></div></div>
+    <span class="pil-kpi-sub">{{ totaux.recouvrement.encaisse|floatformat:0|intcomma }} / {{ totaux.recouvrement.attendu|floatformat:0|intcomma }} FCFA</span>
+  </div>
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Impayés</span>
+    <span class="pil-kpi-value pil-rouge">{{ totaux.recouvrement.reste|floatformat:0|intcomma }}</span>
+    <span class="pil-kpi-sub">FCFA · {{ totaux.recouvrement.redevables }} élève{{ totaux.recouvrement.redevables|pluralize }} redevable{{ totaux.recouvrement.redevables|pluralize }}</span>
+  </div>
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Effectifs</span>
+    <span class="pil-kpi-value">{{ totaux.effectifs.total }}</span>
+    <span class="pil-kpi-sub">{{ totaux.effectifs.garcons }} G · {{ totaux.effectifs.filles }} F · {{ totaux.effectifs.classes }} classe{{ totaux.effectifs.classes|pluralize }} · remplissage {{ totaux.effectifs.taux_remplissage|floatformat:0 }} %</span>
+  </div>
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Absences (30 jours)</span>
+    <span class="pil-kpi-value {% if totaux.absences.taux_30j >= 10 %}pil-rouge{% elif totaux.absences.taux_30j >= 5 %}pil-orange{% endif %}">{{ totaux.absences.trente_jours }}</span>
+    <span class="pil-kpi-sub">taux {{ totaux.absences.taux_30j|floatformat:1 }} % · {{ totaux.absences.justifications_attente }} justificatif{{ totaux.absences.justifications_attente|pluralize }} en attente</span>
+  </div>
+  <div class="pil-kpi">
+    <span class="pil-kpi-label">Élèves à risque</span>
+    <span class="pil-kpi-value {% if totaux.risque.prioritaires_nb %}pil-orange{% endif %}">{{ totaux.risque.prioritaires_nb }}</span>
+    <span class="pil-kpi-sub">niveaux critique et élevé, tous sites</span>
+  </div>
+</div>
+
+{# ── Tableau par établissement ── #}
+<div class="card animate-fade-up delay-1">
+  <div class="table-container">
     <table class="data-table">
       <thead>
         <tr>
           <th>Établissement</th>
-          <th>Groupe / Réseau</th>
-          <th>Année courante</th>
-          <th style="text-align:right;">Élèves</th>
-          <th style="text-align:right;">Encaissé (FCFA)</th>
-          <th style="text-align:right;">Accès</th>
+          <th class="text-right">Élèves</th>
+          <th class="text-right">Classes</th>
+          <th class="text-right">Remplissage</th>
+          <th class="text-right">Attendu</th>
+          <th class="text-right">Encaissé</th>
+          <th class="text-right">Reste</th>
+          <th class="text-right">Recouvr.</th>
+          <th class="text-right">Redevables</th>
+          <th class="text-right">Abs. 30 j</th>
+          <th class="text-right">À risque</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
-        {% for s in stats_par_etab %}
+        {% for l in lignes %}
         <tr>
           <td>
-            <div class="fw-semibold">{{ s.etablissement.nom }}</div>
-            <div class="text-muted" style="font-size:0.75rem;">{{ s.etablissement.code }} — {{ s.etablissement.ville }}</div>
+            <div class="fw-semibold">{{ l.etablissement.nom }}</div>
+            <div class="text-muted text-sm">{{ l.etablissement.code }}{% if l.etablissement.ville %} — {{ l.etablissement.ville }}{% endif %}{% if l.annee %} · {{ l.annee.libelle }}{% endif %}</div>
           </td>
-          <td class="text-secondary">{{ s.etablissement.groupe.nom|default:"—" }}</td>
-          <td>{{ s.annee.libelle|default:"—" }}</td>
-          <td style="text-align:right;" class="fw-semibold">{{ s.nb_eleves }}</td>
-          <td style="text-align:right; color:#10b981;" class="fw-semibold">{{ s.total_paye|floatformat:0 }}</td>
-          <td style="text-align:right;">
-            <a href="{% url 'inscriptions:eleve_list' %}?etab={{ s.etablissement.pk }}" class="btn-secondary btn-sm">Élèves</a>
-          </td>
+          {% if l.annee %}
+          <td class="text-right fw-semibold">{{ l.effectifs.total }}<div class="text-muted text-sm">{{ l.effectifs.garcons }} G · {{ l.effectifs.filles }} F</div></td>
+          <td class="text-right">{{ l.effectifs.classes }}</td>
+          <td class="text-right">{{ l.effectifs.taux_remplissage|floatformat:0 }} %</td>
+          <td class="text-right">{{ l.recouvrement.attendu|floatformat:0|intcomma }}</td>
+          <td class="text-right text-success">{{ l.recouvrement.encaisse|floatformat:0|intcomma }}</td>
+          <td class="text-right {% if l.recouvrement.reste %}text-danger{% endif %}">{{ l.recouvrement.reste|floatformat:0|intcomma }}</td>
+          <td class="text-right fw-semibold {% if l.recouvrement.taux < 50 %}text-danger{% elif l.recouvrement.taux < 80 %}text-warning{% else %}text-success{% endif %}">{{ l.recouvrement.taux|floatformat:0 }} %</td>
+          <td class="text-right">{{ l.recouvrement.redevables }}</td>
+          <td class="text-right">{{ l.absences.trente_jours }}<div class="text-muted text-sm">{{ l.absences.taux_30j|floatformat:1 }} %</div></td>
+          <td class="text-right {% if l.risque.prioritaires_nb %}text-warning fw-semibold{% endif %}">{{ l.risque.prioritaires_nb }}</td>
+          <td class="text-right"><a href="{% url 'core:pilotage' %}?etab={{ l.etablissement.pk }}" class="btn-secondary btn-sm">Tableau de bord</a></td>
+          {% else %}
+          <td colspan="10" class="text-muted text-sm">Aucune année scolaire courante : indicateurs indisponibles.</td>
+          <td></td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr style="background:var(--color-bg-subtle); font-weight:700;">
-          <td colspan="3" style="padding:8px 12px;">Total réseau</td>
-          <td style="text-align:right; padding:8px 12px;">{{ total_eleves }}</td>
-          <td style="text-align:right; padding:8px 12px; color:#10b981;">{{ total_encaisse|floatformat:0 }}</td>
+        <tr class="fw-semibold">
+          <td>Total réseau — {{ totaux.sites }} site{{ totaux.sites|pluralize }}</td>
+          <td class="text-right">{{ totaux.effectifs.total }}</td>
+          <td class="text-right">{{ totaux.effectifs.classes }}</td>
+          <td class="text-right">{{ totaux.effectifs.taux_remplissage|floatformat:0 }} %</td>
+          <td class="text-right">{{ totaux.recouvrement.attendu|floatformat:0|intcomma }}</td>
+          <td class="text-right text-success">{{ totaux.recouvrement.encaisse|floatformat:0|intcomma }}</td>
+          <td class="text-right text-danger">{{ totaux.recouvrement.reste|floatformat:0|intcomma }}</td>
+          <td class="text-right">{{ totaux.recouvrement.taux|floatformat:0 }} %</td>
+          <td class="text-right">{{ totaux.recouvrement.redevables }}</td>
+          <td class="text-right">{{ totaux.absences.trente_jours }}</td>
+          <td class="text-right">{{ totaux.risque.prioritaires_nb }}</td>
           <td></td>
         </tr>
       </tfoot>
     </table>
   </div>
+  <p class="text-muted text-sm" style="padding:0.5rem 1rem;">Montants en FCFA. Les taux du total sont pondérés par les volumes de chaque site (pas une moyenne des pourcentages).</p>
 </div>
 
 {% else %}
-<div class="card animate-fade-up" style="padding:3rem; text-align:center;">
-  <p class="text-muted">Aucun établissement rattaché à un groupe.</p>
-  {% if request.user.role == 'SUPER_ADMIN' %}
-  <a href="{% url 'etablissements:groupe_list' %}" class="btn-primary" style="margin-top:var(--space-3);">
-    Créer un groupe →
-  </a>
-  {% endif %}
+<div class="card animate-fade-up">
+  <div class="empty-state">
+    <p class="empty-state-text">Aucun établissement à consolider.</p>
+    {% if request.user.role == 'SUPER_ADMIN' %}
+    <a href="{% url 'etablissements:groupe_list' %}" class="btn-primary">Créer un groupe →</a>
+    {% else %}
+    <p class="text-sm text-secondary">Demandez au Super Admin de rattacher votre compte et vos établissements à un groupe.</p>
+    {% endif %}
+  </div>
 </div>
 {% endif %}
 {% endblock %}

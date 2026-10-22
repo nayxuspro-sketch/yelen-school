@@ -93,3 +93,12 @@ from .budget import (  # noqa: F401
     tableau_bord_budget,
     tableau_bord_budget_xlsx,
 )
+from .services import (  # noqa: F401
+    service_list,
+    service_form,
+    formule_form,
+    abonnes_list,
+    abonnement_form,
+    abonnement_annuler,
+    abonnement_classe,
+)

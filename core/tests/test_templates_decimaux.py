@@ -18,7 +18,7 @@ _SANS_DECIMALES = {
     'config.seuil_exclusion', 'cycle.ordre', 'd.jours_avant', 'discipline.ordre',
     'instance.annee_acquisition', 'instance.annee_edition', 'instance.prix_remplacement', 'localisation.etage',
     'periode.numero', 'post_data.montant', 'presence.minutes_retard', 'rubrique.ordre', 'statut.ordre',
-    'tarif.montant', 'type_eval.nb_meilleures_notes', 'type_eval.ordre',
+    'tarif.montant', 'type_eval.nb_meilleures_notes', 'type_eval.ordre', 'valeurs.montant',
 }
 
 

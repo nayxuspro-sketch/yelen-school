@@ -125,6 +125,9 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 - [34. Import depuis vos fichiers existants (élèves, parents, notes)](#34-import-depuis-vos-fichiers-existants-élèves-parents-notes)
   - [34.1 Importer des élèves et leurs parents](#341-importer-des-élèves-et-leurs-parents)
   - [34.2 Importer les notes d'une classe](#342-importer-les-notes-dune-classe)
+- [35. Services annexes facturés et vue consolidée réseau](#35-services-annexes-facturés-et-vue-consolidée-réseau)
+  - [35.1 Cantine, transport, internat](#351-cantine-transport-internat)
+  - [35.2 Vue consolidée multi-sites (licence RESEAU)](#352-vue-consolidée-multi-sites-licence-reseau)
 
 ---
 
@@ -6769,3 +6772,55 @@ au lieu de les dupliquer : importer un fichier corrigé est sans risque.
 > **Mise en route type (une classe en moins de dix minutes) :** importer la liste d'élèves de la
 > classe (§34.1), créer ou vérifier les enseignements de la classe (§6.1), importer le relevé de
 > notes du trimestre (§34.2), lancer le calcul des moyennes, imprimer les bulletins (§6.7).
+
+---
+
+## 35. Services annexes facturés et vue consolidée réseau
+
+### 35.1 Cantine, transport, internat
+
+**Qui peut accéder :** rôles ayant accès aux Finances (droit *Finances → Services annexes* ;
+actions *Créer / modifier les services et leurs formules* et *Abonner un élève ou une classe*,
+par défaut Directeur, Censeur, Comptable). **Où :** `Finances → Services annexes`.
+
+Un **service** (type cantine, transport ou internat) encaisse sur une **rubrique de paiement** :
+laissez le champ vide et YELEN SCHOOL crée la rubrique dédiée (codes `CANT`, `TRANS`, `INTER`),
+ce qui isole ces recettes dans le *Bilan des encaissements*. Ses tarifs sont exprimés au mois, au
+trimestre ou à l'année. Chaque **formule** porte un tarif : « Déjeuner 5 j/7 — 5 000 F/mois »,
+« Zone 2 aller-retour — 7 500 F/mois », « Pension complète — 150 000 F/an ».
+
+**Abonner un élève :** depuis sa *Situation financière*, carte *Services annexes* → **+** ; choisir
+la formule et les dates (par défaut : d'aujourd'hui à la fin de l'année scolaire). Le montant dû
+est **figé à la souscription** : tarif × périodes couvertes (mensuel : chaque mois civil entamé
+compte ; trimestriel : par tranche de 3 mois ; annuel : forfait). Un élève n'a qu'un abonnement
+actif par service ; pour changer de formule ou de dates, modifiez l'abonnement (le montant est
+recalculé au tarif en vigueur). **Annuler** un abonnement supprime ce qui restait dû ; les
+versements déjà encaissés demeurent. **Abonner une classe** (depuis la liste des services ou des
+abonnés) coche tous les élèves non encore abonnés d'une classe pour une formule et des dates communes.
+
+Le montant de l'abonnement s'ajoute au total dû de l'élève : il apparaît dans la situation
+financière, le formulaire de paiement (rubrique du service, plafonnée au montant souscrit), les
+*Redevables*, les *Relances* et le *Tableau de bord direction*. Un élève sans tarif de scolarité
+(statut élève non renseigné) peut tout de même être abonné et payer son service.
+
+**Liste des abonnés** d'un service (pour la cuisine, le chauffeur, le surveillant d'internat) :
+filtre par classe et formule, dû / versé / reste par élève, totaux, export Excel avec le
+téléphone des parents.
+
+### 35.2 Vue consolidée multi-sites (licence RESEAU)
+
+**Qui peut accéder :** Directeur Réseau (son groupe) et Super Admin (tous les groupes, avec
+sélecteur). Nécessite la fonctionnalité *multi-établissements* de la licence RESEAU. **Où :**
+menu `Réseau` (ou `Établissements → Réseau`).
+
+La page consolide, pour l'**année courante de chaque établissement** du groupe, les indicateurs
+du *Tableau de bord direction* (§1.4) : effectifs (G/F, classes, remplissage), recouvrement
+(attendu, encaissé, reste, taux, redevables), absences des 30 derniers jours et élèves à risque.
+La ligne **Total réseau** additionne les volumes ; ses taux sont **pondérés** (150 000 encaissés
+sur 300 000 attendus = 50 %, et non la moyenne des pourcentages des sites). Un établissement sans
+année courante est listé « indicateurs indisponibles ». Le bouton **Tableau de bord** d'une ligne
+ouvre le pilotage complet de ce site (impayés par classe, absences, élèves à risque) ; un
+Directeur Réseau ne peut ouvrir que les sites de son groupe. **Excel** exporte le tableau et le total.
+
+Les groupes se créent dans `Établissements → Gérer les groupes` (Super Admin) : rattacher chaque
+établissement au groupe, puis le compte Directeur Réseau à ce même groupe.

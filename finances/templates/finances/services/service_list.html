@@ -1,0 +1,103 @@
+{% extends "core/base.html" %}
+{% load humanize droits_tags %}
+
+{% block title %}Services annexes — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Services annexes</h1>
+    <p class="page-subtitle">Cantine, transport, internat : formules, tarifs et abonnés{% if annee %} — {{ annee.libelle }}{% endif %}</p>
+  </div>
+  {% if request|autorise_url:'finances:service_create' %}
+  <a href="{% url 'finances:service_create' %}" class="btn-primary">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+    Nouveau service
+  </a>
+  {% endif %}
+</div>
+
+{% for s in services %}
+<div class="card animate-fade-up mb-5"{% if not s.actif %} style="opacity:.65;"{% endif %}>
+  <div class="card-header">
+    <div class="d-flex align-center gap-3">
+      <div class="card-header-icon">
+        <span style="font-size:1.1rem;">{% if s.type_service == 'CANTINE' %}🍽{% elif s.type_service == 'TRANSPORT' %}🚌{% else %}🛏{% endif %}</span>
+      </div>
+      <div>
+        <span class="card-title">{{ s.nom }}</span>
+        <p class="card-header-sub">
+          {{ s.get_type_service_display }} · tarif {{ s.get_periodicite_display|lower }} · rubrique « {{ s.rubrique.nom }} »
+          {% if not s.actif %} · <span class="badge badge-secondary">Inactif</span>{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="d-flex gap-2 align-center">
+      <span class="badge badge-info">{{ s.nb_abonnes }} abonné(s)</span>
+      <a href="{% url 'finances:abonnes_list' s.pk %}" class="btn-secondary btn-sm">Abonnés</a>
+      {% if request|autorise_url:'finances:abonnement_classe' %}
+      <a href="{% url 'finances:abonnement_classe' s.pk %}" class="btn-secondary btn-sm">Abonner une classe</a>
+      {% endif %}
+      {% if request|autorise_url:'finances:service_edit' %}
+      <a href="{% url 'finances:service_edit' s.pk %}" class="btn-icon" title="Modifier le service">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Formule</th>
+          <th class="text-right">Tarif ({{ s.get_periodicite_display|lower }})</th>
+          <th>Statut</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in s.formules.all %}
+        <tr>
+          <td class="fw-medium">{{ f.libelle }}</td>
+          <td class="text-right fw-semibold">{{ f.montant|floatformat:0|intcomma }} FCFA</td>
+          <td><span class="badge badge-{% if f.actif %}success{% else %}secondary{% endif %}">{% if f.actif %}Active{% else %}Inactive{% endif %}</span></td>
+          <td class="text-right">
+            {% if request|autorise_url:'finances:formule_edit' %}
+            <a href="{% url 'finances:formule_edit' f.pk %}" class="btn-icon" title="Modifier la formule">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-secondary text-sm">Aucune formule : ajoutez-en une pour pouvoir abonner des élèves.</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="d-flex justify-between align-center" style="padding:0.75rem 1rem;">
+            <span class="text-sm text-secondary">Dû cette année : <strong>{{ s.total_du|floatformat:0|intcomma }}</strong> FCFA · encaissé sur la rubrique : <strong>{{ s.total_verse|floatformat:0|intcomma }}</strong> FCFA</span>
+            {% if request|autorise_url:'finances:formule_create' %}
+            <a href="{% url 'finances:formule_create' s.pk %}" class="btn-secondary btn-sm">+ Formule</a>
+            {% endif %}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% empty %}
+<div class="card animate-fade-up">
+  <div class="empty-state">
+    <p class="empty-state-text">Aucun service annexe configuré.</p>
+    <p class="text-sm text-secondary">Créez un service (cantine, transport ou internat), ajoutez ses formules tarifaires, puis abonnez les élèves depuis leur situation financière ou par classe entière.</p>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -14,6 +14,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
 import io
+from ..abonnements import abonnements_actifs, montants_par_rubrique
 from ..models import Paiement, Echeancier, ModePaiement, Remboursement
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, TarifScolarite, RubriquePaiement
@@ -357,6 +358,8 @@ def situation_eleve(request, inscription_id):
         'remboursements': remboursements,
         'relances_eleve': relances_eleve,
         'bourses': sit.get('bourses', []),
+        'total_du_brut': sit.get('total_du_brut'),
+        'abonnements': abonnements_actifs(inscription),
     })
 
 
@@ -549,7 +552,9 @@ def api_rubriques_inscription(request, inscription_id):
     }
 
     # ── Vérification : le code paiement (statut_eleve) doit être renseigné ──────
-    if not inscription.statut_eleve_id:
+    # (sauf pour encaisser uniquement des services annexes souscrits : cantine, transport, internat)
+    services = montants_par_rubrique(inscription)
+    if not inscription.statut_eleve_id and not services:
         return JsonResponse({
             'rubriques': [],
             'eleve': eleve_data,
@@ -563,16 +568,18 @@ def api_rubriques_inscription(request, inscription_id):
 
     # ── Tarifs filtrés par niveau × année × statut_eleve ────────────────────────
     # Le tarif est défini au niveau (ex: 5ème), pas à la classe individuelle.
-    tarifs_qs = TarifScolarite.objects.filter(
-        etablissement=etablissement,
-        classe__niveau=inscription.classe.niveau,
-        annee_scolaire=inscription.annee_scolaire,
-        statut_eleve=inscription.statut_eleve,
-        actif=True,
-        rubrique__actif=True,
-    ).select_related('rubrique').order_by('rubrique__ordre', 'rubrique__nom')
+    tarifs_qs = TarifScolarite.objects.none()
+    if inscription.statut_eleve_id:
+        tarifs_qs = TarifScolarite.objects.filter(
+            etablissement=etablissement,
+            classe__niveau=inscription.classe.niveau,
+            annee_scolaire=inscription.annee_scolaire,
+            statut_eleve=inscription.statut_eleve,
+            actif=True,
+            rubrique__actif=True,
+        ).select_related('rubrique').order_by('rubrique__ordre', 'rubrique__nom')
 
-    if not tarifs_qs.exists():
+    if not tarifs_qs.exists() and not services:
         statut = inscription.statut_eleve
         sit = _calcul_situation_financiere(inscription)
         return JsonResponse({
@@ -595,7 +602,7 @@ def api_rubriques_inscription(request, inscription_id):
             ),
         })
 
-    # Dédoublonner par rubrique (sécurité)
+    # Dédoublonner par rubrique (sécurité), puis les services annexes souscrits (cantine, transport, internat)
     seen = set()
     rubriques_data = []
     for t in tarifs_qs:
@@ -603,6 +610,10 @@ def api_rubriques_inscription(request, inscription_id):
         if rid not in seen:
             seen.add(rid)
             rubriques_data.append((rid, t.rubrique.nom, t.rubrique.code, t.montant))
+    for rubrique in RubriquePaiement.objects.filter(pk__in=services).order_by('ordre', 'nom'):
+        if str(rubrique.pk) not in seen:
+            seen.add(str(rubrique.pk))
+            rubriques_data.append((str(rubrique.pk), rubrique.nom, rubrique.code, services[rubrique.pk]))
 
     rubriques = []
     for rid, nom, code, montant in rubriques_data:

@@ -78,6 +78,7 @@ def _render_etab_detail(request, etab, form=None, success=None, error=None):
 # ═══════════════════════════════════════════════════════════════════
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from .models import GroupeEtablissements
@@ -94,63 +95,75 @@ def _get_groupe(user):
     return getattr(user, 'groupe', None)
 
 
+def etablissement_pilotable(user, etab_id):
+    """Établissement qu'un Super Admin ou un Directeur Réseau peut piloter à distance (même groupe), sinon None."""
+    if not etab_id or not _is_reseau_user(user):
+        return None
+    try:
+        etab = Etablissement.objects.select_related('groupe').filter(pk=etab_id).first()
+    except (ValueError, ValidationError):
+        return None
+    if etab is None or user.role == 'SUPER_ADMIN':
+        return etab
+    return etab if user.groupe_id and etab.groupe_id == user.groupe_id else None
+
+
+def _export_reseau_xlsx(groupe, lignes, totaux):
+    from core.excel import ExcelExport
+
+    wb = ExcelExport("Réseau")
+    wb.add_title("Vue consolidée du réseau", groupe.nom if groupe else "Tous les établissements")
+    wb.add_header(['Établissement', 'Année', 'Élèves', 'Garçons', 'Filles', 'Classes', 'Remplissage %',
+                   'Attendu (FCFA)', 'Encaissé (FCFA)', 'Reste (FCFA)', 'Recouvrement %', 'Redevables',
+                   'Absences 30 j', 'Absentéisme 30 j %', 'Justificatifs en attente', 'Élèves à risque'])
+
+    def valeurs(ligne):
+        e, r, a, q = ligne['effectifs'], ligne['recouvrement'], ligne['absences'], ligne['risque']
+        return [e['total'], e['garcons'], e['filles'], e['classes'], e['taux_remplissage'],
+                int(r['attendu']), int(r['encaisse']), int(r['reste']), r['taux'], r['redevables'],
+                a['trente_jours'], a['taux_30j'], a['justifications_attente'], q['prioritaires_nb']]
+
+    for ligne in lignes:
+        if ligne['annee'] is None:
+            wb.add_row([ligne['etablissement'].nom, 'Aucune année courante'] + [''] * 14)
+        else:
+            wb.add_row([ligne['etablissement'].nom, ligne['annee'].libelle] + valeurs(ligne))
+    wb.add_row(['Total réseau', f"{totaux['sites']} site(s)"] + valeurs(totaux), highlight_color='E5E7EB')
+    return wb.response('reseau_consolide.xlsx')
+
+
 @login_required
 @requires_licence_feature('multi_etablissements')
 def reseau_dashboard(request):
-    """Dashboard consolidé réseau — statistiques agrégées par établissement."""
+    """Vue consolidée multi-sites : indicateurs de pilotage de chaque établissement du groupe et totaux pondérés."""
+    from core.pilotage import tableau_reseau
+
     if not _is_reseau_user(request.user):
         messages.error(request, "Accès réservé au Directeur Réseau.")
         return redirect('core:home')
 
-    groupe_filtre = _get_groupe(request.user)
-
-    if groupe_filtre:
-        groupes = [groupe_filtre]
-        etablissements_qs = Etablissement.objects.filter(groupe=groupe_filtre)
+    groupe = _get_groupe(request.user)
+    groupes = []
+    if request.user.role == 'SUPER_ADMIN':
+        groupes = list(GroupeEtablissements.objects.order_by('nom'))
+        if request.GET.get('groupe'):
+            try:
+                groupe = GroupeEtablissements.objects.filter(pk=request.GET['groupe']).first()
+            except (ValueError, ValidationError):
+                groupe = None
+        etablissements = Etablissement.objects.filter(groupe=groupe) if groupe else Etablissement.objects.all()
+    elif groupe is not None:
+        etablissements = Etablissement.objects.filter(groupe=groupe)
     else:
-        groupes = list(GroupeEtablissements.objects.prefetch_related('etablissements').order_by('nom'))
-        etablissements_qs = Etablissement.objects.filter(groupe__isnull=False)
+        messages.warning(request, "Votre compte n'est rattaché à aucun groupe d'établissements.")
+        etablissements = Etablissement.objects.none()
 
-    # Aucun groupe ? Afficher quand même tous les établissements (SUPER_ADMIN)
-    if not groupes and request.user.role == 'SUPER_ADMIN':
-        etablissements_qs = Etablissement.objects.all()
-
-    # Statistiques par établissement
-    from inscriptions.models import Inscription
-    from finances.models import Paiement
-    from parametres.models import AnneeScolaire
-
-    stats_par_etab = []
-    for etab in etablissements_qs.order_by('nom'):
-        annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
-        nb_eleves = Inscription.objects.filter(
-            classe__etablissement=etab,
-            annee_scolaire=annee,
-        ).exclude(statut='ABANDON').count() if annee else 0
-
-        total_paye = sum(
-            p.montant for p in Paiement.objects.filter(
-                inscription__classe__etablissement=etab,
-                inscription__annee_scolaire=annee,
-            )
-        ) if annee else 0
-
-        stats_par_etab.append({
-            'etablissement': etab,
-            'annee': annee,
-            'nb_eleves': nb_eleves,
-            'total_paye': total_paye,
-        })
-
-    total_eleves = sum(s['nb_eleves'] for s in stats_par_etab)
-    total_encaisse = sum(s['total_paye'] for s in stats_par_etab)
+    consolide = tableau_reseau(etablissements.select_related('groupe').order_by('nom'))
+    if request.GET.get('format') == 'xlsx':
+        return _export_reseau_xlsx(groupe, **consolide)
 
     return render(request, 'etablissements/reseau_dashboard.html', {
-        'groupes': groupes,
-        'stats_par_etab': stats_par_etab,
-        'total_eleves': total_eleves,
-        'total_encaisse': total_encaisse,
-        'groupe_filtre': groupe_filtre,
+        'groupes': groupes, 'groupe_filtre': groupe, 'lignes': consolide['lignes'], 'totaux': consolide['totaux'],
     })
 
 

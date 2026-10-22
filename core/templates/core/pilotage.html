@@ -13,13 +13,14 @@
       </svg>
     </div>
     <div>
-      <h1>Tableau de bord direction</h1>
-      <p>Recouvrement, impayés par classe, effectifs, absences et élèves à risque — en une page</p>
+      <h1>Tableau de bord direction{% if etab_reseau %} — {{ etab_reseau.nom }}{% endif %}</h1>
+      <p>{% if etab_reseau %}Site du réseau consulté à distance — <a href="{% url 'etablissements:reseau_dashboard' %}">retour à la vue consolidée</a>{% else %}Recouvrement, impayés par classe, effectifs, absences et élèves à risque — en une page{% endif %}</p>
     </div>
   </div>
   <div class="dash-section-actions">
     {% if annees %}
     <form method="get" class="edt-toolbar">
+      {% if etab_reseau %}<input type="hidden" name="etab" value="{{ etab_reseau.pk }}">{% endif %}
       <select name="annee_id" class="dash-input" data-csp-submit-on-change>
         {% for a in annees %}
         <option value="{{ a.pk }}" {% if annee_selectionnee and a.pk == annee_selectionnee.pk %}selected{% endif %}>{{ a.libelle }}{% if a.est_courante %} ★{% endif %}</option>
@@ -42,7 +43,7 @@
 </div>
 {% else %}
 
-<p class="pil-print-title">{{ request.user.etablissement.nom }} — {{ annee_selectionnee.libelle }} — situation au {% now "d/m/Y" %}</p>
+<p class="pil-print-title">{{ etablissement_pilote.nom }} — {{ annee_selectionnee.libelle }} — situation au {% now "d/m/Y" %}</p>
 
 {# ── Indicateurs clés ── #}
 <div class="pil-kpis animate-fade-up">

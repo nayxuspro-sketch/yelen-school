@@ -149,6 +149,14 @@
         Pilotage
       </a>
       {% endif %}
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR_RESEAU' %}
+      <a href="{% url 'etablissements:reseau_dashboard' %}" class="sb-item-modern" data-url="/etablissements/reseau/">
+        <svg class="sb-icon-modern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18"/><path d="M5 21V7l4-4v18"/><path d="M19 21V11l-6-4v14"/><path d="M9 9h1m-1 4h1m-1 4h1m5-4h1m-1 4h1"/>
+        </svg>
+        Réseau
+      </a>
+      {% endif %}
 
       {# ── SCOLARITÉ ── #}
       {% if droits_scolarite %}
@@ -405,6 +413,9 @@
         {% endif %}
         {% if '/finances/bourses/' in droits_fonctionnalites %}
         <a href="{% url 'finances:boursiers_list' %}" class="sb-item-submodern" data-url="/finances/bourses/"><span class="sub-item-dot"></span>Bourses &amp; Aides</a>
+        {% endif %}
+        {% if '/finances/services/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:service_list' %}" class="sb-item-submodern" data-url="/finances/services/"><span class="sub-item-dot"></span>Services annexes</a>
         {% endif %}
         {% if '/finances/relances/' in droits_fonctionnalites %}
         <a href="{% url 'finances:relance_paiement' %}" class="sb-item-submodern" data-url="/finances/relances/"><span class="sub-item-dot"></span>Relances</a>

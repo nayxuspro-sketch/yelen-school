@@ -11,6 +11,7 @@ try:
 except Exception:  # ImportError ou OSError (libpango/cairo absents)
     # Les vues PDF vérifient cette valeur avant de générer un document.
     WeasyHTML = None
+from ..abonnements import lignes_services, montants_par_rubrique, montants_services
 from ..models import Paiement, Remboursement, BourseEleve
 from parametres.models import TarifScolarite
 from parametres.droits import acces_autorise, peut_acceder
@@ -31,12 +32,13 @@ def _situations_financieres_en_lot(inscriptions):
     """
     Version « en lot » de _calcul_situation_financiere : calcule
     {inscription_id: {'total_du', 'total_paye', 'reste_a_payer'}} pour toutes
-    les inscriptions fournies en 4 requêtes agrégées au lieu de 4 par élève.
+    les inscriptions fournies en 5 requêtes agrégées au lieu de 5 par élève.
 
     Reproduit strictement les mêmes règles :
     - total payé  = Σ paiements − Σ remboursements
     - total dû    = Σ tarifs actifs (niveau × statut_eleve × année), dédoublonnés
-                    par rubrique, − Σ bourses actives ; 0 si pas de statut_eleve
+                    par rubrique (0 si pas de statut_eleve), + Σ services annexes
+                    souscrits, − Σ bourses actives
     - reste       = max(total dû net − total payé, 0)
     Utilisée par les listes (redevables, PDF) sur des milliers d'inscriptions.
     """
@@ -59,6 +61,7 @@ def _situations_financieres_en_lot(inscriptions):
         for r in BourseEleve.objects.filter(inscription_id__in=ids, actif=True)
         .values('inscription_id').annotate(s=Sum('montant_accorde'))
     }
+    services = montants_services(ids)
 
     # Tarifs : une seule requête pour toutes les combinaisons (etab, niveau, année, statut)
     combos = {
@@ -84,11 +87,10 @@ def _situations_financieres_en_lot(inscriptions):
     result = {}
     for i in inscriptions:
         total_paye = verses.get(i.pk, Decimal('0')) - rembourses.get(i.pk, Decimal('0'))
-        if not i.statut_eleve_id:
-            result[i.pk] = {'total_du': Decimal('0'), 'total_paye': total_paye, 'reste_a_payer': Decimal('0')}
-            continue
-        combo = (i.classe.etablissement_id, i.classe.niveau, i.annee_scolaire_id, i.statut_eleve_id)
-        total_du = sum(tarifs_par_combo.get(combo, {}).values(), Decimal('0'))
+        total_du = services.get(i.pk, Decimal('0'))
+        if i.statut_eleve_id:
+            combo = (i.classe.etablissement_id, i.classe.niveau, i.annee_scolaire_id, i.statut_eleve_id)
+            total_du += sum(tarifs_par_combo.get(combo, {}).values(), Decimal('0'))
         total_du_net = max(total_du - bourses.get(i.pk, Decimal('0')), Decimal('0'))
         result[i.pk] = {
             'total_du': total_du_net,
@@ -125,7 +127,8 @@ def _calcul_situation_financiere(inscription):
     Calcule Total DÛ, Total payé, Reste à payer pour une inscription.
 
     - Total DÛ  : somme des tarifs actifs niveau × statut_eleve × annee,
-                  dédoublonnés par rubrique. 0 si statut_eleve non configuré.
+                  dédoublonnés par rubrique (0 si statut_eleve non configuré),
+                  plus les services annexes souscrits (cantine, transport, internat).
                   Les bourses/aides actives sont déduites du total dû.
     - Total payé: somme de tous les paiements enregistrés pour l'inscription.
     - Reste     : Total DÛ net – Total payé (jamais négatif pour le reste affiché).
@@ -145,28 +148,16 @@ def _calcul_situation_financiere(inscription):
         inscription=inscription, actif=True, is_active=True,
     ).select_related('type_bourse', 'rubrique')
 
-    # Sans statut_eleve, impossible de déterminer les frais — total_du = 0
-    if not inscription.statut_eleve_id:
-        total_reduction = bourses.aggregate(s=Sum('montant_accorde'))['s'] or Decimal('0')
-        return {
-            'total_du': Decimal('0'),
-            'total_paye': total_paye,
-            'total_rembourse': total_rembourse,
-            'total_reduction': total_reduction,
-            'reste_a_payer': Decimal('0'),
-            'frais_details': [],
-            'use_tarifs': False,
-            'paiements': paiements,
-            'bourses': bourses,
-        }
-
-    tarifs_qs = TarifScolarite.objects.filter(
-        etablissement=etablissement,
-        classe__niveau=inscription.classe.niveau,
-        annee_scolaire=inscription.annee_scolaire,
-        statut_eleve=inscription.statut_eleve,
-        actif=True,
-    ).select_related('rubrique').order_by('rubrique__ordre', 'rubrique__nom')
+    # Sans statut_eleve, impossible de déterminer les frais de scolarité : seuls les services souscrits sont dus
+    tarifs_qs = TarifScolarite.objects.none()
+    if inscription.statut_eleve_id:
+        tarifs_qs = TarifScolarite.objects.filter(
+            etablissement=etablissement,
+            classe__niveau=inscription.classe.niveau,
+            annee_scolaire=inscription.annee_scolaire,
+            statut_eleve=inscription.statut_eleve,
+            actif=True,
+        ).select_related('rubrique').order_by('rubrique__ordre', 'rubrique__nom')
 
     # Dédoublonner par rubrique (plusieurs classes peuvent partager le même niveau)
     seen = set()
@@ -177,6 +168,9 @@ def _calcul_situation_financiere(inscription):
             seen.add(t.rubrique_id)
             frais_details.append(t)
             total_du += t.montant
+    for ligne in lignes_services(inscription):
+        frais_details.append(ligne)
+        total_du += ligne.montant
 
     # Déduire les bourses/aides scolaires
     total_reduction = bourses.aggregate(s=Sum('montant_accorde'))['s'] or Decimal('0')
@@ -225,8 +219,9 @@ def _payment_overage_errors(inscription, lignes):
         if inscription.statut_eleve_id:
             tarif_qs = tarif_qs.filter(statut_eleve=inscription.statut_eleve)
         tarif = tarif_qs.first()
-        if tarif:
-            reste = Decimal(str(tarif.montant)) - deja_verse
+        plafond = Decimal(str(tarif.montant)) if tarif else montants_par_rubrique(inscription).get(rubrique.pk)
+        if plafond is not None:
+            reste = plafond - deja_verse
             if montant > reste:
                 errors.append(
                     f"« {rubrique.nom} » : montant versé {montant:,.0f} FCFA "

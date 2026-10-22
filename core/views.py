@@ -307,7 +307,11 @@ def pilotage(request):
         return render(request, 'core/access_denied.html', {
             'message': "Le tableau de bord direction est réservé à la direction.",
         })
-    etab = request.user.etablissement
+    from etablissements.views import etablissement_pilotable
+
+    # Depuis la vue consolidée du réseau : un Super Admin ou un Directeur Réseau pilote un site de son groupe
+    etab_reseau = etablissement_pilotable(request.user, request.GET.get('etab'))
+    etab = etab_reseau or request.user.etablissement
     annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut') if etab else AnneeScolaire.objects.none()
     annee = None
     if request.GET.get('annee_id'):
@@ -316,7 +320,7 @@ def pilotage(request):
         except (ValueError, ValidationError):
             annee = None
     annee = annee or annees.filter(est_courante=True).first() or annees.first()
-    context = {'annees': annees, 'annee_selectionnee': annee}
+    context = {'annees': annees, 'annee_selectionnee': annee, 'etablissement_pilote': etab, 'etab_reseau': etab_reseau}
     if annee is not None:
         context.update(tableau_de_bord(etab, annee))
     return render(request, 'core/pilotage.html', context)

@@ -1,0 +1,78 @@
+{% extends "core/base.html" %}
+{% load humanize %}
+
+{% block title %}{% if abonnement %}Modifier l'abonnement{% else %}Abonner{% endif %} — {{ inscription.eleve }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="form-page-wrap">
+
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-4">
+      <a href="{% url 'finances:situation_eleve' inscription.pk %}" class="btn-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="page-title">{% if abonnement %}Modifier l'abonnement{% else %}Abonner à un service{% endif %}</h1>
+        <p class="page-subtitle">{{ inscription.eleve.nom }} {{ inscription.eleve.prenom }} — {{ inscription.classe.nom }} — {{ inscription.annee_scolaire.libelle }}</p>
+      </div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="card animate-fade-up delay-1 mb-5">
+      <div class="form-body">
+
+        <div class="form-group mb-4">
+          <label for="formule" class="input-label">Service et formule <span class="required-star">*</span></label>
+          <select id="formule" name="formule" class="input select" required autofocus>
+            <option value="">— Choisir —</option>
+            {% regroup formules by service as groupes %}
+            {% for g in groupes %}
+            <optgroup label="{{ g.grouper.nom }} ({{ g.grouper.get_periodicite_display|lower }})">
+              {% for f in g.list %}
+              <option value="{{ f.pk }}" {% if valeurs.formule == f.pk|stringformat:'s' %}selected{% endif %}>{{ f.libelle }} — {{ f.montant|floatformat:0|intcomma }} FCFA</option>
+              {% endfor %}
+            </optgroup>
+            {% empty %}
+            <option value="" disabled>Aucune formule active : configurez d'abord les services annexes</option>
+            {% endfor %}
+          </select>
+          {% if abonnement %}<p class="input-hint">Changer de formule recalcule le montant dû avec le tarif actuel.</p>{% endif %}
+        </div>
+
+        <div class="form-grid-2 mb-4">
+          <div class="form-group">
+            <label for="date_debut" class="input-label">Début <span class="required-star">*</span></label>
+            <input type="date" id="date_debut" name="date_debut" class="input" required value="{{ valeurs.date_debut }}">
+          </div>
+          <div class="form-group">
+            <label for="date_fin" class="input-label">Fin <span class="required-star">*</span></label>
+            <input type="date" id="date_fin" name="date_fin" class="input" required value="{{ valeurs.date_fin }}">
+            <p class="input-hint">Mensuel : chaque mois entamé compte ; trimestriel : par tranche de 3 mois ; annuel : forfait</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="observation" class="input-label">Observation <span class="input-label-opt">(optionnel)</span></label>
+          <input type="text" id="observation" name="observation" class="input" maxlength="200"
+                 value="{{ valeurs.observation }}" placeholder="Ex : arrêt de bus Tampouy, régime sans porc">
+        </div>
+
+      </div>
+    </div>
+
+    <div class="form-actions animate-fade-up delay-2">
+      <a href="{% url 'finances:situation_eleve' inscription.pk %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        {% if abonnement %}Enregistrer{% else %}Abonner{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

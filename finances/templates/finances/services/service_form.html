@@ -1,0 +1,93 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if service %}Modifier{% else %}Nouveau{% endif %} service annexe — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="form-page-wrap">
+
+  <div class="page-header animate-fade-up">
+    <div class="d-flex align-center gap-4">
+      <a href="{% url 'finances:service_list' %}" class="btn-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="page-title">{% if service %}Modifier « {{ service.nom }} »{% else %}Nouveau service annexe{% endif %}</h1>
+        <p class="page-subtitle">Un service encaisse sur une rubrique de paiement ; ses formules fixent les tarifs</p>
+      </div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="card animate-fade-up delay-1 mb-5">
+      <div class="form-body">
+
+        <div class="form-group mb-4">
+          <label class="input-label">Type de service <span class="required-star">*</span></label>
+          <div class="form-grid-3 mt-2">
+            {% for val, lib in types %}
+            <label class="choice-card">
+              <input type="radio" name="type_service" value="{{ val }}" required
+                     {% if valeurs.type_service == val %}checked{% endif %}>
+              <span class="choice-card-emoji">{% if val == 'CANTINE' %}🍽{% elif val == 'TRANSPORT' %}🚌{% else %}🛏{% endif %}</span>
+              <span>{{ lib }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="form-grid-2-1 mb-4">
+          <div class="form-group">
+            <label for="nom" class="input-label">Nom <span class="required-star">*</span></label>
+            <input type="text" id="nom" name="nom" class="input" required maxlength="100" autofocus
+                   value="{{ valeurs.nom }}"
+                   placeholder="Ex : Cantine du midi, Transport scolaire, Internat filles">
+          </div>
+          <div class="form-group">
+            <label for="periodicite" class="input-label">Tarifs exprimés <span class="required-star">*</span></label>
+            <select id="periodicite" name="periodicite" class="input select" required>
+              {% for val, lib in periodicites %}
+              <option value="{{ val }}" {% if valeurs.periodicite == val %}selected{% endif %}>{{ lib }}</option>
+              {% endfor %}
+            </select>
+            <p class="input-hint">Le montant dû d'un abonné = tarif × périodes couvertes par ses dates</p>
+          </div>
+        </div>
+
+        <div class="form-group mb-4">
+          <label for="rubrique" class="input-label">Rubrique de paiement <span class="input-label-opt">(optionnel)</span></label>
+          <select id="rubrique" name="rubrique" class="input select">
+            <option value="">— Créer automatiquement une rubrique dédiée —</option>
+            {% for r in rubriques %}
+            <option value="{{ r.pk }}" {% if valeurs.rubrique == r.pk|stringformat:'s' %}selected{% endif %}>{{ r.nom }} ({{ r.code }})</option>
+            {% endfor %}
+          </select>
+          <p class="input-hint">Les versements des abonnés sont saisis sur cette rubrique et isolés dans les bilans</p>
+        </div>
+
+        <label class="checkbox-block" for="actif">
+          <input type="checkbox" name="actif" id="actif" class="checkbox-block-input"
+                 {% if valeurs.actif %}checked{% endif %}>
+          <div>
+            <div class="checkbox-block-title">Service actif</div>
+            <p class="checkbox-block-sub">Un service inactif n'accepte plus de nouveaux abonnements ; les abonnements en cours restent dus.</p>
+          </div>
+        </label>
+
+      </div>
+    </div>
+
+    <div class="form-actions animate-fade-up delay-2">
+      <a href="{% url 'finances:service_list' %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        {% if service %}Enregistrer{% else %}Créer le service{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

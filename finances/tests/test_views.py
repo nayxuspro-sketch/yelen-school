@@ -280,7 +280,7 @@ class TestSituationsFinancieresEnLot:
         from inscriptions.models import Inscription
         annee, _ = jeu
         inscriptions = list(Inscription.objects.filter(annee_scolaire=annee).select_related('classe', 'statut_eleve'))
-        with django_assert_max_num_queries(4):
+        with django_assert_max_num_queries(5):  # paiements, remboursements, bourses, services annexes, tarifs
             _situations_financieres_en_lot(inscriptions)
 
     def test_page_redevables_et_pdf(self, jeu, client):

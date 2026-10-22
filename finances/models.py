@@ -758,3 +758,130 @@ class LigneReleve(BaseModel):
 
     def __str__(self):
         return f"{self.numero_transaction} — {self.montant} FCFA"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SERVICES ANNEXES FACTURÉS — cantine, transport, internat
+# ═══════════════════════════════════════════════════════════════════
+
+class TypeService(models.TextChoices):
+    CANTINE = 'CANTINE', _('Cantine')
+    TRANSPORT = 'TRANSPORT', _('Transport')
+    INTERNAT = 'INTERNAT', _('Internat')
+
+
+class PeriodiciteService(models.TextChoices):
+    MENSUEL = 'MENSUEL', _('Mensuel')
+    TRIMESTRIEL = 'TRIMESTRIEL', _('Trimestriel')
+    ANNUEL = 'ANNUEL', _('Annuel')
+
+
+# Code de la rubrique de paiement créée automatiquement pour un service.
+CODES_RUBRIQUE_SERVICE = {
+    TypeService.CANTINE: 'CANT',
+    TypeService.TRANSPORT: 'TRANS',
+    TypeService.INTERNAT: 'INTER',
+}
+
+
+class ServiceAnnexe(BaseModel):
+    """Service facturé en plus de la scolarité ; ses encaissements passent par ``rubrique``."""
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement', on_delete=models.CASCADE, related_name='services_annexes',
+        verbose_name=_("Établissement"),
+    )
+    type_service = models.CharField(max_length=10, choices=TypeService.choices, verbose_name=_("Type"))
+    nom = models.CharField(max_length=100, verbose_name=_("Nom"))
+    rubrique = models.ForeignKey(
+        'parametres.RubriquePaiement', on_delete=models.PROTECT, related_name='services_annexes',
+        verbose_name=_("Rubrique de paiement"),
+    )
+    periodicite = models.CharField(
+        max_length=12, choices=PeriodiciteService.choices, default=PeriodiciteService.MENSUEL,
+        verbose_name=_("Périodicité des tarifs"),
+    )
+    actif = models.BooleanField(default=True, verbose_name=_("Service actif"))
+
+    class Meta:
+        verbose_name = _("Service annexe")
+        verbose_name_plural = _("Services annexes")
+        ordering = ['type_service', 'nom']
+        unique_together = [['etablissement', 'nom']]
+
+    def __str__(self):
+        return self.nom
+
+    def nb_periodes(self, date_debut, date_fin):
+        """Périodes facturées entre deux dates incluses : mois civils entamés, trimestres (3 mois) ou 1."""
+        if self.periodicite == PeriodiciteService.ANNUEL:
+            return 1
+        mois = (date_fin.year - date_debut.year) * 12 + date_fin.month - date_debut.month + 1
+        if self.periodicite == PeriodiciteService.TRIMESTRIEL:
+            return -(-mois // 3)
+        return mois
+
+
+class FormuleService(BaseModel):
+    """Tarif d'un service par période : zone de transport, régime d'internat, formule de cantine."""
+    service = models.ForeignKey(ServiceAnnexe, on_delete=models.CASCADE, related_name='formules', verbose_name=_("Service"))
+    libelle = models.CharField(max_length=100, verbose_name=_("Libellé"))
+    montant = models.DecimalField(max_digits=10, decimal_places=0, verbose_name=_("Montant par période (FCFA)"))
+    actif = models.BooleanField(default=True, verbose_name=_("Formule active"))
+
+    class Meta:
+        verbose_name = _("Formule de service")
+        verbose_name_plural = _("Formules de service")
+        ordering = ['service', 'montant', 'libelle']
+        unique_together = [['service', 'libelle']]
+        constraints = [models.CheckConstraint(condition=models.Q(montant__gt=0), name='formule_service_montant_positif')]
+
+    def __str__(self):
+        return f"{self.service.nom} — {self.libelle}"
+
+
+class AbonnementService(BaseModel):
+    """Souscription d'un élève à une formule ; le montant dû est figé à la souscription."""
+    inscription = models.ForeignKey(Inscription, on_delete=models.CASCADE, related_name='abonnements_services')
+    formule = models.ForeignKey(FormuleService, on_delete=models.PROTECT, related_name='abonnements', verbose_name=_("Formule"))
+    date_debut = models.DateField(verbose_name=_("Début"))
+    date_fin = models.DateField(verbose_name=_("Fin"))
+    nb_periodes = models.PositiveSmallIntegerField(verbose_name=_("Périodes facturées"))
+    montant_periode = models.DecimalField(max_digits=10, decimal_places=0, verbose_name=_("Montant par période (FCFA)"))
+    montant_total = models.DecimalField(max_digits=12, decimal_places=0, verbose_name=_("Montant dû (FCFA)"))
+    actif = models.BooleanField(default=True, verbose_name=_("Abonnement actif"))
+    observation = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Observation"))
+
+    class Meta:
+        verbose_name = _("Abonnement à un service")
+        verbose_name_plural = _("Abonnements aux services")
+        ordering = ['formule__service', 'date_debut']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(date_fin__gte=models.F('date_debut')),
+                                   name='abonnement_service_dates_ordonnees'),
+        ]
+
+    def __str__(self):
+        return f"{self.inscription.eleve} — {self.formule}"
+
+    @property
+    def periodes_libelle(self):
+        """« 9 mois du 01/10/2026 au 30/06/2027 », « 3 trimestres du … », « forfait annuel du … »."""
+        periodicite = self.formule.service.periodicite
+        if periodicite == PeriodiciteService.ANNUEL:
+            quantite = "forfait annuel"
+        elif periodicite == PeriodiciteService.MENSUEL:
+            quantite = f"{self.nb_periodes} mois"
+        else:
+            quantite = f"{self.nb_periodes} trimestre{'s' if self.nb_periodes > 1 else ''}"
+        return f"{quantite} du {self.date_debut:%d/%m/%Y} au {self.date_fin:%d/%m/%Y}"
+
+    def calculer(self):
+        """Fige périodes et montants d'après la formule et les dates."""
+        self.nb_periodes = self.formule.service.nb_periodes(self.date_debut, self.date_fin)
+        self.montant_periode = self.formule.montant
+        self.montant_total = self.montant_periode * self.nb_periodes
+
+    def save(self, *args, **kwargs):
+        if not self.montant_total:
+            self.calculer()
+        super().save(*args, **kwargs)
