@@ -115,6 +115,8 @@ jobs:
           LICENSE_ENFORCEMENT: "false"
           SECRET_KEY: ci-secret-key-for-testing-only
           DISABLE_HTTPS_REDIRECT: "true"
+      - name: Tests PowerShell (installer/start-local.ps1)
+        run: pwsh -NoProfile -File installer/tests/test-start-local.ps1
       - name: Run tests (SQLite)
         run: python -m pytest --tb=short -x
         env:

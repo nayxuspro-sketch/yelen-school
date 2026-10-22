@@ -40,10 +40,9 @@ function Set-DotEnvValue {
         [string]$Value
     )
 
-    $content = Get-Content $EnvFile -Raw
-    if ($null -eq $content) {
-        $content = ''
-    }
+    # Lecture explicite en UTF-8 : sans BOM, Windows PowerShell lirait le fichier
+    # en ANSI et altérerait les accents des commentaires à chaque réécriture.
+    $content = [System.IO.File]::ReadAllText($EnvFile, [System.Text.UTF8Encoding]::new($false))
 
     $escapedName = [regex]::Escape($Name)
     $line = "$Name=$Value"
@@ -63,6 +62,90 @@ function Set-DotEnvValue {
         $content,
         [System.Text.UTF8Encoding]::new($false)
     )
+}
+
+function Add-DotEnvListValues {
+    # Complète une liste séparée par des virgules sans rien retirer et retourne
+    # les valeurs ajoutées. Une variable absente ou vide est laissée telle
+    # quelle : c'est à l'installateur de la créer.
+    param(
+        [string]$Name,
+        [string[]]$Values
+    )
+
+    $current = Get-DotEnvValue $Name
+    if ([string]::IsNullOrWhiteSpace($current)) { return @() }
+    $items = @($current -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $added = @($Values | Select-Object -Unique | Where-Object { $items -notcontains $_ })
+    if ($added.Count -gt 0) {
+        Set-DotEnvValue $Name (($items + $added) -join ',')
+    }
+    return $added
+}
+
+function Get-PhysicalInterfaceIndexes {
+    # Cartes réseau physiques actives (Wi-Fi, Ethernet). Les cartes virtuelles
+    # (WSL, Hyper-V, Docker) changent d'adresse à chaque démarrage et ne sont
+    # jamais jointes depuis les autres postes.
+    if (-not (Get-Command Get-NetAdapter -ErrorAction SilentlyContinue)) { return @() }
+    try {
+        return @(Get-NetAdapter -Physical -ErrorAction Stop |
+            Where-Object { $_.Status -eq 'Up' } |
+            Select-Object -ExpandProperty ifIndex)
+    } catch {
+        return @()
+    }
+}
+
+function Get-LanIPv4Addresses {
+    param([uint32[]]$InterfaceIndexes)
+
+    if ($InterfaceIndexes.Count -eq 0) { return @() }
+    try {
+        return @(Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $InterfaceIndexes -ErrorAction Stop |
+            Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
+            Select-Object -ExpandProperty IPAddress -Unique)
+    } catch {
+        return @()
+    }
+}
+
+function Get-PublicNetworkNames {
+    # Réseaux classés « Public » sur les cartes physiques : la règle de pare-feu
+    # YELEN ne s'y applique pas, les autres postes ne peuvent pas se connecter.
+    param([uint32[]]$InterfaceIndexes)
+
+    if ($InterfaceIndexes.Count -eq 0 -or -not (Get-Command Get-NetConnectionProfile -ErrorAction SilentlyContinue)) {
+        return @()
+    }
+    try {
+        return @(Get-NetConnectionProfile -ErrorAction Stop |
+            Where-Object { $_.NetworkCategory -eq 'Public' -and $InterfaceIndexes -contains $_.InterfaceIndex } |
+            ForEach-Object { "$($_.Name) ($($_.InterfaceAlias))" })
+    } catch {
+        return @()
+    }
+}
+
+function Register-LanAddresses {
+    # Autorise les adresses IP actuelles du poste (ALLOWED_HOSTS et
+    # CSRF_TRUSTED_ORIGINS) : l'application suit le poste d'un réseau à l'autre.
+    # Retourne les adresses nouvellement autorisées.
+    param(
+        [string[]]$Addresses,
+        [int]$HttpPort
+    )
+
+    if ($Addresses.Count -eq 0) { return @() }
+    $origins = @($Addresses | ForEach-Object { "http://${_}:$HttpPort" })
+    if ((Get-DotEnvValue 'YELEN_HTTPS') -eq 'true') {
+        $httpsPort = Get-DotEnvValue 'YELEN_HTTPS_PORT'
+        if ([string]::IsNullOrWhiteSpace($httpsPort)) { $httpsPort = '8443' }
+        $origins += @($Addresses | ForEach-Object { "https://${_}:$httpsPort" })
+    }
+    $added = @(Add-DotEnvListValues 'ALLOWED_HOSTS' $Addresses)
+    Add-DotEnvListValues 'CSRF_TRUSTED_ORIGINS' $origins | Out-Null
+    return $added
 }
 
 function Test-FirewallRuleForPort {
@@ -197,6 +280,20 @@ try {
         }
     } else {
         Write-StartupLog "Port HTTP conservé : $selectedPort ; règle pare-feu inchangée."
+    }
+
+    # Adresses IP actuelles du poste : autorisées automatiquement pour que
+    # l'application reste joignable après un changement de réseau (box, Wi-Fi).
+    # Si .env change, docker compose recrée le service web.
+    $physicalIndexes = @(Get-PhysicalInterfaceIndexes)
+    $lanAddresses = @(Get-LanIPv4Addresses -InterfaceIndexes $physicalIndexes)
+    $newAddresses = @(Register-LanAddresses -Addresses $lanAddresses -HttpPort $selectedPort)
+    if ($newAddresses.Count -gt 0) {
+        Write-StartupLog "Nouvelle(s) adresse(s) du poste autorisée(s) : $($newAddresses -join ', ')."
+    }
+    $publicNetworks = @(Get-PublicNetworkNames -InterfaceIndexes $physicalIndexes)
+    if ($publicNetworks.Count -gt 0) {
+        Write-StartupLog "AVERTISSEMENT : réseau classé Public ($($publicNetworks -join ', ')) : le pare-feu Windows bloque l'accès des autres postes. Classer ce réseau en « Réseau privé » (Paramètres > Réseau et Internet)."
     }
 
     # Empreinte du serveur transmise au conteneur (liaison de la licence).

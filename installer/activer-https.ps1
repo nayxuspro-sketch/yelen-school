@@ -46,8 +46,7 @@ function Get-DotEnvValue {
 
 function Set-DotEnvValue {
     param([string]$Name, [string]$Value)
-    $content = Get-Content $EnvFile -Raw
-    if ($null -eq $content) { $content = '' }
+    $content = [System.IO.File]::ReadAllText($EnvFile, [System.Text.UTF8Encoding]::new($false))
     $pattern = "(?m)^$([regex]::Escape($Name))=.*$"
     $line = "$Name=$Value"
     if ([regex]::IsMatch($content, $pattern)) {

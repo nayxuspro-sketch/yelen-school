@@ -174,10 +174,7 @@ if ($FreshInstallation) {
     Write-Host '[OK] Fichier .env créé à partir de .env.example' -ForegroundColor Green
 }
 
-$script:EnvContent = Get-Content $EnvFile -Raw
-if ($null -eq $script:EnvContent) {
-    $script:EnvContent = ''
-}
+$script:EnvContent = [System.IO.File]::ReadAllText($EnvFile, [System.Text.UTF8Encoding]::new($false))
 
 $httpPort = Get-EnvValue 'YELEN_HTTP_PORT'
 if ([string]::IsNullOrWhiteSpace($httpPort)) {
@@ -349,7 +346,7 @@ if ($initialSetupPending) {
     # Le compte initial a été créé par entrypoint.sh. On évite de réinitialiser
     # son mot de passe lors des prochains redémarrages et on retire le secret
     # temporaire du fichier .env.
-    $script:EnvContent = Get-Content $EnvFile -Raw
+    $script:EnvContent = [System.IO.File]::ReadAllText($EnvFile, [System.Text.UTF8Encoding]::new($false))
     Set-EnvValue 'ENSURE_ADMIN' 'false'
     Set-EnvValue 'INITIAL_ADMIN_PASSWORD' ''
     [System.IO.File]::WriteAllText(
