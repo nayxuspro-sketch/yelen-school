@@ -95,7 +95,8 @@ if ($Hosts.Count -eq 0) {
         Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' -and
                        $_.InterfaceAlias -notlike 'vEthernet*' -and $_.InterfaceAlias -notlike '*Loopback*' } |
         Select-Object -ExpandProperty IPAddress)
-    $Hosts = @($lan) + @($env:COMPUTERNAME) + @($memo -split '[,; ]+')
+    # NOMPC (postes Windows) et NOMPC.local (tablettes, téléphones, Mac) : cf. §9.1 du guide.
+    $Hosts = @($lan) + @($env:COMPUTERNAME, "$env:COMPUTERNAME.local") + @($memo -split '[,; ]+')
 }
 $Hosts = @(@($Hosts) + @('localhost', '127.0.0.1') | ForEach-Object { "$_".Trim() } | Where-Object { $_ } | Select-Object -Unique)
 $hostList = $Hosts -join ','

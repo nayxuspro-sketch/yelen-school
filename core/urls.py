@@ -25,6 +25,7 @@ urlpatterns = [
     # PWA — portail parent
     path('manifest.json', views.pwa_manifest, name='pwa_manifest'),
     path('pwa/icon/<int:size>/', views.pwa_icon, name='pwa_icon'),
+    path('certificat-autorite/', views.certificat_autorite, name='certificat_autorite'),
 
     # PWA — application principale (staff)
     path('app-manifest.json', views.app_manifest, name='app_manifest'),

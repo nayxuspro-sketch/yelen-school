@@ -963,7 +963,7 @@ Par défaut, l'application est servie en HTTP : mots de passe et données circul
 
 **Sur le serveur** — clic droit sur `activer-https.bat` (racine du dossier), **Exécuter en tant qu'administrateur**. Le script :
 
-1. génère `certs\yelen-ca.crt` (autorité, 10 ans) et le certificat du serveur (825 jours) couvrant les adresses IP détectées, le nom du serveur, `localhost` et `127.0.0.1` ; pour imposer la liste : `activer-https.bat -Hosts 192.168.1.10,serveur-ecole` ;
+1. génère `certs\yelen-ca.crt` (autorité, 10 ans) et le certificat du serveur (825 jours) couvrant les adresses IP détectées, le nom du serveur (`NOMPC` et `NOMPC.local`), `localhost` et `127.0.0.1` ; pour imposer la liste : `activer-https.bat -Hosts 192.168.1.10,serveur-ecole` ;
 2. inscrit dans `.env` : `YELEN_HTTPS=true`, `YELEN_HTTPS_PORT=8443` (`-Port` pour changer), `YELEN_HTTPS_HOSTS`, `COMPOSE_PROFILES=https` et `YELEN_WEB_BIND=127.0.0.1` — **l'accès HTTP est fermé sur le réseau** (il reste disponible sur le serveur, `http://127.0.0.1:<port>`, pour la surveillance) ;
 3. ouvre le port HTTPS dans le pare-feu (règle `YELEN SCHOOL - Accès réseau local (HTTPS)`), installe l'autorité sur le serveur, redémarre les services et vérifie `https://127.0.0.1:8443/health/`.
 
@@ -971,7 +971,18 @@ Nouvelle adresse à communiquer : `https://<IP du serveur>:8443/`.
 
 **Sur chaque poste (une fois)** — copier `certs\yelen-ca.crt` et `installer\installer-certificat-poste.bat` dans un même dossier (clé USB), puis exécuter le `.bat` en tant qu'administrateur : il installe l'autorité dans le magasin Windows (Edge, Chrome). Firefox : si un avertissement persiste, Paramètres → Vie privée et sécurité → Certificats → Importer `yelen-ca.crt`. Sans cette installation, le navigateur affiche un avertissement de certificat mais la connexion reste chiffrée.
 
+**Sur chaque tablette ou téléphone (une fois)** — l'autorité se télécharge depuis l'application elle-même : ouvrir `https://NOMPC.local:8443/certificat-autorite/` (ou avec l'adresse IP), accepter l'avertissement de sécurité **cette seule fois** (menu *Paramètres avancés → Continuer*), le fichier `yelen-ca.crt` est téléchargé. Puis :
+
+- **Android** : Paramètres → Sécurité (ou *Sécurité et confidentialité* → *Autres paramètres de sécurité*) → *Chiffrement et identifiants* → **Installer un certificat** → **Certificat CA** → *Installer quand même* → choisir `yelen-ca.crt` dans Téléchargements. Les libellés varient selon la marque ; la recherche « certificat » dans les Paramètres y mène directement.
+- **iPhone / iPad** : Safari signale « Profil téléchargé » → Réglages → **Profil téléchargé** → Installer (code de l'appareil) ; puis Réglages → Général → Informations → **Réglages des certificats** → activer la confiance totale pour **YELEN SCHOOL**.
+
+Rouvrir ensuite `https://NOMPC.local:8443/` : le cadenas doit apparaître sans avertissement. Sans cette installation, la connexion reste chiffrée mais le navigateur affiche un avertissement et **ne propose pas l'installation de l'application** (PWA).
+
+**Installer l'application (PWA) sur tablette ou téléphone** — uniquement sur l'adresse `https://` avec l'autorité installée (en `http://`, aucun navigateur ne propose l'installation ; Android n'offre alors qu'un simple raccourci). Chrome / Samsung Internet : menu ⋮ → **Installer l'application** (ou *Ajouter à l'écran d'accueil*) → Installer. Safari (iPad, iPhone) : bouton Partager → **Sur l'écran d'accueil** → Ajouter. L'icône YELEN apparaît sur l'écran d'accueil et l'application s'ouvre en plein écran, avec les raccourcis « Appel » et « Notes » (appui long sur l'icône, Android).
+
 **Changement d'adresse IP du serveur** — relancer `activer-https.bat` : le certificat serveur est renouvelé, l'autorité est conservée, rien à refaire sur les postes. Même opération avant l'expiration du certificat (date affichée par le script).
+
+**HTTPS activé avant octobre 2026** — relancer une fois `activer-https.bat` pour que le certificat couvre aussi `NOMPC.local` (adresse des tablettes, §9.1) ; l'autorité est conservée, rien à refaire sur les postes.
 
 **Retour en HTTP** — `activer-https.bat -Desactiver` (administrateur) : retire le proxy, rouvre le port HTTP sur le réseau et supprime la règle de pare-feu HTTPS. Les fichiers `certs\` sont conservés.
 

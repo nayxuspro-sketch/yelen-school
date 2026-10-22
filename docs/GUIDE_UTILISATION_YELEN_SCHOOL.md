@@ -1537,7 +1537,7 @@ La page d'impression s'ouvre dans un nouvel onglet et reprend automatiquement le
 
 **Prérequis :** la fiche du personnel de l'enseignant porte la **même adresse e-mail** que son compte (c'est ce lien qui retrouve ses enseignements). Les séances du jour proviennent de l'emploi du temps (`Vie scolaire → Emploi du temps`) ; sans emploi du temps, tous les cours de l'année restent proposés.
 
-**Installer l'application sur le téléphone :** ouvrir l'adresse de YELEN SCHOOL dans Chrome (Android) ou Safari (iPhone), puis **Installer l'application** (bandeau en bas du menu) ou *Ajouter à l'écran d'accueil*. L'installation en vrai « plein écran » exige une adresse `https://` (voir le guide de déploiement, HTTPS local) ; en `http://`, l'application s'utilise normalement dans le navigateur.
+**Installer l'application sur le téléphone ou la tablette :** ouvrir l'adresse **`https://`** de YELEN SCHOOL (fournie par l'administrateur, le certificat de l'école installé une fois sur l'appareil — guide de déploiement §9.3) dans Chrome (Android) ou Safari (iPhone, iPad), puis menu ⋮ → **Installer l'application** ou Partager → **Sur l'écran d'accueil**. En `http://`, aucun navigateur ne propose l'installation (Android n'affiche qu'un simple raccourci) : l'application s'utilise alors normalement dans le navigateur.
 
 **La page Mes cours :**
 
@@ -4939,6 +4939,7 @@ Le texte du SMS envoyé est défini dans **Paramètres → Modèles de messages*
 
 **Étapes d'installation (Android) :**
 
+0. Prérequis : l'adresse `https://` de l'établissement et son certificat installé sur le téléphone (remis par l'école ; guide de déploiement §9.3). En `http://`, Chrome ne propose pas l'installation.
 1. Ouvrir Chrome sur le téléphone Android
 2. Naviguer vers l'adresse du portail de l'établissement puis `/portail/parent/`
 3. Se connecter avec les identifiants parent

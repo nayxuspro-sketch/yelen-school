@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -5,7 +8,8 @@ from django.db.models import Sum, Count, Q
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 
-from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponseForbidden, HttpResponse, JsonResponse
+from django.templatetags.static import static
 
 from personnel.models import MembrePersonnel
 from inscriptions.models import Eleve, Inscription
@@ -1033,8 +1037,9 @@ def app_manifest(request):
         "theme_color": "#00A86B",
         "lang": "fr",
         "icons": [
-            {"src": "/pwa/icon/192/", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable"},
-            {"src": "/pwa/icon/512/", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable"},
+            {"src": static('img/pwa/icon-192.png'), "sizes": "192x192", "type": "image/png", "purpose": "any"},
+            {"src": static('img/pwa/icon-512.png'), "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            {"src": static('img/pwa/icon-maskable-512.png'), "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
         ],
         "categories": ["education", "productivity"],
         "shortcuts": [
@@ -1136,11 +1141,22 @@ def pwa_manifest(request):
         "theme_color": "#00A86B",
         "lang": "fr",
         "icons": [
-            {"src": "/pwa/icon/192/", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any"},
-            {"src": "/pwa/icon/512/", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any"},
+            {"src": static('img/pwa/icon-192.png'), "sizes": "192x192", "type": "image/png", "purpose": "any"},
+            {"src": static('img/pwa/icon-512.png'), "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            {"src": static('img/pwa/icon-maskable-512.png'), "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
         ],
     }
     return JsonResponse(manifest)
+
+
+def certificat_autorite(request):
+    """Autorité de certification locale (clé publique, HTTPS local) à installer
+    une fois sur les tablettes et téléphones ; 404 tant que le HTTPS n'est pas activé."""
+    chemin = Path(settings.BASE_DIR) / 'certs' / 'yelen-ca.crt'
+    if not chemin.is_file():
+        raise Http404("HTTPS local non activé : aucune autorité à télécharger.")
+    return FileResponse(chemin.open('rb'), content_type='application/x-x509-ca-cert',
+                        as_attachment=True, filename='yelen-ca.crt')
 
 
 def pwa_icon(request, size):
