@@ -36,6 +36,17 @@ def test_icone_ios_dans_les_pages(client, settings):
     assert 'img/pwa/apple-touch-icon' in page
 
 
+@pytest.mark.django_db
+def test_page_de_connexion_installable(client):
+    """Le manifeste et le Service Worker sont déclarés dès la page de connexion : le menu
+    « Installer l'application » est proposé avant toute authentification."""
+    page = client.get(reverse('accounts:login')).content.decode()
+
+    assert 'rel="manifest" href="/app-manifest.json"' in page
+    assert 'rel="apple-touch-icon"' in page
+    assert "serviceWorker.register('/app-sw.js'" in page
+
+
 def test_certificat_autorite_absent(client):
     assert client.get(reverse('core:certificat_autorite')).status_code == 404
 

@@ -7,6 +7,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Connexion — YELEN SCHOOL</title>
   <link rel="stylesheet" href="{% static_v 'css/yelen.css' %}">
+
+  {# ── PWA : manifeste déclaré dès la page de connexion, l'installation est proposée sans attendre d'être connecté ── #}
+  <link rel="manifest" href="/app-manifest.json">
+  <link rel="apple-touch-icon" href="{% static 'img/pwa/apple-touch-icon.png' %}">
+  <meta name="theme-color" content="#00A86B">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="YELEN SCHOOL">
 </head>
 <body class="login-clean-body">
 
@@ -232,6 +240,13 @@
 
   <script nonce="{{ request.csp_nonce }}">
   (function () {
+
+    /* ── PWA : Service Worker (même enregistrement que base.html ; /accounts/ n'est jamais mis en cache) ── */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/app-sw.js', { scope: '/' }).catch(function () {});
+      });
+    }
 
     /* ── Toggle affichage mot de passe ── */
     var inp    = document.getElementById('id_password');
