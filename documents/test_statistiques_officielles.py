@@ -90,6 +90,17 @@ class TestEcranEtExport:
             assert attendu in html, attendu
         assert '5 élèves' in html and '4 présents' in html
 
+    def test_disposition(self, client, ecole):
+        """Tableaux au style maison (classe .table définie) et défilants, groupes G/F/T séparés, totaux en pied."""
+        from pathlib import Path
+        client.force_login(baker.make('accounts.User', role='SECRETAIRE', etablissement=ecole['etab'], must_change_password=False))
+        html = client.get(reverse('documents:statistiques_officielles')).content.decode()
+        assert html.count('<div class="table-wrapper table-scroll">\n    <table class="table table-stats">') == 4
+        assert html.count('<th colspan="3" class="col-groupe">') == 16 and html.count('<td class="td-right col-groupe">') >= 20
+        assert html.count('<tfoot>') == 2 and '<td colspan="3">Total</td>' in html and '<td>Total</td>' in html
+        css = (Path(__file__).resolve().parents[1] / 'static/css/yelen.css').read_text(encoding='utf-8')
+        assert '.table th' in css and '.table-stats .col-groupe' in css and '.table-stats tfoot td' in css
+
     def test_export_excel(self, client, ecole):
         client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=ecole['etab'], must_change_password=False))
         reponse = client.get(reverse('documents:statistiques_officielles'), {'annee_id': ecole['annee'].pk, 'format': 'xlsx'})

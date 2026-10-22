@@ -52,26 +52,26 @@
     <span class="card-title">Rentrée {{ annee_selectionnee.libelle }} — élèves et redoublants par niveau</span>
     <span class="badge badge-neutral">{{ rentree.total.effectif.T }} élève{{ rentree.total.effectif.T|pluralize }}</span>
   </div>
-  <div class="table-wrapper">
-    <table class="table">
+  <div class="table-wrapper table-scroll">
+    <table class="table table-stats">
       <thead>
         <tr>
-          <th rowspan="2">Cycle</th><th rowspan="2">Niveau</th><th rowspan="2" class="td-right">Divisions</th>
-          <th colspan="3" class="text-center">Effectif</th><th colspan="3" class="text-center">Redoublants</th><th colspan="3" class="text-center">Nouveaux entrants</th>
+          <th rowspan="2">Cycle</th><th rowspan="2">Niveau</th><th rowspan="2" class="td-right col-groupe">Divisions</th>
+          <th colspan="3" class="col-groupe">Effectif</th><th colspan="3" class="col-groupe">Redoublants</th><th colspan="3" class="col-groupe">Nouveaux entrants</th>
         </tr>
         <tr>
-          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
-          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
-          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          <th class="td-right col-groupe">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          <th class="td-right col-groupe">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          <th class="td-right col-groupe">G</th><th class="td-right">F</th><th class="td-right">T</th>
         </tr>
       </thead>
       <tbody>
         {% for l in rentree.lignes %}
         <tr>
           <td>{{ l.cycle|default:"—" }}</td><td class="fw-semibold">{{ l.niveau }}</td><td class="td-right">{{ l.divisions }}</td>
-          <td class="td-right">{{ l.effectif.M }}</td><td class="td-right">{{ l.effectif.F }}</td><td class="td-right fw-semibold">{{ l.effectif.T }}</td>
-          <td class="td-right">{{ l.redoublants.M }}</td><td class="td-right">{{ l.redoublants.F }}</td><td class="td-right fw-semibold">{{ l.redoublants.T }}</td>
-          <td class="td-right">{{ l.nouveaux.M }}</td><td class="td-right">{{ l.nouveaux.F }}</td><td class="td-right fw-semibold">{{ l.nouveaux.T }}</td>
+          <td class="td-right col-groupe">{{ l.effectif.M }}</td><td class="td-right">{{ l.effectif.F }}</td><td class="td-right fw-semibold">{{ l.effectif.T }}</td>
+          <td class="td-right col-groupe">{{ l.redoublants.M }}</td><td class="td-right">{{ l.redoublants.F }}</td><td class="td-right fw-semibold">{{ l.redoublants.T }}</td>
+          <td class="td-right col-groupe">{{ l.nouveaux.M }}</td><td class="td-right">{{ l.nouveaux.F }}</td><td class="td-right fw-semibold">{{ l.nouveaux.T }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="12" class="text-center text-muted">Aucune inscription pour cette année.</td></tr>
@@ -81,9 +81,9 @@
       <tfoot>
         <tr class="fw-semibold">
           <td colspan="3">Total</td>
-          <td class="td-right">{{ rentree.total.effectif.M }}</td><td class="td-right">{{ rentree.total.effectif.F }}</td><td class="td-right">{{ rentree.total.effectif.T }}</td>
-          <td class="td-right">{{ rentree.total.redoublants.M }}</td><td class="td-right">{{ rentree.total.redoublants.F }}</td><td class="td-right">{{ rentree.total.redoublants.T }}</td>
-          <td class="td-right">{{ rentree.total.nouveaux.M }}</td><td class="td-right">{{ rentree.total.nouveaux.F }}</td><td class="td-right">{{ rentree.total.nouveaux.T }}</td>
+          <td class="td-right col-groupe">{{ rentree.total.effectif.M }}</td><td class="td-right">{{ rentree.total.effectif.F }}</td><td class="td-right">{{ rentree.total.effectif.T }}</td>
+          <td class="td-right col-groupe">{{ rentree.total.redoublants.M }}</td><td class="td-right">{{ rentree.total.redoublants.F }}</td><td class="td-right">{{ rentree.total.redoublants.T }}</td>
+          <td class="td-right col-groupe">{{ rentree.total.nouveaux.M }}</td><td class="td-right">{{ rentree.total.nouveaux.F }}</td><td class="td-right">{{ rentree.total.nouveaux.T }}</td>
         </tr>
       </tfoot>
       {% endif %}
@@ -98,25 +98,25 @@
     <span class="card-title">Répartition par âge et par sexe</span>
     <span class="text-xs text-muted">Âge = année de la rentrée − année de naissance</span>
   </div>
-  <div class="table-wrapper">
-    <table class="table">
+  <div class="table-wrapper table-scroll">
+    <table class="table table-stats">
       <thead>
         <tr>
           <th rowspan="2">Âge</th>
-          {% for niveau in rentree.niveaux %}<th colspan="2" class="text-center">{{ niveau }}</th>{% endfor %}
-          <th colspan="3" class="text-center">Total</th>
+          {% for niveau in rentree.niveaux %}<th colspan="2" class="col-groupe">{{ niveau }}</th>{% endfor %}
+          <th colspan="3" class="col-groupe">Total</th>
         </tr>
         <tr>
-          {% for niveau in rentree.niveaux %}<th class="td-right">G</th><th class="td-right">F</th>{% endfor %}
-          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          {% for niveau in rentree.niveaux %}<th class="td-right col-groupe">G</th><th class="td-right">F</th>{% endfor %}
+          <th class="td-right col-groupe">G</th><th class="td-right">F</th><th class="td-right">T</th>
         </tr>
       </thead>
       <tbody>
         {% for l in rentree.ages %}
         <tr>
           <td class="fw-semibold">{{ l.age }}</td>
-          {% for c in l.colonnes %}<td class="td-right">{{ c.M }}</td><td class="td-right">{{ c.F }}</td>{% endfor %}
-          <td class="td-right">{{ l.total.M }}</td><td class="td-right">{{ l.total.F }}</td><td class="td-right fw-semibold">{{ l.total.T }}</td>
+          {% for c in l.colonnes %}<td class="td-right col-groupe">{{ c.M }}</td><td class="td-right">{{ c.F }}</td>{% endfor %}
+          <td class="td-right col-groupe">{{ l.total.M }}</td><td class="td-right">{{ l.total.F }}</td><td class="td-right fw-semibold">{{ l.total.T }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -131,61 +131,76 @@
     <span class="card-title">Fin d'année {{ annee_selectionnee.libelle }} — abandons et décisions des conseils de classe</span>
     <span class="badge badge-neutral">{{ fin_annee.total.fin_annee.T }} présent{{ fin_annee.total.fin_annee.T|pluralize }} en fin d'année</span>
   </div>
-  <div class="table-wrapper">
-    <table class="table">
+  <div class="table-wrapper table-scroll">
+    <table class="table table-stats">
       <thead>
         <tr>
           <th rowspan="2">Niveau</th>
-          <th colspan="3" class="text-center">Inscrits</th><th colspan="3" class="text-center">Abandons</th><th colspan="3" class="text-center">Fin d'année</th>
-          {% for cle, libelle in fin_annee.decisions %}<th colspan="3" class="text-center">{{ libelle }}</th>{% endfor %}
+          <th colspan="3" class="col-groupe">Inscrits</th><th colspan="3" class="col-groupe">Abandons</th><th colspan="3" class="col-groupe">Fin d'année</th>
+          {% for cle, libelle in fin_annee.decisions %}<th colspan="3" class="col-groupe">{{ libelle }}</th>{% endfor %}
         </tr>
         <tr>
-          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
-          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
-          <th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>
-          {% for cle, libelle in fin_annee.decisions %}<th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>{% endfor %}
+          <th class="td-right col-groupe">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          <th class="td-right col-groupe">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          <th class="td-right col-groupe">G</th><th class="td-right">F</th><th class="td-right">T</th>
+          {% for cle, libelle in fin_annee.decisions %}<th class="td-right col-groupe">G</th><th class="td-right">F</th><th class="td-right">T</th>{% endfor %}
         </tr>
       </thead>
       <tbody>
         {% for l in fin_annee.lignes %}
         <tr>
           <td class="fw-semibold">{{ l.niveau }}</td>
-          <td class="td-right">{{ l.inscrits.M }}</td><td class="td-right">{{ l.inscrits.F }}</td><td class="td-right fw-semibold">{{ l.inscrits.T }}</td>
-          <td class="td-right">{{ l.abandons.M }}</td><td class="td-right">{{ l.abandons.F }}</td><td class="td-right fw-semibold">{{ l.abandons.T }}</td>
-          <td class="td-right">{{ l.fin_annee.M }}</td><td class="td-right">{{ l.fin_annee.F }}</td><td class="td-right fw-semibold">{{ l.fin_annee.T }}</td>
-          <td class="td-right">{{ l.passage.M }}</td><td class="td-right">{{ l.passage.F }}</td><td class="td-right fw-semibold">{{ l.passage.T }}</td>
-          <td class="td-right">{{ l.redoublement.M }}</td><td class="td-right">{{ l.redoublement.F }}</td><td class="td-right fw-semibold">{{ l.redoublement.T }}</td>
-          <td class="td-right">{{ l.orientation.M }}</td><td class="td-right">{{ l.orientation.F }}</td><td class="td-right fw-semibold">{{ l.orientation.T }}</td>
-          <td class="td-right">{{ l.exclusion.M }}</td><td class="td-right">{{ l.exclusion.F }}</td><td class="td-right fw-semibold">{{ l.exclusion.T }}</td>
-          <td class="td-right">{{ l.sans_decision.M }}</td><td class="td-right">{{ l.sans_decision.F }}</td><td class="td-right fw-semibold">{{ l.sans_decision.T }}</td>
+          <td class="td-right col-groupe">{{ l.inscrits.M }}</td><td class="td-right">{{ l.inscrits.F }}</td><td class="td-right fw-semibold">{{ l.inscrits.T }}</td>
+          <td class="td-right col-groupe">{{ l.abandons.M }}</td><td class="td-right">{{ l.abandons.F }}</td><td class="td-right fw-semibold">{{ l.abandons.T }}</td>
+          <td class="td-right col-groupe">{{ l.fin_annee.M }}</td><td class="td-right">{{ l.fin_annee.F }}</td><td class="td-right fw-semibold">{{ l.fin_annee.T }}</td>
+          <td class="td-right col-groupe">{{ l.passage.M }}</td><td class="td-right">{{ l.passage.F }}</td><td class="td-right fw-semibold">{{ l.passage.T }}</td>
+          <td class="td-right col-groupe">{{ l.redoublement.M }}</td><td class="td-right">{{ l.redoublement.F }}</td><td class="td-right fw-semibold">{{ l.redoublement.T }}</td>
+          <td class="td-right col-groupe">{{ l.orientation.M }}</td><td class="td-right">{{ l.orientation.F }}</td><td class="td-right fw-semibold">{{ l.orientation.T }}</td>
+          <td class="td-right col-groupe">{{ l.exclusion.M }}</td><td class="td-right">{{ l.exclusion.F }}</td><td class="td-right fw-semibold">{{ l.exclusion.T }}</td>
+          <td class="td-right col-groupe">{{ l.sans_decision.M }}</td><td class="td-right">{{ l.sans_decision.F }}</td><td class="td-right fw-semibold">{{ l.sans_decision.T }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="25" class="text-center text-muted">Aucune inscription pour cette année.</td></tr>
         {% endfor %}
       </tbody>
+      {% if fin_annee.lignes %}
+      <tfoot>
+        <tr class="fw-semibold">
+          <td>Total</td>
+          <td class="td-right col-groupe">{{ fin_annee.total.inscrits.M }}</td><td class="td-right">{{ fin_annee.total.inscrits.F }}</td><td class="td-right">{{ fin_annee.total.inscrits.T }}</td>
+          <td class="td-right col-groupe">{{ fin_annee.total.abandons.M }}</td><td class="td-right">{{ fin_annee.total.abandons.F }}</td><td class="td-right">{{ fin_annee.total.abandons.T }}</td>
+          <td class="td-right col-groupe">{{ fin_annee.total.fin_annee.M }}</td><td class="td-right">{{ fin_annee.total.fin_annee.F }}</td><td class="td-right">{{ fin_annee.total.fin_annee.T }}</td>
+          <td class="td-right col-groupe">{{ fin_annee.total.passage.M }}</td><td class="td-right">{{ fin_annee.total.passage.F }}</td><td class="td-right">{{ fin_annee.total.passage.T }}</td>
+          <td class="td-right col-groupe">{{ fin_annee.total.redoublement.M }}</td><td class="td-right">{{ fin_annee.total.redoublement.F }}</td><td class="td-right">{{ fin_annee.total.redoublement.T }}</td>
+          <td class="td-right col-groupe">{{ fin_annee.total.orientation.M }}</td><td class="td-right">{{ fin_annee.total.orientation.F }}</td><td class="td-right">{{ fin_annee.total.orientation.T }}</td>
+          <td class="td-right col-groupe">{{ fin_annee.total.exclusion.M }}</td><td class="td-right">{{ fin_annee.total.exclusion.F }}</td><td class="td-right">{{ fin_annee.total.exclusion.T }}</td>
+          <td class="td-right col-groupe">{{ fin_annee.total.sans_decision.M }}</td><td class="td-right">{{ fin_annee.total.sans_decision.F }}</td><td class="td-right">{{ fin_annee.total.sans_decision.T }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
     </table>
   </div>
   {% if fin_annee.examens %}
-  <div class="card-header"><span class="card-title">Résultats aux examens officiels</span></div>
-  <div class="table-wrapper">
-    <table class="table">
+  <div class="card-header mt-6"><span class="card-title">Résultats aux examens officiels</span></div>
+  <div class="table-wrapper table-scroll">
+    <table class="table table-stats">
       <thead>
         <tr>
           <th rowspan="2">Examen</th><th rowspan="2">Session</th>
-          <th colspan="3" class="text-center">Inscrits</th><th colspan="3" class="text-center">Présents</th><th colspan="3" class="text-center">Admis</th><th colspan="3" class="text-center">Taux de réussite (%)</th>
+          <th colspan="3" class="col-groupe">Inscrits</th><th colspan="3" class="col-groupe">Présents</th><th colspan="3" class="col-groupe">Admis</th><th colspan="3" class="col-groupe">Taux de réussite (%)</th>
         </tr>
         <tr>
-          {% for _ in "1234" %}<th class="td-right">G</th><th class="td-right">F</th><th class="td-right">T</th>{% endfor %}
+          {% for _ in "1234" %}<th class="td-right col-groupe">G</th><th class="td-right">F</th><th class="td-right">T</th>{% endfor %}
         </tr>
       </thead>
       <tbody>
         {% for e in fin_annee.examens %}
         <tr>
           <td class="fw-semibold">{{ e.session.get_type_examen_display }}</td><td>{{ e.session.libelle }}</td>
-          <td class="td-right">{{ e.inscrits.M }}</td><td class="td-right">{{ e.inscrits.F }}</td><td class="td-right fw-semibold">{{ e.inscrits.T }}</td>
-          <td class="td-right">{{ e.presents.M }}</td><td class="td-right">{{ e.presents.F }}</td><td class="td-right fw-semibold">{{ e.presents.T }}</td>
-          <td class="td-right">{{ e.admis.M }}</td><td class="td-right">{{ e.admis.F }}</td><td class="td-right fw-semibold">{{ e.admis.T }}</td>
-          <td class="td-right">{{ e.taux.M|default_if_none:"—" }}</td><td class="td-right">{{ e.taux.F|default_if_none:"—" }}</td><td class="td-right fw-semibold">{{ e.taux.T|default_if_none:"—" }}</td>
+          <td class="td-right col-groupe">{{ e.inscrits.M }}</td><td class="td-right">{{ e.inscrits.F }}</td><td class="td-right fw-semibold">{{ e.inscrits.T }}</td>
+          <td class="td-right col-groupe">{{ e.presents.M }}</td><td class="td-right">{{ e.presents.F }}</td><td class="td-right fw-semibold">{{ e.presents.T }}</td>
+          <td class="td-right col-groupe">{{ e.admis.M }}</td><td class="td-right">{{ e.admis.F }}</td><td class="td-right fw-semibold">{{ e.admis.T }}</td>
+          <td class="td-right col-groupe">{{ e.taux.M|default_if_none:"—" }}</td><td class="td-right">{{ e.taux.F|default_if_none:"—" }}</td><td class="td-right fw-semibold">{{ e.taux.T|default_if_none:"—" }}</td>
         </tr>
         {% endfor %}
       </tbody>

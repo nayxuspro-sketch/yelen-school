@@ -1604,15 +1604,17 @@ select.input {
 .eval-actions { text-align: right; white-space: nowrap; }
 .eval-actions .btn-icon { margin-left: var(--space-2); vertical-align: middle; }
 
-/* ── Tableau de données ───────────────────────────────────────── */
+/* ── Tableau de données (.data-table et .table partagent le même style) ── */
 
-.data-table {
+.data-table,
+.table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
 }
 
-.data-table th {
+.data-table th,
+.table th {
   text-align: left;
   padding: var(--space-3) var(--space-4);
   font-size: 11px;
@@ -1625,22 +1627,59 @@ select.input {
   white-space: nowrap;
 }
 
-.data-table td {
+.data-table td,
+.table td {
   padding: var(--space-3) var(--space-4);
   color: var(--color-text-primary);
   border-bottom: 1px solid rgba(255,255,255,0.04);
   vertical-align: middle;
 }
 
-.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:last-child td,
+.table tr:last-child td { border-bottom: none; }
 
-.data-table tbody tr {
+.data-table tbody tr,
+.table tbody tr {
   transition: background 0.12s ease;
 }
 
-.data-table tbody tr:hover td {
+.data-table tbody tr:hover td,
+.table tbody tr:hover td {
   background: var(--color-bg-hover);
 }
+
+/* Tableau statistique (colonnes G / F / T par groupe) : compact, chiffres alignés,
+   groupes séparés, première colonne figée au défilement horizontal, total en pied. */
+.table-stats th,
+.table-stats td {
+  padding: 7px 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.table-stats thead th { text-align: center; vertical-align: middle; background: #0A1526; }
+.table-stats thead th[rowspan] { text-align: left; }
+.table-stats thead tr + tr th { font-size: 10px; letter-spacing: 0.04em; }
+.table-stats thead th.td-right,
+.table-stats td.td-right { text-align: right; }
+.table-stats .col-groupe { border-left: 1px solid var(--color-border); }
+.table-stats tbody tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+.table-stats tfoot td {
+  border-top: 2px solid var(--color-border);
+  background: #0A1526;
+  font-weight: var(--font-semibold);
+}
+.table-stats thead tr:first-child th:first-child,
+.table-stats tbody td:first-child,
+.table-stats tfoot td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.table-stats thead tr:first-child th:first-child,
+.table-stats tfoot td:first-child { background: #0A1526; }
+.table-stats tbody td:first-child { background: var(--color-bg-card); }
+.table-stats tbody tr:nth-child(even) td:first-child { background: #101D30; }
+.table-stats tbody tr:hover td:first-child { background: var(--color-bg-hover); }
 
 .data-table .col-matricule {
   font-family: var(--font-mono);
