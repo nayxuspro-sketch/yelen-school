@@ -4180,6 +4180,7 @@ input::-webkit-strong-password-auto-fill-button {
 
 /* Carte cours */
 .edt-course {
+  position: relative;
   padding: 8px 10px;
   border-radius: 8px;
   font-size: 0.75rem;
@@ -4191,6 +4192,22 @@ input::-webkit-strong-password-auto-fill-button {
 .edt-course:last-child { margin-bottom: 0; }
 
 .edt-course:hover { transform: translateY(-1px); }
+
+/* Retrait d'une séance : croix discrète en haut à droite de la carte (accentuée au survol, tactile compris) */
+.edt-course-remove { position: absolute; top: 2px; right: 2px; margin: 0; }
+.edt-course-remove + .edt-course-name { padding-right: 20px; }
+.edt-course-remove-btn {
+  width: 18px; height: 18px; padding: 0;
+  border: 0; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem; line-height: 18px;
+  cursor: pointer; opacity: 0.45;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.edt-course:hover .edt-course-remove-btn,
+.edt-course-remove-btn:focus-visible { opacity: 1; }
+.edt-course-remove-btn:hover { background: var(--color-danger); color: #fff; }
 
 .edt-course-name {
   font-weight: 600;

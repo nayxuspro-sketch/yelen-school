@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load droits_tags %}
 
 {% block title %}EDT — {{ personnel.get_nom_complet }} — YELEN SCHOOL{% endblock %}
 
@@ -116,6 +117,14 @@
           <td class="edt-cell">
             {% if jour_data.seance %}
             <div class="edt-course edt-course-0">
+              {% if request|autorise_url:'viescolaire:seance_delete' %}
+              <form method="post" action="{% url 'viescolaire:seance_delete' jour_data.seance.pk %}" class="edt-course-remove no-print"
+                    data-csp-confirm-submit="Retirer cette séance de {{ jour_data.seance.enseignement.matiere.nom }} ?">
+                {% csrf_token %}
+                <input type="hidden" name="retour" value="prof">
+                <button type="submit" class="edt-course-remove-btn" title="Retirer la séance" aria-label="Retirer la séance">&times;</button>
+              </form>
+              {% endif %}
               <div class="edt-course-name">{{ jour_data.seance.enseignement.matiere.nom }}</div>
               <span class="edt-course-meta">{{ jour_data.seance.enseignement.classe.nom }}</span>
               {% if jour_data.seance.salle %}

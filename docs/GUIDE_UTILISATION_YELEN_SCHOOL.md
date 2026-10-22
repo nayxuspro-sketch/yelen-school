@@ -2283,6 +2283,13 @@ Une fois sur la page du professeur, tu vois :
 - Total d'heures hebdomadaires calculé automatiquement
 - Résumé par matière avec le nombre de séances
 
+##### Retirer une séance au professeur
+
+1. Survole la séance dans la grille du professeur et clique sur le bouton **×** en haut à droite de la carte
+2. Confirme le retrait : la séance est supprimée de l'emploi du temps de la classe concernée et tu restes sur la grille du professeur (message « Séance retirée : … »)
+
+Le bouton n'apparaît qu'avec le droit *Modifier l'emploi du temps* (matrice des droits).
+
 ##### Imprimer l'Emploi du Temps en PDF
 
 1. Clique sur le bouton **Imprimer PDF** en haut à droite

@@ -762,17 +762,21 @@ def seance_create(request, classe_id):
 @login_required
 @require_POST
 def seance_delete(request, seance_id):
-    """Supprime une séance de cours."""
+    """Retire une séance de cours, puis revient à la grille d'origine (classe, ou professeur si ``retour=prof``)."""
     from django.urls import reverse
     seance = get_object_or_404(
-        SeanceCours.objects.select_related('enseignement'),
-        pk=seance_id,
+        SeanceCours.objects.select_related('enseignement__matiere', 'enseignement__classe'),
+        pk=seance_id, enseignement__classe__etablissement=_get_etab(request),
     )
-    classe_id = seance.enseignement.classe_id
-    annee_id = seance.enseignement.annee_scolaire_id
+    enseignement = seance.enseignement
     seance.delete()
-    url = reverse('viescolaire:emploi_du_temps', kwargs={'classe_id': classe_id})
-    return redirect(f"{url}?annee={annee_id}")
+    messages.success(request, f"Séance retirée : {enseignement.matiere.nom} — {JourSemaine(seance.jour).label} "
+                              f"{seance.heure_debut:%H:%M}–{seance.heure_fin:%H:%M} ({enseignement.classe.nom}).")
+    if request.POST.get('retour') == 'prof' and enseignement.personnel_id:
+        url = reverse('viescolaire:emploi_du_temps_prof', kwargs={'personnel_id': enseignement.personnel_id})
+    else:
+        url = reverse('viescolaire:emploi_du_temps', kwargs={'classe_id': enseignement.classe_id})
+    return redirect(f"{url}?annee={enseignement.annee_scolaire_id}")
 
 
 @login_required

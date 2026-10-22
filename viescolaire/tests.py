@@ -324,3 +324,68 @@ class TestConfigEDT:
         assert gen.duree == 60 and len(gen.slots) == 4
         assert len(GenerateurEDT(ecole['classe'], ecole['annee'], None).slots) == 54
         assert ConfigEDT.pour(None)._state.adding
+
+
+@pytest.mark.django_db
+class TestRetraitSeance:
+    """Retrait d'une séance depuis la grille d'un professeur ou d'une classe."""
+
+    @pytest.fixture
+    def ecole(self, client):
+        from datetime import time
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab), nom='6ème A')
+        prof = baker.make('personnel.MembrePersonnel', etablissement=etab)
+        enseignement = baker.make('pedagogie.Enseignement', classe=classe, annee_scolaire=annee, personnel=prof,
+                                  matiere=baker.make('pedagogie.Matiere', nom='Mathématiques'), est_actif=True)
+        seances = [baker.make('viescolaire.SeanceCours', enseignement=enseignement, jour=jour,
+                              heure_debut=time(8, 0), heure_fin=time(8, 50)) for jour in (1, 2)]
+        return {'etab': etab, 'annee': annee, 'classe': classe, 'prof': prof, 'seances': seances}
+
+    def _formulaire(self, html, seance):
+        """Formulaire de retrait de la séance dans la grille, avec sa cible de retour."""
+        motif = re.compile(r'<form method="post" action="%s"[^>]*data-csp-confirm-submit="Retirer cette séance de Mathématiques \?">'
+                           r'.*?name="retour" value="(\w+)"' % reverse('viescolaire:seance_delete', args=[seance.pk]), re.S)
+        return motif.search(html)
+
+    def test_retrait_depuis_la_grille_du_professeur(self, client, ecole):
+        from viescolaire.models import SeanceCours
+        lundi, mardi = ecole['seances']
+        url_prof = reverse('viescolaire:emploi_du_temps_prof', args=[ecole['prof'].pk])
+        html = client.get(url_prof).content.decode()
+        assert self._formulaire(html, lundi).group(1) == 'prof' and self._formulaire(html, mardi)
+        reponse = client.post(reverse('viescolaire:seance_delete', args=[lundi.pk]), {'retour': 'prof'})
+        assert reponse.status_code == 302 and reponse.url == f"{url_prof}?annee={ecole['annee'].pk}"
+        assert list(SeanceCours.objects.values_list('jour', flat=True)) == [2]
+        html = unescape(client.get(reponse.url).content.decode())
+        assert 'Séance retirée : Mathématiques — Lundi 08:00–08:50 (6ème A).' in html
+        assert not self._formulaire(html, lundi) and self._formulaire(html, mardi)
+
+    def test_retrait_depuis_la_grille_de_la_classe(self, client, ecole):
+        from viescolaire.models import SeanceCours
+        lundi, _ = ecole['seances']
+        url_classe = reverse('viescolaire:emploi_du_temps', args=[ecole['classe'].pk])
+        assert self._formulaire(client.get(url_classe).content.decode(), lundi).group(1) == 'classe'
+        reponse = client.post(reverse('viescolaire:seance_delete', args=[lundi.pk]), {'retour': 'classe'})
+        assert reponse.status_code == 302 and reponse.url == f"{url_classe}?annee={ecole['annee'].pk}"
+        assert SeanceCours.objects.count() == 1
+
+    def test_isolation_etablissement_et_droit(self, client, ecole):
+        from parametres import droits
+        from parametres.models import DroitAcces
+        from viescolaire.models import SeanceCours
+        autre = baker.make('viescolaire.SeanceCours', enseignement=baker.make('pedagogie.Enseignement', personnel=None))
+        assert client.post(reverse('viescolaire:seance_delete', args=[autre.pk])).status_code == 404
+        # Action « modifier » retirée aux enseignants : ni bouton, ni suppression
+        DroitAcces.objects.create(role='ENSEIGNANT', module='viescolaire', fonctionnalite='/viescolaire/emploi-du-temps/',
+                                  action='modifier', autorise=False)
+        droits.invalider_cache()
+        client.force_login(baker.make('accounts.User', role='ENSEIGNANT', etablissement=ecole['etab'], must_change_password=False))
+        html = client.get(reverse('viescolaire:emploi_du_temps_prof', args=[ecole['prof'].pk])).content.decode()
+        assert 'Mathématiques' in html and 'edt-course-remove' not in html
+        lundi, _ = ecole['seances']
+        assert client.post(reverse('viescolaire:seance_delete', args=[lundi.pk]), {'retour': 'prof'}).status_code in (302, 403)
+        assert SeanceCours.objects.count() == 3
+        droits.invalider_cache()
