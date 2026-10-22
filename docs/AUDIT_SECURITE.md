@@ -34,7 +34,7 @@ Les corrections de cette révision portent sur :
 | Uploads | Renforcés | extension, taille et contenu réel contrôlés par Pillow |
 | Webhook SMS | Renforcé | token ou HMAC obligatoire hors DEBUG, IP optionnelles et rate limit |
 | Logs Nginx | Durcis | format explicite sans `Authorization` ni query string |
-| Dépendances | Corrigées statiquement | `pip-audit -r requirements/base.txt` : aucune vulnérabilité connue le 14/09/2026 ; Django 5.2.17, DRF 3.17.2, Pillow 12.3.0 et autres correctifs ; contrôle conservé dans la CI |
+| Dépendances | Corrigées statiquement | `pip-audit -r requirements/base.txt` : aucune vulnérabilité connue le 22/10/2026 ; Django 5.2.17, DRF 3.18.3 (CVE-2026-114136/7/8 corrigées), Pillow 12.3.0 et autres correctifs ; contrôle conservé dans la CI |
 | PostgreSQL/Redis | Non exposés par Compose client | services accessibles uniquement dans le réseau Docker |
 
 ## 3. Webhook SMS
