@@ -5966,7 +5966,24 @@ Le générateur utilise une approche **greedy avec random restarts** (jusqu'à 4
 
 Jours : Lundi à Samedi (6 jours).
 
-**Avec ConfigEDT** : les créneaux sont calculés dynamiquement depuis la configuration (heures de début/fin matin et après-midi, durée de séance personnalisée).
+**Avec une configuration enregistrée** (§ 30.2.1) : les créneaux sont calculés depuis les horaires configurés (plages matin et après-midi découpées par la durée de séance) et les jours de classe cochés.
+
+#### 30.2.1 Configurer les horaires et les jours de classe
+
+**Accès :** **Vie Scolaire → Emploi du temps** → bouton **Horaires et jours de classe** (Directeur et Censeur par défaut ; droit *Configurer les horaires de cours et les jours de classe* attribuable dans la matrice des droits).
+
+| Réglage | Valeur par défaut | Remarque |
+|---------|-------------------|----------|
+| Matinée (début – fin) | 07:30 – 12:00 | obligatoire |
+| Après-midi (début – fin) | 14:00 – 17:20 | laisser les deux champs vides pour une **journée continue** |
+| Durée d'une séance | 50 min | de 20 à 180 min |
+| Jours de classe | Lundi → Samedi | au moins un jour ; le Dimanche est proposé |
+
+La page affiche l'aperçu des créneaux obtenus (ex. 9 séances de 50 min). Une fois enregistrée, la configuration s'applique partout :
+
+- grilles à l'écran et PDF (classe et professeur) : une colonne par jour de classe (un jour non coché qui porte encore des séances reste affiché) ;
+- formulaire **Ajouter une séance** : seuls les jours de classe sont proposés, et une séance hors des heures de cours configurées ou sur un jour non travaillé est refusée avec un message explicite ;
+- **Générer automatiquement** : créneaux et jours issus de la configuration.
 
 ---
 

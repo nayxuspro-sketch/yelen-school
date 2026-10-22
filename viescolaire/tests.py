@@ -1,4 +1,5 @@
 import re
+from html import unescape
 
 import pytest
 from django.urls import reverse
@@ -182,3 +183,144 @@ class TestEmploiDuTempsPdfUnePage:
         _, prof = contexte
         nb = self._une_page(espion, client.get(reverse('viescolaire:emploi_du_temps_prof_pdf', args=[prof.pk])))
         assert nb == 1, f'{nb} pages'
+
+
+@pytest.mark.django_db
+class TestConfigEDT:
+    """Horaires de cours et jours de classe configurables : page, grilles, PDF, saisie manuelle, générateur."""
+
+    DONNEES = {
+        'heure_debut_matin': '07:00', 'heure_fin_matin': '12:00',
+        'heure_debut_aprem': '15:00', 'heure_fin_aprem': '17:00',
+        'duree_seance': 55, 'jours_actifs': [1, 2, 3, 4, 5],
+    }
+
+    @pytest.fixture
+    def ecole(self, client):
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
+        prof = baker.make('personnel.MembrePersonnel', etablissement=etab)
+        enseignement = baker.make('pedagogie.Enseignement', classe=classe, annee_scolaire=annee, personnel=prof,
+                                  heures_hebdomadaires=2, est_actif=True)
+        return {'etab': etab, 'annee': annee, 'classe': classe, 'prof': prof, 'enseignement': enseignement}
+
+    @pytest.fixture
+    def pdf_html(self, mocker):
+        """Remplace WeasyPrint et capture le HTML rendu."""
+        rendus = []
+
+        class FauxHTML:
+            def __init__(self, string=None, **kwargs):
+                rendus.append(string)
+
+            def write_pdf(self, target=None, **kwargs):
+                target.write(b'%PDF-1.4')
+
+        mocker.patch('viescolaire.views.WeasyHTML', FauxHTML)
+        return rendus
+
+    def _colonnes(self, html):
+        """En-têtes de la grille (premier tableau de la page)."""
+        return re.findall(r'<th[^>]*>\s*([^<]*?)\s*</th>', html.split('</thead>')[0])
+
+    def test_defauts_sans_configuration(self, client, ecole):
+        from viescolaire.models import ConfigEDT
+        config = ConfigEDT.pour(ecole['etab'])
+        assert config._state.adding and config.get_jours_actifs() == [1, 2, 3, 4, 5, 6]
+        assert config.plages_libelle() == '07:30–12:00 et 14:00–17:20' and len(config.creneaux()) == 9
+        html = client.get(reverse('viescolaire:emploi_du_temps_index')).content.decode()
+        assert 'Horaires et jours de classe' in html and reverse('viescolaire:edt_config') in html
+
+    def test_page_configuration(self, client, ecole):
+        from viescolaire.models import ConfigEDT
+        url = reverse('viescolaire:edt_config')
+        html = client.get(url).content.decode()
+        assert 'value="07:30"' in html and '07:30–08:20' in html and '9 séances de 50 min' in html
+        reponse = client.post(url, self.DONNEES)
+        assert reponse.status_code == 302 and reponse.url == reverse('viescolaire:emploi_du_temps_index')
+        config = ConfigEDT.objects.get(etablissement=ecole['etab'])
+        assert config.get_jours_actifs() == [1, 2, 3, 4, 5] and config.duree_seance == 55
+        assert config.plages_libelle() == '07:00–12:00 et 15:00–17:00' and len(config.creneaux()) == 7
+        # Journée continue : après-midi vide
+        client.post(url, {**self.DONNEES, 'heure_debut_aprem': '', 'heure_fin_aprem': ''})
+        config.refresh_from_db()
+        assert config.heure_debut_aprem is None and config.plages_libelle() == '07:00–12:00'
+
+    @pytest.mark.parametrize('donnees, champ', [
+        ({'heure_fin_matin': '07:00'}, 'heure_fin_matin'),
+        ({'heure_fin_aprem': ''}, 'heure_fin_aprem'),
+        ({'heure_debut_aprem': '11:00'}, 'heure_debut_aprem'),
+        ({'heure_fin_aprem': '15:00'}, 'heure_fin_aprem'),
+        ({'duree_seance': 10}, 'duree_seance'),
+        ({'jours_actifs': []}, 'jours_actifs'),
+    ])
+    def test_validation(self, client, ecole, donnees, champ):
+        from viescolaire.models import ConfigEDT
+        reponse = client.post(reverse('viescolaire:edt_config'), {**self.DONNEES, **donnees})
+        assert reponse.status_code == 200 and reponse.context['form'].errors.keys() == {champ}
+        assert not ConfigEDT.objects.exists()
+
+    def test_reserve_a_la_direction(self, client, ecole):
+        client.force_login(baker.make('accounts.User', role='ENSEIGNANT', etablissement=ecole['etab'], must_change_password=False))
+        assert client.get(reverse('viescolaire:edt_config')).status_code in (302, 403)
+        html = client.get(reverse('viescolaire:emploi_du_temps_index')).content.decode()
+        assert reverse('viescolaire:edt_config') not in html
+
+    def test_grilles_et_pdf_suivent_les_jours_de_classe(self, client, ecole, pdf_html):
+        from datetime import time
+        baker.make('viescolaire.ConfigEDT', etablissement=ecole['etab'], jours_actifs=[1, 2, 3, 4, 5],
+                   heure_debut_matin=time(7, 0), heure_fin_matin=time(12, 0),
+                   heure_debut_aprem=None, heure_fin_aprem=None, duree_seance=60)
+        baker.make('viescolaire.SeanceCours', enseignement=ecole['enseignement'], jour=1,
+                   heure_debut=time(8, 0), heure_fin=time(9, 0))
+        classe, prof = ecole['classe'], ecole['prof']
+        attendu = ['Horaire', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi']
+        html = client.get(reverse('viescolaire:emploi_du_temps', args=[classe.pk])).content.decode()
+        assert self._colonnes(html) == attendu and 'Samedi' not in html
+        assert 'Heures de cours : 07:00–12:00 · séances de 60 min' in html and 'max="12:00"' in html
+        assert self._colonnes(client.get(reverse('viescolaire:emploi_du_temps_prof', args=[prof.pk])).content.decode()) == attendu
+        client.get(reverse('viescolaire:emploi_du_temps_pdf', args=[classe.pk]))
+        client.get(reverse('viescolaire:emploi_du_temps_prof_pdf', args=[prof.pk]))
+        assert len(pdf_html) == 2
+        for rendu in pdf_html:
+            assert self._colonnes(rendu)[:5] == attendu[1:] and 'Samedi' not in rendu and 'width: 20%' in rendu
+        # Une séance existante hors jours de classe reste visible
+        baker.make('viescolaire.SeanceCours', enseignement=ecole['enseignement'], jour=6,
+                   heure_debut=time(8, 0), heure_fin=time(9, 0))
+        html = client.get(reverse('viescolaire:emploi_du_temps', args=[classe.pk])).content.decode()
+        assert self._colonnes(html) == attendu + ['Samedi']
+
+    def test_seance_manuelle_respecte_la_configuration(self, client, ecole):
+        from viescolaire.models import SeanceCours
+        baker.make('viescolaire.ConfigEDT', etablissement=ecole['etab'], jours_actifs=[1, 2, 3, 4, 5])
+        url = reverse('viescolaire:seance_create', args=[ecole['classe'].pk])
+        base = {'annee': ecole['annee'].pk, 'enseignement': ecole['enseignement'].pk, 'heure_debut': '08:00', 'heure_fin': '08:50'}
+        for donnees, message in [
+            ({'jour': 6}, "Samedi n'est pas un jour de classe configuré."),
+            ({'jour': 2, 'heure_debut': '12:30', 'heure_fin': '13:20'},
+             'Horaire hors des heures de cours configurées (07:30–12:00 et 14:00–17:20).'),
+            ({'jour': 2, 'heure_debut': '11:30', 'heure_fin': '14:20'},
+             'Horaire hors des heures de cours configurées (07:30–12:00 et 14:00–17:20).'),
+        ]:
+            reponse = client.post(url, {**base, **donnees}, follow=True)
+            assert message in unescape(reponse.content.decode())
+        assert not SeanceCours.objects.exists()
+        assert client.post(url, {**base, 'jour': 2}).status_code == 302
+        assert SeanceCours.objects.filter(jour=2, heure_debut='08:00').exists()
+        assert client.post(url, {**base, 'jour': 'x'}).status_code == 400
+
+    def test_generateur_utilise_la_configuration(self, ecole):
+        from datetime import time
+        from viescolaire.models import ConfigEDT
+        from viescolaire.services import GenerateurEDT, _build_slots
+        config = baker.make('viescolaire.ConfigEDT', etablissement=ecole['etab'], jours_actifs=[1, 3],
+                            heure_debut_matin=time(8, 0), heure_fin_matin=time(10, 0),
+                            heure_debut_aprem=None, heure_fin_aprem=None, duree_seance=60)
+        assert _build_slots(config) == [(1, time(8), time(9)), (1, time(9), time(10)),
+                                        (3, time(8), time(9)), (3, time(9), time(10))]
+        gen = GenerateurEDT(ecole['classe'], ecole['annee'], config)
+        assert gen.duree == 60 and len(gen.slots) == 4
+        assert len(GenerateurEDT(ecole['classe'], ecole['annee'], None).slots) == 54
+        assert ConfigEDT.pour(None)._state.adding

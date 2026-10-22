@@ -392,10 +392,15 @@ class ConfigEDT(BaseModel):
     )
     heure_debut_aprem = models.TimeField(
         default=__import__('datetime').time(14, 0),
+        null=True,
+        blank=True,
         verbose_name=_("Début après-midi"),
+        help_text=_("Laisser vide pour une journée continue (pas de cours l'après-midi)"),
     )
     heure_fin_aprem = models.TimeField(
         default=__import__('datetime').time(17, 20),
+        null=True,
+        blank=True,
         verbose_name=_("Fin après-midi"),
     )
     duree_seance = models.PositiveIntegerField(
@@ -416,8 +421,46 @@ class ConfigEDT(BaseModel):
     def __str__(self):
         return f"Config EDT — {self.etablissement}"
 
+    JOURS_PAR_DEFAUT = [1, 2, 3, 4, 5, 6]
+
+    @classmethod
+    def pour(cls, etablissement):
+        """Configuration de l'établissement, ou les valeurs par défaut (instance non enregistrée)."""
+        config = cls.objects.filter(etablissement=etablissement).first() if etablissement else None
+        return config or cls(etablissement=etablissement)
+
     def get_jours_actifs(self):
-        return self.jours_actifs if self.jours_actifs else [1, 2, 3, 4, 5, 6]
+        return sorted(int(j) for j in self.jours_actifs) if self.jours_actifs else list(self.JOURS_PAR_DEFAUT)
+
+    def jours_choices(self):
+        return [(j, JourSemaine(j).label) for j in self.get_jours_actifs()]
+
+    def plages(self):
+        """Plages horaires de cours : matin, puis après-midi si elle est renseignée."""
+        plages = [(self.heure_debut_matin, self.heure_fin_matin)]
+        if self.heure_debut_aprem and self.heure_fin_aprem:
+            plages.append((self.heure_debut_aprem, self.heure_fin_aprem))
+        return plages
+
+    def creneaux(self):
+        """Créneaux de séance d'une journée, découpés par ``duree_seance`` dans chaque plage."""
+        from datetime import date, datetime, timedelta
+
+        duree = timedelta(minutes=self.duree_seance)
+        creneaux = []
+        for debut, fin in self.plages():
+            t, borne = datetime.combine(date.today(), debut), datetime.combine(date.today(), fin)
+            while t + duree <= borne:
+                creneaux.append((t.time(), (t + duree).time()))
+                t += duree
+        return creneaux
+
+    def plages_libelle(self):
+        return ' et '.join(f"{d:%H:%M}–{f:%H:%M}" for d, f in self.plages())
+
+    def couvre(self, heure_debut, heure_fin):
+        """Vrai si la séance tient entièrement dans une plage de cours."""
+        return any(d <= heure_debut and heure_fin <= f for d, f in self.plages())
 
 
 class DisponibiliteEnseignant(BaseModel):

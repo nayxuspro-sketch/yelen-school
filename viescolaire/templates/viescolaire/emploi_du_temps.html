@@ -188,19 +188,22 @@
           <select name="jour" class="dash-input" required>
             <option value="">— Sélectionner —</option>
             {% for val, label in jours_choices %}
-            {% if val <= 6 %}<option value="{{ val }}">{{ label }}</option>{% endif %}
+            <option value="{{ val }}">{{ label }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="dash-form-group">
           <label class="dash-label">Heure début <span class="required-star">*</span></label>
-          <input type="time" name="heure_debut" class="dash-input" required>
+          <input type="time" name="heure_debut" class="dash-input" required
+                 min="{{ config.heure_debut_matin|time:'H:i' }}" max="{{ config.plages|last|last|time:'H:i' }}">
         </div>
         <div class="dash-form-group">
           <label class="dash-label">Heure fin <span class="required-star">*</span></label>
-          <input type="time" name="heure_fin" class="dash-input" required>
+          <input type="time" name="heure_fin" class="dash-input" required
+                 min="{{ config.heure_debut_matin|time:'H:i' }}" max="{{ config.plages|last|last|time:'H:i' }}">
         </div>
       </div>
+      <p class="edt-optional">Heures de cours : {{ config.plages_libelle }} · séances de {{ config.duree_seance }} min.</p>
 
       <div class="edt-form-footer">
         <div class="dash-form-group">

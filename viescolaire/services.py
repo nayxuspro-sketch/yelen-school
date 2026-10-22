@@ -16,7 +16,7 @@ import json
 import random
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
+from datetime import time
 
 MAX_SEANCES_PAR_JOUR = 2
 MAX_TENTATIVES = 40
@@ -93,22 +93,7 @@ class ResultatGeneration:
 
 def _build_slots(config):
     """Construit la liste (jour, hd, hf) depuis une ConfigEDT."""
-    slots = []
-    jours = config.get_jours_actifs()
-    duree = timedelta(minutes=config.duree_seance)
-    today = date.today()
-    for jour in jours:
-        t = datetime.combine(today, config.heure_debut_matin)
-        end = datetime.combine(today, config.heure_fin_matin)
-        while t + duree <= end:
-            slots.append((jour, t.time(), (t + duree).time()))
-            t += duree
-        t = datetime.combine(today, config.heure_debut_aprem)
-        end = datetime.combine(today, config.heure_fin_aprem)
-        while t + duree <= end:
-            slots.append((jour, t.time(), (t + duree).time()))
-            t += duree
-    return slots
+    return [(jour, hd, hf) for jour in config.get_jours_actifs() for hd, hf in config.creneaux()]
 
 
 def _build_slots_defaut(jours=None):

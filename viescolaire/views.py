@@ -5,10 +5,12 @@ YELEN SCHOOL v3.5
 """
 
 import io
+from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponse
+from django.utils.dateparse import parse_time
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 try:
@@ -23,11 +25,12 @@ from pedagogie.models import Trimestre, Enseignement, MoyenneGenerale
 from inscriptions.models import Inscription
 from core.utils import get_etablissement_context
 from parametres.droits import autorise_url
+from .forms import ConfigEDTForm
 from .models import (
     ConseilClasse, DecisionConseil, AppelDecision,
     SanctionDisciplinaire,
     ActiviteParascolaire, ParticipationActivite,
-    SeanceCours, JourSemaine,
+    SeanceCours, JourSemaine, ConfigEDT,
     ConfigDiscipline,
 )
 
@@ -583,6 +586,29 @@ def _get_etab(request):
     return getattr(request.user, 'etablissement', None)
 
 
+def _jours_grille(config, seances):
+    """Colonnes de la grille : jours de classe configurés, plus ceux portant déjà des séances."""
+    return sorted(set(config.get_jours_actifs()) | {s.jour for s in seances})
+
+
+@login_required
+def edt_config(request):
+    """Horaires de cours et jours de classe de l'établissement."""
+    etab = _get_etab(request)
+    if etab is None:
+        return redirect('viescolaire:emploi_du_temps_index')
+    config = ConfigEDT.pour(etab)
+    form = ConfigEDTForm(request.POST or None, instance=config)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "Horaires et jours de classe enregistrés.")
+        return redirect('viescolaire:emploi_du_temps_index')
+    config = ConfigEDT.pour(etab)  # valeurs effectives : un formulaire invalide ne modifie pas l'aperçu
+    return render(request, 'viescolaire/edt_config.html', {
+        'form': form, 'config': config, 'creneaux': config.creneaux(),
+    })
+
+
 @login_required
 def emploi_du_temps_index(request):
     """Sélecteur de classe pour accéder à l'emploi du temps."""
@@ -638,8 +664,9 @@ def emploi_du_temps(request, classe_id):
     # Index couleur par enseignement (8 couleurs en rotation)
     color_map = {ens.pk: i % 8 for i, ens in enumerate(enseignements)}
 
-    # Grille horaire : lignes = créneaux uniques, colonnes = jours (Lun–Sam)
-    JOURS = list(range(1, 7))
+    # Grille horaire : lignes = créneaux uniques, colonnes = jours de classe configurés
+    config = ConfigEDT.pour(etab)
+    JOURS = _jours_grille(config, seances)
     jours_labels = [JourSemaine(j).label for j in JOURS]
 
     slots: dict = {}
@@ -675,7 +702,8 @@ def emploi_du_temps(request, classe_id):
         'enseignements_avec_couleur': enseignements_avec_couleur,
         'grille_creneaux': grille_creneaux,
         'jours_labels': jours_labels,
-        'jours_choices': JourSemaine.choices,
+        'jours_choices': config.jours_choices(),
+        'config': config,
     })
 
 
@@ -699,11 +727,23 @@ def seance_create(request, classe_id):
     heure_fin = request.POST.get('heure_fin', '').strip()
     salle = request.POST.get('salle', '').strip()
 
-    if not all([jour, heure_debut, heure_fin]):
+    heure_debut, heure_fin = parse_time(heure_debut), parse_time(heure_fin)
+    if not (jour.isdigit() and heure_debut and heure_fin):
         return HttpResponse("Jour, heure de début et heure de fin sont obligatoires.", status=400)
 
     if heure_fin <= heure_debut:
         return HttpResponse("L'heure de fin doit être postérieure à l'heure de début.", status=400)
+
+    from django.urls import reverse
+    url = reverse('viescolaire:emploi_du_temps', kwargs={'classe_id': classe.pk})
+    config = ConfigEDT.pour(etab)
+    if int(jour) not in config.get_jours_actifs():
+        libelle = dict(JourSemaine.choices).get(int(jour), f"Le jour {jour}")
+        messages.error(request, f"{libelle} n'est pas un jour de classe configuré.")
+        return redirect(f"{url}?annee={annee.pk}")
+    if not config.couvre(heure_debut, heure_fin):
+        messages.error(request, f"Horaire hors des heures de cours configurées ({config.plages_libelle()}).")
+        return redirect(f"{url}?annee={annee.pk}")
 
     try:
         SeanceCours.objects.create(
@@ -716,8 +756,6 @@ def seance_create(request, classe_id):
     except IntegrityError:
         messages.error(request, "Une séance existe déjà pour ce créneau (même matière, même jour, même heure).")
 
-    from django.urls import reverse
-    url = reverse('viescolaire:emploi_du_temps', kwargs={'classe_id': classe.pk})
     return redirect(f"{url}?annee={annee.pk}")
 
 
@@ -741,7 +779,6 @@ def seance_delete(request, seance_id):
 def edt_generer(request, classe_id):
     """Génération automatique d'EDT — formulaire, aperçu et application."""
     import json as _json
-    from .models import ConfigEDT
     from .services import GenerateurEDT
 
     etab = _get_etab(request)
@@ -753,6 +790,7 @@ def edt_generer(request, classe_id):
     else:
         annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
 
+    # Sans configuration enregistrée, le générateur garde ses créneaux par défaut (pause de 10 h incluse).
     config = ConfigEDT.objects.filter(etablissement=etab).first()
 
     if request.method == 'GET':
@@ -836,13 +874,14 @@ def emploi_du_temps_pdf(request, classe_id):
         .order_by('jour', 'heure_debut')
     )
 
-    jours_dict = {j: [] for j in range(1, 8)}
+    jours = _jours_grille(ConfigEDT.pour(etab), seances)
+    jours_dict = {j: [] for j in jours}
     for s in seances:
         jours_dict[s.jour].append(s)
 
     grille = [
         {'jour_num': j, 'jour_label': JourSemaine(j).label, 'seances': jours_dict[j]}
-        for j in range(1, 7)
+        for j in jours
     ]
 
     from core.utils import get_etablissement_context
@@ -946,7 +985,7 @@ def emploi_du_temps_prof(request, personnel_id):
         .order_by('jour', 'heure_debut')
     )
 
-    JOURS = list(range(1, 7))
+    JOURS = _jours_grille(ConfigEDT.pour(etab), seances)
     jours_labels = [JourSemaine(j).label for j in JOURS]
 
     slots: dict = {}
@@ -980,7 +1019,6 @@ def emploi_du_temps_prof_pdf(request, personnel_id):
         messages.error(request, "WeasyPrint n'est pas installé sur ce serveur.")
         return redirect('viescolaire:emploi_du_temps_prof_index')
 
-    from datetime import datetime
     from personnel.models import MembrePersonnel
 
     etab = _get_etab(request)
@@ -1010,12 +1048,13 @@ def emploi_du_temps_prof_pdf(request, personnel_id):
         .order_by('jour', 'heure_debut')
     )
 
-    jours_dict = {j: [] for j in range(1, 7)}
+    jours = _jours_grille(ConfigEDT.pour(etab), seances)
+    jours_dict = {j: [] for j in jours}
     for s in seances:
         jours_dict[s.jour].append(s)
     grille = [
         {'jour_num': j, 'jour_label': JourSemaine(j).label, 'seances': jours_dict[j]}
-        for j in range(1, 7)
+        for j in jours
     ]
 
     total_minutes = sum(

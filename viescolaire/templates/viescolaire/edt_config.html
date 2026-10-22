@@ -1,0 +1,93 @@
+{% extends "core/base.html" %}
+
+{% block title %}Horaires et jours de classe — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Horaires et jours de classe</h1>
+    <p class="page-subtitle">Heures de cours, durée des séances et jours de classe utilisés par les emplois du temps</p>
+  </div>
+  <a href="{% url 'viescolaire:emploi_du_temps_index' %}" class="btn btn-secondary">
+    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Emplois du temps
+  </a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger mb-4">{{ form.non_field_errors.0 }}</div>
+  {% endif %}
+  <div class="d-grid" style="grid-template-columns: 1fr 1fr; gap: var(--space-5); max-width: 800px;">
+
+    <div class="card mb-4">
+      <h3 class="card-title mb-3">Matinée</h3>
+      <div class="form-group">
+        <label class="input-label" for="{{ form.heure_debut_matin.id_for_label }}">Début</label>
+        {{ form.heure_debut_matin }}
+        {% if form.heure_debut_matin.errors %}<p class="form-error">{{ form.heure_debut_matin.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="form-group mb-0">
+        <label class="input-label" for="{{ form.heure_fin_matin.id_for_label }}">Fin</label>
+        {{ form.heure_fin_matin }}
+        {% if form.heure_fin_matin.errors %}<p class="form-error">{{ form.heure_fin_matin.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <h3 class="card-title mb-3">Après-midi</h3>
+      <p class="text-sm text-muted mb-4">Laisser les deux champs vides pour une journée continue.</p>
+      <div class="form-group">
+        <label class="input-label" for="{{ form.heure_debut_aprem.id_for_label }}">Début</label>
+        {{ form.heure_debut_aprem }}
+        {% if form.heure_debut_aprem.errors %}<p class="form-error">{{ form.heure_debut_aprem.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="form-group mb-0">
+        <label class="input-label" for="{{ form.heure_fin_aprem.id_for_label }}">Fin</label>
+        {{ form.heure_fin_aprem }}
+        {% if form.heure_fin_aprem.errors %}<p class="form-error">{{ form.heure_fin_aprem.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <h3 class="card-title mb-3">Séances</h3>
+      <div class="form-group mb-0">
+        <label class="input-label" for="{{ form.duree_seance.id_for_label }}">Durée d'une séance (minutes)</label>
+        {{ form.duree_seance }}
+        {% if form.duree_seance.errors %}<p class="form-error">{{ form.duree_seance.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <h3 class="card-title mb-3">Jours de classe</h3>
+      <div class="form-group mb-0 edt-config-jours">
+        {% for case in form.jours_actifs %}
+        <label class="d-flex align-center gap-2 mb-2">{{ case.tag }} <span>{{ case.choice_label }}</span></label>
+        {% endfor %}
+        {% if form.jours_actifs.errors %}<p class="form-error">{{ form.jours_actifs.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-4" style="grid-column: 1 / -1; background: var(--color-bg-hover);">
+      <h3 class="card-title mb-3">Créneaux obtenus par jour de classe</h3>
+      {% if creneaux %}
+      <div class="d-flex flex-wrap gap-2">
+        {% for debut, fin in creneaux %}<span class="badge badge-neutral">{{ debut|time:"H:i" }}–{{ fin|time:"H:i" }}</span>{% endfor %}
+      </div>
+      <p class="text-xs text-muted mt-2 mb-0">{{ creneaux|length }} séance{{ creneaux|length|pluralize }} de {{ config.duree_seance }} min · {{ config.plages_libelle }}</p>
+      {% else %}
+      <p class="text-sm text-muted mb-0">Aucune séance complète ne tient dans ces horaires.</p>
+      {% endif %}
+    </div>
+
+    <div style="grid-column: 1 / -1;">
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </div>
+</form>
+
+{% endblock %}

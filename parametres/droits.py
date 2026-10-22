@@ -140,6 +140,7 @@ MODULES = (
         _f('/viescolaire/fiches-suivi/', 'Fiches de suivi', '/viescolaire/eleve/'),
         _f('/viescolaire/emploi-du-temps/', 'Emploi du temps', '/viescolaire/classe/', '/viescolaire/seance/', actions=(
             _a('modifier', "Modifier l'emploi du temps (séances, génération)", 'seance_create', 'seance_delete', 'edt_generer'),
+            _a('configurer', 'Configurer les horaires de cours et les jours de classe', 'edt_config', roles=_DIRECTION),
         )),
         _f('/viescolaire/emploi-du-temps/professeur/', 'Emploi du temps par professeur'),
         _f('/viescolaire/conseils/', 'Conseils de classe', actions=(
