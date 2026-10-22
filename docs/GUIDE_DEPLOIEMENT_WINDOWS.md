@@ -18,6 +18,7 @@
 
 1. [Architecture et prérequis](#1-architecture-et-prérequis)
    - [État de validation avant installation](#14-état-de-validation-à-connaître-avant-linstallation)
+   - [1.5 Répartition sur plusieurs partitions](#15-répartition-sur-plusieurs-partitions-déploiement-chez-un-client)
 2. [Installation initiale](#2-installation-initiale)
 3. [Configuration et premier accès](#3-configuration-et-premier-accès)
    - [Validation après installation](#34-validation-après-installation)
@@ -63,13 +64,13 @@ La première installation télécharge l'image PostgreSQL, l'image Redis et les 
 
 ### 1.3 Dossier de l'application
 
-Pour l'installation cliente de référence, utiliser exclusivement le chemin :
+Pour l'installation cliente de référence, utiliser le chemin :
 
 ```text
 C:\YELEN-SCHOOL
 ```
 
-Ne pas utiliser un dossier du Bureau ni créer une seconde copie du projet dans un autre emplacement. Les scripts utilisent ce chemin comme racine de référence. Ne pas placer les sauvegardes uniquement sur le même disque que l'ordinateur serveur.
+ou, avec la répartition sur plusieurs partitions (§1.5), `D:\YELEN-SCHOOL`. Le nom du dossier `YELEN-SCHOOL` ne doit pas changer : il sert de nom de projet Docker Compose (`yelen-school`) et donc de préfixe aux volumes de données. Ne pas utiliser un dossier du Bureau ni créer une seconde copie du projet dans un autre emplacement ; les scripts utilisent leur propre emplacement comme racine. Ne pas placer les sauvegardes uniquement sur le même disque que l'ordinateur serveur.
 
 ### 1.4 État de validation à connaître avant l'installation
 
@@ -85,6 +86,57 @@ Les pourcentages ci-dessous mesurent la préparation et les preuves disponibles 
 | Gates de commercialisation entièrement validés | **0 % (0/7)** — certification générale non validée |
 
 La validation ci-dessus concerne l'installation cliente de référence et ne remplace pas la recette de sauvegarde/restauration ni les autres gates. Les contrôles non exécutables dans l'environnement disponible sont `BLOCKED`, pas `PASS`. Ne pas utiliser SQLite pour contourner la validation PostgreSQL.
+
+### 1.5 Répartition sur plusieurs partitions (déploiement chez un client)
+
+**Ce que ça apporte, et ce que ça n'apporte pas.** Séparer le système, l'application et les données protège contre un disque `C:` saturé, une réinstallation de Windows, une suppression du dossier de l'application ou une image Docker effacée par erreur : les données survivent et la reprise se limite à un `git clone` + `demarrage.bat`. En revanche, des partitions d'un **même disque physique** meurent ensemble : la protection contre la panne matérielle, le vol et les rançongiciels vient des **sauvegardes chiffrées sur un autre support** (§5.2, §5.4), de **BitLocker** sur les partitions application et données, et du fait de ne jamais partager ces dossiers sur le réseau.
+
+**Où vivent réellement les données.** Avec Docker Desktop, PostgreSQL, Redis, les médias (photos, justificatifs, PDF) et les journaux sont des volumes Docker stockés dans **un seul fichier disque virtuel** (`docker_data.vhdx`, par défaut `%LOCALAPPDATA%\Docker\wsl\disk\`). Déplacer ce fichier déplace toutes les données ; c'est la seule opération utile côté Docker. Monter le répertoire PostgreSQL directement sur un dossier Windows n'est pas pris en charge (droits et performances). Le programme Docker Desktop lui-même (≈ 2 Go, réinstallable) peut rester sur `C:`.
+
+**Répartition recommandée :**
+
+| Partition | Contenu | Remarques |
+|---|---|---|
+| `C:` système | Windows, Docker Desktop (programme) | option à l'installation : `--installation-dir=D:\Docker` |
+| `D:` application | `D:\YELEN-SCHOOL` : code, `.env`, `certs\`, `logs\`, `backups\` (copie locale) | BitLocker ; `.env` protégé comme un mot de passe |
+| `E:` données | `E:\YELEN-DONNEES\Docker` : disque virtuel Docker (PostgreSQL, Redis, médias) | BitLocker ; disque **SSD** local, jamais un partage réseau ni un dossier synchronisé |
+| autre support | `YELEN_BACKUP_OFFSITE` : disque externe, NAS ou second disque physique | jamais sur `D:` ni `E:` |
+
+La liaison de la licence (§3.5) ne dépend pas de ces partitions : l'empreinte du serveur n'utilise que la carte mère, le système et le disque qui porte Windows.
+
+#### 1.5.1 Installation neuve
+
+1. Créer et formater les partitions (NTFS) dans *Gestion des disques* ; activer BitLocker sur `D:` et `E:` (Panneau de configuration → Chiffrement de lecteur BitLocker), conserver les clés de récupération hors de la machine.
+2. Créer le dossier des données : `mkdir E:\YELEN-DONNEES\Docker`.
+3. Installer Docker Desktop en lui indiquant ce dossier **avant son premier démarrage** (invite de commandes administrateur, dans le dossier du téléchargement) :
+
+   ```cmd
+   start /w "" "Docker Desktop Installer.exe" install --accept-license --backend=wsl-2 --no-windows-containers --wsl-default-data-root=E:\YELEN-DONNEES\Docker
+   ```
+
+   Ajouter `--installation-dir=D:\Docker` pour installer aussi le programme hors de `C:`. Démarrer Docker Desktop une fois et vérifier : `dir E:\YELEN-DONNEES\Docker` contient le disque virtuel (`disk\docker_data.vhdx`).
+4. Cloner l'application sur la partition application : `git clone https://github.com/nayxuspro-sketch/yelen-school.git D:\YELEN-SCHOOL`, puis suivre l'installation habituelle (§2.2) depuis `D:\YELEN-SCHOOL`. Tous les scripts et tâches planifiées se référencent à leur dossier : aucun chemin à adapter.
+5. Programmer la sauvegarde (§6.1) et inscrire dans `.env` la copie hors machine : `YELEN_BACKUP_OFFSITE=F:\YELEN-SAUVEGARDES` (support distinct de `D:` et `E:`), avec le chiffrement (§5.4).
+
+#### 1.5.2 Installation existante à répartir
+
+Prévoir 15 minutes d'arrêt et, sur `E:`, autant d'espace libre que la taille actuelle de `docker_data.vhdx`.
+
+1. Sauvegarde complète puis copie de la paire sur un support externe : `powershell -NoProfile -ExecutionPolicy Bypass -File installer\backup-windows.ps1`.
+2. Arrêter l'application **sans** toucher aux volumes : `cd /d C:\YELEN-SCHOOL && docker compose -f docker-compose.client.yml down` (jamais `down -v`).
+3. Déplacer le dossier de l'application en conservant son nom (invite de commandes administrateur) :
+
+   ```cmd
+   robocopy C:\YELEN-SCHOOL D:\YELEN-SCHOOL /E /COPYALL /DCOPY:DAT /R:1 /W:1
+   ```
+
+   Un code de retour inférieur à 8 signifie que la copie est complète. Renommer ensuite `C:\YELEN-SCHOOL` en `C:\YELEN-SCHOOL.ancien` (à supprimer après validation).
+4. Déplacer les données Docker : Docker Desktop → **Settings → Resources → Advanced → Disk image location → Browse** → `E:\YELEN-DONNEES\Docker` → **Apply & restart**. Docker Desktop copie lui-même le disque virtuel (plusieurs minutes selon la taille). Vérifier ensuite que `E:\YELEN-DONNEES\Docker` contient `docker_data.vhdx` et que `docker volume ls` liste toujours les volumes `yelen-school_yelen_*`. Si Docker Desktop signale une erreur de copie alors que le fichier est présent et que les volumes sont listés, redémarrer Docker Desktop et poursuivre ; si les volumes ont disparu, restaurer la paire de l'étape 1 (§7.2).
+5. Redémarrer depuis le nouveau dossier : `cd /d D:\YELEN-SCHOOL && powershell -NoProfile -ExecutionPolicy Bypass -File installer\start-local.ps1`, puis vérifier `http://localhost:8001/health/`, la connexion et la présence des données.
+6. Réinscrire les tâches planifiées depuis le nouveau dossier (elles pointaient vers `C:\YELEN-SCHOOL`) : exécuter en administrateur `programmer-demarrage.bat`, `programmer-sauvegarde.bat`, `programmer-surveillance.bat`, `programmer-sms.bat`, `programmer-risques.bat` et, si le paiement en ligne est configuré, `programmer-verification-paiements.bat`. Chaque script remplace la tâche existante du même nom.
+7. Supprimer `C:\YELEN-SCHOOL.ancien` après une journée d'exploitation normale et une sauvegarde réussie depuis `D:\YELEN-SCHOOL`.
+
+**Mode autonome SQLite (§3.6)** : la base est un fichier, `data\yelen_school.sqlite3` par défaut ; la répartition se résume à inscrire dans `.env` `SQLITE_PATH=E:\YELEN-DONNEES\yelen_school.sqlite3` (disque local, jamais un partage réseau) et à diriger `sauvegarde_sqlite --dest` (ou `BACKUP_DIR`) vers un autre support.
 
 ---
 
