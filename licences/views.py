@@ -48,7 +48,7 @@ def _enrich(lic):
     return {
         'obj': lic,
         'jours_restants': jours,
-        'jours_pct': max(0, min(100, round(jours / 365 * 100))) if jours is not None and jours >= 0 else 0,
+        'jours_pct': lic.progression_periode(),
         'signature_valide': lic.verifier_signature(),
         'limites': LIMITES_LICENCES.get(lic.type_licence, {}),
     }
@@ -309,14 +309,12 @@ def statut_licence(request):
         {'label': LABELS.get(feat, feat), 'inclus': type_licence in niveaux}
         for feat, niveaux in FEATURE_FLAGS.items()
     ]
-    jours_pct = 0
-    if jours_restants is not None:
-        jours_pct = max(0, min(100, round(jours_restants / 365 * 100)))
     return render(request, 'licences/statut.html', {
         'etab': etab,
         'licence': licence,
         'jours_restants': jours_restants,
-        'jours_restants_pct': jours_pct,
+        'jours_prevus': licence.duree_periode() if licence else None,
+        'jours_restants_pct': licence.progression_periode() if licence else 0,
         'date_debut': licence.date_activation if licence else None,
         'est_expiree': est_expiree,
         'expire_bientot': expire_bientot,

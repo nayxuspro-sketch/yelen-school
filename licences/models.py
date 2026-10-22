@@ -223,6 +223,12 @@ class Licence(BaseModel):
         verbose_name=_("Date d'expiration"),
         help_text=_("Date de fin de validité de la licence")
     )
+    date_debut_periode = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("Début de la période en cours"),
+        help_text=_("Activation ou dernier renouvellement : borne la durée affichée")
+    )
     
     # Signature HMAC pour vérification d'intégrité (legacy, v1/v2)
     signature_hmac = models.CharField(
@@ -544,6 +550,24 @@ class Licence(BaseModel):
         """
         delta = self.date_expiration - timezone.now().date()
         return delta.days
+
+    def duree_periode(self) -> int:
+        """Jours prévus pour la période en cours : du début de période (activation
+        ou dernier renouvellement, à défaut création) à l'expiration. Toujours
+        supérieur ou égal aux jours restants."""
+        debut = self.date_debut_periode or self.date_activation or self.created_at
+        if debut is None:
+            return max(self.jours_restants(), 0)
+        if isinstance(debut, datetime):
+            debut = debut.date()
+        return max((self.date_expiration - debut).days, 0)
+
+    def progression_periode(self) -> int:
+        """Part de la période en cours encore à courir, en pourcentage (0 à 100)."""
+        total = self.duree_periode()
+        if total <= 0:
+            return 0
+        return max(0, min(100, round(self.jours_restants() / total * 100)))
     
     def peut_utiliser_feature(self, feature_name: str) -> bool:
         """
@@ -582,6 +606,7 @@ class Licence(BaseModel):
         if self.statut == StatutLicence.EN_ATTENTE:
             self.statut = StatutLicence.ACTIVE
             self.date_activation = timezone.now()
+            self.date_debut_periode = self.date_activation.date()
             self.save()
     
     def revoquer(self, raison: str = "") -> None:
@@ -603,8 +628,8 @@ class Licence(BaseModel):
         Args:
             duree_jours: Durée du renouvellement en jours (par défaut 1 an)
         """
-        nouvelle_expiration = timezone.now().date() + timedelta(days=duree_jours)
-        self.date_expiration = nouvelle_expiration
+        self.date_debut_periode = timezone.now().date()
+        self.date_expiration = self.date_debut_periode + timedelta(days=duree_jours)
         
         if self.statut == StatutLicence.EXPIREE:
             self.statut = StatutLicence.ACTIVE
