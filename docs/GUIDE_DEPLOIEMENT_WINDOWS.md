@@ -918,8 +918,8 @@ Get-NetIPAddress -AddressFamily IPv4 |
 | Poste client | Adresse à saisir |
 |---|---|
 | Windows | `http://NOMPC:8001/` |
-| iPhone, iPad, Mac, Android 12 ou plus récent, Linux | `http://NOMPC.local:8001/` |
-| Android 11 ou plus ancien | `http://ADRESSE_IP_DU_SERVEUR:8001/` |
+| iPhone, iPad, Mac, Linux | `http://NOMPC.local:8001/` |
+| Android (toutes versions) | `http://ADRESSE_IP_DU_SERVEUR:8001/` — la résolution des noms `.local` n'est pas garantie sur Android, même récent : absente avant Android 12, livrée ensuite dans un module système que certains constructeurs n'activent pas, et coupée par tout VPN, antivirus ou « DNS privé » |
 
 Pour une adresse courte et parlante, renommer le serveur (Paramètres → Système → Renommer ce PC ; 15 caractères maximum, lettres, chiffres et tirets, par exemple `YELEN`) puis redémarrer : `http://yelen:8001/` et `http://yelen.local:8001/`. Le `.env` suit le nouveau nom au démarrage suivant, les anciennes entrées restent valides.
 
@@ -1041,7 +1041,7 @@ docker compose -f docker-compose.client.yml logs --tail=100 web
 
 Le poste client n'a pas pu traduire le nom du serveur : l'erreur survient avant toute connexion, elle n'a rien à voir avec le HTTPS ni avec le certificat. Trois causes, à vérifier dans l'ordre :
 
-1. **Android 11 ou plus ancien** (Paramètres → À propos de la tablette → Version d'Android) : ces versions ne résolvent pas les noms `.local` (§9.1). Utiliser l'adresse IP du serveur, couverte elle aussi par le certificat (§9.3) : `https://ADRESSE_IP_DU_SERVEUR:8443/certificat-autorite/` puis `https://ADRESSE_IP_DU_SERVEUR:8443/`. L'application installée restant liée à cette adresse, fixer l'IP du serveur (réservation DHCP sur la box, ou IP fixe dans Windows).
+1. **Android** (toutes versions) : la résolution des noms `.local` n'y est pas garantie (§9.1) — les postes Windows, iPhone, iPad et Mac du même réseau y parviennent, pas forcément la tablette. Utiliser l'adresse IP du serveur, couverte elle aussi par le certificat (§9.3) : `https://ADRESSE_IP_DU_SERVEUR:8443/certificat-autorite/` puis `https://ADRESSE_IP_DU_SERVEUR:8443/`. L'application installée restant liée à cette adresse, fixer l'IP du serveur (réservation DHCP sur la box, ou IP fixe dans Windows).
 2. **Serveur** : les réponses de nom passent par la règle « YELEN SCHOOL - Résolution du nom du serveur » et exigent un réseau classé *Privé* ; les deux sont mis en place par `start-local.ps1` à chaque démarrage depuis la version du 22 octobre 2026 — une production plus ancienne doit d'abord être mise à jour (§8.2). Vérification, à exécuter sur le serveur :
 
    ```bat

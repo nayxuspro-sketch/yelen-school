@@ -268,7 +268,7 @@ $csrfOrigins = @(
     "http://${lanIp}:$httpPort"
 )
 if (-not [string]::IsNullOrWhiteSpace($computerName)) {
-    # NOMPC (postes Windows) et NOMPC.local (iPhone/iPad/Mac, Android 12+, Linux).
+    # NOMPC (postes Windows) et NOMPC.local (iPhone/iPad/Mac, Linux ; non garanti sur Android).
     $allowedHosts += $computerName
     $allowedHosts += "${computerName}.local"
     $csrfOrigins += "http://${computerName}"

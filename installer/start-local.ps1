@@ -133,8 +133,8 @@ function Get-ServerHostName {
 
 function Get-ServerNames {
     # Nom Windows du serveur : http://NOMPC:port depuis les postes Windows
-    # (NetBIOS, LLMNR) et http://NOMPC.local:port depuis iPhone/iPad/Mac,
-    # Android 12+ et Linux (mDNS).
+    # (NetBIOS, LLMNR) et http://NOMPC.local:port depuis iPhone/iPad/Mac et
+    # Linux (mDNS ; non garanti sur Android, qui utilise l'adresse IP).
     $name = Get-ServerHostName
     if ([string]::IsNullOrWhiteSpace($name)) { return @() }
     return @($name, "$name.local")
