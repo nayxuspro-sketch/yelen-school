@@ -1036,6 +1036,22 @@ Le pare-feu provoque normalement un délai d'attente, pas une réponse HTTP 400.
 docker compose -f docker-compose.client.yml logs --tail=100 web
 ```
 
+### « Site inaccessible – DNS_PROBE_FINISHED_NXDOMAIN » avec `NOMPC.local`
+
+Le poste client n'a pas pu traduire le nom du serveur : l'erreur survient avant toute connexion, elle n'a rien à voir avec le HTTPS ni avec le certificat. Trois causes, à vérifier dans l'ordre :
+
+1. **Android 11 ou plus ancien** (Paramètres → À propos de la tablette → Version d'Android) : ces versions ne résolvent pas les noms `.local` (§9.1). Utiliser l'adresse IP du serveur, couverte elle aussi par le certificat (§9.3) : `https://ADRESSE_IP_DU_SERVEUR:8443/certificat-autorite/` puis `https://ADRESSE_IP_DU_SERVEUR:8443/`. L'application installée restant liée à cette adresse, fixer l'IP du serveur (réservation DHCP sur la box, ou IP fixe dans Windows).
+2. **Serveur** : les réponses de nom passent par la règle « YELEN SCHOOL - Résolution du nom du serveur » et exigent un réseau classé *Privé* ; les deux sont mis en place par `start-local.ps1` à chaque démarrage depuis la version du 22 octobre 2026 — une production plus ancienne doit d'abord être mise à jour (§8.2). Vérification, à exécuter sur le serveur :
+
+   ```bat
+   powershell -NoProfile -Command "Get-NetConnectionProfile | Format-Table Name,InterfaceAlias,NetworkCategory -AutoSize; Get-NetFirewallRule -DisplayName 'mDNS (UDP-In)','YELEN SCHOOL - R*' | Format-Table DisplayName,Profile,Enabled -AutoSize"
+   ```
+
+   Attendu : la carte réseau en `Private`, les règles `Enabled : True`.
+3. **Routeur ou point d'accès** qui isole les clients Wi-Fi ou filtre le multicast (fréquent sur un partage de connexion de téléphone et sur certaines box en mode « invité ») : le nom ne peut pas être annoncé ; utiliser l'adresse IP comme au point 1.
+
+Test rapide, sans HTTPS : `http://NOMPC.local:8001/` sur le même appareil. Si cette page s'ouvre, le nom est résolu et l'adresse `https://NOMPC.local:8443/` fonctionnera aussi.
+
 ### Les services ne sont pas prêts
 
 ```powershell
