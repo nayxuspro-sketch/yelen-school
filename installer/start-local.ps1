@@ -161,6 +161,62 @@ function Register-ServerHosts {
     return $added
 }
 
+function Get-CertificateNotAfter {
+    # Date d'expiration (UTC) d'un certificat PEM ; $null si le fichier est absent ou illisible.
+    param([string]$Path)
+
+    if (-not (Test-Path $Path)) { return $null }
+    try {
+        $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($Path)
+        return $certificate.NotAfter.ToUniversalTime()
+    } catch {
+        return $null
+    }
+}
+
+function Update-ServerCertificate {
+    # HTTPS actif : le certificat du serveur doit couvrir les adresses IP et les
+    # noms actuels du poste et rester valide. Sinon il est renouvelé sans
+    # intervention (autorité conservée : rien à refaire sur les postes) et
+    # YELEN_HTTPS_HOSTS est complété. Retourne $true si un certificat a été émis :
+    # le proxy doit alors être redémarré pour le charger.
+    param(
+        [string[]]$Hosts,
+        [int]$RenewBeforeDays = 30
+    )
+
+    if ((Get-DotEnvValue 'YELEN_HTTPS') -ne 'true') { return $false }
+    $certificateFile = Join-Path $Root 'certs\yelen-serveur.crt'
+    $covered = @((Get-DotEnvValue 'YELEN_HTTPS_HOSTS') -split '[,; ]+' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $wanted = @(@($Hosts) + @('localhost', '127.0.0.1') | ForEach-Object { "$_".Trim() } | Where-Object { $_ })
+    $missing = @()
+    foreach ($entry in $wanted) {
+        if ($covered -notcontains $entry -and $missing -notcontains $entry) { $missing += $entry }
+    }
+    $notAfter = Get-CertificateNotAfter $certificateFile
+    if ($null -eq $notAfter) {
+        $reason = 'certificat serveur absent ou illisible'
+    } elseif ($notAfter -lt (Get-Date).ToUniversalTime().AddDays($RenewBeforeDays)) {
+        $reason = "certificat serveur expirant le $($notAfter.ToString('dd/MM/yyyy'))"
+    } elseif ($missing.Count -gt 0) {
+        $reason = "nouvelle(s) adresse(s) : $($missing -join ', ')"
+    } else {
+        return $false
+    }
+
+    $hostList = ($covered + $missing) -join ','
+    Write-StartupLog "Renouvellement du certificat HTTPS ($reason) pour : $hostList"
+    & docker compose -f $ComposeFile run --rm --no-deps --entrypoint python web /app/installer/generer-certificats.py --hosts $hostList --out /app/certs *> $null
+    $renewed = Get-CertificateNotAfter $certificateFile
+    if ($LASTEXITCODE -ne 0 -or $null -eq $renewed -or $renewed -eq $notAfter) {
+        Write-StartupLog 'AVERTISSEMENT : le certificat HTTPS n''a pas pu être renouvelé ; relancer activer-https.bat en administrateur.'
+        return $false
+    }
+    Set-DotEnvValue 'YELEN_HTTPS_HOSTS' $hostList
+    Write-StartupLog "Certificat HTTPS renouvelé, valide jusqu'au $($renewed.ToString('dd/MM/yyyy'))."
+    return $true
+}
+
 function Test-NameResolutionRule {
     # Règle UDP 137/5353/5355 (NetBIOS, mDNS, LLMNR) : réponses au nom du serveur.
     if (-not (Get-Command Get-NetFirewallRule -ErrorAction SilentlyContinue)) {
@@ -364,10 +420,23 @@ try {
     $env:YELEN_HOST_ID = Get-YelenHostId
 
     Set-Location $Root
+    # HTTPS : certificat renouvelé automatiquement après un changement d'adresse IP
+    # ou de nom du poste, et avant son expiration (autorité conservée).
+    $certificateRenewed = Update-ServerCertificate -Hosts ($lanAddresses + @(Get-ServerNames))
+
     Write-StartupLog 'Démarrage des services YELEN SCHOOL...'
     & docker compose -f $ComposeFile up -d
     if ($LASTEXITCODE -ne 0) {
         throw 'Le démarrage Docker Compose a échoué.'
+    }
+    if ($certificateRenewed) {
+        # Caddy lit le certificat au démarrage : le proxy est relancé pour servir le nouveau.
+        & docker compose -f $ComposeFile --profile https restart proxy *> $null
+        if ($LASTEXITCODE -eq 0) {
+            Write-StartupLog 'Proxy HTTPS redémarré avec le nouveau certificat.'
+        } else {
+            Write-StartupLog 'AVERTISSEMENT : le proxy HTTPS n''a pas redémarré ; relancer demarrage.bat.'
+        }
     }
     Write-StartupLog 'Services YELEN SCHOOL démarrés.'
 

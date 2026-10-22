@@ -129,6 +129,48 @@ try {
     $text = [System.IO.File]::ReadAllText($EnvFile, [System.Text.UTF8Encoding]::new($false))
     Assert ($text.Contains('Contrôle des licences') -and $text.Contains('YELEN_HTTP_PORT=8002')) 'accents intacts après réécriture'
 
+    Write-Host '9. HTTPS inactif : aucun renouvellement de certificat'
+    [System.IO.File]::WriteAllText($EnvFile, $envText, [System.Text.UTF8Encoding]::new($false))
+    $script:DockerCalls = @()
+    $script:DockerExitCode = 0
+    $script:CertNotAfter = (Get-Date).ToUniversalTime().AddDays(400)
+    function docker {
+        $script:DockerCalls += ,@($args)
+        if ($script:DockerExitCode -eq 0) { $script:CertNotAfter = (Get-Date).ToUniversalTime().AddDays(825) }
+        $global:LASTEXITCODE = $script:DockerExitCode
+    }
+    function Get-CertificateNotAfter { param([string]$Path) $script:CertNotAfter }
+    $hosts = @('10.52.237.38', 'desktop-nkqmf8l', 'desktop-nkqmf8l.local')
+    Assert (-not (Update-ServerCertificate -Hosts $hosts) -and $script:DockerCalls.Count -eq 0) 'sans YELEN_HTTPS=true : rien à faire, docker non appelé'
+
+    Write-Host '10. HTTPS actif, certificat valide couvrant les adresses actuelles : rien à faire'
+    [System.IO.File]::AppendAllText($EnvFile, "YELEN_HTTPS=true`r`nYELEN_HTTPS_HOSTS=10.52.237.38,DESKTOP-NKQMF8L,DESKTOP-NKQMF8L.local,localhost,127.0.0.1`r`n", [System.Text.UTF8Encoding]::new($false))
+    Assert (-not (Update-ServerCertificate -Hosts $hosts) -and $script:DockerCalls.Count -eq 0) 'adresses couvertes (casse ignorée) et certificat valide : docker non appelé'
+
+    Write-Host '11. Nouvelle adresse IP : certificat renouvelé, liste complétée'
+    Remove-Item $LogFile -ErrorAction SilentlyContinue
+    $renewed = Update-ServerCertificate -Hosts (@('192.168.11.108') + $hosts)
+    Assert ($renewed -eq $true -and $script:DockerCalls.Count -eq 1) 'un appel docker, renouvellement signalé'
+    $call = $script:DockerCalls[0]
+    Assert (($call -join ' ') -like 'compose -f * run --rm --no-deps --entrypoint python web /app/installer/generer-certificats.py --hosts 10.52.237.38,DESKTOP-NKQMF8L,DESKTOP-NKQMF8L.local,localhost,127.0.0.1,192.168.11.108 --out /app/certs') 'generer-certificats.py reçoit les anciennes adresses puis la nouvelle (autorité réutilisée)'
+    Assert ((Get-EnvLine 'YELEN_HTTPS_HOSTS') -eq 'YELEN_HTTPS_HOSTS=10.52.237.38,DESKTOP-NKQMF8L,DESKTOP-NKQMF8L.local,localhost,127.0.0.1,192.168.11.108') 'YELEN_HTTPS_HOSTS complété'
+    $log = [System.IO.File]::ReadAllText($LogFile)
+    Assert ($log -match 'Renouvellement du certificat HTTPS \(nouvelle\(s\) adresse\(s\) : 192\.168\.11\.108\)' -and $log -match 'Certificat HTTPS renouvelé') 'journal : motif et confirmation'
+    Assert (-not (Update-ServerCertificate -Hosts (@('192.168.11.108') + $hosts)) -and $script:DockerCalls.Count -eq 1) 'second passage : plus rien à faire'
+
+    Write-Host '12. Certificat expirant dans moins de 30 jours : renouvelé'
+    $script:CertNotAfter = (Get-Date).ToUniversalTime().AddDays(10)
+    Assert ((Update-ServerCertificate -Hosts $hosts) -eq $true -and $script:DockerCalls.Count -eq 2) 'renouvellement anticipé'
+    Assert ([System.IO.File]::ReadAllText($LogFile) -match 'certificat serveur expirant le') 'journal : motif expiration'
+
+    Write-Host '13. Échec de la génération : avertissement, .env inchangé, pas de redémarrage du proxy'
+    $script:DockerExitCode = 1
+    $script:CertNotAfter = $null
+    $before = Get-EnvLine 'YELEN_HTTPS_HOSTS'
+    Assert (-not (Update-ServerCertificate -Hosts (@('10.0.0.9') + $hosts)) -and $script:DockerCalls.Count -eq 3) 'retourne $false après l''appel docker'
+    Assert ((Get-EnvLine 'YELEN_HTTPS_HOSTS') -eq $before) 'YELEN_HTTPS_HOSTS inchangé'
+    Assert ([System.IO.File]::ReadAllText($LogFile) -match 'relancer activer-https.bat') 'journal : consigne de reprise manuelle'
+
     Write-Host 'Tous les tests passent.' -ForegroundColor Green
 } finally {
     Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue

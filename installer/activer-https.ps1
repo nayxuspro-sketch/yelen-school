@@ -12,8 +12,10 @@
          conservé sur le serveur pour la surveillance) ;
       3. ouvre le port HTTPS dans le pare-feu, installe l'autorité sur ce serveur,
          redémarre les services et vérifie https://127.0.0.1:<port>/health/.
-    Relancer le script après un changement d'adresse IP (le certificat est renouvelé,
-    l'autorité est conservée : rien à refaire sur les postes).
+    Ensuite, start-local.ps1 (démarrage et surveillance) renouvelle seul le certificat
+    après un changement d'adresse IP ou de nom, et avant son expiration (autorité
+    conservée : rien à refaire sur les postes). Relancer ce script uniquement pour
+    forcer un renouvellement, imposer la liste d'adresses (-Hosts) ou changer de port.
 
 .EXAMPLE
     .\installer\activer-https.ps1

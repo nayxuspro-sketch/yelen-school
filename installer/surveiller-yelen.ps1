@@ -11,7 +11,9 @@
          ALERTE_SMS_NUMEROS du .env via la passerelle SMS déjà configurée
          (SMS_HTTP_URL / SMS_HTTP_USER / SMS_HTTP_PASSWORD), puis un SMS de retour
          à la normale ;
-      4. signale (un SMS par jour) l'absence de sauvegarde depuis plus de 36 heures.
+      4. signale (un SMS par jour) l'absence de sauvegarde depuis plus de 36 heures ;
+      5. détecte une nouvelle adresse IP du serveur (nouveau réseau, nouvelle box) et
+         relance start-local.ps1, qui autorise l'adresse et renouvelle le certificat HTTPS.
     État conservé dans logs\surveillance.json, journal dans logs\surveillance.log.
 #>
 [CmdletBinding()]
@@ -91,6 +93,21 @@ function Send-AlerteSms {
     }
 }
 
+function Get-LanIPv4Addresses {
+    # Adresses IPv4 des cartes physiques actives (mêmes critères que start-local.ps1).
+    if (-not (Get-Command Get-NetAdapter -ErrorAction SilentlyContinue)) { return @() }
+    try {
+        $indexes = @(Get-NetAdapter -Physical -ErrorAction Stop | Where-Object { $_.Status -eq 'Up' } |
+            Select-Object -ExpandProperty ifIndex)
+        if ($indexes.Count -eq 0) { return @() }
+        return @(Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $indexes -ErrorAction Stop |
+            Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
+            Select-Object -ExpandProperty IPAddress -Unique)
+    } catch {
+        return @()
+    }
+}
+
 $etat = Get-Etat
 $nomServeur = $env:COMPUTERNAME
 
@@ -140,3 +157,22 @@ if ($null -eq $derniere -or $derniere.LastWriteTime -lt (Get-Date).AddHours(-$He
 }
 
 Save-Etat $etat
+
+# ── 3. Nouvelle adresse IP du serveur (nouveau réseau, nouvelle box) ───────
+# start-local.ps1 autorise l'adresse (ALLOWED_HOSTS, CSRF), reclasse le réseau en
+# privé et renouvelle le certificat HTTPS : rien à faire à la main.
+$autorisees = @((Get-DotEnvValue 'ALLOWED_HOSTS') -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+$nouvelles = @(Get-LanIPv4Addresses | Where-Object { $autorisees -notcontains $_ })
+if ($autorisees.Count -gt 0 -and $nouvelles.Count -gt 0) {
+    Write-Log "Nouvelle adresse IP du serveur : $($nouvelles -join ', ') ; mise à jour de la configuration..."
+    try {
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $StartScript *> $null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Log 'Configuration mise à jour (voir logs\startup.log).'
+        } else {
+            Write-Log 'Mise à jour de la configuration en échec (voir logs\startup.log).'
+        }
+    } catch {
+        Write-Log "Mise à jour de la configuration impossible : $($_.Exception.Message)"
+    }
+}
