@@ -6,6 +6,7 @@ Toutes les fonctions reçoivent une ``AnneeScolaire`` et renvoient des structure
 """
 import re
 import unicodedata
+from collections import Counter
 
 from examens.models import InscriptionExamen, SessionExamen
 from inscriptions.models import Inscription
@@ -58,6 +59,17 @@ def _inscriptions(annee):
     )
 
 
+def _cle_ligne(ligne):
+    """Identité d'une ligne de niveau : un même libellé de niveau peut exister dans plusieurs cycles."""
+    return (ligne['cycle_ordre'], ligne['cycle'], ligne['niveau'])
+
+
+def _libelles_colonnes(lignes):
+    """Libellé de colonne par niveau, précisé du cycle lorsque le niveau existe dans plusieurs cycles."""
+    doublons = {niveau for niveau, n in Counter(ligne['niveau'] for ligne in lignes).items() if n > 1}
+    return [f"{ligne['niveau']} ({ligne['cycle']})" if ligne['niveau'] in doublons else ligne['niveau'] for ligne in lignes]
+
+
 def _ligne(lignes, valeur, cles):
     cle = (valeur['classe__cycle__ordre'] or 0, valeur['classe__cycle__nom'] or '', valeur['classe__niveau'])
     ligne = lignes.get(cle)
@@ -85,19 +97,22 @@ def statistiques_rentree(annee):
         if valeur['eleve_id'] not in anciens:
             _ajouter(ligne['nouveaux'], genre)
         age = annee.date_debut.year - valeur['eleve__date_naissance'].year
-        _ajouter(ages.setdefault(age, {}).setdefault(ligne['niveau'], _compteur()), genre)
+        _ajouter(ages.setdefault(age, {}).setdefault(_cle_ligne(ligne), _compteur()), genre)
 
     lignes = _ordonner(lignes)
-    niveaux = [ligne['niveau'] for ligne in lignes]
+    cles_lignes = [_cle_ligne(ligne) for ligne in lignes]
     tableau_ages = []
     for age in sorted(ages):
-        colonnes = [ages[age].get(niveau, _compteur()) for niveau in niveaux]
+        colonnes = [ages[age].get(cle, _compteur()) for cle in cles_lignes]
         tableau_ages.append({'age': f'{age} ans', 'colonnes': colonnes, 'total': _total(colonnes)})
+    total = {cle: _total(ligne[cle] for ligne in lignes) for cle in cles}
     return {
         'lignes': lignes,
-        'total': {cle: _total(ligne[cle] for ligne in lignes) for cle in cles},
-        'niveaux': niveaux,
+        'total': total,
+        'niveaux': _libelles_colonnes(lignes),
         'ages': tableau_ages,
+        # Pied du tableau des âges : effectif par niveau et total général (= somme des lignes d'âge)
+        'ages_total': {'colonnes': [ligne['effectif'] for ligne in lignes], 'total': total['effectif']},
     }
 
 

@@ -958,6 +958,9 @@ def statistiques_officielles(request):
     wb.add_header(['Âge', *[f"{niveau} {sexe}" for niveau in rentree['niveaux'] for sexe in ('G', 'F')], 'Garçons', 'Filles', 'Total'])
     for ligne in rentree['ages']:
         wb.add_row([ligne['age'], *[v for c in ligne['colonnes'] for v in (c['M'], c['F'])], *gft(ligne['total'])])
+    ages_total = rentree['ages_total']
+    wb.add_row(['TOTAL', *[v for c in ages_total['colonnes'] for v in (c['M'], c['F'])], *gft(ages_total['total'])],
+               highlight_color='DBEAFE')
 
     wb.new_sheet("Fin d'année")
     wb.add_title("Statistiques de fin d'année — abandons et décisions des conseils de classe", titre)

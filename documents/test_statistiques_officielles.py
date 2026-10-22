@@ -63,6 +63,23 @@ class TestCalculs:
         assert rentree['total']['effectif'] == {'M': 2, 'F': 3, 'T': 5} and rentree['niveaux'] == ['6ème', '3ème']
         ages = {ligne['age']: [c['T'] for c in ligne['colonnes']] for ligne in rentree['ages']}
         assert ages == {'11 ans': [2, 0], '12 ans': [1, 0], '14 ans': [0, 1], '15 ans': [0, 1]}
+        # Pied du tableau des âges = effectif par niveau, et la somme des lignes d'âge retombe sur l'effectif total
+        assert rentree['ages_total'] == {'colonnes': [sixieme['effectif'], troisieme['effectif']], 'total': {'M': 2, 'F': 3, 'T': 5}}
+        assert {cle: sum(ligne['total'][cle] for ligne in rentree['ages']) for cle in 'MFT'} == rentree['total']['effectif']
+
+    def test_meme_niveau_dans_deux_cycles(self, ecole):
+        """Un niveau présent dans deux cycles (ex. filière franco-arabe) : colonnes distinctes, totaux non doublés."""
+        etab, annee = ecole['etab'], ecole['annee']
+        franco_arabe = baker.make('parametres.Cycle', etablissement=etab, nom='Franco-arabe', ordre=2)
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=franco_arabe, niveau='6ème', nom='6ème FA')
+        baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee, statut='AFFECTE',
+                   eleve=baker.make('inscriptions.Eleve', genre='F', date_naissance=datetime.date(2014, 2, 2)))
+        rentree = statistiques_rentree(annee)
+        assert rentree['niveaux'] == ['6ème (Post-primaire)', '3ème', '6ème (Franco-arabe)']
+        onze_ans = rentree['ages'][0]
+        assert onze_ans['age'] == '11 ans' and [(c['M'], c['F']) for c in onze_ans['colonnes']] == [(0, 2), (0, 0), (0, 1)]
+        assert onze_ans['total'] == {'M': 0, 'F': 3, 'T': 3}
+        assert rentree['ages_total']['total'] == rentree['total']['effectif'] == {'M': 2, 'F': 4, 'T': 6}
 
     def test_fin_annee(self, ecole):
         fin = statistiques_fin_annee(ecole['annee'])
@@ -97,7 +114,7 @@ class TestEcranEtExport:
         html = client.get(reverse('documents:statistiques_officielles')).content.decode()
         assert html.count('<div class="table-wrapper table-scroll">\n    <table class="table table-stats">') == 4
         assert html.count('<th colspan="3" class="col-groupe">') == 16 and html.count('<td class="td-right col-groupe">') >= 20
-        assert html.count('<tfoot>') == 2 and '<td colspan="3">Total</td>' in html and '<td>Total</td>' in html
+        assert html.count('<tfoot>') == 3 and '<td colspan="3">Total</td>' in html and html.count('<td>Total</td>') == 2
         css = (Path(__file__).resolve().parents[1] / 'static/css/yelen.css').read_text(encoding='utf-8')
         assert '.table th' in css and '.table-stats .col-groupe' in css and '.table-stats tfoot td' in css
 
@@ -114,6 +131,7 @@ class TestEcranEtExport:
         ages = list(classeur['Âges'].iter_rows(values_only=True))
         assert ages[3] == ('Âge', '6ème G', '6ème F', '3ème G', '3ème F', 'Garçons', 'Filles', 'Total')
         assert ages[4] == ('11 ans', 0, 2, 0, 0, 0, 2, 2)
+        assert ages[8] == ('TOTAL', 1, 2, 1, 1, 2, 3, 5)
         fin = list(classeur["Fin d'année"].iter_rows(values_only=True))
         assert fin[4][:11] == ('Post-primaire', '6ème', 1, 2, 3, 0, 1, 1, 1, 1, 2)
         assert [ligne for ligne in fin if ligne[0] == 'BEPC'][0][:14] == ('BEPC', 'BEPC 2026', 1, 1, 2, 1, 0, 1, 1, 0, 1, 100.0, None, 100.0)

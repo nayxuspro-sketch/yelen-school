@@ -3573,7 +3573,7 @@ Le PDF généré certifie que l'élève **ne doit rien** à l'établissement. Si
 | Tableau | Contenu | Source dans YELEN |
 |---------|---------|-------------------|
 | Rentrée | Par niveau : divisions, effectif G/F/T, redoublants, nouveaux entrants | Inscriptions de l'année (abandons ultérieurs compris) ; redoublant = case « Redoublant » de l'inscription ; nouvel entrant = aucune inscription antérieure dans l'établissement |
-| Âges | Élèves par âge, par niveau et par sexe | Âge = année de la rentrée − année de naissance (convention des annuaires statistiques) |
+| Âges | Élèves par âge, par niveau et par sexe | Âge = année de la rentrée − année de naissance (convention des annuaires statistiques). La ligne **Total** reprend l'effectif de chaque niveau ; un niveau présent dans plusieurs cycles (ex. « 6ème (Franco-arabe) ») a ses propres colonnes |
 | Fin d'année | Par niveau : inscrits, abandons, effectif de fin d'année, passage (rachat compris), redoublement, réorientation, exclusion, sans décision ; par session d'examen : inscrits, présents, admis, taux de réussite | Statut « Abandon » des inscriptions, dernière décision du conseil de classe, résultats saisis dans Examens |
 
 > Les niveaux suivent l'ordre officiel (maternelle → terminale) quel que soit le nom des classes. Pour que les redoublants soient exacts, cocher « Redoublant » à l'inscription ; pour la fin d'année, saisir les décisions des conseils de classe (Vie scolaire) et les résultats d'examen (Examens).

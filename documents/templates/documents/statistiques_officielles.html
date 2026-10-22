@@ -120,6 +120,13 @@
         </tr>
         {% endfor %}
       </tbody>
+      <tfoot>
+        <tr class="fw-semibold">
+          <td>Total</td>
+          {% for c in rentree.ages_total.colonnes %}<td class="td-right col-groupe">{{ c.M }}</td><td class="td-right">{{ c.F }}</td>{% endfor %}
+          <td class="td-right col-groupe">{{ rentree.ages_total.total.M }}</td><td class="td-right">{{ rentree.ages_total.total.F }}</td><td class="td-right">{{ rentree.ages_total.total.T }}</td>
+        </tr>
+      </tfoot>
     </table>
   </div>
 </div>
