@@ -66,7 +66,10 @@ MODULES = (
         _f('/inscriptions/', 'Élèves', actions=(
             _a('gerer', 'Créer / modifier un élève et ses inscriptions',
                'eleve_create', 'eleve_update', 'inscription_create', 'inscription_update',
-               'transfert_classe', 'marquer_abandon', 'eleve_import', 'eleve_import_template'),
+               'transfert_classe', 'marquer_abandon'),
+            _a('importer', 'Importer des élèves depuis un fichier Excel / CSV',
+               'eleve_import', 'eleve_import_template', 'eleve_import_correspondance', 'eleve_import_verification',
+               'eleve_import_resultat', 'eleve_import_rapport', roles=_SECRETARIAT),
             _a('supprimer', 'Supprimer un élève', 'eleve_delete', 'evenement_supprimer'),
             _a('exporter', 'Exporter la liste des élèves (CSV / Excel)', 'eleve_list_csv', 'eleve_list_xlsx', roles=_SECRETARIAT),
             _a('transferts', 'Demander un transfert inter-établissements', 'transfert_inter_demander'),
@@ -91,6 +94,9 @@ MODULES = (
         _f('/pedagogie/evaluations/', 'Évaluations', '/pedagogie/classes/', actions=(
             _a('gerer', 'Créer / modifier une évaluation', 'evaluation_create', 'evaluation_update'),
             _a('saisir_notes', 'Saisir les notes', 'evaluation_saisie', 'saisie_classe_select', 'saisie_rapide_classe'),
+            _a('importer_notes', 'Importer les notes d\'une classe depuis un fichier Excel',
+               'notes_import', 'notes_import_correspondance', 'notes_import_verification', 'notes_import_resultat',
+               'notes_import_rapport', roles=_DIRECTION | {RoleChoices.SECRETAIRE}),
         )),
         _f('/pedagogie/releve-notes/', 'Relevé de notes'),
         _f('/pedagogie/resultats/', 'Résultats', actions=(

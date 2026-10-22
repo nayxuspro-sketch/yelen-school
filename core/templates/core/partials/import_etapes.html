@@ -1,0 +1,8 @@
+{# Fil des étapes d'un assistant d'import — contexte : etapes (libellés), etape (numéro courant, à partir de 1) #}
+<ol class="wizard-steps" aria-label="Étapes">
+  {% for libelle in etapes %}
+  <li class="wizard-step{% if forloop.counter == etape %} is-active{% elif forloop.counter < etape %} is-done{% endif %}"{% if forloop.counter == etape %} aria-current="step"{% endif %}>
+    <span class="wizard-step-num">{{ forloop.counter }}</span>{{ libelle }}
+  </li>
+  {% endfor %}
+</ol>

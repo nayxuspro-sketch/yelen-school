@@ -19,6 +19,14 @@
       Saisie par classe
     </a>
     {% endif %}
+    {% if request|autorise_url:'pedagogie:notes_import' %}
+    <a href="{% url 'pedagogie:notes_import' %}" class="btn-secondary" title="Importer les notes d'une classe depuis un fichier Excel ou CSV">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+      </svg>
+      Importer des notes
+    </a>
+    {% endif %}
     <a href="{% url 'pedagogie:evaluation_create' %}" class="btn-primary">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>

@@ -1,0 +1,145 @@
+{% extends "core/base.html" %}
+
+{% block title %}Importer des élèves — vérification — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'inscriptions:eleve_import_correspondance' %}" class="btn-icon" title="Revoir les colonnes">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Vérification avant import</h1>
+      <p class="page-subtitle"><strong>{{ etat.nom_fichier }}</strong> — inscription en {{ annee.libelle }}. Rien n'est encore enregistré.</p>
+    </div>
+  </div>
+</div>
+
+{% include "core/partials/import_etapes.html" %}
+
+<div class="stats-grid-auto animate-fade-up">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg></div>
+    <div><div class="stat-value">{{ analyse.nb_nouveaux }}</div><div class="stat-label">Élèves à créer</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
+    <div><div class="stat-value">{{ analyse.nb_existants }}</div><div class="stat-label">Déjà enregistrés</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon {% if analyse.erreurs %}stat-icon-red{% else %}stat-icon-green{% endif %}"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value">{{ analyse.erreurs|length }}</div><div class="stat-label">Lignes en erreur</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg></div>
+    <div><div class="stat-value">{{ analyse.nb_sans_lieu }}</div><div class="stat-label">Sans lieu de naissance</div></div>
+  </div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+
+  {% if lignes_classes %}
+  <div class="table-wrapper animate-fade-up delay-1">
+    <table class="data-table wizard-mapping">
+      <thead>
+        <tr>
+          <th>Classe dans le fichier</th>
+          <th style="width:90px;">Élèves</th>
+          <th>Classe YELEN SCHOOL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in lignes_classes %}
+        <tr>
+          <td class="fw-semibold">{{ l.libelle }}</td>
+          <td>{{ l.nb }}</td>
+          <td>
+            <select name="classe_{{ l.position }}" class="input select input-sm">
+              <option value="">— ne pas inscrire (fiche seulement) —</option>
+              {% for c in classes %}<option value="{{ c.pk }}" {% if l.classe and c.pk == l.classe.pk %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if nb_libelles_sans_classe %}
+  <div class="alert alert-warning" style="margin-top:var(--space-3);">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    <span>{{ nb_libelles_sans_classe }} élève{{ nb_libelles_sans_classe|pluralize }} dont la classe n'a pas été reconnue : choisissez la classe correspondante ci-dessus, ou créez-la d'abord (Paramètres › Classes). Sans choix, la fiche est créée sans inscription.</span>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {% if nb_sans_libelle %}
+  <div class="alert alert-info" style="margin-top:var(--space-3);">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span>{{ nb_sans_libelle }} ligne{{ nb_sans_libelle|pluralize }} sans classe :
+      {% if classe_defaut %}inscription en <strong>{{ classe_defaut.nom }}</strong> (classe choisie à l'étape précédente).{% else %}fiche créée sans inscription (aucune classe par défaut choisie à l'étape précédente).{% endif %}</span>
+  </div>
+  {% endif %}
+
+  {% if analyse.nb_sans_lieu %}
+  <div class="alert alert-info" style="margin-top:var(--space-3);">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span>Le lieu de naissance manque pour {{ analyse.nb_sans_lieu }} élève{{ analyse.nb_sans_lieu|pluralize }} : l'import n'est pas bloqué, la fiche sera à compléter (il figure sur les certificats et les documents d'examen).</span>
+  </div>
+  {% endif %}
+
+  {% if erreurs %}
+  <div class="table-wrapper animate-fade-up delay-2" style="margin-top:var(--space-4); border-left:3px solid var(--color-danger);">
+    <div class="card-header" style="padding:var(--space-4) var(--space-5); margin:0;">
+      <span class="card-title">Lignes qui ne seront pas importées</span>
+      <span class="text-muted" style="font-size:0.8125rem;">Corrigez-les dans le fichier et réimportez-le ensuite : les élèves déjà créés ne seront pas dupliqués.</span>
+    </div>
+    <table class="data-table">
+      <thead><tr><th style="width:110px;">Ligne</th><th>Élève</th><th>Motif</th></tr></thead>
+      <tbody>
+        {% for numero, identite, motif in erreurs %}
+        <tr><td>{{ numero }}</td><td>{{ identite|default:"—" }}</td><td>{{ motif }}</td></tr>
+        {% endfor %}
+        {% if analyse.erreurs|length > erreurs|length %}
+        <tr><td colspan="3" class="text-muted">… et {{ analyse.erreurs|length|add:"-100" }} autre{{ analyse.erreurs|length|add:"-100"|pluralize }} (rapport complet téléchargeable après l'import).</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if apercu %}
+  <div class="table-wrapper animate-fade-up delay-2" style="margin-top:var(--space-4);">
+    <div class="card-header" style="padding:var(--space-4) var(--space-5); margin:0;"><span class="card-title">Aperçu des données telles qu'elles seront enregistrées</span></div>
+    <table class="data-table">
+      <thead><tr><th>Ligne</th><th>Nom</th><th>Prénom(s)</th><th>Genre</th><th>Naissance</th><th>Classe (fichier)</th><th>Téléphone parents</th><th>Statut</th></tr></thead>
+      <tbody>
+        {% for l in apercu %}
+        <tr>
+          <td>{{ l.numero }}</td><td class="fw-semibold">{{ l.nom }}</td><td>{{ l.prenom }}</td><td>{{ l.genre }}</td>
+          <td>{{ l.date_naissance|date:"d/m/Y" }}</td><td>{{ l.classe_libelle|default:"—" }}</td>
+          <td>{{ l.champs.telephone_parent|default:"—" }}</td>
+          <td>{% if l.existant_id %}<span class="badge badge-info">déjà enregistré</span>{% else %}<span class="badge badge-success">nouveau</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="wizard-actions">
+    <a href="{% url 'inscriptions:eleve_import_correspondance' %}" class="btn-secondary">Revoir les colonnes</a>
+    {% if analyse.lignes %}
+    <button type="submit" class="btn-primary">
+      Importer {{ analyse.lignes|length }} élève{{ analyse.lignes|length|pluralize }}{% if analyse.erreurs %} (les {{ analyse.erreurs|length }} ligne{{ analyse.erreurs|length|pluralize }} en erreur seront ignorées){% endif %}
+    </button>
+    {% else %}
+    <span class="text-muted">Aucune ligne importable : corrigez le fichier ou les colonnes.</span>
+    {% endif %}
+  </div>
+</form>
+
+{% endblock %}

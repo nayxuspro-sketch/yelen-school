@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import import_notes
 
 app_name = 'pedagogie'
 
@@ -23,6 +24,12 @@ urlpatterns = [
     path('evaluations/nouvelle/', views.evaluation_create, name='evaluation_create'),
     path('evaluations/<uuid:pk>/modifier/', views.evaluation_update, name='evaluation_update'),
     path('evaluations/<uuid:pk>/saisie/', views.evaluation_saisie, name='evaluation_saisie'),
+    # Assistant d'import des notes (fichier existant de l'école)
+    path('evaluations/import/', import_notes.notes_import, name='notes_import'),
+    path('evaluations/import/colonnes/', import_notes.notes_import_correspondance, name='notes_import_correspondance'),
+    path('evaluations/import/verification/', import_notes.notes_import_verification, name='notes_import_verification'),
+    path('evaluations/import/resultat/', import_notes.notes_import_resultat, name='notes_import_resultat'),
+    path('evaluations/import/rapport/', import_notes.notes_import_rapport, name='notes_import_rapport'),
 
     # Saisie rapide par classe
     path('classes/', views.saisie_classe_select, name='saisie_classe_select'),

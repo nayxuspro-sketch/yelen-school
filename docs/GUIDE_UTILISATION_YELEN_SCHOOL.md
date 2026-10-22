@@ -122,6 +122,9 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [18.6 Journal d'Audit (Traçabilité)](#186-journal-daudit-traçabilité)
   - [18.7 Réunion de Parents](#187-réunion-de-parents-reunion-parents)
   - [18.8 Galerie de Captures d'Écran](#188-galerie-de-captures-décran)
+- [34. Import depuis vos fichiers existants (élèves, parents, notes)](#34-import-depuis-vos-fichiers-existants-élèves-parents-notes)
+  - [34.1 Importer des élèves et leurs parents](#341-importer-des-élèves-et-leurs-parents)
+  - [34.2 Importer les notes d'une classe](#342-importer-les-notes-dune-classe)
 
 ---
 
@@ -6688,3 +6691,81 @@ Pour un développeur : `pip install -r requirements/dev.txt`, puis `python manag
 et `python -m pytest` (voir `README.md`, section *Développement et tests*).
 La version Word de ce guide se régénère depuis le Markdown :
 `python scripts/md_vers_docx.py docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` (table des matières mise à jour à l'ouverture dans Word).
+
+---
+
+## 34. Import depuis vos fichiers existants (élèves, parents, notes)
+
+Une école qui adopte YELEN SCHOOL possède déjà ses listes d'élèves et ses relevés de notes
+dans Excel (souvent un fichier par classe, avec des colonnes qui lui sont propres). Les deux
+assistants d'import reprennent **ces fichiers tels quels** : inutile de les remettre au
+format d'un modèle. Ils fonctionnent en quatre étapes identiques — **Fichier → Colonnes →
+Vérification → Résultat** — et n'écrivent rien en base avant la confirmation de l'étape 3.
+
+Formats acceptés : Excel `.xlsx` / `.xlsm` et CSV (séparateur `;` ou `,`, Excel ou UTF-8),
+10 Mo et 10 000 lignes au plus par fichier. Un ancien `.xls` s'enregistre en `.xlsx` depuis
+Excel (*Fichier → Enregistrer sous*). Les lignes de titre au-dessus du tableau et les lignes
+vides sont ignorées : l'assistant repère lui-même la ligne d'entête. Si le classeur a plusieurs
+feuilles, la feuille se choisit à l'étape 2.
+
+### 34.1 Importer des élèves et leurs parents
+
+**Qui peut accéder :** Directeur, Censeur, Secrétaire, Comptable (droit *Élèves → Importer des
+élèves depuis un fichier Excel / CSV*, modifiable dans §2.19). **Où :** `Élèves → Importer`.
+
+1. **Fichier** — choisir le fichier et l'année scolaire d'inscription (l'année en cours est
+   proposée). Un modèle Excel vide est téléchargeable, mais il n'est pas obligatoire.
+2. **Colonnes** — l'assistant propose, pour chaque information YELEN SCHOOL, la colonne du
+   fichier reconnue d'après son titre (« NOM ET PRENOMS », « Sexe », « Né(e) le », « Contact
+   parent », « Redoublant »…). Chaque liste montre la lettre de la colonne et un exemple de
+   valeur ; corriger les propositions si besoin. Indispensables : **nom et prénom(s)** (deux
+   colonnes, ou une colonne unique « Nom et prénom(s) » — le nom en MAJUSCULES, puis les
+   prénoms), **genre** et **date de naissance**. Si présents : matricule, lieu de naissance,
+   classe, redoublant, nationalité, téléphone des parents, père et mère (nom, profession),
+   tuteur (nom, téléphone, adresse), téléphone d'urgence, e-mail, province, commune, village,
+   établissement d'origine. Pour un fichier d'une seule classe sans colonne *Classe*, indiquer
+   la **classe par défaut**.
+3. **Vérification** — compteurs (élèves à créer, déjà enregistrés, lignes en erreur) ; table de
+   correspondance des **classes** (« 6EME A », « 6ème A », « Sixième A » sont reconnues comme
+   la classe *6ème A* ; les libellés inconnus, par exemple « CM2 » avant création de la classe,
+   se choisissent dans la liste ou restent sans inscription) ; liste des lignes refusées avec le
+   motif exact (date manquante, genre illisible, doublon dans le fichier, matricule déjà attribué
+   à un autre élève…). Les lignes valides s'importent même si d'autres sont en erreur.
+4. **Résultat** — élèves créés, inscriptions créées, élèves déjà connus, lignes non importées
+   (rapport Excel téléchargeable : ligne du fichier, élève, motif).
+
+Règles : un élève déjà enregistré (même matricule, ou mêmes nom, prénom et date de naissance)
+n'est **jamais recréé** ; seule son inscription dans la classe est ajoutée si elle manque.
+Corriger le fichier puis le réimporter est donc sans risque. Les matricules du fichier sont
+conservés ; sinon YELEN SCHOOL en attribue un. Un lieu de naissance absent ne bloque pas
+l'import, mais la fiche sera à compléter (il figure sur les certificats et dossiers d'examen).
+
+### 34.2 Importer les notes d'une classe
+
+**Qui peut accéder :** Directeur, Censeur, Secrétaire (droit *Évaluations → Importer les notes
+d'une classe*). Les enseignants saisissent leurs notes depuis *Évaluations*. **Où :**
+`Pédagogie → Évaluations → Importer des notes`. Prérequis : les élèves sont inscrits dans la
+classe (§34.1), les enseignements de la classe existent (§6.1), le trimestre et au moins un type
+d'évaluation sont définis.
+
+1. **Fichier et période** — fichier, classe, trimestre, type d'évaluation (devoir, composition…),
+   titre commun des évaluations créées (ex. « Composition T1 »), barème (20 par défaut) et date.
+2. **Colonnes** — colonne qui identifie l'élève (matricule, ou nom et prénom(s)), puis pour
+   chaque colonne du fichier la **matière** correspondante : « Math » → Mathématiques, « SVT »,
+   « HG », « Français »… sont reconnues automatiquement ; les colonnes *N°*, *Moyenne*, *Rang*,
+   *Observation* sont ignorées. Une matière = une évaluation.
+3. **Vérification** — élèves reconnus parmi les inscrits de la classe, nombre de notes, notes qui
+   seront remplacées (réimport), cellules refusées avec le motif (élève introuvable, homonymes
+   sans matricule, note hors barème, valeur illisible). `ABS` dans une cellule = absent (note 0) ;
+   cellule vide = pas de note. Si une évaluation du même titre existe déjà avec un autre barème,
+   l'import est bloqué : reprendre ce barème ou changer le titre.
+4. **Résultat** — évaluations créées, notes créées / remplacées, rapport Excel des cellules non
+   importées, lien vers *Résultats de la classe* pour **lancer le calcul des moyennes et rangs**
+   (il n'est pas automatique).
+
+Un nouvel import avec le même titre, le même trimestre et le même type **met à jour** les notes
+au lieu de les dupliquer : importer un fichier corrigé est sans risque.
+
+> **Mise en route type (une classe en moins de dix minutes) :** importer la liste d'élèves de la
+> classe (§34.1), créer ou vérifier les enseignements de la classe (§6.1), importer le relevé de
+> notes du trimestre (§34.2), lancer le calcul des moyennes, imprimer les bulletins (§6.7).

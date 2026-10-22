@@ -1,0 +1,108 @@
+{% extends "core/base.html" %}
+
+{% block title %}Importer des notes — colonnes — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'pedagogie:notes_import' %}" class="btn-icon" title="Changer de fichier">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Reconnaissance des colonnes</h1>
+      <p class="page-subtitle">
+        <strong>{{ etat.nom_fichier }}</strong> — {{ parametres.classe.nom }}, {{ parametres.trimestre.nom }}, {{ parametres.type_evaluation.nom }} « {{ parametres.titre }} » sur {{ parametres.bareme|floatformat:"-2" }}.
+        Feuille « {{ feuille.nom }} », {{ feuille.lignes|length }} ligne{{ feuille.lignes|length|pluralize }}, {{ nb_matieres }} matière{{ nb_matieres|pluralize }} reconnue{{ nb_matieres|pluralize }} automatiquement.
+      </p>
+    </div>
+  </div>
+  {% if feuilles|length > 1 %}
+  <form method="get" class="d-flex align-center gap-2">
+    <label class="input-label" for="feuille" style="margin:0;">Feuille</label>
+    <select id="feuille" name="feuille" class="input select input-sm">
+      {% for f in feuilles %}<option value="{{ f }}" {% if f == feuille.nom %}selected{% endif %}>{{ f }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn-secondary">Changer</button>
+  </form>
+  {% endif %}
+</div>
+
+{% include "core/partials/import_etapes.html" %}
+
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="feuille" value="{{ feuille.nom }}">
+
+  <div class="table-wrapper animate-fade-up">
+    <div class="card-header" style="padding:var(--space-4) var(--space-5); margin:0;"><span class="card-title">Identification de l'élève</span><span class="text-muted" style="font-size:0.8125rem;">Matricule, ou nom et prénom(s), ou une colonne unique « Nom et prénom(s) »</span></div>
+    <table class="data-table wizard-mapping">
+      <tbody>
+        {% for ligne in champs %}
+        <tr>
+          <td style="width:28%;"><label for="col_{{ ligne.champ.code }}" class="fw-semibold">{{ ligne.champ.libelle }}</label></td>
+          <td>
+            <select id="col_{{ ligne.champ.code }}" name="col_{{ ligne.champ.code }}" class="input select input-sm">
+              <option value="">— absent du fichier —</option>
+              {% for c in colonnes %}
+              <option value="{{ c.index }}" {% if c.index == ligne.index %}selected{% endif %}>{{ c.lettre }} · {{ c.entete }}{% if c.exemple %} (ex. {{ c.exemple|truncatechars:30 }}){% endif %}</option>
+              {% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-wrapper animate-fade-up delay-1" style="margin-top:var(--space-4);">
+    <div class="card-header" style="padding:var(--space-4) var(--space-5); margin:0;"><span class="card-title">Colonnes de matières</span><span class="text-muted" style="font-size:0.8125rem;">Une évaluation par matière désignée ; les autres colonnes sont ignorées</span></div>
+    <table class="data-table wizard-mapping">
+      <thead><tr><th style="width:28%;">Colonne du fichier</th><th style="width:22%;">Exemple</th><th>Matière YELEN SCHOOL</th></tr></thead>
+      <tbody>
+        {% for c in colonnes %}
+        <tr>
+          <td class="fw-semibold">{{ c.lettre }} · {{ c.entete }}</td>
+          <td class="wizard-sample" title="{{ c.exemple }}">{{ c.exemple|default:"—" }}</td>
+          <td>
+            {% if c.champ %}
+            <span class="badge badge-neutral">{{ c.champ.libelle }}</span>
+            {% else %}
+            <select name="mat_{{ c.index }}" class="input select input-sm">
+              <option value="">— ignorer —</option>
+              {% for e in enseignements %}<option value="{{ e.pk }}" {% if c.enseignement and e.pk == c.enseignement.pk %}selected{% endif %}>{{ e.matiere.nom }}</option>{% endfor %}
+            </select>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card animate-fade-up delay-2" style="margin-top:var(--space-4); padding:0; overflow:auto;">
+    <div class="card-header" style="padding:var(--space-4) var(--space-5); margin:0;"><span class="card-title">Aperçu du fichier — {{ apercu|length }} première{{ apercu|length|pluralize }} ligne{{ apercu|length|pluralize }}</span></div>
+    <table class="data-table">
+      <thead><tr>{% for c in colonnes %}<th title="{{ c.entete }}">{{ c.lettre }} · {{ c.entete|truncatechars:18 }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for ligne in apercu %}
+        <tr>{% for v in ligne %}<td class="wizard-sample" title="{{ v }}">{{ v }}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="wizard-actions">
+    <a href="{% url 'pedagogie:notes_import' %}" class="btn-secondary">Changer de fichier</a>
+    <button type="submit" class="btn-primary">
+      Continuer : vérifier les notes
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+      </svg>
+    </button>
+  </div>
+</form>
+
+{% endblock %}

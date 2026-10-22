@@ -1,0 +1,79 @@
+{% extends "core/base.html" %}
+{% load droits_tags %}
+
+{% block title %}Importer des élèves — résultat — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Import terminé</h1>
+    <p class="page-subtitle"><strong>{{ etat.nom_fichier }}</strong>{% if annee %} — {{ annee.libelle }}{% endif %}</p>
+  </div>
+</div>
+
+{% include "core/partials/import_etapes.html" %}
+
+<div class="stats-grid-auto animate-fade-up">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg></div>
+    <div><div class="stat-value">{{ resultat.crees }}</div><div class="stat-label">Élèves créés</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 12.5c0 2.5-1 4.5-3 6M12 14v7"/></svg></div>
+    <div><div class="stat-value">{{ resultat.inscrits }}</div><div class="stat-label">Inscriptions créées</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
+    <div><div class="stat-value">{{ resultat.existants }}</div><div class="stat-label">Déjà enregistrés</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon {% if resultat.nb_erreurs %}stat-icon-red{% else %}stat-icon-green{% endif %}"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div><div class="stat-value">{{ resultat.nb_erreurs }}</div><div class="stat-label">Lignes non importées</div></div>
+  </div>
+</div>
+
+{% if resultat.deja_inscrits or resultat.sans_classe %}
+<div class="alert alert-info">
+  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+  <span>
+    {% if resultat.deja_inscrits %}{{ resultat.deja_inscrits }} élève{{ resultat.deja_inscrits|pluralize }} déjà inscrit{{ resultat.deja_inscrits|pluralize }} cette année : inscription conservée telle quelle.{% endif %}
+    {% if resultat.sans_classe %}{{ resultat.sans_classe }} fiche{{ resultat.sans_classe|pluralize }} créée{{ resultat.sans_classe|pluralize }} ou reconnue{{ resultat.sans_classe|pluralize }} sans inscription (classe non désignée) : inscription à faire depuis la fiche de l'élève.{% endif %}
+  </span>
+</div>
+{% endif %}
+
+{% if erreurs %}
+<div class="table-wrapper animate-fade-up delay-1" style="border-left:3px solid var(--color-danger);">
+  <div class="card-header" style="padding:var(--space-4) var(--space-5); margin:0;">
+    <span class="card-title">Lignes non importées</span>
+    <a href="{% url 'inscriptions:eleve_import_rapport' %}" class="btn-secondary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Rapport Excel
+    </a>
+  </div>
+  <table class="data-table">
+    <thead><tr><th style="width:110px;">Ligne</th><th>Élève</th><th>Motif</th></tr></thead>
+    <tbody>
+      {% for numero, identite, motif in erreurs %}
+      <tr><td>{{ numero }}</td><td>{{ identite|default:"—" }}</td><td>{{ motif }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="text-muted" style="padding:var(--space-3) var(--space-5); margin:0; font-size:0.8125rem;">
+    Corrigez ces lignes dans le fichier d'origine puis réimportez-le : les élèves déjà créés sont reconnus et ne sont pas dupliqués.
+  </p>
+</div>
+{% endif %}
+
+<div class="wizard-actions">
+  <div class="d-flex gap-2" style="flex-wrap:wrap;">
+    <a href="{% url 'inscriptions:eleve_list' %}" class="btn-primary">Voir la liste des élèves</a>
+    <a href="{% url 'inscriptions:eleve_import' %}" class="btn-secondary">Importer un autre fichier</a>
+  </div>
+  {% if request|autorise_url:'pedagogie:notes_import' %}
+  <a href="{% url 'pedagogie:notes_import' %}" class="btn-secondary">Importer des notes</a>
+  {% endif %}
+</div>
+
+{% endblock %}

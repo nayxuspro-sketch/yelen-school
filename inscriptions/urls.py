@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, views_import
 
 app_name = 'inscriptions'
 
@@ -35,7 +35,11 @@ urlpatterns = [
     path('transferts/<uuid:pk>/approuver/', views.transfert_inter_approuver, name='transfert_inter_approuver'),
     path('transferts/<uuid:pk>/refuser/', views.transfert_inter_refuser, name='transfert_inter_refuser'),
     path('transferts/<uuid:pk>/dossier/pdf/', views.transfert_inter_dossier_pdf, name='transfert_inter_dossier_pdf'),
-    # Import Excel
-    path('import/template/', views.eleve_import_template, name='eleve_import_template'),
-    path('import/', views.eleve_import, name='eleve_import'),
+    # Assistant d'import (fichier existant de l'école)
+    path('import/', views_import.eleve_import, name='eleve_import'),
+    path('import/template/', views_import.eleve_import_template, name='eleve_import_template'),
+    path('import/colonnes/', views_import.eleve_import_correspondance, name='eleve_import_correspondance'),
+    path('import/verification/', views_import.eleve_import_verification, name='eleve_import_verification'),
+    path('import/resultat/', views_import.eleve_import_resultat, name='eleve_import_resultat'),
+    path('import/rapport/', views_import.eleve_import_rapport, name='eleve_import_rapport'),
 ]
