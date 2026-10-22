@@ -268,9 +268,12 @@ $csrfOrigins = @(
     "http://${lanIp}:$httpPort"
 )
 if (-not [string]::IsNullOrWhiteSpace($computerName)) {
+    # NOMPC (postes Windows) et NOMPC.local (iPhone/iPad/Mac, Android 12+, Linux).
     $allowedHosts += $computerName
+    $allowedHosts += "${computerName}.local"
     $csrfOrigins += "http://${computerName}"
     $csrfOrigins += "http://${computerName}:$httpPort"
+    $csrfOrigins += "http://${computerName}.local:$httpPort"
 }
 Ensure-EnvListValues 'ALLOWED_HOSTS' $allowedHosts
 Ensure-EnvListValues 'CSRF_TRUSTED_ORIGINS' $csrfOrigins
@@ -295,7 +298,7 @@ $firewallNeedsUpdate = $FreshInstallation -or
 if (Test-Path $FirewallScript) {
     if ($firewallNeedsUpdate) {
         Write-Host '[OK] Configuration du pare-feu Windows pour le réseau local...' -ForegroundColor Cyan
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $httpPortNumber
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $httpPortNumber -PrivateNetwork
         if ($LASTEXITCODE -ne 0) {
             Write-Host '[AVERTISSEMENT] Le pare-feu n''a pas été configuré. L''application restera accessible localement, mais l''accès depuis les autres postes peut être bloqué.' -ForegroundColor Yellow
             Write-Host 'Relancez demarrage.bat et acceptez la demande UAC pour autoriser le réseau local.' -ForegroundColor Yellow

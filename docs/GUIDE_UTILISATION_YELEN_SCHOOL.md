@@ -225,7 +225,7 @@ Ce guide est organisé **par module**. Chaque section suit le même schéma :
 
 YELEN SCHOOL fonctionne dans ton navigateur web. L'adresse dépend de ton installation :
 
-- **Réseau local** : `http://192.168.X.X:8000` par défaut, ou le port défini par `YELEN_HTTP_PORT` (adresse fournie par ton administrateur)
+- **Réseau local** : `http://NOM-DU-SERVEUR:8000` depuis un poste Windows, `http://NOM-DU-SERVEUR.local:8000` depuis une tablette ou un téléphone (iPhone, iPad, Android 12+), ou `http://192.168.X.X:8000` ; le port est celui défini par `YELEN_HTTP_PORT` (adresse fournie par ton administrateur)
 - **Internet** : `https://[nom-etablissement].yelenscnool.bf` *(si hébergé)*
 
 > YELEN SCHOOL est conçu pour fonctionner **hors ligne** sur un réseau local. Tu n'as pas besoin d'une connexion internet si le serveur est installé dans ton établissement.

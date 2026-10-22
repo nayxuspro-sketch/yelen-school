@@ -127,25 +127,72 @@ function Get-PublicNetworkNames {
     }
 }
 
-function Register-LanAddresses {
-    # Autorise les adresses IP actuelles du poste (ALLOWED_HOSTS et
-    # CSRF_TRUSTED_ORIGINS) : l'application suit le poste d'un réseau à l'autre.
-    # Retourne les adresses nouvellement autorisées.
+function Get-ServerHostName {
+    return [System.Net.Dns]::GetHostName()
+}
+
+function Get-ServerNames {
+    # Nom Windows du serveur : http://NOMPC:port depuis les postes Windows
+    # (NetBIOS, LLMNR) et http://NOMPC.local:port depuis iPhone/iPad/Mac,
+    # Android 12+ et Linux (mDNS).
+    $name = Get-ServerHostName
+    if ([string]::IsNullOrWhiteSpace($name)) { return @() }
+    return @($name, "$name.local")
+}
+
+function Register-ServerHosts {
+    # Autorise les adresses IP et les noms actuels du poste (ALLOWED_HOSTS et
+    # CSRF_TRUSTED_ORIGINS) : l'application suit le poste d'un réseau à l'autre
+    # et un renommage du PC. Retourne les entrées nouvellement autorisées.
     param(
-        [string[]]$Addresses,
+        [string[]]$Hosts,
         [int]$HttpPort
     )
 
-    if ($Addresses.Count -eq 0) { return @() }
-    $origins = @($Addresses | ForEach-Object { "http://${_}:$HttpPort" })
+    if ($Hosts.Count -eq 0) { return @() }
+    $origins = @($Hosts | ForEach-Object { "http://${_}:$HttpPort" })
     if ((Get-DotEnvValue 'YELEN_HTTPS') -eq 'true') {
         $httpsPort = Get-DotEnvValue 'YELEN_HTTPS_PORT'
         if ([string]::IsNullOrWhiteSpace($httpsPort)) { $httpsPort = '8443' }
-        $origins += @($Addresses | ForEach-Object { "https://${_}:$httpsPort" })
+        $origins += @($Hosts | ForEach-Object { "https://${_}:$httpsPort" })
     }
-    $added = @(Add-DotEnvListValues 'ALLOWED_HOSTS' $Addresses)
+    $added = @(Add-DotEnvListValues 'ALLOWED_HOSTS' $Hosts)
     Add-DotEnvListValues 'CSRF_TRUSTED_ORIGINS' $origins | Out-Null
     return $added
+}
+
+function Test-NameResolutionRule {
+    # Règle UDP 137/5353/5355 (NetBIOS, mDNS, LLMNR) : réponses au nom du serveur.
+    if (-not (Get-Command Get-NetFirewallRule -ErrorAction SilentlyContinue)) {
+        return $false
+    }
+
+    try {
+        $rules = @(Get-NetFirewallRule -Name 'YELEN_SCHOOL_NameResolution' -ErrorAction SilentlyContinue)
+        foreach ($rule in $rules) {
+            $profile = $rule.Profile.ToString()
+            if (
+                $rule.Enabled -ne 'True' -or
+                $rule.Direction -ne 'Inbound' -or
+                $rule.Action -ne 'Allow' -or
+                $profile -notmatch 'Domain' -or
+                $profile -notmatch 'Private' -or
+                $profile -match 'Public'
+            ) {
+                continue
+            }
+            $portFilters = @($rule | Get-NetFirewallPortFilter -ErrorAction Stop)
+            $portOk = $portFilters | Where-Object {
+                $_.Protocol -eq 'UDP' -and @($_.LocalPort) -contains '5353' -and @($_.LocalPort) -contains '137'
+            }
+            if ($portOk) {
+                return $true
+            }
+        }
+        return $false
+    } catch {
+        return $false
+    }
 }
 
 function Test-FirewallRuleForPort {
@@ -256,22 +303,36 @@ try {
         Set-DotEnvValue 'YELEN_HTTP_PORT' ([string]$selectedPort)
     }
 
+    # Un réseau classé Public sur une carte physique (nouveau Wi-Fi, nouvelle box)
+    # est reclassé « Réseau privé », sinon le pare-feu bloque les autres postes.
+    # YELEN_RESEAU_PRIVE_AUTO=false pour conserver le classement manuel.
+    $physicalIndexes = @(Get-PhysicalInterfaceIndexes)
+    $publicNetworks = @(Get-PublicNetworkNames -InterfaceIndexes $physicalIndexes)
+    $privateNetworkWanted = ($publicNetworks.Count -gt 0) -and ((Get-DotEnvValue 'YELEN_RESEAU_PRIVE_AUTO') -ne 'false')
+
     $firewallNeedsUpdate = $portChanged -or
-        (-not (Test-FirewallRuleForPort -Port $selectedPort))
+        $privateNetworkWanted -or
+        (-not (Test-FirewallRuleForPort -Port $selectedPort)) -or
+        (-not (Test-NameResolutionRule))
 
     if ($firewallNeedsUpdate) {
         if ($portChanged) {
             Write-StartupLog "Le port TCP $requestedPort est occupé. Port sélectionné automatiquement : $selectedPort."
+        } elseif ($privateNetworkWanted) {
+            Write-StartupLog "Réseau classé Public ($($publicNetworks -join ', ')) : reclassement en Réseau privé pour autoriser les autres postes."
         } else {
-            Write-StartupLog "La règle du pare-feu ne correspond pas au port TCP $selectedPort. Synchronisation nécessaire."
+            Write-StartupLog "Les règles du pare-feu (TCP $selectedPort, résolution du nom du serveur) doivent être actualisées."
         }
 
         # La tâche planifiée est enregistrée avec le niveau d'exécution élevé.
-        # Lors d'un démarrage normal la règle conforme est donc conservée sans
-        # nouvelle UAC ; une demande ne survient qu'après un changement ou une
-        # absence de règle.
+        # Lors d'un démarrage normal les règles conformes sont donc conservées
+        # sans nouvelle UAC ; une demande ne survient qu'après un changement.
         if (Test-Path $FirewallScript) {
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $FirewallScript -Port $selectedPort
+            $firewallArguments = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $FirewallScript, '-Port', $selectedPort)
+            if ($privateNetworkWanted) {
+                $firewallArguments += '-PrivateNetwork'
+            }
+            & powershell.exe @firewallArguments
             if ($LASTEXITCODE -ne 0) {
                 Write-StartupLog 'AVERTISSEMENT : le pare-feu n''a pas été actualisé.'
             }
@@ -279,17 +340,16 @@ try {
             Write-StartupLog 'AVERTISSEMENT : script de configuration du pare-feu introuvable.'
         }
     } else {
-        Write-StartupLog "Port HTTP conservé : $selectedPort ; règle pare-feu inchangée."
+        Write-StartupLog "Port HTTP conservé : $selectedPort ; pare-feu et réseau inchangés."
     }
 
-    # Adresses IP actuelles du poste : autorisées automatiquement pour que
-    # l'application reste joignable après un changement de réseau (box, Wi-Fi).
-    # Si .env change, docker compose recrée le service web.
-    $physicalIndexes = @(Get-PhysicalInterfaceIndexes)
+    # Adresses IP et noms actuels du poste : autorisés automatiquement pour que
+    # l'application reste joignable après un changement de réseau (box, Wi-Fi)
+    # ou un renommage du PC. Si .env change, docker compose recrée le service web.
     $lanAddresses = @(Get-LanIPv4Addresses -InterfaceIndexes $physicalIndexes)
-    $newAddresses = @(Register-LanAddresses -Addresses $lanAddresses -HttpPort $selectedPort)
-    if ($newAddresses.Count -gt 0) {
-        Write-StartupLog "Nouvelle(s) adresse(s) du poste autorisée(s) : $($newAddresses -join ', ')."
+    $newHosts = @(Register-ServerHosts -Hosts ($lanAddresses + @(Get-ServerNames)) -HttpPort $selectedPort)
+    if ($newHosts.Count -gt 0) {
+        Write-StartupLog "Nouvelle(s) adresse(s) du poste autorisée(s) : $($newHosts -join ', ')."
     }
     $publicNetworks = @(Get-PublicNetworkNames -InterfaceIndexes $physicalIndexes)
     if ($publicNetworks.Count -gt 0) {

@@ -119,7 +119,7 @@ Le script appelle `installer\install-windows.bat` et :
 - crée `.env` depuis `.env.example` si nécessaire ;
 - génère une clé Django, un mot de passe PostgreSQL local et un secret temporaire pour le compte administrateur initial ;
 - configure `DB_HOST=db`, Redis et les hôtes du réseau local ;
-- crée ou met à jour, uniquement si nécessaire, la règle entrante Windows `YELEN SCHOOL - Accès réseau local` pour le port TCP `YELEN_HTTP_PORT`, uniquement sur les profils privé ou domaine et le sous-réseau local ;
+- crée ou met à jour, uniquement si nécessaire, les règles entrantes Windows `YELEN SCHOOL - Accès réseau local` (port TCP `YELEN_HTTP_PORT`) et `YELEN SCHOOL - Résolution du nom du serveur` (UDP 137, 5353, 5355), uniquement sur les profils privé ou domaine et le sous-réseau local, et classe le réseau courant en « Réseau privé » ;
 - démarre `docker-compose.client.yml` avec `--build` ;
 - applique les migrations et collecte les fichiers statiques via `entrypoint.sh` ;
 - crée le compte administrateur initial lors d'une nouvelle installation ;
@@ -461,7 +461,7 @@ Pour que YELEN SCHOOL démarre automatiquement après l'ouverture de session Win
 3. Choisir **Exécuter en tant qu'administrateur**.
 4. Vérifier la création de la tâche `YELEN SCHOOL - Démarrage automatique`.
 
-À chaque ouverture de session, la tâche attend que Docker Desktop réponde, vérifie que le port HTTP conservé dans `.env` est toujours utilisable, puis exécute `docker compose -f docker-compose.client.yml up -d`. Si le port est occupé par un autre programme, elle essaie automatiquement la plage `8000` à `8005`, conserve le nouveau port dans `.env` et actualise la règle du pare-feu. Elle ajoute aussi au `.env` les adresses IP actuelles des cartes physiques (§9.1). Elle ne reconstruit pas l'image et ne supprime aucun volume. Le journal est écrit dans `logs\startup.log`. Une règle déjà conforme n'est pas réappliquée : aucune demande UAC n'intervient lors d'une ouverture de session normale. Si une règle doit être créée ou actualisée et que la tâche ne dispose pas des droits élevés, relancer `demarrage.bat` et accepter la demande UAC.
+À chaque ouverture de session, la tâche attend que Docker Desktop réponde, vérifie que le port HTTP conservé dans `.env` est toujours utilisable, puis exécute `docker compose -f docker-compose.client.yml up -d`. Si le port est occupé par un autre programme, elle essaie automatiquement la plage `8000` à `8005`, conserve le nouveau port dans `.env` et actualise la règle du pare-feu. Elle ajoute aussi au `.env` les adresses IP et les noms actuels du serveur (§9.1) et reclasse en « Réseau privé » un réseau Public (§9.2). Elle ne reconstruit pas l'image et ne supprime aucun volume. Le journal est écrit dans `logs\startup.log`. Une règle déjà conforme n'est pas réappliquée : aucune demande UAC n'intervient lors d'une ouverture de session normale. Si une règle doit être créée ou actualisée et que la tâche ne dispose pas des droits élevés, relancer `demarrage.bat` et accepter la demande UAC.
 
 Cette tâche s'exécute dans la session de l'utilisateur qui l'a enregistrée. Configurer Docker Desktop pour démarrer avec Windows. Tester le fonctionnement en redémarrant Windows, puis vérifier :
 
@@ -860,19 +860,30 @@ Get-NetIPAddress -AddressFamily IPv4 |
 
 **Changement de réseau ou d'adresse IP.** À chaque démarrage (`demarrage.bat` ou tâche de démarrage), `start-local.ps1` ajoute les adresses IPv4 des cartes réseau physiques actives (Wi-Fi, Ethernet) à `ALLOWED_HOSTS` et `CSRF_TRUSTED_ORIGINS` du `.env` — rien n'est retiré, les anciennes adresses restent valides — puis Docker Compose recrée le service `web` si le fichier a changé. Une nouvelle adresse est consignée dans `logs\startup.log` (« Nouvelle(s) adresse(s) du poste autorisée(s) »). Si l'adresse change sans redémarrage, relancer `demarrage.bat`.
 
-**Tablettes et téléphones.** Saisir l'adresse IP complète avec le préfixe, par exemple `http://192.168.1.10:8001/` : le nom Windows du serveur n'est généralement pas résolu par Android ou iPadOS.
+**Accès par le nom du serveur.** Le nom Windows du serveur (Paramètres → Système → Informations système, par exemple `DESKTOP-NKQMF8L`) est inscrit automatiquement dans le `.env` à chaque démarrage (`NOMPC` et `NOMPC.local`, avec les origines CSRF correspondantes), et le pare-feu laisse passer les réponses de nom du serveur (règle « YELEN SCHOOL - Résolution du nom du serveur », §9.2). Aucune configuration n'est nécessaire sur les postes clients, qui doivent être sur le même réseau local que le serveur :
+
+| Poste client | Adresse à saisir |
+|---|---|
+| Windows | `http://NOMPC:8001/` |
+| iPhone, iPad, Mac, Android 12 ou plus récent, Linux | `http://NOMPC.local:8001/` |
+| Android 11 ou plus ancien | `http://ADRESSE_IP_DU_SERVEUR:8001/` |
+
+Pour une adresse courte et parlante, renommer le serveur (Paramètres → Système → Renommer ce PC ; 15 caractères maximum, lettres, chiffres et tirets, par exemple `YELEN`) puis redémarrer : `http://yelen:8001/` et `http://yelen.local:8001/`. Le `.env` suit le nouveau nom au démarrage suivant, les anciennes entrées restent valides.
+
+Pour que `http://NOMPC:8001/` fonctionne sur tous les appareils sans exception (Android ancien compris) et survive à tout changement d'adresse, déclarer le serveur dans la box : réservation DHCP (adresse fixe) et, si la box le propose, entrée DNS locale `NOMPC` → adresse du serveur. Saisir toujours le préfixe `http://` sur tablette et téléphone.
 
 ### 9.2 Pare-feu Windows
 
-Lors de la première exécution de `demarrage.bat`, ou lorsqu'un changement de port le rend nécessaire, le script crée ou met à jour automatiquement la règle :
+Lors de la première exécution de `demarrage.bat`, ou lorsqu'un changement de port le rend nécessaire, le script crée ou met à jour automatiquement les règles :
 
 ```text
 YELEN SCHOOL - Accès réseau local
+YELEN SCHOOL - Résolution du nom du serveur
 ```
 
-La règle autorise uniquement le port TCP défini par `YELEN_HTTP_PORT` (8000 par défaut), sur les profils réseau **Privé** ou **Domaine** et depuis le sous-réseau local. Elle ne s'applique pas au profil Public. Si Windows affiche une demande UAC, l'accepter pour permettre l'accès depuis les autres postes. Si elle est refusée, l'application reste accessible sur le serveur mais peut rester inaccessible depuis le réseau local.
+La première autorise uniquement le port TCP défini par `YELEN_HTTP_PORT` (8000 par défaut) ; la seconde, les réponses du serveur aux demandes de nom des autres postes (NetBIOS UDP 137, mDNS UDP 5353, LLMNR UDP 5355), nécessaires à `http://NOMPC:port`. Toutes deux valent sur les profils réseau **Privé** ou **Domaine** et depuis le sous-réseau local. Elles ne s'appliquent pas au profil Public. Si Windows affiche une demande UAC, l'accepter pour permettre l'accès depuis les autres postes. Si elle est refusée, l'application reste accessible sur le serveur mais peut rester inaccessible depuis le réseau local.
 
-Un nouveau Wi-Fi est classé **Public** par Windows : le démarrage le signale dans `logs\startup.log` (« AVERTISSEMENT : réseau classé Public ») et les autres postes n'obtiennent aucune réponse (délai dépassé). Classer le réseau en **Réseau privé** (Paramètres → Réseau et Internet → propriétés du réseau) ou, en PowerShell administrateur : `Set-NetConnectionProfile -InterfaceAlias "Wi-Fi" -NetworkCategory Private`. Certains réseaux (partage de connexion d'un téléphone, box en mode « isolation des clients ») empêchent les appareils de se joindre entre eux ; aucun réglage du serveur n'y remédie — tester avec `ping <IP du poste client>` depuis le serveur.
+Un nouveau Wi-Fi ou une nouvelle box est classé **Public** par Windows et les autres postes n'obtiennent alors aucune réponse (délai dépassé). Le démarrage reclasse automatiquement en **Réseau privé** les réseaux Public des cartes physiques actives (ligne « reclassement en Réseau privé » dans `logs\startup.log` ; une demande UAC peut apparaître si `demarrage.bat` est lancé à la main). Pour conserver un classement manuel, inscrire `YELEN_RESEAU_PRIVE_AUTO=false` dans `.env` : le démarrage se contente alors d'un « AVERTISSEMENT : réseau classé Public » et le reclassement se fait dans Paramètres → Réseau et Internet → propriétés du réseau, ou en PowerShell administrateur : `Set-NetConnectionProfile -InterfaceAlias "Wi-Fi" -NetworkCategory Private`. Certains réseaux (partage de connexion d'un téléphone, box en mode « isolation des clients ») empêchent les appareils de se joindre entre eux ; aucun réglage du serveur n'y remédie — tester avec `ping <IP du poste client>` depuis le serveur.
 
 En cas de changement de port, relancer `demarrage.bat` : l'ancienne règle YELEN SCHOOL est remplacée par la règle correspondant au nouveau port.
 
@@ -885,7 +896,7 @@ $rule | Get-NetFirewallPortFilter
 $rule | Get-NetFirewallAddressFilter
 ```
 
-Pour la supprimer manuellement si nécessaire :
+Pour supprimer les deux règles manuellement si nécessaire :
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
