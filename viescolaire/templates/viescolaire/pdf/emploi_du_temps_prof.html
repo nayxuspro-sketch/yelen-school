@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <style>
+  /* Une seule page A4 paysage : en-tête, six jours, récapitulatif sur deux
+     colonnes, signature. Dix séances par jour tiennent avec marge. */
   @page {
     size: A4 landscape;
     margin: 5mm;
@@ -40,11 +42,11 @@
   .stats-bar {
     display: table;
     width: 100%;
-    margin-bottom: 2mm;
+    margin-bottom: 1.5mm;
     background: #f5f5f5;
     border: 1pt solid #bbb;
     border-radius: 2px;
-    padding: 1.5mm 3mm;
+    padding: 1mm 3mm;
   }
   .stat-item {
     display: table-cell;
@@ -53,8 +55,8 @@
     padding: 0 4mm;
   }
   .stat-item:last-child { border-right: none; }
-  .stat-value { font-size: 9.5pt; font-weight: 800; color: #111; }
-  .stat-label { font-size: 6pt; color: #444; margin-top: 0.5mm; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-value { font-size: 9pt; font-weight: 800; color: #111; }
+  .stat-label { font-size: 6pt; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
 
   /* ── Grid ── */
   .timetable-grid {
@@ -82,48 +84,38 @@
   }
   .day-body {
     padding: 2px;
-    min-height: 60mm;
   }
 
-  /* ── Lesson Card N&B ── */
+  /* ── Lesson Card N&B, deux lignes : horaire + classe, matière + salle ── */
   .lesson {
     background: #fff;
-    border: 1pt solid #bbb;
+    border: 0.75pt solid #bbb;
     border-left: 2pt solid #111;
     border-radius: 2px;
-    padding: 3px 4px;
+    padding: 2px 4px;
     margin-bottom: 2px;
     page-break-inside: avoid;
   }
-  .lesson-subject {
-    font-size: 7pt;
-    font-weight: 800;
-    color: #111;
-    margin-bottom: 1px;
-    line-height: 1.1;
-  }
-  .lesson-time {
+  .lesson-line { display: table; width: 100%; }
+  .lesson-line > span { display: table-cell; vertical-align: top; }
+  .lesson-time { font-size: 6.5pt; font-weight: 700; color: #333; }
+  .lesson-subject { font-size: 7pt; font-weight: 700; color: #111; }
+  .lesson-classe, .lesson-room {
+    width: 1%;
+    padding-left: 2mm;
+    text-align: right;
+    white-space: nowrap;
     font-size: 6.5pt;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 1px;
   }
-  .lesson-meta {
-    font-size: 6pt;
-    color: #444;
-    display: block;
-  }
-  .lesson-classe {
-    font-weight: 700;
-    color: #222;
-  }
+  .lesson-classe { font-weight: 800; color: #111; }
+  .lesson-room { font-weight: 400; color: #444; }
 
   /* Créneaux vides N&B */
   .empty-state {
     font-size: 6.5pt;
     color: #888;
     text-align: center;
-    padding: 8mm 0;
+    padding: 5mm 0;
     font-style: italic;
     background: #f5f5f5;
   }
@@ -155,10 +147,11 @@
   }
   .recap-table td {
     border: 0.5pt solid #bbb;
-    padding: 2px 4px;
+    padding: 1.5px 4px;
     color: #111;
   }
   .recap-table tr:nth-child(even) td { background: #f5f5f5; }
+  .recap-table .recap-sep { border-left: 1.5pt solid #111; }
 
   /* ── Signature ── */
   .signature-area {
@@ -169,7 +162,7 @@
   }
   .signature-box { display: table-cell; width: 100%; text-align: right; }
   .date-place    { font-size: 7.5pt; color: #333; margin-bottom: 2mm; }
-  .sig-function  { font-size: 8pt; font-weight: 700; color: #111; margin-bottom: 8mm; }
+  .sig-function  { font-size: 8pt; font-weight: 700; color: #111; margin-bottom: 7mm; }
   .sig-name {
     font-size: 8pt; font-weight: 800; color: #111;
     display: inline-block;
@@ -240,12 +233,14 @@
         <div class="day-body">
           {% for seance in jour.seances %}
           <div class="lesson">
-            <div class="lesson-subject">{{ seance.enseignement.matiere.nom }}</div>
-            <div class="lesson-time">{{ seance.heure_debut|time:"H\hi" }} – {{ seance.heure_fin|time:"H\hi" }}</div>
-            <span class="lesson-meta lesson-classe">{{ seance.enseignement.classe.nom }}</span>
-            {% if seance.salle %}
-            <span class="lesson-meta">Salle : {{ seance.salle }}</span>
-            {% endif %}
+            <div class="lesson-line">
+              <span class="lesson-time">{{ seance.heure_debut|time:"H\hi" }} – {{ seance.heure_fin|time:"H\hi" }}</span>
+              <span class="lesson-classe">{{ seance.enseignement.classe.nom }}</span>
+            </div>
+            <div class="lesson-line">
+              <span class="lesson-subject">{{ seance.enseignement.matiere.nom }}</span>
+              {% if seance.salle %}<span class="lesson-room">Salle {{ seance.salle }}</span>{% endif %}
+            </div>
           </div>
           {% empty %}
           <div class="empty-state">—</div>
@@ -260,23 +255,22 @@
 <div class="recap-area">
   {% if enseignements %}
   <div class="recap-title">Récapitulatif des enseignements</div>
+  {# Deux enseignements par ligne : le récapitulatif reste bas même avec douze enseignements. #}
   <table class="recap-table">
     <thead>
       <tr>
-        <th>Matière</th>
-        <th>Classe</th>
-        <th>Coeff.</th>
-        <th>H/semaine</th>
+        <th>Matière</th><th>Classe</th><th>Coeff.</th><th>H/semaine</th>
+        <th class="recap-sep">Matière</th><th>Classe</th><th>Coeff.</th><th>H/semaine</th>
       </tr>
     </thead>
     <tbody>
       {% for ens in enseignements %}
-      <tr>
-        <td>{{ ens.matiere.nom }}</td>
+      {% if forloop.counter0|divisibleby:2 %}<tr>{% endif %}
+        <td{% if not forloop.counter0|divisibleby:2 %} class="recap-sep"{% endif %}>{{ ens.matiere.nom }}</td>
         <td>{{ ens.classe.nom }}</td>
-        <td>{{ ens.get_coefficient }}</td>
-        <td>{% if ens.heures_hebdomadaires %}{{ ens.heures_hebdomadaires }}h{% else %}—{% endif %}</td>
-      </tr>
+        <td>{{ ens.get_coefficient|floatformat:"-2" }}</td>
+        <td>{% if ens.heures_hebdomadaires %}{{ ens.heures_hebdomadaires|floatformat:"-2" }}h{% else %}—{% endif %}</td>
+      {% if forloop.counter|divisibleby:2 %}</tr>{% elif forloop.last %}<td class="recap-sep" colspan="4"></td></tr>{% endif %}
       {% endfor %}
     </tbody>
   </table>

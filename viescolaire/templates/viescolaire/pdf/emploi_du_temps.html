@@ -3,35 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <style>
+  /* Une seule page A4 paysage : en-tête, six jours, signature. La hauteur est
+     bornée par le jour le plus chargé (dix séances tiennent avec marge). */
   @page {
     size: A4 landscape;
-    margin: 8mm;
+    margin: 6mm;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: "DejaVu Sans", Arial, sans-serif;
-    font-size: 8pt;
+    font-size: 7pt;
+    line-height: 1.15;
     color: #111;
     background: #fff;
   }
 
   /* ── Header N&B ── */
   .header {
-    border-bottom: 2.5pt solid #111;
-    padding-bottom: 3mm;
-    margin-bottom: 5mm;
+    border-bottom: 2pt solid #111;
+    padding-bottom: 1.5mm;
+    margin-bottom: 2.5mm;
     display: table;
     width: 100%;
   }
   .header-left { display: table-cell; vertical-align: bottom; }
   .header-right { display: table-cell; vertical-align: bottom; text-align: right; }
 
-  .school-name { font-size: 14pt; font-weight: bold; color: #111; letter-spacing: -0.01em; }
-  .doc-title { font-size: 9pt; color: #444; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
-  .class-name { font-size: 12pt; font-weight: 800; color: #111; }
-  .academic-year { font-size: 8.5pt; color: #444; margin-top: 2px; }
+  .school-name { font-size: 12pt; font-weight: bold; color: #111; letter-spacing: -0.01em; }
+  .doc-title { font-size: 7pt; color: #444; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-top: 0.5mm; }
+  .class-name { font-size: 11pt; font-weight: 800; color: #111; }
+  .academic-year { font-size: 7.5pt; color: #444; margin-top: 0.5mm; }
 
   /* ── Grid ── */
   .timetable-grid {
@@ -41,7 +44,7 @@
   }
   .day-col {
     vertical-align: top;
-    border: 1pt solid #bbb;
+    border: 0.75pt solid #bbb;
     width: 16.666%;
   }
 
@@ -49,70 +52,67 @@
   .day-header {
     background: #111;
     color: #fff;
-    border-bottom: 1pt solid #111;
-    padding: 6px 4px;
-    font-size: 8pt;
+    border-bottom: 0.75pt solid #111;
+    padding: 3px 2px;
+    font-size: 7pt;
     font-weight: 800;
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
   .day-body {
-    padding: 4px;
-    min-height: 120mm;
+    padding: 2px;
   }
 
-  /* ── Lesson Card N&B ── */
+  /* ── Lesson Card N&B : horaire + salle, matière, enseignant ── */
   .lesson {
     background: #fff;
-    border: 1pt solid #bbb;
-    border-left: 2.5pt solid #111;
+    border: 0.75pt solid #bbb;
+    border-left: 2pt solid #111;
     border-radius: 2px;
-    padding: 6px 8px;
-    margin-bottom: 4px;
+    padding: 2.5px 5px;
+    margin-bottom: 2.5px;
     page-break-inside: avoid;
   }
-  .lesson-subject {
-    font-size: 8.5pt;
-    font-weight: 800;
-    color: #111;
-    margin-bottom: 3px;
-    line-height: 1.2;
-  }
+  .lesson-line { display: table; width: 100%; }
+  .lesson-line > span { display: table-cell; vertical-align: top; }
   .lesson-time {
-    font-size: 7.5pt;
+    font-size: 6.5pt;
     font-weight: 700;
     color: #333;
-    margin-bottom: 4px;
   }
-  .lesson-meta {
-    font-size: 7pt;
+  .lesson-room {
+    width: 1%;
+    padding-left: 2mm;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 6.5pt;
     color: #444;
-    display: block;
-    margin-top: 1px;
+  }
+  .lesson-subject {
+    font-size: 7.5pt;
+    font-weight: 800;
+    color: #111;
   }
   .lesson-teacher {
+    font-size: 6.5pt;
     font-style: italic;
-    font-weight: 400;
+    color: #444;
   }
 
   /* Créneaux vides N&B */
   .empty-state {
-    font-size: 7pt;
+    font-size: 6.5pt;
     color: #888;
     text-align: center;
-    padding: 15mm 0;
+    padding: 6mm 0;
     font-style: italic;
     background: #f5f5f5;
-    min-height: 120mm;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   /* ── Signature ── */
   .signature-area {
-    margin-top: 8mm;
+    margin-top: 4mm;
     display: table;
     width: 100%;
     page-break-inside: avoid;
@@ -122,16 +122,16 @@
     width: 100%;
     text-align: right;
   }
-  .date-place { font-size: 9pt; color: #333; margin-bottom: 4mm; }
-  .sig-function { font-size: 10pt; font-weight: 700; color: #111; margin-bottom: 12mm; }
+  .date-place { font-size: 7.5pt; color: #333; margin-bottom: 2mm; }
+  .sig-function { font-size: 8pt; font-weight: 700; color: #111; margin-bottom: 9mm; }
   .sig-name {
-    font-size: 10pt;
+    font-size: 8pt;
     font-weight: 800;
     color: #111;
     display: inline-block;
     border-top: 1pt solid #555;
-    padding-top: 2mm;
-    min-width: 60mm;
+    padding-top: 1mm;
+    min-width: 50mm;
     text-align: center;
   }
 </style>
@@ -164,13 +164,13 @@
         <div class="day-body">
           {% for seance in jour.seances %}
           <div class="lesson">
+            <div class="lesson-line">
+              <span class="lesson-time">{{ seance.heure_debut|time:"H\hi" }} – {{ seance.heure_fin|time:"H\hi" }}</span>
+              {% if seance.salle %}<span class="lesson-room">Salle {{ seance.salle }}</span>{% endif %}
+            </div>
             <div class="lesson-subject">{{ seance.enseignement.matiere.nom }}</div>
-            <div class="lesson-time">{{ seance.heure_debut|time:"H\hi" }} – {{ seance.heure_fin|time:"H\hi" }}</div>
-            {% if seance.salle %}
-              <div class="lesson-meta">Salle : {{ seance.salle }}</div>
-            {% endif %}
             {% if seance.enseignement.personnel %}
-              <div class="lesson-meta lesson-teacher">{{ seance.enseignement.personnel.get_nom_complet }}</div>
+              <div class="lesson-teacher">{{ seance.enseignement.personnel.get_nom_complet }}</div>
             {% endif %}
           </div>
           {% empty %}
