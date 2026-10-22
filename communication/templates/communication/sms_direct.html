@@ -44,7 +44,7 @@
     <div id="sms-log-count"
          class="stat-value"
          hx-trigger="smsHistoryUpdated from:body"
-         hx-get="{% url 'communication:sms_direct_simulateur' %}?_partial=count"
+         hx-get="{% url 'communication:sms_direct' %}?_partial=count"
          hx-target="#sms-log-count"
          hx-swap="innerHTML">{{ logs|length }}</div>
     <div class="stat-label">Requêtes récentes</div>
@@ -145,7 +145,7 @@
 <div id="sms-history"
      class="card animate-fade-up delay-4"
      hx-trigger="smsHistoryUpdated from:body"
-     hx-get="{% url 'communication:sms_direct_simulateur' %}?_partial=history"
+     hx-get="{% url 'communication:sms_direct' %}?_partial=history"
      hx-target="#sms-history"
      hx-swap="innerHTML">
   {% include 'communication/partials/sms_direct_history.html' %}

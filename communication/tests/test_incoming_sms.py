@@ -246,3 +246,21 @@ class TestIncomingSMSWebhook:
             secure=True,
         )
         assert response.status_code == 503
+
+
+@pytest.mark.django_db
+def test_sms_direct_page_et_partiels(client, settings):
+    """La page SMS Direct et ses rafraîchissements HTMX (compteur, historique) se rendent sans erreur."""
+    settings.TWO_FACTOR_REQUIRED = False
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', role='SUPER_ADMIN', etablissement=etab, is_superuser=True,
+                                  must_change_password=False))
+    url = reverse('communication:sms_direct')
+
+    page = client.get(url)
+
+    assert page.status_code == 200
+    assert f'hx-get="{url}?_partial=count"' in page.content.decode()
+    assert f'hx-get="{url}?_partial=history"' in page.content.decode()
+    for partiel in ('count', 'history'):
+        assert client.get(url, {'_partial': partiel}, HTTP_HX_REQUEST='true').status_code == 200
