@@ -174,3 +174,23 @@ def test_liste_classe_effectif_par_genre(client, mocker):
     assert client.get(url + '?format=pdf').status_code == 200
     assert lignes(html_cls.call_args.kwargs['string'], 'Effectif par genre') == genre_attendu
     assert lignes(html_cls.call_args.kwargs['string'], 'Répartition des âges par genre') == ages_attendu
+
+
+@pytest.mark.django_db
+def test_liste_personnel_pdf_qr_sous_le_recapitulatif(client, mocker):
+    """Le code QR (réduit à 2,5 cm) suit immédiatement le tableau récapitulatif, calé à gauche, avant le signataire."""
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True))
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST')
+    baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    html_cls = mocker.patch('core.pdf.HTML')
+    html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+
+    url = reverse('documents:liste_personnel_pdf', kwargs={'cycle_id': cycle.pk})
+    assert client.get(url + '?format=pdf').status_code == 200
+
+    html = html_cls.call_args.kwargs['string']
+    assert re.search(r'\.qr-zone img \{ width: 2\.5cm; height: 2\.5cm; \}', html)
+    assert 'border-top: 1px solid #aaa' not in html and 'justify-content: space-between' not in html
+    corps = html[html.index('<body'):]
+    assert corps.rfind('</table>') < corps.index('class="qr-zone"') < corps.index('<!-- Signataire -->')

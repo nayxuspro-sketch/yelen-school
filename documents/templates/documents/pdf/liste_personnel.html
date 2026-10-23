@@ -61,15 +61,9 @@
     .recap-simple-col-effectif { text-align: center; width: 80px; }
     .recap-simple-total td { background-color: #111; color: #fff; font-weight: bold; border: 1px solid #111; }
 
-    /* Zone QR bas de page */
-    .qr-zone {
-        margin-top: 1cm;
-        border-top: 1px solid #aaa;
-        padding-top: 0.5cm;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
+    /* Code QR : sous le tableau récapitulatif, aligné sur son bord gauche */
+    .qr-zone { margin-top: 0.4cm; display: flex; align-items: flex-end; gap: 0.4cm; page-break-inside: avoid; }
+    .qr-zone img { width: 2.5cm; height: 2.5cm; }
     .qr-date { font-size: 8pt; color: #444; }
 </style>
 </head>
@@ -193,10 +187,7 @@
     </div>
     {% endif %}
 
-    <!-- Signataire -->
-    {% signataire_auto "LISTE_PERSONNEL" %}
-
-    <!-- Code QR établissement en bas de page -->
+    <!-- Code QR établissement, sous le récapitulatif -->
     {% with etab_nom=identite.nom_etablissement|default:etablissement.nom %}
     {% with adresse=identite.adresse|default:etablissement.adresse %}
     {% with ville=identite.ville|default:etablissement.ville %}
@@ -206,6 +197,9 @@
         <div class="qr-date">Imprimé le {% now "d/m/Y" %}</div>
     </div>
     {% endwith %}{% endwith %}{% endwith %}{% endwith %}
+
+    <!-- Signataire -->
+    {% signataire_auto "LISTE_PERSONNEL" %}
 
 </div>
 </body>
