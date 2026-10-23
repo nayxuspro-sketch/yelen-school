@@ -53,7 +53,7 @@
                   background:linear-gradient(to bottom,#00A86B,#0A1628); z-index:2;"></div>
 
       <!-- Header -->
-      <div style="background:#0A1628; padding:8px 12px 7px 17px;
+      <div style="background:#F8FAFC; border-bottom:1px solid #CBD5E1; padding:8px 12px 7px 17px;
                   display:flex; align-items:center; gap:8px; flex-shrink:0;">
         <div style="width:32px; height:32px; flex-shrink:0; border-radius:6px; overflow:hidden;
                     display:flex; align-items:center; justify-content:center;">
@@ -71,7 +71,7 @@
           {% endif %}
         </div>
         <div style="flex:1; min-width:0;">
-          <div style="font-size:0.68rem; font-weight:700; color:#E8EDF5;
+          <div style="font-size:0.68rem; font-weight:700; color:#0A1628;
                       text-transform:uppercase; letter-spacing:0.3px; line-height:1.2;
                       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             {% if identite %}{{ identite.nom_etablissement }}{% elif etablissement %}{{ etablissement.nom }}{% else %}Établissement{% endif %}
@@ -81,7 +81,7 @@
             {% if identite %}{{ identite.get_type_etablissement_display }}{% else %}Établissement scolaire{% endif %}
           </div>
         </div>
-        <div style="font-size:0.5rem; color:#475569; text-align:right; white-space:nowrap;">
+        <div style="font-size:0.6rem; font-weight:700; color:#0A1628; letter-spacing:0.5px; text-align:right; white-space:nowrap;">
           CARTE SCOLAIRE
         </div>
       </div>
@@ -150,8 +150,8 @@
           <div style="font-size:0.58rem; color:#334155; font-family:monospace;">{{ eleve.matricule }}</div>
         </div>
         {% if inscription %}
-        <div style="font-size:0.52rem; color:#94A3B8; text-align:right;">
-          {{ inscription.annee_scolaire.libelle }}
+        <div style="font-size:0.5rem; font-weight:700; color:#0A1628; text-align:right; white-space:nowrap;">
+          VALABLE POUR L'ANNÉE SCOLAIRE : {{ inscription.annee_scolaire.libelle }}
         </div>
         {% endif %}
       </div>

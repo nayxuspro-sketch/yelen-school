@@ -162,6 +162,8 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
     attendu = ['Résidence :', 'Secteur 30 (Karpala)', 'Père :', 'OUEDRAOGO Boukary', 'Mère :', 'SAWADOGO Mariam',
                "N° d'urgence :", '70 11 22 33']   # sans numéro d'urgence dédié, le téléphone des parents est utilisé
 
+    attendu.append(f"VALABLE POUR L'ANNÉE SCOLAIRE : {annee.libelle}")   # mention en gras au bas de la carte
+
     assert client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk}) + '?format=pdf').status_code == 200
     carte = unescape(weasy.call_args.kwargs['string'])
     assert all(texte in carte for texte in attendu) and carte.count('class="carte"') == 1   # une seule face
@@ -170,6 +172,10 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
     assert client.get(reverse('inscriptions:classe_cartes_pdf', kwargs={'pk': classe.pk})).status_code == 200
     cartes = unescape(weasy.call_args.kwargs['string'])
     assert all(texte in cartes for texte in attendu)
+    for html in (carte, cartes):   # en-tête clair, « CARTE SCOLAIRE » en gras lisible, mention en gras
+        assert re.search(r'\.carte-header \{[^}]*background: #f5f5f5;', html) and '.carte-header {\n    background: #111' not in html
+        assert re.search(r'\.label-carte \{ font-size: 6pt; font-weight: 700; color: #111;', html)
+        assert re.search(r'\.validite \{ font-size: 4\.5pt; font-weight: 700;', html)
 
     apercu = unescape(client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk})).content.decode())
     assert all(texte in apercu for texte in attendu) and 'Verso' not in apercu and 'Recto' not in apercu
