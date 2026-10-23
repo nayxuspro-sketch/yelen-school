@@ -1,0 +1,20 @@
+# Couverture de tests — lue automatiquement par pytest-cov (CI : `pytest --cov`).
+# Le seuil `fail_under` fait échouer la CI si la couverture du code applicatif baisse.
+[run]
+source = .
+omit =
+    */migrations/*
+    */tests/*
+    */tests.py
+    */test_*.py
+    */conftest.py
+    conftest.py
+    manage.py
+    .claude/*
+    installer/*
+    scripts/*
+    seed_test_data.py
+
+[report]
+fail_under = 65
+precision = 2
