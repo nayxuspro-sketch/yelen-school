@@ -1,5 +1,8 @@
-# Mises à jour automatiques des dépendances : une PR par paquet, chaque lundi.
-# La CI (tests + pip-audit) valide chaque proposition avant fusion.
+# Mises à jour automatiques des dépendances, livrées par lot :
+#   - Python : une PR regroupant les versions mineures et correctives, chaque lundi ;
+#     les versions majeures restent des PR individuelles (risque de rupture).
+#   - Actions GitHub : une PR regroupée, chaque mois.
+# La CI (tests + pip-audit) valide chaque lot avant fusion.
 version: 2
 updates:
   - package-ecosystem: pip
@@ -9,8 +12,15 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     labels: ["dépendances"]
+    groups:
+      python-mineures:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: monthly
     labels: ["dépendances"]
+    groups:
+      actions-ci:
+        patterns: ["*"]

@@ -57,6 +57,11 @@ python -m pytest                         # PostgreSQL par défaut ; SQLite : DB_
 `requirements/base.txt` ne contient que les dépendances d'exécution (Docker, mode autonome) ;
 les outils de test et de documentation sont dans `requirements/dev.txt`.
 
+Dependabot (`.github/dependabot.yml`) ouvre chaque lundi une PR regroupant les mises à jour Python
+mineures et correctives (les majeures arrivent séparément) et, chaque mois, une PR pour les actions CI.
+Procédure : attendre la CI verte sur la PR, puis fusionner. `main` alimentant directement la
+production, aucune fusion automatique n'est activée.
+
 ## Licence
 
 Usage interne — Établissements YELEN SCHOOL.
