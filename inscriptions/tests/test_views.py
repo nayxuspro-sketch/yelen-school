@@ -54,6 +54,19 @@ class TestInscriptionsViews:
         assert html.index('Nom de famille') < html.index('Informations Familiales') < html.index('Nom du père')
         assert 'Nom de famille' not in html[html.index('Informations Familiales'):]
 
+    def test_telephone_urgence_35_caracteres(self, logged_in_client):
+        """Le téléphone d'urgence accepte 35 caractères (deux numéros, ex. « 70 00 00 00 / 76 00 00 00 »)."""
+        from inscriptions.models import Eleve
+        numeros = '+226 70 00 00 00 / +226 76 00 00 00'
+        assert len(numeros) == 35
+        html = logged_in_client.get(reverse('inscriptions:eleve_create')).content.decode()
+        assert 'maxlength="35"' in re.search(r'<input[^>]*name="telephone_urgence"[^>]*>', html).group(0)
+        reponse = logged_in_client.post(reverse('inscriptions:eleve_create'), {
+            'nom': 'TRAORE', 'prenom': 'Moussa', 'genre': 'M', 'date_naissance': '2013-01-01', 'lieu_naissance': 'Bobo-Dioulasso',
+            'nationalite': 'Burkinabè', 'lieu_residence': 'Dafra', 'telephone_urgence': numeros,
+        })
+        assert reponse.status_code == 302 and Eleve.objects.get(nom='TRAORE').telephone_urgence == numeros
+
     def test_lieu_de_residence(self, logged_in_client):
         """« Localisation & Origine Scolaire » : lieu de résidence (village / quartier / secteur) au lieu du pays."""
         from html import unescape

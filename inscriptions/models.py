@@ -108,7 +108,7 @@ class Eleve(BaseModel):
 
     # Contact d'urgence
     telephone_urgence = models.CharField(
-        max_length=20,
+        max_length=35,
         blank=True,
         default='',
         verbose_name=_("Téléphone d'urgence")
