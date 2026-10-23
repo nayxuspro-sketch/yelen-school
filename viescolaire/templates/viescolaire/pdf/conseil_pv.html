@@ -1,93 +1,91 @@
-{% extends "pedagogie/pdf/bulletin_base.html" %}
+{% extends "pdf/base_rapport.html" %}
 
-{% block pdf_content %}
+{% block css_document %}
+/* ── Statut conseil ── */
+.statut-tenu   { font-weight: bold; color: #111; }
+.statut-attente { font-weight: bold; font-style: italic; color: #333; }
 
-<style>
-  /* ── Statut conseil ── */
-  .statut-tenu   { font-weight: bold; color: #111; }
-  .statut-attente { font-weight: bold; font-style: italic; color: #333; }
+/* ── Info cells ── */
+.info-cell {
+  padding: 3pt 6pt;
+  border: 0.5pt solid #bbb;
+  background: #f5f5f5;
+}
+.info-label {
+  font-size: 7.5pt; color: #444;
+  text-transform: uppercase; letter-spacing: .04em;
+}
 
-  /* ── Info cells ── */
-  .info-cell {
-    padding: 3pt 6pt;
-    border: 0.5pt solid #bbb;
-    background: #f5f5f5;
-  }
-  .info-label {
-    font-size: 7.5pt; color: #444;
-    text-transform: uppercase; letter-spacing: .04em;
-  }
+/* ── Observations ── */
+.obs-bloc {
+  margin-bottom: 8pt;
+  padding: 5pt 8pt;
+  background: #f5f5f5;
+  border-left: 3pt solid #111;
+  border-radius: 0 3pt 3pt 0;
+  font-size: 8.5pt;
+}
+.obs-label { font-size: 7.5pt; color: #444; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2pt; }
 
-  /* ── Observations ── */
-  .obs-bloc {
-    margin-bottom: 8pt;
-    padding: 5pt 8pt;
-    background: #f5f5f5;
-    border-left: 3pt solid #111;
-    border-radius: 0 3pt 3pt 0;
-    font-size: 8.5pt;
-  }
-  .obs-label { font-size: 7.5pt; color: #444; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2pt; }
+/* ── Récap section title ── */
+.section-head {
+  font-size: 8pt; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: #111;
+  margin-bottom: 4pt;
+  border-bottom: 1.5pt solid #111;
+  padding-bottom: 2pt;
+}
 
-  /* ── Récap section title ── */
-  .section-head {
-    font-size: 8pt; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .06em; color: #111;
-    margin-bottom: 4pt;
-    border-bottom: 1.5pt solid #111;
-    padding-bottom: 2pt;
-  }
+/* ── Cellules décision stats ── */
+.stat-cell { text-align: center; padding: 3pt 6pt; border: 0.5pt solid #bbb; }
+.stat-passage   { background: #fff; border: 1.5pt solid #111; }
+.stat-redoublement { background: #ddd; border: 1.5pt solid #111; }
+.stat-exclusion { background: #555; color: #fff; }
+.stat-felic     { background: #f5f5f5; border: 1pt solid #555; }
+.stat-encour    { background: #ebebeb; border: 1pt solid #555; }
+.stat-mention   { background: #ddd; border: 1pt solid #111; }
+.stat-defaut    { background: #f5f5f5; }
 
-  /* ── Cellules décision stats ── */
-  .stat-cell { text-align: center; padding: 3pt 6pt; border: 0.5pt solid #bbb; }
-  .stat-passage   { background: #fff; border: 1.5pt solid #111; }
-  .stat-redoublement { background: #ddd; border: 1.5pt solid #111; }
-  .stat-exclusion { background: #555; color: #fff; }
-  .stat-felic     { background: #f5f5f5; border: 1pt solid #555; }
-  .stat-encour    { background: #ebebeb; border: 1pt solid #555; }
-  .stat-mention   { background: #ddd; border: 1pt solid #111; }
-  .stat-defaut    { background: #f5f5f5; }
+.stat-count { font-size: 11pt; font-weight: 700; }
+.stat-label { font-size: 7pt; color: #333; }
+.stat-count-inv { font-size: 11pt; font-weight: 700; color: #fff; }
 
-  .stat-count { font-size: 11pt; font-weight: 700; }
-  .stat-label { font-size: 7pt; color: #333; }
-  .stat-count-inv { font-size: 11pt; font-weight: 700; color: #fff; }
+/* ── Décisions individuelles ── */
+.dec-passage      { font-weight: bold; color: #111; }
+.dec-redoublement { font-weight: bold; font-style: italic; color: #333; }
+.dec-rachat       { font-style: italic; color: #333; }
+.dec-defaut       { color: #444; }
 
-  /* ── Décisions individuelles ── */
-  .dec-passage      { font-weight: bold; color: #111; }
-  .dec-redoublement { font-weight: bold; font-style: italic; color: #333; }
-  .dec-rachat       { font-style: italic; color: #333; }
-  .dec-defaut       { color: #444; }
+/* Moyenne */
+.moy-ok   { font-weight: bold; color: #111; }
+.moy-fail { font-style: italic; color: #333; }
 
-  /* Moyenne */
-  .moy-ok   { font-weight: bold; color: #111; }
-  .moy-fail { font-style: italic; color: #333; }
+/* Rang */
+.rang-txt { color: #333; }
 
-  /* Rang */
-  .rang-txt { color: #333; }
+/* Appréciation vide */
+.apprec-vide { color: #888; font-style: italic; }
 
-  /* Appréciation vide */
-  .apprec-vide { color: #888; font-style: italic; }
+/* Distinctions */
+.dist-f  { font-weight: 700; font-style: italic; }
+.dist-e  { font-weight: 700; }
+.dist-mh { font-weight: 700; font-style: italic; text-decoration: underline; }
 
-  /* Distinctions */
-  .dist-f  { font-weight: 700; font-style: italic; }
-  .dist-e  { font-weight: 700; }
-  .dist-mh { font-weight: 700; font-style: italic; text-decoration: underline; }
+/* Lignes paires */
+.row-pair   { background: #f5f5f5; }
+.row-impair { background: #fff; }
 
-  /* Lignes paires */
-  .row-pair   { background: #f5f5f5; }
-  .row-impair { background: #fff; }
+/* Signatures */
+.sig-label { color: #444; margin-bottom: 30pt; }
+.sig-line { border-top: 0.5pt solid #111; padding-top: 4pt; font-weight: 600; }
 
-  /* Signatures */
-  .sig-label { color: #444; margin-bottom: 30pt; }
-  .sig-line { border-top: 0.5pt solid #111; padding-top: 4pt; font-weight: 600; }
+/* Légende */
+.legende { font-size: 7pt; color: #555; margin-top: 4pt; text-align: right; font-style: italic; }
 
-  /* Légende */
-  .legende { font-size: 7pt; color: #555; margin-top: 4pt; text-align: right; font-style: italic; }
-
-  /* Vide */
-  .msg-vide { text-align: center; color: #555; font-style: italic; margin-top: 16pt; }
-</style>
-
+/* Vide */
+.msg-vide { text-align: center; color: #555; font-style: italic; margin-top: 16pt; }
+{% endblock %}
+{% block corps %}
 {# ── Titre ── #}
 <div class="document-title">
     <h2 style="text-transform:uppercase; letter-spacing:.5pt;">

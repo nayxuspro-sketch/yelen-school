@@ -1,9 +1,5 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-  @page {
+{% extends "pdf/base.html" %}
+{% block page %}@page {
     size: A4 portrait;
     margin: 15mm 12mm 15mm;
     @top-center {
@@ -14,122 +10,90 @@
       content: "Page " counter(page) " / " counter(pages);
       font-size: 7.5pt; color: #9ca3af;
     }
-  }
+}{% endblock %}
+{% block css %}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #111827; background: #fff; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #111827; background: #fff; }
+.doc-title {
+  text-align: center; margin: 16px 0;
+  background: #1d4ed8; color: #fff;
+  padding: 10px 0; border-radius: 4px;
+}
+.doc-title h1 { font-size: 14pt; font-weight: bold; letter-spacing: 0.04em; }
+.doc-title p { font-size: 8.5pt; opacity: .85; margin-top: 3px; }
 
-  .header {
-    display: flex; align-items: flex-start; gap: 12px;
-    margin-bottom: 14px; padding-bottom: 10px;
-    border-bottom: 2px solid #00A86B;
-  }
-  .header-logo img { width: 44px; height: 44px; object-fit: contain; }
-  .header-text { flex: 1; }
-  .header-etab { font-size: 12pt; font-weight: bold; color: #111827; margin-bottom: 2px; }
-  .header-sub { font-size: 8pt; color: #6b7280; }
-  .header-right { text-align: right; font-size: 7.5pt; color: #6b7280; }
+.stamp {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 3px;
+  font-size: 8pt;
+  font-weight: bold;
+}
+.stamp-approuve { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+.stamp-attente  { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+.stamp-refuse   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
-  .doc-title {
-    text-align: center; margin: 16px 0;
-    background: #1d4ed8; color: #fff;
-    padding: 10px 0; border-radius: 4px;
-  }
-  .doc-title h1 { font-size: 14pt; font-weight: bold; letter-spacing: 0.04em; }
-  .doc-title p { font-size: 8.5pt; opacity: .85; margin-top: 3px; }
+.section-title {
+  font-size: 9.5pt; font-weight: bold; color: #1d4ed8;
+  text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid #93c5fd;
+  padding-bottom: 3px; margin: 14px 0 8px;
+}
 
-  .stamp {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 3px;
-    font-size: 8pt;
-    font-weight: bold;
-  }
-  .stamp-approuve { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-  .stamp-attente  { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
-  .stamp-refuse   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.info-grid {
+  display: grid; grid-template-columns: 140px 1fr; gap: 4px 12px;
+  margin-bottom: 10px;
+}
+.info-label { color: #6b7280; font-size: 8.5pt; }
+.info-value { font-weight: 600; font-size: 8.5pt; }
 
-  .section-title {
-    font-size: 9.5pt; font-weight: bold; color: #1d4ed8;
-    text-transform: uppercase; letter-spacing: .06em;
-    border-bottom: 1px solid #93c5fd;
-    padding-bottom: 3px; margin: 14px 0 8px;
-  }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  .info-grid {
-    display: grid; grid-template-columns: 140px 1fr; gap: 4px 12px;
-    margin-bottom: 10px;
-  }
-  .info-label { color: #6b7280; font-size: 8.5pt; }
-  .info-value { font-weight: 600; font-size: 8.5pt; }
+table { width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px; }
+th { background: #1d4ed8; color: #fff; padding: 5px 7px; text-align: left; font-weight: 600; }
+td { padding: 4px 7px; border-bottom: 1px solid #e5e7eb; }
+tr:nth-child(even) td { background: #f0f4ff; }
 
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.total-row td { font-weight: bold; background: #dbeafe !important; border-top: 2px solid #3b82f6; }
+.no-data { text-align: center; color: #9ca3af; padding: 10px; font-style: italic; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px; }
-  th { background: #1d4ed8; color: #fff; padding: 5px 7px; text-align: left; font-weight: 600; }
-  td { padding: 4px 7px; border-bottom: 1px solid #e5e7eb; }
-  tr:nth-child(even) td { background: #f0f4ff; }
+.finance-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 3px;
+  font-size: 8pt; font-weight: bold;
+}
+.finance-ok  { background: #dcfce7; color: #166534; }
+.finance-due { background: #fee2e2; color: #991b1b; }
 
-  .total-row td { font-weight: bold; background: #dbeafe !important; border-top: 2px solid #3b82f6; }
-  .no-data { text-align: center; color: #9ca3af; padding: 10px; font-style: italic; }
+.signature-block {
+  margin-top: 24px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;
+  font-size: 8pt;
+}
+.sig-box { text-align: center; }
+.sig-line { border-bottom: 1px solid #111827; margin: 40px 10px 4px; }
+.sig-label { color: #6b7280; }
 
-  .finance-badge {
-    display: inline-block; padding: 2px 8px; border-radius: 3px;
-    font-size: 8pt; font-weight: bold;
-  }
-  .finance-ok  { background: #dcfce7; color: #166534; }
-  .finance-due { background: #fee2e2; color: #991b1b; }
-
-  .signature-block {
-    margin-top: 24px;
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;
-    font-size: 8pt;
-  }
-  .sig-box { text-align: center; }
-  .sig-line { border-bottom: 1px solid #111827; margin: 40px 10px 4px; }
-  .sig-label { color: #6b7280; }
-
-  .watermark-approved {
-    position: fixed; top: 40%; left: 20%;
-    transform: rotate(-35deg);
-    font-size: 72pt; font-weight: bold;
-    color: rgba(16,185,129,0.07);
-    letter-spacing: 0.1em;
-    pointer-events: none;
-  }
-</style>
-</head>
-<body>
-
+.watermark-approved {
+  position: fixed; top: 40%; left: 20%;
+  transform: rotate(-35deg);
+  font-size: 72pt; font-weight: bold;
+  color: rgba(16,185,129,0.07);
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+{% endblock %}
+{% block corps %}
 {% if transfert.statut == 'APPROUVE' %}
 <div class="watermark-approved">APPROUVÉ</div>
 {% endif %}
-
-{# En-tête établissement #}
-<div class="header">
-  <div class="header-logo">
-    {% if etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo">{% endif %}
-  </div>
-  <div class="header-text">
-    <div class="header-etab">{% if identite %}{{ identite.nom_etablissement }}{% elif etablissement %}{{ etablissement.nom }}{% else %}YELEN SCHOOL{% endif %}</div>
-    {% if identite %}
-    <div class="header-sub">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
-    {% if identite.telephone %}<div class="header-sub">Tél. : {{ identite.telephone }}</div>{% endif %}
-    {% endif %}
-  </div>
-  <div class="header-right">
-    Dossier N° {{ transfert.pk|truncatechars:8 }}<br>
-    Date : {{ transfert.date_demande|date:"d/m/Y" }}<br>
-    <span class="stamp stamp-{% if transfert.statut == 'APPROUVE' %}approuve{% elif transfert.statut == 'EN_ATTENTE' %}attente{% else %}refuse{% endif %}">
-      {{ transfert.get_statut_display }}
-    </span>
-  </div>
-</div>
 
 {# Titre #}
 <div class="doc-title">
   <h1>Dossier de Transfert Inter-Établissements</h1>
   <p>{{ transfert.inscription.annee_scolaire.libelle }}</p>
+  <p>Dossier N° {{ transfert.pk|truncatechars:8 }} — Date : {{ transfert.date_demande|date:"d/m/Y" }}
+    <span class="stamp stamp-{% if transfert.statut == 'APPROUVE' %}approuve{% elif transfert.statut == 'EN_ATTENTE' %}attente{% else %}refuse{% endif %}">{{ transfert.get_statut_display }}</span></p>
 </div>
 
 {# Infos élève #}
@@ -259,6 +223,4 @@
     <div class="sig-label">Cachet de l'établissement</div>
   </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

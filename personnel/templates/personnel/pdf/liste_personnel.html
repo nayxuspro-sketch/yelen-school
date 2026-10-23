@@ -1,10 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title>{{ titre }} — {{ etab_nom }}</title>
-<style>
-  @page {
+{% extends "pdf/base.html" %}
+{% block titre %}{{ titre }} — {{ etab_nom }}{% endblock %}
+{% block page %}@page {
     size: A4 landscape;
     margin: 14mm 12mm 14mm;
     @top-center {
@@ -22,84 +18,49 @@
       font-size: 7.5pt;
       color: #9ca3af;
     }
-  }
+}{% endblock %}
+{% block css %}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #111827; background: #fff; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #111827; background: #fff; }
+/* ── Titre ── */
+.doc-title { font-size: 12pt; font-weight: bold; text-align: center; margin: 6px 0 3px; }
+.doc-subtitle { font-size: 8pt; text-align: center; color: #6b7280; margin-bottom: 10px; }
 
-  /* ── En-tête ── */
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #00A86B;
-  }
-  .header-logo img { width: 46px; height: 46px; object-fit: contain; }
-  .header-text { flex: 1; }
-  .header-etab { font-size: 12pt; font-weight: bold; color: #111827; margin-bottom: 2px; }
-  .header-sub { font-size: 8pt; color: #6b7280; }
-  .header-right { text-align: right; font-size: 8pt; color: #6b7280; white-space: nowrap; }
+/* ── Tableau ── */
+table { width: 100%; border-collapse: collapse; }
+thead tr { background-color: #00A86B; color: #fff; }
+thead th { padding: 5px 6px; font-size: 8pt; font-weight: 600; text-align: left; white-space: nowrap; }
+tbody tr { border-bottom: 1px solid #e5e7eb; page-break-inside: avoid; }
+tbody tr:nth-child(even) { background-color: #f9fafb; }
+tbody td { padding: 4px 6px; font-size: 8pt; vertical-align: middle; }
 
-  /* ── Titre ── */
-  .doc-title { font-size: 12pt; font-weight: bold; text-align: center; margin: 6px 0 3px; }
-  .doc-subtitle { font-size: 8pt; text-align: center; color: #6b7280; margin-bottom: 10px; }
+.col-num { width: 4%; text-align: center; color: #9ca3af; }
+.col-mat { width: 11%; font-family: 'DejaVu Sans Mono', monospace; font-size: 7.5pt; white-space: nowrap; }
+.col-nom { width: 13%; font-weight: 600; }
+.col-prenom { width: 13%; }
+.col-genre { width: 5%; text-align: center; }
+.col-naissance { width: 8%; white-space: nowrap; }
+.col-fonction { width: 14%; }
+.col-tel { width: 9%; white-space: nowrap; }
+.col-email { width: 15%; font-size: 7.5pt; }
+.col-cycles { width: 8%; }
+.col-statut { width: 7%; text-align: center; }
 
-  /* ── Tableau ── */
-  table { width: 100%; border-collapse: collapse; }
-  thead tr { background-color: #00A86B; color: #fff; }
-  thead th { padding: 5px 6px; font-size: 8pt; font-weight: 600; text-align: left; white-space: nowrap; }
-  tbody tr { border-bottom: 1px solid #e5e7eb; page-break-inside: avoid; }
-  tbody tr:nth-child(even) { background-color: #f9fafb; }
-  tbody td { padding: 4px 6px; font-size: 8pt; vertical-align: middle; }
+.badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 7pt; font-weight: 600; white-space: nowrap; }
+.badge-active { background: #d1fae5; color: #065f46; }
+.badge-inactive { background: #fee2e2; color: #991b1b; }
 
-  .col-num { width: 4%; text-align: center; color: #9ca3af; }
-  .col-mat { width: 11%; font-family: 'DejaVu Sans Mono', monospace; font-size: 7.5pt; white-space: nowrap; }
-  .col-nom { width: 13%; font-weight: 600; }
-  .col-prenom { width: 13%; }
-  .col-genre { width: 5%; text-align: center; }
-  .col-naissance { width: 8%; white-space: nowrap; }
-  .col-fonction { width: 14%; }
-  .col-tel { width: 9%; white-space: nowrap; }
-  .col-email { width: 15%; font-size: 7.5pt; }
-  .col-cycles { width: 8%; }
-  .col-statut { width: 7%; text-align: center; }
+.vide { text-align: center; color: #6b7280; padding: 18px 0; font-style: italic; }
 
-  .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 7pt; font-weight: 600; white-space: nowrap; }
-  .badge-active { background: #d1fae5; color: #065f46; }
-  .badge-inactive { background: #fee2e2; color: #991b1b; }
-
-  .vide { text-align: center; color: #6b7280; padding: 18px 0; font-style: italic; }
-
-  /* ── Récapitulatif ── */
-  .recap { margin-top: 12px; display: flex; gap: 18px; font-size: 8pt; color: #374151; page-break-inside: avoid; }
-  .recap strong { color: #111827; }
-</style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
-
-<div class="header">
-  {% if logo_url %}
-  <div class="header-logo"><img src="{{ logo_url }}" alt="Logo"></div>
-  {% endif %}
-  <div class="header-text">
-    <div class="header-etab">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etab_nom }}{% endif %}</div>
-    {% if identite %}
-    {% if identite.numero_agrement_mena %}<div class="header-sub">N° Agrément : {{ identite.numero_agrement_mena }}</div>{% endif %}
-    <div class="header-sub">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
-    {% if identite.telephone %}<div class="header-sub">Tél. : {{ identite.telephone }}</div>{% endif %}
-    {% endif %}
-  </div>
-  <div class="header-right">
-    YELEN SCHOOL<br>
-    Édité le {{ date_edition }}
-  </div>
-</div>
-
+/* ── Récapitulatif ── */
+.recap { margin-top: 12px; display: flex; gap: 18px; font-size: 8pt; color: #374151; page-break-inside: avoid; }
+.recap strong { color: #111827; }
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block corps %}
 <div class="doc-title">{{ titre }}</div>
-<div class="doc-subtitle">{{ nb_total }} membre{{ nb_total|pluralize }} — {% if selection %}Sélection{% elif show_all %}Actifs et inactifs{% else %}Actifs{% endif %}{% if query %} — Recherche : « {{ query }} »{% endif %}</div>
+<div class="doc-subtitle">Édité le {{ date_edition }} — {{ nb_total }} membre{{ nb_total|pluralize }} — {% if selection %}Sélection{% elif show_all %}Actifs et inactifs{% else %}Actifs{% endif %}{% if query %} — Recherche : « {{ query }} »{% endif %}</div>
 
 <table>
   <thead>
@@ -146,6 +107,4 @@
   <span>Femmes : <strong>{{ nb_femmes }}</strong></span>
   {% if show_all or selection %}<span>Inactifs : <strong>{{ nb_inactifs }}</strong></span>{% endif %}
 </div>
-
-</body>
-</html>
+{% endblock %}

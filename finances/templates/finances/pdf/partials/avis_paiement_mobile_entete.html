@@ -1,0 +1,3 @@
+{% comment %}Colonne droite de l'en-tête de l'avis (incluse par pdf/partials/entete.html).{% endcomment %}<div class="doc-badge"><h2>Avis de paiement</h2></div>
+<div class="doc-meta">Référence : <strong>{{ demande.reference }}</strong><br>
+Émis le {{ demande.created_at|date:"d/m/Y" }} — Imprimé le {{ now|date:"d/m/Y à H:i" }}</div>

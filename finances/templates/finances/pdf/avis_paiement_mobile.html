@@ -1,71 +1,37 @@
-{% load qr_tags %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        /* Avis de paiement Mobile Money A5 portrait (148 × 210 mm), une page. */
-        @page { size: A5 portrait; margin: 9mm 10mm; }
-        body { font-family: "DejaVu Sans", sans-serif; font-size: 9pt; color: #111; margin: 0; padding: 0; }
+{% extends "pdf/base.html" %}{% load qr_tags %}
+{% block page %}@page { size: A5 portrait; margin: 9mm 10mm; }{% endblock %}
+{% block css %}
+/* Avis de paiement Mobile Money A5 portrait (148 × 210 mm), une page. */
 
-        /* ─── En-tête (même gabarit que le reçu) ─── */
-        .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 5px; border-bottom: 2px solid #111; margin-bottom: 8px; }
-        .header-left { display: flex; align-items: center; gap: 8px; }
-        .pdf-logo { width: 38px; height: 38px; object-fit: contain; filter: grayscale(100%); }
-        .etab-nom { font-size: 12pt; font-weight: bold; margin: 0 0 1px; }
-        .etab-agrement { font-size: 7pt; color: #444; font-style: italic; margin: 1px 0; }
-        .etab-info { font-size: 7pt; color: #444; margin: 1px 0; }
-        .header-right { text-align: right; }
-        .doc-badge { border: 1.5px solid #111; padding: 3px 10px; border-radius: 4px; display: inline-block; }
-        .doc-badge h2 { margin: 0; font-size: 9.5pt; text-transform: uppercase; letter-spacing: .5px; }
-        .doc-meta { font-size: 6.5pt; color: #555; margin-top: 3px; line-height: 1.4; }
+body { font-family: "DejaVu Sans", sans-serif; font-size: 9pt; color: #111; margin: 0; padding: 0; }
+.doc-badge { border: 1.5px solid #111; padding: 3px 10px; border-radius: 4px; display: inline-block; }
+.doc-badge h2 { margin: 0; font-size: 9.5pt; text-transform: uppercase; letter-spacing: .5px; }
+.doc-meta { font-size: 6.5pt; color: #555; margin-top: 3px; line-height: 1.4; }
 
-        /* ─── Créance ─── */
-        .bloc { background: #f8f8f8; border: 1px solid #ccc; border-radius: 4px; padding: 6px 9px; margin-bottom: 8px; }
-        .ligne { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dotted #ddd; }
-        .ligne:last-child { border-bottom: none; }
-        .lbl { font-size: 7pt; color: #555; text-transform: uppercase; }
-        .val { font-weight: bold; }
-        .montant { font-size: 15pt; font-weight: bold; text-align: center; margin: 4px 0 2px; }
-        .reference { font-size: 8pt; text-align: center; color: #333; }
+/* ─── Créance ─── */
+.bloc { background: #f8f8f8; border: 1px solid #ccc; border-radius: 4px; padding: 6px 9px; margin-bottom: 8px; }
+.ligne { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dotted #ddd; }
+.ligne:last-child { border-bottom: none; }
+.lbl { font-size: 7pt; color: #555; text-transform: uppercase; }
+.val { font-weight: bold; }
+.montant { font-size: 15pt; font-weight: bold; text-align: center; margin: 4px 0 2px; }
+.reference { font-size: 8pt; text-align: center; color: #333; }
 
-        /* ─── Moyens de paiement ─── */
-        .moyens { display: flex; gap: 10px; }
-        .moyen { flex: 1; border: 1px solid #bbb; border-radius: 4px; padding: 6px 8px; }
-        .moyen h3 { margin: 0 0 5px; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .3px; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
-        .qr { display: flex; justify-content: center; margin: 4px 0; }
-        .aide { font-size: 7.5pt; color: #444; line-height: 1.45; margin: 3px 0 0; }
-        .lien { font-size: 6.5pt; color: #666; word-break: break-all; margin-top: 4px; }
-        .ussd { font-size: 13pt; font-weight: bold; text-align: center; letter-spacing: 1px; margin: 2px 0 5px; }
-        .etape { display: flex; gap: 6px; font-size: 8pt; margin: 3px 0; }
-        .num { flex: none; width: 13px; height: 13px; border-radius: 50%; background: #111; color: #fff; font-size: 7pt; font-weight: bold; text-align: center; line-height: 13px; }
+/* ─── Moyens de paiement ─── */
+.moyens { display: flex; gap: 10px; }
+.moyen { flex: 1; border: 1px solid #bbb; border-radius: 4px; padding: 6px 8px; }
+.moyen h3 { margin: 0 0 5px; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .3px; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
+.qr { display: flex; justify-content: center; margin: 4px 0; }
+.aide { font-size: 7.5pt; color: #444; line-height: 1.45; margin: 3px 0 0; }
+.lien { font-size: 6.5pt; color: #666; word-break: break-all; margin-top: 4px; }
+.ussd { font-size: 13pt; font-weight: bold; text-align: center; letter-spacing: 1px; margin: 2px 0 5px; }
+.etape { display: flex; gap: 6px; font-size: 8pt; margin: 3px 0; }
+.num { flex: none; width: 13px; height: 13px; border-radius: 50%; background: #111; color: #fff; font-size: 7pt; font-weight: bold; text-align: center; line-height: 13px; }
 
-        .pied { margin-top: 9px; padding-top: 5px; border-top: 1px solid #ccc; font-size: 7pt; color: #555; line-height: 1.5; }
-    </style>
-</head>
-<body>
-
-<!-- En-tête -->
-<div class="header">
-    <div class="header-left">
-        {% if logo_url %}<img src="{{ logo_url }}" class="pdf-logo" alt="Logo">
-        {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" class="pdf-logo" alt="Logo">{% endif %}
-        <div>
-            <p class="etab-nom">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</p>
-            {% if identite and identite.numero_agrement_mena %}
-            <p class="etab-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>{% endif %}
-            <p class="etab-info">{% if identite %}{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}{% else %}{{ etablissement.adresse|default:"Burkina Faso" }}{% endif %}</p>
-            <p class="etab-info">Tél : {% if identite %}{{ identite.telephone }}{% else %}{{ etablissement.telephone|default:"—" }}{% endif %}</p>
-        </div>
-    </div>
-    <div class="header-right">
-        <div class="doc-badge"><h2>Avis de paiement</h2></div>
-        <div class="doc-meta">
-            Référence : <strong>{{ demande.reference }}</strong><br>
-            Émis le {{ demande.created_at|date:"d/m/Y" }} — Imprimé le {{ now|date:"d/m/Y à H:i" }}
-        </div>
-    </div>
-</div>
+.pied { margin-top: 9px; padding-top: 5px; border-top: 1px solid #ccc; font-size: 7pt; color: #555; line-height: 1.5; }
+{% endblock %}
+{% block entete %}{% include "pdf/partials/entete.html" with compacte=True droite="finances/pdf/partials/avis_paiement_mobile_entete.html" %}{% endblock %}
+{% block corps %}
 
 <!-- Créance -->
 <div class="bloc">
@@ -102,6 +68,4 @@
     Cet avis n'est pas un reçu : le reçu officiel est délivré par l'école après confirmation du paiement.
     Conservez-le jusqu'à réception du reçu.
 </div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,9 +1,5 @@
-{% load signataire_tags %}<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-@page {
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page {
     size: A4;
     margin: 1.5cm 1.5cm;
     @bottom-right {
@@ -11,7 +7,8 @@
         font-size: 7pt;
         color: #000;
     }
-}
+}{% endblock %}
+{% block css %}
 html, body {
     font-family: Arial, sans-serif;
     font-size: 8pt;
@@ -306,11 +303,10 @@ html, body {
     z-index: 1;
 }
 .bul-sig-col { text-align: center; }
-</style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
-
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
 <!-- Filigrane diagonal -->
 <div class="watermark">DUPLICATA</div>
 
@@ -511,6 +507,4 @@ html, body {
     <div class="bul-sig-col"></div>
     <div class="bul-sig-col">{% signataire_auto "BULLETIN" %}</div>
 </div>
-
-</body>
-</html>
+{% endblock %}

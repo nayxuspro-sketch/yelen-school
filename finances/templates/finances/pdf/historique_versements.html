@@ -1,168 +1,118 @@
-{% load qr_tags signataire_tags %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        @page { size: A4 portrait; margin: 15mm; }
-        body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #111; margin: 0; padding: 0; }
+{% extends "pdf/base.html" %}{% load qr_tags signataire_tags %}
+{% block page %}@page { size: A4 portrait; margin: 15mm; }{% endblock %}
+{% block css %}
+body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #111; margin: 0; padding: 0; }
+/* Infos élève */
+.eleve-info {
+    display: flex; justify-content: space-between;
+    margin-bottom: 18px; background: #f8f8f8;
+    padding: 12px; border: 1px solid #ccc;
+}
+.eleve-block { width: 48%; }
+.info-label { font-size: 8pt; color: #555; text-transform: uppercase; margin-bottom: 2px; }
+.info-value { font-size: 11pt; font-weight: bold; border-bottom: 1px dashed #bbb; padding-bottom: 2px; margin-bottom: 8px; }
+.matricule { font-family: monospace; color: #111; }
+.qr-zone { text-align: center; padding-left: 10px; border-left: 1px dashed #ccc; }
+.qr-label { font-size: 6.5pt; color: #888; margin-top: 3px; }
 
-        /* En-tête */
-        .pdf-entete {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2.5px solid #111;
-        }
-        .pdf-entete-gauche { display: flex; align-items: center; gap: 12px; }
-        .pdf-logo { width: 55px; height: 55px; object-fit: contain; filter: grayscale(100%); }
-        .pdf-etab-nom { font-size: 15pt; font-weight: bold; color: #111; margin: 0 0 3px 0; }
-        .pdf-etab-agrement { font-size: 8pt; color: #444; font-style: italic; margin: 2px 0; }
-        .pdf-etab-info { font-size: 8pt; color: #444; margin: 2px 0; }
-        .pdf-entete-droit { text-align: right; }
-        .doc-title { background: #fff; border: 1.5px solid #111; padding: 6px 14px; border-radius: 4px; }
-        .doc-title h2 { margin: 0; font-size: 12pt; color: #111; text-transform: uppercase; letter-spacing: 1px; }
-        .pdf-date { font-size: 8pt; color: #555; margin-top: 5px; }
+/* Résumé financier — hiérarchie par bordure gauche */
+.resume { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 10px; }
+.resume-box { flex: 1; text-align: center; padding: 12px 8px; border: 1pt solid #bbb; }
+.resume-box.du    { background: #fff;    border-left: 2pt solid #555; }
+.resume-box.paye  { background: #fff;    border-left: 3.5pt solid #111; }
+.resume-box.reste { background: #ebebeb; border-left: 2pt solid #555; }
+.r-label { font-size: 8pt; text-transform: uppercase; color: #555; margin-bottom: 4px; }
+.r-value { font-size: 14pt; font-weight: bold; color: #111; }
+.resume-box.paye .r-value { font-size: 15pt; }
+.r-value span { font-size: 9pt; font-weight: normal; }
 
-        /* Titre centré */
-        .pdf-titre {
-            text-align: center; font-size: 14pt; font-weight: bold;
-            text-decoration: underline; text-transform: uppercase;
-            margin: 18px 0 20px 0; color: #111;
-        }
+/* Tableau */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th { background: #111; color: #fff; padding: 8px 10px; text-align: left; font-size: 9pt; text-transform: uppercase; }
+th.right { text-align: right; }
+td { padding: 7px 10px; border-bottom: 1px solid #e0e0e0; font-size: 9pt; }
+td.right { text-align: right; font-weight: bold; }
+tr:nth-child(even) td { background: #f5f5f5; }
+.total-row td { font-weight: bold; border-top: 2px solid #111; border-bottom: 2px solid #111; background: #fff; }
+.empty { text-align: center; color: #777; font-style: italic; padding: 20px; }
 
-        /* Infos élève */
-        .eleve-info {
-            display: flex; justify-content: space-between;
-            margin-bottom: 18px; background: #f8f8f8;
-            padding: 12px; border: 1px solid #ccc;
-        }
-        .eleve-block { width: 48%; }
-        .info-label { font-size: 8pt; color: #555; text-transform: uppercase; margin-bottom: 2px; }
-        .info-value { font-size: 11pt; font-weight: bold; border-bottom: 1px dashed #bbb; padding-bottom: 2px; margin-bottom: 8px; }
-        .matricule { font-family: monospace; color: #111; }
-        .qr-zone { text-align: center; padding-left: 10px; border-left: 1px dashed #ccc; }
-        .qr-label { font-size: 6.5pt; color: #888; margin-top: 3px; }
+/* Pied de page */
+.footer {
+    margin-top: 30px; display: flex; justify-content: space-between;
+    page-break-inside: avoid; break-inside: avoid;
+    align-items: flex-end; padding-top: 12px; border-top: 1px solid #ccc;
+}
+.footer-info { font-size: 8pt; color: #777; }
+{% endblock %}
+{% block corps %}
+<div class="pdf-titre">Historique des versements</div>
+<p class="pdf-sous-titre">Imprimé le {{ now|date:"d/m/Y à H:i" }}</p>
 
-        /* Résumé financier — hiérarchie par bordure gauche */
-        .resume { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 10px; }
-        .resume-box { flex: 1; text-align: center; padding: 12px 8px; border: 1pt solid #bbb; }
-        .resume-box.du    { background: #fff;    border-left: 2pt solid #555; }
-        .resume-box.paye  { background: #fff;    border-left: 3.5pt solid #111; }
-        .resume-box.reste { background: #ebebeb; border-left: 2pt solid #555; }
-        .r-label { font-size: 8pt; text-transform: uppercase; color: #555; margin-bottom: 4px; }
-        .r-value { font-size: 14pt; font-weight: bold; color: #111; }
-        .resume-box.paye .r-value { font-size: 15pt; }
-        .r-value span { font-size: 9pt; font-weight: normal; }
-
-        /* Tableau */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #111; color: #fff; padding: 8px 10px; text-align: left; font-size: 9pt; text-transform: uppercase; }
-        th.right { text-align: right; }
-        td { padding: 7px 10px; border-bottom: 1px solid #e0e0e0; font-size: 9pt; }
-        td.right { text-align: right; font-weight: bold; }
-        tr:nth-child(even) td { background: #f5f5f5; }
-        .total-row td { font-weight: bold; border-top: 2px solid #111; border-bottom: 2px solid #111; background: #fff; }
-        .empty { text-align: center; color: #777; font-style: italic; padding: 20px; }
-
-        /* Pied de page */
-        .footer {
-            margin-top: 30px; display: flex; justify-content: space-between;
-            page-break-inside: avoid; break-inside: avoid;
-            align-items: flex-end; padding-top: 12px; border-top: 1px solid #ccc;
-        }
-        .footer-info { font-size: 8pt; color: #777; }
-    </style>
-</head>
-<body>
-    <div class="pdf-entete">
-        <div class="pdf-entete-gauche">
-            {% if logo_url %}
-            <img src="{{ logo_url }}" class="pdf-logo" alt="Logo">
-            {% elif etab_logo_url %}
-            <img src="{{ etab_logo_url }}" class="pdf-logo" alt="Logo">
-            {% endif %}
-            <div>
-                <p class="pdf-etab-nom">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</p>
-                {% if identite and identite.numero_agrement_mena %}
-                <p class="pdf-etab-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>
-                {% endif %}
-                <p class="pdf-etab-info">{% if identite %}{{ identite.adresse_complete|default:etablissement.adresse|default:"Burkina Faso" }}{% else %}{{ etablissement.adresse|default:"Burkina Faso" }}{% endif %}</p>
-                <p class="pdf-etab-info">{% if identite %}Tél : {{ identite.telephone }}{% else %}Tél : {{ etablissement.telephone|default:"—" }}{% endif %}</p>
-            </div>
-        </div>
-        <div class="pdf-entete-droit">
-            <div class="doc-title"><h2>Historique de Versements</h2></div>
-            <p class="pdf-date">Imprimé le {{ now|date:"d/m/Y à H:i" }}</p>
-        </div>
+{% with etab_nom=identite.nom_etablissement|default:etablissement.nom %}
+<div class="eleve-info">
+    <div class="eleve-block">
+        <div class="info-label">Élève</div>
+        <div class="info-value">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</div>
+        <div class="info-label">Matricule</div>
+        <div class="info-value matricule">{{ inscription.eleve.matricule }}</div>
     </div>
-
-    <div class="pdf-titre">Historique des Versements</div>
-
-    {% with etab_nom=identite.nom_etablissement|default:etablissement.nom %}
-    <div class="eleve-info">
-        <div class="eleve-block">
-            <div class="info-label">Élève</div>
-            <div class="info-value">{{ inscription.eleve.nom|upper }} {{ inscription.eleve.prenom }}</div>
-            <div class="info-label">Matricule</div>
-            <div class="info-value matricule">{{ inscription.eleve.matricule }}</div>
-        </div>
-        <div class="eleve-block">
-            <div class="info-label">Classe</div>
-            <div class="info-value">{{ inscription.classe.nom }}</div>
-            <div class="info-label">Année scolaire</div>
-            <div class="info-value">{{ inscription.annee_scolaire.libelle }}</div>
-        </div>
-        <div class="qr-zone">
-            {% qr_eleve inscription.eleve.matricule inscription.eleve.nom inscription.eleve.prenom etab_nom 'grand' adresse=identite.adresse ville=identite.ville telephone=identite.telephone %}
-            <div class="qr-label">{{ inscription.eleve.matricule }}</div>
-        </div>
+    <div class="eleve-block">
+        <div class="info-label">Classe</div>
+        <div class="info-value">{{ inscription.classe.nom }}</div>
+        <div class="info-label">Année scolaire</div>
+        <div class="info-value">{{ inscription.annee_scolaire.libelle }}</div>
     </div>
-    {% endwith %}
-
-    <div class="resume">
-        <div class="resume-box du">
-            <div class="r-label">Total Dû</div>
-            <div class="r-value">{{ total_du }} <span>FCFA</span></div>
-        </div>
-        <div class="resume-box paye">
-            <div class="r-label">Total Payé</div>
-            <div class="r-value">{{ total_paye }} <span>FCFA</span></div>
-        </div>
-        <div class="resume-box reste">
-            <div class="r-label">Reste à Payer</div>
-            <div class="r-value">{{ reste_a_payer }} <span>FCFA</span></div>
-        </div>
+    <div class="qr-zone">
+        {% qr_eleve inscription.eleve.matricule inscription.eleve.nom inscription.eleve.prenom etab_nom 'grand' adresse=identite.adresse_complete ville=identite.ville telephone=identite.telephone %}
+        <div class="qr-label">{{ inscription.eleve.matricule }}</div>
     </div>
+</div>
+{% endwith %}
 
-    <table>
-        <thead>
-            <tr>
-                <th>Date</th><th>Rubrique</th><th>Mode</th><th>Référence</th><th class="right">Montant</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in paiements %}
-            <tr>
-                <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
-                <td>{{ p.rubrique.nom|default:"—" }}</td>
-                <td>{{ p.get_mode_paiement_display }}</td>
-                <td>{{ p.reference|default:"-" }}</td>
-                <td class="right">{{ p.montant }} FCFA</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="empty">Aucun versement effectué.</td></tr>
-            {% endfor %}
-            {% if paiements %}
-            <tr class="total-row">
-                <td colspan="4">Total versé</td>
-                <td class="right">{{ total_paye }} FCFA</td>
-            </tr>
-            {% endif %}
-        </tbody>
-    </table>
-
-    <div class="footer">
-        <div class="footer-info">YELEN SCHOOL — Logiciel de gestion scolaire</div>
-        <div>{% signataire_auto "HIST_VERSEMENTS" %}</div>
+<div class="resume">
+    <div class="resume-box du">
+        <div class="r-label">Total Dû</div>
+        <div class="r-value">{{ total_du }} <span>FCFA</span></div>
     </div>
-</body>
-</html>
+    <div class="resume-box paye">
+        <div class="r-label">Total Payé</div>
+        <div class="r-value">{{ total_paye }} <span>FCFA</span></div>
+    </div>
+    <div class="resume-box reste">
+        <div class="r-label">Reste à Payer</div>
+        <div class="r-value">{{ reste_a_payer }} <span>FCFA</span></div>
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Date</th><th>Rubrique</th><th>Mode</th><th>Référence</th><th class="right">Montant</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in paiements %}
+        <tr>
+            <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
+            <td>{{ p.rubrique.nom|default:"—" }}</td>
+            <td>{{ p.get_mode_paiement_display }}</td>
+            <td>{{ p.reference|default:"-" }}</td>
+            <td class="right">{{ p.montant }} FCFA</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty">Aucun versement effectué.</td></tr>
+        {% endfor %}
+        {% if paiements %}
+        <tr class="total-row">
+            <td colspan="4">Total versé</td>
+            <td class="right">{{ total_paye }} FCFA</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<div class="footer">
+    <div class="footer-info">YELEN SCHOOL — Logiciel de gestion scolaire</div>
+    <div>{% signataire_auto "HIST_VERSEMENTS" %}</div>
+</div>
+{% endblock %}

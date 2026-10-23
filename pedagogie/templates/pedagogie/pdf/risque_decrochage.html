@@ -1,282 +1,276 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Risque de décrochage — {{ annee.libelle|default:"Année scolaire" }}</title>
-  <style>
-    @page {
-      size: A4;
-      margin: 1.5cm;
-      @bottom-center {
-        content: "Page " counter(page) " / " counter(pages);
-        font-size: 10px;
-        color: #555;
-      }
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 11px;
-      line-height: 1.4;
-      color: #111;
-    }
-
-    /* ── En-tête ── */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 2.5px solid #111;
-    }
-    .header-left h1 {
-      font-size: 16px;
-      color: #111;
-      margin-bottom: 4px;
-      font-weight: bold;
-    }
-    .header-left p {
-      color: #555;
-      font-size: 11px;
-    }
-    .header-right {
-      text-align: right;
+{% extends "pdf/base.html" %}{% load static %}
+{% block titre %}Risque de décrochage — {{ annee.libelle|default:"Année scolaire" }}{% endblock %}
+{% block page %}@page {
+    size: A4;
+    margin: 1.5cm;
+    @bottom-center {
+      content: "Page " counter(page) " / " counter(pages);
       font-size: 10px;
       color: #555;
     }
+}{% endblock %}
+{% block css %}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #111;
+}
 
-    /* ── Blocs statistiques ── */
-    .stats-row {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    .stat-box {
-      flex: 1;
-      padding: 12px;
-      text-align: center;
-      background: #fff;
-      border: 1pt solid #ccc;
-      border-left: 3pt solid #111;
-    }
-    .stat-box.total      { border-left-color: #111; }
-    .stat-box.critique   { border-left-color: #111; }
-    .stat-box.eleve      { border-left-color: #555; }
-    .stat-box.modere     { border-left-color: #999; }
-    .stat-box .value {
-      font-size: 20px;
-      font-weight: bold;
-      color: #111;
-    }
-    .stat-box.critique .value { font-weight: bold; }
-    .stat-box.eleve .value    { font-weight: bold; font-style: italic; }
-    .stat-box.modere .value   { color: #555; }
-    .stat-box .label {
-      font-size: 9px;
-      color: #555;
-      text-transform: uppercase;
-    }
+/* ── En-tête ── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2.5px solid #111;
+}
+.header-left h1 {
+  font-size: 16px;
+  color: #111;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+.header-left p {
+  color: #555;
+  font-size: 11px;
+}
+.header-right {
+  text-align: right;
+  font-size: 10px;
+  color: #555;
+}
 
-    /* ── Tableau ── */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 15px;
-    }
-    th {
-      background: #111;
-      color: white;
-      padding: 8px;
-      font-weight: bold;
-      font-size: 10px;
-      text-transform: uppercase;
-      text-align: left;
-      border-bottom: 2px solid #111;
-    }
-    td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-    tbody tr:nth-child(even) { background: #f5f5f5; }
+/* ── Blocs statistiques ── */
+.stats-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+.stat-box {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  background: #fff;
+  border: 1pt solid #ccc;
+  border-left: 3pt solid #111;
+}
+.stat-box.total      { border-left-color: #111; }
+.stat-box.critique   { border-left-color: #111; }
+.stat-box.eleve      { border-left-color: #555; }
+.stat-box.modere     { border-left-color: #999; }
+.stat-box .value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #111;
+}
+.stat-box.critique .value { font-weight: bold; }
+.stat-box.eleve .value    { font-weight: bold; font-style: italic; }
+.stat-box.modere .value   { color: #555; }
+.stat-box .label {
+  font-size: 9px;
+  color: #555;
+  text-transform: uppercase;
+}
 
-    /* ── Score / barre de progression ── */
-    .score-cell {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .score-bar {
-      width: 60px;
-      height: 8px;
-      background: #ddd;
-      overflow: hidden;
-    }
-    .score-bar-inner {
-      height: 100%;
-      background: #555;
-    }
-    .score-value {
-      font-weight: bold;
-      min-width: 28px;
-      color: #111;
-    }
+/* ── Tableau ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+th {
+  background: #111;
+  color: white;
+  padding: 8px;
+  font-weight: bold;
+  font-size: 10px;
+  text-transform: uppercase;
+  text-align: left;
+  border-bottom: 2px solid #111;
+}
+td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+tbody tr:nth-child(even) { background: #f5f5f5; }
 
-    /* ── Badges de risque N&B ── */
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      font-size: 9px;
-      font-weight: bold;
-    }
-    .badge-critique {
-      background: #111;
-      color: #fff;
-    }
-    .badge-eleve {
-      background: #555;
-      color: #fff;
-    }
-    .badge-modere {
-      background: #ddd;
-      border: 1pt solid #555;
-      color: #111;
-    }
-    .badge-faible {
-      background: #fff;
-      border: 1pt solid #555;
-      color: #111;
-    }
+/* ── Score / barre de progression ── */
+.score-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.score-bar {
+  width: 60px;
+  height: 8px;
+  background: #ddd;
+  overflow: hidden;
+}
+.score-bar-inner {
+  height: 100%;
+  background: #555;
+}
+.score-value {
+  font-weight: bold;
+  min-width: 28px;
+  color: #111;
+}
 
-    .matricule-small {
-      font-size: 9px;
-      color: #555;
-    }
+/* ── Badges de risque N&B ── */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 9px;
+  font-weight: bold;
+}
+.badge-critique {
+  background: #111;
+  color: #fff;
+}
+.badge-eleve {
+  background: #555;
+  color: #fff;
+}
+.badge-modere {
+  background: #ddd;
+  border: 1pt solid #555;
+  color: #111;
+}
+.badge-faible {
+  background: #fff;
+  border: 1pt solid #555;
+  color: #111;
+}
 
-    .facteurs {
-      font-size: 9px;
-      color: #555;
-      max-width: 200px;
-    }
+.matricule-small {
+  font-size: 9px;
+  color: #555;
+}
 
-    .vide-cell {
-      text-align: center;
-      padding: 30px;
-      color: #555;
-      font-style: italic;
-    }
+.facteurs {
+  font-size: 9px;
+  color: #555;
+  max-width: 200px;
+}
 
-    /* ── Légende ── */
-    .legend {
-      margin-top: 15px;
-      padding: 10px;
-      background: #f5f5f5;
-      border: 1pt solid #ccc;
-      font-size: 9px;
-    }
-    .legend-item {
-      display: inline-block;
-      margin-right: 15px;
-    }
+.vide-cell {
+  text-align: center;
+  padding: 30px;
+  color: #555;
+  font-style: italic;
+}
 
-    /* ── Pied de page ── */
-    .footer {
-      margin-top: 20px;
-      padding-top: 10px;
-      border-top: 1px solid #ccc;
-      font-size: 9px;
-      color: #555;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
-  <div class="header">
-    <div class="header-left">
-      <h1>Rapport de risque de décrochage scolaire</h1>
-      <p>{% if annee %}{{ annee.libelle }}{% else %}Année en cours{% endif %}</p>
-    </div>
-    <div class="header-right">
-      <p>Généré le {% now "d/m/Y à H:i" %}</p>
-    </div>
+/* ── Légende ── */
+.legend {
+  margin-top: 15px;
+  padding: 10px;
+  background: #f5f5f5;
+  border: 1pt solid #ccc;
+  font-size: 9px;
+}
+.legend-item {
+  display: inline-block;
+  margin-right: 15px;
+}
+
+/* ── Pied de page ── */
+.footer {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #ccc;
+  font-size: 9px;
+  color: #555;
+  text-align: center;
+}
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block corps %}
+<div class="header">
+  <div class="header-left">
+    <h1>Rapport de risque de décrochage scolaire</h1>
+    <p>{% if annee %}{{ annee.libelle }}{% else %}Année en cours{% endif %}</p>
   </div>
-
-  <div class="stats-row">
-    <div class="stat-box total">
-      <div class="value">{{ stats.total }}</div>
-      <div class="label">Élèves analysés</div>
-    </div>
-    <div class="stat-box critique">
-      <div class="value">{{ stats.CRITIQUE }}</div>
-      <div class="label">Critique (76-100)</div>
-    </div>
-    <div class="stat-box eleve">
-      <div class="value">{{ stats.ELEVE }}</div>
-      <div class="label">Élevé (51-75)</div>
-    </div>
-    <div class="stat-box modere">
-      <div class="value">{{ stats.MODERE }}</div>
-      <div class="label">Modéré (26-50)</div>
-    </div>
+  <div class="header-right">
+    <p>Généré le {% now "d/m/Y à H:i" %}</p>
   </div>
+</div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Élève</th>
-        <th>Classe</th>
-        <th>Score</th>
-        <th>Niveau</th>
-        <th>Facteurs</th>
-        <th>Date calcul</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in risques %}
-      <tr>
-        <td>
-          <strong>{{ r.eleve.nom }} {{ r.eleve.prenom }}</strong>
-          {% if r.eleve.matricule %}<br><span class="matricule-small">{{ r.eleve.matricule }}</span>{% endif %}
-        </td>
-        <td>{{ r.classe.nom }}</td>
-        <td>
-          <div class="score-cell">
-            <div class="score-bar">
-              <div class="score-bar-inner" style="width: {{ r.score }}%;"></div>
-            </div>
-            <span class="score-value">{{ r.score }}</span>
+<div class="stats-row">
+  <div class="stat-box total">
+    <div class="value">{{ stats.total }}</div>
+    <div class="label">Élèves analysés</div>
+  </div>
+  <div class="stat-box critique">
+    <div class="value">{{ stats.CRITIQUE }}</div>
+    <div class="label">Critique (76-100)</div>
+  </div>
+  <div class="stat-box eleve">
+    <div class="value">{{ stats.ELEVE }}</div>
+    <div class="label">Élevé (51-75)</div>
+  </div>
+  <div class="stat-box modere">
+    <div class="value">{{ stats.MODERE }}</div>
+    <div class="label">Modéré (26-50)</div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Élève</th>
+      <th>Classe</th>
+      <th>Score</th>
+      <th>Niveau</th>
+      <th>Facteurs</th>
+      <th>Date calcul</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in risques %}
+    <tr>
+      <td>
+        <strong>{{ r.eleve.nom }} {{ r.eleve.prenom }}</strong>
+        {% if r.eleve.matricule %}<br><span class="matricule-small">{{ r.eleve.matricule }}</span>{% endif %}
+      </td>
+      <td>{{ r.classe.nom }}</td>
+      <td>
+        <div class="score-cell">
+          <div class="score-bar">
+            <div class="score-bar-inner" style="width: {{ r.score }}%;"></div>
           </div>
-        </td>
-        <td>
-          {% if r.niveau == 'CRITIQUE' %}<span class="badge badge-critique">CRITIQUE</span>
-          {% elif r.niveau == 'ELEVE' %}<span class="badge badge-eleve">ÉLEVÉ</span>
-          {% elif r.niveau == 'MODERE' %}<span class="badge badge-modere">MODÉRÉ</span>
-          {% else %}<span class="badge badge-faible">FAIBLE</span>{% endif %}
-        </td>
-        <td class="facteurs">
-          {% for f in r.facteurs %}{{ f.libelle }} (+{{ f.points }}){% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
-        </td>
-        <td>{{ r.date_calcul|date:"d/m/Y H:i" }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="6" class="vide-cell">Aucun élève à risque trouvé.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+          <span class="score-value">{{ r.score }}</span>
+        </div>
+      </td>
+      <td>
+        {% if r.niveau == 'CRITIQUE' %}<span class="badge badge-critique">CRITIQUE</span>
+        {% elif r.niveau == 'ELEVE' %}<span class="badge badge-eleve">ÉLEVÉ</span>
+        {% elif r.niveau == 'MODERE' %}<span class="badge badge-modere">MODÉRÉ</span>
+        {% else %}<span class="badge badge-faible">FAIBLE</span>{% endif %}
+      </td>
+      <td class="facteurs">
+        {% for f in r.facteurs %}{{ f.libelle }} (+{{ f.points }}){% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+      </td>
+      <td>{{ r.date_calcul|date:"d/m/Y H:i" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="vide-cell">Aucun élève à risque trouvé.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-  <div class="legend">
-    <strong>Légende :</strong>
-    <span class="legend-item"><span class="badge badge-critique">CRITIQUE</span> (76-100) : Intervention urgente</span>
-    <span class="legend-item"><span class="badge badge-eleve">ÉLEVÉ</span> (51-75) : Entretien parents recommandé</span>
-    <span class="legend-item"><span class="badge badge-modere">MODÉRÉ</span> (26-50) : Surveillance renforcée</span>
-    <span class="legend-item"><span class="badge badge-faible">FAIBLE</span> (0-25) : Aucune action immédiate</span>
-  </div>
+<div class="legend">
+  <strong>Légende :</strong>
+  <span class="legend-item"><span class="badge badge-critique">CRITIQUE</span> (76-100) : Intervention urgente</span>
+  <span class="legend-item"><span class="badge badge-eleve">ÉLEVÉ</span> (51-75) : Entretien parents recommandé</span>
+  <span class="legend-item"><span class="badge badge-modere">MODÉRÉ</span> (26-50) : Surveillance renforcée</span>
+  <span class="legend-item"><span class="badge badge-faible">FAIBLE</span> (0-25) : Aucune action immédiate</span>
+</div>
 
-  <div class="footer">
-    <p>YELEN SCHOOL — Logiciel de gestion scolaire — yelengroup.com</p>
-  </div>
-</body>
-</html>
+<div class="footer">
+  <p>YELEN SCHOOL — Logiciel de gestion scolaire — yelengroup.com</p>
+</div>
+{% endblock %}

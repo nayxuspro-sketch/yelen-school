@@ -316,7 +316,7 @@ def prediction_classe_pdf(request, class_id):
         'annee': annee,
         'predictions': predictions,
         'etablissement': etab,
-        'identite': etab_ctx.get('identite'),
+        **etab_ctx,
         'licence_info': _pdf_licence_info(request, etab),
     }, request=request)
 

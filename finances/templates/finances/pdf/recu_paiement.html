@@ -1,165 +1,123 @@
-{% load qr_tags signataire_tags %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        /* Reçu A5 paysage (210 × 148 mm) : tout le contenu tient sur une page. */
-        @page {
-            size: A5 landscape;
-            margin: 7mm 9mm;
-        }
-        body {
-            font-family: "DejaVu Sans", sans-serif;
-            font-size: 8.5pt;
-            color: #111;
-            margin: 0;
-            padding: 0;
-        }
+{% extends "pdf/base.html" %}{% load qr_tags signataire_tags %}
+{% block page %}@page {
+    size: A5 landscape;
+    margin: 7mm 9mm;
+}{% endblock %}
+{% block css %}
+/* Reçu A5 paysage (210 × 148 mm) : tout le contenu tient sur une page. */
 
-        /* ─── En-tête ─── */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #111;
-            margin-bottom: 6px;
-        }
-        .header-left { display: flex; align-items: center; gap: 8px; }
-        .pdf-logo { width: 38px; height: 38px; object-fit: contain; filter: grayscale(100%); }
-        .etab-nom  { font-size: 12pt; font-weight: bold; color: #111; margin: 0 0 1px; }
-        .etab-agrement { font-size: 7pt; color: #444; font-style: italic; margin: 1px 0; }
-        .etab-info { font-size: 7pt; color: #444; margin: 1px 0; }
-        .header-right { text-align: right; }
-        .doc-badge {
-            background: #fff;
-            border: 1.5px solid #111;
-            padding: 3px 10px;
-            border-radius: 4px;
-            display: inline-block;
-        }
-        .doc-badge h2 { margin: 0; font-size: 10pt; text-transform: uppercase; letter-spacing: .5px; color: #111; }
-        .doc-meta { font-size: 6.5pt; color: #555; margin-top: 3px; line-height: 1.4; }
+body {
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 8.5pt;
+    color: #111;
+    margin: 0;
+    padding: 0;
+}
+.doc-badge {
+    background: #fff;
+    border: 1.5px solid #111;
+    padding: 3px 10px;
+    border-radius: 4px;
+    display: inline-block;
+}
+.doc-badge h2 { margin: 0; font-size: 10pt; text-transform: uppercase; letter-spacing: .5px; color: #111; }
+.doc-meta { font-size: 6.5pt; color: #555; margin-top: 3px; line-height: 1.4; }
 
-        /* ─── Infos élève ─── */
-        .eleve-section {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 6px;
-            background: #f8f8f8;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 4px 8px;
-        }
-        .eleve-cols { flex: 1; display: flex; gap: 12px; }
-        .eleve-col  { flex: 1; }
-        .eleve-col:first-child { flex: 1.8; }
-        .lbl { font-size: 6.5pt; color: #555; text-transform: uppercase; margin-bottom: 1px; }
-        .val {
-            font-size: 9pt; font-weight: bold;
-            border-bottom: 1px dashed #bbb; padding-bottom: 1px; margin-bottom: 4px;
-            color: #111;
-        }
-        .val.mono { font-family: monospace; color: #111; }
-        .qr-zone { text-align: center; border-left: 1px dashed #ccc; padding-left: 8px; }
-        .qr-zone img { width: 17mm; height: 17mm; margin: 0 auto; }
-        .qr-zone small { font-size: 6pt; color: #888; display: block; margin-top: 1px; }
+/* ─── Infos élève ─── */
+.eleve-section {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    background: #f8f8f8;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+.eleve-cols { flex: 1; display: flex; gap: 12px; }
+.eleve-col  { flex: 1; }
+.eleve-col:first-child { flex: 1.8; }
+.lbl { font-size: 6.5pt; color: #555; text-transform: uppercase; margin-bottom: 1px; }
+.val {
+    font-size: 9pt; font-weight: bold;
+    border-bottom: 1px dashed #bbb; padding-bottom: 1px; margin-bottom: 4px;
+    color: #111;
+}
+.val.mono { font-family: monospace; color: #111; }
+.qr-zone { text-align: center; border-left: 1px dashed #ccc; padding-left: 8px; }
+.qr-zone img { width: 17mm; height: 17mm; margin: 0 auto; }
+.qr-zone small { font-size: 6pt; color: #888; display: block; margin-top: 1px; }
 
-        /* ─── Résumé 3 blocs ─── */
-        .resume {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 6px;
-        }
-        .r-box {
-            flex: 1; text-align: center;
-            padding: 4px 6px; border-radius: 4px;
-            border: 1pt solid #bbb;
-        }
-        /* Hiérarchie par bordure gauche : du (neutre) · paye (fort) · reste (grisé) */
-        .r-box.du    { background: #fff;  border-left: 2pt solid #555; }
-        .r-box.paye  { background: #fff;  border-left: 3.5pt solid #111; }
-        .r-box.reste { background: #ebebeb; border-left: 2pt solid #555; }
-        .r-lbl { font-size: 6.5pt; text-transform: uppercase; color: #555; margin-bottom: 2px; }
-        .r-val { font-size: 11.5pt; font-weight: bold; line-height: 1; color: #111; }
-        .r-box.paye .r-val { font-size: 12.5pt; }
-        .r-val span { font-size: 7.5pt; font-weight: normal; }
+/* ─── Résumé 3 blocs ─── */
+.resume {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.r-box {
+    flex: 1; text-align: center;
+    padding: 4px 6px; border-radius: 4px;
+    border: 1pt solid #bbb;
+}
+/* Hiérarchie par bordure gauche : du (neutre) · paye (fort) · reste (grisé) */
+.r-box.du    { background: #fff;  border-left: 2pt solid #555; }
+.r-box.paye  { background: #fff;  border-left: 3.5pt solid #111; }
+.r-box.reste { background: #ebebeb; border-left: 2pt solid #555; }
+.r-lbl { font-size: 6.5pt; text-transform: uppercase; color: #555; margin-bottom: 2px; }
+.r-val { font-size: 11.5pt; font-weight: bold; line-height: 1; color: #111; }
+.r-box.paye .r-val { font-size: 12.5pt; }
+.r-val span { font-size: 7.5pt; font-weight: normal; }
 
-        /* ─── Tableau rubriques ─── */
-        table { width: 100%; border-collapse: collapse; }
-        th {
-            background: #111; color: #fff;
-            padding: 3px 6px; font-size: 7.5pt; text-transform: uppercase;
-        }
-        th.r { text-align: right; }
-        th.c { text-align: center; }
-        td { padding: 1px 6px; border-bottom: 1px solid #e0e0e0; font-size: 8pt; vertical-align: middle; }
-        td.r { text-align: right; font-weight: bold; }
-        td.c { text-align: center; }
-        tr:nth-child(even) { background: #f4f4f4; }
-        .total-row td {
-            font-weight: bold; font-size: 8.5pt;
-            border-top: 2px solid #111;
-            border-bottom: 2px solid #111;
-            background: #fff;
-            color: #111;
-        }
-        .badge-ok {
-            background: #fff; color: #111;
-            border: 1px solid #555; border-radius: 8px;
-            padding: 0 6px; font-size: 7pt; font-weight: bold;
-        }
-        .badge-reste {
-            background: #ddd; color: #111;
-            border: 1px solid #888; border-radius: 8px;
-            padding: 0 6px; font-size: 7pt; font-style: italic;
-        }
-        .empty { text-align: center; color: #777; font-style: italic; padding: 8px; }
+/* ─── Tableau rubriques ─── */
+table { width: 100%; border-collapse: collapse; }
+th {
+    background: #111; color: #fff;
+    padding: 3px 6px; font-size: 7.5pt; text-transform: uppercase;
+}
+th.r { text-align: right; }
+th.c { text-align: center; }
+td { padding: 1px 6px; border-bottom: 1px solid #e0e0e0; font-size: 8pt; vertical-align: middle; }
+td.r { text-align: right; font-weight: bold; }
+td.c { text-align: center; }
+tr:nth-child(even) { background: #f4f4f4; }
+.total-row td {
+    font-weight: bold; font-size: 8.5pt;
+    border-top: 2px solid #111;
+    border-bottom: 2px solid #111;
+    background: #fff;
+    color: #111;
+}
+.badge-ok {
+    background: #fff; color: #111;
+    border: 1px solid #555; border-radius: 8px;
+    padding: 0 6px; font-size: 7pt; font-weight: bold;
+}
+.badge-reste {
+    background: #ddd; color: #111;
+    border: 1px solid #888; border-radius: 8px;
+    padding: 0 6px; font-size: 7pt; font-style: italic;
+}
+.empty { text-align: center; color: #777; font-style: italic; padding: 8px; }
 
-        /* ─── Pied de page ─── */
-        .footer {
-            margin-top: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            padding-top: 4px;
-            border-top: 1px solid #ccc;
-        }
-        .footer-info { font-size: 7pt; color: #666; line-height: 1.5; }
-        /* Bloc signataire compacté pour le format A5 (prime sur les styles injectés par signataire_auto). */
-        .footer .sig-zone { margin-top: 0; text-align: right; }
-        .footer .msig-zone { margin-top: 0; }
-        .footer .msig-date { font-size: 8pt; margin-bottom: 2pt; }
-        .footer .msig-fonction { font-size: 8pt; }
-        .footer .msig-name { font-size: 9pt; margin-top: 7mm; }
-        .footer .msig-honors { font-size: 7pt; }
-    </style>
-</head>
-<body>
-
-<!-- En-tête -->
-<div class="header">
-    <div class="header-left">
-        {% if logo_url %}<img src="{{ logo_url }}" class="pdf-logo" alt="Logo">
-        {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" class="pdf-logo" alt="Logo">{% endif %}
-        <div>
-            <p class="etab-nom">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}</p>
-            {% if identite and identite.numero_agrement_mena %}
-            <p class="etab-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>{% endif %}
-            <p class="etab-info">{% if identite %}{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}{% else %}{{ etablissement.adresse|default:"Burkina Faso" }}{% endif %}</p>
-            <p class="etab-info">Tél : {% if identite %}{{ identite.telephone }}{% else %}{{ etablissement.telephone|default:"—" }}{% endif %}</p>
-        </div>
-    </div>
-    <div class="header-right">
-        <div class="doc-badge"><h2>Reçu de Paiement</h2></div>
-        <div class="doc-meta">
-            Reçu N° : <strong>{{ paiement.numero_recu|default:paiement.id }}</strong><br>
-            {% if paiement.reference %}Tx Réf. : {{ paiement.reference }}<br>{% endif %}
-            Imprimé le {{ now|date:"d/m/Y à H:i" }}
-        </div>
-    </div>
-</div>
+/* ─── Pied de page ─── */
+.footer {
+    margin-top: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 4px;
+    border-top: 1px solid #ccc;
+}
+.footer-info { font-size: 7pt; color: #666; line-height: 1.5; }
+/* Bloc signataire compacté pour le format A5 (prime sur les styles injectés par signataire_auto). */
+.footer .sig-zone { margin-top: 0; text-align: right; }
+.footer .msig-zone { margin-top: 0; }
+.footer .msig-date { font-size: 8pt; margin-bottom: 2pt; }
+.footer .msig-fonction { font-size: 8pt; }
+.footer .msig-name { font-size: 9pt; margin-top: 7mm; }
+.footer .msig-honors { font-size: 7pt; }
+{% endblock %}
+{% block entete %}{% include "pdf/partials/entete.html" with compacte=True droite="finances/pdf/partials/recu_paiement_entete.html" %}{% endblock %}
+{% block corps %}
 
 <!-- Infos élève -->
 {% with etab_nom=identite.nom_etablissement|default:etablissement.nom %}
@@ -190,7 +148,7 @@
         </div>{% endif %}
     </div>
     <div class="qr-zone">
-        {% qr_eleve inscription.eleve.matricule inscription.eleve.nom inscription.eleve.prenom etab_nom 'grand' adresse=identite.adresse ville=identite.ville telephone=identite.telephone %}
+        {% qr_eleve inscription.eleve.matricule inscription.eleve.nom inscription.eleve.prenom etab_nom 'grand' adresse=identite.adresse_complete ville=identite.ville telephone=identite.telephone %}
         <small>{{ inscription.eleve.matricule }}</small>
     </div>
 </div>
@@ -267,6 +225,4 @@
         {% signataire_auto "RECU_PAIEMENT" %}
     </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

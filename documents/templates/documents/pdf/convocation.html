@@ -1,373 +1,358 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-  /* ── Base ────────────────────────────────────────────────────────────────── */
-  @page {
+{% extends "pdf/base.html" %}
+{% block page %}@page {
     size: A4;
     margin: 0;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: Arial, 'DejaVu Serif', 'Times New Roman', serif;
-    font-size: 11pt;
-    color: #000;
-    line-height: 1.55;
-    background: #fff;
-  }
+}{% endblock %}
+{% block css %}
+/* ── Base ────────────────────────────────────────────────────────────────── */
 
-  /* ── Lettre (page break entre convocations) ──────────────────────────────── */
-  .lettre { page-break-after: always; }
-  .lettre:last-child { page-break-after: avoid; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Arial, 'DejaVu Serif', 'Times New Roman', serif;
+  font-size: 11pt;
+  color: #000;
+  line-height: 1.55;
+  background: #fff;
+}
 
-  /* ── Bande supérieure ─────────────────────────────────────────────────── */
-  .top-stripe {
-    height: 6pt;
-    background: #111;
-    width: 100%;
-  }
+/* ── Lettre (page break entre convocations) ──────────────────────────────── */
+.lettre { page-break-after: always; }
+.lettre:last-child { page-break-after: avoid; }
 
-  /* ── Zone de contenu principal ───────────────────────────────────────────── */
-  .page-inner {
-    padding: 1.4cm 2cm 1.6cm 2cm;
-  }
+/* ── Bande supérieure ─────────────────────────────────────────────────── */
+.top-stripe {
+  height: 6pt;
+  background: #111;
+  width: 100%;
+}
 
-  /* ── En-tête établissement ───────────────────────────────────────────────── */
-  .entete-wrapper {
-    padding-bottom: 10pt;
-    margin-bottom: 6pt;
-  }
-  .entete-sep {
-    height: 0;
-    border: none;
-    border-top: 2.5pt solid #111;
-    margin-bottom: 2pt;
-  }
-  .entete-sep-thin {
-    height: 0;
-    border: none;
-    border-top: 0.75pt solid #aaa;
-    margin-bottom: 10pt;
-  }
+/* ── Zone de contenu principal ───────────────────────────────────────────── */
+.page-inner {
+  padding: 1.4cm 2cm 1.6cm 2cm;
+}
 
-  /* Agrandir le logo et le cachet dans le contexte convocation */
-  .entete-wrapper table { border-collapse: collapse; }
-  .entete-wrapper table tr td:first-child { width: 110px; }
-  .entete-wrapper table tr td:first-child img {
-    width: 100px;
-    height: 100px;
-    display: block;
-    object-fit: contain;
-    filter: grayscale(100%);
-  }
-  .entete-wrapper table tr td:last-child { width: 100px; }
-  .entete-wrapper table tr td:last-child img {
-    width: 90px;
-    height: 90px;
-    display: block;
-    object-fit: contain;
-    margin-left: auto;
-    filter: grayscale(100%);
-  }
-  /* Nom de l'établissement plus grand */
-  .entete-wrapper table tr td:nth-child(2) p:first-child {
-    font-size: 15pt;
-  }
+/* ── En-tête établissement ───────────────────────────────────────────────── */
+.entete-wrapper {
+  padding-bottom: 10pt;
+  margin-bottom: 6pt;
+}
 
-  /* ── Titre du document ───────────────────────────────────────────────────── */
-  .doc-title-zone {
-    margin: 14pt 0 10pt 0;
-    text-align: center;
-  }
-  .doc-title-label {
-    display: inline-block;
-    font-size: 7.5pt;
-    text-transform: uppercase;
-    letter-spacing: .12em;
-    color: #111;
-    font-weight: bold;
-    margin-bottom: 4pt;
-  }
-  .doc-title-main {
-    font-size: 16pt;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    color: #000;
-    line-height: 1;
-  }
-  .doc-title-sub {
-    font-size: 9.5pt;
-    color: #333;
-    font-style: italic;
-    margin-top: 4pt;
-    letter-spacing: .5px;
-  }
-  .doc-title-accent {
-    display: block;
-    width: 48pt;
-    height: 2.5pt;
-    background: #111;
-    margin: 6pt auto 0;
-  }
+/* Agrandir le logo et le cachet dans le contexte convocation */
+.entete-wrapper table { border-collapse: collapse; }
+.entete-wrapper table tr td:first-child { width: 110px; }
+.entete-wrapper table tr td:first-child img {
+  width: 100px;
+  height: 100px;
+  display: block;
+  object-fit: contain;
+  filter: grayscale(100%);
+}
+.entete-wrapper table tr td:last-child { width: 100px; }
+.entete-wrapper table tr td:last-child img {
+  width: 90px;
+  height: 90px;
+  display: block;
+  object-fit: contain;
+  margin-left: auto;
+  filter: grayscale(100%);
+}
+/* Nom de l'établissement plus grand */
+.entete-wrapper table tr td:nth-child(2) p:first-child {
+  font-size: 15pt;
+}
 
-  /* ── Ligne référence + lieu/date ─────────────────────────────────────────── */
-  .meta-line {
-    display: table;
-    width: 100%;
-    margin: 10pt 0 14pt 0;
-    font-size: 9pt;
-  }
-  .meta-ref {
-    display: table-cell;
-    vertical-align: middle;
-    width: 50%;
-    color: #444;
-  }
-  .meta-ref strong { color: #111; }
-  .meta-date {
-    display: table-cell;
-    vertical-align: middle;
-    text-align: right;
-    width: 50%;
-    color: #111;
-    font-size: 9.5pt;
-    font-weight: bold;
-  }
+/* ── Titre du document ───────────────────────────────────────────────────── */
+.doc-title-zone {
+  margin: 14pt 0 10pt 0;
+  text-align: center;
+}
+.doc-title-label {
+  display: inline-block;
+  font-size: 7.5pt;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: #111;
+  font-weight: bold;
+  margin-bottom: 4pt;
+}
+.doc-title-main {
+  font-size: 16pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: #000;
+  line-height: 1;
+}
+.doc-title-sub {
+  font-size: 9.5pt;
+  color: #333;
+  font-style: italic;
+  margin-top: 4pt;
+  letter-spacing: .5px;
+}
+.doc-title-accent {
+  display: block;
+  width: 48pt;
+  height: 2.5pt;
+  background: #111;
+  margin: 6pt auto 0;
+}
 
-  /* ── Bloc destinataire ───────────────────────────────────────────────────── */
-  .dest-layout {
-    display: table;
-    width: 100%;
-    margin-bottom: 16pt;
-  }
-  .dest-left {
-    display: table-cell;
-    vertical-align: top;
-    width: 52%;
-    padding-top: 4pt;
-    font-size: 9pt;
-    color: #333;
-    line-height: 1.65;
-  }
-  .dest-right {
-    display: table-cell;
-    vertical-align: top;
-    width: 48%;
-    padding-left: 1cm;
-  }
-  .dest-card {
-    border: 1pt solid #aaa;
-    border-top: 3pt solid #111;
-    padding: 9pt 11pt;
-    background: #f5f5f5;
-  }
-  .dest-card-label {
-    font-size: 7pt;
-    text-transform: uppercase;
-    letter-spacing: .1em;
-    color: #111;
-    font-weight: bold;
-    margin-bottom: 6pt;
-  }
-  .dest-card-parent {
-    font-size: 9pt;
-    color: #333;
-    font-style: italic;
-    margin-bottom: 2pt;
-  }
-  .dest-card-nom {
-    font-size: 11pt;
-    font-weight: bold;
-    color: #000;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-  }
-  .dest-card-classe {
-    font-size: 8.5pt;
-    color: #333;
-    margin-top: 5pt;
-    padding-top: 5pt;
-    border-top: .5pt solid #bbb;
-  }
+/* ── Ligne référence + lieu/date ─────────────────────────────────────────── */
+.meta-line {
+  display: table;
+  width: 100%;
+  margin: 10pt 0 14pt 0;
+  font-size: 9pt;
+}
+.meta-ref {
+  display: table-cell;
+  vertical-align: middle;
+  width: 50%;
+  color: #444;
+}
+.meta-ref strong { color: #111; }
+.meta-date {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: right;
+  width: 50%;
+  color: #111;
+  font-size: 9.5pt;
+  font-weight: bold;
+}
 
-  /* ── Ligne objet ─────────────────────────────────────────────────────────── */
-  .objet-line {
-    border-left: 3pt solid #111;
-    padding: 5pt 0 5pt 9pt;
-    margin-bottom: 14pt;
-    background: #f5f5f5;
-  }
-  .objet-lbl {
-    font-size: 7.5pt;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    color: #111;
-    font-weight: bold;
-    display: block;
-    margin-bottom: 1pt;
-  }
-  .objet-val {
-    font-size: 10.5pt;
-    font-weight: bold;
-    color: #000;
-  }
+/* ── Bloc destinataire ───────────────────────────────────────────────────── */
+.dest-layout {
+  display: table;
+  width: 100%;
+  margin-bottom: 16pt;
+}
+.dest-left {
+  display: table-cell;
+  vertical-align: top;
+  width: 52%;
+  padding-top: 4pt;
+  font-size: 9pt;
+  color: #333;
+  line-height: 1.65;
+}
+.dest-right {
+  display: table-cell;
+  vertical-align: top;
+  width: 48%;
+  padding-left: 1cm;
+}
+.dest-card {
+  border: 1pt solid #aaa;
+  border-top: 3pt solid #111;
+  padding: 9pt 11pt;
+  background: #f5f5f5;
+}
+.dest-card-label {
+  font-size: 7pt;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #111;
+  font-weight: bold;
+  margin-bottom: 6pt;
+}
+.dest-card-parent {
+  font-size: 9pt;
+  color: #333;
+  font-style: italic;
+  margin-bottom: 2pt;
+}
+.dest-card-nom {
+  font-size: 11pt;
+  font-weight: bold;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.dest-card-classe {
+  font-size: 8.5pt;
+  color: #333;
+  margin-top: 5pt;
+  padding-top: 5pt;
+  border-top: .5pt solid #bbb;
+}
 
-  /* ── Corps du texte ──────────────────────────────────────────────────────── */
-  .corps {
-    font-size: 10.5pt;
-    line-height: 1.8;
-    text-align: justify;
-  }
-  .corps p { margin-bottom: 7pt; }
-  .corps .soulig { font-weight: bold; text-decoration: underline; }
+/* ── Ligne objet ─────────────────────────────────────────────────────────── */
+.objet-line {
+  border-left: 3pt solid #111;
+  padding: 5pt 0 5pt 9pt;
+  margin-bottom: 14pt;
+  background: #f5f5f5;
+}
+.objet-lbl {
+  font-size: 7.5pt;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #111;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 1pt;
+}
+.objet-val {
+  font-size: 10.5pt;
+  font-weight: bold;
+  color: #000;
+}
 
-  /* ── Encart informations pratiques ───────────────────────────────────────── */
-  .encart {
-    margin: 12pt 0;
-    border: 1pt solid #aaa;
-  }
-  .encart-header {
-    background: #111;
-    color: #fff;
-    font-size: 7.5pt;
-    text-transform: uppercase;
-    letter-spacing: .1em;
-    font-weight: bold;
-    padding: 5pt 11pt;
-  }
-  .encart-body {
-    background: #f5f5f5;
-    padding: 4pt 11pt;
-  }
-  .encart-row {
-    display: table;
-    width: 100%;
-    border-bottom: .5pt solid #ccc;
-    padding: 4pt 0;
-  }
-  .encart-row:last-child { border-bottom: none; }
-  .encart-lbl {
-    display: table-cell;
-    width: 3cm;
-    font-size: 8.5pt;
-    font-weight: bold;
-    color: #111;
-    vertical-align: top;
-    white-space: nowrap;
-    padding-right: 6pt;
-  }
-  .encart-val {
-    display: table-cell;
-    font-size: 9.5pt;
-    color: #000;
-    vertical-align: top;
-    font-weight: bold;
-    font-size: 10pt;
-  }
+/* ── Corps du texte ──────────────────────────────────────────────────────── */
+.corps {
+  font-size: 10.5pt;
+  line-height: 1.8;
+  text-align: justify;
+}
+.corps p { margin-bottom: 7pt; }
+.corps .soulig { font-weight: bold; text-decoration: underline; }
 
-  /* ── Note obligatoire ────────────────────────────────────────────────────── */
-  .note-obligatoire {
-    background: #f0f0f0;
-    border-left: 4pt solid #111;
-    padding: 5pt 9pt;
-    font-size: 8.5pt;
-    color: #000;
-    margin: 10pt 0 8pt 0;
-  }
+/* ── Encart informations pratiques ───────────────────────────────────────── */
+.encart {
+  margin: 12pt 0;
+  border: 1pt solid #aaa;
+}
+.encart-header {
+  background: #111;
+  color: #fff;
+  font-size: 7.5pt;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-weight: bold;
+  padding: 5pt 11pt;
+}
+.encart-body {
+  background: #f5f5f5;
+  padding: 4pt 11pt;
+}
+.encart-row {
+  display: table;
+  width: 100%;
+  border-bottom: .5pt solid #ccc;
+  padding: 4pt 0;
+}
+.encart-row:last-child { border-bottom: none; }
+.encart-lbl {
+  display: table-cell;
+  width: 3cm;
+  font-size: 8.5pt;
+  font-weight: bold;
+  color: #111;
+  vertical-align: top;
+  white-space: nowrap;
+  padding-right: 6pt;
+}
+.encart-val {
+  display: table-cell;
+  font-size: 9.5pt;
+  color: #000;
+  vertical-align: top;
+  font-weight: bold;
+  font-size: 10pt;
+}
 
-  /* ── Signature ───────────────────────────────────────────────────────────── */
-  .sig-zone {
-    margin-top: 22pt;
-    text-align: right;
-    page-break-inside: avoid;
-  }
-  .sig-lieu-date { font-size: 9.5pt; color: #111; }
-  .sig-fonction { font-size: 10pt; color: #111; font-weight: bold; margin-top: 9pt; }
-  .sig-nom {
-    font-size: 11pt;
-    font-weight: bold;
-    color: #000;
-    margin-top: 1.5cm;
-    letter-spacing: .3px;
-  }
-  .sig-titres { font-size: 8pt; color: #333; font-style: italic; margin-top: 2pt; }
+/* ── Note obligatoire ────────────────────────────────────────────────────── */
+.note-obligatoire {
+  background: #f0f0f0;
+  border-left: 4pt solid #111;
+  padding: 5pt 9pt;
+  font-size: 8.5pt;
+  color: #000;
+  margin: 10pt 0 8pt 0;
+}
 
-  /* ── Pied de document ────────────────────────────────────────────────────── */
-  .doc-footer {
-    display: table;
-    width: 100%;
-    margin-top: 10pt;
-    padding-top: 6pt;
-    border-top: .5pt solid #ccc;
-  }
-  .doc-footer-left {
-    display: table-cell;
-    vertical-align: middle;
-    font-size: 7pt;
-    color: #555;
-    font-style: italic;
-  }
-  .doc-footer-right {
-    display: table-cell;
-    vertical-align: middle;
-    text-align: right;
-    font-size: 7pt;
-    color: #555;
-  }
+/* ── Signature ───────────────────────────────────────────────────────────── */
+.sig-zone {
+  margin-top: 22pt;
+  text-align: right;
+  page-break-inside: avoid;
+}
+.sig-lieu-date { font-size: 9.5pt; color: #111; }
+.sig-fonction { font-size: 10pt; color: #111; font-weight: bold; margin-top: 9pt; }
+.sig-nom {
+  font-size: 11pt;
+  font-weight: bold;
+  color: #000;
+  margin-top: 1.5cm;
+  letter-spacing: .3px;
+}
+.sig-titres { font-size: 8pt; color: #333; font-style: italic; margin-top: 2pt; }
 
-  /* ── Récépissé détachable ────────────────────────────────────────────────── */
-  .recepisse-wrapper { margin-top: 18pt; }
-  .recepisse-sep-line {
-    border: none;
-    border-top: 1pt dashed #555;
-    margin-bottom: 5pt;
-  }
-  .recepisse-cut-label {
-    text-align: center;
-    font-size: 7.5pt;
-    color: #444;
-    letter-spacing: .06em;
-    margin-bottom: 7pt;
-  }
-  .recepisse-body {
-    display: table;
-    width: 100%;
-  }
-  .recepisse-text {
-    display: table-cell;
-    width: 62%;
-    font-size: 8.5pt;
-    color: #333;
-    line-height: 1.65;
-    vertical-align: top;
-    padding-right: 12pt;
-  }
-  .recepisse-sig {
-    display: table-cell;
-    width: 38%;
-    vertical-align: bottom;
-    text-align: center;
-    padding-top: 16pt;
-  }
-  .recepisse-sig-line {
-    border-bottom: 1pt solid #111;
-    margin: 0 auto;
-    width: 5cm;
-    padding-top: 16pt;
-  }
-  .recepisse-sig-label {
-    font-size: 7.5pt;
-    color: #333;
-    text-align: center;
-    margin-top: 3pt;
-  }
-</style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
+/* ── Pied de document ────────────────────────────────────────────────────── */
+.doc-footer {
+  display: table;
+  width: 100%;
+  margin-top: 10pt;
+  padding-top: 6pt;
+  border-top: .5pt solid #ccc;
+}
+.doc-footer-left {
+  display: table-cell;
+  vertical-align: middle;
+  font-size: 7pt;
+  color: #555;
+  font-style: italic;
+}
+.doc-footer-right {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: right;
+  font-size: 7pt;
+  color: #555;
+}
 
+/* ── Récépissé détachable ────────────────────────────────────────────────── */
+.recepisse-wrapper { margin-top: 18pt; }
+.recepisse-sep-line {
+  border: none;
+  border-top: 1pt dashed #555;
+  margin-bottom: 5pt;
+}
+.recepisse-cut-label {
+  text-align: center;
+  font-size: 7.5pt;
+  color: #444;
+  letter-spacing: .06em;
+  margin-bottom: 7pt;
+}
+.recepisse-body {
+  display: table;
+  width: 100%;
+}
+.recepisse-text {
+  display: table-cell;
+  width: 62%;
+  font-size: 8.5pt;
+  color: #333;
+  line-height: 1.65;
+  vertical-align: top;
+  padding-right: 12pt;
+}
+.recepisse-sig {
+  display: table-cell;
+  width: 38%;
+  vertical-align: bottom;
+  text-align: center;
+  padding-top: 16pt;
+}
+.recepisse-sig-line {
+  border-bottom: 1pt solid #111;
+  margin: 0 auto;
+  width: 5cm;
+  padding-top: 16pt;
+}
+.recepisse-sig-label {
+  font-size: 7.5pt;
+  color: #333;
+  text-align: center;
+  margin-top: 3pt;
+}
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
 <div class="lettre">
 
   <!-- Bande supérieure -->
@@ -377,7 +362,7 @@
 
     <!-- En-tête établissement -->
     <div class="entete-wrapper">
-      {% include "documents/pdf/partials/entete.html" %}
+      {% include "pdf/partials/entete.html" %}
     </div>
 
     <!-- Titre du document -->
@@ -408,8 +393,8 @@
       <div class="dest-left">
         {% if identite %}
         <div>{{ identite.nom_etablissement }}</div>
-        {% if identite.adresse %}
-        <div>{{ identite.adresse }}</div>
+        {% if identite.adresse_complete %}
+        <div>{{ identite.adresse_complete }}</div>
         {% endif %}
         {% if identite.ville %}
         <div><strong>{{ identite.ville }}</strong></div>
@@ -516,7 +501,7 @@
       {% endif %}
     </div>
     {% else %}
-    {% include "documents/pdf/partials/signataire_bloc.html" %}
+    {% include "pdf/partials/signature.html" %}
     {% endif %}
 
     <!-- Pied de page -->
@@ -549,6 +534,4 @@
   </div><!-- /page-inner -->
 
 </div><!-- /lettre -->
-
-</body>
-</html>
+{% endblock %}

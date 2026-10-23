@@ -1,9 +1,5 @@
-{% load signataire_tags %}<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-@page {
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page {
     size: A4;
     margin: 1cm 1.2cm;
     @bottom-right {
@@ -16,7 +12,8 @@
         font-size: 6.5pt;
         color: #555;
     }
-}
+}{% endblock %}
+{% block css %}
 html, body {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 9pt;
@@ -172,11 +169,10 @@ html, body {
 .decision-redouble { font-weight: 700; font-size: 8pt; font-style: italic; color: #111; }
 
 .vide-cell { color: #aaa; font-style: italic; }
-</style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
-
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
 <!-- En-tête établissement -->
 <div class="bul-header">
   <div class="bul-badge">
@@ -188,7 +184,7 @@ html, body {
   </div>
   <div style="flex:1;">
     <div class="bul-school-name">{{ identite.nom_etablissement|default:"YELEN SCHOOL" }}</div>
-    {% if identite.adresse %}<div class="bul-school-sub">{{ identite.adresse }}</div>{% endif %}
+    {% if identite.adresse_complete %}<div class="bul-school-sub">{{ identite.adresse_complete }}</div>{% endif %}
     {% if identite.telephone %}<div class="bul-school-sub">Tél. {{ identite.telephone }}</div>{% endif %}
   </div>
   <div style="text-align:right;">
@@ -304,6 +300,4 @@ html, body {
 
 <!-- Signature -->
 {% signataire_auto "BULLETIN" %}
-
-</body>
-</html>
+{% endblock %}

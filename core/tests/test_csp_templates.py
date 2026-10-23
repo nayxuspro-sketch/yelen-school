@@ -158,7 +158,7 @@ def test_selecteurs_de_classe_et_appels_sans_inline():
 
 # Gabarits PDF (WeasyPrint, sans CSP) et gabarits jamais rendus : hors du périmètre du garde-fou ci-dessous.
 _HORS_CSP = (
-    '/pdf/', '_pdf.html', 'bulletin_base.html', 'static/img/',
+    '/pdf/', '_pdf.html', 'static/img/',
     'templates/500.html',                                 # rendu sans request : pas de nonce possible
 )
 _BALISE = re.compile(r'<(script|style)\b([^>]*)>', re.I)

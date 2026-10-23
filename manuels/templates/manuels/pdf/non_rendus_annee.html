@@ -1,13 +1,11 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
+{% extends "pdf/base.html" %}
+{% block page %}@page {
+    size: A4;
+    margin: 0;
+}{% endblock %}
+{% block css %}
 /* ── Page ── */
-@page {
-  size: A4;
-  margin: 0;
-}
+
 body {
   margin: 0; padding: 0;
   width: 21cm; min-height: 29.7cm;
@@ -23,42 +21,6 @@ body {
 
 /* ── Zone contenu ── */
 .page { padding: 0.5cm 1.8cm 0.4cm; }
-
-/* ── En-tête établissement ── */
-.entete {
-  display: table;
-  width: 100%;
-  border-collapse: collapse;
-  border-bottom: 1.5pt solid #111;
-  padding-bottom: 0.3cm;
-  margin-bottom: 0.35cm;
-}
-.entete-col        { display: table-cell; vertical-align: middle; }
-.entete-col-logo   { width: 2cm; }
-.entete-col-centre { text-align: center; padding: 0 0.4cm; }
-.entete-col-logo img { width: 1.6cm; height: 1.6cm; object-fit: contain;
-                       filter: grayscale(100%); }
-
-.entete-pays {
-  font-size: 7pt;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: #555;
-  margin-bottom: 2pt;
-}
-.entete-nom {
-  font-size: 11.5pt;
-  font-weight: bold;
-  text-transform: uppercase;
-  line-height: 1.2;
-}
-.entete-agrement {
-  font-size: 7.5pt;
-  color: #444;
-  font-style: italic;
-  margin-top: 2pt;
-}
-.entete-type { font-size: 7.5pt; color: #444; margin-top: 1pt; }
 
 /* ── Titre document ── */
 .doc-titre {
@@ -203,42 +165,19 @@ tbody tr:nth-child(even) td { background: #f2f2f2; }
 }
 .footer-left  { display: table-cell; text-align: left; }
 .footer-right { display: table-cell; text-align: right; }
-</style>
-</head>
-<body>
-
+{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
 <div class="barre-top"></div>
 
 <div class="page">
 
-  <!-- En-tête établissement -->
-  <div class="entete">
-    <div class="entete-col entete-col-logo">
-      {% if logo_url %}
-      <img src="{{ logo_url }}" alt="Logo">
-      {% endif %}
-    </div>
-    <div class="entete-col entete-col-centre">
-      <div class="entete-pays">Burkina Faso</div>
-      <div class="entete-nom">
-        {% if identite %}{{ identite.nom_etablissement }}{% elif etab %}{{ etab.nom }}{% endif %}
-      </div>
-      {% if identite and identite.numero_agrement_mena %}
-      <div class="entete-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</div>
-      {% endif %}
-      {% if identite %}
-      <div class="entete-type">{{ identite.get_type_etablissement_display }}</div>
-      {% endif %}
-    </div>
-    <div class="entete-col" style="width:2cm; text-align:right; font-size:7pt; color:#555;">
-      Imprimé le<br>{{ today }}
-    </div>
-  </div>
+  {% include "pdf/partials/entete.html" %}
 
   <!-- Titre -->
   <div class="doc-titre">
     <h1>Manuels non rendus</h1>
-    <div class="annee">Année scolaire {{ annee }}</div>
+    <div class="annee">Année scolaire {{ annee }} — Imprimé le {{ today }}</div>
   </div>
 
   <!-- Stats -->
@@ -338,6 +277,4 @@ tbody tr:nth-child(even) td { background: #f2f2f2; }
 </div>
 
 <div class="barre-bottom"></div>
-
-</body>
-</html>
+{% endblock %}

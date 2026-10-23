@@ -1,58 +1,56 @@
-{% extends "pedagogie/pdf/bulletin_base.html" %}
+{% extends "pdf/base_rapport.html" %}
 
-{% block pdf_content %}
+{% block css_document %}
+.doc-meta { font-size: 9pt; color: #555; }
+.doc-dates { font-size: 8pt; color: #333; }
 
-<style>
-  .doc-meta { font-size: 9pt; color: #555; }
-  .doc-dates { font-size: 8pt; color: #333; }
+/* Statut badges N&B */
+.badge-admis {
+  background: #fff;
+  border: 1pt solid #111;
+  font-weight: bold;
+  padding: 1pt 4pt;
+  font-size: 7pt;
+}
+.badge-ajourne {
+  background: #ddd;
+  border: 1pt solid #111;
+  font-style: italic;
+  padding: 1pt 4pt;
+  font-size: 7pt;
+}
+.badge-absent {
+  background: #555;
+  color: #fff;
+  padding: 1pt 4pt;
+  font-size: 7pt;
+}
+.badge-defaut {
+  color: #333;
+  font-size: 7pt;
+}
 
-  /* Statut badges N&B */
-  .badge-admis {
-    background: #fff;
-    border: 1pt solid #111;
-    font-weight: bold;
-    padding: 1pt 4pt;
-    font-size: 7pt;
-  }
-  .badge-ajourne {
-    background: #ddd;
-    border: 1pt solid #111;
-    font-style: italic;
-    padding: 1pt 4pt;
-    font-size: 7pt;
-  }
-  .badge-absent {
-    background: #555;
-    color: #fff;
-    padding: 1pt 4pt;
-    font-size: 7pt;
-  }
-  .badge-defaut {
-    color: #333;
-    font-size: 7pt;
-  }
+/* Moyenne N&B */
+.moy-ok   { font-weight: bold; color: #111; }
+.moy-fail { font-weight: bold; font-style: italic; color: #333; }
 
-  /* Moyenne N&B */
-  .moy-ok   { font-weight: bold; color: #111; }
-  .moy-fail { font-weight: bold; font-style: italic; color: #333; }
+/* Matricule */
+.mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 7.5pt; color: #333; }
 
-  /* Matricule */
-  .mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 7.5pt; color: #333; }
+/* Centre */
+.centre-txt { font-size: 7.5pt; color: #222; }
 
-  /* Centre */
-  .centre-txt { font-size: 7.5pt; color: #222; }
+/* Ligne paire */
+.row-pair { background: #f5f5f5; }
+.row-impair { background: #fff; }
 
-  /* Ligne paire */
-  .row-pair { background: #f5f5f5; }
-  .row-impair { background: #fff; }
+/* Pied */
+.total-note { font-size: 7.5pt; color: #333; margin-top: 6pt; text-align: right; }
 
-  /* Pied */
-  .total-note { font-size: 7.5pt; color: #333; margin-top: 6pt; text-align: right; }
-
-  /* Message vide */
-  .msg-vide { text-align: center; color: #555; font-style: italic; margin-top: 20pt; }
-</style>
-
+/* Message vide */
+.msg-vide { text-align: center; color: #555; font-style: italic; margin-top: 20pt; }
+{% endblock %}
+{% block corps %}
 <div class="document-title">
     <h2 style="text-transform:uppercase; letter-spacing:.5pt;">
         LISTE OFFICIELLE DES CANDIDATS

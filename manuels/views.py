@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from core.utils import get_etablissement_context
 from finances.models import Paiement
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, RubriquePaiement
@@ -477,6 +478,7 @@ def inventaire_classe_pdf(request, classe_pk):
         'attributions': attributions,
         'annee': annee_courante,
         'today': date.today(),
+        **get_etablissement_context(etab, request),
     }).content.decode('utf-8')
 
     from core.pdf import HTML as WP
@@ -519,6 +521,7 @@ def attributions_annee_pdf(request):
         'nb_rendus': nb_rendus,
         'today': date.today(),
         'etab': etab,
+        **get_etablissement_context(etab, request),
     }).content.decode('utf-8')
 
     from core.pdf import HTML as WP
@@ -566,7 +569,6 @@ def non_rendus_pdf(request):
     # Évaluer le queryset une seule fois pour le template
     attributions = list(attributions)
 
-    from core.utils import get_etablissement_context
     etab_ctx = get_etablissement_context(etab, request)
 
     html = render(request, 'manuels/pdf/non_rendus_annee.html', {

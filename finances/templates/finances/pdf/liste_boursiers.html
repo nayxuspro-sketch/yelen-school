@@ -1,64 +1,27 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    @page {
-      size: A4 portrait;
-      margin: 15mm;
-      @bottom-right {
-        content: "Page " counter(page) " sur " counter(pages);
-        font-size: 9pt; color: #666;
-      }
+{% extends "pdf/base.html" %}
+{% block page %}@page {
+    size: A4 portrait;
+    margin: 15mm;
+    @bottom-right {
+      content: "Page " counter(page) " sur " counter(pages);
+      font-size: 9pt; color: #666;
     }
-    body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #1A1A1A; margin:0; padding:0; }
+}{% endblock %}
+{% block css %}
+body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #1A1A1A; margin:0; padding:0; }
+table { width:100%; border-collapse:collapse; font-size:9pt; }
+thead tr { background:#f0f0f0; }
+th { padding:5pt 6pt; text-align:left; font-weight:bold; border:0.5pt solid #ccc; }
+td { padding:4.5pt 6pt; border:0.5pt solid #ddd; vertical-align:top; }
+tr:nth-child(even) { background:#fafafa; }
 
-    .entete { display:flex; justify-content:space-between; align-items:flex-start;
-               margin-bottom:14px; padding-bottom:10px; border-bottom:2pt solid #1A1A1A; }
-    .entete-logo { width:60px; height:60px; object-fit:contain; }
-    .entete-etab { font-size:11pt; font-weight:bold; text-transform:uppercase; }
-    .entete-sub  { font-size:9pt; color:#555; margin-top:2px; }
-    .entete-date { font-size:8.5pt; color:#666; text-align:right; }
-
-    h2 { font-size:12pt; text-align:center; text-transform:uppercase;
-         letter-spacing:.05em; margin:8px 0 14px; }
-
-    table { width:100%; border-collapse:collapse; font-size:9pt; }
-    thead tr { background:#f0f0f0; }
-    th { padding:5pt 6pt; text-align:left; font-weight:bold; border:0.5pt solid #ccc; }
-    td { padding:4.5pt 6pt; border:0.5pt solid #ddd; vertical-align:top; }
-    tr:nth-child(even) { background:#fafafa; }
-
-    .total-row { background:#e8f5e9; font-weight:bold; }
-    .text-right { text-align:right; }
-    .text-center { text-align:center; }
-  </style>
-</head>
-<body>
-
-<!-- En-tête établissement -->
-<div class="entete">
-  <div style="display:flex; align-items:center; gap:10px;">
-    {% if etab_logo_url %}
-    <img src="{{ etab_logo_url }}" class="entete-logo" alt="Logo">
-    {% elif logo_url %}
-    <img src="{{ logo_url }}" class="entete-logo" alt="Logo">
-    {% endif %}
-    <div>
-      {% if identite %}
-      <div class="entete-etab">{{ identite.nom_etablissement }}</div>
-      <div class="entete-sub">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
-      {% if identite.telephone %}<div class="entete-sub">Tél : {{ identite.telephone }}</div>{% endif %}
-      {% endif %}
-    </div>
-  </div>
-  <div class="entete-date">
-    Édité le {{ now|date:"d/m/Y" }}<br>
-    Année scolaire : <strong>{{ annee_sel.libelle|default:"—" }}</strong>
-  </div>
-</div>
-
-<h2>Liste des boursiers et bénéficiaires d'aides scolaires</h2>
+.total-row { background:#e8f5e9; font-weight:bold; }
+.text-right { text-align:right; }
+.text-center { text-align:center; }
+{% endblock %}
+{% block corps %}
+<div class="pdf-titre">Liste des boursiers et bénéficiaires d'aides scolaires</div>
+<p class="pdf-sous-titre">Année scolaire : <strong>{{ annee_sel.libelle|default:"—" }}</strong> — Édité le {{ now|date:"d/m/Y" }}</p>
 
 <table>
   <thead>
@@ -101,6 +64,4 @@
   </tfoot>
   {% endif %}
 </table>
-
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% comment %}
+Socle commun des documents PDF (WeasyPrint).
+
+Blocs : titre · head · page (règle @page complète) · css (styles propres au document) · filigrane ·
+entete (partials/entete.html ; options compacte=True et droite="gabarit" — vider le bloc pour un en-tête maison) · corps.
+Classes fournies : .pdf-titre (titre encadré), .pdf-sous-titre. Le socle n'impose rien d'autre au document.
+{% endcomment %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>{% block titre %}{% firstof identite.nom_etablissement etablissement.nom etab_nom "YELEN SCHOOL" %}{% endblock %}</title>
+{% block head %}{% endblock %}
+<style>
+{% block page %}@page { size: A4 portrait; margin: 15mm; @bottom-right { content: "Page " counter(page) " / " counter(pages); font-size: 7.5pt; color: #555; } }{% endblock %}
+body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10pt; color: #111; margin: 0; padding: 0; }
+
+/* En-tête établissement (tableau : rendu fiable sous WeasyPrint) */
+.pdf-entete { width: 100%; border: 0; border-collapse: collapse; margin-bottom: 4px; }
+.pdf-entete td { padding: 0; border: 0; vertical-align: middle; }
+.pdf-entete-logo, .pdf-entete-cachet { width: 20%; }
+.pdf-entete-logo img { display: block; width: 72px; height: 72px; object-fit: contain; }
+.pdf-entete-cachet img { display: block; width: 70px; height: 70px; object-fit: contain; margin-left: auto; }
+.pdf-entete-droite { text-align: right; white-space: nowrap; font-size: 8pt; color: #333; line-height: 1.4; }
+.pdf-entete-identite { text-align: center; padding: 0 10px; }
+.pdf-entete-identite p { margin: 3px 0 0; font-size: 8.5pt; color: #333; line-height: 1.3; }
+.pdf-entete-nom { margin: 0 !important; font-size: 14pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #111; }
+.pdf-entete-agrement { font-size: 8pt !important; color: #666 !important; font-style: italic; }
+.pdf-entete-type { font-size: 8pt !important; color: #666 !important; text-transform: uppercase; letter-spacing: 1px; }
+.pdf-entete-filet { height: 3px; border-top: 3px solid #1a1a1a; border-bottom: 1px solid #bbb; margin-bottom: 10px; }
+/* Variante compacte (A5, listes denses) */
+.pdf-entete-compacte .pdf-entete-logo, .pdf-entete-compacte .pdf-entete-cachet { width: 56px; }
+.pdf-entete-compacte .pdf-entete-logo img, .pdf-entete-compacte .pdf-entete-cachet img { width: 48px; height: 48px; }
+.pdf-entete-compacte .pdf-entete-nom { font-size: 11pt; letter-spacing: .5px; }
+.pdf-entete-compacte .pdf-entete-identite p { margin-top: 1px; font-size: 7.5pt; line-height: 1.2; }
+.pdf-entete-compacte .pdf-entete-agrement, .pdf-entete-compacte .pdf-entete-type { font-size: 7pt !important; }
+.pdf-entete-compacte .pdf-entete-adresse, .pdf-entete-compacte .pdf-entete-contact { display: inline; }
+.pdf-entete-compacte .pdf-entete-adresse + .pdf-entete-contact::before { content: " \00b7 "; }
+.pdf-entete-compacte + .pdf-entete-filet { margin-bottom: 6px; }
+/* Titre du document et sous-titre */
+.pdf-titre { margin: 0 0 10px; padding: 5pt 10pt; border: 1.5px solid #111; text-align: center; font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+.pdf-sous-titre { margin: -6px 0 12px; text-align: center; font-size: 9pt; color: #333; }
+{% block css %}{% endblock %}
+</style>
+</head>
+<body>
+{% block filigrane %}{% endblock %}
+{% block entete %}{% include "pdf/partials/entete.html" %}{% endblock %}
+{% block corps %}{% endblock %}
+</body>
+</html>

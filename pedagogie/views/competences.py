@@ -250,7 +250,7 @@ def competences_bulletin_pdf(request, inscription_id, trimestre_id):
         'trimestre': trimestre,
         'groupes': groupes_list,
         'etablissement': etab,
-        'identite': etab_ctx.get('identite'),
+        **etab_ctx,
         'licence_info': _pdf_licence_info(request, etab),
     }, request=request)
 

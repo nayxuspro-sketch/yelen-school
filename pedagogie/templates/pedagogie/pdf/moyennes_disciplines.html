@@ -1,15 +1,5 @@
-{% load signataire_tags %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-  @font-face {
-    font-family: 'Outfit';
-    src: url('{{ logo_url|default:"" }}');
-  }
-
-  @page {
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page {
     size: A4 landscape;
     margin: 1cm 1.2cm;
     @bottom-right {
@@ -20,161 +10,130 @@
       content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }} — Imprimé le {{ date_impression }}";
       font-size: 7pt; color: #555;
     }
-  }
+}{% endblock %}
+{% block css %}
+@font-face {
+  font-family: 'Outfit';
+  src: url('{{ logo_url|default:"" }}');
+}
 
-  body {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 8.5pt;
-    color: #111;
-    margin: 0; padding: 0;
-    background: white;
-  }
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 8.5pt;
+  color: #111;
+  margin: 0; padding: 0;
+  background: white;
+}
 
-  /* ── En-tête ── */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2.5px solid #111;
-    padding-bottom: 5pt;
-    margin-bottom: 8pt;
-  }
-  .school-name {
-    font-size: 13pt;
-    font-weight: 700;
-    color: #111;
-    text-transform: uppercase;
-    letter-spacing: .5pt;
-  }
-  .school-sub { font-size: 7.5pt; color: #555; margin-top: 1pt; }
-  .logo-box { width: 50pt; text-align: center; }
-  .logo-box img { max-height: 40pt; max-width: 50pt; filter: grayscale(100%); }
+/* ── Titre ── */
+.doc-title {
+  text-align: center;
+  background: #fff;
+  border: 1.5px solid #111;
+  padding: 4pt 8pt;
+  margin-bottom: 8pt;
+}
+.doc-title h2 {
+  margin: 0;
+  font-size: 10.5pt;
+  text-transform: uppercase;
+  letter-spacing: .6pt;
+  color: #111;
+}
+.doc-title p { margin: 2pt 0 0; font-size: 7.5pt; color: #555; }
 
-  /* ── Titre ── */
-  .doc-title {
-    text-align: center;
-    background: #fff;
-    border: 1.5px solid #111;
-    padding: 4pt 8pt;
-    margin-bottom: 8pt;
-  }
-  .doc-title h2 {
-    margin: 0;
-    font-size: 10.5pt;
-    text-transform: uppercase;
-    letter-spacing: .6pt;
-    color: #111;
-  }
-  .doc-title p { margin: 2pt 0 0; font-size: 7.5pt; color: #555; }
+/* ── Tableau ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.5pt;
+}
+thead tr { background: #111; color: white; }
+thead th {
+  padding: 4pt 3pt;
+  text-align: center;
+  border: .5pt solid #555;
+  font-weight: 600;
+}
+thead th.col-nom {
+  text-align: left;
+  min-width: 80pt;
+  max-width: 110pt;
+}
+thead th.col-matiere {
+  min-width: 28pt;
+  vertical-align: bottom;
+}
+.th-matiere-inner {
+  writing-mode: vertical-lr;
+  white-space: nowrap;
+  max-height: 65pt;
+  overflow: hidden;
+  font-size: 6.5pt;
+  font-weight: 600;
+}
+.th-coef {
+  display: block;
+  font-size: 5.5pt;
+  font-weight: 400;
+  color: #ccc;
+  margin-top: 2pt;
+  writing-mode: horizontal-tb;
+}
 
-  /* ── Tableau ── */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 7.5pt;
-  }
-  thead tr { background: #111; color: white; }
-  thead th {
-    padding: 4pt 3pt;
-    text-align: center;
-    border: .5pt solid #555;
-    font-weight: 600;
-  }
-  thead th.col-nom {
-    text-align: left;
-    min-width: 80pt;
-    max-width: 110pt;
-  }
-  thead th.col-matiere {
-    min-width: 28pt;
-    vertical-align: bottom;
-  }
-  .th-matiere-inner {
-    writing-mode: vertical-lr;
-    white-space: nowrap;
-    max-height: 65pt;
-    overflow: hidden;
-    font-size: 6.5pt;
-    font-weight: 600;
-  }
-  .th-coef {
-    display: block;
-    font-size: 5.5pt;
-    font-weight: 400;
-    color: #ccc;
-    margin-top: 2pt;
-    writing-mode: horizontal-tb;
-  }
+tbody tr:nth-child(even) { background: #f5f5f5; }
 
-  tbody tr:nth-child(even) { background: #f5f5f5; }
+td {
+  padding: 3pt 4pt;
+  border: .5pt solid #ccc;
+  text-align: center;
+  vertical-align: middle;
+}
+td.col-num  { color: #555; font-size: 7pt; width: 14pt; }
+td.col-nom  { text-align: left; font-weight: 500; white-space: nowrap; }
 
-  td {
-    padding: 3pt 4pt;
-    border: .5pt solid #ccc;
-    text-align: center;
-    vertical-align: middle;
-  }
-  td.col-num  { color: #555; font-size: 7pt; width: 14pt; }
-  td.col-nom  { text-align: left; font-weight: 500; white-space: nowrap; }
+/* Codage N&B des moyennes */
+.moy-rouge  { font-weight: 700; }
+.moy-orange { font-weight: 700; font-style: italic; }
+.moy-vert   { font-weight: 700; }
+.moy-vide   { color: #aaa; }
 
-  /* Codage N&B des moyennes */
-  .moy-rouge  { font-weight: 700; }
-  .moy-orange { font-weight: 700; font-style: italic; }
-  .moy-vert   { font-weight: 700; }
-  .moy-vide   { color: #aaa; }
+/* Colonne Moy. Générale */
+td.col-mg {
+  font-weight: 700;
+  border-left: 1.5pt solid #555;
+  min-width: 28pt;
+}
+thead th.col-mg {
+  border-left: 1.5pt solid #999;
+  color: #fff;
+}
+td.col-rang { color: #555; font-size: 7pt; }
 
-  /* Colonne Moy. Générale */
-  td.col-mg {
-    font-weight: 700;
-    border-left: 1.5pt solid #555;
-    min-width: 28pt;
-  }
-  thead th.col-mg {
-    border-left: 1.5pt solid #999;
-    color: #fff;
-  }
-  td.col-rang { color: #555; font-size: 7pt; }
-
-  /* ── Légende ── */
-  .legende {
-    display: flex;
-    gap: 14pt;
-    margin-top: 8pt;
-    font-size: 6.5pt;
-    color: #555;
-  }
-  .leg-item { display: flex; align-items: center; gap: 3pt; }
-  .leg-color {
-    width: 9pt; height: 9pt;
-    display: inline-block;
-    border: 1pt solid #555;
-    background: #fff;
-  }
-  .leg-color-hatch {
-    width: 9pt; height: 9pt;
-    display: inline-block;
-    border: 1pt solid #555;
-    background: #ddd;
-  }
-</style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
-
-<!-- ── En-tête ── -->
-<div class="header">
-  <div>
-    <div class="school-name">{{ identite.nom_etablissement|default:"YELEN SCHOOL" }}</div>
-    <div class="school-sub">
-      {% if identite.ville %}{{ identite.ville }}{% if identite.pays %}, {{ identite.pays }}{% endif %} — {% endif %}
-      {{ identite.telephone|default:"" }}
-    </div>
-  </div>
-  <div class="logo-box">
-    {% if logo_url %}<img src="{{ logo_url }}" alt="Logo">{% endif %}
-  </div>
-</div>
-
+/* ── Légende ── */
+.legende {
+  display: flex;
+  gap: 14pt;
+  margin-top: 8pt;
+  font-size: 6.5pt;
+  color: #555;
+}
+.leg-item { display: flex; align-items: center; gap: 3pt; }
+.leg-color {
+  width: 9pt; height: 9pt;
+  display: inline-block;
+  border: 1pt solid #555;
+  background: #fff;
+}
+.leg-color-hatch {
+  width: 9pt; height: 9pt;
+  display: inline-block;
+  border: 1pt solid #555;
+  background: #ddd;
+}
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block corps %}
 <!-- ── Titre ── -->
 <div class="doc-title">
   <h2>Tableau des moyennes par discipline</h2>
@@ -268,6 +227,4 @@
 {% endif %}
 
 {% signataire_auto "BULLETIN" %}
-
-</body>
-</html>
+{% endblock %}

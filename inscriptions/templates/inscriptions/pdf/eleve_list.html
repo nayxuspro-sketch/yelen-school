@@ -1,9 +1,5 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-  @page {
+{% extends "pdf/base.html" %}
+{% block page %}@page {
     size: A4 portrait;
     margin: 15mm 12mm 12mm;
     @top-center {
@@ -16,134 +12,92 @@
       font-size: 7.5pt;
       color: #9ca3af;
     }
-  }
+}{% endblock %}
+{% block css %}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #111827; background: #fff; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #111827; background: #fff; }
+/* ── Titre du document ── */
+.doc-title {
+  font-size: 11pt;
+  font-weight: bold;
+  text-align: center;
+  margin: 8px 0 4px;
+  color: #111827;
+}
+.doc-subtitle {
+  font-size: 8pt;
+  text-align: center;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
 
-  /* ── En-tête ── */
-  .header {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 14px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #00A86B;
-  }
-  .header-logo img { width: 44px; height: 44px; object-fit: contain; }
-  .header-text { flex: 1; }
-  .header-etab {
-    font-size: 12pt;
-    font-weight: bold;
-    color: #111827;
-    margin-bottom: 2px;
-  }
-  .header-sub { font-size: 8pt; color: #6b7280; }
-  .header-right {
-    text-align: right;
-    font-size: 8pt;
-    color: #6b7280;
-    white-space: nowrap;
-  }
+/* ── Tableau ── */
+table { width: 100%; border-collapse: collapse; }
+thead tr { background-color: #00A86B; color: #fff; }
+thead th {
+  padding: 5px 6px;
+  font-size: 8pt;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+tbody tr:nth-child(even) { background-color: #f9fafb; }
+tbody tr { border-bottom: 1px solid #e5e7eb; }
+tbody td { padding: 4px 6px; font-size: 8pt; vertical-align: middle; }
 
-  /* ── Titre du document ── */
-  .doc-title {
-    font-size: 11pt;
-    font-weight: bold;
-    text-align: center;
-    margin: 8px 0 4px;
-    color: #111827;
-  }
-  .doc-subtitle {
-    font-size: 8pt;
-    text-align: center;
-    color: #6b7280;
-    margin-bottom: 10px;
-  }
+.col-num { width: 5%; text-align: center; color: #9ca3af; }
+.col-mat { width: 14%; font-family: monospace; font-size: 7.5pt; }
+.col-nom { width: 22%; font-weight: 600; }
+.col-prenom { width: 20%; }
+.col-naissance { width: 11%; }
+.col-genre { width: 6%; text-align: center; }
+.col-classe { width: 14%; }
+.col-statut { width: 8%; }
 
-  /* ── Tableau ── */
-  table { width: 100%; border-collapse: collapse; }
-  thead tr { background-color: #00A86B; color: #fff; }
-  thead th {
-    padding: 5px 6px;
-    font-size: 8pt;
-    font-weight: 600;
-    text-align: left;
-    white-space: nowrap;
-  }
-  tbody tr:nth-child(even) { background-color: #f9fafb; }
-  tbody tr { border-bottom: 1px solid #e5e7eb; }
-  tbody td { padding: 4px 6px; font-size: 8pt; vertical-align: middle; }
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 7pt;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-active { background: #d1fae5; color: #065f46; }
+.badge-abandon { background: #fee2e2; color: #991b1b; }
 
-  .col-num { width: 5%; text-align: center; color: #9ca3af; }
-  .col-mat { width: 14%; font-family: monospace; font-size: 7.5pt; }
-  .col-nom { width: 22%; font-weight: 600; }
-  .col-prenom { width: 20%; }
-  .col-naissance { width: 11%; }
-  .col-genre { width: 6%; text-align: center; }
-  .col-classe { width: 14%; }
-  .col-statut { width: 8%; }
+/* ── Tableaux statistiques ── */
+.stats { display: flex; gap: 10mm; margin-top: 10mm; page-break-inside: avoid; }
+.stats-bloc { flex: 1; }
+.stats-bloc.genre { flex: 0 0 62mm; }
+.stats-titre {
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #111827;
+  margin-bottom: 4px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #9ca3af;
+}
+.stats table { width: 100%; }
+.stats th.center, .stats td.center { text-align: center; }
+.stats thead th.center { width: 20mm; }
+.stats tr.total-row td { background-color: #111827; color: #fff; font-weight: 700; }
 
-  .badge {
-    display: inline-block;
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 7pt;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .badge-active { background: #d1fae5; color: #065f46; }
-  .badge-abandon { background: #fee2e2; color: #991b1b; }
-
-  /* ── Tableaux statistiques ── */
-  .stats { display: flex; gap: 10mm; margin-top: 10mm; page-break-inside: avoid; }
-  .stats-bloc { flex: 1; }
-  .stats-bloc.genre { flex: 0 0 62mm; }
-  .stats-titre {
-    font-size: 8pt;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    color: #111827;
-    margin-bottom: 4px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid #9ca3af;
-  }
-  .stats table { width: 100%; }
-  .stats th.center, .stats td.center { text-align: center; }
-  .stats thead th.center { width: 20mm; }
-  .stats tr.total-row td { background-color: #111827; color: #fff; font-weight: 700; }
-
-  /* ── Pied de page ── */
-  .footer {
-    margin-top: 12px;
-    font-size: 7.5pt;
-    color: #9ca3af;
-    display: flex;
-    justify-content: space-between;
-  }
-</style>
-</head>
-<body>
-
-<!-- En-tête -->
-<div class="header">
-  <div class="header-text">
-    {% if identite %}
-    <div class="header-sub">{{ identite.ministere }}</div>
-    <div class="header-sub">{{ identite.direction }}</div>
-    {% endif %}
-    <div class="header-etab">{{ etab_nom }}</div>
-  </div>
-  <div class="header-right">
-    YELEN SCHOOL<br>
-    Année scolaire : {{ annee_libelle }}
-  </div>
-</div>
-
+/* ── Pied de page ── */
+.footer {
+  margin-top: 12px;
+  font-size: 7.5pt;
+  color: #9ca3af;
+  display: flex;
+  justify-content: space-between;
+}
+{% endblock %}
+{% block corps %}
 <div class="doc-title">Liste des élèves</div>
 <div class="doc-subtitle">
-  {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
+  Année scolaire {{ annee_libelle }} — {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
   {% if filtre_classe %} — Classe : {{ filtre_classe }}{% endif %}
   {% if filtre_statut %} — Statut : {{ filtre_statut }}{% endif %}
 </div>
@@ -248,6 +202,4 @@
   <span>Édité le {{ date_edition }}</span>
   <span>{{ nb_eleves }} élève{{ nb_eleves|pluralize }} — {{ annee_libelle }}</span>
 </div>
-
-</body>
-</html>
+{% endblock %}

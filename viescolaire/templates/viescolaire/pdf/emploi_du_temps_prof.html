@@ -1,196 +1,192 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-  /* Une seule page A4 paysage : en-tête, six jours, récapitulatif sur deux
-     colonnes, signature. Dix séances par jour tiennent avec marge. */
-  @page {
+{% extends "pdf/base.html" %}
+{% block page %}@page {
     size: A4 landscape;
     margin: 5mm;
-  }
+}{% endblock %}
+{% block css %}
+/* Une seule page A4 paysage : en-tête, six jours, récapitulatif sur deux
+   colonnes, signature. Dix séances par jour tiennent avec marge. */
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: "DejaVu Sans", Arial, sans-serif;
-    font-size: 7.5pt;
-    color: #111;
-    background: #fff;
-    line-height: 1.1;
-  }
+body {
+  font-family: "DejaVu Sans", Arial, sans-serif;
+  font-size: 7.5pt;
+  color: #111;
+  background: #fff;
+  line-height: 1.1;
+}
 
-  /* ── Header N&B ── */
-  .header {
-    border-bottom: 2pt solid #111;
-    padding-bottom: 1.5mm;
-    margin-bottom: 2mm;
-    display: table;
-    width: 100%;
-  }
-  .header-left  { display: table-cell; vertical-align: bottom; }
-  .header-right { display: table-cell; vertical-align: bottom; text-align: right; }
+/* ── Header N&B ── */
+.header {
+  border-bottom: 2pt solid #111;
+  padding-bottom: 1.5mm;
+  margin-bottom: 2mm;
+  display: table;
+  width: 100%;
+}
+.header-left  { display: table-cell; vertical-align: bottom; }
+.header-right { display: table-cell; vertical-align: bottom; text-align: right; }
 
-  .school-name   { font-size: 11pt; font-weight: bold; color: #111; letter-spacing: -0.01em; }
-  .doc-title     { font-size: 7pt; color: #444; text-transform: uppercase;
-                   letter-spacing: 0.1em; font-weight: 600; margin-top: 0.5mm; }
-  .prof-name     { font-size: 10pt; font-weight: 800; color: #111; }
-  .prof-fonction { font-size: 7.5pt; color: #444; margin-top: 0.5mm; }
-  .academic-year { font-size: 7pt; color: #444; margin-top: 0.5mm; }
+.school-name   { font-size: 11pt; font-weight: bold; color: #111; letter-spacing: -0.01em; }
+.doc-title     { font-size: 7pt; color: #444; text-transform: uppercase;
+                 letter-spacing: 0.1em; font-weight: 600; margin-top: 0.5mm; }
+.prof-name     { font-size: 10pt; font-weight: 800; color: #111; }
+.prof-fonction { font-size: 7.5pt; color: #444; margin-top: 0.5mm; }
+.academic-year { font-size: 7pt; color: #444; margin-top: 0.5mm; }
 
-  /* ── Stats bar N&B ── */
-  .stats-bar {
-    display: table;
-    width: 100%;
-    margin-bottom: 1.5mm;
-    background: #f5f5f5;
-    border: 1pt solid #bbb;
-    border-radius: 2px;
-    padding: 1mm 3mm;
-  }
-  .stat-item {
-    display: table-cell;
-    text-align: center;
-    border-right: 1pt solid #ddd;
-    padding: 0 4mm;
-  }
-  .stat-item:last-child { border-right: none; }
-  .stat-value { font-size: 9pt; font-weight: 800; color: #111; }
-  .stat-label { font-size: 6pt; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
+/* ── Stats bar N&B ── */
+.stats-bar {
+  display: table;
+  width: 100%;
+  margin-bottom: 1.5mm;
+  background: #f5f5f5;
+  border: 1pt solid #bbb;
+  border-radius: 2px;
+  padding: 1mm 3mm;
+}
+.stat-item {
+  display: table-cell;
+  text-align: center;
+  border-right: 1pt solid #ddd;
+  padding: 0 4mm;
+}
+.stat-item:last-child { border-right: none; }
+.stat-value { font-size: 9pt; font-weight: 800; color: #111; }
+.stat-label { font-size: 6pt; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
 
-  /* ── Grid ── */
-  .timetable-grid {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-  }
-  .day-col {
-    vertical-align: top;
-    border: 1pt solid #bbb;
-    width: {% widthratio 100 grille|length 1 %}%;
-  }
+/* ── Grid ── */
+.timetable-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.day-col {
+  vertical-align: top;
+  border: 1pt solid #bbb;
+  width: {% widthratio 100 grille|length 1 %}%;
+}
 
-  /* En-tête jours N&B */
-  .day-header {
-    background: #111;
-    color: #fff;
-    border-bottom: 1pt solid #111;
-    padding: 3px 2px;
-    font-size: 7pt;
-    font-weight: 800;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .day-body {
-    padding: 2px;
-  }
+/* En-tête jours N&B */
+.day-header {
+  background: #111;
+  color: #fff;
+  border-bottom: 1pt solid #111;
+  padding: 3px 2px;
+  font-size: 7pt;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.day-body {
+  padding: 2px;
+}
 
-  /* ── Lesson Card N&B, deux lignes : horaire + classe, matière + salle ── */
-  .lesson {
-    background: #fff;
-    border: 0.75pt solid #bbb;
-    border-left: 2pt solid #111;
-    border-radius: 2px;
-    padding: 2px 4px;
-    margin-bottom: 2px;
-    page-break-inside: avoid;
-  }
-  .lesson-line { display: table; width: 100%; }
-  .lesson-line > span { display: table-cell; vertical-align: top; }
-  .lesson-time { font-size: 6.5pt; font-weight: 700; color: #333; }
-  .lesson-subject { font-size: 7pt; font-weight: 700; color: #111; }
-  .lesson-classe, .lesson-room {
-    width: 1%;
-    padding-left: 2mm;
-    text-align: right;
-    white-space: nowrap;
-    font-size: 6.5pt;
-  }
-  .lesson-classe { font-weight: 800; color: #111; }
-  .lesson-room { font-weight: 400; color: #444; }
+/* ── Lesson Card N&B, deux lignes : horaire + classe, matière + salle ── */
+.lesson {
+  background: #fff;
+  border: 0.75pt solid #bbb;
+  border-left: 2pt solid #111;
+  border-radius: 2px;
+  padding: 2px 4px;
+  margin-bottom: 2px;
+  page-break-inside: avoid;
+}
+.lesson-line { display: table; width: 100%; }
+.lesson-line > span { display: table-cell; vertical-align: top; }
+.lesson-time { font-size: 6.5pt; font-weight: 700; color: #333; }
+.lesson-subject { font-size: 7pt; font-weight: 700; color: #111; }
+.lesson-classe, .lesson-room {
+  width: 1%;
+  padding-left: 2mm;
+  text-align: right;
+  white-space: nowrap;
+  font-size: 6.5pt;
+}
+.lesson-classe { font-weight: 800; color: #111; }
+.lesson-room { font-weight: 400; color: #444; }
 
-  /* Créneaux vides N&B */
-  .empty-state {
-    font-size: 6.5pt;
-    color: #888;
-    text-align: center;
-    padding: 5mm 0;
-    font-style: italic;
-    background: #f5f5f5;
-  }
+/* Créneaux vides N&B */
+.empty-state {
+  font-size: 6.5pt;
+  color: #888;
+  text-align: center;
+  padding: 5mm 0;
+  font-style: italic;
+  background: #f5f5f5;
+}
 
-  /* ── Récapitulatif matières N&B ── */
-  .recap-area {
-    margin-top: 3mm;
-  }
-  .recap-title {
-    font-size: 6.5pt;
-    font-weight: 700;
-    color: #333;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 1mm;
-  }
-  .recap-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 6.5pt;
-  }
-  .recap-table th {
-    background: #111;
-    color: #fff;
-    border: 1pt solid #111;
-    padding: 2px 4px;
-    text-align: left;
-    font-weight: 700;
-  }
-  .recap-table td {
-    border: 0.5pt solid #bbb;
-    padding: 1.5px 4px;
-    color: #111;
-  }
-  .recap-table tr:nth-child(even) td { background: #f5f5f5; }
-  .recap-table .recap-sep { border-left: 1.5pt solid #111; }
+/* ── Récapitulatif matières N&B ── */
+.recap-area {
+  margin-top: 3mm;
+}
+.recap-title {
+  font-size: 6.5pt;
+  font-weight: 700;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1mm;
+}
+.recap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 6.5pt;
+}
+.recap-table th {
+  background: #111;
+  color: #fff;
+  border: 1pt solid #111;
+  padding: 2px 4px;
+  text-align: left;
+  font-weight: 700;
+}
+.recap-table td {
+  border: 0.5pt solid #bbb;
+  padding: 1.5px 4px;
+  color: #111;
+}
+.recap-table tr:nth-child(even) td { background: #f5f5f5; }
+.recap-table .recap-sep { border-left: 1.5pt solid #111; }
 
-  /* ── Signature ── */
-  .signature-area {
-    margin-top: 3mm;
-    display: table;
-    width: 100%;
-    page-break-inside: avoid;
-  }
-  .signature-box { display: table-cell; width: 100%; text-align: right; }
-  .date-place    { font-size: 7.5pt; color: #333; margin-bottom: 2mm; }
-  .sig-function  { font-size: 8pt; font-weight: 700; color: #111; margin-bottom: 7mm; }
-  .sig-name {
-    font-size: 8pt; font-weight: 800; color: #111;
-    display: inline-block;
-    border-top: 1pt solid #555;
-    padding-top: 1mm;
-    min-width: 50mm;
-    text-align: center;
-  }
+/* ── Signature ── */
+.signature-area {
+  margin-top: 3mm;
+  display: table;
+  width: 100%;
+  page-break-inside: avoid;
+}
+.signature-box { display: table-cell; width: 100%; text-align: right; }
+.date-place    { font-size: 7.5pt; color: #333; margin-bottom: 2mm; }
+.sig-function  { font-size: 8pt; font-weight: 700; color: #111; margin-bottom: 7mm; }
+.sig-name {
+  font-size: 8pt; font-weight: 800; color: #111;
+  display: inline-block;
+  border-top: 1pt solid #555;
+  padding-top: 1mm;
+  min-width: 50mm;
+  text-align: center;
+}
 
-  /* ── Footer N&B ── */
-  .footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding-top: 1.5mm;
-    border-top: 0.5pt solid #bbb;
-    font-size: 6pt;
-    color: #555;
-    display: table;
-    width: 100%;
-  }
-  .footer-left  { display: table-cell; text-align: left; }
-  .footer-right { display: table-cell; text-align: right; }
-</style>
-</head>
-<body>
-
+/* ── Footer N&B ── */
+.footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding-top: 1.5mm;
+  border-top: 0.5pt solid #bbb;
+  font-size: 6pt;
+  color: #555;
+  display: table;
+  width: 100%;
+}
+.footer-left  { display: table-cell; text-align: left; }
+.footer-right { display: table-cell; text-align: right; }
+{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
 <div class="header">
   <div class="header-left">
     <div class="school-name">{% if etab %}{{ etab.nom }}{% else %}YELEN SCHOOL{% endif %}</div>
@@ -301,6 +297,4 @@
     {% if etab %}{{ etab.nom }}{% else %}YELEN SCHOOL{% endif %} — Confidentiel
   </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,134 +1,91 @@
-{% load signataire_tags %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        @page {
-            size: A4 portrait; margin: 15mm;
-            @bottom-right { content: "Page " counter(page) " sur " counter(pages); font-size: 9pt; color: #666; }
-        }
-        body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #111; margin: 0; padding: 0; }
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page {
+    size: A4 portrait; margin: 15mm;
+    @bottom-right { content: "Page " counter(page) " sur " counter(pages); font-size: 9pt; color: #666; }
+}{% endblock %}
+{% block css %}
+body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #111; margin: 0; padding: 0; }
+.info-box {
+    background: #f5f5f5; padding: 10px; border-left: 3pt solid #111;
+    margin-bottom: 15px; font-size: 9pt;
+}
 
-        .pdf-entete {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2.5px solid #111;
-        }
-        .pdf-entete-gauche { display: flex; align-items: center; gap: 12px; }
-        .pdf-logo { width: 55px; height: 55px; object-fit: contain; filter: grayscale(100%); }
-        .pdf-etab-nom { font-size: 15pt; font-weight: bold; color: #111; margin: 0 0 3px 0; }
-        .pdf-etab-agrement { font-size: 8pt; color: #444; font-style: italic; margin: 2px 0; }
-        .pdf-etab-info { font-size: 8pt; color: #444; margin: 2px 0; }
-        .pdf-entete-droit { text-align: right; }
-        .doc-title { background: #fff; border: 1.5px solid #111; padding: 8px 16px; border-radius: 4px; }
-        .doc-title h2 { margin: 0; font-size: 12pt; color: #111; text-transform: uppercase; letter-spacing: 1px; }
-        .doc-meta { font-size: 9pt; margin: 4px 0 0 0; }
+.cycle-section { margin-bottom: 20px; page-break-inside: avoid; }
+.cycle-header {
+    background: #111; color: #fff; padding: 8px 12px;
+    display: flex; justify-content: space-between; font-weight: bold;
+}
 
-        .info-box {
-            background: #f5f5f5; padding: 10px; border-left: 3pt solid #111;
-            margin-bottom: 15px; font-size: 9pt;
-        }
+.classe-section { border: 1px solid #ccc; margin-bottom: 15px; page-break-inside: avoid; }
+.classe-header {
+    background: #ddd; padding: 8px 12px;
+    border-bottom: 1px solid #bbb;
+    display: flex; justify-content: space-between; font-weight: bold;
+}
 
-        .cycle-section { margin-bottom: 20px; page-break-inside: avoid; }
-        .cycle-header {
-            background: #111; color: #fff; padding: 8px 12px;
-            display: flex; justify-content: space-between; font-weight: bold;
-        }
+table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+th { background: #eee; padding: 6px 8px; text-align: left; border-bottom: 1.5px solid #bbb; font-weight: bold; }
+td { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; }
+th.right, td.right { text-align: right; }
+tr:nth-child(even) td { background: #f5f5f5; }
+.total-row td { font-weight: bold; background: #ebebeb; border-top: 1.5px solid #bbb; }
 
-        .classe-section { border: 1px solid #ccc; margin-bottom: 15px; page-break-inside: avoid; }
-        .classe-header {
-            background: #ddd; padding: 8px 12px;
-            border-bottom: 1px solid #bbb;
-            display: flex; justify-content: space-between; font-weight: bold;
-        }
+.total-general {
+    border: 2.5px solid #111; padding: 12px;
+    text-align: right; font-size: 12pt; font-weight: bold;
+    margin-top: 20px;
+}
 
-        table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-        th { background: #eee; padding: 6px 8px; text-align: left; border-bottom: 1.5px solid #bbb; font-weight: bold; }
-        td { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; }
-        th.right, td.right { text-align: right; }
-        tr:nth-child(even) td { background: #f5f5f5; }
-        .total-row td { font-weight: bold; background: #ebebeb; border-top: 1.5px solid #bbb; }
+.footer {
+    margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc;
+    font-size: 8pt; color: #555; display: flex; justify-content: space-between;
+}
+{% endblock %}
+{% block corps %}
+<div class="pdf-titre">Liste des redevables</div>
+<p class="pdf-sous-titre">Année scolaire : <strong>{{ annee_courante.libelle }}</strong> — Édité le {{ now|date:"d/m/Y" }}</p>
 
-        .total-general {
-            border: 2.5px solid #111; padding: 12px;
-            text-align: right; font-size: 12pt; font-weight: bold;
-            margin-top: 20px;
-        }
+<div class="info-box"><strong>{{ nb_redevables }}</strong> élève(s) redevable(s)</div>
 
-        .footer {
-            margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc;
-            font-size: 8pt; color: #555; display: flex; justify-content: space-between;
-        }
-    </style>
-</head>
-<body>
-    <div class="pdf-entete">
-        <div class="pdf-entete-gauche">
-            {% if logo_url %}
-            <img src="{{ logo_url }}" class="pdf-logo" alt="Logo">
-            {% elif etab_logo_url %}
-            <img src="{{ etab_logo_url }}" class="pdf-logo" alt="Logo">
-            {% endif %}
-            <div>
-                <h1 class="pdf-etab-nom">{% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom }}{% endif %}</h1>
-                {% if identite and identite.numero_agrement_mena %}
-                <p class="pdf-etab-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>
-                {% endif %}
-                {% if identite %}
-                <p class="pdf-etab-info">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</p>
-                {% if identite.telephone %}<p class="pdf-etab-info">Tél : {{ identite.telephone }}</p>{% endif %}
-                {% endif %}
-            </div>
-        </div>
-        <div class="pdf-entete-droit">
-            <div class="doc-title"><h2>LISTE DES REDEVABLES</h2></div>
-            <p class="doc-meta">Année scolaire : <strong>{{ annee_courante.libelle }}</strong></p>
-            <p class="doc-meta">Date : {{ now|date:"d/m/Y" }}</p>
-        </div>
+{% for cycle_data in cycles_list %}
+<div class="cycle-section">
+    <div class="cycle-header">
+        <span>{{ cycle_data.cycle.nom }}</span>
+        <span>{{ cycle_data.total|floatformat:0 }} FCFA</span>
     </div>
-
-    <div class="info-box"><strong>{{ nb_redevables }}</strong> élève(s) redevable(s)</div>
-
-    {% for cycle_data in cycles_list %}
-    <div class="cycle-section">
-        <div class="cycle-header">
-            <span>{{ cycle_data.cycle.nom }}</span>
-            <span>{{ cycle_data.total|floatformat:0 }} FCFA</span>
+    {% for classe_data in cycle_data.classes %}
+    <div class="classe-section">
+        <div class="classe-header">
+            <span>{{ classe_data.classe.nom }}</span>
+            <span>{{ classe_data.total|floatformat:0 }} FCFA</span>
         </div>
-        {% for classe_data in cycle_data.classes %}
-        <div class="classe-section">
-            <div class="classe-header">
-                <span>{{ classe_data.classe.nom }}</span>
-                <span>{{ classe_data.total|floatformat:0 }} FCFA</span>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Matricule</th><th>Élève</th>
-                        <th class="right">Total Dû</th>
-                        <th class="right">Payé</th>
-                        <th class="right">Reste</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in classe_data.eleves %}
-                    <tr>
-                        <td>{{ item.inscription.eleve.matricule }}</td>
-                        <td>{{ item.inscription.eleve.nom }} {{ item.inscription.eleve.prenom }}</td>
-                        <td class="right">{{ item.total_du|floatformat:0 }}</td>
-                        <td class="right">{{ item.total_paye|floatformat:0 }}</td>
-                        <td class="right"><strong>{{ item.reste|floatformat:0 }}</strong></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endfor %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Matricule</th><th>Élève</th>
+                    <th class="right">Total Dû</th>
+                    <th class="right">Payé</th>
+                    <th class="right">Reste</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in classe_data.eleves %}
+                <tr>
+                    <td>{{ item.inscription.eleve.matricule }}</td>
+                    <td>{{ item.inscription.eleve.nom }} {{ item.inscription.eleve.prenom }}</td>
+                    <td class="right">{{ item.total_du|floatformat:0 }}</td>
+                    <td class="right">{{ item.total_paye|floatformat:0 }}</td>
+                    <td class="right"><strong>{{ item.reste|floatformat:0 }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     {% endfor %}
+</div>
+{% endfor %}
 
-    <div class="total-general">TOTAL REDEVABLE : {{ total_redevable|floatformat:0 }} FCFA</div>
+<div class="total-general">TOTAL REDEVABLE : {{ total_redevable|floatformat:0 }} FCFA</div>
 
-    {% signataire_auto "LISTE_REDEVABLES" %}
-</body>
-</html>
+{% signataire_auto "LISTE_REDEVABLES" %}
+{% endblock %}

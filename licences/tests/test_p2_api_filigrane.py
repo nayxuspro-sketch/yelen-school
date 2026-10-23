@@ -219,7 +219,7 @@ class TestFiligranePDF:
         """Régression (500 sur /personnel/pdf/) : le partial ne doit pas exiger « etablissement »."""
         from django.template.loader import render_to_string
         from django.utils.html import escape
-        partial = 'documents/pdf/partials/filigrane_licence.html'
+        partial = 'pdf/partials/filigrane_licence.html'
         info = get_licence_info_for_pdf(None, etablissement)
 
         html = render_to_string(partial, {'licence_info': info})
@@ -232,7 +232,7 @@ class TestFiligranePDF:
 
     def test_template_filigrane_exists(self):
         from pathlib import Path
-        p = Path('documents/templates/documents/pdf/partials/filigrane_licence.html')
+        p = Path('templates/pdf/partials/filigrane_licence.html')
         assert p.exists()
         content = p.read_text()
         assert 'licence_info' in content
@@ -253,19 +253,16 @@ class TestFiligranePDF:
                 continue
             assert 'filigrane_licence' in content, f"{tpl} n'inclut pas filigrane"
 
-        # Pour pedagogie, bulletin_base.html doit contenir filigrane, et les enfants en héritent
-        base_path = Path('pedagogie/templates/pedagogie/pdf/bulletin_base.html')
+        # Pour pedagogie, le socle pdf/base_rapport.html inclut le filigrane et ses enfants en héritent
+        base_path = Path('templates/pdf/base_rapport.html')
         assert base_path.exists()
         base_content = base_path.read_text()
-        assert 'filigrane_licence' in base_content, "bulletin_base.html doit inclure filigrane"
+        assert 'filigrane_licence' in base_content, "base_rapport.html doit inclure filigrane"
 
         bulletin_templates = list(Path('pedagogie/templates/pedagogie/pdf').glob('*.html'))
         for tpl in bulletin_templates:
-            if tpl.name == 'bulletin_base.html':
-                continue
             content = tpl.read_text()
-            # Si template extends bulletin_base, filigrane vient de l'héritage
-            if 'extends' in content and 'bulletin_base' in content:
-                # OK via héritage, mais on vérifie quand même que base l'a
+            # Si template extends base_rapport, filigrane vient de l'héritage
+            if 'extends' in content and 'base_rapport' in content:
                 continue
             assert 'filigrane_licence' in content, f"{tpl} n'inclut pas filigrane"

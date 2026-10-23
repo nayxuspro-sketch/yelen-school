@@ -1,14 +1,11 @@
-{% load qr_tags signataire_tags %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-/* ── Page ── */
-@page {
+{% extends "pdf/base.html" %}{% load qr_tags signataire_tags %}
+{% block page %}@page {
     size: A5 portrait;
     margin: 0;
-}
+}{% endblock %}
+{% block css %}
+/* ── Page ── */
+
 html {
     margin: 0;
     padding: 0;
@@ -31,50 +28,6 @@ body {
 
 /* ── Zone de contenu ── */
 .page { padding: 0.5cm 1.2cm 0.5cm; }
-
-/* ── En-tête (table 3 colonnes) ── */
-.entete {
-    display: table;
-    width: 100%;
-    border-collapse: collapse;
-    border-bottom: 2.5pt solid #111;
-    padding-bottom: 0.3cm;
-    margin-bottom: 0.3cm;
-}
-.entete-col { display: table-cell; vertical-align: middle; }
-.entete-col-logo   { width: 2cm; }
-.entete-col-cachet { width: 2cm; text-align: right; }
-.entete-col-centre { text-align: center; padding: 0 0.4cm; }
-
-.entete-col-logo img,
-.entete-col-cachet img {
-    width: 1.6cm;
-    height: 1.6cm;
-    object-fit: contain;
-    filter: grayscale(100%);
-}
-
-.entete-pays {
-    font-size: 7pt;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #444;
-    margin-bottom: 2pt;
-}
-.entete-nom {
-    font-size: 12pt;
-    font-weight: bold;
-    text-transform: uppercase;
-    line-height: 1.2;
-    color: #111;
-}
-.entete-agrement {
-    font-size: 7.5pt;
-    color: #444;
-    font-style: italic;
-    margin-top: 2pt;
-}
-.entete-type { font-size: 7.5pt; color: #333; margin-top: 1pt; }
 
 /* ── Titre du document ── */
 .titre-section { text-align: center; margin: 0.3cm 0 0.3cm; }
@@ -167,42 +120,15 @@ body {
     text-transform: uppercase;
     color: #111;
 }
-</style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
-
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
 <div class="barre-top"></div>
 
 <div class="page">
 
-    <!-- En-tête -->
-    <div class="entete">
-        <div class="entete-col entete-col-logo">
-            {% if logo_url %}
-            <img src="{{ logo_url }}" alt="Logo">
-            {% elif etab_logo_url %}
-            <img src="{{ etab_logo_url }}" alt="Logo">
-            {% endif %}
-        </div>
-        <div class="entete-col entete-col-centre">
-            <div class="entete-pays">Burkina Faso</div>
-            <div class="entete-nom">
-                {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ annee_scolaire.etablissement }}{% endif %}
-            </div>
-            {% if identite and identite.numero_agrement_mena %}
-            <div class="entete-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</div>
-            {% endif %}
-            {% if identite %}
-            <div class="entete-type">{{ identite.get_type_etablissement_display }}</div>
-            {% endif %}
-        </div>
-        <div class="entete-col entete-col-cachet">
-            {% if identite and identite.cachet_etablissement %}
-            <img src="{{ identite.cachet_etablissement.url }}" alt="Cachet">
-            {% endif %}
-        </div>
-    </div>
+    {% include "pdf/partials/entete.html" with compacte=True %}
 
     <!-- Titre -->
     <div class="titre-section">
@@ -250,7 +176,7 @@ body {
     <div class="bas-page">
         <div class="bas-qr">
             {% with etab_nom=identite.nom_etablissement|default:annee_scolaire.etablissement %}
-            {% qr_eleve eleve.matricule eleve.nom eleve.prenom etab_nom 'petit' adresse=identite.adresse ville=identite.ville telephone=identite.telephone %}
+            {% qr_eleve eleve.matricule eleve.nom eleve.prenom etab_nom 'petit' adresse=identite.adresse_complete ville=identite.ville telephone=identite.telephone %}
             {% endwith %}
             <div class="bas-qr-legende">
                 {{ eleve.matricule }}<br>
@@ -277,6 +203,4 @@ body {
 </div>
 
 <div class="barre-bottom"></div>
-
-</body>
-</html>
+{% endblock %}

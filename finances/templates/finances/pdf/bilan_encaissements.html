@@ -1,184 +1,125 @@
-{% load signataire_tags %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        @page {
-            size: A4 portrait;
-            margin: 15mm;
-            @bottom-right {
-                content: "Page " counter(page) " sur " counter(pages);
-                font-size: 9pt;
-                color: #666;
-            }
-        }
-        body {
-            font-family: "DejaVu Sans", sans-serif;
-            font-size: 10pt;
-            color: #111;
-            margin: 0;
-            padding: 0;
-        }
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page {
+    size: A4 portrait;
+    margin: 15mm;
+    @bottom-right {
+        content: "Page " counter(page) " sur " counter(pages);
+        font-size: 9pt;
+        color: #666;
+    }
+}{% endblock %}
+{% block css %}
+body {
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 10pt;
+    color: #111;
+    margin: 0;
+    padding: 0;
+}
+.stats-grid { display: flex; gap: 12px; margin-bottom: 20px; }
+.stat-card {
+    flex: 1; padding: 12px; text-align: center;
+    background: #fff; border: 1pt solid #ccc; border-left: 3pt solid #111;
+}
+.stat-label { font-size: 9pt; color: #555; margin-bottom: 4px; }
+.stat-value { font-size: 14pt; font-weight: bold; color: #111; }
 
-        .pdf-entete {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2.5px solid #111;
-        }
-        .pdf-entete-gauche { display: flex; align-items: center; gap: 12px; }
-        .pdf-logo { width: 55px; height: 55px; object-fit: contain; filter: grayscale(100%); }
-        .pdf-etab-nom { font-size: 15pt; font-weight: bold; color: #111; margin: 0 0 3px 0; }
-        .pdf-etab-agrement { font-size: 8pt; color: #444; font-style: italic; margin: 2px 0; }
-        .pdf-etab-info { font-size: 8pt; color: #444; margin: 2px 0; }
-        .pdf-entete-droit { text-align: right; }
-        .doc-title { background: #fff; border: 1.5px solid #111; padding: 6px 14px; border-radius: 4px; }
-        .doc-title h2 { margin: 0; font-size: 12pt; color: #111; }
-        .doc-meta { font-size: 9pt; margin: 4px 0 0 0; }
+.section { margin-bottom: 20px; page-break-inside: avoid; }
+.section-title {
+    background: #111; color: #fff;
+    padding: 6px 10px;
+    font-weight: bold; font-size: 10pt;
+}
 
-        .stats-grid { display: flex; gap: 12px; margin-bottom: 20px; }
-        .stat-card {
-            flex: 1; padding: 12px; text-align: center;
-            background: #fff; border: 1pt solid #ccc; border-left: 3pt solid #111;
-        }
-        .stat-label { font-size: 9pt; color: #555; margin-bottom: 4px; }
-        .stat-value { font-size: 14pt; font-weight: bold; color: #111; }
+table { width: 100%; border-collapse: collapse; font-size: 9pt; border: 1px solid #ccc; }
+th { background: #eee; padding: 6px 8px; text-align: left; border-bottom: 1.5px solid #bbb; font-weight: bold; }
+td { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; }
+th.right, td.right { text-align: right; }
+tr:nth-child(even) td { background: #f5f5f5; }
+.total-row td { font-weight: bold; border-top: 2px solid #111; border-bottom: 2px solid #111; background: #fff; }
 
-        .section { margin-bottom: 20px; page-break-inside: avoid; }
-        .section-title {
-            background: #111; color: #fff;
-            padding: 6px 10px;
-            font-weight: bold; font-size: 10pt;
-        }
+.classe-sub-header {
+    background: #ddd; padding: 6px 10px;
+    font-weight: bold; border-bottom: 1px solid #bbb;
+}
+.footer { margin-top: 28px; display: flex; justify-content: flex-end; font-size: 9pt; color: #555; }
+{% endblock %}
+{% block corps %}
+<div class="pdf-titre">Bilan des encaissements</div>
+<p class="pdf-sous-titre">{% if annee_selected %}Année scolaire : <strong>{{ annee_selected.libelle }}</strong>{% else %}Toutes les années{% endif %}{% if rub_selected %} — Rubrique : <strong>{{ rub_selected.nom }}</strong>{% endif %}{% if date_debut or date_fin %} — Période : {% if date_debut %}{{ date_debut }}{% else %}…{% endif %} au {% if date_fin %}{{ date_fin }}{% else %}…{% endif %}{% endif %} — Édité le {{ now|date:"d/m/Y" }}</p>
 
-        table { width: 100%; border-collapse: collapse; font-size: 9pt; border: 1px solid #ccc; }
-        th { background: #eee; padding: 6px 8px; text-align: left; border-bottom: 1.5px solid #bbb; font-weight: bold; }
-        td { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; }
-        th.right, td.right { text-align: right; }
-        tr:nth-child(even) td { background: #f5f5f5; }
-        .total-row td { font-weight: bold; border-top: 2px solid #111; border-bottom: 2px solid #111; background: #fff; }
-
-        .classe-sub-header {
-            background: #ddd; padding: 6px 10px;
-            font-weight: bold; border-bottom: 1px solid #bbb;
-        }
-        .footer { margin-top: 28px; display: flex; justify-content: flex-end; font-size: 9pt; color: #555; }
-    </style>
-</head>
-<body>
-    <div class="pdf-entete">
-        <div class="pdf-entete-gauche">
-            {% if logo_url %}
-            <img src="{{ logo_url }}" class="pdf-logo" alt="Logo">
-            {% elif etab_logo_url %}
-            <img src="{{ etab_logo_url }}" class="pdf-logo" alt="Logo">
-            {% endif %}
-            <div>
-                <h1 class="pdf-etab-nom">
-                    {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom }}{% endif %}
-                </h1>
-                {% if identite and identite.numero_agrement_mena %}
-                <p class="pdf-etab-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>
-                {% endif %}
-                {% if identite %}
-                <p class="pdf-etab-info">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</p>
-                {% if identite.telephone %}<p class="pdf-etab-info">Tél : {{ identite.telephone }}</p>{% endif %}
-                {% endif %}
-            </div>
-        </div>
-        <div class="pdf-entete-droit">
-            <div class="doc-title"><h2>BILAN DES ENCAISSEMENTS</h2></div>
-            <p class="doc-meta">
-                {% if annee_selected %}Année : <strong>{{ annee_selected.libelle }}</strong>{% else %}Toutes les années{% endif %}
-            </p>
-            {% if rub_selected %}
-            <p class="doc-meta">Rubrique : <strong>{{ rub_selected.nom }}</strong></p>
-            {% endif %}
-            {% if date_debut or date_fin %}
-            <p class="doc-meta">
-                Période : {% if date_debut %}{{ date_debut }}{% else %}…{% endif %} au {% if date_fin %}{{ date_fin }}{% else %}…{% endif %}
-            </p>
-            {% endif %}
-            <p class="doc-meta">Date : {{ now|date:"d/m/Y" }}</p>
-        </div>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Encaissé</div>
+        <div class="stat-value">{{ total_encaissement|floatformat:0 }} FCFA</div>
     </div>
-
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-label">Total Encaissé</div>
-            <div class="stat-value">{{ total_encaissement|floatformat:0 }} FCFA</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Nombre de transactions</div>
-            <div class="stat-value">{{ nb_paiements }}</div>
-        </div>
+    <div class="stat-card">
+        <div class="stat-label">Nombre de transactions</div>
+        <div class="stat-value">{{ nb_paiements }}</div>
     </div>
+</div>
 
-    <div class="section">
-        <div class="section-title">Par Mode de Paiement</div>
+<div class="section">
+    <div class="section-title">Par Mode de Paiement</div>
+    <table>
+        <thead>
+            <tr><th>Mode</th><th class="right">Nombre</th><th class="right">Total</th></tr>
+        </thead>
+        <tbody>
+            {% for mode, data in par_mode.items %}
+            <tr>
+                <td>{{ mode }}</td>
+                <td class="right">{{ data.count }}</td>
+                <td class="right"><strong>{{ data.total|floatformat:0 }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <div class="section-title">Par Jour</div>
+    <table>
+        <thead>
+            <tr><th>Date</th><th class="right">Nombre</th><th class="right">Total</th></tr>
+        </thead>
+        <tbody>
+            {% for jour, data in par_jour.items %}
+            <tr>
+                <td>{{ jour }}</td>
+                <td class="right">{{ data.count }}</td>
+                <td class="right"><strong>{{ data.total|floatformat:0 }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% for cycle_data in cycles_list %}
+<div class="section">
+    <div class="section-title">{{ cycle_data.cycle.nom }} — {{ cycle_data.total|floatformat:0 }} FCFA</div>
+    {% for classe_data in cycle_data.classes %}
+    <div style="margin-bottom:15px; page-break-inside:avoid;">
+        <div class="classe-sub-header">{{ classe_data.classe.nom }} — {{ classe_data.total|floatformat:0 }} FCFA</div>
         <table>
             <thead>
-                <tr><th>Mode</th><th class="right">Nombre</th><th class="right">Total</th></tr>
+                <tr><th>Date</th><th>Élève</th><th>Rubrique</th><th class="right">Montant</th></tr>
             </thead>
             <tbody>
-                {% for mode, data in par_mode.items %}
+                {% for p in classe_data.paiements %}
                 <tr>
-                    <td>{{ mode }}</td>
-                    <td class="right">{{ data.count }}</td>
-                    <td class="right"><strong>{{ data.total|floatformat:0 }}</strong></td>
+                    <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
+                    <td>{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
+                    <td>{{ p.rubrique.nom|default:"—" }}</td>
+                    <td class="right"><strong>{{ p.montant|floatformat:0 }}</strong></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Par Jour</div>
-        <table>
-            <thead>
-                <tr><th>Date</th><th class="right">Nombre</th><th class="right">Total</th></tr>
-            </thead>
-            <tbody>
-                {% for jour, data in par_jour.items %}
-                <tr>
-                    <td>{{ jour }}</td>
-                    <td class="right">{{ data.count }}</td>
-                    <td class="right"><strong>{{ data.total|floatformat:0 }}</strong></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    {% for cycle_data in cycles_list %}
-    <div class="section">
-        <div class="section-title">{{ cycle_data.cycle.nom }} — {{ cycle_data.total|floatformat:0 }} FCFA</div>
-        {% for classe_data in cycle_data.classes %}
-        <div style="margin-bottom:15px; page-break-inside:avoid;">
-            <div class="classe-sub-header">{{ classe_data.classe.nom }} — {{ classe_data.total|floatformat:0 }} FCFA</div>
-            <table>
-                <thead>
-                    <tr><th>Date</th><th>Élève</th><th>Rubrique</th><th class="right">Montant</th></tr>
-                </thead>
-                <tbody>
-                    {% for p in classe_data.paiements %}
-                    <tr>
-                        <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
-                        <td>{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
-                        <td>{{ p.rubrique.nom|default:"—" }}</td>
-                        <td class="right"><strong>{{ p.montant|floatformat:0 }}</strong></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endfor %}
     </div>
     {% endfor %}
+</div>
+{% endfor %}
 
-    {% signataire_auto "BILAN_ENCAISSEMENTS" %}
-</body>
-</html>
+{% signataire_auto "BILAN_ENCAISSEMENTS" %}
+{% endblock %}

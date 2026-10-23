@@ -1,223 +1,187 @@
-{% load signataire_tags %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-  @page { margin: 0; size: A4; }
-  body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; margin: 0; padding: 0; }
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page { margin: 0; size: A4; }{% endblock %}
+{% block css %}
+body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; margin: 0; padding: 0; }
 
-  .page {
-    padding: 1.5cm 2cm;
-    min-height: 100%;
-    position: relative;
-    box-sizing: border-box;
-  }
+.page {
+  padding: 1.5cm 2cm;
+  min-height: 100%;
+  position: relative;
+  box-sizing: border-box;
+}
 
-  /* En-tête avec logo */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 0.8cm;
-    padding-bottom: 0.5cm;
-    border-bottom: 2.5px solid #111;
-  }
-  .header-left { flex: 1; text-align: left; }
-  .header-center { flex: 2; text-align: center; }
-  .header-right { flex: 1; text-align: right; }
+/* Titre principal */
+.titre-doc {
+  text-align: center;
+  margin: 0.5cm 0 0.6cm;
+}
+.titre-doc h1 {
+  font-size: 14pt;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: bold;
+  color: #111;
+  margin: 0;
+  padding: 5px 15px;
+  border: 2px solid #111;
+  display: inline-block;
+}
+.annee {
+  font-size: 10pt;
+  color: #333;
+  margin-top: 5px;
+  font-weight: 500;
+}
+.doc-numero {
+  font-size: 9pt;
+  color: #111;
+  font-weight: bold;
+  margin-top: 4px;
+}
 
-  .logo-img { max-height: 45px; max-width: 80px; filter: grayscale(100%); }
-  .etab-nom { font-size: 13pt; font-weight: bold; color: #111; }
-  .etab-info { font-size: 9pt; color: #444; }
+/* Corps du document */
+.corps {
+  line-height: 1.5;
+  font-size: 11pt;
+  margin: 0.4cm 0;
+  text-align: justify;
+}
+.corps p { margin: 0.25cm 0; }
 
-  /* Titre principal */
-  .titre-doc {
-    text-align: center;
-    margin: 0.5cm 0 0.6cm;
-  }
-  .titre-doc h1 {
-    font-size: 14pt;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: bold;
-    color: #111;
-    margin: 0;
-    padding: 5px 15px;
-    border: 2px solid #111;
-    display: inline-block;
-  }
-  .annee {
-    font-size: 10pt;
-    color: #333;
-    margin-top: 5px;
-    font-weight: 500;
-  }
-  .doc-numero {
-    font-size: 9pt;
-    color: #111;
-    font-weight: bold;
-    margin-top: 4px;
-  }
+.eleve-nom {
+  font-weight: bold;
+  font-size: 12pt;
+  color: #111;
+}
 
-  /* Corps du document */
-  .corps {
-    line-height: 1.5;
-    font-size: 11pt;
-    margin: 0.4cm 0;
-    text-align: justify;
-  }
-  .corps p { margin: 0.25cm 0; }
+.classe-info {
+  font-weight: bold;
+  color: #111;
+}
 
-  .eleve-nom {
-    font-weight: bold;
-    font-size: 12pt;
-    color: #111;
-  }
+/* Tableau financier */
+.recap {
+  border: 1px solid #aaa;
+  padding: 0.4cm 0.5cm;
+  margin: 0.5cm 0;
+  background: #f5f5f5;
+}
+.recap-title {
+  font-size: 9pt;
+  font-weight: bold;
+  color: #111;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.recap table { width: 100%; border-collapse: collapse; }
+.recap td { padding: 4px 6px; font-size: 9.5pt; }
+.recap .lbl { color: #333; text-align: left; }
+.recap .val { text-align: right; font-weight: bold; color: #111; }
+.recap .total-row td {
+  border-top: 2px solid #111;
+  padding-top: 6px;
+  font-size: 10pt;
+}
+.recap .solde-ok { color: #111; font-size: 11pt; }
+.recap .solde-nok { color: #111; font-size: 11pt; font-style: italic; }
+.recap .negative { color: #111; }
 
-  .classe-info {
-    font-weight: bold;
-    color: #111;
-  }
+/* Message de confirmation */
+.confirmation-box {
+  background: #f0f0f0;
+  border: 2px solid #111;
+  padding: 8px 12px;
+  margin: 0.4cm 0;
+}
+.confirmation-box p {
+  margin: 0;
+  font-weight: 500;
+  color: #111;
+  font-size: 9.5pt;
+}
 
-  /* Tableau financier */
-  .recap {
-    border: 1px solid #aaa;
-    padding: 0.4cm 0.5cm;
-    margin: 0.5cm 0;
-    background: #f5f5f5;
-  }
-  .recap-title {
-    font-size: 9pt;
-    font-weight: bold;
-    color: #111;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .recap table { width: 100%; border-collapse: collapse; }
-  .recap td { padding: 4px 6px; font-size: 9.5pt; }
-  .recap .lbl { color: #333; text-align: left; }
-  .recap .val { text-align: right; font-weight: bold; color: #111; }
-  .recap .total-row td {
-    border-top: 2px solid #111;
-    padding-top: 6px;
-    font-size: 10pt;
-  }
-  .recap .solde-ok { color: #111; font-size: 11pt; }
-  .recap .solde-nok { color: #111; font-size: 11pt; font-style: italic; }
-  .recap .negative { color: #111; }
+/* Message d'alerte */
+.alerte-box {
+  background: #ddd;
+  border: 2px solid #111;
+  padding: 8px 12px;
+  margin: 0.4cm 0;
+}
+.alerte-box p {
+  margin: 0;
+  font-weight: bold;
+  color: #111;
+  font-size: 9.5pt;
+  font-style: italic;
+}
 
-  /* Message de confirmation */
-  .confirmation-box {
-    background: #f0f0f0;
-    border: 2px solid #111;
-    padding: 8px 12px;
-    margin: 0.4cm 0;
-  }
-  .confirmation-box p {
-    margin: 0;
-    font-weight: 500;
-    color: #111;
-    font-size: 9.5pt;
-  }
+/* Attestation footer */
+.attestation-footer {
+  margin-top: 0.6cm;
+  text-align: justify;
+  font-style: italic;
+  color: #333;
+  font-size: 9.5pt;
+}
 
-  /* Message d'alerte */
-  .alerte-box {
-    background: #ddd;
-    border: 2px solid #111;
-    padding: 8px 12px;
-    margin: 0.4cm 0;
-  }
-  .alerte-box p {
-    margin: 0;
-    font-weight: bold;
-    color: #111;
-    font-size: 9.5pt;
-    font-style: italic;
-  }
+/* Signature */
+.signature-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5cm;
+  padding-top: 0.5cm;
+}
+.signature-block {
+  text-align: center;
+  width: 40%;
+}
+.signature-func {
+  font-size: 9pt;
+  color: #333;
+  margin-bottom: 1.8cm;
+}
+.signature-line {
+  border-top: 1px solid #111;
+  margin-bottom: 4px;
+  padding-top: 3px;
+}
+.signature-name {
+  font-weight: bold;
+  font-size: 10pt;
+  color: #111;
+}
+.signature-titre {
+  font-size: 9pt;
+  color: #333;
+  margin-top: 4px;
+  font-style: italic;
+}
 
-  /* Attestation footer */
-  .attestation-footer {
-    margin-top: 0.6cm;
-    text-align: justify;
-    font-style: italic;
-    color: #333;
-    font-size: 9.5pt;
-  }
+/* Numéro document */
+.numero {
+  font-size: 8pt;
+  color: #555;
+  text-align: center;
+  margin-top: 0.6cm;
+  padding-top: 0.3cm;
+  border-top: 1px solid #ccc;
+}
 
-  /* Signature */
-  .signature-section {
-    display: flex;
-    justify-content: center;
-    margin-top: 1.5cm;
-    padding-top: 0.5cm;
-  }
-  .signature-block {
-    text-align: center;
-    width: 40%;
-  }
-  .signature-func {
-    font-size: 9pt;
-    color: #333;
-    margin-bottom: 1.8cm;
-  }
-  .signature-line {
-    border-top: 1px solid #111;
-    margin-bottom: 4px;
-    padding-top: 3px;
-  }
-  .signature-name {
-    font-weight: bold;
-    font-size: 10pt;
-    color: #111;
-  }
-  .signature-titre {
-    font-size: 9pt;
-    color: #333;
-    margin-top: 4px;
-    font-style: italic;
-  }
-
-  /* Numéro document */
-  .numero {
-    font-size: 8pt;
-    color: #555;
-    text-align: center;
-    margin-top: 0.6cm;
-    padding-top: 0.3cm;
-    border-top: 1px solid #ccc;
-  }
-
-  /* Date et lieu */
-  .date-lieu {
-    text-align: right;
-    font-size: 10pt;
-    margin-top: 0.4cm;
-    color: #111;
-  }
-</style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
+/* Date et lieu */
+.date-lieu {
+  text-align: right;
+  font-size: 10pt;
+  margin-top: 0.4cm;
+  color: #111;
+}
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
 <div class="page">
 
-  <!-- En-tête avec logo -->
-  <div class="header">
-    <div class="header-left">
-      {% if logo_url %}
-      <img src="{{ logo_url }}" alt="Logo" class="logo-img">
-      {% endif %}
-    </div>
-    <div class="header-center">
-      {% if identite %}
-      <div class="etab-nom">{{ identite.nom_etablissement }}</div>
-      <div class="etab-info">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
-      {% if identite.telephone %}<div class="etab-info">Tél : {{ identite.telephone }}</div>{% endif %}
-      {% endif %}
-    </div>
-    <div class="header-right"></div>
-  </div>
+  {% include "pdf/partials/entete.html" %}
 
   <!-- Titre -->
   <div class="titre-doc">
@@ -321,5 +285,4 @@
   {% endif %}
 
 </div>
-</body>
-</html>
+{% endblock %}

@@ -1,9 +1,5 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-  @page {
+{% extends "pdf/base.html" %}
+{% block page %}@page {
     size: A4;
     margin: 18mm 18mm 20mm 18mm;
     @bottom-center {
@@ -12,164 +8,121 @@
       color: #555;
       font-family: 'DejaVu Sans', Arial, sans-serif;
     }
-  }
+}{% endblock %}
+{% block css %}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DejaVu Sans', Arial, sans-serif;
+  font-size: 10.5pt;
+  color: #111;
+  line-height: 1.5;
+}
 
-  body {
-    font-family: 'DejaVu Sans', Arial, sans-serif;
-    font-size: 10.5pt;
-    color: #111;
-    line-height: 1.5;
-  }
+/* ── Titre ── */
+.titre-bloc {
+  text-align: center;
+  margin: 6mm 0 8mm;
+  padding: 4mm;
+  background: #f5f5f5;
+  border: 1px solid #bbb;
+  border-radius: 2mm;
+}
+.titre-bloc h1 { font-size: 14pt; font-weight: bold; color: #111; letter-spacing: 0.5pt; }
+.titre-bloc .periode { font-size: 11pt; color: #333; margin-top: 2mm; }
 
-  /* ── En-tête établissement ── */
-  .entete {
-    display: flex;
-    align-items: center;
-    gap: 10mm;
-    border-bottom: 2.5px solid #111;
-    padding-bottom: 4mm;
-    margin-bottom: 6mm;
-  }
-  .entete-logo img {
-    width: 20mm;
-    height: 20mm;
-    object-fit: contain;
-    filter: grayscale(100%);
-  }
-  .entete-info { flex: 1; }
-  .entete-info .pays { font-size: 8pt; color: #444; }
-  .entete-info .nom  { font-size: 12pt; font-weight: bold; color: #111; }
-  .entete-info .ville { font-size: 9pt; color: #333; }
-  .entete-annee { text-align: right; font-size: 8.5pt; color: #333; }
+/* ── Infos vacataire ── */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3mm 8mm;
+  margin-bottom: 7mm;
+  font-size: 10pt;
+}
+.info-grid .label { color: #444; font-size: 9pt; }
+.info-grid .value { font-weight: 600; color: #111; }
 
-  /* ── Titre ── */
-  .titre-bloc {
-    text-align: center;
-    margin: 6mm 0 8mm;
-    padding: 4mm;
-    background: #f5f5f5;
-    border: 1px solid #bbb;
-    border-radius: 2mm;
-  }
-  .titre-bloc h1 { font-size: 14pt; font-weight: bold; color: #111; letter-spacing: 0.5pt; }
-  .titre-bloc .periode { font-size: 11pt; color: #333; margin-top: 2mm; }
+/* ── Tableau détail ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+  margin-bottom: 6mm;
+}
 
-  /* ── Infos vacataire ── */
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3mm 8mm;
-    margin-bottom: 7mm;
-    font-size: 10pt;
-  }
-  .info-grid .label { color: #444; font-size: 9pt; }
-  .info-grid .value { font-weight: 600; color: #111; }
+/* En-tête N&B */
+thead tr { background: #111; color: #fff; }
+thead th { padding: 2.5mm 3mm; text-align: left; font-weight: 600; border: 1px solid #111; }
+thead th.right { text-align: right; }
 
-  /* ── Tableau détail ── */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 9.5pt;
-    margin-bottom: 6mm;
-  }
+/* Lignes paires */
+tbody tr:nth-child(even) { background: #f5f5f5; }
+tbody tr:nth-child(odd)  { background: #fff; }
+tbody td { padding: 2mm 3mm; border-bottom: 0.2mm solid #ccc; border-left: 0.5pt solid #ddd; border-right: 0.5pt solid #ddd; }
+tbody td.right { text-align: right; }
 
-  /* En-tête N&B */
-  thead tr { background: #111; color: #fff; }
-  thead th { padding: 2.5mm 3mm; text-align: left; font-weight: 600; border: 1px solid #111; }
-  thead th.right { text-align: right; }
+/* ── Ligne total N&B ── */
+.total-row td {
+  font-weight: bold;
+  background: #fff;
+  border-top: 2px solid #111;
+  border-bottom: 2px solid #111;
+  color: #111;
+  padding: 2.5mm 3mm;
+}
+.total-row td.right { text-align: right; }
 
-  /* Lignes paires */
-  tbody tr:nth-child(even) { background: #f5f5f5; }
-  tbody tr:nth-child(odd)  { background: #fff; }
-  tbody td { padding: 2mm 3mm; border-bottom: 0.2mm solid #ccc; border-left: 0.5pt solid #ddd; border-right: 0.5pt solid #ddd; }
-  tbody td.right { text-align: right; }
+/* ── Montant mis en évidence N&B ── */
+.montant-bloc {
+  text-align: right;
+  margin-bottom: 8mm;
+  font-size: 12pt;
+  padding: 3mm 0;
+  border-top: 1px solid #bbb;
+  border-bottom: 1px solid #bbb;
+}
+.montant-bloc .label { color: #333; font-size: 9pt; font-weight: 600; text-transform: uppercase; }
+.montant-bloc .valeur { font-size: 16pt; font-weight: bold; color: #111; }
 
-  /* ── Ligne total N&B ── */
-  .total-row td {
-    font-weight: bold;
-    background: #fff;
-    border-top: 2px solid #111;
-    border-bottom: 2px solid #111;
-    color: #111;
-    padding: 2.5mm 3mm;
-  }
-  .total-row td.right { text-align: right; }
+/* ── Statut badges N&B ── */
+.statut-ligne {
+  display: flex;
+  gap: 8mm;
+  font-size: 9.5pt;
+  margin-bottom: 10mm;
+  color: #333;
+  align-items: center;
+}
+.statut-ligne .badge {
+  display: inline-block;
+  padding: 1mm 3mm;
+  border-radius: 2mm;
+  font-weight: 600;
+  font-size: 9pt;
+}
+/* PAYÉ : encadré N&B lisible */
+.badge-paye    { background: #fff; border: 1.5pt solid #111; color: #111; font-weight: bold; }
+/* VALIDÉ : fond gris léger */
+.badge-valide  { background: #ebebeb; border: 1pt solid #555; color: #111; }
+/* BROUILLON : fond gris doux */
+.badge-brouillon { background: #f5f5f5; border: 1pt solid #bbb; color: #333; }
 
-  /* ── Montant mis en évidence N&B ── */
-  .montant-bloc {
-    text-align: right;
-    margin-bottom: 8mm;
-    font-size: 12pt;
-    padding: 3mm 0;
-    border-top: 1px solid #bbb;
-    border-bottom: 1px solid #bbb;
-  }
-  .montant-bloc .label { color: #333; font-size: 9pt; font-weight: 600; text-transform: uppercase; }
-  .montant-bloc .valeur { font-size: 16pt; font-weight: bold; color: #111; }
-
-  /* ── Statut badges N&B ── */
-  .statut-ligne {
-    display: flex;
-    gap: 8mm;
-    font-size: 9.5pt;
-    margin-bottom: 10mm;
-    color: #333;
-    align-items: center;
-  }
-  .statut-ligne .badge {
-    display: inline-block;
-    padding: 1mm 3mm;
-    border-radius: 2mm;
-    font-weight: 600;
-    font-size: 9pt;
-  }
-  /* PAYÉ : encadré N&B lisible */
-  .badge-paye    { background: #fff; border: 1.5pt solid #111; color: #111; font-weight: bold; }
-  /* VALIDÉ : fond gris léger */
-  .badge-valide  { background: #ebebeb; border: 1pt solid #555; color: #111; }
-  /* BROUILLON : fond gris doux */
-  .badge-brouillon { background: #f5f5f5; border: 1pt solid #bbb; color: #333; }
-
-  /* ── Signatures ── */
-  .signatures {
-    margin-top: 14mm;
-    display: flex;
-    justify-content: space-between;
-    font-size: 9.5pt;
-  }
-  .sig-bloc { text-align: center; width: 55mm; }
-  .sig-bloc .sig-titre { font-weight: 600; margin-bottom: 15mm; color: #111; }
-  .sig-bloc .sig-ligne { border-top: 0.3mm solid #111; padding-top: 2mm; color: #333; }
-</style>
-</head>
-<body>
-
-<!-- En-tête établissement -->
-<div class="entete">
-  {% if logo_url %}
-  <div class="entete-logo"><img src="{{ logo_url }}" alt="Logo"></div>
-  {% endif %}
-  <div class="entete-info">
-    {% if identite %}
-      <div class="pays">{{ identite.pays|default:"Burkina Faso" }}</div>
-      <div class="nom">{{ identite.nom_etablissement }}</div>
-      <div class="ville">{{ identite.ville }}</div>
-      {% if identite.telephone %}<div class="ville">Tél. : {{ identite.telephone }}</div>{% endif %}
-    {% else %}
-      <div class="nom">Établissement</div>
-    {% endif %}
-  </div>
-  <div class="entete-annee">
-    {{ bulletin.annee_scolaire }}
-  </div>
-</div>
-
+/* ── Signatures ── */
+.signatures {
+  margin-top: 14mm;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5pt;
+}
+.sig-bloc { text-align: center; width: 55mm; }
+.sig-bloc .sig-titre { font-weight: 600; margin-bottom: 15mm; color: #111; }
+.sig-bloc .sig-ligne { border-top: 0.3mm solid #111; padding-top: 2mm; color: #333; }
+{% endblock %}
+{% block corps %}
 <!-- Titre -->
 <div class="titre-bloc">
   <h1>BULLETIN DE VACATION</h1>
-  <div class="periode">{{ bulletin.get_mois_display|upper }} {{ bulletin.annee }}</div>
+  <div class="periode">{{ bulletin.get_mois_display|upper }} {{ bulletin.annee }} — Année scolaire {{ bulletin.annee_scolaire }}</div>
 </div>
 
 <!-- Infos vacataire -->
@@ -261,6 +214,4 @@
     <div class="sig-ligne">Signature et cachet</div>
   </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

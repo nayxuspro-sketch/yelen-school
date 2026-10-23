@@ -1,139 +1,135 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-  @font-face {
-    font-family: 'Outfit';
-    src: url('/static/fonts/Outfit-Regular.ttf');
-    font-weight: 400;
-  }
-  @font-face {
-    font-family: 'Outfit';
-    src: url('/static/fonts/Outfit-SemiBold.ttf');
-    font-weight: 600;
-  }
-  @font-face {
-    font-family: 'Outfit';
-    src: url('/static/fonts/Outfit-Bold.ttf');
-    font-weight: 700;
-  }
-
-  @page {
+{% extends "pdf/base.html" %}
+{% block page %}@page {
     size: A4 portrait;
     margin: 10mm 12mm;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif; background: #fff; }
+}{% endblock %}
+{% block css %}
+@font-face {
+  font-family: 'Outfit';
+  src: url('/static/fonts/Outfit-Regular.ttf');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'Outfit';
+  src: url('/static/fonts/Outfit-SemiBold.ttf');
+  font-weight: 600;
+}
+@font-face {
+  font-family: 'Outfit';
+  src: url('/static/fonts/Outfit-Bold.ttf');
+  font-weight: 700;
+}
 
-  /* Grille : 2 colonnes × 5 lignes = 10 cartes par page */
-  .grille {
-    display: grid;
-    grid-template-columns: 85.6mm 85.6mm;
-    column-gap: 8mm;
-    row-gap: 5mm;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif; background: #fff; }
 
-  /* ── Carte 85,6 × 54 mm ── */
-  .carte {
-    width: 85.6mm;
-    height: 54mm;
-    border-radius: 3mm;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    border: 1pt solid #111;
-    page-break-inside: avoid;
-  }
+/* Grille : 2 colonnes × 5 lignes = 10 cartes par page */
+.grille {
+  display: grid;
+  grid-template-columns: 85.6mm 85.6mm;
+  column-gap: 8mm;
+  row-gap: 5mm;
+}
 
-  /* Accent vertical N&B */
-  .accent {
-    position: absolute; left: 0; top: 0; bottom: 0; width: 1.5mm; z-index: 2;
-    background: #111;
-  }
+/* ── Carte 85,6 × 54 mm ── */
+.carte {
+  width: 85.6mm;
+  height: 54mm;
+  border-radius: 3mm;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border: 1pt solid #111;
+  page-break-inside: avoid;
+}
 
-  /* En-tête : fond clair */
-  .carte-header {
-    background: #f5f5f5;
-    border-bottom: 0.75pt solid #111;
-    padding: 2mm 3mm 2mm 5mm;
-    display: flex;
-    align-items: center;
-    gap: 2mm;
-    flex-shrink: 0;
-  }
-  .logo-box {
-    width: 9mm; height: 9mm; flex-shrink: 0;
-    border-radius: 1.5mm; overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
-    background: #fff; border: 0.5pt solid #bbb;
-  }
-  .logo-box img { width: 100%; height: 100%; object-fit: contain; filter: grayscale(100%); }
-  .logo-fallback {
-    background: #444; width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .etab-nom {
-    font-size: 5.5pt; font-weight: 700; color: #111;
-    text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.2;
-  }
-  .etab-type { font-size: 4pt; color: #555; margin-top: 0.5mm; text-transform: uppercase; }
-  .etab-tel { font-size: 4pt; color: #333; margin-top: 0.5mm; line-height: 1.2; }
-  .label-carte { font-size: 6pt; font-weight: 700; color: #111; letter-spacing: 0.06em; margin-left: auto; white-space: nowrap; }
+/* Accent vertical N&B */
+.accent {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 1.5mm; z-index: 2;
+  background: #111;
+}
 
-  /* Corps */
-  .carte-body {
-    flex: 1; display: flex; padding: 2.5mm 3mm 2.5mm 5mm; gap: 3mm; background: #fff;
-  }
-  .photo-box {
-    width: 16mm; height: 20mm; flex-shrink: 0;
-    border-radius: 1.2mm; border: 1pt solid #bbb; overflow: hidden;
-  }
-  .photo-box img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); }
-  .photo-initials {
-    width: 100%; height: 100%;
-    background: #ddd;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 9pt; font-weight: 700; color: #555;
-  }
-  .infos { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.5mm; }
-  .eleve-nom { font-size: 7pt; font-weight: 700; color: #111; text-transform: uppercase; line-height: 1.2; }
-  .eleve-prenom { font-size: 5.5pt; color: #333; margin-top: 0.5mm; }
-  .classe-badge {
-    font-size: 4.5pt; color: #111; font-weight: 700; text-transform: uppercase;
-    padding: 0.5mm 2mm; background: #ebebeb;
-    border-left: 1mm solid #555; border-radius: 0 1mm 1mm 0;
-    display: inline-block; letter-spacing: 0.04em;
-  }
-  .naissance { font-size: 4pt; color: #444; }
-  .contacts { display: grid; grid-template-columns: auto 1fr; gap: 0.5mm 1.5mm; font-size: 5pt; line-height: 1.2; }
-  .contacts .lbl { color: #666; white-space: nowrap; }
-  .contacts .val { color: #111; white-space: nowrap; overflow: hidden; }
-  .contacts .urgence { font-weight: 700; color: #111; }
+/* En-tête : fond clair */
+.carte-header {
+  background: #f5f5f5;
+  border-bottom: 0.75pt solid #111;
+  padding: 2mm 3mm 2mm 5mm;
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  flex-shrink: 0;
+}
+.logo-box {
+  width: 9mm; height: 9mm; flex-shrink: 0;
+  border-radius: 1.5mm; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; border: 0.5pt solid #bbb;
+}
+.logo-box img { width: 100%; height: 100%; object-fit: contain; filter: grayscale(100%); }
+.logo-fallback {
+  background: #444; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.etab-nom {
+  font-size: 5.5pt; font-weight: 700; color: #111;
+  text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.2;
+}
+.etab-type { font-size: 4pt; color: #555; margin-top: 0.5mm; text-transform: uppercase; }
+.etab-tel { font-size: 4pt; color: #333; margin-top: 0.5mm; line-height: 1.2; }
+.label-carte { font-size: 6pt; font-weight: 700; color: #111; letter-spacing: 0.06em; margin-left: auto; white-space: nowrap; }
 
-  /* Footer */
-  .carte-footer {
-    background: #f5f5f5; border-top: 0.5pt solid #bbb;
-    padding: 1mm 3mm 1mm 5mm;
-    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-  }
-  .matricule-label { font-size: 3.5pt; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
-  .matricule-val { font-size: 4.5pt; color: #111; font-family: 'DejaVu Sans Mono', monospace; }
-  .validite { font-size: 4.5pt; font-weight: 700; color: #111; white-space: nowrap; }
+/* Corps */
+.carte-body {
+  flex: 1; display: flex; padding: 2.5mm 3mm 2.5mm 5mm; gap: 3mm; background: #fff;
+}
+.photo-box {
+  width: 16mm; height: 20mm; flex-shrink: 0;
+  border-radius: 1.2mm; border: 1pt solid #bbb; overflow: hidden;
+}
+.photo-box img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); }
+.photo-initials {
+  width: 100%; height: 100%;
+  background: #ddd;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9pt; font-weight: 700; color: #555;
+}
+.infos { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.5mm; }
+.eleve-nom { font-size: 7pt; font-weight: 700; color: #111; text-transform: uppercase; line-height: 1.2; }
+.eleve-prenom { font-size: 5.5pt; color: #333; margin-top: 0.5mm; }
+.classe-badge {
+  font-size: 4.5pt; color: #111; font-weight: 700; text-transform: uppercase;
+  padding: 0.5mm 2mm; background: #ebebeb;
+  border-left: 1mm solid #555; border-radius: 0 1mm 1mm 0;
+  display: inline-block; letter-spacing: 0.04em;
+}
+.naissance { font-size: 4pt; color: #444; }
+.contacts { display: grid; grid-template-columns: auto 1fr; gap: 0.5mm 1.5mm; font-size: 5pt; line-height: 1.2; }
+.contacts .lbl { color: #666; white-space: nowrap; }
+.contacts .val { color: #111; white-space: nowrap; overflow: hidden; }
+.contacts .urgence { font-weight: 700; color: #111; }
 
-  /* En-tête de page */
-  .page-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 6mm; border-bottom: 2.5px solid #111; padding-bottom: 3mm;
-  }
-  .page-header-title { font-size: 9pt; font-weight: 700; color: #111; text-transform: uppercase; }
-  .page-header-sub { font-size: 7pt; color: #444; margin-top: 1mm; }
-  .page-header img { height: 10mm; object-fit: contain; filter: grayscale(100%); }
-</style>
-</head>
-<body>
+/* Footer */
+.carte-footer {
+  background: #f5f5f5; border-top: 0.5pt solid #bbb;
+  padding: 1mm 3mm 1mm 5mm;
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.matricule-label { font-size: 3.5pt; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+.matricule-val { font-size: 4.5pt; color: #111; font-family: 'DejaVu Sans Mono', monospace; }
+.validite { font-size: 4.5pt; font-weight: 700; color: #111; white-space: nowrap; }
 
+/* En-tête de page */
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6mm; border-bottom: 2.5px solid #111; padding-bottom: 3mm;
+}
+.page-header-title { font-size: 9pt; font-weight: 700; color: #111; text-transform: uppercase; }
+.page-header-sub { font-size: 7pt; color: #444; margin-top: 1mm; }
+.page-header img { height: 10mm; object-fit: contain; filter: grayscale(100%); }
+{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
 <div class="page-header">
   <div>
     <div class="page-header-title">
@@ -218,6 +214,4 @@
   </div>
 {% endfor %}
 </div>
-
-</body>
-</html>
+{% endblock %}

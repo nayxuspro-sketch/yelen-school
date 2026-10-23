@@ -1,9 +1,5 @@
-{% load signataire_tags %}<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-@page {
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page {
     size: A5 portrait;
     margin: 7mm 9mm 8mm 9mm;
     @bottom-right {
@@ -16,7 +12,8 @@
         font-size: 6.5pt;
         color: #555;
     }
-}
+}{% endblock %}
+{% block css %}
 html, body {
     font-family: Arial, sans-serif;
     font-size: 9.5pt;
@@ -243,11 +240,10 @@ html, body {
     page-break-after: auto;
     break-after: auto;
 }
-</style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
-
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
 {% for ctx in students_data %}
 <div class="bulletin-page">
 
@@ -392,6 +388,4 @@ html, body {
 
 </div>
 {% endfor %}
-
-</body>
-</html>
+{% endblock %}

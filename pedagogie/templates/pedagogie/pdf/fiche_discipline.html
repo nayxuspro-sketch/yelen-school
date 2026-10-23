@@ -1,9 +1,5 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-@page {
+{% extends "pdf/base.html" %}
+{% block page %}@page {
     size: A4 landscape;
     margin: 1.5cm 1.5cm 1.5cm 1.5cm;
     @bottom-center {
@@ -21,7 +17,8 @@
         font-size: 7pt;
         color: #000;
     }
-}
+}{% endblock %}
+{% block css %}
 * { box-sizing: border-box; }
 body {
     font-family: Arial, sans-serif;
@@ -31,25 +28,6 @@ body {
     padding: 0;
     background: #fff;
 }
-
-/* ══ EN-TÊTE ══ */
-.hdr {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-bottom: 2.5pt solid #111;
-    padding-bottom: 7pt;
-    margin-bottom: 9pt;
-}
-.hdr-school {
-    font-size: 14pt;
-    font-weight: bold;
-    color: #111;
-    text-transform: uppercase;
-    letter-spacing: 0.6pt;
-}
-.hdr-meta { font-size: 8pt; color: #555; margin-top: 2pt; line-height: 1.5; }
-.hdr-right img { max-height: 44pt; max-width: 75pt; filter: grayscale(100%); }
 
 /* ══ BANDEAU TITRE ══ */
 .banner {
@@ -202,30 +180,9 @@ tfoot td.tf-low { color: #000; font-style: italic; }
 .sig-name     { font-size: 12pt; font-weight: bold; color: #000; margin: 40pt 0 0; text-transform: uppercase; letter-spacing: 0.4pt; }
 .sig-mat      { font-family: 'DejaVu Sans Mono', monospace; font-size: 8pt; color: #555; margin: 3pt 0 0; }
 .sig-none     { font-size: 10pt; color: #555; font-style: italic; margin: 16pt 0 0; }
-</style>
-</head>
-<body>
-{% include "documents/pdf/partials/filigrane_licence.html" %}
-
-<!-- ══ EN-TÊTE ÉTABLISSEMENT ══ -->
-<div class="hdr">
-  <div>
-    <div class="hdr-school">
-      {% if identite %}{{ identite.nom_etablissement }}{% else %}{{ etablissement.nom|default:"YELEN SCHOOL" }}{% endif %}
-    </div>
-    {% if identite %}
-    <div class="hdr-meta">{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %}, {% endif %}{{ identite.ville }}</div>
-    {% if identite.telephone or identite.email %}
-    <div class="hdr-meta">{% if identite.telephone %}Tél : {{ identite.telephone }}{% endif %}{% if identite.telephone and identite.email %} &nbsp;&middot;&nbsp; {% endif %}{{ identite.email|default:"" }}</div>
-    {% endif %}
-    {% endif %}
-  </div>
-  <div class="hdr-right">
-    {% if logo_url %}<img src="{{ logo_url }}" alt="Logo">
-    {% elif etab_logo_url %}<img src="{{ etab_logo_url }}" alt="Logo">{% endif %}
-  </div>
-</div>
-
+{% endblock %}
+{% block filigrane %}{% include "pdf/partials/filigrane_licence.html" %}{% endblock %}
+{% block corps %}
 <!-- ══ BANDEAU TITRE ══ -->
 <div class="banner">
   <div>
@@ -420,6 +377,4 @@ tfoot td.tf-low { color: #000; font-style: italic; }
     </div>
   </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% comment %}
+En-tête établissement des documents PDF : logo · identité (nom, N° Agrément, type/sigle, adresse, contacts) · cachet.
+Contexte : identite, etablissement, logo_url, etab_logo_url (core.utils.get_etablissement_context).
+Options d'inclusion : compacte=True (A5) ; droite="chemin/gabarit.html" remplace le cachet par un bloc propre au document.
+{% endcomment %}<table class="pdf-entete{% if compacte %} pdf-entete-compacte{% endif %}">
+  <tr>
+    <td class="pdf-entete-logo">{% if logo_url or etab_logo_url %}<img src="{% firstof logo_url etab_logo_url %}" alt="Logo">{% endif %}</td>
+    <td class="pdf-entete-identite">
+      <p class="pdf-entete-nom">{% firstof identite.nom_etablissement etablissement.nom etab_nom "YELEN SCHOOL" %}</p>
+      {% if identite.numero_agrement_mena %}<p class="pdf-entete-agrement">N° Agrément : {{ identite.numero_agrement_mena }}</p>{% endif %}
+      {% if identite.get_type_etablissement_display or identite.sigle %}<p class="pdf-entete-type">{{ identite.get_type_etablissement_display }}{% if identite.sigle %} &mdash; {{ identite.sigle }}{% endif %}</p>{% endif %}
+      {% firstof identite.adresse_complete etablissement.adresse as adresse %}{% firstof identite.ville etablissement.ville as ville %}
+      {% firstof identite.telephone etablissement.telephone as tel %}{% firstof identite.email etablissement.email as email %}
+      {% if adresse or ville %}<p class="pdf-entete-adresse">{{ adresse }}{% if adresse and ville %} &mdash; {% endif %}{% if ville %}<strong>{{ ville }}</strong>{% endif %}</p>{% endif %}
+      {% if tel or email %}<p class="pdf-entete-contact">{% if tel %}T&eacute;l&nbsp;: {{ tel }}{% endif %}{% if tel and email %} &nbsp;&middot;&nbsp; {% endif %}{{ email }}</p>{% endif %}
+    </td>
+    {% if droite %}<td class="pdf-entete-droite">{% include droite %}</td>
+    {% else %}<td class="pdf-entete-cachet">{% if identite.cachet_etablissement %}<img src="{{ identite.cachet_etablissement.url }}" alt="Cachet">{% endif %}</td>{% endif %}
+  </tr>
+</table>
+<div class="pdf-entete-filet"></div>

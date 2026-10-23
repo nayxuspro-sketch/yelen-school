@@ -1,45 +1,36 @@
-{% load static %}<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<link rel="stylesheet" href="{% static 'css/outfit.css' %}">
-<style>
-  body { font-family: 'Outfit', Arial, sans-serif; font-size: 10pt; color: #1a1a2e; margin: 0; padding: 20px 30px; }
+{% extends "pdf/base.html" %}{% load static %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/outfit.css' %}">{% endblock %}
+{% block css %}
+body { font-family: 'Outfit', Arial, sans-serif; font-size: 10pt; color: #1a1a2e; margin: 0; padding: 20px 30px; }
 
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #00A86B; padding-bottom: 10px; }
-  .header-left h1 { font-size: 15pt; color: #00A86B; margin: 0 0 2px 0; }
-  .header-left .sub { font-size: 9pt; color: #555; }
-  .header-right { text-align: right; font-size: 8.5pt; color: #555; }
-  .etab { font-weight: 700; font-size: 12pt; color: #0A1628; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #00A86B; padding-bottom: 10px; }
+.header-left h1 { font-size: 15pt; color: #00A86B; margin: 0 0 2px 0; }
+.header-left .sub { font-size: 9pt; color: #555; }
+.header-right { text-align: right; font-size: 8.5pt; color: #555; }
 
-  .eleve-card { background: #f0fdf8; border: 1px solid #00A86B; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; gap: 30px; }
-  .eleve-card .lbl { font-size: 7.5pt; color: #555; text-transform: uppercase; letter-spacing: 0.04em; }
-  .eleve-card .val { font-size: 11pt; font-weight: 700; color: #0A1628; }
+.eleve-card { background: #f0fdf8; border: 1px solid #00A86B; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; gap: 30px; }
+.eleve-card .lbl { font-size: 7.5pt; color: #555; text-transform: uppercase; letter-spacing: 0.04em; }
+.eleve-card .val { font-size: 11pt; font-weight: 700; color: #0A1628; }
 
-  .groupe-titre { background: #0A1628; color: #fff; padding: 5px 10px; font-size: 9pt; font-weight: 600; margin-top: 12px; border-radius: 4px 4px 0 0; }
-  table { width: 100%; border-collapse: collapse; }
-  th { background: #1a2e45; color: #fff; padding: 5px 8px; font-size: 8pt; text-align: left; }
-  td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; font-size: 9pt; }
-  tr:nth-child(even) td { background: #f8f9fa; }
+.groupe-titre { background: #0A1628; color: #fff; padding: 5px 10px; font-size: 9pt; font-weight: 600; margin-top: 12px; border-radius: 4px 4px 0 0; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #1a2e45; color: #fff; padding: 5px 8px; font-size: 8pt; text-align: left; }
+td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; font-size: 9pt; }
+tr:nth-child(even) td { background: #f8f9fa; }
 
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 8pt; font-weight: 600; }
-  .acquis     { background: #d1fae5; color: #065f46; }
-  .en-cours   { background: #fef3c7; color: #92400e; }
-  .non-acquis { background: #fee2e2; color: #991b1b; }
-  .non-evalue { background: #f3f4f6; color: #6b7280; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 8pt; font-weight: 600; }
+.acquis     { background: #d1fae5; color: #065f46; }
+.en-cours   { background: #fef3c7; color: #92400e; }
+.non-acquis { background: #fee2e2; color: #991b1b; }
+.non-evalue { background: #f3f4f6; color: #6b7280; }
 
-  .legend { display: flex; gap: 12px; margin: 14px 0 10px; flex-wrap: wrap; }
-  .footer { font-size: 7.5pt; color: #999; margin-top: 20px; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 8px; }
-  .page-break { page-break-before: always; }
-</style>
-</head>
-<body>
-
+.legend { display: flex; gap: 12px; margin: 14px 0 10px; flex-wrap: wrap; }
+.footer { font-size: 7.5pt; color: #999; margin-top: 20px; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 8px; }
+.page-break { page-break-before: always; }
+{% endblock %}
+{% block corps %}
 <div class="header">
   <div class="header-left">
-    {% if etablissement %}
-    <div class="etab">{{ etablissement.nom }}</div>
-    {% endif %}
     <h1>Bulletin de compétences</h1>
     <div class="sub">
       {{ inscription.classe.nom }}
@@ -141,6 +132,4 @@
   {% if etablissement %}{{ etablissement.nom }} · {% endif %}
   Année {% if trimestre.annee_scolaire %}{{ trimestre.annee_scolaire.libelle }}{% endif %}
 </div>
-
-</body>
-</html>
+{% endblock %}

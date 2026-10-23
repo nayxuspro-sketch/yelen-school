@@ -1,99 +1,83 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
-  @page { size: A4 landscape; margin: 1.5cm 2cm; }
+{% extends "pdf/base.html" %}
+{% block page %}@page { size: A4 landscape; margin: 1.5cm 2cm; }{% endblock %}
+{% block css %}
+body { font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif; font-size: 10pt; color: #111; }
 
-  body { font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif; font-size: 10pt; color: #111; }
+/* ── Statistiques ── */
+.stats-bar { display: flex; gap: 16pt; margin-bottom: 14pt; }
+.stat {
+  flex: 1;
+  background: #fff;
+  border: 1pt solid #ccc;
+  border-left: 3pt solid #111;
+  padding: 5pt 10pt;
+  font-size: 9pt;
+  color: #333;
+}
+.stat strong { display: block; font-size: 14pt; color: #111; line-height: 1.2; }
 
-  /* ── En-tête ── */
-  .doc-header { border-bottom: 3pt solid #111; padding-bottom: 8pt; margin-bottom: 14pt; }
-  .doc-title   { font-size: 15pt; font-weight: bold; margin: 0 0 2pt; }
-  .doc-meta    { font-size: 9pt; color: #444; }
+/* ── Tableau ── */
+table { width: 100%; border-collapse: collapse; font-size: 9pt; }
 
-  /* ── Statistiques ── */
-  .stats-bar { display: flex; gap: 16pt; margin-bottom: 14pt; }
-  .stat {
-    flex: 1;
-    background: #fff;
-    border: 1pt solid #ccc;
-    border-left: 3pt solid #111;
-    padding: 5pt 10pt;
-    font-size: 9pt;
-    color: #333;
-  }
-  .stat strong { display: block; font-size: 14pt; color: #111; line-height: 1.2; }
+thead th {
+  background: #111;
+  color: #fff;
+  padding: 6pt 8pt;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 8.5pt;
+  font-weight: 600;
+}
 
-  /* ── Tableau ── */
-  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+tbody td { padding: 5pt 8pt; border-bottom: 0.5pt solid #ddd; vertical-align: middle; }
+tbody tr:nth-child(even) td { background: #f4f4f4; }
 
-  thead th {
-    background: #111;
-    color: #fff;
-    padding: 6pt 8pt;
-    text-align: left;
-    white-space: nowrap;
-    font-size: 8.5pt;
-    font-weight: 600;
-  }
+/* Séparateur de classe */
+.classe-row td {
+  background: #ddd;
+  font-weight: 700;
+  font-size: 9pt;
+  color: #111;
+  padding: 4pt 8pt;
+  border-top: 1pt solid #bbb;
+}
 
-  tbody td { padding: 5pt 8pt; border-bottom: 0.5pt solid #ddd; vertical-align: middle; }
-  tbody tr:nth-child(even) td { background: #f4f4f4; }
+/* Ligne total */
+.total-row td {
+  font-weight: 700;
+  background: #fff;
+  border-top: 2pt solid #111;
+  border-bottom: 2pt solid #111;
+}
 
-  /* Séparateur de classe */
-  .classe-row td {
-    background: #ddd;
-    font-weight: 700;
-    font-size: 9pt;
-    color: #111;
-    padding: 4pt 8pt;
-    border-top: 1pt solid #bbb;
-  }
+/* ── Badges ── */
+.badge {
+  display: inline-block;
+  padding: 1pt 6pt;
+  border-radius: 3pt;
+  font-size: 7.5pt;
+  font-weight: 600;
+  border: 0.8pt solid;
+}
+.badge-ok   { background: #fff; border-color: #555; color: #111; }
+.badge-warn { background: #ddd; border-color: #555; color: #111; font-style: italic; }
 
-  /* Ligne total */
-  .total-row td {
-    font-weight: 700;
-    background: #fff;
-    border-top: 2pt solid #111;
-    border-bottom: 2pt solid #111;
-  }
+/* ── Matricule/code ── */
+.mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 8pt; }
 
-  /* ── Badges ── */
-  .badge {
-    display: inline-block;
-    padding: 1pt 6pt;
-    border-radius: 3pt;
-    font-size: 7.5pt;
-    font-weight: 600;
-    border: 0.8pt solid;
-  }
-  .badge-ok   { background: #fff; border-color: #555; color: #111; }
-  .badge-warn { background: #ddd; border-color: #555; color: #111; font-style: italic; }
-
-  /* ── Matricule/code ── */
-  .mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 8pt; }
-
-  /* ── Pied de page ── */
-  .footer {
-    margin-top: 16pt;
-    font-size: 8pt;
-    color: #777;
-    text-align: right;
-    border-top: 0.5pt solid #ccc;
-    padding-top: 5pt;
-  }
-</style>
-</head>
-<body>
-
-<div class="doc-header">
-  <div class="doc-title">Attributions de manuels — {{ annee }}</div>
-  <div class="doc-meta">
-    {% if etab %}{{ etab }} &nbsp;|&nbsp; {% endif %}
-    Imprimé le : {{ today }}
-  </div>
-</div>
+/* ── Pied de page ── */
+.footer {
+  margin-top: 16pt;
+  font-size: 8pt;
+  color: #777;
+  text-align: right;
+  border-top: 0.5pt solid #ccc;
+  padding-top: 5pt;
+}
+{% endblock %}
+{% block corps %}
+<div class="pdf-titre">Attributions de manuels — {{ annee }}</div>
+<p class="pdf-sous-titre">Imprimé le {{ today }}</p>
 
 <div class="stats-bar">
   <div class="stat"><strong>{{ attributions|length }}</strong>Attributions totales</div>
@@ -156,5 +140,4 @@
 {% endif %}
 
 <p class="footer">YELEN SCHOOL — Document généré automatiquement</p>
-</body>
-</html>
+{% endblock %}
