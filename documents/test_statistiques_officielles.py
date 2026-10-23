@@ -23,7 +23,7 @@ def ecole():
                             date_debut=datetime.date(2024, 10, 1), date_fin=datetime.date(2025, 6, 30))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2025-2026', est_courante=True,
                        date_debut=datetime.date(2025, 10, 1), date_fin=datetime.date(2026, 6, 30))
-    cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Post-primaire', ordre=1)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Post-primaire', code='POST', ordre=1)
     sixieme_a = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, niveau='6ème', nom='6ème A')
     sixieme_b = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, niveau='6ème', nom='6ème B')
     troisieme = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, niveau='3ème', nom='3ème',
@@ -70,7 +70,7 @@ class TestCalculs:
     def test_meme_niveau_dans_deux_cycles(self, ecole):
         """Un niveau présent dans deux cycles (ex. filière franco-arabe) : colonnes distinctes, totaux non doublés."""
         etab, annee = ecole['etab'], ecole['annee']
-        franco_arabe = baker.make('parametres.Cycle', etablissement=etab, nom='Franco-arabe', ordre=2)
+        franco_arabe = baker.make('parametres.Cycle', etablissement=etab, nom='Franco-arabe', code='SEC', ordre=2)
         classe = baker.make('parametres.Classe', etablissement=etab, cycle=franco_arabe, niveau='6ème', nom='6ème FA')
         baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee, statut='AFFECTE',
                    eleve=baker.make('inscriptions.Eleve', genre='F', date_naissance=datetime.date(2014, 2, 2)))
