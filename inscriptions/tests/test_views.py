@@ -49,6 +49,8 @@ class TestInscriptionsViews:
         html = unescape(logged_in_client.get(reverse('inscriptions:eleve_create')).content.decode())
         assert 'Lieu de résidence (Village/Quartier/Secteur)' in html and 'Pays de résidence' not in html
         assert 'name="lieu_residence"' in html and 'name="pays_residence"' not in html
+        assert not any(f'name="{nom}"' in html for nom in ('province', 'commune', 'village'))
+        assert 'Province' not in html and 'Commune' not in html and 'Village/Ville' not in html
         reponse = logged_in_client.post(reverse('inscriptions:eleve_create'), {
             'nom': 'KABORE', 'prenom': 'Awa', 'genre': 'F', 'date_naissance': '2014-03-05', 'lieu_naissance': 'Ouagadougou',
             'nationalite': 'Burkinabè', 'lieu_residence': 'Secteur 30 (Karpala)',

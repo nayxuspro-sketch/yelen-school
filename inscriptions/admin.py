@@ -64,7 +64,7 @@ class EleveAdmin(admin.ModelAdmin):
         }),
         (_('Localisation'), {
             'fields': (
-                'lieu_residence', 'province', 'commune', 'village',
+                'lieu_residence',
             ),
             'classes': ('collapse',)
         }),

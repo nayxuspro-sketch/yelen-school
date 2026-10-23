@@ -108,28 +108,6 @@ class Eleve(BaseModel):
         verbose_name=_("Lieu de résidence (Village/Quartier/Secteur)")
     )
 
-    # Localisation (contexte Burkina)
-    province = models.CharField(
-        max_length=100,
-        blank=True,
-        default='',
-        verbose_name=_("Province")
-    )
-
-    commune = models.CharField(
-        max_length=100,
-        blank=True,
-        default='',
-        verbose_name=_("Commune")
-    )
-
-    village = models.CharField(
-        max_length=100,
-        blank=True,
-        default='',
-        verbose_name=_("Village/Ville")
-    )
-
     # Contact d'urgence
     telephone_urgence = models.CharField(
         max_length=20,

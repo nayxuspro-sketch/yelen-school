@@ -73,15 +73,14 @@ CHAMPS = (
           ('telephone tuteur', 'tel tuteur', 'contact tuteur', 'telephone du tuteur', 'telephone responsable',
            'contact responsable', 'numero tuteur')),
     Champ('tuteur_adresse', 'Adresse',
-          ('adresse tuteur', 'adresse du tuteur', 'adresse', 'domicile', 'quartier', 'adresse parents', 'residence',
-           'adresse des parents', 'lieu de residence')),
+          ('adresse tuteur', 'adresse du tuteur', 'adresse', 'domicile', 'adresse parents', 'adresse des parents')),
     Champ('telephone_urgence', "Téléphone d'urgence",
           ('telephone urgence', 'telephone d urgence', 'contact urgence', 'contact d urgence', 'urgence',
            'numero urgence', 'numero d urgence')),
     Champ('email', 'Email', ('email', 'e mail', 'courriel', 'mail', 'adresse email', 'adresse e mail')),
-    Champ('province', 'Province', ('province',)),
-    Champ('commune', 'Commune', ('commune',)),
-    Champ('village', 'Village / ville', ('village', 'village ville', 'ville', 'localite')),
+    Champ('lieu_residence', 'Lieu de résidence',
+          ('lieu de residence', 'residence', 'lieu d habitation', 'village', 'quartier', 'secteur', 'ville',
+           'village ville', 'localite')),
     Champ('etablissement_origine', "Établissement d'origine",
           ('etablissement d origine', 'ecole d origine', 'etablissement origine', 'ecole precedente', 'provenance',
            'ancien etablissement', 'ecole de provenance', 'etablissement precedent', 'etablissement de provenance')),
@@ -91,8 +90,8 @@ CHAMPS_PAR_CODE = {c.code: c for c in CHAMPS}
 # Colonnes recopiées telles quelles dans la fiche (texte), avec leur longueur maximale.
 _CHAMPS_TEXTE = {
     'lieu_naissance': 200, 'nationalite': 100, 'nom_pere': 150, 'profession_pere': 100, 'nom_mere': 150,
-    'profession_mere': 100, 'tuteur_nom': 150, 'tuteur_adresse': 2000, 'email': 254, 'province': 100,
-    'commune': 100, 'village': 100, 'etablissement_origine': 200,
+    'profession_mere': 100, 'tuteur_nom': 150, 'tuteur_adresse': 2000, 'email': 254, 'lieu_residence': 150,
+    'etablissement_origine': 200,
 }
 _CHAMPS_TELEPHONE = ('telephone_parent', 'tuteur_telephone', 'telephone_urgence')
 

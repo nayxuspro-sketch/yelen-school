@@ -157,6 +157,20 @@ def test_import_complet_depuis_le_fichier_de_l_ecole(directeur, ecole):
     assert lignes[-1] == (7, 'OUEDRAOGO Abdoul Kader', 'doublon de la ligne 4 dans le fichier')
 
 
+def test_colonne_quartier_alimente_le_lieu_de_residence(directeur, ecole):
+    """Province / Commune / Village ont disparu : « Quartier » (village, secteur, résidence…) remplit le lieu de résidence."""
+    codes = {c.code for c in importation.CHAMPS}
+    assert 'lieu_residence' in codes and not codes & {'province', 'commune', 'village'}
+    lignes = [['NOM ET PRENOMS', 'SEXE', 'DATE DE NAISSANCE', 'CLASSE', 'QUARTIER', 'ADRESSE PARENTS'],
+              ['TRAORE Moussa', 'M', datetime(2012, 2, 2), '6EME A', 'Secteur 30 (Karpala)', 'Porte 125']]
+    _, donnees = _jusqu_a_la_verification(directeur, ecole, _xlsx(lignes))
+    assert donnees['col_lieu_residence'] == '4' and donnees['col_tuteur_adresse'] == '5'
+    assert directeur.post(reverse('inscriptions:eleve_import_correspondance'), donnees).status_code == 302
+    assert directeur.post(reverse('inscriptions:eleve_import_verification'), {}).status_code == 302
+    eleve = Eleve.objects.get(nom='TRAORE')
+    assert eleve.lieu_residence == 'Secteur 30 (Karpala)' and eleve.tuteur_adresse == 'Porte 125'
+
+
 def test_reimport_du_meme_fichier_ne_duplique_rien(directeur, ecole):
     for _ in range(2):
         _, donnees = _jusqu_a_la_verification(directeur, ecole, _xlsx(LIGNES_ECOLE[:3]))

@@ -6749,9 +6749,9 @@ feuilles, la feuille se choisit à l'étape 2.
    colonnes, ou une colonne unique « Nom et prénom(s) » — le nom en MAJUSCULES, puis les
    prénoms), **genre** et **date de naissance**. Si présents : matricule, lieu de naissance,
    classe, redoublant, nationalité, téléphone des parents, père et mère (nom, profession),
-   tuteur (nom, téléphone, adresse), téléphone d'urgence, e-mail, province, commune, village,
-   établissement d'origine. Pour un fichier d'une seule classe sans colonne *Classe*, indiquer
-   la **classe par défaut**.
+   tuteur (nom, téléphone, adresse), téléphone d'urgence, e-mail, lieu de résidence (colonne
+   « Quartier », « Village », « Secteur » ou « Résidence »), établissement d'origine. Pour un
+   fichier d'une seule classe sans colonne *Classe*, indiquer la **classe par défaut**.
 3. **Vérification** — compteurs (élèves à créer, déjà enregistrés, lignes en erreur) ; table de
    correspondance des **classes** (« 6EME A », « 6ème A », « Sixième A » sont reconnues comme
    la classe *6ème A* ; les libellés inconnus, par exemple « CM2 » avant création de la classe,

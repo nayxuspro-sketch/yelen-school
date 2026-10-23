@@ -31,7 +31,7 @@ class EleveForm(forms.ModelForm):
         model = Eleve
         fields = [
             'nom', 'prenom', 'genre', 'date_naissance', 'lieu_naissance',
-            'nationalite', 'lieu_residence', 'province', 'commune', 'village',
+            'nationalite', 'lieu_residence',
             'telephone_urgence', 'email', 'photo', 'nom_pere', 'profession_pere',
             'nom_mere', 'profession_mere', 'telephone_parent', 'tuteur_nom',
             'tuteur_telephone', 'tuteur_adresse', 'etablissement_origine',

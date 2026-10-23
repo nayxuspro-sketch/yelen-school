@@ -27,8 +27,6 @@ class EleveModelTest(TestCase):
             'lieu_naissance': 'Ouagadougou',
             'nationalite': 'Burkinabè',
             'lieu_residence': 'Secteur 15',
-            'province': 'Kadiogo',
-            'commune': 'Ouagadougou',
             'telephone_parent': '+226 70 00 00 00',
         }
     
