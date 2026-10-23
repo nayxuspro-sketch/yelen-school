@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import aide, views
 
 app_name = 'core'
 
@@ -36,4 +36,6 @@ urlpatterns = [
 
     # Healthcheck pour load balancer / monitoring
     path('health/', views.health_check, name='health_check'),
+    path('aide/', aide.aide, name='aide'),
+    path('aide/screenshots/<str:nom>', aide.aide_capture, name='aide_capture'),
 ]

@@ -1,0 +1,99 @@
+{% extends "core/base.html" %}
+
+{% block title %}Aide — Guide d'utilisation — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'core:home' %}" class="text-secondary">Accueil</a>
+      <span class="text-muted"> / </span>
+      <span>Aide</span>
+    </p>
+    <h1 class="page-title">Guide d'utilisation</h1>
+    <p class="page-subtitle">Documentation complète de YELEN SCHOOL v{{ yelen_version }}, consultable hors connexion Internet — Ctrl+F pour chercher dans tout le guide.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'licences:guide' %}" class="btn-secondary btn-sm">Prise en main rapide</a>
+  </div>
+</div>
+
+{% if contenu %}
+<div class="aide-layout">
+  <aside class="aide-sommaire" aria-label="Sommaire du guide">
+    <label for="aide-filtre" class="input-label">Filtrer les sections</label>
+    <input type="search" id="aide-filtre" class="input" placeholder="Ex. : bulletin, paiement…" autocomplete="off">
+    <nav id="aide-sommaire-liste">
+      <ol>
+        {% for section in sommaire %}
+        <li>
+          <a href="#{{ section.id }}" data-section="{{ section.id }}">{{ section.name }}</a>
+          {% if section.children %}
+          <ol>
+            {% for sous in section.children %}
+            <li><a href="#{{ sous.id }}" data-section="{{ sous.id }}">{{ sous.name }}</a></li>
+            {% endfor %}
+          </ol>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+      <p id="aide-filtre-vide" class="text-muted text-sm" hidden>Aucune section ne correspond.</p>
+    </nav>
+  </aside>
+
+  <article class="card aide-doc" id="aide-contenu">
+    {{ contenu|safe }}
+  </article>
+</div>
+{% else %}
+<div class="card">
+  <p>Le guide d'utilisation (<code>docs/GUIDE_UTILISATION_YELEN_SCHOOL.md</code>) n'est pas présent sur ce serveur.
+  Mettre à jour l'application (<code>mettre-a-jour.bat</code>) pour le rétablir.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ request.csp_nonce }}">
+(function () {
+  var liste = document.getElementById('aide-sommaire-liste');
+  var filtre = document.getElementById('aide-filtre');
+  if (!liste || !filtre) { return; }
+  var liens = Array.prototype.slice.call(liste.querySelectorAll('a[data-section]'));
+
+  // Filtre du sommaire (titres de sections et de sous-sections).
+  filtre.addEventListener('input', function () {
+    var terme = filtre.value.trim().toLowerCase();
+    var visibles = 0;
+    liste.querySelectorAll('li').forEach(function (li) {
+      var correspond = !terme || li.textContent.toLowerCase().indexOf(terme) !== -1;
+      li.hidden = !correspond;
+      if (correspond && li.querySelector(':scope > a')) { visibles++; }
+    });
+    document.getElementById('aide-filtre-vide').hidden = visibles > 0;
+  });
+
+  // Section courante mise en évidence dans le sommaire au fil de la lecture.
+  var parId = {};
+  liens.forEach(function (a) { parId[a.dataset.section] = a; });
+  var titres = Array.prototype.slice.call(document.querySelectorAll('#aide-contenu h2[id], #aide-contenu h3[id]'))
+    .filter(function (h) { return parId[h.id]; });
+  function marquer(id) {
+    liens.forEach(function (a) { a.classList.toggle('active', a.dataset.section === id); });
+    var actif = parId[id];
+    if (actif && actif.scrollIntoView) { actif.scrollIntoView({ block: 'nearest' }); }
+  }
+  if ('IntersectionObserver' in window && titres.length) {
+    var visibles = new Set();
+    var observateur = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) { e.isIntersecting ? visibles.add(e.target) : visibles.delete(e.target); });
+      var premier = titres.find(function (h) { return visibles.has(h); });
+      if (premier) { marquer(premier.id); }
+    }, { rootMargin: '0px 0px -70% 0px' });
+    titres.forEach(function (h) { observateur.observe(h); });
+  }
+  if (window.location.hash) { marquer(decodeURIComponent(window.location.hash.slice(1))); }
+})();
+</script>
+{% endblock %}

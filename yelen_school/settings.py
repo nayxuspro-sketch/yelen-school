@@ -271,6 +271,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'parametres.context_processors.droits_acces',
                 'core.context_processors.version',
+                'core.context_processors.aide',
             ],
         },
     },

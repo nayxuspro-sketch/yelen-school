@@ -21,6 +21,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 - [0. Introduction](#0-introduction)
 - [1. Connexion et Tableau de Bord](#1-connexion-et-tableau-de-bord)
   - [1.4 Tableau de bord direction (Pilotage)](#14-tableau-de-bord-direction-pilotage)
+  - [1.5 Aide en ligne](#15-aide-en-ligne)
   - [1.6 Gestion des Comptes Utilisateurs](#16-gestion-des-comptes-utilisateurs)
   - [1.7 Double Authentification (2FA) — Activer la Sécurité Renforcée](#17-double-authentification-2fa--activer-la-sécurité-renforcée)
   - [1.8 Se Connecter avec la 2FA Activée](#18-se-connecter-avec-la-2fa-activée)
@@ -28,7 +29,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 - [2. Paramètres de l'Établissement](#2-paramètres-de-létablissement)
   - [2.1 Identité de l'établissement](#21-identité-de-létablissement)
   - [2.2 Gestion des Années Scolaires](#22-gestion-des-années-scolaires)
-  - [2.3 Génération Automatique de la Nouvelle Année Scolaire](#23-génération-automatique-de-la-nouvelle-année-scolaire)
+  - [2.3 Création Manuelle d'une Année Scolaire (recommandé)](#23-création-manuelle-dune-année-scolaire-recommandé)
   - [2.17 Configuration SMS](#217-configuration-sms)
   - [2.7 Appréciations et Moyennes (Secondaire)](#27-appréciations-et-moyennes)
   - [2.10 Signataires des Documents PDF](#210-signataires-des-documents-pdf)
@@ -36,7 +37,6 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [2.14 Types d'Évaluation](#214-types-dévaluation)
   - [2.15 Calendrier Scolaire](#215-calendrier-scolaire)
   - [2.16 Modèles de Messages SMS](#216-modèles-de-messages-sms)
-  - [2.18 Localisations des Postes](#218-localisations-des-postes)
   - [2.19 Droits d'accès par rôle](#219-droits-daccès-par-rôle)
 - [3. Enregistrement des Élèves](#3-enregistrement-des-élèves)
   - [3.8 Page Profil Élève — Vue d'ensemble](#38-page-profil-élève--vue-densemble)
@@ -46,11 +46,9 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 - [5. Gestion du Personnel](#5-gestion-du-personnel)
   - [5.1 Profil du Personnel (Page de Détail)](#51-profil-du-personnel-page-de-détail)
   - [5.10 Gestion des Congés du Personnel](#510-gestion-des-congés-du-personnel)
-    - [Design du formulaire (Design System v4)](#design-du-formulaire-conge_formhtml--design-system-v4)
   - [5.11 Gestion des Salaires du Personnel](#511-gestion-des-salaires-du-personnel)
-    - [Design du formulaire (Design System v4)](#design-du-formulaire-salaire_formhtml--design-system-v4)
 - [6. Scolarité et Notes](#6-scolarité-et-notes)
-  - [6.1 Matières et Enseignements (regroupés par classe)](#61-configurer-les-matières-et-enseignements)
+  - [6.1 Référentiel des Matières](#61-référentiel-des-matières)
   - [6.6 Conseil de Classe](#66-conseil-de-classe)
   - [6.7 Bulletins Trimestriels PDF](#67-bulletins-trimestriels-pdf)
   - [6.7.0 Duplicata du Bulletin Trimestriel](#670-duplicata-du-bulletin-trimestriel)
@@ -109,7 +107,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 - [14. Statistiques et Rapports](#14-statistiques-et-rapports)
   - [14.4 Emploi du Temps](#144-emploi-du-temps)
     - [14.4.1 Emploi du Temps par Professeur](#1441-emploi-du-temps-par-professeur)
-- [15. Fonctionnalités à Venir](#15-fonctionnalités-à-venir-)
+- [15. État des Fonctionnalités et Limites](#15-état-des-fonctionnalités-et-limites)
 - [16. Questions Fréquentes (FAQ)](#16-questions-fréquentes-faq)
 - [17. Glossaire](#17-glossaire)
 - [18. Design System et Interface](#18-design-system-et-interface)
@@ -348,6 +346,14 @@ Le sélecteur d'année permet de revoir une année passée. **Imprimer** produit
 
 ---
 
+### 1.5 Aide en ligne
+
+**Accès :** bouton **Aide** (icône livre, en bas du menu latéral) ou `/aide/`.
+
+Le présent guide est consultable dans l'application, sans connexion Internet. Le bouton **Aide** ouvre directement la section du module affiché (Finances, Présences, Examens…). La page comporte un sommaire latéral avec filtre par mot-clé ; la recherche dans tout le texte se fait avec **Ctrl+F**. Le bouton **Prise en main rapide** renvoie au résumé en cinq étapes (`/licences/guide/`).
+
+---
+
 ### 1.6 Gestion des Comptes Utilisateurs
 
 **À quoi ça sert :** Permet aux administrateurs (SUPER_ADMIN, DIRECTEUR) de créer, modifier et désactiver les comptes des membres du personnel qui utilisent YELEN SCHOOL.
@@ -397,6 +403,282 @@ En mode **modification**, la section mot de passe est remplacée par une case à
 | ELEVE | Consultation des notes et bulletins |
 
 > **Règle de sécurité :** Un DIRECTEUR ne peut pas créer un compte SUPER_ADMIN. L'établissement d'un Directeur est pré-sélectionné et non modifiable.
+
+---
+
+## 2. PARAMÈTRES DE L'ÉTABLISSEMENT
+
+### 2.1 Identité de l'établissement
+
+> **Accès :** `Paramètres → Identité Établissement`
+
+**À quoi ça sert :** Configurer les informations officielles de l'établissement — nom, adresse, contacts, logo, signature et cachet — qui apparaîtront sur tous les documents PDF (certificats, bulletins, attestations).
+
+**Champs principaux :**
+- **Informations officielles** : nom, sigle, type (public/privé/confessionnel), numéro et date d'agrément
+- **Adresse complète** : rue/quartier, ville, province, région
+- **Contact** : téléphone (35 caractères maximum, plusieurs numéros possibles), email, site web, nom du directeur
+- **Éléments graphiques** : logo (PNG/JPG ≥ 300×300px), signature du directeur (PNG transparent), cachet officiel
+- **Devise** : phrase ou valeur éducative de l'établissement
+
+**Design v2.11 :** La page a été modernisée avec des sections séparées (card-header + card-title), des icônes Lucide par section, et une correction de l'affichage des messages de confirmation.
+
+---
+
+### 2.2 Gestion des Années Scolaires
+
+> **Accès :** `Paramètres → Années scolaires`
+
+**À quoi ça sert :** Créer et gérer les années scolaires de l'établissement. Chaque année scolaire définit une période d'enseignement avec une date de début et une date de fin.
+
+**Interface :** Tableau listant toutes les années avec les colonnes :
+- **Libellé** (ex: `2025-2026`)
+- **Date début / Date fin**
+- **Statut** — badge vert "Courante" pour l'année active
+
+**Actions disponibles :**
+- **Créer** — ajouter une nouvelle année (libellé, dates, cocher "Année en cours")
+- **Définir comme courante** — cliquer sur le bouton dans la liste pour basculer
+- **Supprimer** — impossible si des inscriptions sont rattachées
+
+**Règles :**
+- Un seul établissement ne peut avoir qu'**une seule année courante** à la fois
+- Les matricules élèves (`{CODE_ETAB}-AAAA-NN`) sont liés à l'année de première inscription
+
+---
+
+### 2.3 Création Manuelle d'une Année Scolaire (recommandé)
+
+> **L'année scolaire se crée manuellement** via l'interface `Paramètres → Années scolaires`.
+
+**Procédure :**
+1. Cliquer sur **Ajouter une année scolaire**
+2. Saisir le libellé (ex: `2025-2026`)
+3. Définir la date de début (généralement 1er octobre) et la date de fin (30 juin)
+4. Cocher **"Année en cours"** pour activer la nouvelle année
+5. Valider
+
+> L'ancienne année passe automatiquement à `Année précédente` dès qu'une nouvelle année est marquée comme courante.
+
+**Commande manuelle (pour les administrateurs — dépréciée) :**
+```bash
+python manage.py auto_generer_annee_scolaire --dry-run # simulation
+python manage.py auto_generer_annee_scolaire --force   # création forcée
+```
+
+---
+
+### 2.17 Configuration SMS
+
+> **Accès :** `Menu principal → Core → Configuration SMS`
+>
+> **Qui peut accéder :** SUPER_ADMIN, DIRECTEUR
+
+**À quoi ça sert :** Permet de paramétrer la passerelle SMS pour l'envoi de notifications aux parents (absences, relances, convocations, bulletins).
+
+**Interface :** La page se compose de quatre cartes :
+
+0. **URL Endpoint du Webhook SMS** — Affiche l'URL du webhook `/communication/webhook/sms/` à configurer dans l'App Android SMS Gateway. Bouton "Copier l'URL" pour copier en un clic. La passerelle doit aussi envoyer `X-SMS-Token` avec la valeur de `SMS_WEBHOOK_TOKEN` stockée dans `.env` ; ne pas placer ce secret dans une URL ou un ticket.
+
+1. **Paramètres de Backend** — Configuration de la passerelle :
+   - **Activer le service SMS** — Toggle ON/OFF pour activer/désactiver l'envoi SMS
+   - **Type de passerelle** : `Interface WiFi` (App Android SMS Gateway via HTTP) ou `Interface Série` (Clé Modem GSM USB)
+   - **Configuration HTTP** : URL endpoint, timeout, identifiant API, mot de passe
+   - **Configuration Série** : Port COM, baudrate
+
+2. **Test de Connectivité** — Lancer un diagnostic pour vérifier la connexion au modem ou à l'API
+
+3. **Envoi Manuel** — Envoyer un SMS de test vers un numéro pour valider la configuration. Cette action envoie réellement un SMS lorsque `SMS_ENABLED=True` ; utiliser d'abord `sms_auto --dry-run` pour vérifier les déclencheurs automatiques.
+
+**Prise en compte immédiate (sans redémarrage) :** Depuis la version avec cache runtime, les modifications de configuration SMS sont appliquées immédiatement après le clic sur "Enregistrer". Le système stocke les valeurs dans un cache mémoire (via `get_sms_val()` / `set_sms_config_runtime()`) et les persist dans le fichier `.env`. Aucun redémarrage du serveur ni du conteneur Docker n'est nécessaire.
+
+**Design :** Page modernisée avec cartes premium, icônes param-icon colorées par section, toggle-switch iOS-style, et classes CSS exclusives du design system (zéro style inline).
+
+---
+
+### 2.19 Droits d'accès par rôle
+
+> **Accès :** `Paramètres → Droits d'accès` (carte de la page Paramètres ou menu `Configuration → Droits d'accès`)
+>
+> **Qui peut accéder :** SUPER_ADMIN uniquement
+
+**À quoi ça sert :** Décider, module par module, fonctionnalité par fonctionnalité et action par action, ce que chaque rôle du personnel peut ouvrir et faire. Une fonctionnalité non cochée disparaît du menu du rôle et ses pages lui sont refusées (retour au tableau de bord avec le message « Accès à « … » non autorisé pour votre rôle ») ; un module dont aucune fonctionnalité n'est cochée disparaît entièrement.
+
+**La matrice :** une colonne par rôle — Directeur Réseau, Directeur/Proviseur, Censeur, Secrétaire, Comptable, Enseignant, Agent de Vie Scolaire — et, pour chacun des 13 modules (Inscriptions, Pédagogie, Bulletins, Présences, Examens, Vie scolaire, Personnel, Finances, Vacations, Communication, Manuels scolaires, Documents, Paramètres), une ligne par fonctionnalité : ce sont les entrées du menu latéral (par exemple, pour Pédagogie : Cahier de textes, Matières, Enseignements, Évaluations, Relevé de notes, Résultats, Moyennes par discipline, Risque de décrochage, Prédictions examens, Bulletins compétences). La case de la ligne du module coche ou décoche d'un coup toutes ses fonctionnalités pour le rôle. Cochez, puis **Enregistrer** : la modification s'applique immédiatement, sans redémarrage, et chaque changement est journalisé dans l'audit. Sous certaines fonctionnalités, des lignes « ↳ » listent leurs **actions** (sous-fonctionnalités) : par exemple, sous Pédagogie › Évaluations, « Créer / modifier une évaluation » et « Saisir les notes » ; sous Finances › Paiements, « Encaisser un paiement », « Rembourser » et « Échéanciers » ; sous Personnel › Salaires, créer, valider, payer, supprimer. Un rôle peut ainsi consulter les évaluations sans pouvoir saisir les notes : la case de la fonctionnalité reste cochée, celle de l'action est décochée. Les boutons de saisie des notes disparaissent pour ce rôle ; pour les autres actions, le bouton reste visible mais la demande est refusée. Documents et Paramètres n'ont pas d'action séparée.
+
+**Règle d'application :** chaque page est rattachée à la fonctionnalité dont elle porte l'adresse (ex. le reçu d'un paiement relève de « Paiements », les types de bourses de « Bourses & Aides ») ; une page du module sans entrée de menu suit l'accès au module (au moins une fonctionnalité cochée). Une action est reconnue par la page qu'elle appelle (même hors de l'adresse de sa fonctionnalité, ex. l'annulation d'un remboursement relève de « Paiements ») et n'est accessible que si sa fonctionnalité l'est : cocher une action dont la fonctionnalité est décochée n'ouvre rien. Un **enseignant** n'intervient, en plus, que sur ses propres enseignements (classe × matière qui lui sont attribués dans Pédagogie › Enseignements) : la saisie des notes, la création et la modification d'évaluations, la sélection par classe et le cahier de textes sont limités à ceux-ci. Le lien entre son compte et sa fiche du personnel se fait par l'adresse e-mail : si la fiche ne porte pas l'adresse du compte, l'enseignant est prévenu par un message explicite et ne peut rien saisir tant que l'administration n'a pas corrigé l'adresse sur la fiche (Personnel).
+
+**Valeurs par défaut (à la première ouverture) :** toutes les fonctionnalités sont ouvertes à tous les rôles du personnel, sauf **Finances** (fermé aux enseignants et AVS) et **Paramètres** (réservé au Directeur / Proviseur et au Censeur). Elles reproduisent le fonctionnement antérieur ; le tableau de la section 0.3 décrit la répartition recommandée que le Super Admin peut appliquer depuis cette page. Les actes qui étaient déjà réservés à certains rôles gardent exactement ces rôles : encaissements, échéanciers, bourses, relances SMS, Mobile Money, saisie des dépenses et budget prévisionnel → Directeur, Censeur, Comptable ; remboursements et validation / annulation des dépenses → Directeur Réseau, Directeur, Censeur ; export CSV / Excel de la liste des élèves → Directeur, Censeur, Secrétaire, Comptable ; approbation d'un transfert inter-établissements → Directeur ; sanctions → Directeur, Censeur, Secrétaire, AVS. Ces actes ne s'ouvrent à un autre rôle qu'en cochant leur propre case : cocher la fonctionnalité ou le module ne les ouvre pas.
+
+**Rôles personnalisés :** en haut de la page, le Super Admin crée de nouveaux rôles (ex. « Surveillant général », « Caissier ») en indiquant un libellé et un **rôle de référence** parmi les sept rôles du personnel. Le rôle de référence fixe le comportement métier (tableau de bord, périmètre d'un enseignant limité à ses classes…) et les droits de départ ; le nouveau rôle devient aussitôt une colonne de la matrice, où ses droits se règlent ensuite indépendamment de sa référence. Il est proposé dans le champ « Rôle » de la fiche utilisateur (groupe « Rôles personnalisés ») et affiché dans la liste des utilisateurs, qui peut le filtrer. Un rôle ne peut être supprimé que lorsqu'aucun utilisateur ne le porte ; sa suppression efface ses droits enregistrés.
+
+**Hors matrice :** le Super Admin garde tous les accès ; les parents et les élèves restent limités à leur portail ; la gestion des utilisateurs, le journal d'audit et la configuration SMS restent réservés à la direction ; le volet « Système » (Mon abonnement, Licences) est réservé au Super Admin. Tout le reste suit la matrice : un droit coché n'est jamais contredit par l'application.
+
+---
+
+## 5. GESTION DU PERSONNEL
+
+### 5.0 Liste du personnel et exports (CSV, Excel, PDF)
+
+**Accès :** `Personnel` (`/personnel/`). La liste affiche les membres **actifs** de l'établissement,
+regroupés par cycle ; la recherche (nom, prénom ou matricule) filtre en direct et le lien
+« Voir aussi les inactifs » ajoute les membres désactivés (`?tous=1`).
+
+**Colonne « Inscription <année courante> » :** pour chaque membre, badge vert **Inscrit** suivi du
+cycle et du poste de son inscription annuelle active (une ligne par inscription), ou badge orange
+**Non inscrit** avec un lien **Inscrire** qui ouvre directement le formulaire d'inscription annuelle
+(voir §12.7 : c'est cette inscription qui alimente la liste du personnel par cycle). Seules les
+inscriptions *actives* de l'*année scolaire courante* comptent ; sans année courante, la colonne
+affiche « — ».
+
+**Exports :** les trois boutons **CSV**, **Excel** et **PDF** en haut à droite exportent
+**exactement la liste affichée** (mêmes filtres : recherche et inactifs). La barre d'actions
+groupées (cases à cocher) exporte la sélection. Le PDF et l'Excel sont titrés
+« Liste du personnel – Année scolaire <année courante> » (sans année courante : « Liste du personnel »).
+
+| Format | Contenu | Usage |
+|---|---|---|
+| CSV / Excel | Matricule, nom, prénom, genre, date de naissance, téléphone, e-mail, fonction, cycles, actif | Retraitement dans un tableur |
+| **PDF** (`/personnel/pdf/`) | Document A4 paysage avec en-tête de l'établissement (logo, n° d'agrément, adresse), sous-titre rappelant les filtres (« 14 membres — Actifs et inactifs — Recherche : … »), tableau numéroté (matricule, nom, prénom(s), genre, naissance, fonction, téléphone, e-mail, cycles, statut), récapitulatif Total / Hommes / Femmes / Inactifs, date d'édition et numéros de page | Impression, affichage, transmission à l'administration |
+
+Le PDF s'ouvre dans un nouvel onglet (`personnel_<code établissement>.pdf`). Les trois exports
+partagent la même requête (`personnel/selectors.py` → `personnel_filtre`) : une modification des
+filtres de la liste s'applique automatiquement aux trois formats.
+
+### 5.1 Profil du Personnel (Page de Détail)
+
+**À quoi ça sert :** Affiche la fiche détaillée d'un membre du personnel : informations personnelles, coordonnées, affectations, inscriptions annuelles, bulletins de salaire récents et congés.
+
+**Qui peut accéder :** Directeur, Proviseur, Secrétaire, Comptable
+
+**Accès :** `Personnel → Liste → [Nom du membre]` ou via le bouton "Voir le profil"
+
+**Template :** `personnel/templates/personnel/personnel_detail.html`
+
+#### Design System v4 — Refactorisation complète
+
+La page de détail du personnel a été intégralement refactorisée pour être en conformité totale avec `DESIGN_SYSTEM_v4.md` :
+
+| Règle | Application |
+|---|---|
+| **Zéro CSS inline** | Toutes les balises `style="..."` supprimées et remplacées par des classes CSS |
+| **Zéro classe CSS créée** | Utilisation exclusive des classes de `yelen.css` |
+| **Icônes Lucide** | Toutes les icônes sont des SVGs Lucide inline (flèche retour, contrat, badge, salaire, congé, document) |
+| **Boutons** | `.btn-danger` (Désactiver), `.btn-primary` (Réactiver, Nouvelle inscription), `.btn-secondary` (Modifier le profil), `.btn-ghost.btn-sm` (actions inline : Supprimer, Approuver, Refuser) |
+| **En-tête de page** | `.page-header` + `.page-title` + `.page-subtitle` |
+| **En-têtes de carte** | `.card-header` + `.card-title` pour chaque section |
+| **Badges statut** | `.badge-success` (Actif / Payé / Approuvé), `.badge-danger` (Inactif / Refusé), `.badge-info` (cycles / Validé), `.badge-neutral` (Terminée / Brouillon / Annulé), `.badge-warning` (En attente) |
+| **Grille d'actions rapides** | `.form-grid-2` pour les 4 cartes d'actions (contrat, badge, salaire, congé) |
+| **Disposition** | `.d-flex.gap-6` pour les deux colonnes principales, `.flex-1.min-w-0` pour chaque colonne |
+| **Affichage inline** | `.d-inline` pour les formulaires d'action dans les tableaux |
+| **Couleurs d'accent** | `.color-primary` (liens Voir tout, Voir, Autorisation PDF), `.color-danger` (Supprimer, Refuser), `.color-success` (Approuver) |
+| **Police mono** | `.font-mono` pour les matricules et montants |
+| **Alignement** | `.text-right` pour les colonnes de montants, `.text-center` pour le nombre de jours |
+| **Espacement** | `.p-4` pour le padding uniforme des rangées et des cartes |
+| **Icônes statistiques** | `.stat-icon-green`, `.stat-icon-blue`, `.stat-icon-gold`, `.stat-icon-purple` pour les cartes d'actions |
+| **Animations** | `.animate-fade-up` + `.delay-1` / `.delay-2` pour l'apparition progressive |
+| **Confirmation** | `data-confirm` remplace les appels `onsubmit`/`confirm()` JavaScript pour les actions destructrices (Désactiver, Supprimer inscription) |
+| **Survol CSS** | `:hover` géré par la classe `.card` (transition border-color et box-shadow) — aucun `onmouseover`/`onmouseout` |
+
+#### Sections de la page
+
+1. **En-tête** : nom complet, fonction, matricule (`.text-mono.color-primary`), badge Inactif si désactivé, boutons d'action (Modifier, Nouvelle inscription, Désactiver/Réactiver)
+2. **Carte d'identité** : téléphone, email, date d'embauche, type de contrat en grille 4 colonnes flex
+3. **Informations personnelles** : date/lieu de naissance, sexe, nationalité, CNI, situation matrimoniale, adresse
+4. **Affectations (Cycles)** : badges pour chaque cycle assigné
+5. **Inscriptions annuelles** : tableau avec année, cycle, poste, statut (Active/Terminée), date d'inscription, actions Modifier/Supprimer
+6. **Actions rapides** : 4 cartes cliquables (Contrat de travail, Badge Personnel, Bulletin de salaire, Demande de congé)
+7. **Derniers bulletins de salaire** : tableau mois, brut, net, statut, lien Voir
+8. **Congés récents** : tableau type, dates, nombre de jours, statut, actions Approuver/Refuser, Autorisation PDF
+
+#### URLs
+
+- Détail : `/personnel/<uuid:pk>/`
+- Modification : `/personnel/<uuid:pk>/modifier/`
+- Activation/désactivation : `/personnel/<uuid:pk>/toggle-active/` (POST)
+
+### 5.10 Gestion des Congés du Personnel
+
+**À quoi ça sert :** Permet d'enregistrer et de suivre les demandes de congé des membres du personnel (annuels, maladie, formation, etc.) avec affichage du solde de jours restants.
+
+**Qui peut accéder :** Directeur, Proviseur, Secrétaire
+
+**Accès :** `Personnel → Congés → Nouvelle demande`
+
+**Design du formulaire (`conge_form.html`) — Design System v4 :**
+
+Le formulaire de demande de congé a été refactorisé pour être en conformité totale avec `DESIGN_SYSTEM_v4.md` :
+
+| Règle | Application |
+|---|---|
+| **Zéro CSS inline** | Aucune balise `style="..."` ni `<style>` dans le template |
+| **Zéro classe CSS créée** | Utilisation exclusive des classes de `yelen.css` |
+| **Icônes Lucide** | Icône de retour (flèche) via SVG inline Lucide |
+| **Boutons** | `.btn-primary` (Enregistrer, vert) + `.btn-secondary` (Annuler, bordure verte) |
+| **En-tête de carte** | `.card-header` + `.card-title` pour chaque section |
+| **Labels** | `.input-label` + `.required-star` pour champs obligatoires |
+| **Erreurs** | `.input-error` pour les messages d'erreur par champ |
+| **Grille formulaire** | `.form-grid-2` pour les champs en 2 colonnes |
+| **Séparateur** | `.divider` entre les lignes du solde congés |
+| **Texte danger** | `.text-danger` pour les jours pris |
+| **Texte accent** | `.color-primary` pour le solde restant (vert) |
+| **Animations** | `.animate-fade-up` sur les cartes, `.delay-1` / `.delay-2` pour le décalage |
+
+**Champs du formulaire :**
+
+| Champ | Type | Obligatoire |
+|---|---|---|
+| Membre du personnel | Select | Oui |
+| Type de congé | Select | Oui |
+| Date de début | Date | Oui |
+| Date de fin | Date | Oui |
+| Motif / Justification | Textarea | Non |
+
+**Carte latérale — Solde des congés :**
+
+Affiche dynamiquement les droits annuels, jours pris et solde restant pour l'année en cours. Apparaît uniquement si `jours_info` est présent dans le contexte. Le design utilise `.stat-value` pour le solde en grand chiffre, `.text-muted` pour les libellés, et `.fw-bold` + `.color-primary` pour la mise en valeur du solde.
+
+### 5.11 Gestion des Salaires du Personnel
+
+**À quoi ça sert :** Permet de créer et de modifier les bulletins de salaire mensuels des membres du personnel (salaire de base, primes, indemnités, retenues CNSS/IUTS, net à payer).
+
+**Qui peut accéder :** Directeur, Proviseur, Comptable, Secrétaire
+
+**Accès :** `Personnel → Salaires → Nouveau bulletin`
+
+**Design du formulaire (`salaire_form.html`) — Design System v4 :**
+
+Le formulaire de bulletin de salaire a été refactorisé pour être en conformité totale avec `DESIGN_SYSTEM_v4.md` :
+
+| Règle | Application |
+|---|---|
+| **Zéro CSS inline** | Aucune balise `style="..."` ni `<style>` dans le template — supprimé les anciens `max-width`, `grid-template-columns`, `grid-column` inline |
+| **Zéro classe CSS créée** | Utilisation exclusive des classes de `yelen.css` |
+| **Icônes Lucide** | Icône de retour (flèche) via SVG inline Lucide |
+| **Boutons** | `.btn-primary` (Enregistrer) + `.btn-secondary` (Annuler) + `.btn-icon` (retour) |
+| **En-tête de carte** | `.card-header` + `.card-title` pour chaque section (Identification, Éléments de rémunération, Retenues, Paiement) |
+| **Conteneur formulaire** | `.form-page-wrap` remplace le `max-width` inline |
+| **Labels** | `.input-label` pour tous les champs |
+| **Erreurs** | `.input-error` pour les messages d'erreur par champ |
+| **Aide** | `.form-hint` pour les textes d'aide (prime ancienneté, CNSS, IUTS) |
+| **Grilles** | `.form-grid-3` pour Identification (4 champs dont 1 full-width), `.form-grid-2` pour Éléments de rémunération (5 champs dont 1 full-width), `.form-grid-3` pour Retenues et Paiement |
+| **Full-width** | `.form-grid-2-full` pour les champs qui doivent occuper toute la largeur dans leur grille |
+| **Animations** | `.animate-fade-up` sur le header et chaque carte, `.delay-1` / `.delay-2` pour le décalage progressif |
+
+**Sections du formulaire :**
+
+1. **Identification** : Membre du personnel (full-width), Année scolaire, Mois, Année (grille 3 colonnes)
+2. **Éléments de rémunération** : Salaire de base (obligatoire), Prime d'ancienneté, Indemnités transport/logement, Autres primes (grille 2 colonnes)
+3. **Retenues** : CNSS, IUTS, Autres retenues (grille 3 colonnes)
+4. **Paiement** : Statut, Date de paiement, Référence paiement, Observations (full-width)
+
+---
+
+## 6. SCOLARITÉ ET NOTES
+
+> **Qui peut accéder :** Directeur, Censeur, Enseignant (ses classes), Secrétaire (consultation)
+>
+> **Accès menu :** `Menu principal → Pédagogie`
 
 ---
 
@@ -933,274 +1215,6 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 > **Attention :** L'analyse globale peut prendre plusieurs secondes selon l'effectif total de l'établissement. Un indicateur de chargement s'affiche pendant le traitement.
 
 **Analyse automatique :** Sous Windows, programmer `programmer-risques.bat` en tant qu'administrateur pour exécuter chaque nuit l'analyse complète. L'heure par défaut est 02:00 ; le journal est écrit dans `logs\\risques.log`. La tâche nécessite une année scolaire courante et Docker Desktop démarré.
-
----
-
-## 2. PARAMÈTRES DE L'ÉTABLISSEMENT
-
-### 2.1 Identité de l'établissement
-
-> **Accès :** `Paramètres → Identité Établissement`
-
-**À quoi ça sert :** Configurer les informations officielles de l'établissement — nom, adresse, contacts, logo, signature et cachet — qui apparaîtront sur tous les documents PDF (certificats, bulletins, attestations).
-
-**Champs principaux :**
-- **Informations officielles** : nom, sigle, type (public/privé/confessionnel), numéro et date d'agrément
-- **Adresse complète** : rue/quartier, ville, province, région
-- **Contact** : téléphone (35 caractères maximum, plusieurs numéros possibles), email, site web, nom du directeur
-- **Éléments graphiques** : logo (PNG/JPG ≥ 300×300px), signature du directeur (PNG transparent), cachet officiel
-- **Devise** : phrase ou valeur éducative de l'établissement
-
-**Design v2.11 :** La page a été modernisée avec des sections séparées (card-header + card-title), des icônes Lucide par section, et une correction de l'affichage des messages de confirmation.
-
----
-
-### 2.2 Gestion des Années Scolaires
-
-> **Accès :** `Paramètres → Années scolaires`
-
-**À quoi ça sert :** Créer et gérer les années scolaires de l'établissement. Chaque année scolaire définit une période d'enseignement avec une date de début et une date de fin.
-
-**Interface :** Tableau listant toutes les années avec les colonnes :
-- **Libellé** (ex: `2025-2026`)
-- **Date début / Date fin**
-- **Statut** — badge vert "Courante" pour l'année active
-
-**Actions disponibles :**
-- **Créer** — ajouter une nouvelle année (libellé, dates, cocher "Année en cours")
-- **Définir comme courante** — cliquer sur le bouton dans la liste pour basculer
-- **Supprimer** — impossible si des inscriptions sont rattachées
-
-**Règles :**
-- Un seul établissement ne peut avoir qu'**une seule année courante** à la fois
-- Les matricules élèves (`{CODE_ETAB}-AAAA-NN`) sont liés à l'année de première inscription
-
----
-
-### 2.3 Création Manuelle d'une Année Scolaire (recommandé)
-
-> **L'année scolaire se crée manuellement** via l'interface `Paramètres → Années scolaires`.
-
-**Procédure :**
-1. Cliquer sur **Ajouter une année scolaire**
-2. Saisir le libellé (ex: `2025-2026`)
-3. Définir la date de début (généralement 1er octobre) et la date de fin (30 juin)
-4. Cocher **"Année en cours"** pour activer la nouvelle année
-5. Valider
-
-> L'ancienne année passe automatiquement à `Année précédente` dès qu'une nouvelle année est marquée comme courante.
-
-**Commande manuelle (pour les administrateurs — dépréciée) :**
-```bash
-python manage.py auto_generer_annee_scolaire --dry-run # simulation
-python manage.py auto_generer_annee_scolaire --force   # création forcée
-```
-
----
-
-### 2.17 Configuration SMS
-
-> **Accès :** `Menu principal → Core → Configuration SMS`
->
-> **Qui peut accéder :** SUPER_ADMIN, DIRECTEUR
-
-**À quoi ça sert :** Permet de paramétrer la passerelle SMS pour l'envoi de notifications aux parents (absences, relances, convocations, bulletins).
-
-**Interface :** La page se compose de quatre cartes :
-
-0. **URL Endpoint du Webhook SMS** — Affiche l'URL du webhook `/communication/webhook/sms/` à configurer dans l'App Android SMS Gateway. Bouton "Copier l'URL" pour copier en un clic. La passerelle doit aussi envoyer `X-SMS-Token` avec la valeur de `SMS_WEBHOOK_TOKEN` stockée dans `.env` ; ne pas placer ce secret dans une URL ou un ticket.
-
-1. **Paramètres de Backend** — Configuration de la passerelle :
-   - **Activer le service SMS** — Toggle ON/OFF pour activer/désactiver l'envoi SMS
-   - **Type de passerelle** : `Interface WiFi` (App Android SMS Gateway via HTTP) ou `Interface Série` (Clé Modem GSM USB)
-   - **Configuration HTTP** : URL endpoint, timeout, identifiant API, mot de passe
-   - **Configuration Série** : Port COM, baudrate
-
-2. **Test de Connectivité** — Lancer un diagnostic pour vérifier la connexion au modem ou à l'API
-
-3. **Envoi Manuel** — Envoyer un SMS de test vers un numéro pour valider la configuration. Cette action envoie réellement un SMS lorsque `SMS_ENABLED=True` ; utiliser d'abord `sms_auto --dry-run` pour vérifier les déclencheurs automatiques.
-
-**Prise en compte immédiate (sans redémarrage) :** Depuis la version avec cache runtime, les modifications de configuration SMS sont appliquées immédiatement après le clic sur "Enregistrer". Le système stocke les valeurs dans un cache mémoire (via `get_sms_val()` / `set_sms_config_runtime()`) et les persist dans le fichier `.env`. Aucun redémarrage du serveur ni du conteneur Docker n'est nécessaire.
-
-**Design :** Page modernisée avec cartes premium, icônes param-icon colorées par section, toggle-switch iOS-style, et classes CSS exclusives du design system (zéro style inline).
-
----
-
-### 2.19 Droits d'accès par rôle
-
-> **Accès :** `Paramètres → Droits d'accès` (carte de la page Paramètres ou menu `Configuration → Droits d'accès`)
->
-> **Qui peut accéder :** SUPER_ADMIN uniquement
-
-**À quoi ça sert :** Décider, module par module, fonctionnalité par fonctionnalité et action par action, ce que chaque rôle du personnel peut ouvrir et faire. Une fonctionnalité non cochée disparaît du menu du rôle et ses pages lui sont refusées (retour au tableau de bord avec le message « Accès à « … » non autorisé pour votre rôle ») ; un module dont aucune fonctionnalité n'est cochée disparaît entièrement.
-
-**La matrice :** une colonne par rôle — Directeur Réseau, Directeur/Proviseur, Censeur, Secrétaire, Comptable, Enseignant, Agent de Vie Scolaire — et, pour chacun des 13 modules (Inscriptions, Pédagogie, Bulletins, Présences, Examens, Vie scolaire, Personnel, Finances, Vacations, Communication, Manuels scolaires, Documents, Paramètres), une ligne par fonctionnalité : ce sont les entrées du menu latéral (par exemple, pour Pédagogie : Cahier de textes, Matières, Enseignements, Évaluations, Relevé de notes, Résultats, Moyennes par discipline, Risque de décrochage, Prédictions examens, Bulletins compétences). La case de la ligne du module coche ou décoche d'un coup toutes ses fonctionnalités pour le rôle. Cochez, puis **Enregistrer** : la modification s'applique immédiatement, sans redémarrage, et chaque changement est journalisé dans l'audit. Sous certaines fonctionnalités, des lignes « ↳ » listent leurs **actions** (sous-fonctionnalités) : par exemple, sous Pédagogie › Évaluations, « Créer / modifier une évaluation » et « Saisir les notes » ; sous Finances › Paiements, « Encaisser un paiement », « Rembourser » et « Échéanciers » ; sous Personnel › Salaires, créer, valider, payer, supprimer. Un rôle peut ainsi consulter les évaluations sans pouvoir saisir les notes : la case de la fonctionnalité reste cochée, celle de l'action est décochée. Les boutons de saisie des notes disparaissent pour ce rôle ; pour les autres actions, le bouton reste visible mais la demande est refusée. Documents et Paramètres n'ont pas d'action séparée.
-
-**Règle d'application :** chaque page est rattachée à la fonctionnalité dont elle porte l'adresse (ex. le reçu d'un paiement relève de « Paiements », les types de bourses de « Bourses & Aides ») ; une page du module sans entrée de menu suit l'accès au module (au moins une fonctionnalité cochée). Une action est reconnue par la page qu'elle appelle (même hors de l'adresse de sa fonctionnalité, ex. l'annulation d'un remboursement relève de « Paiements ») et n'est accessible que si sa fonctionnalité l'est : cocher une action dont la fonctionnalité est décochée n'ouvre rien. Un **enseignant** n'intervient, en plus, que sur ses propres enseignements (classe × matière qui lui sont attribués dans Pédagogie › Enseignements) : la saisie des notes, la création et la modification d'évaluations, la sélection par classe et le cahier de textes sont limités à ceux-ci. Le lien entre son compte et sa fiche du personnel se fait par l'adresse e-mail : si la fiche ne porte pas l'adresse du compte, l'enseignant est prévenu par un message explicite et ne peut rien saisir tant que l'administration n'a pas corrigé l'adresse sur la fiche (Personnel).
-
-**Valeurs par défaut (à la première ouverture) :** toutes les fonctionnalités sont ouvertes à tous les rôles du personnel, sauf **Finances** (fermé aux enseignants et AVS) et **Paramètres** (réservé au Directeur / Proviseur et au Censeur). Elles reproduisent le fonctionnement antérieur ; le tableau de la section 0.3 décrit la répartition recommandée que le Super Admin peut appliquer depuis cette page. Les actes qui étaient déjà réservés à certains rôles gardent exactement ces rôles : encaissements, échéanciers, bourses, relances SMS, Mobile Money, saisie des dépenses et budget prévisionnel → Directeur, Censeur, Comptable ; remboursements et validation / annulation des dépenses → Directeur Réseau, Directeur, Censeur ; export CSV / Excel de la liste des élèves → Directeur, Censeur, Secrétaire, Comptable ; approbation d'un transfert inter-établissements → Directeur ; sanctions → Directeur, Censeur, Secrétaire, AVS. Ces actes ne s'ouvrent à un autre rôle qu'en cochant leur propre case : cocher la fonctionnalité ou le module ne les ouvre pas.
-
-**Rôles personnalisés :** en haut de la page, le Super Admin crée de nouveaux rôles (ex. « Surveillant général », « Caissier ») en indiquant un libellé et un **rôle de référence** parmi les sept rôles du personnel. Le rôle de référence fixe le comportement métier (tableau de bord, périmètre d'un enseignant limité à ses classes…) et les droits de départ ; le nouveau rôle devient aussitôt une colonne de la matrice, où ses droits se règlent ensuite indépendamment de sa référence. Il est proposé dans le champ « Rôle » de la fiche utilisateur (groupe « Rôles personnalisés ») et affiché dans la liste des utilisateurs, qui peut le filtrer. Un rôle ne peut être supprimé que lorsqu'aucun utilisateur ne le porte ; sa suppression efface ses droits enregistrés.
-
-**Hors matrice :** le Super Admin garde tous les accès ; les parents et les élèves restent limités à leur portail ; la gestion des utilisateurs, le journal d'audit et la configuration SMS restent réservés à la direction ; le volet « Système » (Mon abonnement, Licences) est réservé au Super Admin. Tout le reste suit la matrice : un droit coché n'est jamais contredit par l'application.
-
----
-
-## 5. GESTION DU PERSONNEL
-
-### 5.0 Liste du personnel et exports (CSV, Excel, PDF)
-
-**Accès :** `Personnel` (`/personnel/`). La liste affiche les membres **actifs** de l'établissement,
-regroupés par cycle ; la recherche (nom, prénom ou matricule) filtre en direct et le lien
-« Voir aussi les inactifs » ajoute les membres désactivés (`?tous=1`).
-
-**Colonne « Inscription <année courante> » :** pour chaque membre, badge vert **Inscrit** suivi du
-cycle et du poste de son inscription annuelle active (une ligne par inscription), ou badge orange
-**Non inscrit** avec un lien **Inscrire** qui ouvre directement le formulaire d'inscription annuelle
-(voir §12.7 : c'est cette inscription qui alimente la liste du personnel par cycle). Seules les
-inscriptions *actives* de l'*année scolaire courante* comptent ; sans année courante, la colonne
-affiche « — ».
-
-**Exports :** les trois boutons **CSV**, **Excel** et **PDF** en haut à droite exportent
-**exactement la liste affichée** (mêmes filtres : recherche et inactifs). La barre d'actions
-groupées (cases à cocher) exporte la sélection. Le PDF et l'Excel sont titrés
-« Liste du personnel – Année scolaire <année courante> » (sans année courante : « Liste du personnel »).
-
-| Format | Contenu | Usage |
-|---|---|---|
-| CSV / Excel | Matricule, nom, prénom, genre, date de naissance, téléphone, e-mail, fonction, cycles, actif | Retraitement dans un tableur |
-| **PDF** (`/personnel/pdf/`) | Document A4 paysage avec en-tête de l'établissement (logo, n° d'agrément, adresse), sous-titre rappelant les filtres (« 14 membres — Actifs et inactifs — Recherche : … »), tableau numéroté (matricule, nom, prénom(s), genre, naissance, fonction, téléphone, e-mail, cycles, statut), récapitulatif Total / Hommes / Femmes / Inactifs, date d'édition et numéros de page | Impression, affichage, transmission à l'administration |
-
-Le PDF s'ouvre dans un nouvel onglet (`personnel_<code établissement>.pdf`). Les trois exports
-partagent la même requête (`personnel/selectors.py` → `personnel_filtre`) : une modification des
-filtres de la liste s'applique automatiquement aux trois formats.
-
-### 5.1 Profil du Personnel (Page de Détail)
-
-**À quoi ça sert :** Affiche la fiche détaillée d'un membre du personnel : informations personnelles, coordonnées, affectations, inscriptions annuelles, bulletins de salaire récents et congés.
-
-**Qui peut accéder :** Directeur, Proviseur, Secrétaire, Comptable
-
-**Accès :** `Personnel → Liste → [Nom du membre]` ou via le bouton "Voir le profil"
-
-**Template :** `personnel/templates/personnel/personnel_detail.html`
-
-#### Design System v4 — Refactorisation complète
-
-La page de détail du personnel a été intégralement refactorisée pour être en conformité totale avec `DESIGN_SYSTEM_v4.md` :
-
-| Règle | Application |
-|---|---|
-| **Zéro CSS inline** | Toutes les balises `style="..."` supprimées et remplacées par des classes CSS |
-| **Zéro classe CSS créée** | Utilisation exclusive des classes de `yelen.css` |
-| **Icônes Lucide** | Toutes les icônes sont des SVGs Lucide inline (flèche retour, contrat, badge, salaire, congé, document) |
-| **Boutons** | `.btn-danger` (Désactiver), `.btn-primary` (Réactiver, Nouvelle inscription), `.btn-secondary` (Modifier le profil), `.btn-ghost.btn-sm` (actions inline : Supprimer, Approuver, Refuser) |
-| **En-tête de page** | `.page-header` + `.page-title` + `.page-subtitle` |
-| **En-têtes de carte** | `.card-header` + `.card-title` pour chaque section |
-| **Badges statut** | `.badge-success` (Actif / Payé / Approuvé), `.badge-danger` (Inactif / Refusé), `.badge-info` (cycles / Validé), `.badge-neutral` (Terminée / Brouillon / Annulé), `.badge-warning` (En attente) |
-| **Grille d'actions rapides** | `.form-grid-2` pour les 4 cartes d'actions (contrat, badge, salaire, congé) |
-| **Disposition** | `.d-flex.gap-6` pour les deux colonnes principales, `.flex-1.min-w-0` pour chaque colonne |
-| **Affichage inline** | `.d-inline` pour les formulaires d'action dans les tableaux |
-| **Couleurs d'accent** | `.color-primary` (liens Voir tout, Voir, Autorisation PDF), `.color-danger` (Supprimer, Refuser), `.color-success` (Approuver) |
-| **Police mono** | `.font-mono` pour les matricules et montants |
-| **Alignement** | `.text-right` pour les colonnes de montants, `.text-center` pour le nombre de jours |
-| **Espacement** | `.p-4` pour le padding uniforme des rangées et des cartes |
-| **Icônes statistiques** | `.stat-icon-green`, `.stat-icon-blue`, `.stat-icon-gold`, `.stat-icon-purple` pour les cartes d'actions |
-| **Animations** | `.animate-fade-up` + `.delay-1` / `.delay-2` pour l'apparition progressive |
-| **Confirmation** | `data-confirm` remplace les appels `onsubmit`/`confirm()` JavaScript pour les actions destructrices (Désactiver, Supprimer inscription) |
-| **Survol CSS** | `:hover` géré par la classe `.card` (transition border-color et box-shadow) — aucun `onmouseover`/`onmouseout` |
-
-#### Sections de la page
-
-1. **En-tête** : nom complet, fonction, matricule (`.text-mono.color-primary`), badge Inactif si désactivé, boutons d'action (Modifier, Nouvelle inscription, Désactiver/Réactiver)
-2. **Carte d'identité** : téléphone, email, date d'embauche, type de contrat en grille 4 colonnes flex
-3. **Informations personnelles** : date/lieu de naissance, sexe, nationalité, CNI, situation matrimoniale, adresse
-4. **Affectations (Cycles)** : badges pour chaque cycle assigné
-5. **Inscriptions annuelles** : tableau avec année, cycle, poste, statut (Active/Terminée), date d'inscription, actions Modifier/Supprimer
-6. **Actions rapides** : 4 cartes cliquables (Contrat de travail, Badge Personnel, Bulletin de salaire, Demande de congé)
-7. **Derniers bulletins de salaire** : tableau mois, brut, net, statut, lien Voir
-8. **Congés récents** : tableau type, dates, nombre de jours, statut, actions Approuver/Refuser, Autorisation PDF
-
-#### URLs
-
-- Détail : `/personnel/<uuid:pk>/`
-- Modification : `/personnel/<uuid:pk>/modifier/`
-- Activation/désactivation : `/personnel/<uuid:pk>/toggle-active/` (POST)
-
-### 5.10 Gestion des Congés du Personnel
-
-**À quoi ça sert :** Permet d'enregistrer et de suivre les demandes de congé des membres du personnel (annuels, maladie, formation, etc.) avec affichage du solde de jours restants.
-
-**Qui peut accéder :** Directeur, Proviseur, Secrétaire
-
-**Accès :** `Personnel → Congés → Nouvelle demande`
-
-**Design du formulaire (`conge_form.html`) — Design System v4 :**
-
-Le formulaire de demande de congé a été refactorisé pour être en conformité totale avec `DESIGN_SYSTEM_v4.md` :
-
-| Règle | Application |
-|---|---|
-| **Zéro CSS inline** | Aucune balise `style="..."` ni `<style>` dans le template |
-| **Zéro classe CSS créée** | Utilisation exclusive des classes de `yelen.css` |
-| **Icônes Lucide** | Icône de retour (flèche) via SVG inline Lucide |
-| **Boutons** | `.btn-primary` (Enregistrer, vert) + `.btn-secondary` (Annuler, bordure verte) |
-| **En-tête de carte** | `.card-header` + `.card-title` pour chaque section |
-| **Labels** | `.input-label` + `.required-star` pour champs obligatoires |
-| **Erreurs** | `.input-error` pour les messages d'erreur par champ |
-| **Grille formulaire** | `.form-grid-2` pour les champs en 2 colonnes |
-| **Séparateur** | `.divider` entre les lignes du solde congés |
-| **Texte danger** | `.text-danger` pour les jours pris |
-| **Texte accent** | `.color-primary` pour le solde restant (vert) |
-| **Animations** | `.animate-fade-up` sur les cartes, `.delay-1` / `.delay-2` pour le décalage |
-
-**Champs du formulaire :**
-
-| Champ | Type | Obligatoire |
-|---|---|---|
-| Membre du personnel | Select | Oui |
-| Type de congé | Select | Oui |
-| Date de début | Date | Oui |
-| Date de fin | Date | Oui |
-| Motif / Justification | Textarea | Non |
-
-**Carte latérale — Solde des congés :**
-
-Affiche dynamiquement les droits annuels, jours pris et solde restant pour l'année en cours. Apparaît uniquement si `jours_info` est présent dans le contexte. Le design utilise `.stat-value` pour le solde en grand chiffre, `.text-muted` pour les libellés, et `.fw-bold` + `.color-primary` pour la mise en valeur du solde.
-
-### 5.11 Gestion des Salaires du Personnel
-
-**À quoi ça sert :** Permet de créer et de modifier les bulletins de salaire mensuels des membres du personnel (salaire de base, primes, indemnités, retenues CNSS/IUTS, net à payer).
-
-**Qui peut accéder :** Directeur, Proviseur, Comptable, Secrétaire
-
-**Accès :** `Personnel → Salaires → Nouveau bulletin`
-
-**Design du formulaire (`salaire_form.html`) — Design System v4 :**
-
-Le formulaire de bulletin de salaire a été refactorisé pour être en conformité totale avec `DESIGN_SYSTEM_v4.md` :
-
-| Règle | Application |
-|---|---|
-| **Zéro CSS inline** | Aucune balise `style="..."` ni `<style>` dans le template — supprimé les anciens `max-width`, `grid-template-columns`, `grid-column` inline |
-| **Zéro classe CSS créée** | Utilisation exclusive des classes de `yelen.css` |
-| **Icônes Lucide** | Icône de retour (flèche) via SVG inline Lucide |
-| **Boutons** | `.btn-primary` (Enregistrer) + `.btn-secondary` (Annuler) + `.btn-icon` (retour) |
-| **En-tête de carte** | `.card-header` + `.card-title` pour chaque section (Identification, Éléments de rémunération, Retenues, Paiement) |
-| **Conteneur formulaire** | `.form-page-wrap` remplace le `max-width` inline |
-| **Labels** | `.input-label` pour tous les champs |
-| **Erreurs** | `.input-error` pour les messages d'erreur par champ |
-| **Aide** | `.form-hint` pour les textes d'aide (prime ancienneté, CNSS, IUTS) |
-| **Grilles** | `.form-grid-3` pour Identification (4 champs dont 1 full-width), `.form-grid-2` pour Éléments de rémunération (5 champs dont 1 full-width), `.form-grid-3` pour Retenues et Paiement |
-| **Full-width** | `.form-grid-2-full` pour les champs qui doivent occuper toute la largeur dans leur grille |
-| **Animations** | `.animate-fade-up` sur le header et chaque carte, `.delay-1` / `.delay-2` pour le décalage progressif |
-
-**Sections du formulaire :**
-
-1. **Identification** : Membre du personnel (full-width), Année scolaire, Mois, Année (grille 3 colonnes)
-2. **Éléments de rémunération** : Salaire de base (obligatoire), Prime d'ancienneté, Indemnités transport/logement, Autres primes (grille 2 colonnes)
-3. **Retenues** : CNSS, IUTS, Autres retenues (grille 3 colonnes)
-4. **Paiement** : Statut, Date de paiement, Référence paiement, Observations (full-width)
 
 ---
 
@@ -2367,6 +2381,7 @@ Sélectionne la période pour obtenir le rapport de tous les paiements :
 ├──────────────────────────────────────────────────────────────┤
 │  [ 📄 Exporter PDF ]  [ 📊 Exporter Excel ]                  │
 └──────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -6691,7 +6706,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.1.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.2.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

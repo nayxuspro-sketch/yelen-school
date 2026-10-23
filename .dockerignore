@@ -12,7 +12,10 @@ node_modules/
 *.sqlite3
 .gitattributes
 README.md
-docs/
+# Documentation hors image, sauf le guide d'utilisation servi par /aide/ et ses captures.
+docs/*
+!docs/GUIDE_UTILISATION_YELEN_SCHOOL.md
+!docs/screenshots
 .vscode/
 .claude/
 skills/
