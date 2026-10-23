@@ -80,10 +80,8 @@
                       letter-spacing:0.5px; text-transform:uppercase;">
             {% if identite %}{{ identite.get_type_etablissement_display }}{% else %}Établissement scolaire{% endif %}
           </div>
-          <div style="font-size:0.5rem; color:#475569; margin-top:1px; line-height:1.2;
-                      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            {% if identite %}{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %} — {% endif %}{{ identite.ville }}{% elif etablissement %}{{ etablissement.adresse }}{% if etablissement.adresse and etablissement.ville %} — {% endif %}{{ etablissement.ville }}{% endif %}
-          </div>
+          {% firstof identite.telephone etablissement.telephone as etab_tel %}
+          {% if etab_tel %}<div style="font-size:0.5rem; color:#475569; margin-top:1px; line-height:1.2;">Tél : {{ etab_tel }}</div>{% endif %}
         </div>
         <div style="font-size:0.6rem; font-weight:700; color:#0A1628; letter-spacing:0.5px; text-align:right; white-space:nowrap;">
           CARTE SCOLAIRE
