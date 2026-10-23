@@ -1,11 +1,11 @@
 <div id="modal-overlay" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-header">
-            <span class="modal-title">
+            <span class="modal-title" id="modal-title">
                 {% if annee %}Modifier l'année scolaire{% else %}Nouvelle année scolaire{% endif %}
             </span>
             <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
             </button>
@@ -21,21 +21,21 @@
                 {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
 
                 <div class="form-group">
-                    <label class="input-label">Libellé <span style="color:#FF6B7A;">*</span></label>
+                    <label class="input-label" for="id_libelle">Libellé <span style="color:#FF6B7A;">*</span></label>
                     <input type="text" name="libelle" value="{{ annee.libelle|default:'' }}" placeholder="Ex: 2025-2026"
-                        required class="input">
+                        required class="input" id="id_libelle">
                 </div>
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label class="input-label">Date de début <span style="color:#FF6B7A;">*</span></label>
+                        <label class="input-label" for="id_date_debut">Date de début <span style="color:#FF6B7A;">*</span></label>
                         <input type="date" name="date_debut" value="{{ annee.date_debut|default:'' }}"
-                            required class="input">
+                            required class="input" id="id_date_debut">
                     </div>
                     <div class="form-group">
-                        <label class="input-label">Date de fin <span style="color:#FF6B7A;">*</span></label>
+                        <label class="input-label" for="id_date_fin">Date de fin <span style="color:#FF6B7A;">*</span></label>
                         <input type="date" name="date_fin" value="{{ annee.date_fin|default:'' }}"
-                            required class="input">
+                            required class="input" id="id_date_fin">
                     </div>
                 </div>
 

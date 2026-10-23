@@ -7,7 +7,7 @@
   <div>
     <a href="{% url 'inscriptions:eleve_detail' pk=inscription.eleve.pk %}"
        style="font-size:0.8rem; color:var(--color-text-muted); text-decoration:none; display:flex; align-items:center; gap:4px; margin-bottom:var(--space-1);">
-      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
       Retour fiche élève
@@ -27,14 +27,14 @@
     <form method="post">
       {% csrf_token %}
       <div class="form-group" style="margin-bottom:var(--space-4);">
-        <label class="input-label">Établissement de destination <span style="color:#ef4444;">*</span></label>
+        <label class="input-label" for="id_etablissement_destination">Établissement de destination <span style="color:#ef4444;">*</span></label>
         <input type="text" name="etablissement_destination" class="input" required
-               placeholder="Nom de l'établissement d'accueil" style="width:100%;">
+               placeholder="Nom de l'établissement d'accueil" style="width:100%;" id="id_etablissement_destination">
       </div>
       <div class="form-group" style="margin-bottom:var(--space-5);">
-        <label class="input-label">Motif du transfert</label>
+        <label class="input-label" for="id_motif">Motif du transfert</label>
         <textarea name="motif" class="input" rows="3" style="width:100%; resize:vertical;"
-                  placeholder="Raison du transfert (déménagement, choix de filière…)"></textarea>
+                  placeholder="Raison du transfert (déménagement, choix de filière…)" id="id_motif"></textarea>
       </div>
       <div class="d-flex gap-3">
         <button type="submit" class="btn-primary">Soumettre la demande</button>

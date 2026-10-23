@@ -7,7 +7,7 @@
 <div class="page-header">
   <div class="d-flex align-center gap-4">
     <a href="{% url 'pedagogie:evaluation_list' %}" class="btn-icon" title="Retour aux évaluations">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
@@ -22,17 +22,17 @@
 
 {% if not annee %}
 <div class="alert alert-warning">
-  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+  <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
   <span>Aucune année scolaire en cours : définissez-la d'abord (Paramètres › Années scolaires).</span>
 </div>
 {% elif not trimestres %}
 <div class="alert alert-warning">
-  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+  <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
   <span>Aucun trimestre n'est défini pour {{ annee.libelle }} : créez les périodes d'abord (Paramètres › Périodes).</span>
 </div>
 {% elif not types %}
 <div class="alert alert-warning">
-  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+  <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
   <span>Aucun type d'évaluation (devoir, composition…) n'est défini : créez-en un d'abord (Pédagogie › Évaluations).</span>
 </div>
 {% endif %}
@@ -88,7 +88,7 @@
       <span class="text-muted" style="font-size:0.8125rem;">Réservé à la direction et au secrétariat ; les enseignants saisissent leurs notes depuis Évaluations.</span>
       <button type="submit" class="btn-primary" {% if not trimestres or not types %}disabled{% endif %}>
         Continuer : reconnaître les colonnes
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
         </svg>
       </button>

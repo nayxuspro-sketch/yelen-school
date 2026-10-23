@@ -6,8 +6,8 @@
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'presences:appel_list' %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'presences:appel_list' %}" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
@@ -22,7 +22,7 @@
   <div class="d-flex gap-2">
     <a href="{% url 'presences:bilan_csv' %}{% if classe_id %}?classe={{ classe_id }}{% endif %}"
        class="btn btn-outline" title="Télécharger en CSV">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
       </svg>
       CSV
@@ -34,7 +34,7 @@
 <div class="stats-grid animate-fade-up delay-1" style="grid-template-columns:repeat(5,1fr); margin-bottom:var(--space-5);">
   <div class="stat-card">
     <div class="stat-icon stat-icon-blue">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
       </svg>
     </div>
@@ -42,7 +42,7 @@
   </div>
   <div class="stat-card">
     <div class="stat-icon stat-icon-green">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
       </svg>
     </div>
@@ -50,7 +50,7 @@
   </div>
   <div class="stat-card">
     <div class="stat-icon stat-icon-red">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
       </svg>
     </div>
@@ -58,7 +58,7 @@
   </div>
   <div class="stat-card">
     <div class="stat-icon stat-icon-gold">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
     </div>
@@ -66,7 +66,7 @@
   </div>
   <div class="stat-card">
     <div class="stat-icon stat-icon-blue">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
     </div>
@@ -79,7 +79,7 @@
   <div class="card-header">
     <div class="d-flex align-center gap-3">
       <div class="card-header-icon">
-        <svg width="17" height="17" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="17" height="17" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
         </svg>
@@ -117,7 +117,7 @@
         <div class="form-group form-group-end">
           {% if classe_id %}
           <a href="{% url 'presences:bilan_annuel' %}" class="btn-secondary">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             Toutes les classes

@@ -6,7 +6,7 @@
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
     <a href="{% url 'viescolaire:sanction_list' %}" class="dash-btn-icon" title="Retour">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
@@ -22,7 +22,7 @@
   <div class="dash-card mb-6">
     <div class="dash-card-body">
       <div class="form-group mb-0">
-        <label class="dash-label">Sélectionner la classe de l'élève</label>
+        <label class="dash-label" for="id_inscription">Sélectionner la classe de l'élève</label>
         <form method="get" class="dash-select-wrapper max-w-sm">
           <select name="classe" class="dash-input" data-csp-submit-on-change>
             <option value="">— Toutes les classes —</option>
@@ -47,7 +47,7 @@
         <div class="dash-form-grid">
           <div class="form-group col-span-2">
             <label class="dash-label">Élève <span class="text-danger">*</span></label>
-            <select name="inscription" required class="dash-input">
+            <select name="inscription" required class="dash-input" id="id_inscription">
               <option value="">— Choisir un élève —</option>
               {% for ins in inscriptions %}
               <option value="{{ ins.pk }}">{{ ins.eleve.get_nom_complet }}</option>
@@ -74,8 +74,8 @@
           </div>
 
           <div class="form-group">
-            <label class="dash-label">Statut</label>
-            <select name="statut" class="dash-input">
+            <label class="dash-label" for="id_statut">Statut</label>
+            <select name="statut" class="dash-input" id="id_statut">
               {% for val, label in statut_choices %}
               <option value="{{ val }}">{{ label }}</option>
               {% endfor %}
@@ -83,18 +83,18 @@
           </div>
 
           <div class="form-group">
-            <label class="dash-label">Date de la sanction <span class="text-danger">*</span></label>
-            <input type="date" name="date_sanction" required class="dash-input">
+            <label class="dash-label" for="id_date_sanction">Date de la sanction <span class="text-danger">*</span></label>
+            <input type="date" name="date_sanction" required class="dash-input" id="id_date_sanction">
           </div>
 
           <div class="form-group">
-            <label class="dash-label">Durée (jours)</label>
-            <input type="number" name="duree_jours" min="0" value="0" class="dash-input">
+            <label class="dash-label" for="id_duree_jours">Durée (jours)</label>
+            <input type="number" name="duree_jours" min="0" value="0" class="dash-input" id="id_duree_jours">
           </div>
 
           <div class="form-group col-span-2">
-            <label class="dash-label">Motif <span class="text-danger">*</span></label>
-            <textarea name="motif" rows="3" required class="dash-input" placeholder="Détaillez le motif de la sanction..."></textarea>
+            <label class="dash-label" for="id_motif">Motif <span class="text-danger">*</span></label>
+            <textarea name="motif" rows="3" required class="dash-input" placeholder="Détaillez le motif de la sanction..." id="id_motif"></textarea>
           </div>
         </div>
       </div>
@@ -111,8 +111,8 @@
       <div class="dash-card-body">
         <div class="dash-form-grid">
           <div class="form-group">
-            <label class="dash-label">Trimestre concerné</label>
-            <select name="trimestre" class="dash-input">
+            <label class="dash-label" for="id_trimestre">Trimestre concerné</label>
+            <select name="trimestre" class="dash-input" id="id_trimestre">
               <option value="">— Aucun impact —</option>
               {% for t in trimestres %}
               <option value="{{ t.pk }}">{{ t }}</option>
@@ -121,9 +121,9 @@
           </div>
           
           <div class="form-group">
-            <label class="dash-label">Points (− retrait / + ajout)</label>
+            <label class="dash-label" for="id_points">Points (− retrait / + ajout)</label>
             <div class="dash-input-group">
-              <input type="number" name="points" step="0.25" value="0" class="dash-input dash-input-center dash-font-bold dash-text-lg">
+              <input type="number" name="points" step="0.25" value="0" class="dash-input dash-input-center dash-font-bold dash-text-lg" id="id_points">
             </div>
             <p class="dash-help-text mt-1">
               Ex: <code>-2</code> pour retirer, <code>+1</code> pour ajouter.
@@ -131,8 +131,8 @@
           </div>
 
           <div class="form-group col-span-2">
-            <label class="dash-label">Appréciation de la conduite</label>
-            <input type="text" name="appreciation_conduite" list="conduites-list" class="dash-input" placeholder="Ex: Conduite à améliorer...">
+            <label class="dash-label" for="id_appreciation_conduite">Appréciation de la conduite</label>
+            <input type="text" name="appreciation_conduite" list="conduites-list" class="dash-input" placeholder="Ex: Conduite à améliorer..." id="id_appreciation_conduite">
             <datalist id="conduites-list">
               <option value="Très bonne conduite">
               <option value="Bonne conduite">
@@ -154,16 +154,16 @@
       <div class="dash-card-body">
         <div class="dash-form-grid">
           <div class="form-group">
-            <label class="dash-label">Date de retour</label>
-            <input type="date" name="date_retour" class="dash-input">
+            <label class="dash-label" for="id_date_retour">Date de retour</label>
+            <input type="date" name="date_retour" class="dash-input" id="id_date_retour">
           </div>
           <div class="form-group">
-            <label class="dash-label">Convocation parents</label>
-            <input type="date" name="date_convocation" class="dash-input">
+            <label class="dash-label" for="id_date_convocation">Convocation parents</label>
+            <input type="date" name="date_convocation" class="dash-input" id="id_date_convocation">
           </div>
           <div class="form-group col-span-2">
-            <label class="dash-label">Observations</label>
-            <input type="text" name="observations" class="dash-input">
+            <label class="dash-label" for="id_observations">Observations</label>
+            <input type="text" name="observations" class="dash-input" id="id_observations">
           </div>
           <div class="form-group col-span-2">
             <label class="dash-checkbox-label">
@@ -177,7 +177,7 @@
 
     {% if config_disc %}
     <div id="seuil-warning" class="dash-alert dash-alert-warning mb-6">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="mt-0.5">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="mt-0.5">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
       </svg>
       <div>

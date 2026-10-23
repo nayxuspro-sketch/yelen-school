@@ -8,7 +8,7 @@
 <div class="page-header animate-fade-up">
   <div>
     <a href="{% url 'bulletins:index' %}" class="btn-icon" title="Retour">
-      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
     </a>
@@ -19,7 +19,7 @@
     <form method="post" action="{% url 'bulletins:bulletins_classe_publier' class_id=classe.pk trimestre_id=trimestre.pk %}" data-csp-confirm-submit="Publier tous les bulletins avec moyenne calculée ?" >
       {% csrf_token %}
       <button type="submit" class="btn-primary btn-sm">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
         Publier tous
@@ -27,14 +27,14 @@
     </form>
     <a href="{% url 'pedagogie:bulletin_classe_batch_pdf' class_id=classe.pk trimestre_id=trimestre.pk %}"
        target="_blank" class="btn-secondary btn-sm">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
       </svg>
       PDF (tous)
     </a>
     <a href="{% url 'pedagogie:bulletin_classe_zip' class_id=classe.pk trimestre_id=trimestre.pk %}"
        class="btn-secondary btn-sm">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
       </svg>
       ZIP (individuel)
@@ -73,7 +73,7 @@
 {# Modale de saisie bulletin (placée en dehors de l'overflow:hidden) #}
 <div id="bulletin-modal"
      class="bul-modal" data-csp-action="modal-backdrop-dismiss" >
-  <div class="bul-modal-inner">
+  <div class="bul-modal-inner" role="dialog" aria-modal="true" aria-label="Saisie du bulletin">
     <div id="modal-content">
       <div class="text-center text-muted p-4">Chargement…</div>
     </div>

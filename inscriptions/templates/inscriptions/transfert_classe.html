@@ -6,8 +6,8 @@
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
@@ -55,7 +55,7 @@
 
       <div class="d-flex gap-3" style="margin-top:var(--space-5);">
         <button type="submit" class="btn-primary" style="flex:1;">
-          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
           </svg>
           Confirmer le transfert

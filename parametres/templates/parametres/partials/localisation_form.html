@@ -1,11 +1,11 @@
 <div id="modal-overlay" class="modal-overlay">
-  <div class="modal-box">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-header">
-      <span class="modal-title">
+      <span class="modal-title" id="modal-title">
         {% if localisation %}Modifier la localisation{% else %}Nouvelle localisation{% endif %}
       </span>
       <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
-        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
@@ -20,38 +20,38 @@
         {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
 
         <div class="form-group">
-          <label class="input-label">Nom <span style="color:#FF6B7A;">*</span></label>
+          <label class="input-label" for="id_nom">Nom <span style="color:#FF6B7A;">*</span></label>
           <input type="text" name="nom" value="{{ localisation.nom|default:'' }}"
                  placeholder="Ex: Bureau du directeur, Salle des professeurs"
-                 required class="input">
+                 required class="input" id="id_nom">
         </div>
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="input-label">Type</label>
-            <select name="type_localisation" class="input select">
+            <label class="input-label" for="id_type_localisation">Type</label>
+            <select name="type_localisation" class="input select" id="id_type_localisation">
               {% for val, label in type_choices %}
               <option value="{{ val }}" {% if localisation.type_localisation == val %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="form-group">
-            <label class="input-label">Bâtiment</label>
+            <label class="input-label" for="id_batiment">Bâtiment</label>
             <input type="text" name="batiment" value="{{ localisation.batiment|default:'' }}"
-                   placeholder="Ex: Bloc administratif" class="input">
+                   placeholder="Ex: Bloc administratif" class="input" id="id_batiment">
           </div>
         </div>
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="input-label">Étage <small class="text-muted">(0 = RDC)</small></label>
+            <label class="input-label" for="id_etage">Étage <small class="text-muted">(0 = RDC)</small></label>
             <input type="number" name="etage" value="{{ localisation.etage|default:0 }}"
-                   min="0" max="20" class="input">
+                   min="0" max="20" class="input" id="id_etage">
           </div>
           <div class="form-group">
-            <label class="input-label">Numéro</label>
+            <label class="input-label" for="id_numero">Numéro</label>
             <input type="text" name="numero" value="{{ localisation.numero|default:'' }}"
-                   placeholder="Ex: 101, A3" class="input">
+                   placeholder="Ex: 101, A3" class="input" id="id_numero">
           </div>
         </div>
 

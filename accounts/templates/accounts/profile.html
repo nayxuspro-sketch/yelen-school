@@ -34,7 +34,7 @@
       {% endif %}
 
       <div class="form-group">
-        <label class="form-label">Nom</label>
+        <label class="form-label" for="id_code">Nom</label>
         {{ form.last_name }}
         {% if form.last_name.errors %}<p class="form-error">{{ form.last_name.errors.0 }}</p>{% endif %}
       </div>
@@ -147,7 +147,7 @@
         <label class="input-label">Code de confirmation (pour désactiver)</label>
         <input type="text" name="code" required maxlength="6" pattern="[0-9]{6}"
                inputmode="numeric" class="input w-full" placeholder="000000"
-               style="letter-spacing:.3em; text-align:center;">
+               style="letter-spacing:.3em; text-align:center;" id="id_code">
       </div>
       <button type="submit" class="btn-secondary"
               style="color:#dc2626; border-color:#fca5a5;" data-csp-confirm="Désactiver la double authentification ?" >

@@ -19,7 +19,7 @@
     <div class="pai-sec-hd">
       <div class="pai-sec-hd-left">
         <div class="pai-sec-icon">
-          <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
         </div>
@@ -48,7 +48,7 @@
             <td class="td-right fw-bold">{{ p.montant|floatformat:"0" }} FCFA</td>
             <td class="td-right">
               <a href="{% url 'finances:recu_pdf' p.pk %}" class="btn-icon btn-icon-primary" target="_blank" title="Imprimer le reçu N°{{ p.numero_recu }}">
-                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
                   <rect x="6" y="14" width="12" height="8" rx="1"/>
                 </svg>
@@ -71,7 +71,7 @@
   <div class="card animate-fade-up delay-2">
     <div class="pai-footer">
       <a href="{% url 'finances:situation_eleve' inscription.pk %}" class="dash-btn-secondary">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
         </svg>
         Situation financière
@@ -82,7 +82,7 @@
         </a>
         {% for p in paiements %}
         <a href="{% url 'finances:recu_pdf' p.pk %}" class="btn-primary" target="_blank">
-          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
             <rect x="6" y="14" width="12" height="8" rx="1"/>
           </svg>

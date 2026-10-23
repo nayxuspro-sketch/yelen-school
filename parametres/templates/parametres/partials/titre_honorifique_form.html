@@ -1,9 +1,9 @@
 <div id="modal-overlay" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-header">
-            <span class="modal-title">{% if titre %}Modifier le titre honorifique{% else %}Nouveau titre honorifique{% endif %}</span>
+            <span class="modal-title" id="modal-title">{% if titre %}Modifier le titre honorifique{% else %}Nouveau titre honorifique{% endif %}</span>
             <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
         <form hx-post="{% if titre %}{% url 'parametres:titre_honorifique_edit' titre.pk %}{% else %}{% url 'parametres:titre_honorifique_create' %}{% endif %}"
@@ -15,10 +15,10 @@
                 {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
 
                 <div class="form-group">
-                    <label class="input-label">Titre honorifique <span style="color:#FF6B7A;">*</span></label>
+                    <label class="input-label" for="id_nom">Titre honorifique <span style="color:#FF6B7A;">*</span></label>
                     <input type="text" name="nom" value="{{ titre.nom|default:'' }}"
                            placeholder="Ex: M. le Directeur, Chevalier de l'Ordre des Palmes académiques"
-                           required class="input">
+                           required class="input" id="id_nom">
                 </div>
 
                 {% if titre %}

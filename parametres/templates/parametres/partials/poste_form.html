@@ -1,9 +1,9 @@
 <div id="modal-overlay" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-header">
-            <span class="modal-title">{% if poste %}Modifier le poste{% else %}Nouveau poste{% endif %}</span>
+            <span class="modal-title" id="modal-title">{% if poste %}Modifier le poste{% else %}Nouveau poste{% endif %}</span>
             <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
         <form hx-post="{% if poste %}{% url 'parametres:poste_edit' poste.pk %}{% else %}{% url 'parametres:poste_create' %}{% endif %}"
@@ -15,26 +15,26 @@
                 {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
 
                 <div class="form-group">
-                    <label class="input-label">Titre <span style="color:#FF6B7A;">*</span></label>
-                    <input type="text" name="titre" value="{{ poste.titre|default:'' }}" placeholder="Ex: Enseignant" required class="input">
+                    <label class="input-label" for="id_titre">Titre <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="titre" value="{{ poste.titre|default:'' }}" placeholder="Ex: Enseignant" required class="input" id="id_titre">
                 </div>
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label class="input-label">Code <span style="color:#FF6B7A;">*</span></label>
-                        <input type="text" name="code" value="{{ poste.code|default:'' }}" placeholder="Ex: ENS" required class="input">
+                        <label class="input-label" for="id_code">Code <span style="color:#FF6B7A;">*</span></label>
+                        <input type="text" name="code" value="{{ poste.code|default:'' }}" placeholder="Ex: ENS" required class="input" id="id_code">
                     </div>
                     <div class="form-group">
-                        <label class="input-label">Catégorie <span style="color:#FF6B7A;">*</span></label>
-                        <select name="categorie" required class="input select">
+                        <label class="input-label" for="id_categorie">Catégorie <span style="color:#FF6B7A;">*</span></label>
+                        <select name="categorie" required class="input select" id="id_categorie">
                             {% for val, label in categorie_choices %}<option value="{{ val }}" {% if poste.categorie == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="input-label">Description</label>
-                    <textarea name="description" rows="2" class="input" style="resize:none;">{{ poste.description|default:'' }}</textarea>
+                    <label class="input-label" for="id_description">Description</label>
+                    <textarea name="description" rows="2" class="input" style="resize:none;" id="id_description">{{ poste.description|default:'' }}</textarea>
                 </div>
 
                 {% if poste %}

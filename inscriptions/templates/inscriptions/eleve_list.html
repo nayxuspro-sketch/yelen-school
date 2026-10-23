@@ -14,7 +14,7 @@
   <div class="page-actions">
     <a href="{% url 'inscriptions:eleve_list_csv' %}?{{ request.GET.urlencode }}"
        class="btn-secondary" title="Exporter CSV">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
@@ -22,7 +22,7 @@
     </a>
     <a href="{% url 'inscriptions:eleve_list_xlsx' %}?{{ request.GET.urlencode }}"
        class="btn-secondary btn-excel" title="Exporter Excel (.xlsx)">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
@@ -30,7 +30,7 @@
     </a>
     <a href="{% url 'inscriptions:eleve_list_pdf' %}?{{ request.GET.urlencode }}"
        class="btn-secondary" title="Exporter PDF">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
       </svg>
@@ -38,7 +38,7 @@
     </a>
     {% if request|autorise_url:'inscriptions:eleve_import' %}
     <a href="{% url 'inscriptions:eleve_import' %}" class="btn-secondary" title="Importer des élèves depuis un fichier Excel ou CSV">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
       </svg>
       Importer

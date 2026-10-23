@@ -6,8 +6,8 @@
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'bulletins:bulletins_classe' class_id=inscription.classe_id trimestre_id=trimestre.pk %}" data-csp-action="history-back" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'bulletins:bulletins_classe' class_id=inscription.classe_id trimestre_id=trimestre.pk %}" data-csp-action="history-back" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
@@ -22,7 +22,7 @@
   </div>
   <div class="d-flex gap-2">
     <a href="{{ pdf_url }}" target="_blank" class="btn-primary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
       </svg>
@@ -175,7 +175,7 @@
   <div class="d-flex justify-end gap-3" style="margin-top:var(--space-4);">
     <a href="{% url 'bulletins:bulletins_classe' class_id=inscription.classe_id trimestre_id=trimestre.pk %}" data-csp-action="history-back" class="btn-secondary">Retour</a>
     <a href="{{ pdf_url }}" target="_blank" class="btn-primary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
       </svg>

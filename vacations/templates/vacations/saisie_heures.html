@@ -6,8 +6,8 @@
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'vacations:contrat_list' %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'vacations:contrat_list' %}" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
       </svg>
     </a>
@@ -50,22 +50,22 @@
 
       <div class="form-grid-3 mb-4">
         <div class="form-group mb-0">
-          <label class="input-label">Heures prévues (semaine)</label>
-          <input type="text" value="{{ contrat.heures_hebdo_prevues }}h" class="input input-readonly" readonly>
+          <label class="input-label" for="id_heures_prevues">Heures prévues (semaine)</label>
+          <input type="text" value="{{ contrat.heures_hebdo_prevues }}h" class="input input-readonly" readonly id="id_heures_prevues">
         </div>
         <div class="form-group mb-0">
-          <label class="input-label">Heures effectuées</label>
-          <input type="number" name="heures_effectuees" step="0.5" min="0" value="0" class="input">
+          <label class="input-label" for="id_heures_effectuees">Heures effectuées</label>
+          <input type="number" name="heures_effectuees" step="0.5" min="0" value="0" class="input" id="id_heures_effectuees">
         </div>
         <div class="form-group mb-0">
-          <label class="input-label">Heures annulées</label>
-          <input type="number" name="heures_annulees" step="0.5" min="0" value="0" class="input">
+          <label class="input-label" for="id_heures_annulees">Heures annulées</label>
+          <input type="number" name="heures_annulees" step="0.5" min="0" value="0" class="input" id="id_heures_annulees">
         </div>
       </div>
 
       <div class="form-group mb-4">
-        <label class="input-label">Observations</label>
-        <input type="text" name="observations" placeholder="Optionnel" class="input w-full">
+        <label class="input-label" for="id_observations">Observations</label>
+        <input type="text" name="observations" placeholder="Optionnel" class="input w-full" id="id_observations">
       </div>
 
       <div class="d-flex justify-end">
@@ -110,13 +110,13 @@
           <td class="text-right">
             {% if h.est_valide %}
               <a href="{% url 'vacations:invalider_heure' h.pk %}" class="btn-icon btn-icon-danger" title="Invalider">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                 </svg>
               </a>
             {% else %}
               <a href="{% url 'vacations:valider_heure' h.pk %}" class="btn-icon" title="Valider">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
               </a>

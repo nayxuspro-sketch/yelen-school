@@ -14,13 +14,13 @@
   {% if is_superuser %}
   <div class="page-actions">
     <a href="{% url 'licences:outils' %}" class="btn btn-secondary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
       </svg>
       Outils Crypto
     </a>
     <a href="{% url 'licences:licence_create' %}" class="btn btn-primary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
       </svg>
       Nouvelle Licence
@@ -33,7 +33,7 @@
 {% if not licences %}
 <div class="dash-empty-state animate-fade-up">
   <div class="dash-empty-icon">
-    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+    <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
     </svg>
   </div>
@@ -150,13 +150,13 @@
       {% endif %}
       <a href="{% url 'licences:licence_renouveler' lic.pk %}" class="btn btn-secondary btn-sm">Prolonger</a>
       <a href="{% url 'licences:licence_edit' lic.pk %}" class="btn-icon" title="Modifier">
-        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
         </svg>
       </a>
       {% if lic.statut != 'REVOQUEE' %}
       <a href="{% url 'licences:licence_revoquer' lic.pk %}" class="btn-icon text-danger" title="Révoquer">
-        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"/>
         </svg>
       </a>

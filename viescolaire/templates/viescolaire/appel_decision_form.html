@@ -4,8 +4,8 @@
 {% block content %}
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'viescolaire:conseil_detail' decision.conseil.pk %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'viescolaire:conseil_detail' decision.conseil.pk %}" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
@@ -25,7 +25,7 @@
   <div class="card animate-fade-up delay-1 mb-4"
        style="padding:var(--space-4); background:#fef2f2; border-color:#fecaca;">
     <div class="d-flex align-center gap-3">
-      <svg width="20" height="20" fill="none" stroke="#b91c1c" viewBox="0 0 24 24" style="flex-shrink:0;">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="#b91c1c" viewBox="0 0 24 24" style="flex-shrink:0;">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
       </svg>
@@ -80,7 +80,7 @@
       <div class="d-flex gap-3 justify-end" style="margin-top:.5rem;">
         <a href="{% url 'viescolaire:conseil_detail' decision.conseil.pk %}" class="btn-secondary">Annuler</a>
         <button type="submit" class="btn-primary">
-          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
           Déposer l'appel

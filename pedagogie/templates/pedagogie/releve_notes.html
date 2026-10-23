@@ -8,7 +8,7 @@
 <div class="dash-section-header animate-fade-up">
   <div class="dash-section-title">
     <div class="dash-section-icon dash-section-icon-primary">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
       </svg>
@@ -27,7 +27,7 @@
   <div class="dash-section-actions">
     <a href="{% url 'pedagogie:releve_notes_pdf' %}?{{ request.GET.urlencode }}"
        target="_blank" class="dash-btn dash-btn-secondary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
         <polyline stroke-linecap="round" stroke-linejoin="round" points="6,9 6,2 18,2 18,9"/>
         <path stroke-linecap="round" stroke-linejoin="round"
               d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
@@ -37,7 +37,7 @@
     </a>
     <a href="{% url 'pedagogie:fiche_discipline_pdf' %}?{{ request.GET.urlencode }}"
        target="_blank" class="dash-btn dash-btn-primary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round"
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
@@ -58,15 +58,15 @@
         <div class="rlv-step-head">
           <div class="rlv-step-dot">
             {% if annee %}
-            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
+            <svg aria-hidden="true" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
               <polyline stroke-linecap="round" stroke-linejoin="round" points="20,6 9,17 4,12"/>
             </svg>
             {% else %}1{% endif %}
           </div>
           <div class="rlv-step-line"></div>
         </div>
-        <label class="rlv-step-slabel">Année scolaire</label>
-        <select name="annee" class="dash-input">
+        <label class="rlv-step-slabel" for="id_annee">Année scolaire</label>
+        <select name="annee" class="dash-input" id="id_annee">
           <option value="">— Choisir —</option>
           {% for a in annees %}
           <option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>
@@ -81,18 +81,18 @@
         <div class="rlv-step-head">
           <div class="rlv-step-dot">
             {% if classe %}
-            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
+            <svg aria-hidden="true" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
               <polyline stroke-linecap="round" stroke-linejoin="round" points="20,6 9,17 4,12"/>
             </svg>
             {% else %}2{% endif %}
           </div>
           <div class="rlv-step-line"></div>
         </div>
-        <label class="rlv-step-slabel">
+        <label class="rlv-step-slabel" for="id_classe">
           Classe
           {% if not annee %}<span class="rlv-step-hint2">— année d'abord</span>{% endif %}
         </label>
-        <select name="classe" class="dash-input">
+        <select name="classe" class="dash-input" id="id_classe">
           <option value="">— Choisir —</option>
           {% for cl in classes %}
           <option value="{{ cl.pk }}" {% if classe and cl.pk == classe.pk %}selected{% endif %}>{{ cl.nom }}</option>
@@ -105,19 +105,19 @@
         <div class="rlv-step-head">
           <div class="rlv-step-dot">
             {% if enseignement %}
-            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
+            <svg aria-hidden="true" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
               <polyline stroke-linecap="round" stroke-linejoin="round" points="20,6 9,17 4,12"/>
             </svg>
             {% else %}3{% endif %}
           </div>
           <div class="rlv-step-line"></div>
         </div>
-        <label class="rlv-step-slabel">
+        <label class="rlv-step-slabel" for="id_enseignement">
           Discipline
           {% if not classe %}<span class="rlv-step-hint2">— classe d'abord</span>{% endif %}
         </label>
         <select name="enseignement" class="dash-input"
-                {% if not classe %}disabled{% endif %}>
+                {% if not classe %}disabled{% endif %} id="id_enseignement">
           <option value="">— Choisir —</option>
           {% for ens in enseignements %}
           <option value="{{ ens.pk }}" {% if enseignement and ens.pk == enseignement.pk %}selected{% endif %}>
@@ -132,18 +132,18 @@
         <div class="rlv-step-head">
           <div class="rlv-step-dot rlv-step-num-opt">
             {% if periode %}
-            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
+            <svg aria-hidden="true" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5">
               <polyline stroke-linecap="round" stroke-linejoin="round" points="20,6 9,17 4,12"/>
             </svg>
             {% else %}4{% endif %}
           </div>
         </div>
-        <label class="rlv-step-slabel">
+        <label class="rlv-step-slabel" for="id_periode">
           Période
           <span class="rlv-step-hint2">(optionnel)</span>
         </label>
         <select name="periode" class="dash-input"
-                {% if not enseignement %}disabled{% endif %}>
+                {% if not enseignement %}disabled{% endif %} id="id_periode">
           <option value="">Toutes les périodes</option>
           {% for p in periodes %}
           <option value="{{ p.pk }}" {% if periode and p.pk == periode.pk %}selected{% endif %}>{{ p.nom }}</option>
@@ -156,7 +156,7 @@
     {% if enseignement or classe or annee %}
     <div class="rlv-filters-reset">
       <a href="{% url 'pedagogie:releve_notes' %}" class="dash-btn dash-btn-secondary">
-        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <svg aria-hidden="true" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
         </svg>
         Réinitialiser
@@ -276,7 +276,7 @@
   {% if table %}
   <div class="rlv-toolbar">
     <div class="rlv-search-wrap">
-      <svg class="rlv-search-icon" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" class="rlv-search-icon" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <circle cx="11" cy="11" r="8"/>
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35"/>
       </svg>

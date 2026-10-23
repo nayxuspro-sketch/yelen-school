@@ -17,7 +17,7 @@
 {% if messages %}
 {% for message in messages %}
 <div class="alert alert-{{ message.tags }} mb-4">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
         {% if message.tags == 'success' %}
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
         {% elif message.tags == 'error' %}
@@ -37,7 +37,7 @@
 
         <div class="card-header">
             <div class="card-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11m16-11v11M8 14v.01M12 14v.01M16 14v.01M8 18v.01M12 18v.01M16 18v.01"/>
                 </svg>
                 Informations officielles
@@ -46,20 +46,20 @@
 
         <div class="form-grid-2">
             <div class="form-group">
-                <label class="input-label">Nom de l'établissement</label>
+                <label class="input-label" for="id_nom_etablissement">Nom de l'établissement</label>
                 <input type="text" name="nom_etablissement" value="{{ identite.nom_etablissement|default:etablissement.nom }}"
-                    class="input" placeholder="Ex: Lycée d'Excellence Yelen">
+                    class="input" placeholder="Ex: Lycée d'Excellence Yelen" id="id_nom_etablissement">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Sigle</label>
+                <label class="input-label" for="id_sigle">Sigle</label>
                 <input type="text" name="sigle" value="{{ identite.sigle|default:'' }}"
-                    class="input" placeholder="Ex: LEY, CEG, Lycée...">
+                    class="input" placeholder="Ex: LEY, CEG, Lycée..." id="id_sigle">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Type d'établissement</label>
-                <select name="type_etablissement" class="input select">
+                <label class="input-label" for="id_type_etablissement">Type d'établissement</label>
+                <select name="type_etablissement" class="input select" id="id_type_etablissement">
                     <option value="PUBLIC" {% if identite.type_etablissement == 'PUBLIC' %}selected{% endif %}>Public</option>
                     <option value="PRIVE" {% if identite.type_etablissement != 'PUBLIC' and identite.type_etablissement != 'CONFESSIONNEL' %}selected{% endif %}>Privé</option>
                     <option value="CONFESSIONNEL" {% if identite.type_etablissement == 'CONFESSIONNEL' %}selected{% endif %}>Confessionnel</option>
@@ -67,21 +67,21 @@
             </div>
 
             <div class="form-group">
-                <label class="input-label">N° Agrément</label>
+                <label class="input-label" for="id_numero_agrement_mena">N° Agrément</label>
                 <input type="text" name="numero_agrement_mena" value="{{ identite.numero_agrement_mena|default:'' }}"
-                    class="input" placeholder="Ex: 2024-001/MENA">
+                    class="input" placeholder="Ex: 2024-001/MENA" id="id_numero_agrement_mena">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Date d'agrément</label>
+                <label class="input-label" for="id_date_agrement">Date d'agrément</label>
                 <input type="date" name="date_agrement" value="{{ identite.date_agrement|date:'Y-m-d'|default:'' }}"
-                    class="input">
+                    class="input" id="id_date_agrement">
             </div>
         </div>
 
         <div class="card-header">
             <div class="card-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                     <circle cx="12" cy="10" r="3"/>
                 </svg>
@@ -91,32 +91,32 @@
 
         <div class="form-grid-2">
             <div class="form-group" style="grid-column:1/-1;">
-                <label class="input-label">Adresse complète</label>
-                <textarea name="adresse_complete" rows="2" class="input" placeholder="Adresse complète (Rue, Quartier, Secteur...)">{{ identite.adresse_complete|default:'' }}</textarea>
+                <label class="input-label" for="id_adresse_complete">Adresse complète</label>
+                <textarea name="adresse_complete" rows="2" class="input" placeholder="Adresse complète (Rue, Quartier, Secteur...)" id="id_adresse_complete">{{ identite.adresse_complete|default:'' }}</textarea>
             </div>
 
             <div class="form-group">
-                <label class="input-label">Ville</label>
+                <label class="input-label" for="id_ville">Ville</label>
                 <input type="text" name="ville" value="{{ identite.ville|default:'' }}"
-                    class="input" placeholder="Ouagadougou">
+                    class="input" placeholder="Ouagadougou" id="id_ville">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Province</label>
+                <label class="input-label" for="id_province">Province</label>
                 <input type="text" name="province" value="{{ identite.province|default:'' }}"
-                    class="input" placeholder="Kadiogo">
+                    class="input" placeholder="Kadiogo" id="id_province">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Région</label>
+                <label class="input-label" for="id_region">Région</label>
                 <input type="text" name="region" value="{{ identite.region|default:'' }}"
-                    class="input" placeholder="Centre">
+                    class="input" placeholder="Centre" id="id_region">
             </div>
         </div>
 
         <div class="card-header">
             <div class="card-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                 </svg>
                 Contact
@@ -125,33 +125,33 @@
 
         <div class="form-grid-2">
             <div class="form-group">
-                <label class="input-label">Téléphone</label>
+                <label class="input-label" for="id_telephone">Téléphone</label>
                 <input type="text" name="telephone" value="{{ identite.telephone|default:'' }}"
-                    class="input" placeholder="+226 25 30 00 00" maxlength="35">
+                    class="input" placeholder="+226 25 30 00 00" maxlength="35" id="id_telephone">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Email</label>
+                <label class="input-label" for="id_email">Email</label>
                 <input type="email" name="email" value="{{ identite.email|default:'' }}"
-                    class="input" placeholder="direction@yelen.bf">
+                    class="input" placeholder="direction@yelen.bf" id="id_email">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Site web</label>
+                <label class="input-label" for="id_site_web">Site web</label>
                 <input type="url" name="site_web" value="{{ identite.site_web|default:'' }}"
-                    class="input" placeholder="https://www.yelen.bf">
+                    class="input" placeholder="https://www.yelen.bf" id="id_site_web">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Nom du Directeur</label>
+                <label class="input-label" for="id_nom_directeur">Nom du Directeur</label>
                 <input type="text" name="nom_directeur" value="{{ identite.nom_directeur|default:'' }}"
-                    class="input" placeholder="Nom et prénom du directeur">
+                    class="input" placeholder="Nom et prénom du directeur" id="id_nom_directeur">
             </div>
         </div>
 
         <div class="card-header">
             <div class="card-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                     <circle cx="8.5" cy="8.5" r="1.5"/>
                     <polyline points="21 15 16 10 5 21"/>
@@ -162,7 +162,7 @@
 
         <div class="form-grid-2">
             <div class="form-group">
-                <label class="input-label">Logo de l'établissement</label>
+                <label class="input-label" for="id_devise">Logo de l'établissement</label>
                 <div class="d-flex align-center gap-4 mt-2">
                     {% if identite.logo %}
                     <div id="logo-preview-container" style="flex-shrink:0;">
@@ -227,7 +227,7 @@
 
         <div class="card-header">
             <div class="card-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
                     <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
                 </svg>
@@ -237,14 +237,14 @@
 
         <div class="form-group" style="padding:0 var(--space-6) var(--space-6);">
             <label class="input-label">Devise</label>
-            <textarea name="devise" rows="2" class="input" placeholder="Ex: Ensemble pour la réussite de chaque élève">{{ identite.devise|default:'' }}</textarea>
+            <textarea name="devise" rows="2" class="input" placeholder="Ex: Ensemble pour la réussite de chaque élève" id="id_devise">{{ identite.devise|default:'' }}</textarea>
         </div>
 
         <div class="divider"></div>
 
         <div class="d-flex justify-end gap-3" style="padding:var(--space-5) var(--space-6) 0;">
             <button type="submit" class="btn-primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
                     <polyline points="17 21 17 13 7 13 7 21"/>
                     <polyline points="7 3 7 8 15 8"/>

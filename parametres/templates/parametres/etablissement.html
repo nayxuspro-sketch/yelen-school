@@ -29,45 +29,45 @@
 
         <div class="form-grid-2">
             <div class="form-group">
-                <label class="input-label">Nom de l'établissement <span style="color:#FF6B7A;">*</span></label>
+                <label class="input-label" for="id_nom">Nom de l'établissement <span style="color:#FF6B7A;">*</span></label>
                 <input type="text" name="nom" value="{{ etablissement.nom }}" required
-                    class="input" placeholder="Ex: Lycée d'Excellence Yelen">
+                    class="input" placeholder="Ex: Lycée d'Excellence Yelen" id="id_nom">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Code <span style="color:#FF6B7A;">*</span></label>
+                <label class="input-label" for="id_code">Code <span style="color:#FF6B7A;">*</span></label>
                 <input type="text" name="code" value="{{ etablissement.code }}" required
-                    class="input" placeholder="Ex: LEY-OUA">
+                    class="input" placeholder="Ex: LEY-OUA" id="id_code">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Téléphone</label>
+                <label class="input-label" for="id_telephone">Téléphone</label>
                 <input type="text" name="telephone" value="{{ etablissement.telephone }}"
-                    class="input" placeholder="+226 25 30 00 00">
+                    class="input" placeholder="+226 25 30 00 00" id="id_telephone">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Email</label>
+                <label class="input-label" for="id_email">Email</label>
                 <input type="email" name="email" value="{{ etablissement.email }}"
-                    class="input" placeholder="direction@yelen.bf">
+                    class="input" placeholder="direction@yelen.bf" id="id_email">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Ville</label>
+                <label class="input-label" for="id_ville">Ville</label>
                 <input type="text" name="ville" value="{{ etablissement.ville }}"
-                    class="input" placeholder="Ouagadougou">
+                    class="input" placeholder="Ouagadougou" id="id_ville">
             </div>
 
             <div class="form-group">
-                <label class="input-label">Pays</label>
+                <label class="input-label" for="id_pays">Pays</label>
                 <input type="text" name="pays" value="{{ etablissement.pays }}"
-                    class="input" placeholder="Burkina Faso">
+                    class="input" placeholder="Burkina Faso" id="id_pays">
             </div>
 
             <div class="form-group" style="grid-column:1/-1;">
-                <label class="input-label">Adresse</label>
+                <label class="input-label" for="id_adresse">Adresse</label>
                 <textarea name="adresse" rows="2"
-                    class="input" placeholder="Secteur, Quartier, Rue...">{{ etablissement.adresse }}</textarea>
+                    class="input" placeholder="Secteur, Quartier, Rue..." id="id_adresse">{{ etablissement.adresse }}</textarea>
             </div>
 
             <div style="grid-column:1/-1;">

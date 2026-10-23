@@ -13,7 +13,7 @@
     <h1 class="page-title">{{ msg.get_type_display }}</h1>
   </div>
   <a href="{% url 'communication:message_list' %}" class="btn-secondary btn-sm">
-    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
     </svg>
     Retour
@@ -24,7 +24,7 @@
 {% if msg.statut == 'REPONDU' %}
 <div class="comm-status-banner comm-status-banner-success animate-fade-up delay-1">
   <div class="comm-status-banner-icon">
-    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
     </svg>
   </div>
@@ -36,7 +36,7 @@
 {% elif msg.statut == 'LU' %}
 <div class="comm-status-banner comm-status-banner-info animate-fade-up delay-1">
   <div class="comm-status-banner-icon">
-    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
     </svg>
@@ -49,7 +49,7 @@
 {% else %}
 <div class="comm-status-banner comm-status-banner-warning animate-fade-up delay-1">
   <div class="comm-status-banner-icon">
-    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
     </svg>
   </div>
@@ -69,25 +69,25 @@
         {# Icône par type #}
         {% if msg.type == 'CONVOCATION' %}
         <span style="color:#17A2B8;">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
         </span>
         {% elif msg.type == 'AVERTISSEMENT' %}
         <span style="color:#F5A623;">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
         </span>
         {% elif msg.type == 'JUSTIFICATIF' %}
         <span style="color:#A259FF;">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
         </span>
         {% else %}
         <span style="color:#DC3545;">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
         </span>
@@ -118,19 +118,19 @@
             " style="background:rgba(220,53,69,0.12); color:#DC3545;"
           {% endif %}>
           {% if msg.type == 'CONVOCATION' %}
-          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
           {% elif msg.type == 'AVERTISSEMENT' %}
-          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
           {% elif msg.type == 'JUSTIFICATIF' %}
-          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
           {% else %}
-          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
           {% endif %}
@@ -150,7 +150,7 @@
       {# Élève #}
       <div class="comm-eleve-hero">
         <div class="comm-eleve-avatar">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
           </svg>
         </div>
@@ -169,7 +169,7 @@
       <div class="comm-creneaux-list">
         {% for c in msg.creneaux_proposes %}
         <div class="comm-creneau-chip{% if reponse and reponse.creneau_choisi == c %} comm-creneau-chip-selected{% endif %}">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           {{ c }}
@@ -215,7 +215,7 @@
   <div class="card">
     <div class="card-header">
       <h2 class="card-title">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
         </svg>
         Réponse du parent
@@ -246,7 +246,7 @@
         <div class="comm-response-item">
           <span class="comm-response-label">Créneau choisi</span>
           <div class="comm-response-creneau">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:6px;">
+            <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:6px;">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             {{ reponse.creneau_choisi }}
@@ -271,7 +271,7 @@
         <div class="comm-response-item">
           <span class="comm-response-label">Date de règlement prévue</span>
           <span class="comm-response-value">
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:4px;color:var(--color-gold);">
+            <svg aria-hidden="true" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:4px;color:var(--color-gold);">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
             {{ reponse.date_reglement_prevue|date:"d/m/Y" }}
@@ -283,7 +283,7 @@
         <div class="comm-response-item">
           <span class="comm-response-label">Justificatif déposé</span>
           <a href="{% url 'communication:justificatif_download' pk=reponse.pk %}" target="_blank" class="btn-secondary btn-sm">
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
             Télécharger
@@ -302,7 +302,7 @@
 
       {% else %}
       <div class="empty-state">
-        <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="empty-state-icon">
+        <svg aria-hidden="true" width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="empty-state-icon">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
         <p class="empty-state-text">En attente de réponse du parent.</p>

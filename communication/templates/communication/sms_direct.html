@@ -17,7 +17,7 @@
   <div class="stat-card">
     <div class="stat-card-accent" style="--accent-color:#00A86B;"></div>
     <div class="stat-icon-wrap" style="background:rgba(0,168,107,0.12); color:#00C07A;">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
       </svg>
     </div>
@@ -27,7 +27,7 @@
   <div class="stat-card">
     <div class="stat-card-accent" style="--accent-color:#17A2B8;"></div>
     <div class="stat-icon-wrap" style="background:rgba(23,162,184,0.12); color:#17A2B8;">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
       </svg>
     </div>
@@ -37,7 +37,7 @@
   <div class="stat-card">
     <div class="stat-card-accent" style="--accent-color:#F5A623;"></div>
     <div class="stat-icon-wrap" style="background:rgba(245,166,35,0.12); color:#F5A623;">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
     </div>
@@ -110,17 +110,17 @@
           class="form-vertical">
       <div class="form-grid-2">
         <div class="form-group">
-          <label class="input-label">Numéro du parent (expéditeur)</label>
+          <label class="input-label" for="id_phone">Numéro du parent (expéditeur)</label>
           <input type="text" name="phone" class="input" required
                  placeholder="+22670112233"
-                 value="+22670112233">
+                 value="+22670112233" id="id_phone">
           <span class="text-xs text-muted">Le numéro doit correspondre à un parent enregistré</span>
         </div>
         <div class="form-group">
-          <label class="input-label">Message SMS</label>
+          <label class="input-label" for="id_message">Message SMS</label>
           <input type="text" name="message" class="input" required
                  placeholder="NOTE 01-2026-00123 T1"
-                 value="HELP">
+                 value="HELP" id="id_message">
           <span class="text-xs text-muted">
             Commandes : NOTE, SOLDE, ABS, AIDE
           </span>
@@ -128,7 +128,7 @@
       </div>
       <div class="d-flex align-center gap-2 mt-2">
         <button type="submit" class="btn-primary">
-          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
           </svg>
           Envoyer la requête SMS

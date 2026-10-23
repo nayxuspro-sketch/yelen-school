@@ -191,7 +191,7 @@ class TestPartialsSansScriptInline:
     def test_identite_etablissement_libelle_agrement(self, client_etab):
         html = client_etab.get(reverse('parametres:identite_etablissement')).content.decode()
 
-        assert '<label class="input-label">N° Agrément</label>' in html
+        assert '<label class="input-label" for="id_numero_agrement_mena">N° Agrément</label>' in html
         assert 'Agrément MENA' not in html
 
     def test_identite_etablissement_telephone_35_caracteres(self, client_etab):

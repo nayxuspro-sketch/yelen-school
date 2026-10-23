@@ -15,7 +15,7 @@
   </div>
   <div class="page-actions">
     <a href="{% url 'finances:releve_list' %}" class="btn-secondary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
       Relevés
@@ -63,7 +63,7 @@
           data-csp-confirm-submit="Enregistrer un paiement Mobile Money (avec reçu) pour chaque ligne cochée ?">
       {% csrf_token %}
       <button type="submit" class="btn-primary">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
         Valider les lignes cochées
@@ -131,7 +131,7 @@
                     data-csp-prompt-submit="Motif d'exclusion de la transaction {{ l.numero_transaction }} :">
                 {% csrf_token %}
                 <button type="submit" class="btn-icon btn-icon-danger" title="Exclure du rapprochement">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                   </svg>
                 </button>
@@ -140,7 +140,7 @@
             </div>
             {% elif l.paiement %}
             <a href="{% url 'finances:recu_pdf' l.paiement.pk %}" class="btn-icon" title="Reçu PDF" target="_blank">
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
               </svg>
             </a>

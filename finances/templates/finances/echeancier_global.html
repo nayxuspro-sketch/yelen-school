@@ -11,7 +11,7 @@
   </div>
   <a href="{% url 'finances:echeancier_global_xlsx' %}?annee={{ annee_id }}&classe={{ classe_id }}&statut={{ statut }}&q={{ q }}"
      class="btn-secondary btn-excel" title="Exporter Excel">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
     </svg>
@@ -22,7 +22,7 @@
 {# Alertes urgentes #}
 {% if nb_retard > 0 %}
 <div class="alert alert-danger animate-fade-up mb-4">
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="flex-shrink-0">
+  <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="flex-shrink-0">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
   </svg>
   <div>
@@ -35,7 +35,7 @@
 
 {% if nb_alerte > 0 %}
 <div class="alert alert-warning animate-fade-up mb-4">
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="flex-shrink-0">
+  <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="flex-shrink-0">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
   </svg>
   <div>
@@ -49,27 +49,27 @@
 {# Compteurs #}
 <div class="stats-grid stats-grid-sm animate-fade-up mb-5">
   <a href="?annee={{ annee_id }}&classe={{ classe_id }}&statut=retard" class="stat-card {% if statut == 'retard' %}stat-card-active-danger{% endif %}">
-    <div class="stat-icon stat-icon-red"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div class="stat-icon stat-icon-red"><svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
     <div><div class="stat-value stat-value-danger">{{ nb_retard }}</div><div class="stat-label">En retard</div></div>
   </a>
   <a href="?annee={{ annee_id }}&classe={{ classe_id }}&statut=alerte" class="stat-card {% if statut == 'alerte' %}stat-card-active-warning{% endif %}">
-    <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div class="stat-icon stat-icon-gold"><svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
     <div><div class="stat-value stat-value-warning">{{ nb_alerte }}</div><div class="stat-label">Sous 7 jours</div></div>
   </a>
   <a href="?annee={{ annee_id }}&classe={{ classe_id }}&statut=avenir" class="stat-card {% if statut == 'avenir' %}stat-card-active{% endif %}">
-    <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+    <div class="stat-icon stat-icon-blue"><svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
     <div><div class="stat-value">{{ nb_avenir }}</div><div class="stat-label">À venir</div></div>
   </a>
   <a href="?annee={{ annee_id }}&classe={{ classe_id }}&statut=paye" class="stat-card {% if statut == 'paye' %}stat-card-active-success{% endif %}">
-    <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div class="stat-icon stat-icon-green"><svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
     <div><div class="stat-value color-success">{{ nb_paye }}</div><div class="stat-label">Payés</div></div>
   </a>
   <div class="stat-card">
-    <div class="stat-icon stat-icon-gold"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div class="stat-icon stat-icon-gold"><svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
     <div><div class="stat-value-compact">{{ total_du|floatformat:0 }}<span class="stat-unit">CFA</span></div><div class="stat-label">Restant dû</div></div>
   </div>
   <div class="stat-card">
-    <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    <div class="stat-icon stat-icon-green"><svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
     <div><div class="stat-value-compact color-success">{{ total_paye|floatformat:0 }}<span class="stat-unit">CFA</span></div><div class="stat-label">Total encaissé</div></div>
   </div>
 </div>

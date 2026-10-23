@@ -10911,3 +10911,38 @@ body.offline-active { padding-top: 2rem; }
   margin-top: var(--space-5);
   flex-wrap: wrap;
 }
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  ACCESSIBILITÉ — navigation clavier et préférences utilisateur   */
+/* ─────────────────────────────────────────────────────────────── */
+/* Lien d'évitement : premier élément focusable, visible au clavier uniquement */
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: -100px;
+  z-index: 1000;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-semibold);
+  text-decoration: none;
+}
+.skip-link:focus { top: var(--space-3); outline: 2px solid #fff; outline-offset: 2px; }
+#main-content:focus { outline: none; }
+
+/* Indicateur de focus uniforme (clavier seulement ; les champs gardent leur halo propre) */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Respect de la préférence « réduire les animations » */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -11,7 +11,7 @@
   <!-- En-tête classe -->
   <div style="display:flex; align-items:center; gap:.75rem; padding:.6rem 1rem;
               background:var(--color-primary); color:#fff; border-radius:var(--radius-md) var(--radius-md) 0 0;">
-    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
     </svg>
@@ -77,8 +77,8 @@
               {% else %}<span class="text-muted eval-sub">—</span>{% endif %}
             </td>
             <td class="eval-actions">
-              {% if request|autorise_url:'pedagogie:evaluation_saisie' %}<a href="{% url 'pedagogie:evaluation_saisie' evaluation.pk %}" class="btn-primary btn-sm" title="Saisir les notes"><svg width="13" height="13"><use href="#ico-eval-saisir"/></svg> Saisir</a>{% endif %}
-              <a href="{% url 'pedagogie:evaluation_update' evaluation.pk %}" class="btn-icon" title="Modifier"><svg width="15" height="15"><use href="#ico-eval-modifier"/></svg></a>
+              {% if request|autorise_url:'pedagogie:evaluation_saisie' %}<a href="{% url 'pedagogie:evaluation_saisie' evaluation.pk %}" class="btn-primary btn-sm" title="Saisir les notes"><svg aria-hidden="true" width="13" height="13"><use href="#ico-eval-saisir"/></svg> Saisir</a>{% endif %}
+              <a href="{% url 'pedagogie:evaluation_update' evaluation.pk %}" class="btn-icon" title="Modifier"><svg aria-hidden="true" width="15" height="15"><use href="#ico-eval-modifier"/></svg></a>
             </td>
           </tr>
           {% endfor %}
@@ -100,7 +100,7 @@
      hx-target="#evaluation-table"
      hx-push-url="true"
      class="btn-icon" title="Classes précédentes">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
     </svg>
   </a>
@@ -116,7 +116,7 @@
      hx-target="#evaluation-table"
      hx-push-url="true"
      class="btn-icon" title="Classes suivantes">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
     </svg>
   </a>
@@ -127,7 +127,7 @@
 {% else %}
 <div class="empty-state" style="padding:3rem 0;">
   <div class="empty-state-icon">
-    <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
     </svg>

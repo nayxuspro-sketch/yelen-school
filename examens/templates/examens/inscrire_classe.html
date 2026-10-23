@@ -6,8 +6,8 @@
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'examens:session_detail' session.pk %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'examens:session_detail' session.pk %}" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
@@ -61,7 +61,7 @@
             <td>
               {% if ins.pk in deja_inscrits %}
                 <span class="badge" style="background:rgba(0,168,107,0.15); color:#00A86B;">
-                  <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:2px;">
+                  <svg aria-hidden="true" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:2px;">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                   </svg>
                   Déjà inscrit

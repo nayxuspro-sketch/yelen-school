@@ -20,7 +20,7 @@
 
   <div class="stat-card">
     <div class="stat-icon stat-icon-green">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
       </svg>
@@ -33,7 +33,7 @@
 
   <div class="stat-card">
     <div class="stat-icon stat-icon-gold">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
       </svg>
@@ -47,7 +47,7 @@
   {% if eleve.etablissement_origine %}
   <div class="stat-card">
     <div class="stat-icon stat-icon-blue">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
       </svg>
@@ -189,7 +189,7 @@
 <div class="card animate-fade-up">
   <div class="empty-state">
     <div class="empty-state-icon">
-      <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2
                  M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
@@ -217,8 +217,8 @@
     <div class="tl-form-grid">
 
       <div>
-        <label class="input-label">Type d'événement <span class="required-star">*</span></label>
-        <select name="type_evenement" class="input select" required>
+        <label class="input-label" for="id_type_evenement">Type d'événement <span class="required-star">*</span></label>
+        <select name="type_evenement" class="input select" required id="id_type_evenement">
           <option value="">— Choisir —</option>
           {% for val, label in types_evenement %}
           <option value="{{ val }}">{{ label }}</option>
@@ -227,8 +227,8 @@
       </div>
 
       <div>
-        <label class="input-label">Année scolaire <span class="required-star">*</span></label>
-        <select name="annee_scolaire" class="input select" required>
+        <label class="input-label" for="id_annee_scolaire">Année scolaire <span class="required-star">*</span></label>
+        <select name="annee_scolaire" class="input select" required id="id_annee_scolaire">
           <option value="">— Choisir —</option>
           {% for annee in annees %}
           <option value="{{ annee.pk }}">{{ annee }}</option>
@@ -237,20 +237,20 @@
       </div>
 
       <div>
-        <label class="input-label">Date</label>
-        <input type="date" name="date_evenement" class="input" value="{% now 'Y-m-d' %}">
+        <label class="input-label" for="id_date_evenement">Date</label>
+        <input type="date" name="date_evenement" class="input" value="{% now 'Y-m-d' %}" id="id_date_evenement">
       </div>
 
       <div>
-        <label class="input-label">Établissement (transfert)</label>
+        <label class="input-label" for="id_etablissement_transfert">Établissement (transfert)</label>
         <input type="text" name="etablissement_transfert" class="input"
-               placeholder="Nom de l'établissement…">
+               placeholder="Nom de l'établissement…" id="id_etablissement_transfert">
       </div>
 
       <div class="tl-form-full">
-        <label class="input-label">Motif / Observations</label>
+        <label class="input-label" for="id_motif">Motif / Observations</label>
         <textarea name="motif" class="input" rows="2"
-                  placeholder="Raison du redoublement, nom du diplôme obtenu…"></textarea>
+                  placeholder="Raison du redoublement, nom du diplôme obtenu…" id="id_motif"></textarea>
       </div>
 
       <div class="tl-form-full tl-form-actions">

@@ -27,7 +27,7 @@
       <div class="pai-sec-hd">
         <div class="d-flex align-center gap-3">
           <div class="pai-sec-icon">
-            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
             </svg>
@@ -43,12 +43,12 @@
         <div class="ev-sec-body">
           <div class="form-grid-2">
             <div class="form-group mb-0">
-              <label class="input-label">Date de la réunion <span class="required-star">*</span></label>
-              <input type="date" name="date" class="input w-full" required>
+              <label class="input-label" for="id_date">Date de la réunion <span class="required-star">*</span></label>
+              <input type="date" name="date" class="input w-full" required id="id_date">
             </div>
             <div class="form-group mb-0">
-              <label class="input-label">Heure <span class="required-star">*</span></label>
-              <input type="time" name="heure" class="input w-full" required>
+              <label class="input-label" for="id_heure">Heure <span class="required-star">*</span></label>
+              <input type="time" name="heure" class="input w-full" required id="id_heure">
             </div>
           </div>
         </div>
@@ -57,14 +57,14 @@
         <div class="ev-sec-body">
           <div class="form-grid-2">
             <div class="form-group mb-0">
-              <label class="input-label">Lieu <span class="required-star">*</span></label>
+              <label class="input-label" for="id_lieu">Lieu <span class="required-star">*</span></label>
               <input type="text" name="lieu" class="input w-full"
-                     placeholder="Salle de conférence, Cour principale…" required>
+                     placeholder="Salle de conférence, Cour principale…" required id="id_lieu">
             </div>
             <div class="form-group mb-0">
-              <label class="input-label">Objet <span class="required-star">*</span></label>
+              <label class="input-label" for="id_objet">Objet <span class="required-star">*</span></label>
               <input type="text" name="objet" class="input w-full"
-                     placeholder="Résultats du 1er trimestre, Discipline…" required>
+                     placeholder="Résultats du 1er trimestre, Discipline…" required id="id_objet">
             </div>
           </div>
         </div>
@@ -72,8 +72,8 @@
         <!-- Destinataires -->
         <div class="ev-sec-body ev-sec-body-last">
           <div class="form-group mb-0">
-            <label class="input-label">Destinataires</label>
-            <select name="cibles" class="input w-full">
+            <label class="input-label" for="id_cibles">Destinataires</label>
+            <select name="cibles" class="input w-full" id="id_cibles">
               <option value="tous">Tous les parents</option>
               {% for c in classes %}
               <option value="{{ c.pk }}">Classe {{ c.nom }}</option>
@@ -86,7 +86,7 @@
         <!-- Pied -->
         <div class="ev-form-footer">
           <button type="submit" class="btn btn-primary">
-            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
             </svg>

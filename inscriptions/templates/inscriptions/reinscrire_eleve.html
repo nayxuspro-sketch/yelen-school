@@ -6,8 +6,8 @@
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'inscriptions:reinscription_list' %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'inscriptions:reinscription_list' %}" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
@@ -27,13 +27,13 @@
       {% csrf_token %}
       
       <div class="form-group">
-        <label class="input-label">Élève</label>
-        <input type="text" value="{{ eleve.get_nom_complet }}" class="input" readonly>
+        <label class="input-label" for="id_eleve_nom">Élève</label>
+        <input type="text" value="{{ eleve.get_nom_complet }}" class="input" readonly id="id_eleve_nom">
       </div>
       
       <div class="form-group">
-        <label class="input-label">Nouvelle classe <span class="text-danger">*</span></label>
-        <select name="classe" class="input select" required>
+        <label class="input-label" for="id_classe">Nouvelle classe <span class="text-danger">*</span></label>
+        <select name="classe" class="input select" required id="id_classe">
           <option value="">Sélectionner une classe</option>
           {% for classe in classes %}
           <option value="{{ classe.pk }}">{{ classe.cycle.nom }} - {{ classe.nom }}</option>

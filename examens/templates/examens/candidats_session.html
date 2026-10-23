@@ -6,8 +6,8 @@
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'examens:session_detail' session.pk %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'examens:session_detail' session.pk %}" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
     </a>
@@ -24,7 +24,7 @@
        target="_blank"
        class="btn btn-outline"
        title="Télécharger la liste PDF">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
       </svg>
@@ -32,13 +32,13 @@
     </a>
     <a href="{% url 'examens:candidats_session_xlsx' session.pk %}{% if centre_selectionne %}?centre={{ centre_selectionne.pk }}{% endif %}"
        class="btn btn-outline" title="Fichier d'inscription des candidats (Excel) pour la DGEC / l'OCECOS">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
       Fichier d'inscription (Excel)
     </a>
     <a href="{% url 'examens:session_resultats_csv' session.pk %}" class="btn btn-outline" title="Export CSV">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
       </svg>
       CSV
@@ -50,8 +50,8 @@
 {% if centres %}
 <div class="card animate-fade-up" style="padding:var(--space-4) var(--space-6); margin-bottom:var(--space-5);">
   <form method="get" class="d-flex align-center gap-4" style="flex-wrap:wrap;">
-    <label class="fw-semibold" style="white-space:nowrap; font-size:0.9rem;">Filtrer par centre :</label>
-    <select name="centre" class="form-select" style="max-width:300px;" data-csp-submit-on-change>
+    <label class="fw-semibold" style="white-space:nowrap; font-size:0.9rem;" for="id_centre">Filtrer par centre :</label>
+    <select name="centre" class="form-select" style="max-width:300px;" data-csp-submit-on-change id="id_centre">
       <option value="">— Tous les centres ({{ nb_total }} candidat{{ nb_total|pluralize }}) —</option>
       {% for c in centres %}
       <option value="{{ c.pk }}" {% if centre_selectionne and centre_selectionne.pk == c.pk %}selected{% endif %}>

@@ -1,9 +1,9 @@
 <div id="modal-overlay" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-header">
-            <span class="modal-title">{% if discipline %}Modifier la discipline{% else %}Nouvelle discipline{% endif %}</span>
+            <span class="modal-title" id="modal-title">{% if discipline %}Modifier la discipline{% else %}Nouvelle discipline{% endif %}</span>
             <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
         <form hx-post="{% if discipline %}{% url 'parametres:discipline_edit' discipline.pk %}{% else %}{% url 'parametres:discipline_create' %}{% endif %}"
@@ -15,18 +15,18 @@
                 {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
 
                 <div class="form-group">
-                    <label class="input-label">Nom <span style="color:#FF6B7A;">*</span></label>
-                    <input type="text" name="nom" value="{{ discipline.nom|default:'' }}" placeholder="Ex: Mathématiques" required class="input">
+                    <label class="input-label" for="id_nom">Nom <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="nom" value="{{ discipline.nom|default:'' }}" placeholder="Ex: Mathématiques" required class="input" id="id_nom">
                 </div>
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label class="input-label">Code <span style="color:#FF6B7A;">*</span></label>
-                        <input type="text" name="code" value="{{ discipline.code|default:'' }}" placeholder="Ex: MATH" required class="input">
+                        <label class="input-label" for="id_code">Code <span style="color:#FF6B7A;">*</span></label>
+                        <input type="text" name="code" value="{{ discipline.code|default:'' }}" placeholder="Ex: MATH" required class="input" id="id_code">
                     </div>
                     <div class="form-group">
-                        <label class="input-label">Cycle <span style="color:#FF6B7A;">*</span></label>
-                        <select name="cycle" required class="input select">
+                        <label class="input-label" for="id_cycle">Cycle <span style="color:#FF6B7A;">*</span></label>
+                        <select name="cycle" required class="input select" id="id_cycle">
                             {% for cy in cycles %}<option value="{{ cy.pk }}" {% if discipline.cycle_id == cy.pk %}selected{% endif %}>{{ cy.nom }}</option>{% endfor %}
                         </select>
                     </div>
@@ -34,23 +34,23 @@
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label class="input-label">Catégorie</label>
-                        <select name="categorie" class="input select">
+                        <label class="input-label" for="id_categorie">Catégorie</label>
+                        <select name="categorie" class="input select" id="id_categorie">
                             <option value="">— Aucune —</option>
                             {% for cat in categories %}<option value="{{ cat.pk }}" {% if discipline.categorie_id == cat.pk %}selected{% endif %}>{{ cat.nom }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="input-label">Ordre</label>
-                        <input type="number" name="ordre" value="{{ discipline.ordre|default:1 }}" min="1" class="input">
+                        <label class="input-label" for="id_ordre">Ordre</label>
+                        <input type="number" name="ordre" value="{{ discipline.ordre|default:1 }}" min="1" class="input" id="id_ordre">
                     </div>
                 </div>
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label class="input-label">Couleur</label>
+                        <label class="input-label" for="id_couleur">Couleur</label>
                         <input type="color" name="couleur" value="{{ discipline.couleur|default:'#00A86B' }}"
-                            style="width:100%; height:2.375rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-input); cursor:pointer; padding:2px;">
+                            style="width:100%; height:2.375rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-input); cursor:pointer; padding:2px;" id="id_couleur">
                     </div>
                     <div></div>
                 </div>

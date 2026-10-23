@@ -17,7 +17,7 @@
         
         <div style="text-align: center; margin-bottom: 40px;">
             <div style="width: 80px; height: 80px; background: linear-gradient(135deg, rgba(0, 168, 107, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transform: rotate(-5deg);">
-                <svg width="40" height="40" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="40" height="40" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
                 </svg>
             </div>
@@ -28,7 +28,7 @@
         {% if licence and licence.statut == 'REVOQUEE' %}
         <div class="dash-alert" style="background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.2); border-left: 4px solid var(--color-danger); padding: 16px; margin-bottom: 30px;">
             <div style="display: flex; gap: 14px; align-items: center;">
-                <svg width="24" height="24" fill="none" stroke="var(--color-danger)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <svg aria-hidden="true" width="24" height="24" fill="none" stroke="var(--color-danger)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 <p style="margin: 0; font-size: 14px; color: #FFF;"><strong>Alerte de Révocation :</strong> Votre accès a été suspendu pour des raisons de conformité. Contactez le support.</p>
             </div>
         </div>
@@ -47,7 +47,7 @@
 
         <div style="background: linear-gradient(to right, rgba(0, 168, 107, 0.08), rgba(59, 130, 246, 0.08)); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 30px; margin-bottom: 40px;">
             <h3 style="color: #FFF; font-size: 15px; margin: 0 0 20px; display: flex; align-items: center; gap: 10px; font-family: 'Outfit';">
-                <svg width="20" height="20" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Informations de Dépannage
             </h3>
             <div style="display: flex; flex-direction: column; gap: 14px;">

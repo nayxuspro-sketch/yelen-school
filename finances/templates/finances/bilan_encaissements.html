@@ -14,21 +14,21 @@
         <div class="page-actions">
             <a href="{% url 'finances:bilan_encaissements_pdf' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
                target="_blank" class="btn-secondary btn-sm" title="Imprimer PDF">
-                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                 </svg>
                 PDF
             </a>
             <a href="{% url 'finances:bilan_encaissements_csv' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
                class="btn-secondary btn-sm" title="Exporter CSV">
-                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                 </svg>
                 CSV
             </a>
             <a href="{% url 'finances:bilan_encaissements_xlsx' %}?{% if annee_selected %}annee={{ annee_selected.pk }}{% endif %}{% if rub_selected %}&rubrique={{ rub_selected.pk }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}"
                class="btn-secondary btn-sm btn-excel" title="Exporter Excel (.xlsx)">
-                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                 </svg>
                 Excel
@@ -40,13 +40,13 @@
     <div class="card mb-6 animate-fade-up delay-1">
         <div class="card-header">
             <span class="card-title">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
                 </svg>
                 Filtres
             </span>
             <a href="{% url 'finances:bilan_encaissements' %}" class="btn-ghost btn-sm" title="Réinitialiser les filtres">
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
                 Réinitialiser
@@ -56,8 +56,8 @@
             <form method="get">
                 <div class="d-flex gap-3 align-end flex-wrap">
                     <div class="form-group flex-1 min-w-150">
-                        <label class="input-label">Année scolaire</label>
-                        <select name="annee" class="input select">
+                        <label class="input-label" for="id_annee">Année scolaire</label>
+                        <select name="annee" class="input select" id="id_annee">
                             <option value="">Toutes</option>
                             {% for a in annees %}
                             <option value="{{ a.pk }}" {% if annee_selected and annee_selected.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
@@ -65,8 +65,8 @@
                         </select>
                     </div>
                     <div class="form-group flex-1 min-w-150">
-                        <label class="input-label">Rubrique</label>
-                        <select name="rubrique" class="input select">
+                        <label class="input-label" for="id_rubrique">Rubrique</label>
+                        <select name="rubrique" class="input select" id="id_rubrique">
                             <option value="">Toutes</option>
                             {% for r in rubriques %}
                             <option value="{{ r.pk }}" {% if rub_selected and rub_selected.pk == r.pk %}selected{% endif %}>{{ r.nom }}</option>
@@ -74,17 +74,17 @@
                         </select>
                     </div>
                     <div class="form-group w-140">
-                        <label class="input-label">Date début</label>
-                        <input type="date" name="date_debut" value="{{ date_debut }}" class="input">
+                        <label class="input-label" for="id_date_debut">Date début</label>
+                        <input type="date" name="date_debut" value="{{ date_debut }}" class="input" id="id_date_debut">
                     </div>
                     <div class="form-group w-140">
-                        <label class="input-label">Date fin</label>
-                        <input type="date" name="date_fin" value="{{ date_fin }}" class="input">
+                        <label class="input-label" for="id_date_fin">Date fin</label>
+                        <input type="date" name="date_fin" value="{{ date_fin }}" class="input" id="id_date_fin">
                     </div>
                     <div class="form-group">
                         <label class="input-label">&nbsp;</label>
                         <button type="submit" class="btn-primary">
-                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="11" cy="11" r="8"/>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                             </svg>
@@ -101,7 +101,7 @@
         <div class="stat-card" style="--accent-color: #00A86B">
             <div class="stat-card-accent"></div>
             <div class="stat-icon-wrap" style="background: rgba(0,168,107,0.15); color: #00C07A;">
-                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
             </div>
@@ -111,7 +111,7 @@
         <div class="stat-card" style="--accent-color: #17A2B8">
             <div class="stat-card-accent"></div>
             <div class="stat-icon-wrap" style="background: rgba(23,162,184,0.15); color: #17A2B8;">
-                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                 </svg>
             </div>
@@ -290,7 +290,7 @@
     <div class="card animate-fade-up">
         <div class="empty-state">
             <div class="empty-state-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </div>

@@ -1,9 +1,9 @@
 <div id="modal-overlay" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-header">
-            <span class="modal-title">{% if cycle %}Modifier le cycle{% else %}Nouveau cycle{% endif %}</span>
+            <span class="modal-title" id="modal-title">{% if cycle %}Modifier le cycle{% else %}Nouveau cycle{% endif %}</span>
             <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
         <form hx-post="{% if cycle %}{% url 'parametres:cycle_edit' cycle.pk %}{% else %}{% url 'parametres:cycle_create' %}{% endif %}"
@@ -15,29 +15,29 @@
                 {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
 
                 <div class="form-group">
-                    <label class="input-label">Nom <span style="color:#FF6B7A;">*</span></label>
-                    <input type="text" name="nom" value="{{ cycle.nom|default:'' }}" placeholder="Ex: Secondaire" required class="input">
+                    <label class="input-label" for="id_nom">Nom <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="nom" value="{{ cycle.nom|default:'' }}" placeholder="Ex: Secondaire" required class="input" id="id_nom">
                 </div>
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label class="input-label">Code <span style="color:#FF6B7A;">*</span></label>
-                        <select name="code" required class="input select">
+                        <label class="input-label" for="id_code">Code <span style="color:#FF6B7A;">*</span></label>
+                        <select name="code" required class="input select" id="id_code">
                             {% for val, label in code_choices %}
                             <option value="{{ val }}" {% if cycle.code == val %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="input-label">Ordre</label>
-                        <input type="number" name="ordre" value="{{ cycle.ordre|default:1 }}" min="1" max="10" class="input">
+                        <label class="input-label" for="id_ordre">Ordre</label>
+                        <input type="number" name="ordre" value="{{ cycle.ordre|default:1 }}" min="1" max="10" class="input" id="id_ordre">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="input-label">Description</label>
+                    <label class="input-label" for="id_description">Description</label>
                     <textarea name="description" rows="2" placeholder="Description optionnelle..."
-                        class="input" style="resize:none;">{{ cycle.description|default:'' }}</textarea>
+                        class="input" style="resize:none;" id="id_description">{{ cycle.description|default:'' }}</textarea>
                 </div>
 
                 {% if cycle %}

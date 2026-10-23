@@ -23,31 +23,31 @@
 
         {% if instance %}
         <div class="form-group">
-          <label class="input-label">Code exemplaire</label>
-          <input type="text" value="{{ instance.code_exemplaire }}" class="input" disabled>
+          <label class="input-label" for="id_code_exemplaire">Code exemplaire</label>
+          <input type="text" value="{{ instance.code_exemplaire }}" class="input" disabled id="id_code_exemplaire">
         </div>
         {% endif %}
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="input-label required">État</label>
-            <select name="etat" class="input select" required>
+            <label class="input-label required" for="id_etat">État</label>
+            <select name="etat" class="input select" required id="id_etat">
               {% for val, lbl in etats %}
               <option value="{{ val }}" {% if instance and instance.etat == val %}selected{% elif not instance and val == 'NEUF' %}selected{% endif %}>{{ lbl }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="form-group">
-            <label class="input-label">Année d'acquisition</label>
+            <label class="input-label" for="id_annee_acquisition">Année d'acquisition</label>
             <input type="number" name="annee_acquisition" min="2000" max="2100"
-                   value="{{ instance.annee_acquisition|default:today_year }}" class="input">
+                   value="{{ instance.annee_acquisition|default:today_year }}" class="input" id="id_annee_acquisition">
           </div>
         </div>
 
         {% if not instance %}
         <div class="form-group">
-          <label class="input-label required">Nombre d'exemplaires</label>
-          <input type="number" name="nombre" min="1" max="100" value="1" class="input">
+          <label class="input-label required" for="id_nombre">Nombre d'exemplaires</label>
+          <input type="number" name="nombre" min="1" max="100" value="1" class="input" id="id_nombre">
         </div>
         {% endif %}
 

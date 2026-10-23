@@ -2,7 +2,7 @@
 {% if vide %}
 <div class="card" style="padding:var(--space-8); text-align:center;">
   <div style="width:56px; height:56px; border-radius:50%; background:var(--color-primary-ambient,rgba(0,168,107,0.1)); display:flex; align-items:center; justify-content:center; margin:0 auto var(--space-4);">
-    <svg width="26" height="26" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="26" height="26" fill="none" stroke="var(--color-primary)" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
     </svg>
   </div>
@@ -16,7 +16,7 @@
 {% if erreur %}
 <div class="card" style="padding:var(--space-6);">
   <div class="alert alert-danger">
-    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
     </svg>
     <span>{{ erreur }}</span>
@@ -29,7 +29,7 @@
 <div class="card" style="padding:var(--space-8);">
   <div style="text-align:center;">
     <div style="width:56px; height:56px; border-radius:50%; background:rgba(245,166,35,0.15); display:flex; align-items:center; justify-content:center; margin:0 auto var(--space-4);">
-      <svg width="26" height="26" fill="none" stroke="#F5A623" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="26" height="26" fill="none" stroke="#F5A623" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
       </svg>
     </div>
@@ -40,7 +40,7 @@
       Aucun tarif n'existe pour <strong>{{ classe.nom }}</strong> avec le statut <strong>{{ statut.nom }}</strong> en <strong>{{ annee.libelle }}</strong>.
     </p>
     <a href="{% url 'parametres:tarif_create' %}" class="btn-primary">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
       Créer un tarif
@@ -108,7 +108,7 @@
 
   <div style="padding:var(--space-4) var(--space-5); border-top:1px solid var(--color-border); background:rgba(0,168,107,0.03);">
     <div style="display:flex; align-items:center; gap:var(--space-2); color:var(--color-text-secondary); font-size:0.85rem;">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
       <span>Ce montant correspond aux frais pour l'année scolaire {{ annee.libelle }}. Des frais supplémentaires peuvent s'ajouter selon les services utilisés.</span>

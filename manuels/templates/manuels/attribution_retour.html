@@ -53,12 +53,12 @@
       <div class="card-body">
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="input-label required">Date de retour</label>
-            <input type="date" name="date_retour" value="{{ today }}" class="input" required>
+            <label class="input-label required" for="id_date_retour">Date de retour</label>
+            <input type="date" name="date_retour" value="{{ today }}" class="input" required id="id_date_retour">
           </div>
           <div class="form-group">
-            <label class="input-label required">État au retour</label>
-            <select name="etat_retour" class="input select" required>
+            <label class="input-label required" for="id_etat_retour">État au retour</label>
+            <select name="etat_retour" class="input select" required id="id_etat_retour">
               {% for val, lbl in etats %}
               <option value="{{ val }}" {% if val == 'BON' %}selected{% endif %}>{{ lbl }}</option>
               {% endfor %}
@@ -66,8 +66,8 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="input-label">Observation</label>
-          <textarea name="observation" rows="3" class="input textarea">{{ attribution.observation }}</textarea>
+          <label class="input-label" for="id_observation">Observation</label>
+          <textarea name="observation" rows="3" class="input textarea" id="id_observation">{{ attribution.observation }}</textarea>
         </div>
       </div>
       <div class="card-footer d-flex justify-end gap-3">

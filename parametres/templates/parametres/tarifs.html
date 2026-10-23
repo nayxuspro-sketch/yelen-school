@@ -14,11 +14,11 @@
     </div>
     <button type="button" hx-get="{% url 'parametres:tarif_create' %}" hx-target="#modal-container" hx-swap="innerHTML"
         class="btn-primary">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Nouveau Tarif
     </button>
     <a href="{% url 'parametres:tarif_simulation' %}" class="btn-secondary">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
         Simulation
     </a>
 </div>
@@ -29,8 +29,8 @@
 <div class="card animate-fade-up delay-1" style="margin-bottom:1rem;">
     <form method="get" style="padding:1rem 1.25rem; display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
         <div class="form-group" style="margin:0; min-width:200px;">
-            <label class="input-label">Année scolaire</label>
-            <select name="annee" class="input select" data-csp-submit-on-change>
+            <label class="input-label" for="id_annee">Année scolaire</label>
+            <select name="annee" class="input select" data-csp-submit-on-change id="id_annee">
                 <option value="">— Toutes —</option>
                 {% for a in annees %}
                 <option value="{{ a.pk }}" {% if selected_annee == a.pk|stringformat:"s" %}selected{% endif %}>{{ a.libelle }}</option>
@@ -38,8 +38,8 @@
             </select>
         </div>
         <div class="form-group" style="margin:0; min-width:200px;">
-            <label class="input-label">Niveau</label>
-            <select name="niveau" class="input select" data-csp-submit-on-change>
+            <label class="input-label" for="id_niveau">Niveau</label>
+            <select name="niveau" class="input select" data-csp-submit-on-change id="id_niveau">
                 <option value="">— Tous —</option>
                 {% for n in niveaux %}
                 <option value="{{ n }}" {% if selected_niveau == n %}selected{% endif %}>{{ n }}</option>

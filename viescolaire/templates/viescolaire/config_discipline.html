@@ -10,7 +10,7 @@
     <p class="page-subtitle">Paramétrer le système de points de conduite par élève</p>
   </div>
   <a href="{% url 'viescolaire:capital_points_list' %}" class="btn btn-secondary">
-    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
     </svg>
     Tableau de bord capital
@@ -25,9 +25,9 @@
       <h3 class="card-title mb-3">Capital de départ</h3>
       <p class="text-sm text-muted mb-4">Nombre de points attribués à chaque élève au début de l'année scolaire.</p>
       <div class="form-group mb-0">
-        <label class="input-label">Points de départ</label>
+        <label class="input-label" for="id_points_depart">Points de départ</label>
         <input type="number" name="points_depart" class="input input-sm"
-               value="{{ config.points_depart }}" min="0" max="100" required>
+               value="{{ config.points_depart }}" min="0" max="100" required id="id_points_depart">
       </div>
     </div>
 
@@ -35,36 +35,36 @@
       <h3 class="card-title mb-3">Seuils d'alerte</h3>
 
       <div class="form-group">
-        <label class="input-label">
+        <label class="input-label" for="id_seuil_alerte">
           Seuil alerte <span style="color: var(--color-warning);">●</span>
         </label>
         <input type="number" name="seuil_alerte" class="input input-sm mb-3"
-               value="{{ config.seuil_alerte }}" min="0" required>
+               value="{{ config.seuil_alerte }}" min="0" required id="id_seuil_alerte">
       </div>
 
       <div class="form-group">
-        <label class="input-label">
+        <label class="input-label" for="id_seuil_conseil">
           Seuil conseil <span style="color: var(--color-danger);">●</span>
         </label>
         <input type="number" name="seuil_conseil" class="input input-sm mb-3"
-               value="{{ config.seuil_conseil }}" min="0" required>
+               value="{{ config.seuil_conseil }}" min="0" required id="id_seuil_conseil">
       </div>
 
       <div class="form-group mb-0">
-        <label class="input-label">
+        <label class="input-label" for="id_seuil_exclusion">
           Seuil exclusion <span style="color: #991b1b;">●</span>
         </label>
         <input type="number" name="seuil_exclusion" class="input input-sm"
-               value="{{ config.seuil_exclusion }}" required>
+               value="{{ config.seuil_exclusion }}" required id="id_seuil_exclusion">
       </div>
     </div>
 
     <div class="card mb-4" style="grid-column: 1 / -1;">
       <h3 class="card-title mb-3">Message d'alerte</h3>
       <div class="form-group mb-0">
-        <label class="input-label">Message affiché lorsque l'élève est en alerte</label>
+        <label class="input-label" for="id_message_alerte">Message affiché lorsque l'élève est en alerte</label>
         <input type="text" name="message_alerte" class="input input-sm"
-               value="{{ config.message_alerte }}" maxlength="200">
+               value="{{ config.message_alerte }}" maxlength="200" id="id_message_alerte">
       </div>
     </div>
 

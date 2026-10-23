@@ -11,7 +11,7 @@
   </div>
   <div class="d-flex gap-2">
     <a href="{% url 'personnel:salaire_create' %}" class="btn btn-primary">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
       Nouveau bulletin
@@ -23,8 +23,8 @@
 <form method="get" class="card animate-fade-up delay-1" style="padding: var(--space-4); margin-bottom: var(--space-4);">
   <div class="form-grid-2" style="gap: var(--space-4); align-items: flex-end;">
     <div class="form-group" style="margin: 0;">
-      <label class="form-label">Mois</label>
-      <select name="mois" class="input select" style="width: 100%;">
+      <label class="form-label" for="id_mois">Mois</label>
+      <select name="mois" class="input select" style="width: 100%;" id="id_mois">
         <option value="">Tous les mois</option>
         {% for num, nom in mois_choices %}
           <option value="{{ num }}" {% if mois_filtre == num|stringformat:"s" %}selected{% endif %}>{{ nom }}</option>
@@ -32,12 +32,12 @@
       </select>
     </div>
     <div class="form-group" style="margin: 0;">
-      <label class="form-label">Année</label>
-      <input type="number" name="annee" value="{{ annee_filtre }}" class="input" style="width: 100%;">
+      <label class="form-label" for="id_annee">Année</label>
+      <input type="number" name="annee" value="{{ annee_filtre }}" class="input" style="width: 100%;" id="id_annee">
     </div>
     <div class="form-group" style="margin: 0;">
-      <label class="form-label">Statut</label>
-      <select name="statut" class="input select" style="width: 100%;">
+      <label class="form-label" for="id_statut">Statut</label>
+      <select name="statut" class="input select" style="width: 100%;" id="id_statut">
         <option value="">Tous</option>
         {% for val, lib in statut_choices %}
           <option value="{{ val }}" {% if statut_filtre == val %}selected{% endif %}>{{ lib }}</option>

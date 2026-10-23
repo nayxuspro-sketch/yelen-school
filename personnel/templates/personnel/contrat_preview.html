@@ -6,8 +6,8 @@
 
 <div class="page-header animate-fade-up">
   <div class="d-flex align-center gap-4">
-    <a href="{% url 'personnel:detail' membre.pk %}" class="btn-icon">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{% url 'personnel:detail' membre.pk %}" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
       </svg>
     </a>
@@ -18,7 +18,7 @@
   </div>
   <div class="header-actions">
     <a href="{% url 'personnel:contrat' membre.pk %}?format=pdf" target="_blank" class="btn-primary">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
       </svg>
       Télécharger PDF
@@ -52,7 +52,7 @@
           {% elif etab_logo_url %}
             <img src="{{ etab_logo_url }}" alt="Logo" style="width:44px; height:44px; object-fit:contain;">
           {% else %}
-            <svg width="28" height="28" fill="white" viewBox="0 0 20 20">
+            <svg aria-hidden="true" width="28" height="28" fill="white" viewBox="0 0 20 20">
               <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
             </svg>
           {% endif %}
@@ -188,7 +188,7 @@
       <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--color-border);">
         <a href="{% url 'personnel:contrat' membre.pk %}?format=pdf" target="_blank"
            class="btn-primary" style="width:100%; justify-content:center;">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
           </svg>
           Télécharger le contrat PDF

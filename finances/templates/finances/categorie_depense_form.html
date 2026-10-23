@@ -7,8 +7,8 @@
 
   <div class="page-header animate-fade-up">
     <div class="d-flex align-center gap-4">
-      <a href="{% url 'finances:categorie_depense_list' %}" class="btn-icon">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <a href="{% url 'finances:categorie_depense_list' %}" class="btn-icon" aria-label="Retour">
+        <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
         </svg>
       </a>
@@ -27,21 +27,21 @@
         <div class="form-grid-2">
 
           <div class="form-group">
-            <label class="input-label required">Nom</label>
+            <label class="input-label required" for="id_nom">Nom</label>
             <input type="text" name="nom" value="{{ instance.nom|default:'' }}"
-                   class="input" placeholder="Ex : Fournitures de bureau" required autofocus>
+                   class="input" placeholder="Ex : Fournitures de bureau" required autofocus id="id_nom">
           </div>
 
           <div class="form-group">
-            <label class="input-label required">Code</label>
+            <label class="input-label required" for="id_code">Code</label>
             <input type="text" name="code" value="{{ instance.code|default:'' }}"
-                   class="input" placeholder="Ex : FOUR01" maxlength="20" required>
+                   class="input" placeholder="Ex : FOUR01" maxlength="20" required id="id_code">
             <p class="input-hint">Code unique, majuscules, sans espace.</p>
           </div>
 
           <div class="form-group">
-            <label class="input-label">Type de dépense</label>
-            <select name="type_depense" class="input select">
+            <label class="input-label" for="id_type_depense">Type de dépense</label>
+            <select name="type_depense" class="input select" id="id_type_depense">
               {% for val, label in types %}
               <option value="{{ val }}" {% if instance.type_depense == val %}selected{% endif %}>{{ label }}</option>
               {% endfor %}

@@ -10,7 +10,7 @@
     <p class="page-subtitle">Solde de points de conduite par élève — année {{ annee_sel }}</p>
   </div>
   <a href="{% url 'viescolaire:config_discipline' %}" class="btn-secondary">
-    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
+    <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
       <circle cx="12" cy="12" r="3"/>
@@ -64,8 +64,8 @@
   <form method="get" style="padding:1.25rem; display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
 
     <div style="flex:1; min-width:160px;">
-      <label class="input-label">Année scolaire</label>
-      <select name="annee" class="input select" data-csp-submit-on-change>
+      <label class="input-label" for="id_annee">Année scolaire</label>
+      <select name="annee" class="input select" data-csp-submit-on-change id="id_annee">
         {% for a in annees %}
         <option value="{{ a.id }}" {% if a == annee_sel %}selected{% endif %}>{{ a.libelle }}</option>
         {% endfor %}
@@ -73,8 +73,8 @@
     </div>
 
     <div style="flex:1; min-width:160px;">
-      <label class="input-label">Classe</label>
-      <select name="classe" class="input select" data-csp-submit-on-change>
+      <label class="input-label" for="id_classe">Classe</label>
+      <select name="classe" class="input select" data-csp-submit-on-change id="id_classe">
         <option value="">Toutes les classes</option>
         {% for c in classes %}
         <option value="{{ c.id }}" {% if c.id|stringformat:"s" == classe_id %}selected{% endif %}>{{ c.nom }}</option>
@@ -173,7 +173,7 @@
           <td>
             <a href="{% url 'viescolaire:fiche_suivi_eleve' inscr.id %}#sanctions" class="btn-secondary btn-sm">
               Fiche
-              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left:4px;">
+              <svg aria-hidden="true" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left:4px;">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
               </svg>
             </a>

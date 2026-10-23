@@ -11,7 +11,7 @@
   </div>
   <div class="dash-actions">
     <a href="{% url 'pedagogie:classe_result_list' %}" class="dash-btn dash-btn-secondary">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <rect x="3" y="3" width="7" height="7" rx="1"/>
         <rect x="14" y="3" width="7" height="7" rx="1"/>
         <rect x="3" y="14" width="7" height="7" rx="1"/>
@@ -24,8 +24,8 @@
 
 <div class="dash-info-row animate-fade-up delay-1" style="margin-bottom: 1.5rem;">
   <form method="get" id="form-annee" style="display: flex; align-items: center; gap: 0.75rem;">
-    <label class="dash-form-label" style="margin: 0; white-space: nowrap;">Année scolaire</label>
-    <select name="annee" data-csp-submit-on-change class="input" style="min-width: 200px;">
+    <label class="dash-form-label" style="margin: 0; white-space: nowrap;" for="id_annee">Année scolaire</label>
+    <select name="annee" data-csp-submit-on-change class="input" style="min-width: 200px;" id="id_annee">
       {% for a in annees %}
       <option value="{{ a.pk }}" {% if a.pk == annee.pk %}selected{% endif %}>
         {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
@@ -37,7 +37,7 @@
 
 {% if not periodes_data %}
 <div class="dash-empty-state animate-fade-up delay-2">
-  <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color: var(--color-text-muted); margin-bottom: 1rem;">
+  <svg aria-hidden="true" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color: var(--color-text-muted); margin-bottom: 1rem;">
     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
   </svg>
   <p style="color: var(--color-text-secondary);">Aucun résultat calculé pour cette année scolaire.</p>
@@ -51,7 +51,7 @@
     <input type="hidden" name="annee" value="{{ annee.pk }}">
     <input type="hidden" name="commentaires" id="input-commentaires" value="{}">
     <button type="submit" class="dash-btn dash-btn-primary">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
       </svg>
       Imprimer le bilan
@@ -61,14 +61,14 @@
   <div class="dash-action-sep" id="sep-ia"></div>
 
   <div id="btn-ia" class="dash-btn dash-btn-secondary" title="Analyse locale - fonctionne sans Internet">
-    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
     </svg>
     <span id="btn-ia-label">Analyser avec l'IA</span>
   </div>
 
   <span id="badge-offline" class="dash-offline-badge" title="L'analyse fonctionne aussi sans connexion Internet">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M3 3l18 18M10.584 10.584a3 3 0 004.243 4.243"/>
     </svg>
     Hors ligne
@@ -114,7 +114,7 @@
                  target="_blank"
                  title="Relevé de moyennes par ordre de mérite"
                  class="dash-pdf-link">
-                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                 </svg>
                 Relevé PDF

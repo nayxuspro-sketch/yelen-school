@@ -25,8 +25,8 @@
       <form method="get">
         <div class="d-flex gap-3 align-end">
           <div class="form-group flex-1">
-            <label class="input-label">Année scolaire</label>
-            <select name="annee" class="input select" data-csp-submit-on-change>
+            <label class="input-label" for="id_annee">Année scolaire</label>
+            <select name="annee" class="input select" data-csp-submit-on-change id="id_annee">
               {% for a in annees %}
               <option value="{{ a.pk }}" {% if annee_sel and annee_sel.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
               {% endfor %}

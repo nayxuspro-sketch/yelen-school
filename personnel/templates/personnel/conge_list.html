@@ -11,7 +11,7 @@
   </div>
   <div class="d-flex gap-2">
     <a href="{% url 'personnel:conge_create' %}" class="btn btn-primary">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
       Nouvelle demande
@@ -23,8 +23,8 @@
 <form method="get" class="card animate-fade-up delay-1" style="padding: var(--space-4); margin-bottom: var(--space-4);">
   <div class="d-flex gap-3" style="flex-wrap: wrap; align-items: flex-end;">
     <div class="form-group" style="margin: 0; min-width: 180px;">
-      <label class="form-label">Type</label>
-      <select name="type" class="input select" style="width: 100%;">
+      <label class="form-label" for="id_type">Type</label>
+      <select name="type" class="input select" style="width: 100%;" id="id_type">
         <option value="">Tous les types</option>
         {% for val, lib in type_choices %}
           <option value="{{ val }}" {% if type_filtre == val %}selected{% endif %}>{{ lib }}</option>
@@ -32,8 +32,8 @@
       </select>
     </div>
     <div class="form-group" style="margin: 0; min-width: 160px;">
-      <label class="form-label">Statut</label>
-      <select name="statut" class="input select" style="width: 100%;">
+      <label class="form-label" for="id_statut">Statut</label>
+      <select name="statut" class="input select" style="width: 100%;" id="id_statut">
         <option value="">Tous</option>
         {% for val, lib in statut_choices %}
           <option value="{{ val }}" {% if statut_filtre == val %}selected{% endif %}>{{ lib }}</option>

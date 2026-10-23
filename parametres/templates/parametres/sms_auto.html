@@ -7,7 +7,7 @@
   <div>
     <a href="{% url 'parametres:index' %}"
        style="font-size:0.8rem; color:var(--color-text-muted); text-decoration:none; display:flex; align-items:center; gap:4px; margin-bottom:var(--space-1);">
-      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
       Paramètres
@@ -20,7 +20,7 @@
 {# Alerte SMS désactivé #}
 {% if not sms_enabled %}
 <div class="alert animate-fade-up" style="background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; padding:var(--space-4) var(--space-5); margin-bottom:var(--space-5); display:flex; align-items:flex-start; gap:var(--space-3);">
-  <svg width="20" height="20" fill="none" stroke="#f59e0b" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;">
+  <svg aria-hidden="true" width="20" height="20" fill="none" stroke="#f59e0b" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
   </svg>
   <div>
@@ -62,7 +62,7 @@
 {# Lien vers modèles de messages #}
 <div class="animate-fade-up delay-3" style="margin-top:var(--space-5);">
   <a href="{% url 'parametres:modeles_messages' %}" class="btn-secondary">
-    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px; vertical-align:middle;">
+    <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px; vertical-align:middle;">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
     </svg>
     Personnaliser les modèles de messages SMS →

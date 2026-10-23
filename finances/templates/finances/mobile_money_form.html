@@ -17,14 +17,14 @@
   <div class="page-actions">
     {% if inscription %}
     <a href="{% url 'finances:situation_eleve' inscription.pk %}" class="btn-secondary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
       Retour
     </a>
     {% else %}
     <a href="{% url 'finances:mobile_money_list' %}" class="btn-secondary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
       Retour
@@ -38,7 +38,7 @@
      style="border-left: 3px solid #F5A623;">
   <div class="card-body">
     <div class="d-flex align-start gap-3">
-      <svg width="20" height="20" fill="none" stroke="#F5A623" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="#F5A623" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
       </svg>
@@ -57,7 +57,7 @@
 <div class="card animate-fade-up delay-2">
   <div class="card-header">
     <span class="card-title">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
       </svg>
@@ -74,8 +74,8 @@
       <!-- Rubrique -->
       {% if rubriques %}
       <div class="form-group mb-4">
-        <label class="input-label">Rubrique de paiement</label>
-        <select name="rubrique" class="input select">
+        <label class="input-label" for="id_rubrique">Rubrique de paiement</label>
+        <select name="rubrique" class="input select" id="id_rubrique">
           <option value="">— Sélectionner une rubrique (optionnel) —</option>
           {% for r in rubriques %}
           <option value="{{ r.pk }}">{{ r.nom }}</option>
@@ -87,14 +87,14 @@
       <!-- Montant + Téléphone -->
       <div class="form-grid-2 mb-4">
         <div class="form-group">
-          <label class="input-label">Montant (FCFA) <span style="color:var(--color-danger);">*</span></label>
+          <label class="input-label" for="id_montant">Montant (FCFA) <span style="color:var(--color-danger);">*</span></label>
           <input type="number" name="montant" class="input" required min="1"
-                 placeholder="Ex: 25000">
+                 placeholder="Ex: 25000" id="id_montant">
         </div>
         <div class="form-group">
-          <label class="input-label">Numéro Orange Money <span style="color:var(--color-danger);">*</span></label>
+          <label class="input-label" for="id_telephone">Numéro Orange Money <span style="color:var(--color-danger);">*</span></label>
           <input type="tel" name="telephone" class="input" required
-                 placeholder="Ex: 70123456 ou +22670123456">
+                 placeholder="Ex: 70123456 ou +22670123456" id="id_telephone">
         </div>
       </div>
 
@@ -105,7 +105,7 @@
         <a href="{% url 'finances:mobile_money_list' %}" class="btn-secondary">Annuler</a>
         {% endif %}
         <button type="submit" class="btn-primary">
-          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
           Créer la demande &amp; envoyer SMS

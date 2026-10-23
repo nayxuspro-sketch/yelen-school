@@ -1,9 +1,9 @@
 <div id="modal-overlay" class="modal-overlay">
-  <div class="modal-box modal-box-lg">
+  <div class="modal-box modal-box-lg" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-header">
-      <span class="modal-title">Nouveau message au parent</span>
+      <span class="modal-title" id="modal-title">Nouveau message au parent</span>
       <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
-        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
@@ -21,8 +21,8 @@
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="input-label">Élève <span class="text-danger">*</span></label>
-            <select name="eleve" required class="input select">
+            <label class="input-label" for="id_eleve">Élève <span class="text-danger">*</span></label>
+            <select name="eleve" required class="input select" id="id_eleve">
               <option value="">— Choisir un élève —</option>
               {% for eleve in eleves %}
               <option value="{{ eleve.pk }}">{{ eleve.nom }} {{ eleve.prenom }} ({{ eleve.matricule }})</option>
@@ -30,8 +30,8 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="input-label">Type de message <span class="text-danger">*</span></label>
-            <select name="type" required class="input select">
+            <label class="input-label" for="id_type">Type de message <span class="text-danger">*</span></label>
+            <select name="type" required class="input select" id="id_type">
               <option value="">— Choisir un type —</option>
               {% for val, label in type_choices %}
               <option value="{{ val }}">{{ label }}</option>
@@ -41,24 +41,24 @@
         </div>
 
         <div class="form-group">
-          <label class="input-label">Objet <span class="text-danger">*</span></label>
+          <label class="input-label" for="id_objet">Objet <span class="text-danger">*</span></label>
           <input type="text" name="objet" required class="input"
-                 placeholder="Ex : Convocation pour entretien disciplinaire">
+                 placeholder="Ex : Convocation pour entretien disciplinaire" id="id_objet">
         </div>
 
         <div class="form-group">
-          <label class="input-label">Contenu <span class="text-danger">*</span></label>
+          <label class="input-label" for="id_contenu">Contenu <span class="text-danger">*</span></label>
           <textarea name="contenu" rows="4" required class="input"
-                    placeholder="Rédigez votre message ici…"></textarea>
+                    placeholder="Rédigez votre message ici…" id="id_contenu"></textarea>
         </div>
 
         <div class="form-group">
-          <label class="input-label">
+          <label class="input-label" for="id_creneaux">
             Créneaux proposés
             <span class="text-muted text-sm">(pour convocations — un créneau par ligne)</span>
           </label>
           <textarea name="creneaux" rows="3" class="input"
-                    placeholder="Lundi 12 mai à 10h00&#10;Mardi 13 mai à 14h30&#10;Mercredi 14 mai à 08h00"></textarea>
+                    placeholder="Lundi 12 mai à 10h00&#10;Mardi 13 mai à 14h30&#10;Mercredi 14 mai à 08h00" id="id_creneaux"></textarea>
         </div>
 
         <label class="d-flex align-center gap-3">

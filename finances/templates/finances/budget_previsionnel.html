@@ -12,7 +12,7 @@
     </div>
     <div class="page-actions">
       <a href="{% url 'finances:tableau_bord_budget' %}{% if annee_sel %}?annee={{ annee_sel.pk }}{% endif %}" class="btn-secondary btn-sm">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
         </svg>
         Voir trésorerie
@@ -26,8 +26,8 @@
       <form method="get">
         <div class="d-flex gap-3 align-end">
           <div class="form-group flex-1">
-            <label class="input-label">Année scolaire</label>
-            <select name="annee" class="input select" data-csp-submit-on-change>
+            <label class="input-label" for="id_annee">Année scolaire</label>
+            <select name="annee" class="input select" data-csp-submit-on-change id="id_annee">
               {% for a in annees %}
               <option value="{{ a.pk }}" {% if annee_sel and annee_sel.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
               {% endfor %}

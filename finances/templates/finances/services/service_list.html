@@ -11,7 +11,7 @@
   </div>
   {% if request|autorise_url:'finances:service_create' %}
   <a href="{% url 'finances:service_create' %}" class="btn-primary">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
     </svg>
     Nouveau service
@@ -42,7 +42,7 @@
       {% endif %}
       {% if request|autorise_url:'finances:service_edit' %}
       <a href="{% url 'finances:service_edit' s.pk %}" class="btn-icon" title="Modifier le service">
-        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
         </svg>
       </a>
@@ -68,7 +68,7 @@
           <td class="text-right">
             {% if request|autorise_url:'finances:formule_edit' %}
             <a href="{% url 'finances:formule_edit' f.pk %}" class="btn-icon" title="Modifier la formule">
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
               </svg>
             </a>

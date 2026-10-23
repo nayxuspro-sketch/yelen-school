@@ -10,7 +10,7 @@
     <p class="page-subtitle">Générer une lettre de convocation officielle</p>
   </div>
   <a href="{% url 'documents:document_list' %}" class="btn-secondary">
-    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
+    <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
     </svg>
     Archives
@@ -20,7 +20,7 @@
 <!-- Sélection de la classe (GET) -->
 <div class="card animate-fade-up delay-1" style="margin-bottom:1.25rem;">
   <div style="padding:1.25rem 1.5rem;">
-    <label class="input-label">Filtrer par classe</label>
+    <label class="input-label" for="id_objet">Filtrer par classe</label>
     <form method="get" style="display:flex; gap:.75rem; margin-top:.5rem; flex-wrap:wrap;">
       <select name="classe" class="input select" style="max-width:280px;" data-csp-submit-on-change>
         <option value="">— Toutes les classes —</option>
@@ -98,30 +98,30 @@
         <div>
           <label class="input-label">Objet <span style="color:var(--color-danger);">*</span></label>
           <input type="text" name="objet" class="input" required
-                 placeholder="Ex : Conseil de classe du 1er trimestre">
+                 placeholder="Ex : Conseil de classe du 1er trimestre" id="id_objet">
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem;">
           <div>
-            <label class="input-label">Date de réunion</label>
-            <input type="date" name="date_convocation" class="input">
+            <label class="input-label" for="id_date_convocation">Date de réunion</label>
+            <input type="date" name="date_convocation" class="input" id="id_date_convocation">
           </div>
           <div>
-            <label class="input-label">Heure</label>
-            <input type="time" name="heure_convocation" class="input">
+            <label class="input-label" for="id_heure_convocation">Heure</label>
+            <input type="time" name="heure_convocation" class="input" id="id_heure_convocation">
           </div>
         </div>
 
         <div>
-          <label class="input-label">Lieu</label>
+          <label class="input-label" for="id_lieu">Lieu</label>
           <input type="text" name="lieu" class="input"
-                 placeholder="Ex : Salle de conférence, Direction...">
+                 placeholder="Ex : Salle de conférence, Direction..." id="id_lieu">
         </div>
 
         <div>
-          <label class="input-label">Corps du message</label>
+          <label class="input-label" for="id_corps">Corps du message</label>
           <textarea name="corps" rows="5" class="input" style="resize:vertical;"
-                    placeholder="Texte complémentaire (optionnel)…"></textarea>
+                    placeholder="Texte complémentaire (optionnel)…" id="id_corps"></textarea>
         </div>
 
       </div>
@@ -134,7 +134,7 @@
       Aperçu
     </button>
     <button type="submit" name="format" value="pdf" class="btn-primary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:5px;">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
       </svg>

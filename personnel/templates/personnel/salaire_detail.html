@@ -7,7 +7,7 @@
 <div class="dash-section-header animate-fade-up">
   <div class="dash-section-title">
     <div class="dash-section-icon dash-section-icon-primary">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
       </svg>
@@ -38,7 +38,7 @@
       <span class="dash-badge" style="background: rgba(0,168,107,0.15); color: #16a34a;">Payé</span>
     {% endif %}
     <a href="?format=pdf" target="_blank" class="dash-btn dash-btn-secondary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
       </svg>
@@ -117,8 +117,8 @@
     <form method="post" action="{% url 'personnel:salaire_payer' salaire.pk %}">
       {% csrf_token %}
       <div class="dash-form-group">
-        <label class="dash-label">Référence de paiement (optionnel)</label>
-        <input type="text" name="reference_paiement" class="dash-input" placeholder="N° virement, caisse, etc.">
+        <label class="dash-label" for="id_reference_paiement">Référence de paiement (optionnel)</label>
+        <input type="text" name="reference_paiement" class="dash-input" placeholder="N° virement, caisse, etc." id="id_reference_paiement">
       </div>
       <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
         <button type="button" class="dash-btn dash-btn-secondary" style="flex: 1;" data-csp-dismiss="modal-paiement" >

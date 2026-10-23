@@ -15,9 +15,9 @@
   <form method="get" style="display:flex; align-items:flex-end; gap:var(--space-3); flex-wrap:wrap;">
 
     <div>
-      <label class="input-label" style="font-size:.78rem;">Année</label>
+      <label class="input-label" style="font-size:.78rem;" for="id_annee_id">Année</label>
       <select name="annee_id" class="input select" style="width:auto; min-width:150px;"
-              data-csp-submit-on-change>
+              data-csp-submit-on-change id="id_annee_id">
         {% for annee in annees %}
         <option value="{{ annee.pk }}"
           {% if annee == annee_selectionnee %}selected{% endif %}>
@@ -28,9 +28,9 @@
     </div>
 
     <div>
-      <label class="input-label" style="font-size:.78rem;">Type</label>
+      <label class="input-label" style="font-size:.78rem;" for="id_type_id">Type</label>
       <select name="type_id" class="input select" style="width:auto; min-width:170px;"
-              data-csp-submit-on-change>
+              data-csp-submit-on-change id="id_type_id">
         <option value="">Tous les types</option>
         {% for t in types %}
         <option value="{{ t.pk }}" {% if type_id == t.pk|stringformat:"s" %}selected{% endif %}>
@@ -44,7 +44,7 @@
       <label class="input-label" style="font-size:.78rem;">Recherche</label>
       <div class="search-wrapper">
         <span class="search-icon">
-          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
         </span>
@@ -116,7 +116,7 @@
             <a href="{{ doc.fichier.url }}" target="_blank"
                class="btn btn-outline btn-sm"
                style="font-size:.78rem; white-space:nowrap;">
-              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:3px;">
+              <svg aria-hidden="true" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:3px;">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
               PDF
@@ -131,7 +131,7 @@
           <td colspan="7">
             <div class="empty-state">
               <div class="empty-state-icon">
-                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
               </div>

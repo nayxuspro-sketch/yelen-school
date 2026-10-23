@@ -7,7 +7,7 @@
 <div class="dash-section-header animate-fade-up">
   <div class="dash-section-title">
     <div class="dash-section-icon dash-section-icon-primary">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
       </svg>
@@ -18,7 +18,7 @@
   </div>
   <div class="dash-section-actions">
     <a href="{% url 'viescolaire:conseil_list' %}" class="dash-btn dash-btn-secondary">
-      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
       Retour
@@ -31,8 +31,8 @@
     {% csrf_token %}
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
       <div class="dash-form-group">
-        <label class="dash-label">Classe</label>
-        <select name="classe" required class="dash-input" style="width: 100%;">
+        <label class="dash-label" for="id_classe">Classe</label>
+        <select name="classe" required class="dash-input" style="width: 100%;" id="id_classe">
           <option value="">— Choisir une classe —</option>
           {% for cl in classes %}
           <option value="{{ cl.pk }}">{{ cl.nom }}</option>
@@ -40,8 +40,8 @@
         </select>
       </div>
       <div class="dash-form-group">
-        <label class="dash-label">Trimestre</label>
-        <select name="trimestre" required class="dash-input" style="width: 100%;">
+        <label class="dash-label" for="id_trimestre">Trimestre</label>
+        <select name="trimestre" required class="dash-input" style="width: 100%;" id="id_trimestre">
           <option value="">— Choisir un trimestre —</option>
           {% for t in trimestres %}
           <option value="{{ t.pk }}">{{ t.nom }}</option>
@@ -49,8 +49,8 @@
         </select>
       </div>
       <div class="dash-form-group" style="grid-column: 1 / -1;">
-        <label class="dash-label">Date du conseil</label>
-        <input type="date" name="date_conseil" required class="dash-input" style="width: 100%;">
+        <label class="dash-label" for="id_date_conseil">Date du conseil</label>
+        <input type="date" name="date_conseil" required class="dash-input" style="width: 100%;" id="id_date_conseil">
       </div>
     </div>
     <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
