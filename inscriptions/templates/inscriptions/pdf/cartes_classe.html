@@ -105,6 +105,9 @@
     display: inline-block; letter-spacing: 0.04em;
   }
   .naissance { font-size: 4pt; color: #444; }
+  .contacts { display: grid; grid-template-columns: auto 1fr; gap: 0.5mm 1.5mm; font-size: 4pt; line-height: 1.2; }
+  .contacts .lbl { color: #666; white-space: nowrap; }
+  .contacts .val { color: #111; white-space: nowrap; overflow: hidden; }
 
   /* Footer */
   .carte-footer {
@@ -191,6 +194,12 @@
         {% if ins.eleve.date_naissance %}
         <div class="naissance">Né{{ ins.eleve.genre|yesno:",e," }} le {{ ins.eleve.date_naissance|date:"d/m/Y" }}</div>
         {% endif %}
+        <div class="contacts">
+          <span class="lbl">Résidence :</span><span class="val">{{ ins.eleve.lieu_residence|default:"—" }}</span>
+          <span class="lbl">Père :</span><span class="val">{{ ins.eleve.nom_pere|default:"—" }}</span>
+          <span class="lbl">Mère :</span><span class="val">{{ ins.eleve.nom_mere|default:"—" }}</span>
+          <span class="lbl">N° d'urgence :</span><span class="val">{{ ins.eleve.telephone_urgence|default:ins.eleve.telephone_parent|default:"—" }}</span>
+        </div>
       </div>
     </div>
 

@@ -36,11 +36,10 @@
 
 <div class="animate-fade-up delay-1" style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
 
-  <!-- ── Aperçu Recto ── -->
+  <!-- ── Aperçu de la carte (face unique) ── -->
   <div>
-    <p class="text-muted text-sm" style="margin-bottom:0.5rem; font-size:0.75rem;">Recto — 85,6 × 54 mm</p>
+    <p class="text-muted text-sm" style="margin-bottom:0.5rem; font-size:0.75rem;">Carte — 85,6 × 54 mm</p>
 
-    <!-- RECTO -->
     <div style="
       width:342px; height:216px;
       border-radius:12px; overflow:hidden;
@@ -132,6 +131,13 @@
             </div>
             {% endif %}
           </div>
+
+          <div style="display:grid; grid-template-columns:auto 1fr; gap:2px 6px; font-size:0.52rem; line-height:1.2;">
+            <span style="color:#64748B;">Résidence :</span><span style="color:#0A1628;">{{ eleve.lieu_residence|default:"—" }}</span>
+            <span style="color:#64748B;">Père :</span><span style="color:#0A1628;">{{ eleve.nom_pere|default:"—" }}</span>
+            <span style="color:#64748B;">Mère :</span><span style="color:#0A1628;">{{ eleve.nom_mere|default:"—" }}</span>
+            <span style="color:#64748B;">N° d'urgence :</span><span style="color:#0A1628;">{{ eleve.telephone_urgence|default:eleve.telephone_parent|default:"—" }}</span>
+          </div>
         </div>
       </div>
 
@@ -151,68 +157,6 @@
       </div>
     </div>
 
-    <!-- VERSO -->
-    <p class="text-muted text-sm" style="margin:1rem 0 0.5rem; font-size:0.75rem;">Verso</p>
-    <div style="
-      width:342px; height:216px;
-      border-radius:12px; overflow:hidden;
-      box-shadow:0 8px 32px rgba(0,0,0,0.30);
-      display:flex; flex-direction:column;
-      font-family:'Outfit', sans-serif;
-      background:#0A1628; position:relative;
-    ">
-      <div style="position:absolute; right:0; top:0; bottom:0; width:5px;
-                  background:linear-gradient(to bottom,#0A1628,#00A86B); z-index:2;"></div>
-
-      <div style="flex:1; padding:14px 20px 14px 14px; display:flex; flex-direction:column; gap:8px;">
-        <div style="font-size:0.55rem; font-weight:700; color:#00A86B;
-                    text-transform:uppercase; letter-spacing:0.6px; border-bottom:1px solid #1e3a5f;
-                    padding-bottom:5px;">
-          Informations
-        </div>
-
-        <div style="display:grid; grid-template-columns:auto 1fr; gap:3px 8px; font-size:0.52rem;">
-          {% if identite and identite.adresse_complete %}
-          <span style="color:#64748B;">Adresse</span>
-          <span style="color:#CBD5E1;">{{ identite.adresse_complete }}</span>
-          {% elif etablissement and etablissement.adresse %}
-          <span style="color:#64748B;">Adresse</span>
-          <span style="color:#CBD5E1;">{{ etablissement.adresse }}</span>
-          {% endif %}
-
-          {% if identite and identite.telephone %}
-          <span style="color:#64748B;">Tél.</span>
-          <span style="color:#CBD5E1;">{{ identite.telephone }}</span>
-          {% elif etablissement and etablissement.telephone %}
-          <span style="color:#64748B;">Tél.</span>
-          <span style="color:#CBD5E1;">{{ etablissement.telephone }}</span>
-          {% endif %}
-
-          {% if eleve.telephone_urgence %}
-          <span style="color:#64748B;">Urgence</span>
-          <span style="color:#CBD5E1;">{{ eleve.telephone_urgence }}</span>
-          {% endif %}
-        </div>
-
-        <div style="margin-top:auto;">
-          <div style="font-size:0.5rem; color:#475569; font-style:italic; line-height:1.4;">
-            Cette carte est la propriété de l'établissement. En cas de perte, la signaler à l'administration.
-          </div>
-          {% if inscription %}
-          <div style="margin-top:5px; font-size:0.52rem; color:#00A86B; font-weight:600;">
-            Valable pour l'année scolaire {{ inscription.annee_scolaire.libelle }}
-          </div>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Signature -->
-      <div style="background:#071020; padding:6px 20px 6px 14px;
-                  display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
-        <div style="font-size:0.48rem; color:#475569;">Cachet et signature</div>
-        <div style="width:70px; height:20px; border-bottom:1px solid #1e3a5f;"></div>
-      </div>
-    </div>
   </div>
 
   <!-- ── Fiche récapitulative ── -->

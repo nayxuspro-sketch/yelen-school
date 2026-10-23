@@ -45,7 +45,6 @@
 
   /* Accent vertical */
   .accent { position: absolute; left: 0; top: 0; bottom: 0; width: 1.5mm; z-index: 2; background: #111; }
-  .accent-right { position: absolute; right: 0; top: 0; bottom: 0; width: 1.5mm; z-index: 2; background: #555; }
 
   /* Header N&B */
   .carte-header {
@@ -99,13 +98,16 @@
     display: inline-block; letter-spacing: 0.04em;
   }
   .naissance { font-size: 4pt; color: #444; }
+  .contacts { display: grid; grid-template-columns: auto 1fr; gap: 0.5mm 1.5mm; font-size: 4pt; line-height: 1.2; }
+  .contacts .lbl { color: #666; white-space: nowrap; }
+  .contacts .val { color: #111; white-space: nowrap; overflow: hidden; }
   .statut-badge {
     font-size: 3.5pt; color: #fff; font-weight: 700;
     padding: 0.3mm 2mm; border-radius: 1mm; display: inline-block;
     background: #333;
   }
 
-  /* Footer recto */
+  /* Footer */
   .carte-footer {
     background: #f5f5f5; border-top: 0.5pt solid #bbb;
     padding: 1mm 3mm 1mm 5mm;
@@ -115,30 +117,6 @@
   .matricule-val { font-size: 4.5pt; color: #111; font-family: 'DejaVu Sans Mono', monospace; }
   .annee-val { font-size: 4pt; color: #555; }
 
-  /* Verso N&B : fond sombre reste lisible */
-  .carte-verso { background: #111; }
-  .verso-body { flex: 1; padding: 3mm 5mm 3mm 3mm; display: flex; flex-direction: column; gap: 2mm; }
-  .verso-title {
-    font-size: 4pt; font-weight: 700; color: #fff;
-    text-transform: uppercase; letter-spacing: 0.06em;
-    border-bottom: 0.5pt solid #555; padding-bottom: 1.5mm;
-  }
-  .verso-grid { display: grid; grid-template-columns: auto 1fr; gap: 1mm 3mm; }
-  .verso-lbl { font-size: 3.5pt; color: #bbb; }
-  .verso-val { font-size: 3.5pt; color: #ddd; }
-  .verso-note { font-size: 3.5pt; color: #999; font-style: italic; line-height: 1.4; margin-top: auto; }
-  .verso-valid { font-size: 4pt; color: #ccc; font-weight: 700; margin-top: 1.5mm; }
-  .carte-sig {
-    background: #222; padding: 1.5mm 5mm 1.5mm 3mm;
-    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-  }
-  .sig-lbl { font-size: 3.5pt; color: #999; }
-  .sig-line { width: 18mm; border-bottom: 0.5pt solid #555; }
-
-  .section-label {
-    font-size: 8pt; font-weight: 700; color: #333;
-    margin: 6mm 0 3mm; text-transform: uppercase; letter-spacing: 0.05em;
-  }
 </style>
 </head>
 <body>
@@ -150,9 +128,8 @@
 
 <div class="cartes-wrapper">
 
-  <!-- ══ RECTO ══ -->
+  <!-- ══ Carte (face unique) ══ -->
   <div>
-    <p class="section-label">Recto</p>
     <div class="carte">
       <div class="accent"></div>
 
@@ -200,6 +177,12 @@
           {% if eleve.date_naissance %}
           <div class="naissance">Né{{ eleve.genre|yesno:",e," }} le {{ eleve.date_naissance|date:"d/m/Y" }}</div>
           {% endif %}
+          <div class="contacts">
+            <span class="lbl">Résidence :</span><span class="val">{{ eleve.lieu_residence|default:"—" }}</span>
+            <span class="lbl">Père :</span><span class="val">{{ eleve.nom_pere|default:"—" }}</span>
+            <span class="lbl">Mère :</span><span class="val">{{ eleve.nom_mere|default:"—" }}</span>
+            <span class="lbl">N° d'urgence :</span><span class="val">{{ eleve.telephone_urgence|default:eleve.telephone_parent|default:"—" }}</span>
+          </div>
         </div>
       </div>
 
@@ -211,51 +194,6 @@
         {% if inscription %}
         <div class="annee-val">{{ inscription.annee_scolaire.libelle }}</div>
         {% endif %}
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ VERSO ══ -->
-  <div>
-    <p class="section-label">Verso</p>
-    <div class="carte carte-verso">
-      <div class="accent-right"></div>
-
-      <div class="verso-body">
-        <div class="verso-title">Informations</div>
-        <div class="verso-grid">
-          {% if identite and identite.adresse_complete %}
-          <span class="verso-lbl">Adresse</span>
-          <span class="verso-val">{{ identite.adresse_complete }}</span>
-          {% elif etablissement and etablissement.adresse %}
-          <span class="verso-lbl">Adresse</span>
-          <span class="verso-val">{{ etablissement.adresse }}</span>
-          {% endif %}
-
-          {% if identite and identite.telephone %}
-          <span class="verso-lbl">Tél.</span>
-          <span class="verso-val">{{ identite.telephone }}</span>
-          {% elif etablissement and etablissement.telephone %}
-          <span class="verso-lbl">Tél.</span>
-          <span class="verso-val">{{ etablissement.telephone }}</span>
-          {% endif %}
-
-          {% if eleve.telephone_urgence %}
-          <span class="verso-lbl">Urgence</span>
-          <span class="verso-val">{{ eleve.telephone_urgence }}</span>
-          {% endif %}
-        </div>
-        <div class="verso-note">
-          Cette carte est la propriété de l'établissement. En cas de perte, la signaler à l'administration.
-        </div>
-        {% if inscription %}
-        <div class="verso-valid">Valable pour l'année scolaire {{ inscription.annee_scolaire.libelle }}</div>
-        {% endif %}
-      </div>
-
-      <div class="carte-sig">
-        <div class="sig-lbl">Cachet et signature</div>
-        <div class="sig-line"></div>
       </div>
     </div>
   </div>

@@ -129,3 +129,34 @@ class TestEleveListStatistiques:
         assert self._lignes(html_pdf, 'Effectif par genre') == ['Garçons 2', 'Filles 2', 'EFFECTIF TOTAL 4']
         assert self._lignes(html_pdf, 'Répartition des âges par genre') == [
             '6 – 8 ans 1 0 1', '9 – 11 ans 1 1 2', '15 – 17 ans 0 1 1', 'TOTAL 2 2 4']
+
+
+@pytest.mark.django_db
+def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
+    """La carte n'a plus de verso ; la face unique porte Résidence, Père, Mère et N° d'urgence (carte seule, cartes de classe, aperçu)."""
+    import datetime
+    from html import unescape
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True))
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab, code='POST'))
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    eleve = baker.make('inscriptions.Eleve', nom='OUEDRAOGO', prenom='Abdoul', genre='M', date_naissance=datetime.date(2012, 5, 12),
+                       lieu_residence='Secteur 30 (Karpala)', nom_pere='OUEDRAOGO Boukary', nom_mere='SAWADOGO Mariam',
+                       telephone_urgence='', telephone_parent='70 11 22 33', photo='')
+    baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee)
+    weasy = mocker.patch('inscriptions.views._WeasyHTML')
+    weasy.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+    attendu = ['Résidence :', 'Secteur 30 (Karpala)', 'Père :', 'OUEDRAOGO Boukary', 'Mère :', 'SAWADOGO Mariam',
+               "N° d'urgence :", '70 11 22 33']   # sans numéro d'urgence dédié, le téléphone des parents est utilisé
+
+    assert client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk}) + '?format=pdf').status_code == 200
+    carte = unescape(weasy.call_args.kwargs['string'])
+    assert all(texte in carte for texte in attendu) and carte.count('class="carte"') == 1   # une seule face
+    assert 'Verso' not in carte and 'Recto' not in carte and 'Cachet et signature' not in carte
+
+    assert client.get(reverse('inscriptions:classe_cartes_pdf', kwargs={'pk': classe.pk})).status_code == 200
+    cartes = unescape(weasy.call_args.kwargs['string'])
+    assert all(texte in cartes for texte in attendu)
+
+    apercu = unescape(client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk})).content.decode())
+    assert all(texte in apercu for texte in attendu) and 'Verso' not in apercu and 'Recto' not in apercu
