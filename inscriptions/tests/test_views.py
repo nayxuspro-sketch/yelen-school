@@ -150,6 +150,7 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
     import datetime
     from html import unescape
     etab = baker.make('etablissements.Etablissement')
+    baker.make('parametres.IdentiteEtablissement', etablissement=etab, adresse_complete='Secteur 15, Avenue de la Nation', ville='Ouagadougou')
     client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True))
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab, code='POST'))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
@@ -163,6 +164,7 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
                "N° d'urgence :", '70 11 22 33']   # sans numéro d'urgence dédié, le téléphone des parents est utilisé
 
     attendu.append(f"VALABLE POUR L'ANNÉE SCOLAIRE : {annee.libelle}")   # mention en gras au bas de la carte
+    attendu.append('Secteur 15, Avenue de la Nation — Ouagadougou')   # adresse de l'établissement dans l'en-tête
 
     assert client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk}) + '?format=pdf').status_code == 200
     carte = unescape(weasy.call_args.kwargs['string'])
@@ -176,6 +178,7 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
         assert re.search(r'\.carte-header \{[^}]*background: #f5f5f5;', html) and '.carte-header {\n    background: #111' not in html
         assert re.search(r'\.label-carte \{ font-size: 6pt; font-weight: 700; color: #111;', html)
         assert re.search(r'\.validite \{ font-size: 4\.5pt; font-weight: 700;', html)
+        assert re.search(r'\.etab-adresse \{ font-size: 4pt;', html)
 
     apercu = unescape(client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk})).content.decode())
     assert all(texte in apercu for texte in attendu) and 'Verso' not in apercu and 'Recto' not in apercu

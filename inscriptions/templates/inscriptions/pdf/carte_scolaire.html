@@ -72,6 +72,7 @@
     text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.2;
   }
   .etab-type { font-size: 4pt; color: #555; margin-top: 0.5mm; text-transform: uppercase; letter-spacing: 0.05em; }
+  .etab-adresse { font-size: 4pt; color: #333; margin-top: 0.5mm; line-height: 1.2; }
   .label-carte { font-size: 6pt; font-weight: 700; color: #111; letter-spacing: 0.06em; margin-left: auto; white-space: nowrap; }
 
   /* Corps */
@@ -154,6 +155,9 @@
           </div>
           <div class="etab-type">
             {% if identite %}{{ identite.get_type_etablissement_display }}{% else %}Établissement scolaire{% endif %}
+          </div>
+          <div class="etab-adresse">
+            {% if identite %}{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %} — {% endif %}{{ identite.ville }}{% elif etablissement %}{{ etablissement.adresse }}{% if etablissement.adresse and etablissement.ville %} — {% endif %}{{ etablissement.ville }}{% endif %}
           </div>
         </div>
         <div class="label-carte">CARTE SCOLAIRE</div>

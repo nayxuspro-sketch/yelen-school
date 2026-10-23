@@ -41,7 +41,7 @@
     <p class="text-muted text-sm" style="margin-bottom:0.5rem; font-size:0.75rem;">Carte — 85,6 × 54 mm</p>
 
     <div style="
-      width:342px; height:216px;
+      width:362px; min-height:228px;
       border-radius:12px; overflow:hidden;
       box-shadow:0 8px 32px rgba(0,0,0,0.30);
       display:flex; flex-direction:column;
@@ -79,6 +79,10 @@
           <div style="font-size:0.5rem; color:#00A86B; margin-top:1px;
                       letter-spacing:0.5px; text-transform:uppercase;">
             {% if identite %}{{ identite.get_type_etablissement_display }}{% else %}Établissement scolaire{% endif %}
+          </div>
+          <div style="font-size:0.5rem; color:#475569; margin-top:1px; line-height:1.2;
+                      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            {% if identite %}{{ identite.adresse_complete }}{% if identite.adresse_complete and identite.ville %} — {% endif %}{{ identite.ville }}{% elif etablissement %}{{ etablissement.adresse }}{% if etablissement.adresse and etablissement.ville %} — {% endif %}{{ etablissement.ville }}{% endif %}
           </div>
         </div>
         <div style="font-size:0.6rem; font-weight:700; color:#0A1628; letter-spacing:0.5px; text-align:right; white-space:nowrap;">
