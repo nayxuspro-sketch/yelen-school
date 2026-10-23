@@ -3139,7 +3139,7 @@ L'établissement ne dispose pas d'imprimante couleur. Tous les documents PDF gé
 | Bilan des périodes | En-tête période → fond `#111`/blanc ; lignes paires → `#f5f5f5` ; blocs analyse → `border-left: 3pt solid #111` fond `#f5f5f5` ; légende → texte et symboles sans couleur |
 | Fiche relevé de notes (discipline) | En-tête → `border-bottom: 2.5pt solid #111` ; bandeau → fond `#111`/blanc ; colonne moy. → fond `#555`/blanc ; note basse → fond `#ddd` italique ; note ok → fond `#f5f5f5` ; stat-box → `border-left: 3pt solid` |
 | Liste des candidats (examens) | Badge ADMIS → `#fff` bordure `1pt solid #111` gras ; Badge AJOURNÉ → `#ddd` bordure `#111` italique ; Badge ABSENT → `#555`/blanc ; lignes paires → `#f5f5f5` |
-| Cartes scolaires classe | En-tête carte → fond `#f5f5f5`, filet bas `#111`, texte `#111` (« CARTE SCOLAIRE » 6 pt gras, téléphone de l'établissement 4 pt `#333`) ; accent → `#111` ; photo → `grayscale(100%)` ; classe-badge → `#ebebeb` bordure gauche `#555` ; footer → `#f5f5f5`, mention « VALABLE POUR L'ANNÉE SCOLAIRE : … » en gras |
+| Cartes scolaires classe | En-tête carte → fond `#f5f5f5`, filet bas `#111`, texte `#111` (« CARTE SCOLAIRE » 6 pt gras, téléphone de l'établissement 4 pt `#333`) ; accent → `#111` ; photo → `grayscale(100%)` ; classe-badge → `#ebebeb` bordure gauche `#555` ; lignes Résidence/Père/Mère/N° d'urgence → 5 pt, N° d'urgence en gras ; footer → `#f5f5f5`, mention « VALABLE POUR L'ANNÉE SCOLAIRE : … » en gras |
 | Carte scolaire individuelle | Face unique (pas de verso), mêmes règles que les cartes classe ; lignes Résidence / Père / Mère / N° d'urgence sous la date de naissance |
 | Contrat de travail | En-tête → `border-bottom: 2.5px solid #111` ; titre → `border-bottom: 2px solid #111` ; section-titre → `border-left: 2mm solid #111` ; highlight-box → `#f5f5f5` bordure `#bbb` |
 | Badge personnel | Header → fond `#111`/blanc ; accent → `#111` ; photo → `grayscale(100%)` ; badge-fonction → `#ebebeb` bordure gauche `#555` ; footer → `#f5f5f5` |
@@ -3260,7 +3260,7 @@ Le système génère automatiquement un PDF signé par le responsable configuré
 
 ### 12.5 Carte d'Identité Scolaire
 
-**À quoi ça sert :** Génère une carte scolaire individuelle (format carte plastifiable, face unique) pour l'élève : en-tête avec le nom, le type et le téléphone de l'établissement (`Paramètres → Identité Établissement`), puis son nom, sa classe, sa date de naissance, son matricule, son lieu de résidence, les noms de ses père et mère, le numéro d'urgence (à défaut, le téléphone des parents) et, au bas de la carte, la mention en gras « VALABLE POUR L'ANNÉE SCOLAIRE : » suivie de l'année en cours.
+**À quoi ça sert :** Génère une carte scolaire individuelle (format carte plastifiable, face unique) pour l'élève : en-tête avec le nom, le type et le téléphone de l'établissement (`Paramètres → Identité Établissement`), puis son nom, sa classe, sa date de naissance, son matricule, son lieu de résidence, les noms de ses père et mère, le numéro d'urgence en gras (à défaut, le téléphone des parents) et, au bas de la carte, la mention en gras « VALABLE POUR L'ANNÉE SCOLAIRE : » suivie de l'année en cours.
 
 **Accès :** `Inscriptions → [fiche de l'élève] → Carte scolaire`
 

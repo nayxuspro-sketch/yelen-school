@@ -179,6 +179,10 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
         assert re.search(r'\.label-carte \{ font-size: 6pt; font-weight: 700; color: #111;', html)
         assert re.search(r'\.validite \{ font-size: 4\.5pt; font-weight: 700;', html)
         assert re.search(r'\.etab-tel \{ font-size: 4pt;', html)
+        # lignes Résidence / Père / Mère / N° d'urgence en 5 pt, la dernière en gras
+        assert re.search(r'\.contacts \{[^}]*font-size: 5pt;', html) and '.contacts .urgence { font-weight: 700;' in html
+        assert '<span class="lbl urgence">N° d\'urgence :</span><span class="val urgence">' in html
 
     apercu = unescape(client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk})).content.decode())
     assert all(texte in apercu for texte in attendu) and 'Verso' not in apercu and 'Recto' not in apercu
+    assert 'font-size:0.6rem; line-height:1.2;' in apercu and '<span style="color:#0A1628; font-weight:700;">N° d\'urgence :</span>' in apercu

@@ -107,9 +107,10 @@
     display: inline-block; letter-spacing: 0.04em;
   }
   .naissance { font-size: 4pt; color: #444; }
-  .contacts { display: grid; grid-template-columns: auto 1fr; gap: 0.5mm 1.5mm; font-size: 4pt; line-height: 1.2; }
+  .contacts { display: grid; grid-template-columns: auto 1fr; gap: 0.5mm 1.5mm; font-size: 5pt; line-height: 1.2; }
   .contacts .lbl { color: #666; white-space: nowrap; }
   .contacts .val { color: #111; white-space: nowrap; overflow: hidden; }
+  .contacts .urgence { font-weight: 700; color: #111; }
 
   /* Footer */
   .carte-footer {
@@ -202,7 +203,7 @@
           <span class="lbl">Résidence :</span><span class="val">{{ ins.eleve.lieu_residence|default:"—" }}</span>
           <span class="lbl">Père :</span><span class="val">{{ ins.eleve.nom_pere|default:"—" }}</span>
           <span class="lbl">Mère :</span><span class="val">{{ ins.eleve.nom_mere|default:"—" }}</span>
-          <span class="lbl">N° d'urgence :</span><span class="val">{{ ins.eleve.telephone_urgence|default:ins.eleve.telephone_parent|default:"—" }}</span>
+          <span class="lbl urgence">N° d'urgence :</span><span class="val urgence">{{ ins.eleve.telephone_urgence|default:ins.eleve.telephone_parent|default:"—" }}</span>
         </div>
       </div>
     </div>

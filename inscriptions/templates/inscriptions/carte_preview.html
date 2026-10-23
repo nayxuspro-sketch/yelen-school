@@ -134,11 +134,11 @@
             {% endif %}
           </div>
 
-          <div style="display:grid; grid-template-columns:auto 1fr; gap:2px 6px; font-size:0.52rem; line-height:1.2;">
+          <div style="display:grid; grid-template-columns:auto 1fr; gap:2px 6px; font-size:0.6rem; line-height:1.2;">
             <span style="color:#64748B;">Résidence :</span><span style="color:#0A1628;">{{ eleve.lieu_residence|default:"—" }}</span>
             <span style="color:#64748B;">Père :</span><span style="color:#0A1628;">{{ eleve.nom_pere|default:"—" }}</span>
             <span style="color:#64748B;">Mère :</span><span style="color:#0A1628;">{{ eleve.nom_mere|default:"—" }}</span>
-            <span style="color:#64748B;">N° d'urgence :</span><span style="color:#0A1628;">{{ eleve.telephone_urgence|default:eleve.telephone_parent|default:"—" }}</span>
+            <span style="color:#0A1628; font-weight:700;">N° d'urgence :</span><span style="color:#0A1628; font-weight:700;">{{ eleve.telephone_urgence|default:eleve.telephone_parent|default:"—" }}</span>
           </div>
         </div>
       </div>
