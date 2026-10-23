@@ -42,6 +42,16 @@ class TestInscriptionsViews:
         assert response.status_code == 200
         assert 'form' in response.context
 
+    def test_chaque_champ_affiche_une_seule_fois(self, logged_in_client):
+        """« Nom de famille * » n'est plus répété dans « Informations Familiales & Tuteur » (« nom » ⊂ « nom_pere »)."""
+        from itertools import chain
+        from inscriptions.forms import EleveForm
+        assert set(chain.from_iterable(EleveForm.SECTIONS.values())) == set(EleveForm.base_fields)
+        html = logged_in_client.get(reverse('inscriptions:eleve_create')).content.decode()
+        assert {nom: html.count(f'name="{nom}"') for nom in EleveForm.base_fields} == dict.fromkeys(EleveForm.base_fields, 1)
+        assert html.index('Nom de famille') < html.index('Informations Familiales') < html.index('Nom du père')
+        assert 'Nom de famille' not in html[html.index('Informations Familiales'):]
+
     def test_lieu_de_residence(self, logged_in_client):
         """« Localisation & Origine Scolaire » : lieu de résidence (village / quartier / secteur) au lieu du pays."""
         from html import unescape

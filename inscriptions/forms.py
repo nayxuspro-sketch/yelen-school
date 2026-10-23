@@ -27,12 +27,25 @@ def _apply_yelen_classes(fields):
 class EleveForm(forms.ModelForm):
     """Formulaire pour la création et la modification d'un élève."""
 
+    #: Champs de chaque section du gabarit eleve_form.html, dans l'ordre d'affichage.
+    SECTIONS = {
+        'identite': ('nom', 'prenom', 'genre', 'date_naissance', 'lieu_naissance', 'nationalite', 'photo'),
+        'localisation': ('lieu_residence', 'etablissement_origine', 'last_classe', 'last_annee'),
+        'famille': ('telephone_urgence', 'nom_pere', 'profession_pere', 'nom_mere', 'profession_mere',
+                    'telephone_parent', 'tuteur_nom', 'tuteur_telephone', 'tuteur_adresse'),
+    }
+
+    @property
+    def sections(self):
+        """Champs liés de chaque section (« nom » n'est plus confondu avec « nom_pere » par un test de sous-chaîne)."""
+        return {nom: [self[champ] for champ in champs] for nom, champs in self.SECTIONS.items()}
+
     class Meta:
         model = Eleve
         fields = [
             'nom', 'prenom', 'genre', 'date_naissance', 'lieu_naissance',
             'nationalite', 'lieu_residence',
-            'telephone_urgence', 'email', 'photo', 'nom_pere', 'profession_pere',
+            'telephone_urgence', 'photo', 'nom_pere', 'profession_pere',
             'nom_mere', 'profession_mere', 'telephone_parent', 'tuteur_nom',
             'tuteur_telephone', 'tuteur_adresse', 'etablissement_origine',
             'last_classe', 'last_annee'

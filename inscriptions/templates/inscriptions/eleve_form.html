@@ -27,19 +27,17 @@
                 État Civil de l'Élève
             </h3>
             <div class="form-grid-2">
-                {% for field in form %}
-                    {% if field.name in "nom,prenom,genre,date_naissance,lieu_naissance,nationalite,photo" %}
-                        <div class="form-group">
-                            <label for="{{ field.id_for_label }}" class="input-label">
-                                {{ field.label }}
-                                {% if field.field.required %}<span style="color:#FF6B7A;">*</span>{% endif %}
-                            </label>
-                            {{ field }}
-                            {% if field.errors %}
-                                <p class="input-error">{{ field.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+                {% for field in form.sections.identite %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}" class="input-label">
+                            {{ field.label }}
+                            {% if field.field.required %}<span style="color:#FF6B7A;">*</span>{% endif %}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <p class="input-error">{{ field.errors.0 }}</p>
+                        {% endif %}
+                    </div>
                 {% endfor %}
             </div>
         </div>
@@ -53,16 +51,14 @@
                 Localisation & Origine Scolaire
             </h3>
             <div class="form-grid-2">
-                {% for field in form %}
-                    {% if field.name in "lieu_residence,etablissement_origine,last_classe,last_annee" %}
-                        <div class="form-group">
-                            <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.errors %}
-                                <p class="input-error">{{ field.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+                {% for field in form.sections.localisation %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <p class="input-error">{{ field.errors.0 }}</p>
+                        {% endif %}
+                    </div>
                 {% endfor %}
             </div>
         </div>
@@ -76,16 +72,14 @@
                 Informations Familiales & Tuteur
             </h3>
             <div class="form-grid-2">
-                {% for field in form %}
-                    {% if field.name in "nom_pere,profession_pere,nom_mere,profession_mere,telephone_parent,telephone_urgence,tuteur_nom,tuteur_telephone,tuteur_adresse" %}
-                        <div class="form-group {% if field.name == 'tuteur_adresse' %}w-full{% endif %}" {% if field.name == 'tuteur_adresse' %}style="grid-column:1/-1;"{% endif %}>
-                            <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.errors %}
-                                <p class="input-error">{{ field.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+                {% for field in form.sections.famille %}
+                    <div class="form-group {% if field.name == 'tuteur_adresse' %}w-full{% endif %}" {% if field.name == 'tuteur_adresse' %}style="grid-column:1/-1;"{% endif %}>
+                        <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <p class="input-error">{{ field.errors.0 }}</p>
+                        {% endif %}
+                    </div>
                 {% endfor %}
             </div>
         </div>
