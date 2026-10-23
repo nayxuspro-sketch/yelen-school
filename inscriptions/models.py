@@ -103,8 +103,6 @@ class Eleve(BaseModel):
 
     lieu_residence = models.CharField(
         max_length=150,
-        blank=True,
-        default='',
         verbose_name=_("Lieu de résidence (Village/Quartier/Secteur)")
     )
 

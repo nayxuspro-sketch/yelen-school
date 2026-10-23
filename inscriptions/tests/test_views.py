@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.urls import reverse
 from model_bakery import baker
@@ -61,10 +63,14 @@ class TestInscriptionsViews:
         assert 'name="lieu_residence"' in html and 'name="pays_residence"' not in html
         assert not any(f'name="{nom}"' in html for nom in ('province', 'commune', 'village'))
         assert 'Province' not in html and 'Commune' not in html and 'Village/Ville' not in html
-        reponse = logged_in_client.post(reverse('inscriptions:eleve_create'), {
-            'nom': 'KABORE', 'prenom': 'Awa', 'genre': 'F', 'date_naissance': '2014-03-05', 'lieu_naissance': 'Ouagadougou',
-            'nationalite': 'Burkinabè', 'lieu_residence': 'Secteur 30 (Karpala)',
-        })
+        assert 'required' in re.search(r'<input[^>]*name="lieu_residence"[^>]*>', html).group(0)   # champ obligatoire
+        assert re.search(r'Lieu de résidence \(Village/Quartier/Secteur\)\s*<span[^>]*>\*</span>', html)
+        donnees = {'nom': 'KABORE', 'prenom': 'Awa', 'genre': 'F', 'date_naissance': '2014-03-05',
+                   'lieu_naissance': 'Ouagadougou', 'nationalite': 'Burkinabè'}
+        sans_residence = logged_in_client.post(reverse('inscriptions:eleve_create'), donnees)
+        assert sans_residence.status_code == 200 and not Eleve.objects.filter(nom='KABORE').exists()
+        assert 'Ce champ est obligatoire.' in unescape(sans_residence.content.decode())
+        reponse = logged_in_client.post(reverse('inscriptions:eleve_create'), {**donnees, 'lieu_residence': 'Secteur 30 (Karpala)'})
         eleve = Eleve.objects.get(nom='KABORE')
         assert reponse.status_code == 302 and eleve.lieu_residence == 'Secteur 30 (Karpala)'
         assert 'Secteur 30 (Karpala)' in logged_in_client.get(reverse('inscriptions:eleve_detail', kwargs={'pk': eleve.pk})).content.decode()

@@ -53,7 +53,10 @@
             <div class="form-grid-2">
                 {% for field in form.sections.localisation %}
                     <div class="form-group">
-                        <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}</label>
+                        <label for="{{ field.id_for_label }}" class="input-label">
+                            {{ field.label }}
+                            {% if field.field.required %}<span style="color:#FF6B7A;">*</span>{% endif %}
+                        </label>
                         {{ field }}
                         {% if field.errors %}
                             <p class="input-error">{{ field.errors.0 }}</p>
@@ -74,7 +77,10 @@
             <div class="form-grid-2">
                 {% for field in form.sections.famille %}
                     <div class="form-group {% if field.name == 'tuteur_adresse' %}w-full{% endif %}" {% if field.name == 'tuteur_adresse' %}style="grid-column:1/-1;"{% endif %}>
-                        <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}</label>
+                        <label for="{{ field.id_for_label }}" class="input-label">
+                            {{ field.label }}
+                            {% if field.field.required %}<span style="color:#FF6B7A;">*</span>{% endif %}
+                        </label>
                         {{ field }}
                         {% if field.errors %}
                             <p class="input-error">{{ field.errors.0 }}</p>

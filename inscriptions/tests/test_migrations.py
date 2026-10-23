@@ -29,3 +29,5 @@ def test_0016_reporte_province_commune_village_dans_le_lieu_de_residence():
     assert residences == {'M-1': 'Dafra, Bobo-Dioulasso, Houet', 'M-2': 'Ouagadougou, Kadiogo',
                           'M-3': 'Secteur 15', 'M-4': ''}
     assert not {'province', 'commune', 'village'} & {f.name for f in Eleve._meta.fields}
+    executor = MigrationExecutor(connection)   # rechargé : l'état appliqué a changé
+    executor.migrate(executor.loader.graph.leaf_nodes())   # base ramenée à l'état courant pour les tests suivants
