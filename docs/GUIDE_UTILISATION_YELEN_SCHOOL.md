@@ -639,7 +639,7 @@ Le bulletin annuel contient :
 
 > Le design est en thème sombre (fond `#0A1628`, cartes `#111E35`, accent `#00A86B`) pour les deux versions : individuelle et batch (PDF groupé de toute la classe).
 >
-> **Format d'impression :** une feuille **A5 paysage** par élève (individuel comme PDF groupé) : identité et statistiques de classe à gauche, récapitulatif des moyennes à droite, décision puis signature en bas.
+> **Format d'impression :** une feuille **A5 portrait** par élève (individuel comme PDF groupé) : identité, récapitulatif des moyennes, statistiques de classe, décision puis signature.
 
 ##### Règles de calcul
 
@@ -3135,7 +3135,7 @@ L'établissement ne dispose pas d'imprimante couleur. Tous les documents PDF gé
 | Liste de classe | En-tête → `#111`/blanc ; lignes paires → `#f5f5f5` ; bordures tableau visibles `1px solid #ccc` |
 | Liste du personnel | Même règles que liste de classe ; ligne total récap → `#111`/blanc |
 | Bulletin trimestriel PDF | En-tête section → fond `#ebebeb` bordure gauche `3pt solid #111` ; tableau notes → en-tête `#111`/blanc ; ligne totale → `border-top/bottom: 2pt solid #111` fond `#ebebeb` ; stat-box → `border-left: 3pt solid #111` ; badge rang → bordure `1pt solid #555` ; titre bannière → `border: 1.5pt solid #111` |
-| Bulletin annuel PDF | A5 paysage, une page par élève ; mêmes règles que bulletin trimestriel ; décision ADMIS → fond `#f5f5f5` bordure `2pt solid #111` ; décision NON ADMIS → fond `#ddd` bordure `2pt solid #111` italique |
+| Bulletin annuel PDF | A5 portrait, une page par élève ; mêmes règles que bulletin trimestriel ; décision ADMIS → fond `#f5f5f5` bordure `2pt solid #111` ; décision NON ADMIS → fond `#ddd` bordure `2pt solid #111` italique |
 | Bulletin batch (impression groupée) | Mêmes règles bulletin trimestriel ; bloc recap → fond `#f5f5f5` bordure `1.5pt solid #111` ; stat-values → gras sans couleur |
 | Bulletin duplicata | Filigrane `rgba(0,0,0,0.08)` ; bandeau DUPLICATA → fond `#ddd` bordure `#555` ; tampon → fond `#ddd` bordure `#111` ; titre → fond `#555` blanc ; stat-box → `border-left: 3pt solid #111` |
 | Bilan des périodes | En-tête période → fond `#111`/blanc ; lignes paires → `#f5f5f5` ; blocs analyse → `border-left: 3pt solid #111` fond `#f5f5f5` ; légende → texte et symboles sans couleur |

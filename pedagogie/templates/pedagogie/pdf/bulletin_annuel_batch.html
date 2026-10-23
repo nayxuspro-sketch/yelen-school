@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <style>
 @page {
-    size: A5 landscape;
+    size: A5 portrait;
     margin: 7mm 9mm 8mm 9mm;
     @bottom-right {
         content: "Page " counter(page) " / " counter(pages);
@@ -230,21 +230,13 @@ html, body {
 .bul-sig-col .msig-name { font-size: 9pt; margin-top: 7mm; }
 .bul-sig-col .msig-honors { font-size: 7pt; }
 
-/* ── Deux colonnes (A5 paysage) ── */
-.bul-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 6pt;
-    align-items: start;
-}
-
-/* ── Pagination batch : 1 bulletin = 1 page A5 paysage exacte ── */
+/* ── Pagination batch : 1 bulletin = 1 page A5 portrait exacte ── */
 .bulletin-page {
     page-break-after: always;
     break-after: page;
-    /* Hauteur A5 paysage (148mm) moins marges (7mm haut + 8mm bas) = 133mm
-       Les running footers WeasyPrint consomment ~7mm => 126mm */
-    max-height: 126mm;
+    /* Hauteur A5 portrait (210mm) moins marges (7mm haut + 8mm bas) = 195mm
+       Les running footers WeasyPrint consomment ~7mm => 188mm */
+    max-height: 188mm;
     overflow: hidden;
 }
 .bulletin-page:last-child {
@@ -279,8 +271,6 @@ html, body {
     BULLETIN DE FIN D'ANNÉE — {{ annee_scolaire.libelle }}
 </div>
 
-<div class="bul-cols">
-<div>
 <!-- ══ IDENTITÉ DE L'ÉLÈVE ══ -->
 <div class="bul-card">
     <div class="bul-section-label">Identité de l'élève</div>
@@ -327,32 +317,6 @@ html, body {
     </div>
 </div>
 
-<!-- ══ STATISTIQUES DE LA CLASSE ══ -->
-<div class="bul-card">
-    <div class="bul-section-label">Statistiques de la classe</div>
-    <div class="bul-card-body">
-        <div class="bul-stats">
-            <div class="bul-stat-box">
-                <div class="bul-stat-label">Plus forte moy.</div>
-                <div class="bul-stat-value">{{ ctx.moy_max_classe|floatformat:2 }}</div>
-            </div>
-            <div class="bul-stat-box">
-                <div class="bul-stat-label">Plus faible moy.</div>
-                <div class="bul-stat-value">{{ ctx.moy_min_classe|floatformat:2 }}</div>
-            </div>
-            <div class="bul-stat-box">
-                <div class="bul-stat-label">Moy. de classe</div>
-                <div class="bul-stat-value">{{ ctx.moy_avg_classe|floatformat:2 }}</div>
-            </div>
-        </div>
-        <div class="bul-rang-line">
-            Rang annuel &nbsp;<span class="bul-rang-badge">{{ ctx.moyenne_annuelle.rang|default:"—" }}{% if ctx.moyenne_annuelle.rang == 1 %}er{% elif ctx.moyenne_annuelle.rang %}ème{% endif %}</span>&nbsp; / {{ ctx.nb_eleves }} élève{{ ctx.nb_eleves|pluralize }}
-            {% if ctx.moyenne_annuelle.mention %}&nbsp;·&nbsp; <strong>{{ ctx.moyenne_annuelle.mention }}</strong>{% endif %}
-        </div>
-    </div>
-</div>
-</div>
-<div>
 <!-- ══ RÉCAPITULATIF DES PÉRIODES ══ -->
 {% if ctx.periodes %}
 <div class="bul-card">
@@ -383,7 +347,30 @@ html, body {
     </table>
 </div>
 {% endif %}
-</div>
+
+<!-- ══ STATISTIQUES DE LA CLASSE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Statistiques de la classe</div>
+    <div class="bul-card-body">
+        <div class="bul-stats">
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus forte moy.</div>
+                <div class="bul-stat-value">{{ ctx.moy_max_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus faible moy.</div>
+                <div class="bul-stat-value">{{ ctx.moy_min_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Moy. de classe</div>
+                <div class="bul-stat-value">{{ ctx.moy_avg_classe|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="bul-rang-line">
+            Rang annuel &nbsp;<span class="bul-rang-badge">{{ ctx.moyenne_annuelle.rang|default:"—" }}{% if ctx.moyenne_annuelle.rang == 1 %}er{% elif ctx.moyenne_annuelle.rang %}ème{% endif %}</span>&nbsp; / {{ ctx.nb_eleves }} élève{{ ctx.nb_eleves|pluralize }}
+            {% if ctx.moyenne_annuelle.mention %}&nbsp;·&nbsp; <strong>{{ ctx.moyenne_annuelle.mention }}</strong>{% endif %}
+        </div>
+    </div>
 </div>
 
 <!-- ══ DÉCISION ══ -->

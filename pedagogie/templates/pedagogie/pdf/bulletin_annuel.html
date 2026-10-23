@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <style>
 @page {
-    size: A5 landscape;
+    size: A5 portrait;
     margin: 7mm 9mm 8mm 9mm;
     @bottom-right {
         content: "Page " counter(page) " / " counter(pages);
@@ -229,14 +229,6 @@ html, body {
 .bul-sig-col .msig-fonction { font-size: 8pt; }
 .bul-sig-col .msig-name { font-size: 9pt; margin-top: 7mm; }
 .bul-sig-col .msig-honors { font-size: 7pt; }
-
-/* ── Deux colonnes (A5 paysage) ── */
-.bul-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 6pt;
-    align-items: start;
-}
 </style>
 </head>
 <body>
@@ -262,8 +254,6 @@ html, body {
     BULLETIN DE FIN D'ANNÉE — {{ annee_scolaire.libelle }}
 </div>
 
-<div class="bul-cols">
-<div>
 <!-- ══ IDENTITÉ DE L'ÉLÈVE ══ -->
 <div class="bul-card">
     <div class="bul-section-label">Identité de l'élève</div>
@@ -310,32 +300,6 @@ html, body {
     </div>
 </div>
 
-<!-- ══ STATISTIQUES DE LA CLASSE ══ -->
-<div class="bul-card">
-    <div class="bul-section-label">Statistiques de la classe</div>
-    <div class="bul-card-body">
-        <div class="bul-stats">
-            <div class="bul-stat-box">
-                <div class="bul-stat-label">Plus forte moy.</div>
-                <div class="bul-stat-value">{{ moy_max_classe|floatformat:2 }}</div>
-            </div>
-            <div class="bul-stat-box">
-                <div class="bul-stat-label">Plus faible moy.</div>
-                <div class="bul-stat-value">{{ moy_min_classe|floatformat:2 }}</div>
-            </div>
-            <div class="bul-stat-box">
-                <div class="bul-stat-label">Moy. de classe</div>
-                <div class="bul-stat-value">{{ moy_avg_classe|floatformat:2 }}</div>
-            </div>
-        </div>
-        <div class="bul-rang-line">
-            Rang annuel &nbsp;<span class="bul-rang-badge">{{ moyenne_annuelle.rang|default:"—" }}{% if moyenne_annuelle.rang == 1 %}er{% elif moyenne_annuelle.rang %}ème{% endif %}</span>&nbsp; / {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
-            {% if moyenne_annuelle.mention %}&nbsp;·&nbsp; <strong>{{ moyenne_annuelle.mention }}</strong>{% endif %}
-        </div>
-    </div>
-</div>
-</div>
-<div>
 <!-- ══ RÉCAPITULATIF DES PÉRIODES ══ -->
 {% if periodes %}
 <div class="bul-card">
@@ -366,7 +330,30 @@ html, body {
     </table>
 </div>
 {% endif %}
-</div>
+
+<!-- ══ STATISTIQUES DE LA CLASSE ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Statistiques de la classe</div>
+    <div class="bul-card-body">
+        <div class="bul-stats">
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus forte moy.</div>
+                <div class="bul-stat-value">{{ moy_max_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Plus faible moy.</div>
+                <div class="bul-stat-value">{{ moy_min_classe|floatformat:2 }}</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Moy. de classe</div>
+                <div class="bul-stat-value">{{ moy_avg_classe|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="bul-rang-line">
+            Rang annuel &nbsp;<span class="bul-rang-badge">{{ moyenne_annuelle.rang|default:"—" }}{% if moyenne_annuelle.rang == 1 %}er{% elif moyenne_annuelle.rang %}ème{% endif %}</span>&nbsp; / {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
+            {% if moyenne_annuelle.mention %}&nbsp;·&nbsp; <strong>{{ moyenne_annuelle.mention }}</strong>{% endif %}
+        </div>
+    </div>
 </div>
 
 <!-- ══ DÉCISION ══ -->

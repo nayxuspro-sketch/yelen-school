@@ -27,8 +27,8 @@ class TestBulletinsViews:
 
 
 @pytest.mark.django_db
-def test_bulletin_annuel_pdf_une_page_a5_paysage(client, mocker):
-    """Le bulletin annuel (individuel et lot de classe) tient sur une page A5 paysage par élève."""
+def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
+    """Le bulletin annuel (individuel et lot de classe) tient sur une page A5 portrait par élève."""
     import datetime
     from decimal import Decimal
     import core.pdf
@@ -74,6 +74,6 @@ def test_bulletin_annuel_pdf_une_page_a5_paysage(client, mocker):
 
     assert individuel.status_code == 200 and lot.status_code == 200 and len(documents) == 2
     assert len(documents[0].pages) == 1 and len(documents[1].pages) == 3   # un élève = une page
-    # A5 paysage : 210 × 148 mm, soit 793,7 × 559,4 px CSS (WeasyPrint)
+    # A5 portrait : 148 × 210 mm, soit 559,4 × 793,7 px CSS (WeasyPrint)
     for page in documents[0].pages + documents[1].pages:
-        assert round(page.width) == 794 and round(page.height) == 559
+        assert round(page.width) == 559 and round(page.height) == 794
