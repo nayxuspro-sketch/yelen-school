@@ -945,7 +945,7 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 **Champs principaux :**
 - **Informations officielles** : nom, sigle, type (public/privé/confessionnel), numéro et date d'agrément
 - **Adresse complète** : rue/quartier, ville, province, région
-- **Contact** : téléphone, email, site web, nom du directeur
+- **Contact** : téléphone (35 caractères maximum, plusieurs numéros possibles), email, site web, nom du directeur
 - **Éléments graphiques** : logo (PNG/JPG ≥ 300×300px), signature du directeur (PNG transparent), cachet officiel
 - **Devise** : phrase ou valeur éducative de l'établissement
 

@@ -194,6 +194,23 @@ class TestPartialsSansScriptInline:
         assert '<label class="input-label">N° Agrément</label>' in html
         assert 'Agrément MENA' not in html
 
+    def test_identite_etablissement_telephone_35_caracteres(self, client_etab):
+        etab = Etablissement.objects.get(code='CSP')
+        identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='Lycée Yelen',
+                              numero_agrement_mena='AG-001', email='contact@yelen.bf', nom_directeur='D. Yelen')
+        tel = '+226 25 36 47 58 / 70 11 22 33 / 76'   # 35 caractères
+        assert len(tel) == 35
+        donnees = {champ: getattr(identite, champ) for champ in (
+            'nom_etablissement', 'type_etablissement', 'numero_agrement_mena', 'date_agrement',
+            'adresse_complete', 'ville', 'province', 'region', 'email', 'nom_directeur')}
+
+        html = client_etab.get(reverse('parametres:identite_etablissement')).content.decode()
+        assert re.search(r'<input[^>]*name="telephone"[^>]*maxlength="35"', html)
+
+        client_etab.post(reverse('parametres:identite_etablissement'), {**donnees, 'telephone': tel})
+        identite.refresh_from_db()
+        assert identite.telephone == tel
+
     def test_formulaire_tarif_montant_lisible(self, client_etab):
         html = client_etab.get(reverse('parametres:tarif_create'), HTTP_HX_REQUEST='true').content.decode()
 
