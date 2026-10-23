@@ -26,6 +26,17 @@ function Write-StartupLog {
     Write-Host $line
 }
 
+function Invoke-NativeQuiet {
+    # Exécute une commande native sans afficher sa sortie et retourne son code de retour.
+    # Sous $ErrorActionPreference = 'Stop', Windows PowerShell transforme la sortie
+    # d'erreur redirigée d'une commande native en exception : la simple progression de
+    # docker compose (« Container … Creating ») interrompait le démarrage.
+    param([Parameter(Mandatory = $true)][scriptblock]$Command)
+    $ErrorActionPreference = 'Continue'
+    & $Command *> $null
+    return $LASTEXITCODE
+}
+
 function Get-DotEnvValue {
     param([string]$Name)
     if (-not (Test-Path $EnvFile)) { return '' }
@@ -206,9 +217,9 @@ function Update-ServerCertificate {
 
     $hostList = ($covered + $missing) -join ','
     Write-StartupLog "Renouvellement du certificat HTTPS ($reason) pour : $hostList"
-    & docker compose -f $ComposeFile run --rm --no-deps --entrypoint python web /app/installer/generer-certificats.py --hosts $hostList --out /app/certs *> $null
+    $exitCode = Invoke-NativeQuiet { docker compose -f $ComposeFile run --rm --no-deps --entrypoint python web /app/installer/generer-certificats.py --hosts $hostList --out /app/certs }
     $renewed = Get-CertificateNotAfter $certificateFile
-    if ($LASTEXITCODE -ne 0 -or $null -eq $renewed -or $renewed -eq $notAfter) {
+    if ($exitCode -ne 0 -or $null -eq $renewed -or $renewed -eq $notAfter) {
         Write-StartupLog 'AVERTISSEMENT : le certificat HTTPS n''a pas pu être renouvelé ; relancer activer-https.bat en administrateur.'
         return $false
     }
@@ -304,8 +315,7 @@ try {
         throw 'Docker est introuvable dans le PATH.'
     }
 
-    & docker info *> $null
-    if ($LASTEXITCODE -ne 0) {
+    if ((Invoke-NativeQuiet { docker info }) -ne 0) {
         $desktopCandidates = @(
             (Join-Path ${env:ProgramFiles} 'Docker\Docker\Docker Desktop.exe'),
             (Join-Path ${env:LOCALAPPDATA} 'Docker\Docker Desktop.exe')
@@ -319,8 +329,7 @@ try {
 
     $dockerReady = $false
     for ($attempt = 1; $attempt -le 90; $attempt++) {
-        & docker info *> $null
-        if ($LASTEXITCODE -eq 0) {
+        if ((Invoke-NativeQuiet { docker info }) -eq 0) {
             $dockerReady = $true
             break
         }
@@ -431,8 +440,7 @@ try {
     }
     if ($certificateRenewed) {
         # Caddy lit le certificat au démarrage : le proxy est relancé pour servir le nouveau.
-        & docker compose -f $ComposeFile --profile https restart proxy *> $null
-        if ($LASTEXITCODE -eq 0) {
+        if ((Invoke-NativeQuiet { docker compose -f $ComposeFile --profile https restart proxy }) -eq 0) {
             Write-StartupLog 'Proxy HTTPS redémarré avec le nouveau certificat.'
         } else {
             Write-StartupLog 'AVERTISSEMENT : le proxy HTTPS n''a pas redémarré ; relancer demarrage.bat.'

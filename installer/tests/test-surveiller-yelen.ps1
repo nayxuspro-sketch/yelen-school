@@ -11,6 +11,7 @@ $ErrorActionPreference = 'Stop'
 $scriptPath = Join-Path $PSScriptRoot '..\surveiller-yelen.ps1'
 $script = [System.IO.File]::ReadAllText($scriptPath, [System.Text.UTF8Encoding]::new($true))
 $block = $script.Substring($script.IndexOf('# ── 3. Nouvelle adresse IP'))
+Invoke-Expression ([regex]::Match($script, '(?s)function Invoke-NativeQuiet \{.*?\n\}\n').Value)   # fonction réelle du script
 $work = Join-Path ([System.IO.Path]::GetTempPath()) ("yelen-surveiller-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work -Force | Out-Null
 $blockFile = Join-Path $work 'bloc.ps1'
@@ -24,7 +25,11 @@ $StartScript = 'C:\YELEN-SCHOOL\installer\start-local.ps1'
 function Get-DotEnvValue { param([string]$Name) if ($script:Env.ContainsKey($Name)) { $script:Env[$Name] } else { '' } }
 function Get-LanIPv4Addresses { $script:Lan }
 function Write-Log { param([string]$Message) $script:Journal += $Message }
-function powershell.exe { $script:Relances++; $global:LASTEXITCODE = 0 }
+function powershell.exe {
+    $script:Relances++
+    Write-Error ' Container yelen-school-web-1 Running'   # progression de docker compose relayée sur le flux d'erreur
+    $global:LASTEXITCODE = 0
+}
 
 function Assert($condition, $message) {
     if (-not $condition) { throw "ÉCHEC : $message" }

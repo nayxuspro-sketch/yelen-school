@@ -38,6 +38,17 @@ function Write-Log {
     Add-Content -Path $LogFile -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $Message" -Encoding UTF8
 }
 
+function Invoke-NativeQuiet {
+    # Exécute une commande native sans afficher sa sortie et retourne son code de retour.
+    # Sous $ErrorActionPreference = 'Stop', Windows PowerShell transforme la sortie
+    # d'erreur redirigée d'une commande native en exception (progression de docker
+    # compose, avertissements) : elle est ignorée ici.
+    param([Parameter(Mandatory = $true)][scriptblock]$Command)
+    $ErrorActionPreference = 'Continue'
+    & $Command *> $null
+    return $LASTEXITCODE
+}
+
 function Get-DotEnvValue {
     param([string]$Name)
     if (-not (Test-Path $EnvFile)) { return '' }
@@ -125,7 +136,7 @@ if (Test-Sante) {
     if ($etat.echecs -ge $EchecsAvantRedemarrage) {
         Write-Log 'Redémarrage des services...'
         try {
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $StartScript *> $null
+            $null = Invoke-NativeQuiet { powershell.exe -NoProfile -ExecutionPolicy Bypass -File $StartScript }
         } catch {
             Write-Log "Redémarrage impossible : $($_.Exception.Message)"
         }
@@ -166,8 +177,7 @@ $nouvelles = @(Get-LanIPv4Addresses | Where-Object { $autorisees -notcontains $_
 if ($autorisees.Count -gt 0 -and $nouvelles.Count -gt 0) {
     Write-Log "Nouvelle adresse IP du serveur : $($nouvelles -join ', ') ; mise à jour de la configuration..."
     try {
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $StartScript *> $null
-        if ($LASTEXITCODE -eq 0) {
+        if ((Invoke-NativeQuiet { powershell.exe -NoProfile -ExecutionPolicy Bypass -File $StartScript }) -eq 0) {
             Write-Log 'Configuration mise à jour (voir logs\startup.log).'
         } else {
             Write-Log 'Mise à jour de la configuration en échec (voir logs\startup.log).'

@@ -61,6 +61,17 @@ function Set-DotEnvValue {
     [System.IO.File]::WriteAllText($EnvFile, $content, [System.Text.UTF8Encoding]::new($false))
 }
 
+function Invoke-NativeQuiet {
+    # Exécute une commande native sans afficher sa sortie et retourne son code de retour.
+    # Sous $ErrorActionPreference = 'Stop', Windows PowerShell transforme la sortie
+    # d'erreur redirigée d'une commande native en exception (progression de docker
+    # compose, avertissements) : elle est ignorée ici.
+    param([Parameter(Mandatory = $true)][scriptblock]$Command)
+    $ErrorActionPreference = 'Continue'
+    & $Command *> $null
+    return $LASTEXITCODE
+}
+
 function Invoke-Start {
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $StartScript
     if ($LASTEXITCODE -ne 0) { throw 'Le redémarrage des services a échoué (voir logs\startup.log).' }
@@ -72,8 +83,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 }
 if (-not (Test-Path $EnvFile)) { throw '.env est introuvable. Lancez d''abord l''installation locale.' }
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { throw 'Docker est introuvable.' }
-& docker info *> $null
-if ($LASTEXITCODE -ne 0) { throw 'Docker ne fonctionne pas.' }
+if ((Invoke-NativeQuiet { docker info }) -ne 0) { throw 'Docker ne fonctionne pas.' }
 
 if ($Desactiver) {
     Write-Host '[1/3] Désactivation du HTTPS dans .env...' -ForegroundColor Cyan
@@ -81,7 +91,7 @@ if ($Desactiver) {
     Set-DotEnvValue 'COMPOSE_PROFILES' ''
     Set-DotEnvValue 'YELEN_WEB_BIND' '0.0.0.0'
     Write-Host '[2/3] Arrêt du proxy et fermeture du port dans le pare-feu...' -ForegroundColor Cyan
-    & docker compose -f $ComposeFile --profile https rm -sf proxy *> $null
+    $null = Invoke-NativeQuiet { docker compose -f $ComposeFile --profile https rm -sf proxy }
     Get-NetFirewallRule -Name $RuleName -ErrorAction SilentlyContinue | Remove-NetFirewallRule
     Write-Host '[3/3] Redémarrage des services...' -ForegroundColor Cyan
     Invoke-Start

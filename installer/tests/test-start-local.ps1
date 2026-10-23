@@ -171,6 +171,20 @@ try {
     Assert ((Get-EnvLine 'YELEN_HTTPS_HOSTS') -eq $before) 'YELEN_HTTPS_HOSTS inchangé'
     Assert ([System.IO.File]::ReadAllText($LogFile) -match 'relancer activer-https.bat') 'journal : consigne de reprise manuelle'
 
+    Write-Host '14. Progression de docker compose sur la sortie d''erreur : renouvellement mené à bien sous $ErrorActionPreference = Stop'
+    $script:DockerExitCode = 0
+    $script:CertNotAfter = (Get-Date).ToUniversalTime().AddDays(400)
+    function docker {
+        $script:DockerCalls += ,@($args)
+        Write-Error ' Container yelen-school-web-run-cc2783af306b Creating'   # ce que Windows PowerShell fait du flux d'erreur natif
+        $script:CertNotAfter = (Get-Date).ToUniversalTime().AddDays(825)
+        $global:LASTEXITCODE = 0
+    }
+    $renewed = $false
+    try { $renewed = Update-ServerCertificate -Hosts (@('10.52.237.43') + $hosts) } catch { Assert $false "exception : $($_.Exception.Message)" }
+    Assert ($renewed -eq $true -and $script:DockerCalls.Count -eq 4) 'la sortie d''erreur de docker n''interrompt pas le script ; certificat renouvelé'
+    Assert ((Invoke-NativeQuiet { docker info }) -eq 0) 'Invoke-NativeQuiet retourne le code de retour malgré la sortie d''erreur'
+
     Write-Host 'Tous les tests passent.' -ForegroundColor Green
 } finally {
     Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
