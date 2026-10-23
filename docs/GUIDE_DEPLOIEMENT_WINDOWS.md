@@ -28,6 +28,7 @@
 6. [Programmation automatique](#6-programmation-automatique)
 7. [Restauration après incident](#7-restauration-après-incident)
 8. [Mise à jour sans perte de données](#8-mise-à-jour-sans-perte-de-données)
+   - [8.1 Mise à jour en un clic : `mettre-a-jour.bat`](#81-mise-à-jour-en-un-clic--mettre-a-jourbat)
 9. [Accès depuis le réseau local](#9-accès-depuis-le-réseau-local)
 10. [Dépannage et vérifications](#10-dépannage-et-vérifications)
 11. [Reprise sur une nouvelle machine](#11-reprise-sur-une-nouvelle-machine)
@@ -521,7 +522,7 @@ Cette tâche s'exécute dans la session de l'utilisateur qui l'a enregistrée. C
 docker compose -f docker-compose.client.yml ps
 ```
 
-En cas de changement de code ou de dépendances, utiliser `demarrage.bat` pour reconstruire l'image avec `--build`. Le démarrage automatique quotidien reste volontairement plus rapide et local, sans reconstruction.
+Pour passer à une nouvelle version, utiliser `mettre-a-jour.bat` (§8.1). Le démarrage automatique quotidien reste volontairement plus rapide et local, sans reconstruction.
 
 ### 4.3 Avant d'éteindre le serveur
 
@@ -843,51 +844,61 @@ Une fois la restauration validée, cette copie peut être supprimée pour libér
 
 ## 8. Mise à jour sans perte de données
 
-### 8.1 Avant de remplacer le code
+### 8.1 Mise à jour en un clic : `mettre-a-jour.bat`
 
-1. Prévenir les utilisateurs.
-2. Exécuter une sauvegarde complète avec `installer\backup-windows.bat`.
-3. Vérifier la paire `.dump` et `_media.tar.gz`.
-4. Copier cette paire hors de la machine.
-5. Conserver `.env` séparément.
+Double-cliquer sur `C:\YELEN-SCHOOL\mettre-a-jour.bat` (ou l'exécuter dans `cmd`). Le script enchaîne,
+sans autre intervention :
 
-### 8.2 Mise à jour avec Git
+1. lecture de la version installée (fichier `VERSION`) et recherche d'une nouvelle version sur GitHub
+   (branche `main`) — s'il n'y en a pas : « YELEN SCHOOL est déjà à jour » ;
+2. sauvegarde chiffrée complète (`installer\backup-windows.ps1`, §5) — si elle échoue, la mise à jour est
+   annulée et rien n'est modifié ;
+3. récupération du code (`git merge --ff-only`), reconstruction de l'image, redémarrage par
+   `start-local.ps1` (migrations et fichiers statiques appliqués par `entrypoint.sh`) ;
+4. contrôle de `/health/` jusqu'à ce que la nouvelle version réponde (3 min au plus, `-DelaiAttente`
+   pour ajuster).
+
+Si la reconstruction échoue, les services en cours ne sont pas touchés et le code précédent est remis en
+place. Si la nouvelle version ne répond pas, l'ancienne est reconstruite et redémarrée ; restaurer la
+sauvegarde créée à l'étape 2 uniquement si les journaux montrent que la base a été migrée (§7.2).
+Journal : `logs\mise-a-jour.log`. Options : `mettre-a-jour.bat -SansSauvegarde` (déconseillé),
+`-DelaiAttente 600`.
+
+Les postes déjà connectés reçoivent la nouvelle version automatiquement : le cache du navigateur est
+identifié par la version et la page se recharge d'elle-même à la navigation suivante (plus de Ctrl+F5).
+La version en service est visible en bas du menu latéral, sur la page de connexion et dans `/health/`.
+
+### 8.2 Prérequis et procédure manuelle équivalente
+
+`C:\YELEN-SCHOOL` doit être un clone Git (`git -C C:\YELEN-SCHOOL rev-parse --is-inside-work-tree`
+répond `true`) avec Git et Docker Desktop dans le `PATH`. Ne jamais remplacer `.env` par
+`.env.example` pendant une mise à jour. Les mêmes étapes, à la main :
 
 ```powershell
 Set-Location C:\YELEN-SCHOOL
-git pull origin main
-```
-
-Si l'équipe fournit une autre branche ou une archive, suivre ses notes de version. Ne jamais remplacer `.env` par `.env.example` pendant une mise à jour.
-
-### 8.3 Reconstruire sans effacer les volumes
-
-```powershell
+installer\backup-windows.bat
+git checkout -- docs
+git pull --ff-only origin main
+git checkout -- docs
 docker compose -f docker-compose.client.yml build
 powershell -NoProfile -ExecutionPolicy Bypass -File installer\start-local.ps1
+docker compose -f docker-compose.client.yml ps
 ```
 
 (`start-local.ps1` transmet l'empreinte du serveur au conteneur `web` ; un `up -d` lancé sans lui
 laisse `YELEN_HOST_ID` vide et la licence liée au serveur est refusée — §3.5.)
 
-`entrypoint.sh` applique les migrations et collecte les fichiers statiques au démarrage. Vérifier ensuite :
-
-```powershell
-docker compose -f docker-compose.client.yml ps
-docker compose -f docker-compose.client.yml logs --tail=100 web
-```
-
 Ne pas utiliser `docker compose down -v`, `docker volume prune` ou la suppression manuelle de `yelen_postgres_data` et `yelen_media`. Ces commandes peuvent supprimer définitivement les données.
 
-### 8.4 Retour arrière
+### 8.3 Retour arrière manuel
 
-Si la nouvelle version ne démarre pas :
+Si la nouvelle version ne démarre pas et que le retour automatique de `mettre-a-jour.bat` n'a pas abouti :
 
 1. arrêter les utilisateurs ;
-2. consulter les journaux ;
-3. remettre le code de la version précédente ;
-4. relancer `docker compose -f docker-compose.client.yml up -d --build` ;
-5. restaurer la paire créée avant la mise à jour uniquement si les migrations ont rendu la base incompatible et si les notes de version le recommandent.
+2. consulter `logs\mise-a-jour.log` et `docker compose -f docker-compose.client.yml logs --tail=100 web` ;
+3. remettre le code précédent : `git reset --hard <hash affiché dans le journal>` ;
+4. reconstruire et redémarrer (`build` puis `start-local.ps1`, §8.2) ;
+5. restaurer la paire créée avant la mise à jour uniquement si les migrations ont rendu la base incompatible.
 
 Une sauvegarde est indispensable avant toute migration de schéma.
 
@@ -1042,7 +1053,7 @@ docker compose -f docker-compose.client.yml logs --tail=100 web
 Le poste client n'a pas pu traduire le nom du serveur : l'erreur survient avant toute connexion, elle n'a rien à voir avec le HTTPS ni avec le certificat. Trois causes, à vérifier dans l'ordre :
 
 1. **Android** (toutes versions) : la résolution des noms `.local` n'y est pas garantie (§9.1) — les postes Windows, iPhone, iPad et Mac du même réseau y parviennent, pas forcément la tablette. Utiliser l'adresse IP du serveur, couverte elle aussi par le certificat (§9.3) : `https://ADRESSE_IP_DU_SERVEUR:8443/certificat-autorite/` puis `https://ADRESSE_IP_DU_SERVEUR:8443/`. L'application installée restant liée à cette adresse, fixer l'IP du serveur (réservation DHCP sur la box, ou IP fixe dans Windows).
-2. **Serveur** : les réponses de nom passent par la règle « YELEN SCHOOL - Résolution du nom du serveur » et exigent un réseau classé *Privé* ; les deux sont mis en place par `start-local.ps1` à chaque démarrage depuis la version du 22 octobre 2026 — une production plus ancienne doit d'abord être mise à jour (§8.2). Vérification, à exécuter sur le serveur :
+2. **Serveur** : les réponses de nom passent par la règle « YELEN SCHOOL - Résolution du nom du serveur » et exigent un réseau classé *Privé* ; les deux sont mis en place par `start-local.ps1` à chaque démarrage depuis la version du 22 octobre 2026 — une production plus ancienne doit d'abord être mise à jour (§8.1). Vérification, à exécuter sur le serveur :
 
    ```bat
    powershell -NoProfile -Command "Get-NetConnectionProfile | Format-Table Name,InterfaceAlias,NetworkCategory -AutoSize; Get-NetFirewallRule -DisplayName 'mDNS (UDP-In)','YELEN SCHOOL - R*' | Format-Table DisplayName,Profile,Enabled -AutoSize"

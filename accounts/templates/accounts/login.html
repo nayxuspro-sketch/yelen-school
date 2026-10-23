@@ -230,7 +230,7 @@
         <div class="login-clean-form-footer">
           <span>Burkina Faso</span>
           <span class="login-clean-dot"></span>
-          <span>v4.2</span>
+          <span>v{{ yelen_version }}</span>
         </div>
 
       </div>
@@ -243,6 +243,12 @@
 
     /* ── PWA : Service Worker (même enregistrement que base.html ; /accounts/ n'est jamais mis en cache) ── */
     if ('serviceWorker' in navigator) {
+      // Nouvelle version déployée : le worker mis à jour prend le contrôle, la page se recharge
+      // une seule fois (jamais à la première installation : aucun contrôleur préalable).
+      var dejaControlee = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (dejaControlee) { dejaControlee = false; window.location.reload(); }
+      });
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('/app-sw.js', { scope: '/' }).catch(function () {});
       });

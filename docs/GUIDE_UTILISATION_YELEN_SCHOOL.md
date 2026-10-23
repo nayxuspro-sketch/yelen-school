@@ -6587,7 +6587,8 @@ Un endpoint de monitoring est disponible :
 curl https://votre-domaine.com/health/
 ```
 
-Retourne **200** si tout va bien (base de données + Redis accessibles), **503** sinon.
+Retourne **200** si tout va bien (base de données + Redis accessibles), **503** sinon ; le champ `version`
+indique la version installée (fichier `VERSION`).
 
 #### 4. Mise à jour
 
@@ -6683,20 +6684,20 @@ est **l'unique source de vérité**. Elle fusionne :
 
 ### 33.2 Mettre à jour une installation client existante (Docker)
 
-```cmd
-cd /d C:\YELEN-SCHOOL
-git pull origin main
-docker compose -f docker-compose.client.yml build
-powershell -NoProfile -ExecutionPolicy Bypass -File installer\start-local.ps1
-docker compose -f docker-compose.client.yml exec web python manage.py migrate
-```
+Double-cliquer sur `C:\YELEN-SCHOOL\mettre-a-jour.bat`. Le script sauvegarde (chiffré), récupère la
+nouvelle version sur GitHub, reconstruit l'image, redémarre les services (`start-local.ps1`, qui
+transmet l'empreinte du serveur au conteneur `web` — indispensable quand la licence est liée au
+serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version précédente. S'il n'y a rien
+de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
+manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-(`start-local.ps1` exécute `docker compose up -d` après avoir transmis l'empreinte du serveur au
-conteneur `web` — indispensable quand la licence est liée au serveur, §13.A.)
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.1.0 »), sur la page de connexion et
+dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
+chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
+d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.
 
 Les données vivent dans les volumes nommés (`yelen_postgres_data`, `yelen_media`, …) :
-reconstruire l'image ne les touche pas. Le fichier `.env` n'est pas versionné et doit être
-conservé. Vérifier ensuite `docker compose -f docker-compose.client.yml logs --tail 50 web`.
+reconstruire l'image ne les touche pas. Le fichier `.env` n'est pas versionné et doit être conservé.
 
 > Le dossier `C:\YELEN-SCHOOL` doit être un **clone git** (`git clone … C:\YELEN-SCHOOL`),
 > plus jamais une copie manuelle : c'est ce qui garantit qu'une correction appliquée sur

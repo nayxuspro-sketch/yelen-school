@@ -1061,9 +1061,13 @@ def app_manifest(request):
 
 @never_cache
 def app_service_worker(request):
-    """Service Worker de l'application principale — cache les assets, page offline en fallback."""
+    """Service Worker de l'application principale — cache les assets, page offline en fallback.
+
+    Le nom du cache porte la version : chaque livraison change le script, le navigateur installe le
+    nouveau worker qui purge l'ancien cache, puis les pages ouvertes se rechargent (base.html).
+    """
     sw = """
-const APP_CACHE = 'yelen-app-v2';
+const APP_CACHE = 'yelen-app-__VERSION__';
 const PRECACHE = [
   '/offline/',
   '/static/css/yelen.css',
@@ -1128,7 +1132,7 @@ self.addEventListener('fetch', e => {
   );
 });
 """
-    return HttpResponse(sw.strip(), content_type='application/javascript')
+    return HttpResponse(sw.strip().replace('__VERSION__', settings.YELEN_VERSION), content_type='application/javascript')
 
 
 def offline_page(request):
@@ -1249,7 +1253,7 @@ def health_check(request):
     """Endpoint de healthcheck pour le load balancer / monitoring Docker."""
     from django.db import connections
 
-    health = {'status': 'ok', 'version': '1.0.0'}
+    health = {'status': 'ok', 'version': settings.YELEN_VERSION}
 
     # Vérification base de données
     db_ok = False

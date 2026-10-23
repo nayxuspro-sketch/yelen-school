@@ -45,6 +45,10 @@ Voir [`docs/GUIDE_MODE_AUTONOME_SQLITE.md`](docs/GUIDE_MODE_AUTONOME_SQLITE.md).
 
 - Mode serveur (Docker, PostgreSQL, Redis) : [`docs/GUIDE_DEPLOIEMENT_WINDOWS.md`](docs/GUIDE_DEPLOIEMENT_WINDOWS.md)
 - Mode autonome (SQLite) : [`docs/GUIDE_MODE_AUTONOME_SQLITE.md`](docs/GUIDE_MODE_AUTONOME_SQLITE.md)
+- Mise à jour d'une installation Docker : `mettre-a-jour.bat` (sauvegarde, nouvelle version, reconstruction,
+  contrôle de `/health/`, retour arrière automatique — guide de déploiement §8.1)
+- Version : fichier [`VERSION`](VERSION) (affichée dans l'interface et `/health/`), historique dans
+  [`CHANGELOG.md`](CHANGELOG.md) ; chaque livraison incrémente `VERSION` et pose le tag `vX.Y.Z`
 
 ## Développement et tests
 

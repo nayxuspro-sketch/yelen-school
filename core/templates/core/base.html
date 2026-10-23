@@ -731,7 +731,7 @@
         </svg>
         Installer l'application
       </button>
-      <span class="sb-version">YELEN SCHOOL v5.0</span>
+      <span class="sb-version">YELEN SCHOOL v{{ yelen_version }}</span>
       <div class="sb-footer-actions">
         <a href="{% url 'licences:guide' %}" class="sb-footer-btn" title="Guide">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1061,6 +1061,12 @@
   (function () {
     // ── 1. Enregistrement du Service Worker ──────────────────────────────
     if ('serviceWorker' in navigator) {
+      // Nouvelle version déployée : le worker mis à jour prend le contrôle, la page se recharge
+      // une seule fois (jamais à la première installation : aucun contrôleur préalable).
+      var dejaControlee = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (dejaControlee) { dejaControlee = false; window.location.reload(); }
+      });
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('/app-sw.js', { scope: '/' }).catch(function () {});
       });

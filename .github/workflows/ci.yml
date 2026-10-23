@@ -117,6 +117,8 @@ jobs:
           DISABLE_HTTPS_REDIRECT: "true"
       - name: Tests PowerShell (installer/start-local.ps1)
         run: pwsh -NoProfile -File installer/tests/test-start-local.ps1
+      - name: Tests PowerShell (installer/mettre-a-jour.ps1)
+        run: pwsh -NoProfile -File installer/tests/test-mettre-a-jour.ps1
       - name: Run tests (SQLite)
         run: python -m pytest --tb=short -x
         env:

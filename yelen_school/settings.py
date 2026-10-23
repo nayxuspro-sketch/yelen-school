@@ -20,6 +20,10 @@ import warnings
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Version de l'application : fichier VERSION à la racine, source unique (interface, /health/,
+# cache du Service Worker, script de mise à jour). À incrémenter à chaque livraison.
+YELEN_VERSION = (BASE_DIR / 'VERSION').read_text(encoding='utf-8').strip()
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -266,6 +270,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'parametres.context_processors.droits_acces',
+                'core.context_processors.version',
             ],
         },
     },
