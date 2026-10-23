@@ -42,6 +42,21 @@ class TestInscriptionsViews:
         assert response.status_code == 200
         assert 'form' in response.context
 
+    def test_lieu_de_residence(self, logged_in_client):
+        """« Localisation & Origine Scolaire » : lieu de résidence (village / quartier / secteur) au lieu du pays."""
+        from html import unescape
+        from inscriptions.models import Eleve
+        html = unescape(logged_in_client.get(reverse('inscriptions:eleve_create')).content.decode())
+        assert 'Lieu de résidence (Village/Quartier/Secteur)' in html and 'Pays de résidence' not in html
+        assert 'name="lieu_residence"' in html and 'name="pays_residence"' not in html
+        reponse = logged_in_client.post(reverse('inscriptions:eleve_create'), {
+            'nom': 'KABORE', 'prenom': 'Awa', 'genre': 'F', 'date_naissance': '2014-03-05', 'lieu_naissance': 'Ouagadougou',
+            'nationalite': 'Burkinabè', 'lieu_residence': 'Secteur 30 (Karpala)',
+        })
+        eleve = Eleve.objects.get(nom='KABORE')
+        assert reponse.status_code == 302 and eleve.lieu_residence == 'Secteur 30 (Karpala)'
+        assert 'Secteur 30 (Karpala)' in logged_in_client.get(reverse('inscriptions:eleve_detail', kwargs={'pk': eleve.pk})).content.decode()
+
 
 @pytest.mark.django_db
 def test_formulaire_inscription_sans_onchange_genere(client):

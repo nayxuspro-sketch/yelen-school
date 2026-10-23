@@ -54,7 +54,7 @@
             </h3>
             <div class="form-grid-2">
                 {% for field in form %}
-                    {% if field.name in "pays_residence,province,commune,village,etablissement_origine,last_classe,last_annee" %}
+                    {% if field.name in "lieu_residence,province,commune,village,etablissement_origine,last_classe,last_annee" %}
                         <div class="form-group">
                             <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}</label>
                             {{ field }}

@@ -34,7 +34,6 @@ class EleveAdmin(admin.ModelAdmin):
     list_filter = [
         'genre',
         'nationalite',
-        'pays_residence',
         'is_active',
     ]
     
@@ -60,12 +59,12 @@ class EleveAdmin(admin.ModelAdmin):
             'fields': (
                 'nom', 'prenom', 'genre',
                 'date_naissance', 'lieu_naissance',
-                'nationalite', 'pays_residence',
+                'nationalite',
             )
         }),
         (_('Localisation'), {
             'fields': (
-                'province', 'commune', 'village',
+                'lieu_residence', 'province', 'commune', 'village',
             ),
             'classes': ('collapse',)
         }),

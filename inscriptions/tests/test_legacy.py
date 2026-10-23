@@ -26,7 +26,7 @@ class EleveModelTest(TestCase):
             'date_naissance': date(2015, 3, 15),
             'lieu_naissance': 'Ouagadougou',
             'nationalite': 'Burkinabè',
-            'pays_residence': 'Burkina Faso',
+            'lieu_residence': 'Secteur 15',
             'province': 'Kadiogo',
             'commune': 'Ouagadougou',
             'telephone_parent': '+226 70 00 00 00',
@@ -87,7 +87,7 @@ class InscriptionModelTest(TestCase):
             date_naissance=date(2014, 5, 20),
             lieu_naissance='Bobo-Dioulasso',
             nationalite='Burkinabè',
-            pays_residence='Burkina Faso',
+            lieu_residence='Dafra',
         )
         
         # Créer une année scolaire et une classe (si disponibles)

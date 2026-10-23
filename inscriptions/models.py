@@ -101,10 +101,11 @@ class Eleve(BaseModel):
         verbose_name=_("Nationalité")
     )
 
-    pays_residence = models.CharField(
-        max_length=100,
-        default='Burkina Faso',
-        verbose_name=_("Pays de résidence")
+    lieu_residence = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+        verbose_name=_("Lieu de résidence (Village/Quartier/Secteur)")
     )
 
     # Localisation (contexte Burkina)
