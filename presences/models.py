@@ -94,6 +94,11 @@ class Appel(BaseModel):
         verbose_name_plural = _("Appels")
         ordering = ['-date', 'classe']
         unique_together = [['classe', 'date', 'matiere']]
+        indexes = [
+            # Appels du jour / d'une période (tableau de bord, pilotage) : la contrainte unique
+            # commence par classe et ne sert pas aux filtres par date seule.
+            models.Index(fields=['date'], name='appel_date_idx'),
+        ]
 
     def __str__(self):
         matiere = self.matiere.nom if self.matiere else "—"
@@ -175,6 +180,11 @@ class Presence(BaseModel):
         verbose_name_plural = _("Présences")
         ordering = ['appel__date', 'inscription__eleve__nom']
         unique_together = [['appel', 'inscription']]
+        indexes = [
+            # Comptages par statut depuis les appels (absents du jour, pilotage 30 j, effectifs
+            # présents par appel) : parcours d'index seul sur la plus grosse table de la base.
+            models.Index(fields=['appel', 'statut'], name='presence_appel_statut_idx'),
+        ]
 
     def __str__(self):
         return (

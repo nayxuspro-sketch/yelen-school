@@ -215,6 +215,10 @@ class Eleve(BaseModel):
         verbose_name = _("Élève")
         verbose_name_plural = _("Élèves")
         ordering = ['nom', 'prenom']
+        indexes = [
+            # Tri par défaut de toutes les listes d'élèves (pagination sans tri en mémoire).
+            models.Index(fields=['nom', 'prenom'], name='eleve_nom_prenom_idx'),
+        ]
 
     def __str__(self) -> str:
         return f"{self.prenom} {self.nom} ({self.matricule})"

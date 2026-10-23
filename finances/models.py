@@ -87,6 +87,12 @@ class Paiement(BaseModel):
         verbose_name = _("Paiement")
         verbose_name_plural = _("Paiements")
         ordering = ['-date_paiement', '-created_at']
+        indexes = [
+            # Tri par défaut des listes et états (périodes d'encaissement) sans tri en mémoire.
+            models.Index(fields=['-date_paiement', '-created_at'], name='paiement_date_idx'),
+            # Dernier paiement de chaque inscription (liste des paiements) et historique d'un élève.
+            models.Index(fields=['inscription', '-date_paiement', '-created_at'], name='paiement_insc_date_idx'),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(montant__gt=0),
