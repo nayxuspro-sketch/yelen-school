@@ -3,9 +3,14 @@
 Issu du découpage mécanique de ``pedagogie/views.py`` (octobre 2026) : code inchangé.
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 try:
     from core.pdf import HTML
-except Exception:  # ImportError ou OSError (libpango/cairo absents)
+except (ImportError, OSError) as exc:  # libpango/cairo absents
+    logger.error("WeasyPrint indisponible, génération PDF désactivée : %s", exc)
     HTML = None
 
 # P2 — filigrane licence PDF : helper central licences/pdf_utils.py
@@ -15,6 +20,7 @@ try:
         try:
             return get_licence_info_for_pdf(request.user, etab)
         except Exception:
+            logger.warning("Filigrane licence indisponible pour le PDF", exc_info=True)
             return None
 except ImportError:
     def inject_licence_filigrane_context(ctx, user, etab=None):  # type: ignore

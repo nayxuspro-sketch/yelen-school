@@ -4,6 +4,7 @@ Module Vie Scolaire - Views
 YELEN SCHOOL v3.5
 """
 
+import logging
 import io
 from datetime import datetime
 
@@ -13,9 +14,12 @@ from django.http import HttpResponse
 from django.utils.dateparse import parse_time
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
+
+logger = logging.getLogger(__name__)
 try:
     from core.pdf import HTML as WeasyHTML
-except Exception:  # ImportError ou OSError (libpango/cairo absents)
+except (ImportError, OSError) as exc:  # libpango/cairo absents
+    logger.error("WeasyPrint indisponible, génération PDF désactivée : %s", exc)
     WeasyHTML = None
 from django.contrib import messages
 from django.views.decorators.http import require_POST
@@ -842,7 +846,7 @@ def edt_generer(request, classe_id):
                     defaults={'heure_fin': s['heure_fin']},
                 )
             except Exception:
-                pass
+                logger.exception("Génération EDT : séance non créée (enseignement %s)", s.get('enseignement_id'))
 
         return HttpResponse('', headers={'HX-Refresh': 'true'})
 

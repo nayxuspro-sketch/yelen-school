@@ -2,13 +2,17 @@
 
 Issu du découpage mécanique de ``finances/views.py`` (octobre 2026) : code inchangé.
 """
+import logging
 from django.db.models import Sum
 from django.core.exceptions import PermissionDenied
 from decimal import Decimal
 
+logger = logging.getLogger(__name__)
+
 try:
     from core.pdf import HTML as WeasyHTML
-except Exception:  # ImportError ou OSError (libpango/cairo absents)
+except (ImportError, OSError) as exc:  # libpango/cairo absents
+    logger.error("WeasyPrint indisponible, génération PDF désactivée : %s", exc)
     # Les vues PDF vérifient cette valeur avant de générer un document.
     WeasyHTML = None
 from ..abonnements import lignes_services, montants_par_rubrique, montants_services

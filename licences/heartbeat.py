@@ -56,6 +56,7 @@ def _load_public_key():
             raw = base64.b64decode(pub_hex)
         return Ed25519PublicKey.from_public_bytes(raw)
     except Exception:
+        logger.error("Heartbeat : clé publique éditeur illisible", exc_info=True)
         return None
 
 
@@ -88,7 +89,7 @@ def send_heartbeat(licence, timeout: int = 10) -> Dict:
         from licences.models import Licence
         Licence.objects.filter(pk=licence.pk).update(heartbeat_payload=payload)
     except Exception:
-        pass
+        logger.warning("Heartbeat : enregistrement du payload impossible", exc_info=True)
 
     try:
         # Utilise urllib pour éviter dépendance requests
@@ -134,6 +135,7 @@ def send_heartbeat(licence, timeout: int = 10) -> Dict:
             try:
                 licence.save()
             except Exception:
+                logger.exception("Heartbeat : enregistrement de la révocation impossible, mise à jour directe")
                 from licences.models import Licence as L
                 L.objects.filter(pk=licence.pk).update(statut='REVOQUEE')
             # Audit
@@ -145,7 +147,7 @@ def send_heartbeat(licence, timeout: int = 10) -> Dict:
                     acteur_systeme=True,
                 )
             except Exception:
-                pass
+                logger.exception("Heartbeat : journal d'audit de révocation non écrit")
             logger.critical("[HEARTBEAT] Licence %s révoquée par serveur éditeur", licence.cle_licence)
             return {
                 'ok': False,

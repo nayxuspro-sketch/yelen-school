@@ -4,6 +4,7 @@ Circuit hors ligne : les parents paient au numéro marchand de l'école ; le rel
 Excel) téléchargé depuis l'espace marchand est importé ici, puis chaque transaction est
 rapprochée d'un paiement YELEN — déjà saisi au guichet, ou créé à la validation.
 """
+import logging
 import csv
 import io
 import re
@@ -17,6 +18,8 @@ from django.utils import timezone
 from inscriptions.models import Inscription
 from .models import DemandePaiementMobile, LigneReleve, ModePaiement, Paiement, ReleveMobileMoney
 from .selectors import annee_de_reference, inscriptions_payables
+
+logger = logging.getLogger(__name__)
 
 TAILLE_MAX_FICHIER = 5 * 1024 * 1024
 LIGNES_MAX = 10_000
@@ -403,4 +406,4 @@ def _sms_confirmation(ligne, paiement):
             f"({ligne.get_operateur_display()} {ligne.numero_transaction}). Recu {paiement.numero_recu}.",
         )
     except Exception:
-        pass
+        logger.exception("SMS de confirmation non envoyé (paiement %s)", paiement.pk)

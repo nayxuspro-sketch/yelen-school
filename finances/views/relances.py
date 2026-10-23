@@ -2,6 +2,7 @@
 
 Issu du découpage mécanique de ``finances/views.py`` (octobre 2026) : code inchangé.
 """
+import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -21,6 +22,8 @@ from parametres.models import AnneeScolaire, Classe, TarifScolarite, RubriquePai
 from core.utils import get_etablissement_context
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
 from .commun import WeasyHTML, _numero_valide, _require_finance_role
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -354,6 +357,7 @@ def relance_sms(request):
                 'etablissement': etab.nom,
             })
         except Exception:
+            logger.exception("Relance SMS : modèle de message invalide, texte par défaut utilisé")
             sms_msg = f"Bonjour, votre enfant {eleve.nom} {eleve.prenom} a un reste à payer de {reste:,.0f} F pour la rubro {rubrique.nom}. Merci de regler au plus vite. {etab.nom}"
 
         envois.append({'inscription': inscr, 'rubrique': rubrique, 'montant': reste, 'telephone': numero, 'message': sms_msg})

@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
@@ -31,6 +32,8 @@ from .models import (
 )
 from personnel.models import MembrePersonnel
 from etablissements.models import Etablissement
+
+logger = logging.getLogger(__name__)
 
 
 def _get_etab(request):
@@ -541,6 +544,7 @@ def tarif_form(request, pk=None):
                         )
             return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
         except Exception as e:
+            logger.exception("Enregistrement du tarif impossible")
             ctx['error'] = str(e)
             return render(request, 'parametres/partials/tarif_form.html', ctx)
 
@@ -754,6 +758,7 @@ def signataire_config(request):
                 libelle_cat = TypeDocument.CategorieChoices(categorie).label
                 messages.success(request, f"Signataire enregistré pour {cycle.nom} · {libelle_cat}.")
             except Exception as e:
+                logger.exception("Enregistrement du signataire impossible")
                 messages.error(request, f"Erreur : {e}")
         return redirect(retour)
 
@@ -985,6 +990,7 @@ def etablissement_edit(request):
                 'success': "Établissement mis à jour avec succès.",
             })
         except Exception as e:
+            logger.exception("Mise à jour de l'établissement impossible")
             return render(request, 'parametres/etablissement.html', {
                 'etablissement': etab,
                 'error': str(e),
@@ -1157,6 +1163,7 @@ def signataire_formulaire(request):
             )
             return redirect('parametres:signataires_list')
         except Exception as e:
+            logger.exception("Enregistrement des signataires impossible")
             context['error'] = f"Erreur : {str(e)}"
     else:
         context['form'] = SignataireForm(etablissement=etab)
@@ -1359,6 +1366,7 @@ def _delete_view(request, obj):
             status=400,
         )
     except Exception as e:
+        logger.exception("Suppression impossible")
         return HttpResponse(str(e), status=400)
 
 
@@ -1902,6 +1910,7 @@ def sms_auto_executer(request, pk):
             stderr=output,
         )
     except Exception as exc:
+        logger.exception("Exécution de la commande SMS impossible")
         messages.error(request, f"Exécution SMS échouée : {exc}")
     else:
         lines = [line.strip() for line in output.getvalue().splitlines() if line.strip()]

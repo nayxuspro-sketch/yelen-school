@@ -1,3 +1,4 @@
+import logging
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -10,6 +11,8 @@ from inscriptions.models import Eleve
 from parametres.models import AnneeScolaire
 
 from .models import MessageParent, ReponseParent
+
+logger = logging.getLogger(__name__)
 
 
 def _get_etab(request):
@@ -295,7 +298,8 @@ def sms_direct_envoyer(request):
 
     try:
         data = json.loads(resp.content)
-    except Exception:
+    except ValueError:
+        logger.exception("Envoi SMS direct : réponse illisible")
         data = {'status': 'error', 'response': 'Erreur de traitement'}
 
     from .models import IncomingSMSLog
@@ -372,6 +376,7 @@ def webhook_incoming_sms(request):
                 cache.add(rate_key, 1, timeout=70)
                 request_count = 1
         except Exception:
+            logger.warning("Webhook SMS : cache indisponible, limitation de débit désactivée", exc_info=True)
             # Cache indisponible : on ne bloque pas (fail-open pour disponibilité)
             request_count = 0
         if request_count > rate_limit:
@@ -449,7 +454,8 @@ def webhook_incoming_sms(request):
 
     try:
         sender_normalized = _normaliser_numero(sender_number)
-    except Exception:
+    except (AttributeError, TypeError, ValueError):
+        logger.warning("Webhook SMS : numéro expéditeur illisible : %r", sender_number)
         sender_normalized = sender_number
 
     clean_msg = re.sub(r'\s+', ' ', message_text).strip().upper()
@@ -507,16 +513,16 @@ def webhook_incoming_sms(request):
                     if c and str(c).strip():
                         try:
                             normalized_candidates.append(_normaliser_numero(str(c)))
-                        except Exception:
-                            pass
+                        except (AttributeError, TypeError, ValueError):
+                            logger.warning("Webhook SMS : numéro parent illisible : %r", c)
 
                 master_numbers = getattr(settings, 'MASTER_SMS_NUMBERS', [])
                 for mn in master_numbers:
                     if mn:
                         try:
                             normalized_candidates.append(_normaliser_numero(str(mn)))
-                        except Exception:
-                            pass
+                        except (AttributeError, TypeError, ValueError):
+                            logger.warning("Webhook SMS : numéro parent illisible : %r", mn)
 
                 if sender_normalized in normalized_candidates:
                     is_authorized = True
@@ -566,6 +572,7 @@ def webhook_incoming_sms(request):
                                 response_text = f"Yelen - {eleve.prenom} {eleve.nom} ({inscription.classe.nom}): Du {int(total_du)} FCFA, Paye {int(total_paye)} FCFA, Reste {int(reste)} FCFA."
                                 processed_successfully = True
                             except Exception as e:
+                                logger.exception("Webhook SMS : calcul du solde impossible (inscription %s)", inscription.pk)
                                 error_message = f"Erreur calcul solde: {str(e)}"
                                 response_text = f"Yelen - Erreur lors de la recuperation du solde de {eleve.prenom} {eleve.nom}."
 
@@ -576,6 +583,7 @@ def webhook_incoming_sms(request):
                                 response_text = f"Yelen - {eleve.prenom} {eleve.nom} ({inscription.classe.nom}): {total_abs} absence(s) non justifiee(s), {abs_justifiees} excusee(s) cette annee."
                                 processed_successfully = True
                             except Exception as e:
+                                logger.exception("Webhook SMS : calcul de l'assiduité impossible (inscription %s)", inscription.pk)
                                 error_message = f"Erreur assiduite: {str(e)}"
                                 response_text = f"Yelen - Erreur lors de la recuperation des absences de {eleve.prenom} {eleve.nom}."
                 else:

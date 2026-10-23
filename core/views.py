@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from django.conf import settings
@@ -18,6 +19,8 @@ from finances.models import Paiement
 
 
 from licences.decorators import requires_licence_feature
+
+logger = logging.getLogger(__name__)
 @login_required
 def home(request):
     """Tableau de bord principal — adapté au rôle de l'utilisateur."""
@@ -161,7 +164,7 @@ def home(request):
                     trimestre__annee_scolaire=annee_courante
                 ).count()
             except Exception:
-                pass
+                logger.exception("Tableau de bord : comptage des évaluations impossible")
 
         context['nb_eleves_sans_notes'] = 0
         if annee_courante:
@@ -171,7 +174,7 @@ def home(request):
                     moyenne__isnull=True,
                 ).values('inscription').distinct().count()
             except Exception:
-                pass
+                logger.exception("Tableau de bord : comptage des élèves sans notes impossible")
 
     # ── COMPTABLE ─────────────────────────────────────────────────────
     elif role == 'COMPTABLE':
@@ -859,6 +862,7 @@ def sms_configuration(request):
                 messages.success(request, "Configuration SMS enregistrée et appliquée immédiatement (sans redémarrage).")
                 return redirect('core:sms_configuration')
             except Exception as e:
+                logger.exception("Enregistrement de la configuration SMS impossible")
                 messages.error(request, f"Erreur lors de l'enregistrement : {e}")
 
         elif 'tester' in request.POST:
@@ -1007,6 +1011,7 @@ def risque_recalculer(request):
             else:
                 updated += 1
         except Exception:
+            logger.exception("Calcul du risque impossible (inscription %s)", inscription.pk)
             erreurs += 1
 
     total = created + updated
@@ -1253,7 +1258,7 @@ def health_check(request):
         conn.cursor()
         db_ok = True
     except Exception:
-        pass
+        logger.exception("Health check : base de données indisponible")
     health['database'] = 'ok' if db_ok else 'error'
 
     # Vérification cache Redis
@@ -1263,7 +1268,7 @@ def health_check(request):
         cache.set('_health_check', 1, 5)
         cache_ok = cache.get('_health_check') == 1
     except Exception:
-        pass
+        logger.exception("Health check : cache indisponible")
     health['cache'] = 'ok' if cache_ok else 'error'
 
     status_code = 200 if (db_ok and cache_ok) else 503

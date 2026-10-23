@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
@@ -12,6 +13,8 @@ from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, RubriquePaiement
 
 from .models import AttributionManuel, EtatManuel, ExemplaireManuel, ManuelScolaire
+
+logger = logging.getLogger(__name__)
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -450,7 +453,7 @@ def _notifier_parents_manuel_non_rendu(eleve, manuel, etab):
         try:
             envoyer_sms_async(numero, sms_texte)
         except Exception:
-            pass
+            logger.exception("SMS manuel non rendu : envoi impossible vers %s", numero)
 
 
 # ── Export PDF inventaire par classe ───────────────────────────────────────

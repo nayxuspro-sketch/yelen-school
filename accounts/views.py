@@ -4,6 +4,7 @@ Module Accounts - Views
 YELEN SCHOOL v3.4 - Authentification utilisateur
 """
 
+import logging
 from functools import wraps
 
 from django.conf import settings
@@ -29,6 +30,8 @@ from .services import (  # verrouillage et message unique : source unique
     LOGIN_FAILURE_MESSAGE, authenticate_with_lockout,
 )
 from licences.models import Licence
+
+logger = logging.getLogger(__name__)
 
 
 # ── Mot de passe oublié — vue avec limitation de débit ────────────────────────
@@ -277,6 +280,7 @@ def totp_setup(request):
             signer = Signer()
             secret = signer.unsign(signed_secret)
         except Exception:
+            logger.warning("Configuration 2FA : secret signé invalide ou expiré", exc_info=True)
             messages.error(request, "Session expirée. Recommencez.")
             return redirect('accounts:totp_setup')
 

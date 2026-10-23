@@ -8,12 +8,15 @@ Ce module contient la logique de calcul pour :
 - Bulletin annuel de notes (calcul de la moyenne de passage)
 """
 
+import logging
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import models
 
 from pedagogie.models import Resultat, Trimestre
+
+logger = logging.getLogger(__name__)
 
 
 def calculer_bulletin_annuel(inscription, annee_scolaire):
@@ -73,6 +76,7 @@ def calculer_bulletin_annuel(inscription, annee_scolaire):
                 try:
                     matiere_nom = resultat.enseignement.matiere.nom
                 except Exception:
+                    logger.warning("Bulletin annuel : matière introuvable (résultat %s)", resultat.pk, exc_info=True)
                     matiere_nom = f"Matière {idx + 1}"
                 
                 matieres_data.append({

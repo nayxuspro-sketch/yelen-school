@@ -5,6 +5,7 @@ envoyé par SMS. Le serveur de l'école n'étant pas joignable depuis Internet, 
 notification n'est attendue : YELEN interroge lui-même l'API de contrôle (bouton
 « Vérifier », commande ``verifier_paiements_mobiles``) et confirme la demande.
 """
+import logging
 import json
 import re
 import unicodedata
@@ -20,6 +21,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import CanalRelance, DemandePaiementMobile, HistoriqueRelance, ModePaiement, Paiement
+
+logger = logging.getLogger(__name__)
 
 EN_ATTENTE = DemandePaiementMobile.StatutChoices.EN_ATTENTE
 CONFIRME = DemandePaiementMobile.StatutChoices.CONFIRME
@@ -194,7 +197,7 @@ def _sms_recu(demande, paiement):
             f"Recu {paiement.numero_recu}. Merci.",
         )
     except Exception:
-        pass
+        logger.exception("SMS de reçu non envoyé (paiement %s)", paiement.pk)
 
 
 # ── Relances ───────────────────────────────────────────────────────────────

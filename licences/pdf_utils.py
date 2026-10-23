@@ -7,7 +7,10 @@ Injecte licence_info dans le contexte des PDFs pour traçabilité anti-fraude.
 Réutilise _get_licence_for_user / _licence_to_dict de api.py pour éviter doublon.
 """
 
+import logging
 from typing import Optional, Dict
+
+logger = logging.getLogger(__name__)
 
 
 def get_licence_info_for_pdf(user, etablissement=None) -> Optional[Dict]:
@@ -63,6 +66,7 @@ def get_licence_info_for_pdf(user, etablissement=None) -> Optional[Dict]:
             'est_active': licence.est_active(),
         }
     except Exception:
+        logger.exception("Informations de licence pour le filigrane PDF indisponibles")
         return None
 
 

@@ -2,6 +2,7 @@
 
 Issu du découpage mécanique de ``finances/views.py`` (octobre 2026) : code inchangé.
 """
+import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -29,6 +30,8 @@ from parametres.models import RubriquePaiement
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
 from core.utils import get_etablissement_context
 from .commun import WeasyHTML, _numero_valide, _require_finance_role, _require_same_establishment
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -281,6 +284,7 @@ def _envoyer_sms_mobile_money(demande, request):
             demande.save(update_fields=['sms_envoye'])
         return ok
     except Exception:
+        logger.exception("SMS Mobile Money non envoyé (demande %s)", demande.pk)
         return False
 
 

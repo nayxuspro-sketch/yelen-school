@@ -318,6 +318,7 @@ def tester_modem() -> dict:
             urllib.request.urlopen(req, timeout=timeout)
             return {'ok': True, 'message': 'Passerelle HTTP joignable', 'operateur': None, 'backend': 'http'}
         except Exception as e:
+            logger.warning("Test de la passerelle HTTP échoué : %s", e)
             return {'ok': False, 'message': str(e), 'operateur': None, 'backend': 'http'}
 
     if backend == 'serial':
@@ -337,6 +338,7 @@ def tester_modem() -> dict:
             finally:
                 ser.close()
         except Exception as e:
+            logger.warning("Test du modem série échoué : %s", e)
             return {'ok': False, 'message': str(e), 'operateur': None, 'backend': 'serial'}
 
     return {'ok': False, 'message': f"Backend inconnu : '{backend}'", 'operateur': None, 'backend': backend}

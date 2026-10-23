@@ -6,7 +6,10 @@ Algorithme sans ML : formule pondérée basée sur :
   - Tendance inter-trimestrielle (±10 pts)
   - Absences non justifiées (malus jusqu'à -15 pts)
 """
+import logging
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 
 def _examen_pour_cycle(cycle_nom):
@@ -92,7 +95,7 @@ def calculer_prediction(inscription):
         elif abs_nj > 10:
             malus_presence = -5
     except Exception:
-        pass
+        logger.exception("Prédiction : décompte des absences impossible (inscription %s)", inscription.pk)
 
     if abs_nj > 0:
         facteurs.append({

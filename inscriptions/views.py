@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -15,9 +16,12 @@ from core.utils import get_etablissement_context
 from core.statistiques import statistiques_eleves
 from parametres.droits import autorise_url
 
+logger = logging.getLogger(__name__)
+
 try:
     from core.pdf import HTML as _WeasyHTML
-except Exception:  # ImportError ou OSError (libpango/cairo absents)
+except (ImportError, OSError) as exc:  # libpango/cairo absents
+    logger.error("WeasyPrint indisponible, génération PDF désactivée : %s", exc)
     # Le serveur peut démarrer sans les bibliothèques système PDF ; les vues
     # concernées afficheront un message d'indisponibilité.
     _WeasyHTML = None
@@ -169,7 +173,7 @@ def eleve_list_csv(request):
             ip_address=request.META.get('REMOTE_ADDR'),
         )
     except Exception:
-        pass  # Ne pas bloquer l'export si l'audit échoue
+        logger.exception("Journal d'audit indisponible pour l'export CSV")  # l'export n'est pas bloqué
 
     if annee_courante:
         if classe_id:

@@ -13,10 +13,13 @@ octets exacts du payload : aucune clé privée côté école, aucun secret parta
 """
 from __future__ import annotations
 
+import logging
 import base64
 import binascii
 import json
 from datetime import date, datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 PREFIXE = 'YELEN3'
 VERSION = 3
@@ -48,6 +51,7 @@ def charger_cle_publique(valeur: str):
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
         return Ed25519PublicKey.from_public_bytes(_decoder_cle(valeur))
     except Exception:
+        logger.error("Jeton : clé publique Ed25519 illisible", exc_info=True)
         return None
 
 
@@ -59,6 +63,7 @@ def charger_cle_privee(valeur: str):
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
         return Ed25519PrivateKey.from_private_bytes(_decoder_cle(valeur))
     except Exception:
+        logger.error("Jeton : clé privée Ed25519 illisible", exc_info=True)
         return None
 
 

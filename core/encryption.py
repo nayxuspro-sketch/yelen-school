@@ -7,9 +7,12 @@ Ce module fournit des fonctions de chiffrement pour protéger les données sensi
 Méthode : XOR cipher avec clé dérivée (pour développement) + Hash pour vérification
 """
 
+import logging
 import base64
 import hashlib
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def _get_encryption_key():
@@ -50,6 +53,7 @@ def decrypt_sensitive_data(encrypted_data: str) -> str:
         
         return decrypted.decode('utf-8')
     except Exception:
+        logger.exception("Déchiffrement d'une donnée sensible impossible")
         return ''  # Retourne chaîne vide si erreur
 
 

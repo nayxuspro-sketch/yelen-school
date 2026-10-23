@@ -27,10 +27,13 @@ Codes TypeDocument disponibles
   AUTORISATION      Autorisation d'Absence
 """
 
+import logging
 import html as html_escape_lib
 from django import template
 from django.utils.safestring import mark_safe
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 register = template.Library()
 
@@ -219,6 +222,7 @@ def signataire_auto(context, type_doc_code):
             from django.utils.formats import date_format
             date_str = date_format(timezone.now(), 'd F Y', use_l10n=True)
         except Exception:
+            logger.warning("Signataire : formatage de la date impossible", exc_info=True)
             date_str = timezone.now().strftime('%d %B %Y')
 
         # Construire la liste ordonnée de tous les signataires
@@ -307,4 +311,5 @@ def signataire_auto(context, type_doc_code):
         return mark_safe(bloc)
 
     except Exception:
+        logger.exception("Signataire : bloc de signature non rendu")
         return mark_safe('')

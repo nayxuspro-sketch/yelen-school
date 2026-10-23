@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import uuid
 
+from django.core.exceptions import ObjectDoesNotExist
+
 
 def _establishment_from_instance(instance):
     """Déduit l'établissement sans supposer un seul nom de relation."""
     for attr in ('etablissement', 'classe', 'personnel', 'inscription', 'user'):
         try:
             related = getattr(instance, attr)
-        except Exception:
+        except (AttributeError, ObjectDoesNotExist):
             continue
         if attr == 'etablissement':
             return related
@@ -18,7 +20,7 @@ def _establishment_from_instance(instance):
             etab = getattr(related, 'etablissement', None)
             if etab is not None:
                 return etab
-        except Exception:
+        except (AttributeError, ObjectDoesNotExist):
             continue
     return None
 

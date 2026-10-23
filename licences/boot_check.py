@@ -150,7 +150,7 @@ def run_boot_check(strict: bool = False) -> dict:
         except RuntimeError:
             raise
         except Exception:
-            pass
+            logger.exception("[LICENCES BOOT] contrôle anti-altération incomplet")
 
     try:
         from django.utils import timezone
@@ -216,7 +216,7 @@ def run_boot_check(strict: bool = False) -> dict:
         except RuntimeError:
             raise
         except Exception:
-            pass
+            logger.exception("[LICENCES BOOT] vérification de licence incomplète")
 
     return result
 

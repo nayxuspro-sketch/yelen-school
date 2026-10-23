@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import logging
 from pathlib import Path
 import os
 import sys
@@ -55,8 +56,8 @@ try:
     if _lan_ip and not _lan_ip.startswith('127.'):
         ALLOWED_HOSTS.append(_lan_ip)
         ALLOWED_HOSTS.append(_hostname)
-except Exception:
-    pass
+except OSError:
+    logging.getLogger(__name__).warning("Adresse IP locale indéterminée : ALLOWED_HOSTS non complété")
 
 # Déduplication et nettoyage
 ALLOWED_HOSTS = list(dict.fromkeys(h for h in ALLOWED_HOSTS if h))
@@ -101,8 +102,8 @@ try:
         _lan_origin = f'http://{_lan_ip}:{_local_http_port}'
         if _lan_origin not in CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append(_lan_origin)
-except Exception:
-    pass
+except OSError:
+    logging.getLogger(__name__).warning("Adresse IP locale indéterminée : CSRF_TRUSTED_ORIGINS non complété")
 
 # ── HTTPS réseau local (service proxy Caddy, activé par installer/activer-https.ps1) ──
 # Le proxy termine le TLS et transmet X-Forwarded-Proto : Django traite ces requêtes
@@ -486,6 +487,12 @@ LOGGING = {
             'backupCount': 3,
             'formatter': 'verbose',
         },
+    },
+    # Journaux applicatifs (core, finances, licences…) : sans « root », ils n'atteignaient
+    # aucun fichier — seul le handler de dernier recours de Python affichait les avertissements.
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': os.environ.get('LOG_LEVEL', 'INFO'),
     },
     'loggers': {
         'django': {

@@ -1,3 +1,4 @@
+import logging
 from datetime import date as date_module
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -19,6 +20,8 @@ from core.utils import get_etablissement_context
 
 from licences.decorators import requires_licence_feature
 from licences.pdf_utils import inject_licence_filigrane_context
+
+logger = logging.getLogger(__name__)
 @login_required
 @requires_licence_feature('gestion_personnel')
 def personnel_list(request):
@@ -160,7 +163,8 @@ def personnel_list_pdf(request):
     """Export PDF de la liste du personnel (mêmes filtres que personnel_list, CSV et Excel)."""
     try:
         from core.pdf import HTML
-    except Exception:  # ImportError ou OSError (libpango/cairo absents)
+    except (ImportError, OSError) as exc:  # libpango/cairo absents
+        logger.error("WeasyPrint indisponible, génération PDF désactivée : %s", exc)
         messages.error(request, "La génération PDF n'est pas disponible sur ce serveur (WeasyPrint manquant).")
         return redirect('personnel:personnel_list')
 

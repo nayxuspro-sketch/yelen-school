@@ -4,6 +4,7 @@ Module Examens - Views
 YELEN SCHOOL v3.4
 """
 
+import logging
 import csv
 from decimal import Decimal, InvalidOperation
 
@@ -20,9 +21,12 @@ from inscriptions.models import Inscription
 from .models import SessionExamen, CentreExamen, InscriptionExamen, SalleExamen, PlacementExamen
 from .forms import SessionExamenForm, CentreExamenForm, SalleExamenForm
 
+logger = logging.getLogger(__name__)
+
 try:
     from core.pdf import HTML as WeasyHTML
-except Exception:  # ImportError ou OSError (libpango/cairo absents)
+except (ImportError, OSError) as exc:  # libpango/cairo absents
+    logger.error("WeasyPrint indisponible, génération PDF désactivée : %s", exc)
     WeasyHTML = None
 
 

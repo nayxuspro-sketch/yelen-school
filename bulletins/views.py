@@ -11,6 +11,7 @@ Vues :
   bulletins_classe_publier   — Publier TOUS les bulletins d'une classe
 """
 
+import logging
 import json
 
 from django.contrib import messages
@@ -25,6 +26,8 @@ from parametres.models import AnneeScolaire, Classe
 from pedagogie.models import MoyenneGenerale, Trimestre
 
 from .models import Bulletin
+
+logger = logging.getLogger(__name__)
 
 
 def _get_etab(request):
@@ -344,7 +347,8 @@ from django.views import View
 from django.template.loader import render_to_string
 try:
     from core.pdf import HTML
-except Exception:  # ImportError ou OSError (libpango/cairo absents)
+except (ImportError, OSError) as exc:  # libpango/cairo absents
+    logger.error("WeasyPrint indisponible, génération PDF désactivée : %s", exc)
     HTML = None
 
 
@@ -457,7 +461,7 @@ class BulletinAnnuelPDFView(LoginRequiredMixin, View):
                 etab_lic = getattr(request.user, 'etablissement', None) or inscription.classe.etablissement
                 ctx['licence_info'] = _get_lic_pdf(request.user, etab_lic)
             except Exception:
-                pass
+                logger.warning("Filigrane licence indisponible pour le PDF", exc_info=True)
 
         html_string = render_to_string('pedagogie/pdf/bulletin_annuel.html', ctx,
                                        request=request)
@@ -508,6 +512,7 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
             from licences.pdf_utils import get_licence_info_for_pdf as _get_lic_pdf2
             lic_info = _get_lic_pdf2(request.user, etab)
         except Exception:
+            logger.warning("Filigrane licence indisponible pour le PDF", exc_info=True)
             lic_info = None
 
         students_data = [

@@ -13,12 +13,15 @@ Utilisé pour générer automatiquement les attributs :
 - platform data
 """
 
+import logging
 import hashlib
 import os
 import platform
 import socket
 import uuid
 from typing import TYPE_CHECKING, Dict
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .models import LicenceActivation
@@ -33,6 +36,7 @@ def get_mac_address() -> str:
         mac_str = ':'.join(('%012X' % mac)[i:i+2] for i in range(0, 12, 2))
         return mac_str
     except Exception:
+        logger.debug("Empreinte machine : adresse MAC indisponible", exc_info=True)
         return ''
 
 
@@ -40,6 +44,7 @@ def get_hostname() -> str:
     try:
         return socket.gethostname()
     except Exception:
+        logger.debug("Empreinte machine : nom d'hôte indisponible", exc_info=True)
         return ''
 
 
@@ -59,6 +64,7 @@ def get_cpu_id() -> str:
         # Fallback : platform.processor()
         return platform.processor()[:255]
     except Exception:
+        logger.debug("Empreinte machine : identifiant CPU indisponible", exc_info=True)
         return ''
 
 
@@ -80,6 +86,7 @@ def get_disk_serial() -> str:
         # Fallback : utiliser l'ID de la partition racine via blkid (si dispo)
         return ''
     except Exception:
+        logger.debug("Empreinte machine : numéro de série disque indisponible", exc_info=True)
         return ''
 
 
@@ -99,6 +106,7 @@ def get_system_uuid() -> str:
                     return f.read().strip()[:255]
         return ''
     except Exception:
+        logger.debug("Empreinte machine : UUID système indisponible", exc_info=True)
         return ''
 
 
@@ -106,6 +114,7 @@ def get_os_info() -> str:
     try:
         return f"{platform.system()} {platform.release()} {platform.version()}"[:500]
     except Exception:
+        logger.debug("Empreinte machine : informations OS indisponibles", exc_info=True)
         return ''
 
 
@@ -121,6 +130,7 @@ def get_platform_data() -> Dict:
             'python_version': platform.python_version(),
         }
     except Exception:
+        logger.debug("Empreinte machine : données de plateforme indisponibles", exc_info=True)
         return {}
 
 

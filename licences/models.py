@@ -14,6 +14,7 @@ Date: Mars 2026
 Version: 1.1 - Corrigée
 """
 
+import logging
 import hashlib
 import hmac
 from datetime import date, datetime, time, timedelta, timezone as dt_timezone
@@ -25,6 +26,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+logger = logging.getLogger(__name__)
 
 
 # Récupérer le modèle User (compatible avec custom user model)
@@ -406,6 +409,7 @@ class Licence(BaseModel):
         try:
             self._generer_signature_ed25519()
         except Exception:
+            logger.warning("Licence %s : signature Ed25519 non générée", self.cle_licence, exc_info=True)
             # En prod école, pas de clé privée → on garde seulement HMAC
             # Si signature_ed25519 déjà présente (licence importée), on la conserve
             if not self.signature_ed25519:
@@ -428,6 +432,7 @@ class Licence(BaseModel):
                 raw = base64.b64decode(priv_hex)
             return Ed25519PrivateKey.from_private_bytes(raw)
         except Exception:
+            logger.error("Licence : clé privée Ed25519 illisible", exc_info=True)
             return None
 
     def _load_public_key(self):
@@ -444,6 +449,7 @@ class Licence(BaseModel):
                 raw = base64.b64decode(pub_hex)
             return Ed25519PublicKey.from_public_bytes(raw)
         except Exception:
+            logger.error("Licence : clé publique Ed25519 illisible", exc_info=True)
             return None
 
     def _generer_signature_ed25519(self) -> None:
@@ -475,6 +481,7 @@ class Licence(BaseModel):
             pub.verify(sig_bytes, message)
             return True
         except Exception:
+            logger.warning("Licence %s : signature Ed25519 invalide", self.cle_licence)
             return False
 
     def verifier_jeton(self) -> bool:
@@ -662,7 +669,7 @@ class Licence(BaseModel):
                 sig = priv.sign(message)
                 payload['ed25519'] = sig.hex()
         except Exception:
-            pass
+            logger.warning("Licence %s : payload heartbeat non signé", self.cle_licence, exc_info=True)
         return payload
 
     def record_heartbeat_success(self) -> None:
@@ -767,9 +774,11 @@ class Licence(BaseModel):
                         msg = f"{cle}:{statut_resp}:{ts}".encode('utf-8')
                         pub.verify(sig_bytes, msg)
                     except Exception:
+                        logger.warning("Heartbeat : signature de la réponse invalide")
                         return False
             return True
         except Exception:
+            logger.warning("Heartbeat : réponse illisible", exc_info=True)
             return False
 
 
@@ -976,6 +985,7 @@ class LicenceActivation(BaseModel):
             sig_hmac = hmac.new(key.encode('utf-8'), fp.encode('utf-8'), hashlib.sha256).hexdigest()
             self.fingerprint_signature = sig_hmac
         except Exception:
+            logger.exception("Licence %s : signature HMAC de l'empreinte impossible", self.cle_licence)
             self.fingerprint_signature = ''
 
         # Ed25519 si clé privée dispo (éditeur)
@@ -992,6 +1002,7 @@ class LicenceActivation(BaseModel):
                 sig = priv.sign(fp.encode('utf-8'))
                 self.fingerprint_signature_ed25519 = sig.hex()
         except Exception:
+            logger.warning("Licence %s : signature Ed25519 de l'empreinte impossible", self.cle_licence, exc_info=True)
             if not self.fingerprint_signature_ed25519:
                 self.fingerprint_signature_ed25519 = ''
 
@@ -1028,6 +1039,7 @@ class LicenceActivation(BaseModel):
                     return True
                 # Si Ed25519 présent mais pas de clé publique (dev) → on tolère si HMAC OK
             except Exception:
+                logger.warning("Licence %s : signature Ed25519 de l'empreinte invalide", self.cle_licence)
                 # Si clé publique configurée, Ed25519 invalide = échec (anti-downgrade)
                 if getattr(settings, 'LICENCE_PUBLIC_KEY', ''):
                     return False
@@ -1039,6 +1051,7 @@ class LicenceActivation(BaseModel):
                 expected = hmac.new(key.encode('utf-8'), self.machine_fingerprint.encode('utf-8'), hashlib.sha256).hexdigest()
                 return hmac.compare_digest(expected, self.fingerprint_signature)
             except Exception:
+                logger.warning("Licence %s : vérification HMAC de l'empreinte impossible", self.cle_licence, exc_info=True)
                 return False
 
         # Si aucune signature stockée (licence legacy), on considère l'empreinte comme non vérifiable

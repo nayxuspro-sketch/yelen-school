@@ -12,6 +12,7 @@ Auteur: YELEN SCHOOL Team
 Date: Mars 2026
 """
 
+import logging
 from typing import Callable
 
 from django.contrib import messages
@@ -24,6 +25,8 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import Licence, LicenceAlert, LicenceAuditLog, StatutLicence
 from .boot_check import blocage_boot
+
+logger = logging.getLogger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -215,7 +218,7 @@ class LicenceCheckMiddleware:
                 )
                 return False, redirect('licences:support')
         except Exception:
-            pass
+            logger.exception("Contrôle du bail offline impossible")
 
         # 1c. Liaison au serveur : la licence (jeton signé) ne vaut que sur
         # le serveur dont l'empreinte a été déclarée à l'éditeur.
@@ -279,17 +282,7 @@ class LicenceCheckMiddleware:
             # Donc on fait un update direct
             Licence.objects.filter(pk=licence.pk).update(derniere_verification=licence.derniere_verification)
         except Exception:
-            pass
-
-        # 6. Heartbeat opportuniste : si dû et URL configurée, on tente en arrière-plan (non bloquant)
-        try:
-            from django.conf import settings as _s
-            if getattr(_s, 'LICENCE_HEARTBEAT_URL', '') and licence.is_heartbeat_required():
-                # On ne bloque pas la requête, on lance heartbeat en thread ou on le marque pour cron
-                # Ici, simple : on log, le vrai envoi se fait via management command cron
-                pass
-        except Exception:
-            pass
+            logger.warning("Licence : horodatage de vérification non enregistré", exc_info=True)
 
         # Licence valide
         return True, None
@@ -376,7 +369,7 @@ class LicenceCheckMiddleware:
                 user_agent=request.META.get('HTTP_USER_AGENT', '') if request else '',
             )
         except Exception:
-            pass
+            logger.exception("Journal d'audit licence non écrit")
     
     def _get_client_ip(self, request: HttpRequest) -> str:
         """
@@ -477,6 +470,7 @@ class LicenceLimitsMiddleware:
         try:
             resultat = get_usage_limites(licence)
         except Exception:
+            logger.warning("Contrôle des limites de licence impossible", exc_info=True)
             # Tables absentes (migration partielle) ou erreur de comptage :
             # le contrôle de limites ne doit jamais bloquer l'application.
             return
