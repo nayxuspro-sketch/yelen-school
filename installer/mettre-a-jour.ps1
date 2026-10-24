@@ -38,6 +38,8 @@ function Write-Log {
 function Invoke-Native {
     # Exécute une commande native en affichant sa sortie et ne retourne que son code de retour
     # (sous 'Stop', Windows PowerShell transformerait la progression écrite sur stderr en erreur).
+    # La sortie passant par Out-Host n'est pas une console : les commandes docker qui affichent une
+    # progression interactive doivent recevoir --progress plain (« failed to get console »).
     param([Parameter(Mandatory = $true)][scriptblock]$Command)
     $ErrorActionPreference = 'Continue'
     & $Command | Out-Host
@@ -101,7 +103,7 @@ function Restore-PreviousVersion {
         return
     }
     if ($Rebuild) {
-        if ((Invoke-Native { docker compose -f $ComposeFile build }) -ne 0) {
+        if ((Invoke-Native { docker compose -f $ComposeFile build --progress plain }) -ne 0) {
             Write-Log 'ERREUR : reconstruction de la version précédente impossible.'
             return
         }
@@ -156,7 +158,7 @@ try {
     [void](Invoke-Native { git checkout --quiet -- docs })
 
     Write-Log 'Reconstruction de l''image (plusieurs minutes)...'
-    if ((Invoke-Native { docker compose -f $ComposeFile build }) -ne 0) {
+    if ((Invoke-Native { docker compose -f $ComposeFile build --progress plain }) -ne 0) {
         Write-Log 'ERREUR : la reconstruction a échoué ; les services en cours ne sont pas touchés.'
         Restore-PreviousVersion -Commit $commitAvant -Rebuild $false
         exit 1

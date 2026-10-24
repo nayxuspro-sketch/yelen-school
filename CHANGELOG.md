@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.2.4 — 2026-10-24
+
+- `mettre-a-jour.bat` : la reconstruction de l'image échouait (« failed to get console: The handle is
+  invalid ») car la progression interactive de Docker n'a pas de console quand la sortie est journalisée ;
+  `--progress plain` sur les reconstructions (mise à jour et retour arrière).
+
 ## 5.2.3 — 2026-10-24
 
 - Aperçu du bulletin : les boutons « Générer le PDF » / « Télécharger le PDF » renvoyaient une page

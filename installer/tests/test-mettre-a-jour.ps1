@@ -74,7 +74,7 @@ $code = Invoke-Update $clone
 Assert ($code -eq 0) 'mise à jour nominale : code de retour 0'
 Assert ((Get-Head $clone) -ne $avant -and (Get-Head $clone) -eq (Get-OriginHead $clone)) 'le clone est sur origin/main'
 Assert ((Get-Content (Join-Path $clone 'VERSION')) -eq '5.2.0') 'VERSION 5.2.0 installée'
-Assert (($global:Calls -join '|') -match 'backup-windows\.ps1\|docker compose -f .* build\|start-local\.ps1\|docker compose -f .* ps') 'ordre : sauvegarde, build, démarrage, ps'
+Assert (($global:Calls -join '|') -match 'backup-windows\.ps1\|docker compose -f .* build --progress plain\|start-local\.ps1\|docker compose -f .* ps') 'ordre : sauvegarde, build, démarrage, ps'
 Assert ((Get-Log $clone) -match 'Mise à jour terminée : version 5\.2\.0') 'journal : mise à jour terminée'
 
 # ── 2. Déjà à jour ────────────────────────────────────────────────────────────
