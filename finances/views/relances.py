@@ -167,26 +167,14 @@ def relance_paiement_pdf(request):
 
     etab_context = get_etablissement_context(etab, request)
 
-    # Signataire
+    # Signataire : même résolution (avec repli progressif) que les autres documents PDF
     from parametres.models import SignataireDocument, TypeDocument
-    type_doc = TypeDocument.objects.filter(code='RELANCE').first()
-    signataire = None
-    sig_membre = None
-    if type_doc:
-        cycle_filter = classe.cycle if classe else None
-        if cycle_filter:
-            signataire = SignataireDocument.objects.filter(
-                type_document=type_doc,
-                cycle=cycle_filter,
-                annee_scolaire=annee,
-            ).first()
-        if not signataire:
-            signataire = SignataireDocument.objects.filter(
-                type_document=type_doc,
-                annee_scolaire=annee,
-            ).first()
-    if signataire:
-        sig_membre = signataire.get_membre_personnel()
+    signataire = SignataireDocument.objects.get_signataire(
+        cycle=classe.cycle if classe else None,
+        type_document=TypeDocument.objects.filter(code='RELANCE', actif=True).first(),
+        annee_scolaire=annee,
+    )
+    sig_membre = signataire.get_membre_personnel() if signataire else None
 
     # Inscriptions triées par classe puis par élève
     inscriptions = insc_qs.exclude(statut='ABANDON').select_related(

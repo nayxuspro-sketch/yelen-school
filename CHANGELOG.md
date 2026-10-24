@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.2.1 — 2026-10-24
+
+- Relance de paiement (PDF) : le signataire apparaît de nouveau — type de document « Relance de Paiement »
+  (catégorie Finance) ajouté aux signataires configurables, signataires Finance existants repris
+  (migration `parametres 0033`), résolution avec repli identique aux autres documents.
+
 ## 5.2.0 — 2026-10-24
 
 - Performance : index de base de données sur les tables métier (appels et présences par date/statut,

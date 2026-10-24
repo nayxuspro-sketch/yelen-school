@@ -22,6 +22,7 @@ Codes TypeDocument disponibles
   LISTE_CLASSE      Liste Alphabétique de Classe
   LISTE_PERSONNEL   Liste du Personnel
   LISTE_REDEVABLES  Liste des Redevables
+  RELANCE           Relance de Paiement
   CURSUS            Cursus Scolaire Complet
   CARTE_ID          Carte d'Identité Scolaire
   AUTORISATION      Autorisation d'Absence

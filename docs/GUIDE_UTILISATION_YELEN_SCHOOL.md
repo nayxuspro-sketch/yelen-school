@@ -2570,7 +2570,7 @@ Le document contient :
 
 **Prérequis :**
 
-- Un signataire de type **RELANCE** doit être configuré dans `Paramètres → Signataires des documents`
+- Un signataire de la catégorie **Finance** doit être configuré dans `Paramètres → Signataires des documents` (il signe la relance, la liste des redevables, les reçus…)
 - Des tarifs de scolarité doivent être définis pour les niveaux concernés
 
 **Étapes :**
@@ -2631,10 +2631,10 @@ Le document contient :
 - **Comptage préalable** : Avant de générer, le système affiche le nombre d'élèves redevables pour la sélection choisie
 - **3 relances par page A5** : Optimisation de l'impression pour réduire la consommation de papier
 - **Trait de découpe** : Séparateur visuel entre les coupons pour faciliter la distribution
-- **Signataire automatique** : Le nom, la fonction et les titres du signataire sont issus des paramètres (`type = RELANCE`, `cycle = cycle de la classe`)
+- **Signataire automatique** : Le nom, la fonction et les titres du signataire sont issus des paramètres (document « Relance de Paiement », catégorie Finance, cycle de la classe ; à défaut, repli sur le signataire Finance le plus récent)
 - **Date limite obligatoire** : La date limite de paiement est requise pour générer les relances
 
-> **Configurer le signataire des relances :** Va dans `Paramètres → Signataires des documents`, puis clique **Nouveau signataire**. Le formulaire est organisé en 3 sections à 2 colonnes côte à côte : **Période & Périmètre** (année + cycle), **Type de document** (catégorie + fonction), **Signataire** (nom + titre honorifique). Sélectionne la catégorie **RELANCE** et associe le membre du personnel signataire.
+> **Configurer le signataire des relances :** Va dans `Paramètres → Signataires des documents`, puis clique **Nouveau signataire**. Le formulaire est organisé en 3 sections à 2 colonnes côte à côte : **Période & Périmètre** (année + cycle), **Type de document** (catégorie + fonction), **Signataire** (nom + titre honorifique). Sélectionne la catégorie **Finance** et associe le membre du personnel signataire.
 
 ---
 
@@ -6706,7 +6706,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.2.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.2.1 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.
