@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.2.3 — 2026-10-24
+
+- Aperçu du bulletin : les boutons « Générer le PDF » / « Télécharger le PDF » renvoyaient une page
+  introuvable (adresse écrite à la main) ; adresses désormais résolues par nom de route, retour de
+  l'aperçu annuel corrigé.
+
 ## 5.2.2 — 2026-10-24
 
 - Relance de paiement (PDF) : ligne « Contact parent » retirée du coupon.

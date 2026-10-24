@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+from django.urls import reverse
 from ..models import Resultat, MoyenneGenerale, Trimestre, Competence, EvaluationCompetence
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription
@@ -213,9 +214,8 @@ def bulletin_apercu(request, inscription_id, trimestre_id):
     )
     trimestre = get_object_or_404(Trimestre.objects.select_related('annee_scolaire'), pk=trimestre_id)
     ctx = _build_bulletin_context(request, inscription, trimestre)
-    ctx['pdf_url'] = request.build_absolute_uri(
-        f"/pedagogie/bulletins/{inscription_id}/{trimestre_id}/pdf/"
-    )
+    ctx['pdf_url'] = reverse('pedagogie:bulletin_pdf', kwargs={'inscription_id': inscription_id, 'trimestre_id': trimestre_id})
+    ctx['retour_url'] = reverse('bulletins:bulletins_classe', kwargs={'class_id': inscription.classe_id, 'trimestre_id': trimestre_id})
     return render(request, 'pedagogie/bulletin_apercu.html', ctx)
 
 
@@ -557,9 +557,8 @@ def bulletin_annuel_apercu(request, inscription_id):
         return redirect('pedagogie:resultat_classe', class_id=inscription.classe_id)
 
     ctx = _build_bulletin_annuel_context(request, inscription, annee_scolaire)
-    ctx['pdf_url'] = request.build_absolute_uri(
-        f"/pedagogie/bulletins/{inscription_id}/annuel/pdf/?annee={annee_scolaire.pk}"
-    )
+    ctx['pdf_url'] = reverse('pedagogie:bulletin_annuel_pdf', kwargs={'inscription_id': inscription_id}) + f'?annee={annee_scolaire.pk}'
+    ctx['retour_url'] = reverse('pedagogie:resultat_classe', kwargs={'class_id': inscription.classe_id})
     return render(request, 'pedagogie/bulletin_apercu.html', ctx)
 
 

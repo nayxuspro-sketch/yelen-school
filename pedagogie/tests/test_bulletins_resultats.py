@@ -151,6 +151,23 @@ class TestBulletinTrimestriel:
         url = reverse('pedagogie:bulletin_apercu', kwargs={'inscription_id': c.chantal.pk, 'trimestre_id': c.t1.pk})
         assert c.client.get(url).context['appreciation_generale'].libelle == 'Insuffisant'
 
+    def test_boutons_pdf_de_l_apercu(self, classe_notee, mocker):
+        """« Générer le PDF » / « Télécharger le PDF » pointent sur les routes réelles (trimestriel et annuel)."""
+        c = classe_notee
+        _calculer(c)
+        weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        apercus = (
+            reverse('pedagogie:bulletin_apercu', kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}),
+            reverse('pedagogie:bulletin_annuel_apercu', kwargs={'inscription_id': c.awa.pk}),
+        )
+        for apercu in apercus:
+            reponse = c.client.get(apercu)
+            pdf_url = reponse.context['pdf_url']
+            assert reponse.content.decode().count(f'href="{pdf_url}"') == 2
+            assert c.client.get(reponse.context['retour_url']).status_code == 200
+            assert c.client.get(pdf_url)['Content-Type'] == 'application/pdf'
+
     def test_pdf_individuel_batch_et_duplicata(self, classe_notee, mocker):
         c = classe_notee
         _calculer(c)
