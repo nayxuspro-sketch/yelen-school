@@ -166,11 +166,6 @@ body {
       en classe de <strong>{{ r.classe.nom|upper }}</strong>{% if r.date_echeance %},
       au plus tard le <strong>{{ r.date_echeance }}</strong>{% endif %}.
     </p>
-    {% if r.contact_tel %}
-    <p style="font-size:8pt; color:#555; margin-top:2pt;">
-      Contact parent&nbsp;: <strong>{{ r.contact_tel }}</strong>
-    </p>
-    {% endif %}
     <!-- Reste à payer (gauche) + Titre signataire (droite) sur la même ligne -->
     <div class="reste-sig-ligne">
       <p class="reste-bloc">Reste à payer&nbsp;: <strong>{{ r.reste|floatformat:0 }} F</strong>.</p>

@@ -32,7 +32,8 @@ def contexte(db, client):
     rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, actif=True, nom='Scolarité')
     baker.make('parametres.TarifScolarite', etablissement=etab, classe=classe, annee_scolaire=annee, statut_eleve=statut,
                rubrique=rubrique, montant=Decimal('25000'), actif=True)
-    eleve = baker.make('inscriptions.Eleve', nom='OUÉDRAOGO', prenom='Awa', matricule='ETAB-2026-07')
+    eleve = baker.make('inscriptions.Eleve', nom='OUÉDRAOGO', prenom='Awa', matricule='ETAB-2026-07',
+                       telephone_parent='70123456')
     baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee, statut_eleve=statut)
     return {'etab': etab, 'annee': annee, 'cycle': cycle, 'classe': classe, 'rubrique': rubrique}
 
@@ -64,6 +65,7 @@ def test_signataire_finance_sur_la_relance(client, contexte):
     for classe in (contexte['classe'].pk, 'all'):
         html = _relance(client, contexte, classe)
         assert 'OUÉDRAOGO' in html and '25' in html
+        assert 'Contact parent' not in html and '70123456' not in html
         assert '<div class="sig-titre">L&#x27;Intendante</div>' in html
         assert '<div class="sig-nom">KABORE Salimata</div>' in html
 

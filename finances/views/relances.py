@@ -213,19 +213,14 @@ def relance_paiement_pdf(request):
             inscription=inscr, rubrique=rubrique, echeance__isnull=False
         ).order_by('-echeance').values_list('echeance', flat=True).first()
 
-        eleve = inscr.eleve
-        contact_nom = eleve.tuteur_nom or eleve.nom_pere or ''
-        contact_tel = eleve.tuteur_telephone or getattr(eleve, 'telephone_parent', '') or ''
         relances.append({
             'inscription': inscr,
-            'eleve': eleve,
+            'eleve': inscr.eleve,
             'classe': inscr.classe,
             'montant_du': montant_du,
             'verse': verse,
             'reste': reste,
             'date_echeance': date_echeance or (derniere_echeance.strftime('%d/%m/%Y') if derniere_echeance else ''),
-            'contact_nom': contact_nom,
-            'contact_tel': contact_tel,
         })
 
     from django.utils import timezone as tz
