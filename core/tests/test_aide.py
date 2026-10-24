@@ -71,14 +71,16 @@ def test_page_aide_exige_connexion(client):
 
 
 def test_captures_servies_sans_traversee(connecte):
-    reponse = connecte.get(reverse('core:aide_capture', args=['01-login.png']))
-    assert reponse.status_code == 200 and reponse['Content-Type'] == 'image/png'
-    reponse.close()
     assert connecte.get('/aide/screenshots/..%2F..%2Fmanage.py').status_code == 404
     assert connecte.get(reverse('core:aide_capture', args=['inexistant.png'])).status_code == 404
     # Toutes les images du guide sont présentes.
     for nom in re.findall(r'!\[[^\]]*\]\(screenshots/([^)]+)\)', aide.GUIDE.read_text(encoding='utf-8')):
         assert (aide.CAPTURES / nom).is_file(), nom
+
+    reponse = connecte.get(reverse('core:aide_capture', args=['01-login.png']))
+    assert reponse.status_code == 200 and reponse['Content-Type'] == 'image/png'
+    # Flux consommé en dernier : sa fermeture déclenche request_finished (connexion PostgreSQL fermée).
+    assert b''.join(reponse.streaming_content).startswith(b'\x89PNG')
 
 
 def test_repli_si_guide_absent(connecte, tmp_path, monkeypatch):
