@@ -32,6 +32,7 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
     import datetime
     from decimal import Decimal
     import core.pdf
+    import weasyprint.document
     from parametres.models import TypeDocument
 
     documents, sources = [], []
@@ -41,12 +42,19 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
             sources.append(kwargs.get('string', ''))
             super().__init__(*args, **kwargs)
 
-        def write_pdf(self, target=None, **kwargs):
-            document = self.render()
+        def render(self, *args, **kwargs):
+            document = super().render(*args, **kwargs)
             documents.append(document)
-            return document.write_pdf(target, **kwargs)
+            return document
+
+    def pied_de_page(page):
+        """Texte du cadre @bottom-right de la page rendue (pagination)."""
+        def texte(box):
+            return box.text if hasattr(box, 'text') else ''.join(texte(b) for b in getattr(box, 'children', ()))
+        return next(texte(b) for b in page._page_box.children if getattr(b, 'at_keyword', None) == '@bottom-right')
 
     mocker.patch('bulletins.views.HTML', HTMLEspion)
+    fusion = mocker.spy(weasyprint.document.Document, 'copy')
 
     etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR')
     baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='COMPLEXE SCOLAIRE LE SAVOIR',
@@ -76,20 +84,25 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
     individuel = client.get(reverse('bulletins:bulletin_annuel_pdf', kwargs={'inscription_id': inscriptions[0].pk, 'annee_pk': annee.pk}))
     lot = client.get(reverse('bulletins:bulletin_annuel_batch_pdf', kwargs={'class_id': classe.pk, 'annee_pk': annee.pk}))
 
-    assert individuel.status_code == 200 and lot.status_code == 200 and len(documents) == 2
-    assert len(documents[0].pages) == 1 and len(documents[1].pages) == 3   # un élève = une page
+    # Individuel = 1 document ; lot = 1 document par élève (3), paginés à part : « Page 1 / 1 » sur chaque bulletin
+    assert individuel.status_code == 200 and lot.status_code == 200 and len(documents) == 4 and len(sources) == 4
+    pages = [page for document in documents for page in document.pages]
+    assert all(len(document.pages) == 1 for document in documents) and len(pages) == 4   # un élève = une page
+    assert all(pied_de_page(page) == 'Page 1 / 1' for page in pages)
+    assert lot.content.startswith(b'%PDF') and len(fusion.call_args.args[1]) == 3, 'un seul PDF assemblant les 3 pages'
     # A5 portrait : 148 × 210 mm, soit 559,4 × 793,7 px CSS (WeasyPrint)
-    for page in documents[0].pages + documents[1].pages:
+    for page in pages:
         assert round(page.width) == 559 and round(page.height) == 794
+    lot_html = ''.join(sources[1:])
     # N° Agrément sous le nom de l'établissement, sur l'individuel et sur chacun des 3 bulletins du lot
     agrement = 'N° Agrément : N°2024-0147/MENAPLN/SG/DGEPFIC</div>'
-    assert sources[0].count(agrement) == 1 and sources[1].count(agrement) == 3
+    assert sources[0].count(agrement) == 1 and lot_html.count(agrement) == 3
     assert sources[0].index('COMPLEXE SCOLAIRE LE SAVOIR</div>') < sources[0].index(agrement) < sources[0].index('Discipline — Travail — Succès')
     # Code QR (matricule, classe, moyenne annuelle) dans la zone des signatures, sans légende
     qr = f'alt="QR bulletin annuel {inscriptions[0].eleve.matricule}"'
-    assert sources[0].count('alt="QR bulletin annuel ') == 1 and sources[1].count('alt="QR bulletin annuel ') == 3
-    assert sources[0].index('class="bul-sig-grid"') < sources[0].index(qr) and qr in sources[1]
-    assert 'Code QR de vérification' not in sources[0] + sources[1]
+    assert sources[0].count('alt="QR bulletin annuel ') == 1 and lot_html.count('alt="QR bulletin annuel ') == 3
+    assert sources[0].index('class="bul-sig-grid"') < sources[0].index(qr) and qr in lot_html
+    assert 'Code QR de vérification' not in sources[0] + lot_html
 
 
 @pytest.mark.django_db

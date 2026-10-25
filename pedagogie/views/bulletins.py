@@ -368,11 +368,10 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     # Contexte établissement
     etab_context = get_etablissement_context(etab, request)
 
-    # 2. Rendre le template HTML (on utilisera un template qui boucle sur les élèves)
-    html_string = render_to_string('pedagogie/pdf/bulletin_batch.html', {
+    # 2. Un document HTML par élève : chaque bulletin est paginé à part (« Page 1 / 1 »)
+    contexte = {
         'trimestre': trimestre,
         'classe': classe,
-        'students_data': students_data,
         'nb_eleves': nb_eleves,
         'moy_max_classe': moy_max_classe,
         'moy_min_classe': moy_min_classe,
@@ -382,10 +381,12 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
         'etab_logo_url': etab_context.get('etab_logo_url'),
         'etablissement': etab,
         'licence_info': _pdf_licence_info(request, etab),
-    })
-    
+    }
+    fragments = [render_to_string('pedagogie/pdf/bulletin_batch.html', {**contexte, 'students_data': [d]})
+                 for d in students_data]
+
     # 3. Générer le PDF
-    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+    pdf_file = HTML.lot(fragments, base_url=request.build_absolute_uri())
     
     response = HttpResponse(pdf_file, content_type='application/pdf')
     filename = f"Bulletins_{classe.nom}_{trimestre.nom}.pdf".replace(" ", "_")
@@ -644,18 +645,19 @@ def bulletin_annuel_classe_batch_pdf(request, class_id):
         ctx = _build_bulletin_annuel_context(request, ins, annee_scolaire)
         students_data.append(ctx)
 
-    html_string = render_to_string('pedagogie/pdf/bulletin_annuel_batch.html', {
+    contexte = {
         'classe': classe,
         'annee_scolaire': annee_scolaire,
-        'students_data': students_data,
         'identite': etab_context.get('identite'),
         'logo_url': etab_context.get('logo_url'),
         'etab_logo_url': etab_context.get('etab_logo_url'),
         'etablissement': etab,
         'licence_info': _pdf_licence_info(request, etab),
-    })
-
-    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+    }
+    # Un document HTML par élève : chaque bulletin est paginé à part (« Page 1 / 1 »)
+    fragments = [render_to_string('pedagogie/pdf/bulletin_annuel_batch.html', {**contexte, 'students_data': [d]})
+                 for d in students_data]
+    pdf_file = HTML.lot(fragments, base_url=request.build_absolute_uri())
 
     response = HttpResponse(pdf_file, content_type='application/pdf')
     filename = f"Bulletins_Annuels_{classe.nom}_{annee_scolaire.libelle.replace(' ', '_')}.pdf"

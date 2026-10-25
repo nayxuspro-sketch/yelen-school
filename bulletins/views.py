@@ -528,18 +528,19 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
             for ins in inscriptions
         ]
 
-        html_string = render_to_string('pedagogie/pdf/bulletin_annuel_batch.html', {
+        contexte = {
             'classe': classe,
             'annee_scolaire': annee,
-            'students_data': students_data,
             'identite': etab_context.get('identite'),
             'logo_url': etab_context.get('logo_url'),
             'etab_logo_url': etab_context.get('etab_logo_url'),
             'etablissement': etab,
             'licence_info': lic_info,
-        })
-
-        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+        }
+        # Un document HTML par élève : chaque bulletin est paginé à part (« Page 1 / 1 »)
+        fragments = [render_to_string('pedagogie/pdf/bulletin_annuel_batch.html', {**contexte, 'students_data': [d]})
+                     for d in students_data]
+        pdf_file = HTML.lot(fragments, base_url=request.build_absolute_uri())
         filename = f"Bulletins_Annuels_{classe.nom}_{annee.libelle.replace(' ', '_')}.pdf"
         response = HttpResponse(pdf_file, content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="{filename}"'

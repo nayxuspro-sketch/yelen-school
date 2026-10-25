@@ -220,13 +220,16 @@ class TestBulletinTrimestriel:
         reponse = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf',
                                        kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
         assert reponse.status_code == 200
-        html = _html(weasy)
+        # Lot = un document HTML par élève, paginés à part par HTML.lot (« Page 1 / 1 » sur chaque bulletin)
+        fragments = weasy.lot.call_args.args[0]
+        assert len(fragments) == 3 and all(f.count('class="bul-page"') == 1 for f in fragments)
+        html = ''.join(fragments)
         assert all(nom in html for nom in ('OUEDRAOGO', 'SAWADOGO', 'ZONGO'))
         assert 'KABORE' not in html and 'TRAORE' not in html, 'sans moyenne : pas de bulletin'
         assert 'Total : 112,00&nbsp;/&nbsp;140 pts' in html and '/ 7,00' not in html, 'même notation que le bulletin individuel'
         assert 'Note pond.' in html and note in html and '>Rang</th>' not in html
         assert all(html.count(m) == 3 for m in modele), 'même modèle que le bulletin individuel, un par élève'
-        assert html.count('page-break-after: always') == 2, 'un élève par page'
+        assert 'page-break-after' not in html, 'un élève par document : pas de saut de page interne'
         assert all(a in html for a in assiduite) and 'Excellent trimestre, félicitations du conseil.' in html
         assert html.count('<div class="bul-stat-value">0 h</div>') == 4, 'Boubacar et Chantal sans fiche : 0 h'
         assert 'Résultats passables ce trimestre' in html, 'sans appréciation saisie : commentaire généré conservé'

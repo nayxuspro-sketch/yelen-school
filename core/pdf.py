@@ -83,3 +83,11 @@ class HTML(weasyprint.HTML):
 
     def __init__(self, *args, url_fetcher=None, **kwargs):
         super().__init__(*args, url_fetcher=url_fetcher or FetcherLocal(), **kwargs)
+
+    @classmethod
+    def lot(cls, fragments, base_url=None):
+        """Un seul PDF où chaque fragment HTML est paginé à part : chaque bulletin d'un lot
+        porte « Page 1 / 1 » (et non « Page 3 / 60 »). Lot vide → une page blanche."""
+        documents = [cls(string=fragment, base_url=base_url).render() for fragment in fragments]
+        documents = documents or [cls(string='', base_url=base_url).render()]
+        return documents[0].copy([page for document in documents for page in document.pages]).write_pdf()
