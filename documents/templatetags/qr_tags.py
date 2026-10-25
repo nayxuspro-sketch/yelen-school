@@ -93,6 +93,26 @@ def qr_personnel(matricule, nom, prenom, etab_nom, taille='petit', adresse='', v
     )
 
 
+def _build_qr_bulletin_text(matricule, classe, trimestre, annee, moyenne):
+    return "\n".join([
+        f"MAT: {matricule}",
+        f"CLA: {classe}",
+        f"TRI: {trimestre} {annee}",
+        f"MOY: {moyenne}/20",
+    ])
+
+
+@register.simple_tag
+def qr_bulletin(matricule, classe, trimestre, annee, moyenne, px=50):
+    """QR code du bulletin trimestriel : matricule, classe et moyenne du trimestre de l'élève."""
+    text = _build_qr_bulletin_text(matricule, classe, trimestre, annee, moyenne)
+    uri = _build_qr_data_uri(text, 3)
+    return mark_safe(
+        f'<img src="{uri}" width="{px}" height="{px}" alt="QR bulletin {matricule}" '
+        f'style="display:block; image-rendering:pixelated;">'
+    )
+
+
 @register.simple_tag
 def qr_lien(url, px=120):
     """QR code d'un lien (paiement en ligne) à scanner avec l'appareil photo du téléphone."""

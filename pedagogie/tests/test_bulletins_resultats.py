@@ -206,6 +206,10 @@ class TestBulletinTrimestriel:
         assert 'Appréciation du conseil de classe' in _html(weasy)
         assert 'Excellent trimestre, félicitations du conseil.' in _html(weasy) and 'Excellent travail ce trimestre' not in _html(weasy)
         assert mentions in _html(weasy)
+        # Code QR (matricule, classe, moyenne du trimestre) dans la zone des signatures, à gauche du signataire
+        qr = f'alt="QR bulletin {c.awa.eleve.matricule}"'
+        assert _html(weasy).count('alt="QR bulletin ') == 1
+        assert _html(weasy).index('class="bul-sig-grid"') < _html(weasy).index(qr) < _html(weasy).index('Code QR de vérification')
 
         reponse = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf',
                                        kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
@@ -221,6 +225,7 @@ class TestBulletinTrimestriel:
         assert html.count('<div class="bul-stat-value">0 h</div>') == 4, 'Boubacar et Chantal sans fiche : 0 h'
         assert 'Résultats passables ce trimestre' in html, 'sans appréciation saisie : commentaire généré conservé'
         assert html.count('Mentions / distinctions :') == 1 and mentions in html, 'mentions cochées imprimées pour Awa seule'
+        assert html.count('alt="QR bulletin ') == 3 and qr in html, 'un QR par élève'
 
         reponse = c.client.get(reverse('pedagogie:bulletin_duplicata_pdf',
                                        kwargs={'inscription_id': c.boubacar.pk, 'trimestre_id': c.t1.pk}))

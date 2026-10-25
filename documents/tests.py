@@ -194,3 +194,13 @@ def test_liste_personnel_pdf_qr_sous_le_recapitulatif(client, mocker):
     assert 'border-top: 1px solid #aaa' not in html and 'justify-content: space-between' not in html
     corps = html[html.index('<body'):]
     assert corps.rfind('</table>') < corps.index('class="qr-zone"') < corps.index('<!-- Signataire -->')
+
+
+def test_qr_bulletin_contenu_et_balise():
+    """Le QR du bulletin trimestriel encode matricule, classe, trimestre et moyenne ; balise image auto-portée."""
+    from documents.templatetags.qr_tags import _build_qr_bulletin_text, qr_bulletin
+
+    assert _build_qr_bulletin_text('2024-0001', '6ème A', 'Trimestre 1', '2025-2026', '14,50') == (
+        'MAT: 2024-0001\nCLA: 6ème A\nTRI: Trimestre 1 2025-2026\nMOY: 14,50/20')
+    balise = qr_bulletin('2024-0001', '6ème A', 'Trimestre 1', '2025-2026', '14,50')
+    assert balise.startswith('<img src="data:image/png;base64,') and 'alt="QR bulletin 2024-0001"' in balise
