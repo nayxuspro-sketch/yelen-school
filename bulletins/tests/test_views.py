@@ -47,11 +47,11 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
             documents.append(document)
             return document
 
-    def pied_de_page(page):
-        """Texte du cadre @bottom-right de la page rendue (pagination)."""
+    def pied_de_page(page, cadre='@bottom-right'):
+        """Texte d'un cadre de marge (@bottom-right : pagination ; @bottom-left : mention officielle)."""
         def texte(box):
             return box.text if hasattr(box, 'text') else ''.join(texte(b) for b in getattr(box, 'children', ()))
-        return next(texte(b) for b in page._page_box.children if getattr(b, 'at_keyword', None) == '@bottom-right')
+        return next(texte(b) for b in page._page_box.children if getattr(b, 'at_keyword', None) == cadre)
 
     mocker.patch('bulletins.views.HTML', HTMLEspion)
     fusion = mocker.spy(weasyprint.document.Document, 'copy')
@@ -89,6 +89,9 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
     pages = [page for document in documents for page in document.pages]
     assert all(len(document.pages) == 1 for document in documents) and len(pages) == 4   # un élève = une page
     assert all(pied_de_page(page) == 'Page 1 / 1' for page in pages)
+    mention = pied_de_page(pages[0], '@bottom-left').replace(' ', '')   # la ligne peut se replier sur deux lignes en A5
+    assert mention.startswith('COMPLEXESCOLAIRELESAVOIR—Généréle') and 'restants' not in mention
+    assert mention.endswith('—Documentofficiel—Toutefalsificationexposeàdespoursuites')
     assert lot.content.startswith(b'%PDF') and len(fusion.call_args.args[1]) == 3, 'un seul PDF assemblant les 3 pages'
     # A5 portrait : 148 × 210 mm, soit 559,4 × 793,7 px CSS (WeasyPrint)
     for page in pages:

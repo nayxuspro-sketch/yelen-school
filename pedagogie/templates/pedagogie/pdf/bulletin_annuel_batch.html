@@ -4,12 +4,13 @@
     margin: 7mm 9mm 8mm 9mm;
     @bottom-right {
         content: "Page " counter(page) " / " counter(pages);
-        font-size: 6.5pt;
+        font-size: 6pt;
         color: #555;
+        white-space: nowrap;
     }
     @bottom-left {
-        content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }}";
-        font-size: 6.5pt;
+        content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }} — Généré le {% now 'd/m/Y H:i' %} — Document officiel — Toute falsification expose à des poursuites";
+        font-size: 6pt;
         color: #555;
     }
 }{% endblock %}

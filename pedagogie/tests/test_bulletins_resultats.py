@@ -217,6 +217,10 @@ class TestBulletinTrimestriel:
         assert '<th style="width:24%;">Professeur</th>' in _html(weasy)
         assert '_____' not in _html(weasy), 'colonne Signature vide (pas de ligne en face des professeurs)'
         assert 'class="bul-card bul-dense"' not in _html(weasy), 'variante dense réservée aux bulletins de plus de 12 matières'
+        # Pied de page : « établissement — Généré le JJ/MM/AAAA HH:MM — Document officiel — … », sans information de licence
+        pied = ' — Document officiel — Toute falsification expose à des poursuites";'
+        assert '@bottom-left' in _html(weasy) and ' — Généré le ' in _html(weasy) and pied in _html(weasy)
+        assert 'restants' not in _html(weasy) and 'Licence ' not in _html(weasy)
 
         reponse = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf',
                                        kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
@@ -244,6 +248,8 @@ class TestBulletinTrimestriel:
         assert '&nbsp;/&nbsp;140 pts' in _html(weasy)
         assert 'Note pond.' in _html(weasy) and '>Rang</th>' not in _html(weasy)
         assert all(m in _html(weasy) for m in modele) and 'Duplicata officiel délivré le' in _html(weasy)
+        assert 'Ce document est une reproduction du bulletin original' in _html(weasy) and 'dup-banner' not in _html(weasy)
+        assert pied in _html(weasy) and 'Duplicata — Page' in _html(weasy)
         assert 'Assiduité du Trimestre 1' in _html(weasy) and html.count('Assiduité du Trimestre 1') == 3
 
     def test_bulletin_charge_tient_sur_une_page(self, classe_notee, mocker):
@@ -307,8 +313,9 @@ class TestBulletinTrimestriel:
         mocker.patch('pedagogie.views.bulletins.HTML', HTMLEspion)
         individuel = c.client.get(reverse('pedagogie:bulletin_pdf', kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
         lot = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf', kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
-        assert individuel.status_code == 200 and lot.status_code == 200 and len(documents) == 4
-        assert all(len(document.pages) == 1 for document in documents), 'chaque bulletin trimestriel tient sur une page A4'
+        duplicata = c.client.get(reverse('pedagogie:bulletin_duplicata_pdf', kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
+        assert individuel.status_code == 200 and lot.status_code == 200 and duplicata.status_code == 200 and len(documents) == 5
+        assert all(len(document.pages) == 1 for document in documents), 'chaque bulletin trimestriel (original, lot, duplicata) tient sur une page A4'
         assert all('class="bul-card bul-dense"' in html and html.count('<tr>') >= 17 for html in sources), '16 matières → variante dense'
         assert all('Chevalier de l&#x27;Ordre du Mérite' in html and 'Tableau d&#x27;honneur' in sources[0] for html in sources)
 

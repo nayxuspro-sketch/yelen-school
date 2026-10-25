@@ -871,11 +871,10 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 | Élément | Bulletin original | Duplicata |
 | ------- | ---------------- | --------- |
 | Mise en page | Modèle de référence (une page A4) | Identique (même gabarit) |
-| Sous-titre | — | "Duplicata officiel délivré le JJ/MM/AAAA" |
+| Sous-titre | — | "Duplicata officiel délivré le JJ/MM/AAAA — Ce document est une reproduction du bulletin original" |
 | En-tête | Nom, N° Agrément, devise, adresse, téléphone | Idem + tampon "Duplicata" en coin supérieur droit |
-| Bandeau haut | — | Bandeau gris "Duplicata officiel — Ce document est une reproduction du bulletin original" |
 | Filigrane | — | "DUPLICATA" diagonal en transparence sur toute la page |
-| Pied de page | Nom de l'établissement · "Page x / y" | Nom de l'établissement · "Duplicata — Page x / y" |
+| Pied de page | "Établissement — Généré le JJ/MM/AAAA HH:MM — Document officiel — Toute falsification expose à des poursuites" · "Page x / y" | Idem · "Duplicata — Page x / y" |
 | Signataire | Identique (détecté automatiquement) | Identique (détecté automatiquement) |
 | Contenu pédagogique | Identique | Identique |
 
@@ -3136,10 +3135,10 @@ L'établissement ne dispose pas d'imprimante couleur. Tous les documents PDF gé
 | Convocation | Bannière encart → fond `#111` blanc ; note obligatoire → fond `#f0f0f0` bordure gauche `4pt solid #111` ; carte destinataire → bordure top `3pt solid #111` fond `#f5f5f5` |
 | Liste de classe | En-tête → `#111`/blanc ; lignes paires → `#f5f5f5` ; bordures tableau visibles `1px solid #ccc` |
 | Liste du personnel | Même règles que liste de classe ; ligne total récap → `#111`/blanc |
-| Bulletin trimestriel PDF | En-tête section → fond `#ebebeb` bordure gauche `3pt solid #111` ; tableau notes → en-tête `#111`/blanc, colonnes à largeur fixe Matières 25 % · Coef 7 % · Moy. /20 10 % · Note pond. 9 % · Appréciation 14 % · Professeur 24 % · Signature 11 % (cellules vides, sans ligne), mode dense automatique au-delà de 12 matières ; une seule page A4 par bulletin (marges 8/12/10/12 mm, identité sur deux lignes, Assiduité et Statistiques côte à côte ; primaire APC garanti jusqu'à ≈ 10 compétences) ; impression par lot → un seul PDF, chaque bulletin paginé à part (« Page 1 / 1 ») ; ligne totale → `border-top/bottom: 2pt solid #111` fond `#ebebeb` ; stat-box → `border-left: 3pt solid #111` ; badge rang → bordure `1pt solid #555` ; titre bannière → `border: 1.5pt solid #111` |
+| Bulletin trimestriel PDF | En-tête section → fond `#ebebeb` bordure gauche `3pt solid #111` ; tableau notes → en-tête `#111`/blanc, colonnes à largeur fixe Matières 25 % · Coef 7 % · Moy. /20 10 % · Note pond. 9 % · Appréciation 14 % · Professeur 24 % · Signature 11 % (cellules vides, sans ligne), mode dense automatique au-delà de 12 matières ; une seule page A4 par bulletin (marges 8/12/10/12 mm, identité sur deux lignes, Assiduité et Statistiques côte à côte ; primaire APC garanti jusqu'à ≈ 10 compétences) ; impression par lot → un seul PDF, chaque bulletin paginé à part (« Page 1 / 1 ») ; pied de page « Établissement — Généré le JJ/MM/AAAA HH:MM — Document officiel — Toute falsification expose à des poursuites » (idem bulletin annuel, 6 pt en A5) ; ligne totale → `border-top/bottom: 2pt solid #111` fond `#ebebeb` ; stat-box → `border-left: 3pt solid #111` ; badge rang → bordure `1pt solid #555` ; titre bannière → `border: 1.5pt solid #111` |
 | Bulletin annuel PDF | A5 portrait, une page par élève (lot → un seul PDF, chaque bulletin paginé à part « Page 1 / 1 ») ; mêmes règles que bulletin trimestriel (en-tête : nom, **N° Agrément**, devise, adresse, téléphone ; code QR sans légende dans la zone des signatures : `MAT:` / `CLA:` / `ANN: 2025-2026` / `MOY: <moyenne annuelle>/20`) ; **moyenne annuelle = moyenne des moyennes trimestrielles imprimées** (arrondi au centime supérieur à partir de 0,005, comme au trimestre : avec un seul trimestre saisi, l'annuel lui est identique) ; même règle pour le rang, les statistiques de classe et le palmarès annuel ; décision ADMIS → fond `#f5f5f5` bordure `2pt solid #111` ; décision NON ADMIS → fond `#ddd` bordure `2pt solid #111` italique |
 | Bulletin batch (impression groupée) | Mêmes règles bulletin trimestriel ; bloc recap → fond `#f5f5f5` bordure `1.5pt solid #111` ; stat-values → gras sans couleur |
-| Bulletin duplicata | Filigrane `rgba(0,0,0,0.08)` ; bandeau DUPLICATA → fond `#ddd` bordure `#555` ; tampon → fond `#ddd` bordure `#111` ; titre → fond `#555` blanc ; stat-box → `border-left: 3pt solid #111` |
+| Bulletin duplicata | Filigrane `rgba(0,0,0,0.08)` ; tampon → fond `#ddd` bordure `#111` ; titre → fond `#555` blanc ; stat-box → `border-left: 3pt solid #111` |
 | Bilan des périodes | En-tête période → fond `#111`/blanc ; lignes paires → `#f5f5f5` ; blocs analyse → `border-left: 3pt solid #111` fond `#f5f5f5` ; légende → texte et symboles sans couleur |
 | Fiche relevé de notes (discipline) | En-tête → `border-bottom: 2.5pt solid #111` ; bandeau → fond `#111`/blanc ; colonne moy. → fond `#555`/blanc ; note basse → fond `#ddd` italique ; note ok → fond `#f5f5f5` ; stat-box → `border-left: 3pt solid` |
 | Liste des candidats (examens) | Badge ADMIS → `#fff` bordure `1pt solid #111` gras ; Badge AJOURNÉ → `#ddd` bordure `#111` italique ; Badge ABSENT → `#555`/blanc ; lignes paires → `#f5f5f5` |
@@ -6693,7 +6692,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.4.1 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.4.2 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

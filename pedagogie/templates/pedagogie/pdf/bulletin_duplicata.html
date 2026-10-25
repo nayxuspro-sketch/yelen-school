@@ -1,5 +1,5 @@
 {% extends "pdf/base.html" %}{% comment %}
-Duplicata du bulletin trimestriel : même modèle que le bulletin individuel, plus filigrane, bandeau, tampon et date de délivrance.
+Duplicata du bulletin trimestriel : même modèle que le bulletin individuel, plus filigrane, tampon et mention de délivrance.
 {% endcomment %}
 {% block page %}@page {
     size: A4 portrait;
@@ -8,9 +8,10 @@ Duplicata du bulletin trimestriel : même modèle que le bulletin individuel, pl
         content: "Duplicata — Page " counter(page) " / " counter(pages);
         font-size: 6.5pt;
         color: #555;
+        white-space: nowrap;
     }
     @bottom-left {
-        content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }}";
+        content: "{{ identite.nom_etablissement|default:'YELEN SCHOOL' }} — Généré le {% now 'd/m/Y H:i' %} — Document officiel — Toute falsification expose à des poursuites";
         font-size: 6.5pt;
         color: #555;
     }
@@ -35,19 +36,6 @@ Duplicata du bulletin trimestriel : même modèle que le bulletin individuel, pl
     z-index: 0;
 }
 .bul-header, .bul-card, .bul-sig-grid { position: relative; z-index: 1; }
-.dup-banner {
-    background: #ddd;
-    border: 1pt solid #555;
-    padding: 2pt 8pt;
-    margin-bottom: 4pt;
-    text-align: center;
-    font-size: 8pt;
-    font-weight: 700;
-    color: #111;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-}
-.dup-banner-sub { font-size: 7pt; font-weight: 400; color: #555; text-transform: none; letter-spacing: 0; }
 .dup-stamp {
     position: absolute;
     top: 4pt;
@@ -68,6 +56,5 @@ Duplicata du bulletin trimestriel : même modèle que le bulletin individuel, pl
 {% block entete %}{% endblock %}
 {% block corps %}
 <div class="watermark">DUPLICATA</div>
-<div class="dup-banner">! Duplicata officiel <span class="dup-banner-sub">— Ce document est une reproduction du bulletin original —</span></div>
 {% include "pedagogie/pdf/partials/bulletin_trimestriel_corps.html" %}
 {% endblock %}

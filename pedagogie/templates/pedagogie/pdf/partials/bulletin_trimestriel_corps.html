@@ -26,7 +26,7 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
 <!-- ══ TITRE ══ -->
 <div class="bul-title">
     BULLETIN DE NOTES — {{ trimestre.nom|upper }} — {{ trimestre.annee_scolaire.libelle }}
-    {% if is_duplicata %}<div class="bul-title-sub">Duplicata officiel délivré le {{ today|date:"d/m/Y" }}</div>{% endif %}
+    {% if is_duplicata %}<div class="bul-title-sub">Duplicata officiel délivré le {{ today|date:"d/m/Y" }} — Ce document est une reproduction du bulletin original</div>{% endif %}
 </div>
 
 <!-- ══ IDENTITÉ DE L'ÉLÈVE ══ -->
