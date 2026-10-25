@@ -212,10 +212,11 @@ class TestBulletinTrimestriel:
         qr = f'alt="QR bulletin {c.awa.eleve.matricule}"'
         assert _html(weasy).count('alt="QR bulletin ') == 1 and 'Code QR de vérification' not in _html(weasy)
         assert _html(weasy).index('class="bul-sig-grid"') < _html(weasy).index(qr)
-        # Colonne Professeur élargie (21 %) aux dépens de la colonne Appréciation (13 %)
-        assert '<th style="width:13%;">Appréciation</th>' in _html(weasy)
-        assert '<th style="width:21%;">Professeur</th>' in _html(weasy)
+        # Colonne Professeur élargie (24 %) aux dépens des colonnes Appréciation (14 %) et Signature (11 %)
+        assert '<th style="width:14%;">Appréciation</th>' in _html(weasy)
+        assert '<th style="width:24%;">Professeur</th>' in _html(weasy)
         assert '_____' not in _html(weasy), 'colonne Signature vide (pas de ligne en face des professeurs)'
+        assert 'class="bul-card bul-dense"' not in _html(weasy), 'variante dense réservée aux bulletins de plus de 12 matières'
 
         reponse = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf',
                                        kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
@@ -244,6 +245,72 @@ class TestBulletinTrimestriel:
         assert 'Note pond.' in _html(weasy) and '>Rang</th>' not in _html(weasy)
         assert all(m in _html(weasy) for m in modele) and 'Duplicata officiel délivré le' in _html(weasy)
         assert 'Assiduité du Trimestre 1' in _html(weasy) and html.count('Assiduité du Trimestre 1') == 3
+
+    def test_bulletin_charge_tient_sur_une_page(self, classe_notee, mocker):
+        """Pire cas réaliste rendu par WeasyPrint : 16 matières (noms de professeurs longs), en-tête complet,
+        3 sanctions, appréciation de trois lignes, 2 mentions, signataire avec titre → une page par élève."""
+        import core.pdf
+        from parametres.models import Distinction, IdentiteEtablissement, TypeDocument
+        from viescolaire.models import SanctionDisciplinaire
+        c = classe_notee
+        IdentiteEtablissement.objects.filter(etablissement=c.etab).update(
+            ville='Ouagadougou', devise='Discipline — Travail — Succès', adresse_complete='Secteur 15, Ouaga 2000',
+            telephone='+226 25 36 47 58')
+        devoir = baker.make('pedagogie.TypeEvaluation', coefficient=Decimal('1'), nb_meilleures_notes=0)
+        matieres = ['Anglais', 'Histoire-Géographie', 'Sciences de la Vie et de la Terre', 'Physique-Chimie', 'Allemand',
+                    'Éducation Physique et Sportive', 'Éducation Civique et Morale', 'Arts plastiques', 'Technologie',
+                    'Informatique', 'Musique', 'Dessin', 'Arabe', 'Espagnol']
+        profs = [('OUEDRAOGO', 'Abdoul Rasmané'), ('COMPAORE', 'Wendpanga Jean Benoit'), ('SAWADOGO', 'Mariam Rasmata'),
+                 ('ZOUNGRANA', 'Pengdwendé Hamidou'), ('TAPSOBA', 'Kiswendsida Léonce'), ('SANKARA', 'Wendkuni Christian')]
+        enseignements = [c.maths, c.francais]
+        for i, nom in enumerate(matieres):
+            ens = baker.make('pedagogie.Enseignement', classe=c.classe, annee_scolaire=c.annee, est_actif=True,
+                             coefficient=Decimal('2'), matiere=baker.make('pedagogie.Matiere', nom=nom))
+            ev = baker.make('pedagogie.Evaluation', enseignement=ens, trimestre=c.t1, type_evaluation=devoir, titre='Devoir',
+                            bareme=Decimal('20'), statut='TERMINEE', date_planifiee=date(2026, 11, 5))
+            for ins in (c.awa, c.boubacar, c.chantal):
+                baker.make('pedagogie.Note', inscription=ins, evaluation=ev, valeur=Decimal(7 + (i * 3) % 13))
+            enseignements.append(ens)
+        for i, ens in enumerate(enseignements):
+            nom, prenom = profs[i % len(profs)]
+            ens.personnel = baker.make('personnel.MembrePersonnel', nom=nom, prenom=prenom, etablissement=c.etab)
+            ens.save(update_fields=['personnel'])
+        _calculer(c)
+        fiche = baker.make('bulletins.Bulletin', inscription=c.awa, trimestre=c.t1, absences_justifiees=2,
+                           absences_non_justifiees=1, retards=3,
+                           appreciation_conseil="Trimestre globalement satisfaisant. L'élève participe activement et rend un "
+                                                "travail régulier ; des efforts restent à fournir en sciences et en langues. "
+                                                "Le conseil l'encourage à poursuivre sur cette voie et à consolider ses acquis.")
+        fiche.distinctions.set(Distinction.objects.filter(code__in=['FELICITATIONS', 'TABLEAU_HONNEUR']))
+        for j in range(3):
+            baker.make('viescolaire.SanctionDisciplinaire', inscription=c.awa, trimestre=c.t1, is_active=True,
+                       statut=SanctionDisciplinaire.StatutChoices.CONFIRME, date_sanction=date(2026, 11, 10 + j),
+                       motif='Bavardage répété', type_sanction__libelle='Avertissement', type_sanction__code=f'AVERT{j}')
+        type_doc, _ = TypeDocument.objects.get_or_create(code='BULLETIN', defaults={'nom': 'Bulletin', 'actif': True})
+        membre = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='KABORE', prenom='Salimata')
+        baker.make('parametres.SignataireDocument', cycle=c.classe.cycle, type_document=type_doc, annee_scolaire=c.annee,
+                   membre_personnel_id=membre.id, fonction='Le Directeur des Études',
+                   titres_honorifiques=["Chevalier de l'Ordre du Mérite"], actif=True)
+
+        documents, sources = [], []
+
+        class HTMLEspion(core.pdf.HTML):
+            def __init__(self, *args, **kwargs):
+                sources.append(kwargs.get('string', ''))
+                super().__init__(*args, **kwargs)
+
+            def render(self, *args, **kwargs):
+                document = super().render(*args, **kwargs)
+                documents.append(document)
+                return document
+
+        mocker.patch('pedagogie.views.bulletins.HTML', HTMLEspion)
+        individuel = c.client.get(reverse('pedagogie:bulletin_pdf', kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
+        lot = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf', kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
+        assert individuel.status_code == 200 and lot.status_code == 200 and len(documents) == 4
+        assert all(len(document.pages) == 1 for document in documents), 'chaque bulletin trimestriel tient sur une page A4'
+        assert all('class="bul-card bul-dense"' in html and html.count('<tr>') >= 17 for html in sources), '16 matières → variante dense'
+        assert all('Chevalier de l&#x27;Ordre du Mérite' in html and 'Tableau d&#x27;honneur' in sources[0] for html in sources)
 
     def test_batch_sans_moyenne_redirige(self, classe_notee, mocker):
         c = classe_notee
