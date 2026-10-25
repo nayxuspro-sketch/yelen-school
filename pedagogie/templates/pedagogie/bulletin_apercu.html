@@ -107,7 +107,7 @@
             <th>Matière</th>
             <th style="text-align:center; width:60px;">Coeff.</th>
             <th style="text-align:center; width:80px;">Moy. / 20</th>
-            <th style="text-align:center; width:80px;">Points</th>
+            <th style="text-align:center; width:80px;">Note pond.</th>
             <th style="text-align:center; width:80px;">Moy. classe</th>
             <th>Appréciation</th>
             <th>Enseignant</th>
@@ -123,7 +123,7 @@
               {% if r.dispense %}—{% elif r.moyenne is not None %}{{ r.moyenne|floatformat:2 }}{% else %}—{% endif %}
             </td>
             <td style="text-align:center;" class="text-secondary">
-              {% if not r.dispense and r.total_points is not None %}{{ r.total_points|floatformat:2 }}{% else %}—{% endif %}
+              {% if r.note_ponderee is None %}—{% else %}{{ r.note_ponderee|floatformat:2 }}{% endif %}
             </td>
             <td style="text-align:center;" class="text-muted">
               {{ r.moy_classe|floatformat:2|default:"—" }}

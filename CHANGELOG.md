@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.2.7 — 2026-10-24
+
+### Corrigé
+- Bulletins trimestriels (individuel, duplicata, classe) : dans le tableau des matières, la colonne « Rang » est remplacée par « Note pond. » = moyenne /20 × coefficient ; « — » si l'élève est dispensé. Le rang général de l'élève reste affiché dans le récapitulatif.
+- Aperçu du bulletin à l'écran : la colonne « Points », restée vide, affiche désormais la même note pondérée.
+
 ## 5.2.6 — 2026-10-24
 
 - Bulletins d'une classe : la colonne Actions (5 % de la largeur) rognait trois des quatre boutons ;

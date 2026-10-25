@@ -394,7 +394,7 @@ html, body {
                 <th style="width:28%;">Matières</th>
                 <th class="bul-tc" style="width:7%;">Coef</th>
                 <th class="bul-tc" style="width:10%;">Moy. /20</th>
-                <th class="bul-tc" style="width:9%;">Rang</th>
+                <th class="bul-tc" style="width:9%;">Note pond.</th>
                 <th style="width:19%;">Appréciation</th>
                 <th style="width:15%;">Professeur</th>
                 <th style="width:12%;">Signature</th>
@@ -410,9 +410,7 @@ html, body {
                     {% else %}{{ result.moyenne }}{% endif %}
                 </td>
                 <td class="bul-tc bul-muted">
-                    {% if result.dispense %}—
-                    {% elif result.rang %}{{ result.rang }}{% if result.rang == 1 %}er{% else %}e{% endif %}/{{ nb_eleves }}
-                    {% else %}—{% endif %}
+                    {% if result.note_ponderee is None %}—{% else %}{{ result.note_ponderee|floatformat:2 }}{% endif %}
                 </td>
                 <td class="bul-italic bul-muted">
                     {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle }}{% else %}—{% endif %}

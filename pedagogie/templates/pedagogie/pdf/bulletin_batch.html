@@ -65,7 +65,7 @@ td { padding: 2pt 5pt; font-size: 8pt; }
                         <th style="width:28%;">Matières</th>
                         <th style="text-align:center; width:7%;">Coef</th>
                         <th style="text-align:center; width:10%;">Moy./20</th>
-                        <th style="text-align:center; width:8%;">Rang</th>
+                        <th style="text-align:center; width:8%;">Note pond.</th>
                         <th style="width:18%;">Appréciation</th>
                         <th style="width:15%;">Professeur</th>
                         <th style="width:14%;">Signature</th>
@@ -79,7 +79,7 @@ td { padding: 2pt 5pt; font-size: 8pt; }
                         <td class="moyenne-col">
                             {% if result.dispense %}<em style="color:#555;">Dispensé</em>{% else %}{{ result.moyenne }}{% endif %}
                         </td>
-                        <td style="text-align:center;">{% if result.dispense %}-{% elif result.rang %}{{ result.rang }}{% if result.rang == 1 %}er{% else %}e{% endif %}/{{ data.nb_eleves }}{% else %}-{% endif %}</td>
+                        <td style="text-align:center;">{% if result.note_ponderee is None %}-{% else %}{{ result.note_ponderee|floatformat:2 }}{% endif %}</td>
                         <td style="font-style:italic; color:#555;">
                             {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle }}{% else %}-{% endif %}
                         </td>

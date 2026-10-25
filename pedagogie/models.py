@@ -395,6 +395,13 @@ class Resultat(BaseModel):
     def __str__(self):
         return f"{self.inscription.eleve} - {self.enseignement.matiere}: {self.moyenne}"
 
+    @property
+    def note_ponderee(self):
+        """Note pondérée = moyenne /20 × coefficient (contribution de la matière au total des points)."""
+        if self.dispense or self.moyenne is None:
+            return None
+        return (self.moyenne * (self.coefficient_utilise or Decimal('1.00'))).quantize(Decimal('0.01'))
+
 class MoyenneGenerale(BaseModel):
     """Moyenne générale calculée pour un élève pour un trimestre."""
     

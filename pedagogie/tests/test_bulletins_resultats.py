@@ -180,6 +180,10 @@ class TestBulletinTrimestriel:
         assert 'Bulletin_OUEDRAOGO' in reponse['Content-Disposition']
         assert 'OUEDRAOGO' in _html(weasy) and 'Très bien' in _html(weasy)
         assert 'Total : 112,00&nbsp;/&nbsp;140 pts' in _html(weasy), 'points obtenus / points maximum (7 coef. × 20)'
+        maths_awa = Resultat.objects.get(inscription=c.awa, enseignement=c.maths)
+        assert maths_awa.note_ponderee == maths_awa.moyenne * 4, 'note pondérée = moyenne /20 × coefficient'
+        note = str(maths_awa.note_ponderee).replace('.', ',')
+        assert 'Note pond.' in _html(weasy) and note in _html(weasy) and '>Rang</th>' not in _html(weasy)
 
         reponse = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf',
                                        kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
@@ -188,12 +192,14 @@ class TestBulletinTrimestriel:
         assert all(nom in html for nom in ('OUEDRAOGO', 'SAWADOGO', 'ZONGO'))
         assert 'KABORE' not in html and 'TRAORE' not in html, 'sans moyenne : pas de bulletin'
         assert '<strong>112,00</strong> / 140<' in html and '/ 7,00' not in html, 'même notation que le bulletin individuel'
+        assert 'Note pond.' in html and note in html and '>Rang</th>' not in html
 
         reponse = c.client.get(reverse('pedagogie:bulletin_duplicata_pdf',
                                        kwargs={'inscription_id': c.boubacar.pk, 'trimestre_id': c.t1.pk}))
         assert reponse.status_code == 200
         assert 'DUPLICATA' in _html(weasy).upper() and 'SAWADOGO' in _html(weasy)
         assert '&nbsp;/&nbsp;140 pts' in _html(weasy)
+        assert 'Note pond.' in _html(weasy) and '>Rang</th>' not in _html(weasy)
 
     def test_batch_sans_moyenne_redirige(self, classe_notee, mocker):
         c = classe_notee
