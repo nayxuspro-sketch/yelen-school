@@ -15,7 +15,7 @@ _SANS_DECIMALES = {
     'activite.capacite_max', 'annee_filtre', 'appr.ordre', 'bulletin.absences_justifiees',
     'bulletin.absences_non_justifiees', 'bulletin.retards', 'categorie.ordre', 'classe.capacite_max',
     'config.SMS_HTTP_TIMEOUT', 'config.points_depart', 'config.seuil_alerte', 'config.seuil_conseil',
-    'config.seuil_exclusion', 'cycle.ordre', 'd.jours_avant', 'discipline.ordre',
+    'config.seuil_exclusion', 'cycle.ordre', 'd.jours_avant', 'discipline.ordre', 'distinction.ordre',
     'instance.annee_acquisition', 'instance.annee_edition', 'instance.prix_remplacement', 'localisation.etage',
     'periode.numero', 'post_data.montant', 'presence.minutes_retard', 'rubrique.ordre', 'statut.ordre',
     'tarif.montant', 'type_eval.nb_meilleures_notes', 'type_eval.ordre', 'valeurs.montant',

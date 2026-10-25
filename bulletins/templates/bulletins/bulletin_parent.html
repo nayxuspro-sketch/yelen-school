@@ -171,13 +171,14 @@
   </div>
 
   <!-- Appréciation -->
-  {% if bulletin.appreciation_conseil %}
+  {% if bulletin.appreciation_conseil or bulletin.distinctions.exists %}
   <div class="card">
     <div class="card-header" style="font-size:0.75rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.06em;">
       Appréciation du conseil de classe
     </div>
     <div class="card-body">
-      <div class="appreciation">{{ bulletin.appreciation_conseil }}</div>
+      {% if bulletin.distinctions.exists %}<div style="margin-bottom:8px;"><strong>Mentions / distinctions :</strong> {{ bulletin.distinctions.all|join:" · " }}</div>{% endif %}
+      {% if bulletin.appreciation_conseil %}<div class="appreciation">{{ bulletin.appreciation_conseil }}</div>{% endif %}
     </div>
   </div>
   {% endif %}

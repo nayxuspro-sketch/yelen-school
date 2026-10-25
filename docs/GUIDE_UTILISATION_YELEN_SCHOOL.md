@@ -783,7 +783,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 
 #### 6.7.A Modale de saisie du bulletin (bouton « Saisir »)
 
-**À quoi ça sert :** Permet de renseigner les absences et l'appréciation du conseil de classe pour un élève donné, depuis la vue liste de la classe.
+**À quoi ça sert :** Permet de renseigner les absences, les mentions / distinctions et l'appréciation du conseil de classe pour un élève donné, depuis la vue liste de la classe.
 
 **Comment y accéder :** `Bulletins → [Classe] → [Trimestre]` → colonne **Actions** → bouton crayon **Saisir**.
 
@@ -806,6 +806,11 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 ║ │  │     0      │ │     2      │ │     1      │         │ ║
 ║ │  └────────────┘ └────────────┘ └────────────┘         │ ║
 ║ │  ─────────────────────────────────────────────        │ ║
+║ │  ☆ MENTIONS / DISTINCTIONS                            │ ║
+║ │  [✓] Félicitations      [✓] Tableau d'honneur         │ ║
+║ │  [ ] Encouragements     [ ] Avertissement             │ ║
+║ │  [ ] Blâme                                            │ ║
+║ │  ─────────────────────────────────────────────        │ ║
 ║ │  💬 APPRÉCIATION DU CONSEIL DE CLASSE                 │ ║
 ║ │  ┌──────────────────────────────────────────────────┐ │ ║
 ║ │  │ Ex : Bon trimestre, continue tes efforts…        │ │ ║
@@ -825,6 +830,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 | **Bouton ×** | Ferme la modale, rouge au survol |
 | **Carte Moyenne** | Affiche la moyenne calculée (verte ≥10 / rouge <10) et le rang |
 | **Grille absences** | 3 champs numériques centrés (Justifiées · Non justifiées · Retards) |
+| **Mentions / distinctions** | Cases à cocher (plusieurs possibles) alimentées par `Paramètres → Mentions / distinctions` : seules les mentions **actives** sont proposées (une mention désactivée reste proposée tant qu'elle est attribuée à l'élève). Cinq mentions usuelles sont fournies : Félicitations, Tableau d'honneur, Encouragements, Avertissement, Blâme — modifiables, supprimables, complétables (code, libellé, description, ordre d'affichage, active). Les mentions cochées apparaissent en badges dans le tableau de classe et sont imprimées sur le bulletin trimestriel (carte « Appréciation du conseil de classe »). |
 | **Textarea** | Appréciation du conseil, resize vertical autorisé |
 | **Footer** | Bouton Annuler (premium ghost avec icône ×, devient rouge au survol) + Enregistrer (vert primaire avec icône ✓) |
 
@@ -847,7 +853,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 - **Identité de l'élève** : matricule, sexe, effectif, nom, classe, date de naissance, cycle, redoublant
 - **Notes du trimestre** : matières / coef / moy. /20 / **note pond.** (= moy. × coef) / appréciation / professeur / signature ; ligne récapitulative : moyenne générale, rang, total des points / maximum (coef × 20)
 - **Compétences APC** (préscolaire, primaire) · **Assiduité du trimestre** (absences justifiées / non justifiées en heures, retards) · **Conduite** (si sanctions) · **Statistiques de la classe** + rang · **Appréciation du conseil de classe** · **Signature**
-- **Assiduité et appréciation du conseil** : valeurs saisies dans `Bulletins → [classe] → Saisir` (fiche élève × trimestre). Sans fiche, les compteurs s'impriment à 0 ; sans appréciation saisie, le commentaire généré automatiquement à partir des résultats est imprimé à la place.
+- **Assiduité, mentions et appréciation du conseil** : valeurs saisies dans `Bulletins → [classe] → Saisir` (fiche élève × trimestre). Sans fiche, les compteurs s'impriment à 0 ; les mentions cochées s'impriment sur la ligne « Mentions / distinctions » de la carte du conseil ; sans appréciation saisie, le commentaire généré automatiquement à partir des résultats est imprimé à la place.
 
 **Signataire :** Détecté automatiquement selon le cycle de la classe et l'année scolaire (`Paramètres → Signataires des documents`, type `BULLETIN`).
 
@@ -6686,7 +6692,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.2.9 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.3.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

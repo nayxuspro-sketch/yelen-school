@@ -53,9 +53,10 @@
         {% if b %}{{ b.retards }}{% else %}0{% endif %}
       </td>
       <td class="text-muted truncate">
+        {% if b and b.distinctions.all %}<div style="white-space:normal; line-height:1.9;">{% for d in b.distinctions.all %}<span class="badge" style="background:#00A86B20; color:#00A86B; margin-right:4px;">{{ d.libelle }}</span>{% endfor %}</div>{% endif %}
         {% if b and b.appreciation_conseil %}
           {{ b.appreciation_conseil|truncatechars:80 }}
-        {% else %}
+        {% elif not b or not b.distinctions.all %}
           <span class="text-muted text-italic">Non renseignée</span>
         {% endif %}
       </td>

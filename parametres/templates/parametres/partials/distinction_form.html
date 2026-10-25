@@ -1,0 +1,50 @@
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title">{% if distinction %}Modifier la mention{% else %}Nouvelle mention{% endif %}</span>
+            <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form hx-post="{% if distinction %}{% url 'parametres:distinction_edit' distinction.pk %}{% else %}{% url 'parametres:distinction_create' %}{% endif %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#modal-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+
+                <div class="form-group">
+                    <label class="input-label" for="id_code">Code <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="code" value="{{ distinction.code|default:'' }}" placeholder="Ex: FELICITATIONS" required class="input" id="id_code">
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label" for="id_libelle">Libellé <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="libelle" value="{{ distinction.libelle|default:'' }}" placeholder="Ex: Félicitations" required class="input" id="id_libelle">
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label" for="id_description">Description</label>
+                    <textarea name="description" rows="3" class="input" placeholder="Ex : décernée à partir de 16 de moyenne…" id="id_description">{{ distinction.description|default:'' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label" for="id_ordre">Ordre d'affichage</label>
+                    <input type="number" name="ordre" value="{{ distinction.ordre|default:0 }}" min="0" class="input" id="id_ordre">
+                    <small style="color:#64748b; font-size:0.75rem;">Ordre des cases à cocher dans la saisie du bulletin et d'impression</small>
+                </div>
+
+                <label class="d-flex align-center gap-3" style="cursor:pointer;">
+                    <input type="checkbox" name="actif" {% if not distinction or distinction.actif %}checked{% endif %} style="width:1rem; height:1rem; accent-color:var(--color-primary);">
+                    <span class="text-sm text-secondary">Mention active (proposée dans la saisie du bulletin)</span>
+                </label>
+
+                <div class="modal-footer">
+                    <button type="button" data-csp-remove="modal-overlay" class="btn-secondary">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

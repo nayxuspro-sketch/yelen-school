@@ -175,8 +175,11 @@ class TestBulletinTrimestriel:
     def test_pdf_individuel_batch_et_duplicata(self, classe_notee, mocker):
         c = classe_notee
         _calculer(c)
-        baker.make('bulletins.Bulletin', inscription=c.awa, trimestre=c.t1, absences_justifiees=2,
-                   absences_non_justifiees=1, retards=3, appreciation_conseil='Excellent trimestre, félicitations du conseil.')
+        from parametres.models import Distinction
+        fiche = baker.make('bulletins.Bulletin', inscription=c.awa, trimestre=c.t1, absences_justifiees=2,
+                           absences_non_justifiees=1, retards=3, appreciation_conseil='Excellent trimestre, félicitations du conseil.')
+        fiche.distinctions.set(Distinction.objects.filter(code__in=['FELICITATIONS', 'TABLEAU_HONNEUR']))
+        mentions = 'Mentions / distinctions :</strong> Félicitations · Tableau d&#x27;honneur'
         weasy = mocker.patch('pedagogie.views.bulletins.HTML')
         weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
 
@@ -202,6 +205,7 @@ class TestBulletinTrimestriel:
         assert all(a in _html(weasy) for a in assiduite)
         assert 'Appréciation du conseil de classe' in _html(weasy)
         assert 'Excellent trimestre, félicitations du conseil.' in _html(weasy) and 'Excellent travail ce trimestre' not in _html(weasy)
+        assert mentions in _html(weasy)
 
         reponse = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf',
                                        kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
@@ -216,6 +220,7 @@ class TestBulletinTrimestriel:
         assert all(a in html for a in assiduite) and 'Excellent trimestre, félicitations du conseil.' in html
         assert html.count('<div class="bul-stat-value">0 h</div>') == 4, 'Boubacar et Chantal sans fiche : 0 h'
         assert 'Résultats passables ce trimestre' in html, 'sans appréciation saisie : commentaire généré conservé'
+        assert html.count('Mentions / distinctions :') == 1 and mentions in html, 'mentions cochées imprimées pour Awa seule'
 
         reponse = c.client.get(reverse('pedagogie:bulletin_duplicata_pdf',
                                        kwargs={'inscription_id': c.boubacar.pk, 'trimestre_id': c.t1.pk}))

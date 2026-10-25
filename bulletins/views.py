@@ -16,13 +16,14 @@ import json
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from inscriptions.models import Inscription
-from parametres.models import AnneeScolaire, Classe
+from parametres.models import AnneeScolaire, Classe, Distinction
 from pedagogie.models import MoyenneGenerale, Trimestre
 
 from .models import Bulletin
@@ -104,7 +105,7 @@ def bulletins_classe(request, class_id, trimestre_id):
     # Charger (ou créer) les bulletins pour chaque inscription
     bulletins_par_ins = {
         b.inscription_id: b
-        for b in Bulletin.objects.filter(trimestre=trimestre, inscription__in=inscriptions)
+        for b in Bulletin.objects.filter(trimestre=trimestre, inscription__in=inscriptions).prefetch_related('distinctions')
     }
     # Charger les moyennes générales calculées
     mg_par_ins = {
@@ -167,6 +168,8 @@ def bulletin_saisir(request, inscription_id, trimestre_id):
         trimestre=trimestre,
     )
     mg = MoyenneGenerale.objects.filter(inscription=inscription, trimestre=trimestre).first()
+    # Mentions proposées : celles actives + celles déjà cochées (même désactivées depuis)
+    distinctions = Distinction.objects.filter(Q(actif=True) | Q(bulletins=bulletin)).distinct()
 
     if request.method == 'POST':
         d = request.POST
@@ -176,16 +179,19 @@ def bulletin_saisir(request, inscription_id, trimestre_id):
             bulletin.retards = int(d.get('retards', 0) or 0)
             bulletin.appreciation_conseil = d.get('appreciation_conseil', '').strip()
             bulletin.save()
+            bulletin.distinctions.set(distinctions.filter(pk__in=d.getlist('distinctions')))
             # Synchroniser l'observation dans MoyenneGenerale si elle existe
             if mg and bulletin.appreciation_conseil:
                 mg.observation_generale = bulletin.appreciation_conseil
                 mg.save(update_fields=['observation_generale', 'updated_at'])
-        except (ValueError, TypeError) as e:
+        except (ValueError, TypeError, ValidationError) as e:
             return render(request, 'bulletins/partials/bulletin_form.html', {
                 'inscription': inscription,
                 'trimestre': trimestre,
                 'bulletin': bulletin,
                 'mg': mg,
+                'distinctions': distinctions,
+                'distinctions_cochees': set(bulletin.distinctions.values_list('pk', flat=True)),
                 'error': str(e),
             })
         return HttpResponse(status=204, headers={'HX-Trigger': 'bulletinUpdated'})
@@ -195,6 +201,8 @@ def bulletin_saisir(request, inscription_id, trimestre_id):
         'trimestre': trimestre,
         'bulletin': bulletin,
         'mg': mg,
+        'distinctions': distinctions,
+        'distinctions_cochees': set(bulletin.distinctions.values_list('pk', flat=True)),
     })
 
 

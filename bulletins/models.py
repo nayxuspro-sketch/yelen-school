@@ -62,6 +62,13 @@ class Bulletin(BaseModel):
         verbose_name=_("Appréciation du conseil de classe"),
         help_text=_("Observation saisie lors du conseil de classe"),
     )
+    distinctions = models.ManyToManyField(
+        'parametres.Distinction',
+        blank=True,
+        related_name='bulletins',
+        verbose_name=_("Mentions / distinctions"),
+        help_text=_("Mentions décernées par le conseil de classe (Paramètres → Mentions / distinctions)"),
+    )
 
     # ── Publication ───────────────────────────────────────────────────
     est_publie = models.BooleanField(

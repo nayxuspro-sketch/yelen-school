@@ -287,6 +287,7 @@ MODULES = (
         _f('/parametres/types-evaluations/', "Types d'évaluation"),
         _f('/parametres/types-documents/', 'Types Documents'),
         _f('/parametres/types-sanctions/', 'Types Sanctions'),
+        _f('/parametres/mentions-distinctions/', 'Mentions / distinctions'),
         _f('/parametres/titres-fonctions/', 'Titres Fonctions'),
         _f('/parametres/titres-honorifiques/', 'Titres Honorifiques'),
     )),

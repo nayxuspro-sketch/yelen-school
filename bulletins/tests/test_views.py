@@ -77,3 +77,52 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
     # A5 portrait : 148 × 210 mm, soit 559,4 × 793,7 px CSS (WeasyPrint)
     for page in documents[0].pages + documents[1].pages:
         assert round(page.width) == 559 and round(page.height) == 794
+
+
+@pytest.mark.django_db
+def test_saisie_bulletin_mentions_distinctions(client):
+    """La modale « Saisir » propose les mentions actives en cases à cocher et enregistre la sélection."""
+    import re
+    from parametres.models import Distinction
+    from bulletins.models import Bulletin
+
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
+    ins = baker.make('inscriptions.Inscription', classe__etablissement=etab)
+    tri = baker.make('pedagogie.Trimestre', annee_scolaire=ins.annee_scolaire, nom='Trimestre 1', numero=1)
+    baker.make(Distinction, code='INACTIVE', libelle='Mention désactivée', actif=False)
+    felicitations = Distinction.objects.get(code='FELICITATIONS')
+    tableau = Distinction.objects.get(code='TABLEAU_HONNEUR')
+    url = reverse('bulletins:bulletin_saisir', kwargs={'inscription_id': ins.pk, 'trimestre_id': tri.pk})
+
+    html = client.get(url, HTTP_HX_REQUEST='true').content.decode()
+    cases = re.findall(r'<input type="checkbox" name="distinctions" value="([^"]+)"( checked)?>', html)
+    assert len(cases) == 5 and not any(c[1] for c in cases), 'les 5 mentions amorcées, aucune cochée'
+    assert 'Mention désactivée' not in html
+
+    reponse = client.post(url, {
+        'absences_justifiees': '2', 'absences_non_justifiees': '0', 'retards': '1',
+        'appreciation_conseil': 'Très bon trimestre.', 'distinctions': [str(felicitations.pk), str(tableau.pk)],
+    }, HTTP_HX_REQUEST='true')
+    assert reponse.status_code == 204 and reponse.headers['HX-Trigger'] == 'bulletinUpdated'
+    fiche = Bulletin.objects.get(inscription=ins, trimestre=tri)
+    assert set(fiche.distinctions.values_list('code', flat=True)) == {'FELICITATIONS', 'TABLEAU_HONNEUR'}
+
+    html = client.get(url, HTTP_HX_REQUEST='true').content.decode()
+    assert html.count(' checked>') == 2
+
+    # Tableau de classe : badges des mentions cochées
+    html = client.get(reverse('bulletins:bulletins_classe', kwargs={'class_id': ins.classe.pk, 'trimestre_id': tri.pk})).content.decode()
+    assert html.count('>Félicitations</span>') == 1 and 'Tableau d&#x27;honneur</span>' in html
+
+    # Mention désactivée après coup : reste proposée (cochée) tant qu'elle est attribuée ; décochée → retirée
+    Distinction.objects.filter(pk=tableau.pk).update(actif=False)
+    html = client.get(url, HTTP_HX_REQUEST='true').content.decode()
+    assert f'value="{tableau.pk}" checked>' in html
+    reponse = client.post(url, {'absences_justifiees': '2', 'retards': '1', 'distinctions': [str(felicitations.pk)]}, HTTP_HX_REQUEST='true')
+    assert reponse.status_code == 204
+    assert list(fiche.distinctions.values_list('code', flat=True)) == ['FELICITATIONS']
+
+    # Valeur forgée : erreur affichée dans la modale, pas d'erreur serveur
+    reponse = client.post(url, {'absences_justifiees': '2', 'distinctions': ['pas-un-uuid']}, HTTP_HX_REQUEST='true')
+    assert reponse.status_code == 200 and reponse.context['error']

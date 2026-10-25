@@ -3,6 +3,15 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.3.0 — 2026-10-25
+
+- Nouveau référentiel `Paramètres → Mentions / distinctions` (code, libellé, description, ordre, active ;
+  droit d'accès dédié) amorcé avec Félicitations, Tableau d'honneur, Encouragements, Avertissement, Blâme.
+- Saisie du bulletin : les mentions actives sont proposées en cases à cocher et enregistrées sur la fiche
+  (élève × trimestre) ; badges dans le tableau de classe, impression sur les bulletins trimestriels
+  (individuel, duplicata, classe), l'aperçu et la consultation parent.
+- Migrations : `parametres 0034`, `bulletins 0006`.
+
 ## 5.2.9 — 2026-10-25
 
 - Bulletins trimestriels (individuel, duplicata, classe, aperçu) : impression de la fiche saisie dans

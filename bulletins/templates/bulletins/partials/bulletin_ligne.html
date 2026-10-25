@@ -25,9 +25,10 @@
     {% if bulletin %}{{ bulletin.retards }}{% else %}0{% endif %}
   </td>
   <td style="font-size:0.8rem; color:var(--color-text-secondary); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+    {% if bulletin and bulletin.distinctions.all %}<div style="white-space:normal; line-height:1.9;">{% for d in bulletin.distinctions.all %}<span class="badge" style="background:#00A86B20; color:#00A86B; margin-right:4px;">{{ d.libelle }}</span>{% endfor %}</div>{% endif %}
     {% if bulletin and bulletin.appreciation_conseil %}
     {{ bulletin.appreciation_conseil|truncatechars:60 }}
-    {% else %}
+    {% elif not bulletin or not bulletin.distinctions.all %}
     <span style="color:var(--color-text-muted); font-style:italic;">Non renseignée</span>
     {% endif %}
   </td>

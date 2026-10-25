@@ -154,6 +154,7 @@ def _build_bulletin_context(request, inscription, trimestre):
     )
 
     fiche_bulletin = Bulletin.objects.filter(inscription=inscription, trimestre=trimestre).first()
+    distinctions = list(fiche_bulletin.distinctions.all()) if fiche_bulletin else []
     commentaire_eleve = _appreciation_conseil(
         fiche_bulletin, mg, nb_eleves, stats_classe['avg_moy'], resultats_annotes, sanctions_conduite
     )
@@ -199,6 +200,7 @@ def _build_bulletin_context(request, inscription, trimestre):
         'appreciation_generale': appreciation_generale,
         'sanctions_conduite': sanctions_conduite,
         'fiche_bulletin': fiche_bulletin,
+        'distinctions': distinctions,
         'commentaire_eleve': commentaire_eleve,
         'identite': etab_context.get('identite'),
         'logo_url': etab_context.get('logo_url'),
@@ -274,7 +276,10 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     # Récupérer toutes les données nécessaires
     from viescolaire.models import SanctionDisciplinaire
     from bulletins.models import Bulletin
-    fiches_par_ins = {f.inscription_id: f for f in Bulletin.objects.filter(inscription__in=inscriptions, trimestre=trimestre)}
+    fiches_par_ins = {
+        f.inscription_id: f
+        for f in Bulletin.objects.filter(inscription__in=inscriptions, trimestre=trimestre).prefetch_related('distinctions')
+    }
     # Précharger toutes les sanctions confirmées de la classe pour ce trimestre
     sanctions_par_ins = {}
     for s in SanctionDisciplinaire.objects.filter(
@@ -337,6 +342,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
                 'appreciation_generale': _get_appreciation_generale(ins, mg, etab),
                 'sanctions_conduite': sanctions,
                 'fiche_bulletin': fiches_par_ins.get(ins.pk),
+                'distinctions': list(fiches_par_ins[ins.pk].distinctions.all()) if ins.pk in fiches_par_ins else [],
                 'commentaire_eleve': None,
                 'competences_data': competences_data,
             })

@@ -106,6 +106,12 @@ urlpatterns = [
     path('types-sanctions/<uuid:pk>/edit/', views.type_sanction_form, name='type_sanction_edit'),
     path('types-sanctions/<uuid:pk>/delete/', views.type_sanction_delete, name='type_sanction_delete'),
 
+    # Mentions / distinctions (conseil de classe)
+    path('mentions-distinctions/', views.distinction_list, name='distinction_list'),
+    path('mentions-distinctions/create/', views.distinction_form, name='distinction_create'),
+    path('mentions-distinctions/<uuid:pk>/edit/', views.distinction_form, name='distinction_edit'),
+    path('mentions-distinctions/<uuid:pk>/delete/', views.distinction_delete, name='distinction_delete'),
+
     # Titres fonctions
     path('titres-fonctions/', views.titre_fonction_list, name='titre_fonction_list'),
     path('titres-fonctions/create/', views.titre_fonction_form, name='titre_fonction_create'),

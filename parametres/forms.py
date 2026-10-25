@@ -9,7 +9,7 @@ from .models import (
     TypeDocument, Cycle, AnneeScolaire, Classe, Poste, LocalisationPoste,
     StatutEleve, RubriquePaiement, AppreciationMoyenneSecondaire,
     AppreciationMoyennePrimaire, CategorieDiscipline, Discipline,
-    PeriodeEvaluation, TypeSanction, TitreFonction, TitreHonorifiquePersonnel,
+    PeriodeEvaluation, TypeSanction, Distinction, TitreFonction, TitreHonorifiquePersonnel,
     EvenementCalendrier, IdentiteEtablissement, RolePersonnalise,
 )
 
@@ -128,6 +128,13 @@ class TypeSanctionForm(forms.ModelForm):
     class Meta:
         model = TypeSanction
         fields = ['code', 'libelle', 'description', 'actif', 'points_defaut']
+        widgets = {'description': forms.Textarea(attrs={'rows': 2})}
+
+
+class DistinctionForm(forms.ModelForm):
+    class Meta:
+        model = Distinction
+        fields = ['code', 'libelle', 'description', 'ordre', 'actif']
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
 
 

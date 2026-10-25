@@ -19,7 +19,7 @@ from .forms import (
     AnneeScolaireForm, CycleForm, ClasseForm, PosteForm, LocalisationPosteForm,
     StatutEleveForm, RubriquePaiementForm, AppreciationMoyenneSecondaireForm,
     AppreciationMoyennePrimaireForm, CategorieDisciplineForm, DisciplineForm,
-    PeriodeEvaluationForm, TypeSanctionForm, TitreFonctionForm,
+    PeriodeEvaluationForm, TypeSanctionForm, DistinctionForm, TitreFonctionForm,
     TitreHonorifiquePersonnelForm, TypeEvaluationForm,
     EvenementCalendrierForm, IdentiteEtablissementForm, RolePersonnaliseForm,
 )
@@ -27,7 +27,7 @@ from .models import (
     Cycle, AnneeScolaire, TypeDocument, SignataireDocument,
     Classe, Poste, LocalisationPoste, StatutEleve, RubriquePaiement, TarifScolarite,
     AppreciationMoyenneSecondaire, AppreciationMoyennePrimaire, PeriodeEvaluation, Discipline,
-    CategorieDiscipline, TypeSanction, TitreFonction, TitreHonorifiquePersonnel,
+    CategorieDiscipline, TypeSanction, Distinction, TitreFonction, TitreHonorifiquePersonnel,
     EvenementCalendrier, ModeleMessage, DeclencheurSMS, DroitAcces, RolePersonnalise,
 )
 from personnel.models import MembrePersonnel
@@ -1192,6 +1192,29 @@ def type_sanction_form(request, pk=None):
     return render(request, 'parametres/partials/type_sanction_form.html', {'type_sanction': type_sanction})
 
 
+# ─── MENTIONS / DISTINCTIONS ──────────────────────────────────────
+
+@login_required
+def distinction_list(request):
+    distinctions = Distinction.objects.all()
+    tpl = 'parametres/partials/distinction_list.html' if request.headers.get('HX-Request') else 'parametres/mentions_distinctions.html'
+    return render(request, tpl, {'distinctions': distinctions})
+
+
+@login_required
+def distinction_form(request, pk=None):
+    distinction = get_object_or_404(Distinction, pk=pk) if pk else None
+
+    if request.method == 'POST':
+        form = DistinctionForm(request.POST, instance=distinction)
+        if form.is_valid():
+            form.save()
+            return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
+        return render(request, 'parametres/partials/distinction_form.html', {'distinction': distinction, 'error': form.errors.as_text()})
+
+    return render(request, 'parametres/partials/distinction_form.html', {'distinction': distinction})
+
+
 # ─── DROITS D'ACCÈS PAR RÔLE ──────────────────────────────────────
 
 @login_required
@@ -1562,6 +1585,13 @@ def type_document_delete(request, pk):
 @require_POST
 def type_sanction_delete(request, pk):
     obj = get_object_or_404(TypeSanction, pk=pk)
+    return _delete_view(request, obj)
+
+
+@login_required
+@require_POST
+def distinction_delete(request, pk):
+    obj = get_object_or_404(Distinction, pk=pk)
     return _delete_view(request, obj)
 
 

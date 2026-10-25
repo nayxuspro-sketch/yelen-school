@@ -21,7 +21,7 @@ Bulletins trimestriels d'une classe : le modèle du bulletin individuel, un él�
 {% block corps %}
 {% for data in students_data %}
 <div class="bul-page"{% if not forloop.last %} style="page-break-after: always;"{% endif %}>
-    {% include "pedagogie/pdf/partials/bulletin_trimestriel_corps.html" with inscription=data.inscription mg=data.mg resultats_annotes=data.resultats_annotes appreciation_generale=data.appreciation_generale sanctions_conduite=data.sanctions_conduite fiche_bulletin=data.fiche_bulletin commentaire_eleve=data.commentaire_eleve competences_data=data.competences_data %}
+    {% include "pedagogie/pdf/partials/bulletin_trimestriel_corps.html" with inscription=data.inscription mg=data.mg resultats_annotes=data.resultats_annotes appreciation_generale=data.appreciation_generale sanctions_conduite=data.sanctions_conduite fiche_bulletin=data.fiche_bulletin distinctions=data.distinctions commentaire_eleve=data.commentaire_eleve competences_data=data.competences_data %}
 </div>
 {% endfor %}
 {% endblock %}

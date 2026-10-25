@@ -479,3 +479,48 @@ class TestTypeSanctionForm:
         assert reponse.status_code == 204, reponse.content.decode()[:200]
         type_sanction.refresh_from_db()
         assert type_sanction.actif is False and type_sanction.points_defaut == Decimal('-1.50')
+
+
+@pytest.mark.django_db
+class TestDistinction:
+    """Référentiel Mentions / distinctions : amorcé par migration, géré en modale HTMX, proposé dans la saisie du bulletin."""
+
+    @pytest.fixture
+    def client_admin(self, client):
+        etab = baker.make(Etablissement)
+        client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
+        return client
+
+    def test_amorcage_et_liste(self, client_admin):
+        from parametres.models import Distinction
+
+        assert list(Distinction.objects.values_list('code', flat=True)) == [
+            'FELICITATIONS', 'TABLEAU_HONNEUR', 'ENCOURAGEMENTS', 'AVERTISSEMENT', 'BLAME']
+        html = client_admin.get(reverse('parametres:distinction_list')).content.decode()
+        assert '<h1 class="page-title">Mentions / distinctions</h1>' in html
+        assert 'data-url="/parametres/mentions-distinctions/"' in html, 'entrée du menu Paramètres'
+        assert html.count('title="Modifier"') == 5 and 'Tableau d&#x27;honneur' in html
+        assert '<html' not in client_admin.get(reverse('parametres:distinction_list'), HTTP_HX_REQUEST='true').content.decode()
+
+    def test_creation_modification_suppression(self, client_admin):
+        from parametres.models import Distinction
+
+        html = client_admin.get(reverse('parametres:distinction_create'), HTTP_HX_REQUEST='true').content.decode()
+        assert re.search(r'name="ordre"[^>]*value="0"', html) and re.search(r'name="actif"[^>]*checked', html)
+
+        reponse = client_admin.post(reverse('parametres:distinction_create'), {
+            'code': 'PRIX_EXCELLENCE', 'libelle': "Prix d'excellence", 'description': '', 'ordre': '0', 'actif': 'on',
+        }, HTTP_HX_REQUEST='true')
+        assert reponse.status_code == 204, reponse.content.decode()[:200]
+        mention = Distinction.objects.get(code='PRIX_EXCELLENCE')
+        assert mention.actif is True and mention.ordre == 0
+
+        reponse = client_admin.post(reverse('parametres:distinction_edit', args=[mention.pk]), {
+            'code': 'PRIX_EXCELLENCE', 'libelle': "Prix d'excellence", 'description': '', 'ordre': '9',
+        }, HTTP_HX_REQUEST='true')
+        assert reponse.status_code == 204
+        mention.refresh_from_db()
+        assert (mention.ordre, mention.actif) == (9, False), 'case décochée = mention inactive'
+
+        assert client_admin.post(reverse('parametres:distinction_delete', args=[mention.pk])).status_code == 204
+        assert not Distinction.objects.filter(pk=mention.pk).exists()

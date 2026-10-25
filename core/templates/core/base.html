@@ -643,6 +643,9 @@
         {% if '/parametres/types-sanctions/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:type_sanction_list' %}" class="sb-item-submodern" data-url="/parametres/types-sanctions/"><span class="sub-item-dot"></span>Types Sanctions</a>
         {% endif %}
+        {% if '/parametres/mentions-distinctions/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:distinction_list' %}" class="sb-item-submodern" data-url="/parametres/mentions-distinctions/"><span class="sub-item-dot"></span>Mentions / distinctions</a>
+        {% endif %}
         {% if '/parametres/titres-fonctions/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:titre_fonction_list' %}" class="sb-item-submodern" data-url="/parametres/titres-fonctions/"><span class="sub-item-dot"></span>Titres Fonctions</a>
         {% endif %}

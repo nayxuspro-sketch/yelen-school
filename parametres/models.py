@@ -1277,6 +1277,29 @@ class TypeSanction(BaseModel):
         return f"{self.libelle} ({self.code})"
 
 
+class Distinction(BaseModel):
+    """Mentions et distinctions décernées par le conseil de classe (cochées dans la saisie du bulletin).
+
+    Ex: FELICITATIONS, TABLEAU_HONNEUR, ENCOURAGEMENTS, AVERTISSEMENT, BLAME.
+    """
+
+    code = models.CharField(max_length=20, unique=True, verbose_name=_("Code"),
+                            help_text=_("Ex: FELICITATIONS, TABLEAU_HONNEUR"))
+    libelle = models.CharField(max_length=100, verbose_name=_("Libellé"),
+                               help_text=_("Ex: Félicitations, Tableau d'honneur"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    ordre = models.PositiveSmallIntegerField(default=0, verbose_name=_("Ordre d'affichage"))
+    actif = models.BooleanField(default=True, verbose_name=_("Mention active"))
+
+    class Meta:
+        verbose_name = _("Mention / distinction")
+        verbose_name_plural = _("Mentions / distinctions")
+        ordering = ['ordre', 'libelle']
+
+    def __str__(self):
+        return self.libelle
+
+
 # ═══════════════════════════════════════════════════════════════════
 # 15. SIGNATAIRE DOCUMENT (v3.4)
 # ═══════════════════════════════════════════════════════════════════

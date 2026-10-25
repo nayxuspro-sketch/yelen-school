@@ -7640,6 +7640,29 @@ input::-webkit-strong-password-auto-fill-button {
   box-shadow: 0 0 0 3px rgba(0,168,107,0.15);
 }
 
+/* Cases à cocher des mentions / distinctions */
+.bul-modal-checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.bul-modal-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 8px;
+  background: #0D1B2E;
+  color: #E2E8F0;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.bul-modal-check:has(input:checked) { border-color: #00A86B; background: rgba(0,168,107,0.10); }
+.bul-modal-check input { width: 1rem; height: 1rem; accent-color: #00A86B; flex-shrink: 0; }
+.bul-modal-hint { font-size: 0.8rem; color: #94A3B8; font-style: italic; margin: 0 0 0.5rem; }
+
 /* Séparateur */
 .bul-modal-sep {
   height: 1px;

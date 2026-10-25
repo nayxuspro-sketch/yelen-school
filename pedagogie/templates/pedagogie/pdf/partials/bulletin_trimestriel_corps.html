@@ -2,7 +2,8 @@
 Corps du bulletin trimestriel (modèle de référence) : en-tête établissement, titre, identité de l'élève,
 notes, compétences, conduite, statistiques, appréciation du conseil, signatures.
 Contexte : inscription, trimestre, mg, resultats_annotes, nb_eleves, moy_max/min/avg_classe, appreciation_generale,
-sanctions_conduite, fiche_bulletin (absences, retards, appréciation du conseil), commentaire_eleve, competences_data,
+sanctions_conduite, fiche_bulletin (absences, retards, appréciation du conseil), distinctions (mentions cochées),
+commentaire_eleve, competences_data,
 identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
 {% endcomment %}<!-- ══ EN-TÊTE ÉTABLISSEMENT ══ -->
 <div class="bul-header">
@@ -280,12 +281,13 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
     </div>
 </div>
 
-{% if commentaire_eleve %}
+{% if commentaire_eleve or distinctions %}
 <!-- ══ APPRÉCIATION DU CONSEIL ══ -->
 <div class="bul-card">
     <div class="bul-section-label">Appréciation du conseil de classe</div>
     <div class="bul-card-body">
-        <p style="margin:0; font-style:italic; color:#000; line-height:1.5;">{{ commentaire_eleve }}</p>
+        {% if distinctions %}<p style="margin:0 0 4px; color:#000;"><strong>Mentions / distinctions :</strong> {{ distinctions|join:" · " }}</p>{% endif %}
+        {% if commentaire_eleve %}<p style="margin:0; font-style:italic; color:#000; line-height:1.5;">{{ commentaire_eleve }}</p>{% endif %}
     </div>
 </div>
 {% endif %}
