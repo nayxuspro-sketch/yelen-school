@@ -215,6 +215,7 @@ class TestBulletinTrimestriel:
         # Colonne Professeur élargie (21 %) aux dépens de la colonne Appréciation (13 %)
         assert '<th style="width:13%;">Appréciation</th>' in _html(weasy)
         assert '<th style="width:21%;">Professeur</th>' in _html(weasy)
+        assert '_____' not in _html(weasy), 'colonne Signature vide (pas de ligne en face des professeurs)'
 
         reponse = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf',
                                        kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
