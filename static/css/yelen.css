@@ -7428,15 +7428,17 @@ input::-webkit-strong-password-auto-fill-button {
   table-layout: fixed;
 }
 /* colgroup widths */
-.bul-col-eleve    { width: 20%; }
-.bul-col-moy      { width: 8%;  }
-.bul-col-rang     { width: 7%;  }
-.bul-col-absj     { width: 7%;  }
-.bul-col-absnj    { width: 8%;  }
-.bul-col-ret      { width: 7%;  }
-.bul-col-apprec   { width: 27%; }
-.bul-col-statut   { width: 11%; }
-.bul-col-actions  { width: 5%;  }
+.bul-col-eleve    { width: 18%; }
+.bul-col-moy      { width: 7%;  }
+.bul-col-rang     { width: 6%;  }
+.bul-col-absj     { width: 6%;  }
+.bul-col-absnj    { width: 7%;  }
+.bul-col-ret      { width: 6%;  }
+.bul-col-apprec   { width: 16%; }
+.bul-col-statut   { width: 10%; }
+.bul-col-actions  { width: 24%; } /* 4 boutons (saisir, publier, aperçu, PDF) ≈ 180 px, dès 1280 px */
+.bul-table-fixed th:last-child,
+.bul-table-fixed td:last-child { padding-left: 8px; padding-right: 8px; }
 /* inline matricule chip */
 .bul-matricule {
   margin-left: 8px;
@@ -7449,7 +7451,7 @@ input::-webkit-strong-password-auto-fill-button {
   display: flex;
   gap: 2px;
   justify-content: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap; /* jamais rogné par le conteneur (overflow hidden) : passe à la ligne si trop étroit */
 }
 /* utility */
 .text-italic { font-style: italic; }

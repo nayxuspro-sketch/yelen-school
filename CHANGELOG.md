@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.2.6 — 2026-10-24
+
+- Bulletins d'une classe : la colonne Actions (5 % de la largeur) rognait trois des quatre boutons ;
+  largeurs de colonnes revues, les quatre boutons sont visibles dès 1280 px et passent à la ligne
+  en dessous au lieu d'être coupés.
+
 ## 5.2.5 — 2026-10-24
 
 - Bulletins trimestriels PDF : le total de points est rapporté au maximum possible (coefficients × 20),
