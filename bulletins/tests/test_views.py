@@ -34,9 +34,13 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
     import core.pdf
     from parametres.models import TypeDocument
 
-    documents = []
+    documents, sources = [], []
 
     class HTMLEspion(core.pdf.HTML):
+        def __init__(self, *args, **kwargs):
+            sources.append(kwargs.get('string', ''))
+            super().__init__(*args, **kwargs)
+
         def write_pdf(self, target=None, **kwargs):
             document = self.render()
             documents.append(document)
@@ -47,7 +51,7 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
     etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR')
     baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='COMPLEXE SCOLAIRE LE SAVOIR',
                devise='Discipline — Travail — Succès', adresse_complete='Secteur 15, Ouaga 2000', ville='Ouagadougou',
-               telephone='+226 25 36 47 58')
+               telephone='+226 25 36 47 58', numero_agrement_mena='N°2024-0147/MENAPLN/SG/DGEPFIC')
     client.force_login(baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True, libelle='2025-2026')
     cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST', nom='Post-primaire')
@@ -77,6 +81,10 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
     # A5 portrait : 148 × 210 mm, soit 559,4 × 793,7 px CSS (WeasyPrint)
     for page in documents[0].pages + documents[1].pages:
         assert round(page.width) == 559 and round(page.height) == 794
+    # N° Agrément sous le nom de l'établissement, sur l'individuel et sur chacun des 3 bulletins du lot
+    agrement = 'N° Agrément : N°2024-0147/MENAPLN/SG/DGEPFIC</div>'
+    assert sources[0].count(agrement) == 1 and sources[1].count(agrement) == 3
+    assert sources[0].index('COMPLEXE SCOLAIRE LE SAVOIR</div>') < sources[0].index(agrement) < sources[0].index('Discipline — Travail — Succès')
 
 
 @pytest.mark.django_db
