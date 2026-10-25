@@ -262,6 +262,21 @@ class TestFonctionsPures:
     def test_mention(self, moyenne, mention):
         assert _get_mention(moyenne) == mention
 
+    def test_textes_generes_en_virgule_francaise(self):
+        """Les nombres des textes générés (appréciation élève, bilan de classe) s'écrivent 11,14 et non 11.14."""
+        import re
+        from types import SimpleNamespace
+        from pedagogie.utils_ia import generer_analyse_bilan, generer_commentaire_eleve
+
+        mg = SimpleNamespace(moyenne=Decimal('9.50'), rang=5, nb_matieres_validees=3, nb_matieres_total=7)
+        texte = generer_commentaire_eleve(mg, 10, Decimal('11.14'), [])
+        assert 'moyenne insuffisante de 9,50/20' in texte and 'moyenne de classe de 11,14/20 (rang 5/10)' in texte
+        bilan = generer_analyse_bilan([{'cle': 'k', 'moy_classe': 12.5, 'taux': 66.666, 'moy_max': 17.5, 'moy_min': 4.2,
+                                       'nb_eleves': 30, 'nb_admis': 20}])['k']
+        assert 'moyenne de 12,50/20' in bilan['commentaire'] and 'taux de réussite de 66,7 %' in bilan['commentaire']
+        assert 'écart de 13,3 points' in bilan['commentaire']
+        assert not re.search(r'\d\.\d', texte + bilan['commentaire'] + ' '.join(bilan['recommandations']))
+
     def test_appreciation_trou_de_configuration(self):
         bas = SimpleNamespace(libelle='Insuffisant', moy_min=Decimal('0'), moy_max=Decimal('9.99'))
         haut = SimpleNamespace(libelle='Assez bien', moy_min=Decimal('12'), moy_max=Decimal('13.99'))

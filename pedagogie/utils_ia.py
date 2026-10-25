@@ -5,6 +5,11 @@ Génère des commentaires et recommandations basés sur des règles statistiques
 import datetime
 
 
+
+def _fr(valeur, decimales=2):
+    """Nombre au format français (virgule décimale) pour les textes générés : 11,14."""
+    return f"{float(valeur):.{decimales}f}".replace('.', ',')
+
 def _niveau_moyenne(moy):
     """Retourne le niveau qualitatif d'une moyenne /20."""
     if moy is None:
@@ -56,29 +61,29 @@ def _commentaire(s):
     # Phrase 1 — appréciation globale
     if niv_m == 'tres_bien':
         phrases.append(
-            f"La classe affiche d'excellents résultats avec une moyenne de {moy:.2f}/20."
+            f"La classe affiche d'excellents résultats avec une moyenne de {_fr(moy, 2)}/20."
         )
     elif niv_m == 'bien':
         phrases.append(
-            f"Les résultats sont bons avec une moyenne de {moy:.2f}/20."
+            f"Les résultats sont bons avec une moyenne de {_fr(moy, 2)}/20."
         )
     elif niv_m == 'assez_bien':
         phrases.append(
-            f"Les résultats sont satisfaisants avec une moyenne de {moy:.2f}/20."
+            f"Les résultats sont satisfaisants avec une moyenne de {_fr(moy, 2)}/20."
         )
     elif niv_m == 'passable':
         phrases.append(
-            f"Les résultats sont passables avec une moyenne de {moy:.2f}/20 ; "
+            f"Les résultats sont passables avec une moyenne de {_fr(moy, 2)}/20 ; "
             "des efforts supplémentaires sont nécessaires."
         )
     elif niv_m == 'faible':
         phrases.append(
-            f"Les résultats sont insuffisants avec une moyenne de {moy:.2f}/20 ; "
+            f"Les résultats sont insuffisants avec une moyenne de {_fr(moy, 2)}/20 ; "
             "la situation nécessite une attention immédiate."
         )
     elif niv_m == 'insuffisant':
         phrases.append(
-            f"La classe est en grande difficulté avec une moyenne de {moy:.2f}/20 ; "
+            f"La classe est en grande difficulté avec une moyenne de {_fr(moy, 2)}/20 ; "
             "une intervention pédagogique urgente s'impose."
         )
     else:
@@ -88,36 +93,36 @@ def _commentaire(s):
     if taux is not None:
         if niv_t == 'excellent':
             phrases.append(
-                f"Le taux de réussite de {taux:.1f}% témoigne d'un très bon niveau général."
+                f"Le taux de réussite de {_fr(taux, 1)} % témoigne d'un très bon niveau général."
             )
         elif niv_t == 'bon':
             phrases.append(
-                f"Le taux de réussite de {taux:.1f}% est encourageant."
+                f"Le taux de réussite de {_fr(taux, 1)} % est encourageant."
             )
         elif niv_t == 'moyen':
             phrases.append(
-                f"Le taux de réussite de {taux:.1f}% reste perfectible."
+                f"Le taux de réussite de {_fr(taux, 1)} % reste perfectible."
             )
         elif niv_t == 'faible':
             phrases.append(
-                f"Avec seulement {taux:.1f}% de réussite, la majorité des élèves "
+                f"Avec seulement {_fr(taux, 1)} % de réussite, la majorité des élèves "
                 "est en difficulté."
             )
         else:
             phrases.append(
-                f"Le taux de réussite de {taux:.1f}% est très préoccupant."
+                f"Le taux de réussite de {_fr(taux, 1)} % est très préoccupant."
             )
 
     # Phrase 3 — disparité
     if ecart is not None:
         if ecart >= 12:
             phrases.append(
-                f"L'écart de {ecart:.1f} points entre le meilleur et le plus faible élève "
+                f"L'écart de {_fr(ecart, 1)} points entre le meilleur et le plus faible élève "
                 "révèle une très grande hétérogénéité au sein de la classe."
             )
         elif ecart >= 8:
             phrases.append(
-                f"Un écart de {ecart:.1f} points indique une classe assez hétérogène."
+                f"Un écart de {_fr(ecart, 1)} points indique une classe assez hétérogène."
             )
 
     return " ".join(phrases)
@@ -262,17 +267,17 @@ def generer_commentaire_eleve(mg, nb_eleves, moy_avg_classe, resultats_annotes, 
 
     # ── Phrase 1 : niveau global ─────────────────────────────────────
     if moyenne >= 16:
-        p1 = f"Excellent travail ce trimestre avec une moyenne remarquable de {moyenne:.2f}/20."
+        p1 = f"Excellent travail ce trimestre avec une moyenne remarquable de {_fr(moyenne, 2)}/20."
     elif moyenne >= 14:
-        p1 = f"Très bon travail ce trimestre avec une moyenne de {moyenne:.2f}/20."
+        p1 = f"Très bon travail ce trimestre avec une moyenne de {_fr(moyenne, 2)}/20."
     elif moyenne >= 12:
-        p1 = f"Bon travail ce trimestre, avec une moyenne satisfaisante de {moyenne:.2f}/20."
+        p1 = f"Bon travail ce trimestre, avec une moyenne satisfaisante de {_fr(moyenne, 2)}/20."
     elif moyenne >= 10:
-        p1 = f"Résultats passables ce trimestre avec une moyenne de {moyenne:.2f}/20 ; des progrès sont possibles."
+        p1 = f"Résultats passables ce trimestre avec une moyenne de {_fr(moyenne, 2)}/20 ; des progrès sont possibles."
     elif moyenne >= 8:
-        p1 = f"Trimestre difficile avec une moyenne insuffisante de {moyenne:.2f}/20 ; un effort soutenu est nécessaire."
+        p1 = f"Trimestre difficile avec une moyenne insuffisante de {_fr(moyenne, 2)}/20 ; un effort soutenu est nécessaire."
     else:
-        p1 = f"Résultats très insuffisants ce trimestre avec une moyenne de {moyenne:.2f}/20 ; une remise en question sérieuse s'impose."
+        p1 = f"Résultats très insuffisants ce trimestre avec une moyenne de {_fr(moyenne, 2)}/20 ; une remise en question sérieuse s'impose."
     phrases.append(p1)
 
     # ── Phrase 2 : position dans la classe ──────────────────────────
@@ -284,7 +289,7 @@ def generer_commentaire_eleve(mg, nb_eleves, moy_avg_classe, resultats_annotes, 
             phrases.append(f"L'élève se situe dans le bon tiers de la classe (rang {rang}/{nb_eleves}).")
         elif pct_rang <= 0.65:
             if moy_avg_classe and moyenne < float(moy_avg_classe):
-                phrases.append(f"L'élève est en dessous de la moyenne de classe de {float(moy_avg_classe):.2f}/20 (rang {rang}/{nb_eleves}).")
+                phrases.append(f"L'élève est en dessous de la moyenne de classe de {_fr(moy_avg_classe, 2)}/20 (rang {rang}/{nb_eleves}).")
             else:
                 phrases.append(f"L'élève se situe dans la moyenne de la classe (rang {rang}/{nb_eleves}).")
         else:
@@ -410,15 +415,15 @@ def calculer_score_risque(inscription, annee):
         chute = premiere - derniere
 
         if derniere < 8:
-            pts, detail = 30, f"Moyenne critique : {derniere:.2f}/20"
+            pts, detail = 30, f"Moyenne critique : {_fr(derniere, 2)}/20"
         elif derniere < 10 and chute > 2:
-            pts, detail = 22, f"Moyenne insuffisante en chute ({premiere:.1f} -> {derniere:.1f}/20)"
+            pts, detail = 22, f"Moyenne insuffisante en chute ({_fr(premiere, 1)} -> {_fr(derniere, 1)}/20)"
         elif derniere < 10:
-            pts, detail = 15, f"Moyenne insuffisante : {derniere:.2f}/20"
+            pts, detail = 15, f"Moyenne insuffisante : {_fr(derniere, 2)}/20"
         elif chute > 3:
-            pts, detail = 12, f"Chute marquée ({premiere:.1f} -> {derniere:.1f}/20)"
+            pts, detail = 12, f"Chute marquée ({_fr(premiere, 1)} -> {_fr(derniere, 1)}/20)"
         elif chute > 1.5:
-            pts, detail = 6, f"Baisse de la moyenne ({premiere:.1f} -> {derniere:.1f}/20)"
+            pts, detail = 6, f"Baisse de la moyenne ({_fr(premiere, 1)} -> {_fr(derniere, 1)}/20)"
         else:
             pts, detail = 0, ""
 
@@ -432,7 +437,7 @@ def calculer_score_risque(inscription, annee):
         facteurs.append({
             'libelle': "Moyenne critique (T1)",
             'points': pts,
-            'detail': f"Moyenne du 1er trimestre : {moyennes[0]:.2f}/20",
+            'detail': f"Moyenne du 1er trimestre : {_fr(moyennes[0], 2)}/20",
         })
 
     # ── 3. MATIÈRES SOUS 8/20 (max 20 pts) ─────────────────────────

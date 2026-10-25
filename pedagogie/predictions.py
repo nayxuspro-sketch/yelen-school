@@ -9,6 +9,8 @@ Algorithme sans ML : formule pondérée basée sur :
 import logging
 from decimal import Decimal
 
+from .utils_ia import _fr
+
 logger = logging.getLogger(__name__)
 
 
@@ -51,7 +53,7 @@ def calculer_prediction(inscription):
     facteurs = [
         {
             'libelle': f"Moyenne générale ({derniere_mg.trimestre.nom})",
-            'detail': f"{mg_val:.2f}/20",
+            'detail': f"{_fr(mg_val)}/20",
             'points': round(score_base, 1),
         }
     ]
@@ -75,7 +77,7 @@ def calculer_prediction(inscription):
                 bonus_tendance = -10
             facteurs.append({
                 'libelle': "Tendance inter-trimestrielle",
-                'detail': f"{tendance:+.2f} pts ({derniere_mg.trimestre.nom} vs {avant_derniere.trimestre.nom})",
+                'detail': f"{'+' if tendance > 0 else ''}{_fr(tendance)} pts ({derniere_mg.trimestre.nom} vs {avant_derniere.trimestre.nom})",
                 'points': bonus_tendance,
             })
 
