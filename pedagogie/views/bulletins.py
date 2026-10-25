@@ -394,11 +394,33 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     return response
 
 
+def _moyenne_annuelle(moyennes_trimestrielles):
+    """Moyenne annuelle = moyenne arithmétique des moyennes trimestrielles imprimées sur les bulletins
+    (arrondi au centime supérieur, comme les moyennes trimestrielles) ; None sans trimestre calculé."""
+    from pedagogie.utils import CalculateurMoyenne
+    moyennes = [m for m in moyennes_trimestrielles if m is not None]
+    return CalculateurMoyenne.arrondir(sum(moyennes) / len(moyennes)) if moyennes else None
+
+
+def _moyennes_annuelles_classe(classe, annee_scolaire, trimestres):
+    """{inscription_id: moyenne annuelle} des élèves actifs de la classe (même règle que le bulletin)."""
+    from collections import defaultdict
+    par_ins = defaultdict(list)
+    lignes = MoyenneGenerale.objects.filter(
+        inscription__classe=classe, inscription__annee_scolaire=annee_scolaire,
+        trimestre__in=trimestres, moyenne__isnull=False,
+    ).exclude(inscription__statut='ABANDON').values_list('inscription_id', 'moyenne')
+    for ins_id, moyenne in lignes:
+        par_ins[ins_id].append(moyenne)
+    return {ins_id: _moyenne_annuelle(moyennes) for ins_id, moyennes in par_ins.items()}
+
+
 def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
     """Construit le contexte pour le bulletin annuel."""
     from datetime import date as _date
     from parametres.models import TypeDocument, SignataireDocument
     from decimal import Decimal
+    from pedagogie.utils import CalculateurMoyenne
 
     etab = inscription.classe.etablissement
     etab_context = get_etablissement_context(etab, request)
@@ -427,34 +449,15 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
                 total_coefficients_annuel += mg.total_coefficients
         periodes.append({'nom': t.nom, 'moyenne': mg.moyenne if mg else None})
 
-    moyenne_annuelle = None
-    if total_coefficients_annuel > 0:
-        moyenne_annuelle = (total_points_annuel / total_coefficients_annuel).quantize(Decimal('0.01'))
-
-    from django.db.models import Sum as _Sum
+    moyenne_annuelle = _moyenne_annuelle(p['moyenne'] for p in periodes)
 
     # Moyenne annuelle de chaque élève actif de la classe (une entrée par élève)
-    all_annuals = list(MoyenneGenerale.objects.filter(
-        inscription__classe=inscription.classe,
-        inscription__annee_scolaire=annee_scolaire,
-        trimestre__in=trimestres,
-    ).exclude(
-        inscription__statut='ABANDON'
-    ).values('inscription_id').annotate(
-        pts=_Sum('total_points'),
-        coef=_Sum('total_coefficients'),
-    ))
-
-    avgs_by_ins = {
-        row['inscription_id']: Decimal(str(row['pts'])) / Decimal(str(row['coef']))
-        for row in all_annuals
-        if row['coef']
-    }
+    avgs_by_ins = _moyennes_annuelles_classe(inscription.classe, annee_scolaire, trimestres)
 
     all_avgs = list(avgs_by_ins.values())
     moy_max_classe = max(all_avgs) if all_avgs else None
     moy_min_classe = min(all_avgs) if all_avgs else None
-    moy_avg_classe = (sum(all_avgs) / len(all_avgs)).quantize(Decimal('0.01')) if all_avgs else None
+    moy_avg_classe = CalculateurMoyenne.arrondir(sum(all_avgs) / len(all_avgs)) if all_avgs else None
 
     nb_admis = sum(1 for m in all_avgs if m >= Decimal('10'))
     taux_reussite = (nb_admis / nb_eleves * 100) if nb_eleves > 0 else 0
@@ -663,28 +666,10 @@ def bulletin_annuel_classe_batch_pdf(request, class_id):
 def _compute_palmares_annuel(classe, annee_scolaire):
     """Calcule le palmarès annuel d'une classe : moyenne, rang et décision du conseil."""
     from decimal import Decimal
-    from django.db.models import Sum
+    from pedagogie.utils import CalculateurMoyenne
 
     trimestres = list(Trimestre.objects.filter(annee_scolaire=annee_scolaire).order_by('numero'))
-
-    rows = list(
-        MoyenneGenerale.objects.filter(
-            inscription__classe=classe,
-            inscription__annee_scolaire=annee_scolaire,
-            trimestre__in=trimestres,
-        ).exclude(
-            inscription__statut='ABANDON'
-        ).values('inscription_id').annotate(
-            pts=Sum('total_points'),
-            coef=Sum('total_coefficients'),
-        )
-    )
-
-    avgs_by_ins = {
-        row['inscription_id']: Decimal(str(row['pts'])) / Decimal(str(row['coef']))
-        for row in rows
-        if row['coef']
-    }
+    avgs_by_ins = _moyennes_annuelles_classe(classe, annee_scolaire, trimestres)
 
     # Classement avec ex-aequo
     sorted_avgs = sorted(avgs_by_ins.items(), key=lambda x: x[1], reverse=True)
@@ -709,7 +694,7 @@ def _compute_palmares_annuel(classe, annee_scolaire):
         moyenne = avgs_by_ins.get(ins.pk)
         rang = rang_by_ins.get(ins.pk)
         if moyenne is not None:
-            moyenne_q = moyenne.quantize(Decimal('0.01'))
+            moyenne_q = moyenne
             admis = moyenne_q >= Decimal('10')
             decision = "Admis(e) en classe supérieure" if admis else "Redouble la classe"
         else:
@@ -731,9 +716,9 @@ def _compute_palmares_annuel(classe, annee_scolaire):
     all_avgs = list(avgs_by_ins.values())
     nb_admis = sum(1 for m in all_avgs if m >= Decimal('10'))
     taux_reussite = round(nb_admis / nb_eleves * 100, 1) if nb_eleves > 0 else 0
-    moy_max = max(all_avgs).quantize(Decimal('0.01')) if all_avgs else None
-    moy_min = min(all_avgs).quantize(Decimal('0.01')) if all_avgs else None
-    moy_avg = (sum(all_avgs) / len(all_avgs)).quantize(Decimal('0.01')) if all_avgs else None
+    moy_max = max(all_avgs) if all_avgs else None
+    moy_min = min(all_avgs) if all_avgs else None
+    moy_avg = CalculateurMoyenne.arrondir(sum(all_avgs) / len(all_avgs)) if all_avgs else None
 
     return {
         'palmares': palmares,

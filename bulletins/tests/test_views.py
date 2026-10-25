@@ -139,3 +139,44 @@ def test_saisie_bulletin_mentions_distinctions(client):
     # Valeur forgée : erreur affichée dans la modale, pas d'erreur serveur
     reponse = client.post(url, {'absences_justifiees': '2', 'distinctions': ['pas-un-uuid']}, HTTP_HX_REQUEST='true')
     assert reponse.status_code == 200 and reponse.context['error']
+
+
+@pytest.mark.django_db
+def test_moyenne_annuelle_egale_moyenne_des_trimestres(client):
+    """Moyenne annuelle = moyenne des moyennes trimestrielles imprimées, arrondie au centime supérieur
+    (cas réel : T1 seul à 11,63 → l'annuel affichait 11,62, recalculé à partir des points avec l'arrondi au pair)."""
+    from decimal import Decimal
+
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True, libelle='2025-2026')
+    classe = baker.make('parametres.Classe', etablissement=etab, nom='4ème B')
+    t1, t2 = (baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=i, nom=f'Trimestre {i}') for i in (1, 2))
+
+    def eleve(nom, *moyennes):
+        ins = baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee, eleve__nom=nom)
+        for trimestre, (moyenne, points, coef) in zip((t1, t2), moyennes):
+            baker.make('pedagogie.MoyenneGenerale', inscription=ins, trimestre=trimestre, moyenne=Decimal(moyenne),
+                       total_points=Decimal(points), total_coefficients=Decimal(coef))
+        return ins
+
+    compaore = eleve('COMPAORE', ('11.63', '279.00', '24'))                              # 279/24 = 11,625 → 11,63
+    inegal = eleve('OUEDRAOGO', ('10.00', '100.00', '10'), ('14.00', '420.00', '30'))     # pondéré = 13,00 ; moyenne des trimestres = 12,00
+    zero = eleve('ZONGO', ('0.00', '0.00', '24'))
+
+    def contexte(ins):
+        return client.get(reverse('bulletins:bulletin_annuel', kwargs={'inscription_id': ins.pk, 'annee_pk': annee.pk})).context
+
+    ctx = contexte(compaore)
+    assert ctx['periodes'][0]['moyenne'] == Decimal('11.63') and ctx['moyenne_annuelle']['moyenne_annuelle'] == Decimal('11.63')
+    assert ctx['moyenne_annuelle']['rang'] == 2
+    ctx = contexte(inegal)
+    assert ctx['moyenne_annuelle']['moyenne_annuelle'] == Decimal('12.00') and ctx['moyenne_annuelle']['rang'] == 1
+    assert (ctx['moy_max_classe'], ctx['moy_min_classe'], ctx['moy_avg_classe']) == (Decimal('12.00'), Decimal('0.00'), Decimal('7.88'))  # 23,63/3 = 7,8767
+
+    html = client.get(reverse('bulletins:bulletin_annuel', kwargs={'inscription_id': zero.pk, 'annee_pk': annee.pk})).content.decode()
+    assert '0,00' in html and '>—<' not in html.split('Trimestre 1')[1].split('</tr>')[0], 'une moyenne de 0,00 s’imprime, pas « — »'
+
+    palmares = {p['eleve'].nom: (p['moyenne'], p['rang']) for p in
+                client.get(reverse('pedagogie:palmares_annuel', kwargs={'class_id': classe.pk}) + f'?annee={annee.pk}').context['palmares']}
+    assert palmares['COMPAORE'] == (Decimal('11.63'), 2) and palmares['OUEDRAOGO'] == (Decimal('12.00'), 1)

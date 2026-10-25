@@ -273,7 +273,7 @@ class TestPalmaresAnnuel:
         c = classe_notee
         fatou = baker.make('inscriptions.Inscription', eleve=_eleve('BARRY', 'Fatou'), classe=c.classe,
                            annee_scolaire=c.annee, statut='ACTIF')
-        # Σ points / Σ coefficients sur les deux trimestres
+        # moyenne annuelle = moyenne des moyennes trimestrielles (ZONGO : (7,43 + 8,00) / 2 = 7,715 → 7,72)
         points = {c.awa: (112, 98), fatou: (112, 98), c.boubacar: (70, 70), c.chantal: (52, 56), c.desire: (140, 140)}
         for ins, (p1, p2) in points.items():
             baker.make('pedagogie.MoyenneGenerale', inscription=ins, trimestre=c.t1, total_points=Decimal(p1),
@@ -293,11 +293,11 @@ class TestPalmaresAnnuel:
         assert lignes['OUEDRAOGO']['moyenne'] == Decimal('15.00')
         assert lignes['SAWADOGO'] == {**lignes['SAWADOGO'], 'moyenne': Decimal('10.00'), 'admis': True,
                                       'decision': 'Admis(e) en classe supérieure'}
-        assert lignes['ZONGO']['moyenne'] == Decimal('7.71') and lignes['ZONGO']['decision'] == 'Redouble la classe'
+        assert lignes['ZONGO']['moyenne'] == Decimal('7.72') and lignes['ZONGO']['decision'] == 'Redouble la classe'
         assert lignes['KABORE'] == {**lignes['KABORE'], 'moyenne': None, 'rang': None, 'admis': None, 'decision': '—'}
         assert 'TRAORE' not in lignes
         assert (data['nb_eleves'], data['nb_admis'], data['nb_redoublants'], data['taux_reussite']) == (5, 3, 2, 60.0)
-        assert (data['moy_max'], data['moy_min'], data['moy_avg']) == (Decimal('15.00'), Decimal('7.71'), Decimal('11.93'))
+        assert (data['moy_max'], data['moy_min'], data['moy_avg']) == (Decimal('15.00'), Decimal('7.72'), Decimal('11.93'))
 
     def test_vues_html_et_pdf(self, palmares, mocker):
         c = palmares

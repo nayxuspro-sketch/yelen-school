@@ -313,8 +313,8 @@ html, body {
             {% for p in periodes %}
             <tr>
                 <td>{{ p.nom }}</td>
-                <td style="font-weight:{% if p.moyenne %}bold{% else %}normal{% endif %};">
-                    {% if p.moyenne %}{{ p.moyenne|floatformat:2 }}{% else %}—{% endif %}
+                <td style="font-weight:{% if p.moyenne is not None %}bold{% else %}normal{% endif %};">
+                    {% if p.moyenne is not None %}{{ p.moyenne|floatformat:2 }}{% else %}—{% endif %}
                 </td>
             </tr>
             {% endfor %}

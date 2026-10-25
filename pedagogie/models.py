@@ -19,7 +19,7 @@ Version: 3.4
 """
 
 import uuid
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
@@ -400,7 +400,7 @@ class Resultat(BaseModel):
         """Note pondérée = moyenne /20 × coefficient (contribution de la matière au total des points)."""
         if self.dispense or self.moyenne is None:
             return None
-        return (self.moyenne * (self.coefficient_utilise or Decimal('1.00'))).quantize(Decimal('0.01'))
+        return (self.moyenne * (self.coefficient_utilise or Decimal('1.00'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 class MoyenneGenerale(BaseModel):
     """Moyenne générale calculée pour un élève pour un trimestre."""
