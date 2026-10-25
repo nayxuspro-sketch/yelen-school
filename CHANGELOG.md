@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.2.9 — 2026-10-25
+
+- Bulletins trimestriels (individuel, duplicata, classe, aperçu) : impression de la fiche saisie dans
+  `Bulletins → Saisir` — carte « Assiduité du trimestre » (absences justifiées, absences non justifiées en
+  heures, retards ; 0 sans fiche) et appréciation du conseil de classe saisie, prioritaire sur le commentaire
+  généré automatiquement (conservé en repli). Libellé « Appréciation du conseil de classe » aligné sur la modale.
+
 ## 5.2.8 — 2026-10-25
 
 ### Modifié

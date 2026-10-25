@@ -77,6 +77,13 @@ def _match_appreciation(moyenne, apprs):
     return apprs[0]
 
 
+def _appreciation_conseil(fiche, mg, nb_eleves, moy_avg_classe, resultats_annotes, sanctions):
+    """Appréciation imprimée : celle saisie au conseil de classe (fiche Bulletin), sinon le commentaire généré."""
+    from ..utils_ia import generer_commentaire_eleve
+    saisie = (fiche.appreciation_conseil or '').strip() if fiche else ''
+    return saisie or generer_commentaire_eleve(mg, nb_eleves, moy_avg_classe, resultats_annotes, sanctions)
+
+
 def _annotate_resultats(resultats, apprs, cycle_code):
     """
     Annote chaque Resultat avec un attribut .appreciation et retourne la liste.
@@ -96,7 +103,7 @@ def _build_bulletin_context(request, inscription, trimestre):
     from datetime import date as _date
     from parametres.models import TypeDocument, SignataireDocument
     from viescolaire.models import SanctionDisciplinaire
-    from ..utils_ia import generer_commentaire_eleve
+    from bulletins.models import Bulletin
 
     mg = get_object_or_404(MoyenneGenerale, inscription=inscription, trimestre=trimestre)
     resultats = Resultat.objects.filter(
@@ -146,8 +153,9 @@ def _build_bulletin_context(request, inscription, trimestre):
         ).select_related('type_sanction').order_by('date_sanction')
     )
 
-    commentaire_eleve = generer_commentaire_eleve(
-        mg, nb_eleves, stats_classe['avg_moy'], resultats_annotes, sanctions_conduite
+    fiche_bulletin = Bulletin.objects.filter(inscription=inscription, trimestre=trimestre).first()
+    commentaire_eleve = _appreciation_conseil(
+        fiche_bulletin, mg, nb_eleves, stats_classe['avg_moy'], resultats_annotes, sanctions_conduite
     )
 
     # Compétences APC (Préscolaire / Primaire uniquement)
@@ -190,6 +198,7 @@ def _build_bulletin_context(request, inscription, trimestre):
         'moy_avg_classe': stats_classe['avg_moy'],
         'appreciation_generale': appreciation_generale,
         'sanctions_conduite': sanctions_conduite,
+        'fiche_bulletin': fiche_bulletin,
         'commentaire_eleve': commentaire_eleve,
         'identite': etab_context.get('identite'),
         'logo_url': etab_context.get('logo_url'),
@@ -264,6 +273,8 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
 
     # Récupérer toutes les données nécessaires
     from viescolaire.models import SanctionDisciplinaire
+    from bulletins.models import Bulletin
+    fiches_par_ins = {f.inscription_id: f for f in Bulletin.objects.filter(inscription__in=inscriptions, trimestre=trimestre)}
     # Précharger toutes les sanctions confirmées de la classe pour ce trimestre
     sanctions_par_ins = {}
     for s in SanctionDisciplinaire.objects.filter(
@@ -325,6 +336,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
                 'resultats_annotes': resultats_annotes,
                 'appreciation_generale': _get_appreciation_generale(ins, mg, etab),
                 'sanctions_conduite': sanctions,
+                'fiche_bulletin': fiches_par_ins.get(ins.pk),
                 'commentaire_eleve': None,
                 'competences_data': competences_data,
             })
@@ -341,11 +353,10 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     moy_min_classe = min(toutes_moyennes) if toutes_moyennes else None
     moy_avg_classe = round(sum(toutes_moyennes) / len(toutes_moyennes), 2) if toutes_moyennes else None
 
-    # Commentaires individuels (nécessitent moy_avg_classe, calculé ci-dessus)
-    from ..utils_ia import generer_commentaire_eleve
+    # Appréciations individuelles (nécessitent moy_avg_classe, calculé ci-dessus)
     for d in students_data:
-        d['commentaire_eleve'] = generer_commentaire_eleve(
-            d['mg'], nb_eleves, moy_avg_classe, d['resultats_annotes'], d['sanctions_conduite']
+        d['commentaire_eleve'] = _appreciation_conseil(
+            d['fiche_bulletin'], d['mg'], nb_eleves, moy_avg_classe, d['resultats_annotes'], d['sanctions_conduite']
         )
 
     # Contexte établissement

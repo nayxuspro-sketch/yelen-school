@@ -2,7 +2,8 @@
 Corps du bulletin trimestriel (modèle de référence) : en-tête établissement, titre, identité de l'élève,
 notes, compétences, conduite, statistiques, appréciation du conseil, signatures.
 Contexte : inscription, trimestre, mg, resultats_annotes, nb_eleves, moy_max/min/avg_classe, appreciation_generale,
-sanctions_conduite, commentaire_eleve, competences_data, identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
+sanctions_conduite, fiche_bulletin (absences, retards, appréciation du conseil), commentaire_eleve, competences_data,
+identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
 {% endcomment %}<!-- ══ EN-TÊTE ÉTABLISSEMENT ══ -->
 <div class="bul-header">
     <div class="bul-badge">
@@ -204,6 +205,27 @@ sanctions_conduite, commentaire_eleve, competences_data, identite, logo_url, eta
 </div>
 {% endif %}
 
+<!-- ══ ASSIDUITÉ ══ -->
+<div class="bul-card">
+    <div class="bul-section-label">Assiduité du {{ trimestre.nom }}</div>
+    <div class="bul-card-body">
+        <div class="bul-stats" style="margin-bottom:0;">
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Absences justifiées</div>
+                <div class="bul-stat-value">{{ fiche_bulletin.absences_justifiees|default:0 }} h</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Absences non justifiées</div>
+                <div class="bul-stat-value">{{ fiche_bulletin.absences_non_justifiees|default:0 }} h</div>
+            </div>
+            <div class="bul-stat-box">
+                <div class="bul-stat-label">Retards</div>
+                <div class="bul-stat-value">{{ fiche_bulletin.retards|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% if sanctions_conduite %}
 <!-- ══ CONDUITE ══ -->
 <div class="bul-card">
@@ -261,7 +283,7 @@ sanctions_conduite, commentaire_eleve, competences_data, identite, logo_url, eta
 {% if commentaire_eleve %}
 <!-- ══ APPRÉCIATION DU CONSEIL ══ -->
 <div class="bul-card">
-    <div class="bul-section-label">Appréciation du Conseil des Professeurs</div>
+    <div class="bul-section-label">Appréciation du conseil de classe</div>
     <div class="bul-card-body">
         <p style="margin:0; font-style:italic; color:#000; line-height:1.5;">{{ commentaire_eleve }}</p>
     </div>

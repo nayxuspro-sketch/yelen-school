@@ -140,12 +140,19 @@
       </table>
     </div>
 
-    {# Commentaire élève + sanctions #}
-    {% if commentaire_eleve or sanctions_conduite %}
-    <div style="padding:var(--space-4) var(--space-6); border-top:1px solid var(--color-border); display:grid; grid-template-columns:1fr{% if sanctions_conduite %} 1fr{% endif %}; gap:var(--space-6);">
+    {# Assiduité + appréciation du conseil + sanctions #}
+    <div style="padding:var(--space-4) var(--space-6); border-top:1px solid var(--color-border); display:grid; grid-template-columns:auto 1fr{% if sanctions_conduite %} 1fr{% endif %}; gap:var(--space-6);">
+      <div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:var(--space-2);">Assiduité</div>
+        <div style="font-size:0.82rem; line-height:1.6; white-space:nowrap;">
+          Absences justifiées : <strong>{{ fiche_bulletin.absences_justifiees|default:0 }} h</strong><br>
+          Absences non justifiées : <strong>{{ fiche_bulletin.absences_non_justifiees|default:0 }} h</strong><br>
+          Retards : <strong>{{ fiche_bulletin.retards|default:0 }}</strong>
+        </div>
+      </div>
       {% if commentaire_eleve %}
       <div>
-        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:var(--space-2);">Commentaire conseil</div>
+        <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:var(--space-2);">Appréciation du conseil de classe</div>
         <p style="font-size:0.875rem; font-style:italic; line-height:1.6;">{{ commentaire_eleve }}</p>
       </div>
       {% endif %}
@@ -158,7 +165,6 @@
       </div>
       {% endif %}
     </div>
-    {% endif %}
 
     {# Signataire #}
     {% if signataire_membre %}
