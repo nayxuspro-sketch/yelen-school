@@ -427,3 +427,18 @@ class TestFicheSuivi:
         from datetime import date
         autre = baker.make('inscriptions.Inscription', eleve=baker.make('inscriptions.Eleve', date_naissance=date(2012, 1, 1)))
         assert client.get(reverse('viescolaire:fiche_suivi_eleve', args=[autre.pk])).status_code == 404
+
+
+@pytest.mark.django_db
+def test_enregistrement_sanction_avec_journal_audit():
+    """En production le journal d'audit appelle str(sanction) à chaque enregistrement : type_sanction est une relation."""
+    from core.models import AuditLog
+    from core.signals import disable_audit, enable_audit
+    type_sanction = baker.make('parametres.TypeSanction', libelle='Avertissement', code='AVERT')
+    enable_audit()
+    try:
+        sanction = baker.make('viescolaire.SanctionDisciplinaire', type_sanction=type_sanction)
+    finally:
+        disable_audit()
+    assert 'Avertissement' in str(sanction)
+    assert AuditLog.objects.filter(model_name='sanctiondisciplinaire', object_id=str(sanction.pk)).exists()

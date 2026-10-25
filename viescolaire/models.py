@@ -174,7 +174,7 @@ class SanctionDisciplinaire(BaseModel):
         ordering = ['-date_sanction']
 
     def __str__(self):
-        return f"{self.inscription.eleve} - {self.get_type_sanction_display()} ({self.date_sanction})"
+        return f"{self.inscription.eleve} - {self.type_sanction} ({self.date_sanction})"
 
     @property
     def a_impact_points(self):
