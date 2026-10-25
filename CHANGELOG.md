@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.2.5 — 2026-10-24
+
+- Bulletins trimestriels PDF : le total de points est rapporté au maximum possible (coefficients × 20),
+  par exemple « 112,00 / 140 » ; le bulletin de classe affichait la somme des coefficients (« / 7,00 »).
+
 ## 5.2.4 — 2026-10-24
 
 - `mettre-a-jour.bat` : la reconstruction de l'image échouait (« failed to get console: The handle is
