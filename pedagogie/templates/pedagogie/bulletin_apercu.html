@@ -153,8 +153,8 @@
       {% if commentaire_eleve or distinctions %}
       <div>
         <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:var(--space-2);">Appréciation du conseil de classe</div>
-        {% if distinctions %}<p style="font-size:0.85rem; margin-bottom:var(--space-2);"><strong>Mentions / distinctions :</strong> {{ distinctions|join:" · " }}</p>{% endif %}
         <p style="font-size:0.875rem; font-style:italic; line-height:1.6;">{{ commentaire_eleve }}</p>
+        {% if distinctions %}<p style="font-size:0.85rem; margin-top:var(--space-2);"><strong>Mentions / distinctions :</strong> {{ distinctions|join:" · " }}</p>{% endif %}
       </div>
       {% endif %}
       {% if sanctions_conduite %}

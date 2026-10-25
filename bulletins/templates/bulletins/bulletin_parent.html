@@ -177,8 +177,8 @@
       Appréciation du conseil de classe
     </div>
     <div class="card-body">
-      {% if bulletin.distinctions.exists %}<div style="margin-bottom:8px;"><strong>Mentions / distinctions :</strong> {{ bulletin.distinctions.all|join:" · " }}</div>{% endif %}
       {% if bulletin.appreciation_conseil %}<div class="appreciation">{{ bulletin.appreciation_conseil }}</div>{% endif %}
+      {% if bulletin.distinctions.exists %}<div style="margin-top:8px;"><strong>Mentions / distinctions :</strong> {{ bulletin.distinctions.all|join:" · " }}</div>{% endif %}
     </div>
   </div>
   {% endif %}

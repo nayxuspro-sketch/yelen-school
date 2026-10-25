@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.3.4 — 2026-10-25
+
+- Bulletin trimestriel : légende du code QR supprimée ; « Mentions / distinctions » placées en dernière
+  position de la carte « Appréciation du conseil de classe » (après l'appréciation) — idem aperçu écran
+  et consultation parent.
+
 ## 5.3.3 — 2026-10-25
 
 - Bulletin annuel (individuel et lot) : code QR dans la zone des signatures, sans légende — matricule,
