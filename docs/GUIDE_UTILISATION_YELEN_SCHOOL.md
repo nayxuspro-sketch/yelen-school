@@ -840,33 +840,13 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 - Individuel : `Pédagogie → Résultats → [élève] → Bulletin PDF`
 - Classe : `Pédagogie → Résultats → [classe] → Bulletins PDF (batch)`
 
-**Format batch (classe complète) :** Chaque élève occupe exactement **une page A4**. Optimisations appliquées (v2.10) :
+**Modèle unique :** le bulletin individuel est le modèle de référence ; le duplicata et le PDF de classe (un élève par page A4) utilisent exactement le même gabarit (`pedagogie/pdf/partials/bulletin_trimestriel_*.html`). Structure en sections :
 
-| Paramètre | Avant | Après |
-|-----------|-------|-------|
-| Marges `@page` | 1.5 cm | 10 mm haut/bas, 12 mm côtés |
-| Police de base | 11pt / line-height 1.35 | 9.5pt / line-height 1.25 |
-| Padding en-tête | `8pt 12pt` | `4pt 8pt` |
-| Padding cellules tableau | `6pt 10pt` | `3pt 6pt` |
-| Padding entête tableau | `4pt 10pt` | `2pt 6pt` |
-| Margin entre cartes | `7pt` | `3pt` |
-| Badge école | 42 × 42 pt | 30 × 30 pt |
-| Nom école | 15pt | 11pt |
-| Titre bannière | 12pt | 10pt |
-| Statistiques (valeurs) | 13pt | 10pt |
-| Signatures gap | `20pt` | `12pt` |
-| Signatures margin-top | `12pt` | `5pt` |
-
-Ces optimisations garantissent qu'un bulletin avec jusqu'à **15 matières** + conduite tient sur **une seule page A4 imprimée**. La classe `.bulletin-page` dans le template batch est contrainte à `max-height: 267mm` (= 297mm − marges − running footers WeasyPrint).
-
-**Design :** Thème sombre (fond `#0A1628`, cartes `#111E35`, accent vert `#00A86B`). Structure en sections :
-
-- **En-tête** : badge logo circulaire + nom + devise + contact de l'établissement
-- **Titre** : bannière verte avec le nom du trimestre et l'année
-- **Identité de l'élève** : matricule, sexe, nom, classe, date de naissance, effectif, cycle, redoublant
-- **Notes du trimestre** : tableau complet matières / coeff / moyenne / rang / appréciation / professeur / signature du professeur
-- **Statistiques de la classe** : plus forte, plus faible, moyenne de classe + rang de l'élève
-- **Conduite** (si sanctions) · **Appréciation du Conseil** (si commentaire) · **Signature**
+- **En-tête** : badge logo + nom de l'établissement + **N° Agrément** + devise + adresse + téléphone
+- **Titre** : « BULLETIN DE NOTES — TRIMESTRE n — année scolaire »
+- **Identité de l'élève** : matricule, sexe, effectif, nom, classe, date de naissance, cycle, redoublant
+- **Notes du trimestre** : matières / coef / moy. /20 / **note pond.** (= moy. × coef) / appréciation / professeur / signature ; ligne récapitulative : moyenne générale, rang, total des points / maximum (coef × 20)
+- **Compétences APC** (préscolaire, primaire) · **Conduite** (si sanctions) · **Statistiques de la classe** + rang · **Appréciation du Conseil** (si commentaire) · **Signature**
 
 **Signataire :** Détecté automatiquement selon le cycle de la classe et l'année scolaire (`Paramètres → Signataires des documents`, type `BULLETIN`).
 
@@ -882,15 +862,14 @@ Ces optimisations garantissent qu'un bulletin avec jusqu'à **15 matières** + c
 
 | Élément | Bulletin original | Duplicata |
 | ------- | ---------------- | --------- |
-| Couleur du titre | Vert `#00A86B` | Or/ambre `#C27D00` |
+| Mise en page | Modèle de référence (une page A4) | Identique (même gabarit) |
 | Sous-titre | — | "Duplicata officiel délivré le JJ/MM/AAAA" |
-| En-tête | — | Tampon "Duplicata" en coin supérieur droit |
-| Bandeau haut | — | Bandeau doré "Duplicata officiel — Ce document est une reproduction du bulletin original" |
+| En-tête | Nom, N° Agrément, devise, adresse, téléphone | Idem + tampon "Duplicata" en coin supérieur droit |
+| Bandeau haut | — | Bandeau gris "Duplicata officiel — Ce document est une reproduction du bulletin original" |
 | Filigrane | — | "DUPLICATA" diagonal en transparence sur toute la page |
-| Pied de page | "YELEN SCHOOL — Système de Gestion Scolaire" | "YELEN SCHOOL — Duplicata officiel" |
+| Pied de page | Nom de l'établissement · "Page x / y" | Nom de l'établissement · "Duplicata — Page x / y" |
 | Signataire | Identique (détecté automatiquement) | Identique (détecté automatiquement) |
 | Contenu pédagogique | Identique | Identique |
-| Mise en page | Standard | Compressée (une seule page A4) |
 
 ##### Accéder au duplicata
 
@@ -6706,7 +6685,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.2.7 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.2.8 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

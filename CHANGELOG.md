@@ -3,6 +3,15 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.2.8 — 2026-10-25
+
+### Modifié
+- Bulletins trimestriels : le duplicata et le PDF de classe (un élève par page) reprennent exactement le modèle du bulletin individuel, désormais partagé (style et corps en `pedagogie/pdf/partials/`).
+- En-tête des bulletins trimestriels : le N° Agrément de l'établissement apparaît sous son nom.
+
+### Corrigé
+- Sanctions disciplinaires : l'enregistrement échouait en production (journal d'audit) — représentation textuelle corrigée (`type_sanction` est une relation).
+
 ## 5.2.7 — 2026-10-24
 
 ### Corrigé

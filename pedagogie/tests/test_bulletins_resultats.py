@@ -32,6 +32,8 @@ def _eleve(nom, prenom):
 @pytest.fixture
 def classe_notee(client):
     etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR', ville='Ouagadougou')
+    baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='LE SAVOIR',
+               numero_agrement_mena='2019-0123/MENAPLN')
     user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab,
                       must_change_password=False)
     client.force_login(user)
@@ -184,6 +186,11 @@ class TestBulletinTrimestriel:
         assert maths_awa.note_ponderee == maths_awa.moyenne * 4, 'note pondérée = moyenne /20 × coefficient'
         note = str(maths_awa.note_ponderee).replace('.', ',')
         assert 'Note pond.' in _html(weasy) and note in _html(weasy) and '>Rang</th>' not in _html(weasy)
+        # Modèle de référence : en-tête avec N° Agrément, titre, cartes, tableau des notes, signatures
+        modele = ('N° Agrément : 2019-0123/MENAPLN', 'BULLETIN DE NOTES — TRIMESTRE 1 — 2026-2027',
+                  'Identité de l\'élève', 'class="bul-table"', 'Statistiques de la classe', 'class="bul-sig-grid"')
+        assert all(m in _html(weasy) for m in modele)
+        assert 'DUPLICATA' not in _html(weasy)
 
         reponse = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf',
                                        kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
@@ -191,8 +198,10 @@ class TestBulletinTrimestriel:
         html = _html(weasy)
         assert all(nom in html for nom in ('OUEDRAOGO', 'SAWADOGO', 'ZONGO'))
         assert 'KABORE' not in html and 'TRAORE' not in html, 'sans moyenne : pas de bulletin'
-        assert '<strong>112,00</strong> / 140<' in html and '/ 7,00' not in html, 'même notation que le bulletin individuel'
+        assert 'Total : 112,00&nbsp;/&nbsp;140 pts' in html and '/ 7,00' not in html, 'même notation que le bulletin individuel'
         assert 'Note pond.' in html and note in html and '>Rang</th>' not in html
+        assert all(html.count(m) == 3 for m in modele), 'même modèle que le bulletin individuel, un par élève'
+        assert html.count('page-break-after: always') == 2, 'un élève par page'
 
         reponse = c.client.get(reverse('pedagogie:bulletin_duplicata_pdf',
                                        kwargs={'inscription_id': c.boubacar.pk, 'trimestre_id': c.t1.pk}))
@@ -200,6 +209,7 @@ class TestBulletinTrimestriel:
         assert 'DUPLICATA' in _html(weasy).upper() and 'SAWADOGO' in _html(weasy)
         assert '&nbsp;/&nbsp;140 pts' in _html(weasy)
         assert 'Note pond.' in _html(weasy) and '>Rang</th>' not in _html(weasy)
+        assert all(m in _html(weasy) for m in modele) and 'Duplicata officiel délivré le' in _html(weasy)
 
     def test_batch_sans_moyenne_redirige(self, classe_notee, mocker):
         c = classe_notee

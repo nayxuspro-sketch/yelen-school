@@ -1,0 +1,230 @@
+{% comment %}
+Feuille de style du bulletin trimestriel (modèle de référence) : incluse dans le bloc css du bulletin
+individuel, du duplicata et des bulletins de classe.
+{% endcomment %}html, body {
+    font-family: Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #000;
+    line-height: 1.25;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+}
+
+/* ── En-tête ── */
+.bul-header {
+    display: flex;
+    align-items: center;
+    gap: 6pt;
+    background: #f5f5f5;
+    padding: 4pt 8pt;
+    margin-bottom: 4pt;
+    border: 1pt solid #ccc;
+}
+.bul-badge {
+    width: 30pt;
+    height: 30pt;
+    min-width: 30pt;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5pt solid #111;
+    text-align: center;
+    line-height: 27pt;
+    font-family: 'Playfair Display', serif;
+    font-size: 10pt;
+    font-weight: 700;
+    color: #111;
+}
+.bul-badge img { width: 26pt; height: 26pt; border-radius: 50%; vertical-align: middle; filter: grayscale(100%); }
+.bul-school-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 11pt;
+    font-weight: 700;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.3pt;
+    margin: 0 0 1pt;
+}
+.bul-school-sub { font-size: 7pt; color: #555; margin: 0.5pt 0; }
+
+/* ── Bannière titre ── */
+.bul-title {
+    background: #fff;
+    color: #111;
+    text-align: center;
+    padding: 3.5pt 8pt;
+    margin-bottom: 4pt;
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6pt;
+    border: 1.5pt solid #111;
+}
+
+/* ── Cartes ── */
+.bul-card {
+    background: #fff;
+    margin-bottom: 3pt;
+    border: 1pt solid #ccc;
+}
+.bul-section-label {
+    padding: 2pt 6pt;
+    border-left: 2.5pt solid #111;
+    background: #ebebeb;
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #111;
+}
+.bul-card-body { padding: 4pt 6pt; }
+
+/* ── Grille infos élève ── */
+.bul-info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2pt 7pt;
+    margin-bottom: 2pt;
+}
+.bul-info-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2pt 7pt;
+}
+.bul-info-label {
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #555;
+    margin-bottom: 0.5pt;
+}
+.bul-info-value {
+    font-size: 8.5pt;
+    color: #000;
+    font-weight: 600;
+}
+.bul-matricule {
+    font-family: 'DejaVu Sans Mono', monospace;
+    color: #111;
+    font-weight: 700;
+    font-size: 8.5pt;
+}
+.bul-hr {
+    border: none;
+    border-top: 1pt solid #ccc;
+    margin: 2.5pt 0;
+}
+
+/* ── Tableau des notes ── */
+.bul-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.bul-table th {
+    background: #111;
+    color: #fff;
+    text-align: left;
+    padding: 2.5pt 5pt;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.bul-table td {
+    padding: 2.5pt 5pt;
+    font-size: 8.5pt;
+    color: #000;
+    border-bottom: 0.5pt solid #ccc;
+}
+.bul-table tr:nth-child(even) td { background: #f5f5f5; }
+.bul-tc { text-align: center; }
+.bul-bold { font-weight: 700; }
+.bul-italic { font-style: italic; font-size: 7.5pt; }
+.bul-total-row td {
+    background: #ebebeb !important;
+    font-weight: 700;
+    border-top: 1.5pt solid #111;
+    border-bottom: 1.5pt solid #111;
+    color: #000;
+    font-size: 9pt;
+}
+.bul-muted { color: #555; }
+
+/* ── Conduite ── */
+.bul-cond-table { width: 100%; border-collapse: collapse; }
+.bul-cond-table th {
+    background: #ebebeb;
+    color: #111;
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2pt 5pt;
+    text-align: left;
+    border-bottom: 1pt solid #ccc;
+}
+.bul-cond-table td {
+    padding: 2pt 5pt;
+    font-size: 8.5pt;
+    color: #000;
+    border-bottom: 0.5pt solid #ccc;
+}
+
+/* ── Statistiques ── */
+.bul-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3pt;
+    margin-bottom: 3pt;
+}
+.bul-stat-box {
+    background: #fff;
+    border: 1pt solid #ccc;
+    border-left: 2.5pt solid #111;
+    padding: 3pt 4pt;
+    text-align: center;
+}
+.bul-stat-label {
+    font-size: 6.5pt;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 1pt;
+}
+.bul-stat-value { font-size: 10pt; font-weight: 700; color: #111; }
+.bul-rang-line {
+    font-size: 8pt;
+    color: #000;
+    text-align: center;
+}
+.bul-rang-badge {
+    display: inline;
+    background: #fff;
+    border: 1pt solid #555;
+    padding: 0.5pt 5pt;
+    color: #111;
+    font-weight: 700;
+    font-size: 8.5pt;
+}
+
+/* ── Compétences APC ── */
+.bul-comp-table { width:100%; border-collapse:collapse; font-size:7.5pt; }
+.bul-comp-table td { padding:1.5pt 3pt; border-bottom:0.5pt solid #eee; }
+.bul-comp-cat { font-weight:700; font-size:6.5pt; color:#111; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+.bul-comp-stat { flex:1; border:1pt solid #ccc; border-left:3pt solid #555; padding:2pt 4pt; text-align:center; }
+.bul-comp-stat-val { font-size:10pt; font-weight:700; display:block; }
+.bul-comp-stat-lbl { font-size:6pt; text-transform:uppercase; letter-spacing:0.04em; color:#555; }
+.bul-comp-bar-wrap { display:flex; gap:4pt; flex-wrap:wrap; margin:2pt 0; }
+.bul-comp-bar { height:6pt; border-radius:2pt; min-width:2pt; }
+
+/* ── Signatures ── */
+.bul-sig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12pt;
+    margin-top: 5pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+.bul-sig-col { text-align: center; font-size: 8pt; }
