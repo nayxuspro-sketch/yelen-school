@@ -212,6 +212,9 @@ class TestBulletinTrimestriel:
         qr = f'alt="QR bulletin {c.awa.eleve.matricule}"'
         assert _html(weasy).count('alt="QR bulletin ') == 1 and 'Code QR de vérification' not in _html(weasy)
         assert _html(weasy).index('class="bul-sig-grid"') < _html(weasy).index(qr)
+        # Colonne Professeur élargie (21 %) aux dépens de la colonne Appréciation (13 %)
+        assert '<th style="width:13%;">Appréciation</th>' in _html(weasy)
+        assert '<th style="width:21%;">Professeur</th>' in _html(weasy)
 
         reponse = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf',
                                        kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
