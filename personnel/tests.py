@@ -230,7 +230,8 @@ class TestPersonnelListPdf:
 
         assert response.status_code == 200
         html = html_cls.call_args.kwargs['string']
-        assert f'Licence PREMIUM — {licence.cle_licence} — Lycée Yelen' in html
+        assert 'PREMIUM - Lycée Yelen' in html
+        assert licence.cle_licence not in html
 
     def test_bouton_pdf_sur_la_liste(self, client, contexte):
         etab, user, actif, inactif = contexte

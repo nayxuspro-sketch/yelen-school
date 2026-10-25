@@ -223,7 +223,11 @@ class TestFiligranePDF:
         info = get_licence_info_for_pdf(None, etablissement)
 
         html = render_to_string(partial, {'licence_info': info})
-        assert f'Licence PREMIUM — {licence_active.cle_licence} — {escape(etablissement.nom)}' in html
+        assert f'PREMIUM - {escape(etablissement.nom)}' in html
+        # Aucun bandeau de pied de page (clé de licence, jours restants) sur les documents remis aux familles
+        assert 'bandeau-licence' not in html
+        assert licence_active.cle_licence not in html
+        assert 'restants' not in html
 
         # Repli sur etablissement.nom si l'info licence ne porte pas le nom
         html = render_to_string(partial, {'licence_info': {**info, 'etablissement_nom': ''},
