@@ -102,15 +102,35 @@ def _build_qr_bulletin_text(matricule, classe, trimestre, annee, moyenne):
     ])
 
 
+def _img_qr_bulletin(text, alt, px):
+    uri = _build_qr_data_uri(text, 3)
+    return mark_safe(
+        f'<img src="{uri}" width="{px}" height="{px}" alt="{alt}" '
+        f'style="display:block; image-rendering:pixelated;">'
+    )
+
+
 @register.simple_tag
 def qr_bulletin(matricule, classe, trimestre, annee, moyenne, px=50):
     """QR code du bulletin trimestriel : matricule, classe et moyenne du trimestre de l'élève."""
     text = _build_qr_bulletin_text(matricule, classe, trimestre, annee, moyenne)
-    uri = _build_qr_data_uri(text, 3)
-    return mark_safe(
-        f'<img src="{uri}" width="{px}" height="{px}" alt="QR bulletin {matricule}" '
-        f'style="display:block; image-rendering:pixelated;">'
-    )
+    return _img_qr_bulletin(text, f'QR bulletin {matricule}', px)
+
+
+def _build_qr_bulletin_annuel_text(matricule, classe, annee, moyenne):
+    return "\n".join([
+        f"MAT: {matricule}",
+        f"CLA: {classe}",
+        f"ANN: {annee}",
+        f"MOY: {moyenne}/20",
+    ])
+
+
+@register.simple_tag
+def qr_bulletin_annuel(matricule, classe, annee, moyenne, px=50):
+    """QR code du bulletin annuel : matricule, classe et moyenne annuelle de l'élève."""
+    text = _build_qr_bulletin_annuel_text(matricule, classe, annee, moyenne)
+    return _img_qr_bulletin(text, f'QR bulletin annuel {matricule}', px)
 
 
 @register.simple_tag

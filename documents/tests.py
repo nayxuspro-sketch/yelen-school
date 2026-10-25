@@ -204,3 +204,13 @@ def test_qr_bulletin_contenu_et_balise():
         'MAT: 2024-0001\nCLA: 6ème A\nTRI: Trimestre 1 2025-2026\nMOY: 14,50/20')
     balise = qr_bulletin('2024-0001', '6ème A', 'Trimestre 1', '2025-2026', '14,50')
     assert balise.startswith('<img src="data:image/png;base64,') and 'alt="QR bulletin 2024-0001"' in balise
+
+
+def test_qr_bulletin_annuel_contenu_et_balise():
+    """Le QR du bulletin annuel encode matricule, classe, année scolaire et moyenne annuelle."""
+    from documents.templatetags.qr_tags import _build_qr_bulletin_annuel_text, qr_bulletin_annuel
+
+    assert _build_qr_bulletin_annuel_text('2024-0001', '6ème A', '2025-2026', '13,75') == (
+        'MAT: 2024-0001\nCLA: 6ème A\nANN: 2025-2026\nMOY: 13,75/20')
+    balise = qr_bulletin_annuel('2024-0001', '6ème A', '2025-2026', '13,75')
+    assert balise.startswith('<img src="data:image/png;base64,') and 'alt="QR bulletin annuel 2024-0001"' in balise

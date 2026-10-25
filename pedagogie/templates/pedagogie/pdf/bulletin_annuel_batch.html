@@ -1,4 +1,4 @@
-{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% extends "pdf/base.html" %}{% load signataire_tags qr_tags %}
 {% block page %}@page {
     size: A5 portrait;
     margin: 7mm 9mm 8mm 9mm;
@@ -220,6 +220,7 @@ html, body {
     break-inside: avoid;
 }
 .bul-sig-col { text-align: center; font-size: 8pt; }
+.bul-qr img { width: 50pt; height: 50pt; margin: 0 auto; }
 /* Bloc signataire compacté pour le format A5 (prime sur les styles injectés par signataire_auto). */
 .bul-sig-col .msig-zone { margin-top: 0; }
 .bul-sig-col .msig-date { font-size: 8pt; margin-bottom: 2pt; }
@@ -379,7 +380,7 @@ html, body {
 
 <!-- ══ SIGNATURES ══ -->
 <div class="bul-sig-grid">
-    <div class="bul-sig-col"></div>
+    <div class="bul-sig-col bul-qr">{% qr_bulletin_annuel ctx.inscription.eleve.matricule ctx.inscription.classe.nom ctx.annee_scolaire.libelle ctx.moyenne_annuelle.moyenne_annuelle|floatformat:2 %}</div>
     <div class="bul-sig-col">
         {% with inscription=ctx.inscription annee_scolaire=ctx.annee_scolaire %}
         {% signataire_auto "BULLETIN" %}

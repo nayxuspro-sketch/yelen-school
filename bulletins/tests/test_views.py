@@ -85,6 +85,11 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
     agrement = 'N° Agrément : N°2024-0147/MENAPLN/SG/DGEPFIC</div>'
     assert sources[0].count(agrement) == 1 and sources[1].count(agrement) == 3
     assert sources[0].index('COMPLEXE SCOLAIRE LE SAVOIR</div>') < sources[0].index(agrement) < sources[0].index('Discipline — Travail — Succès')
+    # Code QR (matricule, classe, moyenne annuelle) dans la zone des signatures, sans légende
+    qr = f'alt="QR bulletin annuel {inscriptions[0].eleve.matricule}"'
+    assert sources[0].count('alt="QR bulletin annuel ') == 1 and sources[1].count('alt="QR bulletin annuel ') == 3
+    assert sources[0].index('class="bul-sig-grid"') < sources[0].index(qr) and qr in sources[1]
+    assert 'Code QR de vérification' not in sources[0] + sources[1]
 
 
 @pytest.mark.django_db

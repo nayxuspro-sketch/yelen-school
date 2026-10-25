@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.3.3 — 2026-10-25
+
+- Bulletin annuel (individuel et lot) : code QR dans la zone des signatures, sans légende — matricule,
+  classe, année scolaire, moyenne annuelle (balise `qr_bulletin_annuel`).
+
 ## 5.3.2 — 2026-10-25
 
 - Bulletins trimestriels (individuel, duplicata, classe) : code QR de vérification dans la zone des
