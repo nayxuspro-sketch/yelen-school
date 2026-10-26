@@ -349,6 +349,20 @@ class TestSignataireConfig:
         # Le formulaire de la catégorie est pré-rempli avec le signataire enregistré
         assert f'<option value="{membre.id}"\n              selected>' in html
 
+    def test_enregistrement_refuse_signale_le_motif(self, client, contexte):
+        """Formulaire invalide (membre inconnu, titre trop long…) : la page se rechargeait sans un mot,
+        laissant croire que le signataire était enregistré."""
+        from parametres.models import SignataireDocument
+        annee, primaire, secondaire, membre = contexte
+        url = reverse('parametres:signataire_config')
+        reponse = client.post(url, {
+            'annee_id': str(annee.id), 'cycle_id': str(secondaire.id), 'categorie': 'PERSONNEL',
+            'membre_personnel': str(membre.id), 'fonction': 'Le Directeur', 'titre_honorifique': 'M' * 51,
+        })
+        assert reponse.status_code == 302 and not SignataireDocument.objects.filter(cycle=secondaire).exists()
+        html = client.get(reponse['Location']).content.decode()
+        assert 'Signataire non enregistré. titre_honorifique :' in html
+
     def test_signature_scannee_enregistree_sur_la_fiche_du_signataire(self, client, contexte, settings, tmp_path):
         """Champ facultatif « Signature scannée » : l'image est enregistrée sur la fiche du membre du personnel
         (reprise sur tous les documents qu'il signe), prévisualisée dans la fenêtre, et peut être retirée."""

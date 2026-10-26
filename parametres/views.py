@@ -763,6 +763,9 @@ def signataire_config(request):
                 messages.error(request, f"Erreur : {e}")
         elif form.errors.get('signature'):
             messages.error(request, f"Signature scannée refusée : {' '.join(form.errors['signature'])}")
+        else:
+            details = ' '.join(f"{champ} : {' '.join(errs)}" for champ, errs in form.errors.items())
+            messages.error(request, f"Signataire non enregistré. {details or 'Année scolaire, cycle ou catégorie manquant.'}")
         return redirect(retour)
 
     # ── Construction des données pour le template ──

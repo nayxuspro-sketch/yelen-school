@@ -128,6 +128,19 @@ def test_le_signataire_configure_est_imprime(client, monkeypatch, monde, documen
     assert 'msig-img' in images, document
 
 
+def test_type_de_document_desactive_le_document_reste_signe_par_le_signataire_du_cycle(client, monkeypatch, monde):
+    """« Liste du Personnel » désactivé ou supprimé dans Paramètres → Types de documents : la liste alphabétique
+    du personnel du cycle imprimait un blanc, bien que le directeur du cycle soit configuré."""
+    TypeDocument.objects.filter(code='LISTE_PERSONNEL').update(actif=False)
+    url = reverse('documents:liste_personnel_pdf', args=[monde['classe'].cycle_id]) + '?format=pdf'
+    texte, images = _rendre(client, monkeypatch, monde, url)
+    assert 'Le Directeur' in texte and 'KABORE Issouf' in texte and 'msig-img' in images
+
+    TypeDocument.objects.filter(code='LISTE_PERSONNEL').delete()
+    texte, images = _rendre(client, monkeypatch, monde, url)
+    assert 'KABORE Issouf' in texte and 'msig-img' in images
+
+
 def test_fiche_de_discipline_signature_scannee_de_l_enseignant(client, monkeypatch, monde):
     """La fiche de discipline est certifiée par l'enseignant : c'est sa signature scannée qui s'imprime."""
     m = monde

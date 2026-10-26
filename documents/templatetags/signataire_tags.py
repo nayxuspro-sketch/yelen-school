@@ -236,9 +236,9 @@ def signataire_auto(context, type_doc_code, variante=''):
 
         cycle, annee = _detecter_cycle_et_annee(context)
 
+        # Type absent du catalogue (supprimé, renommé ou désactivé) : le document reste signé par le
+        # signataire configuré pour son cycle (replis « même cycle » puis « tout signataire actif »)
         type_doc = _trouver_type_document(type_doc_code, cycle)
-        if not type_doc:
-            return mark_safe('')
 
         signataire = SignataireDocument.objects.get_signataire(
             cycle=cycle,
