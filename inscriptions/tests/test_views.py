@@ -186,3 +186,60 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
     apercu = unescape(client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk})).content.decode())
     assert all(texte in apercu for texte in attendu) and 'Verso' not in apercu and 'Recto' not in apercu
     assert 'font-size:0.6rem; line-height:1.2;' in apercu and '<span style="color:#0A1628; font-weight:700;">N° d\'urgence :</span>' in apercu
+
+
+@pytest.mark.django_db
+def test_carte_scolaire_signature_du_signataire_sous_la_photo(client, settings, tmp_path, mocker):
+    """La signature scannée du signataire de la Carte d'Identité Scolaire (le directeur) est apposée sous la photo
+    de l'élève : carte seule, cartes de classe et aperçu."""
+    import datetime
+    import io
+    import core.pdf
+    from django.core.files.base import ContentFile
+    from PIL import Image
+    from core.tests.test_media_pdf import images_rendues
+    from parametres.models import TypeDocument
+    pytest.importorskip('weasyprint')
+    settings.MEDIA_ROOT = tmp_path
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle)
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    eleve = baker.make('inscriptions.Eleve', nom='OUEDRAOGO', prenom='Abdoul', genre='M', date_naissance=datetime.date(2012, 5, 12), photo='')
+    baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee)
+    directeur = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Issa')
+    type_doc, _ = TypeDocument.objects.get_or_create(code='CARTE_ID', defaults={'libelle': "Carte d'Identité Scolaire", 'categorie': 'SCOLARITE', 'actif': True})
+    baker.make('parametres.SignataireDocument', cycle=cycle, type_document=type_doc, annee_scolaire=annee,
+               membre_personnel_id=directeur.id, fonction='Le Directeur', actif=True)
+    tampon = io.BytesIO()
+    Image.new('RGBA', (600, 220), (0, 0, 0, 0)).save(tampon, 'PNG')
+    directeur.signature.save('directeur.png', ContentFile(tampon.getvalue()), save=True)
+
+    documents = []
+
+    class HTMLEspion(core.pdf.HTML):
+        def write_pdf(self, target=None, **kwargs):
+            document = self.render()
+            documents.append(document)
+            return document.write_pdf(target, **kwargs)
+    mocker.patch('inscriptions.views._WeasyHTML', HTMLEspion)
+
+    def boite(box, classe_css):
+        if classe_css in (box.element.get('class', '') if getattr(box, 'element', None) is not None else '').split():
+            return box
+        return next((b for enfant in getattr(box, 'children', ()) if (b := boite(enfant, classe_css))), None)
+
+    assert client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk}) + '?format=pdf').status_code == 200
+    page = documents[-1].pages[0]
+    assert images_rendues(page) == ['msig-img'], 'signature scannée embarquée dans la carte'
+    photo, signature, pied = (boite(page._page_box, c) for c in ('photo-box', 'msig-img', 'carte-footer'))
+    assert photo.position_y + photo.height <= signature.position_y, 'la signature est sous la photo'
+    assert signature.position_y + signature.height <= pied.position_y, 'la signature reste au-dessus du pied de carte'
+    assert abs((signature.position_x + signature.border_width() / 2) - (photo.position_x + photo.border_width() / 2)) < 0.5, 'centrée sous la photo'
+
+    assert client.get(reverse('inscriptions:classe_cartes_pdf', kwargs={'pk': classe.pk})).status_code == 200
+    assert images_rendues(documents[-1].pages[0]) == ['msig-img']
+
+    apercu = client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk})).content.decode()
+    assert f'<img src="{directeur.signature.url}" alt=""' in apercu

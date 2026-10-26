@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 from .models import Eleve, Inscription, EvenementParcours, TransfertEleve
 from .forms import EleveForm, InscriptionForm, TransfertClasseForm
-from parametres.models import AnneeScolaire, Classe
+from parametres.models import AnneeScolaire, Classe, SignataireDocument, TypeDocument
 from core.utils import get_etablissement_context
 from core.statistiques import statistiques_eleves
 from parametres.droits import autorise_url
@@ -657,6 +657,16 @@ def _get_inscription_courante(eleve):
     ).order_by('-annee_scolaire__date_debut').first()
 
 
+def _signataire_carte(cycle, annee):
+    """Membre du personnel qui signe la Carte d'Identité Scolaire (cycle × année, repli progressif)."""
+    type_doc, _ = TypeDocument.objects.get_or_create(
+        code='CARTE_ID',
+        defaults={'libelle': "Carte d'Identité Scolaire", 'categorie': 'SCOLARITE', 'actif': True},
+    )
+    signataire = SignataireDocument.objects.get_signataire(cycle=cycle, type_document=type_doc, annee_scolaire=annee)
+    return signataire.get_membre_personnel() if signataire else None
+
+
 @login_required
 def marquer_abandon(request, pk):
     """Marque une inscription comme Abandon (ou annule l'abandon)."""
@@ -758,6 +768,8 @@ def eleve_carte(request, pk):
         'logo_url': etab_context.get('logo_url'),
         'etab_logo_url': etab_context.get('etab_logo_url'),
         'etablissement': etab,
+        'sig_membre': _signataire_carte(inscription.classe.cycle if inscription else None,
+                                        inscription.annee_scolaire if inscription else None),
     }
 
     if request.GET.get('format') == 'pdf':
@@ -808,6 +820,7 @@ def classe_cartes_pdf(request, pk):
         'logo_url': etab_context.get('logo_url'),
         'etab_logo_url': etab_context.get('etab_logo_url'),
         'etablissement': etab,
+        'sig_membre': _signataire_carte(classe.cycle, annee),
     }, request=request)
 
     pdf = _WeasyHTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()

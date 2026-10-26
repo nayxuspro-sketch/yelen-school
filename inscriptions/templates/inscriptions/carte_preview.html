@@ -104,6 +104,10 @@
               {{ eleve.prenom|first|upper }}{{ eleve.nom|first|upper }}
             </div>
           {% endif %}
+          {% if sig_membre.signature %}
+            <img src="{{ sig_membre.signature.url }}" alt=""
+                 style="display:block; max-height:21px; max-width:66px; margin:4px auto 0;">
+          {% endif %}
         </div>
 
         <!-- Infos -->
