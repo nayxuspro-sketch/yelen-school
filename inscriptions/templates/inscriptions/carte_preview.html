@@ -104,9 +104,12 @@
               {{ eleve.prenom|first|upper }}{{ eleve.nom|first|upper }}
             </div>
           {% endif %}
-          {% if sig_membre.signature %}
-            <img src="{{ sig_membre.signature.url }}" alt=""
-                 style="display:block; max-height:21px; max-width:66px; margin:4px auto 0;">
+          {% if sig_membre %}
+            <div style="width:66px; height:21px; line-height:21px; margin-top:2px; text-align:center;">
+              {% if sig_membre.signature %}<img src="{{ sig_membre.signature.url }}" alt="" style="max-height:21px; max-width:66px; vertical-align:bottom;">{% endif %}
+            </div>
+            <div style="width:66px; font-size:0.52rem; font-weight:700; color:#0A1628; text-transform:uppercase; text-align:center; line-height:1.2;">{{ sig_membre.nom }}</div>
+            <div style="width:66px; font-size:0.45rem; color:#334155; text-align:center; line-height:1.2;">{{ sig_membre.prenom }}</div>
           {% endif %}
         </div>
 

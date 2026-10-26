@@ -3267,7 +3267,7 @@ Le système génère automatiquement un PDF signé par le responsable configuré
 
 ### 12.5 Carte d'Identité Scolaire
 
-**À quoi ça sert :** Génère une carte scolaire individuelle (format carte plastifiable, face unique) pour l'élève : en-tête avec le nom, le type et le téléphone de l'établissement (`Paramètres → Identité Établissement`), puis son nom, sa classe, sa date de naissance, son matricule, son lieu de résidence, les noms de ses père et mère, le numéro d'urgence en gras (à défaut, le téléphone des parents), la signature scannée du signataire de la Carte d'Identité Scolaire sous la photo (voir section 7) et, au bas de la carte, la mention en gras « VALABLE POUR L'ANNÉE SCOLAIRE : » suivie de l'année en cours.
+**À quoi ça sert :** Génère une carte scolaire individuelle (format carte plastifiable, face unique) pour l'élève : en-tête avec le nom, le type et le téléphone de l'établissement (`Paramètres → Identité Établissement`), puis son nom, sa classe, sa date de naissance, son matricule, son lieu de résidence, les noms de ses père et mère, le numéro d'urgence en gras (à défaut, le téléphone des parents), sous la photo, la signature scannée du signataire de la Carte d'Identité Scolaire suivie de son nom et de son prénom (voir section 7) et, au bas de la carte, la mention en gras « VALABLE POUR L'ANNÉE SCOLAIRE : » suivie de l'année en cours.
 
 **Accès :** `Inscriptions → [fiche de l'élève] → Carte scolaire`
 
@@ -6696,7 +6696,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.5 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.6 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

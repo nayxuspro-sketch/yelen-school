@@ -190,8 +190,8 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
 
 @pytest.mark.django_db
 def test_carte_scolaire_signature_du_signataire_sous_la_photo(client, settings, tmp_path, mocker):
-    """La signature scannée du signataire de la Carte d'Identité Scolaire (le directeur) est apposée sous la photo
-    de l'élève : carte seule, cartes de classe et aperçu."""
+    """Sous la photo de l'élève : la signature scannée du signataire de la Carte d'Identité Scolaire (le directeur),
+    puis son NOM et son prénom — carte seule, cartes de classe et aperçu. Sans image, l'espace reste vierge."""
     import datetime
     import io
     import core.pdf
@@ -230,16 +230,32 @@ def test_carte_scolaire_signature_du_signataire_sous_la_photo(client, settings, 
             return box
         return next((b for enfant in getattr(box, 'children', ()) if (b := boite(enfant, classe_css))), None)
 
+    def texte(box):
+        return ''.join(getattr(b, 'text', '') for b in box.descendants())
+
     assert client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk}) + '?format=pdf').status_code == 200
     page = documents[-1].pages[0]
     assert images_rendues(page) == ['msig-img'], 'signature scannée embarquée dans la carte'
-    photo, signature, pied = (boite(page._page_box, c) for c in ('photo-box', 'msig-img', 'carte-footer'))
+    photo, signature, nom, prenom, corps, pied = (
+        boite(page._page_box, c) for c in ('photo-box', 'msig-img', 'sign-nom', 'sign-prenom', 'carte-body', 'carte-footer'))
     assert photo.position_y + photo.height <= signature.position_y, 'la signature est sous la photo'
-    assert signature.position_y + signature.height <= pied.position_y, 'la signature reste au-dessus du pied de carte'
-    assert abs((signature.position_x + signature.border_width() / 2) - (photo.position_x + photo.border_width() / 2)) < 0.5, 'centrée sous la photo'
+    assert (texte(nom), texte(prenom)) == ('KABORE', 'Issa')
+    assert signature.position_y + signature.height <= nom.position_y <= prenom.position_y, 'NOM puis prénom sous la signature'
+    assert prenom.position_y + prenom.height <= corps.content_box_y() + corps.height < pied.position_y, \
+        'le bloc signataire tient dans le corps de la carte, au-dessus du pied'
+    for b in (signature, nom, prenom):
+        assert abs((b.position_x + b.border_width() / 2) - (photo.position_x + photo.border_width() / 2)) < 0.5, 'centré sous la photo'
 
     assert client.get(reverse('inscriptions:classe_cartes_pdf', kwargs={'pk': classe.pk})).status_code == 200
-    assert images_rendues(documents[-1].pages[0]) == ['msig-img']
+    page_lot = documents[-1].pages[0]
+    assert images_rendues(page_lot) == ['msig-img'] and texte(boite(page_lot._page_box, 'sign-nom')) == 'KABORE'
 
     apercu = client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk})).content.decode()
-    assert f'<img src="{directeur.signature.url}" alt=""' in apercu
+    assert f'<img src="{directeur.signature.url}" alt=""' in apercu and '>KABORE</div>' in apercu and '>Issa</div>' in apercu
+
+    directeur.signature.delete(save=True)   # sans image : espace vierge de même hauteur, nom conservé
+    assert client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk}) + '?format=pdf').status_code == 200
+    page = documents[-1].pages[0]
+    zone, nom_sans = boite(page._page_box, 'photo-sign'), boite(page._page_box, 'sign-nom')
+    assert images_rendues(page) == [] and texte(nom_sans) == 'KABORE' and nom_sans.position_y == nom.position_y
+    assert round(zone.height * 25.4 / 96, 1) == 5.0
