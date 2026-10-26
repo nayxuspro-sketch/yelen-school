@@ -113,7 +113,7 @@ def test_certificat_pdf_format_a5_portrait(client, mocker):
 
     css = html_cls.call_args.kwargs['string']
     assert re.search(r'@page\s*\{\s*size:\s*A5 portrait;', css)
-    assert 'width: 14.8cm;' in css and 'height: 21cm;' in css
+    assert 'width: 14.8cm;' in css and '.bas { position: absolute; left: 1.2cm; right: 1.2cm; bottom: 0.65cm; }' in css
     assert 'Format A5 portrait' in client.get(url).content.decode()
 
 
@@ -146,6 +146,62 @@ def test_certificat_signature_scannee_du_signataire(client, mocker, settings, tm
     html = html_cls.call_args.kwargs['string']
     assert f'<div class="sig-espace"><img class="msig-img" src="{membre.signature.url}" alt=""></div>' in html
     assert membre.signature.url.startswith('/media/personnel/signatures/kabore')
+
+
+@pytest.mark.django_db
+def test_certificat_charge_tient_sur_une_page(client, mocker, settings, tmp_path):
+    """Pire cas réaliste rendu par WeasyPrint : identité complète (nom long, agrément, sigle, adresse, contacts,
+    logo et cachet), filiation et lieu de naissance longs, fonction du signataire longue, signature scannée
+    → une seule page A5, bloc QR + signature ancré au bas de la page."""
+    import io
+    import core.pdf
+    from django.core.files.base import ContentFile
+    from PIL import Image
+    from parametres.models import TypeDocument
+    settings.MEDIA_ROOT = tmp_path
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab, type_etablissement='PRIVE',
+                          nom_etablissement='COMPLEXE SCOLAIRE PRIVÉ LE SAVOIR DE OUAGADOUGOU', sigle='CSPLS',
+                          numero_agrement_mena='N°2024-0147/MENAPLN/SG/DGEPFIC', ville='Ouagadougou',
+                          adresse_complete='Secteur 15, Ouaga 2000, 01 BP 1234 Ouagadougou 01',
+                          telephone='+226 25 36 47 58 / 70 12 34 56', email='contact@lesavoir.bf')
+    tampon = io.BytesIO()
+    Image.new('RGB', (900, 900), (20, 60, 120)).save(tampon, 'PNG')
+    identite.logo.save('logo.png', ContentFile(tampon.getvalue()), save=False)
+    identite.cachet_etablissement.save('cachet.png', ContentFile(tampon.getvalue()), save=True)
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True, libelle='2026-2027')
+    cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire général second cycle')
+    eleve = baker.make('inscriptions.Eleve', nom='OUEDRAOGO', prenom='Awa Wendpanga Christelle', nationalite='Burkinabè',
+                       date_naissance=datetime.date(2010, 3, 14), lieu_naissance='Koudougou (province du Boulkiemdé), Burkina Faso',
+                       nom_pere='OUEDRAOGO Wendpanga Abdoul Rasmané', nom_mere='SAWADOGO Kiswendsida Mariam Rasmata')
+    inscription = baker.make('inscriptions.Inscription', eleve=eleve, annee_scolaire=annee,
+                             classe=baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='Terminale D 2'))
+    type_doc, _ = TypeDocument.objects.get_or_create(code='CERT_SCOL', defaults={'libelle': 'Certificat', 'categorie': 'SCOLARITE'})
+    membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Salimata Wendkouni')
+    baker.make('parametres.SignataireDocument', cycle=cycle, type_document=type_doc, annee_scolaire=annee,
+               membre_personnel_id=membre.id, fonction='Le Directeur Général du Complexe Scolaire', actif=True)
+    tampon = io.BytesIO()
+    Image.new('RGBA', (1654, 600), (0, 0, 0, 0)).save(tampon, 'PNG')
+    membre.signature.save('kabore.png', ContentFile(tampon.getvalue()), save=True)
+
+    documents, sources = [], []
+
+    class HTMLEspion(core.pdf.HTML):
+        def __init__(self, *args, **kwargs):
+            sources.append(kwargs.get('string', ''))
+            super().__init__(*args, **kwargs)
+
+        def render(self, *args, **kwargs):
+            document = super().render(*args, **kwargs)
+            documents.append(document)
+            return document
+
+    mocker.patch('core.pdf.HTML', HTMLEspion)
+    url = reverse('documents:certificat_scolarite', kwargs={'inscription_id': inscription.pk}) + '?format=pdf'
+    assert client.get(url).status_code == 200 and len(documents) == 1
+    assert len(documents[0].pages) == 1, 'le certificat de scolarité tient sur une seule page A5'
+    assert '<div class="bas">' in sources[0] and f'src="{membre.signature.url}"' in sources[0]
 
 
 @pytest.mark.django_db

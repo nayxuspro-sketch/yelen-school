@@ -14,8 +14,6 @@ body {
     margin: 0;
     padding: 0;
     width: 14.8cm;
-    height: 21cm;
-    overflow: hidden;
     font-family: Arial, sans-serif;
     font-size: 10pt;
     color: #000;
@@ -24,7 +22,7 @@ body {
 
 /* ── Barres d'accent ── */
 .barre-top    { height: 5pt; background: #111; }
-.barre-bottom { height: 4pt; background: #111; margin-top: 0.25cm; }
+.barre-bottom { height: 4pt; background: #111; position: absolute; left: 0; right: 0; bottom: 0; }
 
 /* ── Zone de contenu ── */
 .page { padding: 0.5cm 1.2cm 0.5cm; }
@@ -62,16 +60,15 @@ body {
 .corps strong { font-weight: bold; text-decoration: underline; }
 .corps .valoir-droit { font-style: italic; margin-top: 0.2cm; }
 
-/* ── Bas de page : QR (gauche) + Signature (droite) ── */
+/* ── Bas de page : QR (gauche) + Signature (droite) ──
+   Ancré au bas de la page, hors flux : il ne peut pas basculer sur une 2e page. */
+.bas { position: absolute; left: 1.2cm; right: 1.2cm; bottom: 0.65cm; }
 .bas-page {
     display: table;
     width: 100%;
     border-collapse: collapse;
     border-top: 1pt solid #aaa;
-    margin-top: 0.5cm;
     padding-top: 0.25cm;
-    page-break-inside: avoid;
-    break-inside: avoid;
 }
 .bas-qr {
     display: table-cell;
@@ -173,7 +170,10 @@ body {
         </p>
     </div>
 
-    <!-- Bas : QR (gauche) + Signature (droite) -->
+</div>
+
+<!-- Bas : QR (gauche) + Signature (droite), ancré au bas de la page -->
+<div class="bas">
     <div class="bas-page">
         <div class="bas-qr">
             {% with etab_nom=identite.nom_etablissement|default:annee_scolaire.etablissement %}
@@ -200,7 +200,6 @@ body {
             </div>
         </div>
     </div>
-
 </div>
 
 <div class="barre-bottom"></div>

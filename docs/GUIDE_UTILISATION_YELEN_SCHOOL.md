@@ -3192,6 +3192,8 @@ L'établissement ne dispose pas d'imprimante couleur. Tous les documents PDF gé
 - Pied de page : numéro de document et matricule élève
 - Badge `badge-warning` affiché si le signataire n'est pas configuré
 
+**PDF généré :** A5 portrait, **une seule page** — le bloc QR code (gauche) + signature (droite) et la barre noire sont ancrés au bas de la page, quelle que soit la longueur de l'en-tête ou du texte.
+
 **Classes CSS :** `doc-cert-card`, `doc-cert-topbar`, `doc-cert-header`, `doc-cert-title`, `doc-cert-text`, `doc-cert-signature`, `doc-cert-footer`, `doc-preview-wrap`, `alert-warning-accent`
 
 Le système génère automatiquement un PDF signé par le responsable configuré pour ce cycle.
@@ -6694,7 +6696,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.1 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.
