@@ -109,29 +109,41 @@ class TestValiderHeure:
 
 @pytest.mark.django_db
 class TestValiderBulletin:
-    def test_valider_bulletin(self, client, admin_user, annee, personnel):
+    """Valider / payer un bulletin par un utilisateur rattaché à un établissement (cas réel) : le contrôle
+    d'établissement lisait ``bulletin.contrat`` — attribut inexistant sur BulletinVacation — d'où une erreur 500."""
+
+    def test_valider_bulletin(self, client, annee, personnel):
         bulletin = baker.make(
             'vacations.BulletinVacation',
             personnel=personnel,
             annee_scolaire=annee,
             statut='BROUILLON',
         )
-        client.force_login(admin_user)
+        client.force_login(baker.make('accounts.User', is_superuser=True, etablissement=annee.etablissement))
         url = reverse('vacations:valider_bulletin', kwargs={'bulletin_id': bulletin.pk})
         assert client.get(url).status_code == 302
         bulletin.refresh_from_db()
         assert bulletin.statut == 'VALIDE'
 
-    def test_payer_bulletin(self, client, admin_user, annee, personnel):
+    def test_payer_bulletin(self, client, annee, personnel):
         bulletin = baker.make(
             'vacations.BulletinVacation',
             personnel=personnel,
             annee_scolaire=annee,
             statut='VALIDE',
         )
-        client.force_login(admin_user)
+        client.force_login(baker.make('accounts.User', is_superuser=True, etablissement=annee.etablissement))
         url = reverse('vacations:payer_bulletin', kwargs={'bulletin_id': bulletin.pk})
         assert client.get(url).status_code == 302
         bulletin.refresh_from_db()
         assert bulletin.statut == 'PAYE'
         assert bulletin.date_paiement is not None
+
+    @pytest.mark.parametrize('nom_url', ['vacations:valider_bulletin', 'vacations:payer_bulletin'])
+    def test_autre_etablissement_refuse(self, client, annee, personnel, nom_url):
+        bulletin = baker.make('vacations.BulletinVacation', personnel=personnel, annee_scolaire=annee, statut='BROUILLON')
+        client.force_login(baker.make('accounts.User', is_superuser=True, etablissement=baker.make('etablissements.Etablissement')))
+        reponse = client.get(reverse(nom_url, kwargs={'bulletin_id': bulletin.pk}))
+        assert reponse.status_code == 302 and reponse['Location'] == reverse('vacations:bulletin_list')
+        bulletin.refresh_from_db()
+        assert bulletin.statut == 'BROUILLON'

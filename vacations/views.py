@@ -289,7 +289,7 @@ def valider_bulletin(request, bulletin_id):
     etab = getattr(request.user, 'etablissement', None)
     bulletin = get_object_or_404(BulletinVacation, pk=bulletin_id)
     
-    if etab and bulletin.contrat.annee_scolaire.etablissement_id != etab.pk:
+    if etab and bulletin.annee_scolaire.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé.")
         return redirect('vacations:bulletin_list')
     
@@ -302,14 +302,14 @@ def valider_bulletin(request, bulletin_id):
 @login_required
 @requires_licence_feature('vacations')
 def payer_bulletin(request, bulletin_id):
+    """Marquer un bulletin comme payé."""
     etab = getattr(request.user, 'etablissement', None)
     bulletin = get_object_or_404(BulletinVacation, pk=bulletin_id)
     
-    if etab and bulletin.contrat.annee_scolaire.etablissement_id != etab.pk:
+    if etab and bulletin.annee_scolaire.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé.")
         return redirect('vacations:bulletin_list')
     
-    """Marquer un bulletin comme payé."""
     bulletin.statut = BulletinVacation.StatutChoices.PAYE
     from django.utils import timezone
     bulletin.date_paiement = timezone.now().date()
