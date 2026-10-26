@@ -264,12 +264,12 @@ tfoot td.tf-low { color: #000; font-style: italic; }
             <td class="note-abs">ABS</td>
           {% elif note_data.sur_20 is not None %}
             {% if note_data.sur_20 >= 10 %}
-              <td class="note-ok">{{ note_data.valeur|floatformat:"-2" }}</td>
+              <td class="note-ok">{{ note_data.valeur|floatformat:2 }}</td>
             {% else %}
-              <td class="note-low">{{ note_data.valeur|floatformat:"-2" }}</td>
+              <td class="note-low">{{ note_data.valeur|floatformat:2 }}</td>
             {% endif %}
           {% else %}
-            <td class="note-nd">{{ note_data.valeur|floatformat:"-2" }}</td>
+            <td class="note-nd">{{ note_data.valeur|floatformat:2 }}</td>
           {% endif %}
         {% else %}
           <td class="note-nd">—</td>
@@ -283,7 +283,7 @@ tfoot td.tf-low { color: #000; font-style: italic; }
           <td class="td-moy mlow">{{ row.resultat.moyenne_sur_20|floatformat:2 }}</td>
         {% endif %}
       {% elif row.moyenne_locale is not None %}
-        <td class="td-moy mest">~{{ row.moyenne_locale }}</td>
+        <td class="td-moy mest">~{{ row.moyenne_locale|floatformat:2 }}</td>
       {% else %}
         <td class="td-moy mnd">—</td>
       {% endif %}
@@ -318,7 +318,7 @@ tfoot td.tf-low { color: #000; font-style: italic; }
   <div class="stat-box stat-box-ok">
     <div class="stat-lbl">Meilleure moyenne</div>
     {% if moy_max %}
-    <div class="stat-val">{{ moy_max.moy }}<span class="stat-val-unit">/20</span></div>
+    <div class="stat-val">{{ moy_max.moy|floatformat:2 }}<span class="stat-val-unit">/20</span></div>
     <div class="stat-sub">{{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }}</div>
     {% else %}<div class="stat-val">—</div>{% endif %}
   </div>
@@ -326,7 +326,7 @@ tfoot td.tf-low { color: #000; font-style: italic; }
     <div class="stat-lbl">Moyenne de la classe</div>
     {% if moy_classe %}
     <div class="stat-val">
-      {{ moy_classe }}<span class="stat-val-unit">/20</span>
+      {{ moy_classe|floatformat:2 }}<span class="stat-val-unit">/20</span>
     </div>
     <div class="stat-sub">{{ table|length }} élève{{ table|length|pluralize }}</div>
     {% else %}<div class="stat-val">—</div>{% endif %}
@@ -334,7 +334,7 @@ tfoot td.tf-low { color: #000; font-style: italic; }
   <div class="stat-box stat-box-low">
     <div class="stat-lbl">Moyenne la plus faible</div>
     {% if moy_min %}
-    <div class="stat-val">{{ moy_min.moy }}<span class="stat-val-unit">/20</span></div>
+    <div class="stat-val">{{ moy_min.moy|floatformat:2 }}<span class="stat-val-unit">/20</span></div>
     <div class="stat-sub">{{ moy_min.inscription.eleve.nom|upper }} {{ moy_min.inscription.eleve.prenom }}</div>
     {% else %}<div class="stat-val">—</div>{% endif %}
   </div>

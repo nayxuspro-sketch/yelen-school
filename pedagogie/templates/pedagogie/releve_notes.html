@@ -243,7 +243,7 @@
     </div>
     {% if moy_classe %}
     <div class="rlv-chip {% if moy_classe >= 10 %}rlv-chip-good{% else %}rlv-chip-bad{% endif %}">
-      <span class="rlv-chip-val">{{ moy_classe }}</span>
+      <span class="rlv-chip-val">{{ moy_classe|floatformat:2 }}</span>
       <span class="rlv-chip-lbl">Moy. /20</span>
     </div>
     {% else %}
@@ -254,14 +254,14 @@
     {% endif %}
     {% if moy_max %}
     <div class="rlv-chip rlv-chip-good" title="Meilleur·e : {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }}">
-      <span class="rlv-chip-val">{{ moy_max.moy }}</span>
+      <span class="rlv-chip-val">{{ moy_max.moy|floatformat:2 }}</span>
       <span class="rlv-chip-lbl">Max</span>
     </div>
     {% endif %}
     {% if moy_min %}
     <div class="rlv-chip {% if moy_min.moy >= 10 %}rlv-chip-good{% else %}rlv-chip-bad{% endif %}"
          title="Min : {{ moy_min.inscription.eleve.nom|upper }} {{ moy_min.inscription.eleve.prenom }}">
-      <span class="rlv-chip-val">{{ moy_min.moy }}</span>
+      <span class="rlv-chip-val">{{ moy_min.moy|floatformat:2 }}</span>
       <span class="rlv-chip-lbl">Min</span>
     </div>
     {% endif %}
@@ -331,10 +331,10 @@
           {% else %}
           <td class="rlv-td-note {% if note_data.sur_20 >= 10 %}rlv-note-good{% else %}rlv-note-bad{% endif %}">
             <span class="{% if note_data.sur_20 >= 10 %}rlv-note-val-good{% else %}rlv-note-val-bad{% endif %}">
-              {{ note_data.valeur|floatformat:"-2" }}
+              {{ note_data.valeur|floatformat:2 }}
             </span>
             {% if note_data.sur_20 %}
-            <div class="rlv-note-sub">{{ note_data.sur_20|floatformat:1 }}/20</div>
+            <div class="rlv-note-sub">{{ note_data.sur_20|floatformat:2 }}/20</div>
             {% endif %}
           </td>
           {% endif %}
@@ -388,7 +388,7 @@
         <td colspan="2" class="rlv-tfoot-label">Moy. classe</td>
         {% for stat in ev_stats %}
         <td class="rlv-tfoot-avg {% if stat.avg and stat.avg >= 10 %}rlv-tfoot-avg-good{% elif stat.avg %}rlv-tfoot-avg-bad{% endif %}">
-          {% if stat.avg %}{{ stat.avg }}{% else %}—{% endif %}
+          {% if stat.avg %}{{ stat.avg|floatformat:2 }}{% else %}—{% endif %}
         </td>
         {% endfor %}
         <td class="rlv-td-moy"></td>
@@ -421,7 +421,7 @@
     <span class="rlv-legend-pill">~ Estimation (moyennes non calculées)</span>
     {% if moy_max %}
     <span class="rlv-legend-pill rlv-table-footer-right">
-      🏆 {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }} &nbsp;{{ moy_max.moy }}/20
+      🏆 {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }} &nbsp;{{ moy_max.moy|floatformat:2 }}/20
     </span>
     {% endif %}
   </div>

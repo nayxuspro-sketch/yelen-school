@@ -8,6 +8,7 @@ barème 10), un devoir chacun au trimestre 1.
   Éric     aucune note          → aucune moyenne
   Désiré   statut ABANDON       → exclu de tous les calculs
 """
+import re
 from datetime import date
 from decimal import Decimal
 from types import SimpleNamespace
@@ -436,6 +437,31 @@ class TestRelevesEtBilans:
         assert ctx['moy_classe'] == 11.33
         assert ctx['moy_max']['inscription'] == c.awa and ctx['moy_min']['inscription'] == c.chantal
         assert (ctx['nb_saisies'], ctx['nb_max_saisies']) == (3, 4)
+
+    def test_notes_et_moyennes_affichees_avec_deux_decimales(self, classe_notee, mocker):
+        """Toute note ou moyenne s'affiche avec deux décimales (16,00 — jamais 16 ni 16,0) : relevé écran,
+        relevé PDF, fiche discipline, moyennes par discipline."""
+        c = classe_notee
+        _calculer(c)
+        params = {'annee': c.annee.pk, 'classe': c.classe.pk, 'enseignement': c.francais.pk, 'periode': c.periode1.pk}
+        ecran = c.client.get(reverse('pedagogie:releve_notes'), params).content.decode()
+        assert re.search(r'>\s*8,00\s*<', ecran) and '<div class="rlv-note-sub">16,00/20</div>' in ecran   # 8/10 → 16/20
+        assert '<span class="rlv-chip-val">16,00</span>' in ecran and '<span class="rlv-chip-val">11,33</span>' in ecran
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        assert c.client.get(reverse('pedagogie:releve_notes_pdf'), params).status_code == 200
+        pdf = _html(weasy)
+        assert '<td class="note-ok">8,00</td>' in pdf and '<div class="recap-card-val">16,00<span>/20</span></div>' in pdf
+        assert c.client.get(reverse('pedagogie:fiche_discipline_pdf'), params).status_code == 200
+        fiche = _html(weasy)
+        assert '<td class="note-ok">8,00</td>' in fiche
+        assert '<div class="stat-val">16,00<span class="stat-val-unit">/20</span></div>' in fiche
+        moyennes = c.client.get(reverse('pedagogie:moyennes_disciplines'),
+                                {'annee': c.annee.pk, 'trimestre': c.t1.pk, 'classe': c.classe.pk}).content.decode()
+        assert re.search(r'>\s*7,00\s*<', moyennes) and re.search(r'>\s*16,00\s*<', moyennes)   # ZONGO maths, OUEDRAOGO
+        for html in (ecran, pdf, fiche, moyennes):   # texte affiché, hors balises, styles et scripts
+            texte = re.sub(r'<[^>]+>', ' ', re.sub(r'<(style|script)[^>]*>.*?</\1>', ' ', html, flags=re.S))
+            assert not re.search(r'\d,\d(?!\d)', texte), 'aucune valeur à une seule décimale'
 
     def test_releve_et_fiche_pdf(self, classe_notee, mocker):
         c = classe_notee

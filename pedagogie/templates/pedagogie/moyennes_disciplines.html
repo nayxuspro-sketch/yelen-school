@@ -126,7 +126,7 @@
                 <span class="text-muted">Disp.</span>
               {% elif r.moyenne is not None %}
                 <span class="fw-bold {% if r.moyenne < 10 %}text-danger{% elif r.moyenne < 14 %}text-warning{% else %}text-success{% endif %}">
-                  {{ r.moyenne|floatformat:1 }}
+                  {{ r.moyenne|floatformat:2 }}
                 </span>
               {% else %}
                 <span class="text-muted">—</span>
@@ -139,7 +139,7 @@
           <td style="text-align:center;">
             {% if mg and mg.moyenne is not None %}
               <span class="fw-bold {% if mg.moyenne < 10 %}text-danger{% elif mg.moyenne < 14 %}text-warning{% else %}text-success{% endif %}">
-                {{ mg.moyenne|floatformat:1 }}
+                {{ mg.moyenne|floatformat:2 }}
               </span>
             {% else %}
               <span class="text-muted">—</span>

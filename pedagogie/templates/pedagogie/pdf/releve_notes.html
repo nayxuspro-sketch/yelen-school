@@ -324,12 +324,12 @@ tfoot td.tf-vide { color: #aaa; }
             <td class="note-abs">ABS</td>
           {% elif note_data.sur_20 is not None %}
             {% if note_data.sur_20 >= 10 %}
-              <td class="note-ok">{{ note_data.valeur|floatformat:"-2" }}</td>
+              <td class="note-ok">{{ note_data.valeur|floatformat:2 }}</td>
             {% else %}
-              <td class="note-low">{{ note_data.valeur|floatformat:"-2" }}</td>
+              <td class="note-low">{{ note_data.valeur|floatformat:2 }}</td>
             {% endif %}
           {% else %}
-            <td class="note-vide">{{ note_data.valeur|floatformat:"-2" }}</td>
+            <td class="note-vide">{{ note_data.valeur|floatformat:2 }}</td>
           {% endif %}
         {% else %}
           <td class="note-vide">—</td>
@@ -343,7 +343,7 @@ tfoot td.tf-vide { color: #aaa; }
           <td class="td-moy moy-low">{{ row.resultat.moyenne_sur_20|floatformat:2 }}</td>
         {% endif %}
       {% elif row.moyenne_locale is not None %}
-        <td class="td-moy moy-est">~{{ row.moyenne_locale }}</td>
+        <td class="td-moy moy-est">~{{ row.moyenne_locale|floatformat:2 }}</td>
       {% else %}
         <td class="td-moy moy-nd">—</td>
       {% endif %}
@@ -381,7 +381,7 @@ tfoot td.tf-vide { color: #aaa; }
   <div class="recap-card">
     <div class="recap-card-title">Meilleure moyenne</div>
     {% if moy_max %}
-    <div class="recap-card-val">{{ moy_max.moy }}<span>/20</span></div>
+    <div class="recap-card-val">{{ moy_max.moy|floatformat:2 }}<span>/20</span></div>
     <div class="recap-card-sub">
       {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }}
     </div>
@@ -392,9 +392,9 @@ tfoot td.tf-vide { color: #aaa; }
     <div class="recap-card-title">Moyenne de la classe</div>
     {% if moy_classe %}
     {% if moy_classe >= 10 %}
-    <div class="recap-card-val">{{ moy_classe }}<span>/20</span></div>
+    <div class="recap-card-val">{{ moy_classe|floatformat:2 }}<span>/20</span></div>
     {% else %}
-    <div class="recap-card-val-low">{{ moy_classe }}<span>/20</span></div>
+    <div class="recap-card-val-low">{{ moy_classe|floatformat:2 }}<span>/20</span></div>
     {% endif %}
     <div class="recap-card-sub">{{ table|length }} élève{{ table|length|pluralize }}</div>
     {% else %}<div class="recap-card-empty">—</div>{% endif %}
@@ -403,7 +403,7 @@ tfoot td.tf-vide { color: #aaa; }
   <div class="recap-card">
     <div class="recap-card-title">Moyenne la plus faible</div>
     {% if moy_min %}
-    <div class="recap-card-val-low">{{ moy_min.moy }}<span>/20</span></div>
+    <div class="recap-card-val-low">{{ moy_min.moy|floatformat:2 }}<span>/20</span></div>
     <div class="recap-card-sub">
       {{ moy_min.inscription.eleve.nom|upper }} {{ moy_min.inscription.eleve.prenom }}
     </div>
