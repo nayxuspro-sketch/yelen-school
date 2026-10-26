@@ -15,7 +15,7 @@ from ..models import Enseignement, Evaluation, Note, Resultat, MoyenneGenerale, 
 from ..utils import CalculateurMoyenne
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription
-from core.utils import get_etablissement_context
+from core.utils import filtre_enseignant, get_etablissement_context
 from licences.decorators import requires_licence_feature
 from .commun import HTML, _pdf_licence_info
 
@@ -621,15 +621,27 @@ def moyennes_disciplines_pdf(request):
     return response
 
 
+def _enseignement_refuse(request, enseignement_id):
+    """Un enseignant ne consulte que ses propres enseignements : True si ``enseignement_id`` ne lui est pas attribué."""
+    if request.user.role != 'ENSEIGNANT' or not enseignement_id:
+        return False
+    if Enseignement.objects.filter(pk=enseignement_id, personnel=filtre_enseignant(request.user)).exists():
+        return False
+    messages.error(request, "Cet enseignement ne vous est pas attribué (Pédagogie › Enseignements).")
+    return True
+
+
 @login_required
 def releve_notes(request):
     """
     Relevé de notes : tableau croisé élèves × évaluations.
     Filtres : année scolaire, classe, discipline (matière/enseignement), période.
+    Un enseignant ne voit que les classes et les disciplines qui lui sont attribuées.
     """
     from parametres.models import PeriodeEvaluation
 
     etab = request.user.etablissement
+    prof = filtre_enseignant(request.user) if request.user.role == 'ENSEIGNANT' else None
 
     annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut') if etab else AnneeScolaire.objects.none()
     classes = Classe.objects.filter(etablissement=etab, actif=True).select_related('cycle').order_by('cycle__ordre', 'nom') if etab else Classe.objects.none()
@@ -640,15 +652,21 @@ def releve_notes(request):
     periode_id = request.GET.get('periode')
 
     annee = annees.filter(pk=annee_id).first() if annee_id else (annees.filter(est_courante=True).first() or annees.first())
-    classe = classes.filter(pk=classe_id).first() if classe_id else None
 
     # Si annee_id est fourni mais annee non trouvé dans le filtre etab → chercher sans filtre
     if annee_id and not annee:
         annee = AnneeScolaire.objects.filter(pk=annee_id).first()
 
+    if prof is not None:
+        classes = classes.filter(enseignements__personnel=prof, enseignements__est_actif=True,
+                                 **({'enseignements__annee_scolaire': annee} if annee else {})).distinct()
+    classe = classes.filter(pk=classe_id).first() if classe_id else None
+
     enseignements = Enseignement.objects.none()
     if classe:
         qs_classe = Enseignement.objects.filter(classe=classe, est_actif=True).select_related('matiere')
+        if prof is not None:
+            qs_classe = qs_classe.filter(personnel=prof)
         if annee:
             qs_filtered = qs_classe.filter(annee_scolaire=annee)
             enseignements = qs_filtered if qs_filtered.exists() else qs_classe
@@ -666,7 +684,7 @@ def releve_notes(request):
     # On passe str(annee.pk) plutôt que annee_id brut pour couvrir le cas
     # où annee est auto-sélectionnée (annee_id=None en premier chargement).
     releve_ctx = {}
-    if enseignement_id:
+    if enseignement_id and not _enseignement_refuse(request, enseignement_id):
         effective_annee_id = str(annee.pk) if annee else annee_id
         releve_ctx = _build_releve_context(effective_annee_id, enseignement_id, periode_id) or {}
 
@@ -867,6 +885,8 @@ def releve_notes_pdf(request):
     if HTML is None:
         messages.error(request, "WeasyPrint n'est pas installé sur le serveur.")
         return redirect('pedagogie:releve_notes')
+    if _enseignement_refuse(request, request.GET.get('enseignement')):
+        return redirect('pedagogie:releve_notes')
 
     ctx = _build_releve_context(
         annee_id=request.GET.get('annee'),
@@ -908,6 +928,8 @@ def fiche_discipline_pdf(request):
     """
     if HTML is None:
         messages.error(request, "WeasyPrint n'est pas installé sur le serveur.")
+        return redirect('pedagogie:releve_notes')
+    if _enseignement_refuse(request, request.GET.get('enseignement')):
         return redirect('pedagogie:releve_notes')
 
     ctx = _build_releve_context(

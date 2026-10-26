@@ -1111,6 +1111,8 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 3. Choisir la **discipline** → le tableau s'affiche automatiquement
 4. Filtrer par **période** (optionnel — toutes les périodes par défaut)
 
+> **Enseignant :** les listes Classe et Discipline ne proposent que les classes où il enseigne pour l'année choisie et ses propres disciplines (enseignements attribués à sa fiche du personnel, reliée à son compte par l'adresse e-mail — voir `Pédagogie → Enseignements`). La direction et le censeur voient toutes les classes et disciplines.
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  📋 Relevé de notes                                          │
@@ -6696,7 +6698,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.6 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.7 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

@@ -60,3 +60,33 @@ def test_selection_par_classe_limitee_aux_enseignements_du_professeur(client, co
     assert [e.pk for e in form.fields['enseignement'].queryset] == [contexte['ens']['sien'].pk]
     refus = c.get(reverse('pedagogie:evaluation_update', kwargs={'pk': contexte['evals']['collegue'].pk}))
     assert refus.status_code == 302 and refus.url == reverse('pedagogie:evaluation_list')
+
+
+def test_releve_de_notes_limite_aux_classes_et_disciplines_du_professeur(client, contexte):
+    """Relevé de notes : un enseignant ne choisit que ses classes et, dans chacune, que ses disciplines ;
+    un enseignement forgé dans l'URL est refusé (écran et exports PDF). La direction garde la vue complète."""
+    from django.contrib.messages import get_messages
+    ens, annee = contexte['ens'], contexte['ens']['sien'].annee_scolaire
+    baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=contexte['classe_a'],
+               personnel=ens['collegue'].personnel, est_actif=True)             # le collègue enseigne aussi en classe A
+    url = reverse('pedagogie:releve_notes')
+    c = _enseignant(client, contexte['etab'], 'justin.kabore@ecole.bf')
+
+    ctx = c.get(url, {'annee': annee.pk}).context
+    assert [cl.pk for cl in ctx['classes']] == [contexte['classe_a'].pk]
+    ctx = c.get(url, {'annee': annee.pk, 'classe': contexte['classe_a'].pk}).context
+    assert [e.pk for e in ctx['enseignements']] == [ens['sien'].pk]
+    ctx = c.get(url, {'annee': annee.pk, 'classe': contexte['classe_a'].pk, 'enseignement': ens['sien'].pk}).context
+    assert ctx['enseignement'] == ens['sien'] and ctx['table'] is not None
+
+    forge = c.get(url, {'annee': annee.pk, 'classe': contexte['classe_b'].pk, 'enseignement': ens['collegue'].pk})
+    assert forge.context['classe'] is None and forge.context['table'] is None
+    assert 'ne vous est pas attribué' in str(list(get_messages(forge.wsgi_request))[0])
+    for nom_url in ('pedagogie:releve_notes_pdf', 'pedagogie:fiche_discipline_pdf'):
+        refus = c.get(reverse(nom_url), {'annee': annee.pk, 'enseignement': ens['collegue'].pk})
+        assert refus.status_code == 302 and refus.url == url
+        assert 'ne vous est pas attribué' in str(list(get_messages(refus.wsgi_request))[0])
+
+    client.force_login(baker.make('accounts.User', etablissement=contexte['etab'], role='DIRECTEUR', must_change_password=False))
+    ctx = client.get(url, {'annee': annee.pk, 'classe': contexte['classe_a'].pk}).context
+    assert ctx['classes'].count() == 2 and ctx['enseignements'].count() == 2
