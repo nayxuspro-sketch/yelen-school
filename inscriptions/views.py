@@ -452,8 +452,8 @@ def eleve_list_pdf(request):
         'filtre_classe': filtre_classe,
         'filtre_statut': filtre_statut,
         'date_edition': _date.today().strftime('%d/%m/%Y'),
-        'identite': ctx_etab.get('identite'),
         'stats': statistiques_eleves(couples),
+        **ctx_etab,   # identite, etablissement, logo_url, etab_logo_url → en-tête du socle PDF
     })
 
     pdf = _WeasyHTML(string=html_str, base_url=request.build_absolute_uri('/')).write_pdf()

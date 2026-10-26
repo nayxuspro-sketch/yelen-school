@@ -104,6 +104,50 @@ def test_formulaire_inscription_sans_onchange_genere(client):
 
 
 @pytest.mark.django_db
+def test_liste_des_eleves_pdf_entete_avec_logo(client, settings, tmp_path, mocker):
+    """L'en-tête du PDF « Liste des élèves » porte le logo et l'identité de l'établissement : la vue ne passait
+    que ``identite`` au socle PDF, jamais ``logo_url`` — la cellule du logo restait vide."""
+    import io
+    import core.pdf
+    from django.core.files.base import ContentFile
+    from PIL import Image
+    pytest.importorskip('weasyprint')
+    settings.MEDIA_ROOT = tmp_path
+    etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR')
+    client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
+    identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='COMPLEXE SCOLAIRE LE SAVOIR',
+                          numero_agrement_mena='2019-0456/MENAPLN')
+    tampon = io.BytesIO()
+    Image.new('RGB', (120, 120), (0, 90, 160)).save(tampon, 'PNG')
+    identite.logo.save('logo.png', ContentFile(tampon.getvalue()), save=True)
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
+    baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee)
+    sources, documents = [], []
+
+    class HTMLEspion(core.pdf.HTML):
+        def __init__(self, *args, **kwargs):
+            sources.append(kwargs['string'])
+            super().__init__(*args, **kwargs)
+
+        def write_pdf(self, target=None, **kwargs):
+            document = self.render()
+            documents.append(document)
+            return document.write_pdf(target, **kwargs)
+    mocker.patch('inscriptions.views._WeasyHTML', HTMLEspion)
+
+    def images(box):
+        propres = [box.element.get('alt')] if getattr(box, 'element_tag', None) == 'img' else []
+        return propres + [alt for enfant in getattr(box, 'children', ()) for alt in images(enfant)]
+
+    assert client.get(reverse('inscriptions:eleve_list_pdf')).status_code == 200
+    html = sources[0]
+    assert f'<td class="pdf-entete-logo"><img src="http://testserver{identite.logo.url}" alt="Logo"></td>' in html
+    assert 'COMPLEXE SCOLAIRE LE SAVOIR' in html and 'N° Agrément : 2019-0456/MENAPLN' in html
+    assert 'Logo' in images(documents[0].pages[0]._page_box), "logo réellement rendu dans l'en-tête"
+
+
+@pytest.mark.django_db
 class TestEleveListStatistiques:
     """Sous la liste des élèves : effectif par genre et répartition des âges, calculés sur
     l'ensemble filtré (toutes pages), aussi dans la réponse HTMX."""
