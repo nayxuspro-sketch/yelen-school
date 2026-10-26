@@ -252,12 +252,17 @@ class TestBulletinTrimestriel:
         assert pied in _html(weasy) and 'Duplicata — Page' in _html(weasy)
         assert 'Assiduité du Trimestre 1' in _html(weasy) and html.count('Assiduité du Trimestre 1') == 3
 
-    def test_bulletin_charge_tient_sur_une_page(self, classe_notee, mocker):
+    def test_bulletin_charge_tient_sur_une_page(self, classe_notee, mocker, settings, tmp_path):
         """Pire cas réaliste rendu par WeasyPrint : 16 matières (noms de professeurs longs), en-tête complet,
-        3 sanctions, appréciation de trois lignes, 2 mentions, signataire avec titre → une page par élève."""
+        3 sanctions, appréciation de trois lignes, 2 mentions, signataire avec titre et signature scannée
+        → une page par élève."""
+        import io
         import core.pdf
+        from django.core.files.base import ContentFile
+        from PIL import Image
         from parametres.models import Distinction, IdentiteEtablissement, TypeDocument
         from viescolaire.models import SanctionDisciplinaire
+        settings.MEDIA_ROOT = tmp_path
         c = classe_notee
         IdentiteEtablissement.objects.filter(etablissement=c.etab).update(
             ville='Ouagadougou', devise='Discipline — Travail — Succès', adresse_complete='Secteur 15, Ouaga 2000',
@@ -297,6 +302,9 @@ class TestBulletinTrimestriel:
         baker.make('parametres.SignataireDocument', cycle=c.classe.cycle, type_document=type_doc, annee_scolaire=c.annee,
                    membre_personnel_id=membre.id, fonction='Le Directeur des Études',
                    titres_honorifiques=["Chevalier de l'Ordre du Mérite"], actif=True)
+        tampon = io.BytesIO()
+        Image.new('RGBA', (600, 220), (0, 0, 0, 0)).save(tampon, 'PNG')   # signature large : bornée à 1,1 cm de haut
+        membre.signature.save('kabore.png', ContentFile(tampon.getvalue()), save=True)
 
         documents, sources = [], []
 
@@ -318,6 +326,8 @@ class TestBulletinTrimestriel:
         assert all(len(document.pages) == 1 for document in documents), 'chaque bulletin trimestriel (original, lot, duplicata) tient sur une page A4'
         assert all('class="bul-card bul-dense"' in html and html.count('<tr>') >= 17 for html in sources), '16 matières → variante dense'
         assert all('Chevalier de l&#x27;Ordre du Mérite' in html and 'Tableau d&#x27;honneur' in sources[0] for html in sources)
+        signature = f'<div class="msig-sign"><img class="msig-img" src="{membre.signature.url}" alt=""></div><div class="msig-name">'
+        assert all(html.count(signature) == 1 for html in sources), 'signature scannée entre la fonction et le nom du signataire'
 
     def test_batch_sans_moyenne_redirige(self, classe_notee, mocker):
         c = classe_notee

@@ -118,6 +118,37 @@ def test_certificat_pdf_format_a5_portrait(client, mocker):
 
 
 @pytest.mark.django_db
+def test_certificat_signature_scannee_du_signataire(client, mocker, settings, tmp_path):
+    """La signature scannée du signataire configuré est apposée dans l'espace de signature du certificat ;
+    sans signature enregistrée, l'espace reste vierge."""
+    from django.core.files.base import ContentFile
+    from parametres.models import TypeDocument
+    settings.MEDIA_ROOT = tmp_path
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab)
+    inscription = baker.make('inscriptions.Inscription', annee_scolaire=annee,
+                             classe=baker.make('parametres.Classe', etablissement=etab, cycle=cycle))
+    type_doc, _ = TypeDocument.objects.get_or_create(code='CERT_SCOL', defaults={'libelle': 'Certificat', 'categorie': 'SCOLARITE'})
+    membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Salimata')
+    baker.make('parametres.SignataireDocument', cycle=cycle, type_document=type_doc, annee_scolaire=annee,
+               membre_personnel_id=membre.id, fonction='Le Directeur des Études', actif=True)
+    html_cls = mocker.patch('core.pdf.HTML')
+    html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+    url = reverse('documents:certificat_scolarite', kwargs={'inscription_id': inscription.pk}) + '?format=pdf'
+
+    assert client.get(url).status_code == 200
+    assert '<div class="sig-espace"></div>' in html_cls.call_args.kwargs['string']
+
+    membre.signature.save('kabore.png', ContentFile(b'\x89PNG\r\n\x1a\n'), save=True)
+    assert client.get(url).status_code == 200
+    html = html_cls.call_args.kwargs['string']
+    assert f'<div class="sig-espace"><img class="msig-img" src="{membre.signature.url}" alt=""></div>' in html
+    assert membre.signature.url.startswith('/media/personnel/signatures/kabore')
+
+
+@pytest.mark.django_db
 def test_document_numero_et_version_generes_a_la_creation(client, mocker):
     """La clé primaire UUID est pré-remplie : le test `not self.pk` ne déclenchait jamais la numérotation
     (« N° — » sur chaque certificat)."""

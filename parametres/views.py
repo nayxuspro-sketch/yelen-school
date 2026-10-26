@@ -729,7 +729,7 @@ def signataire_config(request):
         categorie = request.POST.get('categorie')
         retour = f"{request.path}?annee={annee.id if annee else ''}"
 
-        form = SignataireForm(request.POST, etablissement=etab)
+        form = SignataireForm(request.POST, request.FILES, etablissement=etab)
         if form.is_valid() and cycle_id and categorie and annee:
             membre = form.cleaned_data['membre_personnel']
             fonction = form.cleaned_data['fonction'] or 'Le Directeur'
@@ -755,11 +755,14 @@ def signataire_config(request):
                             'actif': True,
                         }
                     )
+                form.appliquer_signature(membre)
                 libelle_cat = TypeDocument.CategorieChoices(categorie).label
                 messages.success(request, f"Signataire enregistré pour {cycle.nom} · {libelle_cat}.")
             except Exception as e:
                 logger.exception("Enregistrement du signataire impossible")
                 messages.error(request, f"Erreur : {e}")
+        elif form.errors.get('signature'):
+            messages.error(request, f"Signature scannée refusée : {' '.join(form.errors['signature'])}")
         return redirect(retour)
 
     # ── Construction des données pour le template ──
@@ -794,6 +797,7 @@ def signataire_config(request):
 
             # Signataire "représentatif" pour pré-remplir le formulaire
             sig_ref = next((s for s in sigs.values() if s), None)
+            membre_ref = sig_ref.get_membre_personnel() if sig_ref else None
             categories_data.append({
                 'value':      cat_val,
                 'label':      cat_label,
@@ -801,6 +805,7 @@ def signataire_config(request):
                 'configured': configured,
                 'total':      len(type_docs),
                 'sig_ref':    sig_ref,
+                'signature':  membre_ref.signature if membre_ref and membre_ref.signature else None,
             })
         cycles_data.append({
             'cycle':             cycle,

@@ -349,6 +349,45 @@ class TestSignataireConfig:
         # Le formulaire de la catégorie est pré-rempli avec le signataire enregistré
         assert f'<option value="{membre.id}"\n              selected>' in html
 
+    def test_signature_scannee_enregistree_sur_la_fiche_du_signataire(self, client, contexte, settings, tmp_path):
+        """Champ facultatif « Signature scannée » : l'image est enregistrée sur la fiche du membre du personnel
+        (reprise sur tous les documents qu'il signe), prévisualisée dans la fenêtre, et peut être retirée."""
+        import io
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+        settings.MEDIA_ROOT = tmp_path
+        annee, primaire, secondaire, membre = contexte
+        url = reverse('parametres:signataire_config')
+        donnees = {'annee_id': str(annee.id), 'cycle_id': str(primaire.id), 'categorie': 'SCOLARITE',
+                   'membre_personnel': str(membre.id), 'fonction': 'Le Directeur', 'titre_honorifique': ''}
+        html = client.get(url).content.decode()
+        assert 'enctype="multipart/form-data"' in html and 'name="signature" accept="image/png,image/jpeg"' in html
+        assert 'class="sc-signature-apercu"' not in html and 'name="retirer_signature"' not in html
+
+        tampon = io.BytesIO()
+        Image.new('RGBA', (300, 90), (0, 0, 0, 0)).save(tampon, 'PNG')
+        png = SimpleUploadedFile('signature.png', tampon.getvalue(), content_type='image/png')
+        reponse = client.post(url, {**donnees, 'signature': png})
+        assert reponse.status_code == 302
+        membre.refresh_from_db()
+        assert membre.signature and membre.signature.name.startswith('personnel/signatures/')
+        html = client.get(reponse['Location']).content.decode()
+        assert f'<img src="{membre.signature.url}" alt="Signature enregistrée" class="sc-signature-apercu">' in html
+        assert 'name="retirer_signature"' in html
+
+        # Fichier qui n'est pas une image : refus explicite, rien n'est enregistré
+        faux = SimpleUploadedFile('signature.png', b'pas une image', content_type='image/png')
+        html = client.get(client.post(url, {**donnees, 'signature': faux})['Location']).content.decode()
+        assert 'Signature scannée refusée' in html
+        membre.refresh_from_db()
+        assert membre.signature.name.startswith('personnel/signatures/')
+
+        # Retrait
+        client.post(url, {**donnees, 'retirer_signature': '1'})
+        membre.refresh_from_db()
+        assert not membre.signature
+        assert 'class="sc-signature-apercu"' not in client.get(url).content.decode()
+
 
 @pytest.mark.django_db
 class TestFormulairesDecimauxNonLocalises:

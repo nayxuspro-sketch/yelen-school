@@ -50,6 +50,10 @@ _SIGNATAIRE_CSS = """
 .msig-fonction    { font-size:10pt; color:#1c3557; font-weight:bold; }
 .msig-name        { font-size:11pt; font-weight:bold; color:#000; margin-top:1.6cm; line-height:1.3; }
 .msig-honors      { font-size:8pt; font-style:italic; color:#555; margin-top:2pt; }
+/* Signature scannée : occupe l'espace réservé à la signature manuscrite (hauteur inchangée) */
+.msig-sign        { height:1.6cm; line-height:1.6cm; }
+.msig-sign img    { max-height:1.6cm; max-width:5cm; vertical-align:bottom; }
+.msig-sign + .msig-name { margin-top:0; }
 /* Compatibilité ancienne classe sig-zone (pour templates qui utilisent le partial) */
 .sig-zone          { margin-top:32pt; text-align:right; page-break-inside:avoid; break-inside:avoid; }
 .sig-date          { font-size:10pt; color:#222; }
@@ -157,6 +161,29 @@ def _trouver_type_document(type_doc_code, cycle):
     return None
 
 
+def _signature_html(membre):
+    """Balise <img> de la signature scannée du membre du personnel ('' s'il n'en a pas)."""
+    signature = getattr(membre, 'signature', None) if membre else None
+    if not signature:
+        return ''
+    return f'<img class="msig-img" src="{_e(signature.url)}" alt="">'
+
+
+def _zone_signature_html(membre):
+    """Zone de signature du bloc signataire : l'image scannée si elle existe, sinon rien (espace vierge)."""
+    img = _signature_html(membre)
+    return f'<div class="msig-sign">{img}</div>' if img else ''
+
+
+@register.simple_tag
+def signature_scannee(membre):
+    """Signature scannée d'un signataire, pour les gabarits PDF dotés de leur propre bloc de signature.
+
+        {% signature_scannee sig_membre %}
+    """
+    return mark_safe(_signature_html(membre))
+
+
 def _bloc_signataire_html(fonction, membre, titres_honorifiques=None, titre_honorifique=''):
     """
     Retourne le HTML interne d'un seul signataire (fonction + nom + titres).
@@ -177,6 +204,7 @@ def _bloc_signataire_html(fonction, membre, titres_honorifiques=None, titre_hono
 
     return (
         f'<div class="msig-fonction">{fonction_html}</div>'
+        f'{_zone_signature_html(membre)}'
         f'<div class="msig-name">{nom_html}</div>'
         f'{titres_html}'
     )
@@ -251,6 +279,7 @@ def signataire_auto(context, type_doc_code):
                 f'<div class="msig-zone" style="text-align:right;">'
                 f'<div class="msig-date" style="text-align:right;">{ville_prefix}le {date_str}</div>'
                 f'<div class="msig-fonction">{fonction}</div>'
+                f'{_zone_signature_html(membre_principal)}'
                 f'<div class="msig-name">{nom}</div>'
                 f'{titres_html}'
                 f'</div>'

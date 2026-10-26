@@ -107,7 +107,8 @@ body {
     font-weight: bold;
     color: #111;
 }
-.sig-espace { height: 1.1cm; }
+.sig-espace { height: 1.1cm; line-height: 1.1cm; }
+.sig-espace img { max-height: 1.1cm; max-width: 5cm; vertical-align: bottom; }
 .sig-trait {
     width: 5.5cm;
     border-top: 1pt solid #111;
@@ -192,7 +193,7 @@ body {
                 {% if sig_membre %}{{ signataire.fonction|default:"Le Directeur / La Directrice" }}
                 {% else %}Le Directeur / La Directrice{% endif %}
             </div>
-            <div class="sig-espace"></div>
+            <div class="sig-espace">{% signature_scannee sig_membre %}</div>
 
             <div class="sig-nom">
                 {% if sig_membre %}{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}{% endif %}

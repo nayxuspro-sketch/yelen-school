@@ -245,6 +245,13 @@ class SignataireForm(forms.Form):
         required=False,
         label="Titre honorifique",
     )
+    signature = forms.ImageField(
+        required=False,
+        label="Signature scannée",
+        help_text="Facultatif — PNG à fond transparent recommandé, 512 Ko maximum. Enregistrée sur la fiche "
+                  "du membre du personnel et apposée sur tous les documents qu'il signe.",
+    )
+    retirer_signature = forms.BooleanField(required=False, label="Retirer la signature enregistrée")
 
     def __init__(self, *args, etablissement=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -254,6 +261,24 @@ class SignataireForm(forms.Form):
                 .filter(etablissement=etablissement, is_active=True)
                 .order_by('nom', 'prenom')
             )
+
+    def clean_signature(self):
+        image = self.cleaned_data.get('signature')
+        if image:
+            _validate_image(image, max_size=512 * 1024)
+        return image
+
+    def appliquer_signature(self, membre):
+        """Enregistre (ou retire) la signature scannée sur la fiche du membre du personnel signataire."""
+        image = self.cleaned_data.get('signature')
+        if image:
+            if membre.signature:
+                membre.signature.delete(save=False)
+            membre.signature = image
+            membre.save(update_fields=['signature', 'updated_at'])
+        elif self.cleaned_data.get('retirer_signature') and membre.signature:
+            membre.signature.delete(save=False)
+            membre.save(update_fields=['signature', 'updated_at'])
 
 
 class RolePersonnaliseForm(forms.ModelForm):

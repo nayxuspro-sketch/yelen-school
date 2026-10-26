@@ -229,6 +229,15 @@ class MembrePersonnel(BaseModel):
         null=True,
         verbose_name=_("Photo d'identité")
     )
+
+    signature = models.ImageField(
+        upload_to='personnel/signatures/',
+        blank=True,
+        null=True,
+        verbose_name=_("Signature scannée"),
+        help_text=_("Image PNG à fond transparent recommandée ; apposée à l'emplacement de la signature "
+                    "sur les documents dont ce membre est le signataire")
+    )
     
     # Relations
     etablissement = models.ForeignKey(

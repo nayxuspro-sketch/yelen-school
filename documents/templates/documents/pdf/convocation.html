@@ -1,4 +1,4 @@
-{% extends "pdf/base.html" %}
+{% extends "pdf/base.html" %}{% load signataire_tags %}
 {% block page %}@page {
     size: A4;
     margin: 0;
@@ -278,6 +278,9 @@ body {
   margin-top: 1.5cm;
   letter-spacing: .3px;
 }
+.sig-img { height: 1.5cm; line-height: 1.5cm; }
+.sig-img img { max-height: 1.5cm; max-width: 5cm; vertical-align: bottom; }
+.sig-img + .sig-nom { margin-top: 0; }
 .sig-titres { font-size: 8pt; color: #333; font-style: italic; margin-top: 2pt; }
 
 /* ── Pied de document ────────────────────────────────────────────────────── */
@@ -491,6 +494,7 @@ body {
       <div class="sig-fonction">
         {{ signataire.fonction|default:signataire.titre|default:"Le Directeur" }}
       </div>
+      <div class="sig-img">{% signature_scannee sig_membre %}</div>
       <div class="sig-nom">{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}</div>
       {% if signataire.titres_honorifiques %}
       <div class="sig-titres">

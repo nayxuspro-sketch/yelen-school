@@ -1,4 +1,4 @@
-{% extends "pdf/base.html" %}
+{% extends "pdf/base.html" %}{% load signataire_tags %}
 {% block page %}@page {
     size: A4;
     margin: 10mm 15mm 12mm 15mm;
@@ -94,6 +94,9 @@ body {
   width: 22mm; height: 22mm; object-fit: contain; opacity: 0.85;
 }
 .nom-signataire { font-size: 9pt; font-weight: bold; text-align: right; margin-top: 20mm; }
+.sig-img { height: 20mm; line-height: 20mm; text-align: right; }
+.sig-img img { max-height: 14mm; max-width: 50mm; vertical-align: bottom; }
+.sig-img + .nom-signataire { margin-top: 0; }
 
 /* ── Pied ── */
 .pied-page {
@@ -184,6 +187,7 @@ body {
           {% if signataire %}{{ signataire.fonction|default:"Le(La) Directeur(trice)" }}{% else %}Le(La) Directeur(trice){% endif %}
         </div>
         <div class="signature-zone">
+          <div class="sig-img">{% signature_scannee sig_membre %}</div>
           <div class="nom-signataire">
             {% if sig_membre %}
               {{ sig_membre.get_nom_complet }}

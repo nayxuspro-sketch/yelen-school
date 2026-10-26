@@ -139,8 +139,9 @@ body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; margin: 0; 
 .signature-func {
   font-size: 9pt;
   color: #333;
-  margin-bottom: 1.8cm;
 }
+.signature-img { height: 1.8cm; line-height: 1.8cm; }
+.signature-img img { max-height: 1.6cm; max-width: 4.5cm; vertical-align: bottom; }
 .signature-line {
   border-top: 1px solid #111;
   margin-bottom: 4px;
@@ -270,6 +271,7 @@ body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; margin: 0; 
   <div class="signature-section">
     <div class="signature-block">
       <div class="signature-func">{{ signataire.fonction|default:"Directeur/Proviseur" }}</div>
+      <div class="signature-img">{% signature_scannee sig_membre %}</div>
       <div class="signature-line"></div>
       <div class="signature-name">
         {% if sig_membre %}{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}{% elif identite and identite.nom_directeur %}{{ identite.nom_directeur }}{% endif %}
