@@ -70,6 +70,20 @@ def test_signataire_finance_sur_la_relance(client, contexte):
         assert '<div class="sig-nom">KABORE Salimata</div>' in html
 
 
+def test_signature_scannee_de_l_intendante_sur_la_relance(client, contexte, settings, tmp_path):
+    """La signature scannée du signataire est apposée dans l'espace de 1 cm réservé entre sa fonction et son nom."""
+    from django.core.files.base import ContentFile
+    settings.MEDIA_ROOT = tmp_path
+    signataire = _signataire(contexte, 'RELANCE', 'KABORE', "L'Intendante")
+    html = _relance(client, contexte, 'all')
+    assert '<div class="sig-espace"></div>' in html
+
+    membre = signataire.get_membre_personnel()
+    membre.signature.save('intendante.png', ContentFile(b'\x89PNG\r\n\x1a\n'), save=True)
+    html = _relance(client, contexte, 'all')
+    assert f'<div class="sig-espace"><img class="msig-img" src="{membre.signature.url}" alt=""></div>' in html
+
+
 def test_signataires_configures_avant_la_migration_reportes_sur_la_relance(client, contexte):
     """Établissement configuré avant l'ajout du type « Relance » : le signataire Finance (liste des
     redevables) est repris, pas le signataire pédagogique plus récent."""

@@ -15,6 +15,21 @@ from core import pdf as core_pdf
 pytestmark = pytest.mark.django_db
 
 
+def images_rendues(page):
+    """Classes CSS des <img> réellement rendues : une image introuvable n'a pas de boîte dans la mise en page."""
+    from weasyprint.formatting_structure import boxes
+    classes = []
+
+    def parcourir(box):
+        if isinstance(box, boxes.ReplacedBox) and box.element_tag == 'img':
+            classes.append(box.element.get('class', ''))
+        for enfant in getattr(box, 'children', ()):
+            parcourir(enfant)
+
+    parcourir(page._page_box)
+    return classes
+
+
 @pytest.fixture
 def media_root(settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path / 'media'
@@ -99,6 +114,20 @@ class TestFichierLocalPdf:
             assert reponse.read() == photo_png
         finally:
             reponse.close()
+
+    def test_base_interne_resolue_hors_allowed_hosts(self, settings, fichier_media, media_root):
+        settings.ALLOWED_HOSTS = ['testserver']
+        assert core_pdf.fichier_local(core_pdf.BASE_URL_INTERNE + fichier_media.lstrip('/')) == (
+            media_root / 'personnel' / 'photos' / 'awa.png').resolve()
+        assert core_pdf.fichier_local(core_pdf.BASE_URL_INTERNE + 'comptes/login/') is None
+
+    def test_url_relative_resolue_sans_base_url(self, settings, fichier_media):
+        """Défaut d'origine : ``HTML(string=…)`` sans ``base_url`` → WeasyPrint ignorait toute URL relative
+        (signature scannée « /media/personnel/signatures/… », cachet) ; l'image disparaissait du PDF."""
+        pytest.importorskip('weasyprint')
+        settings.ALLOWED_HOSTS = ['testserver']
+        document = core_pdf.HTML(string=f'<img class="sig" src="{fichier_media}" alt="">').render()
+        assert images_rendues(document.pages[0]) == ['sig']
 
 
 class TestBadgePersonnelPdf:

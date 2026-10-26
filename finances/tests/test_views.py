@@ -388,13 +388,17 @@ class TestFormulairesBoursesCSP:
 class TestRecuPaiementPdf:
     """Le reçu de paiement est un A5 paysage dont tout le contenu tient sur une
     page, même chargé (9 rubriques tarifées, statut, référence, observation,
-    agrément, signataire avec titre honorifique)."""
+    agrément, signataire avec titre honorifique) ; la signature scannée du
+    signataire y est embarquée."""
 
-    def test_a5_paysage_une_page(self, client, mocker):
+    @pytest.fixture
+    def recu_charge(self, client, mocker, settings, tmp_path):
         import core.pdf
         from decimal import Decimal
+        from types import SimpleNamespace
         from parametres.models import TypeDocument
 
+        settings.MEDIA_ROOT = tmp_path
         documents = []
 
         class HTMLEspion(core.pdf.HTML):
@@ -434,16 +438,37 @@ class TestRecuPaiementPdf:
         baker.make('parametres.SignataireDocument', cycle=cycle, type_document=type_doc, annee_scolaire=annee,
                    membre_personnel_id=membre.id, fonction="L'Intendante",
                    titres_honorifiques=["Chevalier de l'Ordre du Mérite"], actif=True)
+        return SimpleNamespace(paiement=paiement, membre=membre, documents=documents)
 
-        response = client.get(reverse('finances:recu_pdf', args=[paiement.id]))
+    def test_a5_paysage_une_page(self, client, recu_charge):
+        response = client.get(reverse('finances:recu_pdf', args=[recu_charge.paiement.id]))
 
         assert response.status_code == 200
         assert response.content.startswith(b'%PDF')
-        assert len(documents) == 1
-        pages = documents[0].pages
+        assert len(recu_charge.documents) == 1
+        pages = recu_charge.documents[0].pages
         assert len(pages) == 1
         # A5 paysage : 210 × 148 mm, soit 793,7 × 559,4 px CSS (WeasyPrint)
         assert round(pages[0].width) == 794 and round(pages[0].height) == 559
+
+    def test_signature_scannee_de_l_intendante_embarquee(self, client, recu_charge):
+        """Défaut d'origine : la vue rendait le reçu sans ``base_url`` ; l'URL relative de la signature
+        (« /media/personnel/signatures/… ») était ignorée par WeasyPrint — nom et fonction imprimés, image absente."""
+        import io
+        from django.core.files.base import ContentFile
+        from PIL import Image
+        from core.tests.test_media_pdf import images_rendues
+
+        tampon = io.BytesIO()
+        Image.new('RGBA', (600, 220), (0, 0, 0, 0)).save(tampon, 'PNG')
+        recu_charge.membre.signature.save('intendante.png', ContentFile(tampon.getvalue()), save=True)
+
+        response = client.get(reverse('finances:recu_pdf', args=[recu_charge.paiement.id]))
+
+        assert response.status_code == 200 and len(recu_charge.documents) == 1
+        pages = recu_charge.documents[0].pages
+        assert len(pages) == 1
+        assert 'msig-img' in images_rendues(pages[0]), 'la signature scannée doit être embarquée dans le reçu'
 
 
 @pytest.mark.django_db

@@ -11,6 +11,11 @@ auprès du serveur lui-même, ce qui échoue en production :
 ``core.pdf.HTML`` remplace ``weasyprint.HTML`` : les URL dont l'hôte est autorisé
 (``ALLOWED_HOSTS``) et le chemin sous ``MEDIA_URL`` ou ``STATIC_URL`` sont lues
 directement sur le disque ; toute autre URL suit le comportement standard.
+
+Les gabarits référencent aussi des URL relatives (cachet, signature scannée :
+``/media/personnel/signatures/…``). Sans ``base_url``, WeasyPrint les ignore : un document
+construit depuis une chaîne reçoit donc par défaut une base interne (``BASE_URL_INTERNE``),
+dont seuls les chemins ``/media/`` et ``/static/`` sont résolus, sur le disque.
 """
 import mimetypes
 from pathlib import Path
@@ -24,6 +29,8 @@ import weasyprint
 from weasyprint.urls import URLFetcher, URLFetcherResponse
 
 _HOTES_DEBUG = ['.localhost', '127.0.0.1', '[::1]']
+_HOTE_INTERNE = 'yelen-school.internal'
+BASE_URL_INTERNE = f'http://{_HOTE_INTERNE}/'
 
 
 def _prefixe(url):
@@ -46,9 +53,10 @@ def fichier_local(url):
     parts = urlsplit(url)
     if parts.scheme not in ('http', 'https') or not parts.hostname:
         return None
-    hotes = settings.ALLOWED_HOSTS or (_HOTES_DEBUG if settings.DEBUG else [])
-    if not validate_host(parts.hostname, hotes):
-        return None
+    if parts.hostname != _HOTE_INTERNE:
+        hotes = settings.ALLOWED_HOSTS or (_HOTES_DEBUG if settings.DEBUG else [])
+        if not validate_host(parts.hostname, hotes):
+            return None
     chemin = unquote(parts.path)
     media = _prefixe(settings.MEDIA_URL)
     static = _prefixe(settings.STATIC_URL)
@@ -79,10 +87,13 @@ class FetcherLocal(URLFetcher):
 
 
 class HTML(weasyprint.HTML):
-    """``weasyprint.HTML`` dont le fetcher par défaut lit static/media sur le disque."""
+    """``weasyprint.HTML`` dont le fetcher par défaut lit static/media sur le disque ; un document
+    construit depuis une chaîne sans ``base_url`` reçoit la base interne (URL relatives résolues)."""
 
-    def __init__(self, *args, url_fetcher=None, **kwargs):
-        super().__init__(*args, url_fetcher=url_fetcher or FetcherLocal(), **kwargs)
+    def __init__(self, *args, url_fetcher=None, base_url=None, **kwargs):
+        if base_url is None and kwargs.get('string') is not None:
+            base_url = BASE_URL_INTERNE
+        super().__init__(*args, url_fetcher=url_fetcher or FetcherLocal(), base_url=base_url, **kwargs)
 
     @classmethod
     def lot(cls, fragments, base_url=None):
