@@ -563,3 +563,32 @@ class TestDistinction:
 
         assert client_admin.post(reverse('parametres:distinction_delete', args=[mention.pk])).status_code == 204
         assert not Distinction.objects.filter(pk=mention.pk).exists()
+
+
+@pytest.mark.django_db
+class TestTypeDocumentForm:
+    """La fenêtre « Nouveau type de document » propose les cycles de l'établissement (la vue ne les
+    transmettait pas au gabarit : la liste ne contenait que « Tous les cycles »)."""
+
+    def test_cycles_de_l_etablissement_proposes_et_enregistres(self, client):
+        from parametres.models import TypeDocument
+        etab = baker.make(Etablissement, code='TD', nom='Lycée Types')
+        client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
+        secondaire = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', ordre=2)
+        primaire = baker.make('parametres.Cycle', etablissement=etab, nom='Primaire', ordre=1)
+        autre = baker.make('parametres.Cycle', etablissement=baker.make(Etablissement, code='AUT'), nom='Autre école')
+
+        html = client.get(reverse('parametres:type_document_create')).content.decode()
+        options = re.findall(r'<option value="([^"]*)"[^>]*>([^<]*)</option>', html.split('id="id_cycle"')[1].split('</select>')[0])
+        assert options == [('', 'Tous les cycles'), (str(primaire.pk), 'Primaire'), (str(secondaire.pk), 'Secondaire')]
+
+        donnees = {'code': 'FICHE_SUIVI', 'libelle': 'Fiche de suivi', 'categorie': 'PEDAGOGIE', 'cycle': str(secondaire.pk)}
+        assert client.post(reverse('parametres:type_document_create'), donnees).status_code == 204
+        type_doc = TypeDocument.objects.get(code='FICHE_SUIVI')
+        assert type_doc.cycle == secondaire
+
+        assert client.post(reverse('parametres:type_document_create'), {**donnees, 'code': 'X', 'cycle': str(autre.pk)}).status_code == 200
+        assert not TypeDocument.objects.filter(code='X').exists(), "un cycle d'un autre établissement est refusé"
+
+        html = client.get(reverse('parametres:type_document_edit', args=[type_doc.pk])).content.decode()
+        assert f'<option value="{secondaire.pk}" selected>Secondaire</option>' in html

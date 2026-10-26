@@ -1046,9 +1046,12 @@ def type_document_list(request):
 @login_required
 def type_document_form(request, pk=None):
     type_doc = get_object_or_404(TypeDocument, pk=pk) if pk else None
+    etab = _get_etab(request)
+    cycles = (Cycle.objects.filter(etablissement=etab) if etab else Cycle.objects.all()).order_by('ordre', 'nom')
 
     if request.method == 'POST':
         form = TypeDocumentForm(request.POST, instance=type_doc)
+        form.fields['cycle'].queryset = cycles
         if form.is_valid():
             form.save()
             return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
@@ -1058,6 +1061,7 @@ def type_document_form(request, pk=None):
     return render(request, 'parametres/partials/type_document_form.html', {
         'type_doc': type_doc,
         'form': form,
+        'cycles': cycles,
     })
 
 
