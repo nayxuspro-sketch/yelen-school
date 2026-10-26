@@ -149,7 +149,7 @@
             {% if sig_membre %}{{ signataire.fonction|default:"Le Directeur / La Directrice" }}
             {% else %}Le Directeur / La Directrice{% endif %}
           </p>
-          <div class="doc-cert-sig-area"></div>
+          <div class="doc-cert-sig-area">{% signature_scannee sig_membre %}</div>
           <p class="doc-cert-sig-name">
             {% if sig_membre %}{{ sig_membre.nom|upper }} {{ sig_membre.prenom }}{% else %}&nbsp;{% endif %}
           </p>

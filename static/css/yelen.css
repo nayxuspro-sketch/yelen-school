@@ -10192,8 +10192,14 @@ input::-webkit-strong-password-auto-fill-button {
 .doc-cert-sig-area {
   width: 200px;
   height: 64px;
+  line-height: 64px;
   margin: 0 auto;
-  border-bottom: 1px solid #1a1a1a;
+}
+
+.doc-cert-sig-area img {
+  max-height: 64px;
+  max-width: 200px;
+  vertical-align: bottom;
 }
 
 .doc-cert-sig-name {

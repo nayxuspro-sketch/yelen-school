@@ -146,6 +146,8 @@ def test_certificat_signature_scannee_du_signataire(client, mocker, settings, tm
     html = html_cls.call_args.kwargs['string']
     assert f'<div class="sig-espace"><img class="msig-img" src="{membre.signature.url}" alt=""></div>' in html
     assert membre.signature.url.startswith('/media/personnel/signatures/kabore')
+    apercu = client.get(url.removesuffix('?format=pdf')).content.decode()   # aperçu écran : même signature, sans trait
+    assert f'<div class="doc-cert-sig-area"><img class="msig-img" src="{membre.signature.url}" alt=""></div>' in apercu
 
 
 @pytest.mark.django_db

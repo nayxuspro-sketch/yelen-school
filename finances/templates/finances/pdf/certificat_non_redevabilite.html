@@ -56,7 +56,6 @@ body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; line-h
 .sig-right .sig-zone, .sig-right .sig-date,
 .sig-right .sig-fonction, .sig-right .sig-name,
 .sig-right .sig-honors { text-align: right !important; }
-.signature-line { border-top: 1px solid #333; margin-top: 0.8cm; padding-top: 0.1cm; font-size: 8pt; }
 {% endblock %}
 {% block corps %}
 <div class="document">
@@ -126,7 +125,6 @@ body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; line-h
     <div class="footer">
         <div class="signature-block"></div>
         <div class="signature-block sig-right">
-            <div class="signature-line">Le Responsable Financier</div>
             {% signataire_auto "ATTESTATION" %}
         </div>
     </div>

@@ -40,6 +40,35 @@ def test_tous_les_gabarits_pdf_heritent_du_socle():
     assert not fautifs, '\n'.join(fautifs)
 
 
+# Signatures manuscrites de tiers (parent, salarié, membres du conseil, directeurs des deux établissements) :
+# la ligne à signer y est légitime. Partout ailleurs, le bloc du signataire configuré ne dessine aucun trait.
+LIGNES_MANUSCRITES = {
+    'documents/templates/documents/pdf/convocation.html': {'.recepisse-sig-line'},
+    'inscriptions/templates/inscriptions/pdf/dossier_transfert.html': {'.sig-line'},
+    'personnel/templates/personnel/pdf/bulletin_salaire.html': {'.pied .ligne-sign'},
+    'personnel/templates/personnel/pdf/contrat_travail.html': {'.signature-ligne'},
+    'vacations/templates/vacations/pdf/bulletin.html': {'.sig-bloc .sig-ligne'},
+    'viescolaire/templates/viescolaire/pdf/conseil_pv.html': {'.sig-line'},
+}
+
+
+def test_aucun_trait_a_la_place_de_la_signature_du_signataire():
+    """Fonction, signature scannée, NOM Prénom : aucune règle CSS de signature (« sig », « sign ») ne trace de
+    bordure haute ou basse dans les gabarits PDF, leurs fragments et le tag ``signataire_auto``."""
+    fichiers = [f for f in RACINE.rglob('templates/**/*.html') if not EXCLUS.intersection(f.parts) and '/pdf/' in f.as_posix()]
+    fichiers.append(RACINE / 'documents/templatetags/signataire_tags.py')
+    fautifs = []
+    for f in fichiers:
+        chemin = f.relative_to(RACINE).as_posix()
+        for selecteur, corps in re.findall(r'([^{}]+)\{([^{}]*)\}', f.read_text(encoding='utf-8')):
+            selecteur = (selecteur.strip().splitlines() or [''])[-1].strip()
+            if re.search(r'sig|sign', selecteur, re.I) and re.search(r'border-(top|bottom)\b', corps) \
+                    and selecteur not in LIGNES_MANUSCRITES.get(chemin, ()):
+                fautifs.append(f'{chemin} : {selecteur}')
+    assert len(fichiers) > 30
+    assert not fautifs, '\n'.join(fautifs)
+
+
 def test_references_identite_existantes():
     """`identite.xxx` dans un gabarit doit être un champ ou un get_xxx_display réel (sinon rendu silencieusement vide)."""
     champs = {f.name for f in IdentiteEtablissement._meta.get_fields()}
