@@ -475,6 +475,32 @@ class TestRelevesEtBilans:
             assert 'Mathématiques' in _html(weasy) and 'OUEDRAOGO' in _html(weasy)
             assert c.client.get(reverse(nom_url), {'annee': c.annee.pk}).status_code == 302, 'sans enseignement'
 
+    def test_releve_pdf_porte_le_signataire_configure(self, classe_notee, mocker, settings, tmp_path):
+        """Le relevé de notes PDF porte le signataire configuré pour « Relevé de Notes » : fonction, signature
+        scannée, NOM Prénom."""
+        import io
+        from django.core.files.base import ContentFile
+        from PIL import Image
+        from parametres.models import TypeDocument
+        settings.MEDIA_ROOT = tmp_path
+        c = classe_notee
+        _calculer(c)
+        membre = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='Sawadogo', prenom='Awa')
+        baker.make('parametres.SignataireDocument', cycle=c.classe.cycle, annee_scolaire=c.annee, actif=True,
+                   type_document=TypeDocument.objects.get(code='RELEVE_NOTES'), membre_personnel_id=membre.id,
+                   fonction='La Censeure')
+        tampon = io.BytesIO()
+        Image.new('RGBA', (300, 110), (0, 0, 0, 0)).save(tampon, 'PNG')
+        membre.signature.save('censeure.png', ContentFile(tampon.getvalue()), save=True)
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        params = {'annee': c.annee.pk, 'enseignement': c.maths.pk, 'periode': c.periode1.pk}
+        assert c.client.get(reverse('pedagogie:releve_notes_pdf'), params).status_code == 200
+        pdf = _html(weasy)
+        assert '<div class="msig-fonction">La Censeure</div>' in pdf
+        assert '<div class="msig-sign"><img class="msig-img" src="/media/personnel/signatures/' in pdf
+        assert '<div class="msig-name">SAWADOGO Awa</div>' in pdf
+
     def test_moyennes_disciplines(self, classe_notee, mocker):
         c = classe_notee
         _calculer(c)

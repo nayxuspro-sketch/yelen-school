@@ -24,7 +24,7 @@ except (ImportError, OSError) as exc:  # libpango/cairo absents
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 
-from parametres.models import AnneeScolaire, Classe, TypeSanction, SignataireDocument
+from parametres.models import AnneeScolaire, Classe, TypeSanction, SignataireDocument, TypeDocument
 from pedagogie.models import Trimestre, Enseignement, MoyenneGenerale
 from inscriptions.models import Inscription
 from core.utils import get_etablissement_context
@@ -897,7 +897,7 @@ def emploi_du_temps_pdf(request, classe_id):
 
     signataire = SignataireDocument.objects.get_signataire(
         cycle=classe.cycle,
-        type_document=None,
+        type_document=TypeDocument.objects.filter(code='EMPLOI_DU_TEMPS').first(),
         annee_scolaire=annee,
     ) if annee else None
 
@@ -1078,7 +1078,8 @@ def emploi_du_temps_prof_pdf(request, personnel_id):
     etab_ctx = get_etablissement_context(etab, request) if etab else {}
     signataire = (
         SignataireDocument.objects.get_signataire(
-            cycle=None, type_document=None, annee_scolaire=annee,
+            cycle=None, type_document=TypeDocument.objects.filter(code='EMPLOI_DU_TEMPS').first(),
+            annee_scolaire=annee,
         )
         if annee else None
     )

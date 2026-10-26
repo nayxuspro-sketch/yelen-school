@@ -303,6 +303,33 @@ class TestSituationsFinancieresEnLot:
         assert len(reponse.context['par_jour']) == 1  # cinq paiements du jour regroupés
         assert client.get(reverse('finances:bilan_encaissements_pdf')).status_code == 200
 
+    def test_bilan_et_historique_pdf_portent_le_signataire_configure(self, jeu, client, mocker, settings, tmp_path):
+        """Bilan des encaissements et historique des versements portent chacun le signataire configuré pour
+        leur type (fonction, signature scannée, NOM Prénom)."""
+        import io
+        from django.core.files.base import ContentFile
+        from PIL import Image
+        from parametres.models import TypeDocument
+        settings.MEDIA_ROOT = tmp_path
+        annee, inscriptions = jeu
+        etab = inscriptions[0].classe.etablissement
+        client.force_login(baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab))
+        membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Kabore', prenom='Salimata')
+        for code in ('BILAN_ENCAISSEMENTS', 'HIST_VERSEMENTS'):
+            baker.make('parametres.SignataireDocument', cycle=inscriptions[0].classe.cycle, annee_scolaire=annee, actif=True,
+                       type_document=TypeDocument.objects.get(code=code), membre_personnel_id=membre.id, fonction="L'Intendante")
+        tampon = io.BytesIO()
+        Image.new('RGBA', (300, 110), (0, 0, 0, 0)).save(tampon, 'PNG')
+        membre.signature.save('intendante.png', ContentFile(tampon.getvalue()), save=True)
+        for module, url in (('etats', reverse('finances:bilan_encaissements_pdf')),
+                            ('paiements', reverse('finances:historique_pdf', args=[inscriptions[0].pk]))):
+            weasy = mocker.patch(f'finances.views.{module}.WeasyHTML')
+            assert client.get(url).status_code == 200, url
+            html = weasy.call_args.kwargs['string']
+            assert '<div class="msig-fonction">L&#x27;Intendante</div>' in html, url
+            assert '<div class="msig-sign"><img class="msig-img" src="/media/personnel/signatures/' in html, url
+            assert '<div class="msig-name">KABORE Salimata</div>' in html, url
+
 
 @pytest.mark.django_db
 class TestPaiementListPagination:

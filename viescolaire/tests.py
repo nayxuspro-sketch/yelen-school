@@ -193,6 +193,23 @@ class TestEmploiDuTempsPdfUnePage:
         nb = self._une_page(espion, client.get(reverse('viescolaire:emploi_du_temps_prof_pdf', args=[prof.pk])))
         assert nb == 1, f'{nb} pages'
 
+    def test_signataire_configure_pour_l_emploi_du_temps(self, client, mocker, contexte):
+        """Les deux emplois du temps portent le signataire configuré pour « Emploi du Temps » (fonction, signature,
+        NOM Prénom) et non le dernier signataire enregistré sur le cycle (ici le directeur, pour les bulletins)."""
+        from parametres.models import AnneeScolaire, TypeDocument
+        classe, prof = contexte
+        directeur = baker.make('personnel.MembrePersonnel', etablissement=classe.etablissement, nom='SAWADOGO', prenom='Boureima')
+        baker.make('parametres.SignataireDocument', cycle=classe.cycle, type_document=TypeDocument.objects.get(code='BULLETIN'),
+                   annee_scolaire=AnneeScolaire.objects.get(etablissement=classe.etablissement),
+                   membre_personnel_id=directeur.id, fonction='Le Directeur', actif=True)
+        weasy = mocker.patch('viescolaire.views.WeasyHTML')
+        for nom_url, pk in (('viescolaire:emploi_du_temps_pdf', classe.pk), ('viescolaire:emploi_du_temps_prof_pdf', prof.pk)):
+            assert client.get(reverse(nom_url, args=[pk])).status_code == 200, nom_url
+            html = weasy.call_args.kwargs['string']
+            assert 'Le Censeur' in html and '<div class="sig-name">OUEDRAOGO Abdoul Rasmané</div>' in html, nom_url
+            assert '<div class="sig-sign"><img class="msig-img" src="/media/personnel/signatures/' in html, nom_url
+            assert 'SAWADOGO' not in html, nom_url
+
 
 @pytest.mark.django_db
 class TestConfigEDT:

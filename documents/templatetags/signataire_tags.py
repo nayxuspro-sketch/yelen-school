@@ -26,6 +26,13 @@ Codes TypeDocument disponibles
   CURSUS            Cursus Scolaire Complet
   CARTE_ID          Carte d'Identité Scolaire
   AUTORISATION      Autorisation d'Absence
+  RELEVE_NOTES      Relevé de Notes
+  EMPLOI_DU_TEMPS   Emploi du Temps
+  CONVOCATION       Convocation
+  CIRCULAIRE        Circulaire
+  CONGE_PERSONNEL   Autorisation de Congé Personnel
+  BILAN_ENCAISSEMENTS  Bilan des Encaissements
+  HIST_VERSEMENTS   Historique des Versements
 """
 
 import logging

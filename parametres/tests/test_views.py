@@ -388,6 +388,23 @@ class TestSignataireConfig:
         assert not membre.signature
         assert 'class="sc-signature-apercu"' not in client.get(url).content.decode()
 
+    def test_tous_les_documents_signes_sont_configurables(self, client, contexte):
+        """Chaque document signé par l'application a son type (migration 0035) et figure dans la fenêtre,
+        sans attendre qu'un premier exemplaire ait été généré."""
+        from django.utils.html import escape
+        html = client.get(reverse('parametres:signataire_config')).content.decode()
+        attendus = {
+            'CERT_SCOL': 'Certificat de Scolarité', 'BULLETIN': 'Bulletin de Notes', 'CARTE_ID': "Carte d'Identité Scolaire",
+            'LISTE_CLASSE': 'Liste Alphabétique de Classe', 'LISTE_PERSONNEL': 'Liste du Personnel',
+            'LISTE_REDEVABLES': 'Liste des Redevables', 'RECU_PAIEMENT': 'Reçu de Paiement',
+            'ATTESTATION': 'Attestation de Non-Redevabilité', 'RELANCE': 'Relance de Paiement',
+            'RELEVE_NOTES': 'Relevé de Notes', 'EMPLOI_DU_TEMPS': 'Emploi du Temps', 'CONVOCATION': 'Convocation',
+            'CIRCULAIRE': 'Circulaire', 'CONGE_PERSONNEL': 'Autorisation de Congé Personnel',
+            'BILAN_ENCAISSEMENTS': 'Bilan des Encaissements', 'HIST_VERSEMENTS': 'Historique des Versements',
+        }
+        for code, libelle in attendus.items():
+            assert f'title="{escape(libelle)}">{code}</span>' in html, code
+
 
 @pytest.mark.django_db
 class TestFormulairesDecimauxNonLocalises:
