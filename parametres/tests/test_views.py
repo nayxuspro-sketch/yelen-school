@@ -574,8 +574,8 @@ class TestTypeDocumentForm:
         from parametres.models import TypeDocument
         etab = baker.make(Etablissement, code='TD', nom='Lycée Types')
         client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
-        secondaire = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', ordre=2)
-        primaire = baker.make('parametres.Cycle', etablissement=etab, nom='Primaire', ordre=1)
+        secondaire = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', code='SEC', ordre=2)
+        primaire = baker.make('parametres.Cycle', etablissement=etab, nom='Primaire', code='PRIM', ordre=1)
         autre = baker.make('parametres.Cycle', etablissement=baker.make(Etablissement, code='AUT'), nom='Autre école')
 
         html = client.get(reverse('parametres:type_document_create')).content.decode()
