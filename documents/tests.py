@@ -205,6 +205,34 @@ def test_certificat_charge_tient_sur_une_page(client, mocker, settings, tmp_path
 
 
 @pytest.mark.django_db
+def test_circulaire_signature_scannee_du_signataire(client, mocker, settings, tmp_path):
+    """Le partiel de signature partagé (circulaire, convocation sans bloc propre) appose la signature scannée
+    dans l'espace de 2 cm réservé entre la fonction et le nom ; sans image, l'espace reste vierge."""
+    from django.core.files.base import ContentFile
+    from parametres.models import TypeDocument
+    settings.MEDIA_ROOT = tmp_path
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    type_doc, _ = TypeDocument.objects.get_or_create(code='CIRCULAIRE', defaults={'libelle': 'Circulaire', 'categorie': 'ADMINISTRATIF'})
+    membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Salimata')
+    baker.make('parametres.SignataireDocument', cycle=baker.make('parametres.Cycle', etablissement=etab), type_document=type_doc,
+               annee_scolaire=annee, membre_personnel_id=membre.id, fonction='Le Directeur', actif=True)
+    html_cls = mocker.patch('core.pdf.HTML')
+    html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+    donnees = {'titre': 'Rentrée scolaire', 'objet': 'Horaires', 'corps': 'Les cours reprennent lundi.', 'format': 'pdf'}
+
+    assert client.post(reverse('documents:circulaire_form'), donnees).status_code == 200
+    html = html_cls.call_args.kwargs['string']
+    assert '<div class="sig-sign"></div>' in html and 'KABORE Salimata' in html
+
+    membre.signature.save('kabore.png', ContentFile(b'\x89PNG\r\n\x1a\n'), save=True)
+    assert client.post(reverse('documents:circulaire_form'), donnees).status_code == 200
+    html = html_cls.call_args.kwargs['string']
+    assert f'<div class="sig-sign"><img class="msig-img" src="{membre.signature.url}" alt=""></div>' in html
+
+
+@pytest.mark.django_db
 def test_document_numero_et_version_generes_a_la_creation(client, mocker):
     """La clé primaire UUID est pré-remplie : le test `not self.pk` ne déclenchait jamais la numérotation
     (« N° — » sur chaque certificat)."""

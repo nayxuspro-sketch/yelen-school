@@ -113,7 +113,7 @@ class TestPagesSansGestionnaireInline:
 class TestEmploiDuTempsPdfUnePage:
     """Les emplois du temps (classe et professeur) tiennent sur une seule page A4
     paysage, même chargés : douze séances par jour sur six jours, intitulés longs,
-    salles, enseignants, récapitulatif de douze enseignements et signataire."""
+    salles, enseignants, récapitulatif de douze enseignements et signataire (signature scannée embarquée)."""
 
     MATIERES = [
         ('MATH', 'Mathématiques'), ('SVT', 'Sciences de la Vie et de la Terre'),
@@ -140,9 +140,13 @@ class TestEmploiDuTempsPdfUnePage:
         return documents
 
     @pytest.fixture
-    def contexte(self, client):
+    def contexte(self, client, settings, tmp_path):
+        import io
         from datetime import time
+        from django.core.files.base import ContentFile
+        from PIL import Image
         from parametres.models import TypeDocument
+        settings.MEDIA_ROOT = tmp_path
         etab = baker.make('etablissements.Etablissement', nom='COMPLEXE SCOLAIRE LE SAVOIR')
         baker.make('parametres.IdentiteEtablissement', etablissement=etab, ville='Ouagadougou')
         client.force_login(baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab))
@@ -154,6 +158,9 @@ class TestEmploiDuTempsPdfUnePage:
         type_doc, _ = TypeDocument.objects.get_or_create(code='EMPLOI_DU_TEMPS', defaults={'libelle': 'Emploi du temps', 'categorie': 'SCOLARITE', 'actif': True})
         baker.make('parametres.SignataireDocument', cycle=cycle, type_document=type_doc, annee_scolaire=annee,
                    membre_personnel_id=prof.id, fonction='Le Censeur', actif=True)
+        tampon = io.BytesIO()
+        Image.new('RGBA', (600, 220), (0, 0, 0, 0)).save(tampon, 'PNG')
+        prof.signature.save('censeur.png', ContentFile(tampon.getvalue()), save=True)
         creneaux = [(time(7 + i, 0), time(8 + i, 0)) for i in range(6)] + \
                    [(time(14 + i, 0), time(15 + i, 0)) for i in range(6)]
         for code, nom in self.MATIERES:
@@ -172,6 +179,8 @@ class TestEmploiDuTempsPdfUnePage:
         pages = espion[0].pages
         # A4 paysage : 297 × 210 mm
         assert round(pages[0].width) == 1123 and round(pages[0].height) == 794
+        from core.tests.test_media_pdf import images_rendues
+        assert 'msig-img' in images_rendues(pages[0]), 'signature scannée du signataire embarquée'
         return len(pages)
 
     def test_classe_une_page(self, client, espion, contexte):

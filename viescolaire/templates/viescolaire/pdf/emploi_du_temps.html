@@ -1,4 +1,4 @@
-{% extends "pdf/base.html" %}
+{% extends "pdf/base.html" %}{% load signataire_tags %}
 {% block page %}@page {
     size: A4 landscape;
     margin: 6mm;
@@ -120,7 +120,9 @@ body {
   text-align: right;
 }
 .date-place { font-size: 7.5pt; color: #333; margin-bottom: 2mm; }
-.sig-function { font-size: 8pt; font-weight: 700; color: #111; margin-bottom: 9mm; }
+.sig-function { font-size: 8pt; font-weight: 700; color: #111; }
+.sig-sign { height: 9mm; line-height: 9mm; }
+.sig-sign img { max-height: 9mm; max-width: 45mm; vertical-align: bottom; }
 .sig-name {
   font-size: 8pt;
   font-weight: 800;
@@ -190,6 +192,7 @@ body {
     <div class="sig-function">
       {{ signataire.fonction|default:signataire.titre|default:"Le Directeur" }}
     </div>
+    <div class="sig-sign">{% signature_scannee membre %}</div>
     <div class="sig-name">{{ membre.nom|upper }} {{ membre.prenom }}</div>
   </div>
 </div>

@@ -1,11 +1,13 @@
-{% if signataire %}
+{% load signataire_tags %}{% if signataire %}
 {% with membre=signataire.get_membre_personnel %}
 {% if membre %}
 <style>
 .sig-zone          { margin-top:32pt; text-align:right; page-break-inside:avoid; break-inside:avoid; }
 .sig-date          { font-size:10pt; color:#222; font-weight:normal; }
 .sig-fonction      { font-size:11pt; font-weight:normal; color:#111; margin-top:1cm; }
-.sig-name          { font-size:11pt; font-weight:bold; color:#000; margin-top:2cm; line-height:1.3; }
+.sig-sign          { height:2cm; line-height:2cm; }
+.sig-sign img      { max-height:1.5cm; max-width:6cm; vertical-align:bottom; }
+.sig-name          { font-size:11pt; font-weight:bold; color:#000; line-height:1.3; }
 .sig-honors        { font-size:8.5pt; font-style:italic; font-weight:normal; color:#333; margin-top:2px; line-height:1.5; }
 </style>
 <div class="sig-zone">
@@ -17,6 +19,8 @@
   <div class="sig-fonction">
     {{ signataire.fonction|default:signataire.titre|default:"Le Directeur" }}
   </div>
+
+  <div class="sig-sign">{% signature_scannee membre %}</div>
 
   <div class="sig-name">
     {{ membre.nom|upper }} {{ membre.prenom }}

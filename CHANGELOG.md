@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.5.3 — 2026-10-26
+
+### Corrigé
+- Signature scannée du signataire absente de trois gabarits qui imprimaient sa fonction et son nom sans emplacement d'image : circulaire (partiel de signature partagé, également utilisé par la convocation sans bloc propre), emploi du temps de classe et emploi du temps du professeur. L'image occupe l'espace déjà réservé à la signature manuscrite (2 cm, 9 mm, 7 mm) : mise en page et nombre de pages inchangés.
+
 ## 5.5.2 — 2026-10-26
 
 ### Corrigé
