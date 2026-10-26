@@ -105,8 +105,8 @@
           </div>
 
           <div class="form-group">
-            <label for="titre_personnel" class="input-label">Fonction du signataire</label>
-            <select name="titre_personnel" id="titre_personnel" class="input select">
+            <label for="fonction" class="input-label">Fonction du signataire</label>
+            <select name="fonction" id="fonction" class="input select">
               <option value="">— Sélectionner une fonction —</option>
               {% for f in fonctions %}
               <option value="{{ f.nom }}" {% if selected_fonction == f.nom %}selected{% endif %}>

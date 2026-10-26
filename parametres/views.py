@@ -946,8 +946,11 @@ def signataire_edit(request, cycle_id, document_type_id):
 
     return render(request, 'parametres/partials/signataire_form.html', {
         'cycle': cycle,
+        'cycles': Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre'),
+        'categories': TypeDocument.CategorieChoices.choices,
         'doc_type': doc_type,
         'signataire': signataire,
+        'personnel': MembrePersonnel.objects.filter(etablissement=etab, is_active=True).order_by('nom', 'prenom'),
         'form': form,
         'fonctions': TitreFonction.objects.filter(actif=True).order_by('nom'),
         'titres_honorifiques': list(

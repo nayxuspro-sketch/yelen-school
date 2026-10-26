@@ -421,6 +421,61 @@ class TestSignataireConfig:
 
 
 @pytest.mark.django_db
+class TestSignataireEdit:
+    """Fenêtre « Modifier le signataire » (Paramètres → Signataires → Modifier) : les listes Cycle, Catégorie et
+    Nom et Prénom étaient vides (contexte jamais transmis au gabarit) et la fonction choisie n'était pas enregistrée
+    (champ posté sous un autre nom que celui lu par le formulaire)."""
+
+    @pytest.fixture
+    def contexte(self, client):
+        from datetime import date
+        from parametres.models import TitreFonction, TypeDocument
+        etab = baker.make('etablissements.Etablissement', code='SIG2', nom='Ets Signataires')
+        client.force_login(baker.make('accounts.User', is_superuser=True, etablissement=etab, must_change_password=False))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027',
+                           date_debut=date(2026, 9, 1), date_fin=date(2027, 7, 31), est_courante=True)
+        cycle = baker.make('parametres.Cycle', etablissement=etab, code='PPS', nom='Post-primaire et secondaire', ordre=1, actif=True)
+        baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Zongo', prenom='Awa', is_active=True, matricule='')
+        membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Kabore', prenom='Issouf', is_active=True, matricule='')
+        fonction, _ = TitreFonction.objects.get_or_create(nom='Le Directeur du Post-primaire et Secondaire', defaults={'actif': True})
+        doc = TypeDocument.objects.get(code='LISTE_PERSONNEL')
+        return annee, cycle, membre, fonction, doc
+
+    def test_listes_de_la_fenetre_renseignees(self, client, contexte):
+        annee, cycle, membre, fonction, doc = contexte
+        baker.make('parametres.SignataireDocument', cycle=cycle, type_document=doc, annee_scolaire=annee,
+                   membre_personnel_id=membre.id, fonction=fonction.nom, actif=True)
+        html = client.get(reverse('parametres:signataire_edit', args=[cycle.id, doc.id]), HTTP_HX_REQUEST='true').content.decode()
+        assert f'<option value="{cycle.id}" selected>Post-primaire et secondaire</option>' in html
+        assert '<option value="PERSONNEL" selected>' in html and 'Document : <strong>Liste du Personnel</strong>' in html
+        assert 'Zongo Awa' in html and f'<option value="{membre.id}"\n                    selected>' in html
+        assert f'<option value="{fonction.nom}"\n                    selected>' in html
+        assert '<select name="fonction" id="fonction"' in html  # nom du champ lu par SignataireForm
+
+    def test_enregistrement_du_membre_et_de_la_fonction(self, client, contexte):
+        from parametres.models import SignataireDocument
+        annee, cycle, membre, fonction, doc = contexte
+        reponse = client.post(reverse('parametres:signataire_edit', args=[cycle.id, doc.id]),
+                              {'membre_personnel': str(membre.id), 'fonction': fonction.nom, 'titre_honorifique': ''},
+                              HTTP_HX_REQUEST='true')
+        assert reponse.status_code == 204 and reponse['HX-Trigger'] == 'signataireUpdated'
+        sig = SignataireDocument.objects.get(cycle=cycle, type_document=doc, annee_scolaire=annee)
+        assert sig.membre_personnel_id == membre.id and sig.fonction == fonction.nom
+
+    def test_page_nouveau_signataire_enregistre_la_fonction(self, client, contexte):
+        from parametres.models import SignataireDocument
+        annee, cycle, membre, fonction, doc = contexte
+        assert '<select name="fonction" id="fonction"' in client.get(reverse('parametres:signataire_formulaire')).content.decode()
+        reponse = client.post(reverse('parametres:signataire_formulaire'), {
+            'annee_id': str(annee.id), 'cycle_id': str(cycle.id), 'categorie': 'PERSONNEL',
+            'membre_personnel': str(membre.id), 'fonction': fonction.nom, 'titre_honorifique': '',
+        })
+        assert reponse.status_code == 302
+        sig = SignataireDocument.objects.get(cycle=cycle, type_document=doc, annee_scolaire=annee)
+        assert sig.membre_personnel_id == membre.id and sig.fonction == fonction.nom
+
+
+@pytest.mark.django_db
 class TestFormulairesDecimauxNonLocalises:
     """Un champ <input type="number"> rejette la virgule : un décimal rendu localisé (« 7,50 »)
     laisse le champ vide à l'ouverture de la fenêtre d'édition et interdit l'enregistrement

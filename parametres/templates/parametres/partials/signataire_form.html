@@ -33,8 +33,8 @@
 
     <!-- 3. Titre (Fonction du personnel) -->
     <div class="form-group">
-        <label for="titre_personnel" class="input-label">Titre (Fonction)</label>
-        <select name="titre_personnel" id="titre_personnel" class="input select">
+        <label for="fonction" class="input-label">Titre (Fonction)</label>
+        <select name="fonction" id="fonction" class="input select">
             <option value="">-- Sélectionner un titre --</option>
             {% for f in fonctions %}
                 <option value="{{ f.nom }}"
