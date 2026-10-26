@@ -1,4 +1,5 @@
 {% extends "pdf/base_rapport.html" %}
+{% load signataire_tags %}
 
 {% block css_document %}
 /* ── Statut conseil ── */
@@ -259,8 +260,11 @@
                 <div class="sig-line">___________________</div>
             </td>
             <td style="width:33%; text-align:center; padding:0 8pt;">
+                {% signataire_auto "PV_CONSEIL" "cellule" as sig_direction %}
+                {% if sig_direction %}{{ sig_direction }}{% else %}
                 <div class="sig-label">Le Directeur / La Directrice</div>
                 <div class="sig-line">___________________</div>
+                {% endif %}
             </td>
         </tr>
     </table>

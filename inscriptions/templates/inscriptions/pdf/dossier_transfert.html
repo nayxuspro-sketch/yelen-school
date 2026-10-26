@@ -1,4 +1,5 @@
 {% extends "pdf/base.html" %}
+{% load signataire_tags %}
 {% block page %}@page {
     size: A4 portrait;
     margin: 15mm 12mm 15mm;
@@ -119,7 +120,7 @@ tr:nth-child(even) td { background: #f0f4ff; }
     <span class="info-label">Statut inscription</span>
     <span class="info-value">{{ transfert.inscription.get_statut_display }}</span>
     <span class="info-label">Parent / Tuteur</span>
-    <span class="info-value">{{ eleve.tuteur_nom|default:eleve.nom_parent|default:"—" }}</span>
+    <span class="info-value">{{ eleve.tuteur_nom|default:eleve.nom_pere|default:eleve.nom_mere|default:"—" }}</span>
     <span class="info-label">Téléphone</span>
     <span class="info-value">{{ eleve.tuteur_telephone|default:eleve.telephone_parent|default:"—" }}</span>
   </div>
@@ -215,8 +216,11 @@ tr:nth-child(even) td { background: #f0f4ff; }
     <div class="sig-label">Le parent / tuteur</div>
   </div>
   <div class="sig-box">
+    {% signataire_auto "DOSSIER_TRANSFERT" "cellule" as sig_direction %}
+    {% if sig_direction %}{{ sig_direction }}{% else %}
     <div class="sig-line"></div>
     <div class="sig-label">Le Directeur</div>
+    {% endif %}
   </div>
   <div class="sig-box">
     <div class="sig-line"></div>

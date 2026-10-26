@@ -1312,6 +1312,7 @@ def transfert_inter_dossier_pdf(request, pk):
 
     html_string = render_to_string('inscriptions/pdf/dossier_transfert.html', {
         'transfert': transfert,
+        'inscription': transfert.inscription,
         'eleve': eleve,
         'inscriptions_historique': inscriptions_historique,
         'paiements': paiements,

@@ -2,6 +2,8 @@
 
 Garde-fous :
 - chaque gabarit PDF hérite du socle (pas de squelette HTML ni de <style> privé) ;
+- chaque document PDF imprime le signataire configuré (``signataire_auto``) ou la signature scannée de son
+  signataire (``signature_scannee``) — un document ajouté sans signataire fait échouer la suite ;
 - toute référence ``identite.<attr>`` désigne un vrai attribut d'IdentiteEtablissement (plus de champs fantômes) ;
 - l'en-tête rend l'identité complète, se replie sur l'établissement, et ne fuit jamais « None ».
 """
@@ -38,6 +40,35 @@ def test_tous_les_gabarits_pdf_heritent_du_socle():
                 fautifs.append(f'{f.relative_to(RACINE)} : {motif} (squelette/CSS hors des blocs du socle)')
     assert list(_gabarits_pdf()), 'aucun gabarit PDF trouvé'
     assert not fautifs, '\n'.join(fautifs)
+
+
+def _source_avec_fragments(f):
+    """Source du gabarit suivie de celle des fragments qu'il inclut (le tag peut être porté par un fragment)."""
+    s = f.read_text(encoding='utf-8')
+    for nom in re.findall(r"""{%\s*include\s+["']([^"']+)["']""", s):
+        s += ''.join(g.read_text(encoding='utf-8') for g in RACINE.rglob(f'templates/{nom}') if not EXCLUS.intersection(g.parts))
+    return s
+
+
+# Documents sans signataire : journal technique, avis automatique, analyses indicatives, badge nominatif.
+SANS_SIGNATAIRE = {
+    'core/templates/core/pdf/audit_log.html',
+    'finances/templates/finances/pdf/avis_paiement_mobile.html',
+    'pedagogie/templates/pedagogie/pdf/risque_decrochage.html',
+    'pedagogie/templates/pedagogie/prediction_classe_pdf.html',
+    'personnel/templates/personnel/pdf/badge_personnel.html',
+}
+
+
+def test_tous_les_documents_pdf_portent_le_signataire_configure():
+    """Jusqu'en 5.5.13, dix documents gardaient une case « Le Directeur » manuscrite ou n'avaient aucune
+    signature : le signataire configuré (nom, prénom, signature scannée) ne pouvait pas y apparaître."""
+    fautifs = [
+        f.relative_to(RACINE).as_posix() for f in _gabarits_pdf()
+        if f.relative_to(RACINE).as_posix() not in SANS_SIGNATAIRE
+        and not re.search(r'{%\s*(signataire_auto|signature_scannee)\b', _source_avec_fragments(f))
+    ]
+    assert not fautifs, 'Documents PDF sans signataire configuré :\n' + '\n'.join(sorted(fautifs))
 
 
 # Signatures manuscrites de tiers (parent, salarié, membres du conseil, directeurs des deux établissements) :

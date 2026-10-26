@@ -1320,6 +1320,8 @@ class SignataireDocumentManager(models.Manager):
         1. Correspondance exacte (cycle + document + année)
         2. Repli : même cycle + même document, n'importe quelle année → prend le plus récent
         3. Repli : même document, n'importe quel cycle/année → prend le plus récent
+        4. Repli : même catégorie de document (même cycle, puis tout cycle) — un type ajouté au
+           catalogue hérite du signataire de sa catégorie tant qu'il n'est pas configuré lui-même
 
         Args:
             cycle: Instance de Cycle
@@ -1358,7 +1360,17 @@ class SignataireDocumentManager(models.Manager):
             if sig:
                 return sig
 
-        # 4. Même cycle, tout document
+            # 4. Même catégorie de document : même cycle d'abord, puis tout cycle
+            for portee in ({'cycle': cycle}, {}) if cycle is not None else ({},):
+                sig = self.filter(
+                    type_document__categorie=type_document.categorie,
+                    actif=True,
+                    **portee,
+                ).order_by('-updated_at').first()
+                if sig:
+                    return sig
+
+        # 5. Même cycle, tout document
         if cycle is not None:
             sig = self.filter(
                 cycle=cycle,
@@ -1367,7 +1379,7 @@ class SignataireDocumentManager(models.Manager):
             if sig:
                 return sig
 
-        # 5. Tout signataire actif (dernier recours absolu)
+        # 6. Tout signataire actif (dernier recours absolu)
         return self.filter(actif=True).order_by('-updated_at').first()
 
 

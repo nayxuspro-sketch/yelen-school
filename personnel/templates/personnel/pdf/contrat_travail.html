@@ -1,4 +1,5 @@
 {% extends "pdf/base.html" %}
+{% load signataire_tags %}
 {% block page %}@page {
     size: A4;
     margin: 20mm 18mm 20mm 18mm;
@@ -276,16 +277,15 @@ body {
 <!-- SIGNATURES -->
 <div class="signatures">
   <div class="signature-bloc">
+    {% signataire_auto "CONTRAT_TRAVAIL" "cellule" as sig_etablissement %}
     <div class="signature-titre">Le Représentant de l'Établissement</div>
-    <div class="signature-nom">
-      {% if identite and identite.nom_directeur %}
-        {{ identite.nom_directeur }}
-      {% else %}
-        Le Directeur / La Directrice
-      {% endif %}
-    </div>
-    <div class="signature-date">Fait à ________________, le {{ today|date:"d F Y" }}</div>
-    <div class="signature-ligne"></div>
+    <div class="signature-date">Fait à {{ identite.ville|default:"________________" }}, le {{ today|date:"d F Y" }}</div>
+    {% if sig_etablissement %}
+      {{ sig_etablissement }}
+    {% else %}
+      <div class="signature-nom">{% if identite and identite.nom_directeur %}{{ identite.nom_directeur }}{% else %}Le Directeur / La Directrice{% endif %}</div>
+      <div class="signature-ligne"></div>
+    {% endif %}
     <div class="signature-label">Signature et cachet</div>
   </div>
 

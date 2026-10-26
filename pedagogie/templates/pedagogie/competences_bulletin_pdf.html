@@ -1,4 +1,4 @@
-{% extends "pdf/base.html" %}{% load static %}
+{% extends "pdf/base.html" %}{% load static signataire_tags %}
 {% block head %}<link rel="stylesheet" href="{% static 'css/outfit.css' %}">{% endblock %}
 {% block css %}
 body { font-family: 'Outfit', Arial, sans-serif; font-size: 10pt; color: #1a1a2e; margin: 0; padding: 20px 30px; }
@@ -120,9 +120,12 @@ tr:nth-child(even) td { background: #f8f9fa; }
       </div>
     </td>
     <td style="width:33%; border:none; text-align:center; padding:0;">
+      {% signataire_auto "BULLETIN" "cellule" as sig_direction %}
+      {% if sig_direction %}{{ sig_direction }}{% else %}
       <div style="border-top:1px solid #ccc; margin: 0 20px; padding-top:6px; font-size:8.5pt; color:#555;">
         Cachet de l'établissement
       </div>
+      {% endif %}
     </td>
   </tr>
 </table>

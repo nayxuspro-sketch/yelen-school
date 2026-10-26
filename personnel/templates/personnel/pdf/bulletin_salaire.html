@@ -1,4 +1,5 @@
 {% extends "pdf/base.html" %}
+{% load signataire_tags %}
 {% block page %}@page {
     size: A4;
     margin: 10mm 12mm 10mm 12mm;
@@ -247,7 +248,7 @@ body {
 {# ── Signatures ── #}
 <table class="pied">
   <tr>
-    <td><div class="ligne-sign">L'Employeur</div></td>
+    <td>{% signataire_auto "BULLETIN_SALAIRE" "cellule" as sig_employeur %}{% if sig_employeur %}{{ sig_employeur }}{% else %}<div class="ligne-sign">L'Employeur</div>{% endif %}</td>
     <td><div class="ligne-sign">Le/La Salarié(e)</div></td>
   </tr>
 </table>

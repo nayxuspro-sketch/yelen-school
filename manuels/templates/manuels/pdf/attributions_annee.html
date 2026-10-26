@@ -1,4 +1,5 @@
 {% extends "pdf/base.html" %}
+{% load signataire_tags %}
 {% block page %}@page { size: A4 landscape; margin: 1.5cm 2cm; }{% endblock %}
 {% block css %}
 body { font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif; font-size: 10pt; color: #111; }
@@ -138,6 +139,8 @@ tbody tr:nth-child(even) td { background: #f4f4f4; }
 {% else %}
 <p>Aucune attribution pour cette année scolaire.</p>
 {% endif %}
+
+{% signataire_auto "MANUELS_SCOLAIRES" %}
 
 <p class="footer">YELEN SCHOOL — Document généré automatiquement</p>
 {% endblock %}

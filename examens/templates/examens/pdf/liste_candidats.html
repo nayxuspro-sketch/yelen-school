@@ -1,4 +1,5 @@
 {% extends "pdf/base_rapport.html" %}
+{% load signataire_tags %}
 
 {% block css_document %}
 .doc-meta { font-size: 9pt; color: #555; }
@@ -132,4 +133,5 @@
 </p>
 {% endif %}
 
+{% signataire_auto "LISTE_CANDIDATS" %}
 {% endblock %}

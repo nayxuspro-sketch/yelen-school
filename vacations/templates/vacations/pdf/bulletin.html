@@ -1,4 +1,5 @@
 {% extends "pdf/base.html" %}
+{% load signataire_tags %}
 {% block page %}@page {
     size: A4;
     margin: 18mm 18mm 20mm 18mm;
@@ -210,8 +211,11 @@ tbody td.right { text-align: right; }
     <div class="sig-ligne">{{ bulletin.personnel.get_nom_complet }}</div>
   </div>
   <div class="sig-bloc">
+    {% signataire_auto "BULLETIN_VACATION" "cellule" as sig_direction %}
+    {% if sig_direction %}{{ sig_direction }}{% else %}
     <div class="sig-titre">Le Directeur</div>
     <div class="sig-ligne">Signature et cachet</div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

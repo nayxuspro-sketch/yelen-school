@@ -208,6 +208,7 @@ def conseil_pv_pdf(request, conseil_id):
 
     html_string = render_to_string('viescolaire/pdf/conseil_pv.html', {
         'conseil': conseil,
+        'classe': conseil.classe,
         'lignes': lignes,
         'stats_decisions': stats_decisions,
         'nb_felicitations': nb_felicitations,

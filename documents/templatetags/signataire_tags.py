@@ -102,6 +102,8 @@ def _detecter_cycle_et_annee(context):
         classe = getattr(inscription, 'classe', None)
         if classe:
             cycle = getattr(classe, 'cycle', None)
+        if cycle is None:  # inscription d'un membre du personnel : le cycle est porté directement
+            cycle = getattr(inscription, 'cycle', None)
 
     if cycle is None:
         classe = context.get('classe')
@@ -218,12 +220,14 @@ def _bloc_signataire_html(fonction, membre, titres_honorifiques=None, titre_hono
 
 
 @register.simple_tag(takes_context=True)
-def signataire_auto(context, type_doc_code):
+def signataire_auto(context, type_doc_code, variante=''):
     """
     Génère le bloc HTML de signature pour un document PDF.
 
     - 1 seul signataire  → aligné à droite (mise en page classique)
     - 2+ signataires     → tableau côte à côte (gauche ↔ droite)
+    - variante "cellule" → fonction, signature scannée et NOM Prénom du signataire principal seuls (ni date,
+      ni alignement), pour la case « direction » d'un gabarit qui possède déjà sa propre zone de signatures.
 
     Les co-signataires sont définis via CoSignataire liés au SignataireDocument principal.
     """
@@ -247,6 +251,13 @@ def signataire_auto(context, type_doc_code):
         membre_principal = signataire.get_membre_personnel()
         if not membre_principal:
             return mark_safe('')
+
+        if variante == 'cellule':
+            interieur = _bloc_signataire_html(
+                signataire.fonction or signataire.titre, membre_principal,
+                signataire.titres_honorifiques, signataire.titre_honorifique,
+            )
+            return mark_safe(f'{_SIGNATAIRE_CSS}<div class="msig-cellule">{interieur}</div>')
 
         # Date + lieu
         identite = context.get('identite')
