@@ -214,6 +214,33 @@ class TestPersonnelListPdf:
         assert client.get(reverse('personnel:personnel_list_pdf')).status_code == 200
         assert 'Liste du personnel – Année scolaire 2026-2027' in html_cls.call_args.kwargs['string']
 
+    def test_signataire_configure_pour_la_liste_du_personnel(self, client, contexte, mocker, settings, tmp_path):
+        """Personnel › Exporter PDF porte le signataire configuré pour « Liste du Personnel » : fonction,
+        signature scannée, NOM Prénom (le gabarit n'avait aucun bloc signataire)."""
+        import io
+        from django.core.files.base import ContentFile
+        from PIL import Image
+        from parametres.models import TypeDocument
+        settings.MEDIA_ROOT = tmp_path
+        etab, user, actif, inactif = contexte
+        client.force_login(user)
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        cycle = baker.make('parametres.Cycle', etablissement=etab)
+        baker.make('parametres.SignataireDocument', cycle=cycle, annee_scolaire=annee, actif=True,
+                   type_document=TypeDocument.objects.get(code='LISTE_PERSONNEL'), membre_personnel_id=actif.id,
+                   fonction='Le Directeur')
+        tampon = io.BytesIO()
+        Image.new('RGBA', (300, 110), (0, 0, 0, 0)).save(tampon, 'PNG')
+        actif.signature.save('directeur.png', ContentFile(tampon.getvalue()), save=True)
+        html_cls = mocker.patch('core.pdf.HTML')
+        html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+
+        assert client.get(reverse('personnel:personnel_list_pdf')).status_code == 200
+        html = html_cls.call_args.kwargs['string']
+        assert '<div class="msig-fonction">Le Directeur</div>' in html
+        assert '<div class="msig-sign"><img class="msig-img" src="/media/personnel/signatures/' in html
+        assert '<div class="msig-name">ZONGO Ali</div>' in html
+
     def test_pdf_avec_licence_active(self, client, contexte, mocker):
         """Régression : avec une licence active, le filigrane (filigrane_licence.html) lit
         « etablissement » dans le contexte — son absence provoquait un 500 en production."""

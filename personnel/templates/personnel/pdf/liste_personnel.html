@@ -1,4 +1,4 @@
-{% extends "pdf/base.html" %}
+{% extends "pdf/base.html" %}{% load signataire_tags %}
 {% block titre %}{{ titre }} — {{ etab_nom }}{% endblock %}
 {% block page %}@page {
     size: A4 landscape;
@@ -107,4 +107,6 @@ tbody td { padding: 4px 6px; font-size: 8pt; vertical-align: middle; }
   <span>Femmes : <strong>{{ nb_femmes }}</strong></span>
   {% if show_all or selection %}<span>Inactifs : <strong>{{ nb_inactifs }}</strong></span>{% endif %}
 </div>
+
+{% signataire_auto "LISTE_PERSONNEL" %}
 {% endblock %}
