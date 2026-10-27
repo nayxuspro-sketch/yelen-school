@@ -555,4 +555,5 @@ def test_entete_du_tableau_des_notes_fond_clair_et_texte_lisible(gabarit):
     regles = dict(re.findall(r'([a-z-]+)\s*:\s*([^;]+);', bloc))
     assert regles['background'] == '#ebebeb' and regles['color'] == '#111', gabarit
     assert regles['font-size'] == '7.5pt' and regles['font-weight'] == '700', gabarit
+    assert regles['border-top'] == regles['border-bottom'] == '1pt solid #111', gabarit  # trait sous le titre de section
     assert 'letter-spacing' not in regles, gabarit
