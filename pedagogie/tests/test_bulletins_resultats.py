@@ -539,3 +539,20 @@ class TestRelevesEtBilans:
         reponse = c.client.get(reverse('pedagogie:classe_result_list'))
         assert reponse.status_code == 200
         assert {cl.pk: cl.nb_eleves for cl in reponse.context['classes']}[c.classe.pk] == 4
+
+
+@pytest.mark.parametrize('gabarit', [
+    'pedagogie/templates/pedagogie/pdf/partials/bulletin_trimestriel_style.html',
+    'pedagogie/templates/pedagogie/pdf/bulletin_annuel.html',
+    'pedagogie/templates/pedagogie/pdf/bulletin_annuel_batch.html',
+])
+def test_entete_du_tableau_des_notes_fond_clair_et_texte_lisible(gabarit):
+    """Bulletins : l'en-tête des colonnes du tableau des notes est sur fond clair, en texte sombre et net
+    (le bulletin trimestriel imprimait un bandeau noir à texte blanc de 7 pt)."""
+    from pathlib import Path
+    source = (Path(__file__).resolve().parents[2] / gabarit).read_text(encoding='utf-8')
+    bloc = re.search(r'\.bul-table th \{(.*?)\}', source, re.S).group(1)
+    regles = dict(re.findall(r'([a-z-]+)\s*:\s*([^;]+);', bloc))
+    assert regles['background'] == '#ebebeb' and regles['color'] == '#111', gabarit
+    assert regles['font-size'] == '7.5pt' and regles['font-weight'] == '700', gabarit
+    assert 'letter-spacing' not in regles, gabarit
