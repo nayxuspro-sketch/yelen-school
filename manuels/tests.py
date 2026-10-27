@@ -174,9 +174,11 @@ def test_facturer_un_non_rendu_emet_une_creance_et_le_retour_l_annule(monde):
 
 def test_migration_convertit_les_faux_paiements_en_creances(monde):
     """Les « paiements » créés par l'ancien bouton Facturer deviennent des créances (annulées si le manuel a été
-    rendu depuis) ; le faux paiement et son reçu disparaissent."""
+    rendu depuis) ; le faux paiement, immuable, est neutralisé par un remboursement et sa rubrique redevient
+    encaissable."""
     from django.apps import apps
-    from finances.models import Creance, Paiement
+    from finances.models import Creance, Paiement, Remboursement
+    from finances.views.commun import _calcul_situation_financiere, _payment_overage_errors
     from parametres.models import RubriquePaiement
     import importlib
     migration = importlib.import_module('manuels.migrations.0002_creance')
@@ -195,7 +197,13 @@ def test_migration_convertit_les_faux_paiements_en_creances(monde):
 
     migration.convertir_faux_paiements(apps, None)
 
-    assert list(Paiement.objects.filter(inscription=monde.inscription)) == [vrai]
+    assert Paiement.objects.filter(inscription=monde.inscription).count() == 3, 'un paiement comptabilisé reste'
+    assert sorted(r.paiement.observation[-9:-1] for r in Remboursement.objects.filter(montant=4500)) == ['MAT-0101', 'MAT-0102']
+    assert not Remboursement.objects.filter(paiement=vrai).exists()
+    sit = _calcul_situation_financiere(monde.inscription)
+    assert (sit['total_du'], sit['total_paye'], sit['reste_a_payer']) == (4500, 1000, 3500)
+    assert _payment_overage_errors(monde.inscription, [(rubrique, Decimal('3500'), None)]) == []
+    assert len(_payment_overage_errors(monde.inscription, [(rubrique, Decimal('3501'), None)])) == 1
     perdu.refresh_from_db()
     rendu.refresh_from_db()
     assert perdu.creance.actif and perdu.creance.montant == 4500 and perdu.creance.date_creance == date(2027, 6, 10)

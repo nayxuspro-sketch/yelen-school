@@ -10,7 +10,7 @@ troisième chiffre, les évolutions fonctionnelles le deuxième, les changements
 - Manuels : `Non rendus → Facturer` émet une créance « Manuel non rendu » (prix de remplacement, rubrique MNR) au lieu d'un faux paiement ; le `Retour` du manuel annule automatiquement la créance. Colonne « Créance émise », messages et SMS reformulés (« frais à régler »).
 
 ### Corrigé
-- Le faux paiement « Manuel non rendu » gonflait le total payé et bloquait tout encaissement réel sur la rubrique (plafond atteint). Migration de données : chaque attribution déjà facturée reçoit sa créance (annulée si le manuel a été rendu depuis) et le faux paiement est supprimé avec son reçu.
+- Le faux paiement « Manuel non rendu » gonflait le total payé et bloquait tout encaissement réel sur la rubrique (plafond atteint). Migration de données : chaque attribution déjà facturée reçoit sa créance (annulée si le manuel a été rendu depuis) et le faux paiement, immuable comme tout paiement comptabilisé, est neutralisé par un remboursement de même montant. Le plafond d'encaissement par rubrique tient désormais compte des remboursements (une rubrique remboursée redevient payable).
 
 ## 5.6.0 — 2026-10-27
 

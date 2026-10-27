@@ -216,6 +216,9 @@ def _payment_overage_errors(inscription, lignes):
         deja_verse = (
             Paiement.objects.filter(inscription=inscription, rubrique=rubrique)
             .aggregate(Sum('montant'))['montant__sum'] or Decimal('0')
+        ) - (
+            Remboursement.objects.filter(paiement__inscription=inscription, paiement__rubrique=rubrique, is_active=True)
+            .aggregate(Sum('montant'))['montant__sum'] or Decimal('0')
         )
         tarif_qs = TarifScolarite.objects.filter(
             etablissement=etablissement,

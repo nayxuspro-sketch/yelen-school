@@ -6,10 +6,12 @@ from django.db import migrations, models
 
 def convertir_faux_paiements(apps, schema_editor):
     """Avant 5.7.0, « Facturer un manuel non rendu » enregistrait un faux paiement (rubrique MNR, reçu numéroté)
-    qui gonflait le total payé. Chaque attribution facturée retrouve une créance ; le faux paiement est supprimé.
-    Si le manuel a été rendu depuis, la créance naît annulée."""
+    qui gonflait le total payé. Chaque attribution facturée retrouve une créance (annulée si le manuel a été rendu
+    depuis) ; le faux paiement, immuable comme tout paiement comptabilisé, est neutralisé par un remboursement
+    de même montant (total payé net inchangé, rubrique à nouveau encaissable)."""
     AttributionManuel = apps.get_model('manuels', 'AttributionManuel')
     Paiement = apps.get_model('finances', 'Paiement')
+    Remboursement = apps.get_model('finances', 'Remboursement')
     Creance = apps.get_model('finances', 'Creance')
     attributions = AttributionManuel.objects.filter(facture_genere=True, creance__isnull=True).select_related(
         'exemplaire__manuel', 'inscription')
@@ -17,7 +19,7 @@ def convertir_faux_paiements(apps, schema_editor):
         exemplaire = attribution.exemplaire
         libelle = f"Manuel non rendu : {exemplaire.manuel.titre} ({exemplaire.code_exemplaire})"
         faux = Paiement.objects.filter(inscription=attribution.inscription, rubrique__code='MNR',
-                                       observation=libelle).order_by('created_at').first()
+                                       observation=libelle, remboursements__isnull=True).order_by('created_at').first()
         if faux is None:
             continue
         rendu = attribution.date_retour is not None
@@ -29,7 +31,11 @@ def convertir_faux_paiements(apps, schema_editor):
         )
         attribution.creance = creance
         attribution.save(update_fields=['creance'])
-        faux.delete()
+        Remboursement.objects.create(
+            paiement=faux, montant=faux.montant,
+            motif=f"Faux paiement « manuel non rendu » (version antérieure à 5.7.0) remplacé par une créance "
+                  f"({exemplaire.code_exemplaire})",
+        )
 
 
 class Migration(migrations.Migration):
