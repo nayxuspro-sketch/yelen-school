@@ -124,7 +124,7 @@
       <!-- Signature scannée (facultative) : enregistrée sur la fiche du signataire, apposée sur ses documents -->
       <div class="sc-form-row sc-form-row--signature">
         <div class="sc-field sc-field--wide">
-          <label class="input-label" for="sgn-{{ cd.cycle.id }}-{{ cat.value }}">Signature scannée <span class="sc-facultatif">(facultatif — PNG à fond transparent, 512 Ko max.)</span></label>
+          <label class="input-label" for="sgn-{{ cd.cycle.id }}-{{ cat.value }}">Signature scannée <span class="sc-facultatif">(facultatif — PNG à fond transparent recommandé, allégé automatiquement)</span></label>
           <div class="sc-signature">
             {% if cat.signature %}<img src="{{ cat.signature.url }}" alt="Signature enregistrée" class="sc-signature-apercu">{% endif %}
             <input type="file" id="sgn-{{ cd.cycle.id }}-{{ cat.value }}" name="signature" accept="image/png,image/jpeg" class="input sc-signature-fichier">

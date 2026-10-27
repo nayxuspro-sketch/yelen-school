@@ -2,11 +2,23 @@ import re
 from decimal import Decimal
 
 import pytest
+from django.contrib.messages import get_messages
 from django.urls import reverse
 from model_bakery import baker
 
 from etablissements.models import Etablissement
 from parametres.models import Cycle, DeclencheurSMS
+
+
+def _image_bruitee(largeur, hauteur, mode, format_):
+    """Image de bruit aléatoire (incompressible) : simule un scan lourd. Octets du fichier."""
+    import io
+    import os
+    from PIL import Image
+    image = Image.frombytes(mode, (largeur, hauteur), os.urandom(largeur * hauteur * len(mode)))
+    tampon = io.BytesIO()
+    image.save(tampon, format_, quality=95)
+    return tampon.getvalue()
 
 @pytest.mark.django_db
 class TestParametresViews:
@@ -211,6 +223,50 @@ class TestPartialsSansScriptInline:
         identite.refresh_from_db()
         assert identite.telephone == tel
 
+    def test_signature_et_cachet_acceptes_jusqu_a_5_mo_puis_alleges(self, client_etab, settings, tmp_path):
+        """Un scan de signature de 694 Ko était refusé (limite codée à 512 Ko). Signature et cachet sont acceptés
+        jusqu'à 5 Mo comme toute image, puis ramenés à 800 px max. pour l'impression ; au-delà, refus explicite."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+        settings.MEDIA_ROOT = tmp_path
+        etab = Etablissement.objects.get(code='CSP')
+        identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='Lycée Yelen',
+                              numero_agrement_mena='AG-001', email='contact@yelen.bf', nom_directeur='D. Yelen')
+        donnees = {champ: getattr(identite, champ) for champ in (
+            'nom_etablissement', 'type_etablissement', 'numero_agrement_mena', 'date_agrement',
+            'adresse_complete', 'ville', 'province', 'region', 'email', 'nom_directeur')}
+        donnees['telephone'] = '+226 25 36 47 58'
+        url = reverse('parametres:identite_etablissement')
+        scan = _image_bruitee(1600, 600, 'RGB', 'JPEG')
+        assert 512 * 1024 < len(scan) < 5 * 1024 * 1024, 'scan réaliste : refusé avant, accepté désormais'
+
+        reponse = client_etab.post(url, {**donnees, 'signature_directeur': SimpleUploadedFile(
+            'signature_directeur.jpg', scan, content_type='image/jpeg')})
+        assert [m.message for m in get_messages(reponse.wsgi_request)] == ["Identité de l'établissement mise à jour avec succès."]
+        identite.refresh_from_db()
+        with Image.open(identite.signature_directeur.path) as image:
+            assert image.format == 'JPEG' and max(image.size) == 800 and image.size == (800, 300)
+        assert identite.signature_directeur.size < len(scan) // 4
+
+        # Cachet PNG transparent : la transparence est conservée
+        cachet = _image_bruitee(900, 900, 'RGBA', 'PNG')
+        assert 512 * 1024 < len(cachet) < 5 * 1024 * 1024
+        client_etab.post(url, {**donnees, 'cachet_etablissement': SimpleUploadedFile(
+            'cachet.png', cachet, content_type='image/png')})
+        identite.refresh_from_db()
+        with Image.open(identite.cachet_etablissement.path) as image:
+            assert image.format == 'PNG' and image.mode == 'RGBA' and image.size == (800, 800)
+
+        # Au-delà de 5 Mo : refus explicite, l'image précédente est conservée
+        trop = _image_bruitee(1400, 1300, 'RGB', 'PNG')
+        assert len(trop) > 5 * 1024 * 1024
+        reponse = client_etab.post(url, {**donnees, 'cachet_etablissement': SimpleUploadedFile(
+            'cachet.png', trop, content_type='image/png')})
+        assert 'Taille maximale : 5.0 Mo' in ''.join(m.message for m in get_messages(reponse.wsgi_request))
+        identite.refresh_from_db()
+        with Image.open(identite.cachet_etablissement.path) as image:
+            assert image.size == (800, 800), 'image précédente conservée'
+
     def test_formulaire_tarif_montant_lisible(self, client_etab):
         html = client_etab.get(reverse('parametres:tarif_create'), HTTP_HX_REQUEST='true').content.decode()
 
@@ -388,6 +444,14 @@ class TestSignataireConfig:
         html = client.get(reponse['Location']).content.decode()
         assert f'<img src="{membre.signature.url}" alt="Signature enregistrée" class="sc-signature-apercu">' in html
         assert 'name="retirer_signature"' in html
+
+        # Scan lourd (> 512 Ko, ancienne limite) : accepté, ramené à 800 px, transparence conservée
+        lourd = SimpleUploadedFile('scan.png', _image_bruitee(1200, 420, 'RGBA', 'PNG'), content_type='image/png')
+        assert 512 * 1024 < lourd.size < 5 * 1024 * 1024
+        assert client.post(url, {**donnees, 'signature': lourd}).status_code == 302
+        membre.refresh_from_db()
+        with Image.open(membre.signature.path) as image:
+            assert image.format == 'PNG' and image.mode == 'RGBA' and image.size == (800, 280)
 
         # Fichier qui n'est pas une image : refus explicite, rien n'est enregistré
         faux = SimpleUploadedFile('signature.png', b'pas une image', content_type='image/png')

@@ -858,7 +858,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 
 **Signataire :** Détecté automatiquement selon le cycle de la classe et l'année scolaire (`Paramètres → Signataires des documents`, type `BULLETIN`).
 
-**Signature scannée (facultatif) :** dans la fenêtre `Paramètres → Signataires → Configurer les Signataires`, chaque carte propose un champ **Signature scannée** (PNG à fond transparent recommandé, 512 Ko max.). L'image est enregistrée sur la fiche du membre du personnel choisi et apposée automatiquement, à l'emplacement prévu pour sa signature, sur **tous** les documents qu'il signe (bulletins trimestriels et annuels, certificats de scolarité, attestations, convocations, circulaires, emplois du temps, cartes scolaires — sous la photo de l'élève —, autorisations, reçus, relances de paiement, listes, états…), sans modifier la mise en page. Sans image, l'espace reste vierge pour la signature manuscrite ; la case **Retirer la signature** supprime l'image enregistrée.
+**Signature scannée (facultatif) :** dans la fenêtre `Paramètres → Signataires → Configurer les Signataires`, chaque carte propose un champ **Signature scannée** (PNG à fond transparent recommandé ; photo ou scan jusqu'à 5 Mo, l'image est automatiquement ramenée à 800 px et allégée pour l'impression — il en va de même pour la signature du directeur et le cachet de `Paramètres → Identité de l'établissement`). L'image est enregistrée sur la fiche du membre du personnel choisi et apposée automatiquement, à l'emplacement prévu pour sa signature, sur **tous** les documents qu'il signe (bulletins trimestriels et annuels, certificats de scolarité, attestations, convocations, circulaires, emplois du temps, cartes scolaires — sous la photo de l'élève —, autorisations, reçus, relances de paiement, listes, états…), sans modifier la mise en page. Sans image, l'espace reste vierge pour la signature manuscrite ; la case **Retirer la signature** supprime l'image enregistrée.
 
 > **Emploi du temps :** le signataire des emplois du temps (classe et professeur) se configure sur le type `EMPLOI_DU_TEMPS` (« Emploi du Temps », catégorie Pédagogie). Tous les documents signés par l'application (dont Convocation, Circulaire, Autorisation de Congé Personnel) sont proposés dans la fenêtre dès l'installation.
 
@@ -6706,7 +6706,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.20 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.21 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

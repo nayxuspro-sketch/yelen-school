@@ -17,8 +17,7 @@ _ALLOWED_PILLOW_FORMATS = {'JPEG', 'PNG', 'GIF', 'WEBP'}
 _ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
 
 # Tailles par défaut
-DEFAULT_MAX_IMAGE_BYTES = 5 * 1024 * 1024    # 5 Mo
-SIGNATURE_MAX_BYTES = 512 * 1024             # 512 Ko (signatures/cachets)
+DEFAULT_MAX_IMAGE_BYTES = 5 * 1024 * 1024    # 5 Mo (signatures et cachets compris : allégés ensuite par core.images)
 
 
 def validate_image_upload(file, max_size_bytes=DEFAULT_MAX_IMAGE_BYTES):

@@ -1,4 +1,5 @@
 from django import forms
+from django.core.files.uploadedfile import UploadedFile
 from django.utils.text import slugify
 
 from core.models import RoleChoices
@@ -193,22 +194,27 @@ class IdentiteEtablissementForm(forms.ModelForm):
         return image
 
     def clean_signature_directeur(self):
-        image = self.cleaned_data.get('signature_directeur')
-        if image and hasattr(image, 'size'):
-            _validate_image(image, max_size=512 * 1024)
-        return image
+        return _image_document(self.cleaned_data.get('signature_directeur'))
 
     def clean_cachet_etablissement(self):
-        image = self.cleaned_data.get('cachet_etablissement')
-        if image and hasattr(image, 'size'):
-            _validate_image(image, max_size=512 * 1024)
-        return image
+        return _image_document(self.cleaned_data.get('cachet_etablissement'))
 
 
 def _validate_image(image, max_size):
     """Valide la taille et le contenu réel d'une image via Pillow."""
     from core.validators import validate_image_upload
     validate_image_upload(image, max_size_bytes=max_size)
+
+
+def _image_document(image):
+    """Signature ou cachet : un nouvel envoi est validé (image réelle, 5 Mo max.) puis allégé pour l'impression ;
+    une image déjà enregistrée est rendue telle quelle."""
+    if isinstance(image, UploadedFile):
+        from core.images import optimiser_image_document
+        from core.validators import validate_image_upload
+        validate_image_upload(image)
+        return optimiser_image_document(image)
+    return image
 
 
 class TypeEvaluationForm(forms.ModelForm):
@@ -248,8 +254,9 @@ class SignataireForm(forms.Form):
     signature = forms.ImageField(
         required=False,
         label="Signature scannée",
-        help_text="Facultatif — PNG à fond transparent recommandé, 512 Ko maximum. Enregistrée sur la fiche "
-                  "du membre du personnel et apposée sur tous les documents qu'il signe.",
+        help_text="Facultatif — PNG à fond transparent recommandé ; l'image est allégée automatiquement pour "
+                  "l'impression. Enregistrée sur la fiche du membre du personnel et apposée sur tous les "
+                  "documents qu'il signe.",
     )
     retirer_signature = forms.BooleanField(required=False, label="Retirer la signature enregistrée")
 
@@ -263,10 +270,7 @@ class SignataireForm(forms.Form):
             )
 
     def clean_signature(self):
-        image = self.cleaned_data.get('signature')
-        if image:
-            _validate_image(image, max_size=512 * 1024)
-        return image
+        return _image_document(self.cleaned_data.get('signature'))
 
     def appliquer_signature(self, membre):
         """Enregistre (ou retire) la signature scannée sur la fiche du membre du personnel signataire."""
