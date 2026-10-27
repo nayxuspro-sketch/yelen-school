@@ -330,6 +330,48 @@ class TestBulletinTrimestriel:
         signature = f'<div class="msig-sign"><img class="msig-img" src="{membre.signature.url}" alt=""></div><div class="msig-name">'
         assert all(html.count(signature) == 1 for html in sources), 'signature scannée entre la fonction et le nom du signataire'
 
+    def test_toutes_les_disciplines_de_la_classe_sur_chaque_bulletin(self, classe_notee, mocker):
+        """Une discipline sans note pour un élève n'est plus absente de son bulletin : chaque bulletin de la
+        classe liste les mêmes disciplines, dans le même ordre, avec « — » quand l'élève n'a pas de moyenne."""
+        c = classe_notee
+        anglais = baker.make('pedagogie.Enseignement', classe=c.classe, annee_scolaire=c.annee, est_actif=True,
+                             coefficient=Decimal('2'), matiere=baker.make('pedagogie.Matiere', nom='Anglais'))
+        ev = baker.make('pedagogie.Evaluation', enseignement=anglais, trimestre=c.t1, statut='TERMINEE',
+                        type_evaluation=baker.make('pedagogie.TypeEvaluation', coefficient=Decimal('1'), nb_meilleures_notes=0),
+                        titre='Oral', bareme=Decimal('20'), date_planifiee=date(2026, 11, 7))
+        baker.make('pedagogie.Note', inscription=c.awa, evaluation=ev, valeur=Decimal('14'))  # Awa seule notée
+        _calculer(c)
+        assert not Resultat.objects.filter(inscription=c.boubacar, enseignement=anglais).exists()
+        weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        weasy.lot.return_value = b'%PDF-1.7'
+
+        c.client.get(reverse('pedagogie:bulletin_pdf', kwargs={'inscription_id': c.boubacar.pk, 'trimestre_id': c.t1.pk}))
+        html = _html(weasy)
+        ordre = [m for m in ('Anglais', 'Français', 'Mathématiques') if m in html]
+        assert ordre == ['Anglais', 'Français', 'Mathématiques'] and html.index('Anglais') < html.index('Français')
+        ligne = html[html.index('Anglais'):html.index('Français')]
+        assert '>—<' in ligne and 'None' not in ligne, 'moyenne absente → tiret, jamais « None »'
+        assert 'Total : 70,00&nbsp;/&nbsp;140 pts' in html, 'la moyenne générale ignore toujours la discipline non notée'
+
+        c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf', kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
+        fragments = weasy.lot.call_args.args[0]
+        assert len(fragments) == 3 and all(f.count('Anglais') == 1 for f in fragments), 'Awa, Boubacar, Chantal'
+
+    def test_saisie_et_import_mettent_les_moyennes_a_jour(self, classe_notee):
+        """Enregistrer des notes recalcule la discipline, les moyennes générales et les rangs de la classe :
+        plus de bulletin figé sur le dernier clic « Calculer les moyennes »."""
+        c = classe_notee
+        _calculer(c)
+        assert not MoyenneGenerale.objects.filter(inscription=c.eric).exists()
+        ev = c.maths.evaluations.get()
+        reponse = c.client.post(reverse('pedagogie:evaluation_saisie', kwargs={'pk': ev.pk}),
+                                {f'note_{c.eric.pk}': '18', f'note_{c.awa.pk}': '16'})
+        assert reponse.status_code == 302
+        eric = MoyenneGenerale.objects.get(inscription=c.eric, trimestre=c.t1)
+        assert eric.moyenne == Decimal('18.00') and eric.rang == 1
+        assert MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1).rang == 2
+
     def test_batch_sans_moyenne_redirige(self, classe_notee, mocker):
         c = classe_notee
         mocker.patch('pedagogie.views.bulletins.HTML')

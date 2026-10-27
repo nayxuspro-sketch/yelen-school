@@ -22,6 +22,7 @@ from parametres.models import AnneeScolaire, Classe
 from .. import importation
 from ..importation import CHAMPS_ELEVE
 from ..models import Enseignement, Trimestre, TypeEvaluation
+from ..utils import CalculateurMoyenne
 
 CLE_SESSION = 'import_notes'
 ETAPES = ('Fichier et période', 'Colonnes', 'Vérification', 'Résultat')
@@ -246,6 +247,7 @@ def notes_import_verification(request):
             analyse, matieres, parametres['trimestre'], parametres['type_evaluation'], parametres['titre'],
             parametres['bareme'], parametres['date_evaluation'],
         )
+        CalculateurMoyenne.recalculer_classe(parametres['classe'], parametres['trimestre'], list(matieres.values()))
         supprimer_fichier(etat['fichier'])
         _memoriser(request, {
             'nom_fichier': etat['nom_fichier'], 'classe': etat['classe'], 'trimestre': etat['trimestre'],

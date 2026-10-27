@@ -1,5 +1,5 @@
 from decimal import Decimal, ROUND_HALF_UP
-from .models import Resultat, MoyenneGenerale, Note, Evaluation
+from .models import Resultat, MoyenneGenerale, Note, Evaluation, Enseignement
 
 class CalculateurMoyenne:
     """Service pour le calcul automatique des moyennes et des rangs."""
@@ -177,3 +177,22 @@ class CalculateurMoyenne:
             mg.save()
             
         return count
+
+    @classmethod
+    def recalculer_classe(cls, classe, trimestre, enseignements=None):
+        """Recalcule, pour une classe et un trimestre, les moyennes par discipline (toutes, ou seulement
+        `enseignements`), puis les moyennes générales et les rangs. Appelé après chaque enregistrement de
+        notes : les résultats et les bulletins reflètent toujours les dernières notes saisies."""
+        from inscriptions.models import Inscription
+
+        inscriptions = list(
+            Inscription.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire).exclude(statut='ABANDON')
+        )
+        if enseignements is None:
+            enseignements = list(Enseignement.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire))
+        for ins in inscriptions:
+            for ens in enseignements:
+                cls.calculer_resultat_matiere(ins, ens, trimestre)
+            cls.calculer_moyenne_generale(ins, trimestre)
+        cls.calculer_rangs(classe, trimestre)
+        return len(inscriptions)

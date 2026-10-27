@@ -10,7 +10,7 @@ from django.urls import reverse
 from model_bakery import baker
 
 from pedagogie import importation
-from pedagogie.models import Evaluation, Note
+from pedagogie.models import Evaluation, MoyenneGenerale, Note
 
 pytestmark = pytest.mark.django_db
 
@@ -125,6 +125,7 @@ def test_import_complet_puis_reimport_met_a_jour(secretaire, ecole):
                         'nb_matieres': 4, 'nb_erreurs': 2}
     evaluation = Evaluation.objects.get(enseignement=ecole['ens']['FR'])
     assert evaluation.titre == 'Devoir 1' and evaluation.bareme == 20 and evaluation.date_planifiee == date(2025, 11, 15)
+    assert MoyenneGenerale.objects.filter(trimestre=evaluation.trimestre).count() == 3, 'moyennes recalculées à l\'import'
     kader = ecole['inscriptions']['kader']
     assert Note.objects.get(inscription=kader, evaluation=evaluation).valeur == Decimal('14.25')
     svt = Note.objects.get(inscription=kader, evaluation__enseignement=ecole['ens']['SVT'])

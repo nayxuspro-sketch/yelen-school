@@ -94,6 +94,7 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
                 <td class="bul-tc bul-muted">{{ result.coefficient_utilise|floatformat:0 }}</td>
                 <td class="bul-tc bul-bold">
                     {% if result.dispense %}<em class="bul-muted" style="font-weight:normal;">Disp.</em>
+                    {% elif result.moyenne is None %}<span class="bul-muted">—</span>
                     {% else %}{{ result.moyenne }}{% endif %}
                 </td>
                 <td class="bul-tc bul-muted">

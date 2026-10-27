@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.urls import reverse
-from ..models import Resultat, MoyenneGenerale, Trimestre, Competence, EvaluationCompetence
+from ..models import Resultat, MoyenneGenerale, Trimestre, Competence, EvaluationCompetence, Enseignement
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription
 from core.utils import get_etablissement_context
@@ -96,6 +96,30 @@ def _annotate_resultats(resultats, apprs, cycle_code):
     return resultats
 
 
+def _enseignements_classe(classe, annee_scolaire):
+    """Disciplines enseignées dans la classe cette année, dans l'ordre des autres états (nom de matière)."""
+    return list(
+        Enseignement.objects.filter(classe=classe, annee_scolaire=annee_scolaire, est_actif=True)
+        .select_related('matiere', 'personnel').order_by('matiere__nom')
+    )
+
+
+def _lignes_disciplines(inscription, trimestre, enseignements, resultats):
+    """Une ligne par discipline de la classe, dans le même ordre sur tous les bulletins : le résultat calculé
+    s'il existe, sinon une ligne vide (« — »). Une discipline sans note pour l'élève ne disparaît plus du
+    bulletin ; un résultat dont l'enseignement n'est plus actif reste affiché en fin de tableau."""
+    par_enseignement = {r.enseignement_id: r for r in resultats}
+    lignes = []
+    for ens in enseignements:
+        resultat = par_enseignement.pop(ens.pk, None)
+        if resultat is None:
+            resultat = Resultat(inscription=inscription, enseignement=ens, trimestre=trimestre,
+                                coefficient_utilise=ens.get_coefficient())
+        lignes.append(resultat)
+    lignes.extend(sorted(par_enseignement.values(), key=lambda r: r.enseignement.matiere.nom))
+    return lignes
+
+
 @login_required
 def _build_bulletin_context(request, inscription, trimestre):
     """Construit le contexte commun utilisé par l'aperçu HTML et le PDF."""
@@ -109,6 +133,7 @@ def _build_bulletin_context(request, inscription, trimestre):
     resultats = Resultat.objects.filter(
         inscription=inscription, trimestre=trimestre
     ).select_related('enseignement__matiere', 'enseignement__personnel')
+    enseignements = _enseignements_classe(inscription.classe, trimestre.annee_scolaire)
 
     nb_eleves = (
         Inscription.objects
@@ -126,7 +151,9 @@ def _build_bulletin_context(request, inscription, trimestre):
     cycle_code = inscription.classe.cycle.code if inscription.classe.cycle_id else None
     apprs = _load_appreciations(etab)
     appreciation_generale = _get_appreciation_generale(inscription, mg, etab=etab)
-    resultats_annotes = _annotate_resultats(list(resultats), apprs, cycle_code)
+    resultats_annotes = _annotate_resultats(
+        _lignes_disciplines(inscription, trimestre, enseignements, resultats), apprs, cycle_code
+    )
 
     cycle = inscription.classe.cycle
     annee = trimestre.annee_scolaire
@@ -272,6 +299,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     etab = classe.etablissement
     cycle_code = classe.cycle.code if classe.cycle_id else None
     apprs = _load_appreciations(etab)
+    enseignements = _enseignements_classe(classe, trimestre.annee_scolaire)
 
     # Récupérer toutes les données nécessaires
     from viescolaire.models import SanctionDisciplinaire
@@ -315,7 +343,9 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
         try:
             mg = MoyenneGenerale.objects.get(inscription=ins, trimestre=trimestre)
             resultats = list(Resultat.objects.filter(inscription=ins, trimestre=trimestre).select_related('enseignement__matiere', 'enseignement__personnel'))
-            resultats_annotes = _annotate_resultats(resultats, apprs, cycle_code)
+            resultats_annotes = _annotate_resultats(
+                _lignes_disciplines(ins, trimestre, enseignements, resultats), apprs, cycle_code
+            )
             sanctions = sanctions_par_ins.get(ins.pk, [])
 
             # Compétences APC pour cet élève

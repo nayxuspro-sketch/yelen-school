@@ -429,22 +429,7 @@ def calculer_moyennes_classe(request, class_id):
         return redirect('pedagogie:resultat_classe', class_id=class_id)
     
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
-    
-    inscriptions = Inscription.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire).exclude(statut='ABANDON')
-    enseignements = Enseignement.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire)
-    
-    # 1. Calculer les moyennes par matière
-    for ins in inscriptions:
-        for ens in enseignements:
-            CalculateurMoyenne.calculer_resultat_matiere(ins, ens, trimestre)
-            
-    # 2. Calculer les moyennes générales
-    for ins in inscriptions:
-        CalculateurMoyenne.calculer_moyenne_generale(ins, trimestre)
-        
-    # 3. Calculer les rangs
-    CalculateurMoyenne.calculer_rangs(classe, trimestre)
-    
+    CalculateurMoyenne.recalculer_classe(classe, trimestre)
     messages.success(request, f"Calcul des moyennes terminé pour la classe {classe.nom}.")
 
     from django.urls import reverse

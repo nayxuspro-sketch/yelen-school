@@ -868,6 +868,8 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 
 > **Configuration requise :** Créer au moins un signataire pour le type `BULLETIN` via `Paramètres → Signataires → Nouveau signataire`. Le formulaire de création est organisé en 3 sections à 2 colonnes : **Période & Périmètre** (année scolaire + cycle), **Type de document** (catégorie + fonction du signataire), **Signataire** (membre du personnel + titre honorifique). Si aucun signataire cycle-spécifique n'existe, le système utilise le signataire générique.
 
+> **Disciplines et moyennes (v5.5.20) :** chaque bulletin de la classe liste **toutes** les disciplines enseignées dans la classe (Pédagogie → Enseignements, actifs), dans le même ordre pour tous les élèves ; une discipline sans note pour l'élève apparaît avec « — » et n'entre pas dans la moyenne générale. Les moyennes par discipline, les moyennes générales et les rangs sont recalculés **automatiquement à chaque enregistrement de notes** (saisie ou import Excel) : le bouton « Calculer les moyennes » de la page Résultats reste disponible mais n'est plus un préalable.
+
 ---
 
 #### 6.7.0 Duplicata du Bulletin Trimestriel
@@ -6704,7 +6706,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.19 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.20 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

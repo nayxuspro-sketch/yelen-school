@@ -12,6 +12,7 @@ from ..forms import EvaluationForm
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription
 from core.utils import filtre_enseignant, get_membre_personnel
+from ..utils import CalculateurMoyenne
 # Nombre de classes affichées par page dans la liste des évaluations
 # (chaque classe regroupe toutes ses matières et évaluations : ~40 lignes
 # par classe et par trimestre).
@@ -366,6 +367,8 @@ def evaluation_saisie(request, pk):
             evaluation.statut = 'TERMINEE'
             evaluation.save(update_fields=['statut'])
             messages.success(request, f"{updated_count} note(s) enregistrée(s).")
+        # Moyennes de la discipline, moyennes générales et rangs à jour sans passer par « Calculer les moyennes »
+        CalculateurMoyenne.recalculer_classe(classe, trimestre, [enseignement])
 
         return redirect('pedagogie:evaluation_saisie', pk=pk)
 
