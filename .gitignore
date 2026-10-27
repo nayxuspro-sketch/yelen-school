@@ -32,7 +32,12 @@ data/
 *.log
 structure.txt
 yelen_source_complet.txt
-.claude/worktrees/
+# Outillage de développement IA — hors dépôt applicatif (retiré en 5.5.22)
+.claude/
+opencode/
+plans/
+skills/
+yelen-school-bulletin-annuel/
 /*.ttf
 /Playfair_Display/
 backups/

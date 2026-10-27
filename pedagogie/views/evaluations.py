@@ -448,7 +448,8 @@ def saisie_rapide_classe(request, class_id):
 @login_required
 def saisie_classe_select(request):
     """Sélection de la classe pour la saisie des notes (ses classes de l'année pour un enseignant)."""
-    classes = Classe.objects.all()
+    etab = getattr(request.user, 'etablissement', None)
+    classes = Classe.objects.filter(etablissement=etab) if etab else Classe.objects.all()
     if request.user.role == 'ENSEIGNANT':
         classes = classes.filter(enseignements__personnel=filtre_enseignant(request.user),
                                  enseignements__annee_scolaire__est_courante=True).distinct()

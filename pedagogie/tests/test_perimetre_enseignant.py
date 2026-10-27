@@ -90,3 +90,15 @@ def test_releve_de_notes_limite_aux_classes_et_disciplines_du_professeur(client,
     client.force_login(baker.make('accounts.User', etablissement=contexte['etab'], role='DIRECTEUR', must_change_password=False))
     ctx = client.get(url, {'annee': annee.pk, 'classe': contexte['classe_a'].pk}).context
     assert ctx['classes'].count() == 2 and ctx['enseignements'].count() == 2
+
+
+def test_selection_par_classe_limitee_a_l_etablissement_du_personnel(client, contexte):
+    """Secrétaire, censeur… : la sélection de classe pour la saisie des notes ne montre que les classes de
+    leur établissement (elle listait toutes les classes de tous les établissements)."""
+    autre = baker.make('etablissements.Etablissement', code='AUT', nom='Autre collège')
+    baker.make('parametres.Classe', etablissement=autre, nom='6e Z', actif=True)
+    user = baker.make('accounts.User', etablissement=contexte['etab'], role='SECRETAIRE', must_change_password=False)
+    client.force_login(user)
+    classes = client.get(reverse('pedagogie:saisie_classe_select')).context['classes']
+    assert {cl.etablissement_id for cl in classes} == {contexte['etab'].pk}
+    assert '6e Z' not in [cl.nom for cl in classes]

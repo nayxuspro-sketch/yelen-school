@@ -600,6 +600,7 @@ def inscription_update(request, pk):
     })
 
 
+@login_required
 def get_classe_niveau(request, pk):
     """API endpoint to get the niveau of a class."""
     from django.http import JsonResponse
@@ -612,6 +613,7 @@ def get_classe_niveau(request, pk):
         return JsonResponse({'niveau': ''})
 
 
+@login_required
 def get_classe_cycle(request, pk):
     """API endpoint to get the cycle of a class."""
     from django.http import JsonResponse
@@ -627,6 +629,7 @@ def get_classe_cycle(request, pk):
         return JsonResponse({'cycle': '', 'cycle_id': ''})
 
 
+@login_required
 def get_statut_code(request, pk):
     """API endpoint to get the code and nom of a statut eleve."""
     from django.http import JsonResponse

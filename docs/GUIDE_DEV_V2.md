@@ -544,7 +544,7 @@ Ne modifie aucun fichier\. Attends ma validation\.
 
 📁 Où placer les Skills ?
 
-yelen\-school/skills/
+yelen\-school/skills/ \(dossier local du développeur, non versionné depuis la 5\.5\.22 — voir \.gitignore\)
 
 ├── 01\-django\-models\.md          \(mis à jour v2\.0\)
 

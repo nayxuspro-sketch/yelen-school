@@ -3,6 +3,16 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.5.22 — 2026-10-27
+
+### Sécurité (audit — Lot A)
+- Formulaire d'inscription : les trois points JSON (niveau et cycle d'une classe, code d'un statut) exigent désormais une session ouverte.
+- Saisie des notes → sélection de la classe : limitée aux classes de l'établissement de l'utilisateur (elle listait toutes les classes de tous les établissements pour les non-enseignants).
+
+### Qualité
+- Module Manuels scolaires exécuté par la CI (`testpaths`) avec 13 tests : catalogue, cloisonnement par établissement, exemplaires, attribution/retour, non-rendus, PDF.
+- Dépôt : l'outillage de développement IA (`.claude/`, `opencode/`, `skills/`, `plans/`, `yelen-school-bulletin-annuel/`, 70 fichiers) n'est plus versionné.
+
 ## 5.5.21 — 2026-10-27
 
 ### Corrigé

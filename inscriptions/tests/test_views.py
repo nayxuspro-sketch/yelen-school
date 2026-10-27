@@ -303,3 +303,24 @@ def test_carte_scolaire_signature_du_signataire_sous_la_photo(client, settings, 
     zone, nom_sans = boite(page._page_box, 'photo-sign'), boite(page._page_box, 'sign-nom')
     assert images_rendues(page) == [] and texte(nom_sans) == 'KABORE' and nom_sans.position_y == nom.position_y
     assert round(zone.height * 25.4 / 96, 1) == 5.0
+
+
+@pytest.mark.django_db
+def test_api_classe_et_statut_reservees_aux_utilisateurs_connectes(client):
+    """Les trois points JSON du formulaire d'inscription (niveau, cycle d'une classe, code d'un statut)
+    étaient accessibles sans connexion."""
+    etab = baker.make('etablissements.Etablissement')
+    cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', code='SEC')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6e A', niveau='6e')
+    statut = baker.make('parametres.StatutEleve', etablissement=etab, nom='Nouveau', code='NOUV')
+    urls = [reverse('inscriptions:classe_niveau', kwargs={'pk': classe.pk}),
+            reverse('inscriptions:classe_cycle', kwargs={'pk': classe.pk}),
+            reverse('inscriptions:statut_code', kwargs={'pk': statut.pk})]
+    for url in urls:
+        reponse = client.get(url)
+        assert reponse.status_code == 302 and reverse('accounts:login') in reponse.url, url
+
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='SECRETAIRE', must_change_password=False))
+    assert client.get(urls[0]).json() == {'niveau': '6e'}
+    assert client.get(urls[1]).json() == {'cycle': 'Secondaire', 'cycle_id': str(cycle.pk)}
+    assert client.get(urls[2]).json() == {'code': 'NOUV', 'nom': 'Nouveau'}
