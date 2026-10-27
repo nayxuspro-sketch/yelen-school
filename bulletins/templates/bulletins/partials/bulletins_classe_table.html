@@ -44,13 +44,13 @@
         {% if mg and mg.rang %}{{ mg.rang }}{% else %}—{% endif %}
       </td>
       <td class="text-center text-muted">
-        {% if b %}{{ b.absences_justifiees }}{% else %}0{% endif %}
+        {{ ligne.assiduite.absences_justifiees }}
       </td>
       <td class="text-center text-muted">
-        {% if b %}{{ b.absences_non_justifiees }}{% else %}0{% endif %}
+        {{ ligne.assiduite.absences_non_justifiees }}
       </td>
       <td class="text-center text-muted">
-        {% if b %}{{ b.retards }}{% else %}0{% endif %}
+        {{ ligne.assiduite.retards }}
       </td>
       <td class="text-muted truncate">
         {% if b and b.distinctions.all %}<div style="white-space:normal; line-height:1.9;">{% for d in b.distinctions.all %}<span class="badge" style="background:#00A86B20; color:#00A86B; margin-right:4px;">{{ d.libelle }}</span>{% endfor %}</div>{% endif %}

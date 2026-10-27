@@ -86,6 +86,7 @@ urlpatterns = [
     path('periodes/create/', views.periode_form, name='periode_create'),
     path('periodes/<uuid:pk>/edit/', views.periode_form, name='periode_edit'),
     path('periodes/<uuid:pk>/delete/', views.periode_delete, name='periode_delete'),
+    path('periodes/<uuid:pk>/cloture/', views.periode_cloture, name='periode_cloture'),
 
     # Signataires
     path('signataires/', views.signataires_list, name='signataires_list'),

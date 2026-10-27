@@ -1,3 +1,4 @@
+{% load droits_tags %}
 <div id="liste-container" hx-trigger="parametreUpdated from:body" hx-get="{% url 'parametres:periode_list' %}" hx-target="#liste-container" hx-swap="outerHTML">
     <div class="table-scroll">
         <table class="data-table">
@@ -29,6 +30,15 @@
                     </td>
                     <td class="td-right">
                         <div class="d-flex justify-end gap-2">
+                            {% if request|autorise_url:'parametres:periode_cloture' %}
+                            <button hx-post="{% url 'parametres:periode_cloture' p.pk %}"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-confirm="{% if p.cloturee %}Rouvrir « {{ p.nom }} » ? Les notes, évaluations et moyennes redeviendront modifiables.{% else %}Clôturer « {{ p.nom }} » ? Les notes, les évaluations et les moyennes de cette période ne pourront plus être modifiées.{% endif %}"
+                                class="btn-icon" title="{% if p.cloturee %}Rouvrir la période{% else %}Clôturer la période (verrouiller les notes){% endif %}">
+                                {% if p.cloturee %}<svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6-6h12a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5a2 2 0 012-2z"/></svg>
+                                {% else %}<svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>{% endif %}
+                            </button>
+                            {% endif %}
                             <button hx-get="{% url 'parametres:periode_edit' p.pk %}" hx-target="#modal-container" hx-swap="innerHTML"
                                 class="btn-icon" title="Modifier">
                                 <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>

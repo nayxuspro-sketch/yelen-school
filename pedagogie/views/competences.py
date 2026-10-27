@@ -115,6 +115,9 @@ def competences_saisie(request, classe_id):
         .order_by('matiere__code', 'ordre')
     ) if classe.cycle_id else Competence.objects.none()
 
+    if request.method == 'POST' and trimestre and trimestre.verrouille:
+        messages.error(request, f"Saisie refusée : {trimestre.message_verrouillage}")
+        return redirect(f"{request.path}?trimestre={trimestre.pk}")
     if request.method == 'POST' and trimestre:
         niveaux_choices = EvaluationCompetence.NiveauChoices.values
         for ins in inscriptions:
@@ -181,6 +184,8 @@ def competence_sauvegarder(request):
     ins = get_object_or_404(Inscription, pk=ins_id)
     comp = get_object_or_404(Competence, pk=comp_id)
     trim = get_object_or_404(Trimestre, pk=trim_id)
+    if trim.verrouille:
+        return HttpResponse(trim.message_verrouillage, status=403)
 
     EvaluationCompetence.objects.update_or_create(
         inscription=ins,

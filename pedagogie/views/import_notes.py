@@ -109,6 +109,8 @@ def notes_import(request):
             date_evaluation, erreur = None, "Date d'évaluation invalide (jj/mm/aaaa)."
         if not (fichier and classe and trimestre and type_evaluation and titre):
             erreur = erreur or "Renseignez le fichier, la classe, le trimestre, le type d'évaluation et le titre."
+        elif trimestre.verrouille:
+            erreur = f"Import refusé : {trimestre.message_verrouillage}"
         elif not Enseignement.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire,
                                              est_actif=True).exists():
             erreur = (f"Aucun enseignement n'est défini pour la classe {classe.nom} en "
@@ -243,6 +245,8 @@ def notes_import_verification(request):
         return _abandonner(request, etat, exc)
 
     if request.method == 'POST' and not analyse.bloquants and analyse.lignes:
+        if parametres['trimestre'].verrouille:   # clôturé entre-temps
+            return _abandonner(request, etat, f"Import refusé : {parametres['trimestre'].message_verrouillage}")
         resultat = importation.importer(
             analyse, matieres, parametres['trimestre'], parametres['type_evaluation'], parametres['titre'],
             parametres['bareme'], parametres['date_evaluation'],

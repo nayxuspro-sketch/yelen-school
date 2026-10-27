@@ -74,8 +74,12 @@
 {# ── Panneau contrôle qualité ── #}
 <div id="cq-panel" class="note-cq-panel animate-fade-up" hidden></div>
 
+{% if verrouille %}
+<div class="alert alert-warning" role="status">{{ evaluation.trimestre.message_verrouillage }}</div>
+{% endif %}
 <form method="post" id="form-saisie">
   {% csrf_token %}
+  <fieldset{% if verrouille %} disabled{% endif %} style="border:0; padding:0; margin:0; min-width:0;">
   <input type="hidden" name="bareme" value="{{ evaluation.bareme|floatformat:"-2u" }}">
 
   {# ════════ DESKTOP (≥ 768px) ════════ #}
@@ -252,6 +256,7 @@
     </div>
   </div>
 
+  </fieldset>
 </form>
 {% endblock %}
 

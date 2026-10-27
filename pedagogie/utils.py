@@ -12,8 +12,10 @@ class CalculateurMoyenne:
 
     @classmethod
     def calculer_resultat_matiere(cls, inscription, enseignement, trimestre):
-        """Calcule la moyenne d'un élève dans une matière pour un trimestre."""
-        
+        """Calcule la moyenne d'un élève dans une matière pour un trimestre (None : rien à enregistrer)."""
+        if trimestre.verrouille:
+            return None
+
         # 1. Récupérer toutes les évaluations de cet enseignement pour ce trimestre
         evaluations = Evaluation.objects.filter(
             enseignement=enseignement,
@@ -84,8 +86,10 @@ class CalculateurMoyenne:
 
     @classmethod
     def calculer_moyenne_generale(cls, inscription, trimestre):
-        """Calcule la moyenne générale d'un élève pour un trimestre."""
-        
+        """Calcule la moyenne générale d'un élève pour un trimestre (inchangée si la période est clôturée)."""
+        if trimestre.verrouille:
+            return MoyenneGenerale.objects.filter(inscription=inscription, trimestre=trimestre).first()
+
         # 1. Récupérer tous les résultats de matières (hors dispensés)
         resultats = Resultat.objects.filter(
             inscription=inscription,
@@ -94,6 +98,7 @@ class CalculateurMoyenne:
         )
 
         if not resultats.exists():
+            MoyenneGenerale.objects.filter(inscription=inscription, trimestre=trimestre).delete()   # plus rien à moyenner
             return None
 
         total_points = Decimal('0')
@@ -154,8 +159,10 @@ class CalculateurMoyenne:
 
     @classmethod
     def calculer_rangs(cls, classe, trimestre):
-        """Calcule et met à jour les rangs pour une classe entière."""
-        
+        """Calcule et met à jour les rangs pour une classe entière (inchangés si la période est clôturée)."""
+        if trimestre.verrouille:
+            return 0
+
         # 1. Récupérer les moyennes générales triées (calculées en amont)
         moyennes = MoyenneGenerale.objects.filter(
             inscription__classe=classe,
@@ -182,9 +189,13 @@ class CalculateurMoyenne:
     def recalculer_classe(cls, classe, trimestre, enseignements=None):
         """Recalcule, pour une classe et un trimestre, les moyennes par discipline (toutes, ou seulement
         `enseignements`), puis les moyennes générales et les rangs. Appelé après chaque enregistrement de
-        notes : les résultats et les bulletins reflètent toujours les dernières notes saisies."""
+        notes : les résultats et les bulletins reflètent toujours les dernières notes saisies. Un résultat
+        qui n'a plus aucune note (évaluation supprimée, note retirée) est purgé. Sans effet si la période
+        est clôturée."""
         from inscriptions.models import Inscription
 
+        if trimestre.verrouille:
+            return 0
         inscriptions = list(
             Inscription.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire).exclude(statut='ABANDON')
         )
@@ -192,7 +203,8 @@ class CalculateurMoyenne:
             enseignements = list(Enseignement.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire))
         for ins in inscriptions:
             for ens in enseignements:
-                cls.calculer_resultat_matiere(ins, ens, trimestre)
+                if cls.calculer_resultat_matiere(ins, ens, trimestre) is None:
+                    Resultat.objects.filter(inscription=ins, enseignement=ens, trimestre=trimestre, dispense=False).delete()
             cls.calculer_moyenne_generale(ins, trimestre)
         cls.calculer_rangs(classe, trimestre)
         return len(inscriptions)

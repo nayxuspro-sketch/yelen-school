@@ -18,6 +18,47 @@ from pedagogie.models import Resultat, Trimestre
 
 logger = logging.getLogger(__name__)
 
+CHAMPS_ASSIDUITE = ('absences_justifiees', 'absences_non_justifiees', 'retards')
+
+
+def assiduite_depuis_presences(trimestre, inscriptions):
+    """Assiduité relevée dans Présences entre les dates du trimestre, par inscription :
+    ``{inscription_id: {'absences_justifiees': h, 'absences_non_justifiees': h, 'retards': n}}``.
+    Absence excusée → justifiée, absence simple → non justifiée, en heures (durée de la séance, une heure si
+    l'appel n'a pas d'horaire, arrondi au plus proche) ; les retards sont comptés en nombre."""
+    from presences.models import Presence
+
+    statuts = Presence.StatutChoices
+    cles = {statuts.EXCUSE: 'absences_justifiees', statuts.ABSENT: 'absences_non_justifiees'}
+    cumuls = {}
+    lignes = Presence.objects.filter(
+        inscription__in=inscriptions, statut__in=(statuts.ABSENT, statuts.EXCUSE, statuts.RETARD),
+        appel__date__range=(trimestre.date_debut, trimestre.date_fin),
+    ).values_list('inscription_id', 'statut', 'appel__heure_debut', 'appel__heure_fin')
+    for inscription_id, statut, debut, fin in lignes:
+        cumul = cumuls.setdefault(inscription_id, {c: Decimal('0') for c in CHAMPS_ASSIDUITE})
+        if statut == statuts.RETARD:
+            cumul['retards'] += 1
+            continue
+        heures = Decimal('1')
+        if debut and fin and fin > debut:
+            heures = Decimal((fin.hour * 60 + fin.minute) - (debut.hour * 60 + debut.minute)) / 60
+        cumul[cles[statut]] += heures
+    return {
+        pk: {c: int(v.quantize(Decimal('1'), rounding=ROUND_HALF_UP)) for c, v in cumul.items()}
+        for pk, cumul in cumuls.items()
+    }
+
+
+def assiduite_bulletin(fiche, trimestre, inscription, releve=None):
+    """Valeurs imprimées sur le bulletin : celles de la fiche si elle existe, sinon le relevé de Présences
+    (``releve`` : résultat de ``assiduite_depuis_presences`` déjà calculé pour la classe)."""
+    if fiche is not None:
+        return {c: getattr(fiche, c) for c in CHAMPS_ASSIDUITE}
+    if releve is None:
+        releve = assiduite_depuis_presences(trimestre, [inscription])
+    return releve.get(inscription.pk) or dict.fromkeys(CHAMPS_ASSIDUITE, 0)
+
 
 def calculer_bulletin_annuel(inscription, annee_scolaire):
     """

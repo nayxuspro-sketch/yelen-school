@@ -27,6 +27,7 @@ from parametres.models import AnneeScolaire, Classe, Distinction
 from pedagogie.models import MoyenneGenerale, Trimestre
 
 from .models import Bulletin
+from .services import assiduite_bulletin, assiduite_depuis_presences
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,8 @@ def bulletins_classe(request, class_id, trimestre_id):
         for mg in MoyenneGenerale.objects.filter(trimestre=trimestre, inscription__in=inscriptions)
     }
 
+    releve = assiduite_depuis_presences(trimestre, inscriptions)
+
     lignes = []
     for ins in inscriptions:
         bulletin = bulletins_par_ins.get(ins.pk)
@@ -122,6 +125,7 @@ def bulletins_classe(request, class_id, trimestre_id):
             'bulletin': bulletin,
             'mg': mg,
             'moyenne_calculee': mg is not None,
+            'assiduite': assiduite_bulletin(bulletin, trimestre, ins, releve),
         })
 
     nb_total = len(lignes)
@@ -158,15 +162,11 @@ def bulletin_saisir(request, inscription_id, trimestre_id):
     )
     
     if etab and inscription.classe.etablissement_id != etab.pk:
-        from django.contrib import messages
         messages.error(request, "Accès refusé. Cette inscription n'appartient pas à votre établissement.")
         return redirect('bulletins:bulletin_list')
     
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
-    bulletin, _ = Bulletin.objects.get_or_create(
-        inscription=inscription,
-        trimestre=trimestre,
-    )
+    bulletin = Bulletin.objects.obtenir(inscription, trimestre)
     mg = MoyenneGenerale.objects.filter(inscription=inscription, trimestre=trimestre).first()
     # Mentions proposées : celles actives + celles déjà cochées (même désactivées depuis)
     distinctions = Distinction.objects.filter(Q(actif=True) | Q(bulletins=bulletin)).distinct()
@@ -219,15 +219,11 @@ def bulletin_publier(request, inscription_id, trimestre_id):
     inscription = get_object_or_404(Inscription, pk=inscription_id)
     
     if etab and inscription.classe.etablissement_id != etab.pk:
-        from django.contrib import messages
         messages.error(request, "Accès refusé.")
         return JsonResponse({'error': 'Accès refusé'}, status=403)
     
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
-    bulletin, _ = Bulletin.objects.get_or_create(
-        inscription=inscription,
-        trimestre=trimestre,
-    )
+    bulletin = Bulletin.objects.obtenir(inscription, trimestre)
     mg = MoyenneGenerale.objects.filter(inscription=inscription, trimestre=trimestre).first()
 
     if bulletin.est_publie:
@@ -271,6 +267,7 @@ def bulletin_publier(request, inscription_id, trimestre_id):
         'mg': mg,
         'trimestre': trimestre,
         'moyenne_calculee': mg is not None,
+        'assiduite': assiduite_bulletin(bulletin, trimestre, inscription),
     })
     response['HX-Trigger'] = json.dumps({
         'showToast': toast,
@@ -289,7 +286,6 @@ def bulletins_classe_publier(request, class_id, trimestre_id):
     classe = get_object_or_404(Classe, pk=class_id)
     
     if etab and classe.etablissement_id != etab.pk:
-        from django.contrib import messages
         messages.error(request, "Accès refusé.")
         return JsonResponse({'error': 'Accès refusé'}, status=403)
     
@@ -310,10 +306,11 @@ def bulletins_classe_publier(request, class_id, trimestre_id):
     nb = 0
     numeros_sms = []  # (numero, nom_eleve) pour envoi SMS après commit
 
+    releve = assiduite_depuis_presences(trimestre, inscriptions)
     for ins in inscriptions.select_related('eleve'):
         if ins.pk not in ins_avec_mg:
             continue
-        bulletin, _ = Bulletin.objects.get_or_create(inscription=ins, trimestre=trimestre)
+        bulletin = Bulletin.objects.obtenir(ins, trimestre, releve)
         if not bulletin.est_publie:
             bulletin.publier(request.user)
             nb += 1
@@ -497,7 +494,6 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
         from django.template.loader import render_to_string
         from parametres.models import Classe
         from pedagogie.views import _build_bulletin_annuel_context
-        from core.utils import get_etablissement_context
 
         if HTML is None:
             messages.error(request, "La génération PDF n'est pas disponible sur ce serveur (WeasyPrint manquant).")
@@ -514,32 +510,19 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
             .order_by('eleve__nom', 'eleve__prenom')
         )
 
-        etab = classe.etablissement
-        etab_context = get_etablissement_context(etab, request)
         try:
             from licences.pdf_utils import get_licence_info_for_pdf as _get_lic_pdf2
-            lic_info = _get_lic_pdf2(request.user, etab)
+            lic_info = _get_lic_pdf2(request.user, classe.etablissement)
         except Exception:
             logger.warning("Filigrane licence indisponible pour le PDF", exc_info=True)
             lic_info = None
 
-        students_data = [
-            _build_bulletin_annuel_context(request, ins, annee)
+        # Même gabarit que le bulletin individuel ; un document HTML par élève, paginé à part (« Page 1 / 1 »)
+        fragments = [
+            render_to_string('pedagogie/pdf/bulletin_annuel.html',
+                             {**_build_bulletin_annuel_context(request, ins, annee), 'licence_info': lic_info})
             for ins in inscriptions
         ]
-
-        contexte = {
-            'classe': classe,
-            'annee_scolaire': annee,
-            'identite': etab_context.get('identite'),
-            'logo_url': etab_context.get('logo_url'),
-            'etab_logo_url': etab_context.get('etab_logo_url'),
-            'etablissement': etab,
-            'licence_info': lic_info,
-        }
-        # Un document HTML par élève : chaque bulletin est paginé à part (« Page 1 / 1 »)
-        fragments = [render_to_string('pedagogie/pdf/bulletin_annuel_batch.html', {**contexte, 'students_data': [d]})
-                     for d in students_data]
         pdf_file = HTML.lot(fragments, base_url=request.build_absolute_uri())
         filename = f"Bulletins_Annuels_{classe.nom}_{annee.libelle.replace(' ', '_')}.pdf"
         response = HttpResponse(pdf_file, content_type='application/pdf')

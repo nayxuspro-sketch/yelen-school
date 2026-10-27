@@ -120,7 +120,6 @@ def _lignes_disciplines(inscription, trimestre, enseignements, resultats):
     return lignes
 
 
-@login_required
 def _build_bulletin_context(request, inscription, trimestre):
     """Construit le contexte commun utilisé par l'aperçu HTML et le PDF."""
     from django.db.models import Max, Min, Avg
@@ -128,6 +127,7 @@ def _build_bulletin_context(request, inscription, trimestre):
     from parametres.models import TypeDocument, SignataireDocument
     from viescolaire.models import SanctionDisciplinaire
     from bulletins.models import Bulletin
+    from bulletins.services import assiduite_bulletin
 
     mg = get_object_or_404(MoyenneGenerale, inscription=inscription, trimestre=trimestre)
     resultats = Resultat.objects.filter(
@@ -227,6 +227,7 @@ def _build_bulletin_context(request, inscription, trimestre):
         'appreciation_generale': appreciation_generale,
         'sanctions_conduite': sanctions_conduite,
         'fiche_bulletin': fiche_bulletin,
+        'assiduite': assiduite_bulletin(fiche_bulletin, trimestre, inscription),
         'distinctions': distinctions,
         'commentaire_eleve': commentaire_eleve,
         'identite': etab_context.get('identite'),
@@ -304,10 +305,12 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     # Récupérer toutes les données nécessaires
     from viescolaire.models import SanctionDisciplinaire
     from bulletins.models import Bulletin
+    from bulletins.services import assiduite_bulletin, assiduite_depuis_presences
     fiches_par_ins = {
         f.inscription_id: f
         for f in Bulletin.objects.filter(inscription__in=inscriptions, trimestre=trimestre).prefetch_related('distinctions')
     }
+    releve_assiduite = assiduite_depuis_presences(trimestre, inscriptions)
     # Précharger toutes les sanctions confirmées de la classe pour ce trimestre
     sanctions_par_ins = {}
     for s in SanctionDisciplinaire.objects.filter(
@@ -372,6 +375,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
                 'appreciation_generale': _get_appreciation_generale(ins, mg, etab),
                 'sanctions_conduite': sanctions,
                 'fiche_bulletin': fiches_par_ins.get(ins.pk),
+                'assiduite': assiduite_bulletin(fiches_par_ins.get(ins.pk), trimestre, ins, releve_assiduite),
                 'distinctions': list(fiches_par_ins[ins.pk].distinctions.all()) if ins.pk in fiches_par_ins else [],
                 'commentaire_eleve': None,
                 'competences_data': competences_data,
@@ -667,26 +671,9 @@ def bulletin_annuel_classe_batch_pdf(request, class_id):
         'eleve', 'classe__cycle'
     ).filter(classe=classe, annee_scolaire=annee_scolaire).exclude(statut='ABANDON')
 
-    etab = classe.etablissement
-    etab_context = get_etablissement_context(etab, request)
-
-    students_data = []
-    for ins in inscriptions:
-        ctx = _build_bulletin_annuel_context(request, ins, annee_scolaire)
-        students_data.append(ctx)
-
-    contexte = {
-        'classe': classe,
-        'annee_scolaire': annee_scolaire,
-        'identite': etab_context.get('identite'),
-        'logo_url': etab_context.get('logo_url'),
-        'etab_logo_url': etab_context.get('etab_logo_url'),
-        'etablissement': etab,
-        'licence_info': _pdf_licence_info(request, etab),
-    }
-    # Un document HTML par élève : chaque bulletin est paginé à part (« Page 1 / 1 »)
-    fragments = [render_to_string('pedagogie/pdf/bulletin_annuel_batch.html', {**contexte, 'students_data': [d]})
-                 for d in students_data]
+    # Même gabarit que le bulletin individuel ; un document HTML par élève, paginé à part (« Page 1 / 1 »)
+    fragments = [render_to_string('pedagogie/pdf/bulletin_annuel.html', _build_bulletin_annuel_context(request, ins, annee_scolaire))
+                 for ins in inscriptions]
     pdf_file = HTML.lot(fragments, base_url=request.build_absolute_uri())
 
     response = HttpResponse(pdf_file, content_type='application/pdf')

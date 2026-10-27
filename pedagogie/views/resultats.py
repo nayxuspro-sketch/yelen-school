@@ -429,8 +429,11 @@ def calculer_moyennes_classe(request, class_id):
         return redirect('pedagogie:resultat_classe', class_id=class_id)
     
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
-    CalculateurMoyenne.recalculer_classe(classe, trimestre)
-    messages.success(request, f"Calcul des moyennes terminé pour la classe {classe.nom}.")
+    if trimestre.verrouille:
+        messages.error(request, f"Calcul refusé : {trimestre.message_verrouillage}")
+    else:
+        CalculateurMoyenne.recalculer_classe(classe, trimestre)
+        messages.success(request, f"Calcul des moyennes terminé pour la classe {classe.nom}.")
 
     from django.urls import reverse
     url = reverse('pedagogie:resultat_classe', kwargs={'class_id': class_id})

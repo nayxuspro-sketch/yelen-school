@@ -145,9 +145,9 @@
       <div>
         <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:var(--space-2);">Assiduité</div>
         <div style="font-size:0.82rem; line-height:1.6; white-space:nowrap;">
-          Absences justifiées : <strong>{{ fiche_bulletin.absences_justifiees|default:0 }} h</strong><br>
-          Absences non justifiées : <strong>{{ fiche_bulletin.absences_non_justifiees|default:0 }} h</strong><br>
-          Retards : <strong>{{ fiche_bulletin.retards|default:0 }}</strong>
+          Absences justifiées : <strong>{{ assiduite.absences_justifiees }} h</strong><br>
+          Absences non justifiées : <strong>{{ assiduite.absences_non_justifiees }} h</strong><br>
+          Retards : <strong>{{ assiduite.retards }}</strong>
         </div>
       </div>
       {% if commentaire_eleve or distinctions %}

@@ -278,7 +278,9 @@ MODULES = (
         _f('/parametres/tarifs/', 'Tarifs de scolarité'),
         _f('/parametres/disciplines/', 'Disciplines'),
         _f('/parametres/categories-disciplines/', 'Catégories disciplines'),
-        _f('/parametres/periodes/', 'Périodes'),
+        _f('/parametres/periodes/', 'Périodes', actions=(
+            _a('cloturer', 'Clôturer / rouvrir une période (verrouillage des notes)', 'periode_cloture', roles=_DIRECTION),
+        )),
         _f('/parametres/appreciations/', 'Appréciation Secondaire'),
         _f('/parametres/appreciations-primaire/', 'Appréciation Primaire'),
         _f('/parametres/signataires/', 'Signataires'),

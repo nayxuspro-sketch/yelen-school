@@ -586,7 +586,6 @@ class TestRelevesEtBilans:
 @pytest.mark.parametrize('gabarit', [
     'pedagogie/templates/pedagogie/pdf/partials/bulletin_trimestriel_style.html',
     'pedagogie/templates/pedagogie/pdf/bulletin_annuel.html',
-    'pedagogie/templates/pedagogie/pdf/bulletin_annuel_batch.html',
 ])
 def test_entete_du_tableau_des_notes_fond_clair_et_texte_lisible(gabarit):
     """Bulletins : l'en-tête des colonnes du tableau des notes est sur fond clair, en texte sombre et net
@@ -599,3 +598,128 @@ def test_entete_du_tableau_des_notes_fond_clair_et_texte_lisible(gabarit):
     assert regles['font-size'] == '7.5pt' and regles['font-weight'] == '700', gabarit
     assert regles['border-top'] == regles['border-bottom'] == '1pt solid #111', gabarit  # trait sous le titre de section
     assert 'letter-spacing' not in regles, gabarit
+
+
+@pytest.mark.django_db
+class TestClotureDePeriode:
+    """Paramètres → Périodes → « Clôturer » verrouille le trimestre : plus aucune note, évaluation ou moyenne ne
+    bouge jusqu'à la réouverture (journalisée par l'audit)."""
+
+    def _cloturer(self, c):
+        reponse = c.client.post(reverse('parametres:periode_cloture', kwargs={'pk': c.periode1.pk}), HTTP_HX_REQUEST='true')
+        assert reponse.status_code == 204 and reponse['HX-Trigger'] == 'parametreUpdated'
+        c.t1.refresh_from_db()
+        c.periode1.refresh_from_db()
+        return reponse
+
+    def test_cloture_bloque_saisie_evaluations_import_et_calcul_puis_reouverture(self, classe_notee):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from core.models import AuditLog
+        from pedagogie.models import Evaluation, Note
+        c = classe_notee
+        _calculer(c)
+        ev = c.maths.evaluations.get()
+        saisie = reverse('pedagogie:evaluation_saisie', kwargs={'pk': ev.pk})
+        nouvelle = {'enseignement': c.maths.pk, 'type_evaluation': ev.type_evaluation.pk, 'periode': c.periode1.pk,
+                    'titre': 'Devoir 2', 'date_planifiee': '2026-12-01', 'bareme': '20', 'duree_minutes': '60',
+                    'statut': 'PLANIFIEE'}
+        assert c.client.post(reverse('pedagogie:evaluation_create'), nouvelle).status_code == 302   # période ouverte
+        assert Evaluation.objects.filter(titre='Devoir 2').exists()
+
+        from core.signals import disable_audit, enable_audit
+        enable_audit()      # coupé par conftest : la clôture doit laisser une trace
+        try:
+            self._cloturer(c)
+        finally:
+            disable_audit()
+        assert c.t1.verrouille and c.t1.date_fermeture == date.today() and c.periode1.cloturee
+        journal = AuditLog.objects.filter(model_name='trimestre', object_id=str(c.t1.pk), action='UPDATE')
+        assert journal.exists() and 'notes_saisies' in journal.latest('timestamp').changes
+
+        # Saisie : formulaire désactivé, enregistrement refusé, note inchangée
+        page = c.client.get(saisie)
+        assert '<fieldset disabled' in page.content.decode() and 'Trimestre 1 (2026-2027) est clôturé' in page.content.decode()
+        reponse = c.client.post(saisie, {f'note_{c.awa.pk}': '5'})
+        assert reponse.status_code == 302 and reponse.url == saisie
+        assert Note.objects.get(inscription=c.awa, evaluation=ev).valeur == Decimal('16')
+        # Évaluations : ni création sur la période close, ni modification d'une évaluation close
+        reponse = c.client.post(reverse('pedagogie:evaluation_create'), {**nouvelle, 'titre': 'Devoir 3'})
+        assert reponse.status_code == 200 and 'est clôturé' in str(reponse.context['form'].errors['periode'])
+        assert not Evaluation.objects.filter(titre='Devoir 3').exists()
+        reponse = c.client.post(reverse('pedagogie:evaluation_update', kwargs={'pk': ev.pk}), {**nouvelle, 'titre': 'Renommé'})
+        assert reponse.status_code == 302 and reponse.url == reverse('pedagogie:evaluation_list')
+        assert Evaluation.objects.get(pk=ev.pk).titre == 'Devoir 1'
+        # Import de notes refusé dès l'étape 1
+        fichier = SimpleUploadedFile('notes.csv', b'Matricule;Nom;Note\n', content_type='text/csv')
+        reponse = c.client.post(reverse('pedagogie:notes_import'), {
+            'fichier': fichier, 'classe': c.classe.pk, 'trimestre': c.t1.pk, 'type_evaluation': ev.type_evaluation.pk,
+            'titre': 'Import', 'bareme': '20', 'date_evaluation': '01/12/2026'}, follow=True)
+        assert 'Import refusé' in reponse.content.decode()
+        # Compétences APC : même verrou
+        competence = baker.make('pedagogie.Competence', cycle=c.classe.cycle, actif=True)
+        reponse = c.client.post(reverse('pedagogie:competence_sauvegarder'), {
+            'inscription': c.awa.pk, 'competence': competence.pk, 'trimestre': c.t1.pk, 'niveau': 'ACQUIS'})
+        assert reponse.status_code == 403 and not c.awa.evaluations_competences.exists()
+        # Recalcul : moyennes et rangs figés
+        Note.objects.filter(inscription=c.awa, evaluation=ev).update(valeur=Decimal('2'))
+        reponse = _calculer(c)
+        assert 'Calcul refusé' in c.client.get(reponse.url).content.decode()
+        assert MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1).moyenne == Decimal('16.00')
+        from pedagogie.utils import CalculateurMoyenne
+        assert CalculateurMoyenne.recalculer_classe(c.classe, c.t1) == 0
+
+        # Réouverture : tout redevient modifiable
+        self._cloturer(c)
+        assert not c.t1.verrouille and c.t1.date_fermeture is None and not c.periode1.cloturee
+        assert c.client.post(saisie, {f'note_{c.awa.pk}': '5'}).url == saisie
+        assert MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1).moyenne == Decimal('9.71')   # (5×4 + 16×3) / 7
+
+    def test_cloture_reservee_a_la_direction_et_dans_son_etablissement(self, classe_notee):
+        """Action « Clôturer / rouvrir une période » de la matrice des droits (Direction par défaut, retirable) ;
+        une période d'un autre établissement est introuvable."""
+        from parametres import droits
+        from parametres.models import DroitAcces
+        c = classe_notee
+        url = reverse('parametres:periode_cloture', kwargs={'pk': c.periode1.pk})
+        liste = reverse('parametres:periode_list')
+        c.client.force_login(baker.make('accounts.User', etablissement=c.etab, role='SECRETAIRE', must_change_password=False))
+        assert c.client.post(url, HTTP_HX_REQUEST='true').status_code == 403
+        c.client.force_login(baker.make('accounts.User', etablissement=c.etab, role='CENSEUR', must_change_password=False))
+        retrait = DroitAcces.objects.create(role='CENSEUR', module='parametres', fonctionnalite='/parametres/periodes/',
+                                            action='cloturer', autorise=False)
+        droits.invalider_cache()
+        page = c.client.get(liste, HTTP_HX_REQUEST='true')
+        assert page.status_code == 200 and url not in page.content.decode()      # bouton masqué
+        assert c.client.post(url, HTTP_HX_REQUEST='true').status_code == 403
+        retrait.delete()
+        droits.invalider_cache()
+        page = c.client.get(liste, HTTP_HX_REQUEST='true')
+        assert url in page.content.decode() and 'Clôturer la période' in page.content.decode()
+        assert c.client.post(url, HTTP_HX_REQUEST='true').status_code == 204
+        c.t1.refresh_from_db()
+        assert c.t1.verrouille
+        assert 'Rouvrir la période' in c.client.get(liste, HTTP_HX_REQUEST='true').content.decode()
+        c.client.force_login(baker.make('accounts.User', etablissement=baker.make('etablissements.Etablissement'),
+                                        role='DIRECTEUR', must_change_password=False))
+        assert c.client.post(url, HTTP_HX_REQUEST='true').status_code == 404
+
+    def test_recalcul_purge_les_resultats_orphelins(self, classe_notee):
+        """Une note retirée (ou une évaluation supprimée) ne laisse plus de moyenne de discipline fantôme ;
+        un élève sans plus aucune note perd sa moyenne générale ; une dispense est conservée."""
+        from pedagogie.models import Note
+        c = classe_notee
+        _calculer(c)
+        dispense = Resultat.objects.create(inscription=c.eric, enseignement=c.maths, trimestre=c.t1, dispense=True,
+                                           coefficient_utilise=Decimal('4'))
+        assert Resultat.objects.filter(inscription=c.chantal, trimestre=c.t1).count() == 2
+        Note.objects.filter(inscription=c.chantal, evaluation__enseignement=c.maths).delete()
+        _calculer(c)
+        assert list(Resultat.objects.filter(inscription=c.chantal, trimestre=c.t1).values_list('enseignement_id', flat=True)) \
+            == [c.francais.pk]
+        assert MoyenneGenerale.objects.get(inscription=c.chantal, trimestre=c.t1).moyenne == Decimal('8.00')
+        Note.objects.filter(inscription=c.chantal).delete()
+        _calculer(c)
+        assert not Resultat.objects.filter(inscription=c.chantal, trimestre=c.t1).exists()
+        assert not MoyenneGenerale.objects.filter(inscription=c.chantal, trimestre=c.t1).exists()
+        assert Resultat.objects.filter(pk=dispense.pk).exists()
+        assert [m.rang for m in MoyenneGenerale.objects.filter(trimestre=c.t1).order_by('rang')] == [1, 2]

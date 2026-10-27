@@ -3,6 +3,19 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.6.0 — 2026-10-27
+
+### Nouveau (audit — Lot B : intégrité des résultats)
+- Clôture de période : `Paramètres → Périodes` propose « Clôturer » (cadenas) sur chaque période. Une période clôturée verrouille son trimestre : saisie des notes (formulaire désactivé), création et modification d'évaluations, import Excel de notes, saisie des compétences APC et calcul des moyennes sont refusés avec un message explicite ; moyennes, rangs et bulletins restent figés (une sanction prononcée après coup ne les modifie plus). « Rouvrir » lève le verrou ; chaque bascule est journalisée dans l'audit. Action « Clôturer / rouvrir une période » de la matrice des droits (Direction par défaut).
+- Bulletins : absences justifiées (heures), non justifiées (heures) et retards sont relevés automatiquement dans **Présences** sur les dates du trimestre (absence excusée → justifiée ; séance sans horaire = 1 h). La fiche du conseil de classe s'ouvre pré-remplie et reste corrigeable ; sans fiche, liste, aperçu et PDF (unitaire et lot) impriment le relevé.
+
+### Corrigé
+- Calcul des moyennes : une note retirée ou une évaluation supprimée laissait une moyenne de discipline fantôme sur le bulletin ; ces résultats orphelins sont purgés au recalcul (les dispenses sont conservées) et un élève sans plus aucune note perd sa moyenne générale.
+- Bulletins → « Publier tous » renvoyait une erreur 500 (variable `messages` masquée par un import local) : la publication en masse fonctionne de nouveau.
+
+### Technique
+- Bulletin annuel : un seul gabarit (`pedagogie/pdf/bulletin_annuel.html`) pour l'individuel et les lots de classe (`bulletin_annuel_batch.html` supprimé) ; `Trimestre.objects.pour_periode(periode)`, `Trimestre.verrouille`, `Bulletin.objects.obtenir(...)`, `bulletins.services.assiduite_depuis_presences(...)`.
+
 ## 5.5.22 — 2026-10-27
 
 ### Sécurité (audit — Lot A)

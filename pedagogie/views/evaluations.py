@@ -165,25 +165,8 @@ def evaluation_list(request):
 
 
 def _resolve_trimestre(periode):
-    """
-    À partir d'une PeriodeEvaluation, trouve ou crée le pedagogie.Trimestre
-    correspondant (même annee_scolaire + même numero).
-    """
-    trimestre, _ = Trimestre.objects.get_or_create(
-        annee_scolaire=periode.annee_scolaire,
-        numero=periode.numero,
-        defaults={
-            'nom': periode.nom,
-            'type_periode': 'TRIMESTRE' if periode.type_periode == 'TRIMESTRE' else 'SEMESTRE',
-            'date_debut': periode.date_debut,
-            'date_fin': periode.date_fin,
-        },
-    )
-    # Mettre à jour le nom si la PeriodeEvaluation a changé
-    if trimestre.nom != periode.nom:
-        trimestre.nom = periode.nom
-        trimestre.save(update_fields=['nom'])
-    return trimestre
+    """Trimestre correspondant à une PeriodeEvaluation (créé au besoin)."""
+    return Trimestre.objects.pour_periode(periode)
 
 
 def _refus_enseignant(request, enseignement):
@@ -215,11 +198,15 @@ def evaluation_create(request):
     if request.method == 'POST':
         form = _formulaire_evaluation(request, request.POST)
         if form.is_valid():
-            evaluation = form.save(commit=False)
-            evaluation.trimestre = _resolve_trimestre(form.cleaned_data['periode'])
-            evaluation.save()
-            messages.success(request, f"Évaluation '{evaluation.titre}' planifiée.")
-            return redirect('pedagogie:evaluation_list')
+            trimestre = _resolve_trimestre(form.cleaned_data['periode'])
+            if trimestre.verrouille:
+                form.add_error('periode', trimestre.message_verrouillage)
+            else:
+                evaluation = form.save(commit=False)
+                evaluation.trimestre = trimestre
+                evaluation.save()
+                messages.success(request, f"Évaluation '{evaluation.titre}' planifiée.")
+                return redirect('pedagogie:evaluation_list')
     else:
         form = _formulaire_evaluation(request)
 
@@ -244,15 +231,22 @@ def evaluation_update(request, pk):
     if refus:
         messages.error(request, f"Modification refusée : {refus}")
         return redirect('pedagogie:evaluation_list')
+    if evaluation.trimestre.verrouille:
+        messages.error(request, f"Modification refusée : {evaluation.trimestre.message_verrouillage}")
+        return redirect('pedagogie:evaluation_list')
 
     if request.method == 'POST':
         form = _formulaire_evaluation(request, request.POST, instance=evaluation)
         if form.is_valid():
-            evaluation = form.save(commit=False)
-            evaluation.trimestre = _resolve_trimestre(form.cleaned_data['periode'])
-            evaluation.save()
-            messages.success(request, "Évaluation mise à jour.")
-            return redirect('pedagogie:evaluation_list')
+            trimestre = _resolve_trimestre(form.cleaned_data['periode'])
+            if trimestre.verrouille:
+                form.add_error('periode', trimestre.message_verrouillage)
+            else:
+                evaluation = form.save(commit=False)
+                evaluation.trimestre = trimestre
+                evaluation.save()
+                messages.success(request, "Évaluation mise à jour.")
+                return redirect('pedagogie:evaluation_list')
     else:
         form = _formulaire_evaluation(request, instance=evaluation)
 
@@ -287,6 +281,9 @@ def evaluation_saisie(request, pk):
     if refus:
         messages.error(request, f"Saisie des notes refusée : {refus}")
         return redirect('pedagogie:evaluation_list')
+    if trimestre.verrouille and request.method == 'POST':
+        messages.error(request, f"Saisie des notes refusée : {trimestre.message_verrouillage}")
+        return redirect('pedagogie:evaluation_saisie', pk=pk)
 
     inscriptions = Inscription.objects.filter(
         classe=classe,
@@ -400,6 +397,7 @@ def evaluation_saisie(request, pk):
     nb_saisies = sum(1 for d in eleves_data if d['note'] is not None and not d['est_dispense'])
 
     return render(request, 'pedagogie/note_saisie.html', {
+        'verrouille': trimestre.verrouille,
         'evaluation': evaluation,
         'eleves_data': eleves_data,
         'nb_total': nb_total,

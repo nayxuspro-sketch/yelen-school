@@ -252,6 +252,24 @@ class TypeEvaluation(BaseModel):
 # 4. TRIMESTRE / PÉRIODE
 # ═══════════════════════════════════════════════════════════════════
 
+class TrimestreManager(models.Manager):
+    def pour_periode(self, periode):
+        """Trimestre correspondant à une ``parametres.PeriodeEvaluation`` (même année, même numéro), créé au
+        besoin ; son nom suit celui de la période."""
+        trimestre, _ = self.get_or_create(
+            annee_scolaire=periode.annee_scolaire, numero=periode.numero,
+            defaults={
+                'nom': periode.nom,
+                'type_periode': 'TRIMESTRE' if periode.type_periode == 'TRIMESTRE' else 'SEMESTRE',
+                'date_debut': periode.date_debut, 'date_fin': periode.date_fin,
+            },
+        )
+        if trimestre.nom != periode.nom:
+            trimestre.nom = periode.nom
+            trimestre.save(update_fields=['nom'])
+        return trimestre
+
+
 class Trimestre(BaseModel):
     """Périodes de l'année scolaire."""
     
@@ -267,6 +285,8 @@ class Trimestre(BaseModel):
     date_fin = models.DateField(verbose_name=_("Date de fin"))
     notes_saisies = models.BooleanField(default=False, verbose_name=_("Saisie des notes terminée"))
     date_fermeture = models.DateField(blank=True, null=True, verbose_name=_("Date de fermeture"))
+
+    objects = TrimestreManager()
     
     class Meta:
         verbose_name = _("Trimestre")
@@ -276,6 +296,23 @@ class Trimestre(BaseModel):
     
     def __str__(self):
         return f"{self.nom} - {self.annee_scolaire.libelle}"
+
+    @property
+    def verrouille(self):
+        """Période clôturée : notes, évaluations, moyennes et rangs ne sont plus modifiables."""
+        return self.notes_saisies
+
+    @property
+    def message_verrouillage(self):
+        return (f"{self.nom} ({self.annee_scolaire.libelle}) est clôturé : les notes, les évaluations et les moyennes "
+                "ne peuvent plus être modifiées. Un responsable peut le rouvrir dans Paramètres → Périodes.")
+
+    def cloturer(self, ouvert):
+        """Clôture (``ouvert=False``) ou rouvre (``ouvert=True``) la période ; l'audit journalise le changement."""
+        from django.utils import timezone
+        self.notes_saisies = not ouvert
+        self.date_fermeture = None if ouvert else timezone.localdate()
+        self.save(update_fields=['notes_saisies', 'date_fermeture', 'updated_at'])
 
 
 # ═══════════════════════════════════════════════════════════════════

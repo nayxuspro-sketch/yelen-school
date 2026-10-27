@@ -23,6 +23,9 @@
   </div>
 </div>
 
+{% if trimestre.verrouille %}
+<div class="alert alert-warning" role="status">{{ trimestre.message_verrouillage }}</div>
+{% endif %}
 <!-- Sélecteur de trimestre -->
 {% if trimestres %}
 <div class="card animate-fade-up delay-1">

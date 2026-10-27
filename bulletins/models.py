@@ -18,6 +18,18 @@ from django.utils.translation import gettext_lazy as _
 from core.models import BaseModel
 
 
+class BulletinManager(models.Manager):
+    def obtenir(self, inscription, trimestre, releve=None):
+        """Fiche de l'élève pour le trimestre, créée au besoin : absences et retards sont alors pré-remplis depuis
+        Présences (``releve`` : relevé déjà calculé pour la classe par ``services.assiduite_depuis_presences``)."""
+        from .services import assiduite_bulletin
+        fiche = self.filter(inscription=inscription, trimestre=trimestre).first()
+        if fiche is None:
+            fiche = self.create(inscription=inscription, trimestre=trimestre,
+                                **assiduite_bulletin(None, trimestre, inscription, releve))
+        return fiche
+
+
 class Bulletin(BaseModel):
     """
     Fiche de publication d'un bulletin trimestriel.
@@ -107,6 +119,8 @@ class Bulletin(BaseModel):
         max_length=100, blank=True,
         verbose_name=_("Signé par"),
     )
+
+    objects = BulletinManager()
 
     class Meta:
         verbose_name = _("Bulletin")

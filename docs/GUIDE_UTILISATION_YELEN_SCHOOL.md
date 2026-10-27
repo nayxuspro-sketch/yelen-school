@@ -468,6 +468,22 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 ---
 
+### 2.4 Périodes d'évaluation et clôture de trimestre
+
+**À quoi ça sert :** `Paramètres → Périodes` définit les trimestres (ou semestres) de l'année : nom, numéro, dates. C'est aussi là que la direction **clôture** une période une fois les bulletins édités, pour que plus rien ne bouge.
+
+**Clôturer une période (bouton cadenas « Clôturer ») :**
+- la saisie des notes de ses évaluations est verrouillée (formulaire grisé, bandeau « … est clôturé ») ;
+- la création et la modification d'évaluations sur cette période, l'import Excel de notes, la saisie des compétences APC et le bouton **Calculer les moyennes** sont refusés avec le même message ;
+- moyennes par discipline, moyennes générales, rangs et bulletins restent exactement ceux imprimés — une sanction prononcée après la clôture ne modifie plus la moyenne du trimestre ;
+- la fiche du conseil de classe (absences, mentions, appréciation) et la publication des bulletins restent possibles : le conseil se tient après le gel des notes.
+
+**Rouvrir :** le même bouton (cadenas ouvert « Rouvrir ») lève le verrou ; chaque clôture / réouverture est journalisée dans `Système → Journal d'audit` (qui, quand).
+
+> Action « Clôturer / rouvrir une période (verrouillage des notes) » de la matrice des droits (§ 2.19) : Directeur et Censeur par défaut, Super Admin toujours. Une période clôturée porte le badge **Clôturée** dans la liste.
+
+---
+
 ### 2.17 Configuration SMS
 
 > **Accès :** `Menu principal → Core → Configuration SMS`
@@ -829,7 +845,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 | **En-tête** | Dégradé vert subtil, nom de l'élève et trimestre en sous-titre |
 | **Bouton ×** | Ferme la modale, rouge au survol |
 | **Carte Moyenne** | Affiche la moyenne calculée (verte ≥10 / rouge <10) et le rang |
-| **Grille absences** | 3 champs numériques centrés (Justifiées · Non justifiées · Retards) |
+| **Grille absences** | 3 champs numériques centrés (Justifiées · Non justifiées · Retards), **pré-remplis depuis Présences** à la première ouverture : heures d'absence relevées aux appels entre les dates du trimestre (absence excusée → justifiée, absence simple → non justifiée, séance sans horaire = 1 h, arrondi à l'heure) et nombre de retards. Les valeurs restent corrigeables ; une fois la fiche enregistrée, ce sont elles qui font foi. Sans fiche, la liste de la classe, l'aperçu et le PDF impriment directement le relevé. |
 | **Mentions / distinctions** | Cases à cocher (plusieurs possibles) alimentées par `Paramètres → Mentions / distinctions` : seules les mentions **actives** sont proposées (une mention désactivée reste proposée tant qu'elle est attribuée à l'élève). Cinq mentions usuelles sont fournies : Félicitations, Tableau d'honneur, Encouragements, Avertissement, Blâme — modifiables, supprimables, complétables (code, libellé, description, ordre d'affichage, active). Les mentions cochées apparaissent en badges dans le tableau de classe et sont imprimées sur le bulletin trimestriel (carte « Appréciation du conseil de classe »). |
 | **Textarea** | Appréciation du conseil, resize vertical autorisé |
 | **Footer** | Bouton Annuler (premium ghost avec icône ×, devient rouge au survol) + Enregistrer (vert primaire avec icône ✓) |
@@ -4242,7 +4258,7 @@ Cela signifie que l'élève n'a pas encore été **enregistré** dans le systèm
 
 ### Q4. J'ai saisi une note incorrecte. Puis-je la modifier ?
 
-Oui. Va dans **Pédagogie → Saisie des notes**, retrouve la classe et l'évaluation concernées, puis modifie la note. Seul l'enseignant concerné, le Directeur ou le Proviseur peuvent modifier une note.
+Oui. Va dans **Pédagogie → Saisie des notes**, retrouve la classe et l'évaluation concernées, puis modifie la note. Seul l'enseignant concerné, le Directeur ou le Proviseur peuvent modifier une note — tant que la période n'est pas **clôturée** (§ 2.4) ; après clôture, un responsable doit d'abord la rouvrir dans `Paramètres → Périodes`.
 
 ---
 
@@ -6706,7 +6722,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.22 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.6.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

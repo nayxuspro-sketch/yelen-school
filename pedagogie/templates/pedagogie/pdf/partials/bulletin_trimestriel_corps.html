@@ -3,7 +3,7 @@ Corps du bulletin trimestriel (modèle de référence) : en-tête établissement
 notes, compétences, conduite, statistiques, appréciation du conseil, code QR (matricule, classe, moyenne), signatures.
 Une page par élève : au-delà de 12 matières le tableau passe en variante dense (.bul-dense).
 Contexte : inscription, trimestre, mg, resultats_annotes, nb_eleves, moy_max/min/avg_classe, appreciation_generale,
-sanctions_conduite, fiche_bulletin (absences, retards, appréciation du conseil), distinctions (mentions cochées),
+sanctions_conduite, fiche_bulletin (appréciation du conseil), assiduite (absences, retards), distinctions (mentions cochées),
 commentaire_eleve, competences_data,
 identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
 {% endcomment %}<!-- ══ EN-TÊTE ÉTABLISSEMENT ══ -->
@@ -213,15 +213,15 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
         <div class="bul-stats" style="margin-bottom:0;">
             <div class="bul-stat-box">
                 <div class="bul-stat-label">Absences justifiées</div>
-                <div class="bul-stat-value">{{ fiche_bulletin.absences_justifiees|default:0 }} h</div>
+                <div class="bul-stat-value">{{ assiduite.absences_justifiees }} h</div>
             </div>
             <div class="bul-stat-box">
                 <div class="bul-stat-label">Absences non justifiées</div>
-                <div class="bul-stat-value">{{ fiche_bulletin.absences_non_justifiees|default:0 }} h</div>
+                <div class="bul-stat-value">{{ assiduite.absences_non_justifiees }} h</div>
             </div>
             <div class="bul-stat-box">
                 <div class="bul-stat-label">Retards</div>
-                <div class="bul-stat-value">{{ fiche_bulletin.retards|default:0 }}</div>
+                <div class="bul-stat-value">{{ assiduite.retards }}</div>
             </div>
         </div>
     </div>

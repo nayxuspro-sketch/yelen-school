@@ -16,13 +16,13 @@
     {% if mg and mg.rang %}{{ mg.rang }}{% else %}—{% endif %}
   </td>
   <td style="text-align:center; font-size:0.85rem;">
-    {% if bulletin %}{{ bulletin.absences_justifiees }}{% else %}0{% endif %}
+    {{ assiduite.absences_justifiees }}
   </td>
   <td style="text-align:center; font-size:0.85rem;">
-    {% if bulletin %}{{ bulletin.absences_non_justifiees }}{% else %}0{% endif %}
+    {{ assiduite.absences_non_justifiees }}
   </td>
   <td style="text-align:center; font-size:0.85rem;">
-    {% if bulletin %}{{ bulletin.retards }}{% else %}0{% endif %}
+    {{ assiduite.retards }}
   </td>
   <td style="font-size:0.8rem; color:var(--color-text-secondary); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
     {% if bulletin and bulletin.distinctions.all %}<div style="white-space:normal; line-height:1.9;">{% for d in bulletin.distinctions.all %}<span class="badge" style="background:#00A86B20; color:#00A86B; margin-right:4px;">{{ d.libelle }}</span>{% endfor %}</div>{% endif %}

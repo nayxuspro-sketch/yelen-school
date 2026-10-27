@@ -1591,6 +1591,23 @@ def periode_delete(request, pk):
 
 @login_required
 @require_POST
+def periode_cloture(request, pk):
+    """Clôture ou rouvre une période : notes, évaluations, moyennes et rangs du trimestre correspondant deviennent
+    (ou redeviennent) modifiables. Le changement est journalisé par l'audit."""
+    from pedagogie.models import Trimestre
+    etab = _get_etab(request)
+    periode = get_object_or_404(PeriodeEvaluation, pk=pk, etablissement=etab)
+    ouvrir = periode.cloturee
+    Trimestre.objects.pour_periode(periode).cloturer(ouvert=ouvrir)
+    periode.cloturee = not ouvrir
+    periode.save(update_fields=['cloturee', 'updated_at'])
+    messages.success(request, f"{periode.nom} {'rouvert' if ouvrir else 'clôturé'} : les notes sont "
+                              f"{'de nouveau modifiables' if ouvrir else 'verrouillées'}.")
+    return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
+
+
+@login_required
+@require_POST
 def type_document_delete(request, pk):
     obj = get_object_or_404(TypeDocument, pk=pk)
     return _delete_view(request, obj)
