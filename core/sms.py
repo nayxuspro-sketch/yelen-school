@@ -67,6 +67,13 @@ def get_sms_val(key: str):
     return getattr(settings, key, SMS_DEFAULTS.get(key))
 
 
+def sms_actifs() -> bool:
+    """SMS_ENABLED interprété quelle que soit sa source (booléen des settings ou chaîne « True »/« False » du .env
+    et de la configuration runtime)."""
+    valeur = get_sms_val('SMS_ENABLED')
+    return valeur is True or str(valeur).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
 def set_sms_config_runtime(**kwargs):
     """Ecrit les valeurs runtime dans le cache (prise en compte immediate, sans redemarrage)."""
     runtime = cache.get(SMS_CACHE_KEY, {})
@@ -255,7 +262,7 @@ def envoyer_sms(numero: str, message: str, limite: int = 160) -> tuple:
         (True, '')           si succès
         (False, 'motif')     si échec
     """
-    if not get_sms_val('SMS_ENABLED'):
+    if not sms_actifs():
         return False, "SMS_ENABLED est désactivé dans la configuration."
 
     if not _numero_valide(numero):

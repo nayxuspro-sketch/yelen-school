@@ -54,6 +54,21 @@
 {% endif %}
 
 
+{% if alertes_exploitation %}
+<div class="alert alert-warning animate-fade-up mb-5" role="alert">
+  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="flex-shrink-0" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+  </svg>
+  <div>
+    <div class="fw-semibold mb-1">Exploitation : {{ alertes_exploitation|length }} alerte{{ alertes_exploitation|length|pluralize }}</div>
+    <div class="text-sm text-secondary">
+      {% for alerte in alertes_exploitation %}{{ alerte.titre }}{% if not forloop.last %} · {% endif %}{% endfor %}
+      — <a href="{% url 'core:exploitation' %}">voir le détail</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 {# Directeur / Censeur / Super Admin #}
 {% if role == 'DIRECTEUR' or role == 'CENSEUR' or role == 'SUPER_ADMIN' %}
 

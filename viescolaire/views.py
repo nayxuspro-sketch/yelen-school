@@ -30,6 +30,7 @@ from inscriptions.models import Inscription
 from core.utils import get_etablissement_context
 from parametres.droits import autorise_url
 from .forms import ConfigEDTForm
+from .edt_conflits import conflits_classe, conflits_seance
 from .models import (
     ConseilClasse, DecisionConseil, AppelDecision,
     SanctionDisciplinaire,
@@ -698,6 +699,7 @@ def emploi_du_temps(request, classe_id):
     enseignements_avec_couleur = [
         (ens, i % 8) for i, ens in enumerate(enseignements)
     ]
+    conflits = conflits_classe(classe, annee)
 
     return render(request, 'viescolaire/emploi_du_temps.html', {
         'classe': classe,
@@ -709,6 +711,7 @@ def emploi_du_temps(request, classe_id):
         'jours_labels': jours_labels,
         'jours_choices': config.jours_choices(),
         'config': config,
+        'conflits': conflits,
     })
 
 
@@ -748,6 +751,11 @@ def seance_create(request, classe_id):
         return redirect(f"{url}?annee={annee.pk}")
     if not config.couvre(heure_debut, heure_fin):
         messages.error(request, f"Horaire hors des heures de cours configurées ({config.plages_libelle()}).")
+        return redirect(f"{url}?annee={annee.pk}")
+
+    conflits = conflits_seance(enseignement, int(jour), heure_debut, heure_fin, salle)
+    if conflits:
+        messages.error(request, "Séance non ajoutée : " + " ; ".join(conflits) + ".")
         return redirect(f"{url}?annee={annee.pk}")
 
     try:
@@ -837,17 +845,26 @@ def edt_generer(request, classe_id):
                 enseignement__annee_scolaire=annee,
             ).delete()
 
+        ignorees = []
         for s in seances_data:
             try:
-                ens = Enseignement.objects.get(pk=s['enseignement_id'])
+                ens = Enseignement.objects.select_related('classe').get(pk=s['enseignement_id'], classe=classe)
+                hd, hf = parse_time(s['heure_debut']), parse_time(s['heure_fin'])
+                conflits = conflits_seance(ens, s['jour'], hd, hf)
+                if conflits:   # créneau pris entre-temps, ou mode « compléter » : on ne crée jamais un chevauchement
+                    ignorees.append(f"{ens.matiere.nom} ({conflits[0]})")
+                    continue
                 SeanceCours.objects.get_or_create(
                     enseignement=ens,
                     jour=s['jour'],
-                    heure_debut=s['heure_debut'],
-                    defaults={'heure_fin': s['heure_fin']},
+                    heure_debut=hd,
+                    defaults={'heure_fin': hf},
                 )
             except Exception:
                 logger.exception("Génération EDT : séance non créée (enseignement %s)", s.get('enseignement_id'))
+        if ignorees:
+            messages.error(request, f"{len(ignorees)} séance(s) non placée(s) pour éviter un conflit : "
+                                    + " ; ".join(ignorees[:5]) + ("…" if len(ignorees) > 5 else "") + ".")
 
         return HttpResponse('', headers={'HX-Refresh': 'true'})
 

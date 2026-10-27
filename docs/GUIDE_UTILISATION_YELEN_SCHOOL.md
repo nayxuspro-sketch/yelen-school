@@ -31,6 +31,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [2.2 Gestion des Années Scolaires](#22-gestion-des-années-scolaires)
   - [2.3 Création Manuelle d'une Année Scolaire (recommandé)](#23-création-manuelle-dune-année-scolaire-recommandé)
   - [2.17 Configuration SMS](#217-configuration-sms)
+  - [2.18 Exploitation (santé du serveur)](#218-exploitation-santé-du-serveur)
   - [2.7 Appréciations et Moyennes (Secondaire)](#27-appréciations-et-moyennes)
   - [2.10 Signataires des Documents PDF](#210-signataires-des-documents-pdf)
   - [2.11 Appréciations — Cycle Primaire](#211-appréciations-de-moyenne--cycle-primaire)
@@ -509,6 +510,25 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 **Prise en compte immédiate (sans redémarrage) :** Depuis la version avec cache runtime, les modifications de configuration SMS sont appliquées immédiatement après le clic sur "Enregistrer". Le système stocke les valeurs dans un cache mémoire (via `get_sms_val()` / `set_sms_config_runtime()`) et les persist dans le fichier `.env`. Aucun redémarrage du serveur ni du conteneur Docker n'est nécessaire.
 
 **Design :** Page modernisée avec cartes premium, icônes param-icon colorées par section, toggle-switch iOS-style, et classes CSS exclusives du design system (zéro style inline).
+
+**File d'envoi persistante :** chaque SMS (absence, relance, bulletin, convocation, réponse automatique…) est d'abord enregistré dans une file en base, puis envoyé immédiatement en arrière-plan. Un redémarrage du serveur ne perd donc aucun message. Un échec passager (passerelle injoignable, modem occupé) est retenté automatiquement après 2 min, 10 min, 30 min puis 2 h ; après 5 tentatives, ou immédiatement si le numéro est invalide, le SMS est **abandonné** et reste visible avec son motif dans `Administration → Exploitation` (carte *File SMS*, bouton **Réessayer maintenant**). La file est aussi reprise par la tâche quotidienne `sms_auto` et par la commande `manage.py sms_file`.
+
+---
+
+### 2.18 Exploitation (santé du serveur)
+
+> **Accès :** `Administration → Exploitation` — Super Admin et Directeur.
+
+La page rassemble ce que la direction doit savoir sur le serveur sans ouvrir une console, et le tableau de bord d'accueil affiche une bannière « Exploitation : n alerte(s) » dès qu'un point mérite attention (recalcul toutes les 5 minutes) :
+
+| Carte | Ce qui est mesuré | Alerte |
+|---|---|---|
+| **Sauvegarde** | fichier `yelen_school_*` le plus récent dans `BACKUP_DIR`, `backups\` (mode serveur : dossier du poste lu par le conteneur) ou `data\backups\` (mode autonome) | aucune sauvegarde visible, ou dernière sauvegarde de plus de 36 h |
+| **Espace disque** | espace libre du disque qui héberge l'application | moins de 5 Go ou moins de 10 % libres |
+| **Erreurs applicatives** | lignes `ERROR`/`CRITICAL` de `logs\django.log` sur 24 h, avec les 5 dernières | au moins une erreur |
+| **File SMS** | SMS en attente, en nouvelle tentative, abandonnés sur 7 jours, envoyés en 24 h | SMS en nouvelle tentative ou abandonnés |
+
+Cette page complète la surveillance Windows (`programmer-surveillance.bat`), qui redémarre l'application et alerte par SMS quand elle ne répond plus.
 
 ---
 
@@ -2239,6 +2259,8 @@ Ce champ est visible dans l'historique des versements de l'élève et sur le re�
 2. Clique sur **Ajouter** pour enregistrer
 
 > Si aucun enseignement n'est configuré pour la classe, le formulaire n'est pas affiché. Configurez d'abord les enseignements dans **Pédagogie**.
+
+**Conflits refusés :** une séance n'est jamais ajoutée si, au même moment, **la classe** a déjà cours, si **l'enseignant** est déjà en cours dans une autre classe, ou si **la salle** indiquée est déjà occupée (message « Séance non ajoutée : … »). Deux séances qui s'enchaînent (08:00–08:50 puis 08:50–09:40) ne sont pas en conflit. La génération automatique tient compte des cours que les professeurs donnent déjà dans les autres classes et, à l'application, écarte toute séance qui créerait un chevauchement (message « n séance(s) non placée(s) pour éviter un conflit »). Les chevauchements déjà présents dans une grille (saisis avant cette règle) sont listés en tête de page dans un encadré rouge « conflits d'emploi du temps » : retirez l'une des séances concernées.
 
 #### Imprimer l'Emploi du Temps en PDF (par Classe)
 
@@ -6724,7 +6746,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.7.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.8.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

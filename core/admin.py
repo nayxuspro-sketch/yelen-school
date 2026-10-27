@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AuditLog
+from .models import AuditLog, SmsSortant
 
 
 @admin.register(AuditLog)
@@ -21,3 +21,12 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(SmsSortant)
+class SmsSortantAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'numero', 'statut', 'tentatives', 'prochaine_tentative', 'date_envoi', 'derniere_erreur')
+    list_filter = ('statut',)
+    search_fields = ('numero', 'message', 'derniere_erreur')
+    readonly_fields = ('created_at', 'date_envoi')
+    ordering = ('-created_at',)

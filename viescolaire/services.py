@@ -121,7 +121,7 @@ class GenerateurEDT:
 
     def generer(self):
         from pedagogie.models import Enseignement
-        from .models import DisponibiliteEnseignant
+        from .models import DisponibiliteEnseignant, SeanceCours
 
         enseignements = list(
             Enseignement.objects
@@ -138,6 +138,14 @@ class GenerateurEDT:
             personnel__in=profs,
         ):
             indispo[d.personnel_id].add((d.jour, d.heure_debut))
+        # Un professeur déjà en cours dans une autre classe à ce moment-là n'est pas disponible.
+        deja_en_cours = SeanceCours.objects.filter(
+            enseignement__personnel__in=profs, enseignement__annee_scolaire=self.annee, enseignement__est_actif=True,
+        ).exclude(enseignement__classe=self.classe).values_list('enseignement__personnel_id', 'jour', 'heure_debut', 'heure_fin')
+        for personnel_id, jour, hd, hf in deja_en_cours:
+            for slot_jour, slot_hd, slot_hf in self.slots:
+                if slot_jour == jour and slot_hd < hf and slot_hf > hd:
+                    indispo[personnel_id].add((slot_jour, slot_hd))
 
         reqs = [(e, _nb_seances(e, self.duree)) for e in enseignements]
         nb_total = sum(n for _, n in reqs)

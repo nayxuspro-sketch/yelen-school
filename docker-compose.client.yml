@@ -53,6 +53,8 @@ services:
       - yelen_staticfiles:/app/staticfiles
       - yelen_logs:/app/logs
       - ./certs:/app/certs
+      # Sauvegardes du poste serveur (backup-windows.ps1) : lues par la page Exploitation, jamais modifiées.
+      - ./backups:/app/backups:ro
     depends_on:
       db:
         condition: service_healthy

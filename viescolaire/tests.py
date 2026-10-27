@@ -468,3 +468,97 @@ def test_enregistrement_sanction_avec_journal_audit():
         disable_audit()
     assert 'Avertissement' in str(sanction)
     assert AuditLog.objects.filter(model_name='sanctiondisciplinaire', object_id=str(sanction.pk)).exists()
+
+
+@pytest.mark.django_db
+class TestConflitsEDT:
+    """Une classe, un professeur ou une salle ne peuvent pas être occupés deux fois au même moment."""
+
+    @pytest.fixture
+    def ecole(self, client):
+        from datetime import time
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        cycle = baker.make('parametres.Cycle', etablissement=etab)
+        c6, c5 = (baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom=nom) for nom in ('6e A', '5e B'))
+        p, q = (baker.make('personnel.MembrePersonnel', etablissement=etab, nom=nom, prenom='Ali') for nom in ('KABORE', 'ZONGO'))
+        maths = baker.make('pedagogie.Enseignement', classe=c6, annee_scolaire=annee, personnel=p, est_actif=True,
+                           matiere=baker.make('pedagogie.Matiere', nom='Mathématiques'), heures_hebdomadaires=1)
+        physique = baker.make('pedagogie.Enseignement', classe=c6, annee_scolaire=annee, personnel=q, est_actif=True,
+                              matiere=baker.make('pedagogie.Matiere', nom='Physique'), heures_hebdomadaires=1)
+        francais = baker.make('pedagogie.Enseignement', classe=c5, annee_scolaire=annee, personnel=p, est_actif=True,
+                              matiere=baker.make('pedagogie.Matiere', nom='Français'), heures_hebdomadaires=1)
+        anglais = baker.make('pedagogie.Enseignement', classe=c5, annee_scolaire=annee, personnel=q, est_actif=True,
+                             matiere=baker.make('pedagogie.Matiere', nom='Anglais'), heures_hebdomadaires=1)
+        seance = baker.make('viescolaire.SeanceCours', enseignement=maths, jour=1, heure_debut=time(8, 0), heure_fin=time(8, 50), salle='S1')
+        return {'etab': etab, 'annee': annee, 'c6': c6, 'c5': c5, 'p': p, 'maths': maths, 'physique': physique,
+                'francais': francais, 'anglais': anglais, 'seance': seance}
+
+    def _ajouter(self, client, ecole, classe, enseignement, **donnees):
+        base = {'annee': ecole['annee'].pk, 'enseignement': enseignement.pk, 'jour': 1, 'heure_debut': '08:00', 'heure_fin': '08:50'}
+        return client.post(reverse('viescolaire:seance_create', args=[classe.pk]), {**base, **donnees}, follow=True)
+
+    def test_saisie_refusee_pour_la_classe_le_professeur_et_la_salle(self, client, ecole):
+        from viescolaire.models import SeanceCours
+        cas = [
+            (ecole['c6'], ecole['physique'], {'heure_debut': '08:30', 'heure_fin': '09:20'},
+             'la classe 6e A a déjà Mathématiques le lundi 08:00–08:50'),
+            (ecole['c5'], ecole['francais'], {},
+             'KABORE Ali enseigne déjà Mathématiques en 6e A le lundi 08:00–08:50'),
+            (ecole['c5'], ecole['anglais'], {'salle': 's1'},
+             'la salle s1 est déjà occupée par 6e A (Mathématiques) le lundi 08:00–08:50'),
+        ]
+        for classe, enseignement, donnees, motif in cas:
+            html = unescape(self._ajouter(client, ecole, classe, enseignement, **donnees).content.decode())
+            assert f'Séance non ajoutée : {motif}.' in html, motif
+        assert SeanceCours.objects.count() == 1
+
+        # Enchaînée (08:50) ou autre salle : acceptée
+        self._ajouter(client, ecole, ecole['c6'], ecole['physique'], heure_debut='08:50', heure_fin='09:40')
+        self._ajouter(client, ecole, ecole['c5'], ecole['anglais'], salle='S2')
+        assert SeanceCours.objects.count() == 3
+
+    def test_grille_signale_les_chevauchements_existants(self, client, ecole):
+        from datetime import time
+        from viescolaire.edt_conflits import conflits_classe
+        baker.make('viescolaire.SeanceCours', enseignement=ecole['physique'], jour=1, heure_debut=time(8, 30), heure_fin=time(9, 20))
+        baker.make('viescolaire.SeanceCours', enseignement=ecole['francais'], jour=1, heure_debut=time(8, 0), heure_fin=time(8, 50))
+        baker.make('viescolaire.SeanceCours', enseignement=ecole['anglais'], jour=2, heure_debut=time(8, 0), heure_fin=time(8, 50))
+        motifs = sorted(motif for _, motif in conflits_classe(ecole['c6'], ecole['annee']))
+        assert motifs == ['KABORE Ali enseigne déjà Français en 5e B le lundi 08:00–08:50',
+                          'la classe 6e A a déjà Physique le lundi 08:30–09:20']
+        html = unescape(client.get(reverse('viescolaire:emploi_du_temps', args=[ecole['c6'].pk]), {'annee': ecole['annee'].pk}).content.decode())
+        assert "2 conflits d'emploi du temps" in html and 'Lundi 08:00–08:50 · Mathématiques : la classe 6e A a déjà Physique' in html
+        html = unescape(client.get(reverse('viescolaire:emploi_du_temps', args=[ecole['c5'].pk]), {'annee': ecole['annee'].pk}).content.decode())
+        assert "1 conflit d'emploi du temps" in html
+
+    def test_generateur_evite_un_professeur_occupe_dans_une_autre_classe(self, ecole):
+        from datetime import time
+        from viescolaire.services import GenerateurEDT
+        config = baker.make('viescolaire.ConfigEDT', etablissement=ecole['etab'], jours_actifs=[1],
+                            heure_debut_matin=time(8, 0), heure_fin_matin=time(10, 0),
+                            heure_debut_aprem=time(14, 0), heure_fin_aprem=time(15, 0), duree_seance=60)
+        ecole['seance'].delete()
+        for hd, hf in ((time(8, 0), time(9, 0)), (time(9, 0), time(10, 0))):   # KABORE enseigne en 5e B toute la matinée
+            baker.make('viescolaire.SeanceCours', enseignement=ecole['francais'], jour=1, heure_debut=hd, heure_fin=hf)
+        ecole['physique'].delete()
+        for _ in range(5):
+            resultat = GenerateurEDT(ecole['c6'], ecole['annee'], config).generer()
+            assert [(s.jour, s.heure_debut) for s in resultat.seances] == [(1, '14:00')]
+
+    def test_application_de_la_generation_ignore_les_conflits(self, client, ecole):
+        import json
+        from viescolaire.models import SeanceCours
+        session = client.session
+        session[f"edt_preview_{ecole['c6'].pk}"] = json.dumps([
+            {'enseignement_id': str(ecole['physique'].pk), 'jour': 1, 'heure_debut': '08:00', 'heure_fin': '08:50'},
+            {'enseignement_id': str(ecole['physique'].pk), 'jour': 2, 'heure_debut': '08:00', 'heure_fin': '08:50'},
+        ])
+        session.save()
+        reponse = client.post(reverse('viescolaire:edt_generer', args=[ecole['c6'].pk]),
+                              {'annee': ecole['annee'].pk, 'action': 'appliquer', 'mode': 'completer'})
+        assert reponse.status_code == 200 and reponse.headers.get('HX-Refresh') == 'true'
+        assert sorted(SeanceCours.objects.filter(enseignement=ecole['physique']).values_list('jour', flat=True)) == [2]
+        html = unescape(client.get(reverse('viescolaire:emploi_du_temps', args=[ecole['c6'].pk]), {'annee': ecole['annee'].pk}).content.decode())
+        assert '1 séance(s) non placée(s) pour éviter un conflit : Physique (la classe 6e A a déjà Mathématiques le lundi 08:00–08:50).' in html

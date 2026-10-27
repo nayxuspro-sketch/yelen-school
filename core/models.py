@@ -296,3 +296,34 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.destinataire} — {self.titre}"
+
+
+class SmsSortant(models.Model):
+    """File persistante des SMS à envoyer : rien ne se perd si l'application redémarre pendant l'envoi, les échecs
+    passagers (passerelle injoignable, modem occupé) sont retentés, les échecs définitifs restent visibles."""
+
+    class Statut(models.TextChoices):
+        EN_ATTENTE = 'EN_ATTENTE', 'En attente'
+        ENVOYE = 'ENVOYE', 'Envoyé'
+        ECHEC = 'ECHEC', 'Échec'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Mis en file le')
+    numero = models.CharField(max_length=20, verbose_name='Destinataire')
+    message = models.TextField(verbose_name='Message')
+    statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.EN_ATTENTE)
+    tentatives = models.PositiveSmallIntegerField(default=0)
+    prochaine_tentative = models.DateTimeField(default=timezone.now)
+    derniere_erreur = models.CharField(max_length=255, blank=True, default='')
+    date_envoi = models.DateTimeField(null=True, blank=True)
+    notification = models.ForeignKey(Notification, on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='sms_sortants', help_text="Notification à marquer « SMS envoyé ».")
+
+    class Meta:
+        verbose_name = 'SMS sortant'
+        verbose_name_plural = 'SMS sortants'
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['statut', 'prochaine_tentative'], name='core_sms_statut_prochaine')]
+
+    def __str__(self):
+        return f"{self.numero} — {self.get_statut_display()}"

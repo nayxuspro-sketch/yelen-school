@@ -45,9 +45,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from core.sms import get_sms_val
-        sms_enabled = get_sms_val('SMS_ENABLED') is True or str(get_sms_val('SMS_ENABLED')).strip().lower() in {'1', 'true', 'yes', 'on'}
-        if not sms_enabled:
+        from core.sms import sms_actifs
+        if not sms_actifs():
             self.stdout.write(self.style.WARNING("SMS_ENABLED=False — aucun SMS envoyé."))
             return
 
@@ -72,6 +71,11 @@ class Command(BaseCommand):
                 )
 
         self.stdout.write(self.style.SUCCESS(f"Total : {total} SMS {'simulés' if dry_run else 'envoyés'}."))
+        if not dry_run:
+            from core.tasks import traiter_file_sms
+            bilan = traiter_file_sms()
+            self.stdout.write(f"File SMS : {bilan['envoyes']} envoyé(s), {bilan['echecs']} échec(s), "
+                              f"{bilan['en_attente']} en attente.")
 
     def _run_declencheur(self, declencheur, dry_run):
         # Une exécution planifiée ne doit pas renvoyer deux fois le même

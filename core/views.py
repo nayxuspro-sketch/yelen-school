@@ -251,6 +251,10 @@ def home(request):
             .order_by('-date_sanction')[:5]
         ) if annee_courante else []
 
+    if role in ('SUPER_ADMIN', 'DIRECTEUR') or request.user.is_superuser:
+        from core.exploitation import alertes_en_cache
+        context['alertes_exploitation'] = alertes_en_cache()
+
     return render(request, 'core/home.html', context)
 
 
@@ -886,6 +890,23 @@ def sms_configuration(request):
         'test_result': test_result,
         'webhook_url': webhook_url,
     })
+
+
+@login_required
+def exploitation(request):
+    """Santé d'exploitation (sauvegardes, disque, erreurs, file SMS) — SUPER_ADMIN / DIRECTEUR."""
+    from core.exploitation import CACHE_CLE, etat_exploitation
+    if request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR') and not request.user.is_superuser:
+        return HttpResponseForbidden("Accès réservé aux administrateurs.")
+    if request.method == 'POST' and 'reessayer_sms' in request.POST:
+        from django.core.cache import cache
+        from core.tasks import traiter_file_sms
+        bilan = traiter_file_sms(limite=20)
+        cache.delete(CACHE_CLE)
+        messages.success(request, f"File SMS traitée : {bilan['envoyes']} envoyé(s), {bilan['echecs']} échec(s), "
+                                  f"{bilan['en_attente']} encore en attente.")
+        return redirect('core:exploitation')
+    return render(request, 'core/exploitation.html', etat_exploitation())
 
 
 @login_required

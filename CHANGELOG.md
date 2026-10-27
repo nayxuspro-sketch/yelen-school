@@ -3,6 +3,16 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.8.0 — 2026-10-27
+
+### Nouveau (audit — Lot C : exploitation)
+- Emploi du temps : détection des conflits. Une séance est refusée si la classe a déjà cours, si l'enseignant est déjà en cours dans une autre classe ou si la salle est occupée au même moment (séances enchaînées autorisées) ; la génération automatique tient compte des cours des professeurs dans les autres classes et son application écarte les séances en conflit ; la grille d'une classe liste en tête les chevauchements déjà présents.
+- SMS : file d'envoi persistante (`SmsSortant`). Chaque SMS est enregistré puis envoyé en arrière-plan ; les échecs passagers sont retentés (2 min, 10 min, 30 min, 2 h, abandon après 5 tentatives, immédiat pour un numéro invalide) par les envois suivants, la commande `sms_file`, la fin de `sms_auto` et le bouton « Réessayer maintenant ». Plus aucun message perdu au redémarrage. Administration Django.
+- Exploitation : page `Administration → Exploitation` (Super Admin, Directeur) et bannière du tableau de bord : dernière sauvegarde (alerte au-delà de 36 h ou si aucune n'est visible), espace disque (alerte sous 5 Go ou 10 %), erreurs applicatives des dernières 24 h (journal `django.log`), état de la file SMS. Le dossier `backups\` du poste serveur est monté en lecture seule dans le conteneur (`docker-compose.client.yml`).
+
+### Corrigé
+- `SMS_ENABLED` enregistré à « False » depuis la page Configuration SMS était lu comme actif (chaîne non vide) : les envois étaient tentés puis échouaient. Lecture unifiée (`sms_actifs()`).
+
 ## 5.7.0 — 2026-10-27
 
 ### Nouveau (audit — Lot B, suite : créances individuelles)
