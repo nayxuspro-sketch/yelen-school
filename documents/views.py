@@ -727,13 +727,12 @@ def circulaire_form(request):
                 defaults={'libelle': 'Circulaire', 'categorie': 'ADMINISTRATIF', 'actif': True}
             )
             etab_ctx = get_etablissement_context(etab, request) if etab else {}
-            sig = None
-            if etab:
-                sig = (
-                    SignataireDocument.objects
-                    .filter(actif=True, type_document=type_doc).first()
-                    or SignataireDocument.objects.filter(actif=True).first()
-                )
+            cycles_dest = {c.cycle for c in classes_sel if c.cycle_id}
+            sig = SignataireDocument.objects.get_signataire(
+                cycle=cycles_dest.pop() if len(cycles_dest) == 1 else None,
+                type_document=type_doc,
+                annee_scolaire=annee_courante,
+            )
             sig_membre = sig.get_membre_personnel() if sig else None
 
             if format_out == 'pdf':

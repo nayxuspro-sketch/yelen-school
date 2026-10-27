@@ -864,6 +864,8 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 
 > **Tous les documents PDF portent le signataire configuré** (depuis la 5.5.14) : contrat de travail, bulletin de salaire et bulletin de vacation (catégorie Personnel), procès-verbal de conseil de classe et documents manuels scolaires (Pédagogie), dossier de transfert et liste des candidats (Scolarité), liste des boursiers (Finance) ont rejoint le catalogue. Un type jamais configuré reprend le signataire de sa **catégorie** ; la fenêtre « Configurer les Signataires » affecte d'ailleurs un membre à toute une catégorie. Seuls le journal d'audit, l'avis Mobile Money, les analyses indicatives (décrochage, prédictions) et le badge du personnel ne sont pas signés ; la fiche de discipline est signée par l'enseignant qui la certifie (sa propre signature scannée). Si un type a été désactivé, renommé ou supprimé dans `Paramètres → Types de documents`, le document correspondant reste signé par le signataire configuré pour son cycle ; recréez le type avec son code d'origine (ex. `LISTE_PERSONNEL`) pour le configurer nommément.
 
+**Vérifier ce que les documents impriment réellement** : `python manage.py verifier_signataires` (en production : `docker compose exec web python manage.py verifier_signataires`) liste, par cycle et type de document, le signataire retenu, le repli utilisé et les anomalies — aucun signataire actif, membre du personnel supprimé, fichier de signature scannée absent du disque. Un document dont le signataire pointe vers un membre supprimé se replie sur le signataire suivant du cycle. Les PDF archivés dans `Documents → Historique` restent tels qu'ils ont été générés : régénérez le document après toute modification des signataires.
+
 > **Configuration requise :** Créer au moins un signataire pour le type `BULLETIN` via `Paramètres → Signataires → Nouveau signataire`. Le formulaire de création est organisé en 3 sections à 2 colonnes : **Période & Périmètre** (année scolaire + cycle), **Type de document** (catégorie + fonction du signataire), **Signataire** (membre du personnel + titre honorifique). Si aucun signataire cycle-spécifique n'existe, le système utilise le signataire générique.
 
 ---
@@ -6702,7 +6704,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.16 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.5.17 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

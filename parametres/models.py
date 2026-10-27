@@ -1322,6 +1322,8 @@ class SignataireDocumentManager(models.Manager):
         3. Repli : même document, n'importe quel cycle/année → prend le plus récent
         4. Repli : même catégorie de document (même cycle, puis tout cycle) — un type ajouté au
            catalogue hérite du signataire de sa catégorie tant qu'il n'est pas configuré lui-même
+        5. Repli : même cycle, tout document ; 6. tout signataire actif.
+        À chaque étape, un signataire dont le membre du personnel a été supprimé est ignoré.
 
         Args:
             cycle: Instance de Cycle
@@ -1333,54 +1335,54 @@ class SignataireDocumentManager(models.Manager):
         """
         if type_document is not None:
             # 1. Correspondance exacte
-            sig = self.filter(
+            sig = self._premier_valide(self.filter(
                 cycle=cycle,
                 type_document=type_document,
                 annee_scolaire=annee_scolaire,
-                actif=True
-            ).first()
+            ))
             if sig:
                 return sig
 
             # 2. Même cycle + même document, toute année
             if cycle is not None:
-                sig = self.filter(
-                    cycle=cycle,
-                    type_document=type_document,
-                    actif=True
-                ).order_by('-updated_at').first()
+                sig = self._premier_valide(self.filter(cycle=cycle, type_document=type_document))
                 if sig:
                     return sig
 
             # 3. Même document, tout cycle
-            sig = self.filter(
-                type_document=type_document,
-                actif=True
-            ).order_by('-updated_at').first()
+            sig = self._premier_valide(self.filter(type_document=type_document))
             if sig:
                 return sig
 
             # 4. Même catégorie de document : même cycle d'abord, puis tout cycle
             for portee in ({'cycle': cycle}, {}) if cycle is not None else ({},):
-                sig = self.filter(
+                sig = self._premier_valide(self.filter(
                     type_document__categorie=type_document.categorie,
-                    actif=True,
                     **portee,
-                ).order_by('-updated_at').first()
+                ))
                 if sig:
                     return sig
 
         # 5. Même cycle, tout document
         if cycle is not None:
-            sig = self.filter(
-                cycle=cycle,
-                actif=True
-            ).order_by('-updated_at').first()
+            sig = self._premier_valide(self.filter(cycle=cycle))
             if sig:
                 return sig
 
         # 6. Tout signataire actif (dernier recours absolu)
-        return self.filter(actif=True).order_by('-updated_at').first()
+        return self._premier_valide(self.all())
+
+    @staticmethod
+    def _premier_valide(candidats):
+        """Signataire actif le plus récent de la file dont le membre du personnel existe encore.
+
+        Un signataire pointant vers un membre supprimé est ignoré : le document se replie sur le
+        candidat suivant au lieu de rester sans signature.
+        """
+        for sig in candidats.filter(actif=True).order_by('-updated_at'):
+            if sig.get_membre_personnel() is not None:
+                return sig
+        return None
 
 
 class SignataireDocument(BaseModel):

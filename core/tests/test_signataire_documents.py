@@ -81,11 +81,74 @@ def monde(settings, tmp_path):
     transfert = baker.make('inscriptions.TransfertEleve', inscription=insc, etablissement_destination='Lycée X',
                            date_demande=datetime.date(2026, 11, 2))
     session = baker.make('examens.SessionExamen', annee_scolaire=annee, type_examen='BEPC')
-    return dict(user=user, annee=annee, classe=classe, insc=insc, trim=trim, prof=prof, ens=ens, salaire=salaire,
-                vacation=vacation, conseil=conseil, transfert=transfert, session=session)
+    paiement = baker.make('finances.Paiement', inscription=insc, montant=Decimal('25000'), reference='R-1',
+                          observation='', mode_paiement='ESPECES', date_paiement=datetime.date(2026, 10, 5))
+    rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, nom='Scolarité', code='SCO', actif=True)
+    baker.make('parametres.TarifScolarite', etablissement=etab, classe=classe, statut_eleve=statut, rubrique=rubrique,
+               annee_scolaire=annee, montant=Decimal('150000'), actif=True)
+    conge = baker.make('personnel.CongePersonnel', personnel=prof, date_debut=datetime.date(2026, 11, 2),
+                       date_fin=datetime.date(2026, 11, 6))
+    baker.make('viescolaire.SeanceCours', enseignement=ens, jour=1, heure_debut=datetime.time(8, 0),
+               heure_fin=datetime.time(10, 0), salle='S1')
+    baker.make('pedagogie.MoyenneGenerale', inscription=insc, trimestre=trim, moyenne=Decimal('12.50'),
+               moyenne_sur_20=Decimal('12.50'), rang=1)
+    return dict(user=user, etab=etab, annee=annee, cycle=cycle, classe=classe, insc=insc, trim=trim, prof=prof, ens=ens,
+                salaire=salaire, vacation=vacation, conseil=conseil, transfert=transfert, session=session,
+                paiement=paiement, rubrique=rubrique, conge=conge)
 
 
+def _post_convocation(client, m):
+    return client.post(reverse('documents:convocation_form'), {
+        'classe': str(m['classe'].pk), 'inscriptions': [str(m['insc'].pk)], 'type_convocation': 'AUTRE',
+        'date_convocation': '2026-11-10', 'heure_convocation': '08:00', 'lieu': 'Bureau', 'objet': 'Entretien',
+        'corps': 'Merci de vous présenter.', 'format': 'pdf',
+    })
+
+
+def _post_circulaire(client, m):
+    return client.post(reverse('documents:circulaire_form'), {
+        'titre': 'Rentrée', 'objet': 'Organisation', 'corps': 'Texte.', 'date_circulaire': '2026-11-10',
+        'classes': [str(m['classe'].pk)], 'format': 'pdf',
+    })
+
+
+# Tous les documents PDF signés de l'application (les non signés sont listés dans test_pdf_base.SANS_SIGNATAIRE)
 DOCUMENTS = {
+    'certificat_scolarite': lambda m: reverse('documents:certificat_scolarite', args=[m['insc'].pk]) + '?format=pdf',
+    'attestation_non_redevabilite': lambda m: reverse('documents:attestation_non_redevabilite', args=[m['insc'].pk]) + '?format=pdf',
+    'convocation': _post_convocation,
+    'circulaire': _post_circulaire,
+    'liste_classe': lambda m: reverse('documents:liste_classe_pdf', args=[m['classe'].pk]) + '?format=pdf',
+    'liste_personnel_cycle': lambda m: reverse('documents:liste_personnel_pdf', args=[m['cycle'].pk]) + '?format=pdf',
+    'liste_personnel_module': lambda m: reverse('personnel:personnel_list_pdf'),
+    'carte_scolaire': lambda m: reverse('inscriptions:eleve_carte', args=[m['insc'].eleve_id]) + '?format=pdf',
+    'cartes_classe': lambda m: reverse('inscriptions:classe_cartes_pdf', args=[m['classe'].pk]),
+    'recu_paiement': lambda m: reverse('finances:recu_pdf', args=[m['paiement'].pk]),
+    'historique_versements': lambda m: reverse('finances:historique_pdf', args=[m['insc'].pk]),
+    'certificat_non_redevabilite': lambda m: reverse('finances:certificat_non_redevabilite', args=[m['insc'].pk]),
+    'relance_paiement': lambda m: (reverse('finances:relance_paiement_pdf')
+                                   + f"?annee={m['annee'].pk}&classe={m['classe'].pk}&rubrique={m['rubrique'].pk}"),
+    'liste_redevables': lambda m: reverse('finances:liste_redevables_pdf'),
+    'liste_exoneres': lambda m: reverse('finances:liste_exoneres_pdf'),
+    'bilan_encaissements': lambda m: reverse('finances:bilan_encaissements_pdf'),
+    'bulletin_trimestriel': lambda m: reverse('pedagogie:bulletin_pdf', args=[m['insc'].pk, m['trim'].pk]),
+    'bulletin_duplicata': lambda m: reverse('pedagogie:bulletin_duplicata_pdf', args=[m['insc'].pk, m['trim'].pk]),
+    'bulletins_classe_lot': lambda m: reverse('pedagogie:bulletin_classe_batch_pdf', args=[m['classe'].pk, m['trim'].pk]),
+    'bulletin_annuel': lambda m: reverse('pedagogie:bulletin_annuel_pdf', args=[m['insc'].pk]),
+    'bulletins_annuels_lot': lambda m: reverse('pedagogie:bulletin_annuel_classe_batch_pdf', args=[m['classe'].pk]),
+    'bulletin_annuel_module': lambda m: reverse('bulletins:bulletin_annuel_pdf', args=[m['insc'].pk, m['annee'].pk]),
+    'bulletins_annuels_module_lot': lambda m: reverse('bulletins:bulletin_annuel_batch_pdf', args=[m['classe'].pk, m['annee'].pk]),
+    'palmares_annuel': lambda m: reverse('pedagogie:palmares_annuel_pdf', args=[m['classe'].pk]),
+    'bilan_periodes': lambda m: reverse('pedagogie:bilan_pdf') + f"?annee={m['annee'].pk}&classe={m['classe'].pk}",
+    'releve_moyenne_classe': lambda m: (reverse('pedagogie:releve_moyenne_classe_pdf')
+                                        + f"?classe={m['classe'].pk}&trimestre={m['trim'].pk}"),
+    'moyennes_disciplines': lambda m: (reverse('pedagogie:moyennes_disciplines_pdf')
+                                       + f"?annee={m['annee'].pk}&trimestre={m['trim'].pk}&classe={m['classe'].pk}"),
+    'releve_notes': lambda m: (reverse('pedagogie:releve_notes_pdf')
+                               + f"?annee={m['annee'].pk}&classe={m['classe'].pk}&enseignement={m['ens'].pk}&periode={m['trim'].pk}"),
+    'emploi_du_temps_classe': lambda m: reverse('viescolaire:emploi_du_temps_pdf', args=[m['classe'].pk]),
+    'emploi_du_temps_prof': lambda m: reverse('viescolaire:emploi_du_temps_prof_pdf', args=[m['prof'].pk]),
+    'autorisation_conge': lambda m: reverse('personnel:conge_autorisation', args=[m['conge'].pk]),
     'contrat_travail': lambda m: reverse('personnel:contrat', args=[m['prof'].pk]) + '?format=pdf',
     'bulletin_salaire': lambda m: reverse('personnel:salaire_detail', args=[m['salaire'].pk]) + '?format=pdf',
     'bulletin_vacation': lambda m: reverse('vacations:bulletin_vacation_pdf', args=[m['vacation'].pk]),
@@ -114,17 +177,18 @@ def _rendre(client, monkeypatch, monde, url):
 
     monkeypatch.setattr(HTML, 'render', espion)
     client.force_login(monde['user'])
-    reponse = client.get(url)
+    reponse = url(client, monde) if callable(url) else client.get(url)
     assert reponse.status_code == 200 and reponse['Content-Type'] == 'application/pdf', url
     assert rendus, url
-    texte, images = _texte_et_images(rendus[0])
-    return texte, images
+    textes, images = zip(*(_texte_et_images(document) for document in rendus))
+    return ' '.join(textes), [classe for liste in images for classe in liste]
 
 
 @pytest.mark.parametrize('document', sorted(DOCUMENTS))
 def test_le_signataire_configure_est_imprime(client, monkeypatch, monde, document):
-    texte, images = _rendre(client, monkeypatch, monde, DOCUMENTS[document](monde))
-    assert 'Le Directeur' in texte and 'KABORE Issouf' in texte, document
+    source = DOCUMENTS[document]
+    texte, images = _rendre(client, monkeypatch, monde, source if source.__name__.startswith('_post') else source(monde))
+    assert 'KABORE ISSOUF' in texte.upper(), document  # certains gabarits capitalisent le nom (text-transform)
     assert 'msig-img' in images, document
 
 

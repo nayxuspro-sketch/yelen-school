@@ -60,3 +60,48 @@ def test_migration_0036_reprend_les_signataires_configures_par_categorie(context
     # Rejouable sans doublon
     import_module('parametres.migrations.0036_typedocument_documents_signes_2').ajouter_types(apps, None)
     assert SignataireDocument.objects.filter(type_document__code='CONTRAT_TRAVAIL').count() == 1
+
+
+def test_signataire_dont_le_membre_a_ete_supprime_est_ignore(contexte):
+    """Le signataire exact du document pointe vers un membre supprimé : le document ne reste pas muet, il se
+    replie sur le signataire suivant du cycle (ici celui de la même catégorie)."""
+    from personnel.models import MembrePersonnel
+    exact = _signataire(contexte, 'CERT_SCOL', 'TRAORE', 'La Directrice')
+    _signataire(contexte, 'CARTE_ID', 'KABORE', 'Le Directeur')
+    MembrePersonnel.objects.filter(pk=exact.membre_personnel_id).delete()
+
+    sig = SignataireDocument.objects.get_signataire(
+        cycle=contexte['cycle'], type_document=TypeDocument.objects.get(code='CERT_SCOL'),
+        annee_scolaire=contexte['annee'],
+    )
+    assert sig.get_membre_personnel().nom == 'KABORE'
+    assert SignataireDocument.objects.get_signataire(cycle=None, type_document=None, annee_scolaire=None) == sig
+
+
+def test_commande_verifier_signataires(contexte, settings, tmp_path):
+    """`manage.py verifier_signataires` : signataire réellement imprimé par type et cycle, replis et anomalies
+    (membre supprimé, fichier de signature absent)."""
+    import io
+    from django.core.files.base import ContentFile
+    from django.core.management import call_command
+    from personnel.models import MembrePersonnel
+    settings.MEDIA_ROOT = str(tmp_path)
+    sig = _signataire(contexte, 'LISTE_PERSONNEL', 'KABORE', 'Le Directeur')
+    membre = sig.get_membre_personnel()
+    membre.signature.save('kabore.png', ContentFile(b'\x89PNG\r\n\x1a\n'), save=True)
+    orphelin = _signataire(contexte, 'CARTE_ID', 'TRAORE', 'La Directrice')
+    MembrePersonnel.objects.filter(pk=orphelin.membre_personnel_id).delete()
+
+    sortie = io.StringIO()
+    call_command('verifier_signataires', stdout=sortie)
+    texte = sortie.getvalue()
+    assert 'Établissement : Ets Signataires — année courante : 2026-2027' in texte and 'Cycle Secondaire' in texte
+    assert 'LISTE_PERSONNEL        Le Directeur — KABORE Salimata · signature scannée : oui' in texte
+    assert 'CONTRAT_TRAVAIL        Le Directeur — KABORE Salimata · signature scannée : oui (repli : LISTE_PERSONNEL · Secondaire)' in texte
+    assert 'CARTE_ID · Secondaire pointe vers un membre du personnel supprimé' in texte
+    assert texte.rstrip().endswith('1 anomalie(s).')
+
+    (tmp_path / membre.signature.name).unlink()
+    sortie = io.StringIO()
+    call_command('verifier_signataires', stdout=sortie)
+    assert 'ANOMALIE : fichier de signature absent' in sortie.getvalue()
