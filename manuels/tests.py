@@ -29,7 +29,7 @@ def monde(client):
     inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee, statut='ACTIF')
     manuel = baker.make(ManuelScolaire, etablissement=etab, titre='Mathématiques 6e', prix_remplacement=Decimal('4500'))
     etranger = baker.make(ManuelScolaire, etablissement=autre, titre='Manuel d\'ailleurs')
-    return SimpleNamespace(client=client, etab=etab, annee=annee, classe=classe, inscription=inscription,
+    return SimpleNamespace(client=client, user=user, etab=etab, annee=annee, classe=classe, inscription=inscription,
                            manuel=manuel, etranger=etranger)
 
 
@@ -138,3 +138,69 @@ def test_pdf_inventaire_attributions_et_non_rendus(monde, mocker):
         html = weasy.call_args.kwargs['string']
         assert 'TRAORE' in html and exemplaire.code_exemplaire in html, nom_url
     assert monde.client.get(reverse('manuels:inventaire_classe_pdf', kwargs={'classe_pk': monde.etranger.pk})).status_code == 404
+
+
+def test_facturer_un_non_rendu_emet_une_creance_et_le_retour_l_annule(monde):
+    """« Facturer » n'enregistre plus un faux paiement : il émet une créance « Manuel non rendu » qui entre dans le
+    reste à payer de l'élève ; le retour tardif du manuel l'annule."""
+    from finances.models import Creance, Paiement
+    from finances.views.commun import _calcul_situation_financiere
+    c = monde.client
+    exemplaire = baker.make(ExemplaireManuel, manuel=monde.manuel, code_exemplaire='MAT-0007')
+    attribution = baker.make(AttributionManuel, exemplaire=exemplaire, inscription=monde.inscription,
+                             date_attribution=date(2026, 10, 5), date_retour=None)
+    facturer = reverse('manuels:facturer_non_rendu', kwargs={'pk': attribution.pk})
+
+    reponse = c.post(facturer, follow=True)
+    assert 'Créance de 4,500 FCFA émise' in reponse.content.decode()
+    attribution.refresh_from_db()
+    creance = Creance.objects.get(attribution_manuel=attribution)
+    assert attribution.facture_genere and attribution.creance == creance
+    assert (creance.origine, creance.montant, creance.rubrique.code, creance.rubrique.etablissement) == \
+        ('MANUEL', 4500, 'MNR', monde.etab)
+    assert creance.libelle == 'Manuel non rendu : Mathématiques 6e (MAT-0007)' and creance.emise_par == monde.user
+    assert not Paiement.objects.filter(inscription=monde.inscription).exists(), 'aucun faux paiement, aucun reçu'
+    assert _calcul_situation_financiere(monde.inscription)['reste_a_payer'] == 4500
+    assert c.post(facturer).status_code == 404, 'une seule créance par attribution'
+    assert 'Créance émise' in c.get(reverse('manuels:non_rendus')).content.decode()
+
+    reponse = c.post(reverse('manuels:attribution_retour', kwargs={'pk': attribution.pk}),
+                     {'date_retour': '2027-06-20', 'etat_retour': 'BON', 'observation': ''}, follow=True)
+    assert 'est annulée' in reponse.content.decode()
+    creance.refresh_from_db()
+    assert not creance.actif and creance.observation == 'Manuel rendu le 20/06/2027'
+    assert _calcul_situation_financiere(monde.inscription)['reste_a_payer'] == 0
+
+
+def test_migration_convertit_les_faux_paiements_en_creances(monde):
+    """Les « paiements » créés par l'ancien bouton Facturer deviennent des créances (annulées si le manuel a été
+    rendu depuis) ; le faux paiement et son reçu disparaissent."""
+    from django.apps import apps
+    from finances.models import Creance, Paiement
+    from parametres.models import RubriquePaiement
+    import importlib
+    migration = importlib.import_module('manuels.migrations.0002_creance')
+    rubrique = RubriquePaiement.objects.create(etablissement=monde.etab, code='MNR', nom='Manuel non rendu')
+    ex1, ex2 = (baker.make(ExemplaireManuel, manuel=monde.manuel, code_exemplaire=code) for code in ('MAT-0101', 'MAT-0102'))
+    perdu = baker.make(AttributionManuel, exemplaire=ex1, inscription=monde.inscription, date_attribution=date(2026, 10, 5),
+                       date_retour=None, facture_genere=True)
+    rendu = baker.make(AttributionManuel, exemplaire=ex2, inscription=monde.inscription, date_attribution=date(2026, 10, 5),
+                       date_retour=date(2027, 6, 18), facture_genere=True)
+    for attribution in (perdu, rendu):
+        Paiement.objects.create(inscription=monde.inscription, rubrique=rubrique, montant=Decimal('4500'),
+                                date_paiement=date(2027, 6, 10), mode_paiement='ESPECES',
+                                observation=f"Manuel non rendu : Mathématiques 6e ({attribution.exemplaire.code_exemplaire})")
+    vrai = Paiement.objects.create(inscription=monde.inscription, rubrique=rubrique, montant=Decimal('1000'),
+                                   date_paiement=date(2027, 6, 11), mode_paiement='ESPECES', observation='Acompte')
+
+    migration.convertir_faux_paiements(apps, None)
+
+    assert list(Paiement.objects.filter(inscription=monde.inscription)) == [vrai]
+    perdu.refresh_from_db()
+    rendu.refresh_from_db()
+    assert perdu.creance.actif and perdu.creance.montant == 4500 and perdu.creance.date_creance == date(2027, 6, 10)
+    assert perdu.creance.observation.startswith('Reprise du faux paiement REC-')
+    assert not rendu.creance.actif and rendu.creance.observation == 'Manuel rendu le 18/06/2027'
+    assert Creance.objects.count() == 2
+    migration.convertir_faux_paiements(apps, None)                      # rejouable sans doublon
+    assert Creance.objects.count() == 2

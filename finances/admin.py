@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Paiement, TypeBourse, BourseEleve, CategorieDepense, BudgetAnnuel, Depense
+from .models import Paiement, TypeBourse, BourseEleve, CategorieDepense, BudgetAnnuel, Depense, Creance
 
 
 @admin.register(TypeBourse)
@@ -44,3 +44,11 @@ class DepenseAdmin(admin.ModelAdmin):
     list_filter = ['statut', 'categorie__type_depense', 'mode_paiement', 'annee_scolaire']
     search_fields = ['libelle', 'numero_depense', 'beneficiaire', 'reference']
     readonly_fields = ['numero_depense', 'saisi_par', 'valide_par', 'date_validation']
+
+
+@admin.register(Creance)
+class CreanceAdmin(admin.ModelAdmin):
+    list_display = ['inscription', 'libelle', 'origine', 'montant', 'date_creance', 'rubrique', 'actif']
+    list_filter = ['origine', 'actif', 'rubrique']
+    search_fields = ['libelle', 'inscription__eleve__nom', 'inscription__eleve__prenom', 'inscription__eleve__matricule']
+    raw_id_fields = ['inscription', 'emise_par']

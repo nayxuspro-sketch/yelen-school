@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from core.utils import get_etablissement_context
-from finances.models import Paiement
+from finances.models import Creance, OrigineCreance
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, RubriquePaiement
 
@@ -326,7 +326,13 @@ def attribution_retour(request, pk):
         attribution.exemplaire.etat = etat_ret
         attribution.exemplaire.save()
         attribution.save()
-        messages.success(request, "Retour enregistré.")
+        creance = attribution.creance
+        if creance and creance.actif:   # manuel finalement rendu : la pénalité n'est plus due
+            creance.annuler(f"Manuel rendu le {date.fromisoformat(str(attribution.date_retour)):%d/%m/%Y}")
+            messages.success(request, f"Retour enregistré. La créance « manuel non rendu » de "
+                                      f"{creance.montant:,.0f} FCFA est annulée.")
+        else:
+            messages.success(request, "Retour enregistré.")
         return redirect('manuels:attributions_list')
 
     return render(request, 'manuels/attribution_retour.html', {
@@ -367,7 +373,7 @@ def non_rendus(request):
 @login_required
 @require_POST
 def facturer_non_rendu(request, pk):
-    """Génère un paiement dans finances pour le manuel non rendu et notifie les parents par SMS."""
+    """Émet une créance « manuel non rendu » (reste à payer de l'élève, relances) et notifie les parents."""
     etab = _etab(request)
     attribution = get_object_or_404(
         AttributionManuel, pk=pk,
@@ -383,19 +389,19 @@ def facturer_non_rendu(request, pk):
         messages.warning(request, "Prix de remplacement non défini pour ce manuel.")
         return redirect('manuels:non_rendus')
 
-    # Rubrique et paiement
+    # Rubrique d'encaissement et créance : le montant entre dans le reste à payer, rien n'est « payé »
     rubrique, _ = RubriquePaiement.objects.get_or_create(
         etablissement=etab,
         code='MNR',
         defaults={'nom': 'Manuel non rendu', 'obligatoire': False},
     )
-    Paiement.objects.create(
+    attribution.creance = Creance.objects.create(
         inscription=inscription,
         rubrique=rubrique,
+        origine=OrigineCreance.MANUEL,
+        libelle=f"Manuel non rendu : {manuel.titre} ({attribution.exemplaire.code_exemplaire})",
         montant=manuel.prix_remplacement,
-        date_paiement=date.today(),
-        mode_paiement='ESPECES',
-        observation=f"Manuel non rendu : {manuel.titre} ({attribution.exemplaire.code_exemplaire})",
+        emise_par=request.user,
     )
     attribution.facture_genere = True
     attribution.save()
@@ -405,8 +411,9 @@ def facturer_non_rendu(request, pk):
 
     messages.success(
         request,
-        f"Frais de {manuel.prix_remplacement:,.0f} FCFA facturés à "
-        f"{eleve.nom} {eleve.prenom}. Les parents ont été notifiés par SMS."
+        f"Créance de {manuel.prix_remplacement:,.0f} FCFA émise pour {eleve.nom} {eleve.prenom} : "
+        f"elle figure dans son reste à payer (Finances) et s'encaisse sur la rubrique « {rubrique.nom} ». "
+        f"Les parents ont été notifiés par SMS."
     )
     return redirect('manuels:non_rendus')
 
@@ -419,12 +426,12 @@ def _notifier_parents_manuel_non_rendu(eleve, manuel, etab):
     titre = f"Manuel non rendu — {manuel.titre}"
     message_inapp = (
         f"{eleve.nom} {eleve.prenom} n'a pas rendu le manuel « {manuel.titre} ». "
-        f"Des frais de {manuel.prix_remplacement:,.0f} FCFA ont été ajoutés à ses frais scolaires."
+        f"Des frais de {manuel.prix_remplacement:,.0f} FCFA ont été ajoutés à son reste à payer."
     )
     sms_texte = (
         f"[{etab.nom}] Manuel non rendu : {eleve.nom} {eleve.prenom} "
         f"doit restituer '{manuel.titre}'. "
-        f"Frais factures : {manuel.prix_remplacement:,.0f} FCFA."
+        f"Frais a regler : {manuel.prix_remplacement:,.0f} FCFA."
     )
 
     from core.sms import get_sms_val

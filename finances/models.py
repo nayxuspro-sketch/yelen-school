@@ -891,3 +891,46 @@ class AbonnementService(BaseModel):
         if not self.montant_total:
             self.calculer()
         super().save(*args, **kwargs)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# CRÉANCES INDIVIDUELLES (manuel non rendu, dégât matériel…)
+# ═══════════════════════════════════════════════════════════════════
+
+class OrigineCreance(models.TextChoices):
+    MANUEL = 'MANUEL', _('Manuel non rendu')
+    AUTRE = 'AUTRE', _('Autre')
+
+
+class Creance(BaseModel):
+    """Montant dû par un élève à titre individuel, hors tarifs de sa classe. Intégré à sa situation financière
+    comme une rubrique à payer : il compte dans le reste à payer et les relances, s'encaisse sur sa rubrique
+    (reçu ordinaire) et se solde par un paiement — jamais par un faux paiement."""
+    inscription = models.ForeignKey(Inscription, on_delete=models.CASCADE, related_name='creances')
+    rubrique = models.ForeignKey('parametres.RubriquePaiement', on_delete=models.PROTECT, related_name='creances',
+                                 verbose_name=_("Rubrique"))
+    origine = models.CharField(max_length=10, choices=OrigineCreance.choices, default=OrigineCreance.AUTRE,
+                               verbose_name=_("Origine"))
+    libelle = models.CharField(max_length=200, verbose_name=_("Libellé"))
+    montant = models.DecimalField(max_digits=12, decimal_places=0, verbose_name=_("Montant dû (FCFA)"))
+    date_creance = models.DateField(default=datetime.date.today, verbose_name=_("Date"))
+    emise_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                  related_name='creances_emises', verbose_name=_("Émise par"))
+    actif = models.BooleanField(default=True, verbose_name=_("Créance active"))
+    observation = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Observation"))
+
+    class Meta:
+        verbose_name = _("Créance")
+        verbose_name_plural = _("Créances")
+        ordering = ['-date_creance', '-created_at']
+        constraints = [models.CheckConstraint(condition=models.Q(montant__gt=0), name='creance_montant_positif')]
+
+    def __str__(self):
+        return f"{self.inscription.eleve} — {self.libelle} ({self.montant:,.0f} FCFA)"
+
+    def annuler(self, observation=''):
+        """Plus rien n'est dû ; la créance reste visible pour l'historique."""
+        self.actif = False
+        if observation:
+            self.observation = observation[:200]
+        self.save(update_fields=['actif', 'observation', 'updated_at'])

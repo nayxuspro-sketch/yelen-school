@@ -93,6 +93,7 @@ from .budget import (  # noqa: F401
     tableau_bord_budget,
     tableau_bord_budget_xlsx,
 )
+from .creances import creance_annuler  # noqa: F401
 from .services import (  # noqa: F401
     service_list,
     service_form,

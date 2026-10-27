@@ -19,6 +19,7 @@ urlpatterns = [
     path('bilan/encaissements/xlsx/', views.bilan_encaissements_xlsx, name='bilan_encaissements_xlsx'),
     path('situation/eleve/<uuid:inscription_id>/', views.situation_eleve, name='situation_eleve'),
     path('situation/eleve/<uuid:inscription_id>/historique/pdf/', views.historique_pdf, name='historique_pdf'),
+    path('situation/creances/<uuid:pk>/annuler/', views.creance_annuler, name='creance_annuler'),
     path('api/rubriques/<uuid:inscription_id>/', views.api_rubriques_inscription, name='api_rubriques'),
 
     # Relances de paiement

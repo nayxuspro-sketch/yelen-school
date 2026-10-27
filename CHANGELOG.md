@@ -3,6 +3,15 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.7.0 — 2026-10-27
+
+### Nouveau (audit — Lot B, suite : créances individuelles)
+- Finances : modèle **Créance** (dû individuel d'un élève, hors tarif et hors abonnement) compté dans le total dû au même titre qu'un service annexe : situation financière (carte *Créances individuelles*), reste à payer unitaire et en lot (redevables, relances, tableau de bord, certificats), formulaire de paiement (rubrique de la créance encaissable, plafond = tarif + services + créances de la rubrique). Action « Annuler une créance individuelle » (Direction) depuis la situation ; l'annulation ne touche pas aux versements encaissés. Administration Django.
+- Manuels : `Non rendus → Facturer` émet une créance « Manuel non rendu » (prix de remplacement, rubrique MNR) au lieu d'un faux paiement ; le `Retour` du manuel annule automatiquement la créance. Colonne « Créance émise », messages et SMS reformulés (« frais à régler »).
+
+### Corrigé
+- Le faux paiement « Manuel non rendu » gonflait le total payé et bloquait tout encaissement réel sur la rubrique (plafond atteint). Migration de données : chaque attribution déjà facturée reçoit sa créance (annulée si le manuel a été rendu depuis) et le faux paiement est supprimé avec son reçu.
+
 ## 5.6.0 — 2026-10-27
 
 ### Nouveau (audit — Lot B : intégrité des résultats)

@@ -15,7 +15,8 @@ except (ImportError, OSError) as exc:  # libpango/cairo absents
     logger.error("WeasyPrint indisponible, génération PDF désactivée : %s", exc)
     # Les vues PDF vérifient cette valeur avant de générer un document.
     WeasyHTML = None
-from ..abonnements import lignes_services, montants_par_rubrique, montants_services
+from ..abonnements import lignes_services, montants_services
+from ..creances import lignes_creances, montants_creances, montants_hors_tarifs_par_rubrique
 from ..models import Paiement, Remboursement, BourseEleve
 from parametres.models import TarifScolarite
 from parametres.droits import acces_autorise, peut_acceder
@@ -42,7 +43,7 @@ def _situations_financieres_en_lot(inscriptions):
     - total payé  = Σ paiements − Σ remboursements
     - total dû    = Σ tarifs actifs (niveau × statut_eleve × année), dédoublonnés
                     par rubrique (0 si pas de statut_eleve), + Σ services annexes
-                    souscrits, − Σ bourses actives
+                    souscrits, + Σ créances individuelles actives, − Σ bourses actives
     - reste       = max(total dû net − total payé, 0)
     Utilisée par les listes (redevables, PDF) sur des milliers d'inscriptions.
     """
@@ -66,6 +67,7 @@ def _situations_financieres_en_lot(inscriptions):
         .values('inscription_id').annotate(s=Sum('montant_accorde'))
     }
     services = montants_services(ids)
+    creances = montants_creances(ids)
 
     # Tarifs : une seule requête pour toutes les combinaisons (etab, niveau, année, statut)
     combos = {
@@ -91,7 +93,7 @@ def _situations_financieres_en_lot(inscriptions):
     result = {}
     for i in inscriptions:
         total_paye = verses.get(i.pk, Decimal('0')) - rembourses.get(i.pk, Decimal('0'))
-        total_du = services.get(i.pk, Decimal('0'))
+        total_du = services.get(i.pk, Decimal('0')) + creances.get(i.pk, Decimal('0'))
         if i.statut_eleve_id:
             combo = (i.classe.etablissement_id, i.classe.niveau, i.annee_scolaire_id, i.statut_eleve_id)
             total_du += sum(tarifs_par_combo.get(combo, {}).values(), Decimal('0'))
@@ -132,7 +134,8 @@ def _calcul_situation_financiere(inscription):
 
     - Total DÛ  : somme des tarifs actifs niveau × statut_eleve × annee,
                   dédoublonnés par rubrique (0 si statut_eleve non configuré),
-                  plus les services annexes souscrits (cantine, transport, internat).
+                  plus les services annexes souscrits (cantine, transport, internat)
+                  et les créances individuelles actives (manuel non rendu…).
                   Les bourses/aides actives sont déduites du total dû.
     - Total payé: somme de tous les paiements enregistrés pour l'inscription.
     - Reste     : Total DÛ net – Total payé (jamais négatif pour le reste affiché).
@@ -172,7 +175,7 @@ def _calcul_situation_financiere(inscription):
             seen.add(t.rubrique_id)
             frais_details.append(t)
             total_du += t.montant
-    for ligne in lignes_services(inscription):
+    for ligne in lignes_services(inscription) + lignes_creances(inscription):
         frais_details.append(ligne)
         total_du += ligne.montant
 
@@ -199,6 +202,7 @@ def _calcul_situation_financiere(inscription):
 def _payment_overage_errors(inscription, lignes):
     """Recalcule les plafonds sous verrou logique de l'inscription."""
     etablissement = inscription.classe.etablissement
+    hors_tarifs = montants_hors_tarifs_par_rubrique(inscription)   # services annexes + créances, par rubrique
     errors = []
     seen = set()
     for rubrique, montant, _echeance in lignes:
@@ -223,7 +227,9 @@ def _payment_overage_errors(inscription, lignes):
         if inscription.statut_eleve_id:
             tarif_qs = tarif_qs.filter(statut_eleve=inscription.statut_eleve)
         tarif = tarif_qs.first()
-        plafond = Decimal(str(tarif.montant)) if tarif else montants_par_rubrique(inscription).get(rubrique.pk)
+        plafond = None
+        if tarif or rubrique.pk in hors_tarifs:
+            plafond = (Decimal(str(tarif.montant)) if tarif else Decimal('0')) + hors_tarifs.get(rubrique.pk, Decimal('0'))
         if plafond is not None:
             reste = plafond - deja_verse
             if montant > reste:

@@ -187,6 +187,8 @@ MODULES = (
                roles=_FINANCE_APPROBATION),
             _a('echeanciers', 'Créer / modifier / supprimer un échéancier', 'echeancier_create', 'echeancier_edit', 'echeancier_delete',
                roles=_FINANCE_SAISIE),
+            _a('creances', 'Annuler une créance individuelle (manuel non rendu…)', 'creance_annuler',
+               roles=_FINANCE_APPROBATION),
         )),
         _f('/finances/redevables/', 'Redevables'),
         _f('/finances/exoneres/', 'Exonérés'),

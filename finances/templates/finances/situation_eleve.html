@@ -246,6 +246,45 @@
         </div>
       </div>
 
+      {# Créances individuelles (manuel non rendu, dégât matériel…) #}
+      {% if creances %}
+      <div class="card mb-4">
+        <div class="pai-sec-hd">
+          <div class="pai-sec-hd-left">
+            <div class="pai-sec-icon">
+              <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M7 4h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+              </svg>
+            </div>
+            <span class="pai-sec-title">Créances individuelles</span>
+          </div>
+        </div>
+        <div class="sit-body">
+          {% for cr in creances %}
+          <div class="sit-row">
+            <div class="min-w-0 flex-1">
+              <div class="sit-row-lbl fw-medium" title="{{ cr.libelle }}">{{ cr.libelle }}</div>
+              <div class="sit-row-sub">{{ cr.get_origine_display }} · {{ cr.date_creance|date:"d/m/Y" }} · rubrique {{ cr.rubrique.nom }}</div>
+            </div>
+            <div class="sit-row-actions">
+              <span class="sit-row-val">{{ cr.montant|floatformat:0 }} F</span>
+              {% if request|autorise_url:'finances:creance_annuler' %}
+              <form method="post" action="{% url 'finances:creance_annuler' cr.id %}" data-csp-confirm-submit="Annuler cette créance ? Le montant ne sera plus dû." class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon text-danger" title="Annuler la créance">
+                  <svg aria-hidden="true" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       {# Informations Élève #}
       <div class="card">
         <div class="pai-sec-hd">

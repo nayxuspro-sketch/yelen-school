@@ -191,6 +191,11 @@ class AttributionManuel(BaseModel):
         verbose_name=_("Frais facturés"),
         help_text=_("Vrai si la pénalité de non-retour a été ajoutée aux frais de l'élève."),
     )
+    creance = models.OneToOneField(
+        'finances.Creance', on_delete=models.SET_NULL, null=True, blank=True, related_name='attribution_manuel',
+        verbose_name=_("Créance émise"),
+        help_text=_("Créance « manuel non rendu » ajoutée au reste à payer de l'élève ; annulée si le manuel est rendu."),
+    )
     observation = models.TextField(blank=True, default='', verbose_name=_("Observation"))
 
     class Meta:

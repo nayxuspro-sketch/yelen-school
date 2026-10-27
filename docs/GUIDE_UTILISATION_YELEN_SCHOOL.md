@@ -5757,7 +5757,9 @@ L'état de l'exemplaire est automatiquement mis à jour après le retour.
 
 Ce tableau liste tous les exemplaires qui n'ont pas été retournés pour l'année sélectionnée. Les lignes non facturées apparaissent en surbrillance.
 
-**Facturation automatique :** bouton `Facturer` → génère automatiquement un paiement dans le module Finances (rubrique *Manuel non rendu*) pour le montant défini comme **Prix de remplacement** du manuel.
+**Facturation :** bouton `Facturer` → émet une **créance « Manuel non rendu »** au nom de l'élève, du montant défini comme **Prix de remplacement** du manuel. Rien n'est encaissé à ce stade : la créance s'ajoute au *reste à payer* de l'élève (situation financière, redevables, relances) et se règle au guichet comme une rubrique ordinaire (rubrique *Manuel non rendu*, plafonnée au montant dû). Les parents sont notifiés (SMS si activé, notification in-app). La colonne **Créance émise** indique les attributions déjà facturées ; une attribution ne peut être facturée qu'une fois.
+
+Si le manuel est finalement rendu (bouton `Retour`), la créance est **annulée automatiquement** et disparaît du reste à payer ; un versement déjà encaissé demeure. La Direction peut aussi annuler une créance à la main depuis la situation financière de l'élève (§ 35.1 bis).
 
 ---
 
@@ -6722,7 +6724,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.6.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.7.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.
@@ -6864,6 +6866,17 @@ financière, le formulaire de paiement (rubrique du service, plafonnée au monta
 **Liste des abonnés** d'un service (pour la cuisine, le chauffeur, le surveillant d'internat) :
 filtre par classe et formule, dû / versé / reste par élève, totaux, export Excel avec le
 téléphone des parents.
+
+### 35.1 bis Créances individuelles
+
+Une **créance** est un montant dû par un seul élève, hors tarif de scolarité et hors abonnement :
+aujourd'hui la pénalité **« Manuel non rendu »** émise depuis `Manuels → Non rendus` (§ 27.5).
+Elle apparaît dans la carte *Créances individuelles* de la situation financière (libellé, date,
+rubrique d'encaissement, montant) et compte dans le total dû exactement comme un service annexe :
+reste à payer, formulaire de paiement (sa rubrique devient encaissable, plafonnée au montant dû),
+*Redevables*, *Relances*, tableau de bord. **Annuler** (Direction — action *Annuler une créance
+individuelle* de la matrice des droits) retire la créance du reste à payer sans toucher aux
+versements déjà encaissés ; l'annulation est automatique quand le manuel est rendu.
 
 ### 35.2 Vue consolidée multi-sites (licence RESEAU)
 
