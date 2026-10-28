@@ -192,12 +192,12 @@ class CalculateurMoyenne:
         notes : les résultats et les bulletins reflètent toujours les dernières notes saisies. Un résultat
         qui n'a plus aucune note (évaluation supprimée, note retirée) est purgé. Sans effet si la période
         est clôturée."""
-        from inscriptions.models import Inscription
+        from inscriptions.models import Inscription, StatutInscriptionChoices
 
         if trimestre.verrouille:
             return 0
         inscriptions = list(
-            Inscription.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire).exclude(statut='ABANDON')
+            Inscription.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire).exclude(statut=StatutInscriptionChoices.ABANDON)
         )
         if enseignements is None:
             enseignements = list(Enseignement.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire))

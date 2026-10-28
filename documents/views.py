@@ -18,7 +18,7 @@ from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from parametres.models import TypeDocument, AnneeScolaire, Classe, Cycle, SignataireDocument
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 
 from .models import Document
 from core.utils import get_etablissement_context
@@ -571,7 +571,7 @@ def convocation_form(request):
         inscriptions = (
             Inscription.objects
             .filter(classe_id=classe_id, annee_scolaire=annee_courante)
-            .exclude(statut='ABANDON')
+            .exclude(statut=StatutInscriptionChoices.ABANDON)
             .select_related('eleve')
             .order_by('eleve__nom')
         )

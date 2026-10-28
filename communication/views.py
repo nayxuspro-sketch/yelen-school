@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from inscriptions.models import Eleve
+from inscriptions.models import Eleve, StatutInscriptionChoices
 from parametres.models import AnneeScolaire
 
 from .models import MessageParent, ReponseParent
@@ -553,7 +553,7 @@ def webhook_incoming_sms(request):
                                 total_eleves = Inscription.objects.filter(
                                     classe=inscription.classe,
                                     annee_scolaire=inscription.annee_scolaire
-                                ).exclude(statut='ABANDON').count()
+                                ).exclude(statut=StatutInscriptionChoices.ABANDON).count()
 
                                 rang_str = f"{mg.rang}/{total_eleves}" if mg.rang else "N/A"
                                 response_text = f"Yelen - {eleve.prenom} {eleve.nom} ({inscription.classe.nom}) - {trim_label}: Moy: {mg.moyenne}/20, Rang: {rang_str}."

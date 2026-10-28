@@ -16,7 +16,7 @@ from core.importation import (
     ERREURS_MAX, ErreurImport, detecter_colonnes, en_date, enregistrer_fichier, lettre_colonne, lire_feuille,
     noms_feuilles, supprimer_fichier, synonymes_de, texte,
 )
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import AnneeScolaire, Classe
 
 from .. import importation
@@ -223,7 +223,7 @@ def _analyse(request, etat, parametres):
     matieres = {int(i): par_pk[p] for i, p in etat['matieres'].items() if p in par_pk}
     inscriptions = Inscription.objects.filter(
         classe=parametres['classe'], annee_scolaire=parametres['trimestre'].annee_scolaire,
-    ).exclude(statut='ABANDON').select_related('eleve')
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve')
     analyse = importation.analyser(
         feuille, {c: int(i) for c, i in etat['correspondance'].items()}, matieres, inscriptions,
         parametres['bareme'], parametres['trimestre'], parametres['type_evaluation'], parametres['titre'],

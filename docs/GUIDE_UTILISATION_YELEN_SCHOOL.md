@@ -5512,7 +5512,8 @@ Ce module répond à deux types de questions en langage naturel :
 
 `Administration → Assistant IA`
 
-Disponible pour les rôles : **Directeur**, **Censeur**, **Super Admin**.
+Disponible pour les rôles : **Directeur**, **Censeur**, **Directeur réseau**, **Super Admin** (tout autre profil reçoit un refus).
+L'assistant ne voit que l'établissement de l'utilisateur connecté : effectifs, finances, absences, moyennes et recherche d'élève sont limités à cet établissement et à son année scolaire courante.
 
 ### 25.2 Prérequis
 
@@ -5584,6 +5585,7 @@ La base de connaissances couvre **21 sujets** extraits du guide d'utilisation :
 
 - Les données dépendent de ce qui est saisi dans le logiciel — si les moyennes ne sont pas calculées, l'assistant l'indique
 - L'assistant ne modifie **jamais** les données — il est en lecture seule
+- Les montants « attendu / encaissé » sont ceux du module Finances (tarifs + services + créances − bourses ; versements − remboursements) : ils concordent avec la situation financière
 - Les réponses du guide sont extraites de la base de connaissances statique — pour les détails très spécifiques, consulter directement le guide complet
 - Les réponses sont indicatives et doivent être vérifiées pour les décisions importantes
 
@@ -6746,7 +6748,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.8.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.8.1 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

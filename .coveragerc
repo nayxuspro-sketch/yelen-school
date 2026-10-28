@@ -16,5 +16,5 @@ omit =
     seed_test_data.py
 
 [report]
-fail_under = 65
+fail_under = 73
 precision = 2

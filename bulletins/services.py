@@ -12,6 +12,7 @@ import logging
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from pedagogie.models import Resultat, Trimestre
@@ -116,7 +117,7 @@ def calculer_bulletin_annuel(inscription, annee_scolaire):
                 # Accès au nom de la matière via enseignement (relation correcte)
                 try:
                     matiere_nom = resultat.enseignement.matiere.nom
-                except Exception:
+                except (AttributeError, ObjectDoesNotExist):
                     logger.warning("Bulletin annuel : matière introuvable (résultat %s)", resultat.pk, exc_info=True)
                     matiere_nom = f"Matière {idx + 1}"
                 

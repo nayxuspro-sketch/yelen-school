@@ -166,7 +166,7 @@ def _envoyer_http(numero: str, message: str) -> tuple:
         )
         logger.error(f"SMS HTTP connexion échouée → {numero} : {e.reason}")
         return False, motif
-    except Exception as e:
+    except (OSError, ValueError) as e:   # délai dépassé, URL invalide…
         motif = str(e)
         logger.error(f"SMS HTTP exception → {numero} : {motif}")
         return False, motif
@@ -201,7 +201,8 @@ def _envoyer_serial(numero: str, message: str) -> tuple:
     """Envoie un SMS via modem GSM (AT commands / pyserial)."""
     try:
         ser = _get_serial()
-    except RuntimeError as e:
+    except (RuntimeError, OSError) as e:   # pyserial absent, port introuvable ou occupé
+        logger.error("SMS série : ouverture du port impossible — %s", e)
         return False, str(e)
 
     try:
@@ -298,7 +299,7 @@ def tester_modem() -> dict:
     """
     backend = str(get_sms_val('SMS_BACKEND')).lower()
 
-    if not get_sms_val('SMS_ENABLED'):
+    if not sms_actifs():
         return {
             'ok': False,
             'message': 'SMS désactivé (SMS_ENABLED=False)',
@@ -324,7 +325,7 @@ def tester_modem() -> dict:
         try:
             urllib.request.urlopen(req, timeout=timeout)
             return {'ok': True, 'message': 'Passerelle HTTP joignable', 'operateur': None, 'backend': 'http'}
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning("Test de la passerelle HTTP échoué : %s", e)
             return {'ok': False, 'message': str(e), 'operateur': None, 'backend': 'http'}
 
@@ -344,7 +345,7 @@ def tester_modem() -> dict:
                 return {'ok': True, 'message': 'Modem connecté', 'operateur': operateur, 'backend': 'serial'}
             finally:
                 ser.close()
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             logger.warning("Test du modem série échoué : %s", e)
             return {'ok': False, 'message': str(e), 'operateur': None, 'backend': 'serial'}
 

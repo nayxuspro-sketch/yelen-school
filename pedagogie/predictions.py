@@ -6,12 +6,9 @@ Algorithme sans ML : formule pondérée basée sur :
   - Tendance inter-trimestrielle (±10 pts)
   - Absences non justifiées (malus jusqu'à -15 pts)
 """
-import logging
 from decimal import Decimal
 
 from .utils_ia import _fr
-
-logger = logging.getLogger(__name__)
 
 
 def _examen_pour_cycle(cycle_nom):
@@ -81,23 +78,15 @@ def calculer_prediction(inscription):
                 'points': bonus_tendance,
             })
 
-    # ── Assiduité ─────────────────────────────────────────────────────
+    # ── Assiduité (ABSENT = non justifiée ; une absence justifiée est EXCUSE) ──
     malus_presence = 0
-    abs_nj = 0
-    try:
-        abs_nj = Presence.objects.filter(
-            inscription=inscription,
-            statut='ABSENT',
-            justifie=False,
-        ).count()
-        if abs_nj > 30:
-            malus_presence = -15
-        elif abs_nj > 20:
-            malus_presence = -10
-        elif abs_nj > 10:
-            malus_presence = -5
-    except Exception:
-        logger.exception("Prédiction : décompte des absences impossible (inscription %s)", inscription.pk)
+    abs_nj = Presence.objects.filter(inscription=inscription, statut=Presence.StatutChoices.ABSENT).count()
+    if abs_nj > 30:
+        malus_presence = -15
+    elif abs_nj > 20:
+        malus_presence = -10
+    elif abs_nj > 10:
+        malus_presence = -5
 
     if abs_nj > 0:
         facteurs.append({
@@ -132,11 +121,11 @@ def calculer_prediction(inscription):
 
 def calculer_predictions_classe(classe, annee_scolaire):
     """Calcule les prédictions pour toutes les inscriptions d'une classe."""
-    from inscriptions.models import Inscription
+    from inscriptions.models import Inscription, StatutInscriptionChoices
     inscriptions = Inscription.objects.filter(
         classe=classe,
         annee_scolaire=annee_scolaire,
-    ).exclude(statut='ABANDON').select_related('eleve', 'classe__cycle')
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe__cycle')
 
     resultats = []
     for ins in inscriptions:

@@ -12,7 +12,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 
-from core.sms import get_sms_val
+from core.sms import sms_actifs
 
 logger = logging.getLogger(__name__)
 
@@ -60,18 +60,18 @@ def creer_notification(destinataire, type_notif, titre, message, lien='',
             )
             notif.email_envoye = True
             notif.save(update_fields=['email_envoye'])
-        except Exception as e:
-            logger.error(f"Notification email échoué pour {destinataire.email}: {e}")
+        except Exception:
+            logger.exception("Notification email échoué pour %s", destinataire.email)
 
-    if envoyer_sms and get_sms_val('SMS_ENABLED'):
+    if envoyer_sms and sms_actifs():
         numero = getattr(destinataire, 'telephone', '') or ''
         if numero:
             try:
                 from core.tasks import envoyer_sms_async
                 sms_texte = f"[YELEN SCHOOL] {titre}\n{message}"
                 envoyer_sms_async(numero, sms_texte, notification_id=notif.pk)
-            except Exception as e:
-                logger.error(f"Planification SMS échouée pour {numero}: {e}")
+            except Exception:
+                logger.exception("Planification SMS échouée pour %s", numero)
 
     return notif
 
@@ -113,13 +113,13 @@ def notifier_bulletin_publie(bulletin):
         for parent in parents:
             creer_notification(parent, 'BULLETIN', titre, message_inapp,
                                lien='/bulletins/', envoyer_sms=False)
-            if get_sms_val('SMS_ENABLED'):
+            if sms_actifs():
                 numero = getattr(parent, 'telephone', '') or ''
                 if numero:
                     from core.tasks import envoyer_sms_async
                     envoyer_sms_async(numero, sms_message)
-    except Exception as e:
-        logger.error(f"notifier_bulletin_publie échoué : {e}")
+    except Exception:
+        logger.exception("notifier_bulletin_publie échoué")
 
 
 def notifier_absence(presence):
@@ -147,7 +147,7 @@ def notifier_absence(presence):
             'matiere': f" en {matiere}" if matiere else '',
             'etablissement': etab.nom,
         })
-        if get_sms_val('SMS_ENABLED'):
+        if sms_actifs():
             numero = (
                 eleve.telephone_parent
                 or eleve.tuteur_telephone
@@ -157,8 +157,8 @@ def notifier_absence(presence):
             if numero:
                 from core.tasks import envoyer_sms_async
                 envoyer_sms_async(numero, sms_message)
-    except Exception as e:
-        logger.error(f"notifier_absence échoué : {e}")
+    except Exception:
+        logger.exception("notifier_absence échoué")
 
 
 def notifier_retard(presence):
@@ -186,7 +186,7 @@ def notifier_retard(presence):
             'matiere': f" en {matiere}" if matiere else '',
             'etablissement': etab.nom,
         })
-        if get_sms_val('SMS_ENABLED'):
+        if sms_actifs():
             numero = (
                 eleve.telephone_parent
                 or eleve.tuteur_telephone
@@ -196,8 +196,8 @@ def notifier_retard(presence):
             if numero:
                 from core.tasks import envoyer_sms_async
                 envoyer_sms_async(numero, sms_message)
-    except Exception as e:
-        logger.error(f"notifier_retard échoué : {e}")
+    except Exception:
+        logger.exception("notifier_retard échoué")
 
 
 def notifier_relance_paiement(inscription, rubrique, montant):
@@ -219,13 +219,13 @@ def notifier_relance_paiement(inscription, rubrique, montant):
         parents = eleve.utilisateurs_lies.filter(role='PARENT', is_active=True)
         for parent in parents:
             creer_notification(parent, 'GENERAL', titre, message_inapp, envoyer_sms=False)
-            if get_sms_val('SMS_ENABLED'):
+            if sms_actifs():
                 numero = getattr(parent, 'telephone', '') or ''
                 if numero:
                     from core.tasks import envoyer_sms_async
                     envoyer_sms_async(numero, sms_message)
-    except Exception as e:
-        logger.error(f"notifier_relance_paiement échoué : {e}")
+    except Exception:
+        logger.exception("notifier_relance_paiement échoué")
 
 
 def notifier_reunion(etablissement, date, heure, lieu, objet, parents_numeros):
@@ -251,11 +251,11 @@ def notifier_reunion(etablissement, date, heure, lieu, objet, parents_numeros):
         titre = f"Réunion parents — {date}"
         for parent, numero in parents_numeros:
             creer_notification(parent, 'GENERAL', titre, sms_message, envoyer_sms=False)
-            if get_sms_val('SMS_ENABLED') and numero:
+            if sms_actifs() and numero:
                 from core.tasks import envoyer_sms_async
                 envoyer_sms_async(numero, sms_message)
-    except Exception as e:
-        logger.error(f"notifier_reunion échoué : {e}")
+    except Exception:
+        logger.exception("notifier_reunion échoué")
 
 
 def notifier_sanction(sanction):
@@ -270,5 +270,5 @@ def notifier_sanction(sanction):
             f"{eleve.get_nom_complet()} le {date}."
         )
         notifier_parents_eleve(eleve, 'SANCTION', titre, message)
-    except Exception as e:
-        logger.error(f"notifier_sanction échoué : {e}")
+    except Exception:
+        logger.exception("notifier_sanction échoué")

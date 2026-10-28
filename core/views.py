@@ -13,7 +13,7 @@ from django.http import FileResponse, Http404, HttpResponseForbidden, HttpRespon
 from django.templatetags.static import static
 
 from personnel.models import MembrePersonnel
-from inscriptions.models import Eleve, Inscription
+from inscriptions.models import Eleve, Inscription, StatutInscriptionChoices
 from parametres.models import AnneeScolaire, Classe
 from finances.models import Paiement
 
@@ -40,7 +40,7 @@ def home(request):
     # ── Base commune (tous les rôles) ─────────────────────────────────
     inscriptions_annee = (
         Inscription.objects.filter(annee_scolaire=annee_courante)
-        .exclude(statut='ABANDON').count()
+        .exclude(statut=StatutInscriptionChoices.ABANDON).count()
         if annee_courante else 0
     )
     nb_classes = Classe.objects.filter(etablissement=etab, actif=True).count() if etab else 0
@@ -98,7 +98,7 @@ def home(request):
             Inscription.objects.filter(
                 annee_scolaire=annee_courante,
                 classe__cycle__etablissement=etab,
-            ).exclude(statut='ABANDON')
+            ).exclude(statut=StatutInscriptionChoices.ABANDON)
             .values('classe__cycle_id')
             .annotate(nb=Count('id'))
             .values_list('classe__cycle_id', 'nb')
@@ -158,23 +158,15 @@ def home(request):
         )
 
         context['nb_evaluations_annee'] = 0
-        if annee_courante:
-            try:
-                context['nb_evaluations_annee'] = Evaluation.objects.filter(
-                    trimestre__annee_scolaire=annee_courante
-                ).count()
-            except Exception:
-                logger.exception("Tableau de bord : comptage des évaluations impossible")
-
         context['nb_eleves_sans_notes'] = 0
         if annee_courante:
-            try:
-                context['nb_eleves_sans_notes'] = Resultat.objects.filter(
-                    trimestre__annee_scolaire=annee_courante,
-                    moyenne__isnull=True,
-                ).values('inscription').distinct().count()
-            except Exception:
-                logger.exception("Tableau de bord : comptage des élèves sans notes impossible")
+            context['nb_evaluations_annee'] = Evaluation.objects.filter(
+                trimestre__annee_scolaire=annee_courante
+            ).count()
+            context['nb_eleves_sans_notes'] = Resultat.objects.filter(
+                trimestre__annee_scolaire=annee_courante,
+                moyenne__isnull=True,
+            ).values('inscription').distinct().count()
 
     # ── COMPTABLE ─────────────────────────────────────────────────────
     elif role == 'COMPTABLE':
@@ -205,7 +197,7 @@ def home(request):
         ) if annee_courante else 0
         context['nb_redevables'] = (
             Inscription.objects.filter(annee_scolaire=annee_courante)
-            .exclude(statut='ABANDON')
+            .exclude(statut=StatutInscriptionChoices.ABANDON)
             .exclude(paiements__isnull=False)
             .distinct().count()
         ) if annee_courante else 0
@@ -958,8 +950,8 @@ def reunion_parents(request):
                     numeros_vus.add(numero)
                     numeros.append(numero)
 
-            from core.sms import get_sms_val
-            if get_sms_val('SMS_ENABLED') and numeros:
+            from core.sms import sms_actifs
+            if sms_actifs() and numeros:
                 from core.tasks import envoyer_sms_async
                 etab_nom = etab.nom if etab else 'YELEN SCHOOL'
                 msg = (
@@ -1014,7 +1006,7 @@ def risque_recalculer(request):
     qs = (
         Inscription.objects
         .filter(annee_scolaire=annee)
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
         .select_related('eleve', 'classe')
     )
 
@@ -1237,7 +1229,10 @@ def pwa_service_worker(request):
 @login_required
 @requires_licence_feature('ia_predictive')
 def chatbot(request):
-    """Interface de l'assistant IA — moteur de requêtes local, sans API externe."""
+    """Interface de l'assistant IA — moteur de requêtes local, sans API externe (direction uniquement :
+    il répond avec les données de l'établissement de l'utilisateur)."""
+    if request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR', 'DIRECTEUR_RESEAU') and not request.user.is_superuser:
+        return HttpResponseForbidden("L'assistant est réservé à la direction.")
     session_key = 'chatbot_display'
     display_history = request.session.get(session_key, [])
 
@@ -1251,7 +1246,7 @@ def chatbot(request):
             return redirect('core:chatbot')
 
         from core.chatbot import chat
-        response_text, display_history = chat(display_history, user_message)
+        response_text, display_history = chat(display_history, user_message, request.user.etablissement)
 
         request.session[session_key] = display_history
         request.session.modified = True

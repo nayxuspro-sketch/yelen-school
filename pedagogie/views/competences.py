@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from ..models import Matiere, Trimestre, Competence, EvaluationCompetence
 from parametres.models import AnneeScolaire, Classe, Cycle
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import get_etablissement_context
 from .commun import HTML, _pdf_licence_info
 
@@ -105,7 +105,7 @@ def competences_saisie(request, classe_id):
     inscriptions = (
         Inscription.objects.filter(classe=classe, annee_scolaire=annee)
         .select_related('eleve')
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
         .order_by('eleve__nom', 'eleve__prenom')
     ) if annee else Inscription.objects.none()
 

@@ -15,7 +15,7 @@ Usage :
 """
 from django.core.management.base import BaseCommand, CommandError
 
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import AnneeScolaire
 from pedagogie.models import RisqueDecrochage
 from pedagogie.utils_ia import calculer_score_risque
@@ -61,7 +61,7 @@ class Command(BaseCommand):
         qs = (
             Inscription.objects
             .filter(annee_scolaire=annee)
-            .exclude(statut='ABANDON')
+            .exclude(statut=StatutInscriptionChoices.ABANDON)
             .select_related('eleve', 'classe')
         )
         if options.get('classe'):

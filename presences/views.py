@@ -15,7 +15,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from parametres.models import Classe, AnneeScolaire, Cycle
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_membre_personnel
 from pedagogie.models import Enseignement, Matiere
 from viescolaire.models import SeanceCours
@@ -282,7 +282,7 @@ def appel_create(request, classe_id):
         inscriptions = Inscription.objects.filter(
             classe=classe,
             annee_scolaire=annee
-        ).exclude(statut='ABANDON').select_related('eleve')
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve')
 
         Presence.objects.bulk_create([
             Presence(appel=appel, inscription=ins, statut=Presence.StatutChoices.PRESENT)
@@ -732,7 +732,7 @@ def cartes_qr_classe(request, classe_id):
     inscriptions = (
         Inscription.objects
         .filter(classe=classe, annee_scolaire=annee)
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
         .select_related('eleve')
         .order_by('eleve__nom', 'eleve__prenom')
     )

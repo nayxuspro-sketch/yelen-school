@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from ..models import RisqueDecrochage, PredictionReussiteExamen
 from parametres.models import AnneeScolaire, Classe
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import get_etablissement_context
 from licences.decorators import requires_licence_feature
 from .commun import HTML, _pdf_licence_info
@@ -48,7 +48,7 @@ def risque_decrochage(request):
             inscriptions = Inscription.objects.filter(
                 annee_scolaire=annee,
                 classe__etablissement=etab
-            ).exclude(statut='ABANDON').select_related('eleve', 'classe')
+            ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe')
 
             count = 0
             for ins in inscriptions:
@@ -108,7 +108,7 @@ def risque_decrochage(request):
     risques_qs = (
         RisqueDecrochage.objects
         .filter(inscription__annee_scolaire=annee, inscription__classe__etablissement=etab)
-        .exclude(inscription__statut='ABANDON')
+        .exclude(inscription__statut=StatutInscriptionChoices.ABANDON)
         .select_related('inscription__eleve', 'inscription__classe')
         .order_by('-score')
     )
@@ -120,7 +120,7 @@ def risque_decrochage(request):
     tous = RisqueDecrochage.objects.filter(
         inscription__annee_scolaire=annee,
         inscription__classe__etablissement=etab,
-    ).exclude(inscription__statut='ABANDON')
+    ).exclude(inscription__statut=StatutInscriptionChoices.ABANDON)
 
     stats = {n: tous.filter(niveau=n).count() for n in RisqueDecrochage.NiveauChoices.values}
     stats['total'] = tous.count()
@@ -162,7 +162,7 @@ def risque_decrochage_pdf(request):
     risques_qs = RisqueDecrochage.objects.filter(
         inscription__annee_scolaire=annee,
         inscription__classe__etablissement=etab,
-    ).exclude(inscription__statut='ABANDON').select_related(
+    ).exclude(inscription__statut=StatutInscriptionChoices.ABANDON).select_related(
         'inscription__eleve', 'inscription__classe'
     ).order_by('-score')
 
@@ -174,7 +174,7 @@ def risque_decrochage_pdf(request):
     tous = RisqueDecrochage.objects.filter(
         inscription__annee_scolaire=annee,
         inscription__classe__etablissement=etab,
-    ).exclude(inscription__statut='ABANDON')
+    ).exclude(inscription__statut=StatutInscriptionChoices.ABANDON)
 
     stats = {n: tous.filter(niveau=n).count() for n in RisqueDecrochage.NiveauChoices.values}
     stats['total'] = tous.count()

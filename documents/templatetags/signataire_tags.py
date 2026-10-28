@@ -265,12 +265,8 @@ def signataire_auto(context, type_doc_code, variante=''):
         if identite and getattr(identite, 'ville', None):
             ville_prefix = f"{_e(identite.ville)}, "
 
-        try:
-            from django.utils.formats import date_format
-            date_str = date_format(timezone.now(), 'd F Y', use_l10n=True)
-        except Exception:
-            logger.warning("Signataire : formatage de la date impossible", exc_info=True)
-            date_str = timezone.now().strftime('%d %B %Y')
+        from django.utils.formats import date_format
+        date_str = date_format(timezone.now(), 'd F Y', use_l10n=True)
 
         # Construire la liste ordonnée de tous les signataires
         # Principal en premier (ordre implicite 1), puis co-signataires triés par ordre

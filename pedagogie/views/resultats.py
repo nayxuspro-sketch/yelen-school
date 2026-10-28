@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 from ..models import Enseignement, Evaluation, Note, Resultat, MoyenneGenerale, Trimestre
 from ..utils import CalculateurMoyenne
 from parametres.models import AnneeScolaire, Classe
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_etablissement_context
 from licences.decorators import requires_licence_feature
 from .commun import HTML, _pdf_licence_info
@@ -35,7 +35,7 @@ def classe_result_list(request):
         nb_sub = (
             Inscription.objects
             .filter(classe=OuterRef('pk'), annee_scolaire=annee_courante)
-            .exclude(statut='ABANDON')
+            .exclude(statut=StatutInscriptionChoices.ABANDON)
             .values('classe')
             .annotate(n=Count('pk'))
             .values('n')
@@ -394,7 +394,7 @@ def resultat_classe(request, class_id):
     inscriptions = Inscription.objects.filter(
         classe=classe,
         annee_scolaire=annee_courante,
-    ).exclude(statut='ABANDON').select_related('eleve')
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve')
 
     # Récupérer les moyennes générales existantes
     moyennes_gen = {}
@@ -483,7 +483,7 @@ def moyennes_disciplines(request):
             Inscription.objects.filter(
                 classe=classe,
                 annee_scolaire=annee,
-            ).exclude(statut='ABANDON').select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
+            ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
         )
 
         # Chargement groupé : tous les Resultat d'un coup
@@ -556,7 +556,7 @@ def moyennes_disciplines_pdf(request):
     inscriptions = list(
         Inscription.objects.filter(
             classe=classe, annee_scolaire=annee,
-        ).exclude(statut='ABANDON').select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
     )
 
     res_map: dict = {}
@@ -734,7 +734,7 @@ def _build_releve_context(annee_id, enseignement_id, periode_id):
     inscriptions = (
         Inscription.objects
         .filter(classe=enseignement.classe, annee_scolaire=annee)
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
         .select_related('eleve')
         .order_by('eleve__nom', 'eleve__prenom')
     )

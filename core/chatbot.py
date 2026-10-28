@@ -7,7 +7,8 @@ Aucune API externe requise — fonctionne hors ligne et sans abonnement.
 
 import re
 import logging
-from django.db.models import Avg, Count, Sum, Max, Min
+from collections import defaultdict
+from django.db.models import Avg, Count, Max, Min
 
 logger = logging.getLogger(__name__)
 
@@ -539,20 +540,20 @@ _GUIDE_KB = [
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Helpers — accès aux modèles Django
+# Helpers — accès aux modèles Django (toujours limités à l'établissement de l'utilisateur)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _get_etab():
-    from etablissements.models import Etablissement
-    return Etablissement.objects.first()
-
-
-def _get_annee():
+def _get_annee(etab):
     from parametres.models import AnneeScolaire
-    etab = _get_etab()
-    if etab:
-        return AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
-    return AnneeScolaire.objects.filter(est_courante=True).first()
+    return AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first() if etab else None
+
+
+def _inscrits(etab, annee, classe_nom=None):
+    """Inscriptions actives de l'année dans l'établissement (filtre facultatif sur le nom de classe)."""
+    from inscriptions.models import Inscription, StatutInscriptionChoices
+    qs = (Inscription.objects.filter(annee_scolaire=annee, classe__etablissement=etab)
+          .exclude(statut=StatutInscriptionChoices.ABANDON))
+    return qs.filter(classe__nom__icontains=classe_nom) if classe_nom else qs
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -621,16 +622,14 @@ def _extract_nom(text: str):
 # Requêtes ORM
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _req_effectifs(classe_nom=None):
-    from inscriptions.models import Inscription
-    annee = _get_annee()
+_SANS_ANNEE = {"erreur": "Aucune année scolaire courante configurée."}
+
+
+def _req_effectifs(etab, classe_nom=None):
+    annee = _get_annee(etab)
     if not annee:
-        return {"erreur": "Aucune année scolaire courante configurée."}
-
-    qs = Inscription.objects.filter(annee_scolaire=annee).exclude(statut='ABANDON')
-    if classe_nom:
-        qs = qs.filter(classe__nom__icontains=classe_nom)
-
+        return dict(_SANS_ANNEE)
+    qs = _inscrits(etab, annee, classe_nom)
     par_classe = (
         qs.values('classe__nom', 'classe__cycle__nom')
         .annotate(nb=Count('id'))
@@ -646,56 +645,38 @@ def _req_effectifs(classe_nom=None):
     }
 
 
-def _req_finances(classe_nom=None):
-    from finances.models import Paiement, FraisScolarite
-    from inscriptions.models import Inscription
-    annee = _get_annee()
+def _req_finances(etab, classe_nom=None):
+    """Mêmes chiffres que Finances (tarifs + services + créances − bourses, paiements − remboursements)."""
+    from finances.views.commun import _situations_financieres_en_lot
+    annee = _get_annee(etab)
     if not annee:
-        return {"erreur": "Aucune année scolaire courante configurée."}
-
-    inscrits = Inscription.objects.filter(annee_scolaire=annee).exclude(statut='ABANDON')
-    if classe_nom:
-        inscrits = inscrits.filter(classe__nom__icontains=classe_nom)
-
-    encaisse = Paiement.objects.filter(inscription__in=inscrits).aggregate(s=Sum('montant'))['s'] or 0
-    frais_qs = FraisScolarite.objects.filter(annee_scolaire=annee)
-    if classe_nom:
-        frais_qs = frais_qs.filter(classe__nom__icontains=classe_nom)
-    attendu = frais_qs.aggregate(s=Sum('montant'))['s'] or 0
-
-    ids_payes = Paiement.objects.filter(inscription__in=inscrits).values_list('inscription_id', flat=True).distinct()
-    nb_total = inscrits.count()
-    nb_payes = inscrits.filter(id__in=ids_payes).count()
-    taux = round(float(encaisse) / float(attendu) * 100, 1) if attendu else 0
-
+        return dict(_SANS_ANNEE)
+    inscrits = list(_inscrits(etab, annee, classe_nom).select_related('classe', 'annee_scolaire'))
+    situations = _situations_financieres_en_lot(inscrits)
+    attendu = sum(s['total_du'] for s in situations.values())
+    encaisse = sum(s['total_paye'] for s in situations.values())
+    nb_retard = sum(1 for s in situations.values() if s['reste_a_payer'] > 0)
     return {
         "annee": str(annee),
-        "nb_inscrits": nb_total,
+        "nb_inscrits": len(inscrits),
         "encaisse": int(encaisse),
         "attendu": int(attendu),
-        "taux": taux,
-        "nb_payes": nb_payes,
-        "nb_retard": nb_total - nb_payes,
+        "taux": round(float(encaisse) / float(attendu) * 100, 1) if attendu else 0,
+        "nb_payes": len(inscrits) - nb_retard,
+        "nb_retard": nb_retard,
     }
 
 
-def _req_absences(classe_nom=None, top_n=10):
+def _req_absences(etab, classe_nom=None, top_n=10):
     from presences.models import Presence
-    from inscriptions.models import Inscription
-    annee = _get_annee()
+    annee = _get_annee(etab)
     if not annee:
-        return {"erreur": "Aucune année scolaire courante configurée."}
-
-    inscrits = Inscription.objects.filter(annee_scolaire=annee).exclude(statut='ABANDON')
-    if classe_nom:
-        inscrits = inscrits.filter(classe__nom__icontains=classe_nom)
-
-    presences = Presence.objects.filter(inscription__in=inscrits)
+        return dict(_SANS_ANNEE)
+    presences = Presence.objects.filter(inscription__in=_inscrits(etab, annee, classe_nom))
     total = presences.count()
     # ABSENT = non justifié | EXCUSE = justifié | RETARD = retard
     nb_absences = presences.filter(statut='ABSENT').count()
     nb_excuses = presences.filter(statut='EXCUSE').count()
-
     top = (
         presences.filter(statut='ABSENT')
         .values('inscription__eleve__nom', 'inscription__eleve__prenom', 'inscription__classe__nom')
@@ -716,27 +697,24 @@ def _req_absences(classe_nom=None, top_n=10):
     }
 
 
-def _req_difficultes(classe_nom=None, seuil=10.0, trimestre_numero=None):
-    from pedagogie.models import MoyenneGenerale
-    annee = _get_annee()
-    if not annee:
-        return {"erreur": "Aucune année scolaire courante configurée."}
-
-    qs = MoyenneGenerale.objects.filter(
-        inscription__annee_scolaire=annee,
-        moyenne__lt=seuil,
-    ).select_related('inscription__eleve', 'inscription__classe')
-
-    if classe_nom:
-        qs = qs.filter(inscription__classe__nom__icontains=classe_nom)
+def _dernier_trimestre(qs, trimestre_numero):
+    """Restreint les moyennes au trimestre demandé, sinon au dernier trimestre disposant de moyennes."""
     if trimestre_numero:
-        qs = qs.filter(trimestre__numero=trimestre_numero)
-    else:
-        dernier = qs.order_by('-trimestre__numero').values('trimestre__numero').first()
-        if dernier:
-            qs = qs.filter(trimestre__numero=dernier['trimestre__numero'])
-            trimestre_numero = dernier['trimestre__numero']
+        return qs.filter(trimestre__numero=trimestre_numero), trimestre_numero
+    dernier = qs.order_by('-trimestre__numero').values('trimestre__numero').first()
+    if dernier:
+        return qs.filter(trimestre__numero=dernier['trimestre__numero']), dernier['trimestre__numero']
+    return qs, None
 
+
+def _req_difficultes(etab, classe_nom=None, seuil=10.0, trimestre_numero=None):
+    from pedagogie.models import MoyenneGenerale
+    annee = _get_annee(etab)
+    if not annee:
+        return dict(_SANS_ANNEE)
+    qs = (MoyenneGenerale.objects.filter(inscription__in=_inscrits(etab, annee, classe_nom), moyenne__lt=seuil)
+          .select_related('inscription__eleve', 'inscription__classe'))
+    qs, trimestre_numero = _dernier_trimestre(qs, trimestre_numero)
     resultats = list(qs.order_by('moyenne')[:30])
     return {
         "seuil": seuil,
@@ -751,35 +729,21 @@ def _req_difficultes(classe_nom=None, seuil=10.0, trimestre_numero=None):
     }
 
 
-def _req_moyennes(classe_nom, trimestre_numero=None):
+def _req_moyennes(etab, classe_nom, trimestre_numero=None):
     from pedagogie.models import MoyenneGenerale
-    from inscriptions.models import Inscription
-    annee = _get_annee()
+    annee = _get_annee(etab)
     if not annee:
-        return {"erreur": "Aucune année scolaire courante configurée."}
-
-    inscrits = Inscription.objects.filter(
-        annee_scolaire=annee, classe__nom__icontains=classe_nom
-    ).exclude(statut='ABANDON')
-    if not inscrits.exists():
+        return dict(_SANS_ANNEE)
+    inscrits = _inscrits(etab, annee, classe_nom)
+    premier = inscrits.select_related('classe').first()
+    if premier is None:
         return {"erreur": f"Classe « {classe_nom} » introuvable ou sans inscrits."}
-
-    classe_obj = inscrits.first().classe
-    qs = MoyenneGenerale.objects.filter(inscription__in=inscrits)
-    if trimestre_numero:
-        qs = qs.filter(trimestre__numero=trimestre_numero)
-    else:
-        dernier = qs.order_by('-trimestre__numero').values('trimestre__numero').first()
-        if dernier:
-            qs = qs.filter(trimestre__numero=dernier['trimestre__numero'])
-            trimestre_numero = dernier['trimestre__numero']
-
+    qs, trimestre_numero = _dernier_trimestre(MoyenneGenerale.objects.filter(inscription__in=inscrits), trimestre_numero)
     stats = qs.aggregate(moy=Avg('moyenne'), maxi=Max('moyenne'), mini=Min('moyenne'))
     top5 = list(qs.select_related('inscription__eleve').order_by('-moyenne')[:5])
     faibles = list(qs.select_related('inscription__eleve').filter(moyenne__lt=10).order_by('moyenne')[:5])
-
     return {
-        "classe": classe_obj.nom,
+        "classe": premier.classe.nom,
         "trimestre": trimestre_numero,
         "nb_evalues": qs.count(),
         "moyenne": round(float(stats['moy'] or 0), 2),
@@ -792,86 +756,68 @@ def _req_moyennes(classe_nom, trimestre_numero=None):
     }
 
 
-def _req_progression(classe_nom=None, sens="baisse"):
+def _req_progression(etab, classe_nom=None, sens="baisse"):
     from pedagogie.models import MoyenneGenerale
-    from inscriptions.models import Inscription
-    annee = _get_annee()
+    annee = _get_annee(etab)
     if not annee:
-        return {"erreur": "Aucune année scolaire courante configurée."}
-
-    inscrits = Inscription.objects.filter(annee_scolaire=annee).exclude(statut='ABANDON')
-    if classe_nom:
-        inscrits = inscrits.filter(classe__nom__icontains=classe_nom)
-
+        return dict(_SANS_ANNEE)
+    inscrits = list(_inscrits(etab, annee, classe_nom).select_related('eleve', 'classe')[:200])
+    moyennes = defaultdict(list)
+    for ins_id, numero, moyenne in (MoyenneGenerale.objects.filter(inscription__in=inscrits)
+                                    .order_by('trimestre__numero')
+                                    .values_list('inscription_id', 'trimestre__numero', 'moyenne')):
+        moyennes[ins_id].append((numero, float(moyenne)))
     resultats = []
-    for ins in inscrits.select_related('eleve', 'classe')[:200]:
-        mgs = list(
-            MoyenneGenerale.objects.filter(inscription=ins)
-            .order_by('trimestre__numero')
-            .values('trimestre__numero', 'moyenne')
-        )
+    for ins in inscrits:
+        mgs = moyennes.get(ins.pk, [])
         if len(mgs) < 2:
             continue
-        avant = float(mgs[-2]['moyenne'])
-        apres = float(mgs[-1]['moyenne'])
+        (t_avant, avant), (t_apres, apres) = mgs[-2], mgs[-1]
         diff = apres - avant
-        if sens == "baisse" and diff <= -0.5:
+        if (sens == "baisse" and diff <= -0.5) or (sens == "hausse" and diff >= 0.5):
             resultats.append({
                 "eleve": f"{ins.eleve.nom} {ins.eleve.prenom}",
                 "classe": ins.classe.nom,
-                "t_avant": mgs[-2]['trimestre__numero'],
+                "t_avant": t_avant,
                 "moy_avant": round(avant, 2),
-                "t_apres": mgs[-1]['trimestre__numero'],
+                "t_apres": t_apres,
                 "moy_apres": round(apres, 2),
                 "diff": round(diff, 2),
             })
-        elif sens == "hausse" and diff >= 0.5:
-            resultats.append({
-                "eleve": f"{ins.eleve.nom} {ins.eleve.prenom}",
-                "classe": ins.classe.nom,
-                "t_avant": mgs[-2]['trimestre__numero'],
-                "moy_avant": round(avant, 2),
-                "t_apres": mgs[-1]['trimestre__numero'],
-                "moy_apres": round(apres, 2),
-                "diff": round(diff, 2),
-            })
-
     resultats.sort(key=lambda x: x['diff'])
     return {"sens": sens, "nb": len(resultats), "eleves": resultats[:25]}
 
 
-def _req_eleve(nom=None, prenom=None):
+def _req_eleve(etab, nom=None, prenom=None):
+    from finances.views.commun import _calcul_situation_financiere
     from inscriptions.models import Eleve, Inscription
     from pedagogie.models import MoyenneGenerale
-    from finances.models import Paiement
 
     if not nom and not prenom:
         return {"erreur": "Fournissez au moins un nom ou un prénom."}
-
-    qs = Eleve.objects.all()
+    qs = Eleve.objects.filter(inscriptions__classe__etablissement=etab).distinct()
     if nom:
         qs = qs.filter(nom__icontains=nom)
     if prenom:
         qs = qs.filter(prenom__icontains=prenom)
 
     resultats = []
-    for eleve in qs[:8]:
-        ins = (Inscription.objects.filter(eleve=eleve)
+    for eleve in qs.order_by('nom', 'prenom')[:8]:
+        ins = (Inscription.objects.filter(eleve=eleve, classe__etablissement=etab)
                .select_related('classe', 'annee_scolaire')
                .order_by('-annee_scolaire__date_debut').first())
-        mg = MoyenneGenerale.objects.filter(inscription=ins).order_by('-trimestre__numero').first() if ins else None
-        paye = Paiement.objects.filter(inscription=ins).aggregate(s=Sum('montant'))['s'] or 0 if ins else 0
+        mg = MoyenneGenerale.objects.filter(inscription=ins).select_related('trimestre').order_by('-trimestre__numero').first() if ins else None
+        paye = _calcul_situation_financiere(ins)['total_paye'] if ins else 0
         resultats.append({
             "nom": f"{eleve.nom} {eleve.prenom}",
             "matricule": eleve.matricule,
             "classe": ins.classe.nom if ins else None,
             "annee": str(ins.annee_scolaire) if ins else None,
-            "statut": ins.statut if ins else "Non inscrit",
+            "statut": ins.get_statut_display() if ins else "Non inscrit",
             "moy": round(float(mg.moyenne), 2) if mg else None,
             "trimestre": mg.trimestre.numero if mg else None,
             "paye": int(paye),
         })
-
     return {"nb": len(resultats), "eleves": resultats}
 
 
@@ -1060,9 +1006,9 @@ def _intent(msg: str) -> str:
     if any(k in m for k in ['difficulté', 'faible', 'sous', 'inférieur', 'moins de']) \
             and any(k in m for k in ['/20', 'moyenne', 'note']) and not is_howto:
         return 'difficultes'
-    if any(k in m for k in ['moyenne de la', 'résultats de la', 'notes de la']) and not is_howto:
+    if any(k in m for k in ['moyenne de la', 'moyennes de la', 'résultats de la', 'notes de la']) and not is_howto:
         return 'moyennes'
-    if any(k in m for k in ['absent', 'assiduité', 'justifi']) \
+    if any(k in m for k in ['absen', 'assiduité', 'justifi']) \
             and any(k in m for k in ['liste', 'top', 'résumé', 'bilan', 'combien']) and not is_howto:
         return 'absences'
     if any(k in m for k in ['financ', 'paiement', 'payé', 'frais']) \
@@ -1099,7 +1045,7 @@ _AIDE = (
 )
 
 
-def _process(user_message: str) -> str:
+def _process(user_message: str, etab) -> str:
     try:
         intent = _intent(user_message)
         classe = _extract_classe(user_message)
@@ -1107,30 +1053,30 @@ def _process(user_message: str) -> str:
 
         if intent == 'eleve':
             nom, prenom = _extract_nom(user_message)
-            return _fmt_eleve(_req_eleve(nom=nom, prenom=prenom))
+            return _fmt_eleve(_req_eleve(etab, nom=nom, prenom=prenom))
 
         if intent == 'finances':
-            return _fmt_finances(_req_finances(classe_nom=classe))
+            return _fmt_finances(_req_finances(etab, classe_nom=classe))
 
         if intent == 'absences':
-            return _fmt_absences(_req_absences(classe_nom=classe))
+            return _fmt_absences(_req_absences(etab, classe_nom=classe))
 
         if intent == 'progression':
             m = user_message.lower()
             sens = "hausse" if any(k in m for k in ['hausse', 'améliore', 'augment', 'progress']) else "baisse"
-            return _fmt_progression(_req_progression(classe_nom=classe, sens=sens))
+            return _fmt_progression(_req_progression(etab, classe_nom=classe, sens=sens))
 
         if intent == 'difficultes':
             seuil = _extract_seuil(user_message, default=10.0)
-            return _fmt_difficultes(_req_difficultes(classe_nom=classe, seuil=seuil, trimestre_numero=trimestre))
+            return _fmt_difficultes(_req_difficultes(etab, classe_nom=classe, seuil=seuil, trimestre_numero=trimestre))
 
         if intent == 'moyennes':
             if not classe:
                 return "Précisez la classe, par exemple : « Moyennes de la 3ème A »."
-            return _fmt_moyennes(_req_moyennes(classe_nom=classe, trimestre_numero=trimestre))
+            return _fmt_moyennes(_req_moyennes(etab, classe_nom=classe, trimestre_numero=trimestre))
 
         if intent == 'effectifs':
-            return _fmt_effectifs(_req_effectifs(classe_nom=classe))
+            return _fmt_effectifs(_req_effectifs(etab, classe_nom=classe))
 
         if intent == 'guide':
             topic = _search_guide(user_message)
@@ -1146,21 +1092,21 @@ def _process(user_message: str) -> str:
 
         return _AIDE
 
-    except Exception as exc:
+    except Exception:   # l'assistant ne doit jamais casser la page : on journalise et on répond proprement
         logger.exception("Erreur chatbot")
-        return f"Une erreur est survenue lors de la requête : {exc}"
+        return "Une erreur est survenue lors de la requête ; elle a été journalisée pour l'administrateur."
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Point d'entrée — interface avec la vue Django
 # ─────────────────────────────────────────────────────────────────────────────
 
-def chat(messages_history: list, user_message: str) -> tuple[str, list]:
+def chat(messages_history: list, user_message: str, etab) -> tuple[str, list]:
     """
-    Traite un message et retourne (réponse, historique_mis_à_jour).
+    Traite un message pour l'établissement de l'utilisateur et retourne (réponse, historique_mis_à_jour).
     L'historique utilise le format {'role': ..., 'text': ...} directement.
     """
-    response = _process(user_message)
+    response = _process(user_message, etab)
     updated = list(messages_history) + [
         {"role": "user", "text": user_message},
         {"role": "assistant", "text": response},

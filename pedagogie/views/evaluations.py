@@ -10,7 +10,7 @@ from django.utils import timezone
 from ..models import Evaluation, Note, Resultat, Trimestre
 from ..forms import EvaluationForm
 from parametres.models import AnneeScolaire, Classe
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_membre_personnel
 from ..utils import CalculateurMoyenne
 # Nombre de classes affichées par page dans la liste des évaluations
@@ -104,7 +104,7 @@ def evaluation_list(request):
             for row in Inscription.objects.filter(
                 annee_scolaire=annee_courante,
                 classe__in=classes_page,
-            ).exclude(statut='ABANDON').values('classe_id').annotate(total=Count('id'))
+            ).exclude(statut=StatutInscriptionChoices.ABANDON).values('classe_id').annotate(total=Count('id'))
         }
     else:
         nb_eleves_map = {}
@@ -288,7 +288,7 @@ def evaluation_saisie(request, pk):
     inscriptions = Inscription.objects.filter(
         classe=classe,
         annee_scolaire=enseignement.annee_scolaire,
-    ).exclude(statut='ABANDON').select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
 
     if request.method == 'POST':
         updated_count = 0
@@ -416,7 +416,7 @@ def saisie_rapide_classe(request, class_id):
 
     nb_eleves = Inscription.objects.filter(
         classe=classe, annee_scolaire=annee_courante,
-    ).exclude(statut='ABANDON').count() if annee_courante else 0
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).count() if annee_courante else 0
 
     # Évaluations de la classe, annotées avec le nb de notes saisies
     evaluations = (

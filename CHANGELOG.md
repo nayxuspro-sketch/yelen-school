@@ -3,6 +3,19 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.8.1 — 2026-10-28
+
+### Corrigé (audit — Lot D : dette technique)
+- Assistant IA : les réponses ne sont plus calculées sur l'ensemble des établissements de la base mais sur celui de l'utilisateur connecté (effectifs, finances, absences, difficultés, moyennes, progression, recherche d'élève). Les montants attendus/encaissés reprennent le calcul du module Finances (tarifs + services + créances − bourses ; versements − remboursements) au lieu de l'ancienne table des frais. La page `/assistant/` est réservée à la Direction (Directeur, Censeur, Directeur réseau, Super Admin) ; une erreur interne affiche un message neutre et n'expose plus le détail technique. Reconnaissance de « Résumé des absences » et « Moyennes de la … » corrigée.
+- Prédiction de réussite : le malus d'assiduité ne s'appliquait jamais (filtre sur un champ inexistant, masqué par un `except Exception` qui remplissait le journal). Les absences non justifiées (statut *Absent*) sont de nouveau comptées ; *Excusé* ne pénalise pas.
+- SMS : modem série débranché ou port introuvable → échec propre consigné dans la file (au lieu d'une exception non rattrapée) ; `SMS_ENABLED` lu via `sms_actifs()` partout (notifications, convocation réunion, manuels, test de la passerelle).
+
+### Technique
+- Constante `StatutInscriptionChoices.ABANDON` à la place de 69 littéraux `'ABANDON'` dans 24 fichiers.
+- `except Exception` : 93 → 75 (hors `licences/`, conçu pour ne jamais bloquer l'application : 39) ; les blocs restants journalisent la trace. Exceptions précises sur la 2FA, le chiffrement, les formulaires de paramétrage, la génération d'EDT, les modèles de SMS, la passerelle SMS.
+- `parametres/views.py` (1 982 lignes) → paquet `parametres/views/` (scolarité, nomenclatures, tarifs, signataires, établissement, calendrier, messages/SMS) ; `viescolaire/views.py` (1 561 lignes) → paquet `viescolaire/views/` (conseils, sanctions, activités, EDT, suivi). Aucune URL ni nom de vue modifié.
+- Tests : assistant IA (20), module SMS (40), prédictions (21) ; couverture mesurée 75 % (seuil CI 65 → 73).
+
 ## 5.8.0 — 2026-10-27
 
 ### Nouveau (audit — Lot C : exploitation)

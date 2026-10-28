@@ -17,7 +17,7 @@ import io
 import threading
 from ..models import Paiement
 from ..paiements_mobiles import cinetpay_configure, relancer_avec_lien
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import AnneeScolaire, Classe, TarifScolarite, RubriquePaiement
 from core.utils import get_etablissement_context
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
@@ -76,7 +76,7 @@ def relance_count(request):
 
     insc_qs = Inscription.objects.filter(
         annee_scolaire=annee,
-    ).exclude(statut='ABANDON').select_related('eleve', 'statut_eleve', 'classe')
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'statut_eleve', 'classe')
 
     if classe_id == 'all':
         insc_qs = insc_qs.filter(classe__etablissement=etab)
@@ -177,7 +177,7 @@ def relance_paiement_pdf(request):
     sig_membre = signataire.get_membre_personnel() if signataire else None
 
     # Inscriptions triées par classe puis par élève
-    inscriptions = insc_qs.exclude(statut='ABANDON').select_related(
+    inscriptions = insc_qs.exclude(statut=StatutInscriptionChoices.ABANDON).select_related(
         'eleve', 'classe', 'classe__cycle', 'statut_eleve'
     ).order_by('classe__nom', 'eleve__nom', 'eleve__prenom')
 
@@ -297,7 +297,7 @@ def relance_sms(request):
         classe = get_object_or_404(Classe, pk=classe_id, etablissement=etab)
         insc_qs = Inscription.objects.filter(annee_scolaire=annee, classe=classe)
 
-    inscriptions = insc_qs.exclude(statut='ABANDON').select_related('eleve', 'classe')
+    inscriptions = insc_qs.exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe')
 
     nb_envoyes = 0
     nb_sans_numero = 0
@@ -339,7 +339,7 @@ def relance_sms(request):
                 'rubrique': rubrique.nom,
                 'etablissement': etab.nom,
             })
-        except Exception:
+        except (ValueError, IndexError, ModeleMessage.MultipleObjectsReturned):
             logger.exception("Relance SMS : modèle de message invalide, texte par défaut utilisé")
             sms_msg = f"Bonjour, votre enfant {eleve.nom} {eleve.prenom} a un reste à payer de {reste:,.0f} F pour la rubro {rubrique.nom}. Merci de regler au plus vite. {etab.nom}"
 

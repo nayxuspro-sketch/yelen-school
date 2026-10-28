@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import render, get_object_or_404, redirect
 
 from parametres.models import AnneeScolaire, Classe
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from .models import SessionExamen, CentreExamen, InscriptionExamen, SalleExamen, PlacementExamen
 from .forms import SessionExamenForm, CentreExamenForm, SalleExamenForm
 
@@ -146,7 +146,7 @@ def inscrire_classe(request, session_id, classe_id):
     inscriptions_scolaires = (
         Inscription.objects
         .filter(classe=classe, annee_scolaire=session.annee_scolaire)
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
         .select_related('eleve')
     )
 

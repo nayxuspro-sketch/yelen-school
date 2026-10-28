@@ -14,7 +14,7 @@ from decimal import Decimal
 import csv
 import io
 from ..models import Paiement
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import AnneeScolaire, RubriquePaiement
 from core.utils import get_etablissement_context
 from ..permissions import FINANCE_VIEW_ROLES
@@ -47,7 +47,7 @@ def liste_redevables(request):
     inscriptions = Inscription.objects.filter(
         annee_scolaire=annee_courante,
         classe__etablissement=etab,
-    ).exclude(statut='ABANDON').select_related('eleve', 'classe', 'classe__cycle', 'statut_eleve')
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe', 'classe__cycle', 'statut_eleve')
     
     if query:
         inscriptions = inscriptions.filter(
@@ -533,7 +533,7 @@ def liste_redevables_pdf(request):
     inscriptions = Inscription.objects.filter(
         annee_scolaire=annee_courante,
         classe__etablissement=etab,
-    ).exclude(statut='ABANDON').select_related('eleve', 'classe', 'classe__cycle', 'statut_eleve')
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe', 'classe__cycle', 'statut_eleve')
 
     cycles_dict = {}
     total_redevable = Decimal('0')

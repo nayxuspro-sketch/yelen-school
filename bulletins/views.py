@@ -22,7 +22,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import AnneeScolaire, Classe, Distinction
 from pedagogie.models import MoyenneGenerale, Trimestre
 
@@ -98,7 +98,7 @@ def bulletins_classe(request, class_id, trimestre_id):
     inscriptions = (
         Inscription.objects
         .filter(classe=classe, annee_scolaire=trimestre.annee_scolaire)
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
         .select_related('eleve')
         .order_by('eleve__nom', 'eleve__prenom')
     )
@@ -294,7 +294,7 @@ def bulletins_classe_publier(request, class_id, trimestre_id):
     inscriptions = (
         Inscription.objects
         .filter(classe=classe, annee_scolaire=trimestre.annee_scolaire)
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
     )
     # Seules les inscriptions avec une MoyenneGenerale calculée
     ins_avec_mg = set(
@@ -400,7 +400,7 @@ class BulletinAnnuelIndexView(LoginRequiredMixin, View):
             inscriptions = (
                 Inscription.objects
                 .filter(classe=classe, annee_scolaire=annee)
-                .exclude(statut='ABANDON')
+                .exclude(statut=StatutInscriptionChoices.ABANDON)
                 .select_related('eleve')
                 .order_by('eleve__nom', 'eleve__prenom')
             )
@@ -506,7 +506,7 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
             Inscription.objects
             .select_related('eleve', 'classe__cycle')
             .filter(classe=classe, annee_scolaire=annee)
-            .exclude(statut='ABANDON')
+            .exclude(statut=StatutInscriptionChoices.ABANDON)
             .order_by('eleve__nom', 'eleve__prenom')
         )
 

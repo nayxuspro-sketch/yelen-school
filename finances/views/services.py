@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 
 from core.excel import ExcelExport
 from core.importation import en_date
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import Classe, RubriquePaiement
 
 from ..models import (
@@ -336,7 +336,7 @@ def abonnement_classe(request, pk):
     eleves = []
     if classe is not None and annee is not None:
         deja = set(_abonnements(service).filter(inscription__classe=classe).values_list('inscription_id', flat=True))
-        eleves = list(Inscription.objects.filter(classe=classe, annee_scolaire=annee).exclude(statut='ABANDON')
+        eleves = list(Inscription.objects.filter(classe=classe, annee_scolaire=annee).exclude(statut=StatutInscriptionChoices.ABANDON)
                       .select_related('eleve').order_by('eleve__nom', 'eleve__prenom'))
         for ins in eleves:
             ins.deja_abonne = ins.pk in deja

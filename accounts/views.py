@@ -279,7 +279,7 @@ def totp_setup(request):
         try:
             signer = Signer()
             secret = signer.unsign(signed_secret)
-        except Exception:
+        except BadSignature:
             logger.warning("Configuration 2FA : secret signé invalide ou expiré", exc_info=True)
             messages.error(request, "Session expirée. Recommencez.")
             return redirect('accounts:totp_setup')

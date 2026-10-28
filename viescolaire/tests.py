@@ -136,7 +136,7 @@ class TestEmploiDuTempsPdfUnePage:
                 documents.append(document)
                 return document.write_pdf(target, **kwargs)
 
-        mocker.patch('viescolaire.views.WeasyHTML', HTMLEspion)
+        mocker.patch('viescolaire.views.edt.WeasyHTML', HTMLEspion)
         return documents
 
     @pytest.fixture
@@ -202,7 +202,7 @@ class TestEmploiDuTempsPdfUnePage:
         baker.make('parametres.SignataireDocument', cycle=classe.cycle, type_document=TypeDocument.objects.get(code='BULLETIN'),
                    annee_scolaire=AnneeScolaire.objects.get(etablissement=classe.etablissement),
                    membre_personnel_id=directeur.id, fonction='Le Directeur', actif=True)
-        weasy = mocker.patch('viescolaire.views.WeasyHTML')
+        weasy = mocker.patch('viescolaire.views.edt.WeasyHTML')
         for nom_url, pk in (('viescolaire:emploi_du_temps_pdf', classe.pk), ('viescolaire:emploi_du_temps_prof_pdf', prof.pk)):
             assert client.get(reverse(nom_url, args=[pk])).status_code == 200, nom_url
             html = weasy.call_args.kwargs['string']
@@ -244,7 +244,7 @@ class TestConfigEDT:
             def write_pdf(self, target=None, **kwargs):
                 target.write(b'%PDF-1.4')
 
-        mocker.patch('viescolaire.views.WeasyHTML', FauxHTML)
+        mocker.patch('viescolaire.views.edt.WeasyHTML', FauxHTML)
         return rendus
 
     def _colonnes(self, html):

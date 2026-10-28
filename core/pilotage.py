@@ -17,7 +17,7 @@ def _taux(part, total):
 def tableau_de_bord(etab, annee, aujourdhui=None):
     """Recouvrement, impayés par classe, effectifs, absences et élèves à risque de ``etab`` pour ``annee``."""
     from finances.views.commun import _situations_financieres_en_lot
-    from inscriptions.models import Inscription
+    from inscriptions.models import Inscription, StatutInscriptionChoices
     from pedagogie.models import RisqueDecrochage
     from presences.models import Justification, Presence
 
@@ -26,7 +26,7 @@ def tableau_de_bord(etab, annee, aujourdhui=None):
         Inscription.objects.filter(annee_scolaire=annee, classe__etablissement=etab)
         .select_related('eleve', 'classe__cycle', 'statut_eleve')
     )
-    actives = [i for i in inscriptions if i.statut != 'ABANDON']
+    actives = [i for i in inscriptions if i.statut != StatutInscriptionChoices.ABANDON]
     situations = _situations_financieres_en_lot(actives)
 
     # ── Recouvrement et impayés par classe ──
@@ -115,7 +115,7 @@ def tableau_de_bord(etab, annee, aujourdhui=None):
     # ── Élèves à risque ──
     risques = RisqueDecrochage.objects.filter(
         inscription__annee_scolaire=annee, inscription__classe__etablissement=etab,
-    ).exclude(inscription__statut='ABANDON')
+    ).exclude(inscription__statut=StatutInscriptionChoices.ABANDON)
     compteurs = defaultdict(int, {
         r['niveau']: r['nb'] for r in risques.values('niveau').annotate(nb=Count('id'))
     })

@@ -23,6 +23,7 @@ SMB/NFS : le verrouillage WAL n'y est pas fiable).
 import logging
 
 from django.conf import settings
+from django.db import DatabaseError
 from django.db.backends.signals import connection_created
 
 logger = logging.getLogger(__name__)
@@ -46,7 +47,7 @@ def configure_sqlite(sender, connection, **kwargs):
         for pragma in SQLITE_PRAGMAS:
             try:
                 cursor.execute(pragma)
-            except Exception as exc:  # pragma: no cover — ne doit jamais bloquer l'appli
+            except DatabaseError as exc:  # pragma: no cover — ne doit jamais bloquer l'appli
                 logger.warning("SQLite: impossible d'appliquer %s (%s)", pragma, exc)
 
 

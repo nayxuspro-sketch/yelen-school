@@ -1,0 +1,112 @@
+"""Vues de l'application parametres.
+
+Paquet découpé par domaine (octobre 2026) ; les URLs et les tests continuent
+d'utiliser ``parametres.views.<nom>`` grâce aux ré-exports ci-dessous.
+"""
+from .commun import (  # noqa: F401
+    _get_etab,
+    _delete_view,
+)
+from .scolarite import (  # noqa: F401
+    parametres_index,
+    annee_list,
+    annee_form,
+    annee_set_courante,
+    cycle_list,
+    cycle_form,
+    classe_list,
+    classe_form,
+    periode_list,
+    periode_form,
+    type_evaluation_list,
+    type_evaluation_form,
+    annee_delete,
+    cycle_delete,
+    classe_delete,
+    periode_delete,
+    periode_cloture,
+    type_evaluation_delete,
+)
+from .nomenclatures import (  # noqa: F401
+    poste_list,
+    poste_form,
+    localisation_list,
+    localisation_form,
+    localisation_delete,
+    statut_list,
+    statut_form,
+    appreciation_list,
+    appreciation_form,
+    appreciation_primaire_list,
+    appreciation_primaire_form,
+    categorie_discipline_list,
+    categorie_discipline_form,
+    discipline_list,
+    discipline_form,
+    type_document_list,
+    type_document_form,
+    type_sanction_list,
+    type_sanction_form,
+    distinction_list,
+    distinction_form,
+    titre_fonction_list,
+    titre_fonction_form,
+    titre_honorifique_list,
+    titre_honorifique_form,
+    poste_delete,
+    statut_delete,
+    appreciation_delete,
+    appreciation_primaire_delete,
+    categorie_discipline_delete,
+    discipline_delete,
+    type_document_delete,
+    type_sanction_delete,
+    distinction_delete,
+    titre_fonction_delete,
+    titre_honorifique_delete,
+)
+from .tarifs import (  # noqa: F401
+    rubrique_list,
+    rubrique_form,
+    rubrique_toggle_actif,
+    tarif_toggle_actif,
+    tarif_list,
+    tarif_form,
+    rubrique_delete,
+    tarif_delete,
+    tarif_simulation,
+    tarif_simulation_resultat,
+)
+from .signataires import (  # noqa: F401
+    signataire_config,
+    signataires_list,
+    signataires_list_detail,
+    signataire_edit,
+    signataire_formulaire,
+)
+from .etablissement import (  # noqa: F401
+    etablissement_edit,
+    identite_etablissement,
+    droits_acces,
+    role_personnalise_create,
+    role_personnalise_delete,
+)
+from .calendrier import (  # noqa: F401
+    calendrier,
+    evenement_form,
+    evenement_delete,
+)
+from .messages_sms import (  # noqa: F401
+    modeles_messages_list,
+    modele_message_form,
+    modele_message_reset,
+    _variables_par_type,
+    _check_sms_configuration_access,
+    _sms_enabled,
+    _get_or_create_sms_triggers,
+    _render_sms_trigger_list,
+    sms_auto_config,
+    sms_auto_toggle,
+    sms_auto_save,
+    sms_auto_executer,
+)

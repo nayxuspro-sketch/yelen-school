@@ -9,7 +9,7 @@ import unicodedata
 from collections import Counter
 
 from examens.models import InscriptionExamen, SessionExamen
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from viescolaire.models import DecisionConseil
 
 _NIVEAUX = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2', '6', '5', '4', '3', '2', '1', 'T']
@@ -134,7 +134,7 @@ def statistiques_fin_annee(annee):
         ligne = _ligne(lignes, valeur, cles)
         genre = valeur['eleve__genre']
         _ajouter(ligne['inscrits'], genre)
-        if valeur['statut'] == 'ABANDON':
+        if valeur['statut'] == StatutInscriptionChoices.ABANDON:
             _ajouter(ligne['abandons'], genre)
             continue
         _ajouter(ligne['fin_annee'], genre)

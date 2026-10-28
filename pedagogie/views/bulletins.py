@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from ..models import Resultat, MoyenneGenerale, Trimestre, Competence, EvaluationCompetence, Enseignement
 from parametres.models import AnneeScolaire, Classe
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import get_etablissement_context
 from licences.decorators import requires_licence_feature
 from .commun import HTML, _pdf_licence_info
@@ -138,7 +138,7 @@ def _build_bulletin_context(request, inscription, trimestre):
     nb_eleves = (
         Inscription.objects
         .filter(classe=inscription.classe, annee_scolaire=trimestre.annee_scolaire)
-        .exclude(statut='ABANDON').count()
+        .exclude(statut=StatutInscriptionChoices.ABANDON).count()
     )
 
     stats_classe = MoyenneGenerale.objects.filter(
@@ -294,7 +294,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     
     inscriptions = Inscription.objects.select_related(
         'eleve', 'classe__cycle'
-    ).filter(classe=classe, annee_scolaire=trimestre.annee_scolaire).exclude(statut='ABANDON')
+    ).filter(classe=classe, annee_scolaire=trimestre.annee_scolaire).exclude(statut=StatutInscriptionChoices.ABANDON)
     nb_eleves = inscriptions.count()
 
     etab = classe.etablissement
@@ -444,7 +444,7 @@ def _moyennes_annuelles_classe(classe, annee_scolaire, trimestres):
     lignes = MoyenneGenerale.objects.filter(
         inscription__classe=classe, inscription__annee_scolaire=annee_scolaire,
         trimestre__in=trimestres, moyenne__isnull=False,
-    ).exclude(inscription__statut='ABANDON').values_list('inscription_id', 'moyenne')
+    ).exclude(inscription__statut=StatutInscriptionChoices.ABANDON).values_list('inscription_id', 'moyenne')
     for ins_id, moyenne in lignes:
         par_ins[ins_id].append(moyenne)
     return {ins_id: _moyenne_annuelle(moyennes) for ins_id, moyennes in par_ins.items()}
@@ -464,7 +464,7 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
     nb_eleves = Inscription.objects.filter(
         classe=inscription.classe,
         annee_scolaire=annee_scolaire
-    ).exclude(statut='ABANDON').count()
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).count()
 
     # Moyennes par trimestre (pour le récapitulatif) + agrégation annuelle
     trimestres = list(Trimestre.objects.filter(annee_scolaire=annee_scolaire).order_by('numero'))
@@ -669,7 +669,7 @@ def bulletin_annuel_classe_batch_pdf(request, class_id):
 
     inscriptions = Inscription.objects.select_related(
         'eleve', 'classe__cycle'
-    ).filter(classe=classe, annee_scolaire=annee_scolaire).exclude(statut='ABANDON')
+    ).filter(classe=classe, annee_scolaire=annee_scolaire).exclude(statut=StatutInscriptionChoices.ABANDON)
 
     # Même gabarit que le bulletin individuel ; un document HTML par élève, paginé à part (« Page 1 / 1 »)
     fragments = [render_to_string('pedagogie/pdf/bulletin_annuel.html', _build_bulletin_annuel_context(request, ins, annee_scolaire))
@@ -704,7 +704,7 @@ def _compute_palmares_annuel(classe, annee_scolaire):
     inscriptions = list(
         Inscription.objects.select_related('eleve')
         .filter(classe=classe, annee_scolaire=annee_scolaire)
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
         .order_by('eleve__nom', 'eleve__prenom')
     )
 

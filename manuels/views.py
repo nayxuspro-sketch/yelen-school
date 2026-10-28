@@ -434,8 +434,8 @@ def _notifier_parents_manuel_non_rendu(eleve, manuel, etab):
         f"Frais a regler : {manuel.prix_remplacement:,.0f} FCFA."
     )
 
-    from core.sms import get_sms_val
-    sms_active = get_sms_val('SMS_ENABLED')
+    from core.sms import sms_actifs
+    sms_active = sms_actifs()
 
     # 1. Notification in-app pour les parents avec compte (sans SMS délégué à creer_notification)
     parents_comptes = eleve.utilisateurs_lies.filter(role='PARENT', is_active=True)

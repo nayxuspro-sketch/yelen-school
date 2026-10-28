@@ -8,7 +8,7 @@ tous de la même population d'élèves.
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 
-from inscriptions.models import Inscription
+from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import AnneeScolaire
 
 # Nombre maximal d'élèves renvoyés par la recherche serveur du formulaire
@@ -39,7 +39,7 @@ def inscriptions_payables(etab, annee):
         .select_related('eleve', 'classe', 'annee_scolaire', 'statut_eleve')
         .filter(annee_scolaire=annee, classe__etablissement=etab)
         .exclude(est_exonere=True)
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
         .order_by('eleve__nom', 'eleve__prenom')
     )
 

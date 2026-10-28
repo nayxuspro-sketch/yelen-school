@@ -52,7 +52,7 @@ def decrypt_sensitive_data(encrypted_data: str) -> str:
         decrypted = bytes(b ^ key[i % len(key)] for i, b in enumerate(encrypted_bytes))
         
         return decrypted.decode('utf-8')
-    except Exception:
+    except (ValueError, TypeError):   # base64 invalide, UTF-8 illisible, type inattendu
         logger.exception("Déchiffrement d'une donnée sensible impossible")
         return ''  # Retourne chaîne vide si erreur
 

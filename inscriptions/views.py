@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
-from .models import Eleve, Inscription, EvenementParcours, TransfertEleve
+from .models import Eleve, Inscription, EvenementParcours, StatutInscriptionChoices, TransfertEleve
 from .forms import EleveForm, InscriptionForm, TransfertClasseForm
 from parametres.models import AnneeScolaire, Classe, SignataireDocument, TypeDocument
 from core.utils import get_etablissement_context
@@ -61,11 +61,11 @@ def eleve_list(request):
         if statut_filter == 'inscrit':
             eleves = eleves.filter(
                 inscriptions__annee_scolaire=annee_courante,
-            ).exclude(inscriptions__statut='ABANDON').distinct()
+            ).exclude(inscriptions__statut=StatutInscriptionChoices.ABANDON).distinct()
         elif statut_filter == 'abandon':
             eleves = eleves.filter(
                 inscriptions__annee_scolaire=annee_courante,
-                inscriptions__statut='ABANDON',
+                inscriptions__statut=StatutInscriptionChoices.ABANDON,
             ).distinct()
         elif statut_filter == 'non_inscrit':
             eleves = eleves.exclude(
@@ -184,11 +184,11 @@ def eleve_list_csv(request):
         if statut_filter == 'inscrit':
             eleves = eleves.filter(
                 inscriptions__annee_scolaire=annee_courante,
-            ).exclude(inscriptions__statut='ABANDON').distinct()
+            ).exclude(inscriptions__statut=StatutInscriptionChoices.ABANDON).distinct()
         elif statut_filter == 'abandon':
             eleves = eleves.filter(
                 inscriptions__annee_scolaire=annee_courante,
-                inscriptions__statut='ABANDON',
+                inscriptions__statut=StatutInscriptionChoices.ABANDON,
             ).distinct()
         elif statut_filter == 'non_inscrit':
             eleves = eleves.exclude(
@@ -299,11 +299,11 @@ def eleve_list_xlsx(request):
         if statut_filter == 'inscrit':
             eleves = eleves.filter(
                 inscriptions__annee_scolaire=annee_courante,
-            ).exclude(inscriptions__statut='ABANDON').distinct()
+            ).exclude(inscriptions__statut=StatutInscriptionChoices.ABANDON).distinct()
         elif statut_filter == 'abandon':
             eleves = eleves.filter(
                 inscriptions__annee_scolaire=annee_courante,
-                inscriptions__statut='ABANDON',
+                inscriptions__statut=StatutInscriptionChoices.ABANDON,
             ).distinct()
         elif statut_filter == 'non_inscrit':
             eleves = eleves.exclude(inscriptions__annee_scolaire=annee_courante)
@@ -394,11 +394,11 @@ def eleve_list_pdf(request):
         if statut_filter == 'inscrit':
             eleves = eleves.filter(
                 inscriptions__annee_scolaire=annee_courante,
-            ).exclude(inscriptions__statut='ABANDON').distinct()
+            ).exclude(inscriptions__statut=StatutInscriptionChoices.ABANDON).distinct()
         elif statut_filter == 'abandon':
             eleves = eleves.filter(
                 inscriptions__annee_scolaire=annee_courante,
-                inscriptions__statut='ABANDON',
+                inscriptions__statut=StatutInscriptionChoices.ABANDON,
             ).distinct()
         elif statut_filter == 'non_inscrit':
             eleves = eleves.exclude(
@@ -479,7 +479,7 @@ def eleve_detail(request, pk):
     inscriptions = eleve.inscriptions.all().order_by('-annee_scolaire__date_debut')
     
     last_inscription = eleve.inscriptions.exclude(
-        statut='ABANDON'
+        statut=StatutInscriptionChoices.ABANDON
     ).order_by('-annee_scolaire__date_debut').first()
     
     context = {
@@ -681,11 +681,11 @@ def marquer_abandon(request, pk):
         return redirect('inscriptions:eleve_list')
     
     if request.method == 'POST':
-        if inscription.statut == 'ABANDON':
+        if inscription.statut == StatutInscriptionChoices.ABANDON:
             inscription.statut = 'AFFECTE'
             messages.success(request, f"{inscription.eleve.get_nom_complet()} — Abandon annulé, statut remis à Affecté.")
         else:
-            inscription.statut = 'ABANDON'
+            inscription.statut = StatutInscriptionChoices.ABANDON
             messages.warning(request, f"{inscription.eleve.get_nom_complet()} — Marqué(e) Abandon pour {inscription.annee_scolaire.libelle}.")
         inscription.save(update_fields=['statut'])
     return redirect('inscriptions:eleve_detail', pk=inscription.eleve.pk)
@@ -704,7 +704,7 @@ def transfert_classe(request, pk):
         messages.error(request, "Accès refusé. Cette inscription n'appartient pas à votre établissement.")
         return redirect('inscriptions:eleve_list')
     
-    if inscription.statut == 'ABANDON':
+    if inscription.statut == StatutInscriptionChoices.ABANDON:
         messages.error(request, "Impossible de transférer une inscription marquée Abandon.")
         return redirect('inscriptions:eleve_detail', pk=inscription.eleve.pk)
 
@@ -940,7 +940,7 @@ def _calculer_transition(insc_courante, insc_suivante):
     Déduit automatiquement le type de transition entre deux inscriptions.
     insc_courante = fin d'une année, insc_suivante = début de l'année d'après.
     """
-    if insc_courante.statut == 'ABANDON':
+    if insc_courante.statut == StatutInscriptionChoices.ABANDON:
         return 'ABANDON'
     if insc_suivante is None:
         return None  # Dernière inscription connue — pas encore de suite
@@ -1007,7 +1007,7 @@ def eleve_parcours(request, pk):
         badges = []
         if insc.est_redoublant:
             badges.append({'label': 'Redoublant', 'badge_class': 'badge-redoublant'})
-        if insc.statut == 'ABANDON':
+        if insc.statut == StatutInscriptionChoices.ABANDON:
             badges.append({'label': 'Abandon', 'badge_class': 'badge-danger'})
         if insc.statut == 'BOURSIER':
             badges.append({'label': 'Boursier', 'badge_class': 'badge-boursier'})
@@ -1122,7 +1122,7 @@ def transfert_inter_demander(request, inscription_id):
     if etab and inscription.classe.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé.")
         return redirect('inscriptions:eleve_list')
-    if inscription.statut == 'ABANDON':
+    if inscription.statut == StatutInscriptionChoices.ABANDON:
         messages.error(request, "Cet élève est déjà en statut Abandon.")
         return redirect('inscriptions:eleve_detail', pk=inscription.eleve.pk)
     # Vérifier qu'il n'y a pas déjà un transfert en attente
@@ -1221,7 +1221,7 @@ def transfert_inter_approuver(request, pk):
 
     # Marquer l'inscription comme abandon
     ins = transfert.inscription
-    ins.statut = 'ABANDON'
+    ins.statut = StatutInscriptionChoices.ABANDON
     ins.save(update_fields=['statut'])
 
     # Mettre à jour l'élève (dernière classe connue)

@@ -22,7 +22,7 @@ def _annee_courante(etablissement):
 def compter_eleves(etablissement) -> int:
     """Nombre d'élèves distincts inscrits dans l'année scolaire courante
     (tous statuts sauf ABANDON)."""
-    from inscriptions.models import Inscription
+    from inscriptions.models import Inscription, StatutInscriptionChoices
 
     annee = _annee_courante(etablissement)
     if annee is None:
@@ -30,7 +30,7 @@ def compter_eleves(etablissement) -> int:
     return (
         Inscription.objects
         .filter(classe__etablissement=etablissement, annee_scolaire=annee)
-        .exclude(statut='ABANDON')
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
         .values('eleve_id')
         .distinct()
         .count()
