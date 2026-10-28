@@ -1,0 +1,40 @@
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page { size: A4 portrait; margin: 15mm 18mm; }{% endblock %}
+{% block css %}
+body { font-family: Arial, sans-serif; font-size: 11.5pt; color: #000; }
+.titre-doc { text-align: center; margin: 0.8cm 0 0.9cm; }
+.titre-doc h1 { font-size: 15pt; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; margin: 0;
+  padding: 6px 18px; border: 2px solid #111; display: inline-block; }
+.corps { line-height: 1.65; text-align: justify; margin: 0.3cm 0 0.8cm; }
+.corps p { margin: 0.35cm 0; }
+.nom { font-weight: bold; text-transform: uppercase; }
+.fiche { width: 100%; border-collapse: collapse; margin: 0.4cm 0 0.6cm; font-size: 10.5pt; }
+.fiche td { padding: 5px 8px; border: 1px solid #bbb; }
+.fiche td.lbl { width: 38%; background: #f3f3f3; color: #222; }
+.mention { font-style: italic; color: #333; font-size: 10pt; margin-top: 0.4cm; }
+{% endblock %}
+{% block corps %}
+<div class="titre-doc"><h1>Attestation de travail</h1></div>
+
+<div class="corps">
+  <p>Je soussigné(e), représentant(e) de <strong>{% firstof identite.nom_etablissement membre.etablissement.nom %}</strong>{% if identite and identite.ville %}, sis(e) à {{ identite.ville }}{% endif %}, atteste que :</p>
+
+  <table class="fiche">
+    <tr><td class="lbl">Nom et prénom(s)</td><td><span class="nom">{{ membre.nom }}</span> {{ membre.prenom }}</td></tr>
+    <tr><td class="lbl">Date et lieu de naissance</td><td>{{ membre.date_naissance|date:"d/m/Y" }}{% if membre.lieu_naissance %} à {{ membre.lieu_naissance }}{% endif %}</td></tr>
+    <tr><td class="lbl">Matricule</td><td>{{ membre.matricule|default:"—" }}</td></tr>
+    <tr><td class="lbl">Fonction / poste</td><td>{{ poste }}</td></tr>
+    {% if membre.titre_capacite %}<tr><td class="lbl">Titre de capacité</td><td>{{ membre.titre_capacite }}</td></tr>{% endif %}
+    <tr><td class="lbl">Date d'embauche</td><td>{{ membre.date_embauche|date:"d/m/Y" }}</td></tr>
+    <tr><td class="lbl">Nature du contrat</td><td>{{ type_contrat|capfirst }}</td></tr>
+  </table>
+
+  <p>est employé(e) au sein de notre établissement depuis le <strong>{{ membre.date_embauche|date:"d/m/Y" }}</strong> en qualité de <strong>{{ poste }}</strong>{% if inscription and inscription.cycle %} ({{ inscription.cycle.nom }}){% endif %}, et {% if membre.is_active %}y exerce toujours à la date de ce jour{% else %}y a exercé jusqu'à la fin de son engagement{% endif %}.</p>
+
+  <p>La présente attestation est délivrée à l'intéressé(e), à sa demande, pour servir et valoir ce que de droit.</p>
+</div>
+
+{% signataire_auto "ATTESTATION_TRAVAIL" %}
+
+<p class="mention">Document établi le {{ today|date:"d/m/Y" }}{% if annee_scolaire %} — année scolaire {{ annee_scolaire.libelle }}{% endif %}.</p>
+{% endblock %}

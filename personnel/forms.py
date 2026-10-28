@@ -1,5 +1,5 @@
 from django import forms
-from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel
+from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel, AbsencePersonnel
 from parametres.models import TitreFonction, TitreHonorifiquePersonnel
 from core.validators import validate_image_upload
 
@@ -154,3 +154,31 @@ class CongePersonnelForm(forms.ModelForm):
                 etablissement=etablissement, is_active=True
             ).order_by('nom', 'prenom')
         _apply_yelen_classes(self.fields)
+
+
+class AbsencePersonnelForm(forms.ModelForm):
+    """Saisie d'une absence d'un agent."""
+
+    class Meta:
+        model = AbsencePersonnel
+        fields = ['personnel', 'date_debut', 'date_fin', 'motif', 'justifiee', 'retenue', 'observation']
+        widgets = {
+            'date_debut': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+            'date_fin': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+        }
+
+    def __init__(self, *args, **kwargs):
+        etablissement = kwargs.pop('etablissement', None)
+        super().__init__(*args, **kwargs)
+        if etablissement:
+            self.fields['personnel'].queryset = MembrePersonnel.objects.filter(
+                etablissement=etablissement, is_active=True
+            ).order_by('nom', 'prenom')
+        _apply_yelen_classes(self.fields)
+
+    def clean(self):
+        cleaned = super().clean()
+        debut, fin = cleaned.get('date_debut'), cleaned.get('date_fin')
+        if debut and fin and fin < debut:
+            self.add_error('date_fin', "La date de fin doit être postérieure ou égale à la date de début.")
+        return cleaned

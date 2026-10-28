@@ -395,6 +395,9 @@
         {% if '/personnel/conges/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:conge_list' %}" class="sb-item-submodern" data-url="/personnel/conges/"><span class="sub-item-dot"></span>Congés</a>
         {% endif %}
+        {% if '/personnel/absences/' in droits_fonctionnalites %}
+        <a href="{% url 'personnel:absence_list' %}" class="sb-item-submodern" data-url="/personnel/absences/"><span class="sub-item-dot"></span>Absences</a>
+        {% endif %}
       </div>
       {% endif %}
 

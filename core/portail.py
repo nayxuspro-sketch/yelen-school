@@ -8,7 +8,7 @@ from django.utils import timezone
 from core.validators import validate_piece_jointe
 from pedagogie.models import CahierTextes, Note, Resultat
 from presences.models import Justification, Presence
-from viescolaire.models import ConfigEDT, JourSemaine, SeanceCours
+from viescolaire.models import ConfigEDT, JourSemaine, SanctionDisciplinaire, SeanceCours
 
 DUREE_MAX_JUSTIFICATION = 31   # jours couverts au plus par un justificatif
 
@@ -40,6 +40,13 @@ def assiduite(inscription, limite=30):
 
 def justifications(inscription, limite=10):
     return list(Justification.objects.filter(inscription=inscription).order_by('-date_debut', '-created_at')[:limite])
+
+
+def sanctions(inscription, limite=10):
+    """Sanctions de l'année visibles par le parent (les annulées sont exclues)."""
+    return list(SanctionDisciplinaire.objects.filter(inscription=inscription)
+                .exclude(statut=SanctionDisciplinaire.StatutChoices.ANNULE)
+                .select_related('type_sanction').order_by('-date_sanction')[:limite])
 
 
 def notes_recentes(inscription, limite=15):

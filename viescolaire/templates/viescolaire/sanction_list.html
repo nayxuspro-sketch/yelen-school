@@ -197,6 +197,7 @@
             {% else %}
             <span class="text-muted">—</span>
             {% endif %}
+            {% if s.parents_notifies_le %}<div class="text-muted" style="font-size:.7rem;" title="Parent informé (portail / SMS)">informé {{ s.parents_notifies_le|date:"d/m" }}</div>{% endif %}
           </td>
           <td class="text-right">
             <form method="post" action="{% url 'viescolaire:sanction_delete' s.pk %}" data-csp-confirm-submit="Supprimer cette sanction ?" >

@@ -23,8 +23,12 @@ class SessionExamenForm(forms.ModelForm):
             'observations': forms.Textarea(attrs={'rows': 3}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, etablissement=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if etablissement is not None:
+            self.fields['annee_scolaire'].queryset = (
+                self.fields['annee_scolaire'].queryset.filter(etablissement=etablissement)
+            )
         for field in self.fields.values():
             field.widget.attrs.setdefault('class', 'input')
 

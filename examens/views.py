@@ -11,7 +11,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Prefetch
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, get_object_or_404, redirect
@@ -62,10 +62,17 @@ def session_list(request):
     })
 
 
+def _verifier_etablissement(request, session):
+    """Une session, un centre, une salle ou un placement d'un autre établissement n'existe pas pour l'utilisateur."""
+    etab = getattr(request.user, 'etablissement', None)
+    if etab and session.annee_scolaire.etablissement_id != etab.pk:
+        raise Http404
+
+
 @login_required
 @requires_licence_feature('examens_officiels')
 def session_create(request):
-    form = SessionExamenForm(request.POST or None)
+    form = SessionExamenForm(request.POST or None, etablissement=getattr(request.user, 'etablissement', None))
     if request.method == 'POST' and form.is_valid():
         session = form.save()
         messages.success(request, f"Session « {session.libelle} » créée.")
@@ -81,7 +88,8 @@ def session_create(request):
 @requires_licence_feature('examens_officiels')
 def session_edit(request, session_id):
     session = get_object_or_404(SessionExamen, pk=session_id)
-    form = SessionExamenForm(request.POST or None, instance=session)
+    _verifier_etablissement(request, session)
+    form = SessionExamenForm(request.POST or None, instance=session, etablissement=getattr(request.user, 'etablissement', None))
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, f"Session « {session.libelle} » mise à jour.")
@@ -141,7 +149,8 @@ def session_detail(request, session_id):
 @requires_licence_feature('examens_officiels')
 def inscrire_classe(request, session_id, classe_id):
     session = get_object_or_404(SessionExamen, pk=session_id)
-    classe = get_object_or_404(Classe, pk=classe_id)
+    _verifier_etablissement(request, session)
+    classe = get_object_or_404(Classe, pk=classe_id, etablissement=session.annee_scolaire.etablissement)
 
     inscriptions_scolaires = (
         Inscription.objects
@@ -152,7 +161,7 @@ def inscrire_classe(request, session_id, classe_id):
 
     if request.method == 'POST':
         centre_id = request.POST.get('centre')
-        centre = get_object_or_404(CentreExamen, pk=centre_id) if centre_id else None
+        centre = get_object_or_404(CentreExamen, pk=centre_id, session=session) if centre_id else None
         count = 0
         for ins in inscriptions_scolaires:
             _, created = InscriptionExamen.objects.get_or_create(
@@ -237,6 +246,7 @@ def session_resultats_csv(request, session_id):
     session = get_object_or_404(
         SessionExamen.objects.select_related('annee_scolaire'), pk=session_id
     )
+    _verifier_etablissement(request, session)
 
     candidats = (
         session.inscriptions_examen
@@ -282,6 +292,7 @@ def session_resultats_csv(request, session_id):
 @requires_licence_feature('examens_officiels')
 def centre_create(request, session_id):
     session = get_object_or_404(SessionExamen, pk=session_id)
+    _verifier_etablissement(request, session)
     form = CentreExamenForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         centre = form.save(commit=False)
@@ -300,7 +311,8 @@ def centre_create(request, session_id):
 @login_required
 @requires_licence_feature('examens_officiels')
 def centre_edit(request, centre_id):
-    centre = get_object_or_404(CentreExamen, pk=centre_id)
+    centre = get_object_or_404(CentreExamen.objects.select_related('session__annee_scolaire'), pk=centre_id)
+    _verifier_etablissement(request, centre.session)
     form = CentreExamenForm(request.POST or None, instance=centre)
     if request.method == 'POST' and form.is_valid():
         form.save()
@@ -318,7 +330,8 @@ def centre_edit(request, centre_id):
 @login_required
 @requires_licence_feature('examens_officiels')
 def centre_delete(request, centre_id):
-    centre = get_object_or_404(CentreExamen, pk=centre_id)
+    centre = get_object_or_404(CentreExamen.objects.select_related('session__annee_scolaire'), pk=centre_id)
+    _verifier_etablissement(request, centre.session)
     session_id = centre.session.pk
     if request.method == 'POST':
         nb = centre.candidats.count()
@@ -333,7 +346,8 @@ def centre_delete(request, centre_id):
 @login_required
 @requires_licence_feature('examens_officiels')
 def salle_create(request, centre_id):
-    centre = get_object_or_404(CentreExamen, pk=centre_id)
+    centre = get_object_or_404(CentreExamen.objects.select_related('session__annee_scolaire'), pk=centre_id)
+    _verifier_etablissement(request, centre.session)
     form = SalleExamenForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         salle = form.save(commit=False)
@@ -352,7 +366,8 @@ def salle_create(request, centre_id):
 @login_required
 @requires_licence_feature('examens_officiels')
 def salle_edit(request, salle_id):
-    salle = get_object_or_404(SalleExamen, pk=salle_id)
+    salle = get_object_or_404(SalleExamen.objects.select_related('centre__session__annee_scolaire'), pk=salle_id)
+    _verifier_etablissement(request, salle.centre.session)
     form = SalleExamenForm(request.POST or None, instance=salle)
     if request.method == 'POST' and form.is_valid():
         form.save()
@@ -370,7 +385,8 @@ def salle_edit(request, salle_id):
 @login_required
 @requires_licence_feature('examens_officiels')
 def salle_delete(request, salle_id):
-    salle = get_object_or_404(SalleExamen, pk=salle_id)
+    salle = get_object_or_404(SalleExamen.objects.select_related('centre__session__annee_scolaire'), pk=salle_id)
+    _verifier_etablissement(request, salle.centre.session)
     session_id = salle.centre.session.pk
     if request.method == 'POST':
         salle.delete()
@@ -386,9 +402,10 @@ def salle_delete(request, salle_id):
 def placement_salle(request, salle_id):
     """Gestion du placement des candidats dans une salle d'examen."""
     salle = get_object_or_404(
-        SalleExamen.objects.select_related('centre__session'), pk=salle_id
+        SalleExamen.objects.select_related('centre__session__annee_scolaire'), pk=salle_id
     )
     session = salle.centre.session
+    _verifier_etablissement(request, session)
 
     placements = (
         salle.placements
@@ -454,7 +471,8 @@ def placement_salle(request, salle_id):
 @require_POST
 def placement_delete(request, placement_id):
     """Retire un candidat de sa salle."""
-    placement = get_object_or_404(PlacementExamen, pk=placement_id)
+    placement = get_object_or_404(PlacementExamen.objects.select_related('salle__centre__session__annee_scolaire'), pk=placement_id)
+    _verifier_etablissement(request, placement.salle.centre.session)
     salle_id = placement.salle.pk
     nom = placement.candidat.inscription.eleve.get_nom_complet()
     placement.delete()
@@ -558,6 +576,7 @@ def candidats_session_pdf(request, session_id):
     session = get_object_or_404(
         SessionExamen.objects.select_related('annee_scolaire'), pk=session_id
     )
+    _verifier_etablissement(request, session)
     centre_id = request.GET.get('centre', '')
     centre_selectionne = None
     if centre_id:

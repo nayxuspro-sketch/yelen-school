@@ -1752,6 +1752,7 @@ class ModeleMessage(BaseModel):
       RETARD    : {nom_eleve}, {date}, {matiere}, {etablissement}
       PAIEMENT  : {nom_eleve}, {montant}, {rubrique}, {etablissement}
       REUNION   : {date}, {heure}, {lieu}, {objet}, {etablissement}
+      SANCTION  : {nom_eleve}, {classe}, {date}, {sanction}, {motif}, {etablissement}
     """
 
     class TypeChoices(models.TextChoices):
@@ -1759,6 +1760,7 @@ class ModeleMessage(BaseModel):
         ABSENCE  = 'ABSENCE',  'Absence élève'
         RETARD   = 'RETARD',   'Retard élève'
         SEUIL_ABSENCES = 'SEUIL_ABSENCES', "Seuil d'absences atteint"
+        SANCTION = 'SANCTION', 'Sanction disciplinaire'
         PAIEMENT = 'PAIEMENT', 'Relance paiement'
         REUNION  = 'REUNION',  'Réunion parents d\'élèves'
 
@@ -1778,6 +1780,10 @@ class ModeleMessage(BaseModel):
         'SEUIL_ABSENCES': (
             "Bonjour, votre enfant {nom_eleve} ({classe}) totalise {nb} absences non justifiées "
             "({periode}). Merci de contacter {etablissement} rapidement."
+        ),
+        'SANCTION': (
+            "Bonjour, votre enfant {nom_eleve} ({classe}) a reçu une sanction le {date} : {sanction}. "
+            "Motif : {motif}. — {etablissement}"
         ),
         'PAIEMENT': (
             "Bonjour, un rappel de paiement : {rubrique} de {montant} FCFA "

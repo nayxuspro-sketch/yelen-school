@@ -257,6 +257,7 @@ def attribution_form(request, exemplaire_pk=None):
     if classe_id and annee_courante:
         inscriptions = Inscription.objects.filter(
             classe_id=classe_id,
+            classe__etablissement=etab,
             annee_scolaire=annee_courante,
         ).select_related('eleve').order_by('eleve__nom')
 
@@ -283,6 +284,7 @@ def inscription_par_classe(request):
     if classe_id and annee_courante:
         inscriptions = Inscription.objects.filter(
             classe_id=classe_id,
+            classe__etablissement=etab,
             annee_scolaire=annee_courante,
         ).select_related('eleve').order_by('eleve__nom')
     return render(request, 'manuels/partials/eleves_options.html', {

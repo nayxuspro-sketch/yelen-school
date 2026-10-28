@@ -1,0 +1,80 @@
+{% extends "core/base.html" %}
+{% load droits_tags %}
+
+{% block title %}Absences du personnel — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Absences du personnel</h1>
+    <p class="page-subtitle">{% if membre %}{{ membre.get_nom_complet }} — toutes les absences enregistrées{% else %}Mois de {{ mois_libelle|date:"F Y" }} : les jours non justifiés marqués « retenue » sont proposés sur le brouillon de paie du mois (1/30e du salaire de base par jour).{% endif %}</p>
+  </div>
+  <div class="d-flex gap-2 align-center">
+    {% if not membre %}
+    <form method="get" class="d-flex gap-2 align-center">
+      <input type="month" name="mois" value="{{ mois_param }}" class="input" aria-label="Mois" data-csp-submit-on-change>
+    </form>
+    {% else %}
+    <a href="{% url 'personnel:absence_list' %}" class="btn-secondary">Tout le personnel</a>
+    {% endif %}
+    {% if request|autorise_url:'personnel:absence_create' %}
+    <a href="{% if membre %}{% url 'personnel:absence_create_pour' membre.pk %}{% else %}{% url 'personnel:absence_create' %}{% endif %}" class="btn-primary">Nouvelle absence</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if bilan and not membre %}
+<div class="card animate-fade-up mb-4" style="padding:0; overflow:hidden;">
+  <div class="card-header" style="padding:var(--space-4);"><span class="card-title">Bilan du mois par agent</span></div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th>Agent</th><th>Fonction</th><th class="text-right">Absences</th><th class="text-right">Jours</th><th class="text-right">Non justifiés</th><th class="text-right">À retenir</th></tr></thead>
+      <tbody>
+        {% for l in bilan %}
+        <tr>
+          <td class="fw-semibold"><a href="{% url 'personnel:detail' l.membre.pk %}">{{ l.membre.get_nom_complet }}</a></td>
+          <td>{{ l.membre.fonction }}</td>
+          <td class="text-right">{{ l.absences }}</td>
+          <td class="text-right">{{ l.jours }}</td>
+          <td class="text-right {% if l.non_justifies %}color-danger fw-semibold{% endif %}">{{ l.non_justifies }}</td>
+          <td class="text-right {% if l.retenus %}color-danger fw-semibold{% endif %}">{{ l.retenus }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th>Agent</th><th>Motif</th><th>Du</th><th>Au</th><th class="text-right">Jours</th><th>Justifiée</th><th>Retenue</th><th>Saisie par</th><th class="text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for a in absences %}
+        <tr>
+          <td class="fw-semibold"><a href="{% url 'personnel:detail' a.personnel.pk %}">{{ a.personnel.get_nom_complet }}</a></td>
+          <td>{{ a.get_motif_display }}{% if a.observation %}<div class="text-muted text-xs">{{ a.observation }}</div>{% endif %}</td>
+          <td>{{ a.date_debut|date:"d/m/Y" }}</td>
+          <td>{{ a.date_fin|date:"d/m/Y" }}</td>
+          <td class="text-right fw-semibold">{{ a.nombre_jours }}</td>
+          <td>{% if a.justifiee %}<span class="badge badge-success">Oui</span>{% else %}<span class="badge badge-warning">Non</span>{% endif %}</td>
+          <td>{% if a.a_retenir %}<span class="badge badge-danger">Proposée</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td class="text-muted text-xs">{% if a.created_by %}{{ a.created_by.get_full_name|default:a.created_by.email }}{% else %}—{% endif %}</td>
+          <td class="text-right">
+            {% if request|autorise_url:'personnel:absence_delete' %}
+            <form method="post" action="{% url 'personnel:absence_delete' a.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-ghost btn-sm color-danger" data-csp-confirm="Supprimer cette absence ?">Supprimer</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucune absence {% if membre %}pour cet agent{% else %}ce mois-ci{% endif %}.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

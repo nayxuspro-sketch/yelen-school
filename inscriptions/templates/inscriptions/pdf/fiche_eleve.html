@@ -1,0 +1,84 @@
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page { size: A4 portrait; margin: 12mm 15mm; @bottom-right { content: "Page " counter(page) " / " counter(pages); font-size: 7.5pt; color: #555; } }{% endblock %}
+{% block css %}
+body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #000; }
+.titre-doc { text-align: center; margin: 0.4cm 0 0.4cm; }
+.titre-doc h1 { font-size: 13pt; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; margin: 0;
+  padding: 4px 14px; border: 2px solid #111; display: inline-block; }
+.titre-doc .sous { font-size: 9pt; color: #333; margin-top: 4px; }
+.entete-eleve { display: flex; gap: 0.5cm; align-items: flex-start; margin-bottom: 0.3cm; }
+.photo { width: 3cm; height: 3.8cm; border: 1px solid #999; text-align: center; font-size: 7.5pt; color: #777; line-height: 3.8cm; flex: none; }
+.photo img { width: 3cm; height: 3.8cm; object-fit: cover; }
+.identite { flex: 1; }
+.identite .nom { font-size: 13pt; font-weight: bold; text-transform: uppercase; }
+.identite .matricule { font-size: 9pt; color: #333; margin-bottom: 4px; }
+h2 { font-size: 9.5pt; text-transform: uppercase; letter-spacing: 1px; margin: 0.35cm 0 0.12cm; padding-bottom: 2px; border-bottom: 1.5px solid #111; }
+table.fiche { width: 100%; border-collapse: collapse; }
+table.fiche td { padding: 3px 6px; border: 1px solid #bbb; vertical-align: top; }
+table.fiche td.lbl { width: 24%; background: #f3f3f3; color: #222; }
+table.fiche td.lbl2 { width: 22%; background: #f3f3f3; color: #222; }
+table.liste { width: 100%; border-collapse: collapse; }
+table.liste th { background: #e9e9e9; color: #111; text-align: left; padding: 3px 6px; border: 1px solid #bbb; font-size: 8.5pt; }
+table.liste td { padding: 3px 6px; border: 1px solid #bbb; font-size: 8.5pt; }
+.vide { color: #666; font-style: italic; }
+.urgence { border: 1.5px solid #111; padding: 4px 8px; background: #f7f7f7; margin-top: 0.15cm; }
+.mention { font-size: 8pt; color: #444; margin-top: 0.3cm; }
+{% endblock %}
+{% block corps %}
+<div class="titre-doc">
+  <h1>Fiche individuelle de l'élève</h1>
+  <div class="sous">{% if inscription %}Année scolaire {{ inscription.annee_scolaire.libelle }} — classe de {{ inscription.classe.nom }}{% else %}Aucune inscription en cours{% endif %}</div>
+</div>
+
+<div class="entete-eleve">
+  <div class="photo">{% if eleve.photo %}<img src="{{ eleve.photo.url }}" alt="Photo">{% else %}Photo{% endif %}</div>
+  <div class="identite">
+    <div class="nom">{{ eleve.nom }} {{ eleve.prenom }}</div>
+    <div class="matricule">Matricule {{ eleve.matricule }}</div>
+    <table class="fiche">
+      <tr><td class="lbl">Sexe</td><td>{{ eleve.get_genre_display }}</td><td class="lbl2">Né(e) le</td><td>{{ eleve.date_naissance|date:"d/m/Y" }}{% if eleve.lieu_naissance %} à {{ eleve.lieu_naissance }}{% endif %}</td></tr>
+      <tr><td class="lbl">Nationalité</td><td>{{ eleve.nationalite|default:"—" }}</td><td class="lbl2">Résidence</td><td>{{ eleve.lieu_residence|default:"—" }}</td></tr>
+      <tr><td class="lbl">Téléphone d'urgence</td><td>{{ eleve.telephone_urgence|default:"—" }}</td><td class="lbl2">E-mail</td><td>{{ eleve.email|default:"—" }}</td></tr>
+    </table>
+  </div>
+</div>
+
+<h2>Scolarité</h2>
+<table class="fiche">
+  <tr><td class="lbl">Classe actuelle</td><td>{% if inscription %}{{ inscription.classe.nom }} ({{ inscription.classe.cycle.nom }}){% else %}—{% endif %}</td><td class="lbl2">Statut</td><td>{% if inscription %}{{ inscription.get_statut_display }}{% if inscription.statut_eleve %} · {{ inscription.statut_eleve.nom }}{% endif %}{% if inscription.est_redoublant %} · Redoublant{% endif %}{% else %}—{% endif %}</td></tr>
+  <tr><td class="lbl">École d'origine</td><td>{{ eleve.etablissement_origine|default:"—" }}</td><td class="lbl2">Dernière classe / année</td><td>{{ eleve.last_classe|default:"—" }}{% if eleve.last_annee %} ({{ eleve.last_annee }}){% endif %}</td></tr>
+</table>
+
+<h2>Parents et tuteur</h2>
+<table class="fiche">
+  <tr><td class="lbl">Père</td><td>{{ eleve.nom_pere|default:"—" }}{% if eleve.profession_pere %} — {{ eleve.profession_pere }}{% endif %}</td><td class="lbl2">Téléphone parent</td><td>{{ eleve.telephone_parent|default:"—" }}</td></tr>
+  <tr><td class="lbl">Mère</td><td>{{ eleve.nom_mere|default:"—" }}{% if eleve.profession_mere %} — {{ eleve.profession_mere }}{% endif %}</td><td class="lbl2">Tuteur</td><td>{{ eleve.tuteur_nom|default:"—" }}{% if eleve.tuteur_telephone %} — {{ eleve.tuteur_telephone }}{% endif %}</td></tr>
+  <tr><td class="lbl">Adresse du tuteur</td><td colspan="3">{{ eleve.tuteur_adresse|default:"—" }}</td></tr>
+</table>
+
+<h2>Santé — fiche d'urgence</h2>
+<table class="fiche">
+  <tr><td class="lbl">Groupe sanguin</td><td>{{ eleve.groupe_sanguin|default:"Non renseigné" }}</td><td class="lbl2">Allergies</td><td>{{ eleve.allergies|default:"Non renseignées" }}</td></tr>
+  <tr><td class="lbl">Médecin / centre de santé</td><td colspan="3">{{ eleve.medecin_traitant|default:"—" }}</td></tr>
+  <tr><td class="lbl">Informations médicales</td><td colspan="3">{% if eleve.informations_medicales %}{{ eleve.informations_medicales|linebreaksbr }}{% else %}<span class="vide">Aucune</span>{% endif %}</td></tr>
+</table>
+<div class="urgence"><strong>Personnes autorisées à récupérer l'élève :</strong>
+  {% if personnes %}<ul style="margin:2px 0 0 0.5cm; padding:0;">{% for p in personnes %}<li>{{ p }}</li>{% endfor %}</ul>{% else %} <span class="vide">aucune personne déclarée — seuls les parents et le tuteur.</span>{% endif %}
+</div>
+
+<h2>Parcours dans l'établissement</h2>
+{% if parcours %}
+<table class="liste">
+  <thead><tr><th>Année</th><th>Classe</th><th>Statut</th><th>Inscrit(e) le</th></tr></thead>
+  <tbody>
+    {% for i in parcours %}
+    <tr><td>{{ i.annee_scolaire.libelle }}</td><td>{{ i.classe.nom }}</td><td>{{ i.get_statut_display }}{% if i.est_redoublant %} (redoublant){% endif %}</td><td>{{ i.date_inscription|date:"d/m/Y" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="vide">Aucune inscription.</p>{% endif %}
+
+{% signataire_auto "FICHE_ELEVE" %}
+
+<p class="mention">Fiche éditée le {{ today|date:"d/m/Y" }}. Les informations de santé sont confidentielles : réservées à la direction, à l'infirmerie et aux personnes habilitées.</p>
+{% endblock %}

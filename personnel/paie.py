@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.db import transaction
 
-from .models import MembrePersonnel, SalairePersonnel
+from .models import AbsencePersonnel, MembrePersonnel, SalairePersonnel
 
 MOIS = dict(SalairePersonnel.MOIS_CHOICES)
 
@@ -21,8 +21,9 @@ def agents_a_payer(etab):
 
 def preparer(etab, mois, annee, annee_scolaire, par):
     """Crée un brouillon pour chaque agent à payer sans bulletin ce mois-ci : salaire de base, indemnités et retenues
-    CNSS / IUTS repris de son dernier bulletin, prime d'ancienneté recalculée, primes et retenues exceptionnelles à
-    zéro. Retourne (bulletins créés, agents sans bulletin de référence — à saisir à la main)."""
+    CNSS / IUTS repris de son dernier bulletin, prime d'ancienneté recalculée, primes exceptionnelles à zéro et
+    retenue proposée pour les jours d'absence non justifiés du mois (1/30e du salaire de base par jour).
+    Retourne (bulletins créés, agents sans bulletin de référence — à saisir à la main)."""
     deja = set(SalairePersonnel.objects.filter(personnel__etablissement=etab, mois=mois, annee=annee)
                .values_list('personnel_id', flat=True))
     crees, sans_reference = [], []
@@ -32,13 +33,16 @@ def preparer(etab, mois, annee, annee_scolaire, par):
             if dernier is None:
                 sans_reference.append(membre)
                 continue
+            jours = AbsencePersonnel.jours_retenus(membre, mois, annee)
+            retenue = (dernier.salaire_base / 30 * jours).quantize(Decimal('1')) if jours else Decimal('0')
             salaire = SalairePersonnel(
                 personnel=membre, annee_scolaire=annee_scolaire, mois=mois, annee=annee,
                 salaire_base=dernier.salaire_base, indemnite_transport=dernier.indemnite_transport,
                 indemnite_logement=dernier.indemnite_logement,
                 prime_anciennete=SalairePersonnel.calculer_prime_anciennete(membre, dernier.salaire_base),
                 autres_primes=Decimal('0'), retenue_cnss=dernier.retenue_cnss, retenue_iuts=dernier.retenue_iuts,
-                autres_retenues=Decimal('0'), statut=SalairePersonnel.StatutChoices.BROUILLON, created_by=par,
+                autres_retenues=retenue, statut=SalairePersonnel.StatutChoices.BROUILLON, created_by=par,
+                observations=f"Retenue absences : {jours} jour(s) non justifié(s) (1/30e du salaire de base par jour)." if jours else '',
             )
             salaire.save()
             crees.append(salaire)

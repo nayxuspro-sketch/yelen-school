@@ -17,6 +17,7 @@ urlpatterns = [
     path('<uuid:pk>/toggle-active/', views.toggle_active, name='toggle_active'),
     path('<uuid:pk>/badge/', views.badge_personnel, name='badge'),
     path('<uuid:pk>/contrat/', views.contrat_travail, name='contrat'),
+    path('<uuid:pk>/attestation-travail/', views.attestation_travail, name='attestation_travail'),
 
     # Salaires
     path('salaires/', views.salaire_list, name='salaire_list'),
@@ -34,6 +35,10 @@ urlpatterns = [
     path('salaires/<uuid:pk>/supprimer/', views.salaire_delete, name='salaire_delete'),
 
     # Congés
+    path('absences/', views.absence_list, name='absence_list'),
+    path('absences/nouvelle/', views.absence_create, name='absence_create'),
+    path('<uuid:pk>/absence/nouvelle/', views.absence_create, name='absence_create_pour'),
+    path('absences/<uuid:pk>/supprimer/', views.absence_delete, name='absence_delete'),
     path('conges/', views.conge_list, name='conge_list'),
     path('conges/nouveau/', views.conge_create, name='conge_create'),
     path('<uuid:pk>/conge/nouveau/', views.conge_create, name='conge_create_pour'),

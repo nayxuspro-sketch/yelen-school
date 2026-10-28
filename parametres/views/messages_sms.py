@@ -94,6 +94,8 @@ def _variables_par_type(type_msg):
         'RETARD':   ['{nom_eleve}', '{date}', '{matiere}', '{etablissement}'],
         'PAIEMENT': ['{nom_eleve}', '{montant}', '{rubrique}', '{etablissement}'],
         'REUNION':  ['{date}', '{heure}', '{lieu}', '{objet}', '{etablissement}'],
+        'SEUIL_ABSENCES': ['{nom_eleve}', '{classe}', '{nb}', '{periode}', '{etablissement}'],
+        'SANCTION': ['{nom_eleve}', '{classe}', '{date}', '{sanction}', '{motif}', '{etablissement}'],
     }.get(type_msg, [])
 
 

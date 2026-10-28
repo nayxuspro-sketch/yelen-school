@@ -1,0 +1,32 @@
+{% extends "core/base.html" %}
+
+{% block title %}Attestation de travail — {{ membre.get_nom_complet }}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div class="d-flex align-center gap-4">
+    <a href="{% url 'personnel:detail' membre.pk %}" class="btn-icon" aria-label="Retour">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="page-title">Attestation de travail</h1>
+      <p class="page-subtitle">{{ membre.get_nom_complet }} — {{ poste }}</p>
+    </div>
+  </div>
+  <a href="?format=pdf" target="_blank" class="btn-primary">Ouvrir le PDF</a>
+</div>
+
+<div class="card animate-fade-up delay-1" style="max-width: 760px;">
+  <div class="card-header"><span class="card-title">Contenu de l'attestation</span></div>
+  <div class="d-flex gap-4 flex-wrap" style="padding:var(--space-4);">
+    <div class="flex-1 min-w-0"><div class="text-muted text-xs text-uppercase">Agent</div><div class="fw-medium">{{ membre.nom|upper }} {{ membre.prenom }}</div></div>
+    <div class="flex-1 min-w-0"><div class="text-muted text-xs text-uppercase">Fonction / poste</div><div class="fw-medium">{{ poste }}</div></div>
+    <div class="flex-1 min-w-0"><div class="text-muted text-xs text-uppercase">Titre de capacité</div><div class="fw-medium">{{ membre.titre_capacite|default:"—" }}</div></div>
+    <div class="flex-1 min-w-0"><div class="text-muted text-xs text-uppercase">Embauche</div><div class="fw-medium">{{ membre.date_embauche|date:"d/m/Y" }}</div></div>
+    <div class="flex-1 min-w-0"><div class="text-muted text-xs text-uppercase">Contrat</div><div class="fw-medium">{{ type_contrat|capfirst }}</div></div>
+  </div>
+  <p class="text-muted text-sm" style="padding:0 var(--space-4) var(--space-4);">Le PDF est signé par le signataire configuré pour « Attestation de Travail » (Paramètres → Signataires des documents) ; à défaut, par celui de la catégorie Personnel.</p>
+</div>
+{% endblock %}

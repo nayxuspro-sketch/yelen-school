@@ -9,10 +9,10 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel
+from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel, AbsencePersonnel
 from .forms import (
     MembrePersonnelForm, InscriptionPersonnelForm,
-    SalairePersonnelForm, CongePersonnelForm,
+    SalairePersonnelForm, CongePersonnelForm, AbsencePersonnelForm,
 )
 from .selectors import annee_courante, avec_inscriptions_annee, personnel_filtre
 from parametres.models import AnneeScolaire, Cycle
@@ -442,6 +442,34 @@ def contrat_travail(request, pk):
             return redirect('personnel:detail', pk=pk)
 
     return render(request, 'personnel/contrat_preview.html', context)
+
+
+@login_required
+@requires_licence_feature('gestion_personnel')
+def attestation_travail(request, pk):
+    """Attestation de travail (A4 portrait, signée par le signataire configuré) : aperçu HTML ou PDF (?format=pdf)."""
+    etab = getattr(request.user, 'etablissement', None)
+    membre = get_object_or_404(MembrePersonnel.objects.select_related('etablissement'), pk=pk,
+                               **({'etablissement': etab} if etab else {}))
+    annee = AnneeScolaire.objects.filter(etablissement=membre.etablissement, est_courante=True).first()
+    inscription = InscriptionPersonnel.objects.filter(personnel=membre, annee_scolaire=annee).select_related('poste', 'cycle').first() if annee else None
+    type_contrat = ("contrat à durée déterminée" if membre.est_contractuel else "vacation à temps partiel" if membre.est_vacataire
+                    else "contrat à durée indéterminée")
+    context = {
+        'membre': membre, 'inscription': inscription, 'annee_scolaire': annee, 'type_contrat': type_contrat,
+        'poste': inscription.poste.titre if inscription and inscription.poste else membre.fonction,
+        'today': date_module.today(),
+        **get_etablissement_context(membre.etablissement, request),
+    }
+    if request.GET.get('format') == 'pdf':
+        from core.pdf import HTML
+        html = render_to_string('personnel/pdf/attestation_travail.html', context, request=request)
+        pdf = HTML(string=html, base_url=request.build_absolute_uri()).write_pdf()
+        nom = f"{membre.nom}_{membre.prenom}".replace(' ', '_')
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="attestation_travail_{nom}.pdf"'
+        return response
+    return render(request, 'personnel/attestation_travail_preview.html', context)
 
 
 @login_required
@@ -985,3 +1013,89 @@ def bulletins_paie_lot_pdf(request):
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="bulletins_salaire_{annee}_{mois:02d}.pdf"'
     return response
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ABSENCES DU PERSONNEL
+# ═══════════════════════════════════════════════════════════════════
+
+def _mois_demande(request):
+    """(mois, année) du paramètre ``mois=AAAA-MM`` ; mois courant par défaut."""
+    valeur = request.GET.get('mois', '')
+    try:
+        annee, mois = (int(v) for v in valeur.split('-'))
+        if not 1 <= mois <= 12:
+            raise ValueError
+        return mois, annee
+    except (TypeError, ValueError):
+        today = date_module.today()
+        return today.month, today.year
+
+
+def _bilan_absences(etab, mois, annee):
+    """Par agent ayant au moins une absence sur le mois : absences, jours, jours non justifiés, jours retenus."""
+    import calendar
+    debut, fin = date_module(annee, mois, 1), date_module(annee, mois, calendar.monthrange(annee, mois)[1])
+    lignes = {}
+    for a in (AbsencePersonnel.objects.filter(personnel__etablissement=etab, date_debut__lte=fin, date_fin__gte=debut)
+              .select_related('personnel').order_by('personnel__nom', 'personnel__prenom')):
+        ligne = lignes.setdefault(a.personnel_id, {'membre': a.personnel, 'absences': 0, 'jours': 0, 'non_justifies': 0, 'retenus': 0})
+        jours = (min(a.date_fin, fin) - max(a.date_debut, debut)).days + 1
+        ligne['absences'] += 1
+        ligne['jours'] += jours
+        if not a.justifiee:
+            ligne['non_justifies'] += jours
+            if a.retenue:
+                ligne['retenus'] += jours
+    return list(lignes.values()), debut, fin
+
+
+@login_required
+def absence_list(request):
+    """Absences du personnel : liste du mois (ou d'un agent) et bilan par agent."""
+    etab = getattr(request.user, 'etablissement', None)
+    mois, annee = _mois_demande(request)
+    bilan, debut, fin = _bilan_absences(etab, mois, annee) if etab else ([], None, None)
+    qs = AbsencePersonnel.objects.filter(personnel__etablissement=etab).select_related('personnel', 'created_by')
+    membre_id = request.GET.get('personnel')
+    membre = MembrePersonnel.objects.filter(pk=membre_id, etablissement=etab).first() if membre_id else None
+    if membre:
+        qs = qs.filter(personnel=membre)
+    elif debut:
+        qs = qs.filter(date_debut__lte=fin, date_fin__gte=debut)
+    return render(request, 'personnel/absence_list.html', {
+        'absences': qs[:300], 'bilan': bilan, 'membre': membre,
+        'mois_param': f"{annee:04d}-{mois:02d}", 'mois_libelle': date_module(annee, mois, 1),
+    })
+
+
+@login_required
+def absence_create(request, pk=None):
+    """Enregistrer une absence (depuis la liste ou la fiche de l'agent)."""
+    etab = getattr(request.user, 'etablissement', None)
+    membre = get_object_or_404(MembrePersonnel, pk=pk, etablissement=etab) if pk else None
+    if request.method == 'POST':
+        form = AbsencePersonnelForm(request.POST, etablissement=etab)
+        if form.is_valid():
+            absence = form.save(commit=False)
+            absence.created_by = request.user
+            absence.save()
+            messages.success(request, f"Absence de {absence.personnel.get_nom_complet()} enregistrée "
+                                      f"({absence.nombre_jours} jour(s){', retenue proposée sur la paie' if absence.a_retenir else ''}).")
+            return redirect('personnel:detail', pk=membre.pk) if membre else redirect('personnel:absence_list')
+    else:
+        form = AbsencePersonnelForm(initial={'personnel': membre, 'date_debut': date_module.today(), 'date_fin': date_module.today()},
+                                    etablissement=etab)
+    return render(request, 'personnel/absence_form.html', {'form': form, 'membre': membre, 'titre': "Nouvelle absence"})
+
+
+@login_required
+@require_POST
+def absence_delete(request, pk):
+    etab = getattr(request.user, 'etablissement', None)
+    absence = get_object_or_404(AbsencePersonnel, pk=pk, personnel__etablissement=etab)
+    membre_id = absence.personnel_id
+    absence.delete()
+    messages.success(request, "Absence supprimée.")
+    suivant = request.POST.get('suivant')
+    return redirect('personnel:detail', pk=membre_id) if suivant == 'fiche' else redirect('personnel:absence_list')

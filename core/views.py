@@ -765,6 +765,7 @@ def portail_parent_vie_scolaire(request):
             'compteurs': compteurs,
             'absences': absences,
             'justifications': portail.justifications(inscription),
+            'sanctions': portail.sanctions(inscription),
         })
     return render(request, 'core/portail_parent_vie_scolaire.html', {
         'enfants': enfants,

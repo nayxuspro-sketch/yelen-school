@@ -1,10 +1,10 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.0
-version_guide: 3.4
-date_mise_a_jour: 10/10/2026 (corrections post-fusion : sécurité, performance, dette technique)
-modules_documentés: [accounts, parametres, inscriptions, pedagogie, finances, examens, personnel, presences, vacations, viescolaire, licences, documents, design_system, 2fa, discipline_points, convocations, circulaires, emploi_du_temps, appels_decision, qr_presences, bourses, notifications, audit_log, calendrier, modeles_sms, reunion_parents, salaires_personnel, conges_personnel, config_sms, compte_parent, portail_parent, transferts, api_rest, bulletins_annuels, manuels, identite_etablissement, personnel_detail, competences_apc, captures_ecran, auto_annee_scolaire_manuel, analyse_risque, sms_auto, sauvegarde_restauration, triggers_financiers, chaine_audit_crypto]
-modules_en_attente: [orientation_postbac, solar_guard]
+version_logiciel: 5.14.0
+version_guide: 5.14
+date_mise_a_jour: 28/10/2026 (Lot J : absences du personnel, sanction → parent, fiche élève, attestation de travail)
+modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
+modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
 ---
 
@@ -3131,6 +3131,41 @@ Dans le formulaire élève, section **Santé & personnes autorisées** : groupe 
 - Le tableau liste les sauvegardes disponibles (fichier, type, date, taille) : `Télécharger` pour les **copier sur une clé USB ou un disque externe** — une sauvegarde qui reste sur le même PC ne protège pas d'une panne de disque.
 - **Restauration** : arrêter YELEN SCHOOL (`arreter.bat`), renommer `data\db.sqlite3` en `db.sqlite3.avant`, décompresser le `.sqlite3.gz` choisi (7-Zip ou `gzip -d`) et le renommer `db.sqlite3` dans `data\`, extraire le ZIP des médias dans `media\`, redémarrer (`demarrer.bat`).
 - En mode serveur (PostgreSQL), la page rappelle la tâche planifiée `installer\backup-windows.bat` : pas de bouton.
+
+### 9.33 Absences du personnel et retenue sur la paie
+
+**Accès :** menu latéral **Personnel → Absences** (adresse `/personnel/absences/`), ou bouton `Absence` sur la fiche d'un membre. Droit « Absences du personnel » (actions `enregistrer`, `supprimer`) dans la matrice des droits.
+
+- **Saisie** : agent, du … au … (une journée = même date aux deux bornes), motif (`Maladie`, `Permission`, `Formation`, `Non justifiée`, `Autre`), case `Justifiée` (certificat ou autorisation présenté), case `Retenue sur salaire` (cochée par défaut), observation.
+- **Règle** : une absence n'est retenue que si elle est **non justifiée et** que la case `Retenue` est cochée. Une absence justifiée n'est jamais retenue, même la case cochée.
+- **Bilan mensuel** : le sélecteur de mois (`AAAA-MM`) affiche, par agent, le nombre d'absences, de jours, de jours non justifiés et de **jours retenus** sur le mois civil (une absence à cheval sur deux mois est répartie). Le lien sur le nom ouvre l'historique complet de l'agent.
+- **Paie** : `Personnel → Paie du mois → Préparer` reprend ces jours : retenue proposée = **salaire de base / 30 × jours retenus**, arrondie au franc, inscrite dans `Autres retenues` du brouillon avec la mention « Retenue absences : N jour(s) non justifié(s) » dans les observations. Le gestionnaire reste libre de corriger le montant avant validation.
+- La fiche du membre liste ses quatre dernières absences (`Voir tout` → historique).
+
+### 9.34 Sanction : prévenir le parent (portail + SMS)
+
+**Accès :** `Vie scolaire → Sanctions → Nouvelle sanction`.
+
+- La case **« Prévenir le parent »** (cochée par défaut) envoie, à l'enregistrement : une **notification sur le portail parent** (comptes parents liés à l'élève, type « Sanction ») et un **SMS** au numéro du parent (fiche élève : téléphone parent, sinon tuteur, sinon urgence) si les SMS sont activés (§10).
+- **Modèle SMS** `Sanction disciplinaire` (`Paramètres → Modèles de messages`), variables `{nom_eleve}`, `{classe}`, `{date}`, `{sanction}`, `{motif}`, `{etablissement}`. Texte par défaut : « Bonjour, votre enfant {nom_eleve} ({classe}) a reçu une sanction le {date} : {sanction}. Motif : {motif}. — {etablissement} ».
+- La liste des sanctions indique « informé jj/mm » sous la colonne des parents convoqués ; si aucun compte parent n'est lié et qu'aucun numéro n'est connu, un avertissement le signale à la saisie.
+- **Portail parent → Vie scolaire** : section « Sanctions disciplinaires » (date, type, durée, motif, convocation) ; les sanctions **annulées** n'y figurent pas. L'ancienne notification automatique à chaque création a été retirée : seule la case décide.
+
+### 9.35 Fiche individuelle de l'élève (PDF)
+
+**Accès :** dossier de l'élève (`Inscriptions → Élèves → fiche`) → carte **Fiche individuelle** (`Ouvrir le PDF`, adresse `/inscriptions/eleve/<id>/fiche.pdf`).
+
+- **A4 portrait, signée** par le signataire configuré pour « Fiche Individuelle de l'Élève » (`Paramètres → Signataires des documents`, catégorie Scolarité ; à défaut, celui de la catégorie).
+- Contenu : identité et photo, matricule, classe et année en cours, parents et tuteur (téléphones, professions, adresse), **santé** (groupe sanguin, allergies, maladies, médecin, contact d'urgence), **personnes autorisées** à récupérer l'élève (§9.29), parcours dans l'établissement (année, classe, statut, redoublement, date d'inscription).
+- Usage : dossier papier, fiche d'urgence pour l'infirmerie, sortie scolaire. Les données de santé étant confidentielles, le pied de page le rappelle.
+
+### 9.36 Attestation de travail (personnel)
+
+**Accès :** fiche du membre (`Personnel → fiche`) → carte **Attestation de travail** : aperçu à l'écran, bouton `PDF` (adresse `/personnel/<id>/attestation-travail/?format=pdf`).
+
+- **A4 portrait, signée** par le signataire configuré pour « Attestation de Travail » (catégorie Personnel).
+- Reprend : nom, prénom, date et lieu de naissance, matricule, **fonction / poste** de l'année en cours (affectation annuelle, sinon fonction de la fiche), **titre de capacité**, **date d'embauche**, **nature du contrat** (CDD si contractuel, vacation si vacataire, sinon CDI) et la formule « exerce toujours à la date de ce jour » (ou « a exercé jusqu'à la fin de son engagement » pour un membre inactif).
+- Document établi à la date du jour ; la signature scannée du signataire s'imprime si elle est enregistrée (`Paramètres → Signataires des documents`).
 
 ---
 
@@ -6960,7 +6995,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.13.1 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.14.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

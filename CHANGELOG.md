@@ -3,6 +3,23 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.14.0 — 2026-10-28
+
+### Ajouté
+- **Absences du personnel** (`Personnel → Absences`, guide §9.33) : saisie (dates, motif, justifiée, retenue), bilan mensuel par agent, historique sur la fiche du membre ; la préparation de la paie propose une retenue de `salaire de base / 30 × jours non justifiés` dans « Autres retenues ». Modèle `AbsencePersonnel` (migration `personnel/0011`), droit « Absences du personnel ».
+- **Sanction → parent** (guide §9.34) : case « Prévenir le parent » à la saisie d'une sanction (notification du portail parent + SMS, modèle `Sanction disciplinaire` avec `{nom_eleve} {classe} {date} {sanction} {motif} {etablissement}`), horodatage `parents_notifies_le` affiché dans la liste ; section « Sanctions disciplinaires » sur le portail parent (annulées exclues). Migrations `viescolaire/0009`, `parametres/0039`.
+- **Fiche individuelle de l'élève** PDF A4 portrait signée (identité, photo, parents/tuteur, santé, personnes autorisées, parcours) depuis le dossier de l'élève (guide §9.35).
+- **Attestation de travail** PDF A4 portrait signée (fonction, titre de capacité, date d'embauche, nature du contrat) depuis la fiche du membre (guide §9.36). Types de documents `FICHE_ELEVE` et `ATTESTATION_TRAVAIL` (migration `parametres/0040`, signataire repris de la catégorie).
+
+### Corrigé
+- **Examens** : les sessions, centres, salles et placements d'un autre établissement répondent désormais 404 (modification de session, inscription d'une classe, export CSV, PDF des candidats, centres, salles, placements) ; le formulaire de session ne propose que les années de l'établissement ; un centre d'une autre session ne peut plus être affecté.
+- **Manuels** : le sélecteur d'élèves du formulaire d'attribution ignore une classe d'un autre établissement.
+- **Sanctions** : l'ancien signal notifiait automatiquement chaque sanction créée (même importée) sans SMS ni trace — remplacé par la case à la saisie.
+- Guide : front matter aligné (version 5.14.0, date, modules réels), variables des modèles SMS `Seuil d'absences` et `Sanction` listées dans l'écran des modèles.
+
+### Tests
+- 77 tests ajoutés : examens (35), manuels (15), personnel (13), vie scolaire (8), fiche élève (4), documents signés (2 : fiche élève, attestation de travail — 50 documents couverts). Suite : 1 293 tests, couverture 78,7 %.
+
 ## 5.13.1 — 2026-10-28
 
 ### Ajouté

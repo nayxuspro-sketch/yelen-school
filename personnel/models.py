@@ -746,3 +746,58 @@ class CongePersonnel(BaseModel):
     def jours_restants(cls, membre, annee):
         """Jours de congé annuel restants pour ce membre sur l'année civile."""
         return cls.DROITS_ANNUELS - cls.jours_pris_annee(membre, annee)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ABSENCES DU PERSONNEL
+# ═══════════════════════════════════════════════════════════════════
+
+class AbsencePersonnel(BaseModel):
+    """Absence d'un agent (jours calendaires) : justifiée ou non ; une absence non justifiée marquée « retenue » est
+    proposée en retenue sur le brouillon de paie du mois (1/30e du salaire de base par jour)."""
+
+    class MotifChoices(models.TextChoices):
+        MALADIE = 'MALADIE', _('Maladie')
+        PERMISSION = 'PERMISSION', _('Permission')
+        FORMATION = 'FORMATION', _('Formation / mission')
+        NON_JUSTIFIEE = 'NON_JUSTIFIEE', _('Non justifiée')
+        AUTRE = 'AUTRE', _('Autre')
+
+    personnel = models.ForeignKey(MembrePersonnel, on_delete=models.CASCADE, related_name='absences',
+                                  verbose_name=_("Membre du personnel"))
+    date_debut = models.DateField(verbose_name=_("Du"))
+    date_fin = models.DateField(verbose_name=_("Au"))
+    motif = models.CharField(max_length=15, choices=MotifChoices.choices, default=MotifChoices.NON_JUSTIFIEE,
+                             verbose_name=_("Motif"))
+    justifiee = models.BooleanField(default=False, verbose_name=_("Justifiée (pièce fournie)"))
+    retenue = models.BooleanField(default=True, verbose_name=_("Retenue sur salaire"),
+                                  help_text=_("Proposée sur le brouillon de paie du mois si l'absence n'est pas justifiée"))
+    observation = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Observation"))
+    created_by = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='absences_personnel_saisies', verbose_name=_("Saisie par"))
+
+    class Meta:
+        verbose_name = _("Absence du personnel")
+        verbose_name_plural = _("Absences du personnel")
+        ordering = ['-date_debut']
+
+    def __str__(self):
+        return f"{self.personnel.get_nom_complet()} — {self.date_debut:%d/%m/%Y} → {self.date_fin:%d/%m/%Y}"
+
+    @property
+    def nombre_jours(self):
+        return (self.date_fin - self.date_debut).days + 1
+
+    @property
+    def a_retenir(self):
+        return self.retenue and not self.justifiee
+
+    @classmethod
+    def jours_retenus(cls, membre, mois, annee):
+        """Jours d'absence non justifiés à retenir pour ``membre`` sur le mois civil (bornés au mois)."""
+        import calendar
+        debut, fin = date(annee, mois, 1), date(annee, mois, calendar.monthrange(annee, mois)[1])
+        total = 0
+        for a in cls.objects.filter(personnel=membre, retenue=True, justifiee=False, date_debut__lte=fin, date_fin__gte=debut):
+            total += (min(a.date_fin, fin) - max(a.date_debut, debut)).days + 1
+        return total

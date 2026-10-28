@@ -148,6 +148,8 @@ class SanctionDisciplinaire(BaseModel):
     observations = models.TextField(blank=True, verbose_name=_("Observations"))
     parents_convoques = models.BooleanField(default=False, verbose_name=_("Parents convoqués"))
     date_convocation = models.DateField(null=True, blank=True, verbose_name=_("Date convocation parents"))
+    parents_notifies_le = models.DateTimeField(null=True, blank=True, verbose_name=_("Parents informés le"),
+                                               help_text=_("SMS et notification du portail parent envoyés à la saisie"))
 
     # ── Impact sur la moyenne trimestrielle ──────────────────────────────────
     trimestre = models.ForeignKey(

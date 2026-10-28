@@ -21,6 +21,7 @@ urlpatterns = [
     path('api/statut-eleve/<uuid:pk>/code/', views.get_statut_code, name='statut_code'),
     # Carte scolaire
     path('eleve/<uuid:pk>/carte/', views.eleve_carte, name='eleve_carte'),
+    path('eleve/<uuid:pk>/fiche.pdf', views.eleve_fiche_pdf, name='eleve_fiche_pdf'),
     path('classe/<uuid:pk>/cartes-pdf/', views.classe_cartes_pdf, name='classe_cartes_pdf'),
     # Réinscription
     path('pre-inscriptions/', views.preinscription_list, name='preinscription_list'),

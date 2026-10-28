@@ -4,8 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 
 from django.contrib import messages
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from core.notifications import notifier_sanction
 from parametres.models import AnneeScolaire, Classe, TypeSanction
 from pedagogie.models import Trimestre
 from inscriptions.models import Inscription, StatutInscriptionChoices
@@ -138,6 +140,14 @@ def sanction_create(request):
             points=points_raw,
             appreciation_conduite=request.POST.get('appreciation_conduite', ''),
         )
+
+        if 'prevenir_parents' in request.POST:
+            if notifier_sanction(sanction):
+                sanction.parents_notifies_le = timezone.now()
+                sanction.save(update_fields=['parents_notifies_le'])
+                messages.info(request, "Parent informé (notification du portail et SMS si activé).")
+            else:
+                messages.warning(request, "Parent non informé : aucun compte parent lié et aucun numéro de téléphone (ou SMS désactivés).")
 
         # Recalculer la moyenne si des points sont appliqués et le trimestre est défini
         if sanction.a_impact_points:

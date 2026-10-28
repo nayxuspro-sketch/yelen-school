@@ -193,6 +193,10 @@ MODULES = (
             _a('creer', 'Enregistrer une demande de congé', 'conge_create', 'conge_create_pour'),
             _a('decider', 'Approuver / refuser un congé', 'conge_approuver', 'conge_refuser'),
         )),
+        _f('/personnel/absences/', 'Absences du personnel', actions=(
+            _a('enregistrer', 'Enregistrer une absence', 'absence_create', 'absence_create_pour'),
+            _a('supprimer', 'Supprimer une absence', 'absence_delete'),
+        )),
     )),
     Module('finances', 'Finances', SECTION_ADMINISTRATION, (
         _f('/finances/paiements/', 'Paiements', '/finances/situation/', '/finances/echeancier/', '/finances/echeanciers/', actions=(

@@ -10,6 +10,7 @@ from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from . import services
 from .models import Eleve, Inscription, EvenementParcours, StatutInscriptionChoices, TransfertEleve
 from .forms import EleveForm, InscriptionForm, TransfertClasseForm
@@ -762,6 +763,37 @@ def eleve_delete(request, pk):
     eleve.save(update_fields=['is_active'])
     messages.success(request, f"L'élève {eleve.get_nom_complet()} a été désactivé.")
     return redirect('inscriptions:eleve_list')
+
+
+@login_required
+def eleve_fiche_pdf(request, pk):
+    """Fiche individuelle de l'élève (A4 portrait, signée) : identité, scolarité, famille, santé, personnes autorisées,
+    parcours — pour le dossier papier et la fiche d'urgence."""
+    eleve = get_object_or_404(Eleve, pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+    if etab and eleve.inscriptions.exists() and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+        messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
+    if _WeasyHTML is None:
+        messages.error(request, "WeasyPrint n'est pas installé.")
+        return redirect('inscriptions:eleve_detail', pk=pk)
+    inscription = _get_inscription_courante(eleve)
+    etab_doc = inscription.classe.etablissement if inscription else etab
+    context = {
+        'eleve': eleve,
+        'inscription': inscription,
+        'parcours': eleve.inscriptions.select_related('annee_scolaire', 'classe', 'statut_eleve').order_by('-annee_scolaire__date_debut'),
+        'personnes': [p.strip() for p in eleve.personnes_autorisees.splitlines() if p.strip()],
+        'etablissement': etab_doc,
+        'today': timezone.localdate(),
+        **(get_etablissement_context(etab_doc, request) if etab_doc else {}),
+    }
+    html_str = render_to_string('inscriptions/pdf/fiche_eleve.html', context, request=request)
+    pdf = _WeasyHTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()
+    filename = f"Fiche_{eleve.nom}_{eleve.prenom}.pdf".replace(" ", "_")
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
 
 
 @login_required

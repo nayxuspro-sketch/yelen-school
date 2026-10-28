@@ -8,6 +8,8 @@ Gère :
 """
 
 import logging
+from datetime import date
+
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -161,6 +163,38 @@ def notifier_absence(presence):
         logger.exception("notifier_absence échoué")
 
 
+def notifier_sanction(sanction):
+    """Informe les parents d'une sanction : notification in-app des comptes parents liés à l'élève et SMS au numéro
+    du parent (modèle « Sanction disciplinaire »). Retourne True si au moins un canal a été utilisé."""
+    try:
+        eleve = sanction.inscription.eleve
+        etab = sanction.inscription.classe.etablissement
+        jour = sanction.date_sanction
+        if isinstance(jour, str):  # valeur brute du formulaire avant rechargement
+            jour = date.fromisoformat(jour)
+        date_str = jour.strftime('%d/%m/%Y')
+        libelle = sanction.type_sanction.libelle
+        titre = f"Sanction disciplinaire — {date_str}"
+        message_inapp = f"{eleve.get_nom_complet()} a reçu la sanction « {libelle} » le {date_str}. Motif : {sanction.motif}"
+        envoye = False
+        for parent in eleve.utilisateurs_lies.filter(role='PARENT', is_active=True):
+            creer_notification(parent, 'SANCTION', titre, message_inapp, lien='/portail/parent/vie-scolaire/',
+                               envoyer_email=False, envoyer_sms=False)
+            envoye = True
+        numero = (eleve.telephone_parent or eleve.tuteur_telephone or eleve.telephone_urgence or '').strip()
+        if sms_actifs() and numero:
+            from core.tasks import envoyer_sms_async
+            sms_message = _get_sms_message(etab, 'SANCTION', {
+                'nom_eleve': eleve.get_nom_complet(), 'classe': sanction.inscription.classe.nom, 'date': date_str,
+                'sanction': libelle, 'motif': (sanction.motif or '').strip()[:80], 'etablissement': etab.nom,
+            })
+            envoye = envoyer_sms_async(numero, sms_message) is not None or envoye
+        return envoye
+    except Exception:
+        logger.exception("notifier_sanction échoué")
+        return False
+
+
 def notifier_retard(presence):
     """Notifie les parents quand un retard est enregistré."""
     try:
@@ -256,19 +290,3 @@ def notifier_reunion(etablissement, date, heure, lieu, objet, parents_numeros):
                 envoyer_sms_async(numero, sms_message)
     except Exception:
         logger.exception("notifier_reunion échoué")
-
-
-def notifier_sanction(sanction):
-    """Notifie les parents quand une sanction est prononcée."""
-    try:
-        eleve = sanction.inscription.eleve
-        type_sanction = sanction.type_sanction.nom if sanction.type_sanction else 'Sanction'
-        date = sanction.date_sanction.strftime('%d/%m/%Y')
-        titre = f"{type_sanction} — {date}"
-        message = (
-            f"Une sanction ({type_sanction}) a été prononcée à l'encontre de "
-            f"{eleve.get_nom_complet()} le {date}."
-        )
-        notifier_parents_eleve(eleve, 'SANCTION', titre, message)
-    except Exception:
-        logger.exception("notifier_sanction échoué")
