@@ -32,7 +32,9 @@ services:
     restart: unless-stopped
 
   web:
-    image: yelen-school:client
+    # YELEN_IMAGE : nom de l'image (yelen-school:test pour l'environnement de test,
+    # installer/creer-environnement-test.ps1) ; la production garde yelen-school:client.
+    image: ${YELEN_IMAGE:-yelen-school:client}
     build:
       context: .
       dockerfile: Dockerfile

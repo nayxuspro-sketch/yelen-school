@@ -25,6 +25,22 @@ FICHIERS :
    - Pour une maintenance sur site : rétablit l'héritage des permissions et
      retire les règles d'audit. Ré-exécuter verrouiller-serveur.bat avant de partir.
 
+3. emettre-licence.ps1
+   - Outil de l'éditeur (poste ou environnement de test, jamais sur un serveur client).
+   - Lit LICENCE_PRIVATE_KEY dans le fichier des clés (C:\YELEN-EDITEUR\cles-editeur.txt,
+     créé par creer-environnement-test.bat ; -FichierCles pour un autre emplacement) et
+     exécute manage.py emettre_licence (image Docker du dossier ou .venv autonome).
+   - powershell -NoProfile -ExecutionPolicy Bypass -File installer\outils-editeur\emettre-licence.ps1
+       -Etablissement <uuid> -Type STARTER|STANDARD|PREMIUM|RESEAU -Expiration AAAA-MM-JJ
+       [-Empreinte <64 hex>] [-Cle YELEN-XXXX-XXXX-XXXX] [-Activation AAAA-MM-JJ]
+   - Affiche le code YELEN3.… à coller dans Licences > Activer ; n'écrit rien en base.
+
+ESSAI AVANT LA PRODUCTION :
+---------------------------
+creer-environnement-test.bat (dossier de production) crée C:\YELEN-TEST : même version, copie de
+la dernière sauvegarde, contrôle des licences actif, bandeau « ENVIRONNEMENT DE TEST »
+(docs/GUIDE_DEPLOIEMENT_WINDOWS.md §3.5.7).
+
 PROCÉDURE CHEZ LE CLIENT (résumé) :
 -----------------------------------
 1. Licence : LICENCE_PUBLIC_KEY dans .env, démarrage par demarrage.bat ou

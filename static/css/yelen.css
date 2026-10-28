@@ -10274,6 +10274,23 @@ input::-webkit-strong-password-auto-fill-button {
 /* Décale le contenu quand le bandeau est visible */
 body.offline-active { padding-top: 2rem; }
 
+/* ─── Bandeau « ENVIRONNEMENT DE TEST » (YELEN_ENVIRONNEMENT=test) ─────────── */
+#env-test-banner {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 9998;
+  background: #6d28d9;
+  color: #ede9fe;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: 0.3rem 1rem;
+  pointer-events: none;
+}
+body.env-test { padding-bottom: 1.7rem; }
+@media print { #env-test-banner { display: none; } }
+
 /* ─── Bouton install PWA sidebar ─────────────────────────────────────────── */
 #pwa-install-btn {
   display: none;

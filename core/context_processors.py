@@ -11,3 +11,8 @@ def version(request):
 def aide(request):
     """Ancre du guide d'utilisation correspondant au module affiché (lien « Aide » du menu)."""
     return {'aide_ancre': ancre_pour(request.path)}
+
+
+def environnement(request):
+    """Bandeau « ENVIRONNEMENT DE TEST » (YELEN_ENVIRONNEMENT=test, copie isolée de la production)."""
+    return {'yelen_environnement_test': settings.YELEN_ENVIRONNEMENT_TEST}

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.14.0
+version_logiciel: 5.14.1
 version_guide: 5.14
-date_mise_a_jour: 28/10/2026 (Lot J : absences du personnel, sanction → parent, fiche élève, attestation de travail)
+date_mise_a_jour: 28/10/2026 (5.14.1 : environnement de test isolé pour l'essai des licences)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -3991,6 +3991,16 @@ ou directement avec `python manage.py …` en mode autonome) :
    de page, actualisé toutes les heures.
 4. Retour arrière : remettre `LICENSE_ENFORCEMENT=false` et redémarrer `web`.
 
+**Essai sans risque avant la production (installation Docker sur Windows) :**
+`creer-environnement-test.bat`, dans le dossier de production, crée `C:\YELEN-TEST`,
+copie isolée (même version, copie de la dernière sauvegarde, bandeau violet
+« ENVIRONNEMENT DE TEST ») où le contrôle est **déjà actif** avec la clé
+publique de l'éditeur : on s'y connecte sur `http://127.0.0.1:8001/` (port
+affiché à la fin du script), on
+active un code d'essai, on constate les refus par niveau et les alertes, la
+production n'ayant pas bougé. Procédure complète : guide de déploiement
+Windows, §3.5.7.
+
 Le message de démarrage « ANTI-TAMPER … fallback SECRET_KEY seul » signale
 simplement qu'aucune clé `LICENCE_SIGNING_KEY` / `LICENCE_PUBLIC_KEY` dédiée
 n'est configurée : la signature s'appuie alors sur `SECRET_KEY`. Pour ajouter
@@ -6995,7 +7005,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.14.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.14.1 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.14.1 — 2026-10-28
+
+### Ajouté
+- **Environnement de test isolé** (`creer-environnement-test.bat` → `installer/creer-environnement-test.ps1`, guide de déploiement §3.5.7) : second YELEN SCHOOL complet à côté de la production (`C:\YELEN-TEST`, projet Docker `yelen-test`, image `yelen-school:test`, port 8001 sur 127.0.0.1, base et médias copiés de la dernière sauvegarde), `.env` dérivé de la production avec contrôle des licences actif (`LICENSE_ENFORCEMENT=true`, `LICENCE_BINDING_ENABLED=true`, `LICENCE_PUBLIC_KEY`), SMS, paiements mobiles, courriel et sauvegarde distante désactivés ; paire de clés de l'éditeur créée une seule fois dans `C:\YELEN-EDITEUR\cles-editeur.txt`. La production n'est jamais modifiée. Tests PowerShell `installer/tests/test-creer-environnement-test.ps1` (CI).
+- **`installer/outils-editeur/emettre-licence.ps1`** : émission d'un code de licence `YELEN3` à partir du fichier des clés de l'éditeur (image Docker ou `.venv` autonome), sans afficher la clé privée.
+- **Bandeau « ENVIRONNEMENT DE TEST »** (`YELEN_ENVIRONNEMENT=test`) sur la connexion, les pages de l'application et les pages licences.
+- `docker-compose.client.yml` : nom de l'image paramétrable (`YELEN_IMAGE`, défaut `yelen-school:client`).
+
 ## 5.14.0 — 2026-10-28
 
 ### Ajouté

@@ -24,6 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # cache du Service Worker, script de mise à jour). À incrémenter à chaque livraison.
 YELEN_VERSION = (BASE_DIR / 'VERSION').read_text(encoding='utf-8').strip()
 
+# Environnement de test créé par installer\creer-environnement-test.ps1 (copie isolée de la
+# production) : YELEN_ENVIRONNEMENT=test affiche le bandeau « ENVIRONNEMENT DE TEST » sur toutes les pages.
+YELEN_ENVIRONNEMENT_TEST = os.environ.get('YELEN_ENVIRONNEMENT', '').strip().lower() == 'test'
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -272,6 +276,7 @@ TEMPLATES = [
                 'parametres.context_processors.droits_acces',
                 'core.context_processors.version',
                 'core.context_processors.aide',
+                'core.context_processors.environnement',
             ],
         },
     },

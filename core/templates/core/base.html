@@ -23,7 +23,7 @@
   {% block extra_head %}{% endblock %}
 </head>
 
-<body class="app-layout" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body class="app-layout{% if yelen_environnement_test %} env-test{% endif %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <a href="#main-content" class="skip-link">Aller au contenu</a>
 
   {# ── Bandeau hors-ligne (masqué par défaut, affiché via JS) ── #}
@@ -38,6 +38,7 @@
     </svg>
     Connexion au serveur perdue — vérifiez le réseau local
   </div>
+  {% include "core/includes/bandeau_environnement.html" %}
 
   {# ════════════════════════════════════════ SIDEBAR MODERNE ══════════════════════════════════════ #}
   <aside id="sidebar" class="sb-modern">

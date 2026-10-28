@@ -383,8 +383,11 @@ Cette commande ne doit rien retourner. Ne pas publier PostgreSQL ni Redis sur le
 
 ### 3.5.1 Côté éditeur, une seule fois : la paire de clés
 
+`creer-environnement-test.bat` (§3.5.7) crée la paire de clés à sa première exécution dans
+`C:\YELEN-EDITEUR\cles-editeur.txt`. À la main :
+
 ```powershell
-docker compose -f docker-compose.client.yml exec web python manage.py generate_licence_keys
+docker compose -f docker-compose.client.yml run --rm --no-deps -T --entrypoint python web manage.py generate_licence_keys --format env
 ```
 
 (sur votre environnement de test ou votre poste). `LICENCE_PRIVATE_KEY` reste **chez l'éditeur**
@@ -406,12 +409,15 @@ docker compose -f docker-compose.client.yml exec web python manage.py generate_l
 ### 3.5.3 Côté éditeur : émettre le code de licence
 
 ```cmd
-docker compose -f docker-compose.client.yml exec -e LICENCE_PRIVATE_KEY=<clé privée> web python manage.py emettre_licence --etablissement <identifiant établissement> --type PREMIUM --expiration 2027-09-16 --empreinte <identifiant du serveur>
+powershell -NoProfile -ExecutionPolicy Bypass -File installer\outils-editeur\emettre-licence.ps1 -Etablissement <identifiant établissement> -Type PREMIUM -Expiration 2027-09-16 -Empreinte <identifiant du serveur>
 ```
 
-(depuis votre environnement de test ; `--cle YELEN-XXXX-XXXX-XXXX` pour conserver la clé déjà
-attribuée, `--empreinte` omis pour une licence non liée). La commande n'écrit rien en base : elle
-affiche une ligne `YELEN3.…` à transmettre au client (courriel, fichier texte, clé USB).
+(depuis votre environnement de test ou votre poste ; le script lit la clé privée dans
+`C:\YELEN-EDITEUR\cles-editeur.txt` — `-FichierCles` pour un autre emplacement — et exécute
+`manage.py emettre_licence` dans l'image Docker du dossier, ou avec `.venv\Scripts\python.exe` en mode
+autonome ; `-Cle YELEN-XXXX-XXXX-XXXX` pour conserver la clé déjà attribuée, `-Empreinte` omis pour
+une licence non liée). La commande n'écrit rien en base : elle affiche une ligne `YELEN3.…` à
+transmettre au client (courriel, fichier texte, clé USB).
 
 ### 3.5.4 Chez le client : activer, durcir, verrouiller
 
@@ -448,6 +454,47 @@ BitLocker limitent l'accès aux fichiers, le journal d'audit et le contrat de li
   Rien d'autre à faire : données et comptes sont conservés.
 - Maintenance sur site : `deverrouiller-serveur.bat` (administrateur) → intervention →
   `verrouiller-serveur.bat` avant de partir.
+
+### 3.5.7 Environnement de test sur le serveur : essayer les licences avant la production
+
+`creer-environnement-test.bat` (double-clic dans le dossier de production) crée — ou remet à niveau —
+un second YELEN SCHOOL complet, isolé, à côté de la production. La production (dossier, conteneurs,
+volumes, `.env`) n'est jamais modifiée.
+
+| | Production | Environnement de test |
+|---|---|---|
+| Dossier, projet Docker | `C:\YELEN-SCHOOL` (`yelen-school`) | `C:\YELEN-TEST` (`yelen-test`), même version (clone git local) |
+| Adresse | `https://IP:8443/` | `http://127.0.0.1:8001/` (ou le premier port libre, affiché à la fin) — depuis le serveur seulement, sans HTTPS |
+| Image, base, médias, cache | `yelen-school:client`, volumes `yelen-school_*` | `yelen-school:test`, volumes `yelen-test_*` |
+| Données | réelles | copie de la sauvegarde la plus récente de `backups\` (base + médias) |
+| `.env` | inchangé | dérivé de la production : `LICENSE_ENFORCEMENT=true`, `LICENCE_BINDING_ENABLED=true`, `LICENCE_PUBLIC_KEY`, `YELEN_ENVIRONNEMENT=test` (bandeau violet « ENVIRONNEMENT DE TEST » sur toutes les pages) ; SMS, paiements mobiles, courriel et sauvegarde distante désactivés |
+
+**Clés de l'éditeur** : créées à la première exécution dans `C:\YELEN-EDITEUR\cles-editeur.txt`
+(`LICENCE_PRIVATE_KEY`, `LICENCE_PUBLIC_KEY`), réutilisées ensuite. Mettre ce fichier à l'abri
+(gestionnaire de mots de passe, clé USB) : sans la clé privée, aucun code de licence ne peut être
+émis ; la clé publique est celle à inscrire plus tard dans le `.env` de la production.
+
+Déroulé de l'essai :
+
+1. `creer-environnement-test.bat` → « Environnement de test prêt : http://127.0.0.1:8001/accounts/login/ »
+   (journal : `logs\environnement-test.log`).
+2. Connexion avec le compte Super Admin de la production : aucune licence signée → page
+   « Activer la licence ». Relever **Identifiant établissement** et **Identifiant du serveur**.
+3. Émettre un code d'essai (depuis le serveur) :
+   `powershell -NoProfile -ExecutionPolicy Bypass -File C:\YELEN-TEST\installer\outils-editeur\emettre-licence.ps1 -Etablissement <identifiant établissement> -Type STARTER -Expiration <AAAA-MM-JJ> -Empreinte <identifiant du serveur>`
+   → ligne `YELEN3.…` à coller dans la page d'activation → « Licence … activée ».
+4. Vérifier le comportement : accueil normal ; avec STARTER, `Personnel`, `Examens`, portail parents,
+   cursus refusés (redirection « Mon abonnement ») et plafonds (150 élèves, 15 enseignants, 10 classes)
+   signalés en haut de page ; un code émis pour un autre établissement ou sans la bonne empreinte est
+   refusé ; un nouveau code PREMIUM rouvre tout ; `docker compose -f C:\YELEN-TEST\docker-compose.client.yml exec web python manage.py check_licences`.
+5. Rien à annuler côté production. Relancer `creer-environnement-test.bat` pour repartir d'une copie
+   fraîche ; `-SansRestauration` pour garder les données du test (code et image remis à niveau).
+
+Options : `-Port 8002`, `-Sauvegarde backups\<fichier>.dump.enc`, `-SansRestauration`, `-FichierCles`.
+Arrêt / reprise : `docker compose -f C:\YELEN-TEST\docker-compose.client.yml stop` / `start`.
+Suppression complète : `docker compose -f C:\YELEN-TEST\docker-compose.client.yml down -v` puis
+supprimer `C:\YELEN-TEST`. L'environnement de test sert aussi à essayer une nouvelle version avant la
+production : `C:\YELEN-TEST\mettre-a-jour.bat` (même dépôt GitHub, image `yelen-school:test`).
 
 ---
 
