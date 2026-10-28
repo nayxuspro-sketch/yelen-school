@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 
-from parametres.models import AnneeScolaire, Classe, SignataireDocument, TypeDocument
+from parametres.models import AnneeScolaire, Classe, Salle, SignataireDocument, TypeDocument
 from pedagogie.models import Enseignement
 from core.utils import get_etablissement_context
 from ..forms import ConfigEDTForm
@@ -146,6 +146,7 @@ def emploi_du_temps(request, classe_id):
         'jours_choices': config.jours_choices(),
         'config': config,
         'conflits': conflits,
+        'salles': Salle.objects.filter(etablissement=etab, actif=True) if etab else Salle.objects.none(),
     })
 
 
@@ -167,7 +168,7 @@ def seance_create(request, classe_id):
     jour = request.POST.get('jour', '').strip()
     heure_debut = request.POST.get('heure_debut', '').strip()
     heure_fin = request.POST.get('heure_fin', '').strip()
-    salle = request.POST.get('salle', '').strip()
+    salle = Salle.canonique(etab, request.POST.get('salle', ''))
 
     heure_debut, heure_fin = parse_time(heure_debut), parse_time(heure_fin)
     if not (jour.isdigit() and heure_debut and heure_fin):
@@ -202,8 +203,70 @@ def seance_create(request, classe_id):
         )
     except IntegrityError:
         messages.error(request, "Une séance existe déjà pour ce créneau (même matière, même jour, même heure).")
+        return redirect(f"{url}?annee={annee.pk}")
 
+    depassement = _depassement_capacite(etab, salle, classe, annee)
+    if depassement:
+        messages.warning(request, depassement)
     return redirect(f"{url}?annee={annee.pk}")
+
+
+def _depassement_capacite(etab, salle, classe, annee):
+    """Avertissement si l'effectif de la classe dépasse la capacité déclarée de la salle ; '' sinon."""
+    from inscriptions.models import Inscription, StatutInscriptionChoices
+    if not salle or etab is None:
+        return ''
+    fiche = Salle.objects.filter(etablissement=etab, nom=salle, capacite__isnull=False).first()
+    if fiche is None:
+        return ''
+    effectif = (Inscription.objects.filter(classe=classe, annee_scolaire=annee)
+                .exclude(statut=StatutInscriptionChoices.ABANDON).count())
+    if effectif <= fiche.capacite:
+        return ''
+    return (f"Attention : la salle {fiche.nom} compte {fiche.capacite} places pour {effectif} élèves en {classe.nom} "
+            f"(séance ajoutée malgré tout).")
+
+
+@login_required
+def occupation_salles(request):
+    """Occupation hebdomadaire des salles : une ligne par salle (référentiel et salles saisies à la main), une
+    colonne par jour de classe, les séances de l'année dans chaque case — pour trouver une salle libre."""
+    etab = _get_etab(request)
+    annee_id = request.GET.get('annee')
+    if annee_id:
+        annee = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
+    else:
+        annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+    config = ConfigEDT.pour(etab)
+    jours = config.get_jours_actifs()
+    labels = dict(JourSemaine.choices)
+    seances = (
+        SeanceCours.objects
+        .filter(enseignement__annee_scolaire=annee, enseignement__classe__etablissement=etab, enseignement__est_actif=True)
+        .exclude(salle='')
+        .select_related('enseignement__classe', 'enseignement__matiere')
+        .order_by('salle', 'jour', 'heure_debut')
+    ) if (annee and etab) else SeanceCours.objects.none()
+    fiches = {s.nom: s for s in Salle.objects.filter(etablissement=etab)} if etab else {}
+    lignes = {}
+    for nom in fiches:
+        lignes[nom] = {'nom': nom, 'fiche': fiches[nom], 'jours': {j: [] for j in jours}, 'nb': 0, 'heures': 0.0}
+    for s in seances:
+        ligne = lignes.setdefault(s.salle, {'nom': s.salle, 'fiche': fiches.get(s.salle), 'jours': {j: [] for j in jours},
+                                            'nb': 0, 'heures': 0.0})
+        if s.jour in ligne['jours']:
+            ligne['jours'][s.jour].append(s)
+        ligne['nb'] += 1
+        ligne['heures'] += (datetime.combine(datetime.min, s.heure_fin) - datetime.combine(datetime.min, s.heure_debut)).total_seconds() / 3600
+    for ligne in lignes.values():
+        ligne['cases'] = [ligne['jours'][j] for j in jours]
+        ligne['heures'] = round(ligne['heures'], 2)
+    return render(request, 'viescolaire/occupation_salles.html', {
+        'annee': annee,
+        'annees': AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut') if etab else [],
+        'jours_labels': [labels[j] for j in jours],
+        'lignes': sorted(lignes.values(), key=lambda l: l['nom'].casefold()),
+    })
 
 
 @login_required

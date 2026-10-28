@@ -1,0 +1,36 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if pre %}Modifier la pré-inscription{% else %}Nouvelle pré-inscription{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <a href="{% url 'inscriptions:preinscription_list' %}" class="text-secondary">Pré-inscriptions</a><span>›</span><span>{% if pre %}Modifier{% else %}Nouvelle demande{% endif %}</span>
+    </div>
+    <h1 class="page-title">{% if pre %}Pré-inscription de {{ pre.get_nom_complet }}{% else %}Nouvelle pré-inscription{% endif %}</h1>
+    <p class="page-subtitle">Identité minimale et parent à joindre : la fiche complète (photo, parents, santé) se remplit à l'inscription.</p>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="max-width:56rem;">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger mb-4" role="alert">{{ form.non_field_errors.0 }}</div>{% endif %}
+    <div class="form-grid-2">
+      {% for field in form %}
+      <div class="form-group" {% if field.name == 'observation' %}style="grid-column:1/-1;"{% endif %}>
+        <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}{% if field.field.required %} <span style="color:#FF6B7A;">*</span>{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="text-muted" style="font-size:.75rem; margin:.25rem 0 0;">{{ field.help_text }}</p>{% endif %}
+        {% if field.errors %}<p class="input-error">{{ field.errors.0 }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="d-flex justify-end gap-4" style="padding-top:1.5rem; border-top:1px solid var(--color-border);">
+      <a href="{% url 'inscriptions:preinscription_list' %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary">Enregistrer la demande</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

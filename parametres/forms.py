@@ -10,7 +10,7 @@ from .models import (
     TypeDocument, Cycle, AnneeScolaire, Classe, Poste, LocalisationPoste,
     StatutEleve, RubriquePaiement, AppreciationMoyenneSecondaire,
     AppreciationMoyennePrimaire, CategorieDiscipline, Discipline,
-    PeriodeEvaluation, TypeSanction, Distinction, TitreFonction, TitreHonorifiquePersonnel,
+    PeriodeEvaluation, TypeSanction, Distinction, TitreFonction, Salle, TitreHonorifiquePersonnel,
     EvenementCalendrier, IdentiteEtablissement, RolePersonnalise,
 )
 
@@ -143,6 +143,29 @@ class TitreFonctionForm(forms.ModelForm):
     class Meta:
         model = TitreFonction
         fields = ['nom', 'actif']
+
+
+class SalleForm(forms.ModelForm):
+    class Meta:
+        model = Salle
+        fields = ['nom', 'capacite', 'actif']
+
+    def __init__(self, *args, etablissement=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._etablissement = etablissement
+
+    def clean_nom(self):
+        nom = ' '.join(self.cleaned_data['nom'].split())
+        doublons = Salle.objects.filter(etablissement=self._etablissement, nom__iexact=nom)
+        if self.instance.pk:
+            doublons = doublons.exclude(pk=self.instance.pk)
+        if doublons.exists():
+            raise forms.ValidationError("Une salle porte déjà ce nom.")
+        return nom
+
+    def save(self, commit=True):
+        self.instance.etablissement = self._etablissement
+        return super().save(commit)
 
 
 class TitreHonorifiquePersonnelForm(forms.ModelForm):

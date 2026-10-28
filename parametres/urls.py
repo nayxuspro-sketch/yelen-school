@@ -115,6 +115,12 @@ urlpatterns = [
     path('mentions-distinctions/<uuid:pk>/delete/', views.distinction_delete, name='distinction_delete'),
 
     # Titres fonctions
+    # Salles (emploi du temps)
+    path('salles/', views.salle_list, name='salle_list'),
+    path('salles/create/', views.salle_form, name='salle_create'),
+    path('salles/<uuid:pk>/edit/', views.salle_form, name='salle_edit'),
+    path('salles/<uuid:pk>/delete/', views.salle_delete, name='salle_delete'),
+
     path('titres-fonctions/', views.titre_fonction_list, name='titre_fonction_list'),
     path('titres-fonctions/create/', views.titre_fonction_form, name='titre_fonction_create'),
     path('titres-fonctions/<uuid:pk>/edit/', views.titre_fonction_form, name='titre_fonction_edit'),

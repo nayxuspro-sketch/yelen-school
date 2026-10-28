@@ -35,6 +35,7 @@ class EleveForm(forms.ModelForm):
         'localisation': ('lieu_residence', 'etablissement_origine', 'last_classe', 'last_annee'),
         'famille': ('telephone_urgence', 'nom_pere', 'profession_pere', 'nom_mere', 'profession_mere',
                     'telephone_parent', 'tuteur_nom', 'tuteur_telephone', 'tuteur_adresse'),
+        'sante': ('groupe_sanguin', 'allergies', 'medecin_traitant', 'informations_medicales', 'personnes_autorisees'),
     }
 
     @property
@@ -50,11 +51,14 @@ class EleveForm(forms.ModelForm):
             'telephone_urgence', 'photo', 'nom_pere', 'profession_pere',
             'nom_mere', 'profession_mere', 'telephone_parent', 'tuteur_nom',
             'tuteur_telephone', 'tuteur_adresse', 'etablissement_origine',
-            'last_classe', 'last_annee'
+            'last_classe', 'last_annee',
+            'groupe_sanguin', 'allergies', 'medecin_traitant', 'informations_medicales', 'personnes_autorisees',
         ]
         widgets = {
             'date_naissance': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'tuteur_adresse': forms.Textarea(attrs={'rows': 2}),
+            'informations_medicales': forms.Textarea(attrs={'rows': 2}),
+            'personnes_autorisees': forms.Textarea(attrs={'rows': 3, 'placeholder': 'OUEDRAOGO Salif — oncle — 70 00 00 00'}),
             'photo': forms.FileInput(attrs={
                 'accept': 'image/jpeg,image/png,image/gif,image/webp',
                 'class': 'input',
@@ -247,3 +251,46 @@ class TransfertClasseForm(forms.Form):
         if complet:
             raise forms.ValidationError(complet)
         return nouvelle_classe
+
+
+class PreInscriptionForm(forms.ModelForm):
+    """Demande d'inscription d'un nouvel élève : années ouvertes et classes actives de l'établissement."""
+
+    class Meta:
+        from .models import PreInscription
+        model = PreInscription
+        fields = ['annee_scolaire', 'classe_demandee', 'nom', 'prenom', 'genre', 'date_naissance', 'lieu_naissance',
+                  'etablissement_origine', 'last_classe', 'parent_nom', 'parent_telephone', 'observation']
+        widgets = {'date_naissance': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d')}
+
+    def __init__(self, *args, etablissement=None, annee_defaut=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._etablissement = etablissement
+        self.fields['annee_scolaire'].queryset = (AnneeScolaire.objects.filter(etablissement=etablissement, cloturee=False)
+                                                  .order_by('-date_debut'))
+        self.fields['classe_demandee'].queryset = (Classe.objects.filter(etablissement=etablissement, actif=True)
+                                                   .select_related('cycle').order_by('cycle__ordre', 'nom'))
+        if annee_defaut is not None and not self.instance.pk:
+            self.fields['annee_scolaire'].initial = annee_defaut.pk
+        _apply_yelen_classes(self.fields)
+
+    def clean_parent_telephone(self):
+        telephone = ' '.join(self.cleaned_data['parent_telephone'].split())
+        if sum(c.isdigit() for c in telephone) < 8:
+            raise forms.ValidationError("Indiquez un numéro de téléphone joignable (8 chiffres au moins).")
+        return telephone
+
+    def clean(self):
+        donnees = super().clean()
+        annee = donnees.get('annee_scolaire')
+        if annee is not None:
+            message = message_annee_cloturee(annee)
+            if message:
+                self.add_error('annee_scolaire', message)
+        return donnees
+
+    def save(self, commit=True):
+        self.instance.etablissement = self._etablissement
+        self.instance.nom = ' '.join(self.instance.nom.split()).upper()
+        self.instance.prenom = ' '.join(self.instance.prenom.split())
+        return super().save(commit)

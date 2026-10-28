@@ -287,3 +287,59 @@ class Justification(BaseModel):
     @property
     def via_portail(self):
         return self.deposee_par_id is not None
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 4. SEUIL D'ABSENCES — alerte direction / parents
+# ═══════════════════════════════════════════════════════════════════
+
+class SeuilAbsences(BaseModel):
+    """Réglage par établissement : au bout de ``seuil`` absences non justifiées sur la période, une alerte est créée
+    à la clôture de l'appel (notification de la direction, SMS au parent)."""
+
+    etablissement = models.OneToOneField('etablissements.Etablissement', on_delete=models.CASCADE,
+                                         related_name='seuil_absences', verbose_name=_("Établissement"))
+    actif = models.BooleanField(default=True, verbose_name=_("Alertes actives"))
+    seuil = models.PositiveSmallIntegerField(default=5, verbose_name=_("Seuil d'absences non justifiées"))
+    par_periode = models.BooleanField(default=True, verbose_name=_("Compter par période (trimestre)"),
+                                      help_text=_("Décoché : le compte court sur toute l'année scolaire."))
+    sms_parent = models.BooleanField(default=True, verbose_name=_("Prévenir le parent par SMS"))
+
+    class Meta:
+        verbose_name = _("Seuil d'absences")
+        verbose_name_plural = _("Seuils d'absences")
+
+    def __str__(self):
+        return f"Seuil d'absences {self.etablissement} : {self.seuil}"
+
+    @classmethod
+    def pour(cls, etablissement):
+        return cls.objects.get_or_create(etablissement=etablissement)[0]
+
+
+class AlerteAbsences(BaseModel):
+    """Palier de seuil franchi par un élève sur une période (1 = seuil atteint, 2 = deux fois le seuil…) ; la direction
+    la marque traitée (convocation, entretien)."""
+
+    inscription = models.ForeignKey('inscriptions.Inscription', on_delete=models.CASCADE,
+                                    related_name='alertes_absences', verbose_name=_("Inscription"))
+    periode = models.CharField(max_length=100, verbose_name=_("Période"))
+    palier = models.PositiveSmallIntegerField(default=1, verbose_name=_("Palier"))
+    seuil = models.PositiveSmallIntegerField(verbose_name=_("Seuil appliqué"))
+    nb_absences = models.PositiveSmallIntegerField(verbose_name=_("Absences non justifiées"))
+    date_appel = models.DateField(verbose_name=_("Date de l'appel déclencheur"))
+    sms_envoye = models.BooleanField(default=False, verbose_name=_("SMS envoyé au parent"))
+    traitee = models.BooleanField(default=False, verbose_name=_("Traitée"))
+    traitee_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='alertes_absences_traitees', verbose_name=_("Traitée par"))
+    traitee_le = models.DateTimeField(null=True, blank=True, verbose_name=_("Traitée le"))
+    observation = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Suite donnée"))
+
+    class Meta:
+        verbose_name = _("Alerte d'absences")
+        verbose_name_plural = _("Alertes d'absences")
+        ordering = ['traitee', '-created_at']
+        unique_together = [['inscription', 'periode', 'palier']]
+
+    def __str__(self):
+        return f"{self.inscription.eleve.get_nom_complet()} — {self.nb_absences} absences ({self.periode})"

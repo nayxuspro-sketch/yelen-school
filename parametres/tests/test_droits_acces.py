@@ -33,7 +33,7 @@ class TestValeursParDefaut:
     def test_comportement_historique(self):
         matrice = {role: d['fonctionnalites'] for role, d in droits.matrice_effective().items()}
 
-        assert matrice['ENSEIGNANT']['inscriptions'] == {'/inscriptions/', '/inscriptions/reinscription/'}
+        assert matrice['ENSEIGNANT']['inscriptions'] == {'/inscriptions/', '/inscriptions/reinscription/', '/inscriptions/pre-inscriptions/'}
         assert matrice['AVS']['viescolaire'] and not matrice['AVS']['finances']
         assert not matrice['ENSEIGNANT']['finances'] and matrice['SECRETAIRE']['finances'] and matrice['COMPTABLE']['finances']
         assert matrice['DIRECTEUR']['parametres'] and not matrice['SECRETAIRE']['parametres']

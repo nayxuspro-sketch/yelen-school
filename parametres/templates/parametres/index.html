@@ -37,6 +37,8 @@
 
   {% include 'parametres/partials/param_card.html' with url='parametres:titre_fonction_list' icon='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' title='Titres Fonctions' description='Directeur, Censeur, Professeur Principal…' count=nb_titres_fonctions %}
 
+  {% include 'parametres/partials/param_card.html' with url='parametres:salle_list' icon='M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6' title='Salles' description='Salles de classe et capacités (emploi du temps)' count=nb_salles %}
+
   {% include 'parametres/partials/param_card.html' with url='parametres:titre_honorifique_list' icon='M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z' title='Titres Honorifiques' description='M. le Directeur, Chevalier des Palmes académiques…' count=nb_titres_honorifiques %}
 
   {% if user.role == 'SUPER_ADMIN' %}

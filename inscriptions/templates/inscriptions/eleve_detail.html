@@ -122,6 +122,39 @@
       {% endif %}
     </div>
 
+    <!-- Santé & personnes autorisées -->
+    <div class="card mt-4">
+      <div class="elv-shd">
+        <span class="elv-shd-title">Santé &amp; personnes autorisées</span>
+      </div>
+      <div class="elv-parents">
+        <div class="elv-parent-item">
+          <span class="elv-parent-role">Groupe sanguin</span>
+          <span class="elv-parent-name">{{ eleve.groupe_sanguin|default:"Non renseigné" }}</span>
+        </div>
+        <div class="elv-parent-item">
+          <span class="elv-parent-role">Allergies</span>
+          <span class="elv-parent-name">{{ eleve.allergies|default:"Non renseignées" }}</span>
+        </div>
+        {% if eleve.medecin_traitant %}
+        <div class="elv-parent-item">
+          <span class="elv-parent-role">Médecin / centre de santé</span>
+          <span class="elv-parent-name">{{ eleve.medecin_traitant }}</span>
+        </div>
+        {% endif %}
+        {% if eleve.informations_medicales %}
+        <div class="elv-parent-item">
+          <span class="elv-parent-role">Informations médicales</span>
+          <span class="elv-parent-prof" style="white-space:pre-line;">{{ eleve.informations_medicales }}</span>
+        </div>
+        {% endif %}
+      </div>
+      <div class="elv-tuteur">
+        <span class="elv-tuteur-role">Personnes autorisées à récupérer l'élève</span>
+        {% if eleve.personnes_autorisees %}<span class="elv-tuteur-addr" style="white-space:pre-line;">{{ eleve.personnes_autorisees }}</span>{% else %}<span class="elv-tuteur-addr text-muted">Aucune personne déclarée : seuls les parents et le tuteur.</span>{% endif %}
+      </div>
+    </div>
+
   </div>
 
   <!-- ── Colonne droite (main) ────────────────────────────────── -->

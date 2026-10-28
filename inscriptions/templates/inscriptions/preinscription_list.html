@@ -1,0 +1,106 @@
+{% extends "core/base.html" %}
+{% load droits_tags %}
+
+{% block title %}Pré-inscriptions{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Pré-inscriptions</h1>
+    <p class="page-subtitle">Demandes d'inscription de nouveaux élèves{% if annee %} pour {{ annee.libelle }}{% endif %} : enregistrer, accepter ou refuser, puis inscrire en un clic. Les élèves déjà scolarisés passent par <a href="{% url 'inscriptions:reinscription_list' %}">Réinscription</a>.</p>
+  </div>
+  <div class="d-flex gap-2 align-center flex-wrap">
+    <form method="get" class="d-flex gap-2 align-center flex-wrap">
+      <select name="annee" class="input" aria-label="Année scolaire" data-csp-submit-on-change>
+        {% for a in annees %}<option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>{{ a.libelle }}</option>{% endfor %}
+      </select>
+      <select name="classe" class="input" aria-label="Classe demandée" data-csp-submit-on-change>
+        <option value="">Toutes les classes</option>
+        {% for c in classes %}<option value="{{ c.pk }}" {% if classe_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
+      </select>
+      <select name="statut" class="input" aria-label="Statut" data-csp-submit-on-change>
+        <option value="">Tous les statuts</option>
+        {% for code, libelle in statuts %}<option value="{{ code }}" {% if statut == code %}selected{% endif %}>{{ libelle }}</option>{% endfor %}
+      </select>
+    </form>
+    {% if request|autorise_url:'inscriptions:preinscription_create' %}
+    <a href="{% url 'inscriptions:preinscription_create' %}{% if annee %}?annee={{ annee.pk }}{% endif %}" class="btn-primary">Nouvelle demande</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stats-grid animate-fade-up mb-4">
+  <div class="stat-card"><div class="stat-label">Demandes</div><div class="stat-value">{{ total }}</div></div>
+  <div class="stat-card"><div class="stat-label">En attente</div><div class="stat-value">{{ compteurs.EN_ATTENTE }}</div></div>
+  <div class="stat-card"><div class="stat-label">Acceptées</div><div class="stat-value">{{ compteurs.ACCEPTEE }}</div></div>
+  <div class="stat-card"><div class="stat-label">Inscrites</div><div class="stat-value">{{ compteurs.INSCRITE }}</div><div class="text-muted" style="font-size:.75rem;">refusées : {{ compteurs.REFUSEE }}</div></div>
+</div>
+
+{% if synthese %}
+<div class="card animate-fade-up delay-1 mb-4" style="padding:0; overflow:hidden;">
+  <div class="card-header"><span class="card-title">Demandes et places par classe</span></div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th>Classe</th><th class="text-right">En attente</th><th class="text-right">Acceptées</th><th class="text-right">Inscrites</th><th class="text-right">Effectif inscrit</th><th class="text-right">Capacité</th><th class="text-right">Places restantes</th></tr></thead>
+      <tbody>
+        {% for l in synthese %}
+        <tr>
+          <td class="fw-semibold">{{ l.classe.nom }}</td>
+          <td class="text-right">{{ l.en_attente }}</td><td class="text-right">{{ l.acceptees }}</td><td class="text-right">{{ l.inscrites }}</td>
+          <td class="text-right">{{ l.effectif }}</td>
+          <td class="text-right">{% if l.capacite %}{{ l.capacite }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td class="text-right">{% if l.restantes is not None %}<span class="{% if l.tension %}text-danger fw-semibold{% endif %}">{{ l.restantes }}</span>{% if l.tension %} <span class="text-muted" style="font-size:.75rem;">(demandes &gt; places)</span>{% endif %}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card animate-fade-up delay-2" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th>Élève</th><th>Classe demandée</th><th>Parent</th><th>Origine</th><th>Observation</th><th>Statut</th><th class="text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for p in demandes %}
+        <tr>
+          <td><span class="fw-semibold">{{ p.get_nom_complet }}</span><div class="text-muted" style="font-size:.75rem;">{{ p.get_genre_display }}{% if p.date_naissance %} · né(e) le {{ p.date_naissance|date:"d/m/Y" }}{% if p.lieu_naissance %} à {{ p.lieu_naissance }}{% endif %}{% endif %} · enregistrée le {{ p.created_at|date:"d/m/Y" }}</div></td>
+          <td>{{ p.classe_demandee.nom }}</td>
+          <td>{{ p.parent_nom }}<div class="text-muted" style="font-size:.75rem;">{{ p.parent_telephone }}</div></td>
+          <td>{{ p.etablissement_origine|default:"—" }}{% if p.last_classe %}<div class="text-muted" style="font-size:.75rem;">{{ p.last_classe }}</div>{% endif %}</td>
+          <td style="max-width:16rem;">{{ p.observation|default:"—" }}</td>
+          <td>
+            {% if p.statut == 'EN_ATTENTE' %}<span class="badge badge-warning">En attente</span>
+            {% elif p.statut == 'ACCEPTEE' %}<span class="badge badge-success">Acceptée</span>
+            {% elif p.statut == 'REFUSEE' %}<span class="badge badge-danger">Refusée</span>
+            {% else %}<span class="badge badge-info">Inscrite</span>{% endif %}
+            {% if p.decidee_le %}<div class="text-muted" style="font-size:.7rem;">{{ p.decidee_le|date:"d/m/Y" }}{% if p.decidee_par %} · {{ p.decidee_par.get_full_name|default:p.decidee_par.email }}{% endif %}</div>{% endif %}
+            {% if p.inscription %}<div style="font-size:.75rem;"><a href="{% url 'inscriptions:eleve_detail' p.inscription.eleve_id %}">Fiche élève</a></div>{% endif %}
+          </td>
+          <td class="text-right" style="white-space:nowrap;">
+            {% if p.statut != 'INSCRITE' %}
+              {% if request|autorise_url:'inscriptions:preinscription_update' %}<a href="{% url 'inscriptions:preinscription_update' p.pk %}" class="btn-secondary btn-sm">Modifier</a>{% endif %}
+              {% if request|autorise_url:'inscriptions:preinscription_decider' %}
+              <form method="post" action="{% url 'inscriptions:preinscription_decider' p.pk %}" style="display:inline;">{% csrf_token %}
+                {% if p.statut != 'ACCEPTEE' %}<button type="submit" name="decision" value="ACCEPTEE" class="btn-secondary btn-sm">Accepter</button>{% endif %}
+                {% if p.statut != 'REFUSEE' %}<button type="submit" name="decision" value="REFUSEE" class="btn-secondary btn-sm" data-csp-confirm="Refuser la demande de {{ p.get_nom_complet }} ?">Refuser</button>{% endif %}
+                {% if p.statut != 'EN_ATTENTE' %}<button type="submit" name="decision" value="EN_ATTENTE" class="btn-secondary btn-sm">Remettre en attente</button>{% endif %}
+              </form>
+              {% endif %}
+              {% if p.statut != 'REFUSEE' and request|autorise_url:'inscriptions:preinscription_inscrire' %}
+              <form method="post" action="{% url 'inscriptions:preinscription_inscrire' p.pk %}" style="display:inline;">{% csrf_token %}
+                <button type="submit" class="btn-primary btn-sm" data-csp-confirm="Créer l'élève {{ p.get_nom_complet }} et l'inscrire en {{ p.classe_demandee.nom }} ?">Inscrire</button>
+              </form>
+              {% endif %}
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-muted" style="text-align:center; padding:var(--space-6);">{% if annee %}Aucune demande{% if statut or classe_id %} pour ces filtres{% endif %}.{% else %}Aucune année scolaire.{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

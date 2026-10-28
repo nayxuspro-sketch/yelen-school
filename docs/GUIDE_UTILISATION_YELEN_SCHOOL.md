@@ -3092,6 +3092,42 @@ Pour chaque enseignant (clique sur son nom pour le détail par classe et discipl
 
 Les enseignements **sans enseignant** apparaissent en dernière ligne « Non attribué » : attribue-les dans `Pédagogie → Enseignements`.
 
+### 9.28 Seuil d'absences — alertes direction et parents
+
+**Accès :** `Présences → Alertes d'absences` (réglage : Directeur, Censeur, Super Admin ; traitement : droit « Marquer une alerte traitée »).
+
+1. **Réglage** (carte du haut) : `Alertes actives`, `Seuil` (nombre d'absences **non justifiées**, défaut 5), `par période` (trimestre contenant la date de l'appel ; décoché : toute l'année scolaire), `SMS au parent`. Le texte du SMS se modifie dans `Paramètres → Modèles de messages → Seuil d'absences atteint` (variables `{nom_eleve}`, `{classe}`, `{nb}`, `{periode}`, `{etablissement}`).
+2. **Déclenchement** : à la **clôture d'un appel**, chaque élève absent dont le total d'absences non justifiées atteint le seuil (puis 2 × le seuil, 3 ×…) crée une alerte : le directeur et le censeur reçoivent une notification (cloche), le parent un SMS si activé, l'enseignant qui clôture voit un avertissement. Une absence passée en **Excusé** par un justificatif accepté n'est plus comptée.
+3. **Suivi** : la page liste les alertes **à traiter** (élève → bilan individuel, classe, période, absences / seuil, SMS envoyé, badge « 2× le seuil » le cas échéant). Saisis la suite donnée (« Parent convoqué le… ») puis `Traitée` : auteur et date sont conservés ; `Tout l'historique` affiche aussi les alertes traitées.
+
+### 9.29 Santé et personnes autorisées (fiche élève)
+
+Dans le formulaire élève, section **Santé & personnes autorisées** : groupe sanguin, allergies, informations médicales (maladie chronique, traitement en cours, consignes en cas de crise), médecin ou centre de santé (nom et téléphone), et **personnes autorisées à récupérer l'élève** — une personne par ligne : `Nom — lien — téléphone`. La fiche élève reprend ces informations dans une carte dédiée ; vide, elle indique « Aucune personne déclarée : seuls les parents et le tuteur ».
+
+### 9.30 Salles : référentiel, suggestions et occupation
+
+- **Référentiel** : `Paramètres → Salles` (nom unique par établissement, capacité facultative, actif). Les salles inactives ne sont plus proposées mais restent dans l'historique.
+- **Emploi du temps** : le champ `Salle` propose les salles du référentiel ; une saisie libre reste possible. La casse est **normalisée** (`salle 2` devient `Salle 2`), si bien que deux classes ne peuvent pas occuper la même salle au même créneau quelle que soit l'écriture. Si l'effectif de la classe dépasse la **capacité** de la salle, la séance est ajoutée avec un avertissement.
+- **Occupation** : `Vie scolaire → Occupation des salles` (sélecteur d'année, bouton `Imprimer`) — une ligne par salle (référentiel et salles saisies à la main), une colonne par jour de classe, les séances de l'année dans chaque case : les cases vides sont les **créneaux libres**. Colonnes `Séances` et `h / sem.`.
+
+### 9.31 Pré-inscriptions (dossier avant inscription)
+
+**Accès :** `Inscriptions → Pré-inscriptions` (secrétariat et direction ; décisions : Directeur, Censeur, Secrétaire).
+
+1. `Nouvelle pré-inscription` : année scolaire (par défaut l'**année suivante** dès qu'elle est créée dans `Paramètres → Années scolaires`, sinon l'année courante), classe demandée, identité, lieu de naissance, école d'origine et dernière classe, parent et téléphone (8 chiffres au moins), observation. Une année clôturée est refusée.
+2. La liste se filtre par année, classe et statut ; la **synthèse par classe** affiche en attente / acceptées / inscrites / effectif inscrit / capacité / places restantes, avec un indicateur de **tension** quand les demandes acceptées dépassent les places.
+3. Décisions sur chaque ligne : `Accepter`, `Refuser`, `Remettre en attente` (auteur et date conservés).
+4. `Inscrire` (dossier accepté ou en attente) : l'élève est créé avec son **matricule**, le tuteur et le téléphone du parent repris, puis inscrit dans la classe demandée au statut « Non affecté » ; le formulaire d'inscription s'ouvre pour compléter (statut, photo, réduction…). Classe complète ou année clôturée : refus avec message ; date de naissance obligatoire ; un dossier refusé ne peut pas être inscrit ; un second clic ne crée rien en double.
+
+### 9.32 Sauvegarde depuis l'interface (mode autonome)
+
+**Accès :** `Système → Exploitation` (Super Admin, Directeur).
+
+- `Sauvegarder maintenant` (case `inclure les médias` cochée par défaut) : copie à chaud de la base SQLite (`yelen_school_<date>.sqlite3.gz`, intégrité vérifiée) et archive `yelen_school_<date>_medias.zip` (photos, signatures, justificatifs) dans le dossier de sauvegarde (`BACKUP_DIR` ou `data\backups`), avec rotation (`BACKUP_KEEP`, défaut 30). L'application reste utilisable pendant la copie.
+- Le tableau liste les sauvegardes disponibles (fichier, type, date, taille) : `Télécharger` pour les **copier sur une clé USB ou un disque externe** — une sauvegarde qui reste sur le même PC ne protège pas d'une panne de disque.
+- **Restauration** : arrêter YELEN SCHOOL (`arreter.bat`), renommer `data\db.sqlite3` en `db.sqlite3.avant`, décompresser le `.sqlite3.gz` choisi (7-Zip ou `gzip -d`) et le renommer `db.sqlite3` dans `data\`, extraire le ZIP des médias dans `media\`, redémarrer (`demarrer.bat`).
+- En mode serveur (PostgreSQL), la page rappelle la tâche planifiée `installer\backup-windows.bat` : pas de bouton.
+
 ---
 
 ## 10. EXAMENS
@@ -6920,7 +6956,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.12.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.13.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

@@ -51,6 +51,8 @@ from .nomenclatures import (  # noqa: F401
     distinction_list,
     distinction_form,
     titre_fonction_list,
+    salle_list,
+    salle_form,
     titre_fonction_form,
     titre_honorifique_list,
     titre_honorifique_form,
@@ -64,6 +66,7 @@ from .nomenclatures import (  # noqa: F401
     type_sanction_delete,
     distinction_delete,
     titre_fonction_delete,
+    salle_delete,
     titre_honorifique_delete,
 )
 from .tarifs import (  # noqa: F401

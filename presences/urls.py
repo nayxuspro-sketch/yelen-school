@@ -16,6 +16,9 @@ urlpatterns = [
     path('justifications/', views.justification_list, name='justification_list'),
     path('justifications/<uuid:justification_id>/traiter/', views.justification_process, name='justification_process'),
     path('bilan/', views.bilan_annuel, name='bilan_annuel'),
+    path('alertes/', views.alertes_absences, name='alertes_absences'),
+    path('alertes/configurer/', views.alertes_absences_config, name='alertes_absences_config'),
+    path('alertes/<uuid:alerte_id>/traiter/', views.alerte_absences_traiter, name='alerte_absences_traiter'),
     path('bilan/csv/', views.bilan_csv, name='bilan_csv'),
 
     # QR-code / Pointage

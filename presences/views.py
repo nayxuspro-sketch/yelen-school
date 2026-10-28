@@ -19,8 +19,9 @@ from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_membre_personnel
 from pedagogie.models import Enseignement, Matiere
 from viescolaire.models import SeanceCours
-from .models import Appel, Presence, Justification
+from .models import Appel, Presence, Justification, SeuilAbsences, AlerteAbsences
 from .services import notifier_parents_appel
+from .alertes import verifier_seuils
 
 
 def _get_annee_courante(etablissement):
@@ -327,8 +328,13 @@ def appel_saisie(request, appel_id):
             appel.est_clos = True
             appel.save(update_fields=['est_clos'])
             nb_familles = notifier_parents_appel(appel)
+            alertes = verifier_seuils(appel)
             messages.success(request, "Appel clôturé avec succès." + (
                 f" {nb_familles} famille(s) informée(s) par SMS (absences et retards)." if nb_familles else ""))
+            if alertes:
+                messages.warning(request, f"Seuil d'absences atteint pour {len(alertes)} élève(s) : "
+                                          + ", ".join(a.inscription.eleve.get_nom_complet() for a in alertes[:5])
+                                          + ("…" if len(alertes) > 5 else "") + " — voir Alertes d'absences.")
             return redirect('presences:appel_list')
 
         messages.success(request, "Présences enregistrées.")
@@ -846,3 +852,68 @@ def api_qr_pointer(request, appel_id):
         }),
         content_type='application/json',
     )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ALERTES D'ABSENCES (seuil)
+# ═══════════════════════════════════════════════════════════════════
+
+_ROLES_SEUIL = ('SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR')
+
+
+@login_required
+def alertes_absences(request):
+    """Élèves ayant atteint le seuil d'absences non justifiées : alertes à traiter, historique, réglage du seuil."""
+    etab = _get_etab(request)
+    reglage = SeuilAbsences.pour(etab) if etab else None
+    toutes = request.GET.get('toutes') == '1'
+    alertes = (AlerteAbsences.objects.filter(inscription__classe__etablissement=etab)
+               .select_related('inscription__eleve', 'inscription__classe', 'traitee_par')) if etab else AlerteAbsences.objects.none()
+    if not toutes:
+        alertes = alertes.filter(traitee=False)
+    return render(request, 'presences/alertes_absences.html', {
+        'reglage': reglage, 'alertes': alertes[:300], 'toutes': toutes,
+        'nb_a_traiter': AlerteAbsences.objects.filter(inscription__classe__etablissement=etab, traitee=False).count() if etab else 0,
+        'peut_regler': request.user.role in _ROLES_SEUIL or request.user.is_superuser,
+    })
+
+
+@login_required
+def alertes_absences_config(request):
+    """Réglage du seuil (direction) : actif, seuil, période, SMS parent."""
+    etab = _get_etab(request)
+    if request.method != 'POST' or etab is None:
+        return redirect('presences:alertes_absences')
+    reglage = SeuilAbsences.pour(etab)
+    try:
+        seuil = int(request.POST.get('seuil', reglage.seuil))
+    except (TypeError, ValueError):
+        seuil = 0
+    if not 1 <= seuil <= 60:
+        messages.error(request, "Le seuil doit être compris entre 1 et 60 absences.")
+        return redirect('presences:alertes_absences')
+    reglage.seuil = seuil
+    reglage.actif = request.POST.get('actif') == 'on'
+    reglage.par_periode = request.POST.get('par_periode') == 'on'
+    reglage.sms_parent = request.POST.get('sms_parent') == 'on'
+    reglage.save(update_fields=['seuil', 'actif', 'par_periode', 'sms_parent', 'updated_at'])
+    messages.success(request, f"Seuil enregistré : {seuil} absences non justifiées par "
+                              f"{'période' if reglage.par_periode else 'année'}"
+                              f"{'' if reglage.actif else ' (alertes désactivées)'}.")
+    return redirect('presences:alertes_absences')
+
+
+@login_required
+def alerte_absences_traiter(request, alerte_id):
+    """Marque l'alerte traitée (convocation, entretien) avec la suite donnée."""
+    from django.utils import timezone
+    if request.method != 'POST':
+        return redirect('presences:alertes_absences')
+    alerte = get_object_or_404(AlerteAbsences, pk=alerte_id, inscription__classe__etablissement=_get_etab(request))
+    alerte.traitee = True
+    alerte.traitee_par = request.user
+    alerte.traitee_le = timezone.now()
+    alerte.observation = request.POST.get('observation', '').strip()[:200]
+    alerte.save(update_fields=['traitee', 'traitee_par', 'traitee_le', 'observation', 'updated_at'])
+    messages.success(request, f"Alerte de {alerte.inscription.eleve.get_nom_complet()} marquée traitée.")
+    return redirect('presences:alertes_absences')

@@ -108,6 +108,28 @@
             </div>
         </div>
 
+        <div class="divider"></div>
+
+        <!-- Section Santé & personnes autorisées -->
+        <div class="mb-6">
+            <h3 class="text-lg fw-semibold d-flex align-center gap-2 mb-4" style="color:var(--color-primary);">
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                Santé &amp; personnes autorisées
+            </h3>
+            <div class="form-grid-2">
+                {% for field in form.sections.sante %}
+                    <div class="form-group" {% if field.name == 'informations_medicales' or field.name == 'personnes_autorisees' %}style="grid-column:1/-1;"{% endif %}>
+                        <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}<p class="text-muted" style="font-size:.75rem; margin:.25rem 0 0;">{{ field.help_text }}</p>{% endif %}
+                        {% if field.errors %}
+                            <p class="input-error">{{ field.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
         <div class="d-flex justify-end gap-4" style="padding-top:1.5rem; border-top:1px solid var(--color-border);">
             <a href="{% url 'inscriptions:eleve_list' %}" class="btn-secondary">Annuler</a>
             <button type="submit" class="btn-primary">

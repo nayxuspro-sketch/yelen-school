@@ -238,7 +238,8 @@
       <div class="edt-form-footer">
         <div class="dash-form-group">
           <label class="dash-label" for="id_salle">Salle <span class="edt-optional">(optionnel)</span></label>
-          <input type="text" name="salle" class="dash-input" placeholder="ex : A12" maxlength="50" id="id_salle">
+          <input type="text" name="salle" class="dash-input" placeholder="ex : A12" maxlength="50" id="id_salle" list="liste-salles" autocomplete="off">
+          <datalist id="liste-salles">{% for s in salles %}<option value="{{ s.nom }}">{% if s.capacite %}{{ s.capacite }} places{% endif %}</option>{% endfor %}</datalist>
         </div>
         <button type="submit" class="dash-btn">
           <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">

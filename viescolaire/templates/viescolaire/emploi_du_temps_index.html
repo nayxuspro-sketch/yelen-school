@@ -17,6 +17,12 @@
       </svg>
       Vue par professeur
     </a>
+    <a href="{% url 'viescolaire:occupation_salles' %}" class="btn-secondary">
+      <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/>
+      </svg>
+      Occupation des salles
+    </a>
     {% if request|autorise_url:'viescolaire:edt_config' %}
     <a href="{% url 'viescolaire:edt_config' %}" class="btn-secondary">
       <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

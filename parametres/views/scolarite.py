@@ -16,7 +16,7 @@ from ..forms import (
 from ..models import (
     Cycle, AnneeScolaire, Classe, Poste, LocalisationPoste, StatutEleve, RubriquePaiement, TarifScolarite,
     AppreciationMoyenneSecondaire, PeriodeEvaluation, Discipline,
-    TitreFonction, TitreHonorifiquePersonnel,
+    TitreFonction, TitreHonorifiquePersonnel, Salle,
 )
 
 from .commun import _get_etab, _delete_view
@@ -43,6 +43,7 @@ def parametres_index(request):
         'nb_disciplines': count(Discipline),
         'nb_periodes':    count(PeriodeEvaluation),
         'nb_titres_fonctions':    TitreFonction.objects.count(),
+        'nb_salles':              count(Salle),
         'nb_titres_honorifiques': TitreHonorifiquePersonnel.objects.count(),
         'nb_localisations': count(LocalisationPoste),
     }

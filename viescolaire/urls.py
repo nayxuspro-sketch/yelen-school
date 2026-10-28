@@ -38,6 +38,7 @@ urlpatterns = [
     # Emploi du temps
     path('emploi-du-temps/', views.emploi_du_temps_index, name='emploi_du_temps_index'),
     path('emploi-du-temps/horaires/', views.edt_config, name='edt_config'),
+    path('emploi-du-temps/salles/', views.occupation_salles, name='occupation_salles'),
     path('classe/<uuid:classe_id>/emploi-du-temps/', views.emploi_du_temps, name='emploi_du_temps'),
     path('classe/<uuid:classe_id>/emploi-du-temps/pdf/', views.emploi_du_temps_pdf, name='emploi_du_temps_pdf'),
     path('classe/<uuid:classe_id>/seance/ajouter/', views.seance_create, name='seance_create'),

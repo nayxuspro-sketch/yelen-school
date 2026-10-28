@@ -79,6 +79,12 @@ MODULES = (
         _f('/inscriptions/reinscription/', 'Réinscription / passage de classe', actions=(
             _a('reinscrire', 'Réinscrire un élève ou passer une classe en lot', 'reinscrire_eleve', 'passage_classe'),
         )),
+        _f('/inscriptions/pre-inscriptions/', 'Pré-inscriptions (nouveaux élèves)', actions=(
+            _a('enregistrer', 'Enregistrer / corriger une demande', 'preinscription_create', 'preinscription_update'),
+            _a('decider', 'Accepter / refuser une demande', 'preinscription_decider',
+               roles=frozenset({RoleChoices.DIRECTEUR, RoleChoices.CENSEUR, RoleChoices.SECRETAIRE})),
+            _a('inscrire', "Inscrire l'élève depuis la demande", 'preinscription_inscrire'),
+        )),
     )),
     Module('pedagogie', 'Pédagogie', SECTION_SCOLARITE, (
         _f('/pedagogie/cahier-textes/', 'Cahier de textes', actions=(
@@ -127,6 +133,10 @@ MODULES = (
         _f('/presences/justifications/', 'Justifications', actions=(
             _a('enregistrer', 'Enregistrer une justification', 'justification_create'),
             _a('traiter', 'Traiter (accepter / refuser)', 'justification_process'),
+        )),
+        _f('/presences/alertes/', "Alertes d'absences (seuil)", actions=(
+            _a('regler', "Régler le seuil d'absences", 'alertes_absences_config', roles=_DIRECTION),
+            _a('traiter', 'Marquer une alerte traitée', 'alerte_absences_traiter'),
         )),
     )),
     Module('examens', 'Examens', SECTION_SCOLARITE, (
@@ -315,6 +325,7 @@ MODULES = (
         _f('/parametres/types-sanctions/', 'Types Sanctions'),
         _f('/parametres/mentions-distinctions/', 'Mentions / distinctions'),
         _f('/parametres/titres-fonctions/', 'Titres Fonctions'),
+        _f('/parametres/salles/', 'Salles'),
         _f('/parametres/titres-honorifiques/', 'Titres Honorifiques'),
     )),
 )

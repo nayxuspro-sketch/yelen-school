@@ -23,6 +23,11 @@ urlpatterns = [
     path('eleve/<uuid:pk>/carte/', views.eleve_carte, name='eleve_carte'),
     path('classe/<uuid:pk>/cartes-pdf/', views.classe_cartes_pdf, name='classe_cartes_pdf'),
     # Réinscription
+    path('pre-inscriptions/', views.preinscription_list, name='preinscription_list'),
+    path('pre-inscriptions/nouvelle/', views.preinscription_form, name='preinscription_create'),
+    path('pre-inscriptions/<uuid:pk>/modifier/', views.preinscription_form, name='preinscription_update'),
+    path('pre-inscriptions/<uuid:pk>/decider/', views.preinscription_decider, name='preinscription_decider'),
+    path('pre-inscriptions/<uuid:pk>/inscrire/', views.preinscription_inscrire, name='preinscription_inscrire'),
     path('reinscription/', views.reinscription_list, name='reinscription_list'),
     path('reinscription/passage/', views.passage_classe, name='passage_classe'),
     path('reinscription/eleve/<uuid:pk>/', views.reinscrire_eleve, name='reinscrire_eleve'),

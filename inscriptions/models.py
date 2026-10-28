@@ -211,6 +211,19 @@ class Eleve(BaseModel):
         help_text=_("Ex : 2024-2025")
     )
 
+    # ── Santé et personnes autorisées (fiche d'urgence) ──
+    GROUPES_SANGUINS = [(g, g) for g in ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')]
+    groupe_sanguin = models.CharField(max_length=3, blank=True, default='', choices=GROUPES_SANGUINS,
+                                      verbose_name=_("Groupe sanguin"))
+    allergies = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Allergies"),
+                                 help_text=_("Alimentaires, médicamenteuses… « Aucune » si connu"))
+    informations_medicales = models.TextField(blank=True, default='', verbose_name=_("Informations médicales"),
+                                              help_text=_("Maladie chronique, traitement en cours, consignes en cas de crise"))
+    medecin_traitant = models.CharField(max_length=120, blank=True, default='', verbose_name=_("Médecin / centre de santé"),
+                                        help_text=_("Nom et téléphone"))
+    personnes_autorisees = models.TextField(blank=True, default='', verbose_name=_("Personnes autorisées à récupérer l'élève"),
+                                            help_text=_("Une personne par ligne : Nom — lien — téléphone"))
+
     class Meta:
         verbose_name = _("Élève")
         verbose_name_plural = _("Élèves")
@@ -621,3 +634,52 @@ class TransfertEleve(BaseModel):
 
     def __str__(self):
         return f"Transfert {self.inscription.eleve} → {self.etablissement_destination} ({self.get_statut_display()})"
+
+
+class PreInscription(BaseModel):
+    """Demande d'inscription d'un nouvel élève (campagne de rentrée) : identité minimale, classe demandée, parent à
+    joindre. Acceptée ou refusée par la direction ; « Inscrire » crée l'élève et son inscription en une fois."""
+
+    class Statut(models.TextChoices):
+        EN_ATTENTE = 'EN_ATTENTE', _('En attente')
+        ACCEPTEE = 'ACCEPTEE', _('Acceptée')
+        REFUSEE = 'REFUSEE', _('Refusée')
+        INSCRITE = 'INSCRITE', _('Inscrite')
+
+    etablissement = models.ForeignKey('etablissements.Etablissement', on_delete=models.CASCADE,
+                                      related_name='pre_inscriptions', verbose_name=_("Établissement"))
+    annee_scolaire = models.ForeignKey('parametres.AnneeScolaire', on_delete=models.PROTECT,
+                                       related_name='pre_inscriptions', verbose_name=_("Année scolaire demandée"))
+    classe_demandee = models.ForeignKey('parametres.Classe', on_delete=models.PROTECT,
+                                        related_name='pre_inscriptions', verbose_name=_("Classe demandée"))
+    nom = models.CharField(max_length=100, verbose_name=_("Nom"))
+    prenom = models.CharField(max_length=100, verbose_name=_("Prénom(s)"))
+    genre = models.CharField(max_length=1, choices=GenreChoices.choices, verbose_name=_("Genre"))
+    date_naissance = models.DateField(null=True, blank=True, verbose_name=_("Date de naissance"))
+    lieu_naissance = models.CharField(max_length=100, blank=True, default='', verbose_name=_("Lieu de naissance"))
+    etablissement_origine = models.CharField(max_length=200, blank=True, default='',
+                                             verbose_name=_("Établissement d'origine"))
+    last_classe = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Dernière classe fréquentée"))
+    parent_nom = models.CharField(max_length=150, verbose_name=_("Parent / tuteur"))
+    parent_telephone = models.CharField(max_length=35, verbose_name=_("Téléphone du parent"))
+    observation = models.CharField(max_length=300, blank=True, default='', verbose_name=_("Observation"),
+                                   help_text=_("Pièces manquantes, frais de dossier versés, rendez-vous…"))
+    statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.EN_ATTENTE, verbose_name=_("Statut"))
+    decidee_par = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='pre_inscriptions_decidees', verbose_name=_("Décidée par"))
+    decidee_le = models.DateTimeField(null=True, blank=True, verbose_name=_("Décidée le"))
+    inscription = models.OneToOneField(Inscription, on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='pre_inscription', verbose_name=_("Inscription créée"))
+    created_by = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='pre_inscriptions_creees', verbose_name=_("Enregistrée par"))
+
+    class Meta:
+        verbose_name = _("Pré-inscription")
+        verbose_name_plural = _("Pré-inscriptions")
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.nom.upper()} {self.prenom} — {self.classe_demandee.nom} ({self.annee_scolaire.libelle})"
+
+    def get_nom_complet(self):
+        return f"{self.nom.upper()} {self.prenom}".strip()

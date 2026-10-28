@@ -1,0 +1,51 @@
+{% extends "core/base.html" %}
+
+{% block title %}Occupation des salles — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <a href="{% url 'viescolaire:emploi_du_temps_index' %}" class="text-secondary">Emplois du temps</a><span>›</span><span>Occupation des salles</span>
+    </div>
+    <h1 class="page-title">Occupation des salles</h1>
+    <p class="page-subtitle">{% if annee %}{{ annee.libelle }} · {% endif %}une ligne par salle, une colonne par jour de classe : les cases vides sont des créneaux libres. Les salles se gèrent dans <a href="{% url 'parametres:salle_list' %}">Paramètres → Salles</a>.</p>
+  </div>
+  <div class="d-flex gap-2 align-center">
+    {% if annees %}
+    <form method="get" class="edt-toolbar">
+      <select name="annee" class="dash-input" data-csp-submit-on-change aria-label="Année scolaire">
+        {% for a in annees %}<option value="{{ a.pk }}" {% if annee and a.pk == annee.pk %}selected{% endif %}>{{ a.libelle }}</option>{% endfor %}
+      </select>
+    </form>
+    {% endif %}
+    <button type="button" class="btn-secondary" data-csp-action="print">Imprimer</button>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table" style="font-size:.85rem;">
+      <thead>
+        <tr><th>Salle</th>{% for j in jours_labels %}<th>{{ j }}</th>{% endfor %}<th class="text-right">Séances</th><th class="text-right">h / sem.</th></tr>
+      </thead>
+      <tbody>
+        {% for l in lignes %}
+        <tr>
+          <td class="fw-semibold" style="white-space:nowrap;">{{ l.nom }}{% if l.fiche %}{% if l.fiche.capacite %}<div class="text-muted" style="font-size:.75rem; font-weight:400;">{{ l.fiche.capacite }} places</div>{% endif %}{% if not l.fiche.actif %}<div class="text-muted" style="font-size:.75rem; font-weight:400;">inactive</div>{% endif %}{% else %}<div class="text-muted" style="font-size:.75rem; font-weight:400;">hors référentiel</div>{% endif %}</td>
+          {% for case in l.cases %}
+          <td style="vertical-align:top;">
+            {% for s in case %}<div style="white-space:nowrap;"><span class="text-muted">{{ s.heure_debut|time:"H:i" }}–{{ s.heure_fin|time:"H:i" }}</span> {{ s.enseignement.classe.nom }} <span class="text-muted">({{ s.enseignement.matiere.nom }})</span></div>{% empty %}<span class="text-muted">—</span>{% endfor %}
+          </td>
+          {% endfor %}
+          <td class="text-right">{{ l.nb }}</td>
+          <td class="text-right">{{ l.heures|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="{{ jours_labels|length|add:3 }}" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucune salle déclarée ni saisie dans l'emploi du temps{% if not annee %} (aucune année scolaire courante){% endif %}.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

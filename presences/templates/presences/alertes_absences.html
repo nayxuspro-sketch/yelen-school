@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+{% load droits_tags %}
+
+{% block title %}Alertes d'absences{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Alertes d'absences</h1>
+    <p class="page-subtitle">À la clôture d'un appel, chaque élève qui atteint le seuil d'absences non justifiées{% if reglage %} ({{ reglage.seuil }} par {% if reglage.par_periode %}période{% else %}année{% endif %}){% endif %} déclenche une alerte : la direction est notifiée{% if reglage and reglage.sms_parent %}, le parent reçoit un SMS{% endif %}. Une absence excusée (justificatif accepté) ne compte plus.</p>
+  </div>
+  <div class="d-flex gap-2 align-center">
+    <a href="{% url 'presences:alertes_absences' %}{% if not toutes %}?toutes=1{% endif %}" class="btn-secondary">{% if toutes %}À traiter seulement ({{ nb_a_traiter }}){% else %}Tout l'historique{% endif %}</a>
+    <a href="{% url 'presences:bilan_annuel' %}" class="btn-secondary">Bilan des absences</a>
+  </div>
+</div>
+
+{% if reglage and peut_regler and request|autorise_url:'presences:alertes_absences_config' %}
+<div class="card animate-fade-up mb-4">
+  <div class="card-header"><span class="card-title">Réglage du seuil</span></div>
+  <form method="post" action="{% url 'presences:alertes_absences_config' %}" class="d-flex gap-4 align-center flex-wrap" style="padding:var(--space-4);">
+    {% csrf_token %}
+    <label class="d-flex align-center gap-2"><input type="checkbox" name="actif" {% if reglage.actif %}checked{% endif %} style="accent-color:var(--color-primary);"> Alertes actives</label>
+    <label class="d-flex align-center gap-2">Seuil <input type="number" name="seuil" value="{{ reglage.seuil }}" min="1" max="60" class="input" style="width:5rem;" aria-label="Seuil d'absences"> absences non justifiées</label>
+    <label class="d-flex align-center gap-2"><input type="checkbox" name="par_periode" {% if reglage.par_periode %}checked{% endif %} style="accent-color:var(--color-primary);"> par période (trimestre) — sinon par année</label>
+    <label class="d-flex align-center gap-2"><input type="checkbox" name="sms_parent" {% if reglage.sms_parent %}checked{% endif %} style="accent-color:var(--color-primary);"> SMS au parent</label>
+    <button type="submit" class="btn-primary">Enregistrer</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th>Élève</th><th>Classe</th><th>Période</th><th class="text-right">Absences</th><th>Déclenchée le</th><th>Parent prévenu</th><th>Suite donnée</th><th class="text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for a in alertes %}
+        <tr>
+          <td class="fw-semibold"><a href="{% url 'presences:bilan_eleve' a.inscription_id %}">{{ a.inscription.eleve.get_nom_complet }}</a>{% if a.palier > 1 %} <span class="badge badge-danger">{{ a.palier }}× le seuil</span>{% endif %}</td>
+          <td>{{ a.inscription.classe.nom }}</td>
+          <td>{{ a.periode }}</td>
+          <td class="text-right fw-semibold">{{ a.nb_absences }} <span class="text-muted" style="font-weight:400;">/ seuil {{ a.seuil }}</span></td>
+          <td>{{ a.date_appel|date:"d/m/Y" }}</td>
+          <td>{% if a.sms_envoye %}<span class="badge badge-success">SMS envoyé</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td>{% if a.traitee %}<span class="badge badge-info">Traitée</span> <span class="text-muted" style="font-size:.75rem;">{{ a.traitee_le|date:"d/m/Y" }}{% if a.traitee_par %} · {{ a.traitee_par.get_full_name|default:a.traitee_par.email }}{% endif %}</span>{% if a.observation %}<div style="font-size:.8rem;">{{ a.observation }}</div>{% endif %}{% else %}<span class="badge badge-warning">À traiter</span>{% endif %}</td>
+          <td class="text-right">
+            {% if not a.traitee and request|autorise_url:'presences:alerte_absences_traiter' %}
+            <form method="post" action="{% url 'presences:alerte_absences_traiter' a.pk %}" class="d-flex gap-2 justify-end">
+              {% csrf_token %}
+              <input type="text" name="observation" class="input" placeholder="Convoqué le…, entretien…" maxlength="200" style="width:12rem;" aria-label="Suite donnée">
+              <button type="submit" class="btn-secondary btn-sm">Traitée</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-muted" style="text-align:center; padding:var(--space-6);">{% if toutes %}Aucune alerte enregistrée.{% else %}Aucune alerte à traiter.{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

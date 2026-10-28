@@ -1,0 +1,44 @@
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title">{% if salle %}Modifier la salle{% else %}Nouvelle salle{% endif %}</span>
+            <button data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form hx-post="{% if salle %}{% url 'parametres:salle_edit' salle.pk %}{% else %}{% url 'parametres:salle_create' %}{% endif %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#modal-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
+
+                <div class="form-group">
+                    <label class="input-label" for="id_nom">Nom de la salle <span style="color:#FF6B7A;">*</span></label>
+                    <input type="text" name="nom" value="{{ salle.nom|default:'' }}" placeholder="Ex : A12, Labo SVT, Salle informatique"
+                           required maxlength="50" class="input" id="id_nom">
+                </div>
+                <div class="form-group">
+                    <label class="input-label" for="id_capacite">Capacité (places)</label>
+                    <input type="number" name="capacite" value="{{ salle.capacite|default_if_none:'' }}" min="1" max="500" class="input" id="id_capacite">
+                </div>
+
+                {% if salle %}
+                <label class="d-flex align-center gap-3" style="cursor:pointer;">
+                    <input type="checkbox" name="actif" {% if salle.actif %}checked{% endif %}
+                           style="width:1rem; height:1rem; accent-color:var(--color-primary);">
+                    <span class="text-sm text-secondary">Salle active (proposée à la saisie)</span>
+                </label>
+                {% else %}
+                <input type="hidden" name="actif" value="on">
+                {% endif %}
+
+                <div class="modal-footer">
+                    <button type="button" data-csp-remove="modal-overlay" class="btn-secondary">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

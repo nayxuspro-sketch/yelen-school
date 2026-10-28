@@ -39,6 +39,7 @@ from .edt import (  # noqa: F401
     emploi_du_temps_prof_index,
     emploi_du_temps_prof,
     emploi_du_temps_prof_pdf,
+    occupation_salles,
 )
 from .suivi import (  # noqa: F401
     fiche_suivi_eleve,

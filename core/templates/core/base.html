@@ -188,6 +188,9 @@
         {% if '/inscriptions/reinscription/' in droits_fonctionnalites %}
         <a href="{% url 'inscriptions:reinscription_list' %}" class="sb-item-submodern" data-url="/inscriptions/reinscription/"><span class="sub-item-dot"></span>Réinscription</a>
         {% endif %}
+        {% if '/inscriptions/pre-inscriptions/' in droits_fonctionnalites %}
+        <a href="{% url 'inscriptions:preinscription_list' %}" class="sb-item-submodern" data-url="/inscriptions/pre-inscriptions/"><span class="sub-item-dot"></span>Pré-inscriptions</a>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -287,6 +290,9 @@
         {% endif %}
         {% if '/presences/justifications/' in droits_fonctionnalites %}
         <a href="{% url 'presences:justification_list' %}" class="sb-item-submodern" data-url="/presences/justifications/"><span class="sub-item-dot"></span>Justifications</a>
+        {% endif %}
+        {% if '/presences/alertes/' in droits_fonctionnalites %}
+        <a href="{% url 'presences:alertes_absences' %}" class="sb-item-submodern" data-url="/presences/alertes/"><span class="sub-item-dot"></span>Alertes d'absences</a>
         {% endif %}
       </div>
       {% endif %}
@@ -664,6 +670,9 @@
         {% endif %}
         {% if '/parametres/titres-fonctions/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:titre_fonction_list' %}" class="sb-item-submodern" data-url="/parametres/titres-fonctions/"><span class="sub-item-dot"></span>Titres Fonctions</a>
+        {% endif %}
+        {% if '/parametres/salles/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:salle_list' %}" class="sb-item-submodern" data-url="/parametres/salles/"><span class="sub-item-dot"></span>Salles</a>
         {% endif %}
         {% if '/parametres/titres-honorifiques/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:titre_honorifique_list' %}" class="sb-item-submodern" data-url="/parametres/titres-honorifiques/"><span class="sub-item-dot"></span>Titres Honorifiques</a>

@@ -10,11 +10,11 @@ from ..forms import (
     StatutEleveForm, AppreciationMoyenneSecondaireForm,
     AppreciationMoyennePrimaireForm, CategorieDisciplineForm, DisciplineForm,
     TypeSanctionForm, DistinctionForm, TitreFonctionForm,
-    TitreHonorifiquePersonnelForm,
+    TitreHonorifiquePersonnelForm, SalleForm,
 )
 from ..models import (
     Cycle, TypeDocument, Poste, LocalisationPoste, StatutEleve, AppreciationMoyenneSecondaire, AppreciationMoyennePrimaire, Discipline,
-    CategorieDiscipline, TypeSanction, Distinction, TitreFonction, TitreHonorifiquePersonnel,
+    CategorieDiscipline, TypeSanction, Distinction, TitreFonction, TitreHonorifiquePersonnel, Salle,
 )
 
 from .commun import _get_etab, _delete_view
@@ -342,6 +342,35 @@ def titre_fonction_form(request, pk=None):
         return render(request, 'parametres/partials/titre_fonction_form.html', {'titre': titre, 'error': form.errors.as_text()})
 
     return render(request, 'parametres/partials/titre_fonction_form.html', {'titre': titre})
+
+
+# ─── SALLES ───────────────────────────────────────────────────────
+
+@login_required
+def salle_list(request):
+    salles = Salle.objects.filter(etablissement=_get_etab(request))
+    tpl = 'parametres/partials/salle_list.html' if request.headers.get('HX-Request') else 'parametres/salles.html'
+    return render(request, tpl, {'salles': salles})
+
+
+@login_required
+def salle_form(request, pk=None):
+    etab = _get_etab(request)
+    salle = get_object_or_404(Salle, pk=pk, etablissement=etab) if pk else None
+    if request.method == 'POST':
+        form = SalleForm(request.POST, instance=salle, etablissement=etab)
+        if form.is_valid():
+            form.save()
+            return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
+        return render(request, 'parametres/partials/salle_form.html', {'salle': salle, 'error': form.errors.as_text()})
+    return render(request, 'parametres/partials/salle_form.html', {'salle': salle})
+
+
+@login_required
+@require_POST
+def salle_delete(request, pk):
+    obj = get_object_or_404(Salle, pk=pk, etablissement=_get_etab(request))
+    return _delete_view(request, obj)
 
 
 # ─── TITRES HONORIFIQUES ──────────────────────────────────────────

@@ -1622,6 +1622,38 @@ class TitreFonction(BaseModel):
         return self.nom
 
 
+class Salle(BaseModel):
+    """Salle de classe de l'établissement : nom unique, capacité indicative. Alimente la saisie de l'emploi du temps
+    (suggestions, nom canonique pour la détection des conflits, alerte de capacité) et l'occupation des salles."""
+
+    etablissement = models.ForeignKey('etablissements.Etablissement', on_delete=models.CASCADE, related_name='salles',
+                                      verbose_name=_("Établissement"))
+    nom = models.CharField(max_length=50, verbose_name=_("Nom"), help_text=_("Ex : A12, Labo SVT, Salle informatique"))
+    capacite = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Capacité (places)"))
+    actif = models.BooleanField(default=True, verbose_name=_("Active"))
+
+    class Meta:
+        verbose_name = _("Salle")
+        verbose_name_plural = _("Salles")
+        ordering = ['nom']
+        unique_together = [['etablissement', 'nom']]
+
+    def __str__(self):
+        return self.nom
+
+    @classmethod
+    def canonique(cls, etab, saisie):
+        """Nom tel qu'enregistré dans le référentiel pour une saisie libre (casse et espaces tolérés) ; la saisie
+        inchangée si aucune salle ne correspond."""
+        voulu = ' '.join((saisie or '').split()).casefold()
+        if not voulu or etab is None:
+            return (saisie or '').strip()
+        for salle in cls.objects.filter(etablissement=etab, actif=True):
+            if ' '.join(salle.nom.split()).casefold() == voulu:
+                return salle.nom
+        return ' '.join(saisie.split())
+
+
 # ═══════════════════════════════════════════════════════════════════
 # 17. TITRE HONORIFIQUE PERSONNEL
 # ═══════════════════════════════════════════════════════════════════
@@ -1726,6 +1758,7 @@ class ModeleMessage(BaseModel):
         BULLETIN = 'BULLETIN', 'Disponibilité du bulletin'
         ABSENCE  = 'ABSENCE',  'Absence élève'
         RETARD   = 'RETARD',   'Retard élève'
+        SEUIL_ABSENCES = 'SEUIL_ABSENCES', "Seuil d'absences atteint"
         PAIEMENT = 'PAIEMENT', 'Relance paiement'
         REUNION  = 'REUNION',  'Réunion parents d\'élèves'
 
@@ -1741,6 +1774,10 @@ class ModeleMessage(BaseModel):
         'RETARD': (
             "Bonjour, votre enfant {nom_eleve} est arrivé(e) en retard le {date}"
             "{matiere}. — {etablissement}"
+        ),
+        'SEUIL_ABSENCES': (
+            "Bonjour, votre enfant {nom_eleve} ({classe}) totalise {nb} absences non justifiées "
+            "({periode}). Merci de contacter {etablissement} rapidement."
         ),
         'PAIEMENT': (
             "Bonjour, un rappel de paiement : {rubrique} de {montant} FCFA "

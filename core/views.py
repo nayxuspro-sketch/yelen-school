@@ -1021,7 +1021,42 @@ def exploitation(request):
         messages.success(request, f"File SMS traitée : {bilan['envoyes']} envoyé(s), {bilan['echecs']} échec(s), "
                                   f"{bilan['en_attente']} encore en attente.")
         return redirect('core:exploitation')
-    return render(request, 'core/exploitation.html', etat_exploitation())
+    if request.method == 'POST' and 'sauvegarder' in request.POST:
+        from django.core.cache import cache
+        from django.core.management.base import CommandError
+        from core.sauvegarde import sauvegarder_maintenant
+        try:
+            resultat = sauvegarder_maintenant(avec_medias=request.POST.get('medias') == 'on')
+        except CommandError as exc:
+            messages.error(request, f"Sauvegarde impossible : {exc}")
+        except Exception:
+            logger.exception("Sauvegarde depuis l'interface échouée")
+            messages.error(request, "La sauvegarde a échoué : consultez le journal des erreurs ci-dessous.")
+        else:
+            cache.delete(CACHE_CLE)
+            texte = f"Sauvegarde terminée en {resultat['duree']:.1f} s : {resultat['base'].name}"
+            if resultat['medias']:
+                texte += f" + {resultat['medias'].name}"
+            elif request.POST.get('medias') == 'on':
+                texte += " (aucun média à archiver)"
+            messages.success(request, texte + ". Copiez-la sur un support externe.")
+        return redirect('core:exploitation')
+    from core.sauvegarde import lister_sauvegardes, mode_sqlite
+    contexte = etat_exploitation()
+    contexte.update({'sauvegardes': lister_sauvegardes(), 'mode_sqlite': mode_sqlite()})
+    return render(request, 'core/exploitation.html', contexte)
+
+
+@login_required
+def sauvegarde_telecharger(request, nom):
+    """Téléchargement d'un fichier de sauvegarde (SUPER_ADMIN / DIRECTEUR) ; nom strictement validé."""
+    from core.sauvegarde import chemin_sauvegarde
+    if request.user.role not in ('SUPER_ADMIN', 'DIRECTEUR') and not request.user.is_superuser:
+        return HttpResponseForbidden("Accès réservé aux administrateurs.")
+    chemin = chemin_sauvegarde(nom)
+    if chemin is None:
+        raise Http404
+    return FileResponse(open(chemin, 'rb'), as_attachment=True, filename=chemin.name)
 
 
 @login_required
