@@ -181,6 +181,14 @@ class MembrePersonnel(BaseModel):
         help_text=_("Ex: M. le Directeur, Le Proviseur, Dr.")
     )
 
+    titre_capacite = models.CharField(
+        max_length=35,
+        blank=True,
+        default='',
+        verbose_name=_("Titre de capacité"),
+        help_text=_("Ex: CAPES, CAP-CEG, Licence, Master")
+    )
+
     date_embauche = models.DateField(
         verbose_name=_("Date d'embauche")
     )

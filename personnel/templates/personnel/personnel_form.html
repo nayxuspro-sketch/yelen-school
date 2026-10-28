@@ -56,7 +56,7 @@
       </div>
       <div class="form-grid-2">
         {% for field in form %}
-          {% if field.name in "fonction,titre_honorifique,date_embauche,etablissement,poste_principal_code,numero_cni,est_contractuel,est_vacataire,est_directeur,est_censeur" %}
+          {% if field.name in "fonction,titre_honorifique,titre_capacite,date_embauche,etablissement,poste_principal_code,numero_cni,est_contractuel,est_vacataire,est_directeur,est_censeur" %}
           <div class="form-group">
             {% if field.field.widget.input_type == 'checkbox' %}
             <label class="d-flex align-center gap-3" style="cursor:pointer;">

@@ -477,3 +477,26 @@ class TestMatriculePersonnel:
         assert response.status_code == 302
         assert response['Location'] == reverse('personnel:detail', args=[nouveau.pk])
         assert nouveau.matricule == self.prefixe(etab) + '03'
+
+
+@pytest.mark.django_db
+def test_titre_de_capacite_dans_le_volet_carriere(client):
+    """Champ « Titre de capacité » (texte, 35 caractères) : formulaire, enregistrement, fiche."""
+    import re
+    from personnel.models import MembrePersonnel
+    etab = baker.make('etablissements.Etablissement', code='ETAB001')
+    client.force_login(baker.make('accounts.User', etablissement=etab, must_change_password=False))
+    html = client.get(reverse('personnel:create')).content.decode()
+    champ = re.search(r'<input[^>]*name="titre_capacite"[^>]*>', html).group(0)
+    assert 'maxlength="35"' in champ and 'type="text"' in champ
+    assert html.index('Carrière &amp; Affectation') < html.index('name="titre_capacite"') < html.index('Contact &amp; Adresse')
+    titre = 'CAPES Mathématiques — session 2019'
+    assert len(titre) <= 35
+    reponse = client.post(reverse('personnel:create'), {
+        'nom': 'Ouedraogo', 'prenom': 'Issa', 'genre': 'M', 'date_naissance': '1990-01-01', 'lieu_naissance': 'Ouagadougou',
+        'nationalite': 'Burkinabè', 'fonction': 'Enseignant', 'titre_capacite': titre, 'date_embauche': '2026-09-01',
+        'situation_matrimoniale': 'CELIBATAIRE', 'nombre_enfants': 0, 'etablissement': etab.pk,
+    })
+    membre = MembrePersonnel.objects.get(nom='Ouedraogo')
+    assert reponse.status_code == 302 and membre.titre_capacite == titre
+    assert titre in client.get(reverse('personnel:detail', args=[membre.pk])).content.decode()

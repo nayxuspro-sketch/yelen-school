@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.13.1 — 2026-10-28
+
+### Ajouté
+- **Titre de capacité** sur la fiche du personnel (`Personnel → Nouveau membre`, volet « Carrière & Affectation », texte de 35 caractères, facultatif — ex. CAPES, CAP-CEG, Licence) ; affiché sur la fiche du membre. Champ `MembrePersonnel.titre_capacite` (migration `personnel/0010`).
+
 ## 5.13.0 — 2026-10-28
 
 ### Ajouté (audit — Lot I : confort)

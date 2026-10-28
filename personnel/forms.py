@@ -40,7 +40,7 @@ class MembrePersonnelForm(forms.ModelForm):
         fields = [
             'nom', 'prenom', 'genre', 'date_naissance', 'lieu_naissance',
             'nationalite', 'telephone', 'email', 'adresse', 'numero_cni',
-            'fonction', 'titre_honorifique', 'date_embauche', 'est_contractuel',
+            'fonction', 'titre_honorifique', 'titre_capacite', 'date_embauche', 'est_contractuel',
             'est_vacataire', 'est_directeur', 'est_censeur',
             'situation_matrimoniale', 'nombre_enfants', 'photo',
             'etablissement', 'poste_principal_code', 'cycles'

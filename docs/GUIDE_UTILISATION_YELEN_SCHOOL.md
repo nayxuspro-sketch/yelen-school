@@ -684,6 +684,10 @@ La page de détail du personnel a été intégralement refactorisée pour être 
 - Modification : `/personnel/<uuid:pk>/modifier/`
 - Activation/désactivation : `/personnel/<uuid:pk>/toggle-active/` (POST)
 
+#### Volet « Carrière & Affectation » du formulaire (`/personnel/nouveau/`, `/personnel/<uuid:pk>/modifier/`)
+
+Titre (fonction), titre honorifique, **titre de capacité** (diplôme professionnel ou académique : CAPES, CAP-CEG, Licence, Master — 35 caractères, facultatif), date d'embauche, établissement, poste principal, n° CNI, cases Contractuel / Vacataire / Directeur / Censeur, cycles d'enseignement. Le titre de capacité est repris sur la fiche du membre (bandeau Téléphone · E-mail · Titre de capacité · Embauche · Contrat).
+
 ### 5.10 Gestion des Congés du Personnel
 
 **À quoi ça sert :** Permet d'enregistrer et de suivre les demandes de congé des membres du personnel (annuels, maladie, formation, etc.) avec affichage du solde de jours restants.
@@ -6956,7 +6960,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.13.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.13.1 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.
