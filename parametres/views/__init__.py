@@ -12,6 +12,7 @@ from .scolarite import (  # noqa: F401
     annee_list,
     annee_form,
     annee_set_courante,
+    annee_cloture,
     cycle_list,
     cycle_form,
     classe_list,

@@ -1,3 +1,4 @@
+{% load droits_tags %}
 <div id="liste-container" hx-trigger="parametreUpdated from:body" hx-get="{% url 'parametres:annee_list' %}" hx-target="#liste-container" hx-swap="outerHTML">
     <div class="table-scroll">
         <table class="data-table">
@@ -21,6 +22,15 @@
                         <span class="badge badge-success">En cours</span>
                         {% elif annee.cloturee %}
                         <span class="badge badge-neutral">Clôturée</span>
+                        {% if request|autorise_url:'parametres:annee_cloture' %}
+                        <button
+                            hx-post="{% url 'parametres:annee_cloture' annee.pk %}"
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                            hx-confirm="Rouvrir {{ annee.libelle }} ? Les inscriptions redeviendront modifiables (les périodes restent clôturées)."
+                            class="btn-secondary btn-sm">
+                            Rouvrir
+                        </button>
+                        {% endif %}
                         {% else %}
                         <button
                             hx-post="{% url 'parametres:annee_set_courante' annee.pk %}"
@@ -28,6 +38,15 @@
                             class="btn-secondary btn-sm">
                             Définir comme courante
                         </button>
+                        {% if request|autorise_url:'parametres:annee_cloture' %}
+                        <button
+                            hx-post="{% url 'parametres:annee_cloture' annee.pk %}"
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                            hx-confirm="Clôturer {{ annee.libelle }} ? Les inscriptions et les notes de cette année seront verrouillées."
+                            class="btn-secondary btn-sm">
+                            Clôturer
+                        </button>
+                        {% endif %}
                         {% endif %}
                     </td>
                     <td style="text-align:right;">

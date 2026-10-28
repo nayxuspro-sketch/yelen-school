@@ -1,5 +1,7 @@
 """Index, années scolaires, cycles, classes, périodes d'évaluation et types d'évaluation."""
 
+import json
+
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
@@ -86,9 +88,45 @@ def annee_form(request, pk=None):
 def annee_set_courante(request, pk):
     etab = _get_etab(request)
     annee = get_object_or_404(AnneeScolaire, pk=pk, etablissement=etab)
+    if annee.cloturee:
+        return _toast('error', f"{annee.libelle} est clôturée : rouvrez-la avant de la définir comme courante.")
     annee.est_courante = True
     annee.save()
     return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
+
+
+def _toast(type_, message, rafraichir=False):
+    """Réponse HTMX sans contenu : affiche un toast et, si demandé, recharge les listes de paramètres."""
+    declencheurs = {'showToast': {'type': type_, 'message': message}}
+    if rafraichir:
+        declencheurs['parametreUpdated'] = True
+    return HttpResponse(status=204, headers={'HX-Trigger': json.dumps(declencheurs)})
+
+
+@login_required
+@require_POST
+def annee_cloture(request, pk):
+    """Clôture ou rouvre une année scolaire. Clôturer verrouille ses inscriptions (création, modification,
+    transfert, abandon, réinscription) et clôture toutes ses périodes d'évaluation (notes) ; les encaissements
+    d'arriérés restent possibles. Rouvrir ne rouvre pas les périodes (Paramètres → Périodes)."""
+    from pedagogie.models import Trimestre
+    etab = _get_etab(request)
+    annee = get_object_or_404(AnneeScolaire, pk=pk, etablissement=etab)
+    if annee.cloturee:
+        annee.cloturee = False
+        annee.save(update_fields=['cloturee', 'updated_at'])
+        return _toast('success', f"{annee.libelle} rouverte : les inscriptions sont de nouveau modifiables "
+                                 "(les périodes restent clôturées).", rafraichir=True)
+    if annee.est_courante:
+        return _toast('error', "Impossible de clôturer l'année courante : définissez d'abord la nouvelle année "
+                               "comme courante.")
+    for periode in PeriodeEvaluation.objects.filter(annee_scolaire=annee, cloturee=False):
+        Trimestre.objects.pour_periode(periode).cloturer(ouvert=False)
+        periode.cloturee = True
+        periode.save(update_fields=['cloturee', 'updated_at'])
+    annee.cloturee = True
+    annee.save(update_fields=['cloturee', 'updated_at'])
+    return _toast('success', f"{annee.libelle} clôturée : inscriptions et notes verrouillées.", rafraichir=True)
 
 
 # ─── CYCLES ──────────────────────────────────────────────────────────

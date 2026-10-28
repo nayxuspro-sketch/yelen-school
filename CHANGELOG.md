@@ -3,6 +3,21 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.9.0 — 2026-10-28
+
+### Ajouté (audit — Lot E : rentrée et fin d'année)
+- **Passage de classe en lot** (`Élèves → Réinscription`) : la page liste les élèves de l'année courante non encore inscrits pour l'année suivante, avec la dernière décision du conseil de classe et la classe de destination proposée (passage / rachat / sans décision → niveau supérieur, redoublement → même classe, exclusion / réorientation → aucune). Cases à cocher, classe modifiable ligne par ligne, inscription en un clic ; chaque refus (classe complète, déjà inscrit, année clôturée) est signalé nommément sans bloquer les autres. Filtre par classe, « Tout cocher », bouton **Détail** pour la réinscription individuelle.
+- **Clôture d'année scolaire** (`Paramètres → Années scolaires`, boutons Clôturer / Rouvrir, droit « Clôturer / rouvrir une année scolaire ») : l'année courante ne se clôture pas ; la clôture verrouille les inscriptions de l'année (création, modification, transfert, abandon, réinscription vers cette année) et clôture toutes ses périodes d'évaluation ; une année clôturée ne peut plus être définie comme courante. La réouverture libère les inscriptions sans rouvrir les périodes.
+- **Capacité des classes appliquée** : inscription, modification d'inscription et transfert refusent une classe pleine (« Classe 6e A complète : 50/50 places occupées pour 2025-2026 ») ; les abandons ne comptent pas.
+- **Détection des homonymes** à la création d'un élève (nom + prénom + date de naissance, établissement courant) : bandeau listant les fiches existantes avec lien ; la création exige un second envoi de confirmation.
+
+### Corrigé
+- Réinscription : l'inscription était créée dans l'année **courante** (donc en double) au lieu de l'année suivante, sans statut élève ni marquage du redoublement ; l'année courante et l'année suivante étaient cherchées sans tenir compte de l'établissement (première année courante de la base). Désormais : année de l'établissement, inscription dans l'année suivante, statut élève repris, redoublant + classe redoublée renseignés, `last_classe` / `last_annee` de l'élève mis à jour.
+- Formulaire d'inscription : la liste des années scolaires n'était pas limitée à l'établissement de l'utilisateur.
+
+### Technique
+- `inscriptions/services.py` (règles réinscription / capacité / clôture) ; `parametres/niveaux.py` (`cle_niveau`, `rang_niveau`, `niveau_suivant`) partagé avec les statistiques officielles.
+
 ## 5.8.1 — 2026-10-28
 
 ### Corrigé (audit — Lot D : dette technique)

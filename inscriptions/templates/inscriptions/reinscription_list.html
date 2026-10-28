@@ -1,6 +1,6 @@
 {% extends "core/base.html" %}
 
-{% block title %}Réinscription — YELEN SCHOOL{% endblock %}
+{% block title %}Passage de classe — YELEN SCHOOL{% endblock %}
 
 {% block content %}
 
@@ -12,48 +12,89 @@
       </svg>
     </a>
     <div>
-      <h1 class="page-title">Réinscription</h1>
+      <h1 class="page-title">Passage de classe / Réinscription</h1>
       {% if annee_courante and annee_suivante %}
-      <p class="page-subtitle">{{ annee_courante.libelle }} → {{ annee_suivante.libelle }}</p>
+      <p class="page-subtitle">{{ annee_courante.libelle }} → {{ annee_suivante.libelle }} · classe proposée d'après la décision du conseil de classe</p>
       {% endif %}
     </div>
   </div>
 </div>
 
-{% if not annee_suivante %}
-<div class="card animate-fade-up" style="padding:var(--space-4); background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);">
-  <p style="color: #f59e0b; margin: 0;">
-    <strong>Attention :</strong> L'année scolaire suivante n'est pas configurée. 
-    Veuillez créer l'année scolaire {{ annee_courante.date_fin.year }}-{{ annee_courante.date_fin.year|add:1 }} dans Paramètres.
-  </p>
+{% if not annee_courante %}
+<div class="alert alert-warning animate-fade-up" role="alert">
+  <strong>Attention :</strong> aucune année scolaire courante n'est définie pour votre établissement (Paramètres → Années scolaires).
 </div>
-{% elif eleves %}
-<div class="table-wrapper animate-fade-up delay-1">
-  <div class="table-scroll">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Élève</th>
-          <th>Classe actuelle</th>
-          <th style="text-align:right">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in eleves %}
-        <tr>
-          <td class="fw-medium">{{ item.eleve.get_nom_complet }}</td>
-          <td class="text-secondary">{{ item.classe_actuelle.nom }}</td>
-          <td style="text-align:right;">
-            <a href="{% url 'inscriptions:reinscrire_eleve' item.eleve.pk %}" class="btn-primary btn-sm">
-              Réinscrire
-            </a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% elif not annee_suivante %}
+<div class="alert alert-warning animate-fade-up" role="alert">
+  <strong>Attention :</strong> l'année scolaire suivante n'est pas configurée.
+  Créez l'année {{ annee_courante.date_fin.year }}-{{ annee_courante.date_fin.year|add:1 }} dans Paramètres → Années scolaires.
+</div>
+{% else %}
+
+<form method="get" class="d-flex align-center gap-3 animate-fade-up" style="margin-bottom:var(--space-4);">
+  <label class="input-label" for="id_filtre_classe" style="margin:0;">Classe actuelle</label>
+  <select name="classe" id="id_filtre_classe" class="input select" style="max-width:16rem;">
+    <option value="">Toutes les classes</option>
+    {% for classe in classes_courantes %}
+    <option value="{{ classe.pk }}" {% if classe.pk|stringformat:"s" == classe_filtre %}selected{% endif %}>{{ classe.nom }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn-secondary btn-sm">Filtrer</button>
+</form>
+
+{% if lignes %}
+<form method="post" action="{% url 'inscriptions:passage_classe' %}" class="animate-fade-up delay-1">
+  {% csrf_token %}
+  <input type="hidden" name="classe_filtre" value="{{ classe_filtre }}">
+  <div class="table-wrapper">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="tout-cocher" aria-label="Tout cocher"></th>
+            <th>Élève</th>
+            <th>Classe actuelle</th>
+            <th>Décision du conseil</th>
+            <th>Statut élève</th>
+            <th>Classe {{ annee_suivante.libelle }}</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ligne in lignes %}
+          <tr>
+            <td><input type="checkbox" name="inscriptions" value="{{ ligne.inscription.pk }}" class="case-eleve" {% if ligne.proposee %}checked{% endif %} aria-label="Réinscrire {{ ligne.inscription.eleve.get_nom_complet }}"></td>
+            <td class="fw-medium">{{ ligne.inscription.eleve.get_nom_complet }}<br><span class="text-secondary" style="font-size:0.8em;">{{ ligne.inscription.eleve.matricule }}</span></td>
+            <td class="text-secondary">{{ ligne.inscription.classe.nom }}</td>
+            <td>{% if ligne.decision %}{{ ligne.decision }}{% else %}<span class="text-secondary">—</span>{% endif %}</td>
+            <td class="text-secondary">{{ ligne.inscription.statut_eleve.nom|default:"—" }}</td>
+            <td>
+              <select name="classe_{{ ligne.inscription.pk }}" class="input select" aria-label="Classe de destination de {{ ligne.inscription.eleve.get_nom_complet }}">
+                <option value="">— Aucune —</option>
+                {% for classe in classes %}
+                <option value="{{ classe.pk }}" {% if ligne.proposee and classe.pk == ligne.proposee.pk %}selected{% endif %}>{{ classe.nom }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td style="text-align:right;">
+              <a href="{% url 'inscriptions:reinscrire_eleve' ligne.inscription.eleve.pk %}" class="btn-secondary btn-sm">Détail</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
+  <div class="d-flex align-center gap-3" style="margin-top:var(--space-4);">
+    <button type="submit" class="btn-primary">Inscrire les élèves cochés pour {{ annee_suivante.libelle }}</button>
+    <span class="text-secondary">{{ lignes|length }} élève(s) à réinscrire · le statut élève (tarifs) est repris ; exonérations et bourses sont à ressaisir.</span>
+  </div>
+</form>
+<script nonce="{{ request.csp_nonce }}">
+  document.getElementById('tout-cocher').addEventListener('change', function () {
+    document.querySelectorAll('.case-eleve').forEach(function (case_) { case_.checked = this.checked; }, this);
+  });
+</script>
 {% else %}
 <div class="card animate-fade-up" style="padding:var(--space-6); text-align:center;">
   <div class="empty-state">
@@ -62,9 +103,10 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
     </div>
-    <p class="empty-state-text" style="font-size:1rem;">Tous les élèves ont déjà été réinscrits pour l'année suivante.</p>
+    <p class="empty-state-text" style="font-size:1rem;">Tous les élèves {% if classe_filtre %}de cette classe {% endif %}sont déjà inscrits pour {{ annee_suivante.libelle }}.</p>
   </div>
 </div>
+{% endif %}
 {% endif %}
 
 {% endblock %}

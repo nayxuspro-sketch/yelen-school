@@ -76,8 +76,8 @@ MODULES = (
             _a('transferts_decider', 'Approuver / refuser un transfert', 'transfert_inter_approuver', 'transfert_inter_refuser',
                roles=frozenset({RoleChoices.DIRECTEUR})),
         )),
-        _f('/inscriptions/reinscription/', 'Réinscription', actions=(
-            _a('reinscrire', 'Réinscrire un élève', 'reinscrire_eleve'),
+        _f('/inscriptions/reinscription/', 'Réinscription / passage de classe', actions=(
+            _a('reinscrire', 'Réinscrire un élève ou passer une classe en lot', 'reinscrire_eleve', 'passage_classe'),
         )),
     )),
     Module('pedagogie', 'Pédagogie', SECTION_SCOLARITE, (
@@ -268,7 +268,10 @@ MODULES = (
     Module('parametres', 'Paramètres', SECTION_CONFIGURATION, (
         _f('/parametres/etablissement/', 'Établissement'),
         _f('/parametres/identite-etablissement/', 'Identité établissement'),
-        _f('/parametres/annees/', 'Années scolaires'),
+        _f('/parametres/annees/', 'Années scolaires', actions=(
+            _a('cloturer', 'Clôturer / rouvrir une année scolaire (verrouillage des inscriptions et des notes)',
+               'annee_cloture', roles=_DIRECTION),
+        )),
         _f('/parametres/calendrier/', 'Calendrier scolaire'),
         _f('/parametres/modeles-messages/', 'Modèles de messages'),
         _f('/parametres/sms-auto/', 'SMS automatiques'),

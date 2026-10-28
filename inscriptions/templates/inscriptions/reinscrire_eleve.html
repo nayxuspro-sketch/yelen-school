@@ -20,27 +20,43 @@
 
 <div class="card animate-fade-up" style="max-width: 600px;">
   <div class="card-header">
-    <span class="card-title">Sélectionner la nouvelle classe</span>
+    <span class="card-title">Nouvelle inscription</span>
   </div>
   <div class="card-body">
     <form method="post">
       {% csrf_token %}
-      
+
       <div class="form-group">
         <label class="input-label" for="id_eleve_nom">Élève</label>
-        <input type="text" value="{{ eleve.get_nom_complet }}" class="input" readonly id="id_eleve_nom">
+        <input type="text" value="{{ eleve.get_nom_complet }} ({{ eleve.matricule }})" class="input" readonly id="id_eleve_nom">
       </div>
-      
+
       <div class="form-group">
-        <label class="input-label" for="id_classe">Nouvelle classe <span class="text-danger">*</span></label>
+        <label class="input-label" for="id_situation">Situation {{ inscription.annee_scolaire.libelle }}</label>
+        <input type="text" value="{{ inscription.classe.nom }} · {% if decision %}{{ decision }}{% else %}aucune décision de conseil{% endif %}" class="input" readonly id="id_situation">
+      </div>
+
+      <div class="form-group">
+        <label class="input-label" for="id_classe">Classe {{ annee.libelle }} <span class="text-danger">*</span></label>
         <select name="classe" class="input select" required id="id_classe">
           <option value="">Sélectionner une classe</option>
           {% for classe in classes %}
-          <option value="{{ classe.pk }}">{{ classe.cycle.nom }} - {{ classe.nom }}</option>
+          <option value="{{ classe.pk }}" {% if classe_choisie and classe.pk == classe_choisie.pk %}selected{% endif %}>{{ classe.cycle.nom }} - {{ classe.nom }}</option>
+          {% endfor %}
+        </select>
+        {% if classe_choisie %}<p class="text-secondary" style="font-size:0.85em; margin:var(--space-1) 0 0;">Classe proposée d'après la décision du conseil de classe.</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="input-label" for="id_statut_eleve">Statut élève (tarifs)</label>
+        <select name="statut_eleve" class="input select" id="id_statut_eleve">
+          <option value="">— Reprendre : {{ inscription.statut_eleve.nom|default:"aucun" }} —</option>
+          {% for statut in statuts %}
+          <option value="{{ statut.pk }}" {% if statut.pk == inscription.statut_eleve_id %}selected{% endif %}>{{ statut.nom }}</option>
           {% endfor %}
         </select>
       </div>
-      
+
       <div class="d-flex gap-3" style="margin-top: var(--space-5);">
         <button type="submit" class="btn-primary">Réinscrire</button>
         <a href="{% url 'inscriptions:reinscription_list' %}" class="btn-secondary">Annuler</a>

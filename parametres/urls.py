@@ -15,6 +15,7 @@ urlpatterns = [
     path('annees/create/', views.annee_form, name='annee_create'),
     path('annees/<uuid:pk>/edit/', views.annee_form, name='annee_edit'),
     path('annees/<uuid:pk>/set-courante/', views.annee_set_courante, name='annee_set_courante'),
+    path('annees/<uuid:pk>/cloture/', views.annee_cloture, name='annee_cloture'),
     path('annees/<uuid:pk>/delete/', views.annee_delete, name='annee_delete'),
 
     # Cycles

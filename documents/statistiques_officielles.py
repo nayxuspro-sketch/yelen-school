@@ -4,27 +4,12 @@ Rentrée : élèves et redoublants par niveau, nouveaux entrants, répartition p
 Fin d'année : abandons, décisions des conseils de classe, résultats aux examens officiels.
 Toutes les fonctions reçoivent une ``AnneeScolaire`` et renvoient des structures prêtes à afficher ou exporter.
 """
-import re
-import unicodedata
 from collections import Counter
 
 from examens.models import InscriptionExamen, SessionExamen
 from inscriptions.models import Inscription, StatutInscriptionChoices
+from parametres.niveaux import rang_niveau
 from viescolaire.models import DecisionConseil
-
-_NIVEAUX = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2', '6', '5', '4', '3', '2', '1', 'T']
-
-
-def rang_niveau(niveau):
-    """Ordre officiel des niveaux (maternelle → terminale) ; les libellés inconnus suivent, par ordre alphabétique."""
-    cle = unicodedata.normalize('NFKD', niveau or '').encode('ascii', 'ignore').decode().upper().strip()
-    if cle.startswith('TERM') or cle.startswith('TLE'):
-        cle = 'T'
-    else:
-        chiffre = re.match(r'(\d+)', cle)
-        if chiffre and not re.match(r'(CP|CE|CM)\d', cle):
-            cle = chiffre.group(1)
-    return (_NIVEAUX.index(cle), '') if cle in _NIVEAUX else (len(_NIVEAUX), cle)
 
 
 def _compteur():

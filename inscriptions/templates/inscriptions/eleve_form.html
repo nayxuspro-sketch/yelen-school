@@ -20,6 +20,24 @@
     <form method="post" enctype="multipart/form-data" class="card">
         {% csrf_token %}
 
+        {% if form.homonymes %}
+        <div class="alert alert-warning mb-6" role="alert">
+            <strong>Homonyme détecté.</strong> {{ form.non_field_errors.0 }}
+            <ul style="margin:var(--space-2) 0 var(--space-2) var(--space-5);">
+                {% for homonyme in form.homonymes %}
+                <li>
+                    <a href="{% url 'inscriptions:eleve_detail' homonyme.pk %}" target="_blank" rel="noopener">{{ homonyme.get_nom_complet }}</a>
+                    — matricule {{ homonyme.matricule }}{% if homonyme.last_classe %}, {{ homonyme.last_classe }} ({{ homonyme.last_annee }}){% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            <p style="margin:0;">S'il s'agit bien d'un autre élève, cliquez de nouveau sur « Enregistrer l'élève » pour confirmer la création.</p>
+            <input type="hidden" name="confirmer_homonyme" value="1">
+        </div>
+        {% elif form.non_field_errors %}
+        <div class="alert alert-danger mb-6" role="alert">{{ form.non_field_errors.0 }}</div>
+        {% endif %}
+
         <!-- Section État Civil -->
         <div class="mb-6">
             <h3 class="text-lg fw-semibold d-flex align-center gap-2 mb-4" style="color:var(--color-primary);">

@@ -42,6 +42,9 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 - [3. Enregistrement des Élèves](#3-enregistrement-des-élèves)
   - [3.8 Page Profil Élève — Vue d'ensemble](#38-page-profil-élève--vue-densemble)
 - [4. Inscription et Réinscription](#4-inscription-et-réinscription)
+  - [4.1 Créer un élève — détection des homonymes](#41-créer-un-élève--détection-des-homonymes)
+  - [4.2 Inscrire un élève — capacité des classes et année clôturée](#42-inscrire-un-élève--capacité-des-classes-et-année-clôturée)
+  - [4.3 Passage de classe (réinscription pour l'année suivante)](#43-passage-de-classe-réinscription-pour-lannée-suivante)
   - [4.5 Carte Scolaire de l'Élève](#45-carte-scolaire-de-lélève)
   - [4.7 Marquer Abandon / Annuler l'Abandon](#47-marquer-abandon--annuler-labandon)
 - [5. Gestion du Personnel](#5-gestion-du-personnel)
@@ -440,11 +443,20 @@ En mode **modification**, la section mot de passe est remplacée par une case à
 **Actions disponibles :**
 - **Créer** — ajouter une nouvelle année (libellé, dates, cocher "Année en cours")
 - **Définir comme courante** — cliquer sur le bouton dans la liste pour basculer
+- **Clôturer / Rouvrir** — verrouiller une année terminée (voir ci-dessous)
 - **Supprimer** — impossible si des inscriptions sont rattachées
 
 **Règles :**
 - Un seul établissement ne peut avoir qu'**une seule année courante** à la fois
 - Les matricules élèves (`{CODE_ETAB}-AAAA-NN`) sont liés à l'année de première inscription
+
+**Clôturer une année scolaire (bouton « Clôturer », après confirmation) :**
+- l'année courante ne se clôture pas : définissez d'abord la nouvelle année comme courante, puis clôturez l'ancienne ;
+- les inscriptions de l'année clôturée sont verrouillées : plus de création, de modification, de transfert de classe ni de marquage d'abandon (message « L'année scolaire … est clôturée ») ; les encaissements d'arriérés restent possibles ;
+- toutes ses périodes d'évaluation sont clôturées d'un coup (notes, moyennes et bulletins figés — § 2.4) ;
+- une année clôturée porte le badge **Clôturée** et ne peut plus être définie comme courante ; **Rouvrir** lève le verrou des inscriptions (les périodes restent clôturées et se rouvrent une à une dans `Paramètres → Périodes`).
+
+> Action « Clôturer / rouvrir une année scolaire » de la matrice des droits (§ 2.19) : Directeur et Censeur par défaut, Super Admin toujours.
 
 ---
 
@@ -549,6 +561,45 @@ Cette page complète la surveillance Windows (`programmer-surveillance.bat`), qu
 **Rôles personnalisés :** en haut de la page, le Super Admin crée de nouveaux rôles (ex. « Surveillant général », « Caissier ») en indiquant un libellé et un **rôle de référence** parmi les sept rôles du personnel. Le rôle de référence fixe le comportement métier (tableau de bord, périmètre d'un enseignant limité à ses classes…) et les droits de départ ; le nouveau rôle devient aussitôt une colonne de la matrice, où ses droits se règlent ensuite indépendamment de sa référence. Il est proposé dans le champ « Rôle » de la fiche utilisateur (groupe « Rôles personnalisés ») et affiché dans la liste des utilisateurs, qui peut le filtrer. Un rôle ne peut être supprimé que lorsqu'aucun utilisateur ne le porte ; sa suppression efface ses droits enregistrés.
 
 **Hors matrice :** le Super Admin garde tous les accès ; les parents et les élèves restent limités à leur portail ; la gestion des utilisateurs, le journal d'audit et la configuration SMS restent réservés à la direction ; le volet « Système » (Mon abonnement, Licences) est réservé au Super Admin. Tout le reste suit la matrice : un droit coché n'est jamais contredit par l'application.
+
+---
+
+## 4. INSCRIPTION ET RÉINSCRIPTION
+
+### 4.1 Créer un élève — détection des homonymes
+
+> **Accès :** `Élèves → Nouvel élève`
+
+À l'enregistrement, YELEN SCHOOL compare **nom + prénom + date de naissance** avec les élèves déjà connus de l'établissement (majuscules et espaces ignorés). En cas de correspondance, la fiche n'est pas créée : un bandeau **« Homonyme détecté »** liste les élèves concernés (matricule, dernière classe, lien vers leur fiche). Deux cas :
+- c'est le même élève (ancien élève qui revient, réinscription oubliée) → ouvrez sa fiche et inscrivez-le depuis là, sans créer de doublon ;
+- c'est bien un autre élève → cliquez de nouveau sur **Enregistrer l'élève** : le second envoi confirme la création.
+
+### 4.2 Inscrire un élève — capacité des classes et année clôturée
+
+> **Accès :** fiche élève → `Inscrire`, ou `Élèves → Inscriptions`
+
+- **Capacité :** chaque classe a une capacité maximale (`Paramètres → Classes`). Inscrire ou transférer un élève dans une classe pleine est refusé : « Classe 6e A complète : 50/50 places occupées pour 2025-2026 ». Les abandons ne comptent pas dans l'effectif. Augmentez la capacité de la classe ou choisissez-en une autre.
+- **Année clôturée :** aucune inscription ne peut être créée ni modifiée sur une année clôturée (§ 2.2).
+- Le formulaire ne propose que les années scolaires, classes et statuts élève de **votre établissement**.
+
+### 4.3 Passage de classe (réinscription pour l'année suivante)
+
+> **Accès :** `Élèves → Réinscription` — droit « Réinscrire un élève ou passer une classe en lot ».
+
+**Prérequis :** l'année suivante existe dans `Paramètres → Années scolaires` (elle n'a pas besoin d'être courante) ; les conseils de classe du dernier trimestre ont saisi leurs décisions (§ 8).
+
+**La page liste tous les élèves de l'année courante** (hors abandons) qui n'ont pas encore d'inscription pour l'année suivante, filtrables par classe, avec pour chacun :
+- la **dernière décision du conseil de classe** (Passage, Redoublement, Rachat, Réorientation, Exclusion) ;
+- la **classe proposée** pour l'année suivante, présélectionnée : Passage / Rachat / pas de décision → première classe du niveau supérieur (6ème → 5ème, CM2 → 6ème…) ; Redoublement → la même classe ; Réorientation / Exclusion / dernier niveau de l'école → aucune (la case n'est pas cochée).
+
+**Passage en lot :** vérifiez ou modifiez la classe de destination ligne par ligne, cochez les élèves (« Tout cocher » en tête de colonne), puis **Inscrire les élèves cochés pour 2026-2027**. Chaque élève est inscrit dans la nouvelle année avec :
+- son **statut élève** repris (donc ses tarifs) — les exonérations et bourses de l'année écoulée ne sont pas reconduites ;
+- la case **Redoublant** et la classe redoublée renseignées automatiquement s'il reste au même niveau ;
+- son parcours scolaire complété (passage, redoublement).
+
+Un élève refusé n'empêche pas les autres : chaque refus est affiché nommément (classe complète, déjà inscrit, année clôturée, aucune classe choisie) et l'élève reste dans la liste pour être traité ensuite.
+
+**Un par un :** le bouton **Détail** ouvre la réinscription individuelle avec la classe proposée et le statut élève modifiable.
 
 ---
 
@@ -6748,7 +6799,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.8.1 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.9.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

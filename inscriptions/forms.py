@@ -1,8 +1,10 @@
 from django import forms
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import FileExtensionValidator
 from .models import Eleve, Inscription
-from parametres.models import Classe, StatutEleve
+from .services import message_annee_cloturee, message_classe_complete
+from parametres.models import AnneeScolaire, Classe, StatutEleve
 from core.validators import validate_image_upload
 
 ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
@@ -59,8 +61,10 @@ class EleveForm(forms.ModelForm):
             }),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, etablissement=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._etablissement = etablissement
+        self.homonymes = []
         photo_field = self.fields['photo']
         photo_field.validators.append(
             FileExtensionValidator(allowed_extensions=ALLOWED_IMAGE_EXTENSIONS)
@@ -72,6 +76,27 @@ class EleveForm(forms.ModelForm):
         if photo and hasattr(photo, 'size'):
             validate_image_upload(photo, max_size_bytes=MAX_IMAGE_SIZE_MB * 1024 * 1024)
         return photo
+
+    def clean(self):
+        """À la création, signale les élèves de l'établissement (ou jamais inscrits) portant les mêmes nom, prénom
+        et date de naissance ; la création n'aboutit qu'après confirmation explicite."""
+        cleaned_data = super().clean()
+        # « confirmer_homonyme=1 » est posé par le gabarit après un premier signalement : le second envoi confirme.
+        if not self.instance._state.adding or self.data.get('confirmer_homonyme') == '1':
+            return cleaned_data
+        nom, prenom, naissance = cleaned_data.get('nom'), cleaned_data.get('prenom'), cleaned_data.get('date_naissance')
+        if nom and prenom and naissance:
+            homonymes = Eleve.objects.filter(nom__iexact=nom.strip(), prenom__iexact=prenom.strip(),
+                                             date_naissance=naissance, is_active=True)
+            if self._etablissement:
+                homonymes = homonymes.filter(Q(inscriptions__classe__etablissement=self._etablissement)
+                                             | Q(inscriptions__isnull=True)).distinct()
+            self.homonymes = list(homonymes.order_by('matricule')[:5])
+            if self.homonymes:
+                raise forms.ValidationError(
+                    "Un élève portant les mêmes nom, prénom et date de naissance existe déjà. Vérifiez qu'il ne "
+                    "s'agit pas du même élève (réinscription) avant de confirmer la création.")
+        return cleaned_data
 
 
 class InscriptionForm(forms.ModelForm):
@@ -129,8 +154,11 @@ class InscriptionForm(forms.ModelForm):
         self.fields['raison_exoneration'].required = False
         self.fields['classe_redoublee'].required = False
         self.fields['statut_eleve'].required = False
-        # Filtrer classes et statuts par établissement
+        # Filtrer années, classes et statuts par établissement
         if etablissement:
+            self.fields['annee_scolaire'].queryset = AnneeScolaire.objects.filter(
+                etablissement=etablissement
+            ).order_by('-date_debut')
             self.fields['classe'].queryset = Classe.objects.filter(
                 etablissement=etablissement, actif=True
             ).select_related('cycle').order_by('cycle__ordre', 'nom')
@@ -138,6 +166,7 @@ class InscriptionForm(forms.ModelForm):
                 etablissement=etablissement, actif=True
             ).order_by('ordre', 'nom')
         else:
+            self.fields['annee_scolaire'].queryset = AnneeScolaire.objects.none()
             self.fields['classe'].queryset = Classe.objects.none()
             self.fields['statut_eleve'].queryset = StatutEleve.objects.none()
 
@@ -176,6 +205,14 @@ class InscriptionForm(forms.ModelForm):
         if classe and self._etablissement and classe.etablissement_id != self._etablissement.pk:
             self.add_error('classe', "Cette classe n'appartient pas à votre établissement.")
 
+        annee = cleaned_data.get('annee_scolaire')
+        if annee and message_annee_cloturee(annee):
+            self.add_error('annee_scolaire', message_annee_cloturee(annee))
+        elif annee and classe and 'classe' not in self.errors:
+            complet = message_classe_complete(classe, annee, exclure=self.instance)
+            if complet:
+                self.add_error('classe', complet)
+
         return cleaned_data
 
 
@@ -206,4 +243,7 @@ class TransfertClasseForm(forms.Form):
         nouvelle_classe = self.cleaned_data['classe']
         if self._inscription and nouvelle_classe.pk == self._inscription.classe_id:
             raise forms.ValidationError("L'élève est déjà dans cette classe.")
+        complet = self._inscription and message_classe_complete(nouvelle_classe, self._inscription.annee_scolaire)
+        if complet:
+            raise forms.ValidationError(complet)
         return nouvelle_classe

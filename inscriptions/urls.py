@@ -24,6 +24,7 @@ urlpatterns = [
     path('classe/<uuid:pk>/cartes-pdf/', views.classe_cartes_pdf, name='classe_cartes_pdf'),
     # Réinscription
     path('reinscription/', views.reinscription_list, name='reinscription_list'),
+    path('reinscription/passage/', views.passage_classe, name='passage_classe'),
     path('reinscription/eleve/<uuid:pk>/', views.reinscrire_eleve, name='reinscrire_eleve'),
     # Parcours scolaire
     path('eleve/<uuid:pk>/parcours/', views.eleve_parcours, name='eleve_parcours'),
