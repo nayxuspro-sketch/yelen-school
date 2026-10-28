@@ -9,8 +9,9 @@ from django.db.models import Sum, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from decimal import Decimal
-from ..models import Echeancier
+from ..models import Echeancier, ModePenalite, ParametresFinances
 from ..forms import EcheancierForm
+from ..penalites import echeances_en_retard
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
@@ -164,7 +165,13 @@ def echeancier_global(request):
     paginator = Paginator(qs, 50)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
+    params = ParametresFinances.objects.filter(etablissement=etab).first()
+    penalites_actives = bool(params and params.penalite_mode != ModePenalite.AUCUNE and params.penalite_rubrique_id)
+    nb_penalisables = len(echeances_en_retard(etab, annee_sel, params, today)) if penalites_actives and annee_sel else 0
+
     return render(request, 'finances/echeancier_global.html', {
+        'penalites_actives': penalites_actives,
+        'nb_penalisables': nb_penalisables,
         'annees': annees,
         'annee_sel': annee_sel,
         'classes': classes,

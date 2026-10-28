@@ -547,7 +547,8 @@ def portail_parent(request):
 
     from presences.models import Presence
     from pedagogie.models import MoyenneGenerale, CahierTextes
-    from finances.models import Paiement
+    from finances.models import Echeancier, Paiement
+    from finances.views.commun import _situations_financieres_en_lot
     from django.utils import timezone
 
     today = timezone.now().date()
@@ -585,10 +586,16 @@ def portail_parent(request):
                 appel__date__gte=depuis,
             ).count()
 
-        total_paye = (
-            Paiement.objects.filter(inscription=inscription)
-            .aggregate(total=Sum('montant'))['total'] or 0
-        ) if inscription else 0
+        situation = _situations_financieres_en_lot([inscription])[inscription.pk] if inscription else None
+        total_paye = situation['total_paye'] if situation else 0
+        prochaine_echeance = (
+            Echeancier.objects.filter(inscription=inscription, is_active=True, paye=False, date_limite__gte=today)
+            .order_by('date_limite').first()
+        ) if inscription and situation and situation['reste_a_payer'] > 0 else None
+        derniers_paiements = list(
+            Paiement.objects.filter(inscription=inscription).select_related('rubrique')
+            .order_by('-date_paiement', '-created_at')[:5]
+        ) if inscription else []
 
         # Devoirs à venir (de la classe de l'élève, non encore échus)
         devoirs_a_venir = []
@@ -609,6 +616,9 @@ def portail_parent(request):
             'derniere_mg': derniere_mg,
             'nb_absences_recentes': nb_absences_recentes,
             'total_paye': total_paye,
+            'situation': situation,
+            'prochaine_echeance': prochaine_echeance,
+            'derniers_paiements': derniers_paiements,
             'devoirs_a_venir': devoirs_a_venir,
         })
 
@@ -626,6 +636,7 @@ def portail_parent_bulletins(request):
         return HttpResponseForbidden("Accès réservé aux parents.")
 
     from bulletins.models import Bulletin
+    from finances.blocage import motif_blocage_bulletin
     from pedagogie.models import MoyenneGenerale
 
     annee = AnneeScolaire.objects.filter(
@@ -639,12 +650,13 @@ def portail_parent_bulletins(request):
         inscription = (
             Inscription.objects
             .filter(eleve=eleve, annee_scolaire=annee)
-            .select_related('classe')
+            .select_related('classe', 'statut_eleve')
             .first()
         ) if annee else None
 
         bulletins = []
-        if inscription:
+        blocage = motif_blocage_bulletin(inscription) if inscription else None
+        if inscription and not blocage:
             bulletins_qs = (
                 Bulletin.objects
                 .filter(inscription=inscription, est_publie=True)
@@ -663,6 +675,7 @@ def portail_parent_bulletins(request):
                 'eleve': eleve,
                 'inscription': inscription,
                 'bulletins': bulletins,
+                'blocage': blocage,
             })
 
     return render(request, 'core/portail_parent_bulletins.html', {

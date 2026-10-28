@@ -131,6 +131,7 @@ DOCUMENTS = {
     'liste_redevables': lambda m: reverse('finances:liste_redevables_pdf'),
     'liste_exoneres': lambda m: reverse('finances:liste_exoneres_pdf'),
     'bilan_encaissements': lambda m: reverse('finances:bilan_encaissements_pdf'),
+    'journal_caisse': lambda m: reverse('finances:journal_caisse_pdf') + '?date=2026-10-05&caissier=',
     'bulletin_trimestriel': lambda m: reverse('pedagogie:bulletin_pdf', args=[m['insc'].pk, m['trim'].pk]),
     'bulletin_duplicata': lambda m: reverse('pedagogie:bulletin_duplicata_pdf', args=[m['insc'].pk, m['trim'].pk]),
     'bulletins_classe_lot': lambda m: reverse('pedagogie:bulletin_classe_batch_pdf', args=[m['classe'].pk, m['trim'].pk]),

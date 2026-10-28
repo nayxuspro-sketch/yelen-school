@@ -100,6 +100,8 @@ def _situations_financieres_en_lot(inscriptions):
         total_du_net = max(total_du - bourses.get(i.pk, Decimal('0')), Decimal('0'))
         result[i.pk] = {
             'total_du': total_du_net,
+            'total_du_brut': total_du,
+            'total_reduction': bourses.get(i.pk, Decimal('0')),
             'total_paye': total_paye,
             'reste_a_payer': max(total_du_net - total_paye, Decimal('0')),
         }

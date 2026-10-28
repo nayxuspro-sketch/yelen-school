@@ -406,6 +406,12 @@
         {% if '/finances/paiements/' in droits_fonctionnalites %}
         <a href="{% url 'finances:paiement_list' %}" class="sb-item-submodern" data-url="/finances/paiements/"><span class="sub-item-dot"></span>Paiements</a>
         {% endif %}
+        {% if '/finances/caisse/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:journal_caisse' %}" class="sb-item-submodern" data-url="/finances/caisse/"><span class="sub-item-dot"></span>Journal de caisse</a>
+        {% endif %}
+        {% if '/finances/familles/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:familles_list' %}" class="sb-item-submodern" data-url="/finances/familles/"><span class="sub-item-dot"></span>Familles</a>
+        {% endif %}
         {% if '/finances/redevables/' in droits_fonctionnalites %}
         <a href="{% url 'finances:liste_redevables' %}" class="sb-item-submodern" data-url="/finances/redevables/"><span class="sub-item-dot"></span>Redevables</a>
         {% endif %}
@@ -438,6 +444,9 @@
         {% endif %}
         {% if '/finances/budget/' in droits_fonctionnalites %}
         <a href="{% url 'finances:budget_previsionnel' %}" class="sb-item-submodern" data-url="/finances/budget/"><span class="sub-item-dot"></span>Budget prévisionnel</a>
+        {% endif %}
+        {% if '/finances/parametres/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:parametres_finances' %}" class="sb-item-submodern" data-url="/finances/parametres/"><span class="sub-item-dot"></span>Paramètres financiers</a>
         {% endif %}
       </div>
       {% endif %}

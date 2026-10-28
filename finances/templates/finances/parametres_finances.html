@@ -1,0 +1,65 @@
+{% extends "core/base.html" %}
+
+{% block title %}Paramètres financiers — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div style="max-width:52rem; margin:0 auto;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Paramètres financiers</h1>
+      <p class="page-subtitle">Pénalités de retard, blocage des bulletins des élèves non à jour, remise fratrie</p>
+    </div>
+  </div>
+
+  <form method="post" class="card" style="padding:1.5rem;">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger mb-4">{{ form.non_field_errors.0 }}</div>{% endif %}
+
+    <h3 class="fw-semibold mb-4" style="color:var(--color-primary);">Pénalités de retard sur les échéances</h3>
+    <p class="text-secondary mb-4" style="font-size:0.9rem;">Une échéance non marquée payée, dépassée du délai de grâce et non couverte par les versements de l'élève déclenche une créance « Pénalité de retard » (bouton <em>Appliquer les pénalités</em> du tableau des échéanciers). La pénalité s'encaisse sur la rubrique choisie et peut être annulée depuis la situation de l'élève.</p>
+    <div class="form-grid-2">
+      {% for champ in form %}{% if champ.name in 'penalite_mode penalite_valeur penalite_delai_jours penalite_rubrique' %}
+      <div class="form-group">
+        <label class="input-label" for="{{ champ.id_for_label }}">{{ champ.label }}</label>
+        {{ champ }}
+        {% if champ.help_text %}<p class="text-secondary" style="font-size:0.8rem; margin:0.25rem 0 0;">{{ champ.help_text }}</p>{% endif %}
+        {% for erreur in champ.errors %}<p class="text-danger" style="font-size:0.85rem; margin:0.25rem 0 0;">{{ erreur }}</p>{% endfor %}
+      </div>
+      {% endif %}{% endfor %}
+    </div>
+
+    <h3 class="fw-semibold mb-4 mt-6" style="color:var(--color-primary);">Blocage des bulletins</h3>
+    <p class="text-secondary mb-4" style="font-size:0.9rem;">Quand le blocage est actif, les parents d'un élève qui n'a pas réglé la part requise du montant dû ne voient pas ses bulletins (portail parent, lien de consultation, application mobile) ; un message indique le reste à payer. L'impression des bulletins par l'école n'est pas concernée.</p>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="d-flex align-center gap-2">{{ form.bloquer_bulletins_impayes }} {{ form.bloquer_bulletins_impayes.label }}</label>
+      </div>
+      <div class="form-group">
+        <label class="input-label" for="{{ form.seuil_blocage_pct.id_for_label }}">{{ form.seuil_blocage_pct.label }}</label>
+        {{ form.seuil_blocage_pct }}
+        {% for erreur in form.seuil_blocage_pct.errors %}<p class="text-danger" style="font-size:0.85rem; margin:0.25rem 0 0;">{{ erreur }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <h3 class="fw-semibold mb-4 mt-6" style="color:var(--color-primary);">Remise fratrie</h3>
+    <p class="text-secondary mb-4" style="font-size:0.9rem;">Type de bourse (pourcentage ou montant fixe, créé dans <em>Bourses &amp; Aides → Types de bourses</em>) attribué par le bouton <em>Appliquer la remise fratrie</em> de la page Familles aux enfants de rang ≥ n de chaque fratrie, l'aîné payant plein tarif.</p>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="input-label" for="{{ form.remise_fratrie.id_for_label }}">{{ form.remise_fratrie.label }}</label>
+        {{ form.remise_fratrie }}
+        {% for erreur in form.remise_fratrie.errors %}<p class="text-danger" style="font-size:0.85rem; margin:0.25rem 0 0;">{{ erreur }}</p>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label class="input-label" for="{{ form.remise_fratrie_a_partir.id_for_label }}">{{ form.remise_fratrie_a_partir.label }}</label>
+        {{ form.remise_fratrie_a_partir }}
+        {% for erreur in form.remise_fratrie_a_partir.errors %}<p class="text-danger" style="font-size:0.85rem; margin:0.25rem 0 0;">{{ erreur }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-3 mt-6">
+      <button type="submit" class="btn-primary">Enregistrer</button>
+      <a href="{% url 'finances:paiement_list' %}" class="btn-secondary">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

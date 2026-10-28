@@ -1,0 +1,162 @@
+{% extends "core/base.html" %}
+{% load droits_tags %}
+
+{% block title %}Journal de caisse — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div style="max-width:72rem; margin:0 auto;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Journal de caisse</h1>
+      <p class="page-subtitle">Encaissements et remboursements du {{ jour|date:"d/m/Y" }}{% if caissier %} — caisse de {{ caissier.get_full_name }}{% else %} — toutes les caisses{% endif %}</p>
+    </div>
+    <a href="{% url 'finances:journal_caisse_pdf' %}?date={{ jour|date:'Y-m-d' }}&caissier={% if caissier %}{{ caissier.pk }}{% endif %}" target="_blank" class="btn-secondary">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+      Imprimer
+    </a>
+  </div>
+
+  <form method="get" class="d-flex gap-3 align-center mb-6" style="flex-wrap:wrap;">
+    <label class="input-label" for="id_date" style="margin:0;">Journée</label>
+    <input type="date" name="date" id="id_date" value="{{ jour|date:'Y-m-d' }}" class="input" style="max-width:12rem;">
+    <label class="input-label" for="id_caissier" style="margin:0;">Caisse</label>
+    <select name="caissier" id="id_caissier" class="input select" style="max-width:18rem;">
+      <option value="">Toutes les caisses</option>
+      {% for c in caissiers %}
+      <option value="{{ c.pk }}" {% if caissier and c.pk == caissier.pk %}selected{% endif %}>{{ c.get_full_name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn-secondary">Afficher</button>
+  </form>
+
+  <div class="d-flex gap-4 mb-6" style="flex-wrap:wrap;">
+    {% for libelle, montant in totaux.par_mode %}
+    <div class="card" style="flex:1; min-width:10rem; padding:1rem; text-align:center;">
+      <div style="color:var(--color-text-secondary); font-size:0.85rem;">{{ libelle }}</div>
+      <div class="fw-bold" style="font-size:1.25rem;">{{ montant|floatformat:0 }} FCFA</div>
+    </div>
+    {% endfor %}
+    <div class="card" style="flex:1; min-width:10rem; padding:1rem; text-align:center; border-left:3px solid var(--color-warning);">
+      <div style="color:var(--color-text-secondary); font-size:0.85rem;">Remboursements</div>
+      <div class="fw-bold" style="font-size:1.25rem;">− {{ totaux.total_rembourse|floatformat:0 }} FCFA</div>
+    </div>
+    <div class="card" style="flex:1; min-width:12rem; padding:1rem; text-align:center; border-left:3px solid var(--color-primary);">
+      <div style="color:var(--color-text-secondary); font-size:0.85rem;">Espèces attendues en caisse</div>
+      <div class="fw-bold" style="font-size:1.25rem; color:var(--color-primary);">{{ totaux.especes_theoriques|floatformat:0 }} FCFA</div>
+      <div style="color:var(--color-text-secondary); font-size:0.8rem;">{{ totaux.nb_operations }} opération(s) · total encaissé {{ totaux.total|floatformat:0 }} FCFA</div>
+    </div>
+  </div>
+
+  {% if clotures %}
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">Arrêtés de caisse du {{ jour|date:"d/m/Y" }}</span></div>
+    <table class="data-table">
+      <thead><tr><th>Caissier</th><th style="text-align:right;">Espèces attendues</th><th style="text-align:right;">Comptées</th><th style="text-align:right;">Écart</th><th>Observation</th><th>Arrêté par</th><th></th></tr></thead>
+      <tbody>
+        {% for c in clotures %}
+        <tr>
+          <td class="fw-medium">{{ c.caissier.get_full_name }}</td>
+          <td style="text-align:right;">{{ c.especes_theoriques|floatformat:0 }}</td>
+          <td style="text-align:right;">{{ c.montant_compte|floatformat:0 }}</td>
+          <td style="text-align:right;" class="{% if c.ecart %}text-danger fw-bold{% endif %}">{{ c.ecart|floatformat:0 }}</td>
+          <td class="text-secondary">{{ c.observation }}</td>
+          <td class="text-secondary">{{ c.cloture_par.get_full_name|default:"—" }} · {{ c.created_at|date:"H:i" }}</td>
+          <td style="text-align:right;">
+            {% if request|autorise_url:'finances:caisse_rouvrir' %}
+            <form method="post" action="{% url 'finances:caisse_rouvrir' c.pk %}" style="display:inline;">{% csrf_token %}
+              <button type="submit" class="btn-secondary btn-sm">Rouvrir</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if peut_arreter and request|autorise_url:'finances:caisse_arreter' %}
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">Arrêter ma caisse du {{ jour|date:"d/m/Y" }}</span></div>
+    <form method="post" action="{% url 'finances:caisse_arreter' %}" class="d-flex gap-3 align-center" style="padding:1rem; flex-wrap:wrap;">
+      {% csrf_token %}
+      <input type="hidden" name="date" value="{{ jour|date:'Y-m-d' }}">
+      <label class="input-label" for="id_montant_compte" style="margin:0;">Espèces comptées (FCFA)</label>
+      <input type="number" name="montant_compte" id="id_montant_compte" class="input" min="0" step="5" required style="max-width:12rem;">
+      <input type="text" name="observation" class="input" placeholder="Observation (facultatif)" maxlength="200" style="flex:1; min-width:14rem;">
+      <button type="submit" class="btn-primary">Arrêter la caisse</button>
+    </form>
+    <p class="text-secondary" style="padding:0 1rem 1rem; margin:0; font-size:0.85rem;">Après l'arrêté, plus aucune opération datée de ce jour (ou d'un jour antérieur) ne peut être saisie sur votre caisse ; l'écart entre espèces attendues et comptées est enregistré.</p>
+  </div>
+  {% endif %}
+
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">Encaissements ({{ paiements|length }})</span></div>
+    {% if paiements %}
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Heure</th><th>Reçu</th><th>Élève</th><th>Classe</th><th>Rubrique</th><th>Mode</th><th>Caissier</th><th style="text-align:right;">Montant</th></tr></thead>
+        <tbody>
+          {% for p in paiements %}
+          <tr>
+            <td class="text-secondary">{{ p.created_at|date:"H:i" }}</td>
+            <td>{{ p.numero_recu }}</td>
+            <td class="fw-medium"><a href="{% url 'finances:situation_eleve' p.inscription.pk %}">{{ p.inscription.eleve.get_nom_complet }}</a></td>
+            <td class="text-secondary">{{ p.inscription.classe.nom }}</td>
+            <td>{{ p.rubrique.nom|default:"—" }}</td>
+            <td>{{ p.get_mode_paiement_display }}</td>
+            <td class="text-secondary">{{ p.encaisse_par.get_full_name|default:"—" }}</td>
+            <td style="text-align:right;" class="fw-medium">{{ p.montant|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-secondary" style="padding:1rem; margin:0;">Aucun encaissement ce jour.</p>
+    {% endif %}
+  </div>
+
+  {% if remboursements %}
+  <div class="card mb-6">
+    <div class="card-header"><span class="card-title">Remboursements ({{ remboursements|length }})</span></div>
+    <table class="data-table">
+      <thead><tr><th>Heure</th><th>Élève</th><th>Rubrique</th><th>Motif</th><th>Par</th><th style="text-align:right;">Montant</th></tr></thead>
+      <tbody>
+        {% for r in remboursements %}
+        <tr>
+          <td class="text-secondary">{{ r.created_at|date:"H:i" }}</td>
+          <td class="fw-medium">{{ r.paiement.inscription.eleve.get_nom_complet }}</td>
+          <td>{{ r.paiement.rubrique.nom|default:"—" }}</td>
+          <td class="text-secondary">{{ r.motif }}</td>
+          <td class="text-secondary">{{ r.rembourse_par.get_full_name|default:"—" }}</td>
+          <td style="text-align:right;">− {{ r.montant|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if historique %}
+  <div class="card">
+    <div class="card-header"><span class="card-title">Derniers arrêtés de caisse</span></div>
+    <table class="data-table">
+      <thead><tr><th>Journée</th><th>Caissier</th><th style="text-align:right;">Encaissé</th><th style="text-align:right;">Espèces attendues</th><th style="text-align:right;">Comptées</th><th style="text-align:right;">Écart</th></tr></thead>
+      <tbody>
+        {% for c in historique %}
+        <tr>
+          <td><a href="?date={{ c.date|date:'Y-m-d' }}&caissier={{ c.caissier.pk }}">{{ c.date|date:"d/m/Y" }}</a></td>
+          <td>{{ c.caissier.get_full_name }}</td>
+          <td style="text-align:right;">{{ c.total_encaisse|floatformat:0 }}</td>
+          <td style="text-align:right;">{{ c.especes_theoriques|floatformat:0 }}</td>
+          <td style="text-align:right;">{{ c.montant_compte|floatformat:0 }}</td>
+          <td style="text-align:right;" class="{% if c.ecart %}text-danger fw-bold{% endif %}">{{ c.ecart|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

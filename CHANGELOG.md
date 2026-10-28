@@ -3,7 +3,21 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
-## 5.9.0 — 2026-10-28
+## 5.10.0 — 2026-10-28
+
+### Ajouté (audit — Lot F : caisse et familles)
+- **Journal de caisse par caissier** (`Finances → Journal de caisse`, PDF) : encaissements et remboursements d'une journée, totaux par mode de paiement, espèces théoriques en caisse (espèces − remboursements). Sans filtre, chaque utilisateur voit sa propre caisse ; « Toutes les caisses » pour la direction.
+- **Arrêté de caisse** (droit « Arrêter sa caisse ») : le caissier saisit les espèces comptées ; l'écart est calculé et figé avec les totaux. Une caisse arrêtée refuse toute saisie de paiement ou de remboursement de ce caissier datée du jour arrêté ou d'un jour antérieur (« Votre caisse est arrêtée jusqu'au … »). Réouverture réservée à la direction (droit « Rouvrir une caisse »), historique des 15 derniers arrêtés.
+- **Familles** (`Finances → Familles`) : fratries de l'année regroupées par compte parent, sinon par téléphone du parent ou du tuteur ; enfants (aîné d'abord), total dû, payé et reste à payer consolidés, recherche par nom / téléphone / enfant. La fiche financière de chaque élève affiche sa fratrie.
+- **Remise fratrie automatique** (droit « Appliquer la remise fratrie ») : le type de bourse et le rang du premier enfant bénéficiaire (2e par défaut) se choisissent dans les paramètres financiers ; l'application attribue la bourse aux enfants de rang ≥ n qui ne l'ont pas encore (calcul sur le montant dû brut, pourcentage ou montant fixe), sans doublon à la ré-exécution.
+- **Pénalités de retard** (`Échéanciers`, bandeau « Appliquer les pénalités », direction) : pour chaque échéance dépassée du délai de grâce, non cochée payée et non couverte par les versements (cumul des échéances dues à cette date > total payé), une créance « Pénalité de retard — <tranche> (échéance du …) » est émise sur la rubrique paramétrée (montant fixe ou % de la tranche). Une seule pénalité active par échéance ; annulable depuis la situation de l'élève.
+- **Blocage des bulletins des élèves non à jour** (paramètre + seuil en % du montant dû) : portail parent, lien public de consultation / signature et API mobile n'affichent plus le bulletin tant que le seuil n'est pas atteint, avec le motif chiffré (« reste à payer … FCFA, x % requis »). La consultation interne (secrétariat, impression) n'est pas bloquée.
+- **Paramètres financiers** (`Finances → Paramètres financiers`, droit d'approbation) : pénalités (mode, valeur, délai de grâce, rubrique), blocage des bulletins (seuil), remise fratrie (type de bourse, rang).
+- **Portail parent** : vignette « Reste à payer » par enfant et section *Frais de scolarité* (montant dû net des bourses, versé net des remboursements, prochaine échéance, trois derniers reçus).
+
+### Technique
+- `finances.ParametresFinances` (un par établissement), `finances.ClotureCaisse`, `Creance.echeance` et origine `PENALITE` (migration `0023`) ; services `finances/caisse.py`, `familles.py`, `penalites.py`, `blocage.py` ; `_situations_financieres_en_lot` expose aussi `total_du_brut` et `total_reduction`. PDF « Journal de caisse » signé par le signataire du bilan des encaissements.
+
 
 ### Ajouté (audit — Lot E : rentrée et fin d'année)
 - **Passage de classe en lot** (`Élèves → Réinscription`) : la page liste les élèves de l'année courante non encore inscrits pour l'année suivante, avec la dernière décision du conseil de classe et la classe de destination proposée (passage / rachat / sans décision → niveau supérieur, redoublement → même classe, exclusion / réorientation → aucune). Cases à cocher, classe modifiable ligne par ligne, inscription en un clic ; chaque refus (classe complète, déjà inscrit, année clôturée) est signalé nommément sans bloquer les autres. Filtre par classe, « Tout cocher », bouton **Détail** pour la réinscription individuelle.

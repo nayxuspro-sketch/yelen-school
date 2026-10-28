@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load humanize %}
+{% load humanize droits_tags %}
 
 {% block title %}Échéanciers — Finances{% endblock %}
 
@@ -31,6 +31,18 @@
   </div>
   <a href="?annee={{ annee_id }}&classe={{ classe_id }}&statut=retard" class="btn-secondary btn-sm ml-auto">Voir →</a>
 </div>
+{% endif %}
+
+{% if penalites_actives and request|autorise_url:'finances:penalites_appliquer' %}
+<form method="post" action="{% url 'finances:penalites_appliquer' %}" class="alert alert-warning animate-fade-up mb-4">
+  {% csrf_token %}
+  <input type="hidden" name="annee" value="{{ annee_sel.pk }}">
+  <div>
+    <div class="fw-semibold">{{ nb_penalisables }} échéance{{ nb_penalisables|pluralize }} dépassée{{ nb_penalisables|pluralize }} sans pénalité</div>
+    <div class="text-secondary text-sm">Délai de grâce écoulé et versements insuffisants : une créance « Pénalité de retard » sera ajoutée à la situation de chaque élève concerné (annulable).</div>
+  </div>
+  <button type="submit" class="btn-primary btn-sm ml-auto" {% if not nb_penalisables %}disabled{% endif %}>Appliquer les pénalités</button>
+</form>
 {% endif %}
 
 {% if nb_alerte > 0 %}

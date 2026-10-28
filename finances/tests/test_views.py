@@ -239,12 +239,19 @@ class TestSituationsFinancieresEnLot:
         baker.make('finances.BourseEleve', inscription=i_normal, type_bourse=tb, montant_accorde=Decimal('99999'), actif=False)
         return annee, [i_normal, i_boursier, i_rembourse, i_sans_statut, i_trop_paye]
 
+    @staticmethod
+    def _lot(inscriptions):
+        """Situations en lot réduites aux trois montants historiques (le lot expose aussi dû brut et réduction)."""
+        from finances.views import _situations_financieres_en_lot
+        return {pk: {k: s[k] for k in ('total_du', 'total_paye', 'reste_a_payer')}
+                for pk, s in _situations_financieres_en_lot(inscriptions).items()}
+
     def test_lot_identique_a_unitaire(self, jeu):
-        from finances.views import _calcul_situation_financiere, _situations_financieres_en_lot
+        from finances.views import _calcul_situation_financiere
         from inscriptions.models import Inscription
         annee, inscriptions = jeu
         qs = Inscription.objects.filter(annee_scolaire=annee).select_related('classe', 'statut_eleve')
-        lot = _situations_financieres_en_lot(qs)
+        lot = self._lot(qs)
         assert set(lot) == {i.pk for i in inscriptions}
         for insc in qs:
             unit = _calcul_situation_financiere(insc)
@@ -258,7 +265,9 @@ class TestSituationsFinancieresEnLot:
         from decimal import Decimal
         from finances.views import _situations_financieres_en_lot
         annee, (i_normal, i_boursier, i_rembourse, i_sans_statut, i_trop_paye) = jeu
-        lot = _situations_financieres_en_lot([i_normal, i_boursier, i_rembourse, i_sans_statut, i_trop_paye])
+        lot = self._lot([i_normal, i_boursier, i_rembourse, i_sans_statut, i_trop_paye])
+        brut = _situations_financieres_en_lot([i_boursier])[i_boursier.pk]
+        assert (brut['total_du_brut'], brut['total_reduction']) == (Decimal('100000'), Decimal('25000'))
         # 90 000 + 10 000 (dédoublonné malgré 2 classes de même niveau) − 40 000 payés
         assert lot[i_normal.pk] == {'total_du': Decimal('100000'), 'total_paye': Decimal('40000'), 'reste_a_payer': Decimal('60000')}
         # Bourse active de 25 000 déduite du dû

@@ -112,12 +112,43 @@
         </div>
         <div class="pp-stat">
           <div class="pp-glow pp-glow--gold"></div>
-          <div class="pp-val pp-val--sm">
-            {{ enfant.total_paye|floatformat:0 }}
+          <div class="pp-val pp-val--sm {% if enfant.situation and enfant.situation.reste_a_payer %}pp-val--warning{% elif enfant.situation %}pp-val--success{% endif %}">
+            {% if enfant.situation %}{{ enfant.situation.reste_a_payer|floatformat:0 }}{% else %}—{% endif %}
           </div>
-          <div class="pp-stat-label">Paiements</div>
+          <div class="pp-stat-label">Reste à payer</div>
         </div>
       </div>
+
+      {% if enfant.situation %}
+      <div class="pp-section">
+        <div class="pp-section-title">
+          <svg aria-hidden="true" class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          <span class="pp-section-label">Frais de scolarité {{ annee.libelle }}</span>
+        </div>
+        <div class="pp-devoir">
+          <div class="pp-devoir-detail">
+            <div class="pp-devoir-subject">Montant dû : {{ enfant.situation.total_du|floatformat:0 }} FCFA · Réglé : {{ enfant.situation.total_paye|floatformat:0 }} FCFA</div>
+            <div class="pp-devoir-text">
+              {% if enfant.situation.reste_a_payer %}Reste à payer : <strong>{{ enfant.situation.reste_a_payer|floatformat:0 }} FCFA</strong>{% if enfant.prochaine_echeance %} — prochaine échéance « {{ enfant.prochaine_echeance.libelle }} » le {{ enfant.prochaine_echeance.date_limite|date:"d/m/Y" }} ({{ enfant.prochaine_echeance.montant_du|floatformat:0 }} FCFA){% endif %}{% else %}Frais à jour — merci.{% endif %}
+            </div>
+          </div>
+        </div>
+        {% for p in enfant.derniers_paiements %}
+        <div class="pp-devoir">
+          <div class="pp-devoir-date">
+            <span class="pp-devoir-day">{{ p.date_paiement|date:"d" }}</span>
+            <span class="pp-devoir-month">{{ p.date_paiement|date:"M" }}</span>
+          </div>
+          <div class="pp-devoir-detail">
+            <div class="pp-devoir-subject">{{ p.montant|floatformat:0 }} FCFA — {{ p.rubrique.nom|default:"Versement" }}</div>
+            <div class="pp-devoir-text">Reçu {{ p.numero_recu }} · {{ p.get_mode_paiement_display }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
 
       <!-- Badges -->
       <div class="pp-badges">

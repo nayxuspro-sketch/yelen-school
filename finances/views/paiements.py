@@ -15,7 +15,9 @@ from django.utils import timezone
 from decimal import Decimal, InvalidOperation
 import io
 from ..abonnements import abonnements_actifs
+from ..caisse import message_caisse_arretee
 from ..creances import creances_actives, montants_hors_tarifs_par_rubrique
+from ..familles import fratrie
 from ..models import Paiement, Echeancier, ModePaiement, Remboursement
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, TarifScolarite, RubriquePaiement
@@ -165,6 +167,9 @@ def paiement_create(request):
             except ValueError:
                 errors.append("La date de paiement est invalide.")
                 date_paiement = None
+        verrou_caisse = message_caisse_arretee(etab, request.user, date_paiement or timezone.now().date())
+        if verrou_caisse:
+            errors.append(verrou_caisse)
 
         # Inscription
         inscription = None
@@ -362,6 +367,7 @@ def situation_eleve(request, inscription_id):
         'total_du_brut': sit.get('total_du_brut'),
         'abonnements': abonnements_actifs(inscription),
         'creances': creances_actives(inscription),
+        'fratrie': fratrie(inscription),
     })
 
 
@@ -417,6 +423,9 @@ def remboursement_create(request, paiement_id):
                 errors.append("La date de remboursement est invalide.")
         else:
             date_remb = _date.today()
+        verrou_caisse = message_caisse_arretee(request.user.etablissement, request.user, date_remb) if date_remb else None
+        if verrou_caisse:
+            errors.append(verrou_caisse)
 
         if not errors:
             with transaction.atomic():

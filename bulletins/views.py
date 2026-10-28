@@ -549,6 +549,11 @@ def bulletin_parent_consulter(request, token):
             'erreur': "Ce bulletin n'est pas encore disponible.",
         })
 
+    from finances.blocage import motif_blocage_bulletin
+    blocage = motif_blocage_bulletin(bulletin.inscription)
+    if blocage:
+        return render(request, 'bulletins/bulletin_parent.html', {'erreur': blocage})
+
     mg = MoyenneGenerale.objects.filter(
         inscription=bulletin.inscription,
         trimestre=bulletin.trimestre,

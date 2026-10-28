@@ -2971,6 +2971,48 @@ Quand l'école dispose d'un compte marchand CinetPay (Orange Money et Moov Money
 
 > **Conseil :** demander aux parents d'indiquer le **matricule** de l'élève dans le motif du paiement marchand ; la transaction est alors proposée automatiquement. Importer le relevé chaque semaine, et la veille de toute clôture de caisse.
 
+### 9.16 Journal et arrêté de caisse
+
+**À quoi ça sert :** contrôler chaque jour, caissier par caissier, ce qui a été encaissé et remboursé, compter les espèces et figer la journée.
+
+**Accès :** `Finances → Journal de caisse` (consultation = accès au module Finances ; « Arrêter sa caisse » = Directeur, Censeur, Comptable ; « Rouvrir une caisse » = Directeur, Censeur).
+
+1. Choisir la **date** ; sans autre filtre, la page affiche **votre** caisse (vos encaissements et remboursements du jour). La direction choisit un caissier dans la liste ou « Toutes les caisses ».
+2. Le bloc **Totaux** donne le montant par mode (Espèces, Mobile Money, Chèque, Virement), le total encaissé, les remboursements et les **espèces théoriques** (espèces − remboursements).
+3. **Arrêter ma caisse** : saisir les **espèces comptées** (et une observation si besoin). L'écart est calculé, affiché et conservé avec les totaux. À partir de là, vous ne pouvez plus enregistrer de paiement ni de remboursement daté de ce jour ou d'un jour antérieur ; les autres caissiers ne sont pas concernés.
+4. **Rouvrir** (direction) : supprime l'arrêté pour permettre une correction ; refaire l'arrêté ensuite.
+5. **PDF** : journal du jour (opérations, totaux, arrêté) à signer par le caissier et le signataire configuré pour le bilan des encaissements.
+
+> **Conseil :** arrêter la caisse chaque soir avant de quitter ; un écart répété se traite avec le journal PDF du jour en main.
+
+### 9.17 Familles et remise fratrie
+
+**Accès :** `Finances → Familles`.
+
+- Les **fratries** de l'année sont regroupées par **compte parent** lié aux élèves, sinon par **téléphone du parent** (ou du tuteur) — renseigner le même numéro sur chaque fiche élève suffit. Pour chaque famille : responsable, téléphone, enfants (aîné d'abord), montant dû, payé et **reste à payer consolidé** ; recherche par nom, téléphone ou enfant.
+- La **fiche financière** d'un élève affiche sa fratrie avec le reste à payer de chaque frère ou sœur.
+- **Remise fratrie :** créer d'abord un type de bourse (§ 9.13, ex. « Remise fratrie 10 % »), le choisir dans `Finances → Paramètres financiers` avec le rang du premier enfant bénéficiaire (2e par défaut), puis cliquer **Appliquer la remise fratrie** : la bourse est attribuée aux enfants de rang ≥ n qui ne l'ont pas encore ; relancer l'opération après de nouvelles inscriptions ne crée pas de doublon. Chaque bourse reste modifiable ou révocable individuellement (§ 9.13).
+
+### 9.18 Pénalités de retard et blocage des bulletins
+
+**Paramétrage :** `Finances → Paramètres financiers` (Directeur, Censeur).
+
+| Paramètre | Rôle |
+|---|---|
+| Mode / valeur de pénalité | Aucune, montant fixe (FCFA) ou pourcentage de la tranche en retard |
+| Délai de grâce | Jours après la date limite avant qu'une tranche soit considérée en retard (7 par défaut) |
+| Rubrique des pénalités | Rubrique de paiement sur laquelle les pénalités sont dues puis encaissées |
+| Bloquer les bulletins / seuil | Si activé, le bulletin n'est consultable par les parents qu'à partir de x % du montant dû réglé (100 % par défaut) |
+| Remise fratrie / à partir du | Voir § 9.17 |
+
+**Appliquer les pénalités :** `Finances → Échéanciers` → bandeau « N échéances dépassées sans pénalité » → **Appliquer les pénalités**. Une tranche est pénalisée si elle n'est pas cochée payée, si son délai de grâce est écoulé et si les versements de l'élève ne couvrent pas le cumul des tranches dues à cette date. Une créance « Pénalité de retard — <tranche> » apparaît dans la situation de l'élève (une seule par tranche) ; elle s'annule comme toute créance (§ 9.3) et peut être ré-émise à l'application suivante.
+
+**Blocage des bulletins :** s'applique au **portail parent**, au **lien public** de consultation / signature et à l'**API mobile** ; le motif affiché précise le reste à payer et le seuil requis. L'impression et la consultation internes des bulletins ne sont jamais bloquées.
+
+### 9.19 Portail parent — frais de scolarité
+
+Le parent voit, par enfant, la vignette **Reste à payer** et la section *Frais de scolarité* : montant dû (net des bourses), versé (net des remboursements), prochaine échéance à venir et les trois derniers reçus (numéro, date, montant).
+
 ---
 
 ## 10. EXAMENS
@@ -6799,7 +6841,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.9.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.10.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

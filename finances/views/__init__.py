@@ -103,3 +103,17 @@ from .services import (  # noqa: F401
     abonnement_annuler,
     abonnement_classe,
 )
+from .caisse import (  # noqa: F401
+    journal_caisse,
+    journal_caisse_pdf,
+    caisse_arreter,
+    caisse_rouvrir,
+)
+from .familles import (  # noqa: F401
+    familles_list,
+    remise_fratrie_appliquer,
+)
+from .parametres import (  # noqa: F401
+    parametres_finances,
+    penalites_appliquer,
+)

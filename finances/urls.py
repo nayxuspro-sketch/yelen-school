@@ -22,6 +22,20 @@ urlpatterns = [
     path('situation/creances/<uuid:pk>/annuler/', views.creance_annuler, name='creance_annuler'),
     path('api/rubriques/<uuid:inscription_id>/', views.api_rubriques_inscription, name='api_rubriques'),
 
+    # Journal de caisse / arrêté de caisse
+    path('caisse/', views.journal_caisse, name='journal_caisse'),
+    path('caisse/pdf/', views.journal_caisse_pdf, name='journal_caisse_pdf'),
+    path('caisse/arreter/', views.caisse_arreter, name='caisse_arreter'),
+    path('caisse/<uuid:pk>/rouvrir/', views.caisse_rouvrir, name='caisse_rouvrir'),
+
+    # Familles (fratries) et remise fratrie
+    path('familles/', views.familles_list, name='familles_list'),
+    path('familles/remise-fratrie/', views.remise_fratrie_appliquer, name='remise_fratrie_appliquer'),
+
+    # Paramètres financiers, pénalités de retard
+    path('parametres/', views.parametres_finances, name='parametres_finances'),
+    path('echeanciers/penalites/', views.penalites_appliquer, name='penalites_appliquer'),
+
     # Relances de paiement
     path('relances/', views.relance_paiement, name='relance_paiement'),
     path('relances/pdf/', views.relance_paiement_pdf, name='relance_paiement_pdf'),

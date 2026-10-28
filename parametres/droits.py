@@ -185,10 +185,19 @@ MODULES = (
                'api_rubriques', roles=_FINANCE_SAISIE),
             _a('rembourser', 'Rembourser / annuler un remboursement', 'remboursement_create', 'remboursement_delete',
                roles=_FINANCE_APPROBATION),
+            _a('penalites', 'Appliquer les pénalités de retard sur les échéances dépassées', 'penalites_appliquer',
+               roles=_FINANCE_APPROBATION),
             _a('echeanciers', 'Créer / modifier / supprimer un échéancier', 'echeancier_create', 'echeancier_edit', 'echeancier_delete',
                roles=_FINANCE_SAISIE),
             _a('creances', 'Annuler une créance individuelle (manuel non rendu…)', 'creance_annuler',
                roles=_FINANCE_APPROBATION),
+        )),
+        _f('/finances/caisse/', 'Journal de caisse', actions=(
+            _a('arreter', 'Arrêter sa caisse du jour', 'caisse_arreter', roles=_FINANCE_SAISIE),
+            _a('rouvrir', 'Rouvrir une caisse arrêtée', 'caisse_rouvrir', roles=_FINANCE_APPROBATION),
+        )),
+        _f('/finances/familles/', 'Familles (fratries)', actions=(
+            _a('remise', 'Appliquer la remise fratrie', 'remise_fratrie_appliquer', roles=_FINANCE_SAISIE),
         )),
         _f('/finances/redevables/', 'Redevables'),
         _f('/finances/exoneres/', 'Exonérés'),
@@ -223,6 +232,8 @@ MODULES = (
         )),
         _f('/finances/budget/tresorerie/', 'Trésorerie'),
         _f('/finances/budget/', 'Budget prévisionnel', roles=_FINANCE_SAISIE),
+        _f('/finances/parametres/', 'Paramètres financiers (pénalités, blocage des bulletins, remise fratrie)',
+           roles=_FINANCE_APPROBATION),
     )),
     Module('vacations', 'Vacations', SECTION_ADMINISTRATION, (
         _f('/vacations/', 'Contrats', actions=(

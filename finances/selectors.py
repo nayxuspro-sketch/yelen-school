@@ -30,6 +30,17 @@ def annee_de_reference(etab):
     )
 
 
+def annee_choisie(etab, valeur):
+    """Année de l'établissement désignée par un paramètre de requête (identifiant), sinon l'année de référence."""
+    if etab is None:
+        return None
+    try:
+        voulue = AnneeScolaire.objects.filter(etablissement=etab, pk=valeur).first() if valeur else None
+    except (ValueError, ValidationError):
+        voulue = None
+    return voulue or annee_de_reference(etab)
+
+
 def inscriptions_payables(etab, annee):
     """Inscriptions pouvant recevoir un encaissement (ni exonérées, ni abandonnées)."""
     if etab is None or annee is None:

@@ -1,0 +1,87 @@
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page {
+    size: A4 portrait;
+    margin: 15mm;
+    @bottom-right {
+        content: "Page " counter(page) " sur " counter(pages);
+        font-size: 9pt;
+        color: #666;
+    }
+}{% endblock %}
+{% block css %}
+body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #111; margin: 0; padding: 0; }
+.stats-grid { display: flex; gap: 10px; margin-bottom: 16px; }
+.stat-card { flex: 1; padding: 8px; text-align: center; border: 1pt solid #ccc; border-left: 3pt solid #111; }
+.stat-label { font-size: 8.5pt; color: #555; margin-bottom: 3px; }
+.stat-value { font-size: 12pt; font-weight: bold; }
+.section { margin-bottom: 16px; page-break-inside: avoid; }
+.section-title { background: #eee; color: #111; padding: 5px 8px; font-weight: bold; font-size: 10pt; border-bottom: 1pt solid #bbb; }
+table { width: 100%; border-collapse: collapse; font-size: 9pt; border: 1px solid #ccc; }
+th { background: #f3f3f3; padding: 5px 6px; text-align: left; border-bottom: 1.5px solid #bbb; font-weight: bold; }
+td { padding: 4px 6px; border-bottom: 1px solid #e0e0e0; }
+th.right, td.right { text-align: right; }
+.total-row td { font-weight: bold; border-top: 2px solid #111; }
+.caissier-sig { margin-top: 24pt; font-size: 9.5pt; }
+{% endblock %}
+{% block corps %}
+<div class="pdf-titre">Journal de caisse</div>
+<p class="pdf-sous-titre">Journée du <strong>{{ jour|date:"d/m/Y" }}</strong>{% if caissier %} — Caisse de <strong>{{ caissier.get_full_name }}</strong>{% else %} — Toutes les caisses{% endif %} — Édité le {{ now|date:"d/m/Y H:i" }}</p>
+
+<div class="stats-grid">
+    {% for libelle, montant in totaux.par_mode %}
+    <div class="stat-card"><div class="stat-label">{{ libelle }}</div><div class="stat-value">{{ montant|floatformat:0 }}</div></div>
+    {% endfor %}
+    <div class="stat-card"><div class="stat-label">Remboursements</div><div class="stat-value">− {{ totaux.total_rembourse|floatformat:0 }}</div></div>
+    <div class="stat-card"><div class="stat-label">Espèces attendues</div><div class="stat-value">{{ totaux.especes_theoriques|floatformat:0 }}</div></div>
+</div>
+
+<div class="section">
+    <div class="section-title">Encaissements ({{ paiements|length }}) — total {{ totaux.total|floatformat:0 }} FCFA</div>
+    <table>
+        <thead><tr><th>Heure</th><th>Reçu</th><th>Élève</th><th>Classe</th><th>Rubrique</th><th>Mode</th>{% if not caissier %}<th>Caissier</th>{% endif %}<th class="right">Montant</th></tr></thead>
+        <tbody>
+        {% for p in paiements %}
+            <tr>
+                <td>{{ p.created_at|date:"H:i" }}</td><td>{{ p.numero_recu }}</td><td>{{ p.inscription.eleve.get_nom_complet }}</td>
+                <td>{{ p.inscription.classe.nom }}</td><td>{{ p.rubrique.nom|default:"—" }}</td><td>{{ p.get_mode_paiement_display }}</td>
+                {% if not caissier %}<td>{{ p.encaisse_par.get_full_name|default:"—" }}</td>{% endif %}
+                <td class="right">{{ p.montant|floatformat:0 }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="8">Aucun encaissement.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if remboursements %}
+<div class="section">
+    <div class="section-title">Remboursements ({{ remboursements|length }}) — total {{ totaux.total_rembourse|floatformat:0 }} FCFA</div>
+    <table>
+        <thead><tr><th>Heure</th><th>Élève</th><th>Rubrique</th><th>Motif</th><th>Par</th><th class="right">Montant</th></tr></thead>
+        <tbody>
+        {% for r in remboursements %}
+            <tr><td>{{ r.created_at|date:"H:i" }}</td><td>{{ r.paiement.inscription.eleve.get_nom_complet }}</td><td>{{ r.paiement.rubrique.nom|default:"—" }}</td><td>{{ r.motif }}</td><td>{{ r.rembourse_par.get_full_name|default:"—" }}</td><td class="right">− {{ r.montant|floatformat:0 }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if clotures %}
+<div class="section">
+    <div class="section-title">Arrêté{{ clotures|length|pluralize }} de caisse</div>
+    <table>
+        <thead><tr><th>Caissier</th><th class="right">Encaissé</th><th class="right">Espèces attendues</th><th class="right">Espèces comptées</th><th class="right">Écart</th><th>Observation</th><th>Arrêté par</th></tr></thead>
+        <tbody>
+        {% for c in clotures %}
+            <tr><td>{{ c.caissier.get_full_name }}</td><td class="right">{{ c.total_encaisse|floatformat:0 }}</td><td class="right">{{ c.especes_theoriques|floatformat:0 }}</td><td class="right">{{ c.montant_compte|floatformat:0 }}</td><td class="right">{{ c.ecart|floatformat:0 }}</td><td>{{ c.observation }}</td><td>{{ c.cloture_par.get_full_name|default:"—" }} ({{ c.created_at|date:"d/m/Y H:i" }})</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if caissier %}<p class="caissier-sig">Le caissier : {{ caissier.get_full_name }}</p>{% endif %}
+{% signataire_auto "BILAN_ENCAISSEMENTS" %}
+{% endblock %}

@@ -284,10 +284,17 @@ class EleveBulletinsView(APIView):
                 {'erreur': 'Élève introuvable.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        from finances.blocage import motif_blocage_bulletin
         bulletins = Bulletin.objects.filter(
             inscription__eleve=eleve,
             est_publie=True,
         ).select_related('inscription__classe', 'trimestre').order_by('-date_publication')
+        # Élève non à jour de ses frais (blocage paramétré) : les bulletins de l'inscription ne sont pas renvoyés.
+        motifs = {}
+        for b in bulletins:
+            if b.inscription_id not in motifs:
+                motifs[b.inscription_id] = motif_blocage_bulletin(b.inscription)
+        bulletins = [b for b in bulletins if not motifs[b.inscription_id]]
         serializer = BulletinSerializer(bulletins, many=True)
         return Response(serializer.data)
 

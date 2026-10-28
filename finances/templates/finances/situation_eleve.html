@@ -323,6 +323,36 @@
     <div class="sit-main">
 
       {# Échéancier de Paiement #}
+      {% if fratrie %}
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="d-flex align-center gap-3">
+            <div class="sit-icon sit-icon-primary">
+              <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </div>
+            <span class="card-title">Fratrie — autres enfants inscrits</span>
+          </div>
+          <a href="{% url 'finances:familles_list' %}?q={{ inscription.eleve.nom|urlencode }}" class="btn-secondary btn-sm">Famille →</a>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Élève</th><th>Classe</th><th style="text-align:right;">Dû</th><th style="text-align:right;">Payé</th><th style="text-align:right;">Reste</th></tr></thead>
+          <tbody>
+            {% for e in fratrie %}
+            <tr>
+              <td class="fw-medium"><a href="{% url 'finances:situation_eleve' e.inscription.pk %}">{{ e.inscription.eleve.get_nom_complet }}</a></td>
+              <td class="text-secondary">{{ e.inscription.classe.nom }}</td>
+              <td style="text-align:right;">{{ e.total_du|floatformat:0 }}</td>
+              <td style="text-align:right;">{{ e.total_paye|floatformat:0 }}</td>
+              <td style="text-align:right;" class="{% if e.reste_a_payer %}text-danger fw-bold{% endif %}">{{ e.reste_a_payer|floatformat:0 }} FCFA</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
       <div class="card mb-4">
         <div class="card-header">
           <div class="d-flex align-center gap-3">

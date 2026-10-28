@@ -899,6 +899,7 @@ class AbonnementService(BaseModel):
 
 class OrigineCreance(models.TextChoices):
     MANUEL = 'MANUEL', _('Manuel non rendu')
+    PENALITE = 'PENALITE', _('Pénalité de retard')
     AUTRE = 'AUTRE', _('Autre')
 
 
@@ -918,6 +919,9 @@ class Creance(BaseModel):
                                   related_name='creances_emises', verbose_name=_("Émise par"))
     actif = models.BooleanField(default=True, verbose_name=_("Créance active"))
     observation = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Observation"))
+    # Pénalité de retard : échéance qui l'a déclenchée (une seule pénalité active par échéance).
+    echeance = models.ForeignKey(Echeancier, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='penalites', verbose_name=_("Échéance d'origine"))
 
     class Meta:
         verbose_name = _("Créance")
@@ -934,3 +938,86 @@ class Creance(BaseModel):
         if observation:
             self.observation = observation[:200]
         self.save(update_fields=['actif', 'observation', 'updated_at'])
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PARAMÈTRES FINANCIERS, ARRÊTÉ DE CAISSE
+# ═══════════════════════════════════════════════════════════════════
+
+class ModePenalite(models.TextChoices):
+    AUCUNE = 'AUCUNE', _('Aucune pénalité')
+    FIXE = 'FIXE', _('Montant fixe par échéance en retard')
+    POURCENT = 'POURCENT', _("Pourcentage de l'échéance en retard")
+
+
+class ParametresFinances(BaseModel):
+    """Réglages financiers de l'établissement : pénalités de retard sur les échéances, blocage des bulletins
+    des élèves non à jour, remise fratrie."""
+    etablissement = models.OneToOneField('etablissements.Etablissement', on_delete=models.CASCADE,
+                                         related_name='parametres_finances', verbose_name=_("Établissement"))
+    penalite_mode = models.CharField(max_length=10, choices=ModePenalite.choices, default=ModePenalite.AUCUNE,
+                                     verbose_name=_("Pénalité de retard"))
+    penalite_valeur = models.DecimalField(max_digits=10, decimal_places=2, default=0,
+                                          verbose_name=_("Valeur (FCFA ou %)"))
+    penalite_delai_jours = models.PositiveSmallIntegerField(default=7, verbose_name=_("Délai de grâce (jours)"),
+                                                            help_text=_("Jours après l'échéance avant pénalité"))
+    penalite_rubrique = models.ForeignKey('parametres.RubriquePaiement', on_delete=models.SET_NULL, null=True,
+                                          blank=True, related_name='+', verbose_name=_("Rubrique d'encaissement"))
+    bloquer_bulletins_impayes = models.BooleanField(default=False,
+                                                    verbose_name=_("Bloquer les bulletins des élèves non à jour"))
+    seuil_blocage_pct = models.PositiveSmallIntegerField(default=100,
+                                                         verbose_name=_("Part du dû à régler pour consulter (%)"))
+    remise_fratrie = models.ForeignKey('finances.TypeBourse', on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='+', verbose_name=_("Remise fratrie (type de bourse)"))
+    remise_fratrie_a_partir = models.PositiveSmallIntegerField(default=2,
+                                                               verbose_name=_("Appliquée à partir du n-ième enfant"))
+
+    class Meta:
+        verbose_name = _("Paramètres financiers")
+        verbose_name_plural = _("Paramètres financiers")
+
+    def __str__(self):
+        return f"Paramètres financiers — {self.etablissement}"
+
+    @classmethod
+    def pour(cls, etablissement):
+        return cls.objects.get_or_create(etablissement=etablissement)[0]
+
+
+class ClotureCaisse(BaseModel):
+    """Arrêté de caisse d'un caissier pour une journée : totaux par mode figés, espèces comptées, écart.
+    Après l'arrêté, le caissier ne peut plus saisir d'opération datée de ce jour ou d'un jour antérieur."""
+    etablissement = models.ForeignKey('etablissements.Etablissement', on_delete=models.CASCADE,
+                                      related_name='clotures_caisse', verbose_name=_("Établissement"))
+    date = models.DateField(verbose_name=_("Journée"))
+    caissier = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='clotures_caisse',
+                                 verbose_name=_("Caissier"))
+    nb_operations = models.PositiveIntegerField(default=0, verbose_name=_("Opérations"))
+    total_especes = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name=_("Espèces"))
+    total_mobile_money = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name=_("Mobile Money"))
+    total_cheque = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name=_("Chèques"))
+    total_virement = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name=_("Virements"))
+    total_rembourse = models.DecimalField(max_digits=12, decimal_places=2, default=0,
+                                          verbose_name=_("Remboursements (espèces)"))
+    montant_compte = models.DecimalField(max_digits=12, decimal_places=2, verbose_name=_("Espèces comptées"))
+    ecart = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name=_("Écart"))
+    observation = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Observation"))
+    cloture_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='+', verbose_name=_("Arrêté par"))
+
+    class Meta:
+        verbose_name = _("Arrêté de caisse")
+        verbose_name_plural = _("Arrêtés de caisse")
+        ordering = ['-date', '-created_at']
+        unique_together = ('etablissement', 'date', 'caissier')
+
+    def __str__(self):
+        return f"Caisse {self.caissier} — {self.date:%d/%m/%Y}"
+
+    @property
+    def total_encaisse(self):
+        return self.total_especes + self.total_mobile_money + self.total_cheque + self.total_virement
+
+    @property
+    def especes_theoriques(self):
+        return self.total_especes - self.total_rembourse
