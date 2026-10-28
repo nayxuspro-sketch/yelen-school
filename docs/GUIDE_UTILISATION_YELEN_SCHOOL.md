@@ -3125,7 +3125,7 @@ Dans le formulaire élève, section **Santé & personnes autorisées** : groupe 
 
 ### 9.32 Sauvegarde depuis l'interface (mode autonome)
 
-**Accès :** `Système → Exploitation` (Super Admin, Directeur).
+**Accès :** menu latéral, section **Administration** → `Exploitation` (adresse `/exploitation/`) — Super Admin et Directeur (voir aussi §2.18).
 
 - `Sauvegarder maintenant` (case `inclure les médias` cochée par défaut) : copie à chaud de la base SQLite (`yelen_school_<date>.sqlite3.gz`, intégrité vérifiée) et archive `yelen_school_<date>_medias.zip` (photos, signatures, justificatifs) dans le dossier de sauvegarde (`BACKUP_DIR` ou `data\backups`), avec rotation (`BACKUP_KEEP`, défaut 30). L'application reste utilisable pendant la copie.
 - Le tableau liste les sauvegardes disponibles (fichier, type, date, taille) : `Télécharger` pour les **copier sur une clé USB ou un disque externe** — une sauvegarde qui reste sur le même PC ne protège pas d'une panne de disque.
