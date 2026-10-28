@@ -1,0 +1,97 @@
+{% extends "core/base.html" %}
+
+{% block title %}Nouvelle campagne SMS{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Communication</span><span>›</span><a href="{% url 'communication:campagne_list' %}" class="text-secondary">Campagnes SMS</a><span>›</span><span>Nouvelle</span>
+    </div>
+    <h1 class="page-title">Nouvelle campagne SMS</h1>
+    <p class="page-subtitle">{% if annee %}{{ annee.libelle }} — {% endif %}un SMS par numéro : les frères et sœurs joints sur le même téléphone ne reçoivent qu'un message.</p>
+  </div>
+</div>
+
+{% if not sms_actifs %}
+<div class="alert alert-warning animate-fade-up mb-4">Les SMS sont désactivés (Paramètres → Configuration SMS) : vous pouvez préparer l'aperçu, mais l'envoi sera refusé.</div>
+{% endif %}
+
+<form method="post" class="card animate-fade-up delay-1" style="padding:var(--space-5);">
+  {% csrf_token %}
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:var(--space-4);">
+    <div>
+      <label class="input-label" for="id_titre">Titre (pour le suivi, non envoyé)</label>
+      <input type="text" id="id_titre" name="titre" class="input" maxlength="120" required value="{{ titre }}" placeholder="Ex. : Rappel réunion du 15 novembre">
+    </div>
+    <div>
+      <label class="input-label" for="id_cible">Public</label>
+      <select id="id_cible" name="cible" class="input" required>
+        {% for code, libelle in cibles %}<option value="{{ code }}" {% if code == cible %}selected{% endif %}>{{ libelle }}</option>{% endfor %}
+      </select>
+    </div>
+    <div id="bloc-date" {% if cible != 'PARENTS_ABSENTS' %}hidden{% endif %}>
+      <label class="input-label" for="id_date">Jour d'absence</label>
+      <input type="date" id="id_date" name="date" class="input" value="{{ date|default:today|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}">
+    </div>
+  </div>
+
+  <fieldset id="bloc-classes" style="margin-top:var(--space-4); border:1px solid var(--color-border); border-radius:8px; padding:var(--space-3);" {% if cible != 'PARENTS_CLASSES' %}hidden{% endif %}>
+    <legend class="input-label" style="padding:0 .4rem;">Classes</legend>
+    <div class="d-flex gap-3 flex-wrap">
+      {% for c in classes %}
+      <label class="d-flex align-center gap-2" style="font-size:.9rem;"><input type="checkbox" name="classes" value="{{ c.pk }}" {% if c.pk|stringformat:'s' in classes_choisies %}checked{% endif %}> {{ c.nom }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <div style="margin-top:var(--space-4);">
+    <label class="input-label" for="id_message">Message <span class="text-muted" style="font-weight:400;">(<span id="compteur">{{ message|length }}</span> / {{ longueur_sms }} caractères — au-delà, le SMS est tronqué)</span></label>
+    <textarea id="id_message" name="message" class="input" rows="4" required maxlength="320" placeholder="Ex. : Bonjour, la rentrée des classes de {classe} est fixée au ... — {etablissement}">{{ message }}</textarea>
+    <div class="text-muted" style="font-size:.8rem; margin-top:.4rem;">
+      Variables : {% for code, aide in variables %}<code>{{ code }}</code> {{ aide }}{% if not forloop.last %} · {% endif %}{% endfor %}.
+    </div>
+  </div>
+
+  {% if apercu %}
+  <div class="alert {% if nb_destinataires %}alert-info{% else %}alert-warning{% endif %} mt-4">
+    <strong>{{ nb_destinataires }} destinataire{{ nb_destinataires|pluralize }}</strong>
+    {% if nb_sans_numero %} — {{ nb_sans_numero }} sans numéro valide (non joint{{ nb_sans_numero|pluralize }}){% endif %}
+    {% if plus_long > longueur_sms %} — <strong>message le plus long : {{ plus_long }} caractères, il sera tronqué à {{ longueur_sms }}</strong>{% endif %}
+  </div>
+  <div class="table-scroll" style="max-height:360px; overflow:auto;">
+    <table class="data-table">
+      <thead><tr><th>Destinataire</th><th>Numéro</th><th>Message rendu</th><th style="text-align:center;">Long.</th></tr></thead>
+      <tbody>
+        {% for d, texte, longueur in rendus %}
+        <tr><td>{{ d.nom }}</td><td class="text-mono">{{ d.numero }}</td><td style="font-size:.85rem;">{{ texte }}</td><td style="text-align:center;" class="{% if longueur > longueur_sms %}text-danger fw-semibold{% endif %}">{{ longueur }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if nb_destinataires > 30 %}<p class="text-muted" style="font-size:.8rem; padding:var(--space-2);">Aperçu limité aux 30 premiers destinataires.</p>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="d-flex align-center gap-3 flex-wrap" style="margin-top:var(--space-4);">
+    <button type="submit" name="confirmer" value="0" class="btn-secondary">Aperçu des destinataires</button>
+    {% if apercu and nb_destinataires %}
+    <button type="submit" name="confirmer" value="1" class="btn-primary" data-csp-confirm="Envoyer {{ nb_destinataires }} SMS maintenant ?">Envoyer {{ nb_destinataires }} SMS</button>
+    {% endif %}
+    <a href="{% url 'communication:campagne_list' %}" class="btn-secondary">Annuler</a>
+  </div>
+</form>
+
+<script nonce="{{ request.csp_nonce }}">
+  (function () {
+    var cible = document.getElementById('id_cible');
+    var zone = document.getElementById('id_message');
+    function majBlocs() {
+      document.getElementById('bloc-classes').hidden = cible.value !== 'PARENTS_CLASSES';
+      document.getElementById('bloc-date').hidden = cible.value !== 'PARENTS_ABSENTS';
+    }
+    cible.addEventListener('change', majBlocs);
+    zone.addEventListener('input', function () { document.getElementById('compteur').textContent = zone.value.length; });
+    majBlocs();
+  })();
+</script>
+{% endblock %}

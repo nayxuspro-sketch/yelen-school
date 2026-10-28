@@ -872,3 +872,116 @@ def conge_refuser(request, pk):
     messages.success(request, f"Congé de {conge.personnel.get_nom_complet()} refusé.")
     return redirect('personnel:detail', pk=conge.personnel.pk)
 
+
+
+# ─── PAIE DU MOIS ──────────────────────────────────────────────────────
+
+def _mois_annee(source):
+    """(mois, année) demandés — par défaut le mois courant."""
+    today = date_module.today()
+    try:
+        mois = int(source.get('mois', today.month))
+    except (TypeError, ValueError):
+        mois = today.month
+    try:
+        annee = int(source.get('annee', today.year))
+    except (TypeError, ValueError):
+        annee = today.year
+    return (mois if 1 <= mois <= 12 else today.month), annee
+
+
+def _url_paie(mois, annee):
+    from django.urls import reverse
+    return f"{reverse('personnel:paie_mois')}?mois={mois}&annee={annee}"
+
+
+@login_required
+@requires_licence_feature('gestion_personnel')
+def paie_mois(request):
+    """Paie du mois : bulletins du mois (statuts, totaux), agents sans bulletin, préparation et validation en masse,
+    livre de paie et bulletins en lot."""
+    from . import paie
+    etab = getattr(request.user, 'etablissement', None)
+    mois, annee = _mois_annee(request.GET)
+    contexte = paie.livre(etab, mois, annee) if etab else {'salaires': [], 'sans_bulletin': [], 'totaux': {},
+                                                            'par_statut': {}, 'mois': mois, 'annee': annee,
+                                                            'libelle_mois': paie.MOIS[mois]}
+    contexte.update({'mois_choices': SalairePersonnel.MOIS_CHOICES, 'annee_courante': date_module.today().year,
+                     'annees': range(date_module.today().year - 3, date_module.today().year + 2)})
+    return render(request, 'personnel/paie_mois.html', contexte)
+
+
+@login_required
+@require_POST
+@requires_licence_feature('gestion_personnel')
+def paie_preparer(request):
+    """Crée les brouillons du mois pour tous les agents permanents sans bulletin."""
+    from . import paie
+    etab = getattr(request.user, 'etablissement', None)
+    mois, annee = _mois_annee(request.POST)
+    annee_scolaire = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+    if etab is None or annee_scolaire is None:
+        messages.error(request, "Aucune année scolaire courante : la paie ne peut pas être préparée.")
+        return redirect(_url_paie(mois, annee))
+    crees, sans_reference = paie.preparer(etab, mois, annee, annee_scolaire, request.user)
+    texte = f"{len(crees)} bulletin{'s' if len(crees) > 1 else ''} de {paie.MOIS[mois]} {annee} préparé{'s' if len(crees) > 1 else ''} en brouillon."
+    if sans_reference:
+        texte += (f" {len(sans_reference)} agent{'s' if len(sans_reference) > 1 else ''} sans bulletin de référence à saisir "
+                  f"à la main : {', '.join(m.get_nom_complet() for m in sans_reference[:5])}"
+                  f"{'…' if len(sans_reference) > 5 else ''}.")
+    messages.success(request, texte)
+    return redirect(_url_paie(mois, annee))
+
+
+@login_required
+@require_POST
+@requires_licence_feature('gestion_personnel')
+def paie_valider(request):
+    """Valide tous les brouillons du mois."""
+    from . import paie
+    etab = getattr(request.user, 'etablissement', None)
+    mois, annee = _mois_annee(request.POST)
+    nb = paie.valider_brouillons(etab, mois, annee) if etab else 0
+    messages.success(request, f"{nb} bulletin{'s' if nb > 1 else ''} validé{'s' if nb > 1 else ''}." if nb else "Aucun brouillon à valider.")
+    return redirect(_url_paie(mois, annee))
+
+
+@login_required
+@requires_licence_feature('gestion_personnel')
+def livre_paie_pdf(request):
+    """Livre de paie du mois (A4 paysage) : une ligne par agent, totaux, signataire."""
+    from core.pdf import HTML
+    from . import paie
+    etab = getattr(request.user, 'etablissement', None)
+    mois, annee = _mois_annee(request.GET)
+    if etab is None:
+        messages.error(request, "Votre compte n'est pas associé à un établissement.")
+        return redirect('personnel:salaire_list')
+    contexte = {**paie.livre(etab, mois, annee), **get_etablissement_context(etab, request), 'now': timezone.now()}
+    html_str = render_to_string('personnel/pdf/livre_paie.html', contexte, request=request)
+    pdf = HTML(string=html_str, base_url=request.build_absolute_uri('/')).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="livre_paie_{annee}_{mois:02d}.pdf"'
+    return response
+
+
+@login_required
+@requires_licence_feature('gestion_personnel')
+def bulletins_paie_lot_pdf(request):
+    """Tous les bulletins de salaire du mois dans un seul PDF (un bulletin par page, même gabarit que l'unitaire)."""
+    from core.pdf import HTML
+    from . import paie
+    etab = getattr(request.user, 'etablissement', None)
+    mois, annee = _mois_annee(request.GET)
+    if etab is None:
+        messages.error(request, "Votre compte n'est pas associé à un établissement.")
+        return redirect('personnel:salaire_list')
+    etab_context = get_etablissement_context(etab, request)
+    fragments = [
+        render_to_string('personnel/pdf/bulletin_salaire.html', {'salaire': salaire, **etab_context}, request=request)
+        for salaire in paie.salaires_du_mois(etab, mois, annee)
+    ]
+    pdf = HTML.lot(fragments, base_url=request.build_absolute_uri('/'))
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="bulletins_salaire_{annee}_{mois:02d}.pdf"'
+    return response

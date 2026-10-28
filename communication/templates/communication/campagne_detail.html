@@ -1,0 +1,57 @@
+{% extends "core/base.html" %}
+
+{% block title %}Campagne — {{ campagne.titre }}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Communication</span><span>›</span><a href="{% url 'communication:campagne_list' %}" class="text-secondary">Campagnes SMS</a>
+    </div>
+    <h1 class="page-title">{{ campagne.titre }}</h1>
+    <p class="page-subtitle">{{ campagne.get_cible_display }} — envoyée le {{ campagne.created_at|date:"d/m/Y à H:i" }}{% if campagne.envoyee_par %} par {{ campagne.envoyee_par.get_full_name }}{% endif %}</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if suivi.echecs %}
+    <form method="post" action="{% url 'communication:campagne_renvoyer' campagne.pk %}">{% csrf_token %}
+      <button type="submit" class="btn-secondary" data-csp-confirm="Remettre en file les {{ suivi.echecs }} SMS en échec ?">Renvoyer les échecs ({{ suivi.echecs }})</button>
+    </form>
+    {% endif %}
+    <a href="{% url 'communication:campagne_detail' campagne.pk %}" class="btn-secondary">Actualiser</a>
+  </div>
+</div>
+
+<div class="stats-grid animate-fade-up delay-1 mb-4">
+  <div class="stat-card"><div class="stat-label">Destinataires</div><div class="stat-value">{{ campagne.nb_destinataires }}</div></div>
+  <div class="stat-card"><div class="stat-label">Envoyés</div><div class="stat-value text-success">{{ suivi.envoyes }}</div></div>
+  <div class="stat-card"><div class="stat-label">Échecs</div><div class="stat-value {% if suivi.echecs %}text-danger{% endif %}">{{ suivi.echecs }}</div></div>
+  <div class="stat-card"><div class="stat-label">En attente</div><div class="stat-value">{{ suivi.en_attente }}</div></div>
+</div>
+
+<div class="card animate-fade-up delay-2 mb-4" style="padding:var(--space-4);">
+  <div class="input-label">Message (modèle)</div>
+  <p style="margin:0; white-space:pre-wrap;">{{ campagne.message }}</p>
+</div>
+
+<div class="card animate-fade-up delay-3" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th>Destinataire</th><th>Numéro</th><th>Statut</th><th>Envoyé le</th><th>Tentatives</th><th>Dernière erreur</th></tr></thead>
+      <tbody>
+        {% for s in sms %}
+        <tr>
+          <td>{{ s.destinataire|default:"—" }}</td>
+          <td class="text-mono">{{ s.numero }}</td>
+          <td>{% if s.statut == 'ENVOYE' %}<span class="badge badge-success">Envoyé</span>{% elif s.statut == 'ECHEC' %}<span class="badge badge-danger">Échec</span>{% else %}<span class="badge badge-warning">En attente</span>{% endif %}</td>
+          <td>{{ s.date_envoi|date:"d/m/Y H:i"|default:"—" }}</td>
+          <td>{{ s.tentatives }}</td>
+          <td class="text-muted" style="font-size:.8rem;">{{ s.derniere_erreur }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucun SMS mis en file (SMS désactivés au moment de l'envoi).</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -3047,6 +3047,53 @@ Une période clôturée (`Paramètres → Périodes`) est en lecture seule. Le d
 
 ---
 
+### 9.24 Campagnes SMS ciblées
+
+**Accès :** `Communication → Campagnes SMS` (Super Admin, Directeur, Censeur, Secrétaire, Comptable). Les SMS doivent être activés (`Paramètres → Configuration SMS`).
+
+1. **Nouvelle campagne** : titre (pour le suivi, non envoyé), **public** — parents de tous les élèves inscrits, parents des élèves de classes cochées, parents des élèves ayant un reste à payer, parents des élèves absents un jour donné, ou membres du personnel — et message.
+2. Le message accepte des **variables** remplacées pour chaque destinataire : `{eleve}` (nom de l'élève, ou des enfants joints sur ce numéro), `{classe}`, `{reste}` (reste à payer de la famille en FCFA), `{etablissement}` (sigle), `{nom}` (agent, campagne personnel). Exemple : `Reunion des parents de {classe} samedi 8h. {etablissement}`.
+3. **Aperçu** : nombre de destinataires joignables, élèves ou agents **sans numéro valide**, les textes rendus et la longueur du plus long message (au-delà de 160 caractères, le SMS est tronqué par la passerelle). Un numéro partagé par plusieurs enfants reçoit **un seul SMS** ; les élèves partis (abandon) ne sont jamais joints. Le numéro utilisé est, dans l'ordre, celui du parent, du tuteur, puis le numéro d'urgence de la fiche élève.
+4. **Envoyer n SMS** : les SMS sont mis en file et partent en arrière-plan par paquets de 50 ; la page de suivi montre envoyés / échecs / en attente et, par destinataire, le statut et l'erreur éventuelle. **Renvoyer les échecs** remet en file les SMS en échec définitif (numéro invalide corrigé entre-temps, passerelle revenue).
+
+### 9.25 Paie du mois
+
+**Accès :** `Personnel → Paie du mois` (ou bouton `Paie du mois` depuis `Salaires`).
+
+1. Choisis le **mois** et l'**année** : la page affiche les bulletins existants par statut (brouillon, validé, payé), les totaux (base, indemnités, primes, brut, CNSS, IUTS, retenues, net) et les **agents permanents sans bulletin** (les vacataires relèvent des bulletins de vacation).
+2. **Préparer la paie** (droit « Préparer la paie du mois en masse ») crée un **brouillon** pour chaque agent sans bulletin ce mois-ci, à partir de son **dernier bulletin** : salaire de base, indemnités de transport et de logement, retenues CNSS et IUTS reprises ; **prime d'ancienneté recalculée** (0 / 5 / 10 / 15 / 20 / 25 % selon la date d'embauche) ; primes et retenues exceptionnelles remises à zéro. Un agent sans aucun bulletin antérieur est signalé : saisis son premier bulletin à la main (`Salaires → Nouveau`), les mois suivants seront préparés automatiquement. Relancer la préparation ne crée jamais de doublon.
+3. Corrige au besoin chaque brouillon depuis `Salaires` (primes exceptionnelles, retenues), puis **Valider les brouillons** (droit « Valider un salaire ») : tout le mois passe en « Validé » ; le paiement de chaque bulletin reste individuel (`Payer`).
+4. **Livre de paie** (PDF A4 paysage) : une ligne par agent (matricule, fonction, base, indemnités, primes, brut, CNSS, IUTS, autres retenues, net, statut), totaux et signataire du bulletin de salaire. **Bulletins du mois** : tous les bulletins dans un seul PDF, un par page, même gabarit que le bulletin unitaire.
+
+### 9.26 Statistiques d'une session d'examen
+
+**Accès :** `Examens → fiche de la session → Statistiques` (droit « Statistiques de la session »), bouton `PDF`.
+
+- **Résumé** : inscrits, présents, admis, taux de réussite (garçons / filles / total), moyenne de la session, candidats sans résultat saisi.
+- **Par classe d'origine** et **par centre** : inscrits, présents, admis, ajournés, absents, taux G / F / total, moyenne.
+- **Par mention** (admis) et **par tranche de moyenne** (moins de 8, 8–9,99, … 16 et plus), **dix meilleures moyennes**.
+- Le **taux de réussite** rapporte les admis aux présents (admis + ajournés + exclus) : les absents n'entrent pas au dénominateur, conformément aux statistiques officielles.
+
+### 9.27 Statistiques par enseignant
+
+**Accès :** `Pilotage → Statistiques par enseignant` (Super Admin, Directeur réseau, Directeur, Censeur), filtre **Toute l'année** ou une période, bouton `PDF` (A4 paysage, signé par le signataire de la liste du personnel).
+
+Pour chaque enseignant (clique sur son nom pour le détail par classe et discipline) :
+
+| Colonne | Calcul |
+|---|---|
+| Classes / Disciplines / Élèves | enseignements actifs de l'année ; élèves inscrits (abandons exclus) |
+| h / sem. | heures hebdomadaires de l'emploi du temps |
+| Évaluations | terminées / créées (annulées exclues) |
+| Saisie des notes | notes saisies / (élèves × évaluations), **en rouge sous 80 %** |
+| Moyenne, ≥ 10 | moyenne des résultats par discipline calculés et part d'élèves à 10 ou plus (dispensés exclus) |
+| Cahier de textes | entrées de la période |
+| Appréciations | appréciations rédigées / résultats |
+
+Les enseignements **sans enseignant** apparaissent en dernière ligne « Non attribué » : attribue-les dans `Pédagogie → Enseignements`.
+
+---
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
@@ -6873,7 +6920,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.11.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.12.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

@@ -1,0 +1,69 @@
+{% extends "core/base.html" %}
+
+{% block title %}Statistiques — {{ session.libelle }}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Examens</span><span>›</span><a href="{% url 'examens:session_detail' session.pk %}" class="text-secondary">{{ session.libelle }}</a><span>›</span><span>Statistiques</span>
+    </div>
+    <h1 class="page-title">{{ session.get_type_examen_display }} — {{ session.libelle }}</h1>
+    <p class="page-subtitle">{{ session.annee_scolaire.libelle }} · taux de réussite = admis / présents (les absents ne comptent pas au dénominateur){% if non_notes %} · <strong>{{ non_notes }} candidat{{ non_notes|pluralize }} sans résultat saisi</strong>{% endif %}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'examens:session_statistiques' session.pk %}?format=pdf" class="btn-primary" target="_blank" rel="noopener">PDF</a>
+    <a href="{% url 'examens:session_detail' session.pk %}" class="btn-secondary">Retour</a>
+  </div>
+</div>
+
+<div class="stats-grid animate-fade-up delay-1 mb-4">
+  <div class="stat-card"><div class="stat-label">Inscrits</div><div class="stat-value">{{ globale.inscrits }}</div><div class="text-muted" style="font-size:.75rem;">G {{ globale.inscrits_g }} · F {{ globale.inscrits_f }}</div></div>
+  <div class="stat-card"><div class="stat-label">Présents</div><div class="stat-value">{{ globale.presents }}</div><div class="text-muted" style="font-size:.75rem;">absents {{ globale.absents }}</div></div>
+  <div class="stat-card"><div class="stat-label">Admis</div><div class="stat-value text-success">{{ globale.admis }}</div><div class="text-muted" style="font-size:.75rem;">G {{ globale.admis_g }} · F {{ globale.admis_f }}</div></div>
+  <div class="stat-card"><div class="stat-label">Taux de réussite</div><div class="stat-value">{{ globale.taux }} %</div><div class="text-muted" style="font-size:.75rem;">G {{ globale.taux_g }} % · F {{ globale.taux_f }} %</div></div>
+  <div class="stat-card"><div class="stat-label">Moyenne de la session</div><div class="stat-value">{% if globale.moyenne is not None %}{{ globale.moyenne|floatformat:2 }}{% else %}—{% endif %}</div></div>
+</div>
+
+{% for titre, lignes in tableaux %}
+<div class="card animate-fade-up delay-2 mb-4" style="padding:0; overflow:hidden;">
+  <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">{{ titre }}</div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th>{{ titre }}</th><th class="text-right">Inscrits</th><th class="text-right">Présents</th><th class="text-right">Admis</th><th class="text-right">Ajournés</th><th class="text-right">Absents</th><th class="text-right">Taux G</th><th class="text-right">Taux F</th><th class="text-right">Taux</th><th class="text-right">Moyenne</th></tr></thead>
+      <tbody>
+        {% for l in lignes %}
+        <tr><td class="fw-semibold">{{ l.libelle }}</td><td class="text-right">{{ l.inscrits }}</td><td class="text-right">{{ l.presents }}</td><td class="text-right">{{ l.admis }}</td><td class="text-right">{{ l.ajournes }}</td><td class="text-right">{{ l.absents }}</td><td class="text-right">{{ l.taux_g }} %</td><td class="text-right">{{ l.taux_f }} %</td><td class="text-right fw-semibold">{{ l.taux }} %</td><td class="text-right">{% if l.moyenne is not None %}{{ l.moyenne|floatformat:2 }}{% else %}—{% endif %}</td></tr>
+        {% empty %}
+        <tr><td colspan="10" class="text-muted" style="text-align:center;">Aucun candidat.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:var(--space-4);" class="animate-fade-up delay-3">
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">Mentions des admis</div>
+    <table class="data-table">
+      <thead><tr><th>Mention</th><th class="text-right">Admis</th><th class="text-right">Garçons</th><th class="text-right">Filles</th></tr></thead>
+      <tbody>{% for l in par_mention %}<tr><td>{{ l.libelle }}</td><td class="text-right">{{ l.admis }}</td><td class="text-right">{{ l.admis_g }}</td><td class="text-right">{{ l.admis_f }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">Aucun admis.</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">Répartition des moyennes</div>
+    <table class="data-table">
+      <thead><tr><th>Tranche</th><th class="text-right">Candidats</th><th class="text-right">Part</th></tr></thead>
+      <tbody>{% for t in tranches %}<tr><td>{{ t.libelle }}</td><td class="text-right">{{ t.nb }}</td><td class="text-right">{{ t.taux }} %</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); font-weight:600;">Dix meilleures moyennes</div>
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Candidat</th><th>Classe</th><th class="text-right">Moyenne</th></tr></thead>
+      <tbody>{% for c in meilleurs %}<tr><td>{{ forloop.counter }}</td><td>{{ c.inscription.eleve.get_nom_complet }}</td><td>{{ c.inscription.classe.nom }}</td><td class="text-right fw-semibold">{{ c.moyenne_examen|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">Aucune moyenne saisie.</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

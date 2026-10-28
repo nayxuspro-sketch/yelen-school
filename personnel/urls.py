@@ -20,6 +20,11 @@ urlpatterns = [
 
     # Salaires
     path('salaires/', views.salaire_list, name='salaire_list'),
+    path('salaires/paie/', views.paie_mois, name='paie_mois'),
+    path('salaires/paie/preparer/', views.paie_preparer, name='paie_preparer'),
+    path('salaires/paie/valider/', views.paie_valider, name='paie_valider'),
+    path('salaires/paie/livre.pdf', views.livre_paie_pdf, name='livre_paie_pdf'),
+    path('salaires/paie/bulletins.pdf', views.bulletins_paie_lot_pdf, name='bulletins_paie_lot_pdf'),
     path('salaires/nouveau/', views.salaire_create, name='salaire_create'),
     path('<uuid:pk>/salaire/nouveau/', views.salaire_create, name='salaire_create_pour'),
     path('salaires/<uuid:pk>/', views.salaire_detail, name='salaire_detail'),

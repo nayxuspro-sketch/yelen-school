@@ -134,6 +134,7 @@ MODULES = (
             _a('gerer', 'Créer / modifier une session', 'session_create', 'session_edit'),
             _a('inscrire', 'Inscrire les candidats', 'inscrire_classe'),
             _a('resultats', 'Saisir les résultats', 'saisie_resultats'),
+            _a('statistiques', 'Statistiques de la session (écran et PDF)', 'session_statistiques'),
             _a('centres', 'Centres, salles et placements',
                'centre_create', 'centre_edit', 'centre_delete', 'salle_create', 'salle_edit', 'salle_delete',
                'placement_salle', 'placement_delete'),
@@ -173,7 +174,8 @@ MODULES = (
         )),
         _f('/personnel/salaires/', 'Salaires', actions=(
             _a('gerer', 'Créer / modifier un salaire', 'salaire_create', 'salaire_create_pour', 'salaire_update'),
-            _a('valider', 'Valider un salaire', 'salaire_valider'),
+            _a('preparer', 'Préparer la paie du mois en masse', 'paie_preparer'),
+            _a('valider', 'Valider un salaire', 'salaire_valider', 'paie_valider'),
             _a('payer', 'Payer un salaire', 'salaire_payer'),
             _a('supprimer', 'Supprimer un salaire', 'salaire_delete'),
         )),
@@ -256,6 +258,9 @@ MODULES = (
         )),
         _f('/communication/sms-direct/', 'SMS Direct', actions=(
             _a('envoyer', 'Envoyer un SMS', 'sms_direct_envoyer'),
+        )),
+        _f('/communication/campagnes/', 'Campagnes SMS', actions=(
+            _a('envoyer', 'Composer et envoyer une campagne', 'campagne_nouvelle', 'campagne_renvoyer'),
         )),
     )),
     Module('manuels', 'Manuels scolaires', SECTION_ADMINISTRATION, (

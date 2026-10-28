@@ -1,6 +1,7 @@
 import logging
 from django.db.models import Q
-from django.shortcuts import render, get_object_or_404
+from django.contrib import messages
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.utils import timezone
@@ -612,3 +613,135 @@ def webhook_incoming_sms(request):
         'response': response_text[:160],
         'log_id': str(log.pk)
     })
+
+
+# ─── CAMPAGNES SMS CIBLÉES ────────────────────────────────────────────
+
+_ROLES_CAMPAGNE = ('SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR', 'SECRETAIRE', 'COMPTABLE')
+
+
+def _refus_campagne(request):
+    if request.user.role in _ROLES_CAMPAGNE or request.user.is_superuser:
+        return None
+    return render(request, 'core/access_denied.html', {
+        'message': "Les campagnes SMS sont réservées à la direction, au secrétariat et à la comptabilité.",
+    }, status=403)
+
+
+def _sigle(etab):
+    from parametres.models import IdentiteEtablissement
+    identite = IdentiteEtablissement.objects.filter(etablissement=etab).first()
+    return (identite.sigle or identite.nom_etablissement) if identite else (etab.nom if etab else '')
+
+
+@login_required
+def campagne_list(request):
+    """Historique des campagnes SMS de l'établissement, avec envoyés / échecs / en attente."""
+    from core.models import CampagneSms
+    refus = _refus_campagne(request)
+    if refus:
+        return refus
+    campagnes = list(CampagneSms.objects.filter(etablissement=_get_etab(request)).select_related('envoyee_par')[:50])
+    for c in campagnes:
+        c.suivi = c.bilan()
+    return render(request, 'communication/campagne_list.html', {'campagnes': campagnes})
+
+
+def _criteres(request, cible):
+    from core.models import CampagneSms
+    if cible == CampagneSms.Cible.PARENTS_CLASSES:
+        return {'classes': request.POST.getlist('classes')}
+    if cible == CampagneSms.Cible.PARENTS_ABSENTS:
+        return {'date': request.POST.get('date') or timezone.localdate().isoformat()}
+    return {}
+
+
+@login_required
+def campagne_nouvelle(request):
+    """Composer une campagne : public, message à variables ; l'aperçu compte les destinataires et montre les textes
+    rendus, puis « Envoyer » met les SMS en file."""
+    from core.models import CampagneSms
+    from core.sms import sms_actifs
+    from parametres.models import Classe
+    from . import campagnes
+
+    refus = _refus_campagne(request)
+    if refus:
+        return refus
+    etab = _get_etab(request)
+    annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+    contexte = {
+        'cibles': CampagneSms.Cible.choices, 'variables': campagnes.VARIABLES, 'longueur_sms': campagnes.LONGUEUR_SMS,
+        'classes': Classe.objects.filter(etablissement=etab, actif=True).order_by('cycle__ordre', 'nom'),
+        'annee': annee, 'sms_actifs': sms_actifs(), 'today': timezone.localdate(),
+        'titre': '', 'message': '', 'cible': CampagneSms.Cible.PARENTS_TOUS, 'classes_choisies': [], 'date': '',
+    }
+    if request.method != 'POST':
+        return render(request, 'communication/campagne_form.html', contexte)
+
+    titre = ' '.join(request.POST.get('titre', '').split())[:120]
+    modele = request.POST.get('message', '').strip()
+    cible = request.POST.get('cible', '')
+    criteres = _criteres(request, cible)
+    contexte.update({'titre': titre, 'message': modele, 'cible': cible,
+                     'classes_choisies': criteres.get('classes', []), 'date': criteres.get('date', '')})
+    erreurs = []
+    if cible not in CampagneSms.Cible.values:
+        erreurs.append("Choisissez le public de la campagne.")
+    if not titre:
+        erreurs.append("Donnez un titre à la campagne (il n'est pas envoyé, il sert au suivi).")
+    if not modele:
+        erreurs.append("Rédigez le message.")
+    if cible == CampagneSms.Cible.PARENTS_CLASSES and not criteres['classes']:
+        erreurs.append("Cochez au moins une classe.")
+    if annee is None and cible != CampagneSms.Cible.PERSONNEL:
+        erreurs.append("Aucune année scolaire courante.")
+    if erreurs:
+        for e in erreurs:
+            messages.error(request, e)
+        return render(request, 'communication/campagne_form.html', contexte)
+
+    liste, compteurs = campagnes.destinataires(etab, annee, cible, criteres, sigle=_sigle(etab))
+    if request.POST.get('confirmer') == '1':
+        if not sms_actifs():
+            messages.error(request, "Les SMS sont désactivés (Paramètres → Configuration SMS) : campagne non envoyée.")
+            return render(request, 'communication/campagne_form.html', contexte)
+        if not liste:
+            messages.error(request, "Aucun destinataire joignable : campagne non envoyée.")
+            return render(request, 'communication/campagne_form.html', contexte)
+        campagne = campagnes.lancer(etab, annee, titre, modele, cible, criteres, liste, request.user)
+        messages.success(request, f"Campagne « {campagne.titre} » : {len(liste)} SMS mis en file, envoi en cours.")
+        return redirect('communication:campagne_detail', pk=campagne.pk)
+
+    rendus, plus_long = campagnes.apercu(modele, liste)
+    contexte.update({'apercu': True, 'rendus': rendus[:30], 'nb_destinataires': len(liste),
+                     'nb_sans_numero': compteurs['sans_numero'], 'plus_long': plus_long})
+    return render(request, 'communication/campagne_form.html', contexte)
+
+
+@login_required
+def campagne_detail(request, pk):
+    """Suivi d'une campagne : destinataire, statut, erreur ; renvoi des échecs."""
+    from core.models import CampagneSms
+    refus = _refus_campagne(request)
+    if refus:
+        return refus
+    campagne = get_object_or_404(CampagneSms, pk=pk, etablissement=_get_etab(request))
+    return render(request, 'communication/campagne_detail.html', {
+        'campagne': campagne, 'suivi': campagne.bilan(),
+        'sms': campagne.sms.order_by('destinataire', 'numero'),
+    })
+
+
+@login_required
+@require_POST
+def campagne_renvoyer(request, pk):
+    from core.models import CampagneSms
+    from . import campagnes
+    refus = _refus_campagne(request)
+    if refus:
+        return refus
+    campagne = get_object_or_404(CampagneSms, pk=pk, etablissement=_get_etab(request))
+    nb = campagnes.renvoyer_echecs(campagne)
+    messages.success(request, f"{nb} SMS remis en file." if nb else "Aucun SMS en échec.")
+    return redirect('communication:campagne_detail', pk=campagne.pk)

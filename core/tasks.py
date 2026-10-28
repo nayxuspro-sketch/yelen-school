@@ -36,6 +36,36 @@ def envoyer_sms_async(numero, message, notification_id=None):
     return sms
 
 
+def mettre_en_file_lot(envois, campagne=None):
+    """Met en file un lot de SMS ``[(numero, message, destinataire), …]`` (campagne, relance de masse) et lance,
+    une fois la transaction validée, UN fil d'arrière-plan qui vide la file par paquets — là où un fil par SMS
+    épuiserait le poste pour quelques centaines de destinataires. Retourne les lignes créées (vide si SMS inactifs)."""
+    from core.models import SmsSortant
+    from core.sms import sms_actifs
+
+    if not sms_actifs() or not envois:
+        return []
+    lignes = SmsSortant.objects.bulk_create([
+        SmsSortant(numero=str(numero).strip(), message=message, destinataire=(destinataire or '')[:120], campagne=campagne)
+        for numero, message, destinataire in envois
+    ])
+    transaction.on_commit(lambda: threading.Thread(target=_vider_file, daemon=True).start())
+    return lignes
+
+
+def _vider_file(limite_paquets=200):
+    """Traite la file par paquets de 50 tant qu'un envoi aboutit ou échoue (les reprises différées restent en file)."""
+    try:
+        for _ in range(limite_paquets):
+            bilan = traiter_file_sms(limite=50)
+            if bilan['envoyes'] + bilan['echecs'] == 0:
+                break
+    except Exception:
+        logger.exception("Vidage de la file SMS interrompu")
+    finally:
+        connection.close()
+
+
 def _envoyer_puis_rattraper(pk):
     from core.models import SmsSortant
     try:

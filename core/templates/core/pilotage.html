@@ -28,6 +28,9 @@
       </select>
     </form>
     {% endif %}
+    {% if not etab_reseau %}
+    <a href="{% url 'core:pilotage_enseignants' %}" class="btn-secondary">Statistiques par enseignant</a>
+    {% endif %}
     {% if annee_selectionnee %}
     <button type="button" class="btn-secondary" data-csp-action="print">Imprimer</button>
     {% endif %}

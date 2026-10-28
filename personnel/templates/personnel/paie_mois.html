@@ -1,0 +1,90 @@
+{% extends "core/base.html" %}
+
+{% block title %}Paie du mois — {{ libelle_mois }} {{ annee }}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Personnel</span><span>›</span><a href="{% url 'personnel:salaire_list' %}" class="text-secondary">Salaires</a><span>›</span><span>Paie du mois</span>
+    </div>
+    <h1 class="page-title">Paie de {{ libelle_mois }} {{ annee }}</h1>
+    <p class="page-subtitle">Préparation en masse des bulletins (repris du dernier bulletin de chaque agent, prime d'ancienneté recalculée), validation groupée, livre de paie et bulletins en lot.</p>
+  </div>
+  <form method="get" class="d-flex gap-2 align-center">
+    <select name="mois" class="input" aria-label="Mois">{% for n, lib in mois_choices %}<option value="{{ n }}" {% if n == mois %}selected{% endif %}>{{ lib }}</option>{% endfor %}</select>
+    <select name="annee" class="input" aria-label="Année">{% for a in annees %}<option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+    <button type="submit" class="btn-secondary">Afficher</button>
+  </form>
+</div>
+
+<div class="stats-grid animate-fade-up delay-1 mb-4">
+  <div class="stat-card"><div class="stat-label">Bulletins</div><div class="stat-value">{{ salaires|length }}</div></div>
+  <div class="stat-card"><div class="stat-label">Brouillons</div><div class="stat-value">{{ par_statut.BROUILLON|default:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Validés</div><div class="stat-value">{{ par_statut.VALIDE|default:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Payés</div><div class="stat-value">{{ par_statut.PAYE|default:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Masse salariale nette</div><div class="stat-value">{{ totaux.net|default:0|floatformat:0 }} <span style="font-size:.7rem;">FCFA</span></div></div>
+</div>
+
+<div class="d-flex gap-2 flex-wrap animate-fade-up delay-1 mb-4">
+  {% if sans_bulletin %}
+  <form method="post" action="{% url 'personnel:paie_preparer' %}">{% csrf_token %}
+    <input type="hidden" name="mois" value="{{ mois }}"><input type="hidden" name="annee" value="{{ annee }}">
+    <button type="submit" class="btn-primary" data-csp-confirm="Préparer un brouillon pour les {{ sans_bulletin|length }} agents sans bulletin de {{ libelle_mois }} {{ annee }} ?">Préparer la paie ({{ sans_bulletin|length }} agent{{ sans_bulletin|length|pluralize }})</button>
+  </form>
+  {% endif %}
+  {% if par_statut.BROUILLON %}
+  <form method="post" action="{% url 'personnel:paie_valider' %}">{% csrf_token %}
+    <input type="hidden" name="mois" value="{{ mois }}"><input type="hidden" name="annee" value="{{ annee }}">
+    <button type="submit" class="btn-secondary" data-csp-confirm="Valider les {{ par_statut.BROUILLON }} brouillons du mois ?">Valider les brouillons ({{ par_statut.BROUILLON }})</button>
+  </form>
+  {% endif %}
+  {% if salaires %}
+  <a href="{% url 'personnel:livre_paie_pdf' %}?mois={{ mois }}&amp;annee={{ annee }}" class="btn-secondary" target="_blank" rel="noopener">Livre de paie (PDF)</a>
+  <a href="{% url 'personnel:bulletins_paie_lot_pdf' %}?mois={{ mois }}&amp;annee={{ annee }}" class="btn-secondary" target="_blank" rel="noopener">Bulletins du mois (PDF)</a>
+  {% endif %}
+</div>
+
+<div class="card animate-fade-up delay-2" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr><th>Agent</th><th>Fonction</th><th class="text-right">Base</th><th class="text-right">Indemnités</th><th class="text-right">Primes</th><th class="text-right">Brut</th><th class="text-right">CNSS</th><th class="text-right">IUTS</th><th class="text-right">Autres ret.</th><th class="text-right">Net</th><th>Statut</th></tr>
+      </thead>
+      <tbody>
+        {% for s in salaires %}
+        <tr>
+          <td><a href="{% url 'personnel:salaire_detail' s.pk %}" class="fw-semibold">{{ s.personnel.nom|upper }} {{ s.personnel.prenom }}</a></td>
+          <td class="text-secondary">{{ s.personnel.fonction|default:"—" }}</td>
+          <td class="text-right">{{ s.salaire_base|floatformat:0 }}</td>
+          <td class="text-right">{{ s.indemnite_transport|add:s.indemnite_logement|floatformat:0 }}</td>
+          <td class="text-right">{{ s.prime_anciennete|add:s.autres_primes|floatformat:0 }}</td>
+          <td class="text-right fw-semibold">{{ s.salaire_brut|floatformat:0 }}</td>
+          <td class="text-right">{{ s.retenue_cnss|floatformat:0 }}</td>
+          <td class="text-right">{{ s.retenue_iuts|floatformat:0 }}</td>
+          <td class="text-right">{{ s.autres_retenues|floatformat:0 }}</td>
+          <td class="text-right fw-semibold">{{ s.salaire_net|floatformat:0 }}</td>
+          <td>{% if s.statut == 'PAYE' %}<span class="badge badge-success">Payé</span>{% elif s.statut == 'VALIDE' %}<span class="badge badge-info">Validé</span>{% else %}<span class="badge badge-warning">Brouillon</span>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="11" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucun bulletin pour {{ libelle_mois }} {{ annee }}.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if salaires %}
+      <tfoot>
+        <tr class="fw-semibold"><td colspan="2">Totaux ({{ salaires|length }})</td><td class="text-right">{{ totaux.base|floatformat:0 }}</td><td class="text-right">{{ totaux.indemnites|floatformat:0 }}</td><td class="text-right">{{ totaux.primes|floatformat:0 }}</td><td class="text-right">{{ totaux.brut|floatformat:0 }}</td><td class="text-right">{{ totaux.cnss|floatformat:0 }}</td><td class="text-right">{{ totaux.iuts|floatformat:0 }}</td><td class="text-right">{{ totaux.autres_retenues|floatformat:0 }}</td><td class="text-right">{{ totaux.net|floatformat:0 }}</td><td></td></tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+{% if sans_bulletin %}
+<div class="card animate-fade-up delay-3 mt-4" style="padding:var(--space-4);">
+  <h3 style="margin:0 0 var(--space-2); font-size:.95rem;">Sans bulletin ce mois — {{ sans_bulletin|length }} agent{{ sans_bulletin|length|pluralize }}</h3>
+  <div class="d-flex gap-2 flex-wrap">
+    {% for m in sans_bulletin %}<a href="{% url 'personnel:salaire_create_pour' m.pk %}" class="badge badge-neutral">{{ m.nom|upper }} {{ m.prenom }}</a>{% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

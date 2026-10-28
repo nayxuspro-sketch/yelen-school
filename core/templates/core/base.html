@@ -384,6 +384,7 @@
         {% endif %}
         {% if '/personnel/salaires/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:salaire_list' %}" class="sb-item-submodern" data-url="/personnel/salaires/"><span class="sub-item-dot"></span>Salaires</a>
+        <a href="{% url 'personnel:paie_mois' %}" class="sb-item-submodern" data-url="/personnel/salaires/paie/"><span class="sub-item-dot"></span>Paie du mois</a>
         {% endif %}
         {% if '/personnel/conges/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:conge_list' %}" class="sb-item-submodern" data-url="/personnel/conges/"><span class="sub-item-dot"></span>Congés</a>
@@ -499,6 +500,9 @@
         {% endif %}
         {% if '/communication/sms-direct/' in droits_fonctionnalites %}
         <a href="{% url 'communication:sms_direct' %}" class="sb-item-submodern" data-url="/communication/sms-direct/"><span class="sub-item-dot"></span>SMS Direct</a>
+        {% endif %}
+        {% if '/communication/campagnes/' in droits_fonctionnalites %}
+        <a href="{% url 'communication:campagne_list' %}" class="sb-item-submodern" data-url="/communication/campagnes/"><span class="sub-item-dot"></span>Campagnes SMS</a>
         {% endif %}
       </div>
       {% endif %}

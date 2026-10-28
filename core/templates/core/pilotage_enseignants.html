@@ -1,0 +1,66 @@
+{% extends "core/base.html" %}
+
+{% block title %}Statistiques par enseignant{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <a href="{% url 'core:pilotage' %}" class="text-secondary">Pilotage</a><span>›</span><span>Statistiques par enseignant</span>
+    </div>
+    <h1 class="page-title">Statistiques par enseignant</h1>
+    <p class="page-subtitle">{% if annee %}{{ annee.libelle }}{% if trimestre %} — {{ trimestre.nom }}{% else %} — toute l'année{% endif %} · {% endif %}charge hebdomadaire (emploi du temps), évaluations, saisie des notes (notes saisies / élèves × évaluations), moyenne et réussite (≥ 10) des élèves, cahier de textes, appréciations.</p>
+  </div>
+  <div class="d-flex gap-2 align-center flex-wrap">
+    <form method="get" class="d-flex gap-2 align-center">
+      <select name="trimestre" class="input" aria-label="Période" data-csp-submit-on-change>
+        <option value="">Toute l'année</option>
+        {% for t in trimestres %}<option value="{{ t.pk }}" {% if trimestre and t.pk == trimestre.pk %}selected{% endif %}>{{ t.nom }}</option>{% endfor %}
+      </select>
+    </form>
+    {% if lignes %}<a href="{% url 'core:pilotage_enseignants' %}?format=pdf{% if trimestre %}&amp;trimestre={{ trimestre.pk }}{% endif %}" class="btn-primary" target="_blank" rel="noopener">PDF</a>{% endif %}
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr><th>Enseignant</th><th>Classes</th><th>Disciplines</th><th class="text-right">Élèves</th><th class="text-right">h / sem.</th><th class="text-right">Évaluations</th><th class="text-right">Saisie des notes</th><th class="text-right">Moyenne</th><th class="text-right">≥ 10</th><th class="text-right">Cahier de textes</th><th class="text-right">Appréciations</th></tr>
+      </thead>
+      <tbody>
+        {% for l in lignes %}
+        <tr>
+          <td>
+            <details>
+              <summary class="fw-semibold" style="cursor:pointer;">{{ l.nom }}</summary>
+              <table class="data-table" style="margin-top:.5rem; font-size:.8rem;">
+                <thead><tr><th>Classe</th><th>Discipline</th><th class="text-right">Élèves</th><th class="text-right">h / sem.</th><th class="text-right">Évaluations</th><th class="text-right">Saisie</th><th class="text-right">Moyenne</th><th class="text-right">≥ 10</th><th class="text-right">Cahier</th><th class="text-right">Appr.</th></tr></thead>
+                <tbody>
+                  {% for d in l.details %}
+                  <tr><td>{{ d.classe }}</td><td>{{ d.matiere }}</td><td class="text-right">{{ d.effectif }}</td><td class="text-right">{{ d.heures }}</td><td class="text-right">{{ d.evaluations_terminees }} / {{ d.evaluations }}</td><td class="text-right">{{ d.notes_saisies }} / {{ d.notes_attendues }} ({{ d.taux_saisie }} %)</td><td class="text-right">{% if d.moyenne is not None %}{{ d.moyenne|floatformat:2 }}{% else %}—{% endif %}</td><td class="text-right">{{ d.taux_reussite }} %</td><td class="text-right">{{ d.cahier }}</td><td class="text-right">{{ d.appreciations }} / {{ d.resultats }}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </details>
+            {% if l.fonction %}<div class="text-muted" style="font-size:.75rem;">{{ l.fonction }}</div>{% endif %}
+          </td>
+          <td>{{ l.libelle_classes }}</td>
+          <td>{{ l.libelle_disciplines }}</td>
+          <td class="text-right">{{ l.eleves }}</td>
+          <td class="text-right">{{ l.heures }}</td>
+          <td class="text-right" title="terminées / créées">{{ l.evaluations_terminees }} / {{ l.evaluations }}</td>
+          <td class="text-right"><span class="{% if l.notes_attendues and l.taux_saisie < 80 %}text-danger fw-semibold{% endif %}">{{ l.taux_saisie }} %</span> <span class="text-muted" style="font-size:.75rem;">({{ l.notes_saisies }} / {{ l.notes_attendues }})</span></td>
+          <td class="text-right fw-semibold">{% if l.moyenne is not None %}{{ l.moyenne|floatformat:2 }}{% else %}—{% endif %}</td>
+          <td class="text-right">{{ l.taux_reussite }} %</td>
+          <td class="text-right">{{ l.cahier }}</td>
+          <td class="text-right">{{ l.appreciations }} / {{ l.resultats }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="11" class="text-muted" style="text-align:center; padding:var(--space-6);">{% if annee %}Aucun enseignement actif cette année.{% else %}Aucune année scolaire courante.{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -3,6 +3,17 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.12.0 — 2026-10-28
+
+### Ajouté (audit — Lot H : communication, personnel, pilotage)
+- **Campagnes SMS ciblées** (`Communication → Campagnes SMS`, direction / secrétariat / comptabilité) : public au choix — parents de tous les élèves inscrits, de classes cochées, des élèves ayant un reste à payer, des élèves absents un jour donné, ou membres du personnel — ; message à variables (`{eleve}`, `{classe}`, `{reste}`, `{etablissement}`, `{nom}`) ; **aperçu avant envoi** (nombre de destinataires joignables, élèves ou agents sans numéro valide, textes rendus, longueur du plus long message par rapport aux 160 caractères) ; un numéro partagé par plusieurs enfants reçoit **un seul SMS** qui les énumère ; les élèves partis (abandon) sont exclus. Les SMS sont mis en file en une fois et envoyés par **un seul fil d'arrière-plan** par paquets de 50. Historique des campagnes avec envoyés / échecs / en attente, détail par destinataire (statut, erreur) et **renvoi des échecs**.
+- **Paie du mois** (`Personnel → Paie du mois`, bouton depuis `Salaires`) : tableau de bord du mois (bulletins par statut, totaux brut / retenues / net, agents permanents sans bulletin) ; **Préparer la paie** crée en une fois un brouillon pour chaque agent permanent (vacataires exclus) sans bulletin ce mois-ci, en reprenant salaire de base, indemnités et retenues CNSS / IUTS de son dernier bulletin, prime d'ancienneté recalculée, primes et retenues exceptionnelles à zéro (droit « Préparer la paie du mois en masse ») ; **Valider les brouillons** passe tout le mois en « Validé » (droit « Valider un salaire ») ; **Livre de paie** PDF (A4 paysage, une ligne par agent, totaux, signataire du bulletin de salaire) ; **Bulletins du mois** en un seul PDF (un bulletin par page, même gabarit que le bulletin unitaire).
+- **Statistiques d'examen ventilées** (fiche de session → `Statistiques`, écran et PDF, droit « Statistiques de la session ») : inscrits, présents, admis, ajournés, absents, exclus et taux de réussite **garçons / filles / total**, par **classe d'origine**, par **centre**, par **mention**, répartition par **tranche de moyenne**, dix meilleures moyennes, candidats sans résultat saisi. Taux de réussite = admis / présents (les absents ne comptent pas au dénominateur).
+- **Statistiques par enseignant** (`Pilotage → Statistiques par enseignant`, direction ; écran et PDF ; année ou période) : par enseignant puis par classe et discipline — nombre de classes et d'élèves, heures hebdomadaires (emploi du temps), évaluations terminées / créées (annulées exclues), **taux de saisie des notes** (notes saisies / élèves × évaluations, en rouge sous 80 %), moyenne et part d'élèves ≥ 10 (dispensés exclus), entrées du cahier de textes, appréciations rédigées. Les enseignements sans enseignant forment la ligne « Non attribué ».
+
+### Technique
+- `core.CampagneSms` + `SmsSortant.campagne` / `destinataire` (migration `core/0006`), `core.tasks.mettre_en_file_lot` / `_vider_file`, `communication/campagnes.py` ; `personnel/paie.py` ; `examens/statistiques.py` ; `pedagogie/statistiques_enseignants.py`. Quatre nouveaux PDF signés (`livre_paie`, `bulletins_salaire_lot`, `statistiques_session`, `statistiques_enseignants`).
+
 ## 5.11.0 — 2026-10-28
 
 ### Ajouté (audit — Lot G : portails)

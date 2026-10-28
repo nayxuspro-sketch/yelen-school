@@ -21,6 +21,7 @@ urlpatterns = [
     # Saisie des résultats
     path('<uuid:session_id>/resultats/', views.saisie_resultats, name='saisie_resultats'),
     path('<uuid:session_id>/resultats/csv/', views.session_resultats_csv, name='session_resultats_csv'),
+    path('<uuid:session_id>/statistiques/', views.session_statistiques, name='session_statistiques'),
 
     # Centres
     path('<uuid:session_id>/centres/nouveau/', views.centre_create, name='centre_create'),

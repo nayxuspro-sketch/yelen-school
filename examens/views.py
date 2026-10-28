@@ -581,3 +581,32 @@ def candidats_session_pdf(request, session_id):
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{nom_fichier}"'
     return response
+
+
+# ─── STATISTIQUES VENTILÉES D'UNE SESSION ─────────────────────────────
+
+@login_required
+@requires_licence_feature('examens_officiels')
+def session_statistiques(request, session_id):
+    """Statistiques de la session par classe, sexe, centre, mention et tranche de moyenne (écran ou ``?format=pdf``)."""
+    from .statistiques import statistiques_session
+    etab = getattr(request.user, 'etablissement', None)
+    session = get_object_or_404(SessionExamen.objects.select_related('annee_scolaire'), pk=session_id)
+    if etab and session.annee_scolaire.etablissement_id != etab.pk:
+        messages.error(request, "Accès refusé.")
+        return redirect('examens:session_list')
+    contexte = {'session': session, **statistiques_session(session)}
+    if request.GET.get('format') != 'pdf':
+        return render(request, 'examens/session_statistiques.html', contexte)
+    if WeasyHTML is None:
+        messages.error(request, "WeasyPrint n'est pas installé.")
+        return redirect('examens:session_statistiques', session_id=session.pk)
+    from django.utils import timezone
+    from core.utils import get_etablissement_context
+    contexte.update(get_etablissement_context(etab or session.annee_scolaire.etablissement, request=request))
+    contexte['now'] = timezone.now()
+    html_string = render_to_string('examens/pdf/statistiques_session.html', contexte)
+    pdf = WeasyHTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="statistiques_{session.libelle.replace(" ", "_")}.pdf"'
+    return response

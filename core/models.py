@@ -298,6 +298,46 @@ class Notification(models.Model):
         return f"{self.destinataire} — {self.titre}"
 
 
+class CampagneSms(models.Model):
+    """Campagne SMS ciblée : un message libre (variables {eleve}, {classe}, {reste}, {etablissement}) envoyé à un
+    public choisi — parents de l'école, de classes, redevables, parents d'élèves absents un jour donné, personnel.
+    Chaque SMS de la campagne est une ligne de la file ``SmsSortant`` : le suivi (envoyés, échecs) en découle."""
+
+    class Cible(models.TextChoices):
+        PARENTS_TOUS = 'PARENTS_TOUS', "Parents de tous les élèves inscrits"
+        PARENTS_CLASSES = 'PARENTS_CLASSES', "Parents des élèves de classes choisies"
+        PARENTS_RETARD = 'PARENTS_RETARD', "Parents des élèves ayant un reste à payer"
+        PARENTS_ABSENTS = 'PARENTS_ABSENTS', "Parents des élèves absents un jour donné"
+        PERSONNEL = 'PERSONNEL', "Membres du personnel"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Envoyée le')
+    etablissement = models.ForeignKey('etablissements.Etablissement', on_delete=models.CASCADE, related_name='campagnes_sms')
+    annee_scolaire = models.ForeignKey('parametres.AnneeScolaire', on_delete=models.SET_NULL, null=True, blank=True)
+    titre = models.CharField(max_length=120, verbose_name='Titre')
+    message = models.TextField(verbose_name='Message (modèle)')
+    cible = models.CharField(max_length=20, choices=Cible.choices)
+    criteres = models.JSONField(default=dict, blank=True, help_text="Classes choisies, date d'absence…")
+    nb_destinataires = models.PositiveIntegerField(default=0)
+    envoyee_par = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='campagnes_sms')
+
+    class Meta:
+        verbose_name = 'Campagne SMS'
+        verbose_name_plural = 'Campagnes SMS'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.titre} — {self.created_at:%d/%m/%Y}"
+
+    def bilan(self):
+        """{'envoyes', 'echecs', 'en_attente'} d'après la file."""
+        compte = {s: 0 for s, _ in SmsSortant.Statut.choices}
+        for ligne in self.sms.order_by().values('statut').annotate(n=models.Count('pk')):
+            compte[ligne['statut']] = ligne['n']
+        return {'envoyes': compte['ENVOYE'], 'echecs': compte['ECHEC'], 'en_attente': compte['EN_ATTENTE']}
+
+
 class SmsSortant(models.Model):
     """File persistante des SMS à envoyer : rien ne se perd si l'application redémarre pendant l'envoi, les échecs
     passagers (passerelle injoignable, modem occupé) sont retentés, les échecs définitifs restent visibles."""
@@ -318,6 +358,9 @@ class SmsSortant(models.Model):
     date_envoi = models.DateTimeField(null=True, blank=True)
     notification = models.ForeignKey(Notification, on_delete=models.SET_NULL, null=True, blank=True,
                                      related_name='sms_sortants', help_text="Notification à marquer « SMS envoyé ».")
+    campagne = models.ForeignKey(CampagneSms, on_delete=models.CASCADE, null=True, blank=True, related_name='sms')
+    destinataire = models.CharField(max_length=120, blank=True, default='',
+                                    help_text="Nom affiché dans le suivi d'une campagne (élève(s) ou agent).")
 
     class Meta:
         verbose_name = 'SMS sortant'

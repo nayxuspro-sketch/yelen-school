@@ -1,0 +1,54 @@
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page {
+    size: A4 landscape;
+    margin: 12mm;
+    @bottom-right {
+        content: "Page " counter(page) " sur " counter(pages);
+        font-size: 8pt;
+        color: #666;
+    }
+}{% endblock %}
+{% block css %}
+body { font-family: "DejaVu Sans", sans-serif; font-size: 8.5pt; color: #111; margin: 0; padding: 0; }
+table { width: 100%; border-collapse: collapse; border: 1px solid #ccc; }
+th { background: #f3f3f3; color: #111; padding: 4px 5px; text-align: left; border-bottom: 1.5px solid #bbb; font-weight: bold; font-size: 8pt; }
+td { padding: 3px 5px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+th.right, td.right { text-align: right; }
+tr.detail td { font-size: 7.5pt; color: #333; background: #fafafa; }
+.legende { font-size: 7.5pt; color: #444; margin: 8pt 0; }
+{% endblock %}
+{% block corps %}
+<div class="pdf-titre">Statistiques par enseignant</div>
+<p class="pdf-sous-titre">{{ annee.libelle }}{% if trimestre %} — {{ trimestre.nom }}{% else %} — toute l'année{% endif %} — édité le {{ now|date:"d/m/Y" }}</p>
+
+<table>
+    <thead>
+        <tr><th>Enseignant</th><th>Classe</th><th>Discipline</th><th class="right">Élèves</th><th class="right">h / sem.</th><th class="right">Évaluations</th><th class="right">Saisie des notes</th><th class="right">Moyenne</th><th class="right">≥ 10</th><th class="right">Cahier</th><th class="right">Appréciations</th></tr>
+    </thead>
+    <tbody>
+    {% for l in lignes %}
+        <tr>
+            <td><strong>{{ l.nom }}</strong>{% if l.fonction %}<br><span style="font-size:7pt; color:#555;">{{ l.fonction }}</span>{% endif %}</td>
+            <td>{{ l.nb_classes }} classe{{ l.nb_classes|pluralize }}</td><td>{{ l.libelle_disciplines }}</td>
+            <td class="right">{{ l.eleves }}</td><td class="right">{{ l.heures }}</td><td class="right">{{ l.evaluations_terminees }} / {{ l.evaluations }}</td>
+            <td class="right"><strong>{{ l.taux_saisie }} %</strong> ({{ l.notes_saisies }} / {{ l.notes_attendues }})</td>
+            <td class="right"><strong>{% if l.moyenne is not None %}{{ l.moyenne|floatformat:2 }}{% else %}—{% endif %}</strong></td>
+            <td class="right">{{ l.taux_reussite }} %</td><td class="right">{{ l.cahier }}</td><td class="right">{{ l.appreciations }} / {{ l.resultats }}</td>
+        </tr>
+        {% for d in l.details %}
+        <tr class="detail">
+            <td></td><td>{{ d.classe }}</td><td>{{ d.matiere }}</td><td class="right">{{ d.effectif }}</td><td class="right">{{ d.heures }}</td>
+            <td class="right">{{ d.evaluations_terminees }} / {{ d.evaluations }}</td><td class="right">{{ d.taux_saisie }} % ({{ d.notes_saisies }} / {{ d.notes_attendues }})</td>
+            <td class="right">{% if d.moyenne is not None %}{{ d.moyenne|floatformat:2 }}{% else %}—{% endif %}</td><td class="right">{{ d.taux_reussite }} %</td>
+            <td class="right">{{ d.cahier }}</td><td class="right">{{ d.appreciations }} / {{ d.resultats }}</td>
+        </tr>
+        {% endfor %}
+    {% empty %}
+        <tr><td colspan="11">Aucun enseignement actif.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+<p class="legende">Évaluations : terminées / créées (annulées exclues). Saisie des notes : notes saisies / (élèves × évaluations). Moyenne et ≥ 10 : résultats par discipline calculés (dispensés exclus). Appréciations : rédigées / résultats.</p>
+
+{% signataire_auto "LISTE_PERSONNEL" %}
+{% endblock %}

@@ -327,6 +327,38 @@ def pilotage(request):
 
 
 @login_required
+def pilotage_enseignants(request):
+    """Statistiques par enseignant (année ou période) : charge, évaluations, saisie des notes, résultats des élèves,
+    cahier de textes, appréciations — écran ou ``?format=pdf``."""
+    from core.pilotage import ROLES_PILOTAGE
+    from pedagogie.models import Trimestre
+    from pedagogie.statistiques_enseignants import statistiques_enseignants
+
+    if request.user.role not in ROLES_PILOTAGE and not request.user.is_superuser:
+        return render(request, 'core/access_denied.html', {
+            'message': "Les statistiques par enseignant sont réservées à la direction.",
+        })
+    etab = request.user.etablissement
+    annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first() if etab else None
+    trimestres = list(Trimestre.objects.filter(annee_scolaire=annee).order_by('numero')) if annee else []
+    trimestre = next((t for t in trimestres if str(t.pk) == request.GET.get('trimestre', '')), None)
+    lignes = statistiques_enseignants(etab, annee, trimestre) if annee else []
+    contexte = {'annee': annee, 'trimestres': trimestres, 'trimestre': trimestre, 'lignes': lignes}
+    if request.GET.get('format') != 'pdf':
+        return render(request, 'core/pilotage_enseignants.html', contexte)
+    from django.template.loader import render_to_string
+    from core.pdf import HTML
+    from core.utils import get_etablissement_context
+    contexte.update(get_etablissement_context(etab, request=request))
+    contexte['now'] = timezone.now()
+    pdf = HTML(string=render_to_string('core/pdf/statistiques_enseignants.html', contexte, request=request),
+               base_url=request.build_absolute_uri('/')).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="statistiques_enseignants.pdf"'
+    return response
+
+
+@login_required
 def audit_log_list(request):
     """Liste du journal d'audit avec filtres."""
     if request.user.role not in ['SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR']:
