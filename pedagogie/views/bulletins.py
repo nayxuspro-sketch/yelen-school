@@ -84,12 +84,24 @@ def _appreciation_conseil(fiche, mg, nb_eleves, moy_avg_classe, resultats_annote
     return saisie or generer_commentaire_eleve(mg, nb_eleves, moy_avg_classe, resultats_annotes, sanctions)
 
 
+class AppreciationSaisie:
+    """Appréciation rédigée par l'enseignant (Resultat.appreciation), présentée comme une entrée de grille."""
+    __slots__ = ('libelle',)
+
+    def __init__(self, libelle):
+        self.libelle = libelle
+
+
 def _annotate_resultats(resultats, apprs, cycle_code):
     """
-    Annote chaque Resultat avec un attribut .appreciation et retourne la liste.
+    Annote chaque Resultat avec un attribut .appreciation (objet à ``.libelle``) et retourne la liste : l'appréciation
+    saisie par l'enseignant si elle existe, sinon celle de la grille des moyennes (secondaire).
     """
     for r in resultats:
-        if cycle_code in ('POST', 'SEC') and not r.dispense and r.moyenne is not None:
+        saisie = (r.appreciation or '').strip()
+        if saisie:
+            r.appreciation = AppreciationSaisie(saisie)
+        elif cycle_code in ('POST', 'SEC') and not r.dispense and r.moyenne is not None:
             r.appreciation = _match_appreciation(r.moyenne, apprs)
         else:
             r.appreciation = None

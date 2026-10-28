@@ -74,3 +74,28 @@ def validate_image_upload(file, max_size_bytes=DEFAULT_MAX_IMAGE_BYTES):
             _("Fichier image invalide ou corrompu. "
               "Assurez-vous que le fichier est une image JPEG, PNG, GIF ou WebP.")
         )
+
+
+_EXTENSIONS_PIECE_JOINTE = {'.pdf', '.jpg', '.jpeg', '.png'}
+
+
+def validate_piece_jointe(file, max_size_bytes=DEFAULT_MAX_IMAGE_BYTES):
+    """Pièce jointe déposée par un tiers (justificatif d'absence) : PDF ou image JPEG / PNG, 5 Mo au plus, dont le
+    contenu réel correspond à l'extension annoncée."""
+    if not file:
+        return
+    if file.size > max_size_bytes:
+        raise ValidationError(_("Le fichier est trop volumineux. Taille maximale : %(max)s Mo."),
+                              params={'max': f'{max_size_bytes / (1024 * 1024):.0f}'})
+    ext = os.path.splitext(file.name)[1].lower()
+    if ext not in _EXTENSIONS_PIECE_JOINTE:
+        raise ValidationError(_("Format non autorisé (%(ext)s). Utilisez : PDF, JPG ou PNG."),
+                              params={'ext': ext or _('aucune extension')})
+    if ext == '.pdf':
+        file.seek(0)
+        entete = file.read(5)
+        file.seek(0)
+        if entete != b'%PDF-':
+            raise ValidationError(_("Le fichier n'est pas un PDF valide."))
+        return
+    validate_image_upload(file, max_size_bytes)

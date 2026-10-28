@@ -149,7 +149,7 @@
       <tbody>
         {% for j in justifications %}
         <tr>
-          <td class="fw-medium">{{ j.inscription.eleve.get_nom_complet }}</td>
+          <td class="fw-medium">{{ j.inscription.eleve.get_nom_complet }}{% if j.via_portail %} <span class="badge badge-info" title="Déposée par {{ j.deposee_par.get_full_name }} depuis le portail parent">Portail parent</span>{% endif %}</td>
           <td class="text-secondary">{{ j.inscription.classe.nom }}</td>
           <td class="text-secondary" style="white-space:nowrap;">
             {{ j.date_debut|date:"d/m/Y" }}

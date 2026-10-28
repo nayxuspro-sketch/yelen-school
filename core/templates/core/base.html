@@ -219,6 +219,9 @@
         {% if '/pedagogie/evaluations/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:evaluation_list' %}" class="sb-item-submodern" data-url="/pedagogie/evaluations/"><span class="sub-item-dot"></span>Évaluations</a>
         {% endif %}
+        {% if '/pedagogie/appreciations/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:appreciations_index' %}" class="sb-item-submodern" data-url="/pedagogie/appreciations/"><span class="sub-item-dot"></span>Appréciations par matière</a>
+        {% endif %}
         {% if '/pedagogie/releve-notes/' in droits_fonctionnalites %}
         <a href="{% url 'pedagogie:releve_notes' %}" class="sb-item-submodern" data-url="/pedagogie/releve-notes/"><span class="sub-item-dot"></span>Relevé de notes</a>
         {% endif %}

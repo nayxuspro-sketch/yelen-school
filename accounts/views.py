@@ -146,7 +146,8 @@ def login_view(request):
         return redirect('core:home')
 
     if request.method == 'POST':
-        email = request.POST.get('username', '').strip().lower()
+        from .parents_masse import email_depuis_identifiant
+        email = email_depuis_identifiant(request.POST.get('username', ''))   # e-mail, ou téléphone d'un compte parent
         password = request.POST.get('password', '').strip()
 
         # Compte créé sans mot de passe : l'utilisateur le crée lui-même.
@@ -486,6 +487,51 @@ def parent_create(request):
         'title': "Créer un compte parent",
         'eleves_inscrits': eleves_inscrits,
         'selected_eleves': selected_eleves,
+    })
+
+
+@_admin_required
+def parents_masse(request):
+    """Comptes parents en masse : familles (téléphone du parent / tuteur) des élèves de l'année sans compte ; création
+    des comptes cochés avec mot de passe provisoire, SMS d'accueil si les SMS sont activés, récapitulatif imprimable."""
+    from parametres.models import AnneeScolaire, IdentiteEtablissement
+    from core.sms import sms_actifs
+    from core.tasks import envoyer_sms_async
+    from . import parents_masse as service
+
+    etab = request.user.etablissement
+    annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first() if etab else None
+    groupes, sans_telephone = service.familles_sans_compte(etab, annee) if annee else ([], [])
+
+    if request.method == 'POST':
+        cles = set(request.POST.getlist('cles'))
+        resultats = service.creer_comptes(etab, groupes, cles, request.user)
+        if not resultats:
+            messages.error(request, "Cochez au moins une famille.")
+            return redirect('accounts:parents_masse')
+        identite = IdentiteEtablissement.objects.filter(etablissement=etab).first()
+        sigle = (identite.sigle if identite and identite.sigle else '').strip()
+        url = request.build_absolute_uri('/')
+        sms = sms_actifs()
+        for r in resultats:
+            if r['mot_de_passe'] and sms:
+                r['sms'] = envoyer_sms_async(r['compte'].telephone,
+                                             service.message_sms(sigle, r['identifiant'], r['mot_de_passe'], url))
+        nb_crees = sum(1 for r in resultats if r['mot_de_passe'])
+        messages.success(request, f"{nb_crees} compte{'s' if nb_crees > 1 else ''} parent créé{'s' if nb_crees > 1 else ''}, "
+                                  f"{len(resultats) - nb_crees} complété{'s' if len(resultats) - nb_crees > 1 else ''}. "
+                                  "Les mots de passe provisoires ci-dessous ne seront plus affichés.")
+        return render(request, 'accounts/parents_masse_resultat.html', {
+            'resultats': resultats, 'sms_actifs': sms, 'url': url, 'annee': annee,
+        })
+
+    return render(request, 'accounts/parents_masse.html', {
+        'groupes': groupes,
+        'sans_telephone': sans_telephone,
+        'annee': annee,
+        'nb_enfants': sum(len(g['enfants']) for g in groupes),
+        'nb_existants': sum(1 for g in groupes if g['compte_existant']),
+        'sms_actifs': sms_actifs(),
     })
 
 

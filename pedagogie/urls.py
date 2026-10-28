@@ -71,6 +71,10 @@ urlpatterns = [
     # ),
 
     # Relevé de notes
+    # Appréciations par matière (enseignant titulaire / direction)
+    path('appreciations/', views.appreciations_index, name='appreciations_index'),
+    path('appreciations/<uuid:enseignement_id>/<uuid:trimestre_id>/', views.appreciations_saisir, name='appreciations_saisir'),
+
     path('releve-notes/', views.releve_notes, name='releve_notes'),
     path('releve-notes/pdf/', views.releve_notes_pdf, name='releve_notes_pdf'),
     path('releve-notes/fiche-discipline/pdf/', views.fiche_discipline_pdf, name='fiche_discipline_pdf'),

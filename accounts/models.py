@@ -177,6 +177,12 @@ class User(AbstractUser, BaseModel):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
+    @property
+    def identifiant_connexion(self):
+        """E-mail, ou numéro de téléphone pour un compte parent créé en masse (adresse technique)."""
+        from .parents_masse import identifiant_connexion
+        return identifiant_connexion(self)
+
     objects = UserManager()
 
     class Meta:

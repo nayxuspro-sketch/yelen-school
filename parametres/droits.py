@@ -98,6 +98,9 @@ MODULES = (
                'notes_import', 'notes_import_correspondance', 'notes_import_verification', 'notes_import_resultat',
                'notes_import_rapport', roles=_DIRECTION | {RoleChoices.SECRETAIRE}),
         )),
+        _f('/pedagogie/appreciations/', 'Appréciations par matière', actions=(
+            _a('saisir', 'Saisir les appréciations de ses disciplines', 'appreciations_saisir'),
+        )),
         _f('/pedagogie/releve-notes/', 'Relevé de notes'),
         _f('/pedagogie/resultats/', 'Résultats', actions=(
             _a('calculer', 'Calculer les moyennes', 'calculer_moyennes_classe'),

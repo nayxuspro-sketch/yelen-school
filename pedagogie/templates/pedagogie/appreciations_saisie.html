@@ -1,0 +1,79 @@
+{% extends "core/base.html" %}
+
+{% block title %}Appréciations — {{ enseignement.matiere.nom }} · {{ enseignement.classe.nom }}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Pédagogie</span><span>›</span><a href="{% url 'pedagogie:appreciations_index' %}" class="text-secondary">Appréciations par matière</a>
+    </div>
+    <h1 class="page-title">{{ enseignement.matiere.nom }} — {{ enseignement.classe.nom }}</h1>
+    <div class="d-flex align-center gap-3 flex-wrap" style="margin-top:.5rem;">
+      <span class="text-muted" style="font-size:.85rem;">{{ enseignement.annee_scolaire.libelle }}{% if enseignement.personnel %} · {{ enseignement.personnel.nom|upper }} {{ enseignement.personnel.prenom }}{% endif %}</span>
+      <span class="badge badge-neutral">{{ lignes|length }} élève{{ lignes|length|pluralize }}</span>
+      <span class="badge badge-info">{{ nb_saisies }} appréciation{{ nb_saisies|pluralize }} saisie{{ nb_saisies|pluralize }}</span>
+      {% if trimestre.verrouille %}<span class="badge badge-danger">Période clôturée</span>{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% for p in periodes %}
+    <a href="{% url 'pedagogie:appreciations_saisir' enseignement.pk p.pk %}" class="{% if p.pk == trimestre.pk %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">{{ p.nom }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+{% if trimestre.verrouille %}
+<div class="alert alert-warning animate-fade-up mb-4">{{ trimestre.message_verrouillage }}</div>
+{% elif nb_sans_moyenne %}
+<div class="alert alert-info animate-fade-up mb-4">{{ nb_sans_moyenne }} élève{{ nb_sans_moyenne|pluralize }} sans moyenne calculée pour {{ trimestre.nom }} : l'appréciation peut être rédigée dès maintenant, elle sera conservée au calcul des moyennes.</div>
+{% endif %}
+
+<form method="post" class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
+  {% csrf_token %}
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:3rem;">N°</th>
+          <th>Élève</th>
+          <th style="text-align:center; width:7rem;">Moyenne {{ trimestre.nom }}</th>
+          <th>Appréciation ({{ longueur_max }} caractères max.)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes %}
+        <tr>
+          <td class="text-muted">{{ forloop.counter }}</td>
+          <td class="fw-medium">
+            <label for="appr_{{ ligne.inscription.pk }}">{{ ligne.inscription.eleve.get_nom_complet }}</label>
+            <div class="text-muted" style="font-size:.75rem;">{{ ligne.inscription.eleve.matricule }}</div>
+          </td>
+          <td style="text-align:center; font-weight:600;">
+            {% if ligne.resultat.dispense %}<span class="text-muted">Dispensé</span>
+            {% elif ligne.resultat and ligne.resultat.moyenne is not None %}<span class="{% if ligne.resultat.moyenne >= 10 %}text-success{% else %}text-danger{% endif %}">{{ ligne.resultat.moyenne|floatformat:2 }}</span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td>
+            <input type="text" id="appr_{{ ligne.inscription.pk }}" name="appr_{{ ligne.inscription.pk }}" class="input" list="suggestions-appreciations"
+                   maxlength="{{ longueur_max }}" value="{{ ligne.resultat.appreciation|default:'' }}" autocomplete="off"
+                   {% if trimestre.verrouille %}readonly{% endif %} placeholder="Appréciation de la matière…">
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucun élève inscrit dans cette classe.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <datalist id="suggestions-appreciations">
+    {% for s in suggestions %}<option value="{{ s }}">{% endfor %}
+  </datalist>
+  {% if not trimestre.verrouille and lignes %}
+  <div class="d-flex align-center gap-3" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
+    <button type="submit" class="btn-primary">Enregistrer les appréciations</button>
+    <span class="text-muted" style="font-size:.8rem;">Une appréciation vide laisse place à celle de la grille des moyennes sur le bulletin.</span>
+  </div>
+  {% endif %}
+</form>
+{% endblock %}

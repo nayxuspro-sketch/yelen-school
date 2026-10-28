@@ -79,6 +79,10 @@ from .cahier_textes import (  # noqa: F401
     cahier_textes_update,
     cahier_textes_delete,
 )
+from .appreciations import (  # noqa: F401
+    appreciations_index,
+    appreciations_saisir,
+)
 from .competences import (  # noqa: F401
     competences_index,
     competences_referentiel,

@@ -3013,6 +3013,38 @@ Quand l'école dispose d'un compte marchand CinetPay (Orange Money et Moov Money
 
 Le parent voit, par enfant, la vignette **Reste à payer** et la section *Frais de scolarité* : montant dû (net des bourses), versé (net des remboursements), prochaine échéance à venir et les trois derniers reçus (numéro, date, montant).
 
+### 9.20 Portail parent — vie scolaire et justificatifs
+
+**Accès :** portail parent, onglet **Vie scolaire** (barre de navigation : Accueil · Vie scolaire · Bulletins · Frais · Notifications).
+
+Par enfant : emploi du temps de la semaine (jour courant mis en évidence), compteurs de l'année (absences, excusées, retards), trente dernières absences / retards et justificatifs déposés avec leur statut.
+
+**Déposer un justificatif :** le parent indique la période de l'absence (au plus 30 jours, jamais une date à venir), le motif et, au besoin, une pièce jointe (PDF, JPG ou PNG, 5 Mo au plus ; le contenu réel du fichier est vérifié). Le justificatif arrive **En attente** dans `Présences → Justifications`, signalé par le badge **Portail parent** ; le secrétariat l'accepte ou le refuse comme un justificatif papier — l'acceptation excuse les absences de la période.
+
+### 9.21 Portail élève
+
+L'élève retrouve sur son portail : le **travail à faire** (devoirs du cahier de textes dont la date de remise n'est pas passée), ses quinze dernières notes, ses moyennes par matière et par période, son emploi du temps et ses absences / retards de l'année.
+
+### 9.22 Appréciations par matière (enseignant)
+
+**Accès :** `Pédagogie → Appréciations par matière` — l'enseignant voit ses disciplines de l'année (rapprochement par l'adresse e-mail de sa fiche du personnel), la direction les voit toutes.
+
+1. Le tableau indique, par discipline et par période, le nombre d'appréciations saisies sur l'effectif ; clique sur une période.
+2. Un champ par élève (200 caractères, suggestions proposées) avec sa moyenne de la période en regard ; **Enregistrer les appréciations**. L'appréciation peut être rédigée avant le calcul des moyennes : elle est conservée au recalcul.
+3. Sur le **bulletin trimestriel**, l'appréciation saisie est imprimée en regard de la matière ; sans saisie, la grille des moyennes (`Paramètres → Appréciations`) s'applique comme avant. Une appréciation vidée rend la main à la grille.
+
+Une période clôturée (`Paramètres → Périodes`) est en lecture seule. Le droit « Saisir les appréciations de ses disciplines » se retire dans la matrice des droits.
+
+### 9.23 Comptes parents en masse et connexion par téléphone
+
+**Accès :** `Utilisateurs → Comptes parents en masse` (Super Admin, Directeur).
+
+1. La page liste les **familles** des élèves de l'année sans compte parent : un numéro de téléphone (parent, sinon tuteur, de la fiche élève) = une famille, avec le responsable et les enfants. Les élèves sans téléphone sont listés à part, avec un lien vers leur fiche.
+2. Coche les familles, **Créer les comptes cochés** : un compte PARENT par famille, **identifiant = numéro de téléphone** (8 chiffres), mot de passe provisoire de 12 caractères à changer à la première connexion, enfants rattachés. Si les SMS sont activés, un SMS d'accueil (identifiant, mot de passe, adresse) est mis en file.
+3. Le récapitulatif (identifiant, mot de passe, enfants) **n'est affiché qu'une fois** : imprime-le pour la remise sur papier. Une famille dont le compte existe déjà sur ce numéro est simplement complétée (enfants rattachés, mot de passe inchangé).
+
+**Connexion :** le parent saisit son numéro de téléphone (avec ou sans espaces, +226, tirets) dans le champ « Adresse e-mail », puis son mot de passe. La liste des utilisateurs affiche le téléphone comme identifiant de ces comptes.
+
 ---
 
 ## 10. EXAMENS
@@ -6841,7 +6873,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.10.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.11.0 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

@@ -3,6 +3,22 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.11.0 — 2026-10-28
+
+### Ajouté (audit — Lot G : portails)
+- **Portail élève enrichi** : travail à faire (devoirs du cahier de textes à venir), quinze dernières notes, moyennes par matière et par période, emploi du temps de la semaine, absences et retards de l'année avec compteurs.
+- **Portail parent — Vie scolaire** (`/portail/parent/vie-scolaire/`, barre de navigation commune Accueil · Vie scolaire · Bulletins · Frais · Notifications) : par enfant, emploi du temps, compteurs et dernières absences / retards, justificatifs déposés et leur statut.
+- **Dépôt de justificatif d'absence par le parent** : période (au plus 30 jours, jamais à venir), motif, pièce jointe facultative (PDF, JPG ou PNG, 5 Mo, contenu vérifié). Le justificatif arrive « En attente » dans `Présences → Justifications` avec le badge **Portail parent** ; l'acceptation par le secrétariat excuse les absences comme aujourd'hui.
+- **Appréciations par matière** (`Pédagogie → Appréciations par matière`, droit « Saisir les appréciations de ses disciplines ») : l'enseignant titulaire rédige, par période, l'appréciation de chaque élève pour sa discipline (200 caractères, suggestions, moyenne en regard) ; la direction voit toutes les disciplines. L'appréciation saisie est **imprimée sur le bulletin** en regard de la matière ; à défaut, la grille des moyennes s'applique comme avant. Une période clôturée est en lecture seule.
+- **Comptes parents en masse** (`Utilisateurs → Comptes parents en masse`, direction) : les élèves de l'année sans compte parent sont regroupés par téléphone du parent ou du tuteur ; un compte par famille est créé (identifiant = numéro de téléphone, mot de passe provisoire de 12 caractères à changer à la première connexion), les enfants sont rattachés, un SMS d'accueil est mis en file si les SMS sont activés et un récapitulatif imprimable est affiché une seule fois. Les familles déjà équipées sont rattachées sans nouveau mot de passe ; les élèves sans téléphone sont listés.
+- **Connexion par téléphone** : la page de connexion accepte l'e-mail ou le numéro de téléphone d'un compte parent créé en masse (toute mise en forme : espaces, +226, tirets).
+
+### Corrigé
+- Le recalcul des moyennes supprimait les lignes de résultat sans note : une appréciation saisie survit désormais au recalcul (ligne conservée sans moyenne).
+
+### Technique
+- `core/portail.py` (emploi du temps, assiduité, notes, devoirs, dépôt de justificatif), `core/validators.py::validate_piece_jointe`, `presences.Justification.deposee_par` (migration `presences/0006`), `pedagogie/views/appreciations.py`, `accounts/parents_masse.py`, `User.identifiant_connexion`. Le rôle PARENT accède aussi à `/bulletins/parent/` (consultation et signature du bulletin).
+
 ## 5.10.0 — 2026-10-28
 
 ### Ajouté (audit — Lot F : caisse et familles)

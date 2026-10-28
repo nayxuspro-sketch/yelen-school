@@ -13,6 +13,7 @@ Date: Mars 2026
 Version: 3.4
 """
 
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -258,6 +259,16 @@ class Justification(BaseModel):
         verbose_name=_("Observation du responsable")
     )
 
+    deposee_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='justifications_deposees',
+        verbose_name=_("Déposée par"),
+        help_text=_("Compte parent ayant déposé le justificatif depuis le portail ; vide pour une saisie au secrétariat."),
+    )
+
     class Meta:
         verbose_name = _("Justification")
         verbose_name_plural = _("Justifications")
@@ -272,3 +283,7 @@ class Justification(BaseModel):
     @property
     def nb_jours(self):
         return (self.date_fin - self.date_debut).days + 1
+
+    @property
+    def via_portail(self):
+        return self.deposee_par_id is not None

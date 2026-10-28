@@ -1,0 +1,86 @@
+{% extends "core/base.html" %}
+
+{% block title %}Comptes parents en masse{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Utilisateurs</span><span>›</span><span>Comptes parents en masse</span>
+    </div>
+    <h1 class="page-title">Comptes parents en masse</h1>
+    <p class="page-subtitle">
+      {% if annee %}{{ annee.libelle }} — {% endif %}une famille = un numéro de téléphone (parent ou tuteur de la fiche élève) ; l'identifiant de connexion est ce numéro,
+      le mot de passe provisoire est envoyé par SMS{% if not sms_actifs %} (SMS désactivés : remise sur papier){% endif %} et doit être changé à la première connexion.
+    </p>
+  </div>
+  <a href="{% url 'accounts:user_list' %}" class="btn-secondary">Retour</a>
+</div>
+
+{% if groupes %}
+<form method="post" class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
+  {% csrf_token %}
+  <div class="d-flex align-center gap-3 flex-wrap" style="padding:var(--space-4); border-bottom:1px solid var(--color-border);">
+    <span class="badge badge-info">{{ groupes|length }} famille{{ groupes|length|pluralize }}</span>
+    <span class="badge badge-neutral">{{ nb_enfants }} élève{{ nb_enfants|pluralize }}</span>
+    {% if nb_existants %}<span class="badge badge-warning">{{ nb_existants }} compte{{ nb_existants|pluralize }} existant{{ nb_existants|pluralize }} à compléter</span>{% endif %}
+    <span class="text-muted" style="font-size:.8rem;">Les familles déjà équipées d'un compte parent n'apparaissent pas.</span>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:2.5rem;"><input type="checkbox" id="tout-cocher" checked aria-label="Tout cocher"></th>
+          <th>Téléphone (identifiant)</th>
+          <th>Responsable</th>
+          <th>Enfants</th>
+          <th>Compte</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in groupes %}
+        <tr>
+          <td><input type="checkbox" class="case-famille" name="cles" value="{{ g.cle }}" checked aria-label="Famille {{ g.telephone }}"></td>
+          <td class="text-mono fw-semibold">{{ g.telephone }}</td>
+          <td>{{ g.responsable|default:"—" }}</td>
+          <td>
+            {% for ins in g.enfants %}<div>{{ ins.eleve.get_nom_complet }} <span class="text-muted">({{ ins.classe.nom }})</span></div>{% endfor %}
+          </td>
+          <td>
+            {% if g.compte_existant %}<span class="badge badge-warning">Existant — rattacher les enfants</span>
+            {% else %}<span class="badge badge-success">À créer</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="d-flex align-center gap-3" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
+    <button type="submit" class="btn-primary" data-csp-confirm="Créer les comptes des familles cochées ? Les mots de passe provisoires ne seront affichés qu'une fois.">Créer les comptes cochés</button>
+  </div>
+</form>
+<script nonce="{{ request.csp_nonce }}">
+  document.getElementById('tout-cocher').addEventListener('change', function () {
+    document.querySelectorAll('.case-famille').forEach(function (case_) { case_.checked = this.checked; }, this);
+  });
+</script>
+{% else %}
+<div class="card animate-fade-up" style="padding:var(--space-6); text-align:center;">
+  <p class="text-muted" style="margin:0;">
+    {% if not annee %}Aucune année scolaire courante.{% else %}Toutes les familles joignables de l'année disposent déjà d'un compte parent.{% endif %}
+  </p>
+</div>
+{% endif %}
+
+{% if sans_telephone %}
+<div class="card animate-fade-up delay-2 mt-4" style="padding:var(--space-4);">
+  <h3 style="margin:0 0 var(--space-2); font-size:.95rem;">Sans téléphone de parent — {{ sans_telephone|length }} élève{{ sans_telephone|length|pluralize }}</h3>
+  <p class="text-muted" style="font-size:.8rem; margin:0 0 var(--space-3);">Renseignez le téléphone du parent ou du tuteur sur la fiche élève, puis revenez ici.</p>
+  <div class="d-flex gap-2 flex-wrap">
+    {% for ins in sans_telephone %}
+    <a href="{% url 'inscriptions:eleve_update' ins.eleve.pk %}" class="badge badge-neutral">{{ ins.eleve.get_nom_complet }} · {{ ins.classe.nom }}</a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

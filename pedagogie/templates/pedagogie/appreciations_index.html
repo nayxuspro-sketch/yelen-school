@@ -1,0 +1,57 @@
+{% extends "core/base.html" %}
+
+{% block title %}Appréciations par matière{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Pédagogie</span><span>›</span><span>Appréciations par matière</span>
+    </div>
+    <h1 class="page-title">Appréciations par matière</h1>
+    <p class="page-subtitle">
+      {% if request.user.role == 'ENSEIGNANT' %}Vos disciplines{% else %}Toutes les disciplines{% endif %}
+      {% if annee %}— {{ annee.libelle }}{% endif %} : l'appréciation rédigée ici est imprimée sur le bulletin en regard de la matière ; sans saisie, la grille des moyennes s'applique.
+    </p>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Classe</th>
+          <th>Matière</th>
+          {% if request.user.role != 'ENSEIGNANT' %}<th>Enseignant</th>{% endif %}
+          <th style="text-align:center;">Élèves</th>
+          {% for t in trimestres %}<th style="text-align:center;">{{ t.nom }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes %}
+        <tr>
+          <td class="fw-semibold">{{ ligne.enseignement.classe.nom }}</td>
+          <td>{{ ligne.enseignement.matiere.nom }}</td>
+          {% if request.user.role != 'ENSEIGNANT' %}
+          <td class="text-secondary">{% if ligne.enseignement.personnel %}{{ ligne.enseignement.personnel.nom|upper }} {{ ligne.enseignement.personnel.prenom }}{% else %}—{% endif %}</td>
+          {% endif %}
+          <td style="text-align:center;">{{ ligne.effectif }}</td>
+          {% for p in ligne.periodes %}
+          <td style="text-align:center;">
+            <a href="{% url 'pedagogie:appreciations_saisir' ligne.enseignement.pk p.trimestre.pk %}" class="btn-secondary btn-sm" title="Saisir les appréciations — {{ p.trimestre.nom }}">
+              {{ p.nb }} / {{ ligne.effectif }}{% if p.trimestre.verrouille %} 🔒{% endif %}
+            </a>
+          </td>
+          {% endfor %}
+        </tr>
+        {% empty %}
+        <tr><td colspan="{{ trimestres|length|add:4 }}" class="text-muted" style="text-align:center; padding:var(--space-6);">
+          {% if not annee %}Aucune année scolaire courante.{% elif request.user.role == 'ENSEIGNANT' %}Aucun enseignement ne vous est attribué cette année (Pédagogie › Enseignements, adresse e-mail de votre fiche du personnel).{% else %}Aucun enseignement actif cette année.{% endif %}
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

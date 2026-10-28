@@ -1,0 +1,200 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#06101E">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Vie scolaire — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+</head>
+
+<body class="pp-app">
+
+  <!-- Topbar -->
+  <header class="pp-topbar">
+    <a href="{% url 'core:portail_parent' %}" class="pp-topbar-back" aria-label="Retour">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div class="pp-topbar-logo">Vie scolaire</div>
+    <div></div>
+  </header>
+
+  <!-- Contenu -->
+  <main class="pp-content">
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} animate-fade-up" role="status" style="margin-bottom:var(--space-4);">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    {% if not enfants %}
+    <div class="pp-empty animate-fade-up">
+      <div class="pp-empty-icon">
+        <svg aria-hidden="true" width="52" height="52" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <h3 class="pp-empty-title">Aucune inscription en cours</h3>
+      <p class="pp-empty-text">L'emploi du temps et les absences apparaîtront ici dès l'inscription de votre enfant pour l'année en cours.</p>
+    </div>
+    {% else %}
+
+    {% for enfant in enfants %}
+    <div class="animate-fade-up">
+
+      <!-- En-tête enfant -->
+      <div class="pp-bul-enfant-header">
+        <div class="pp-avatar pp-avatar--sm">{{ enfant.eleve.prenom|first|upper }}</div>
+        <div>
+          <div class="pp-nom">{{ enfant.eleve.get_nom_complet }}</div>
+          <div class="pp-classe">{{ enfant.inscription.classe.nom }} · {{ annee.libelle }}</div>
+        </div>
+      </div>
+
+      <div class="pp-card">
+
+        <!-- Assiduité de l'année -->
+        <div class="pp-stats">
+          <div class="pp-stat">
+            <div class="pp-glow pp-glow--danger"></div>
+            <div class="pp-val {% if enfant.compteurs.absences %}pp-val--danger{% else %}pp-val--success{% endif %}">{{ enfant.compteurs.absences }}</div>
+            <div class="pp-stat-label">Absences</div>
+          </div>
+          <div class="pp-stat">
+            <div class="pp-glow pp-glow--primary"></div>
+            <div class="pp-val">{{ enfant.compteurs.excusees }}</div>
+            <div class="pp-stat-label">Excusées</div>
+          </div>
+          <div class="pp-stat">
+            <div class="pp-glow pp-glow--gold"></div>
+            <div class="pp-val {% if enfant.compteurs.retards %}pp-val--warning{% endif %}">{{ enfant.compteurs.retards }}</div>
+            <div class="pp-stat-label">Retards</div>
+          </div>
+        </div>
+
+        <!-- Emploi du temps -->
+        <div class="pp-section">
+          <div class="pp-section-title">
+            <svg aria-hidden="true" class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="pp-section-label">Emploi du temps</span>
+          </div>
+          {% for jour in enfant.edt %}
+          <details {% if jour.aujourdhui %}open{% endif %} style="margin-bottom:var(--space-2);">
+            <summary style="cursor:pointer; font-weight:600; padding:var(--space-2) 0; {% if jour.aujourdhui %}color:var(--color-primary);{% endif %}">
+              {{ jour.jour }}{% if jour.aujourdhui %} — aujourd'hui{% endif %}
+              <span class="text-muted" style="font-weight:400; font-size:0.8rem;">· {{ jour.seances|length }} cours</span>
+            </summary>
+            {% for s in jour.seances %}
+            <div class="pp-devoir">
+              <div class="pp-devoir-date">
+                <span class="pp-devoir-day" style="font-size:0.8rem;">{{ s.heure_debut|time:"H:i" }}</span>
+                <span class="pp-devoir-month">{{ s.heure_fin|time:"H:i" }}</span>
+              </div>
+              <div class="pp-devoir-detail">
+                <div class="pp-devoir-subject">{{ s.enseignement.matiere.nom }}</div>
+                <div class="pp-devoir-text">{% if s.enseignement.personnel %}{{ s.enseignement.personnel.nom|upper }} {{ s.enseignement.personnel.prenom }}{% endif %}{% if s.salle %} · Salle {{ s.salle }}{% endif %}</div>
+              </div>
+            </div>
+            {% empty %}
+            <div class="pp-bul-empty">Pas de cours ce jour.</div>
+            {% endfor %}
+          </details>
+          {% empty %}
+          <div class="pp-bul-empty">L'emploi du temps de la classe n'est pas encore publié.</div>
+          {% endfor %}
+        </div>
+
+        <!-- Absences et retards -->
+        <div class="pp-section">
+          <div class="pp-section-title">
+            <svg aria-hidden="true" class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="pp-section-label">Absences et retards récents</span>
+          </div>
+          {% for p in enfant.absences %}
+          <div class="pp-devoir">
+            <div class="pp-devoir-date">
+              <span class="pp-devoir-day">{{ p.appel.date|date:"d" }}</span>
+              <span class="pp-devoir-month">{{ p.appel.date|date:"M" }}</span>
+            </div>
+            <div class="pp-devoir-detail">
+              <div class="pp-devoir-subject">{{ p.appel.matiere.nom|default:"Appel du jour" }}{% if p.appel.heure_debut %} · {{ p.appel.heure_debut|time:"H:i" }}{% endif %}</div>
+              <div class="pp-devoir-text">
+                <span class="badge {% if p.statut == 'ABSENT' %}badge-danger{% elif p.statut == 'RETARD' %}badge-warning{% else %}badge-success{% endif %}">{{ p.get_statut_display }}{% if p.statut == 'RETARD' and p.minutes_retard %} ({{ p.minutes_retard }} min){% endif %}</span>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="pp-bul-empty">Aucune absence ni retard enregistré cette année.</div>
+          {% endfor %}
+        </div>
+
+        <!-- Justificatifs -->
+        <div class="pp-section">
+          <div class="pp-section-title">
+            <svg aria-hidden="true" class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="pp-section-label">Justificatifs d'absence</span>
+          </div>
+          {% for j in enfant.justifications %}
+          <div class="pp-devoir">
+            <div class="pp-devoir-date">
+              <span class="pp-devoir-day">{{ j.date_debut|date:"d" }}</span>
+              <span class="pp-devoir-month">{{ j.date_debut|date:"M" }}</span>
+            </div>
+            <div class="pp-devoir-detail">
+              <div class="pp-devoir-subject">
+                {% if j.date_fin != j.date_debut %}Du {{ j.date_debut|date:"d/m" }} au {{ j.date_fin|date:"d/m/Y" }}{% else %}Le {{ j.date_debut|date:"d/m/Y" }}{% endif %}
+                <span class="badge {% if j.statut == 'ACCEPTEE' %}badge-success{% elif j.statut == 'REFUSEE' %}badge-danger{% else %}badge-warning{% endif %}">{{ j.get_statut_display }}</span>
+              </div>
+              <div class="pp-devoir-text">{{ j.motif|truncatechars:120 }}{% if j.observation_traitement %} — <em>{{ j.observation_traitement }}</em>{% endif %}</div>
+            </div>
+          </div>
+          {% endfor %}
+
+          <form method="post" action="{% url 'core:portail_parent_justifier' %}" enctype="multipart/form-data" style="margin-top:var(--space-3); display:grid; gap:var(--space-3);">
+            {% csrf_token %}
+            <input type="hidden" name="inscription" value="{{ enfant.inscription.pk }}">
+            <div style="font-weight:600; font-size:0.875rem;">Justifier une absence</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3);">
+              <label style="font-size:0.75rem;">Du
+                <input type="date" name="date_debut" class="input" required max="{{ today|date:'Y-m-d' }}" value="{{ today|date:'Y-m-d' }}">
+              </label>
+              <label style="font-size:0.75rem;">Au
+                <input type="date" name="date_fin" class="input" required max="{{ today|date:'Y-m-d' }}" value="{{ today|date:'Y-m-d' }}">
+              </label>
+            </div>
+            <label style="font-size:0.75rem;">Motif
+              <textarea name="motif" class="input" rows="2" required maxlength="500" placeholder="Maladie, événement familial…"></textarea>
+            </label>
+            <label style="font-size:0.75rem;">Pièce jointe (certificat, courrier — PDF, JPG ou PNG, 5 Mo max., facultatif)
+              <input type="file" name="document" class="input" accept=".pdf,.jpg,.jpeg,.png">
+            </label>
+            <button type="submit" class="btn-primary btn-sm">Envoyer le justificatif</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+
+    {% endif %}
+
+  </main>
+
+  {% include 'core/partials/portail_parent_nav.html' with actif='vie_scolaire' %}
+
+</body>
+</html>

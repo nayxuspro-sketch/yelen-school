@@ -431,7 +431,7 @@ def justification_list(request):
     qs = Justification.objects.filter(
         inscription__annee_scolaire=annee
     ).select_related(
-        'inscription__eleve', 'inscription__classe', 'traitee_par'
+        'inscription__eleve', 'inscription__classe', 'traitee_par', 'deposee_par'
     ).order_by('-date_debut')
 
     if statut:

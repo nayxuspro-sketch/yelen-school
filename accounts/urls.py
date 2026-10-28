@@ -50,6 +50,7 @@ urlpatterns = [
     path('utilisateurs/csv/',               views.user_list_csv,     name='user_list_csv'),
     path('utilisateurs/creer/',             views.user_create,        name='user_create'),
     path('utilisateurs/parent/creer/',      views.parent_create,     name='parent_create'),
+    path('utilisateurs/parents/masse/',     views.parents_masse,     name='parents_masse'),
     path('utilisateurs/<uuid:pk>/modifier/', views.user_update,       name='user_update'),
     path('utilisateurs/<uuid:pk>/mot-de-passe/', views.user_set_password, name='user_set_password'),
     path('utilisateurs/<uuid:pk>/activer/', views.user_toggle_active, name='user_toggle_active'),

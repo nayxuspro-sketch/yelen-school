@@ -204,7 +204,11 @@ class CalculateurMoyenne:
         for ins in inscriptions:
             for ens in enseignements:
                 if cls.calculer_resultat_matiere(ins, ens, trimestre) is None:
-                    Resultat.objects.filter(inscription=ins, enseignement=ens, trimestre=trimestre, dispense=False).delete()
+                    sans_note = Resultat.objects.filter(inscription=ins, enseignement=ens, trimestre=trimestre, dispense=False)
+                    # L'appréciation rédigée par l'enseignant survit au recalcul : la ligne reste, sans moyenne.
+                    sans_note.exclude(appreciation='').update(moyenne=None, moyenne_sur_20=None, nb_notes=0, rang=None,
+                                                              meilleure_note=None, pire_note=None)
+                    sans_note.filter(appreciation='').delete()
             cls.calculer_moyenne_generale(ins, trimestre)
         cls.calculer_rangs(classe, trimestre)
         return len(inscriptions)

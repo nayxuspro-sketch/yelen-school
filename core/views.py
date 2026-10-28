@@ -11,6 +11,7 @@ from django.views.decorators.cache import never_cache
 
 from django.http import FileResponse, Http404, HttpResponseForbidden, HttpResponse, JsonResponse
 from django.templatetags.static import static
+from django.utils import timezone
 
 from personnel.models import MembrePersonnel
 from inscriptions.models import Eleve, Inscription, StatutInscriptionChoices
@@ -708,6 +709,69 @@ def portail_parent_notifications(request):
     })
 
 
+@login_required
+@requires_licence_feature('portail_parents')
+def portail_parent_vie_scolaire(request):
+    """Vie scolaire PWA : emploi du temps, absences et retards, justificatifs déposés, pour chaque enfant."""
+    if request.user.role != 'PARENT':
+        return HttpResponseForbidden("Accès réservé aux parents.")
+    from core import portail
+
+    annee = AnneeScolaire.objects.filter(etablissement=request.user.etablissement, est_courante=True).first()
+    enfants = []
+    for eleve in request.user.eleves_lies.all():
+        inscription = (
+            Inscription.objects.filter(eleve=eleve, annee_scolaire=annee).select_related('classe').first()
+        ) if annee else None
+        if inscription is None:
+            continue
+        compteurs, absences = portail.assiduite(inscription)
+        enfants.append({
+            'eleve': eleve,
+            'inscription': inscription,
+            'edt': portail.emploi_du_temps(inscription),
+            'compteurs': compteurs,
+            'absences': absences,
+            'justifications': portail.justifications(inscription),
+        })
+    return render(request, 'core/portail_parent_vie_scolaire.html', {
+        'enfants': enfants,
+        'annee': annee,
+        'today': timezone.localdate(),
+    })
+
+
+@login_required
+@require_POST
+@requires_licence_feature('portail_parents')
+def portail_parent_justifier(request):
+    """Dépôt d'un justificatif d'absence par le parent (période, motif, pièce jointe) : « En attente » jusqu'à la
+    décision du secrétariat."""
+    if request.user.role != 'PARENT':
+        return HttpResponseForbidden("Accès réservé aux parents.")
+    from django.core.exceptions import ValidationError
+    from core import portail
+
+    inscription = Inscription.objects.filter(
+        pk=request.POST.get('inscription') or None, eleve__in=request.user.eleves_lies.all(),
+    ).select_related('eleve').first()
+    if inscription is None:
+        messages.error(request, "Enfant introuvable.")
+        return redirect('core:portail_parent_vie_scolaire')
+    try:
+        justification = portail.deposer_justification(
+            inscription, request.user, request.POST.get('date_debut'), request.POST.get('date_fin'),
+            request.POST.get('motif'), request.FILES.get('document'),
+        )
+    except (ValueError, ValidationError) as exc:
+        messages.error(request, ' '.join(exc.messages) if hasattr(exc, 'messages') else str(exc))
+        return redirect('core:portail_parent_vie_scolaire')
+    messages.success(request, f"Justificatif déposé pour {inscription.eleve.get_nom_complet()} "
+                              f"({justification.nb_jours} jour{'s' if justification.nb_jours > 1 else ''}). "
+                              "Le secrétariat l'examinera.")
+    return redirect('core:portail_parent_vie_scolaire')
+
+
 # ── Portail Élève ─────────────────────────────────────────────────────────────
 
 @login_required
@@ -770,6 +834,19 @@ def portail_eleve(request):
             .order_by('-date_paiement')[:5]
         )
 
+    from core import portail
+    vie_scolaire = {}
+    if inscription:
+        compteurs, absences = portail.assiduite(inscription, limite=15)
+        vie_scolaire = {
+            'edt': portail.emploi_du_temps(inscription),
+            'compteurs': compteurs,
+            'absences': absences,
+            'notes_recentes': portail.notes_recentes(inscription),
+            'moyennes_periodes': portail.moyennes_par_periode(inscription),
+            'devoirs_a_venir': portail.devoirs_a_venir(inscription),
+        }
+
     return render(request, 'core/portail_eleve.html', {
         'eleve': eleve,
         'inscription': inscription,
@@ -778,6 +855,7 @@ def portail_eleve(request):
         'nb_retards': nb_retards,
         'paiements': paiements,
         'annee': annee,
+        **vie_scolaire,
     })
 
 
