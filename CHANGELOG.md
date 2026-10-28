@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.15.0 — 2026-10-28
+
+### Ajouté
+- **Communication → Messages reçus** : boîte des SMS arrivés au numéro de l'école. Vue par défaut sur les **messages libres** des parents (réponses aux relances, questions…), filtre *Commandes automatiques* (NOTE / SOLDE / ABS / AIDE) et *Tous*, état lu / non lu ; famille identifiée d'après les numéros des fiches élèves quel que soit leur format ; **Marquer lu / non lu**, **Tout marquer comme lu**, **Répondre** par SMS (160 caractères, via la file SMS). Pastille du menu avec le nombre de messages libres non lus. Droit d'action *Marquer lu / non lu et répondre par SMS* dans la matrice des droits ; les requêtes du simulateur SMS Direct sont enregistrées déjà lues. Champs `lu_le` / `lu_par` sur le journal des SMS entrants (migration `communication 0004`). Guide §10.4, §10.6, §10.7.
+
 ## 5.14.3 — 2026-10-28
 
 ### Corrigé

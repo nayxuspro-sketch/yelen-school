@@ -1,10 +1,15 @@
 import logging
+import re
+from urllib.parse import urlencode
+
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -305,6 +310,8 @@ def sms_direct_envoyer(request):
 
     from .models import IncomingSMSLog
     dernier_log = IncomingSMSLog.objects.filter(sender_number=phone).order_by('-created_at').first()
+    if dernier_log and dernier_log.lu_le is None:  # saisi et lu à l'écran par l'utilisateur : rien à traiter dans « Messages reçus »
+        IncomingSMSLog.objects.filter(pk=dernier_log.pk).update(lu_le=timezone.now(), lu_par=request.user)
 
     response = render(request, 'communication/partials/sms_direct_result.html', {
         'data': data,
@@ -766,3 +773,130 @@ def campagne_renvoyer(request, pk):
     nb = campagnes.renvoyer_echecs(campagne)
     messages.success(request, f"{nb} SMS remis en file." if nb else "Aucun SMS en échec.")
     return redirect('communication:campagne_detail', pk=campagne.pk)
+
+
+# ─── MESSAGES REÇUS — BOÎTE DES SMS DES PARENTS ───────────────────────
+
+def _cle_numero(numero):
+    """Huit derniers chiffres d'un numéro, quel que soit son format (« +226 70 11 22 33 », « 70112233 », « 0022670112233 »)."""
+    return re.sub(r'\D', '', numero or '')[-8:]
+
+
+def _familles_par_numero(numeros):
+    """{clé de numéro: [élèves dont un numéro de famille porte cette clé]}, classe courante sur chaque élève —
+    deux requêtes pour toute la page, tolérantes aux espaces et préfixes des fiches (« 70 11 22 33 » = « +22670112233 »)."""
+    from inscriptions.models import Inscription
+    cles = {cle for cle in map(_cle_numero, numeros) if len(cle) == 8}
+    if not cles:
+        return {}
+    filtre = Q()
+    for cle in cles:
+        motif = r'\D*'.join(cle) + r'\D*$'
+        filtre |= Q(telephone_parent__regex=motif) | Q(tuteur_telephone__regex=motif) | Q(telephone_urgence__regex=motif)
+    eleves = list(Eleve.objects.filter(filtre).order_by('nom', 'prenom'))
+    classes = dict(Inscription.objects.filter(eleve__in=eleves, annee_scolaire__est_courante=True)
+                   .values_list('eleve_id', 'classe__nom'))
+    familles = {}
+    for eleve in eleves:
+        eleve.classe_courante = classes.get(eleve.pk, '')
+        for brut in (eleve.telephone_parent, eleve.tuteur_telephone, eleve.telephone_urgence):
+            cle = _cle_numero(brut)
+            if cle in cles and eleve not in familles.setdefault(cle, []):
+                familles[cle].append(eleve)
+    return familles
+
+
+def _nb_messages_libres_non_lus():
+    from .models import IncomingSMSLog
+    return IncomingSMSLog.objects.filter(command_type=IncomingSMSLog.LIBRE, lu_le__isnull=True).count()
+
+
+def _retour_messages_recus(request):
+    suivant = request.POST.get('next', '')
+    if suivant and url_has_allowed_host_and_scheme(suivant, allowed_hosts={request.get_host()},
+                                                   require_https=request.is_secure()):
+        return redirect(suivant)
+    return redirect('communication:messages_recus')
+
+
+@login_required
+def messages_recus(request):
+    """Boîte des SMS reçus des parents : messages libres (hors commande) à lire et à traiter ; commandes
+    automatiques en consultation. Filtres type / état, famille identifiée par le numéro, lu / non lu, réponse."""
+    from core.sms import sms_actifs
+    from .models import IncomingSMSLog
+
+    type_ = request.GET.get('type') if request.GET.get('type') in ('commandes', 'tous') else 'libres'
+    etat = request.GET.get('etat') if request.GET.get('etat') in ('non_lus', 'lus') else ''
+    qs = IncomingSMSLog.objects.select_related('eleve', 'lu_par')
+    if type_ == 'libres':
+        qs = qs.filter(command_type=IncomingSMSLog.LIBRE)
+    elif type_ == 'commandes':
+        qs = qs.exclude(command_type=IncomingSMSLog.LIBRE)
+    if etat:
+        qs = qs.filter(lu_le__isnull=(etat == 'non_lus'))
+    page_obj = Paginator(qs, 50).get_page(request.GET.get('page'))
+    familles = _familles_par_numero([m.sender_number for m in page_obj])
+    for m in page_obj:
+        m.famille = familles.get(_cle_numero(m.sender_number), [])
+    return render(request, 'communication/messages_recus.html', {
+        'page_obj': page_obj,
+        'type': type_,
+        'etat': etat,
+        'filtres': urlencode({cle: valeur for cle, valeur in (('type', type_), ('etat', etat)) if valeur}),
+        'non_lus': _nb_messages_libres_non_lus(),
+        'sms_actifs': sms_actifs(),
+    })
+
+
+@login_required
+def messages_recus_compteur(request):
+    """Partiel HTMX — pastille du menu : nombre de messages libres non lus."""
+    return render(request, 'communication/partials/messages_recus_compteur.html', {'nb': _nb_messages_libres_non_lus()})
+
+
+@login_required
+@require_POST
+def messages_recus_marquer(request, pk):
+    """Marque un message lu (``etat=lu``) ou non lu (``etat=non_lu``)."""
+    from .models import IncomingSMSLog
+    message = get_object_or_404(IncomingSMSLog, pk=pk)
+    if request.POST.get('etat') == 'non_lu':
+        IncomingSMSLog.objects.filter(pk=message.pk).update(lu_le=None, lu_par=None)
+    else:
+        IncomingSMSLog.objects.filter(pk=message.pk).update(lu_le=timezone.now(), lu_par=request.user)
+    return _retour_messages_recus(request)
+
+
+@login_required
+@require_POST
+def messages_recus_tout_lu(request):
+    """Marque lus tous les messages libres non lus."""
+    from .models import IncomingSMSLog
+    nb = IncomingSMSLog.objects.filter(command_type=IncomingSMSLog.LIBRE, lu_le__isnull=True) \
+        .update(lu_le=timezone.now(), lu_par=request.user)
+    messages.success(request, f"{nb} message(s) marqué(s) comme lu(s).")
+    return _retour_messages_recus(request)
+
+
+@login_required
+@require_POST
+def messages_recus_repondre(request, pk):
+    """Répond par SMS (160 caractères max.) au numéro du message : la réponse part par la file SMS et le message
+    est marqué lu."""
+    from core.sms import _normaliser_numero
+    from core.tasks import envoyer_sms_async
+    from .models import IncomingSMSLog
+
+    message = get_object_or_404(IncomingSMSLog, pk=pk)
+    texte = ' '.join(request.POST.get('texte', '').split())
+    if not texte or len(texte) > 160:
+        messages.error(request, "La réponse doit compter entre 1 et 160 caractères.")
+        return _retour_messages_recus(request)
+    numero = _normaliser_numero(message.sender_number)
+    if envoyer_sms_async(numero, texte) is None:
+        messages.error(request, "Les SMS sont désactivés (Paramètres → Configuration SMS) : réponse non envoyée.")
+        return _retour_messages_recus(request)
+    IncomingSMSLog.objects.filter(pk=message.pk, lu_le__isnull=True).update(lu_le=timezone.now(), lu_par=request.user)
+    messages.success(request, f"Réponse mise en file pour {numero}.")
+    return _retour_messages_recus(request)

@@ -17,7 +17,7 @@ class ReponseParentAdmin(admin.ModelAdmin):
 
 @admin.register(IncomingSMSLog)
 class IncomingSMSLogAdmin(admin.ModelAdmin):
-    list_display = ('sender_number', 'command_type', 'eleve', 'is_authorized', 'processed_successfully', 'created_at')
+    list_display = ('sender_number', 'command_type', 'eleve', 'is_authorized', 'processed_successfully', 'lu_le', 'created_at')
     list_filter = ('command_type', 'is_authorized', 'processed_successfully')
     search_fields = ('sender_number', 'message_text', 'response_text', 'eleve__nom', 'eleve__prenom', 'error_message')
     ordering = ('-created_at',)

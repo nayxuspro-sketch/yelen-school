@@ -273,6 +273,10 @@ MODULES = (
         _f('/communication/sms-direct/', 'SMS Direct', actions=(
             _a('envoyer', 'Envoyer un SMS', 'sms_direct_envoyer'),
         )),
+        _f('/communication/messages-recus/', 'Messages reçus', actions=(
+            _a('traiter', 'Marquer lu / non lu et répondre par SMS',
+               'messages_recus_marquer', 'messages_recus_tout_lu', 'messages_recus_repondre'),
+        )),
         _f('/communication/campagnes/', 'Campagnes SMS', actions=(
             _a('envoyer', 'Composer et envoyer une campagne', 'campagne_nouvelle', 'campagne_renvoyer'),
         )),

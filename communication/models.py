@@ -178,8 +178,9 @@ class IncomingSMSLog(BaseModel):
         ('SOLDE', 'Demande de solde financier'),
         ('ABS', 'Demande de relevé d\'absences'),
         ('HELP', 'Aide / Instructions'),
-        ('INVALID', 'Commande invalide ou inconnue'),
+        ('INVALID', 'Message libre ou commande inconnue'),
     ]
+    LIBRE = 'INVALID'  # tout SMS qui n'est pas une commande : un message du parent, à lire dans « Messages reçus »
 
     sender_number = models.CharField(
         max_length=20,
@@ -220,6 +221,19 @@ class IncomingSMSLog(BaseModel):
         default='',
         verbose_name=_("Message d'erreur"),
     )
+    lu_le = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Lu le"),
+    )
+    lu_par = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name=_("Lu par"),
+    )
 
     class Meta:
         verbose_name = _("SMS Entrant")
@@ -228,3 +242,7 @@ class IncomingSMSLog(BaseModel):
 
     def __str__(self):
         return f"SMS de {self.sender_number} ({self.command_type}) — {self.created_at}"
+
+    @property
+    def est_libre(self):
+        return self.command_type == self.LIBRE
