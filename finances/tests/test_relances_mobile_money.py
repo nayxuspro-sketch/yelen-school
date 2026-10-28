@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 from model_bakery import baker
 
+from core.models import SmsSortant
 from finances.models import DemandePaiementMobile, HistoriqueRelance
 from finances.paiements_mobiles import ErreurPasserelle, verifier_en_attente
 
@@ -15,6 +16,11 @@ CONFIG = dict(CINETPAY_API_KEY='cle', CINETPAY_SITE_ID='123', CINETPAY_URL_PUBLI
 LIEN = 'https://checkout.cinetpay.com/payment/jeton-abc'
 REPONSE_LIEN = {'code': '201', 'message': 'CREATED', 'data': {'payment_token': 'jeton-abc', 'payment_url': LIEN}}
 INLINE = lambda fonction, *args: fonction(*args)  # noqa: E731 — exécute la campagne dans la requête
+
+
+@pytest.fixture(autouse=True)
+def _sms_actifs(settings):
+    settings.SMS_ENABLED = True
 
 
 @pytest.fixture
@@ -45,11 +51,13 @@ def creance(etab):
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
     rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, actif=True, nom='Scolarité')
+    statut = baker.make('parametres.StatutEleve', etablissement=etab)
     baker.make('parametres.TarifScolarite', etablissement=etab, classe=classe, annee_scolaire=annee, rubrique=rubrique,
-               montant=Decimal('25000'), actif=True)
+               statut_eleve=statut, montant=Decimal('25000'), actif=True)
     eleve = baker.make('inscriptions.Eleve', nom='OUÉDRAOGO', prenom='Awa', matricule='ETAB-2026-07', telephone_parent='70123456')
-    inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee, statut='AFFECTE')
-    return {'annee': annee, 'classe': classe, 'rubrique': rubrique, 'inscription': inscription}
+    inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee, statut='AFFECTE',
+                             statut_eleve=statut)
+    return {'annee': annee, 'classe': classe, 'rubrique': rubrique, 'statut': statut, 'inscription': inscription}
 
 
 @pytest.fixture
@@ -74,10 +82,10 @@ class TestCampagneDeRelances:
             reponse = _campagne(comptable_client, creance)
         demande = DemandePaiementMobile.objects.get()
         assert (demande.montant, demande.telephone, demande.rubrique, demande.cree_par, demande.lien_paiement, demande.sms_envoye) == (
-            Decimal('25000'), '70123456', creance['rubrique'], comptable, LIEN, True)
+            Decimal('25000'), '+22670123456', creance['rubrique'], comptable, LIEN, True)
         assert appel.call_args.args[1]['amount'] == 25000
         numero, texte = sms.call_args.args
-        assert numero == '70123456' and texte.endswith(f'\nPayer en ligne: {LIEN}') and sms.call_args.kwargs == {'limite': 320}
+        assert numero == '+22670123456' and texte.endswith(f'\nPayer en ligne: {LIEN}') and sms.call_args.kwargs == {'limite': 320}
         assert HistoriqueRelance.objects.filter(canal='SMS', montant_reclame=Decimal('25000')).count() == 1
         assert '1 SMS de relance envoyé(s). Lien de paiement en ligne inclus.' in reponse.content.decode()
 
@@ -93,7 +101,8 @@ class TestCampagneDeRelances:
 
     def test_passerelle_en_panne_un_seul_essai_et_sms_sans_lien(self, configure, comptable_client, creance):
         autre = baker.make('inscriptions.Eleve', nom='KABORÉ', prenom='Ali', telephone_parent='71000000')
-        baker.make('inscriptions.Inscription', eleve=autre, classe=creance['classe'], annee_scolaire=creance['annee'], statut='AFFECTE')
+        baker.make('inscriptions.Inscription', eleve=autre, classe=creance['classe'], annee_scolaire=creance['annee'], statut='AFFECTE',
+                   statut_eleve=creance['statut'])
         with patch('finances.views.relances._en_arriere_plan', INLINE), \
                 patch('finances.paiements_mobiles._appeler', side_effect=ErreurPasserelle('passerelle injoignable')) as appel, \
                 patch('core.sms.envoyer_sms', return_value=(True, '')) as sms:
@@ -111,10 +120,11 @@ class TestCampagneDeRelances:
         assert not appel.called and not DemandePaiementMobile.objects.exists()
         assert '1 002' in sms.call_args.args[1] and 'Payer en ligne' not in sms.call_args.args[1]
 
-    def test_sans_passerelle_comportement_inchange(self, comptable_client, creance):
-        with patch('core.tasks.envoyer_sms_async') as envoi:
-            reponse = _campagne(comptable_client, creance)
-        assert envoi.call_args.args[0] == '70123456' and not DemandePaiementMobile.objects.exists()
+    def test_sans_passerelle_sms_mis_en_file_sans_lien(self, comptable_client, creance):
+        reponse = _campagne(comptable_client, creance)
+        sms = SmsSortant.objects.get()
+        assert (sms.numero, sms.destinataire) == ('+22670123456', 'OUÉDRAOGO AWA — Scolarité')
+        assert 'Payer en ligne' not in sms.message and not DemandePaiementMobile.objects.exists()
         html = reponse.content.decode()
         assert '1 SMS de relance envoyé(s).' in html and 'Lien de paiement' not in html
 

@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.14.2 — 2026-10-28
+
+### Corrigé
+- **SMS de relance** (`Finances → Relances → SMS`) : le montant partait d'un tarif pris au hasard (premier tarif de la rubrique, tous niveaux, statuts et années confondus, même inactif) et les élèves sans statut étaient relancés — des familles à jour recevaient un rappel, pour un montant faux, et la liste des SMS ne correspondait ni au compteur ni au PDF. Le compteur, le PDF et les SMS reposent désormais sur un calcul unique (`finances/redevables.py`), identique au formulaire de paiement : tarif du niveau × année × statut de l'élève, services et créances de la rubrique, bourses ciblées déduites, versements moins remboursements, plafonné au reste global de l'élève ; nombre de requêtes constant.
+- **Modèles de messages** : un modèle citant une variable inconnue (`{eleve}`, `{reste}`…) était envoyé **tel quel** au parent, accolades comprises ; une accolade isolée faisait planter le rendu. Le rendu ne lève plus jamais d'exception, un modèle invalide est remplacé par le texte par défaut (signalé « Ignoré — variable inconnue » dans la liste) et l'enregistrement refuse variable inconnue, accolade isolée ou SMS de plus de 160 caractères (il serait tronqué). Les campagnes SMS partagent ce rendu.
+- Relance SMS refusée (message explicite) quand l'envoi de SMS est désactivé, au lieu d'annoncer « N SMS envoyés » sans rien envoyer ; SMS mis en file par lot (un seul fil d'envoi) et tracés dans la file SMS au nom de l'élève et de la rubrique ; numéro de la fiche normalisé (`+226…`) dans l'historique ; résolution du numéro du parent (parent → tuteur → urgence) centralisée (`Eleve.telephone_parent_valide`) ; montant du rappel d'échéancier automatique formaté « 50 000 » et non « 50,000 ».
+
 ## 5.14.1 — 2026-10-28
 
 ### Ajouté

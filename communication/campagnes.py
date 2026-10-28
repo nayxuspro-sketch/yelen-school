@@ -1,6 +1,5 @@
 """Campagnes SMS ciblées : public, destinataires dédoublonnés par numéro, message personnalisé par variables, mise en
 file par lot (un seul fil d'envoi) et suivi par campagne."""
-import re
 import threading
 from dataclasses import dataclass, field
 from datetime import date
@@ -12,6 +11,7 @@ from core.models import CampagneSms, SmsSortant
 from core.sms import _normaliser_numero, _numero_valide
 from core.tasks import _vider_file, mettre_en_file_lot
 from inscriptions.models import Inscription, StatutInscriptionChoices
+from parametres.models import ModeleMessage
 from personnel.models import MembrePersonnel
 from presences.models import Presence
 
@@ -23,7 +23,6 @@ VARIABLES = (
     ('{etablissement}', "sigle ou nom de l'établissement"),
     ('{nom}', "nom de l'agent (campagne personnel)"),
 )
-_VARIABLE = re.compile(r'\{(\w+)\}')
 
 
 @dataclass
@@ -40,11 +39,7 @@ def _montant(valeur):
 
 def _telephone_parent(eleve):
     """Premier numéro de parent valide de la fiche élève, normalisé ; '' s'il n'y en a pas."""
-    for brut in (eleve.telephone_parent, eleve.tuteur_telephone, eleve.telephone_urgence):
-        brut = (brut or '').strip()
-        if brut and _numero_valide(brut):
-            return _normaliser_numero(brut)
-    return ''
+    return eleve.telephone_parent_valide()
 
 
 def _inscriptions(etab, annee, cible, criteres):
@@ -105,7 +100,7 @@ def destinataires(etab, annee, cible, criteres, sigle=''):
 
 def rendre(modele, variables):
     """Remplace les variables connues ; une variable inconnue reste telle quelle (visible à l'aperçu)."""
-    return _VARIABLE.sub(lambda m: str(variables.get(m.group(1), m.group(0))), modele).strip()
+    return ModeleMessage.rendre(modele, variables).strip()
 
 
 def apercu(modele, liste):

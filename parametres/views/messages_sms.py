@@ -34,6 +34,8 @@ def modeles_messages_list(request):
             'modele': modele,
             'defaut': ModeleMessage.DEFAUTS.get(code, ''),
             'variables': _variables_par_type(code),
+            # Modèle enregistré avant le contrôle des variables : il n'est pas envoyé (texte par défaut à la place)
+            'ignore': bool(modele and modele.actif and _variables_inconnues(modele.contenu_sms, code)),
         })
     return render(request, 'parametres/modeles_messages.html', {
         'items': items,
@@ -57,7 +59,10 @@ def modele_message_form(request, type_msg):
     if request.method == 'POST':
         contenu = request.POST.get('contenu_sms', '').strip()
         actif = 'actif' in request.POST
-        if contenu:
+        erreurs = _erreurs_modele(contenu, type_msg, etab) if contenu else []
+        for erreur in erreurs:
+            messages.error(request, f"Modèle « {modele.get_type_display()} » non enregistré : {erreur}")
+        if contenu and not erreurs:
             modele.contenu_sms = contenu
             modele.actif = actif
             modele.save(update_fields=['contenu_sms', 'actif', 'updated_at'])
@@ -97,6 +102,39 @@ def _variables_par_type(type_msg):
         'SEUIL_ABSENCES': ['{nom_eleve}', '{classe}', '{nb}', '{periode}', '{etablissement}'],
         'SANCTION': ['{nom_eleve}', '{classe}', '{date}', '{sanction}', '{motif}', '{etablissement}'],
     }.get(type_msg, [])
+
+
+LONGUEUR_SMS = 160
+# Valeurs d'exemple (longueurs réalistes) pour mesurer le SMS qu'un modèle produira
+_EXEMPLES = {
+    'nom_eleve': 'OUEDRAOGO Abdoul Aziz', 'classe': '6ème A', 'trimestre': '2e trimestre', 'date': '28/10/2026',
+    'matiere': ' en Mathématiques', 'montant': '125 000', 'rubrique': 'Scolarité 2e tranche', 'heure': '08h00',
+    'lieu': 'Salle polyvalente', 'objet': 'Rentrée scolaire', 'nb': '12', 'periode': 'ce trimestre',
+    'sanction': 'Avertissement', 'motif': 'Bavardage répété',
+}
+
+
+def _variables_inconnues(contenu, type_msg):
+    return ModeleMessage.variables_inconnues(contenu, [v.strip('{}') for v in _variables_par_type(type_msg)])
+
+
+def _erreurs_modele(contenu, type_msg, etab):
+    """Motifs de refus d'un modèle : variable inconnue de ce type (le parent la recevrait telle quelle),
+    accolade isolée, ou SMS rendu plus long que 160 caractères (il serait tronqué)."""
+    erreurs = []
+    inconnues = _variables_inconnues(contenu, type_msg)
+    if inconnues:
+        erreurs.append("variable(s) inconnue(s) pour ce type : " + ', '.join('{%s}' % nom for nom in inconnues)
+                       + " — variables disponibles : " + ', '.join(_variables_par_type(type_msg)) + '.')
+    residu = ModeleMessage.VARIABLE.sub('', contenu)
+    if '{' in residu or '}' in residu:
+        erreurs.append("accolade isolée — chaque variable s'écrit {nom_variable}, sans espace.")
+    exemples = dict(_EXEMPLES, etablissement=etab.nom)
+    longueur = len(ModeleMessage.rendre(contenu, exemples))
+    if longueur > LONGUEUR_SMS:
+        erreurs.append(f"message trop long : {longueur} caractères avec des valeurs d'exemple, "
+                       f"maximum {LONGUEUR_SMS} (au-delà, le SMS est tronqué).")
+    return erreurs
 
 
 # ─── SMS AUTOMATIQUES ─────────────────────────────────────────────────────────

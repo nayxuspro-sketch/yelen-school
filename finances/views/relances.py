@@ -10,20 +10,38 @@ from django.views.decorators.http import require_POST
 from django.db import connections, transaction
 from django.db.models import Sum, Q
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.template.loader import render_to_string
+from django.utils import timezone
 from decimal import Decimal
 import io
 import threading
-from ..models import Paiement
+from ..models import CanalRelance, HistoriqueRelance
 from ..paiements_mobiles import cinetpay_configure, relancer_avec_lien
-from inscriptions.models import Inscription, StatutInscriptionChoices
-from parametres.models import AnneeScolaire, Classe, TarifScolarite, RubriquePaiement
+from ..redevables import inscriptions_relancables, redevables_rubrique
+from parametres.models import AnneeScolaire, Classe, ModeleMessage, RubriquePaiement
+from core.sms import sms_actifs
+from core.tasks import mettre_en_file_lot
 from core.utils import get_etablissement_context
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
-from .commun import WeasyHTML, _numero_valide, _require_finance_role
+from .commun import WeasyHTML, _require_finance_role
 
 logger = logging.getLogger(__name__)
+
+
+def _selection(etab, params):
+    """(année, classe — None pour « toutes les classes » —, rubrique) de la sélection ; Http404 si un élément
+    n'appartient pas à l'établissement."""
+    annee = get_object_or_404(AnneeScolaire, pk=params.get('annee'), etablissement=etab)
+    rubrique = get_object_or_404(RubriquePaiement, pk=params.get('rubrique'), etablissement=etab)
+    classe_id = params.get('classe')
+    classe = None if classe_id == 'all' else get_object_or_404(Classe, pk=classe_id, etablissement=etab)
+    return annee, classe, rubrique
+
+
+def _redevables(etab, annee, classe, rubrique):
+    """Redevables de la rubrique pour la sélection — même calcul pour le compteur, le PDF et les SMS."""
+    return redevables_rubrique(inscriptions_relancables(etab, annee, classe), rubrique)
 
 
 @login_required
@@ -56,57 +74,14 @@ def relance_count(request):
     """Retourne en HTML le nombre d'élèves redevables pour les relances (usage HTMX)."""
     _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
-    annee_id    = request.GET.get('annee')
-    classe_id   = request.GET.get('classe')
-    rubrique_id = request.GET.get('rubrique')
-
-    if not (annee_id and classe_id and rubrique_id and etab):
+    if not (etab and request.GET.get('annee') and request.GET.get('classe') and request.GET.get('rubrique')):
         return HttpResponse('')
-
     try:
-        annee = AnneeScolaire.objects.filter(pk=annee_id, etablissement=etab).first()
-        rubrique = RubriquePaiement.objects.filter(
-            pk=rubrique_id, etablissement=etab
-        ).first()
-    except (ValueError, ValidationError):
+        annee, classe, rubrique = _selection(etab, request.GET)
+    except (Http404, ValueError, ValidationError):
         return HttpResponse('')
 
-    if not (annee and rubrique):
-        return HttpResponse('')
-
-    insc_qs = Inscription.objects.filter(
-        annee_scolaire=annee,
-    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'statut_eleve', 'classe')
-
-    if classe_id == 'all':
-        insc_qs = insc_qs.filter(classe__etablissement=etab)
-        classe = None
-    else:
-        classe = Classe.objects.filter(pk=classe_id, etablissement=etab).first()
-        if not classe:
-            return HttpResponse('')
-        insc_qs = insc_qs.filter(classe=classe)
-
-    inscriptions = insc_qs
-
-    count = 0
-    for inscr in inscriptions:
-        if not inscr.statut_eleve_id:
-            continue
-        tarif = TarifScolarite.objects.filter(
-            etablissement=etab,
-            classe__niveau=inscr.classe.niveau,
-            annee_scolaire=annee,
-            statut_eleve=inscr.statut_eleve,
-            rubrique=rubrique,
-            actif=True,
-        ).first()
-        montant_du = tarif.montant if tarif else Decimal('0')
-        verse = Paiement.objects.filter(
-            inscription=inscr, rubrique=rubrique
-        ).aggregate(s=Sum('montant'))['s'] or Decimal('0')
-        if max(montant_du - verse, Decimal('0')) > 0:
-            count += 1
+    count = len(_redevables(etab, annee, classe, rubrique))
 
     if count == 0:
         html = (
@@ -143,27 +118,8 @@ def relance_paiement_pdf(request):
     if not etab:
         return redirect('finances:paiement_list')
 
-    annee_id   = request.GET.get('annee')
-    classe_id  = request.GET.get('classe')
-    rubrique_id = request.GET.get('rubrique')
+    annee, classe, rubrique = _selection(etab, request.GET)
     date_echeance = request.GET.get('date_echeance', '')
-
-    annee    = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
-    rubrique = get_object_or_404(RubriquePaiement, pk=rubrique_id, etablissement=etab)
-
-    # classe_id peut être 'all' → toutes les classes de l'établissement
-    if classe_id == 'all':
-        classe = None
-        insc_qs = Inscription.objects.filter(
-            annee_scolaire=annee,
-            classe__etablissement=etab,
-        )
-    else:
-        classe = get_object_or_404(Classe, pk=classe_id, etablissement=etab)
-        insc_qs = Inscription.objects.filter(
-            annee_scolaire=annee,
-            classe=classe,
-        )
 
     etab_context = get_etablissement_context(etab, request)
 
@@ -176,54 +132,16 @@ def relance_paiement_pdf(request):
     )
     sig_membre = signataire.get_membre_personnel() if signataire else None
 
-    # Inscriptions triées par classe puis par élève
-    inscriptions = insc_qs.exclude(statut=StatutInscriptionChoices.ABANDON).select_related(
-        'eleve', 'classe', 'classe__cycle', 'statut_eleve'
-    ).order_by('classe__nom', 'eleve__nom', 'eleve__prenom')
+    relances = [{
+        'inscription': r.inscription,
+        'eleve': r.eleve,
+        'classe': r.inscription.classe,
+        'montant_du': r.montant_du,
+        'verse': r.verse,
+        'reste': r.reste,
+        'date_echeance': date_echeance or (r.echeance.strftime('%d/%m/%Y') if r.echeance else ''),
+    } for r in _redevables(etab, annee, classe, rubrique)]
 
-    # Pour chaque inscription, calculer le reste à payer pour la rubrique sélectionnée
-    relances = []
-    for inscr in inscriptions:
-        if not inscr.statut_eleve_id:
-            continue
-
-        # Tarif pour cette rubrique × niveau × statut
-        tarif_qs = TarifScolarite.objects.filter(
-            etablissement=etab,
-            classe__niveau=inscr.classe.niveau,
-            annee_scolaire=annee,
-            statut_eleve=inscr.statut_eleve,
-            rubrique=rubrique,
-            actif=True,
-        )
-        tarif = tarif_qs.first()
-        montant_du = tarif.montant if tarif else Decimal('0')
-
-        # Montant versé pour cette rubrique
-        verse = Paiement.objects.filter(
-            inscription=inscr, rubrique=rubrique
-        ).aggregate(s=Sum('montant'))['s'] or Decimal('0')
-
-        reste = max(montant_du - verse, Decimal('0'))
-        if reste <= 0:
-            continue  # Élève à jour pour cette rubrique
-
-        # Dernière date d'échéance configurée pour cet élève
-        derniere_echeance = Paiement.objects.filter(
-            inscription=inscr, rubrique=rubrique, echeance__isnull=False
-        ).order_by('-echeance').values_list('echeance', flat=True).first()
-
-        relances.append({
-            'inscription': inscr,
-            'eleve': inscr.eleve,
-            'classe': inscr.classe,
-            'montant_du': montant_du,
-            'verse': verse,
-            'reste': reste,
-            'date_echeance': date_echeance or (derniere_echeance.strftime('%d/%m/%Y') if derniere_echeance else ''),
-        })
-
-    from django.utils import timezone as tz
     html_string = render_to_string('finances/pdf/relance_paiement.html', {
         'relances': relances,
         'annee': annee,
@@ -232,7 +150,7 @@ def relance_paiement_pdf(request):
         'etablissement': etab,
         'identite': etab_context.get('identite'),
         'logo_url': etab_context.get('logo_url'),
-        'date_impression': tz.now().strftime('%d/%m/%Y'),
+        'date_impression': timezone.now().strftime('%d/%m/%Y'),
         'signataire': signataire,
         'sig_membre': sig_membre,
     }, request=request)
@@ -242,9 +160,7 @@ def relance_paiement_pdf(request):
     nom = f"Relances_{classe.nom if classe else 'toutes'}_{rubrique.nom}.pdf".replace(" ", "_")
 
     # Traçabilité : enregistrer une ligne HistoriqueRelance par élève redevable
-    from ..models import HistoriqueRelance, CanalRelance
-    import datetime as _dt
-    aujourd_hui = _dt.date.today()
+    aujourd_hui = timezone.localdate()
     historique_bulk = [
         HistoriqueRelance(
             inscription=r['inscription'],
@@ -274,104 +190,56 @@ def relance_paiement_pdf(request):
 @login_required
 @require_POST
 def relance_sms(request):
-    """Envoie des SMS de relance paiement aux parents des élèves redevables."""
+    """Envoie aux parents des élèves redevables de la rubrique un SMS de relance nominatif : nom de l'élève,
+    rubrique et reste à payer de cet élève, au numéro de sa propre fiche (parent, tuteur, puis urgence)."""
     _require_finance_role(request, FINANCE_WRITE_ROLES)
 
     etab = request.user.etablissement
     if not etab:
         messages.error(request, "Votre compte n'est pas associé à un établissement.")
         return redirect('finances:relance_paiement')
+    if not sms_actifs():
+        messages.error(request, "Envoi de SMS désactivé : activez-le dans Paramètres → SMS avant de relancer.")
+        return redirect('finances:relance_paiement')
 
-    annee_id    = request.POST.get('annee')
-    classe_id   = request.POST.get('classe')
-    rubrique_id = request.POST.get('rubrique')
+    annee, classe, rubrique = _selection(etab, request.POST)
 
-    annee    = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
-    rubrique = get_object_or_404(RubriquePaiement, pk=rubrique_id, etablissement=etab)
-
-    if classe_id == 'all':
-        insc_qs = Inscription.objects.filter(
-            annee_scolaire=annee, classe__etablissement=etab,
-        )
-    else:
-        classe = get_object_or_404(Classe, pk=classe_id, etablissement=etab)
-        insc_qs = Inscription.objects.filter(annee_scolaire=annee, classe=classe)
-
-    inscriptions = insc_qs.exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe')
-
-    nb_envoyes = 0
-    nb_sans_numero = 0
-    envois = []
-
-    from parametres.models import ModeleMessage
-    from core.tasks import envoyer_sms_async
-
-    for inscr in inscriptions:
-        # Calculer le reste à payer pour cette rubrique
-        tarif = TarifScolarite.objects.filter(
-            etablissement=etab, rubrique=rubrique,
-        ).first()
-        montant_du = tarif.montant if tarif else Decimal('0')
-        montant_paye = Paiement.objects.filter(
-            inscription=inscr, rubrique=rubrique,
-        ).aggregate(total=Sum('montant'))['total'] or Decimal('0')
-        reste = montant_du - montant_paye
-
-        if reste <= 0:
-            continue  # à jour — pas de relance
-
-        eleve = inscr.eleve
-
-        # Chercher un numéro valide (Burkina : 8 chiffres ou +226XXXXXXXX)
-        for champ in ('telephone_parent', 'tuteur_telephone', 'telephone_urgence'):
-            candidat = (getattr(eleve, champ, '') or '').strip()
-            if _numero_valide(candidat):
-                numero = candidat
-                break
-        else:
+    envois, nb_sans_numero = [], 0
+    for redevable in _redevables(etab, annee, classe, rubrique):
+        eleve = redevable.eleve
+        numero = eleve.telephone_parent_valide()
+        if not numero:
             nb_sans_numero += 1
             continue
-
-        try:
-            sms_msg = ModeleMessage.get_contenu(etab, 'PAIEMENT', {
-                'nom_eleve': eleve.get_nom_complet(),
-                'montant': f"{reste:,.0f}".replace(',', ' '),
-                'rubrique': rubrique.nom,
-                'etablissement': etab.nom,
-            })
-        except (ValueError, IndexError, ModeleMessage.MultipleObjectsReturned):
-            logger.exception("Relance SMS : modèle de message invalide, texte par défaut utilisé")
-            sms_msg = f"Bonjour, votre enfant {eleve.nom} {eleve.prenom} a un reste à payer de {reste:,.0f} F pour la rubro {rubrique.nom}. Merci de regler au plus vite. {etab.nom}"
-
-        envois.append({'inscription': inscr, 'rubrique': rubrique, 'montant': reste, 'telephone': numero, 'message': sms_msg})
-        nb_envoyes += 1
-
-        from ..models import HistoriqueRelance, CanalRelance
-        import datetime as _dt
-        HistoriqueRelance.objects.create(
-            inscription=inscr,
-            rubrique=rubrique,
-            canal=CanalRelance.SMS,
-            montant_reclame=max(reste, Decimal('0')),
-            envoye_par=request.user,
-            date_relance=_dt.date.today(),
-            succes=True,
-            detail=numero,
-        )
+        message = ModeleMessage.get_contenu(etab, 'PAIEMENT', {
+            'nom_eleve': eleve.get_nom_complet(),
+            'montant': f"{redevable.reste:,.0f}".replace(',', ' '),
+            'rubrique': rubrique.nom,
+            'etablissement': etab.nom,
+        })
+        envois.append({'inscription': redevable.inscription, 'rubrique': rubrique, 'montant': redevable.reste,
+                       'telephone': numero, 'message': message, 'destinataire': f"{eleve.get_nom_complet()} — {rubrique.nom}"})
 
     # Avec la passerelle, chaque SMS reçoit un lien de paiement : création des liens hors requête.
     avec_lien = bool(envois) and cinetpay_configure()
+    with transaction.atomic():
+        for envoi in envois:
+            HistoriqueRelance.objects.create(
+                inscription=envoi['inscription'], rubrique=rubrique, canal=CanalRelance.SMS,
+                montant_reclame=envoi['montant'], envoye_par=request.user, date_relance=timezone.localdate(),
+                succes=True, detail=envoi['telephone'], created_by=request.user,
+            )
+        if envois and not avec_lien:
+            # Un SMS par élève, tracé dans le journal SMS au nom de l'élève et de la rubrique
+            mettre_en_file_lot([(e['telephone'], e['message'], e['destinataire']) for e in envois])
     if avec_lien:
         _en_arriere_plan(relancer_avec_lien, envois, request.user)
-    else:
-        for envoi in envois:
-            envoyer_sms_async(envoi['telephone'], envoi['message'])
 
-    if nb_envoyes:
-        messages.success(request, f"{nb_envoyes} SMS de relance envoyé(s)." + (" Lien de paiement en ligne inclus." if avec_lien else ""))
+    if envois:
+        messages.success(request, f"{len(envois)} SMS de relance envoyé(s)." + (" Lien de paiement en ligne inclus." if avec_lien else ""))
     if nb_sans_numero:
         messages.warning(request, f"{nb_sans_numero} élève(s) sans numéro valide — non contacté(s).")
-    if not nb_envoyes and not nb_sans_numero:
+    if not envois and not nb_sans_numero:
         messages.info(request, "Aucun élève redevable trouvé pour cette sélection.")
 
     return redirect('finances:relance_paiement')

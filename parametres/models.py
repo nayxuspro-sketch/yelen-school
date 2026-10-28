@@ -28,6 +28,8 @@ Date: Mars 2026
 Version: 3.4
 """
 
+import logging
+import re
 import uuid
 from typing import Optional
 
@@ -37,6 +39,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from core.fields import URLFieldHTTPS
+
+logger = logging.getLogger(__name__)
 
 
 # Importer BaseModel depuis core
@@ -1824,21 +1828,33 @@ class ModeleMessage(BaseModel):
     def __str__(self):
         return f"{self.get_type_display()} — {self.etablissement}"
 
+    VARIABLE = re.compile(r'\{(\w+)\}')
+
     @classmethod
-    def get_contenu(cls, etablissement, type_msg, variables):  # noqa: E501 (original method continues)
-        """
-        Retourne le contenu SMS personnalisé pour ce type,
-        ou le message par défaut si aucun modèle n'est configuré.
-        """
-        try:
-            modele = cls.objects.get(etablissement=etablissement, type=type_msg, actif=True)
-            contenu = modele.contenu_sms
-        except cls.DoesNotExist:
-            contenu = cls.DEFAUTS.get(type_msg, '')
-        try:
-            return contenu.format(**variables)
-        except KeyError:
-            return contenu
+    def rendre(cls, contenu, variables):
+        """Substitue les variables ``{nom}`` connues ; tout autre texte, accolades comprises, reste tel quel
+        (jamais d'exception, contrairement à ``str.format``)."""
+        return cls.VARIABLE.sub(lambda m: str(variables.get(m.group(1), m.group(0))), contenu)
+
+    @classmethod
+    def variables_inconnues(cls, contenu, connues):
+        """Noms de variables cités dans ``contenu`` et absents de ``connues``, triés."""
+        return sorted({nom for nom in cls.VARIABLE.findall(contenu) if nom not in connues})
+
+    @classmethod
+    def get_contenu(cls, etablissement, type_msg, variables):
+        """Message SMS de ce type pour l'établissement : son modèle personnalisé actif, ou le texte par défaut
+        si aucun n'est configuré — ou si le modèle cite une variable inconnue (le parent recevrait sinon
+        ``{nom_eleve}`` ou ``{rubrique}`` tels quels)."""
+        defaut = cls.DEFAUTS.get(type_msg, '')
+        modele = cls.objects.filter(etablissement=etablissement, type=type_msg, actif=True).first()
+        contenu = modele.contenu_sms if modele else defaut
+        inconnues = cls.variables_inconnues(contenu, variables)
+        if inconnues:
+            logger.warning("Modèle SMS %s de %s ignoré (variables inconnues : %s) : texte par défaut utilisé.",
+                           type_msg, etablissement, ', '.join(inconnues))
+            contenu = defaut
+        return cls.rendre(contenu, variables)
 
 
 class TitreHonorifiquePersonnel(BaseModel):

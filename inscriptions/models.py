@@ -240,6 +240,17 @@ class Eleve(BaseModel):
         """Retourne le nom complet en majuscules."""
         return f"{self.nom.upper()} {self.prenom.upper()}"
 
+    def telephone_parent_valide(self) -> str:
+        """Numéro auquel joindre la famille par SMS : parent, à défaut tuteur, à défaut urgence — le premier
+        valide (8 chiffres ou +226…), normalisé ; '' si la fiche n'en comporte aucun."""
+        from core.sms import _normaliser_numero, _numero_valide
+
+        for brut in (self.telephone_parent, self.tuteur_telephone, self.telephone_urgence):
+            brut = (brut or '').strip()
+            if brut and _numero_valide(brut):
+                return _normaliser_numero(brut)
+        return ''
+
     @property
     def age(self) -> Optional[int]:
         """Calcule l'âge dynamiquement (non stocké en base)."""

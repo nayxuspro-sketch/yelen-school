@@ -194,7 +194,7 @@ class Command(BaseCommand):
             msg = ModeleMessage.get_contenu(etab, 'PAIEMENT', {
                 'nom_eleve': eleve.get_nom_complet(),
                 'rubrique': ech.libelle,
-                'montant': f"{int(ech.montant_du):,}",
+                'montant': f"{ech.montant_du:,.0f}".replace(',', ' '),
                 'etablissement': etab_nom,
             })
 

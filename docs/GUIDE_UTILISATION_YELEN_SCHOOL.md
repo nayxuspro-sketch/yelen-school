@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.14.1
+version_logiciel: 5.14.2
 version_guide: 5.14
-date_mise_a_jour: 28/10/2026 (5.14.1 : environnement de test isolé pour l'essai des licences)
+date_mise_a_jour: 28/10/2026 (5.14.2 : SMS de relance — mêmes redevables que le compteur et le PDF, message nominatif toujours rendu)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -2724,6 +2724,10 @@ Le document contient :
 - **Trait de découpe** : Séparateur visuel entre les coupons pour faciliter la distribution
 - **Signataire automatique** : Le nom, la fonction et les titres du signataire sont issus des paramètres (document « Relance de Paiement », catégorie Finance, cycle de la classe ; à défaut, repli sur le signataire Finance le plus récent)
 - **Date limite obligatoire** : La date limite de paiement est requise pour générer les relances
+
+**Qui est redevable, et de combien (depuis la 5.14.2) :** le compteur, le PDF et les SMS désignent exactement les mêmes élèves, avec le même reste à payer, calculé comme au formulaire de paiement : tarif de la rubrique **pour le niveau, l'année et le statut de l'élève** (un élève sans statut n'a pas de tarif), plus ses services souscrits et créances sur cette rubrique, moins ses bourses ciblées sur la rubrique ; moins ses versements (remboursements déduits) ; le montant réclamé ne dépasse jamais le reste global de l'élève (bourse globale comprise). Un élève à jour n'est donc jamais relancé.
+
+**SMS de relance (section SMS de la page) :** un SMS par élève redevable, adressé au numéro de **sa propre fiche** (téléphone du parent ; à défaut celui du tuteur ; à défaut le numéro d'urgence — le premier numéro valide à 8 chiffres ou `+226…`), avec **son** nom, la rubrique choisie et **son** reste à payer. Les élèves sans numéro valide sont comptés dans le message d'avertissement et ne sont pas tracés. Le texte vient de `Paramètres → Modèles de messages → Relance paiement` (variables `{nom_eleve}`, `{montant}`, `{rubrique}`, `{etablissement}`) ; l'enregistrement d'un modèle refuse une variable inconnue, une accolade isolée ou un texte qui dépasserait 160 caractères, et un ancien modèle citant une variable inconnue est signalé **Ignoré — variable inconnue** : le texte par défaut est envoyé à sa place, jamais un `{nom_eleve}` brut. Si l'envoi de SMS est désactivé (2.17), la campagne est refusée avec un message clair au lieu d'annoncer des envois. Chaque SMS apparaît dans la file SMS (`Administration → Exploitation`) au nom de l'élève et de la rubrique, et dans **Historique des relances** avec le numéro utilisé.
 
 > **Configurer le signataire des relances :** Va dans `Paramètres → Signataires des documents`, puis clique **Nouveau signataire**. Le formulaire est organisé en 3 sections à 2 colonnes côte à côte : **Période & Périmètre** (année + cycle), **Type de document** (catégorie + fonction), **Signataire** (nom + titre honorifique). Sélectionne la catégorie **Finance** et associe le membre du personnel signataire.
 
@@ -7005,7 +7009,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.14.1 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.14.2 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

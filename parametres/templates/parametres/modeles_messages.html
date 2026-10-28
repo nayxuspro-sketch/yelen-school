@@ -43,6 +43,9 @@
         {% else %}
         <span style="font-size: 0.72rem; background: rgba(148,163,184,0.15); color: #64748b; padding: 2px 8px; border-radius: 20px; font-weight: 500;">Désactivé</span>
         {% endif %}
+        {% if item.ignore %}
+        <span style="font-size: 0.72rem; background: rgba(239,68,68,0.15); color: #dc2626; padding: 2px 8px; border-radius: 20px; font-weight: 500;" title="Ce modèle cite une variable inconnue : le texte par défaut est envoyé à sa place. Corrigez-le.">Ignoré — variable inconnue</span>
+        {% endif %}
       </div>
       <div style="display: flex; gap: 0.5rem;">
         <button
