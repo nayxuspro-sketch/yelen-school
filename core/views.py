@@ -892,6 +892,39 @@ def portail_eleve(request):
     })
 
 
+_ADRESSES_LOCALES = ('localhost', '127.0.0.1', '[::1]')
+
+
+def _url_webhook_sms(request):
+    """URL du webhook telle que le téléphone passerelle doit l'appeler : l'app SMS Gateway n'accepte que https://,
+    donc toujours en HTTPS, sur le port du proxy TLS, avec une adresse du serveur joignable depuis le réseau — même
+    quand la page est ouverte en http://localhost:8000 sur le serveur. Retourne (url, avertissement bloquant ou '')."""
+    import os
+    import re
+    from django.http.request import split_domain_port
+
+    chemin = '/communication/webhook/sms/'
+    domaine, port = split_domain_port(request.get_host())
+    if request.is_secure():
+        port = port or '443'
+    elif os.environ.get('YELEN_HTTPS', 'false').lower() == 'true':
+        port = os.environ.get('YELEN_HTTPS_PORT', '8443')
+    else:
+        return request.build_absolute_uri(chemin), (
+            "Le HTTPS n'est pas activé sur ce serveur : l'app SMS Gateway refuse les adresses http://. "
+            "Lancez activer-https.bat (guide §9.3) puis revenez ici.")
+    if domaine in _ADRESSES_LOCALES:
+        # Page ouverte sur le serveur lui-même : adresse LAN inscrite par activer-https (YELEN_HTTPS_HOSTS = IP,NOMPC,…).
+        domaine = next((h for h in re.split(r'[,; ]+', os.environ.get('YELEN_HTTPS_HOSTS', ''))
+                        if re.fullmatch(r'\d{1,3}(\.\d{1,3}){3}', h) and not h.startswith('127.')), domaine)
+    url = f"https://{domaine}{'' if port == '443' else ':' + port}{chemin}"
+    avertissement = ''
+    if domaine in _ADRESSES_LOCALES:
+        avertissement = ("Adresse non joignable depuis le téléphone : ouvrez cette page par l'adresse IP du serveur "
+                         "(https://<IP du serveur>:8443/).")
+    return url, avertissement
+
+
 @login_required
 def sms_configuration(request):
     """Page de configuration et test du modem GSM (SUPER_ADMIN / DIRECTEUR uniquement)."""
@@ -918,7 +951,7 @@ def sms_configuration(request):
 
     # URL que le téléphone passerelle appellera pour chaque SMS reçu. L'app SMS Gateway ne peut pas ajouter
     # d'en-tête : sans secret HMAC configuré, le jeton du webhook voyage dans l'URL (page réservée aux administrateurs).
-    webhook_url = request.build_absolute_uri('/communication/webhook/sms/')
+    webhook_url, webhook_avertissement = _url_webhook_sms(request)
     jeton = settings.SMS_WEBHOOK_TOKEN
     if jeton and not jeton.lower().startswith(('generer-', 'votre-', 'changez')) \
             and not (settings.SMS_WEBHOOK_HMAC_SECRET or settings.SMS_WEBHOOK_SECRET):
@@ -996,7 +1029,7 @@ def sms_configuration(request):
 
         elif 'enregistrer_webhook' in request.POST:
             from core.sms import enregistrer_webhook
-            succes, motif = enregistrer_webhook(webhook_url)
+            succes, motif = (False, webhook_avertissement) if webhook_avertissement else enregistrer_webhook(webhook_url)
             if succes:
                 messages.success(request, "Webhook enregistré sur le téléphone passerelle : les SMS reçus seront transmis à YELEN.")
             else:
@@ -1020,6 +1053,7 @@ def sms_configuration(request):
         'config': config,
         'test_result': test_result,
         'webhook_url': webhook_url,
+        'webhook_avertissement': webhook_avertissement,
     })
 
 

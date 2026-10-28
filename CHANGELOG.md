@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.15.1 — 2026-10-28
+
+### Corrigé
+- **Configuration SMS → Enregistrer sur le téléphone** : l'URL du webhook reprenait l'adresse de la page ouverte ; ouverte en `http://localhost:8000` sur le serveur (seul accès HTTP restant après `activer-https`), elle était refusée par l'app SMS Gateway (« url must start with https:// ») et, de toute façon, injoignable depuis le téléphone. L'URL est désormais toujours construite en HTTPS, sur le port du proxy (`YELEN_HTTPS_PORT`), avec l'adresse IP du serveur (`YELEN_HTTPS_HOSTS` quand la page est ouverte en localhost) ; un avertissement explicite bloque l'enregistrement si le HTTPS n'est pas activé ou si l'adresse n'est pas joignable. Guide §10.4.
+
 ## 5.15.0 — 2026-10-28
 
 ### Ajouté

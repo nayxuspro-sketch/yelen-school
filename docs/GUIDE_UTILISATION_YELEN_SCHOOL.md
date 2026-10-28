@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.15.0
+version_logiciel: 5.15.1
 version_guide: 5.14
-date_mise_a_jour: 28/10/2026 (5.15.0 : boîte « Messages reçus » — SMS libres des parents, lu / non lu, réponse par SMS)
+date_mise_a_jour: 28/10/2026 (5.15.1 : URL du webhook SMS toujours en HTTPS avec l'adresse IP du serveur)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -6554,7 +6554,7 @@ Les SMS reçus par le téléphone passerelle sont transmis à YELEN par un **web
 1. **Envoi déjà opérationnel** (2.17) : passerelle `Interface WiFi`, URL `http://<IP du téléphone>:8080/message`, identifiant et mot de passe de l'app, *Test de connectivité* réussi.
 2. **Certificat YELEN sur le téléphone** : le webhook doit être en HTTPS et le téléphone doit faire confiance au certificat du serveur. Sur le téléphone passerelle, ouvrir `https://<IP du serveur>:8443/certificat-autorite/` et installer le certificat (même procédure que pour les tablettes, guide de déploiement §9.3).
 3. **Dans l'app SMS Gateway** : `Settings → Webhooks` → désactiver **Require Internet connection** (réseau local sans Internet), laisser les autres réglages par défaut.
-4. **Dans YELEN**, ouvrir `Paramètres → Configuration SMS` **par l'adresse IP du serveur** (`https://<IP du serveur>:8443/…`, pas par le nom du PC, que le téléphone ne résout pas toujours) et cliquer **Enregistrer sur le téléphone**. YELEN déclare l'URL à l'app (`POST /webhooks`, événement `sms:received`, identifiant fixe `yelen-sms-recus` : l'opération est répétable). L'app affiche une notification « webhook enregistré » et la liste `Settings → Webhooks → Registered webhooks` montre l'URL.
+4. **Dans YELEN**, ouvrir `Paramètres → Configuration SMS` depuis n'importe quel poste (y compris `http://localhost:8000` sur le serveur) : l'URL affichée est toujours construite en HTTPS, sur le port du proxy, avec l'adresse IP du serveur (`https://<IP du serveur>:8443/communication/webhook/sms/?token=…`) — un avertissement orange signale ce qui manque le cas échéant (HTTPS non activé → `activer-https.bat` ; adresse non joignable → ouvrir la page par l'IP du serveur). Cliquer **Enregistrer sur le téléphone** : YELEN déclare l'URL à l'app (`POST /webhooks`, événement `sms:received`, identifiant fixe `yelen-sms-recus` : l'opération est répétable). L'app affiche une notification « webhook enregistré » et la liste `Settings → Webhooks → Registered webhooks` montre l'URL.
 5. **Vérifier** : envoyer `AIDE` au numéro de l'école depuis un portable → réponse automatique en quelques secondes, ligne dans **Communication → Messages reçus** (filtre *Commandes automatiques*) et dans **Communication → SMS Direct** (historique).
 
 Formats acceptés par le webhook (`POST /communication/webhook/sms/`) :
@@ -7034,7 +7034,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.15.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.15.1 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

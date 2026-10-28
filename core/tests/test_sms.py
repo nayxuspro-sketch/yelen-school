@@ -1,4 +1,5 @@
 """Tests du module d'envoi SMS (core/sms.py) : normalisation, dispatch, passerelle HTTP et modem série simulés."""
+import html
 import json
 import urllib.error
 from io import BytesIO
@@ -302,3 +303,54 @@ def test_page_configuration_affiche_l_url_avec_jeton_et_enregistre_le_webhook(cl
     assert 'name="enregistrer_webhook"' in page
     enregistrer.assert_called_once_with('https://testserver/communication/webhook/sms/?token=jeton-webhook')
     assert 'Webhook enregistré sur le téléphone passerelle' in html
+
+
+@pytest.mark.parametrize('hote, securisee, env, attendu, bloquant', [
+    # page ouverte en https par l'IP du serveur (cas nominal) : adresse reprise telle quelle
+    ('192.168.11.108:8443', True, {'YELEN_HTTPS': 'true'}, 'https://192.168.11.108:8443', False),
+    # page ouverte en http://localhost:8000 sur le serveur (web lié à 127.0.0.1 après activer-https) : https, port du
+    # proxy, première IP LAN inscrite par activer-https — c'est ce cas qui donnait « url must start with https:// »
+    ('localhost:8000', False, {'YELEN_HTTPS': 'true', 'YELEN_HTTPS_PORT': '8443',
+                               'YELEN_HTTPS_HOSTS': '192.168.11.108,SERVEUR,SERVEUR.local,localhost,127.0.0.1'},
+     'https://192.168.11.108:8443', False),
+    # page ouverte en http par l'IP (HTTP encore ouvert sur le réseau) : même adresse, basculée en https:8443
+    ('192.168.11.108:8000', False, {'YELEN_HTTPS': 'true'}, 'https://192.168.11.108:8443', False),
+    # proxy sur 443 : pas de port dans l'adresse
+    ('192.168.11.108:8000', False, {'YELEN_HTTPS': 'true', 'YELEN_HTTPS_PORT': '443'}, 'https://192.168.11.108', False),
+    # https ouvert en localhost sans IP LAN connue : adresse injoignable → bloquant
+    ('localhost:8443', True, {'YELEN_HTTPS': 'true', 'YELEN_HTTPS_HOSTS': 'SERVEUR,localhost'}, 'https://localhost:8443', True),
+    # HTTPS non activé : adresse http laissée telle quelle, enregistrement bloqué avec la marche à suivre
+    ('192.168.11.108:8000', False, {'YELEN_HTTPS': 'false'}, 'http://192.168.11.108:8000', True),
+])
+def test_url_webhook_toujours_en_https_et_joignable(rf, settings, monkeypatch, hote, securisee, env, attendu, bloquant):
+    from core.views import _url_webhook_sms
+    settings.ALLOWED_HOSTS = ['*']
+    for variable in ('YELEN_HTTPS', 'YELEN_HTTPS_PORT', 'YELEN_HTTPS_HOSTS'):
+        monkeypatch.delenv(variable, raising=False)
+    for variable, valeur in env.items():
+        monkeypatch.setenv(variable, valeur)
+    requete = rf.get('/parametres/sms/', HTTP_HOST=hote, secure=securisee)
+
+    url, avertissement = _url_webhook_sms(requete)
+
+    assert url == attendu + '/communication/webhook/sms/'
+    assert bool(avertissement) is bloquant
+
+
+@pytest.mark.django_db
+def test_enregistrement_refuse_tant_que_l_adresse_n_est_pas_joignable_en_https(client, settings, mocker, monkeypatch):
+    from django.urls import reverse
+    from model_bakery import baker
+    monkeypatch.setenv('YELEN_HTTPS', 'false')
+    settings.SMS_WEBHOOK_TOKEN = 'jeton-webhook'
+    client.force_login(baker.make('accounts.User', role='DIRECTEUR', must_change_password=False,
+                                  etablissement=baker.make('etablissements.Etablissement')))
+    enregistrer = mocker.patch('core.sms.enregistrer_webhook')
+
+    page = html.unescape(client.get(reverse('core:sms_configuration'), secure=False).content.decode())
+    apres = html.unescape(client.post(reverse('core:sms_configuration'), {'enregistrer_webhook': '1'},
+                                      secure=False, follow=True).content.decode())
+
+    assert "Le HTTPS n'est pas activé sur ce serveur" in page
+    assert "Webhook non enregistré — Le HTTPS n'est pas activé sur ce serveur" in apres
+    enregistrer.assert_not_called()

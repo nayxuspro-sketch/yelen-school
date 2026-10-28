@@ -52,9 +52,12 @@
         {{ webhook_url }}
       </code>
     </div>
+    {% if webhook_avertissement %}
+    <div class="mt-2 text-xs" style="color:#F5A623;">⚠ {{ webhook_avertissement }}</div>
+    {% endif %}
     <div class="d-flex gap-4 mt-2 flex-wrap text-xs text-muted">
       <span>📱 Réception des SMS des parents : « Enregistrer sur le téléphone » déclare cette URL à l'app Android SMS Gateway (événement <code>sms:received</code>), avec les identifiants de la passerelle WiFi ci-dessous.</span>
-      <span>· Ouvrez cette page par l'adresse IP du serveur (en https) : le téléphone doit pouvoir joindre cette URL et faire confiance au certificat YELEN (page <code>/certificat-autorite/</code>).</span>
+      <span>· Adresse toujours en HTTPS, sur le port du proxy, avec l'adresse IP du serveur — quelle que soit la façon dont cette page a été ouverte. Le téléphone doit faire confiance au certificat YELEN (page <code>/certificat-autorite/</code>, guide §10.4).</span>
     </div>
   </div>
 </div>
