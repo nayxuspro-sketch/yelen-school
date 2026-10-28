@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.14.2
+version_logiciel: 5.14.3
 version_guide: 5.14
-date_mise_a_jour: 28/10/2026 (5.14.2 : SMS de relance — mêmes redevables que le compteur et le PDF, message nominatif toujours rendu)
+date_mise_a_jour: 28/10/2026 (5.14.3 : réception des SMS des parents — enveloppe de l'app SMS Gateway comprise, enregistrement du webhook en un clic)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -507,7 +507,7 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 **Interface :** La page se compose de quatre cartes :
 
-0. **URL Endpoint du Webhook SMS** — Affiche l'URL du webhook `/communication/webhook/sms/` à configurer dans l'App Android SMS Gateway. Bouton "Copier l'URL" pour copier en un clic. La passerelle doit aussi envoyer `X-SMS-Token` avec la valeur de `SMS_WEBHOOK_TOKEN` stockée dans `.env` ; ne pas placer ce secret dans une URL ou un ticket.
+0. **URL Endpoint du Webhook SMS** — Affiche l'URL que le téléphone passerelle appelle pour chaque SMS reçu (`/communication/webhook/sms/?token=…`, jeton `SMS_WEBHOOK_TOKEN` du `.env` : l'app Android ne sait pas ajouter d'en-tête, le jeton voyage donc dans l'URL, affichée seulement aux administrateurs). Le bouton **Enregistrer sur le téléphone** déclare cette URL à l'app SMS Gateway (événement `sms:received`) avec les identifiants de la passerelle WiFi : c'est ainsi que les SMS des parents arrivent dans YELEN (procédure complète : 10.4). Bouton "Copier l'URL" pour un enregistrement manuel.
 
 1. **Paramètres de Backend** — Configuration de la passerelle :
    - **Activer le service SMS** — Toggle ON/OFF pour activer/désactiver l'envoi SMS
@@ -6548,16 +6548,24 @@ Retourne la liste résumée de toutes les commandes disponibles. Accessible depu
 
 ### 10.4 Configuration Technique (Administrateur)
 
-#### Passerelle SMS (Android SMS Gateway)
-Le webhook est exposé à l'URL :
-```
-POST /communication/webhook/sms/
-```
+#### Passerelle SMS (Android SMS Gateway) — recevoir les SMS des parents
+Les SMS reçus par le téléphone passerelle sont transmis à YELEN par un **webhook** : l'app SMS Gateway appelle, pour chaque SMS reçu, l'URL affichée dans `Paramètres → Configuration SMS` (carte *URL Endpoint du Webhook SMS*). Mise en place, depuis le poste serveur :
 
-Formats supportés :
-- **JSON** (`Content-Type: application/json`) avec les champs `phoneNumber` et `message`
+1. **Envoi déjà opérationnel** (2.17) : passerelle `Interface WiFi`, URL `http://<IP du téléphone>:8080/message`, identifiant et mot de passe de l'app, *Test de connectivité* réussi.
+2. **Certificat YELEN sur le téléphone** : le webhook doit être en HTTPS et le téléphone doit faire confiance au certificat du serveur. Sur le téléphone passerelle, ouvrir `https://<IP du serveur>:8443/certificat-autorite/` et installer le certificat (même procédure que pour les tablettes, guide de déploiement §9.3).
+3. **Dans l'app SMS Gateway** : `Settings → Webhooks` → désactiver **Require Internet connection** (réseau local sans Internet), laisser les autres réglages par défaut.
+4. **Dans YELEN**, ouvrir `Paramètres → Configuration SMS` **par l'adresse IP du serveur** (`https://<IP du serveur>:8443/…`, pas par le nom du PC, que le téléphone ne résout pas toujours) et cliquer **Enregistrer sur le téléphone**. YELEN déclare l'URL à l'app (`POST /webhooks`, événement `sms:received`, identifiant fixe `yelen-sms-recus` : l'opération est répétable). L'app affiche une notification « webhook enregistré » et la liste `Settings → Webhooks → Registered webhooks` montre l'URL.
+5. **Vérifier** : envoyer `AIDE` au numéro de l'école depuis un portable → réponse automatique en quelques secondes, ligne dans **Communication → SMS Direct** (historique) et dans `Admin → Communication → SMS Entrants`.
+
+Formats acceptés par le webhook (`POST /communication/webhook/sms/`) :
+- **Enveloppe SMS Gateway** (`application/json`) : `{"event": "sms:received", "payload": {"sender": "+226…", "message": "…"}}` ; les autres événements (`sms:sent`, `sms:delivered`, `system:ping`…) sont acquittés (200, `ignored`) sans traitement
+- **JSON à plat** avec les champs `phoneNumber`/`sender` et `message`
 - **Form-data** (`POST`) avec les champs `phoneNumber`/`phone`/`sender` et `message`/`text`/`msg`
 - **GET** (tests uniquement) avec les mêmes paramètres en query string
+
+Authentification : jeton `?token=` (`SMS_WEBHOOK_TOKEN`, déjà dans l'URL affichée) ou, si `SMS_WEBHOOK_HMAC_SECRET` est défini dans `.env`, signature obligatoire — soit `X-SMS-Signature` = HMAC-SHA256(corps), soit la signature native de l'app `X-Signature` = HMAC-SHA256(corps + `X-Timestamp`) avec la **Signing Key** de l'app (`Settings → Webhooks`) comme secret, horodatage toléré à ± 5 minutes.
+
+> **Réponses libres des parents** (« Je paierai lundi ») : elles ne correspondent à aucune commande ; le parent reçoit « Commande invalide. Envoyez AIDE… » et le texte reste consultable dans `Admin → Communication → SMS Entrants` (colonne *Message*).
 
 #### Numéros Administrateurs Maîtres
 Pour permettre à des numéros d'administration de consulter les données de n'importe quel élève, ajouter dans `settings.py` :
@@ -7009,7 +7017,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.14.2 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.14.3 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

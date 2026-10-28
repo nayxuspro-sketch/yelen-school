@@ -288,6 +288,46 @@ def envoyer_sms(numero: str, message: str, limite: int = 160) -> tuple:
     return False, motif
 
 
+# ── Réception des SMS (webhook de l'app Android SMS Gateway) ─────────────────
+
+def enregistrer_webhook(url_webhook: str, timeout: int = 10) -> tuple:
+    """Déclare ``url_webhook`` auprès de l'app Android SMS Gateway du téléphone passerelle (API locale
+    ``POST /webhooks``, mêmes identifiants que l'envoi) pour l'événement ``sms:received`` : chaque SMS reçu par le
+    téléphone est alors transmis à YELEN. L'identifiant fixe rend l'opération répétable (mise à jour de l'URL).
+
+    Returns:
+        (True, '')           si le téléphone a accepté le webhook
+        (False, 'motif')     sinon
+    """
+    import base64
+    import json
+    import urllib.error
+    import urllib.request
+
+    if str(get_sms_val('SMS_BACKEND')).lower() != 'http':
+        return False, "La réception des SMS n'est possible qu'avec la passerelle WiFi (app Android SMS Gateway)."
+    base = re.sub(r'/message/?$', '', str(get_sms_val('SMS_HTTP_URL') or '').strip()).rstrip('/')
+    if not base:
+        return False, "Renseignez d'abord l'URL de la passerelle (SMS_HTTP_URL)."
+    payload = json.dumps({'id': 'yelen-sms-recus', 'url': url_webhook, 'event': 'sms:received'}).encode('utf-8')
+    credentials = base64.b64encode(f"{get_sms_val('SMS_HTTP_USER')}:{get_sms_val('SMS_HTTP_PASSWORD')}".encode()).decode()
+    req = urllib.request.Request(
+        f"{base}/webhooks", data=payload, method='POST',
+        headers={'Content-Type': 'application/json', 'Authorization': f'Basic {credentials}'},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status in (200, 201):
+                logger.info("Webhook SMS enregistré sur la passerelle → %s", url_webhook)
+                return True, ''
+            return False, f"HTTP {resp.status} : {resp.read().decode('utf-8', errors='replace')[:200]}"
+    except urllib.error.HTTPError as e:
+        return False, f"HTTP {e.code} : {e.read().decode('utf-8', errors='replace')[:200]}"
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        return False, (f"Impossible de joindre la passerelle SMS ({base}). Vérifiez que l'app SMS Gateway est démarrée "
+                       f"et que le serveur et le téléphone sont sur le même réseau. Détail : {getattr(e, 'reason', e)}")
+
+
 # ── Diagnostic ────────────────────────────────────────────────────────────────
 
 def tester_modem() -> dict:

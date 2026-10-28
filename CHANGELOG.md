@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.14.3 — 2026-10-28
+
+### Corrigé
+- **Réception des SMS des parents (Parent-SMS Direct)** : le webhook `/communication/webhook/sms/` ne lisait que des champs à plat (`phoneNumber`, `message`) alors que l'app Android SMS Gateway envoie une enveloppe `{"event": "sms:received", "payload": {"sender", "message"}}` — tout SMS reçu était rejeté « Missing phoneNumber or message » et l'app réessayait 14 fois. L'enveloppe est comprise, les autres événements (`sms:sent`, `sms:delivered`, `system:ping`…) sont acquittés sans traitement, et la signature native de l'app (`X-Signature` = HMAC-SHA256(corps + `X-Timestamp`), ± 5 min) est acceptée quand un secret HMAC est configuré.
+
+### Ajouté
+- `Paramètres → Configuration SMS` : l'URL du webhook inclut le jeton (`?token=`, l'app ne sait pas ajouter d'en-tête) et le bouton **Enregistrer sur le téléphone** déclare cette URL à l'app SMS Gateway (`POST /webhooks`, événement `sms:received`, identifiant fixe, mêmes identifiants que l'envoi). Guide §2.17 et §10.4 (certificat YELEN sur le téléphone, « Require Internet connection » désactivé, vérification par `AIDE`).
+
 ## 5.14.2 — 2026-10-28
 
 ### Corrigé

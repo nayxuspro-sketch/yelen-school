@@ -252,3 +252,53 @@ def test_tester_modem_serial(modem, mocker):
 def test_tester_modem_backend_inconnu():
     sms.set_sms_config_runtime(SMS_BACKEND='pigeon')
     assert sms.tester_modem() == {'ok': False, 'message': "Backend inconnu : 'pigeon'", 'operateur': None, 'backend': 'pigeon'}
+
+
+# ── Réception des SMS : enregistrement du webhook sur le téléphone passerelle ─────────────────────────────────────
+
+def test_enregistrer_webhook_declare_l_url_a_l_app_sms_gateway(mocker):
+    urlopen = mocker.patch('urllib.request.urlopen', return_value=FausseReponseHttp(201))
+    url = 'https://192.168.11.108:8443/communication/webhook/sms/?token=abc'
+
+    assert sms.enregistrer_webhook(url) == (True, '')
+
+    requete = urlopen.call_args.args[0]
+    assert requete.full_url == 'http://192.168.1.45:8080/webhooks' and requete.get_method() == 'POST'
+    assert json.loads(requete.data) == {'id': 'yelen-sms-recus', 'url': url, 'event': 'sms:received'}
+    assert requete.get_header('Authorization') == 'Basic YWRtaW46c2VjcmV0'
+
+
+def test_enregistrer_webhook_refus_et_passerelle_injoignable(mocker):
+    sms.set_sms_config_runtime(SMS_BACKEND='serial')
+    ok, motif = sms.enregistrer_webhook('https://serveur/communication/webhook/sms/')
+    assert ok is False and 'passerelle WiFi' in motif
+
+    sms.set_sms_config_runtime(SMS_BACKEND='http')
+    mocker.patch('urllib.request.urlopen', side_effect=urllib.error.URLError('connexion refusée'))
+    ok, motif = sms.enregistrer_webhook('https://serveur/communication/webhook/sms/')
+    assert ok is False and 'Impossible de joindre la passerelle SMS (http://192.168.1.45:8080)' in motif
+
+    erreur = urllib.error.HTTPError('http://192.168.1.45:8080/webhooks', 401, 'Unauthorized', {}, BytesIO(b'bad credentials'))
+    mocker.patch('urllib.request.urlopen', side_effect=erreur)
+    assert sms.enregistrer_webhook('https://serveur/communication/webhook/sms/') == (False, 'HTTP 401 : bad credentials')
+
+
+@pytest.mark.django_db
+def test_page_configuration_affiche_l_url_avec_jeton_et_enregistre_le_webhook(client, settings, mocker):
+    from django.urls import reverse
+    from model_bakery import baker
+    settings.SMS_WEBHOOK_TOKEN = 'jeton-webhook'
+    settings.SMS_WEBHOOK_HMAC_SECRET = ''
+    settings.SMS_WEBHOOK_SECRET = ''
+    client.force_login(baker.make('accounts.User', role='DIRECTEUR', must_change_password=False,
+                                  etablissement=baker.make('etablissements.Etablissement')))
+    url = reverse('core:sms_configuration')
+
+    page = client.get(url, secure=True).content.decode()
+    enregistrer = mocker.patch('core.sms.enregistrer_webhook', return_value=(True, ''))
+    html = client.post(url, {'enregistrer_webhook': '1'}, secure=True, follow=True).content.decode()
+
+    assert 'https://testserver/communication/webhook/sms/?token=jeton-webhook' in page
+    assert 'name="enregistrer_webhook"' in page
+    enregistrer.assert_called_once_with('https://testserver/communication/webhook/sms/?token=jeton-webhook')
+    assert 'Webhook enregistré sur le téléphone passerelle' in html

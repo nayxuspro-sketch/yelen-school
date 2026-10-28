@@ -916,7 +916,13 @@ def sms_configuration(request):
         'SMS_MODEM_TIMEOUT':  get_sms_val('SMS_MODEM_TIMEOUT'),
     }
 
+    # URL que le téléphone passerelle appellera pour chaque SMS reçu. L'app SMS Gateway ne peut pas ajouter
+    # d'en-tête : sans secret HMAC configuré, le jeton du webhook voyage dans l'URL (page réservée aux administrateurs).
     webhook_url = request.build_absolute_uri('/communication/webhook/sms/')
+    jeton = settings.SMS_WEBHOOK_TOKEN
+    if jeton and not jeton.lower().startswith(('generer-', 'votre-', 'changez')) \
+            and not (settings.SMS_WEBHOOK_HMAC_SECRET or settings.SMS_WEBHOOK_SECRET):
+        webhook_url += f'?token={jeton}'
 
     test_result = None
 
@@ -987,6 +993,15 @@ def sms_configuration(request):
 
         elif 'tester' in request.POST:
             test_result = tester_modem()
+
+        elif 'enregistrer_webhook' in request.POST:
+            from core.sms import enregistrer_webhook
+            succes, motif = enregistrer_webhook(webhook_url)
+            if succes:
+                messages.success(request, "Webhook enregistré sur le téléphone passerelle : les SMS reçus seront transmis à YELEN.")
+            else:
+                messages.error(request, f"Webhook non enregistré — {motif}")
+            return redirect('core:sms_configuration')
 
         elif 'envoyer_test' in request.POST:
             numero = request.POST.get('numero_test', '').strip()

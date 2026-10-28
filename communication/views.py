@@ -403,21 +403,33 @@ def webhook_incoming_sms(request):
         token = (request.GET.get('token', '')
                  or request.META.get('HTTP_X_SMS_TOKEN', ''))
         signature = request.META.get('HTTP_X_SMS_SIGNATURE', '').strip().lower()
+        # Signature native de l'app Android SMS Gateway : X-Signature = HMAC-SHA256(corps + X-Timestamp),
+        # avec la « Signing Key » de l'app (Réglages → Webhooks) comme secret. Horodatage toléré à ± 5 min.
+        signature_app = request.META.get('HTTP_X_SIGNATURE', '').strip().lower()
+        horodatage_app = request.META.get('HTTP_X_TIMESTAMP', '').strip()
         authenticated = False
 
         if hmac_secret:
             # Secret configuré → signature HMAC-SHA256 du corps brut OBLIGATOIRE.
-            if not signature:
+            if not signature and not signature_app:
                 return JsonResponse(
                     {'status': 'error', 'message': 'Signature manquante.'},
                     status=403,
                 )
-            expected_signature = hmac.new(
-                hmac_secret.encode('utf-8'),
-                request.body,
-                hashlib.sha256,
-            ).hexdigest()
-            authenticated = constant_time_compare(signature, expected_signature)
+            if signature:
+                expected_signature = hmac.new(
+                    hmac_secret.encode('utf-8'),
+                    request.body,
+                    hashlib.sha256,
+                ).hexdigest()
+                authenticated = constant_time_compare(signature, expected_signature)
+            elif horodatage_app.isdigit() and abs(int(horodatage_app) - int(timezone.now().timestamp())) <= 300:
+                expected_signature = hmac.new(
+                    hmac_secret.encode('utf-8'),
+                    request.body + horodatage_app.encode('utf-8'),
+                    hashlib.sha256,
+                ).hexdigest()
+                authenticated = constant_time_compare(signature_app, expected_signature)
         elif configured_token:
             authenticated = constant_time_compare(token, configured_token)
         elif settings.DEBUG:
@@ -436,10 +448,19 @@ def webhook_incoming_sms(request):
         if request.content_type == 'application/json':
             try:
                 data = json.loads(request.body)
-                sender_number = data.get('phoneNumber') or data.get('phone') or data.get('sender') or data.get('from') or ""
-                message_text = data.get('message') or data.get('text') or data.get('msg') or ""
             except json.JSONDecodeError:
-                pass
+                data = {}
+            if not isinstance(data, dict):
+                data = {}
+            # Enveloppe de l'app Android SMS Gateway : {"event": "sms:received", "payload": {"sender", "message", …}}.
+            # Les autres événements (sms:sent, sms:delivered, system:ping…) sont acquittés sans traitement :
+            # une erreur déclencherait jusqu'à 14 nouvelles tentatives côté téléphone.
+            evenement = data.get('event')
+            if evenement and evenement != 'sms:received':
+                return JsonResponse({'status': 'ignored', 'event': evenement})
+            charge = data.get('payload') if isinstance(data.get('payload'), dict) else data
+            sender_number = charge.get('phoneNumber') or charge.get('phone') or charge.get('sender') or charge.get('from') or ""
+            message_text = charge.get('message') or charge.get('text') or charge.get('msg') or ""
         else:
             sender_number = request.POST.get('phoneNumber') or request.POST.get('phone') or request.POST.get('sender') or request.POST.get('from') or ""
             message_text = request.POST.get('message') or request.POST.get('text') or request.POST.get('msg') or ""

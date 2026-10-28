@@ -234,6 +234,55 @@ class TestIncomingSMSWebhook:
         assert response.status_code == 200
         mock_envoyer.assert_called_once()
 
+    @patch('core.tasks.envoyer_sms_async')
+    def test_enveloppe_de_l_app_sms_gateway(self, mock_envoyer, client):
+        """L'app Android envoie {"event": "sms:received", "payload": {"sender", "message"}} : le SMS du parent est
+        traité (il était rejeté « Missing phoneNumber or message »)."""
+        response = client.post(self.url, json.dumps({
+            'deviceId': 'ffffffffceb0b1db', 'event': 'sms:received', 'id': 'Ey6ECgOkVVFjz3CL48B8C',
+            'payload': {'messageId': 'abc123', 'message': 'NOTE 01-2026-9999 T1', 'sender': '+22670112233',
+                        'recipient': '+22670000000', 'simNumber': 1, 'receivedAt': '2026-10-28T15:46:11.000+00:00'},
+            'webhookId': 'yelen-sms-recus',
+        }), content_type='application/json', secure=True)
+
+        assert response.status_code == 200 and response.json()['status'] == 'success'
+        assert '14.50/20' in response.json()['response']
+        mock_envoyer.assert_called_once_with('+22670112233', response.json()['response'])
+        log = IncomingSMSLog.objects.get()
+        assert (log.sender_number, log.command_type, log.is_authorized) == ('+22670112233', 'NOTE', True)
+
+    @patch('core.tasks.envoyer_sms_async')
+    def test_autres_evenements_acquittes_sans_traitement(self, mock_envoyer, client):
+        """sms:sent, sms:delivered, system:ping… : 200 sans réponse ni journal (une erreur ferait réessayer l'app)."""
+        response = client.post(self.url, json.dumps({
+            'event': 'sms:delivered', 'payload': {'messageId': 'msg-789', 'sender': '+22670000000',
+                                                  'recipient': '+22670112233', 'deliveredAt': '2026-10-28T02:10:00Z'},
+        }), content_type='application/json', secure=True)
+
+        assert response.status_code == 200 and response.json() == {'status': 'ignored', 'event': 'sms:delivered'}
+        assert not IncomingSMSLog.objects.exists() and not mock_envoyer.called
+
+    @patch('core.tasks.envoyer_sms_async')
+    def test_signature_native_de_l_app_sms_gateway(self, mock_envoyer, client, settings):
+        """X-Signature = HMAC-SHA256(corps + X-Timestamp) avec la clé de signature de l'app ; horodatage périmé refusé."""
+        import time
+        settings.SMS_WEBHOOK_TOKEN = ''
+        settings.SMS_WEBHOOK_HMAC_SECRET = 'cle-de-signature-app'
+        client.defaults.pop('HTTP_X_SMS_TOKEN', None)
+        body = json.dumps({'event': 'sms:received', 'payload': {'sender': '+22670000000', 'message': 'AIDE'}}).encode()
+
+        def signer(horodatage):
+            return hmac.new(b'cle-de-signature-app', body + str(horodatage).encode(), hashlib.sha256).hexdigest()
+
+        maintenant = int(time.time())
+        acceptee = client.post(self.url, body, content_type='application/json', secure=True,
+                               HTTP_X_SIGNATURE=signer(maintenant), HTTP_X_TIMESTAMP=str(maintenant))
+        perimee = client.post(self.url, body, content_type='application/json', secure=True,
+                              HTTP_X_SIGNATURE=signer(maintenant - 1000), HTTP_X_TIMESTAMP=str(maintenant - 1000))
+
+        assert acceptee.status_code == 200 and 'Yelen - Commandes:' in acceptee.json()['response']
+        assert perimee.status_code == 403
+
     def test_missing_webhook_secret_is_rejected_outside_debug(self, client, settings):
         settings.SMS_WEBHOOK_TOKEN = ''
         settings.SMS_WEBHOOK_HMAC_SECRET = ''

@@ -34,9 +34,17 @@
       </svg>
       URL Endpoint du Webhook SMS
     </span>
-    <button class="btn-secondary btn-sm" data-csp-action="copy-webhook" id="btn-copy-url">
-      Copier l'URL
-    </button>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn-secondary btn-sm" data-csp-action="copy-webhook" id="btn-copy-url">
+        Copier l'URL
+      </button>
+      <form method="post" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" name="enregistrer_webhook" class="btn-primary btn-sm">
+          Enregistrer sur le téléphone
+        </button>
+      </form>
+    </div>
   </div>
   <div class="card-body">
     <div class="d-flex align-center gap-2 flex-wrap">
@@ -45,8 +53,8 @@
       </code>
     </div>
     <div class="d-flex gap-4 mt-2 flex-wrap text-xs text-muted">
-      <span>📱 Configurez cette URL dans l'App Android SMS Gateway</span>
-      <span>· Formats supportés : JSON POST, Form POST, GET</span>
+      <span>📱 Réception des SMS des parents : « Enregistrer sur le téléphone » déclare cette URL à l'app Android SMS Gateway (événement <code>sms:received</code>), avec les identifiants de la passerelle WiFi ci-dessous.</span>
+      <span>· Ouvrez cette page par l'adresse IP du serveur (en https) : le téléphone doit pouvoir joindre cette URL et faire confiance au certificat YELEN (page <code>/certificat-autorite/</code>).</span>
     </div>
   </div>
 </div>
