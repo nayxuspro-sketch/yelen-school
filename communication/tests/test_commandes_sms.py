@@ -87,7 +87,7 @@ def test_aide_liste_les_commandes_de_l_ecole_dans_la_limite_d_un_sms(ecole):
                                       'FRAIS <matricule>, HORAIRES.')
 
     for i in range(8):
-        commande(ecole['etab'], f'MOTCLETRESLONGNUMERO{i}', 'x')
+        commande(ecole['etab'], f'MOTCLETRESLONGNUM{i:03d}', 'x')   # 20 caractères : maximum du champ
     aide = commandes.texte_aide()
     assert len(aide) <= CommandeSms.LONGUEUR_REPONSE and aide.endswith('...') and 'FRAIS <matricule>' in aide
 

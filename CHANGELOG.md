@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.17.1 — 2026-10-29
+
+### Correctif de test
+- `test_commandes_sms.py` : les mots-clés du test de troncature de `AIDE` dépassaient 20 caractères (accepté par SQLite, refusé par PostgreSQL en CI). Aucun changement applicatif.
+
 ## 5.17.0 — 2026-10-29
 
 ### Commandes SMS définies par l'école

@@ -1,6 +1,6 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.17.0
+version_logiciel: 5.17.1
 version_guide: 5.15
 date_mise_a_jour: 29/10/2026 (5.17.0 : commandes SMS définies par l'école — mots-clés et réponses automatiques, §10.2)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
