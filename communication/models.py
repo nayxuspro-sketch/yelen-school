@@ -1,3 +1,4 @@
+import re
 import uuid
 
 from django.db import models
@@ -178,6 +179,7 @@ class IncomingSMSLog(BaseModel):
         ('SOLDE', 'Demande de solde financier'),
         ('ABS', 'Demande de relevé d\'absences'),
         ('HELP', 'Aide / Instructions'),
+        ('PERSO', 'Commande définie par l\'école'),
         ('INVALID', 'Message libre ou commande inconnue'),
     ]
     LIBRE = 'INVALID'  # tout SMS qui n'est pas une commande : un message du parent, à lire dans « Messages reçus »
@@ -196,6 +198,14 @@ class IncomingSMSLog(BaseModel):
         db_index=True,
         verbose_name=_("Identifiant du SMS sur le téléphone"),
         help_text=_("Même empreinte par le webhook et par la relève de la boîte de réception : un SMS n'est traité qu'une fois."),
+    )
+    commande = models.ForeignKey(
+        'CommandeSms',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='utilisations',
+        verbose_name=_("Commande définie par l'école"),
     )
     command_type = models.CharField(
         max_length=10,
@@ -254,3 +264,58 @@ class IncomingSMSLog(BaseModel):
     @property
     def est_libre(self):
         return self.command_type == self.LIBRE
+
+
+class CommandeSms(BaseModel):
+    """Commande SMS définie par l'école, en plus de NOTE / SOLDE / ABS / AIDE : un mot-clé envoyé par un parent
+    au numéro de l'école déclenche une réponse automatique — information générale (horaires, contacts, frais…)
+    ou information sur un élève (« MOT-CLÉ <matricule> », réservée aux numéros de la fiche de l'élève)."""
+
+    class Portee(models.TextChoices):
+        ECOLE = 'ECOLE', _("Information générale — le parent envoie le mot-clé seul")
+        ELEVE = 'ELEVE', _("Information sur un élève — le parent envoie le mot-clé suivi du matricule")
+
+    RESERVES = ('AIDE', 'HELP', 'NOTE', 'SOLDE', 'ABS', 'ABSENCE')
+    FORMAT_MOT = re.compile(r'^[A-Z][A-Z0-9]{1,19}$')
+    LONGUEUR_REPONSE = 160
+
+    etablissement = models.ForeignKey(
+        'etablissements.Etablissement',
+        on_delete=models.CASCADE,
+        related_name='commandes_sms',
+        verbose_name=_("Établissement"),
+    )
+    mot_cle = models.CharField(max_length=20, verbose_name=_("Mot-clé"))
+    alias = models.CharField(
+        max_length=120, blank=True, default='', verbose_name=_("Autres mots acceptés"),
+        help_text=_("Séparés par des virgules, ex. HORAIRE, HEURES"),
+    )
+    portee = models.CharField(max_length=5, choices=Portee.choices, default=Portee.ECOLE, verbose_name=_("Portée"))
+    description = models.CharField(max_length=80, blank=True, default='', verbose_name=_("Description (pour le personnel)"))
+    reponse = models.TextField(verbose_name=_("Réponse envoyée au parent"))
+    actif = models.BooleanField(default=True, verbose_name=_("Active"))
+
+    class Meta:
+        verbose_name = _("Commande SMS")
+        verbose_name_plural = _("Commandes SMS")
+        ordering = ['mot_cle']
+        constraints = [models.UniqueConstraint(fields=['etablissement', 'mot_cle'], name='communication_commande_mot_cle_unique')]
+
+    def __str__(self):
+        return self.mot_cle
+
+    @staticmethod
+    def normaliser_mot(mot):
+        return re.sub(r'\s+', '', str(mot or '')).upper()
+
+    @property
+    def alias_liste(self):
+        return [m for m in (self.normaliser_mot(a) for a in self.alias.split(',')) if m]
+
+    @property
+    def mots(self):
+        return [self.mot_cle, *self.alias_liste]
+
+    @property
+    def format_sms(self):
+        return f"{self.mot_cle} <matricule>" if self.portee == self.Portee.ELEVE else self.mot_cle

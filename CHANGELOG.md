@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.17.0 — 2026-10-29
+
+### Commandes SMS définies par l'école
+- **Nouvelle page `Communication → Commandes SMS`** : l'école crée ses propres mots-clés avec réponse automatique (`HORAIRES`, `CONTACT`, `CANTINE`, `FRAIS`…), en plus de NOTE / SOLDE / ABS / AIDE. Mot-clé (2–20 lettres ou chiffres, mots intégrés réservés), synonymes acceptés, portée *générale* (mot seul, tout numéro) ou *élève* (mot + matricule, mêmes règles d'autorisation que les commandes intégrées), réponse ≤ 160 caractères avec compteur, activation / désactivation sans suppression, nombre d'utilisations.
+- **Variables** remplacées à l'envoi : `{etablissement}` `{date}` `{annee}`, et en portée élève `{eleve}` `{prenom}` `{nom}` `{matricule}` `{classe}` `{moyenne}` `{rang}` `{trimestre}` `{absences}` `{excusees}` `{total_du}` `{total_paye}` `{reste}` ; seules les variables citées sont calculées. Variable inconnue, mot réservé, doublon ou réponse trop longue refusés à l'enregistrement.
+- `AIDE` liste désormais les commandes intégrées puis celles de l'école (tronqué proprement à 160 caractères) ; le simulateur SMS Direct les affiche et les accepte ; Messages reçus les journalise (`PERSO`, lien vers la commande, `Count` des utilisations).
+- Technique : modèle `communication.CommandeSms` + `IncomingSMSLog.commande` (migration `communication 0006`), module `communication/commandes.py` (`trouver`, `rendre`, `texte_aide`, `valider`), droit `Communication → Commandes SMS → gérer` (secrétariat par défaut), entrée de menu, admin. 7 tests (`test_commandes_sms.py`). Guide §10.2.
+
 ## 5.16.1 — 2026-10-29
 
 ### Relève des SMS reçus fiabilisée

@@ -516,6 +516,9 @@
           <span hx-get="{% url 'communication:messages_recus_compteur' %}" hx-trigger="load, every 60s" hx-target="this" hx-swap="innerHTML"></span>
         </a>
         {% endif %}
+        {% if '/communication/commandes-sms/' in droits_fonctionnalites %}
+        <a href="{% url 'communication:commandes_sms' %}" class="sb-item-submodern" data-url="/communication/commandes-sms/"><span class="sub-item-dot"></span>Commandes SMS</a>
+        {% endif %}
         {% if '/communication/campagnes/' in droits_fonctionnalites %}
         <a href="{% url 'communication:campagne_list' %}" class="sb-item-submodern" data-url="/communication/campagnes/"><span class="sub-item-dot"></span>Campagnes SMS</a>
         {% endif %}

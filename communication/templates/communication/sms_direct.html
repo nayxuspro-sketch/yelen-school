@@ -21,7 +21,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
       </svg>
     </div>
-    <div class="stat-value">NOTE, SOLDE, ABS, AIDE</div>
+    <div class="stat-value">NOTE, SOLDE, ABS, AIDE{% for c in commandes_perso %}, {{ c.mot_cle }}{% endfor %}</div>
     <div class="stat-label">Commandes disponibles</div>
   </div>
   <div class="stat-card">
@@ -92,6 +92,14 @@
             <td><code>AIDE</code></td>
             <td>Liste des commandes disponibles</td>
           </tr>
+          {% for c in commandes_perso %}
+          <tr>
+            <td><span class="badge badge-info">{{ c.mot_cle }}</span></td>
+            <td><code>{{ c.format_sms }}</code></td>
+            <td><code>{% if c.portee == 'ELEVE' %}{{ c.mot_cle }} 01-2026-00123{% else %}{{ c.mot_cle }}{% endif %}</code></td>
+            <td>{{ c.description|default:"Commande définie par l'école" }}{% if not c.actif %} <span class="badge badge-neutral">désactivée</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
         </tbody>
       </table>
     </div>
@@ -122,7 +130,7 @@
                  placeholder="NOTE 01-2026-00123 T1"
                  value="HELP" id="id_message">
           <span class="text-xs text-muted">
-            Commandes : NOTE, SOLDE, ABS, AIDE
+            Commandes : NOTE, SOLDE, ABS, AIDE{% for c in commandes_perso %}, {{ c.mot_cle }}{% endfor %}
           </span>
         </div>
       </div>

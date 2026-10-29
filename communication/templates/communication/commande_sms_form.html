@@ -1,0 +1,74 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if instance %}Modifier la commande {{ instance.mot_cle }}{% else %}Nouvelle commande SMS{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Communication</span><span>›</span><a href="{% url 'communication:commandes_sms' %}">Commandes SMS</a><span>›</span><span>{% if instance %}{{ instance.mot_cle }}{% else %}Nouvelle{% endif %}</span>
+    </div>
+    <h1 class="page-title">{% if instance %}Modifier la commande {{ instance.mot_cle }}{% else %}Nouvelle commande SMS{% endif %}</h1>
+    <p class="page-subtitle">Le parent envoie le mot-clé au numéro de l'école ; YELEN répond avec le texte ci-dessous, variables remplacées.</p>
+  </div>
+</div>
+
+{% if erreurs %}
+<div class="alert alert-danger mb-4 animate-fade-up"><ul style="margin:0; padding-left:1.2rem;">{% for e in erreurs %}<li>{{ e }}</li>{% endfor %}</ul></div>
+{% endif %}
+
+<form method="post" class="card animate-fade-up delay-1" style="max-width:860px;">
+  {% csrf_token %}
+  <div class="d-flex gap-4 flex-wrap">
+    <div style="flex:1; min-width:220px;">
+      <label class="input-label" for="id_mot_cle">Mot-clé</label>
+      <input id="id_mot_cle" name="mot_cle" class="input" value="{{ valeurs.mot_cle }}" required maxlength="20" placeholder="HORAIRES" style="text-transform:uppercase;">
+      <div class="text-muted" style="font-size:.8rem; margin-top:.3rem;">2 à 20 lettres ou chiffres, sans espace ni accent. Réservés : {{ reserves|join:", " }}.</div>
+    </div>
+    <div style="flex:1; min-width:220px;">
+      <label class="input-label" for="id_alias">Autres mots acceptés <span class="text-muted" style="font-weight:400;">(facultatif)</span></label>
+      <input id="id_alias" name="alias" class="input" value="{{ valeurs.alias }}" maxlength="120" placeholder="HORAIRE, HEURES" style="text-transform:uppercase;">
+    </div>
+  </div>
+
+  <div style="margin-top:var(--space-4);">
+    <span class="input-label">Portée</span>
+    {% for code, libelle in portees %}
+    <label class="d-flex align-center gap-2" style="font-size:.9rem; margin-top:.3rem;">
+      <input type="radio" name="portee" value="{{ code }}" {% if valeurs.portee == code %}checked{% endif %}> {{ libelle }}
+    </label>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:var(--space-4);">
+    <label class="input-label" for="id_description">Description <span class="text-muted" style="font-weight:400;">(pour le personnel, facultatif)</span></label>
+    <input id="id_description" name="description" class="input" value="{{ valeurs.description }}" maxlength="80" placeholder="Horaires des cours et du secrétariat">
+  </div>
+
+  <div style="margin-top:var(--space-4);">
+    <label class="input-label" for="id_reponse">Réponse envoyée au parent <span class="text-muted" style="font-weight:400;">(<span id="compteur">{{ valeurs.reponse|length }}</span> / {{ longueur }} caractères)</span></label>
+    <textarea id="id_reponse" name="reponse" class="input" rows="4" required maxlength="{{ longueur }}" placeholder="{{ '{etablissement}' }} - Cours de 7h a 12h et de 15h a 17h. Secretariat ouvert de 7h30 a 16h.">{{ valeurs.reponse }}</textarea>
+    <div class="text-muted" style="font-size:.8rem; margin-top:.4rem;">
+      <div>Variables : {% for code, aide in variables_ecole %}<code>{{ code }}</code> {{ aide }}{% if not forloop.last %} · {% endif %}{% endfor %}.</div>
+      <div id="aide-variables-eleve" style="margin-top:.2rem;">Avec la portée « élève » : {% for code, aide in variables_eleve %}<code>{{ code }}</code> {{ aide }}{% if not forloop.last %} · {% endif %}{% endfor %}.</div>
+      <div style="margin-top:.2rem;">Évitez les accents : certains téléphones les affichent mal et ils réduisent la capacité d'un SMS à 70 caractères.</div>
+    </div>
+  </div>
+
+  <label class="d-flex align-center gap-2" style="margin-top:var(--space-4); font-size:.9rem;">
+    <input type="checkbox" name="actif" value="1" {% if valeurs.actif %}checked{% endif %}> Commande active (répond aux parents)
+  </label>
+
+  <div class="d-flex gap-2 mt-4">
+    <button type="submit" class="btn-primary">Enregistrer</button>
+    <a href="{% url 'communication:commandes_sms' %}" class="btn-secondary">Annuler</a>
+  </div>
+</form>
+
+<script nonce="{{ request.csp_nonce }}">
+  (function () {
+    var zone = document.getElementById('id_reponse');
+    zone.addEventListener('input', function () { document.getElementById('compteur').textContent = zone.value.length; });
+  })();
+</script>
+{% endblock %}

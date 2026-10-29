@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import MessageParent, ReponseParent, IncomingSMSLog
+from .models import CommandeSms, MessageParent, ReponseParent, IncomingSMSLog
 
 @admin.register(MessageParent)
 class MessageParentAdmin(admin.ModelAdmin):
@@ -21,3 +21,10 @@ class IncomingSMSLogAdmin(admin.ModelAdmin):
     list_filter = ('command_type', 'is_authorized', 'processed_successfully')
     search_fields = ('sender_number', 'message_text', 'response_text', 'eleve__nom', 'eleve__prenom', 'error_message', 'message_id')
     ordering = ('-created_at',)
+
+
+@admin.register(CommandeSms)
+class CommandeSmsAdmin(admin.ModelAdmin):
+    list_display = ('mot_cle', 'alias', 'portee', 'actif', 'etablissement', 'updated_at')
+    list_filter = ('portee', 'actif')
+    search_fields = ('mot_cle', 'alias', 'description', 'reponse')

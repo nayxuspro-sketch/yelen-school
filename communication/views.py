@@ -265,8 +265,10 @@ def sms_direct_simulateur(request):
         return render(request, 'communication/partials/sms_direct_count.html', {
             'logs': logs,
         })
+    from .models import CommandeSms
     return render(request, 'communication/sms_direct.html', {
         'logs': logs,
+        'commandes_perso': CommandeSms.objects.filter(etablissement=_get_etab(request)),
     })
 
 
@@ -744,3 +746,93 @@ def messages_recus_repondre(request, pk):
     IncomingSMSLog.objects.filter(pk=message.pk, lu_le__isnull=True).update(lu_le=timezone.now(), lu_par=request.user)
     messages.success(request, f"Réponse mise en file pour {numero}.")
     return _retour_messages_recus(request)
+
+
+# ─── COMMANDES SMS DÉFINIES PAR L'ÉCOLE ──────────────────────────────
+
+@login_required
+def commandes_sms(request):
+    """Commandes automatiques de l'école (mot-clé → réponse), en plus de NOTE / SOLDE / ABS / AIDE."""
+    from django.db.models import Count
+    from . import commandes
+    from .models import CommandeSms
+
+    liste = CommandeSms.objects.filter(etablissement=_get_etab(request)).annotate(nb_utilisations=Count('utilisations'))
+    return render(request, 'communication/commandes_sms.html', {
+        'commandes': liste,
+        'integrees': commandes.COMMANDES_INTEGREES,
+        'texte_aide': commandes.texte_aide(),
+    })
+
+
+def _formulaire_commande(request, instance=None):
+    from . import commandes
+    from .models import CommandeSms
+
+    etab = _get_etab(request)
+    contexte = {
+        'instance': instance,
+        'portees': CommandeSms.Portee.choices,
+        'variables_ecole': commandes.VARIABLES_ECOLE,
+        'variables_eleve': commandes.VARIABLES_ELEVE,
+        'longueur': CommandeSms.LONGUEUR_REPONSE,
+        'reserves': CommandeSms.RESERVES,
+        'valeurs': {
+            'mot_cle': instance.mot_cle if instance else '',
+            'alias': instance.alias if instance else '',
+            'portee': instance.portee if instance else CommandeSms.Portee.ECOLE,
+            'description': instance.description if instance else '',
+            'reponse': instance.reponse if instance else '',
+            'actif': instance.actif if instance else True,
+        },
+        'erreurs': [],
+    }
+    if request.method != 'POST':
+        return render(request, 'communication/commande_sms_form.html', contexte)
+
+    champs, erreurs = commandes.valider(request.POST, etab, instance)
+    contexte['valeurs'] = champs
+    if erreurs:
+        contexte['erreurs'] = erreurs
+        return render(request, 'communication/commande_sms_form.html', contexte, status=400)
+    if instance is None:
+        instance = CommandeSms(etablissement=etab, created_by=request.user)
+    for champ, valeur in champs.items():
+        setattr(instance, champ, valeur)
+    instance.save()
+    messages.success(request, f"Commande {instance.mot_cle} enregistrée : les parents peuvent l'envoyer au numéro de l'école.")
+    return redirect('communication:commandes_sms')
+
+
+@login_required
+def commande_sms_nouvelle(request):
+    return _formulaire_commande(request)
+
+
+@login_required
+def commande_sms_modifier(request, pk):
+    from .models import CommandeSms
+    return _formulaire_commande(request, get_object_or_404(CommandeSms, pk=pk, etablissement=_get_etab(request)))
+
+
+@login_required
+@require_POST
+def commande_sms_basculer(request, pk):
+    """Active / désactive une commande sans la supprimer (ex. HORAIRES pendant les vacances)."""
+    from .models import CommandeSms
+    commande = get_object_or_404(CommandeSms, pk=pk, etablissement=_get_etab(request))
+    commande.actif = not commande.actif
+    commande.save(update_fields=['actif', 'updated_at'])
+    messages.success(request, f"Commande {commande.mot_cle} {'activée' if commande.actif else 'désactivée'}.")
+    return redirect('communication:commandes_sms')
+
+
+@login_required
+@require_POST
+def commande_sms_supprimer(request, pk):
+    from .models import CommandeSms
+    commande = get_object_or_404(CommandeSms, pk=pk, etablissement=_get_etab(request))
+    mot = commande.mot_cle
+    commande.delete()
+    messages.success(request, f"Commande {mot} supprimée. Les SMS déjà reçus restent dans Messages reçus.")
+    return redirect('communication:commandes_sms')

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.16.1
-version_guide: 5.14
-date_mise_a_jour: 29/10/2026 (5.16.1 : relève des SMS reçus fiabilisée — boîte vide au démarrage, horodatages croisés, diagnostic de la boîte)
+version_logiciel: 5.17.0
+version_guide: 5.15
+date_mise_a_jour: 29/10/2026 (5.17.0 : commandes SMS définies par l'école — mots-clés et réponses automatiques, §10.2)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -6531,7 +6531,22 @@ ou
 HELP
 ```
 
-Retourne la liste résumée de toutes les commandes disponibles. Accessible depuis **n'importe quel numéro** (pas besoin d'être enregistré).
+Retourne la liste résumée de toutes les commandes disponibles — les commandes intégrées puis celles définies par l'école (ci-dessous). Accessible depuis **n'importe quel numéro** (pas besoin d'être enregistré).
+
+#### 🧩 Commandes définies par l'école (Communication → Commandes SMS)
+
+En plus de NOTE, SOLDE, ABS et AIDE, l'école crée ses **propres mots-clés** avec la réponse automatique de son choix : `HORAIRES`, `CONTACT`, `CANTINE`, `RENTREE`, `FRAIS`… Aucune intervention technique : la commande est active dès l'enregistrement et apparaît dans la réponse à `AIDE`.
+
+1. **Communication → Commandes SMS → + Nouvelle commande**.
+2. **Mot-clé** : 2 à 20 lettres ou chiffres, sans espace ni accent (saisi en minuscules, il est mis en majuscules ; le parent peut l'envoyer en minuscules). Les mots `AIDE HELP NOTE SOLDE ABS ABSENCE` sont réservés aux commandes intégrées. **Autres mots acceptés** (facultatif) : synonymes séparés par des virgules (`HORAIRE, HEURES`). Un mot ne peut servir qu'à une seule commande.
+3. **Portée** :
+   - *Information générale* — le parent envoie le mot-clé seul (`HORAIRES`) ; tout numéro reçoit la réponse.
+   - *Information sur un élève* — le parent envoie le mot-clé suivi du matricule (`FRAIS 01-2026-0001`) ; **mêmes règles d'autorisation que NOTE / SOLDE / ABS** (numéro du parent, du tuteur ou d'urgence de la fiche élève, ou numéro administrateur maître). Sans matricule, le parent reçoit « Envoyez FRAIS suivi du matricule de l'élève ».
+4. **Réponse envoyée au parent** : 160 caractères maximum (un seul SMS ; compteur affiché). Éviter les accents, mal rendus sur certains téléphones.
+   Variables remplacées à l'envoi — toutes portées : `{etablissement}` (sigle), `{date}` (jj/mm/aaaa), `{annee}` (année scolaire) ; portée élève : `{eleve}`, `{prenom}`, `{nom}`, `{matricule}`, `{classe}`, `{moyenne}`, `{rang}`, `{trimestre}` (dernier trimestre calculé), `{absences}`, `{excusees}` (année en cours), `{total_du}`, `{total_paye}`, `{reste}` (montants en FCFA, `1 000`). Une variable inconnue ou réservée à la portée élève est refusée à l'enregistrement.
+5. **Enregistrer**. Exemple : `HORAIRES` → « {etablissement} - Cours de 7h a 12h et de 15h a 17h. Secretariat ouvert de 7h30 a 16h. » ; `FRAIS` (portée élève) → « {eleve} ({classe}) : paye {total_paye} F, reste {reste} F. Merci de regulariser au secretariat. »
+
+La page liste les commandes de l'école avec leur nombre d'utilisations ; **Désactiver** suspend une commande sans la supprimer (le parent reçoit alors « Commande invalide ») ; **Supprimer** la retire (les SMS déjà reçus restent dans Messages reçus). Les commandes intégrées gardent la priorité : un message `NOTE …` n'est jamais interprété comme une commande de l'école. Tester sans téléphone : **Communication → SMS Direct** (10.5), où les commandes de l'école figurent dans le tableau des commandes. Droit : `Communication → Commandes SMS → gérer` (secrétariat, direction et administration par défaut) ; la consultation suit le module Communication.
 
 ---
 
@@ -6597,7 +6612,7 @@ Une interface de **simulation** est disponible pour les administrateurs qui souh
 
 1. Aller dans **Communication → SMS Direct** (dans la barre latérale)
 2. Saisir un **numéro de téléphone** (doit correspondre à un parent enregistré)
-3. Saisir une **commande** (NOTE, SOLDE, ABS, AIDE)
+3. Saisir une **commande** (NOTE, SOLDE, ABS, AIDE ou une commande définie par l'école)
 4. Cliquer **Envoyer la requête SMS**
 
 Le simulateur :

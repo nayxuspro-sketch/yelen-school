@@ -44,7 +44,8 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
     from finances.views import _calcul_situation_financiere
     from core.sms import _normaliser_numero
     from core.tasks import envoyer_sms_async
-    from .models import IncomingSMSLog
+    from . import commandes
+    from .models import CommandeSms, IncomingSMSLog
 
     if message_id:
         existant = IncomingSMSLog.objects.filter(message_id=message_id).first()
@@ -71,9 +72,10 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
     solde_pattern = re.compile(r'^SOLDE\s+([A-Z0-9\-]+)$')
     abs_pattern = re.compile(r'^ABS(?:ENCE)?\s+([A-Z0-9\-]+)$')
 
+    commande = None
     if help_pattern.match(clean_msg):
         command_type = 'HELP'
-        response_text = "Yelen - Commandes: NOTE <matricule> [trimestre] (ex: NOTE BF-2026-0001 T1), SOLDE <matricule> (situation finance), ABS <matricule> (absences)."
+        response_text = commandes.texte_aide()
         is_authorized = True
         processed_successfully = True
     else:
@@ -94,8 +96,22 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
         elif match_abs:
             command_type = 'ABS'
             matricule = match_abs.group(1)
+        else:
+            # Commandes définies par l'école (Communication → Commandes SMS), après les commandes intégrées.
+            commande, matricule = commandes.trouver(clean_msg)
+            if commande is not None:
+                command_type = 'PERSO'
+                if commande.portee == CommandeSms.Portee.ECOLE:
+                    response_text = commandes.rendre(commande)
+                    is_authorized = True
+                    processed_successfully = True
+                elif not matricule:
+                    error_message = "Matricule manquant."
+                    response_text = f"Yelen - Envoyez {commande.mot_cle} suivi du matricule de l'eleve (ex: {commande.mot_cle} BF-2026-0001)."
 
-        if command_type != 'INVALID':
+        if response_text:
+            pass  # commande de l'école déjà résolue, sans élève
+        elif command_type != 'INVALID':
             eleve = Eleve.objects.filter(matricule__iexact=matricule).first()
             if not eleve:
                 error_message = f"Eleve avec le matricule {matricule} introuvable."
@@ -175,6 +191,10 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
                                 error_message = f"Erreur calcul solde: {str(e)}"
                                 response_text = f"Yelen - Erreur lors de la recuperation du solde de {eleve.prenom} {eleve.nom}."
 
+                        elif command_type == 'PERSO':
+                            response_text = commandes.rendre(commande, eleve, inscription)
+                            processed_successfully = True
+
                         elif command_type == 'ABS':
                             try:
                                 total_abs = Presence.objects.filter(inscription=inscription, statut=Presence.StatutChoices.ABSENT).count()
@@ -202,6 +222,7 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
         message_text=message_text,
         message_id=message_id,
         command_type=command_type,
+        commande=commande,
         eleve=eleve,
         response_text=response_text[:160],
         is_authorized=is_authorized,

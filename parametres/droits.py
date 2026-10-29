@@ -277,6 +277,11 @@ MODULES = (
             _a('traiter', 'Marquer lu / non lu et répondre par SMS',
                'messages_recus_marquer', 'messages_recus_tout_lu', 'messages_recus_repondre'),
         )),
+        _f('/communication/commandes-sms/', 'Commandes SMS', actions=(
+            _a('gerer', 'Créer, modifier, activer / désactiver, supprimer une commande',
+               'commande_sms_nouvelle', 'commande_sms_modifier', 'commande_sms_basculer', 'commande_sms_supprimer',
+               roles=_SECRETARIAT),
+        )),
         _f('/communication/campagnes/', 'Campagnes SMS', actions=(
             _a('envoyer', 'Composer et envoyer une campagne', 'campagne_nouvelle', 'campagne_renvoyer'),
         )),

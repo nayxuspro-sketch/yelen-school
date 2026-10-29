@@ -12,7 +12,7 @@
     <h1 class="page-title">Messages reçus
       {% if non_lus %}<span class="badge badge-danger" style="font-size:0.75rem; margin-left:8px;">{{ non_lus }} non lu{{ non_lus|pluralize }}</span>{% endif %}
     </h1>
-    <p class="page-subtitle">SMS envoyés par les parents au numéro de l'école. Les messages libres sont à lire et à traiter ; les commandes (NOTE, SOLDE, ABS, AIDE) ont reçu une réponse automatique.</p>
+    <p class="page-subtitle">SMS envoyés par les parents au numéro de l'école. Les messages libres sont à lire et à traiter ; les commandes (NOTE, SOLDE, ABS, AIDE et celles définies dans Commandes SMS) ont reçu une réponse automatique.</p>
   </div>
   {% if non_lus and request|autorise_url:'communication:messages_recus_tout_lu' %}
   <form method="post" action="{% url 'communication:messages_recus_tout_lu' %}">
