@@ -25,14 +25,63 @@
 </div>
 {% endif %}
 
-{# ── 0. URL du Webhook SMS Direct ── #}
+{# ── 0. Réception des SMS des parents : relève de la boîte du téléphone (service « sms ») ── #}
+<div class="card mb-6 animate-fade-up delay-1" style="border-left:3px solid {% if releve and releve.ok and not releve_perimee %}#00A86B{% else %}#F5A623{% endif %};">
+  <div class="card-header">
+    <span class="card-title">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+      Réception des SMS des parents
+    </span>
+    <form method="post" style="margin:0;">
+      {% csrf_token %}
+      <button type="submit" name="relever_maintenant" class="btn-primary btn-sm">Relever maintenant</button>
+    </form>
+  </div>
+  <div class="card-body text-sm">
+    <div class="d-flex gap-2 flex-wrap align-center">
+      <strong>Relève automatique :</strong>
+      {% if not releve %}
+        <span style="color:#F5A623;">⚠ jamais exécutée — le service « sms » n'est pas démarré. Lancez <code>mettre-a-jour.bat</code> (Docker) ou <code>python manage.py sms_recus --boucle</code>.</span>
+      {% elif not releve.ok %}
+        <span style="color:#F5A623;">⚠ {{ releve.quand|date:"d/m/Y H:i:s" }} — {{ releve.motif }}</span>
+      {% elif releve_perimee %}
+        <span style="color:#F5A623;">⚠ dernière relève {{ releve.quand|date:"d/m/Y H:i:s" }} — le service « sms » semble arrêté (<code>docker compose -f docker-compose.client.yml logs --tail 100 sms</code>).</span>
+      {% else %}
+        <span style="color:#00A86B;">✓ {{ releve.quand|date:"d/m/Y H:i:s" }} — boîte du téléphone relevée toutes les 15 s ({{ releve.nouveaux }} nouveau(x) au dernier passage).</span>
+      {% endif %}
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-center mt-2">
+      <strong>Dernier SMS reçu :</strong>
+      {% if dernier_recu %}
+        <span>{{ dernier_recu.created_at|date:"d/m/Y H:i" }} · {{ dernier_recu.sender_number }} · « {{ dernier_recu.message_text|truncatechars:40 }} » ({{ dernier_recu.get_command_type_display }})</span>
+        <span>→ réponse :
+          {% if derniere_reponse %}
+            {% if derniere_reponse.statut == 'ENVOYE' %}<span style="color:#00A86B;">envoyée {{ derniere_reponse.date_envoi|date:"H:i:s" }}</span>
+            {% elif derniere_reponse.statut == 'ECHEC' %}<span style="color:#E53E3E;">échec — {{ derniere_reponse.derniere_erreur }}</span>
+            {% else %}en attente ({{ derniere_reponse.tentatives }} tentative(s){% if derniere_reponse.derniere_erreur %} — {{ derniere_reponse.derniere_erreur }}{% endif %}){% endif %}
+          {% elif dernier_recu.response_text %}<span style="color:#F5A623;">non mise en file (SMS désactivés au moment de la réception)</span>
+          {% else %}aucune{% endif %}
+        </span>
+      {% else %}
+        <span class="text-muted">aucun — envoyez <code>AIDE</code> au numéro de la passerelle puis cliquez « Relever maintenant ».</span>
+      {% endif %}
+    </div>
+    <div class="mt-2 text-xs text-muted">
+      Le serveur lit lui-même la boîte de réception de l'app SMS Gateway (même adresse et mêmes identifiants que l'envoi) : aucun réglage supplémentaire sur le téléphone. Le webhook ci-dessous reste le chemin instantané, facultatif.
+    </div>
+  </div>
+</div>
+
+{# ── 0 bis. URL du Webhook SMS Direct (chemin instantané, facultatif) ── #}
 <div class="card mb-6 animate-fade-up delay-1" style="border-left:3px solid #00A86B;">
   <div class="card-header">
     <span class="card-title">
       <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
       </svg>
-      URL Endpoint du Webhook SMS
+      Webhook SMS (réception instantanée, facultatif)
     </span>
     <div class="d-flex gap-2 flex-wrap">
       <button class="btn-secondary btn-sm" data-csp-action="copy-webhook" id="btn-copy-url">
@@ -56,7 +105,7 @@
     <div class="mt-2 text-xs" style="color:#F5A623;">⚠ {{ webhook_avertissement }}</div>
     {% endif %}
     <div class="d-flex gap-4 mt-2 flex-wrap text-xs text-muted">
-      <span>📱 Réception des SMS des parents : « Enregistrer sur le téléphone » déclare cette URL à l'app Android SMS Gateway (événement <code>sms:received</code>), avec les identifiants de la passerelle WiFi ci-dessous.</span>
+      <span>📱 « Enregistrer sur le téléphone » déclare cette URL à l'app Android SMS Gateway (événement <code>sms:received</code>) : chaque SMS reçu est alors transmis sans attendre la relève suivante. Un SMS arrivé par les deux chemins n'est traité qu'une fois.</span>
       <span>· Adresse toujours en HTTPS, sur le port du proxy, avec l'adresse IP du serveur — quelle que soit la façon dont cette page a été ouverte. Le téléphone doit faire confiance au certificat YELEN (page <code>/certificat-autorite/</code>, guide §10.4).</span>
     </div>
   </div>

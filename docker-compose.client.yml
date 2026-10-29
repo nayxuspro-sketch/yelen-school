@@ -71,6 +71,25 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  # Réception des SMS des parents (Parent-SMS Direct) : relève la boîte de réception du téléphone
+  # passerelle toutes les 15 s (API locale de l'app SMS Gateway) et renvoie les SMS sortants en attente.
+  # Même image que web ; sans migration ni port. Journal : docker compose logs --tail 100 sms
+  sms:
+    image: ${YELEN_IMAGE:-yelen-school:client}
+    entrypoint: ["python", "manage.py", "sms_recus", "--boucle"]
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - yelen_logs:/app/logs
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+
   # HTTPS sur le réseau local (optionnel) : activé par installer\activer-https.ps1,
   # qui génère les certificats dans certs\ et inscrit COMPOSE_PROFILES=https dans .env.
   proxy:

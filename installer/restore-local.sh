@@ -44,9 +44,9 @@ fi
 
 # Le serveur web est arrêté afin d'éviter toute connexion pendant la
 # reconstruction de la base. Il sera relancé même en cas d'échec.
-docker compose -f "$COMPOSE_FILE" stop web >/dev/null
+docker compose -f "$COMPOSE_FILE" stop web sms >/dev/null
 restart_web() {
-    docker compose -f "$COMPOSE_FILE" up -d web >/dev/null 2>&1 || true
+    docker compose -f "$COMPOSE_FILE" up -d web sms >/dev/null 2>&1 || true
 }
 trap restart_web EXIT
 
@@ -75,7 +75,7 @@ if ! docker compose -f "$COMPOSE_FILE" exec -T db psql -U "$DB_USER" -d postgres
 fi
 
 echo '[3/5] Redémarrage du service web...'
-docker compose -f "$COMPOSE_FILE" up -d web >/dev/null
+docker compose -f "$COMPOSE_FILE" up -d web sms >/dev/null
 
 if [[ -f "$MEDIA_BACKUP_FILE" ]]; then
     echo '[4/5] Restauration des médias...'

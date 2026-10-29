@@ -290,33 +290,49 @@ def envoyer_sms(numero: str, message: str, limite: int = 160) -> tuple:
 
 # ── Réception des SMS (webhook de l'app Android SMS Gateway) ─────────────────
 
+def adresse_passerelle() -> str:
+    """Base de l'API locale de l'app SMS Gateway (``http://<ip>:8080``), déduite de SMS_HTTP_URL ; '' si la
+    passerelle WiFi n'est pas le backend configuré."""
+    if str(get_sms_val('SMS_BACKEND')).lower() != 'http':
+        return ''
+    return re.sub(r'/message/?$', '', str(get_sms_val('SMS_HTTP_URL') or '').strip()).rstrip('/')
+
+
+def requete_passerelle(methode: str, url: str, corps=None, timeout: int = 10):
+    """Ouvre une requête authentifiée (Basic, identifiants de l'envoi) vers l'API locale de l'app SMS Gateway ;
+    à utiliser comme gestionnaire de contexte. Lève urllib.error.HTTPError / URLError."""
+    import base64
+    import json
+    import urllib.request
+
+    credentials = base64.b64encode(f"{get_sms_val('SMS_HTTP_USER')}:{get_sms_val('SMS_HTTP_PASSWORD')}".encode()).decode()
+    req = urllib.request.Request(
+        url, data=json.dumps(corps).encode('utf-8') if corps is not None else None, method=methode,
+        headers={'Content-Type': 'application/json', 'Authorization': f'Basic {credentials}'},
+    )
+    return urllib.request.urlopen(req, timeout=timeout)
+
+
 def enregistrer_webhook(url_webhook: str, timeout: int = 10) -> tuple:
     """Déclare ``url_webhook`` auprès de l'app Android SMS Gateway du téléphone passerelle (API locale
     ``POST /webhooks``, mêmes identifiants que l'envoi) pour l'événement ``sms:received`` : chaque SMS reçu par le
-    téléphone est alors transmis à YELEN. L'identifiant fixe rend l'opération répétable (mise à jour de l'URL).
+    téléphone est alors transmis à YELEN sans délai. L'identifiant fixe rend l'opération répétable (mise à jour de
+    l'URL). Chemin instantané, facultatif : la relève de la boîte de réception (communication.sms_recus) suffit.
 
     Returns:
         (True, '')           si le téléphone a accepté le webhook
         (False, 'motif')     sinon
     """
-    import base64
-    import json
     import urllib.error
-    import urllib.request
 
-    if str(get_sms_val('SMS_BACKEND')).lower() != 'http':
-        return False, "La réception des SMS n'est possible qu'avec la passerelle WiFi (app Android SMS Gateway)."
-    base = re.sub(r'/message/?$', '', str(get_sms_val('SMS_HTTP_URL') or '').strip()).rstrip('/')
+    base = adresse_passerelle()
     if not base:
-        return False, "Renseignez d'abord l'URL de la passerelle (SMS_HTTP_URL)."
-    payload = json.dumps({'id': 'yelen-sms-recus', 'url': url_webhook, 'event': 'sms:received'}).encode('utf-8')
-    credentials = base64.b64encode(f"{get_sms_val('SMS_HTTP_USER')}:{get_sms_val('SMS_HTTP_PASSWORD')}".encode()).decode()
-    req = urllib.request.Request(
-        f"{base}/webhooks", data=payload, method='POST',
-        headers={'Content-Type': 'application/json', 'Authorization': f'Basic {credentials}'},
-    )
+        return False, ("La réception des SMS n'est possible qu'avec la passerelle WiFi (app Android SMS Gateway)."
+                       if str(get_sms_val('SMS_BACKEND')).lower() != 'http'
+                       else "Renseignez d'abord l'URL de la passerelle (SMS_HTTP_URL).")
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with requete_passerelle('POST', f"{base}/webhooks",
+                                {'id': 'yelen-sms-recus', 'url': url_webhook, 'event': 'sms:received'}, timeout) as resp:
             if resp.status in (200, 201):
                 logger.info("Webhook SMS enregistré sur la passerelle → %s", url_webhook)
                 return True, ''

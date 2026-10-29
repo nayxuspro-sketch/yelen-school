@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.16.0 — 2026-10-29
+
+### Réception des SMS des parents sans dépendre du webhook
+- **Relève automatique de la boîte du téléphone** : nouveau service `sms` (`docker-compose.client.yml`, même image que `web`, démarré par `mettre-a-jour.bat`) qui exécute `python manage.py sms_recus --boucle` : toutes les 15 s, lecture de la boîte de réception de l'app SMS Gateway (`GET /inbox`, même adresse et mêmes identifiants que l'envoi) et traitement des SMS reçus (AIDE / NOTE / SOLDE / ABS, messages libres) exactement comme par le webhook — plus aucune condition côté téléphone (certificat, HTTPS, « Require Internet connection », webhook) pour que les parents reçoivent leur réponse. Le même passage renvoie les SMS sortants dont la reprise est due.
+- **Un SMS, une réponse** : `IncomingSMSLog.message_id` (migration `communication 0005`) porte l'empreinte commune au webhook (`messageId`) et à la boîte (`id` « text:… ») ; un SMS arrivé par les deux chemins, ou un webhook rejoué par le téléphone, n'est traité qu'une fois (réponse `duplicate`). Première relève silencieuse : les SMS antérieurs à la mise en service ne reçoivent pas de réponse tardive.
+- **Diagnostic** : carte « Réception des SMS des parents » en tête de `Paramètres → Configuration SMS` — dernière relève (verte / orange avec le motif : service non démarré, passerelle injoignable, SMS désactivés, app < 1.59), dernier SMS reçu et sort de la réponse (envoyée / en attente / échec et motif), bouton **Relever maintenant**. Le webhook devient le chemin instantané, facultatif.
+- Technique : `communication/sms_recus.py` (`traiter_sms_recu` extrait du webhook, `relever_boite_reception`, `identifiant_message`) ; `core.sms.adresse_passerelle` / `requete_passerelle` partagés par l'envoi du webhook ; `restore-windows.ps1` / `restore-local.sh` arrêtent et relancent `sms` avec `web` (aucune session ouverte pendant la bascule de base). 11 tests.
+
 ## 5.15.1 — 2026-10-28
 
 ### Corrigé

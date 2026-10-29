@@ -13,7 +13,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from inscriptions.models import Eleve, StatutInscriptionChoices
+from inscriptions.models import Eleve
 from parametres.models import AnneeScolaire
 
 from .models import MessageParent, ReponseParent
@@ -339,18 +339,11 @@ def webhook_incoming_sms(request):
     import hashlib
     import hmac
     import json
-    import re
     from django.http import JsonResponse
     from django.conf import settings
     from django.core.cache import cache
     from django.utils.crypto import constant_time_compare
-    from core.sms import _normaliser_numero
-    from core.tasks import envoyer_sms_async
-    from inscriptions.models import Eleve, Inscription
-    from pedagogie.models import MoyenneGenerale
-    from presences.models import Presence
-    from finances.views import _calcul_situation_financiere
-    from .models import IncomingSMSLog
+    from .sms_recus import identifiant_message, traiter_sms_recu
 
     # ── Authentification et limitation du webhook ─────────────────────
     # Fusion des deux protections (main A1 + distribution client) :
@@ -468,12 +461,15 @@ def webhook_incoming_sms(request):
             charge = data.get('payload') if isinstance(data.get('payload'), dict) else data
             sender_number = charge.get('phoneNumber') or charge.get('phone') or charge.get('sender') or charge.get('from') or ""
             message_text = charge.get('message') or charge.get('text') or charge.get('msg') or ""
+            message_id = charge.get('messageId') or ""
         else:
             sender_number = request.POST.get('phoneNumber') or request.POST.get('phone') or request.POST.get('sender') or request.POST.get('from') or ""
             message_text = request.POST.get('message') or request.POST.get('text') or request.POST.get('msg') or ""
+            message_id = request.POST.get('messageId', '')
     else:
         sender_number = request.GET.get('phoneNumber') or request.GET.get('phone') or request.GET.get('sender') or request.GET.get('from') or ""
         message_text = request.GET.get('message') or request.GET.get('text') or request.GET.get('msg') or ""
+        message_id = request.GET.get('messageId', '')
 
     sender_number = str(sender_number).strip()
     message_text = str(message_text).strip()
@@ -481,164 +477,12 @@ def webhook_incoming_sms(request):
     if not sender_number or not message_text:
         return JsonResponse({'status': 'error', 'message': 'Missing phoneNumber or message'}, status=400)
 
-    try:
-        sender_normalized = _normaliser_numero(sender_number)
-    except (AttributeError, TypeError, ValueError):
-        logger.warning("Webhook SMS : numéro expéditeur illisible : %r", sender_number)
-        sender_normalized = sender_number
-
-    clean_msg = re.sub(r'\s+', ' ', message_text).strip().upper()
-
-    command_type = 'INVALID'
-    eleve = None
-    response_text = ""
-    is_authorized = False
-    processed_successfully = False
-    error_message = ""
-
-    help_pattern = re.compile(r'^(HELP|AIDE)$')
-    note_pattern = re.compile(r'^NOTE\s+([A-Z0-9\-]+)(?:\s+(T\d+|\d+))?$')
-    solde_pattern = re.compile(r'^SOLDE\s+([A-Z0-9\-]+)$')
-    abs_pattern = re.compile(r'^ABS(?:ENCE)?\s+([A-Z0-9\-]+)$')
-
-    if help_pattern.match(clean_msg):
-        command_type = 'HELP'
-        response_text = "Yelen - Commandes: NOTE <matricule> [trimestre] (ex: NOTE BF-2026-0001 T1), SOLDE <matricule> (situation finance), ABS <matricule> (absences)."
-        is_authorized = True
-        processed_successfully = True
-    else:
-        match_note = note_pattern.match(clean_msg)
-        match_solde = solde_pattern.match(clean_msg)
-        match_abs = abs_pattern.match(clean_msg)
-
-        matricule = ""
-        trim_str = ""
-
-        if match_note:
-            command_type = 'NOTE'
-            matricule = match_note.group(1)
-            trim_str = match_note.group(2) or ""
-        elif match_solde:
-            command_type = 'SOLDE'
-            matricule = match_solde.group(1)
-        elif match_abs:
-            command_type = 'ABS'
-            matricule = match_abs.group(1)
-
-        if command_type != 'INVALID':
-            eleve = Eleve.objects.filter(matricule__iexact=matricule).first()
-            if not eleve:
-                error_message = f"Eleve avec le matricule {matricule} introuvable."
-                response_text = f"Yelen - Eleve avec le matricule {matricule} introuvable."
-            else:
-                candidate_numbers = [
-                    eleve.telephone_parent,
-                    eleve.tuteur_telephone,
-                    eleve.telephone_urgence,
-                    eleve.telephone if hasattr(eleve, 'telephone') else ''
-                ]
-                normalized_candidates = []
-                for c in candidate_numbers:
-                    if c and str(c).strip():
-                        try:
-                            normalized_candidates.append(_normaliser_numero(str(c)))
-                        except (AttributeError, TypeError, ValueError):
-                            logger.warning("Webhook SMS : numéro parent illisible : %r", c)
-
-                master_numbers = getattr(settings, 'MASTER_SMS_NUMBERS', [])
-                for mn in master_numbers:
-                    if mn:
-                        try:
-                            normalized_candidates.append(_normaliser_numero(str(mn)))
-                        except (AttributeError, TypeError, ValueError):
-                            logger.warning("Webhook SMS : numéro parent illisible : %r", mn)
-
-                if sender_normalized in normalized_candidates:
-                    is_authorized = True
-                    inscription = Inscription.objects.filter(eleve=eleve, annee_scolaire__est_courante=True).first()
-                    if not inscription:
-                        inscription = Inscription.objects.filter(eleve=eleve).order_by('-annee_scolaire__date_debut').first()
-
-                    if not inscription:
-                        error_message = "Aucune inscription trouvee pour cet eleve."
-                        response_text = f"Yelen - {eleve.prenom} {eleve.nom} n'est inscrit dans aucune classe."
-                    else:
-                        if command_type == 'NOTE':
-                            trim_num = None
-                            if trim_str:
-                                digits = re.findall(r'\d+', trim_str)
-                                if digits:
-                                    trim_num = int(digits[0])
-
-                            mg_qs = MoyenneGenerale.objects.filter(inscription=inscription)
-                            if trim_num is not None:
-                                mg = mg_qs.filter(trimestre__numero=trim_num).first()
-                                trim_label = f"T{trim_num}"
-                            else:
-                                mg = mg_qs.order_by('-trimestre__numero').first()
-                                trim_label = mg.trimestre.nom if mg else "Trimestre"
-
-                            if mg and mg.moyenne is not None:
-                                total_eleves = Inscription.objects.filter(
-                                    classe=inscription.classe,
-                                    annee_scolaire=inscription.annee_scolaire
-                                ).exclude(statut=StatutInscriptionChoices.ABANDON).count()
-
-                                rang_str = f"{mg.rang}/{total_eleves}" if mg.rang else "N/A"
-                                response_text = f"Yelen - {eleve.prenom} {eleve.nom} ({inscription.classe.nom}) - {trim_label}: Moy: {mg.moyenne}/20, Rang: {rang_str}."
-                                processed_successfully = True
-                            else:
-                                error_message = f"Aucune moyenne trouvee pour la periode {trim_label}."
-                                response_text = f"Yelen - Aucune moyenne trouvee pour {eleve.prenom} {eleve.nom} ({trim_label})."
-
-                        elif command_type == 'SOLDE':
-                            try:
-                                sit = _calcul_situation_financiere(inscription)
-                                total_du = sit['total_du']
-                                total_paye = sit['total_paye']
-                                reste = sit['reste_a_payer']
-
-                                response_text = f"Yelen - {eleve.prenom} {eleve.nom} ({inscription.classe.nom}): Du {int(total_du)} FCFA, Paye {int(total_paye)} FCFA, Reste {int(reste)} FCFA."
-                                processed_successfully = True
-                            except Exception as e:
-                                logger.exception("Webhook SMS : calcul du solde impossible (inscription %s)", inscription.pk)
-                                error_message = f"Erreur calcul solde: {str(e)}"
-                                response_text = f"Yelen - Erreur lors de la recuperation du solde de {eleve.prenom} {eleve.nom}."
-
-                        elif command_type == 'ABS':
-                            try:
-                                total_abs = Presence.objects.filter(inscription=inscription, statut=Presence.StatutChoices.ABSENT).count()
-                                abs_justifiees = Presence.objects.filter(inscription=inscription, statut=Presence.StatutChoices.EXCUSE).count()
-                                response_text = f"Yelen - {eleve.prenom} {eleve.nom} ({inscription.classe.nom}): {total_abs} absence(s) non justifiee(s), {abs_justifiees} excusee(s) cette annee."
-                                processed_successfully = True
-                            except Exception as e:
-                                logger.exception("Webhook SMS : calcul de l'assiduité impossible (inscription %s)", inscription.pk)
-                                error_message = f"Erreur assiduite: {str(e)}"
-                                response_text = f"Yelen - Erreur lors de la recuperation des absences de {eleve.prenom} {eleve.nom}."
-                else:
-                    error_message = f"Sender {sender_normalized} not authorized for matricule {matricule}."
-                    response_text = "Yelen - Ce numero de telephone n'est pas autorise a consulter les informations de cet eleve."
-        else:
-            error_message = f"Commande invalide: '{message_text}'"
-            response_text = "Yelen - Commande invalide. Envoyez AIDE pour obtenir la liste des commandes disponibles."
-
-    log = IncomingSMSLog.objects.create(
-        sender_number=sender_number,
-        message_text=message_text,
-        command_type=command_type,
-        eleve=eleve,
-        response_text=response_text[:160],
-        is_authorized=is_authorized,
-        processed_successfully=processed_successfully,
-        error_message=error_message,
-    )
-
-    if response_text:
-        envoyer_sms_async(sender_number, response_text[:160])
-
+    log, cree = traiter_sms_recu(sender_number, message_text, identifiant_message(message_id))
+    if not cree:
+        return JsonResponse({'status': 'duplicate', 'response': log.response_text, 'log_id': str(log.pk)})
     return JsonResponse({
-        'status': 'success' if processed_successfully else 'error',
-        'response': response_text[:160],
+        'status': 'success' if log.processed_successfully else 'error',
+        'response': log.response_text,
         'log_id': str(log.pk)
     })
 

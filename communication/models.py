@@ -189,6 +189,14 @@ class IncomingSMSLog(BaseModel):
     message_text = models.TextField(
         verbose_name=_("Texte du SMS"),
     )
+    message_id = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        db_index=True,
+        verbose_name=_("Identifiant du SMS sur le téléphone"),
+        help_text=_("Même empreinte par le webhook et par la relève de la boîte de réception : un SMS n'est traité qu'une fois."),
+    )
     command_type = models.CharField(
         max_length=10,
         choices=COMMAND_CHOICES,

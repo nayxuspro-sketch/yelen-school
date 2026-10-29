@@ -1027,6 +1027,16 @@ def sms_configuration(request):
         elif 'tester' in request.POST:
             test_result = tester_modem()
 
+        elif 'relever_maintenant' in request.POST:
+            from communication.sms_recus import relever_boite_reception
+            bilan = relever_boite_reception()
+            if bilan['ok']:
+                messages.success(request, f"Boîte de réception relevée : {bilan['nouveaux']} nouveau(x) SMS traité(s), "
+                                          f"{bilan['ignores']} déjà connu(s) ou antérieur(s).")
+            else:
+                messages.error(request, f"Relève impossible — {bilan['motif']}")
+            return redirect('core:sms_configuration')
+
         elif 'enregistrer_webhook' in request.POST:
             from core.sms import enregistrer_webhook
             succes, motif = (False, webhook_avertissement) if webhook_avertissement else enregistrer_webhook(webhook_url)
@@ -1054,7 +1064,36 @@ def sms_configuration(request):
         'test_result': test_result,
         'webhook_url': webhook_url,
         'webhook_avertissement': webhook_avertissement,
+        **_etat_reception_sms(),
     })
+
+
+def _etat_reception_sms():
+    """Diagnostic de la réception des SMS des parents : dernière relève de la boîte du téléphone (service « sms »),
+    dernier SMS reçu et sort de la réponse envoyée."""
+    from datetime import datetime, timedelta
+    from communication.models import IncomingSMSLog
+    from communication.sms_recus import etat_releve
+    from core.models import SmsSortant
+
+    releve = etat_releve()
+    if releve:
+        try:
+            releve['quand'] = datetime.fromisoformat(releve['quand'])
+        except (TypeError, ValueError):
+            releve['quand'] = None
+    dernier = IncomingSMSLog.objects.order_by('-created_at').first()
+    reponse = None
+    if dernier is not None and dernier.response_text:
+        reponse = SmsSortant.objects.filter(
+            numero=dernier.sender_number, created_at__gte=dernier.created_at - timedelta(seconds=5),
+        ).order_by('created_at').first()
+    return {
+        'releve': releve,
+        'releve_perimee': bool(releve and releve['quand'] and timezone.now() - releve['quand'] > timedelta(minutes=2)),
+        'dernier_recu': dernier,
+        'derniere_reponse': reponse,
+    }
 
 
 @login_required

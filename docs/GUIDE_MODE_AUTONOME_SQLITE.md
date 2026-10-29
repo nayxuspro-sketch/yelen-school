@@ -273,7 +273,7 @@ reprendre à l'étape 2.
 | Fichier | Rôle |
 |---|---|
 | `.env.autonome.example` | Modèle de configuration du mode autonome |
-| `demarrer-autonome.bat` / `.sh` | Installation + démarrage sans Docker (lanceur unique : `.env`, anti-copie, pare-feu, Waitress) |
+| `demarrer-autonome.bat` / `.sh` | Installation + démarrage sans Docker (lanceur unique : `.env`, anti-copie, pare-feu, Waitress, relève des SMS reçus `sms_recus --boucle` dans la même console) |
 | `core/db_sqlite.py` | PRAGMA SQLite (WAL…) appliqués à chaque connexion |
 | `core/management/commands/sauvegarde_sqlite.py` | Sauvegarde à chaud avec rotation |
 | `core/management/commands/exporter_donnees.py` / `importer_donnees.py` | Transfert intégral et contrôlé vers PostgreSQL (§7) — format `jsonl_us` de `core/serialisation.py` |

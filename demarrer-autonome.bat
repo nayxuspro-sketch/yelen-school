@@ -94,5 +94,7 @@ echo   Laissez cette fenetre ouverte. Ctrl+C pour arreter.
 echo ============================================================
 echo.
 start "" "http://localhost:!PORT!/accounts/login/"
+:: Reception des SMS des parents : releve de la boite du telephone passerelle (meme console, s'arrete avec elle)
+start "" /b python manage.py sms_recus --boucle
 waitress-serve --listen=0.0.0.0:!PORT! --threads=!WEB_THREADS! --channel-timeout=120 yelen_school.wsgi:application
 pause

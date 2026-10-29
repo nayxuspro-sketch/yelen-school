@@ -825,10 +825,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 
 Le script :
 
-1. arrête le service web pour empêcher les écritures pendant la reconstruction ;
+1. arrête les services `web` et `sms` pour empêcher toute écriture ou session ouverte pendant la reconstruction ;
 2. importe le dump dans une base temporaire `<DB_NAME>_restauration` : un dump illisible ou incomplet laisse la base actuelle intacte ;
 3. permute les deux bases par renommage ; la base remplacée est conservée sous `<DB_NAME>_avant_restauration` jusqu'à la restauration suivante ;
-4. redémarre le service web, puis restaure l'archive médias associée lorsqu'elle existe ;
+4. redémarre les services `web` et `sms`, puis restaure l'archive médias associée lorsqu'elle existe ;
 5. exécute `manage.py check`, puis attend un endpoint `/health/` indiquant que PostgreSQL et Redis répondent ;
 6. garantit une tentative de redémarrage du service web même en cas d'erreur.
 

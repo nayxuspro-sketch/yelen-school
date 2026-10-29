@@ -62,6 +62,10 @@ echo "      http://$LANIP:$PORT"
 echo
 echo "  Pare-feu : autoriser le port $PORT/tcp en entrée. Ctrl+C pour arrêter."
 echo "============================================================"
-exec gunicorn yelen_school.wsgi:application \
+# Réception des SMS des parents : relève de la boîte du téléphone passerelle, arrêtée avec le serveur.
+python manage.py sms_recus --boucle &
+SMS_PID=$!
+trap 'kill "$SMS_PID" 2>/dev/null' EXIT
+gunicorn yelen_school.wsgi:application \
     --bind "0.0.0.0:$PORT" --workers "$WORKERS" --threads 2 --timeout 120 \
     --access-logfile data/access.log --error-logfile -

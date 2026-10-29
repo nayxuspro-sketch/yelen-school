@@ -119,8 +119,8 @@ if (-not $Yes) {
 }
 
 Write-Host '[1/5] Arrêt de l''application...' -ForegroundColor Cyan
-& docker compose -f $ComposeFile stop web
-if ($LASTEXITCODE -ne 0) { Fail 'Impossible d''arrêter le service web.' }
+& docker compose -f $ComposeFile stop web sms
+if ($LASTEXITCODE -ne 0) { Fail 'Impossible d''arrêter les services web et sms.' }
 
 # Le dump est importé dans une base temporaire, puis les bases sont permutées
 # par renommage : un dump illisible laisse la base actuelle intacte, et la base
@@ -149,7 +149,7 @@ try {
     & docker compose -f $ComposeFile exec -T db psql -U $dbUser -d postgres -q -v ON_ERROR_STOP=1 -c "ALTER DATABASE $dbName RENAME TO $dbPrevious; ALTER DATABASE $dbRestore RENAME TO $dbName;"
     if ($LASTEXITCODE -ne 0) { Fail 'La bascule a échoué (une session est encore ouverte sur la base ?). La base actuelle est inchangée.' }
 
-    & docker compose -f $ComposeFile up -d web | Out-Host
+    & docker compose -f $ComposeFile up -d web sms | Out-Host
     if ($LASTEXITCODE -ne 0) { Fail 'Impossible de redémarrer le service web.' }
 
     if (Test-Path $mediaFile) {
@@ -178,7 +178,7 @@ try {
     if (-not $healthOk) { Fail 'Le contrôle /health/ a échoué après la restauration.' }
 } finally {
     Write-Host 'Vérification du démarrage de YELEN SCHOOL...' -ForegroundColor Cyan
-    & docker compose -f $ComposeFile up -d web | Out-Host
+    & docker compose -f $ComposeFile up -d web sms | Out-Host
 }
 
 Write-Host '[OK] Restauration terminée et contrôle /health/ réussi.' -ForegroundColor Green
