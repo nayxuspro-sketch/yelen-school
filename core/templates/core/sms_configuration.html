@@ -49,9 +49,12 @@
       {% elif releve_perimee %}
         <span style="color:#F5A623;">⚠ dernière relève {{ releve.quand|date:"d/m/Y H:i:s" }} — le service « sms » semble arrêté (<code>docker compose -f docker-compose.client.yml logs --tail 100 sms</code>).</span>
       {% else %}
-        <span style="color:#00A86B;">✓ {{ releve.quand|date:"d/m/Y H:i:s" }} — boîte du téléphone relevée toutes les 15 s ({{ releve.nouveaux }} nouveau(x) au dernier passage).</span>
+        <span style="color:#00A86B;">✓ {{ releve.quand|date:"d/m/Y H:i:s" }} — boîte du téléphone relevée toutes les 15 s : {{ releve.vus|default:0 }} SMS dans la boîte de l'app{% if releve.dernier %}, dernier reçu le {{ releve.dernier|date:"d/m/Y à H:i:s" }}{% endif %} ; {{ releve.nouveaux }} nouveau(x) au dernier passage.</span>
       {% endif %}
     </div>
+    {% if releve and releve.ok and not releve.vus %}
+    <div class="mt-1 text-xs" style="color:#F5A623;">⚠ L'app SMS Gateway n'a encore enregistré aucun SMS reçu. Si vous venez d'en envoyer un au numéro de l'école : vérifier sur le téléphone que l'autorisation <strong>SMS</strong> est accordée à SMS Gateway (Paramètres Android → Applications → SMS Gateway → Autorisations) et que ce numéro est bien celui de la carte SIM de ce téléphone.</div>
+    {% endif %}
     <div class="d-flex gap-2 flex-wrap align-center mt-2">
       <strong>Dernier SMS reçu :</strong>
       {% if dernier_recu %}

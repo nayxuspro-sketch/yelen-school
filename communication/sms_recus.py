@@ -11,6 +11,7 @@ import json
 import logging
 import re
 import urllib.error
+from datetime import datetime, timezone as dt_timezone
 
 from django.conf import settings
 from django.core.cache import cache
@@ -191,6 +192,11 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
             error_message = f"Commande invalide: '{message_text}'"
             response_text = "Yelen - Commande invalide. Envoyez AIDE pour obtenir la liste des commandes disponibles."
 
+    if response_text and len(re.sub(r'\D', '', sender_number)) < 8:
+        # Code court ou expéditeur alphanumérique (« Orange », « 144 ») : rien à qui répondre, et un SMS facturé en moins.
+        error_message = f"{error_message} Expéditeur sans numéro de téléphone : pas de réponse.".strip()
+        response_text = ''
+
     log = IncomingSMSLog.objects.create(
         sender_number=sender_number,
         message_text=message_text,
@@ -232,13 +238,16 @@ def _lire_boite_reception(limite):
     return messages, ''
 
 
-def relever_boite_reception(limite=30):
-    """Relève les SMS reçus par le téléphone depuis la dernière relève et les traite comme s'ils étaient arrivés par
-    le webhook. La première relève ne fait que poser le repère : les SMS déjà présents ne reçoivent pas de réponse
-    tardive. Retourne le bilan {'ok', 'motif', 'nouveaux', 'ignores'} (aussi mémorisé pour Configuration SMS)."""
+def relever_boite_reception(limite=100):
+    """Relève les SMS reçus par le téléphone et les traite comme s'ils étaient arrivés par le webhook.
+    La première relève ne fait que poser le plancher : les SMS déjà présents ne reçoivent pas de réponse tardive.
+    Ensuite, tout SMS postérieur au plancher et inconnu du journal (identifiant) est traité — l'ordre d'arrivée
+    ou les horloges des opérateurs n'importent pas. Retourne le bilan {'ok', 'motif', 'nouveaux', 'ignores', 'vus',
+    'dernier'} (aussi mémorisé pour Configuration SMS)."""
     from core.sms import sms_actifs
 
-    bilan = {'ok': False, 'motif': '', 'nouveaux': 0, 'ignores': 0, 'quand': timezone.now().isoformat()}
+    bilan = {'ok': False, 'motif': '', 'nouveaux': 0, 'ignores': 0, 'vus': 0, 'dernier': '',
+             'quand': timezone.now().isoformat()}
     if not sms_actifs():
         bilan['motif'] = "SMS désactivés (Paramètres → Configuration SMS)."
     else:
@@ -251,26 +260,49 @@ def relever_boite_reception(limite=30):
     return bilan
 
 
+PLANCHER_ORIGINE = '1970-01-01T00:00:00+00:00'
+
+
+def _instant(valeur):
+    """createdAt de l'app (« 2026-10-29T10:03:00.000Z » ou « …+01:00 ») → datetime avec fuseau, None si illisible."""
+    try:
+        instant = datetime.fromisoformat(str(valeur or ''))
+    except ValueError:
+        return None
+    return instant if instant.tzinfo else instant.replace(tzinfo=dt_timezone.utc)
+
+
 def _traiter_releve(messages):
-    repere = cache.get(CLE_REPERE_RELEVE)
-    recus = sorted((m for m in messages if isinstance(m, dict) and m.get('createdAt')), key=lambda m: m['createdAt'])
-    if repere is None:
-        # Première relève : les SMS déjà dans le téléphone sont antérieurs à la mise en service.
-        if recus:
-            cache.set(CLE_REPERE_RELEVE, recus[-1]['createdAt'], DUREE_CACHE_RELEVE)
-        return {'nouveaux': 0, 'ignores': len(recus)}
-    nouveaux = ignores = 0
-    for m in recus:
-        if m['createdAt'] <= repere:
-            continue
+    from .models import IncomingSMSLog
+
+    recus = []
+    for m in messages:
+        instant = _instant(m.get('createdAt')) if isinstance(m, dict) else None
+        if instant is not None:
+            recus.append((instant, m))
+    recus.sort(key=lambda c: c[0])
+    bilan = {'nouveaux': 0, 'ignores': 0, 'vus': len(recus), 'dernier': recus[-1][0].isoformat() if recus else ''}
+
+    plancher = _instant(cache.get(CLE_REPERE_RELEVE))
+    if plancher is None:
+        # Première relève : les SMS déjà dans le téléphone sont antérieurs à la mise en service — boîte vide comprise.
+        cache.set(CLE_REPERE_RELEVE, bilan['dernier'] or PLANCHER_ORIGINE, DUREE_CACHE_RELEVE)
+        bilan['ignores'] = len(recus)
+        return bilan
+
+    candidats = [(identifiant_message(m.get('id')), m) for instant, m in recus if instant > plancher]
+    identifiants = [i for i, _ in candidats if i]
+    connus = set(IncomingSMSLog.objects.filter(message_id__in=identifiants).values_list('message_id', flat=True)) if identifiants else set()
+    for identifiant, m in candidats:
         expediteur = str(m.get('sender') or '').strip()
         texte = str(m.get('contentPreview') or '').strip()
-        if expediteur and texte:
-            _, cree = traiter_sms_recu(expediteur, texte, identifiant_message(m.get('id')))
-            nouveaux += cree
-            ignores += not cree
-        cache.set(CLE_REPERE_RELEVE, m['createdAt'], DUREE_CACHE_RELEVE)
-    return {'nouveaux': nouveaux, 'ignores': ignores}
+        if not identifiant or identifiant in connus or not expediteur or not texte:
+            bilan['ignores'] += 1
+            continue
+        _, cree = traiter_sms_recu(expediteur, texte, identifiant)
+        bilan['nouveaux' if cree else 'ignores'] += 1
+    bilan['ignores'] += len(recus) - len(candidats)
+    return bilan
 
 
 def etat_releve():

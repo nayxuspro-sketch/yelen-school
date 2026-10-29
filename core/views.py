@@ -1078,10 +1078,11 @@ def _etat_reception_sms():
 
     releve = etat_releve()
     if releve:
-        try:
-            releve['quand'] = datetime.fromisoformat(releve['quand'])
-        except (TypeError, ValueError):
-            releve['quand'] = None
+        for cle in ('quand', 'dernier'):
+            try:
+                releve[cle] = datetime.fromisoformat(releve.get(cle) or '')
+            except ValueError:
+                releve[cle] = None
     dernier = IncomingSMSLog.objects.order_by('-created_at').first()
     reponse = None
     if dernier is not None and dernier.response_text:

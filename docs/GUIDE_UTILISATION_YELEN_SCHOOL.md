@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.16.0
+version_logiciel: 5.16.1
 version_guide: 5.14
-date_mise_a_jour: 29/10/2026 (5.16.0 : réception des SMS des parents par relève automatique de la boîte du téléphone, service sms)
+date_mise_a_jour: 29/10/2026 (5.16.1 : relève des SMS reçus fiabilisée — boîte vide au démarrage, horodatages croisés, diagnostic de la boîte)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -6559,9 +6559,9 @@ Mise en place, depuis le poste serveur :
 
 1. **Envoi déjà opérationnel** (2.17) : passerelle `Interface WiFi`, URL `http://<IP du téléphone>:8080/message`, identifiant et mot de passe de l'app, *Test de connectivité* réussi. App SMS Gateway en version **1.59 ou plus récente** (la boîte de réception est lue par son API locale).
 2. **Service de relève démarré** : il fait partie de l'application depuis la version 5.16 — `mettre-a-jour.bat` le lance (`docker compose ps` montre un service `sms` ; journal : `docker compose -f docker-compose.client.yml logs --tail 100 sms`). Hors Docker : `python manage.py sms_recus --boucle` à exécuter en service.
-3. **Vérifier** dans `Paramètres → Configuration SMS`, carte **Réception des SMS des parents** : la ligne *Relève automatique* doit être verte et datée de moins de 15 secondes ; sinon la carte dit ce qui manque (service non démarré, passerelle injoignable, SMS désactivés, app trop ancienne). Envoyer `AIDE` au numéro de l'école depuis un portable → réponse automatique en moins de 30 secondes, ligne *Dernier SMS reçu* renseignée avec le sort de la réponse (envoyée / en attente / échec et motif), ligne dans **Communication → Messages reçus** (filtre *Commandes automatiques*). Le bouton **Relever maintenant** force une relève sans attendre.
+3. **Vérifier** dans `Paramètres → Configuration SMS`, carte **Réception des SMS des parents** : la ligne *Relève automatique* doit être verte et datée de moins de 15 secondes, avec le nombre de SMS présents dans la boîte de l'app et la date du dernier reçu ; sinon la carte dit ce qui manque (service non démarré, passerelle injoignable, SMS désactivés, app trop ancienne). Envoyer `AIDE` au numéro de l'école depuis un portable → réponse automatique en moins de 30 secondes, ligne *Dernier SMS reçu* renseignée avec le sort de la réponse (envoyée / en attente / échec et motif), ligne dans **Communication → Messages reçus** (filtre *Commandes automatiques*). Le bouton **Relever maintenant** force une relève sans attendre.
 
-> À la première relève, les SMS déjà présents dans le téléphone sont ignorés (pas de réponses tardives) ; seuls les SMS reçus ensuite sont traités.
+> À la première relève, les SMS déjà présents dans le téléphone sont ignorés (pas de réponses tardives) ; seuls les SMS reçus ensuite sont traités. Si la carte indique « 0 SMS dans la boîte de l'app » alors qu'un SMS vient d'être envoyé au numéro de l'école, l'app ne l'a pas vu : vérifier sur le téléphone que l'autorisation **SMS** est accordée à SMS Gateway et que le numéro appelé est bien celui de la carte SIM de ce téléphone. Les SMS des opérateurs (expéditeur « Orange », « 144 »…) sont journalisés dans Messages reçus mais ne reçoivent pas de réponse.
 
 **Webhook (facultatif, réception instantanée)** — carte *Webhook SMS* de la même page :
 
@@ -7046,7 +7046,7 @@ serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version pr
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
-La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.16.0 »), sur la page de connexion et
+La version installée se lit en bas du menu latéral (« YELEN SCHOOL v5.16.1 »), sur la page de connexion et
 dans `/health/` (champ `version`) ; elle provient du fichier `VERSION` à la racine du dépôt, incrémenté à
 chaque livraison (`CHANGELOG.md`). Après une mise à jour, les navigateurs déjà ouverts se rechargent
 d'eux-mêmes à la page suivante : le cache hors ligne porte le numéro de version, **plus besoin de Ctrl+F5**.

@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.16.1 — 2026-10-29
+
+### Relève des SMS reçus fiabilisée
+- **Correction** : quand la boîte de l'app était vide à la première relève (app fraîchement installée), le tout premier SMS reçu ensuite était pris pour un SMS « antérieur à la mise en service » et ignoré sans réponse. Le plancher est maintenant posé même sur boîte vide.
+- Relève : plancher initial fixe + dédoublonnage par identifiant (un SMS horodaté avant le dernier traité — deux SIM, horloges d'opérateurs — est traité quand même) ; dates comparées comme des instants (formats `…Z` / `…+01:00`) ; 100 derniers SMS relus à chaque passage.
+- Carte « Réception des SMS des parents » : nombre de SMS présents dans la boîte de l'app et date du dernier reçu ; avertissement explicite quand l'app n'a enregistré aucun SMS (autorisation SMS de l'app, SIM du téléphone).
+- Aucune réponse n'est envoyée aux codes courts et expéditeurs alphanumériques (SMS d'opérateurs) : journalisés dans Messages reçus, pas de SMS facturé. 3 tests ajoutés (14 au total pour la relève).
+
 ## 5.16.0 — 2026-10-29
 
 ### Réception des SMS des parents sans dépendre du webhook

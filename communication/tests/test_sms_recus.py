@@ -7,6 +7,7 @@ from io import BytesIO, StringIO
 
 import pytest
 from django.core.cache import cache
+from django.utils import timezone
 from django.core.management import call_command
 from django.urls import reverse
 from model_bakery import baker
@@ -84,12 +85,58 @@ def test_premiere_releve_pose_le_repere_sans_repondre_aux_anciens_sms(boite):
 
     bilan = sms_recus.relever_boite_reception()
 
-    assert bilan['ok'] is True and (bilan['nouveaux'], bilan['ignores']) == (0, 2)
+    assert bilan['ok'] is True and (bilan['nouveaux'], bilan['ignores'], bilan['vus']) == (0, 2, 2)
+    assert bilan['dernier'] == '2026-10-28T10:05:00+00:00'
     assert IncomingSMSLog.objects.count() == 0 and SmsSortant.objects.count() == 0
-    assert cache.get(sms_recus.CLE_REPERE_RELEVE) == '2026-10-28T10:05:00.000+00:00'
+    assert cache.get(sms_recus.CLE_REPERE_RELEVE) == '2026-10-28T10:05:00+00:00'
     methode, url, autorisation = boite.appels[0]
-    assert (methode, url, autorisation) == ('GET', f'{PASSERELLE}/inbox?type=SMS&limit=30', 'Basic YWRtaW46c2VjcmV0')
+    assert (methode, url, autorisation) == ('GET', f'{PASSERELLE}/inbox?type=SMS&limit=100', 'Basic YWRtaW46c2VjcmV0')
     assert sms_recus.etat_releve()['ok'] is True
+
+
+def test_boite_vide_a_la_premiere_releve_puis_premier_sms_traite(boite, mocker):
+    """Boîte vide à la mise en service (app fraîchement installée) : le tout premier SMS reçu ensuite doit être traité,
+    pas pris pour un SMS antérieur."""
+    mocker.patch('core.tasks.threading.Thread')
+    assert sms_recus.relever_boite_reception()['vus'] == 0
+    assert cache.get(sms_recus.CLE_REPERE_RELEVE) == sms_recus.PLANCHER_ORIGINE
+
+    boite.messages = [message_boite(21, 'AIDE', '2026-10-29T08:00:00.000Z')]
+    bilan = sms_recus.relever_boite_reception()
+
+    assert (bilan['nouveaux'], bilan['ignores']) == (1, 0)
+    assert IncomingSMSLog.objects.get().command_type == 'HELP' and SmsSortant.objects.count() == 1
+
+
+def test_sms_horodate_avant_le_dernier_traite_est_quand_meme_traite(boite, mocker):
+    """Deux SIM / deux opérateurs : les horodatages peuvent se croiser. Seul le plancher initial compte, le
+    dédoublonnage se fait par identifiant."""
+    mocker.patch('core.tasks.threading.Thread')
+    boite.messages = [message_boite(30, 'ancien', '2026-10-28T10:00:00.000Z')]
+    sms_recus.relever_boite_reception()                      # plancher = 10:00
+    boite.messages.append(message_boite(31, 'AIDE', '2026-10-28T10:10:00.000Z'))
+    assert sms_recus.relever_boite_reception()['nouveaux'] == 1
+    boite.messages.append(message_boite(32, 'AIDE', '2026-10-28T10:08:00.000Z', expediteur='+22676000000'))
+
+    bilan = sms_recus.relever_boite_reception()
+
+    assert (bilan['nouveaux'], bilan['ignores'], bilan['vus']) == (1, 2, 3)
+    assert set(IncomingSMSLog.objects.values_list('message_id', flat=True)) == {'1f', '20'}
+    assert sms_recus.relever_boite_reception()['nouveaux'] == 0
+
+
+def test_pas_de_reponse_aux_codes_courts_et_expediteurs_alphanumeriques(boite, mocker):
+    mocker.patch('core.tasks.threading.Thread')
+    sms_recus.relever_boite_reception()
+    boite.messages = [message_boite(41, 'Votre forfait expire demain', '2026-10-28T10:10:00.000Z', expediteur='Orange'),
+                      message_boite(42, 'Solde : 500 F', '2026-10-28T10:11:00.000Z', expediteur='144')]
+
+    assert sms_recus.relever_boite_reception()['nouveaux'] == 2
+
+    journaux = IncomingSMSLog.objects.order_by('created_at')
+    assert [(j.command_type, j.response_text) for j in journaux] == [('INVALID', ''), ('INVALID', '')]
+    assert all('pas de réponse' in j.error_message for j in journaux)
+    assert SmsSortant.objects.count() == 0
 
 
 def test_releve_traite_les_nouveaux_sms_une_seule_fois(boite, django_capture_on_commit_callbacks, mocker):
@@ -101,7 +148,7 @@ def test_releve_traite_les_nouveaux_sms_une_seule_fois(boite, django_capture_on_
     with django_capture_on_commit_callbacks(execute=True):
         bilan = sms_recus.relever_boite_reception()
 
-    assert (bilan['nouveaux'], bilan['ignores']) == (1, 0)
+    assert (bilan['nouveaux'], bilan['ignores']) == (1, 1)      # le SMS antérieur au plancher reste ignoré
     journal = IncomingSMSLog.objects.get()
     assert (journal.message_id, journal.command_type, journal.sender_number) == ('b78aa314', 'HELP', '+22670112233')
     reponse = SmsSortant.objects.get()
@@ -189,3 +236,14 @@ def test_page_configuration_affiche_la_reception_et_releve_a_la_demande(client, 
     page = client.get(url, secure=True).content.decode()
     assert journal.sender_number in page and 'Impossible de joindre la passerelle' in page
     assert 'semble arrêté' in page        # relève datée de plus de 2 minutes
+
+    cache.set(sms_recus.CLE_ETAT_RELEVE, {'ok': True, 'motif': '', 'nouveaux': 0, 'ignores': 0, 'vus': 0, 'dernier': '',
+                                          'quand': timezone.now().isoformat()})
+    page = client.get(url, secure=True).content.decode()
+    assert "n'a encore enregistré aucun SMS reçu" in page and 'autorisation <strong>SMS</strong>' in page
+
+    cache.set(sms_recus.CLE_ETAT_RELEVE, {'ok': True, 'motif': '', 'nouveaux': 1, 'ignores': 2, 'vus': 3,
+                                          'dernier': '2026-10-29T08:00:00+00:00', 'quand': timezone.now().isoformat()})
+    page = client.get(url, secure=True).content.decode()
+    assert "3 SMS dans la boîte de l'app, dernier reçu le 29/10/2026 à 08:00:00" in page
+    assert "n'a encore enregistré aucun SMS reçu" not in page
