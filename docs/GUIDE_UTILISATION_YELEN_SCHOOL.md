@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.22.1
+version_logiciel: 5.23.0
 version_guide: 5.16
-date_mise_a_jour: 30/10/2026 (5.22.1 : suppression des messages parents par ligne et par sélection, suppression des campagnes SMS, §29.4 et §9.24)
+date_mise_a_jour: 30/10/2026 (5.23.0 : liste du personnel — récapitulatif par titre de capacité et par genre, §12.7)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -3637,9 +3637,9 @@ Le document contient : en-tête de l'établissement, numéro d'ordre, matricule,
 | Poste / Fonction | Titre du poste occupé cette année |
 | Catégorie | Catégorie professionnelle : Direction, Enseignement, Administration, Vie Scolaire, Personnel Technique |
 
-**Récapitulatif PDF :** tableau de synthèse ventilant chaque catégorie par Hommes / Femmes / Total, plus un sous-total général.
+**Récapitulatifs PDF :** deux tableaux de synthèse sous la liste (aperçu et PDF) : **par catégorie et par genre** (chaque catégorie en Hommes / Femmes / Total, plus un sous-total général), puis **par titre de capacité et par genre** (CAPES, CAP-CEG, Licence, Master… tels que saisis sur la fiche de l'agent, regroupés sans tenir compte de la casse ; les agents sans titre saisi sont comptés sur une ligne « Non renseigné », en dernier).
 
-**Contenu du document :** en-tête établissement, année scolaire, tableau alphabétique, récapitulatif par catégorie et genre, signature du directeur, QR code de l'établissement.
+**Contenu du document :** en-tête établissement, année scolaire, tableau alphabétique, récapitulatifs par catégorie et genre puis par titre de capacité et genre, signature du directeur, QR code de l'établissement.
 
 ---
 

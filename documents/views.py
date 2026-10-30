@@ -476,6 +476,21 @@ def liste_personnel_pdf(request, cycle_id):
                 'total': vals['total'],
             })
 
+    # ── Répartition par titre de capacité × genre (champ libre : regroupé sans tenir compte de la casse,
+    #    affiché avec la graphie la plus fréquente ; « Non renseigné » en dernier) ──
+    from collections import Counter
+    repartition_titres = {}
+    for m in membres_list:
+        titre = (m['personnel'].titre_capacite or '').strip() or 'Non renseigné'
+        ligne = repartition_titres.setdefault(titre.casefold(), {'graphies': Counter(), 'hommes': 0, 'femmes': 0, 'total': 0})
+        ligne['graphies'][titre] += 1
+        ligne['total'] += 1
+        ligne['hommes' if m['personnel'].genre == 'M' else 'femmes'] += 1
+    repartition_titres_data = sorted(
+        ({'titre': vals['graphies'].most_common(1)[0][0], 'hommes': vals['hommes'], 'femmes': vals['femmes'],
+          'total': vals['total']} for vals in repartition_titres.values()),
+        key=lambda r: (r['titre'] == 'Non renseigné', r['titre'].casefold()))
+
     # Signataire — cherche par cycle + code TypeDocument contenant "liste" et "personnel"
     signataire_membre = None
     signataire_fonction = None
@@ -516,6 +531,7 @@ def liste_personnel_pdf(request, cycle_id):
         'nb_hommes': nb_hommes,
         'nb_femmes': nb_femmes,
         'repartition_cycles_data': repartition_cycles_data,
+        'repartition_titres_data': repartition_titres_data,
         'signataire_membre': signataire_membre,
         'signataire_fonction': signataire_fonction,
     }

@@ -331,3 +331,37 @@ def test_qr_bulletin_annuel_contenu_et_balise():
         'MAT: 2024-0001\nCLA: 6ème A\nANN: 2025-2026\nMOY: 13,75/20')
     balise = qr_bulletin_annuel('2024-0001', '6ème A', '2025-2026', '13,75')
     assert balise.startswith('<img src="data:image/png;base64,') and 'alt="QR bulletin annuel 2024-0001"' in balise
+
+
+@pytest.mark.django_db
+def test_liste_personnel_recapitulatif_par_titre_de_capacite_et_genre(client, mocker):
+    """Sous le récapitulatif par catégorie, un second tableau compte le personnel par titre de capacité et par genre
+    (prévisualisation HTML et PDF) : regroupement insensible à la casse (graphie majoritaire affichée), « Non renseigné »
+    en dernier."""
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST')
+    poste = baker.make('parametres.Poste', etablissement=etab, categorie='ENSEIGNEMENT')
+    for nom, genre, titre in (('A', 'M', 'capes '), ('B', 'F', 'CAPES'), ('C', 'M', 'Licence'), ('D', 'F', ''), ('E', 'M', 'CAPES')):
+        membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom=nom, prenom='X', genre=genre, titre_capacite=titre)
+        baker.make('personnel.InscriptionPersonnel', personnel=membre, annee_scolaire=annee, cycle=cycle, poste=poste)
+    url = reverse('documents:liste_personnel_pdf', kwargs={'cycle_id': cycle.pk})
+
+    def lignes(html, titre):
+        html = re.sub(r'<!--.*?-->', '', html, flags=re.S)
+        bloc = html.split(titre)[1].split('</table>')[0]
+        return [re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', ligne)).strip()
+                for ligne in re.findall(r'<tr[^>]*>(.*?)</tr>', bloc, re.S)][1:]
+
+    attendu = ['1 CAPES 2 1 3', '2 Licence 1 0 1', '3 Non renseigné 0 1 1', 'TOTAL 3 2 5']   # graphie majoritaire « CAPES »
+    apercu = client.get(url)
+    assert apercu.status_code == 200
+    assert lignes(apercu.content.decode(), 'Récapitulatif par titre de capacité et par genre') == attendu
+
+    html_cls = mocker.patch('core.pdf.HTML')
+    html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
+    assert client.get(url + '?format=pdf').status_code == 200
+    html = html_cls.call_args.kwargs['string']
+    assert lignes(html, 'Récapitulatif par titre de capacité et par genre') == attendu
+    assert html.index('Récapitulatif par catégorie et par genre') < html.index('Récapitulatif par titre de capacité et par genre') < html.index('class="qr-zone"')

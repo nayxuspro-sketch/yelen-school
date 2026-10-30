@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.23.0 — 2026-10-30
+
+### Liste alphabétique du personnel (Documents → Liste du personnel)
+- Second tableau récapitulatif sous la liste, dans l'aperçu et le PDF : **personnel par titre de capacité et par genre** (Hommes / Femmes / Total, ligne TOTAL). Les titres sont regroupés sans tenir compte de la casse (graphie majoritaire affichée) ; les agents sans titre saisi figurent sur une ligne « Non renseigné », en dernier. En-têtes des récapitulatifs sur une seule ligne. 1 test.
+
 ## 5.22.1 — 2026-10-30
 - Tests : isolation du cache de la matrice des droits entre les tests (fixture globale) — en mode serveur (Redis), un refus posé par un test survivait à sa transaction et faisait échouer le test suivant en CI. Aucun changement fonctionnel.
 

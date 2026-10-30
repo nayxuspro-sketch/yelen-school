@@ -32,7 +32,7 @@ tr:nth-child(even) td { background-color: #f5f5f5; }
     padding-bottom: 3px;
 }
 .recap-table { width: 50%; border-collapse: collapse; margin-top: 4px; }
-.recap-table th { background-color: #111; color: #fff; font-size: 9pt; padding: 4px 8px; text-align: left; border: 1px solid #111; }
+.recap-table th { background-color: #111; color: #fff; font-size: 9pt; padding: 4px 8px; text-align: left; border: 1px solid #111; white-space: nowrap; }
 .recap-table th.num { text-align: center; width: 40px; }
 .recap-table th.h,
 .recap-table th.f,
@@ -150,6 +150,42 @@ tr:nth-child(even) td { background-color: #f5f5f5; }
                 <tr class="recap-simple-total">
                     <td>TOTAL</td>
                     <td class="recap-simple-col-effectif">{{ nb_total }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Récapitulatif par titre de capacité × genre -->
+    {% if repartition_titres_data %}
+    <div class="recap">
+        <div class="recap-title">Récapitulatif par titre de capacité et par genre</div>
+        <table class="recap-table">
+            <thead>
+                <tr>
+                    <th class="num">#</th>
+                    <th>Titre de capacité</th>
+                    <th class="h">Hommes</th>
+                    <th class="f">Femmes</th>
+                    <th class="t">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in repartition_titres_data %}
+                <tr>
+                    <td class="num">{{ forloop.counter }}</td>
+                    <td>{{ row.titre }}</td>
+                    <td class="h">{{ row.hommes }}</td>
+                    <td class="f">{{ row.femmes }}</td>
+                    <td class="t">{{ row.total }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="subtotal">
+                    <td class="num"></td>
+                    <td><strong>TOTAL</strong></td>
+                    <td class="h"><strong>{{ nb_hommes }}</strong></td>
+                    <td class="f"><strong>{{ nb_femmes }}</strong></td>
+                    <td class="t"><strong>{{ nb_total }}</strong></td>
                 </tr>
             </tbody>
         </table>
