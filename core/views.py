@@ -10,7 +10,9 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 
 from django.http import FileResponse, Http404, HttpResponseForbidden, HttpResponse, JsonResponse
+from django.middleware.csrf import get_token
 from django.templatetags.static import static
+from django.urls import reverse
 from django.utils import timezone
 
 from personnel.models import MembrePersonnel
@@ -1331,11 +1333,16 @@ def app_service_worker(request):
 const APP_CACHE = 'yelen-app-__VERSION__';
 const PRECACHE = [
   '/offline/',
-  '/static/css/yelen.css',
-  '/static/js/htmx.min.js',
+  '__PAGE_SAISIES__',
+  '__CSS__',
+  '__HTMX__',
+  '__JS_SAISIES__',
 ];
 const STATIC_ORIGIN = self.location.origin;
-const BYPASS = ['/accounts/', '/admin/', '/api/', '/sw.js', '/app-sw.js'];
+const BYPASS = ['/accounts/', '/admin/', '/api/', '/sw.js', '/app-sw.js', '/hors-ligne/contexte/'];
+
+// Saisie hors réseau (notes, appels) : file d'attente des formulaires, rejouée au retour du réseau.
+importScripts('__SW_SAISIES__');
 
 // ── Install : pré-cache les assets critiques ──
 self.addEventListener('install', e => {
@@ -1359,10 +1366,21 @@ self.addEventListener('activate', e => {
 
 // ── Fetch ──
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.origin !== STATIC_ORIGIN) return;
+  if (e.request.method === 'POST' && SAISIES.concerne(url.pathname)) {
+    e.respondWith(SAISIES.intercepter(e.request));
+    return;
+  }
+  if (e.request.method !== 'GET') return;
   if (BYPASS.some(p => url.pathname.startsWith(p))) return;
+
+  // Copie mise en cache : clonée avant que le navigateur ne consomme la réponse (sinon clone() échoue
+  // et rien n'est jamais mis en cache) ; waitUntil garde le worker en vie jusqu'à l'écriture.
+  const memoriser = r => {
+    const copie = r.clone();
+    e.waitUntil(caches.open(APP_CACHE).then(c => c.put(e.request, copie)).catch(() => {}));
+  };
 
   // Assets statiques et fichiers /media/ (servis après connexion) : Cache First.
   // Une réponse redirigée (session expirée → page de connexion) n'est jamais mise en cache.
@@ -1370,7 +1388,7 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       caches.match(e.request).then(cached => {
         const network = fetch(e.request).then(r => {
-          if (r.ok && !r.redirected) caches.open(APP_CACHE).then(c => c.put(e.request, r.clone()));
+          if (r.ok && !r.redirected) memoriser(r);
           return r;
         });
         return cached || network;
@@ -1383,7 +1401,7 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request)
       .then(r => {
-        if (r.ok) caches.open(APP_CACHE).then(c => c.put(e.request, r.clone()));
+        if (r.ok && !r.redirected) memoriser(r);
         return r;
       })
       .catch(() =>
@@ -1393,12 +1411,43 @@ self.addEventListener('fetch', e => {
   );
 });
 """
-    return HttpResponse(sw.strip().replace('__VERSION__', settings.YELEN_VERSION), content_type='application/javascript')
+    remplacements = {
+        '__VERSION__': settings.YELEN_VERSION,
+        '__PAGE_SAISIES__': reverse('core:saisies_hors_ligne'),
+        '__CSS__': static('css/yelen.css'),
+        '__HTMX__': static('js/htmx.min.js'),
+        '__JS_SAISIES__': static('js/saisies_hors_ligne.js'),
+        '__SW_SAISIES__': static('js/sw_saisies.js'),
+    }
+    script = sw.strip()
+    for marqueur, valeur in remplacements.items():
+        script = script.replace(marqueur, valeur)
+    return HttpResponse(script, content_type='application/javascript')
 
 
 def offline_page(request):
     """Page affichée par le Service Worker quand le serveur est inaccessible."""
     return render(request, 'core/offline.html')
+
+
+def saisies_hors_ligne(request):
+    """Saisies (notes, appels) conservées sur l'appareil faute de réseau : liste, transmission, retrait.
+    Page sans donnée serveur (tout vient du navigateur), pré-cachée par le Service Worker, accessible
+    hors connexion."""
+    return render(request, 'core/saisies_hors_ligne.html')
+
+
+@never_cache
+def saisies_contexte(request):
+    """Contexte frais demandé par le navigateur juste avant de transmettre ses saisies hors réseau :
+    session encore valide ?, identité (seules les saisies de l'utilisateur connecté sont transmises)
+    et jeton CSRF courant — une page servie depuis le cache porterait un jeton périmé."""
+    authentifie = request.user.is_authenticated
+    return JsonResponse({
+        'authentifie': authentifie,
+        'utilisateur': str(request.user.pk) if authentifie else '',
+        'csrf': get_token(request),
+    })
 
 
 def pwa_manifest(request):

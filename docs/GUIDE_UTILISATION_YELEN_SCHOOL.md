@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.24.0
-version_guide: 5.16
-date_mise_a_jour: 30/10/2026 (5.24.0 : séparateur de milliers sur tous les montants et effectifs affichés, §0.4)
+version_logiciel: 5.25.0
+version_guide: 5.17
+date_mise_a_jour: 30/10/2026 (5.25.0 : saisie hors réseau des notes et des appels, §28.6)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -6153,7 +6153,40 @@ Le bouton n'apparaît que si le navigateur détecte que l'app peut être install
 | Service Worker | `/app-sw.js` | Cache, stratégies fetch, fallback offline |
 | Manifest | `/app-manifest.json` | Métadonnées d'installation |
 | Page offline | `/offline/` | Fallback quand le serveur est inaccessible |
+| Saisies hors réseau | `/hors-ligne/saisies/` | File des notes et appels conservés sur l'appareil (§28.6) |
 | Portail parent | `/sw.js` + `/manifest.json` | PWA séparée pour les parents |
+
+---
+
+### 28.6 Saisie Hors Réseau — Notes et Appels (enseignants)
+
+**Accès :** Automatique sur les pages **Saisie des notes** (`/pedagogie/evaluations/…/saisie/`) et **Appel** (`/presences/appel/…/saisie/`) — aucune configuration.
+
+**À quoi ça sert :** un enseignant peut saisir ses notes à la maison, ou faire l'appel dans une salle que le Wi-Fi ne couvre pas, sans serveur joignable. La saisie est **conservée sur son appareil** puis **transmise automatiquement** dès qu'il rouvre YELEN SCHOOL sur le réseau de l'établissement.
+
+**Comment ça marche, pas à pas :**
+
+1. **Préparer** — pendant que le serveur est joignable, ouvrir la page de saisie de chaque évaluation à corriger (ou l'appel de la séance). Une mention *« ✓ Disponible hors réseau »* confirme que la page restera consultable sans serveur.
+2. **Saisir sans réseau** — rouvrir la page (favori, historique, ou page *Saisies hors réseau* qui liste les pages disponibles), saisir, puis **Enregistrer** comme d'habitude. Au lieu d'une erreur, l'écran *Saisies hors réseau* confirme : *« Votre saisie a été conservée sur cet appareil »*.
+3. **Transmettre** — de retour sur le réseau de l'école, ouvrir n'importe quelle page de YELEN SCHOOL (connecté avec le **même compte**) : la saisie part toute seule ; un message *« Saisie transmise — Notes — Devoir 1 — Mathématiques — 6e A : 32 note(s) enregistrée(s) »* le confirme. Si la session a expiré, se reconnecter suffit : la transmission reprend juste après.
+
+**Repères à l'écran :**
+
+| Élément | Signification |
+|---|---|
+| Pastille orange **« N saisie(s) en attente de transmission »** (bas de l'écran, toutes les pages) | Des saisies sont conservées sur cet appareil ; cliquer ouvre la page *Saisies hors réseau* |
+| Page **Saisies hors réseau** (`/hors-ligne/saisies/`, aussi accessible depuis la page hors ligne) | Liste des saisies en attente (**Ouvrir la page**, **Retirer**), bouton **Transmettre maintenant**, pages de saisie consultables sans réseau, dernières transmissions |
+| Bandeau sur une page de saisie *« Saisie du … conservée sur cet appareil »* | Une saisie attend pour cette page : **les valeurs saisies sont restaurées** dans le formulaire ; enregistrer de nouveau remplace la saisie en attente |
+| Saisie **refusée** (bandeau rouge, motif affiché) | Le serveur l'a rejetée : période clôturée, appel déjà clôturé, droit retiré… Les valeurs restent restaurées ; corriger puis **Réessayer**, ou **Retirer** |
+
+**Règles de fonctionnement :**
+
+- Une seule saisie en attente **par page** : la plus récente remplace la précédente (le formulaire envoie toujours l'ensemble des élèves).
+- Les saisies sont transmises **dans l'ordre** où elles ont été faites, **uniquement par leur auteur** : sur un poste partagé, une saisie faite par un collègue attend qu'il se connecte.
+- Une saisie transmise est traitée **exactement comme une saisie en ligne** (mêmes contrôles : barème, période clôturée, appel clôturé, droits, SMS d'absence à la clôture de l'appel) ; la date enregistrée est celle de la transmission.
+- Les données attendent dans le navigateur de l'appareil (pas dans le serveur) : verrouiller l'appareil, ne pas effacer les données du navigateur tant que la pastille est visible.
+
+> **Prérequis technique :** le navigateur doit avoir accepté le Service Worker de l'application, ce qui exige un accès **HTTPS** (mode serveur Docker avec l'autorité locale installée, §20.1) ou `http://localhost`. En mode autonome HTTP sur le réseau (port 8000), la saisie hors réseau n'est pas disponible.
 
 ---
 

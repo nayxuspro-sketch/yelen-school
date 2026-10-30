@@ -17,6 +17,7 @@ from django.contrib import messages
 from parametres.models import Classe, AnneeScolaire, Cycle
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_membre_personnel
+from core.hors_ligne import saisie_differee
 from pedagogie.models import Enseignement, Matiere
 from viescolaire.models import SeanceCours
 from .models import Appel, Presence, Justification, SeuilAbsences, AlerteAbsences
@@ -301,6 +302,7 @@ def appel_create(request, classe_id):
     })
 
 
+@saisie_differee
 @login_required
 def appel_saisie(request, appel_id):
     """Saisie des présences pour un appel."""

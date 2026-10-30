@@ -35,6 +35,8 @@ urlpatterns = [
     # PWA — application principale (staff)
     path('app-manifest.json', views.app_manifest, name='app_manifest'),
     path('offline/', views.offline_page, name='offline'),
+    path('hors-ligne/saisies/', views.saisies_hors_ligne, name='saisies_hors_ligne'),
+    path('hors-ligne/contexte/', views.saisies_contexte, name='saisies_contexte'),
 
     # Chatbot IA
     path('assistant/', views.chatbot, name='chatbot'),

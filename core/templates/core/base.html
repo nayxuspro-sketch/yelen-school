@@ -5,6 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}YELEN SCHOOL{% endblock %}</title>
+  {% if request.user.is_authenticated %}
+  {# ── Saisie hors réseau : auteur d'une saisie, lu dans la copie en cache par le Service Worker ── #}
+  <meta name="yelen-utilisateur" content="{{ request.user.pk }}">
+  {% endif %}
 
   {# ── CSS principal — 100% local, zéro CDN ── #}
   <link rel="stylesheet" href="{% static_v 'css/yelen.css' %}">
@@ -38,6 +42,9 @@
     </svg>
     Connexion au serveur perdue — vérifiez le réseau local
   </div>
+
+  {# ── Saisies hors réseau en attente (pastille alimentée par saisies_hors_ligne.js) ── #}
+  <a id="saisies-attente" class="saisies-attente" href="{% url 'core:saisies_hors_ligne' %}" hidden></a>
   {% include "core/includes/bandeau_environnement.html" %}
 
   {# ════════════════════════════════════════ SIDEBAR MODERNE ══════════════════════════════════════ #}
@@ -1111,6 +1118,10 @@
           data-secondes="{{ request.session.get_expiry_age }}" data-logout="{% url 'accounts:logout' %}"></script>
   {% endif %}
   {% block extra_js %}{% endblock %}
+  {% if request.user.is_authenticated %}
+  {# ── Saisie hors réseau : pastille, transmission automatique, restauration sur les pages de saisie ── #}
+  <script nonce="{{ request.csp_nonce }}" src="{% static 'js/saisies_hors_ligne.js' %}"></script>
+  {% endif %}
 
   {# ── PWA : Service Worker + détection réseau + install prompt ── #}
   <script nonce="{{ request.csp_nonce }}">

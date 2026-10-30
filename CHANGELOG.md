@@ -3,6 +3,32 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.25.0 — 2026-10-30
+
+### Saisie hors réseau des notes et des appels (enseignants)
+
+- Les pages **Saisie des notes** et **Appel** soumises alors que le serveur est injoignable sont conservées
+  sur l'appareil par le Service Worker (`static/js/sw_saisies.js`, IndexedDB), puis **rejouées
+  automatiquement** dès qu'une page de l'application est ouverte sur le réseau — par le même compte,
+  avec le jeton CSRF courant (`static/js/saisies_hors_ligne.js`).
+- Le rejeu porte l'en-tête `X-Saisie-Differee` : les vues répondent en JSON (`core.hors_ligne.saisie_differee`,
+  session expirée → 401, saisie d'un autre compte → 403, droit retiré → 403 JSON par le middleware des rôles)
+  et les messages de la vue sont restitués à l'enseignant au lieu de ressortir plus tard.
+- Nouvelle page **Saisies hors réseau** (`/hors-ligne/saisies/`, pré-cachée, accessible sans serveur) :
+  saisies en attente, nouvel essai d'une saisie refusée, retrait, transmission manuelle, pages de saisie
+  consultables sans réseau, dernières transmissions. Pastille « N saisie(s) en attente » sur toutes les pages.
+- Sur une page de saisie : mention « Disponible hors réseau » et **restauration des valeurs** d'une saisie
+  en attente ou refusée (motif affiché).
+- Titres des pages de saisie identifiables : `Notes — Devoir 1 — Mathématiques — 6e A`,
+  `Appel — 5e B — Physique — 30/10/2026`.
+- Page hors ligne : lien vers la file ; plus de boucle de rechargement quand l'appareil est connecté à un
+  autre réseau que celui de l'établissement ; pré-cache des ressources par leur URL réelle (`static()`),
+  donc page hors ligne stylée aussi en production.
+- Correctif Service Worker : les pages et ressources visitées n'étaient en réalité jamais mises en cache
+  (copie de la réponse faite après le début de sa lecture, erreur silencieuse) — copie immédiate et
+  écriture garantie (`waitUntil`) ; les pages déjà ouvertes sont donc bien consultables sans réseau.
+- Guide §28.6.
+
 ## 5.24.0 — 2026-10-30
 
 ### Lisibilité des nombres : séparateur de milliers

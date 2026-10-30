@@ -12,6 +12,7 @@ from ..forms import EvaluationForm
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_membre_personnel
+from core.hors_ligne import saisie_differee
 from ..utils import CalculateurMoyenne
 # Nombre de classes affichées par page dans la liste des évaluations
 # (chaque classe regroupe toutes ses matières et évaluations : ~40 lignes
@@ -257,6 +258,7 @@ def evaluation_update(request, pk):
     })
 
 
+@saisie_differee
 @login_required
 def evaluation_saisie(request, pk):
     """Saisie groupée des notes pour une évaluation."""

@@ -13,9 +13,10 @@ la matrice des droits d'accès administrée par le Super Admin (``parametres.dro
 """
 
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect
 
+from core.hors_ligne import EN_TETE as EN_TETE_SAISIE_DIFFEREE
 from core.models import RoleChoices
 from parametres.droits import CODES_MODULES, acces_autorise, libelle_cible
 
@@ -78,5 +79,8 @@ class RoleAccessMiddleware:
             return None
         if request.headers.get('HX-Request'):
             return HttpResponseForbidden("Fonctionnalité non autorisée pour votre rôle.")
-        messages.error(request, f"Accès à {libelle_cible(module, request.path_info, match.url_name)} non autorisé pour votre rôle.")
+        motif = f"Accès à {libelle_cible(module, request.path_info, match.url_name)} non autorisé pour votre rôle."
+        if request.headers.get(EN_TETE_SAISIE_DIFFEREE):      # saisie hors réseau rejouée : refus lisible par le navigateur
+            return JsonResponse({'ok': False, 'code': 'droit', 'messages': [{'niveau': 'error', 'texte': motif}]}, status=403)
+        messages.error(request, motif)
         return redirect('/')

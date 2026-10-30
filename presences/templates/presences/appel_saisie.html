@@ -1,6 +1,6 @@
 {% extends "core/base.html" %}
 
-{% block title %}Saisie appel — {{ appel.classe.nom }} — YELEN SCHOOL{% endblock %}
+{% block title %}Appel — {{ appel.classe.nom }}{% if appel.matiere %} — {{ appel.matiere.nom }}{% endif %} — {{ appel.date|date:"d/m/Y" }} — YELEN SCHOOL{% endblock %}
 
 {% block content %}
 
