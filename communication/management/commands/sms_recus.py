@@ -3,7 +3,8 @@
     python manage.py sms_recus              # une relève, bilan affiché
     python manage.py sms_recus --boucle     # service : relève toutes les --intervalle secondes (docker compose : service « sms »)
 
-À chaque passage, les SMS sortants dont la reprise est due (réponses, relances échouées) sont aussi renvoyés.
+À chaque passage, les SMS sortants dont la reprise est due (réponses, relances échouées) sont aussi renvoyés,
+et le compte rendu quotidien du promoteur part dès que son heure est passée (communication/compte_rendu.py).
 """
 import time
 
@@ -20,12 +21,16 @@ class Command(BaseCommand):
         parser.add_argument('--iterations', type=int, default=0, help="En mode --boucle : nombre de passages (0 = sans fin).")
 
     def handle(self, *args, **options):
+        from communication.compte_rendu import envoyer_comptes_rendus_dus
         from communication.sms_recus import relever_boite_reception
         from core.tasks import traiter_file_sms
 
         passages = 0
         while True:
             try:
+                comptes_rendus = envoyer_comptes_rendus_dus()
+                if comptes_rendus:
+                    self.stdout.write(f"Compte rendu quotidien du promoteur : {comptes_rendus} SMS mis en file.")
                 bilan = relever_boite_reception()
                 if bilan['ok']:
                     file_sms = traiter_file_sms(limite=20)

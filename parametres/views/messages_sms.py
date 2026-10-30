@@ -1,11 +1,14 @@
 """Modèles de messages et SMS automatiques."""
+import datetime
 import logging
+import re
 
 from django.core.management import call_command
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseForbidden
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from io import StringIO
 
@@ -166,11 +169,17 @@ def _get_or_create_sms_triggers(etab):
     return DeclencheurSMS.objects.filter(etablissement=etab).order_by('type_declencheur')
 
 
-def _render_sms_trigger_list(request, etab):
-    return render(request, 'parametres/partials/sms_declencheurs_list.html', {
+def _contexte_declencheurs(etab):
+    from communication.compte_rendu import composer
+    return {
         'declencheurs': _get_or_create_sms_triggers(etab),
         'sms_enabled': _sms_enabled(),
-    })
+        'apercu_compte_rendu': composer(etab, timezone.localdate()),   # chiffres du jour, tels qu'ils partiraient
+    }
+
+
+def _render_sms_trigger_list(request, etab):
+    return render(request, 'parametres/partials/sms_declencheurs_list.html', _contexte_declencheurs(etab))
 
 
 @login_required
@@ -180,10 +189,7 @@ def sms_auto_config(request):
     if not etab:
         return HttpResponseForbidden("Accès réservé aux directeurs et super administrateurs associés à un établissement.")
 
-    return render(request, 'parametres/sms_auto.html', {
-        'declencheurs': _get_or_create_sms_triggers(etab),
-        'sms_enabled': _sms_enabled(),
-    })
+    return render(request, 'parametres/sms_auto.html', _contexte_declencheurs(etab))
 
 
 @login_required
@@ -201,15 +207,46 @@ def sms_auto_toggle(request, pk):
     return _render_sms_trigger_list(request, etab)
 
 
+def _enregistrer_compte_rendu(declencheur, donnees, utilisateur):
+    """Heure d'envoi et numéros du promoteur (1 à 5, format 8 chiffres ou +226…) ; retourne le message d'erreur
+    ou None après enregistrement."""
+    from core.sms import _numero_valide
+    try:
+        heure = datetime.time.fromisoformat(donnees.get('heure_envoi', ''))
+    except ValueError:
+        return "Indiquez l'heure d'envoi du compte rendu (HH:MM)."
+    numeros = [re.sub(r'[\s.\-]', '', n) for n in re.split(r'[,;\n]', donnees.get('destinataires', ''))]
+    numeros = [n for n in numeros if n]
+    invalides = [n for n in numeros if not _numero_valide(n)]
+    if invalides:
+        return f"Numéro invalide : {', '.join(invalides)} (attendu : 8 chiffres ou +226XXXXXXXX)."
+    if not 1 <= len(numeros) <= 5:
+        return "Indiquez de 1 à 5 numéros, séparés par des virgules."
+    declencheur.heure_envoi = heure
+    declencheur.destinataires = ', '.join(numeros)
+    declencheur.updated_by = utilisateur
+    declencheur.save(update_fields=['heure_envoi', 'destinataires', 'updated_by', 'updated_at'])
+    return None
+
+
 @login_required
 @require_POST
 def sms_auto_save(request, pk):
-    """Enregistre le nombre de jours avant échéance pour un déclencheur."""
+    """Enregistre les paramètres d'un déclencheur : jours avant échéance (rappel d'échéancier), heure et
+    destinataires (compte rendu quotidien du promoteur)."""
     etab = _check_sms_configuration_access(request)
     if not etab:
         return HttpResponseForbidden("Accès interdit.")
 
     declencheur = get_object_or_404(DeclencheurSMS, pk=pk, etablissement=etab)
+    if declencheur.type_declencheur == DeclencheurSMS.TypeChoices.COMPTE_RENDU:
+        erreur = _enregistrer_compte_rendu(declencheur, request.POST, request.user)
+        if erreur:
+            messages.error(request, erreur)
+        else:
+            messages.success(request, f"Compte rendu quotidien : envoi chaque jour à {declencheur.heure_envoi:%H:%M} "
+                                      f"à {len(declencheur.liste_destinataires())} numéro(s).")
+        return redirect('parametres:sms_auto_config')
     try:
         jours_avant = int(request.POST.get('jours_avant', ''))
     except (TypeError, ValueError):
@@ -240,6 +277,9 @@ def sms_auto_executer(request, pk):
         return redirect('parametres:sms_auto_config')
     if not declencheur.actif:
         messages.error(request, "Activez ce déclencheur avant de l'exécuter.")
+        return redirect('parametres:sms_auto_config')
+    if declencheur.type_declencheur == DeclencheurSMS.TypeChoices.COMPTE_RENDU and not declencheur.liste_destinataires():
+        messages.error(request, "Indiquez d'abord le ou les numéros du promoteur.")
         return redirect('parametres:sms_auto_config')
 
     output = StringIO()

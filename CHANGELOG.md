@@ -3,6 +3,22 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.26.0 — 2026-10-30
+
+### Compte rendu quotidien du promoteur par SMS
+
+- Nouveau déclencheur **Compte rendu quotidien du promoteur** (`Configuration → SMS automatiques`) : chaque jour à
+  l'heure choisie, un SMS de 160 caractères au plus résume la journée — encaissements (total, nombre de reçus,
+  remboursements, espèces en caisse), dépenses validées, arrêtés de caisse faits / caissiers et écart, absents et
+  retards sur les appels saisis (`communication/compte_rendu.py`, mêmes calculs que le journal de caisse).
+- Réglage sur la ligne du déclencheur : heure d'envoi (18:00 par défaut) et 1 à 5 numéros validés ; aperçu du
+  message du jour avec son nombre de caractères ; **Tester** envoie immédiatement sans empêcher l'envoi du jour.
+- Envoi par le service SMS existant (`sms_recus --boucle`, Docker `sms` / mode autonome), une seule fois par jour
+  dès que l'heure est passée ; la tâche `sms_auto` du matin l'ignore (`--type COMPTE_RENDU` = envoi à la demande).
+- Texte allégé automatiquement au-delà de 160 caractères (retards, puis nombre de reçus, puis espèces et écart),
+  sans caractère hors du jeu GSM : un seul segment facturé.
+- Migration `parametres 0041` (`heure_envoi`, `destinataires`). Guide §2.20.
+
 ## 5.25.0 — 2026-10-30
 
 ### Saisie hors réseau des notes et des appels (enseignants)

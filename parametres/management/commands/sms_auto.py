@@ -8,11 +8,15 @@ Usage :
     python manage.py sms_auto --type ABSENCE_J1
     python manage.py sms_auto --type ECHEANCIER
     python manage.py sms_auto --type RESULTATS
+    python manage.py sms_auto --type COMPTE_RENDU   # compte rendu du promoteur, à la demande (bouton Tester)
     python manage.py sms_auto --dry-run
     python manage.py sms_auto --etablissement <uuid>
 
 Cron recommandé (Windows Task Scheduler ou Linux cron) :
     0 7 * * * /path/to/venv/bin/python manage.py sms_auto
+
+Le compte rendu quotidien du promoteur n'est pas traité par l'exécution planifiée : il part à son heure par le
+service SMS (``sms_recus --boucle``) ; ici seulement sur demande explicite (``--type COMPTE_RENDU``).
 """
 
 import logging
@@ -30,7 +34,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             '--type',
-            choices=['ABSENCE_J1', 'ECHEANCIER', 'RESULTATS'],
+            choices=['ABSENCE_J1', 'ECHEANCIER', 'RESULTATS', 'COMPTE_RENDU'],
             help="Exécuter uniquement ce type de déclencheur",
         )
         parser.add_argument(
@@ -58,6 +62,8 @@ class Command(BaseCommand):
         qs = DeclencheurSMS.objects.filter(actif=True).select_related('etablissement')
         if filtre_type:
             qs = qs.filter(type_declencheur=filtre_type)
+        else:   # le compte rendu du promoteur part à son heure par le service SMS, pas avec le lot du matin
+            qs = qs.exclude(type_declencheur=DeclencheurSMS.TypeChoices.COMPTE_RENDU)
         if etablissement_id:
             qs = qs.filter(etablissement_id=etablissement_id)
 
@@ -78,6 +84,9 @@ class Command(BaseCommand):
                               f"{bilan['en_attente']} en attente.")
 
     def _run_declencheur(self, declencheur, dry_run):
+        if declencheur.type_declencheur == declencheur.TypeChoices.COMPTE_RENDU:
+            return self._compte_rendu(declencheur, dry_run)
+
         # Une exécution planifiée ne doit pas renvoyer deux fois le même
         # déclencheur le même jour (clic manuel + tâche Windows, par exemple).
         if not dry_run and declencheur.last_run:
@@ -105,6 +114,18 @@ class Command(BaseCommand):
                 update_fields.append('nb_envoyes_total')
             declencheur.save(update_fields=update_fields)
 
+        return nb
+
+    # ── COMPTE RENDU DU PROMOTEUR (à la demande) ───────────────────
+
+    def _compte_rendu(self, declencheur, dry_run):
+        """Envoi immédiat du compte rendu du moment ; ``last_run`` reste celui de l'envoi automatique du jour,
+        qui a donc toujours lieu à l'heure prévue."""
+        from communication.compte_rendu import envoyer
+        nb = envoyer(declencheur, dry_run=dry_run)
+        if nb and not dry_run:
+            declencheur.nb_envoyes_total = (declencheur.nb_envoyes_total or 0) + nb
+            declencheur.save(update_fields=['nb_envoyes_total'])
         return nb
 
     # ── ABSENCE J+1 ────────────────────────────────────────────────

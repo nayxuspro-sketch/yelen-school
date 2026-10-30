@@ -28,6 +28,7 @@ Date: Mars 2026
 Version: 3.4
 """
 
+import datetime
 import logging
 import re
 import uuid
@@ -1899,15 +1900,18 @@ class DeclencheurSMS(BaseModel):
     depuis l'interface Paramètres.
 
     Types disponibles :
-      ABSENCE_J1  — SMS J+1 pour absences non justifiées de la veille
-      ECHEANCIER  — Rappel N jours avant l'échéance impayée
-      RESULTATS   — SMS à la publication d'un nouveau bulletin
+      ABSENCE_J1   — SMS J+1 pour absences non justifiées de la veille
+      ECHEANCIER   — Rappel N jours avant l'échéance impayée
+      RESULTATS    — SMS à la publication d'un nouveau bulletin
+      COMPTE_RENDU — Compte rendu quotidien du promoteur (encaissements, caisse, absences), envoyé à
+                     ``heure_envoi`` par le service SMS (``communication.compte_rendu``)
     """
 
     class TypeChoices(models.TextChoices):
         ABSENCE_J1 = 'ABSENCE_J1', _('Absences non justifiées (J+1)')
         ECHEANCIER = 'ECHEANCIER', _("Rappel d'échéancier")
         RESULTATS  = 'RESULTATS',  _('Bulletin disponible')
+        COMPTE_RENDU = 'COMPTE_RENDU', _('Compte rendu quotidien du promoteur')
 
     etablissement = models.ForeignKey(
         'etablissements.Etablissement',
@@ -1933,6 +1937,20 @@ class DeclencheurSMS(BaseModel):
         help_text=_("Utilisé pour le type Échéancier : envoyer le rappel N jours avant la date limite."),
     )
 
+    heure_envoi = models.TimeField(
+        default=datetime.time(18, 0),
+        verbose_name=_("Heure d'envoi"),
+        help_text=_("Compte rendu quotidien : heure à laquelle le SMS du jour est envoyé."),
+    )
+
+    destinataires = models.CharField(
+        max_length=120,
+        blank=True,
+        default='',
+        verbose_name=_("Destinataires"),
+        help_text=_("Compte rendu quotidien : numéros du promoteur, séparés par des virgules."),
+    )
+
     last_run = models.DateTimeField(
         null=True,
         blank=True,
@@ -1943,6 +1961,10 @@ class DeclencheurSMS(BaseModel):
         default=0,
         verbose_name=_("SMS envoyés au total"),
     )
+
+    def liste_destinataires(self):
+        """Numéros configurés, un par entrée (séparateurs : virgule, point-virgule, espace, retour à la ligne)."""
+        return [n for n in re.split(r'[,;\s]+', self.destinataires or '') if n]
 
     class Meta:
         verbose_name = _("Déclencheur SMS automatique")

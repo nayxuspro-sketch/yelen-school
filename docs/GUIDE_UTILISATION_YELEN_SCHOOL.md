@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.25.0
-version_guide: 5.17
-date_mise_a_jour: 30/10/2026 (5.25.0 : saisie hors réseau des notes et des appels, §28.6)
+version_logiciel: 5.26.0
+version_guide: 5.18
+date_mise_a_jour: 30/10/2026 (5.26.0 : compte rendu quotidien du promoteur par SMS, §2.20)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -564,6 +564,42 @@ Cette page complète la surveillance Windows (`programmer-surveillance.bat`), qu
 **Rôles personnalisés :** en haut de la page, le Super Admin crée de nouveaux rôles (ex. « Surveillant général », « Caissier ») en indiquant un libellé et un **rôle de référence** parmi les sept rôles du personnel. Le rôle de référence fixe le comportement métier (tableau de bord, périmètre d'un enseignant limité à ses classes…) et les droits de départ ; le nouveau rôle devient aussitôt une colonne de la matrice, où ses droits se règlent ensuite indépendamment de sa référence. Il est proposé dans le champ « Rôle » de la fiche utilisateur (groupe « Rôles personnalisés ») et affiché dans la liste des utilisateurs, qui peut le filtrer. Un rôle ne peut être supprimé que lorsqu'aucun utilisateur ne le porte ; sa suppression efface ses droits enregistrés.
 
 **Hors matrice :** le Super Admin garde tous les accès ; les parents et les élèves restent limités à leur portail ; la gestion des utilisateurs, le journal d'audit et la configuration SMS restent réservés à la direction ; le volet « Système » (Mon abonnement, Licences) est réservé au Super Admin. Tout le reste suit la matrice : un droit coché n'est jamais contredit par l'application.
+
+---
+
+### 2.20 SMS automatiques planifiés — alertes parents et compte rendu quotidien du promoteur
+
+> **Accès :** `Configuration → SMS automatiques` (`/parametres/sms-auto/`)
+>
+> **Qui peut accéder :** SUPER_ADMIN, DIRECTEUR
+
+**À quoi ça sert :** activer, régler et tester les SMS que l'application envoie d'elle-même. Chaque ligne (« déclencheur ») a un interrupteur, une description, la date de sa dernière exécution et un bouton **Tester** (envoi réel immédiat, visible seulement si les SMS sont activés, §2.17).
+
+| Déclencheur | Ce qui part | Quand |
+|---|---|---|
+| **Absences non justifiées (J+1)** | SMS au parent de chaque élève absent la veille (texte : `Paramètres → Modèles de messages → Absence`) | Tâche quotidienne `sms_auto` (7 h, `programmer-sms.bat`) |
+| **Rappel d'échéancier** | SMS au parent N jours avant une échéance impayée (champ **Rappel J-**) | Tâche quotidienne `sms_auto` |
+| **Bulletin disponible** | SMS au parent à la publication d'un bulletin | Tâche quotidienne `sms_auto` |
+| **Compte rendu quotidien du promoteur** | Un SMS au promoteur avec les chiffres du jour (ci-dessous) | **Chaque jour à l'heure choisie**, par le service SMS |
+
+**Compte rendu quotidien du promoteur.** Un seul SMS (160 caractères au plus, un seul segment), composé au moment de l'envoi à partir des mêmes données que les écrans *Journal de caisse*, *Dépenses* et *Appels* :
+
+```
+LPB 30/10: Encaisse 1 250 000 F (23 recus), especes 950 000 F. Depenses 185 000 F. Caisses arretees 2/2. Absents 14, retards 3 (12 appels).
+```
+
+- **Encaisse** : total des paiements datés du jour et leur nombre ; **rembourse** apparaît s'il y a eu un remboursement ; **especes** = espèces encaissées moins remboursements (ce qui doit être dans les caisses).
+- **Depenses** : dépenses **validées** datées du jour (les brouillons n'y sont pas).
+- **Caisses arretees k/n** : arrêtés de caisse faits (§9.16) sur le nombre de caissiers ayant opéré ; **ecart** apparaît si la somme des écarts n'est pas nulle (écart ≠ 0 = à vérifier).
+- **Absents / retards** : élèves distincts absents ou en retard sur les appels du jour, et nombre d'appels saisis ; « Aucun appel saisi » si aucun.
+- Le sigle de l'établissement (Identité, §2.1) ouvre le message ; sans sigle, son code. Les accents absents du jeu de caractères SMS sont évités pour ne pas doubler le coût du message.
+- Si le texte dépasse 160 caractères (gros montants, remboursement et écart le même jour), il est allégé dans cet ordre : retards, nombre de reçus, espèces et écart — jamais tronqué au milieu d'un chiffre.
+
+**Réglage :** sur la ligne du compte rendu, indiquer l'**heure d'envoi** (18:00 par défaut ; choisir une heure où les encaissements du jour sont tous saisis, 18:30 ou 19:00 par exemple) et les **numéros du promoteur** (1 à 5, séparés par des virgules ; 8 chiffres ou +226…), puis **Enregistrer** et activer l'interrupteur. L'**aperçu du jour** affiché sous la description est le message tel qu'il partirait à l'instant, avec son nombre de caractères. **Tester** envoie ce message tout de suite aux numéros enregistrés, sans empêcher l'envoi automatique du jour.
+
+**Fonctionnement :** le SMS part par le **service SMS** — celui qui relève les SMS reçus des parents (chapitre Communication Parents, 10.4 « Configuration technique ») — démarré avec l'application (service `sms` de Docker Compose, ou processus `sms_recus --boucle` du mode autonome) : aucune tâche planifiée à ajouter. Il part **une seule fois par jour**, dès que l'heure est passée ; si le service était arrêté à cette heure, le compte rendu part à son redémarrage le même jour (après minuit, le jour manqué n'est pas rattrapé). Comme tout SMS, il passe par la file d'envoi (§2.17) : passerelle injoignable → nouvelles tentatives automatiques, suivi dans *Administration → Exploitation*. La ligne « Dernière exécution » indique l'heure du dernier envoi automatique et le total de SMS envoyés (tests compris). Le compte rendu n'est pas concerné par la tâche quotidienne `sms_auto` du matin ; en ligne de commande, `python manage.py sms_auto --type COMPTE_RENDU` l'envoie à la demande, `--dry-run` le simule.
+
+**Pour un promoteur de plusieurs établissements :** chaque établissement a son propre déclencheur (réglé par son directeur) ; le sigle en tête du SMS distingue les messages.
 
 ---
 

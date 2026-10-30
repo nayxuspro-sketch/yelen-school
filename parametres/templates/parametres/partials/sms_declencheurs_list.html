@@ -43,8 +43,17 @@
           Envoie un rappel de paiement {{ d.jours_avant }} jour{{ d.jours_avant|pluralize }} avant la date limite.
         {% elif d.type_declencheur == 'RESULTATS' %}
           Envoie un SMS dès qu'un nouveau bulletin est publié.
+        {% elif d.type_declencheur == 'COMPTE_RENDU' %}
+          Envoie chaque jour à {{ d.heure_envoi|time:"H:i" }} au promoteur les encaissements, l'état de caisse et les absences du jour
+          ({% with n=d.liste_destinataires|length %}{{ n }} numéro{{ n|pluralize }}{% endwith %} ; le service SMS doit être démarré).
         {% endif %}
       </div>
+      {% if d.type_declencheur == 'COMPTE_RENDU' %}
+      <div class="sms-apercu" title="Compte rendu tel qu'il partirait maintenant">
+        <span class="sms-apercu-libelle">Aperçu du jour ({{ apercu_compte_rendu|length }} caractères)</span>
+        {{ apercu_compte_rendu }}
+      </div>
+      {% endif %}
       {% if d.last_run %}
       <div style="font-size:0.75rem; color:var(--color-text-muted); margin-top:4px;">
         Dernière exécution : {{ d.last_run|date:"d/m/Y à H:i" }}
@@ -68,7 +77,7 @@
 
     {# Bouton exécution manuelle #}
     {% if sms_enabled %}
-    <form method="post" action="{% url 'parametres:sms_auto_executer' pk=d.pk %}" data-csp-confirm-submit="Exécuter ce déclencheur maintenant ? Des SMS réels seront envoyés." >
+    <form method="post" action="{% url 'parametres:sms_auto_executer' pk=d.pk %}" data-csp-confirm-submit="{% if d.type_declencheur == 'COMPTE_RENDU' %}Envoyer maintenant le compte rendu du jour au promoteur ? Un SMS réel sera envoyé ; l'envoi automatique de {{ d.heure_envoi|time:'H:i' }} aura lieu normalement.{% else %}Exécuter ce déclencheur maintenant ? Des SMS réels seront envoyés.{% endif %}" >
       {% csrf_token %}
       <button type="submit" class="btn-secondary btn-sm" title="Exécuter maintenant">
         <svg aria-hidden="true" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:3px; vertical-align:middle;">
@@ -77,6 +86,19 @@
         </svg>
         Tester
       </button>
+    </form>
+    {% endif %}
+
+    {# Paramètres du compte rendu quotidien (ligne entière) : heure d'envoi et numéros du promoteur #}
+    {% if d.type_declencheur == 'COMPTE_RENDU' %}
+    <form method="post" action="{% url 'parametres:sms_auto_save' pk=d.pk %}" class="sms-compte-rendu-form">
+      {% csrf_token %}
+      <label for="id_heure_envoi_{{ d.pk }}">Envoi chaque jour à</label>
+      <input type="time" name="heure_envoi" id="id_heure_envoi_{{ d.pk }}" value="{{ d.heure_envoi|time:'H:i' }}" required class="input">
+      <label for="id_destinataires_{{ d.pk }}">Numéros du promoteur</label>
+      <input type="text" name="destinataires" id="id_destinataires_{{ d.pk }}" value="{{ d.destinataires }}"
+             placeholder="70 12 34 56, +226 76 54 32 10" class="input" required>
+      <button type="submit" class="btn-secondary btn-sm">Enregistrer</button>
     </form>
     {% endif %}
 

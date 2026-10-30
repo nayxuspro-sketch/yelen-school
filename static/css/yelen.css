@@ -11084,3 +11084,14 @@ body.env-test { padding-bottom: 1.7rem; }
   .aide-sommaire { position: static; max-height: 40vh; }
   .aide-doc { padding: var(--space-4); }
 }
+
+/* ── SMS automatiques : compte rendu quotidien du promoteur ─────────────────── */
+.sms-apercu { margin-top: 6px; padding: 6px 10px; border-left: 3px solid var(--color-primary); background: var(--color-bg-hover);
+  border-radius: 6px; font-size: 0.8rem; color: var(--color-text-secondary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.sms-apercu-libelle { display: block; font-family: inherit; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--color-text-muted); margin-bottom: 2px; }
+.sms-compte-rendu-form { flex-basis: 100%; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
+  padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.sms-compte-rendu-form label { font-size: 0.8rem; color: var(--color-text-secondary); white-space: nowrap; }
+.sms-compte-rendu-form input[type="time"] { width: 130px; padding: 4px 6px; }
+.sms-compte-rendu-form input[type="text"] { width: 280px; padding: 4px 8px; }

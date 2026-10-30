@@ -102,7 +102,7 @@ class TestParametresViews:
         response = client.get(reverse('parametres:sms_auto_config'))
 
         assert response.status_code == 200
-        assert DeclencheurSMS.objects.filter(etablissement=etablissement).count() == 3
+        assert DeclencheurSMS.objects.filter(etablissement=etablissement).count() == len(DeclencheurSMS.TypeChoices.choices)
 
     def test_sms_auto_toggle_is_scoped_to_establishment(self, client):
         etablissement = baker.make(
