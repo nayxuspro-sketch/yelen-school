@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.utils import timezone
@@ -33,7 +34,7 @@ def message_list(request):
     base_qs = (
         MessageParent.objects
         .filter(etablissement=etab)
-        .select_related('eleve', 'annee_scolaire', 'envoye_par')
+        .select_related('eleve', 'annee_scolaire', 'envoye_par', 'sms')
         if etab else MessageParent.objects.none()
     )
 
@@ -161,6 +162,43 @@ def message_create(request):
         return HttpResponse('', headers={'HX-Trigger': 'messageCreated'})
 
     return render(request, 'communication/partials/message_form.html', ctx)
+
+
+@login_required
+@require_POST
+def message_renvoyer_sms(request, pk):
+    """(Re)met en file le SMS d'un message : jamais envoyé (case décochée, SMS désactivés à l'époque), en échec,
+    ou envoyé dans l'ancien format avec un lien. Le texte est recomposé et le numéro relu sur la fiche élève."""
+    from core.tasks import envoyer_sms_async
+    from . import bidirectionnel
+
+    etab = _get_etab(request)
+    msg = get_object_or_404(MessageParent.objects.select_related('eleve'), pk=pk, etablissement=etab)
+    suivant = request.POST.get('next', '')
+    if not (suivant and url_has_allowed_host_and_scheme(suivant, allowed_hosts={request.get_host()},
+                                                        require_https=request.is_secure())):
+        suivant = reverse('communication:message_detail', args=[msg.pk])
+
+    telephone = msg.eleve.telephone_parent or msg.eleve.tuteur_telephone or msg.telephone_utilise
+    texte = bidirectionnel.texte_sms(msg, _sigle(etab))
+    if not telephone:
+        messages.error(request, f"Aucun numéro de parent ni de tuteur sur la fiche de {msg.eleve.prenom} {msg.eleve.nom} : SMS non envoyé.")
+        return redirect(suivant)
+    if len(texte) > bidirectionnel.LONGUEUR_SMS:
+        messages.error(request, f"Le SMS ferait {len(texte)} caractères pour {bidirectionnel.LONGUEUR_SMS} maximum : "
+                                "créez un message plus court.")
+        return redirect(suivant)
+    sms = envoyer_sms_async(telephone, texte)
+    if sms is None:
+        messages.error(request, "Les SMS sont désactivés (Paramètres → Configuration SMS) : SMS non envoyé.")
+        return redirect(suivant)
+    msg.sms = sms
+    msg.sms_envoye = True
+    msg.date_envoi_sms = timezone.now()
+    msg.telephone_utilise = telephone
+    msg.save(update_fields=['sms', 'sms_envoye', 'date_envoi_sms', 'telephone_utilise'])
+    messages.success(request, f"SMS mis en file pour {telephone} : « {msg.objet} ».")
+    return redirect(suivant)
 
 
 # ─── DÉTAIL ───────────────────────────────────────────────────────────

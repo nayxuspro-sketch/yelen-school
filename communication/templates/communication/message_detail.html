@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load droits_tags %}
 
 {% block title %}Détail message — Communication{% endblock %}
 
@@ -211,6 +212,14 @@
               <span class="badge badge-neutral">Non envoyé</span>
             {% endif %}
             {% if msg.sms %}<div class="text-xs text-muted" style="margin-top:.3rem; white-space:pre-wrap;">{{ msg.sms.message }}</div>{% endif %}
+            {% if request|autorise_url:'communication:message_renvoyer_sms' %}
+            <form method="post" action="{% url 'communication:message_renvoyer_sms' msg.pk %}" style="margin-top:.5rem;">
+              {% csrf_token %}
+              <button type="submit" class="btn-secondary btn-sm"{% if msg.sms_envoye and not msg.sms.statut == 'ECHEC' %} data-csp-confirm="Un SMS a déjà été envoyé pour ce message. Le renvoyer au parent ?"{% endif %}>
+                {% if msg.sms_envoye %}Renvoyer le SMS{% else %}Envoyer le SMS{% endif %}
+              </button>
+            </form>
+            {% endif %}
           </span>
         </div>
       </div>

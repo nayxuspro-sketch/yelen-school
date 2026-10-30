@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.20.0 — 2026-10-30
+
+### Communication bidirectionnelle : renvoyer les messages non envoyés
+- Liste des messages parents : colonne SMS avec l'état réel (*Non envoyé*, *En attente*, *Échec* avec motif, *Envoyé*) et bouton **Envoyer le SMS** / **Renvoyer** sur les lignes non envoyées ou en échec ; fiche du message : **Renvoyer le SMS** (confirmation si un SMS est déjà parti).
+- `message_renvoyer_sms` recompose le SMS au format actuel (sigle, objet, contenu, consigne de réponse), relit le numéro sur la fiche élève (parent, sinon tuteur, sinon numéro d'origine), met en file une nouvelle ligne `SmsSortant` reliée au message ; refus explicite sans numéro, au-delà de 160 caractères ou SMS désactivés. Couvert par le droit existant *Messages parents → envoyer*. 2 tests.
+
 ## 5.19.0 — 2026-10-30
 
 ### Suppression des messages reçus

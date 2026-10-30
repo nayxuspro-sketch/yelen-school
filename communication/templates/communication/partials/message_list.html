@@ -1,3 +1,4 @@
+{% load droits_tags %}
 <div id="comm-list-container"
      hx-get="{% url 'communication:message_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
      hx-trigger="messageCreated from:body"
@@ -33,12 +34,23 @@
             {% endif %}
           </td>
           <td class="text-secondary">{{ m.objet|truncatechars:50 }}</td>
-          <td>
-            {% if m.sms_envoye %}
+          <td style="white-space:nowrap;">
+            {% if m.sms and m.sms.statut == 'ECHEC' %}
+              <span class="badge badge-danger" title="{{ m.sms.derniere_erreur }}">Échec</span>
+            {% elif m.sms and m.sms.statut == 'EN_ATTENTE' %}
+              <span class="badge badge-warning">En attente</span>
+            {% elif m.sms_envoye %}
               <span class="badge badge-success">Envoyé</span>
             {% else %}
-              <span class="badge badge-neutral">Non</span>
+              <span class="badge badge-neutral">Non envoyé</span>
             {% endif %}
+            {% if request|autorise_url:'communication:message_renvoyer_sms' %}{% if not m.sms_envoye or m.sms.statut == 'ECHEC' %}
+            <form method="post" action="{% url 'communication:message_renvoyer_sms' m.pk %}" style="display:inline; margin-left:.3rem;">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <button type="submit" class="btn-secondary btn-sm">{% if m.sms_envoye %}Renvoyer{% else %}Envoyer le SMS{% endif %}</button>
+            </form>
+            {% endif %}{% endif %}
           </td>
           <td>
             {% if m.statut == 'REPONDU' %}

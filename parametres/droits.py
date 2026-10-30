@@ -268,7 +268,7 @@ MODULES = (
     )),
     Module('communication', 'Communication', SECTION_ADMINISTRATION, (
         _f('/communication/', 'Messages parents', actions=(
-            _a('envoyer', 'Envoyer un message', 'message_create'),
+            _a('envoyer', 'Envoyer un message, renvoyer son SMS', 'message_create', 'message_renvoyer_sms'),
         )),
         _f('/communication/sms-direct/', 'SMS Direct', actions=(
             _a('envoyer', 'Envoyer un SMS', 'sms_direct_envoyer'),

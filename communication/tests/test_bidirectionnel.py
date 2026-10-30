@@ -40,8 +40,8 @@ def directeur(client, ecole):
 
 def message(ecole, type_, objet, contenu, creneaux=(), **extra):
     return baker.make(MessageParent, etablissement=ecole['etab'], eleve=ecole['awa'], type=type_, objet=objet,
-                      contenu=contenu, creneaux_proposes=list(creneaux), telephone_utilise='70 11 22 33',
-                      sms_envoye=True, **extra)
+                      contenu=contenu, creneaux_proposes=list(creneaux),
+                      **{'telephone_utilise': '70 11 22 33', 'sms_envoye': True, **extra})
 
 
 def test_le_message_part_en_clair_par_sms_et_le_parent_repond_au_sms(client, ecole, directeur, mocker):
@@ -145,3 +145,50 @@ def test_messages_recus_liste_les_reponses_avec_le_message_d_origine(client, eco
     assert 'Je serai present' in html and 'Convocation à un entretien : Entretien du 12 mai' in html and '1 non lu' in html
     assert reverse('communication:message_detail', args=[convocation.pk]) in html
     assert 'Je serai present' not in commandes
+
+
+def test_renvoi_du_sms_d_un_message_non_envoye_ou_en_echec(client, ecole, directeur, mocker):
+    mocker.patch('core.tasks.threading.Thread')
+    msg = message(ecole, 'AVERTISSEMENT', 'Retards', '3 retards.', sms_envoye=False, telephone_utilise='')
+    liste_url, renvoi_url = reverse('communication:message_list'), reverse('communication:message_renvoyer_sms', args=[msg.pk])
+
+    liste = client.get(liste_url).content.decode()
+    assert 'Non envoyé' in liste and 'Envoyer le SMS' in liste
+
+    retour = client.post(renvoi_url, {'next': liste_url})
+    msg.refresh_from_db()
+    assert retour.status_code == 302 and retour.url == liste_url
+    assert msg.sms_envoye and msg.telephone_utilise == '70 11 22 33' and msg.sms.numero == '70 11 22 33'
+    assert msg.sms.message == 'LSV - Retards. 3 retards. Repondez OK pour accuser reception.'
+    premier = msg.sms
+
+    SmsSortant.objects.filter(pk=premier.pk).update(statut='ECHEC', derniere_erreur='Passerelle injoignable')
+    liste = client.get(liste_url).content.decode()
+    assert 'Échec' in liste and '>Renvoyer<' in liste
+    assert client.post(renvoi_url).url == reverse('communication:message_detail', args=[msg.pk])
+    msg.refresh_from_db()
+    assert msg.sms != premier and msg.sms.statut == 'EN_ATTENTE' and SmsSortant.objects.count() == 2
+
+    detail = client.get(reverse('communication:message_detail', args=[msg.pk])).content.decode()
+    assert 'Renvoyer le SMS' in detail and "En attente d'envoi" in detail
+
+    ecole['awa'].telephone_parent = ''
+    ecole['awa'].save()
+    MessageParent.objects.filter(pk=msg.pk).update(telephone_utilise='')
+    sans_numero = client.post(renvoi_url, follow=True).content.decode()
+    assert 'Aucun numéro de parent ni de tuteur' in sans_numero and SmsSortant.objects.count() == 2
+
+
+def test_renvoi_refuse_par_la_matrice_des_droits(client, ecole, directeur):
+    from parametres import droits
+    from parametres.models import DroitAcces
+    msg = message(ecole, 'AVERTISSEMENT', 'Retards', '3 retards.', sms_envoye=False)
+    DroitAcces.objects.create(role='DIRECTEUR', module='communication', fonctionnalite='/communication/',
+                              action='envoyer', autorise=False)
+    droits.invalider_cache()
+
+    liste = client.get(reverse('communication:message_list')).content.decode()
+    refus = client.post(reverse('communication:message_renvoyer_sms', args=[msg.pk]))
+
+    assert 'Non envoyé' in liste and 'Envoyer le SMS' not in liste
+    assert refus.status_code == 302 and refus.url == '/' and SmsSortant.objects.count() == 0
