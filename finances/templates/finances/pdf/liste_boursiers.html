@@ -47,7 +47,7 @@ tr:nth-child(even) { background:#fafafa; }
       <td>{{ b.type_bourse.nom }}</td>
       <td>{{ b.type_bourse.get_source_display }}</td>
       <td>{{ b.rubrique.nom|default:"Globale" }}</td>
-      <td class="text-right"><strong>{{ b.montant_accorde|floatformat:0 }}</strong></td>
+      <td class="text-right"><strong>{{ b.montant_accorde|floatformat:"0g" }}</strong></td>
       <td>{{ b.reference_document|default:"—" }}</td>
       <td>{{ b.date_attribution|date:"d/m/Y" }}</td>
     </tr>
@@ -59,7 +59,7 @@ tr:nth-child(even) { background:#fafafa; }
   <tfoot>
     <tr class="total-row">
       <td colspan="6" class="text-right">Total réductions accordées :</td>
-      <td class="text-right">{{ total_reduction|floatformat:0 }} FCFA</td>
+      <td class="text-right">{{ total_reduction|floatformat:"0g" }} FCFA</td>
       <td colspan="2"></td>
     </tr>
   </tfoot>

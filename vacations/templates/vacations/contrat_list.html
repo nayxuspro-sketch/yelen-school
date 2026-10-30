@@ -36,7 +36,7 @@
               {{ contrat.enseignement.matiere.nom }} · {{ contrat.enseignement.classe.nom }}
             {% else %}—{% endif %}
           </td>
-          <td class="fw-semibold text-warning">{{ contrat.taux_horaire|floatformat:0 }} FCFA</td>
+          <td class="fw-semibold text-warning">{{ contrat.taux_horaire|floatformat:"0g" }} FCFA</td>
           <td class="fw-medium">{{ contrat.heures_hebdo_prevues }}h</td>
           <td style="text-align:right;">
             <a href="{% url 'vacations:saisie_heures' contrat.pk %}" class="btn-primary btn-sm">Saisir heures</a>

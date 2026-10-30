@@ -42,7 +42,7 @@
             <label for="formule" class="input-label">Formule <span class="required-star">*</span></label>
             <select id="formule" name="formule" class="input select" required>
               <option value="">— Choisir —</option>
-              {% for f in formules %}<option value="{{ f.pk }}" {% if formule_id == f.pk|stringformat:'s' %}selected{% endif %}>{{ f.libelle }} — {{ f.montant|floatformat:0|intcomma }} FCFA</option>{% endfor %}
+              {% for f in formules %}<option value="{{ f.pk }}" {% if formule_id == f.pk|stringformat:'s' %}selected{% endif %}>{{ f.libelle }} — {{ f.montant|floatformat:"0g"|intcomma }} FCFA</option>{% endfor %}
             </select>
           </div>
           <div class="form-group">

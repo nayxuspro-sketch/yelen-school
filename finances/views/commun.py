@@ -6,6 +6,7 @@ import logging
 from django.db.models import Sum
 from django.core.exceptions import PermissionDenied
 from decimal import Decimal
+from core.utils import fcfa
 
 logger = logging.getLogger(__name__)
 
@@ -239,7 +240,7 @@ def _payment_overage_errors(inscription, lignes):
             reste = plafond - deja_verse
             if montant > reste:
                 errors.append(
-                    f"« {rubrique.nom} » : montant versé {montant:,.0f} FCFA "
-                    f"dépasse le reste à payer {max(reste, Decimal('0')):,.0f} FCFA."
+                    f"« {rubrique.nom} » : montant versé {fcfa(montant)} "
+                    f"dépasse le reste à payer {fcfa(max(reste, Decimal('0')))}."
                 )
     return errors

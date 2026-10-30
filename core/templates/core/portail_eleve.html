@@ -135,7 +135,7 @@
                     <td>{{ n.evaluation.date_planifiee|date:"d/m/Y" }}</td>
                     <td class="fw-semibold">{{ n.evaluation.enseignement.matiere.nom }}</td>
                     <td style="font-size:0.85rem; color:var(--color-text-muted);">{{ n.evaluation.type_evaluation.nom }} — {{ n.evaluation.titre }}</td>
-                    <td style="text-align:right; font-family:var(--font-mono);">{{ n.valeur|floatformat:2 }} / {{ n.evaluation.bareme|floatformat:0 }}</td>
+                    <td style="text-align:right; font-family:var(--font-mono);">{{ n.valeur|floatformat:2 }} / {{ n.evaluation.bareme|floatformat:"0g" }}</td>
                     <td style="text-align:right; font-weight:600; color:{% if n.note_sur_20 >= 10 %}var(--color-primary){% else %}#ef4444{% endif %};">{{ n.note_sur_20|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
@@ -244,7 +244,7 @@
                 <tr>
                     <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
                     <td>{{ p.rubrique.nom|default:"—" }}</td>
-                    <td style="text-align:right; font-family:var(--font-mono);">{{ p.montant|floatformat:0 }} CFA</td>
+                    <td style="text-align:right; font-family:var(--font-mono);">{{ p.montant|floatformat:"0g" }} CFA</td>
                     <td style="font-size:0.8rem; color:var(--color-text-muted);">{{ p.numero_recu|default:"—" }}</td>
                 </tr>
                 {% endfor %}

@@ -50,7 +50,7 @@
       </div>
       <div>
         <p class="stat-label">Recettes encaissées</p>
-        <p class="stat-value">{{ recettes_total|floatformat:0 }} FCFA</p>
+        <p class="stat-value">{{ recettes_total|floatformat:"0g" }} FCFA</p>
       </div>
     </div>
     <div class="stat-card">
@@ -61,7 +61,7 @@
       </div>
       <div>
         <p class="stat-label">Dépenses validées</p>
-        <p class="stat-value">{{ total_depenses|floatformat:0 }} FCFA</p>
+        <p class="stat-value">{{ total_depenses|floatformat:"0g" }} FCFA</p>
       </div>
     </div>
     <div class="stat-card">
@@ -72,7 +72,7 @@
       </div>
       <div>
         <p class="stat-label">Solde net</p>
-        <p class="stat-value {% if solde < 0 %}text-danger{% endif %}">{{ solde|floatformat:0 }} FCFA</p>
+        <p class="stat-value {% if solde < 0 %}text-danger{% endif %}">{{ solde|floatformat:"0g" }} FCFA</p>
       </div>
     </div>
     <div class="stat-card">
@@ -83,7 +83,7 @@
       </div>
       <div>
         <p class="stat-label">Budget prévu</p>
-        <p class="stat-value">{{ total_prevu|floatformat:0 }} FCFA</p>
+        <p class="stat-value">{{ total_prevu|floatformat:"0g" }} FCFA</p>
       </div>
     </div>
   </div>
@@ -114,10 +114,10 @@
               <span class="fw-500">{{ l.categorie.nom }}</span>
               <br><span class="text-muted text-sm">{{ l.categorie.get_type_depense_display }}</span>
             </td>
-            <td class="text-right">{{ l.prevu|floatformat:0 }} FCFA</td>
-            <td class="text-right fw-600">{{ l.reel|floatformat:0 }} FCFA</td>
+            <td class="text-right">{{ l.prevu|floatformat:"0g" }} FCFA</td>
+            <td class="text-right fw-600">{{ l.reel|floatformat:"0g" }} FCFA</td>
             <td class="text-right {% if l.ecart < 0 %}text-danger fw-600{% endif %}">
-              {% if l.ecart < 0 %}▲ {{ l.ecart|floatformat:0|slice:"1:" }} FCFA dépassé{% else %}{{ l.ecart|floatformat:0 }} FCFA{% endif %}
+              {% if l.ecart < 0 %}▲ {{ l.ecart|floatformat:"0g"|slice:"1:" }} FCFA dépassé{% else %}{{ l.ecart|floatformat:"0g" }} FCFA{% endif %}
             </td>
             <td>
               {% if l.prevu > 0 %}
@@ -136,10 +136,10 @@
         <tfoot>
           <tr class="table-total">
             <td class="fw-700">Total</td>
-            <td class="text-right fw-700">{{ total_prevu|floatformat:0 }} FCFA</td>
-            <td class="text-right fw-700">{{ total_depenses|floatformat:0 }} FCFA</td>
+            <td class="text-right fw-700">{{ total_prevu|floatformat:"0g" }} FCFA</td>
+            <td class="text-right fw-700">{{ total_depenses|floatformat:"0g" }} FCFA</td>
             <td class="text-right fw-700 {% if total_prevu < total_depenses %}text-danger{% endif %}">
-              {{ total_prevu|add:total_depenses|floatformat:0 }} FCFA
+              {{ total_prevu|add:total_depenses|floatformat:"0g" }} FCFA
             </td>
             <td></td>
           </tr>
@@ -172,7 +172,7 @@
           {% for m in evolution %}
           <tr>
             <td>{{ m.mois|date:"F Y" }}</td>
-            <td class="text-right fw-500">{{ m.total|floatformat:0 }} FCFA</td>
+            <td class="text-right fw-500">{{ m.total|floatformat:"0g" }} FCFA</td>
           </tr>
           {% endfor %}
         </tbody>

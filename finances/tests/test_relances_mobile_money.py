@@ -189,7 +189,7 @@ class TestAvisDePaiement:
             reponse = comptable_client.get(reverse('finances:mobile_money_avis_pdf', args=[demande.pk]))
         assert reponse['Content-Type'] == 'application/pdf' and f'Avis_{demande.reference}.pdf' in reponse['Content-Disposition']
         html = EspionPdf.documents[0]
-        for attendu in ('Avis de paiement', demande.reference, 'OUÉDRAOGO Awa', 'ETAB-2026-07', '25000 FCFA',
+        for attendu in ('Avis de paiement', demande.reference, 'OUÉDRAOGO Awa', 'ETAB-2026-07', '25\xa0000 FCFA',
                         'data:image/png;base64,', LIEN, '*144#'):
             assert attendu in html, attendu
 

@@ -1,4 +1,11 @@
 import uuid
+from decimal import Decimal
+
+
+def fcfa(valeur):
+    """Montant lisible pour messages et libellés : milliers séparés par une espace insécable, sans décimales
+    (« 150 000 FCFA ») — même rendu que ``floatformat:"0g"`` dans les gabarits."""
+    return f"{Decimal(valeur or 0):,.0f}".replace(',', '\xa0') + ' FCFA'
 def get_membre_personnel(user):
     """Retourne la fiche MembrePersonnel liée à un utilisateur (ou None).
 

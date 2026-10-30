@@ -6,6 +6,8 @@ from core.models import BaseModel
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription
 from django.conf import settings
+from core.utils import fcfa
+
 
 class TypeFrais(models.TextChoices):
     SCOLARITE = 'SCOLARITE', _('Scolarité')
@@ -930,7 +932,7 @@ class Creance(BaseModel):
         constraints = [models.CheckConstraint(condition=models.Q(montant__gt=0), name='creance_montant_positif')]
 
     def __str__(self):
-        return f"{self.inscription.eleve} — {self.libelle} ({self.montant:,.0f} FCFA)"
+        return f"{self.inscription.eleve} — {self.libelle} ({fcfa(self.montant)})"
 
     def annuler(self, observation=''):
         """Plus rien n'est dû ; la créance reste visible pour l'historique."""

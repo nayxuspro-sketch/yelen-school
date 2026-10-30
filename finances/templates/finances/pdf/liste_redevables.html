@@ -51,13 +51,13 @@ tr:nth-child(even) td { background: #f5f5f5; }
 <div class="cycle-section">
     <div class="cycle-header">
         <span>{{ cycle_data.cycle.nom }}</span>
-        <span>{{ cycle_data.total|floatformat:0 }} FCFA</span>
+        <span>{{ cycle_data.total|floatformat:"0g" }} FCFA</span>
     </div>
     {% for classe_data in cycle_data.classes %}
     <div class="classe-section">
         <div class="classe-header">
             <span>{{ classe_data.classe.nom }}</span>
-            <span>{{ classe_data.total|floatformat:0 }} FCFA</span>
+            <span>{{ classe_data.total|floatformat:"0g" }} FCFA</span>
         </div>
         <table>
             <thead>
@@ -73,9 +73,9 @@ tr:nth-child(even) td { background: #f5f5f5; }
                 <tr>
                     <td>{{ item.inscription.eleve.matricule }}</td>
                     <td>{{ item.inscription.eleve.nom }} {{ item.inscription.eleve.prenom }}</td>
-                    <td class="right">{{ item.total_du|floatformat:0 }}</td>
-                    <td class="right">{{ item.total_paye|floatformat:0 }}</td>
-                    <td class="right"><strong>{{ item.reste|floatformat:0 }}</strong></td>
+                    <td class="right">{{ item.total_du|floatformat:"0g" }}</td>
+                    <td class="right">{{ item.total_paye|floatformat:"0g" }}</td>
+                    <td class="right"><strong>{{ item.reste|floatformat:"0g" }}</strong></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -85,7 +85,7 @@ tr:nth-child(even) td { background: #f5f5f5; }
 </div>
 {% endfor %}
 
-<div class="total-general">TOTAL REDEVABLE : {{ total_redevable|floatformat:0 }} FCFA</div>
+<div class="total-general">TOTAL REDEVABLE : {{ total_redevable|floatformat:"0g" }} FCFA</div>
 
 {% signataire_auto "LISTE_REDEVABLES" %}
 {% endblock %}

@@ -174,7 +174,7 @@ def test_facturer_informe_le_parent_sur_le_portail(monde, settings, mocker):  # 
     attribution = _attribuer(monde)
     assert monde.client.post(reverse('manuels:facturer_non_rendu', kwargs={'pk': attribution.pk})).status_code == 302
     notification = Notification.objects.get(destinataire=parent)
-    assert notification.titre == 'Manuel non rendu — Mathématiques 6e' and '4,500 FCFA' in notification.message
+    assert notification.titre == 'Manuel non rendu — Mathématiques 6e' and '4\xa0500 FCFA' in notification.message
     assert envoi.call_count == 1 and envoi.call_args.args[0] == '70000000'
 
 

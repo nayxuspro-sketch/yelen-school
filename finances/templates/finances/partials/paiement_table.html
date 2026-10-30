@@ -33,7 +33,7 @@
         <td class="text-secondary" style="font-size:0.85rem;">
           {{ paiement.rubrique.nom|default:"—" }}
         </td>
-        <td class="fw-bold">{{ paiement.montant|floatformat:0 }} <small class="text-muted fw-medium">FCFA</small></td>
+        <td class="fw-bold">{{ paiement.montant|floatformat:"0g" }} <small class="text-muted fw-medium">FCFA</small></td>
         <td class="text-secondary" style="font-size:0.85rem;">{{ paiement.date_paiement|date:"d/m/Y" }}</td>
         <td class="text-secondary" style="font-size:0.85rem;">{{ paiement.get_mode_paiement_display }}</td>
         <td style="text-align:right;">

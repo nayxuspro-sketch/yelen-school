@@ -40,7 +40,7 @@ body { font-family: "DejaVu Sans", sans-serif; font-size: 9pt; color: #111; marg
     <div class="ligne"><span class="lbl">Classe</span><span class="val">{{ inscription.classe.nom }}</span></div>
     <div class="ligne"><span class="lbl">Rubrique</span><span class="val">{{ demande.rubrique.nom|default:"Scolarité" }}</span></div>
     <div class="ligne"><span class="lbl">Téléphone du payeur</span><span class="val">{{ demande.telephone }}</span></div>
-    <div class="montant">{{ demande.montant|floatformat:0 }} FCFA</div>
+    <div class="montant">{{ demande.montant|floatformat:"0g" }} FCFA</div>
     <div class="reference">À régler par Mobile Money — référence <strong>{{ demande.reference }}</strong></div>
 </div>
 
@@ -59,7 +59,7 @@ body { font-family: "DejaVu Sans", sans-serif; font-size: 9pt; color: #111; marg
         <div class="ussd">*144#</div>
         <div class="etape"><span class="num">1</span><span>Composez <strong>*144#</strong> sur votre téléphone Orange</span></div>
         <div class="etape"><span class="num">2</span><span>Choisissez <strong>Paiement marchand</strong></span></div>
-        <div class="etape"><span class="num">3</span><span>Montant : <strong>{{ demande.montant|floatformat:0 }} FCFA</strong></span></div>
+        <div class="etape"><span class="num">3</span><span>Montant : <strong>{{ demande.montant|floatformat:"0g" }} FCFA</strong></span></div>
         <div class="etape"><span class="num">4</span><span>Communiquez la référence <strong>{{ demande.reference }}</strong> et le n° de transaction à l'école</span></div>
     </div>
 </div>

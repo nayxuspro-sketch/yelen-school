@@ -67,7 +67,7 @@
             <td class="font-mono text-sm">{{ a.exemplaire.code_exemplaire }}</td>
             <td class="text-right">
               {% if a.exemplaire.manuel.prix_remplacement %}
-              {{ a.exemplaire.manuel.prix_remplacement|floatformat:0 }} FCFA
+              {{ a.exemplaire.manuel.prix_remplacement|floatformat:"0g" }} FCFA
               {% else %}—{% endif %}
             </td>
             <td>
@@ -81,7 +81,7 @@
               <a href="{% url 'manuels:attribution_retour' pk=a.pk %}" class="btn-ghost btn-xs">Retour</a>
               {% if not a.facture_genere and a.exemplaire.manuel.prix_remplacement %}
               <form method="post" action="{% url 'manuels:facturer_non_rendu' pk=a.pk %}"
-                    class="d-inline" data-csp-confirm-submit="Facturer {{ a.exemplaire.manuel.prix_remplacement|floatformat:0 }} FCFA à {{ a.inscription.eleve.nom }} ?" >
+                    class="d-inline" data-csp-confirm-submit="Facturer {{ a.exemplaire.manuel.prix_remplacement|floatformat:"0g" }} FCFA à {{ a.inscription.eleve.nom }} ?" >
                 {% csrf_token %}
                 <button type="submit" class="btn-danger btn-xs">Facturer</button>
               </form>

@@ -11,6 +11,7 @@ from ..models import ParametresFinances
 from ..permissions import FINANCE_APPROVER_ROLES
 from ..selectors import annee_choisie
 from .commun import _require_finance_role
+from core.utils import fcfa
 
 
 @login_required
@@ -48,7 +49,7 @@ def penalites_appliquer(request):
         return redirect(retour)
     if creees:
         total = sum((c.montant for c in creees), 0)
-        messages.success(request, f"{len(creees)} pénalité(s) de retard appliquée(s) — {total:,.0f} FCFA au total "
+        messages.success(request, f"{len(creees)} pénalité(s) de retard appliquée(s) — {fcfa(total)} au total "
                                   "(visibles dans la situation de chaque élève, annulables).".replace(',', ' '))
     else:
         messages.info(request, "Aucune nouvelle pénalité : pas d'échéance dépassée non couverte sans pénalité.")

@@ -30,7 +30,7 @@
       </div>
       <div>
         <span class="text-muted">Montant versé</span>
-        <div class="fw-semibold">{{ paiement.montant|floatformat:0 }} <small class="text-muted">FCFA</small></div>
+        <div class="fw-semibold">{{ paiement.montant|floatformat:"0g" }} <small class="text-muted">FCFA</small></div>
       </div>
       <div>
         <span class="text-muted">Date</span>
@@ -44,9 +44,9 @@
     {% if deja_rembourse > 0 %}
     <div style="margin-top:var(--space-3); padding-top:var(--space-3); border-top:1px solid var(--color-border);">
       <span class="text-muted" style="font-size:0.85rem;">Déjà remboursé : </span>
-      <span class="fw-semibold" style="color:var(--color-danger);">{{ deja_rembourse|floatformat:0 }} FCFA</span>
+      <span class="fw-semibold" style="color:var(--color-danger);">{{ deja_rembourse|floatformat:"0g" }} FCFA</span>
       <span class="text-muted" style="font-size:0.85rem; margin-left:var(--space-3);">Remboursable max : </span>
-      <span class="fw-bold" style="color:var(--color-primary);">{{ remboursable|floatformat:0 }} FCFA</span>
+      <span class="fw-bold" style="color:var(--color-primary);">{{ remboursable|floatformat:"0g" }} FCFA</span>
     </div>
     {% endif %}
   </div>
@@ -54,7 +54,7 @@
   <div class="card">
     <div class="card-header">
       <span class="card-title">Enregistrer un remboursement</span>
-      <span class="badge badge-neutral">Max : {{ remboursable|floatformat:0 }} FCFA</span>
+      <span class="badge badge-neutral">Max : {{ remboursable|floatformat:"0g" }} FCFA</span>
     </div>
     <form method="post" style="padding:var(--space-5);">
       {% csrf_token %}
@@ -75,11 +75,11 @@
           <input type="number" id="id_montant" name="montant" class="input"
                  min="1" max="{{ remboursable|floatformat:0 }}" step="1"
                  value="{{ post_data.montant|default:'' }}"
-                 placeholder="{{ remboursable|floatformat:0 }}" required
+                 placeholder="{{ remboursable|floatformat:"0g" }}" required
                  style="padding-right:3.5rem;">
           <span style="position:absolute; right:var(--space-3); top:50%; transform:translateY(-50%); color:var(--color-text-muted); font-size:0.8rem; pointer-events:none;">FCFA</span>
         </div>
-        <p class="form-hint">Maximum remboursable : {{ remboursable|floatformat:0 }} FCFA</p>
+        <p class="form-hint">Maximum remboursable : {{ remboursable|floatformat:"0g" }} FCFA</p>
       </div>
 
       <div class="form-group">

@@ -87,7 +87,7 @@
       <div style="font-size:.8rem; color:var(--color-text-muted);">relance(s) trouvée(s)</div>
     </div>
     <div class="card" style="flex:1; min-width:160px; padding:var(--space-4); text-align:center;">
-      <div style="font-size:1.6rem; font-weight:700; color:var(--color-warning);">{{ total_reclame|floatformat:0 }} FCFA</div>
+      <div style="font-size:1.6rem; font-weight:700; color:var(--color-warning);">{{ total_reclame|floatformat:"0g" }} FCFA</div>
       <div style="font-size:.8rem; color:var(--color-text-muted);">montant total réclamé</div>
     </div>
   </div>
@@ -136,7 +136,7 @@
               {% endif %}
             </td>
             <td style="text-align:right;" class="text-mono fw-bold">
-              {{ rel.montant_reclame|floatformat:0 }} <span class="text-muted">FCFA</span>
+              {{ rel.montant_reclame|floatformat:"0g" }} <span class="text-muted">FCFA</span>
             </td>
             <td style="font-size:.8rem; color:var(--color-text-muted);">{{ rel.envoye_par.get_full_name|default:"—" }}</td>
             <td style="font-size:.75rem; color:var(--color-text-muted); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ rel.detail }}">

@@ -29,7 +29,7 @@
   <span class="yk-alert-icon">⚠</span>
   <span class="yk-alert-msg">
     <strong>Attention :</strong> Cet élève a un solde dû de 
-    <strong>{{ reste|floatformat:0 }} FCAF</strong>.
+    <strong>{{ reste|floatformat:"0g" }} FCAF</strong>.
     L'attestation mentionnera ce montant restant.
   </span>
 </div>
@@ -53,15 +53,15 @@
               border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); margin-bottom: var(--space-6);">
     <div class="d-flex justify-between mb-2">
       <span class="text-muted">Total des frais</span>
-      <span class="fw-medium">{{ situation.total_du|floatformat:0 }} FCAF</span>
+      <span class="fw-medium">{{ situation.total_du|floatformat:"0g" }} FCAF</span>
     </div>
     <div class="d-flex justify-between mb-2">
       <span class="text-muted">Total payé</span>
-      <span class="fw-medium">{{ situation.total_paye|floatformat:0 }} FCAF</span>
+      <span class="fw-medium">{{ situation.total_paye|floatformat:"0g" }} FCAF</span>
     </div>
     <div class="d-flex justify-between pt-2" style="border-top: 1px solid var(--color-border);">
       <span class="fw-semibold">Reste à payer</span>
-      <span class="fw-bold" style="color: {% if reste == 0 %}var(--color-primary){% else %}var(--color-danger){% endif %};">{{ reste|floatformat:0 }} FCAF</span>
+      <span class="fw-bold" style="color: {% if reste == 0 %}var(--color-primary){% else %}var(--color-danger){% endif %};">{{ reste|floatformat:"0g" }} FCAF</span>
     </div>
   </div>
 
@@ -85,7 +85,7 @@
       {% if reste == 0 %}
         <strong>a réglé la totalité de ses frais scolaires</strong> et ne doit aucune somme à l'établissement.
       {% else %}
-        présente un solde restant de <strong>{{ reste|floatformat:0 }} FCAF</strong>.
+        présente un solde restant de <strong>{{ reste|floatformat:"0g" }} FCAF</strong>.
       {% endif %}
     </p>
 

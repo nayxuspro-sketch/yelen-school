@@ -169,7 +169,7 @@
             <option value="">— Globale (toutes rubriques confondues) —</option>
             {% for r in rubriques %}
             <option value="{{ r.id }}" {% if instance and instance.rubrique_id == r.id %}selected{% endif %}>
-              {{ r.nom }}{% if r.montant %} · {{ r.montant|floatformat:0 }} FCFA{% endif %}
+              {{ r.nom }}{% if r.montant %} · {{ r.montant|floatformat:"0g" }} FCFA{% endif %}
             </option>
             {% endfor %}
           </select>

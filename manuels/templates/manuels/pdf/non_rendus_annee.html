@@ -192,7 +192,7 @@ tbody tr:nth-child(even) td { background: #f2f2f2; }
       <span class="stat-lbl">Déjà facturé{% if nb_factures > 1 %}s{% endif %}</span>
     </div>
     <div class="stat-cell rouge">
-      <span class="stat-val">{{ total_du|floatformat:0 }} FCFA</span>
+      <span class="stat-val">{{ total_du|floatformat:"0g" }} FCFA</span>
       <span class="stat-lbl">Total dû (prix de remplacement)</span>
     </div>
   </div>
@@ -233,7 +233,7 @@ tbody tr:nth-child(even) td { background: #f2f2f2; }
         <td>{{ a.date_attribution }}</td>
         <td class="text-right">
           {% if a.exemplaire.manuel.prix_remplacement %}
-          {{ a.exemplaire.manuel.prix_remplacement|floatformat:0 }} FCFA
+          {{ a.exemplaire.manuel.prix_remplacement|floatformat:"0g" }} FCFA
           {% else %}—{% endif %}
         </td>
         <td>
@@ -254,7 +254,7 @@ tbody tr:nth-child(even) td { background: #f2f2f2; }
           Total général — {{ attributions|length }} manuel{% if attributions|length > 1 %}s{% endif %} non rendu{% if attributions|length > 1 %}s{% endif %}
           &nbsp;|&nbsp; {{ nb_factures }} facturé{% if nb_factures > 1 %}s{% endif %}
         </td>
-        <td class="text-right">{{ total_du|floatformat:0 }} FCFA</td>
+        <td class="text-right">{{ total_du|floatformat:"0g" }} FCFA</td>
         <td></td>
       </tr>
     </tbody>

@@ -21,7 +21,7 @@ from ..familles import fratrie
 from ..models import Paiement, Echeancier, ModePaiement, Remboursement
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, TarifScolarite, RubriquePaiement
-from core.utils import get_etablissement_context
+from core.utils import fcfa, get_etablissement_context
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES, FINANCE_APPROVER_ROLES
 from ..selectors import (
     RESULTATS_RECHERCHE_MAX,
@@ -274,7 +274,7 @@ def paiement_create(request):
                 request.session['paiement_inscription_id'] = str(inscription.pk)
                 messages.success(
                     request,
-                    f"{len(lignes)} paiement(s) enregistré(s) pour {inscription.eleve} — Total : {total:,.0f} FCFA"
+                    f"{len(lignes)} paiement(s) enregistré(s) pour {inscription.eleve} — Total : {fcfa(total)}"
                 )
                 return redirect('finances:paiement_confirmation')
 
@@ -408,8 +408,8 @@ def remboursement_create(request, paiement_id):
                 errors.append("Le montant doit être supérieur à 0.")
             elif montant > remboursable:
                 errors.append(
-                    f"Le montant remboursable est au maximum {remboursable:,.0f} FCFA "
-                    f"(paiement {paiement.montant:,.0f} FCFA − déjà remboursé {deja_rembourse:,.0f} FCFA)."
+                    f"Le montant remboursable est au maximum {fcfa(remboursable)} "
+                    f"(paiement {fcfa(paiement.montant)} − déjà remboursé {fcfa(deja_rembourse)})."
                 )
         except (InvalidOperation, ValueError):
             errors.append("Montant invalide.")
@@ -439,7 +439,7 @@ def remboursement_create(request, paiement_id):
                 if montant > locked_remboursable:
                     errors.append(
                         f"Le montant remboursable est désormais limité à "
-                        f"{max(locked_remboursable, Decimal('0')):,.0f} FCFA."
+                        f"{fcfa(max(locked_remboursable, Decimal('0')))}."
                     )
                 else:
                     remboursement = Remboursement(
@@ -454,7 +454,7 @@ def remboursement_create(request, paiement_id):
             if not errors:
                 messages.success(
                     request,
-                    f"Remboursement de {montant:,.0f} FCFA enregistré pour "
+                    f"Remboursement de {fcfa(montant)} enregistré pour "
                     f"{inscription.eleve.get_nom_complet()}."
                 )
                 return redirect('finances:situation_eleve', inscription_id=inscription.pk)

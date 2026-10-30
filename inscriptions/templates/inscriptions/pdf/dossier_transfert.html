@@ -175,7 +175,7 @@ tr:nth-child(even) td { background: #f0f4ff; }
   Situation financière
   &nbsp;
   {% if total_du > 0 %}
-    <span class="finance-badge finance-due">Solde impayé : {{ total_du|floatformat:0 }} FCFA</span>
+    <span class="finance-badge finance-due">Solde impayé : {{ total_du|floatformat:"0g" }} FCFA</span>
   {% else %}
     <span class="finance-badge finance-ok">Situation régulière</span>
   {% endif %}
@@ -196,12 +196,12 @@ tr:nth-child(even) td { background: #f0f4ff; }
       <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
       <td>{{ p.rubrique.nom|default:"—" }}</td>
       <td>{{ p.mode_paiement|default:"—" }}</td>
-      <td style="text-align:right;">{{ p.montant|floatformat:0 }}</td>
+      <td style="text-align:right;">{{ p.montant|floatformat:"0g" }}</td>
     </tr>
     {% endfor %}
     <tr class="total-row">
       <td colspan="3">Total encaissé</td>
-      <td style="text-align:right;">{{ total_paye|floatformat:0 }}</td>
+      <td style="text-align:right;">{{ total_paye|floatformat:"0g" }}</td>
     </tr>
   </tbody>
 </table>

@@ -63,7 +63,7 @@
         {% for f in s.formules.all %}
         <tr>
           <td class="fw-medium">{{ f.libelle }}</td>
-          <td class="text-right fw-semibold">{{ f.montant|floatformat:0|intcomma }} FCFA</td>
+          <td class="text-right fw-semibold">{{ f.montant|floatformat:"0g"|intcomma }} FCFA</td>
           <td><span class="badge badge-{% if f.actif %}success{% else %}secondary{% endif %}">{% if f.actif %}Active{% else %}Inactive{% endif %}</span></td>
           <td class="text-right">
             {% if request|autorise_url:'finances:formule_edit' %}
@@ -82,7 +82,7 @@
       <tfoot>
         <tr>
           <td colspan="4" class="d-flex justify-between align-center" style="padding:0.75rem 1rem;">
-            <span class="text-sm text-secondary">Dû cette année : <strong>{{ s.total_du|floatformat:0|intcomma }}</strong> FCFA · encaissé sur la rubrique : <strong>{{ s.total_verse|floatformat:0|intcomma }}</strong> FCFA</span>
+            <span class="text-sm text-secondary">Dû cette année : <strong>{{ s.total_du|floatformat:"0g"|intcomma }}</strong> FCFA · encaissé sur la rubrique : <strong>{{ s.total_verse|floatformat:"0g"|intcomma }}</strong> FCFA</span>
             {% if request|autorise_url:'finances:formule_create' %}
             <a href="{% url 'finances:formule_create' s.pk %}" class="btn-secondary btn-sm">+ Formule</a>
             {% endif %}

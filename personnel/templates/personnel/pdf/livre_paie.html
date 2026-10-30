@@ -30,10 +30,10 @@ th.right, td.right { text-align: right; }
     {% for s in salaires %}
         <tr>
             <td>{{ forloop.counter }}</td><td>{{ s.personnel.matricule }}</td><td>{{ s.personnel.nom|upper }} {{ s.personnel.prenom }}</td><td>{{ s.personnel.fonction|default:"—" }}</td>
-            <td class="right">{{ s.salaire_base|floatformat:0 }}</td><td class="right">{{ s.indemnite_transport|floatformat:0 }}</td><td class="right">{{ s.indemnite_logement|floatformat:0 }}</td>
-            <td class="right">{{ s.prime_anciennete|floatformat:0 }}</td><td class="right">{{ s.autres_primes|floatformat:0 }}</td><td class="right"><strong>{{ s.salaire_brut|floatformat:0 }}</strong></td>
-            <td class="right">{{ s.retenue_cnss|floatformat:0 }}</td><td class="right">{{ s.retenue_iuts|floatformat:0 }}</td><td class="right">{{ s.autres_retenues|floatformat:0 }}</td>
-            <td class="right"><strong>{{ s.salaire_net|floatformat:0 }}</strong></td><td>{{ s.get_statut_display }}</td>
+            <td class="right">{{ s.salaire_base|floatformat:"0g" }}</td><td class="right">{{ s.indemnite_transport|floatformat:"0g" }}</td><td class="right">{{ s.indemnite_logement|floatformat:"0g" }}</td>
+            <td class="right">{{ s.prime_anciennete|floatformat:"0g" }}</td><td class="right">{{ s.autres_primes|floatformat:"0g" }}</td><td class="right"><strong>{{ s.salaire_brut|floatformat:"0g" }}</strong></td>
+            <td class="right">{{ s.retenue_cnss|floatformat:"0g" }}</td><td class="right">{{ s.retenue_iuts|floatformat:"0g" }}</td><td class="right">{{ s.autres_retenues|floatformat:"0g" }}</td>
+            <td class="right"><strong>{{ s.salaire_net|floatformat:"0g" }}</strong></td><td>{{ s.get_statut_display }}</td>
         </tr>
     {% empty %}
         <tr><td colspan="15">Aucun bulletin pour ce mois.</td></tr>
@@ -41,12 +41,12 @@ th.right, td.right { text-align: right; }
     </tbody>
     {% if salaires %}
     <tfoot>
-        <tr class="total-row"><td colspan="4">Totaux</td><td class="right">{{ totaux.base|floatformat:0 }}</td><td class="right" colspan="2">{{ totaux.indemnites|floatformat:0 }}</td><td class="right" colspan="2">{{ totaux.primes|floatformat:0 }}</td><td class="right">{{ totaux.brut|floatformat:0 }}</td><td class="right">{{ totaux.cnss|floatformat:0 }}</td><td class="right">{{ totaux.iuts|floatformat:0 }}</td><td class="right">{{ totaux.autres_retenues|floatformat:0 }}</td><td class="right">{{ totaux.net|floatformat:0 }}</td><td></td></tr>
+        <tr class="total-row"><td colspan="4">Totaux</td><td class="right">{{ totaux.base|floatformat:"0g" }}</td><td class="right" colspan="2">{{ totaux.indemnites|floatformat:"0g" }}</td><td class="right" colspan="2">{{ totaux.primes|floatformat:"0g" }}</td><td class="right">{{ totaux.brut|floatformat:"0g" }}</td><td class="right">{{ totaux.cnss|floatformat:"0g" }}</td><td class="right">{{ totaux.iuts|floatformat:"0g" }}</td><td class="right">{{ totaux.autres_retenues|floatformat:"0g" }}</td><td class="right">{{ totaux.net|floatformat:"0g" }}</td><td></td></tr>
     </tfoot>
     {% endif %}
 </table>
 
-<p class="recap">Masse salariale brute : <strong>{{ totaux.brut|floatformat:0 }} FCFA</strong> — retenues : <strong>{{ totaux.retenues|floatformat:0 }} FCFA</strong> (CNSS {{ totaux.cnss|floatformat:0 }}, IUTS {{ totaux.iuts|floatformat:0 }}, autres {{ totaux.autres_retenues|floatformat:0 }}) — net à payer : <strong>{{ totaux.net|floatformat:0 }} FCFA</strong>.</p>
+<p class="recap">Masse salariale brute : <strong>{{ totaux.brut|floatformat:"0g" }} FCFA</strong> — retenues : <strong>{{ totaux.retenues|floatformat:"0g" }} FCFA</strong> (CNSS {{ totaux.cnss|floatformat:"0g" }}, IUTS {{ totaux.iuts|floatformat:"0g" }}, autres {{ totaux.autres_retenues|floatformat:"0g" }}) — net à payer : <strong>{{ totaux.net|floatformat:"0g" }} FCFA</strong>.</p>
 {% if sans_bulletin %}<p class="sans">Agents permanents sans bulletin ce mois : {% for m in sans_bulletin %}{{ m.nom|upper }} {{ m.prenom }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>{% endif %}
 
 {% signataire_auto "BULLETIN_SALAIRE" %}

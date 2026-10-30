@@ -162,35 +162,35 @@ body {
           <tbody>
             <tr>
               <td>Salaire de base</td>
-              <td class="montant">{{ salaire.salaire_base|floatformat:"0" }}</td>
+              <td class="montant">{{ salaire.salaire_base|floatformat:"0g" }}</td>
             </tr>
             {% if salaire.prime_anciennete %}
             <tr>
               <td>Prime d'ancienneté</td>
-              <td class="montant">{{ salaire.prime_anciennete|floatformat:"0" }}</td>
+              <td class="montant">{{ salaire.prime_anciennete|floatformat:"0g" }}</td>
             </tr>
             {% endif %}
             {% if salaire.indemnite_transport %}
             <tr>
               <td>Indemnité de transport</td>
-              <td class="montant">{{ salaire.indemnite_transport|floatformat:"0" }}</td>
+              <td class="montant">{{ salaire.indemnite_transport|floatformat:"0g" }}</td>
             </tr>
             {% endif %}
             {% if salaire.indemnite_logement %}
             <tr>
               <td>Indemnité de logement</td>
-              <td class="montant">{{ salaire.indemnite_logement|floatformat:"0" }}</td>
+              <td class="montant">{{ salaire.indemnite_logement|floatformat:"0g" }}</td>
             </tr>
             {% endif %}
             {% if salaire.autres_primes %}
             <tr>
               <td>Autres primes</td>
-              <td class="montant">{{ salaire.autres_primes|floatformat:"0" }}</td>
+              <td class="montant">{{ salaire.autres_primes|floatformat:"0g" }}</td>
             </tr>
             {% endif %}
             <tr class="sous-total">
               <td>SALAIRE BRUT</td>
-              <td class="montant">{{ salaire.salaire_brut|floatformat:"0" }}</td>
+              <td class="montant">{{ salaire.salaire_brut|floatformat:"0g" }}</td>
             </tr>
           </tbody>
         </table>
@@ -209,28 +209,28 @@ body {
             {% if salaire.retenue_cnss %}
             <tr class="retenue">
               <td>Retenue CNSS</td>
-              <td class="montant">- {{ salaire.retenue_cnss|floatformat:"0" }}</td>
+              <td class="montant">- {{ salaire.retenue_cnss|floatformat:"0g" }}</td>
             </tr>
             {% endif %}
             {% if salaire.retenue_iuts %}
             <tr class="retenue">
               <td>Retenue IUTS</td>
-              <td class="montant">- {{ salaire.retenue_iuts|floatformat:"0" }}</td>
+              <td class="montant">- {{ salaire.retenue_iuts|floatformat:"0g" }}</td>
             </tr>
             {% endif %}
             {% if salaire.autres_retenues %}
             <tr class="retenue">
               <td>Autres retenues</td>
-              <td class="montant">- {{ salaire.autres_retenues|floatformat:"0" }}</td>
+              <td class="montant">- {{ salaire.autres_retenues|floatformat:"0g" }}</td>
             </tr>
             {% endif %}
             <tr class="sous-total">
               <td>TOTAL RETENUES</td>
-              <td class="montant">- {{ salaire.total_retenues|floatformat:"0" }}</td>
+              <td class="montant">- {{ salaire.total_retenues|floatformat:"0g" }}</td>
             </tr>
             <tr class="net">
               <td>NET À PAYER</td>
-              <td class="montant">{{ salaire.salaire_net|floatformat:"0" }} FCFA</td>
+              <td class="montant">{{ salaire.salaire_net|floatformat:"0g" }} FCFA</td>
             </tr>
           </tbody>
         </table>

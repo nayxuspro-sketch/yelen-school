@@ -152,7 +152,7 @@ def test_facturer_un_non_rendu_emet_une_creance_et_le_retour_l_annule(monde):
     facturer = reverse('manuels:facturer_non_rendu', kwargs={'pk': attribution.pk})
 
     reponse = c.post(facturer, follow=True)
-    assert 'Créance de 4,500 FCFA émise' in reponse.content.decode()
+    assert 'Créance de 4\xa0500 FCFA émise' in reponse.content.decode()
     attribution.refresh_from_db()
     creance = Creance.objects.get(attribution_manuel=attribution)
     assert attribution.facture_genere and attribution.creance == creance

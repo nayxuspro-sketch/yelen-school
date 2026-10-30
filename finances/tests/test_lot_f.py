@@ -236,13 +236,13 @@ def test_blocage_des_bulletins_des_eleves_non_a_jour(client, ecole):
     params.save()
     _payer(ins, '40000', ecole['comptable'])
     motif = motif_blocage_bulletin(ins)
-    assert motif.startswith('Bulletin consultable après régularisation des frais de scolarité : reste à payer 60 000 FCFA')
+    assert motif.startswith('Bulletin consultable après régularisation des frais de scolarité : reste à payer 60\xa0000 FCFA')
 
     client.force_login(parent)
     portail = client.get(reverse('core:portail_parent_bulletins'))
-    assert portail.context['enfants'][0]['bulletins'] == [] and 'reste à payer 60 000 FCFA' in portail.content.decode()
+    assert portail.context['enfants'][0]['bulletins'] == [] and 'reste à payer 60\xa0000 FCFA' in portail.content.decode()
     public = Client().get(reverse('bulletins:bulletin_parent_consulter', kwargs={'token': bulletin.token_signature}))
-    assert public.status_code == 200 and 'reste à payer 60 000 FCFA' in public.content.decode()
+    assert public.status_code == 200 and 'reste à payer 60\xa0000 FCFA' in public.content.decode()
     from rest_framework.authtoken.models import Token
     token, _ = Token.objects.get_or_create(user=parent)
     api = Client().get(reverse('api:eleve_bulletins', kwargs={'pk': ins.eleve.pk}), HTTP_AUTHORIZATION=f'Token {token.key}')
@@ -269,4 +269,4 @@ def test_portail_parent_affiche_le_reste_a_payer(client, ecole):
     assert (enfant['situation']['total_du'], enfant['situation']['total_paye'], enfant['situation']['reste_a_payer']) == (100000, 35000, 65000)
     assert enfant['prochaine_echeance'].libelle == '2e tranche' and enfant['derniers_paiements'] == [p]
     html = reponse.content.decode()
-    assert 'Reste à payer' in html and '65000' in html and p.numero_recu in html
+    assert 'Reste à payer' in html and '65\xa0000' in html and p.numero_recu in html

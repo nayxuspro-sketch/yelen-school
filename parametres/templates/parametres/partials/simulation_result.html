@@ -63,7 +63,7 @@
     <div style="text-align:right;">
       <span style="font-size:0.85rem; color:var(--color-text-muted);">Total dû</span>
       <div style="font-size:1.5rem; font-weight:700; color:var(--color-primary);">
-        {{ total|floatformat:0 }} <span style="font-size:0.9rem; font-weight:400;">FCFA</span>
+        {{ total|floatformat:"0g" }} <span style="font-size:0.9rem; font-weight:400;">FCFA</span>
       </div>
     </div>
   </div>
@@ -89,7 +89,7 @@
             </div>
           </td>
           <td style="text-align:right; font-family:var(--font-mono);">
-            {{ t.montant|floatformat:0 }} CFA
+            {{ t.montant|floatformat:"0g" }} CFA
           </td>
         </tr>
         {% endfor %}
@@ -98,7 +98,7 @@
         <tr style="background:var(--color-bg-hover);">
           <th style="font-weight:600;">Total</th>
           <th style="text-align:right; font-weight:700; color:var(--color-primary); font-family:var(--font-mono);">
-            {{ total|floatformat:0 }} CFA
+            {{ total|floatformat:"0g" }} CFA
           </th>
         </tr>
       </tfoot>

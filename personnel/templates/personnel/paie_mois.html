@@ -23,7 +23,7 @@
   <div class="stat-card"><div class="stat-label">Brouillons</div><div class="stat-value">{{ par_statut.BROUILLON|default:0 }}</div></div>
   <div class="stat-card"><div class="stat-label">Validés</div><div class="stat-value">{{ par_statut.VALIDE|default:0 }}</div></div>
   <div class="stat-card"><div class="stat-label">Payés</div><div class="stat-value">{{ par_statut.PAYE|default:0 }}</div></div>
-  <div class="stat-card"><div class="stat-label">Masse salariale nette</div><div class="stat-value">{{ totaux.net|default:0|floatformat:0 }} <span style="font-size:.7rem;">FCFA</span></div></div>
+  <div class="stat-card"><div class="stat-label">Masse salariale nette</div><div class="stat-value">{{ totaux.net|default:0|floatformat:"0g" }} <span style="font-size:.7rem;">FCFA</span></div></div>
 </div>
 
 <div class="d-flex gap-2 flex-wrap animate-fade-up delay-1 mb-4">
@@ -56,14 +56,14 @@
         <tr>
           <td><a href="{% url 'personnel:salaire_detail' s.pk %}" class="fw-semibold">{{ s.personnel.nom|upper }} {{ s.personnel.prenom }}</a></td>
           <td class="text-secondary">{{ s.personnel.fonction|default:"—" }}</td>
-          <td class="text-right">{{ s.salaire_base|floatformat:0 }}</td>
-          <td class="text-right">{{ s.indemnite_transport|add:s.indemnite_logement|floatformat:0 }}</td>
-          <td class="text-right">{{ s.prime_anciennete|add:s.autres_primes|floatformat:0 }}</td>
-          <td class="text-right fw-semibold">{{ s.salaire_brut|floatformat:0 }}</td>
-          <td class="text-right">{{ s.retenue_cnss|floatformat:0 }}</td>
-          <td class="text-right">{{ s.retenue_iuts|floatformat:0 }}</td>
-          <td class="text-right">{{ s.autres_retenues|floatformat:0 }}</td>
-          <td class="text-right fw-semibold">{{ s.salaire_net|floatformat:0 }}</td>
+          <td class="text-right">{{ s.salaire_base|floatformat:"0g" }}</td>
+          <td class="text-right">{{ s.indemnite_transport|add:s.indemnite_logement|floatformat:"0g" }}</td>
+          <td class="text-right">{{ s.prime_anciennete|add:s.autres_primes|floatformat:"0g" }}</td>
+          <td class="text-right fw-semibold">{{ s.salaire_brut|floatformat:"0g" }}</td>
+          <td class="text-right">{{ s.retenue_cnss|floatformat:"0g" }}</td>
+          <td class="text-right">{{ s.retenue_iuts|floatformat:"0g" }}</td>
+          <td class="text-right">{{ s.autres_retenues|floatformat:"0g" }}</td>
+          <td class="text-right fw-semibold">{{ s.salaire_net|floatformat:"0g" }}</td>
           <td>{% if s.statut == 'PAYE' %}<span class="badge badge-success">Payé</span>{% elif s.statut == 'VALIDE' %}<span class="badge badge-info">Validé</span>{% else %}<span class="badge badge-warning">Brouillon</span>{% endif %}</td>
         </tr>
         {% empty %}
@@ -72,7 +72,7 @@
       </tbody>
       {% if salaires %}
       <tfoot>
-        <tr class="fw-semibold"><td colspan="2">Totaux ({{ salaires|length }})</td><td class="text-right">{{ totaux.base|floatformat:0 }}</td><td class="text-right">{{ totaux.indemnites|floatformat:0 }}</td><td class="text-right">{{ totaux.primes|floatformat:0 }}</td><td class="text-right">{{ totaux.brut|floatformat:0 }}</td><td class="text-right">{{ totaux.cnss|floatformat:0 }}</td><td class="text-right">{{ totaux.iuts|floatformat:0 }}</td><td class="text-right">{{ totaux.autres_retenues|floatformat:0 }}</td><td class="text-right">{{ totaux.net|floatformat:0 }}</td><td></td></tr>
+        <tr class="fw-semibold"><td colspan="2">Totaux ({{ salaires|length }})</td><td class="text-right">{{ totaux.base|floatformat:"0g" }}</td><td class="text-right">{{ totaux.indemnites|floatformat:"0g" }}</td><td class="text-right">{{ totaux.primes|floatformat:"0g" }}</td><td class="text-right">{{ totaux.brut|floatformat:"0g" }}</td><td class="text-right">{{ totaux.cnss|floatformat:"0g" }}</td><td class="text-right">{{ totaux.iuts|floatformat:"0g" }}</td><td class="text-right">{{ totaux.autres_retenues|floatformat:"0g" }}</td><td class="text-right">{{ totaux.net|floatformat:"0g" }}</td><td></td></tr>
       </tfoot>
       {% endif %}
     </table>

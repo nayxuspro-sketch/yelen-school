@@ -40,19 +40,19 @@
 <div class="pil-kpis animate-fade-up">
   <div class="pil-kpi">
     <span class="pil-kpi-label">Recouvrement réseau</span>
-    <span class="pil-kpi-value {% if totaux.recouvrement.taux < 50 %}pil-rouge{% elif totaux.recouvrement.taux < 80 %}pil-orange{% else %}pil-vert{% endif %}">{{ totaux.recouvrement.taux|floatformat:0 }} %</span>
-    <div class="pil-bar"><div class="pil-bar-fill" style="width:{{ totaux.recouvrement.taux|floatformat:0 }}%"></div></div>
-    <span class="pil-kpi-sub">{{ totaux.recouvrement.encaisse|floatformat:0|intcomma }} / {{ totaux.recouvrement.attendu|floatformat:0|intcomma }} FCFA</span>
+    <span class="pil-kpi-value {% if totaux.recouvrement.taux < 50 %}pil-rouge{% elif totaux.recouvrement.taux < 80 %}pil-orange{% else %}pil-vert{% endif %}">{{ totaux.recouvrement.taux|floatformat:"0g" }} %</span>
+    <div class="pil-bar"><div class="pil-bar-fill" style="width:{{ totaux.recouvrement.taux|floatformat:"0g" }}%"></div></div>
+    <span class="pil-kpi-sub">{{ totaux.recouvrement.encaisse|floatformat:"0g"|intcomma }} / {{ totaux.recouvrement.attendu|floatformat:"0g"|intcomma }} FCFA</span>
   </div>
   <div class="pil-kpi">
     <span class="pil-kpi-label">Impayés</span>
-    <span class="pil-kpi-value pil-rouge">{{ totaux.recouvrement.reste|floatformat:0|intcomma }}</span>
+    <span class="pil-kpi-value pil-rouge">{{ totaux.recouvrement.reste|floatformat:"0g"|intcomma }}</span>
     <span class="pil-kpi-sub">FCFA · {{ totaux.recouvrement.redevables }} élève{{ totaux.recouvrement.redevables|pluralize }} redevable{{ totaux.recouvrement.redevables|pluralize }}</span>
   </div>
   <div class="pil-kpi">
     <span class="pil-kpi-label">Effectifs</span>
-    <span class="pil-kpi-value">{{ totaux.effectifs.total }}</span>
-    <span class="pil-kpi-sub">{{ totaux.effectifs.garcons }} G · {{ totaux.effectifs.filles }} F · {{ totaux.effectifs.classes }} classe{{ totaux.effectifs.classes|pluralize }} · remplissage {{ totaux.effectifs.taux_remplissage|floatformat:0 }} %</span>
+    <span class="pil-kpi-value">{{ totaux.effectifs.total|intcomma }}</span>
+    <span class="pil-kpi-sub">{{ totaux.effectifs.garcons|intcomma }} G · {{ totaux.effectifs.filles|intcomma }} F · {{ totaux.effectifs.classes }} classe{{ totaux.effectifs.classes|pluralize }} · remplissage {{ totaux.effectifs.taux_remplissage|floatformat:"0g" }} %</span>
   </div>
   <div class="pil-kpi">
     <span class="pil-kpi-label">Absences (30 jours)</span>
@@ -94,13 +94,13 @@
             <div class="text-muted text-sm">{{ l.etablissement.code }}{% if l.etablissement.ville %} — {{ l.etablissement.ville }}{% endif %}{% if l.annee %} · {{ l.annee.libelle }}{% endif %}</div>
           </td>
           {% if l.annee %}
-          <td class="text-right fw-semibold">{{ l.effectifs.total }}<div class="text-muted text-sm">{{ l.effectifs.garcons }} G · {{ l.effectifs.filles }} F</div></td>
+          <td class="text-right fw-semibold">{{ l.effectifs.total|intcomma }}<div class="text-muted text-sm">{{ l.effectifs.garcons }} G · {{ l.effectifs.filles }} F</div></td>
           <td class="text-right">{{ l.effectifs.classes }}</td>
-          <td class="text-right">{{ l.effectifs.taux_remplissage|floatformat:0 }} %</td>
-          <td class="text-right">{{ l.recouvrement.attendu|floatformat:0|intcomma }}</td>
-          <td class="text-right text-success">{{ l.recouvrement.encaisse|floatformat:0|intcomma }}</td>
-          <td class="text-right {% if l.recouvrement.reste %}text-danger{% endif %}">{{ l.recouvrement.reste|floatformat:0|intcomma }}</td>
-          <td class="text-right fw-semibold {% if l.recouvrement.taux < 50 %}text-danger{% elif l.recouvrement.taux < 80 %}text-warning{% else %}text-success{% endif %}">{{ l.recouvrement.taux|floatformat:0 }} %</td>
+          <td class="text-right">{{ l.effectifs.taux_remplissage|floatformat:"0g" }} %</td>
+          <td class="text-right">{{ l.recouvrement.attendu|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right text-success">{{ l.recouvrement.encaisse|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right {% if l.recouvrement.reste %}text-danger{% endif %}">{{ l.recouvrement.reste|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right fw-semibold {% if l.recouvrement.taux < 50 %}text-danger{% elif l.recouvrement.taux < 80 %}text-warning{% else %}text-success{% endif %}">{{ l.recouvrement.taux|floatformat:"0g" }} %</td>
           <td class="text-right">{{ l.recouvrement.redevables }}</td>
           <td class="text-right">{{ l.absences.trente_jours }}<div class="text-muted text-sm">{{ l.absences.taux_30j|floatformat:1 }} %</div></td>
           <td class="text-right {% if l.risque.prioritaires_nb %}text-warning fw-semibold{% endif %}">{{ l.risque.prioritaires_nb }}</td>
@@ -115,13 +115,13 @@
       <tfoot>
         <tr class="fw-semibold">
           <td>Total réseau — {{ totaux.sites }} site{{ totaux.sites|pluralize }}</td>
-          <td class="text-right">{{ totaux.effectifs.total }}</td>
+          <td class="text-right">{{ totaux.effectifs.total|intcomma }}</td>
           <td class="text-right">{{ totaux.effectifs.classes }}</td>
-          <td class="text-right">{{ totaux.effectifs.taux_remplissage|floatformat:0 }} %</td>
-          <td class="text-right">{{ totaux.recouvrement.attendu|floatformat:0|intcomma }}</td>
-          <td class="text-right text-success">{{ totaux.recouvrement.encaisse|floatformat:0|intcomma }}</td>
-          <td class="text-right text-danger">{{ totaux.recouvrement.reste|floatformat:0|intcomma }}</td>
-          <td class="text-right">{{ totaux.recouvrement.taux|floatformat:0 }} %</td>
+          <td class="text-right">{{ totaux.effectifs.taux_remplissage|floatformat:"0g" }} %</td>
+          <td class="text-right">{{ totaux.recouvrement.attendu|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right text-success">{{ totaux.recouvrement.encaisse|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right text-danger">{{ totaux.recouvrement.reste|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right">{{ totaux.recouvrement.taux|floatformat:"0g" }} %</td>
           <td class="text-right">{{ totaux.recouvrement.redevables }}</td>
           <td class="text-right">{{ totaux.absences.trente_jours }}</td>
           <td class="text-right">{{ totaux.risque.prioritaires_nb }}</td>

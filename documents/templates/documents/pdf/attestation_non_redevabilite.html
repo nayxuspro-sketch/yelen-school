@@ -220,22 +220,22 @@ body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; margin: 0; 
       <table>
         <tr>
           <td class="lbl">Total des frais de scolarité :</td>
-          <td class="val">{{ situation.total_du|floatformat:0 }} Fcfa</td>
+          <td class="val">{{ situation.total_du|floatformat:"0g" }} Fcfa</td>
         </tr>
         {% if situation.total_reduction %}
         <tr>
           <td class="lbl">Réductions / Bourses accordées :</td>
-          <td class="val">- {{ situation.total_reduction|floatformat:0 }} Fcfa</td>
+          <td class="val">- {{ situation.total_reduction|floatformat:"0g" }} Fcfa</td>
         </tr>
         {% endif %}
         <tr>
           <td class="lbl">Montant total payé :</td>
-          <td class="val">{{ situation.total_paye|floatformat:0 }} Fcfa</td>
+          <td class="val">{{ situation.total_paye|floatformat:"0g" }} Fcfa</td>
         </tr>
         <tr class="total-row">
           <td class="lbl"><strong>Reste à payer :</strong></td>
           <td class="val {% if reste > 0 %}solde-nok{% else %}solde-ok negative{% endif %}">
-            <strong>{{ reste|floatformat:0 }} Fcfa</strong>
+            <strong>{{ reste|floatformat:"0g" }} Fcfa</strong>
           </td>
         </tr>
       </table>
@@ -247,7 +247,7 @@ body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; margin: 0; 
     </div>
     {% else %}
     <div class="alerte-box">
-      <p>&#9888; Attention : Cet(te) élève présente un <strong>solde restant dû de {{ reste|floatformat:0 }} Fcfa</strong> au titre de l'année scolaire {{ annee_scolaire }}.</p>
+      <p>&#9888; Attention : Cet(te) élève présente un <strong>solde restant dû de {{ reste|floatformat:"0g" }} Fcfa</strong> au titre de l'année scolaire {{ annee_scolaire }}.</p>
     </div>
     {% endif %}
 

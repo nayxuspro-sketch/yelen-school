@@ -113,7 +113,7 @@
         <div class="pp-stat">
           <div class="pp-glow pp-glow--gold"></div>
           <div class="pp-val pp-val--sm {% if enfant.situation and enfant.situation.reste_a_payer %}pp-val--warning{% elif enfant.situation %}pp-val--success{% endif %}">
-            {% if enfant.situation %}{{ enfant.situation.reste_a_payer|floatformat:0 }}{% else %}—{% endif %}
+            {% if enfant.situation %}{{ enfant.situation.reste_a_payer|floatformat:"0g" }}{% else %}—{% endif %}
           </div>
           <div class="pp-stat-label">Reste à payer</div>
         </div>
@@ -129,9 +129,9 @@
         </div>
         <div class="pp-devoir">
           <div class="pp-devoir-detail">
-            <div class="pp-devoir-subject">Montant dû : {{ enfant.situation.total_du|floatformat:0 }} FCFA · Réglé : {{ enfant.situation.total_paye|floatformat:0 }} FCFA</div>
+            <div class="pp-devoir-subject">Montant dû : {{ enfant.situation.total_du|floatformat:"0g" }} FCFA · Réglé : {{ enfant.situation.total_paye|floatformat:"0g" }} FCFA</div>
             <div class="pp-devoir-text">
-              {% if enfant.situation.reste_a_payer %}Reste à payer : <strong>{{ enfant.situation.reste_a_payer|floatformat:0 }} FCFA</strong>{% if enfant.prochaine_echeance %} — prochaine échéance « {{ enfant.prochaine_echeance.libelle }} » le {{ enfant.prochaine_echeance.date_limite|date:"d/m/Y" }} ({{ enfant.prochaine_echeance.montant_du|floatformat:0 }} FCFA){% endif %}{% else %}Frais à jour — merci.{% endif %}
+              {% if enfant.situation.reste_a_payer %}Reste à payer : <strong>{{ enfant.situation.reste_a_payer|floatformat:"0g" }} FCFA</strong>{% if enfant.prochaine_echeance %} — prochaine échéance « {{ enfant.prochaine_echeance.libelle }} » le {{ enfant.prochaine_echeance.date_limite|date:"d/m/Y" }} ({{ enfant.prochaine_echeance.montant_du|floatformat:"0g" }} FCFA){% endif %}{% else %}Frais à jour — merci.{% endif %}
             </div>
           </div>
         </div>
@@ -142,7 +142,7 @@
             <span class="pp-devoir-month">{{ p.date_paiement|date:"M" }}</span>
           </div>
           <div class="pp-devoir-detail">
-            <div class="pp-devoir-subject">{{ p.montant|floatformat:0 }} FCFA — {{ p.rubrique.nom|default:"Versement" }}</div>
+            <div class="pp-devoir-subject">{{ p.montant|floatformat:"0g" }} FCFA — {{ p.rubrique.nom|default:"Versement" }}</div>
             <div class="pp-devoir-text">Reçu {{ p.numero_recu }} · {{ p.get_mode_paiement_display }}</div>
           </div>
         </div>

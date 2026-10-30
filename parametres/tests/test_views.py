@@ -331,7 +331,7 @@ class TestSimulationTarifaire:
         url = reverse('parametres:tarif_simulation_resultat')
 
         complet = client.get(url, {'annee': annee.pk, 'classe': classe.pk, 'statut': statut.pk}).content.decode()
-        assert '6ème A · Nouveau' in complet and 'Scolarité' in complet and '75000' in complet
+        assert '6ème A · Nouveau' in complet and 'Scolarité' in complet and '75\xa0000' in complet
 
         incomplet = client.get(url, {'annee': annee.pk, 'classe': '', 'statut': statut.pk}).content.decode()
         assert 'Sélectionnez une année, une classe et un statut' in incomplet

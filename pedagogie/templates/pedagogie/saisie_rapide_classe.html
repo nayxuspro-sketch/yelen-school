@@ -74,7 +74,7 @@
             <td class="text-muted" style="font-size:.85rem;">{{ ev.type_evaluation.nom }}</td>
             <td class="text-muted" style="font-size:.85rem;">{{ ev.trimestre.nom }}</td>
             <td class="text-mono text-muted" style="font-size:.8rem;">{{ ev.date_planifiee|date:"d/m/Y" }}</td>
-            <td class="text-mono" style="font-size:.85rem;">/{{ ev.bareme|floatformat:0 }}</td>
+            <td class="text-mono" style="font-size:.85rem;">/{{ ev.bareme|floatformat:"0g" }}</td>
             <td style="text-align:center; min-width:140px;">
               {% if nb_eleves > 0 %}
               <div class="d-flex align-center gap-2" style="justify-content:center;">

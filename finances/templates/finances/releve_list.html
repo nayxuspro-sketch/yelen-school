@@ -54,7 +54,7 @@
           <td>{{ r.get_operateur_display }}</td>
           <td class="text-xs text-muted">{{ r.nom_fichier }}</td>
           <td class="td-right">{{ r.nb_lignes }}</td>
-          <td class="td-right fw-semibold">{{ r.total|default:0|floatformat:0 }} FCFA</td>
+          <td class="td-right fw-semibold">{{ r.total|default:0|floatformat:"0g" }} FCFA</td>
           <td class="td-right">
             {% if r.nb_a_traiter %}<span class="badge badge-warning">{{ r.nb_a_traiter }}</span>{% else %}<span class="badge badge-success">0</span>{% endif %}
           </td>
@@ -98,7 +98,7 @@
           <td>{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
           <td>{{ p.inscription.classe.nom }}</td>
           <td class="text-mono text-xs">{{ p.reference|default:"—" }}</td>
-          <td class="td-right fw-semibold">{{ p.montant|floatformat:0 }} FCFA</td>
+          <td class="td-right fw-semibold">{{ p.montant|floatformat:"0g" }} FCFA</td>
         </tr>
         {% endfor %}
       </tbody>

@@ -64,7 +64,7 @@
     <div class="stat-card-label">Bénéficiaires</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-value">{{ total_reduction|floatformat:0 }}</div>
+    <div class="stat-card-value">{{ total_reduction|floatformat:"0g" }}</div>
     <div class="stat-card-label">Total réductions (FCFA)</div>
   </div>
 </div>
@@ -103,7 +103,7 @@
           </td>
           <td class="text-secondary text-sm">{{ b.type_bourse.get_source_display }}</td>
           <td class="text-secondary text-sm">{{ b.rubrique.nom|default:"Globale" }}</td>
-          <td class="fw-semibold text-success">{{ b.montant_accorde|floatformat:0 }} <small class="text-muted">FCFA</small></td>
+          <td class="fw-semibold text-success">{{ b.montant_accorde|floatformat:"0g" }} <small class="text-muted">FCFA</small></td>
           <td class="text-secondary text-sm">{{ b.date_attribution|date:"d/m/Y" }}</td>
           <td class="text-secondary text-sm">{{ b.reference_document|default:"—" }}</td>
           <td>
@@ -134,7 +134,7 @@
       <tfoot>
         <tr style="background:var(--color-bg-subtle);">
           <td colspan="5" class="fw-semibold text-right">Total réductions :</td>
-          <td class="fw-bold text-success">{{ total_reduction|floatformat:0 }} FCFA</td>
+          <td class="fw-bold text-success">{{ total_reduction|floatformat:"0g" }} FCFA</td>
           <td colspan="3"></td>
         </tr>
       </tfoot>

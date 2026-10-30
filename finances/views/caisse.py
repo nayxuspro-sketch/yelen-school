@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from core.utils import get_etablissement_context
+from core.utils import fcfa, get_etablissement_context
 from .. import caisse as services
 from ..models import ClotureCaisse
 from ..permissions import FINANCE_APPROVER_ROLES, FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
@@ -94,8 +94,8 @@ def caisse_arreter(request):
         messages.error(request, str(exc))
         return redirect(retour)
     ecart = f"écart {cloture.ecart:+,.0f} FCFA".replace(',', ' ') if cloture.ecart else "aucun écart"
-    messages.success(request, f"Caisse du {jour:%d/%m/%Y} arrêtée : {cloture.especes_theoriques:,.0f} FCFA d'espèces "
-                              f"attendues, {montant_compte:,.0f} FCFA comptées ({ecart}).".replace(',', ' '))
+    messages.success(request, f"Caisse du {jour:%d/%m/%Y} arrêtée : {fcfa(cloture.especes_theoriques)} d'espèces "
+                              f"attendues, {fcfa(montant_compte)} comptées ({ecart}).".replace(',', ' '))
     return redirect(retour)
 
 

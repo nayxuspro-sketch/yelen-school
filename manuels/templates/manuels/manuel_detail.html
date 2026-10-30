@@ -38,7 +38,7 @@
     </div>
     {% if manuel.prix_remplacement %}
     <div class="stat-card">
-      <div><p class="stat-label">Prix remplacement</p><p class="stat-value">{{ manuel.prix_remplacement|floatformat:0 }} FCFA</p></div>
+      <div><p class="stat-label">Prix remplacement</p><p class="stat-value">{{ manuel.prix_remplacement|floatformat:"0g" }} FCFA</p></div>
     </div>
     {% endif %}
   </div>

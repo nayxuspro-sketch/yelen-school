@@ -33,17 +33,17 @@
     {% for libelle, montant in totaux.par_mode %}
     <div class="card" style="flex:1; min-width:10rem; padding:1rem; text-align:center;">
       <div style="color:var(--color-text-secondary); font-size:0.85rem;">{{ libelle }}</div>
-      <div class="fw-bold" style="font-size:1.25rem;">{{ montant|floatformat:0 }} FCFA</div>
+      <div class="fw-bold" style="font-size:1.25rem;">{{ montant|floatformat:"0g" }} FCFA</div>
     </div>
     {% endfor %}
     <div class="card" style="flex:1; min-width:10rem; padding:1rem; text-align:center; border-left:3px solid var(--color-warning);">
       <div style="color:var(--color-text-secondary); font-size:0.85rem;">Remboursements</div>
-      <div class="fw-bold" style="font-size:1.25rem;">− {{ totaux.total_rembourse|floatformat:0 }} FCFA</div>
+      <div class="fw-bold" style="font-size:1.25rem;">− {{ totaux.total_rembourse|floatformat:"0g" }} FCFA</div>
     </div>
     <div class="card" style="flex:1; min-width:12rem; padding:1rem; text-align:center; border-left:3px solid var(--color-primary);">
       <div style="color:var(--color-text-secondary); font-size:0.85rem;">Espèces attendues en caisse</div>
-      <div class="fw-bold" style="font-size:1.25rem; color:var(--color-primary);">{{ totaux.especes_theoriques|floatformat:0 }} FCFA</div>
-      <div style="color:var(--color-text-secondary); font-size:0.8rem;">{{ totaux.nb_operations }} opération(s) · total encaissé {{ totaux.total|floatformat:0 }} FCFA</div>
+      <div class="fw-bold" style="font-size:1.25rem; color:var(--color-primary);">{{ totaux.especes_theoriques|floatformat:"0g" }} FCFA</div>
+      <div style="color:var(--color-text-secondary); font-size:0.8rem;">{{ totaux.nb_operations }} opération(s) · total encaissé {{ totaux.total|floatformat:"0g" }} FCFA</div>
     </div>
   </div>
 
@@ -56,9 +56,9 @@
         {% for c in clotures %}
         <tr>
           <td class="fw-medium">{{ c.caissier.get_full_name }}</td>
-          <td style="text-align:right;">{{ c.especes_theoriques|floatformat:0 }}</td>
-          <td style="text-align:right;">{{ c.montant_compte|floatformat:0 }}</td>
-          <td style="text-align:right;" class="{% if c.ecart %}text-danger fw-bold{% endif %}">{{ c.ecart|floatformat:0 }}</td>
+          <td style="text-align:right;">{{ c.especes_theoriques|floatformat:"0g" }}</td>
+          <td style="text-align:right;">{{ c.montant_compte|floatformat:"0g" }}</td>
+          <td style="text-align:right;" class="{% if c.ecart %}text-danger fw-bold{% endif %}">{{ c.ecart|floatformat:"0g" }}</td>
           <td class="text-secondary">{{ c.observation }}</td>
           <td class="text-secondary">{{ c.cloture_par.get_full_name|default:"—" }} · {{ c.created_at|date:"H:i" }}</td>
           <td style="text-align:right;">
@@ -106,7 +106,7 @@
             <td>{{ p.rubrique.nom|default:"—" }}</td>
             <td>{{ p.get_mode_paiement_display }}</td>
             <td class="text-secondary">{{ p.encaisse_par.get_full_name|default:"—" }}</td>
-            <td style="text-align:right;" class="fw-medium">{{ p.montant|floatformat:0 }}</td>
+            <td style="text-align:right;" class="fw-medium">{{ p.montant|floatformat:"0g" }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -130,7 +130,7 @@
           <td>{{ r.paiement.rubrique.nom|default:"—" }}</td>
           <td class="text-secondary">{{ r.motif }}</td>
           <td class="text-secondary">{{ r.rembourse_par.get_full_name|default:"—" }}</td>
-          <td style="text-align:right;">− {{ r.montant|floatformat:0 }}</td>
+          <td style="text-align:right;">− {{ r.montant|floatformat:"0g" }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -148,10 +148,10 @@
         <tr>
           <td><a href="?date={{ c.date|date:'Y-m-d' }}&caissier={{ c.caissier.pk }}">{{ c.date|date:"d/m/Y" }}</a></td>
           <td>{{ c.caissier.get_full_name }}</td>
-          <td style="text-align:right;">{{ c.total_encaisse|floatformat:0 }}</td>
-          <td style="text-align:right;">{{ c.especes_theoriques|floatformat:0 }}</td>
-          <td style="text-align:right;">{{ c.montant_compte|floatformat:0 }}</td>
-          <td style="text-align:right;" class="{% if c.ecart %}text-danger fw-bold{% endif %}">{{ c.ecart|floatformat:0 }}</td>
+          <td style="text-align:right;">{{ c.total_encaisse|floatformat:"0g" }}</td>
+          <td style="text-align:right;">{{ c.especes_theoriques|floatformat:"0g" }}</td>
+          <td style="text-align:right;">{{ c.montant_compte|floatformat:"0g" }}</td>
+          <td style="text-align:right;" class="{% if c.ecart %}text-danger fw-bold{% endif %}">{{ c.ecart|floatformat:"0g" }}</td>
         </tr>
         {% endfor %}
       </tbody>

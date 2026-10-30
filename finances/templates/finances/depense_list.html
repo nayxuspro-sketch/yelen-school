@@ -94,7 +94,7 @@
       </div>
       <div>
         <p class="stat-label">Total dépensé (validé)</p>
-        <p class="stat-value">{{ total_valide|floatformat:0 }} FCFA</p>
+        <p class="stat-value">{{ total_valide|floatformat:"0g" }} FCFA</p>
       </div>
     </div>
   </div>
@@ -129,7 +129,7 @@
               <span class="badge badge-outline">{{ dep.categorie.nom }}</span>
             </td>
             <td>{{ dep.beneficiaire|default:"—" }}</td>
-            <td class="text-right fw-600">{{ dep.montant|floatformat:0 }} FCFA</td>
+            <td class="text-right fw-600">{{ dep.montant|floatformat:"0g" }} FCFA</td>
             <td>
               {% if dep.statut == 'VALIDEE' %}
                 <span class="badge badge-success">Validée</span>

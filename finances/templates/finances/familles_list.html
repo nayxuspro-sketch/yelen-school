@@ -28,7 +28,7 @@
     <input type="text" name="q" value="{{ q }}" placeholder="Responsable, téléphone ou élève…" class="input" style="max-width:20rem;">
     <button type="submit" class="btn-secondary">Rechercher</button>
     <span class="badge badge-neutral">{{ familles|length }} famille(s) · {{ nb_enfants }} enfant(s)</span>
-    <span class="badge badge-warning">Reste à payer : {{ total_reste|floatformat:0 }} FCFA</span>
+    <span class="badge badge-warning">Reste à payer : {{ total_reste|floatformat:"0g" }} FCFA</span>
   </form>
 
   {% for f in familles %}
@@ -39,9 +39,9 @@
         {% if f.telephone %}<span class="text-secondary" style="margin-left:0.75rem;">{{ f.telephone }}</span>{% endif %}
       </div>
       <div class="d-flex gap-3">
-        <span class="badge badge-neutral">Dû {{ f.total_du|floatformat:0 }}</span>
-        <span class="badge badge-success">Payé {{ f.total_paye|floatformat:0 }}</span>
-        <span class="badge {% if f.reste_a_payer %}badge-warning{% else %}badge-success{% endif %}">Reste {{ f.reste_a_payer|floatformat:0 }} FCFA</span>
+        <span class="badge badge-neutral">Dû {{ f.total_du|floatformat:"0g" }}</span>
+        <span class="badge badge-success">Payé {{ f.total_paye|floatformat:"0g" }}</span>
+        <span class="badge {% if f.reste_a_payer %}badge-warning{% else %}badge-success{% endif %}">Reste {{ f.reste_a_payer|floatformat:"0g" }} FCFA</span>
       </div>
     </div>
     <table class="data-table">
@@ -53,10 +53,10 @@
           <td class="fw-medium">{{ e.inscription.eleve.get_nom_complet }}<br><span class="text-secondary" style="font-size:0.8em;">{{ e.inscription.eleve.matricule }} · né(e) le {{ e.inscription.eleve.date_naissance|date:"d/m/Y" }}</span></td>
           <td>{{ e.inscription.classe.nom }}</td>
           <td class="text-secondary">{{ e.inscription.statut_eleve.nom|default:"—" }}</td>
-          <td style="text-align:right;">{{ e.total_du|floatformat:0 }}</td>
-          <td style="text-align:right;">{% if e.total_reduction %}− {{ e.total_reduction|floatformat:0 }}{% else %}—{% endif %}</td>
-          <td style="text-align:right;">{{ e.total_paye|floatformat:0 }}</td>
-          <td style="text-align:right;" class="{% if e.reste_a_payer %}text-danger fw-bold{% endif %}">{{ e.reste_a_payer|floatformat:0 }}</td>
+          <td style="text-align:right;">{{ e.total_du|floatformat:"0g" }}</td>
+          <td style="text-align:right;">{% if e.total_reduction %}− {{ e.total_reduction|floatformat:"0g" }}{% else %}—{% endif %}</td>
+          <td style="text-align:right;">{{ e.total_paye|floatformat:"0g" }}</td>
+          <td style="text-align:right;" class="{% if e.reste_a_payer %}text-danger fw-bold{% endif %}">{{ e.reste_a_payer|floatformat:"0g" }}</td>
           <td style="text-align:right;"><a href="{% url 'finances:situation_eleve' e.inscription.pk %}" class="btn-secondary btn-sm">Situation →</a></td>
         </tr>
         {% endfor %}

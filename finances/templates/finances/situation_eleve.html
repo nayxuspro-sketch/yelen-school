@@ -129,7 +129,7 @@
           {% for f in frais_details %}
           <div class="sit-row">
             <span class="sit-row-lbl" title="{{ f.libelle|default:f.rubrique.nom }}">{{ f.libelle|default:f.rubrique.nom }}</span>
-            <span class="sit-row-val">{{ f.montant|floatformat:0 }} <small class="text-muted">FCFA</small></span>
+            <span class="sit-row-val">{{ f.montant|floatformat:"0g" }} <small class="text-muted">FCFA</small></span>
           </div>
           {% empty %}
           <p class="text-muted text-center text-sm">Aucun tarif configuré pour ce profil.</p>
@@ -162,7 +162,7 @@
               <div class="sit-row-sub">{{ b.rubrique.nom|default:"Globale" }}</div>
             </div>
             <div class="sit-row-actions">
-              <span class="sit-row-val sit-row-val-green">− {{ b.montant_accorde|floatformat:0 }} F</span>
+              <span class="sit-row-val sit-row-val-green">− {{ b.montant_accorde|floatformat:"0g" }} F</span>
               <a href="{% url 'finances:bourse_edit' b.id %}" class="btn-icon" title="Modifier">
                 <svg aria-hidden="true" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -187,7 +187,7 @@
           {% if bourses %}
           <div class="sit-reduction-total">
             <span class="text-secondary">Total réductions</span>
-            <span class="color-primary">− {{ total_reduction|floatformat:0 }} FCFA</span>
+            <span class="color-primary">− {{ total_reduction|floatformat:"0g" }} FCFA</span>
           </div>
           {% endif %}
         </div>
@@ -220,7 +220,7 @@
               <div class="sit-row-sub">{{ a.periodes_libelle }}</div>
             </div>
             <div class="sit-row-actions">
-              <span class="sit-row-val">{{ a.montant_total|floatformat:0 }} F</span>
+              <span class="sit-row-val">{{ a.montant_total|floatformat:"0g" }} F</span>
               {% if request|autorise_url:'finances:abonnement_edit' %}
               <a href="{% url 'finances:abonnement_edit' a.id %}" class="btn-icon" title="Modifier">
                 <svg aria-hidden="true" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,7 +267,7 @@
               <div class="sit-row-sub">{{ cr.get_origine_display }} · {{ cr.date_creance|date:"d/m/Y" }} · rubrique {{ cr.rubrique.nom }}</div>
             </div>
             <div class="sit-row-actions">
-              <span class="sit-row-val">{{ cr.montant|floatformat:0 }} F</span>
+              <span class="sit-row-val">{{ cr.montant|floatformat:"0g" }} F</span>
               {% if request|autorise_url:'finances:creance_annuler' %}
               <form method="post" action="{% url 'finances:creance_annuler' cr.id %}" data-csp-confirm-submit="Annuler cette créance ? Le montant ne sera plus dû." class="d-inline">
                 {% csrf_token %}
@@ -343,9 +343,9 @@
             <tr>
               <td class="fw-medium"><a href="{% url 'finances:situation_eleve' e.inscription.pk %}">{{ e.inscription.eleve.get_nom_complet }}</a></td>
               <td class="text-secondary">{{ e.inscription.classe.nom }}</td>
-              <td style="text-align:right;">{{ e.total_du|floatformat:0 }}</td>
-              <td style="text-align:right;">{{ e.total_paye|floatformat:0 }}</td>
-              <td style="text-align:right;" class="{% if e.reste_a_payer %}text-danger fw-bold{% endif %}">{{ e.reste_a_payer|floatformat:0 }} FCFA</td>
+              <td style="text-align:right;">{{ e.total_du|floatformat:"0g" }}</td>
+              <td style="text-align:right;">{{ e.total_paye|floatformat:"0g" }}</td>
+              <td style="text-align:right;" class="{% if e.reste_a_payer %}text-danger fw-bold{% endif %}">{{ e.reste_a_payer|floatformat:"0g" }} FCFA</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -478,7 +478,7 @@
                 <td class="fw-medium">{{ p.rubrique.nom|default:"—" }}</td>
                 <td class="text-secondary">{{ p.get_mode_paiement_display }}{% if p.mode_paiement == 'MOBILE_MONEY' %} {% if p.ligne_releve %}<span class="badge badge-success" title="Confirmé par le relevé {{ p.ligne_releve.get_operateur_display }}">Rapproché</span>{% else %}<span class="badge badge-warning" title="En attente de confirmation par un relevé Mobile Money">À rapprocher</span>{% endif %}{% endif %}</td>
                 <td class="text-mono text-xs text-muted">{{ p.reference|default:"—" }}</td>
-                <td class="td-right fw-bold color-success">{{ p.montant }} <span class="text-muted">FCFA</span></td>
+                <td class="td-right fw-bold color-success">{{ p.montant|floatformat:"0g" }} <span class="text-muted">FCFA</span></td>
                 <td class="td-narrow">
                   <a href="{% url 'finances:remboursement_create' p.pk %}" class="btn-icon text-danger" title="Rembourser ce versement">
                     <svg aria-hidden="true" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,10 +546,10 @@
                 <td class="text-muted text-sm">{{ remb.motif|default:"—" }}</td>
                 <td class="text-muted text-xs">{{ remb.rembourse_par.get_full_name|default:"—" }}</td>
                 <td class="td-right fw-bold color-danger">
-                  − {{ remb.montant|floatformat:0 }} <span class="text-muted">FCFA</span>
+                  − {{ remb.montant|floatformat:"0g" }} <span class="text-muted">FCFA</span>
                 </td>
                 <td class="td-narrow">
-                  <form method="post" action="{% url 'finances:remboursement_delete' remb.pk %}" class="d-inline" data-csp-confirm-submit="Annuler ce remboursement de {{ remb.montant|floatformat:0 }} FCFA ?" >
+                  <form method="post" action="{% url 'finances:remboursement_delete' remb.pk %}" class="d-inline" data-csp-confirm-submit="Annuler ce remboursement de {{ remb.montant|floatformat:"0g" }} FCFA ?" >
                     {% csrf_token %}
                     <button type="submit" class="btn-icon text-danger" title="Annuler ce remboursement">
                       <svg aria-hidden="true" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -622,7 +622,7 @@
                   {% endif %}
                 </td>
                 <td>{{ rel.rubrique.nom|default:"—" }}</td>
-                <td class="td-right fw-bold">{{ rel.montant_reclame|floatformat:0 }} <span class="text-muted">FCFA</span></td>
+                <td class="td-right fw-bold">{{ rel.montant_reclame|floatformat:"0g" }} <span class="text-muted">FCFA</span></td>
                 <td class="text-muted text-sm">{{ rel.envoye_par.get_full_name|default:"—" }}</td>
                 <td class="text-muted text-xs">{{ rel.detail|default:"—" }}</td>
               </tr>

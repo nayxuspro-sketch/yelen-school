@@ -96,15 +96,15 @@ body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; line-h
             <table>
                 <tr>
                     <td>Total des frais scolaires</td>
-                    <td>{{ total_du|floatformat:0 }} FCFA</td>
+                    <td>{{ total_du|floatformat:"0g" }} FCFA</td>
                 </tr>
                 <tr>
                     <td>Montant payé</td>
-                    <td>{{ total_paye|floatformat:0 }} FCFA</td>
+                    <td>{{ total_paye|floatformat:"0g" }} FCFA</td>
                 </tr>
                 <tr class="reste-row">
                     <td>Reste à payer</td>
-                    <td>{{ reste_a_payer|floatformat:0 }} FCFA</td>
+                    <td>{{ reste_a_payer|floatformat:"0g" }} FCFA</td>
                 </tr>
             </table>
         </div>
@@ -113,7 +113,7 @@ body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; line-h
             {% if est_regulier %}
             ✓ CET ÉLÈVE EST EN RÈGLE
             {% else %}
-            ⚠ RESTE À PAYER : {{ reste_a_payer|floatformat:0 }} FCFA
+            ⚠ RESTE À PAYER : {{ reste_a_payer|floatformat:"0g" }} FCFA
             {% endif %}
         </div>
 

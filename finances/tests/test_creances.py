@@ -57,7 +57,7 @@ def test_plafond_et_rubriques_encaissables(client, ecole):
     ins, rubrique = ecole['inscription'], ecole['rubrique']
     assert _payment_overage_errors(ins, [(rubrique, Decimal('4500'), None)]) == []
     erreurs = _payment_overage_errors(ins, [(rubrique, Decimal('4501'), None)])
-    assert len(erreurs) == 1 and 'dépasse le reste à payer 4,500 FCFA' in erreurs[0]
+    assert len(erreurs) == 1 and 'dépasse le reste à payer 4\xa0500 FCFA' in erreurs[0]
 
     _connecter(client, ecole, 'COMPTABLE')
     data = client.get(reverse('finances:api_rubriques', kwargs={'inscription_id': ins.pk})).json()

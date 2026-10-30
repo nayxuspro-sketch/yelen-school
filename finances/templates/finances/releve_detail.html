@@ -26,25 +26,25 @@
 <div class="stats-grid animate-fade-up delay-1">
   <div class="stat-card">
     <div>
-      <div class="stat-value">{{ totaux.total|default:0|floatformat:0 }} <span class="text-sm text-muted">FCFA</span></div>
-      <div class="stat-label">{{ nb_lignes }} transaction(s) — frais {{ totaux.frais|default:0|floatformat:0 }} FCFA</div>
+      <div class="stat-value">{{ totaux.total|default:0|floatformat:"0g" }} <span class="text-sm text-muted">FCFA</span></div>
+      <div class="stat-label">{{ nb_lignes }} transaction(s) — frais {{ totaux.frais|default:0|floatformat:"0g" }} FCFA</div>
     </div>
   </div>
   <div class="stat-card stat-card-accent" style="--accent-color: var(--color-success);">
     <div>
-      <div class="stat-value">{{ totaux.rapproche|default:0|floatformat:0 }} <span class="text-sm text-muted">FCFA</span></div>
+      <div class="stat-value">{{ totaux.rapproche|default:0|floatformat:"0g" }} <span class="text-sm text-muted">FCFA</span></div>
       <div class="stat-label">Rapproché — {{ totaux.nb_rapproche }} transaction(s)</div>
     </div>
   </div>
   <div class="stat-card stat-card-accent" style="--accent-color: var(--color-warning);">
     <div>
-      <div class="stat-value">{{ totaux.a_traiter|default:0|floatformat:0 }} <span class="text-sm text-muted">FCFA</span></div>
+      <div class="stat-value">{{ totaux.a_traiter|default:0|floatformat:"0g" }} <span class="text-sm text-muted">FCFA</span></div>
       <div class="stat-label">À traiter — {{ totaux.nb_a_traiter }} transaction(s)</div>
     </div>
   </div>
   <div class="stat-card stat-card-accent" style="--accent-color: var(--color-danger);">
     <div>
-      <div class="stat-value">{{ totaux.ignore|default:0|floatformat:0 }} <span class="text-sm text-muted">FCFA</span></div>
+      <div class="stat-value">{{ totaux.ignore|default:0|floatformat:"0g" }} <span class="text-sm text-muted">FCFA</span></div>
       <div class="stat-label">Exclu — {{ totaux.nb_ignore }} transaction(s)</div>
     </div>
   </div>
@@ -100,7 +100,7 @@
           <td class="text-mono text-xs">{{ l.numero_transaction }}</td>
           <td class="text-xs">{{ l.nom_payeur }}{% if l.telephone_payeur %}<br><span class="text-muted">{{ l.telephone_payeur }}</span>{% endif %}</td>
           <td class="text-xs">{{ l.motif|default:"—" }}</td>
-          <td class="td-right fw-semibold">{{ l.montant|floatformat:0 }} FCFA</td>
+          <td class="td-right fw-semibold">{{ l.montant|floatformat:"0g" }} FCFA</td>
           <td>
             {% if l.inscription %}
               <a href="{% url 'finances:situation_eleve' l.inscription.pk %}">{{ l.inscription.eleve.nom }} {{ l.inscription.eleve.prenom }}</a>

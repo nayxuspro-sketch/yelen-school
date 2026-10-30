@@ -82,7 +82,7 @@
           <td class="fw-medium">{{ b.personnel.get_nom_complet }}</td>
           <td class="text-secondary">{{ b.get_mois_display }} {{ b.annee }}</td>
           <td class="fw-medium">{{ b.total_heures }}h</td>
-          <td class="fw-semibold text-warning">{{ b.montant_total|floatformat:0 }} FCFA</td>
+          <td class="fw-semibold text-warning">{{ b.montant_total|floatformat:"0g" }} FCFA</td>
           <td>
             {% if b.statut == 'PAYE' %}
               <span class="badge badge-success">Payé</span>

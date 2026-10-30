@@ -13,7 +13,7 @@
     </a>
     <div>
       <h1 class="page-title">Saisie des heures</h1>
-      <p class="page-subtitle">{{ contrat.personnel.get_nom_complet }} · {{ contrat.annee_scolaire.libelle }} · {{ contrat.taux_horaire|floatformat:0 }} FCFA/h</p>
+      <p class="page-subtitle">{{ contrat.personnel.get_nom_complet }} · {{ contrat.annee_scolaire.libelle }} · {{ contrat.taux_horaire|floatformat:"0g" }} FCFA/h</p>
     </div>
   </div>
 </div>
@@ -99,7 +99,7 @@
           <td class="text-secondary">{{ h.heures_effectuees }}h</td>
           <td class="text-danger">{{ h.heures_annulees }}h</td>
           <td class="fw-medium">{{ h.heures_nettes }}h</td>
-          <td class="fw-semibold text-warning">{{ h.montant_du|floatformat:0 }} FCFA</td>
+          <td class="fw-semibold text-warning">{{ h.montant_du|floatformat:"0g" }} FCFA</td>
           <td>
             {% if h.est_valide %}
               <span class="badge badge-success">Validé</span>

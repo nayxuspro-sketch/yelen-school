@@ -55,7 +55,7 @@
                         {% endif %}
                     </td>
                     <td>{{ t.rubrique.nom }}</td>
-                    <td style="text-align:right;" class="fw-semibold text-warning">{{ t.montant|floatformat:0 }} FCFA</td>
+                    <td style="text-align:right;" class="fw-semibold text-warning">{{ t.montant|floatformat:"0g" }} FCFA</td>
                     <td>
                         {% if t.actif %}
                         <span class="badge badge-success">Actif</span>

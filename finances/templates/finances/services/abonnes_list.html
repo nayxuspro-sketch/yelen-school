@@ -63,9 +63,9 @@
           <td class="fw-medium">{{ a.inscription.eleve.nom }} {{ a.inscription.eleve.prenom }}<br><code class="text-sm">{{ a.inscription.eleve.matricule }}</code></td>
           <td>{{ a.formule.libelle }}</td>
           <td class="text-sm">{{ a.periodes_libelle }}</td>
-          <td class="text-right">{{ a.montant_total|floatformat:0|intcomma }}</td>
-          <td class="text-right">{{ a.verse|floatformat:0|intcomma }}</td>
-          <td class="text-right fw-semibold {% if a.reste > 0 %}text-danger{% else %}text-success{% endif %}">{{ a.reste|floatformat:0|intcomma }}</td>
+          <td class="text-right">{{ a.montant_total|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right">{{ a.verse|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right fw-semibold {% if a.reste > 0 %}text-danger{% else %}text-success{% endif %}">{{ a.reste|floatformat:"0g"|intcomma }}</td>
           <td class="text-right">
             <a href="{% url 'finances:situation_eleve' a.inscription_id %}" class="btn-secondary btn-sm" title="Situation financière">Situation</a>
           </td>
@@ -78,9 +78,9 @@
       <tfoot>
         <tr class="fw-semibold">
           <td colspan="4">Total — {{ abonnements|length }} abonnement(s)</td>
-          <td class="text-right">{{ totaux.du|floatformat:0|intcomma }}</td>
-          <td class="text-right">{{ totaux.verse|floatformat:0|intcomma }}</td>
-          <td class="text-right">{{ totaux.reste|floatformat:0|intcomma }}</td>
+          <td class="text-right">{{ totaux.du|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right">{{ totaux.verse|floatformat:"0g"|intcomma }}</td>
+          <td class="text-right">{{ totaux.reste|floatformat:"0g"|intcomma }}</td>
           <td></td>
         </tr>
       </tfoot>

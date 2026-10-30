@@ -160,15 +160,15 @@ tr:nth-child(even) { background: #f4f4f4; }
 <div class="resume">
     <div class="r-box du">
         <div class="r-lbl">Total Dû</div>
-        <div class="r-val">{{ total_du|floatformat:0 }} <span>FCFA</span></div>
+        <div class="r-val">{{ total_du|floatformat:"0g" }} <span>FCFA</span></div>
     </div>
     <div class="r-box paye">
         <div class="r-lbl">Total Versé</div>
-        <div class="r-val">{{ total_paye|floatformat:0 }} <span>FCFA</span></div>
+        <div class="r-val">{{ total_paye|floatformat:"0g" }} <span>FCFA</span></div>
     </div>
     <div class="r-box reste">
         <div class="r-lbl">Reste à Payer</div>
-        <div class="r-val">{{ reste_total|floatformat:0 }} <span>FCFA</span></div>
+        <div class="r-val">{{ reste_total|floatformat:"0g" }} <span>FCFA</span></div>
     </div>
 </div>
 
@@ -187,9 +187,9 @@ tr:nth-child(even) { background: #f4f4f4; }
         {% for ligne in lignes_rubriques %}
         <tr>
             <td>{{ ligne.rubrique.nom|default:"Divers" }}</td>
-            <td class="r">{% if ligne.montant_du %}{{ ligne.montant_du|floatformat:0 }}{% else %}—{% endif %}</td>
-            <td class="r">{{ ligne.verse|floatformat:0 }}</td>
-            <td class="r">{% if ligne.reste %}{{ ligne.reste|floatformat:0 }}{% else %}0{% endif %}</td>
+            <td class="r">{% if ligne.montant_du %}{{ ligne.montant_du|floatformat:"0g" }}{% else %}—{% endif %}</td>
+            <td class="r">{{ ligne.verse|floatformat:"0g" }}</td>
+            <td class="r">{% if ligne.reste %}{{ ligne.reste|floatformat:"0g" }}{% else %}0{% endif %}</td>
             <td class="c">
                 {% if ligne.reste == 0 or not ligne.reste %}
                     <span class="badge-ok">✓ Soldé</span>
@@ -204,9 +204,9 @@ tr:nth-child(even) { background: #f4f4f4; }
         {% if lignes_rubriques %}
         <tr class="total-row">
             <td>TOTAL</td>
-            <td class="r">{{ total_du|floatformat:0 }} FCFA</td>
-            <td class="r">{{ total_paye|floatformat:0 }} FCFA</td>
-            <td class="r">{{ reste_total|floatformat:0 }} FCFA</td>
+            <td class="r">{{ total_du|floatformat:"0g" }} FCFA</td>
+            <td class="r">{{ total_paye|floatformat:"0g" }} FCFA</td>
+            <td class="r">{{ reste_total|floatformat:"0g" }} FCFA</td>
             <td class="c">
                 {% if reste_total == 0 %}<span class="badge-ok">✓ Soldé</span>
                 {% else %}<span class="badge-reste">En cours</span>{% endif %}

@@ -1,6 +1,6 @@
 {% if montant %}
 <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.9rem; {% if danger %}color: var(--color-danger);{% endif %}">
   <span style="color: {% if danger %}inherit{% else %}var(--color-text-muted){% endif %};">{{ label }}</span>
-  <span style="font-family: var(--font-mono);">{% if danger %}- {% endif %}{{ montant|floatformat:"0" }} F</span>
+  <span style="font-family: var(--font-mono);">{% if danger %}- {% endif %}{{ montant|floatformat:"0g" }} F</span>
 </div>
 {% endif %}

@@ -105,7 +105,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
             </div>
-            <div class="stat-value">{{ total_encaissement|floatformat:0 }}</div>
+            <div class="stat-value">{{ total_encaissement|floatformat:"0g" }}</div>
             <div class="stat-label">Total Encaissé (FCFA)</div>
         </div>
         <div class="stat-card" style="--accent-color: #17A2B8">
@@ -138,7 +138,7 @@
                         <div class="barh-track">
                             <div class="barh-fill" style="width:{% widthratio data.total max_mode.1.total 100 %}%; background:{% cycle '#00A86B' '#17A2B8' '#F5A623' '#DC3545' '#A259FF' '#EC4899' '#14B8A6' '#F97316' %};"></div>
                         </div>
-                        <span class="barh-value">{{ data.total|floatformat:0 }}</span>
+                        <span class="barh-value">{{ data.total|floatformat:"0g" }}</span>
                     </div>
                     {% empty %}
                     <p class="text-muted text-sm">Aucune donnée</p>
@@ -157,7 +157,7 @@
                         <tr>
                             <td>{{ mode }}</td>
                             <td class="td-right">{{ data.count }}</td>
-                            <td class="td-right fw-bold">{{ data.total|floatformat:0 }}</td>
+                            <td class="td-right fw-bold">{{ data.total|floatformat:"0g" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -183,7 +183,7 @@
                         <div class="barh-track">
                             <div class="barh-fill barh-fill-primary" style="width:{% widthratio data.total max_jour.1.total 100 %}%;"></div>
                         </div>
-                        <span class="barh-value">{{ data.total|floatformat:0 }}</span>
+                        <span class="barh-value">{{ data.total|floatformat:"0g" }}</span>
                     </div>
                     {% empty %}
                     <p class="text-muted text-sm">Aucune donnée</p>
@@ -202,7 +202,7 @@
                         <tr>
                             <td>{{ jour }}</td>
                             <td class="td-right">{{ data.count }}</td>
-                            <td class="td-right fw-bold">{{ data.total|floatformat:0 }}</td>
+                            <td class="td-right fw-bold">{{ data.total|floatformat:"0g" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -233,7 +233,7 @@
                     <div class="barh-track">
                         <div class="barh-fill" style="width:{% widthratio c.total max_cycle.total 100 %}%; background:{% cycle '#00A86B' '#17A2B8' '#F5A623' '#DC3545' %};"></div>
                     </div>
-                    <span class="barh-value">{{ c.total|floatformat:0 }}</span>
+                    <span class="barh-value">{{ c.total|floatformat:"0g" }}</span>
                 </div>
                 {% empty %}
                 <p class="text-muted text-sm">Aucune donnée</p>
@@ -251,14 +251,14 @@
             <div class="d-flex align-center gap-3">
                 <span class="fw-semibold">{{ cycle_data.cycle.nom }}</span>
             </div>
-            <span class="badge badge-success">{{ cycle_data.total|floatformat:0 }} FCFA</span>
+            <span class="badge badge-success">{{ cycle_data.total|floatformat:"0g" }} FCFA</span>
         </div>
 
         {% for classe_data in cycle_data.classes %}
         <div class="section-row">
             <div class="d-flex justify-between align-center mb-3">
                 <span class="fw-semibold">{{ classe_data.classe.nom }}</span>
-                <span class="badge badge-warning">{{ classe_data.total|floatformat:0 }} FCFA</span>
+                <span class="badge badge-warning">{{ classe_data.total|floatformat:"0g" }} FCFA</span>
             </div>
 
             <table class="data-table">
@@ -278,7 +278,7 @@
                         <td class="fw-medium">{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
                         <td>{{ p.rubrique.nom|default:"—" }}</td>
                         <td>{{ p.mode_paiement|default:"—" }}</td>
-                        <td class="td-right fw-bold color-success">{{ p.montant|floatformat:0 }}</td>
+                        <td class="td-right fw-bold color-success">{{ p.montant|floatformat:"0g" }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

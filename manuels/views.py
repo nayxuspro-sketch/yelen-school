@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from core.utils import get_etablissement_context
+from core.utils import fcfa, get_etablissement_context
 from finances.models import Creance, OrigineCreance
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, RubriquePaiement
@@ -332,7 +332,7 @@ def attribution_retour(request, pk):
         if creance and creance.actif:   # manuel finalement rendu : la pénalité n'est plus due
             creance.annuler(f"Manuel rendu le {date.fromisoformat(str(attribution.date_retour)):%d/%m/%Y}")
             messages.success(request, f"Retour enregistré. La créance « manuel non rendu » de "
-                                      f"{creance.montant:,.0f} FCFA est annulée.")
+                                      f"{fcfa(creance.montant)} est annulée.")
         else:
             messages.success(request, "Retour enregistré.")
         return redirect('manuels:attributions_list')
@@ -413,7 +413,7 @@ def facturer_non_rendu(request, pk):
 
     messages.success(
         request,
-        f"Créance de {manuel.prix_remplacement:,.0f} FCFA émise pour {eleve.nom} {eleve.prenom} : "
+        f"Créance de {fcfa(manuel.prix_remplacement)} émise pour {eleve.nom} {eleve.prenom} : "
         f"elle figure dans son reste à payer (Finances) et s'encaisse sur la rubrique « {rubrique.nom} ». "
         f"Les parents ont été notifiés par SMS."
     )
@@ -428,12 +428,12 @@ def _notifier_parents_manuel_non_rendu(eleve, manuel, etab):
     titre = f"Manuel non rendu — {manuel.titre}"
     message_inapp = (
         f"{eleve.nom} {eleve.prenom} n'a pas rendu le manuel « {manuel.titre} ». "
-        f"Des frais de {manuel.prix_remplacement:,.0f} FCFA ont été ajoutés à son reste à payer."
+        f"Des frais de {fcfa(manuel.prix_remplacement)} ont été ajoutés à son reste à payer."
     )
     sms_texte = (
         f"[{etab.nom}] Manuel non rendu : {eleve.nom} {eleve.prenom} "
         f"doit restituer '{manuel.titre}'. "
-        f"Frais a regler : {manuel.prix_remplacement:,.0f} FCFA."
+        f"Frais a regler : {fcfa(manuel.prix_remplacement)}."
     )
 
     from core.sms import sms_actifs

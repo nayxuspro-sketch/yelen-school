@@ -41,7 +41,7 @@
           <td>{{ t.get_type_reduction_display }}</td>
           <td class="fw-semibold">
             {% if t.type_reduction == 'POURCENTAGE' %}{{ t.valeur_reduction }}%
-            {% else %}{{ t.valeur_reduction|floatformat:0 }} FCFA{% endif %}
+            {% else %}{{ t.valeur_reduction|floatformat:"0g" }} FCFA{% endif %}
           </td>
           <td class="text-secondary text-sm">{{ t.rubrique.nom|default:"Globale" }}</td>
           <td>

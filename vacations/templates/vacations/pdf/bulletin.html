@@ -177,15 +177,15 @@ tbody td.right { text-align: right; }
       <td class="right">{{ h.heures_effectuees }}</td>
       <td class="right">{{ h.heures_annulees }}</td>
       <td class="right">{{ h.heures_nettes }}</td>
-      <td class="right">{{ h.contrat.taux_horaire|floatformat:0 }}</td>
-      <td class="right">{{ h.montant_du|floatformat:0 }}</td>
+      <td class="right">{{ h.contrat.taux_horaire|floatformat:"0g" }}</td>
+      <td class="right">{{ h.montant_du|floatformat:"0g" }}</td>
     </tr>
     {% endfor %}
     <tr class="total-row">
       <td colspan="4">TOTAL</td>
       <td class="right">{{ bulletin.total_heures }}</td>
       <td class="right">—</td>
-      <td class="right">{{ bulletin.montant_total|floatformat:0 }}</td>
+      <td class="right">{{ bulletin.montant_total|floatformat:"0g" }}</td>
     </tr>
   </tbody>
 </table>
@@ -194,7 +194,7 @@ tbody td.right { text-align: right; }
 <!-- Montant net à payer -->
 <div class="montant-bloc">
   <div class="label">MONTANT NET À PAYER</div>
-  <div class="valeur">{{ bulletin.montant_total|floatformat:0 }} FCFA</div>
+  <div class="valeur">{{ bulletin.montant_total|floatformat:"0g" }} FCFA</div>
 </div>
 
 {% if bulletin.reference_paiement %}

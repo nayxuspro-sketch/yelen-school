@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.23.0
+version_logiciel: 5.24.0
 version_guide: 5.16
-date_mise_a_jour: 30/10/2026 (5.23.0 : liste du personnel — récapitulatif par titre de capacité et par genre, §12.7)
+date_mise_a_jour: 30/10/2026 (5.24.0 : séparateur de milliers sur tous les montants et effectifs affichés, §0.4)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -200,6 +200,8 @@ Ce guide est organisé **par module**. Chaque section suit le même schéma :
 7. **Les messages système** — ce que tu vois si tout va bien, et si ça ne va pas
 
 > **Astuce :** Si tu cherches une fonction précise, utilise la table des matières ci-dessus pour aller directement à la bonne section.
+
+> **🔢 Lecture des nombres :** à l'écran, dans les PDF et dans les messages, les montants et effectifs sont écrits à la française, milliers séparés par une espace (« 150 000 FCFA », « 1 250 élèves ») et décimales à la virgule (« 16,00 »). Les champs de saisie, eux, attendent le nombre brut (`150000`).
 
 > **🖼 Captures d'écran :** Ce guide inclut désormais des captures d'écran réelles de l'application (section 1). Les images sont situées dans le dossier `docs/screenshots/`. Elles illustrent l'interface telle qu'elle apparaît dans le navigateur.
 

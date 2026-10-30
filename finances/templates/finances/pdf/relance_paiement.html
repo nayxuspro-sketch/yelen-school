@@ -167,7 +167,7 @@ body {
     </p>
     <!-- Reste à payer (gauche) + Titre signataire (droite) sur la même ligne -->
     <div class="reste-sig-ligne">
-      <p class="reste-bloc">Reste à payer&nbsp;: <strong>{{ r.reste|floatformat:0 }} F</strong>.</p>
+      <p class="reste-bloc">Reste à payer&nbsp;: <strong>{{ r.reste|floatformat:"0g" }} F</strong>.</p>
       {% if signataire and signataire.fonction %}<div class="sig-titre">{{ signataire.fonction }}</div>{% endif %}
     </div>
   </div>

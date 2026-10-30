@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import ContratVacation, HeureVacation, BulletinVacation
+from core.utils import fcfa
 
 
 @admin.register(ContratVacation)
@@ -22,7 +23,7 @@ class HeureVacationAdmin(admin.ModelAdmin):
     heures_nettes.short_description = "Heures nettes"
 
     def montant_du(self, obj):
-        return f"{obj.montant_du:,.0f} FCFA"
+        return f"{fcfa(obj.montant_du)}"
     montant_du.short_description = "Montant dû"
 
 

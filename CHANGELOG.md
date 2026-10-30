@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.24.0 — 2026-10-30
+
+### Lisibilité des nombres : séparateur de milliers
+- Tous les montants affichés (écrans, PDF, confirmations) sont écrits « 150 000 » au lieu de « 150000 » : `floatformat:0` → `floatformat:"0g"` dans 65 gabarits (294 affichages), totaux de points des bulletins compris ; montants bruts de la situation élève, de la liste des paiements et de l'historique des versements alignés. Les champs de saisie numériques restent bruts.
+- Effectifs du tableau de bord et du tableau de bord réseau groupés de même (« 1 250 élèves »).
+- Messages et libellés calculés en Python : 24 montants passaient par le groupement anglais (« 150,000 FCFA », virgule lue comme décimale en français) → helper `core.utils.fcfa()` (« 150 000 FCFA »).
+- Garde-fou : un test refuse tout nouveau `floatformat:0` hors attribut de saisie et tout `:,.0f` suivi de FCFA. 2 tests.
+
 ## 5.23.0 — 2026-10-30
 
 ### Liste alphabétique du personnel (Documents → Liste du personnel)

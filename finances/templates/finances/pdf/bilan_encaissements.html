@@ -51,7 +51,7 @@ tr:nth-child(even) td { background: #f5f5f5; }
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-label">Total Encaissé</div>
-        <div class="stat-value">{{ total_encaissement|floatformat:0 }} FCFA</div>
+        <div class="stat-value">{{ total_encaissement|floatformat:"0g" }} FCFA</div>
     </div>
     <div class="stat-card">
         <div class="stat-label">Nombre de transactions</div>
@@ -70,7 +70,7 @@ tr:nth-child(even) td { background: #f5f5f5; }
             <tr>
                 <td>{{ mode }}</td>
                 <td class="right">{{ data.count }}</td>
-                <td class="right"><strong>{{ data.total|floatformat:0 }}</strong></td>
+                <td class="right"><strong>{{ data.total|floatformat:"0g" }}</strong></td>
             </tr>
             {% endfor %}
         </tbody>
@@ -88,7 +88,7 @@ tr:nth-child(even) td { background: #f5f5f5; }
             <tr>
                 <td>{{ jour }}</td>
                 <td class="right">{{ data.count }}</td>
-                <td class="right"><strong>{{ data.total|floatformat:0 }}</strong></td>
+                <td class="right"><strong>{{ data.total|floatformat:"0g" }}</strong></td>
             </tr>
             {% endfor %}
         </tbody>
@@ -97,10 +97,10 @@ tr:nth-child(even) td { background: #f5f5f5; }
 
 {% for cycle_data in cycles_list %}
 <div class="section">
-    <div class="section-title">{{ cycle_data.cycle.nom }} — {{ cycle_data.total|floatformat:0 }} FCFA</div>
+    <div class="section-title">{{ cycle_data.cycle.nom }} — {{ cycle_data.total|floatformat:"0g" }} FCFA</div>
     {% for classe_data in cycle_data.classes %}
     <div style="margin-bottom:15px; page-break-inside:avoid;">
-        <div class="classe-sub-header">{{ classe_data.classe.nom }} — {{ classe_data.total|floatformat:0 }} FCFA</div>
+        <div class="classe-sub-header">{{ classe_data.classe.nom }} — {{ classe_data.total|floatformat:"0g" }} FCFA</div>
         <table>
             <thead>
                 <tr><th>Date</th><th>Élève</th><th>Rubrique</th><th class="right">Montant</th></tr>
@@ -111,7 +111,7 @@ tr:nth-child(even) td { background: #f5f5f5; }
                     <td>{{ p.date_paiement|date:"d/m/Y" }}</td>
                     <td>{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
                     <td>{{ p.rubrique.nom|default:"—" }}</td>
-                    <td class="right"><strong>{{ p.montant|floatformat:0 }}</strong></td>
+                    <td class="right"><strong>{{ p.montant|floatformat:"0g" }}</strong></td>
                 </tr>
                 {% endfor %}
             </tbody>

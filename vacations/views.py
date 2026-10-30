@@ -15,7 +15,7 @@ from django.contrib import messages
 from django.template.loader import render_to_string
 
 from parametres.models import AnneeScolaire
-from core.utils import get_etablissement_context
+from core.utils import fcfa, get_etablissement_context
 from .models import ContratVacation, HeureVacation, BulletinVacation
 from .forms import ContratVacationForm
 
@@ -217,7 +217,7 @@ def generer_bulletin(request, contrat_id, mois, annee):
     messages.success(
         request,
         f"Bulletin de {bulletin.get_mois_display()} {annee} généré : "
-        f"{bulletin.total_heures}h — {bulletin.montant_total:,.0f} FCFA"
+        f"{bulletin.total_heures}h — {fcfa(bulletin.montant_total)}"
     )
     return redirect('vacations:bulletin_list')
 

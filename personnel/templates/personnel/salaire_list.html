@@ -71,11 +71,11 @@
       <tr>
         <td class="fw-bold">{{ s.personnel.get_nom_complet }}</td>
         <td>{{ s.get_mois_display }} {{ s.annee }}</td>
-        <td style="text-align: right;" class="text-mono">{{ s.salaire_brut|floatformat:"0" }} FCA</td>
+        <td style="text-align: right;" class="text-mono">{{ s.salaire_brut|floatformat:"0g" }} FCA</td>
         <td style="text-align: right; color: var(--color-danger);" class="text-mono">
-          {{ s.total_retenues|floatformat:"0" }} FCA
+          {{ s.total_retenues|floatformat:"0g" }} FCA
         </td>
-        <td style="text-align: right;" class="text-mono fw-bold">{{ s.salaire_net|floatformat:"0" }} FCA</td>
+        <td style="text-align: right;" class="text-mono fw-bold">{{ s.salaire_net|floatformat:"0g" }} FCA</td>
         <td>
           {% if s.statut == 'PAYE' %}
             <span class="badge badge-success">Payé</span>

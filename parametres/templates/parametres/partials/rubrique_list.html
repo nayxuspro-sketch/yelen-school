@@ -17,7 +17,7 @@
                 <tr {% if not r.actif %}class="opacity-50"{% endif %}>
                     <td class="fw-medium">{{ r.nom }}</td>
                     <td><span class="badge badge-neutral text-mono">{{ r.code }}</span></td>
-                    <td class="fw-semibold text-warning">{{ r.montant|default:0|floatformat:0 }} FCFA</td>
+                    <td class="fw-semibold text-warning">{{ r.montant|default:0|floatformat:"0g" }} FCFA</td>
                     <td>
                         {% if r.obligatoire %}
                         <span class="badge badge-success">Oui</span>

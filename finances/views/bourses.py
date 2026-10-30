@@ -16,7 +16,7 @@ import io
 from ..models import BourseEleve, TypeBourse, TypeReduction
 from inscriptions.models import Inscription
 from parametres.models import AnneeScolaire, Classe, RubriquePaiement
-from core.utils import get_etablissement_context
+from core.utils import fcfa, get_etablissement_context
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
 from .commun import WeasyHTML, _require_finance_role, _require_same_establishment
 
@@ -87,7 +87,7 @@ def bourse_create(request, inscription_id):
             )
             messages.success(
                 request,
-                f"Bourse \u00ab\u00a0{type_bourse.nom}\u00a0\u00bb de {montant:,.0f} FCFA attribuee a "
+                f"Bourse \u00ab\u00a0{type_bourse.nom}\u00a0\u00bb de {fcfa(montant)} attribuee a "
                 f"{inscription.eleve.get_nom_complet()}."
             )
             return redirect('finances:situation_eleve', inscription_id=inscription.pk)

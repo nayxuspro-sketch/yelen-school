@@ -287,8 +287,8 @@
             {% for s in salaires_recents %}
             <tr>
               <td>{{ s.get_mois_display }} {{ s.annee }}</td>
-              <td class="text-right font-mono">{{ s.salaire_brut|floatformat:"0" }}</td>
-              <td class="text-right font-mono fw-bold">{{ s.salaire_net|floatformat:"0" }}</td>
+              <td class="text-right font-mono">{{ s.salaire_brut|floatformat:"0g" }}</td>
+              <td class="text-right font-mono fw-bold">{{ s.salaire_net|floatformat:"0g" }}</td>
               <td>
                 {% if s.statut == 'PAYE' %}<span class="badge badge-success">Payé</span>
                 {% elif s.statut == 'VALIDE' %}<span class="badge badge-info">Validé</span>

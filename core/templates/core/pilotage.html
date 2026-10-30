@@ -52,19 +52,19 @@
 <div class="pil-kpis animate-fade-up">
   <div class="pil-kpi">
     <span class="pil-kpi-label">Recouvrement</span>
-    <span class="pil-kpi-value {% if recouvrement.taux < 50 %}pil-rouge{% elif recouvrement.taux < 80 %}pil-orange{% else %}pil-vert{% endif %}">{{ recouvrement.taux|floatformat:0 }} %</span>
-    <div class="pil-bar"><div class="pil-bar-fill" style="width:{{ recouvrement.taux|floatformat:0 }}%"></div></div>
-    <span class="pil-kpi-sub">{{ recouvrement.encaisse|floatformat:0|intcomma }} / {{ recouvrement.attendu|floatformat:0|intcomma }} FCFA</span>
+    <span class="pil-kpi-value {% if recouvrement.taux < 50 %}pil-rouge{% elif recouvrement.taux < 80 %}pil-orange{% else %}pil-vert{% endif %}">{{ recouvrement.taux|floatformat:"0g" }} %</span>
+    <div class="pil-bar"><div class="pil-bar-fill" style="width:{{ recouvrement.taux|floatformat:"0g" }}%"></div></div>
+    <span class="pil-kpi-sub">{{ recouvrement.encaisse|floatformat:"0g"|intcomma }} / {{ recouvrement.attendu|floatformat:"0g"|intcomma }} FCFA</span>
   </div>
   <div class="pil-kpi">
     <span class="pil-kpi-label">Impayés</span>
-    <span class="pil-kpi-value pil-rouge">{{ recouvrement.reste|floatformat:0|intcomma }}</span>
+    <span class="pil-kpi-value pil-rouge">{{ recouvrement.reste|floatformat:"0g"|intcomma }}</span>
     <span class="pil-kpi-sub">FCFA · {{ recouvrement.redevables }} élève{{ recouvrement.redevables|pluralize }} redevable{{ recouvrement.redevables|pluralize }}</span>
   </div>
   <div class="pil-kpi">
     <span class="pil-kpi-label">Effectifs</span>
     <span class="pil-kpi-value">{{ effectifs.total }}</span>
-    <span class="pil-kpi-sub">{{ effectifs.garcons }} G · {{ effectifs.filles }} F · {{ effectifs.classes }} classe{{ effectifs.classes|pluralize }} · remplissage {{ effectifs.taux_remplissage|floatformat:0 }} %</span>
+    <span class="pil-kpi-sub">{{ effectifs.garcons }} G · {{ effectifs.filles }} F · {{ effectifs.classes }} classe{{ effectifs.classes|pluralize }} · remplissage {{ effectifs.taux_remplissage|floatformat:"0g" }} %</span>
   </div>
   <div class="pil-kpi">
     <span class="pil-kpi-label">Absences (30 jours)</span>
@@ -100,9 +100,9 @@
             <td class="fw-semibold">{{ l.classe.nom }}</td>
             <td class="td-right">{{ l.effectif }}</td>
             <td class="td-right">{{ l.redevables }}</td>
-            <td class="td-right {% if l.reste %}pil-rouge fw-semibold{% endif %}">{{ l.reste|floatformat:0|intcomma }}</td>
+            <td class="td-right {% if l.reste %}pil-rouge fw-semibold{% endif %}">{{ l.reste|floatformat:"0g"|intcomma }}</td>
             <td class="td-right">
-              <span class="pil-mini"><span class="pil-bar"><span class="pil-bar-fill {% if l.taux < 50 %}is-rouge{% elif l.taux < 80 %}is-orange{% endif %}" style="width:{{ l.taux|floatformat:0 }}%"></span></span>{{ l.taux|floatformat:0 }} %</span>
+              <span class="pil-mini"><span class="pil-bar"><span class="pil-bar-fill {% if l.taux < 50 %}is-rouge{% elif l.taux < 80 %}is-orange{% endif %}" style="width:{{ l.taux|floatformat:"0g" }}%"></span></span>{{ l.taux|floatformat:"0g" }} %</span>
             </td>
           </tr>
           {% empty %}
@@ -111,7 +111,7 @@
         </tbody>
         {% if impayes %}
         <tfoot>
-          <tr class="fw-semibold"><td>Total</td><td class="td-right">{{ effectifs.total }}</td><td class="td-right">{{ recouvrement.redevables }}</td><td class="td-right pil-rouge">{{ recouvrement.reste|floatformat:0|intcomma }}</td><td class="td-right">{{ recouvrement.taux|floatformat:0 }} %</td></tr>
+          <tr class="fw-semibold"><td>Total</td><td class="td-right">{{ effectifs.total }}</td><td class="td-right">{{ recouvrement.redevables }}</td><td class="td-right pil-rouge">{{ recouvrement.reste|floatformat:"0g"|intcomma }}</td><td class="td-right">{{ recouvrement.taux|floatformat:"0g" }} %</td></tr>
         </tfoot>
         {% endif %}
       </table>
@@ -140,7 +140,7 @@
       <div><dt>Redoublants</dt><dd>{{ effectifs.redoublants }}</dd></div>
       <div><dt>Abandons</dt><dd class="{% if effectifs.abandons %}pil-rouge{% endif %}">{{ effectifs.abandons }}</dd></div>
       <div><dt>Capacité (places)</dt><dd>{{ effectifs.capacite }}</dd></div>
-      <div><dt>Remplissage</dt><dd>{{ effectifs.taux_remplissage|floatformat:0 }} %</dd></div>
+      <div><dt>Remplissage</dt><dd>{{ effectifs.taux_remplissage|floatformat:"0g" }} %</dd></div>
     </dl>
   </div>
 

@@ -33,7 +33,7 @@
             {% for g in groupes %}
             <optgroup label="{{ g.grouper.nom }} ({{ g.grouper.get_periodicite_display|lower }})">
               {% for f in g.list %}
-              <option value="{{ f.pk }}" {% if valeurs.formule == f.pk|stringformat:'s' %}selected{% endif %}>{{ f.libelle }} — {{ f.montant|floatformat:0|intcomma }} FCFA</option>
+              <option value="{{ f.pk }}" {% if valeurs.formule == f.pk|stringformat:'s' %}selected{% endif %}>{{ f.libelle }} — {{ f.montant|floatformat:"0g"|intcomma }} FCFA</option>
               {% endfor %}
             </optgroup>
             {% empty %}

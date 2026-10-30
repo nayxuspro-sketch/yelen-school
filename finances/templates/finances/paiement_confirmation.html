@@ -45,7 +45,7 @@
           <tr>
             <td class="fw-medium">{{ p.rubrique.nom|default:"—" }}</td>
             <td><span class="text-mono text-accent">{{ p.numero_recu|default:"—" }}</span></td>
-            <td class="td-right fw-bold">{{ p.montant|floatformat:"0" }} FCFA</td>
+            <td class="td-right fw-bold">{{ p.montant|floatformat:"0g" }} FCFA</td>
             <td class="td-right">
               <a href="{% url 'finances:recu_pdf' p.pk %}" class="btn-icon btn-icon-primary" target="_blank" title="Imprimer le reçu N°{{ p.numero_recu }}">
                 <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,7 +60,7 @@
         <tfoot>
           <tr>
             <td colspan="2" class="fw-bold">TOTAL</td>
-            <td class="td-right fw-bold text-accent" colspan="2">{{ total|floatformat:"0" }} FCFA</td>
+            <td class="td-right fw-bold text-accent" colspan="2">{{ total|floatformat:"0g" }} FCFA</td>
           </tr>
         </tfoot>
       </table>

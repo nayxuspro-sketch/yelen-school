@@ -67,7 +67,7 @@
               </span>
             </td>
             <td class="text-right">
-              {% if m.prix_remplacement %}{{ m.prix_remplacement|floatformat:0 }} FCFA{% else %}—{% endif %}
+              {% if m.prix_remplacement %}{{ m.prix_remplacement|floatformat:"0g" }} FCFA{% else %}—{% endif %}
             </td>
             <td class="text-right">
               <a href="{% url 'manuels:manuel_edit' pk=m.pk %}" class="btn-ghost btn-xs">Modifier</a>

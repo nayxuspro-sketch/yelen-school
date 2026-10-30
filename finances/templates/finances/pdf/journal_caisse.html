@@ -29,14 +29,14 @@ th.right, td.right { text-align: right; }
 
 <div class="stats-grid">
     {% for libelle, montant in totaux.par_mode %}
-    <div class="stat-card"><div class="stat-label">{{ libelle }}</div><div class="stat-value">{{ montant|floatformat:0 }}</div></div>
+    <div class="stat-card"><div class="stat-label">{{ libelle }}</div><div class="stat-value">{{ montant|floatformat:"0g" }}</div></div>
     {% endfor %}
-    <div class="stat-card"><div class="stat-label">Remboursements</div><div class="stat-value">− {{ totaux.total_rembourse|floatformat:0 }}</div></div>
-    <div class="stat-card"><div class="stat-label">Espèces attendues</div><div class="stat-value">{{ totaux.especes_theoriques|floatformat:0 }}</div></div>
+    <div class="stat-card"><div class="stat-label">Remboursements</div><div class="stat-value">− {{ totaux.total_rembourse|floatformat:"0g" }}</div></div>
+    <div class="stat-card"><div class="stat-label">Espèces attendues</div><div class="stat-value">{{ totaux.especes_theoriques|floatformat:"0g" }}</div></div>
 </div>
 
 <div class="section">
-    <div class="section-title">Encaissements ({{ paiements|length }}) — total {{ totaux.total|floatformat:0 }} FCFA</div>
+    <div class="section-title">Encaissements ({{ paiements|length }}) — total {{ totaux.total|floatformat:"0g" }} FCFA</div>
     <table>
         <thead><tr><th>Heure</th><th>Reçu</th><th>Élève</th><th>Classe</th><th>Rubrique</th><th>Mode</th>{% if not caissier %}<th>Caissier</th>{% endif %}<th class="right">Montant</th></tr></thead>
         <tbody>
@@ -45,7 +45,7 @@ th.right, td.right { text-align: right; }
                 <td>{{ p.created_at|date:"H:i" }}</td><td>{{ p.numero_recu }}</td><td>{{ p.inscription.eleve.get_nom_complet }}</td>
                 <td>{{ p.inscription.classe.nom }}</td><td>{{ p.rubrique.nom|default:"—" }}</td><td>{{ p.get_mode_paiement_display }}</td>
                 {% if not caissier %}<td>{{ p.encaisse_par.get_full_name|default:"—" }}</td>{% endif %}
-                <td class="right">{{ p.montant|floatformat:0 }}</td>
+                <td class="right">{{ p.montant|floatformat:"0g" }}</td>
             </tr>
         {% empty %}
             <tr><td colspan="8">Aucun encaissement.</td></tr>
@@ -56,12 +56,12 @@ th.right, td.right { text-align: right; }
 
 {% if remboursements %}
 <div class="section">
-    <div class="section-title">Remboursements ({{ remboursements|length }}) — total {{ totaux.total_rembourse|floatformat:0 }} FCFA</div>
+    <div class="section-title">Remboursements ({{ remboursements|length }}) — total {{ totaux.total_rembourse|floatformat:"0g" }} FCFA</div>
     <table>
         <thead><tr><th>Heure</th><th>Élève</th><th>Rubrique</th><th>Motif</th><th>Par</th><th class="right">Montant</th></tr></thead>
         <tbody>
         {% for r in remboursements %}
-            <tr><td>{{ r.created_at|date:"H:i" }}</td><td>{{ r.paiement.inscription.eleve.get_nom_complet }}</td><td>{{ r.paiement.rubrique.nom|default:"—" }}</td><td>{{ r.motif }}</td><td>{{ r.rembourse_par.get_full_name|default:"—" }}</td><td class="right">− {{ r.montant|floatformat:0 }}</td></tr>
+            <tr><td>{{ r.created_at|date:"H:i" }}</td><td>{{ r.paiement.inscription.eleve.get_nom_complet }}</td><td>{{ r.paiement.rubrique.nom|default:"—" }}</td><td>{{ r.motif }}</td><td>{{ r.rembourse_par.get_full_name|default:"—" }}</td><td class="right">− {{ r.montant|floatformat:"0g" }}</td></tr>
         {% endfor %}
         </tbody>
     </table>
@@ -75,7 +75,7 @@ th.right, td.right { text-align: right; }
         <thead><tr><th>Caissier</th><th class="right">Encaissé</th><th class="right">Espèces attendues</th><th class="right">Espèces comptées</th><th class="right">Écart</th><th>Observation</th><th>Arrêté par</th></tr></thead>
         <tbody>
         {% for c in clotures %}
-            <tr><td>{{ c.caissier.get_full_name }}</td><td class="right">{{ c.total_encaisse|floatformat:0 }}</td><td class="right">{{ c.especes_theoriques|floatformat:0 }}</td><td class="right">{{ c.montant_compte|floatformat:0 }}</td><td class="right">{{ c.ecart|floatformat:0 }}</td><td>{{ c.observation }}</td><td>{{ c.cloture_par.get_full_name|default:"—" }} ({{ c.created_at|date:"d/m/Y H:i" }})</td></tr>
+            <tr><td>{{ c.caissier.get_full_name }}</td><td class="right">{{ c.total_encaisse|floatformat:"0g" }}</td><td class="right">{{ c.especes_theoriques|floatformat:"0g" }}</td><td class="right">{{ c.montant_compte|floatformat:"0g" }}</td><td class="right">{{ c.ecart|floatformat:"0g" }}</td><td>{{ c.observation }}</td><td>{{ c.cloture_par.get_full_name|default:"—" }} ({{ c.created_at|date:"d/m/Y H:i" }})</td></tr>
         {% endfor %}
         </tbody>
     </table>

@@ -11,6 +11,7 @@ from ..models import ParametresFinances
 from ..permissions import FINANCE_VIEW_ROLES, FINANCE_WRITE_ROLES
 from ..selectors import annee_choisie
 from .commun import _require_finance_role
+from core.utils import fcfa
 
 
 def _annee(request, etab):
@@ -63,7 +64,7 @@ def remise_fratrie_appliquer(request):
         return redirect(retour)
     if creees:
         total = sum((b.montant_accorde for b in creees), 0)
-        messages.success(request, f"Remise fratrie attribuée à {len(creees)} enfant(s) — {total:,.0f} FCFA au total."
+        messages.success(request, f"Remise fratrie attribuée à {len(creees)} enfant(s) — {fcfa(total)} au total."
                          .replace(',', ' '))
     else:
         messages.info(request, "Aucune nouvelle remise à attribuer : toutes les fratries en bénéficient déjà.")

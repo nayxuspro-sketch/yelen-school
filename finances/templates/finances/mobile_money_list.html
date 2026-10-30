@@ -140,7 +140,7 @@
           <td>{{ d.inscription.eleve.nom }} {{ d.inscription.eleve.prenom }}</td>
           <td>{{ d.inscription.classe.nom }}</td>
           <td>{% if d.rubrique %}{{ d.rubrique.nom }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-          <td class="td-right fw-semibold">{{ d.montant|floatformat:0 }} FCFA</td>
+          <td class="td-right fw-semibold">{{ d.montant|floatformat:"0g" }} FCFA</td>
           <td>{{ d.telephone }}</td>
           <td>
             {% if d.statut == 'EN_ATTENTE' %}
@@ -230,7 +230,7 @@
             </div>
             <div class="modal-body">
               <p class="text-sm mb-3">
-                Confirmer la réception de <strong>{{ d.montant|floatformat:0 }} FCFA</strong>
+                Confirmer la réception de <strong>{{ d.montant|floatformat:"0g" }} FCFA</strong>
                 de <strong>{{ d.inscription.eleve.nom }} {{ d.inscription.eleve.prenom }}</strong>
                 via Orange Money (<em>{{ d.telephone }}</em>).
               </p>

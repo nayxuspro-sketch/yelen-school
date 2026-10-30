@@ -48,7 +48,7 @@
             data-valeur="{{ t.valeur_reduction }}"
             data-desc="{{ t.description }}"
             {% if bourse and bourse.type_bourse_id == t.id %}selected{% endif %}>
-            {{ t.nom }} ({{ t.get_source_display }}){% if t.type_reduction == 'POURCENTAGE' %} — {{ t.valeur_reduction }}%{% else %} — {{ t.valeur_reduction|floatformat:0 }} FCFA fixe{% endif %}
+            {{ t.nom }} ({{ t.get_source_display }}){% if t.type_reduction == 'POURCENTAGE' %} — {{ t.valeur_reduction }}%{% else %} — {{ t.valeur_reduction|floatformat:"0g" }} FCFA fixe{% endif %}
           </option>
           {% endfor %}
         </select>

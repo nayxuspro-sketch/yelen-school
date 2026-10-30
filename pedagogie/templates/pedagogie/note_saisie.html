@@ -27,7 +27,7 @@
       </div>
       <h1>{{ evaluation.titre }}</h1>
       <div class="note-meta-row">
-        <span class="note-meta-bareme">Barème : /{{ evaluation.bareme|floatformat:0 }}</span>
+        <span class="note-meta-bareme">Barème : /{{ evaluation.bareme|floatformat:"0g" }}</span>
         <span class="note-meta-item">{{ evaluation.type_evaluation.nom }}</span>
         <span class="note-meta-item">{{ evaluation.date_planifiee|date:"d/m/Y" }}</span>
       </div>
@@ -91,7 +91,7 @@
             <th class="note-col-idx">#</th>
             <th>Élève</th>
             <th class="note-col-note">
-              Note <span class="note-col-bareme">/{{ evaluation.bareme|floatformat:0 }}</span>
+              Note <span class="note-col-bareme">/{{ evaluation.bareme|floatformat:"0g" }}</span>
             </th>
             <th class="note-col-abs">Absent</th>
             <th class="note-col-disp" title="Dispensé : cette matière ne compte pas dans la moyenne générale">Dispensé</th>
@@ -173,7 +173,7 @@
 
       <div class="ns-card-body">
         <div class="ns-card-note-group">
-          <div class="ns-card-note-label">Note / {{ evaluation.bareme|floatformat:0 }}</div>
+          <div class="ns-card-note-label">Note / {{ evaluation.bareme|floatformat:"0g" }}</div>
           <input type="number"
                  class="dash-input note-input note-input-num note-input-mobile"
                  name="note_{{ item.inscription.id }}"

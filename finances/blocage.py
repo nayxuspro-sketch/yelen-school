@@ -3,6 +3,7 @@ paramètres financiers de l'établissement."""
 from decimal import Decimal
 
 from .models import ParametresFinances
+from core.utils import fcfa
 
 
 def motif_blocage_bulletin(inscription):
@@ -20,5 +21,5 @@ def motif_blocage_bulletin(inscription):
     if total_paye >= requis:
         return None
     return (f"Bulletin consultable après régularisation des frais de scolarité : reste à payer "
-            f"{situation['reste_a_payer']:,.0f} FCFA ({params.seuil_blocage_pct} % du montant dû requis, "
-            f"{total_paye:,.0f} FCFA réglés sur {total_du:,.0f}).").replace(',', ' ')
+            f"{fcfa(situation['reste_a_payer'])} ({params.seuil_blocage_pct} % du montant dû requis, "
+            f"{fcfa(total_paye)} réglés sur {fcfa(total_du)}).")
