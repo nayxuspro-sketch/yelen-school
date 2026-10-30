@@ -199,11 +199,18 @@
         <div class="comm-meta-item">
           <span class="comm-meta-label">SMS</span>
           <span class="comm-meta-value">
-            {% if msg.sms_envoye %}
+            {% if msg.sms and msg.sms.statut == 'ENVOYE' %}
+              <span class="badge badge-success">Envoyé le {{ msg.sms.date_envoi|date:"d/m/Y H:i" }}</span>
+            {% elif msg.sms and msg.sms.statut == 'ECHEC' %}
+              <span class="badge badge-danger">Échec</span> <span class="text-xs text-muted">{{ msg.sms.derniere_erreur }}</span>
+            {% elif msg.sms %}
+              <span class="badge badge-warning">En attente d'envoi</span>{% if msg.sms.derniere_erreur %} <span class="text-xs text-muted">{{ msg.sms.derniere_erreur }}</span>{% endif %}
+            {% elif msg.sms_envoye %}
               <span class="badge badge-success">Envoyé {{ msg.date_envoi_sms|date:"d/m/Y" }}</span>
             {% else %}
               <span class="badge badge-neutral">Non envoyé</span>
             {% endif %}
+            {% if msg.sms %}<div class="text-xs text-muted" style="margin-top:.3rem; white-space:pre-wrap;">{{ msg.sms.message }}</div>{% endif %}
           </span>
         </div>
       </div>
@@ -225,7 +232,7 @@
 
       {# Lien de réponse #}
       <div class="comm-link-block">
-        <p class="comm-link-label">Lien de réponse</p>
+        <p class="comm-link-label">Lien de réponse <span class="text-muted" style="font-weight:400;">(le parent répond normalement par SMS ; ce lien ne fonctionne que si le serveur est joignable depuis l'extérieur)</span></p>
         <p class="comm-link-url" id="lien-url">{{ lien_reponse }}</p>
         <button type="button" class="btn-secondary btn-sm"
                 data-csp-action="copy-link" data-copy-target="lien-url">

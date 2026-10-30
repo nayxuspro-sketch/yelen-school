@@ -49,9 +49,9 @@ TESTS = [
         {'expected_status': 'error', 'expected_in_response': 'pas autorise'},
     ),
     (
-        'TEST 6 — Commande invalide',
+        'TEST 6 — Message libre (accusé de réception, une fois par jour)',
         {'phoneNumber': PHONE_OK, 'message': 'BONJOUR'},
-        {'expected_status': 'error', 'expected_in_response': 'invalide'},
+        {'expected_status': 'error', 'expected_in_response': 'bien ete recu'},
     ),
 ]
 

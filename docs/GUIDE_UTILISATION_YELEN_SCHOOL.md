@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.17.1
-version_guide: 5.15
-date_mise_a_jour: 29/10/2026 (5.17.0 : commandes SMS définies par l'école — mots-clés et réponses automatiques, §10.2)
+version_logiciel: 5.18.0
+version_guide: 5.16
+date_mise_a_jour: 30/10/2026 (5.18.0 : communication bidirectionnelle par SMS — message en clair, réponse du parent par SMS ; fin des « Commande invalide » en rafale, §29 et §10.3)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -6158,7 +6158,7 @@ Le bouton n'apparaît que si le navigateur détecte que l'app peut être install
 
 **Accès :** Menu latéral → **Communication → Messages parents**
 
-Ce module permet d'envoyer des messages structurés aux parents et de recevoir leurs réponses via un lien sécurisé, sans qu'ils aient besoin d'un compte utilisateur.
+Ce module permet d'envoyer des messages structurés aux parents et de recevoir leurs réponses **par SMS**, sans qu'ils aient besoin d'un compte utilisateur ni d'internet : le message est envoyé en clair au numéro du parent (fiche élève : parent, sinon tuteur) et le parent répond simplement au SMS. Un lien de réponse web existe aussi (29.3) mais il ne fonctionne que si le serveur de l'école est joignable depuis l'extérieur, ce qui n'est pas le cas d'une installation sur le réseau local.
 
 ---
 
@@ -6166,10 +6166,12 @@ Ce module permet d'envoyer des messages structurés aux parents et de recevoir l
 
 | Type | Description | Réponse attendue |
 |---|---|---|
-| **Convocation** | Invitation à un entretien avec choix de créneaux | Le parent choisit un créneau parmi ceux proposés |
-| **Avertissement** | Notification de comportement | Le parent accuse réception |
-| **Justificatif** | Demande de pièce justificative d'absence | Le parent dépose un fichier (photo/PDF) |
-| **Relance** | Rappel de paiement en attente | Le parent indique une date de règlement prévisionnelle |
+| **Convocation** | Invitation à un entretien avec choix de créneaux | SMS reçu : « Repondez 1, 2, 3: 1) Lundi 12 mai 10h 2) … » — le parent répond `2` (ou « je prends le 2 », ou le libellé) : le créneau est enregistré |
+| **Avertissement** | Notification de comportement | SMS reçu : « Repondez OK pour accuser reception. » — toute réponse vaut accusé de réception |
+| **Justificatif** | Demande de pièce justificative d'absence | SMS reçu : « Repondez a ce SMS avec le motif de l'absence. » — le motif est enregistré (le dépôt d'un fichier reste possible par le lien web) |
+| **Relance** | Rappel de paiement en attente | SMS reçu : « Repondez avec la date de reglement prevue (ex: 15/11). » — la date est reconnue (`15/11`, `15-11-2026`) et enregistrée |
+
+Toute réponse est conservée intégralement en commentaire (horodatée `[SMS 12/11 09:15]`), le message passe à **Répondu**, et le parent reçoit « Reponse bien recue, merci. L'ecole en est informee. ». Une seconde réponse complète la première (changement de créneau, précision). La réponse est rattachée au **dernier message envoyé par SMS à ce numéro depuis moins de 30 jours** (numéro utilisé pour l'envoi, ou numéro du parent / tuteur / urgence de la fiche).
 
 ---
 
@@ -6182,8 +6184,8 @@ Ce module permet d'envoyer des messages structurés aux parents et de recevoir l
    - **Objet** — titre court du message
    - **Contenu** — corps du message
    - **Créneaux proposés** *(pour Convocation)* — un créneau par ligne, ex: `Lundi 12 mai à 10h00`
-   - **Envoyer un SMS** — si coché, un SMS contenant le lien de réponse est envoyé automatiquement au téléphone du parent
-3. Cliquer **Envoyer**
+   - **Envoyer le message par SMS** — coché par défaut : le SMS « *SIGLE* - *Objet*. *Contenu* *Consigne de réponse* » part au numéro du parent (sinon du tuteur). Il doit tenir en **160 caractères** : au-delà, le formulaire indique la longueur obtenue et demande de raccourcir ; sans numéro sur la fiche, il refuse l'envoi au lieu de ne rien envoyer en silence.
+3. Cliquer **Envoyer**. La fiche du message affiche le texte exact du SMS et son état réel : **En attente d'envoi**, **Envoyé le …** ou **Échec** avec le motif (passerelle injoignable, numéro invalide…).
 
 ---
 
@@ -6191,9 +6193,7 @@ Ce module permet d'envoyer des messages structurés aux parents et de recevoir l
 
 Chaque message génère un **lien unique sécurisé** de la forme `/communication/repondre/<token>/`.
 
-Ce lien peut être :
-- Envoyé automatiquement par SMS (option à cocher dans le formulaire)
-- Copié manuellement depuis la page de détail du message
+Ce lien n'est plus inclus dans le SMS (inutilisable hors du réseau de l'école) ; il peut être copié depuis la page de détail du message et transmis autrement (WhatsApp, courriel) si le serveur est joignable depuis l'extérieur.
 
 Le lien est accessible **sans connexion** — le parent n'a pas besoin de compte YELEN SCHOOL.
 
@@ -6202,7 +6202,7 @@ Le lien est accessible **sans connexion** — le parent n'a pas besoin de compte
 ### 29.4 Suivi des réponses
 
 La liste des messages affiche :
-- Le **statut** : Envoyé → Lu (ouverture du lien) → Répondu
+- Le **statut** : Envoyé → Lu (ouverture du lien) → Répondu (réponse par SMS ou par le lien)
 - La présence ou non d'un SMS envoyé
 - Un accès rapide au **détail** de chaque message et à la réponse du parent
 
@@ -6558,7 +6558,10 @@ La page liste les commandes de l'école avec leur nombre d'utilisations ; **Dés
 | Matricule introuvable | `Yelen - Eleve avec le matricule XXX introuvable.` |
 | Élève sans inscription active | `Yelen - [Prénom] [Nom] n'est inscrit dans aucune classe.` |
 | Aucune moyenne pour la période | `Yelen - Aucune moyenne trouvee pour [Prénom] [Nom] (T1).` |
-| Commande inconnue | `Yelen - Commande invalide. Envoyez AIDE pour obtenir la liste des commandes disponibles.` |
+| Commande intégrée sans matricule (`NOTE` seul) | `Yelen - Format: NOTE <matricule> [T1] (ex: NOTE BF-2026-0001 T1). Envoyez AIDE pour la liste des commandes.` |
+| Réponse à un message de l'école (§29) | `Yelen - Reponse bien recue, merci. L'ecole en est informee.` |
+| Message libre (ni commande, ni réponse attendue) | `Yelen - Votre message a bien ete recu par l'ecole. Pour une information automatique (notes, solde, absences), envoyez AIDE.` — **au plus une fois par jour et par numéro** ; les SMS suivants sont lus dans Messages reçus sans réponse automatique |
+| SMS envoyé par l'école elle-même (numéro de la SIM du téléphone sur une fiche élève, test) | aucune réponse : l'écho est journalisé et ignoré, jamais de boucle |
 
 ---
 
@@ -6592,7 +6595,7 @@ Formats acceptés par le webhook (`POST /communication/webhook/sms/`) :
 
 Authentification : jeton `?token=` (`SMS_WEBHOOK_TOKEN`, déjà dans l'URL affichée) ou, si `SMS_WEBHOOK_HMAC_SECRET` est défini dans `.env`, signature obligatoire — soit `X-SMS-Signature` = HMAC-SHA256(corps), soit la signature native de l'app `X-Signature` = HMAC-SHA256(corps + `X-Timestamp`) avec la **Signing Key** de l'app (`Settings → Webhooks`) comme secret, horodatage toléré à ± 5 minutes.
 
-> **Réponses libres des parents** (« Je paierai lundi ») : elles ne correspondent à aucune commande ; le parent reçoit « Commande invalide. Envoyez AIDE… » et le message est à lire dans **Communication → Messages reçus** (10.6).
+> **Réponses libres des parents** (« Je paierai lundi ») : si le parent répond à un message de la communication bidirectionnelle (§29), sa réponse est rattachée au message ; sinon il reçoit au plus une fois par jour « Votre message a bien ete recu par l'ecole… » et le message est à lire dans **Communication → Messages reçus** (10.6).
 
 #### Numéros Administrateurs Maîtres
 Pour permettre à des numéros d'administration de consulter les données de n'importe quel élève, ajouter dans `settings.py` :
@@ -6625,7 +6628,7 @@ Le simulateur :
 
 **Communication → Messages reçus** présente tous les SMS arrivés au numéro de l'école ; la pastille rouge du menu indique le nombre de **messages libres non lus** (rafraîchie toutes les 60 secondes).
 
-- **Messages libres** (vue par défaut) : tout SMS qui n'est pas une commande — réponse à une relance, question, justification d'absence… Le parent a reçu automatiquement « Commande invalide. Envoyez AIDE… » ; son message est à lire et à traiter ici.
+- **Messages libres** (vue par défaut) : tout SMS qui n'est pas une commande — question, justification d'absence… Le parent a reçu au plus une fois par jour « Votre message a bien ete recu par l'ecole… » ; son message est à lire et à traiter ici. Les **réponses aux messages de l'école** (§29) y figurent avec le badge *Réponse* et le lien vers le message d'origine.
 - **Commandes automatiques** : `NOTE`, `SOLDE`, `ABS`, `AIDE`, déjà traitées par YELEN (élève concerné affiché).
 - **Filtres** *Lus et non lus* / *Non lus* / *Lus* ; 50 messages par page, les plus récents d'abord.
 

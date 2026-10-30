@@ -50,7 +50,7 @@ def test_commande_generale_repond_avec_ses_variables_et_ses_alias(envoyer, ecole
     horaires.actif = False
     horaires.save()
     journal, _ = traiter_sms_recu('+22676000000', 'HORAIRES')
-    assert journal.command_type == 'INVALID' and 'Commande invalide' in journal.response_text
+    assert journal.command_type == 'INVALID' and 'bien ete recu' in journal.response_text   # message libre, pas une commande
 
 
 @patch('core.tasks.envoyer_sms_async')

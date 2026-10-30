@@ -11,7 +11,7 @@ import json
 import logging
 import re
 import urllib.error
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 from django.conf import settings
 from django.core.cache import cache
@@ -35,6 +35,38 @@ def identifiant_message(brut):
     return brut.lower()[:64]
 
 
+ACCUSE_MESSAGE_LIBRE = ("Yelen - Votre message a bien ete recu par l'ecole. Pour une information automatique "
+                        "(notes, solde, absences), envoyez AIDE.")
+USAGES = {
+    'NOTE': "Yelen - Format: NOTE <matricule> [T1] (ex: NOTE BF-2026-0001 T1). Envoyez AIDE pour la liste des commandes.",
+    'SOLDE': "Yelen - Format: SOLDE <matricule> (ex: SOLDE BF-2026-0001). Envoyez AIDE pour la liste des commandes.",
+    'ABS': "Yelen - Format: ABS <matricule> (ex: ABS BF-2026-0001). Envoyez AIDE pour la liste des commandes.",
+}
+USAGES['ABSENCE'] = USAGES['ABS']
+
+
+def _est_echo(sender_normalized, message_text):
+    """Vrai si l'école a envoyé ce texte exact à ce numéro depuis moins de 24 h (le téléphone passerelle reçoit
+    ses propres SMS quand le numéro de sa SIM figure sur une fiche élève)."""
+    from core.models import SmsSortant
+    from core.sms import _normaliser_numero
+    recents = SmsSortant.objects.filter(message=message_text, created_at__gte=timezone.now() - timedelta(hours=24))
+    for numero in recents.values_list('numero', flat=True)[:50]:
+        try:
+            if _normaliser_numero(numero) == sender_normalized:
+                return True
+        except (AttributeError, TypeError, ValueError):
+            continue
+    return False
+
+
+def _accuse_deja_envoye(sender_number):
+    from .models import IncomingSMSLog
+    return IncomingSMSLog.objects.filter(sender_number=sender_number, command_type=IncomingSMSLog.LIBRE,
+                                         created_at__gte=timezone.now() - timedelta(hours=24)) \
+                                 .exclude(response_text='').exists()
+
+
 def traiter_sms_recu(sender_number, message_text, message_id=''):
     """Interprète un SMS reçu (AIDE / NOTE / SOLDE / ABS, ou message libre), le journalise et met la réponse en file.
     Retourne ``(journal, créé)`` ; ``créé`` est faux si ce message avait déjà été traité (autre chemin)."""
@@ -44,13 +76,14 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
     from finances.views import _calcul_situation_financiere
     from core.sms import _normaliser_numero
     from core.tasks import envoyer_sms_async
-    from . import commandes
+    from . import bidirectionnel, commandes
     from .models import CommandeSms, IncomingSMSLog
 
     if message_id:
         existant = IncomingSMSLog.objects.filter(message_id=message_id).first()
         if existant is not None:
             return existant, False
+    message_parent = None
 
     try:
         sender_normalized = _normaliser_numero(sender_number)
@@ -73,7 +106,11 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
     abs_pattern = re.compile(r'^ABS(?:ENCE)?\s+([A-Z0-9\-]+)$')
 
     commande = None
-    if help_pattern.match(clean_msg):
+    if _est_echo(sender_normalized, message_text):
+        # Le téléphone de l'école a reçu un SMS que l'école vient d'envoyer à ce même numéro (numéro de la SIM
+        # enregistré sur une fiche élève, test…) : ne jamais y répondre, sinon la boucle ne s'arrête plus.
+        error_message = "Echo d'un SMS envoyé par l'école : ignoré, pas de réponse."
+    elif help_pattern.match(clean_msg):
         command_type = 'HELP'
         response_text = commandes.texte_aide()
         is_authorized = True
@@ -109,8 +146,19 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
                     error_message = "Matricule manquant."
                     response_text = f"Yelen - Envoyez {commande.mot_cle} suivi du matricule de l'eleve (ex: {commande.mot_cle} BF-2026-0001)."
 
+        if command_type == 'INVALID' and not response_text:
+            message_parent = bidirectionnel.message_en_attente(sender_normalized)
+            if message_parent is not None:
+                # Réponse par SMS à un message de la communication bidirectionnelle (convocation, avertissement…).
+                command_type = IncomingSMSLog.REPONSE
+                eleve = message_parent.eleve
+                bidirectionnel.enregistrer_reponse(message_parent, message_text)
+                response_text = bidirectionnel.ACCUSE_RECEPTION
+                is_authorized = True
+                processed_successfully = True
+
         if response_text:
-            pass  # commande de l'école déjà résolue, sans élève
+            pass  # réponse déjà résolue, sans recherche d'élève
         elif command_type != 'INVALID':
             eleve = Eleve.objects.filter(matricule__iexact=matricule).first()
             if not eleve:
@@ -208,9 +256,16 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
                 else:
                     error_message = f"Sender {sender_normalized} not authorized for matricule {matricule}."
                     response_text = "Yelen - Ce numero de telephone n'est pas autorise a consulter les informations de cet eleve."
+        elif clean_msg.split(' ')[0] in USAGES:
+            # Commande intégrée mal formée (« NOTE » sans matricule) : rappel du format, pas « message reçu ».
+            error_message = "Matricule manquant."
+            response_text = USAGES[clean_msg.split(' ')[0]]
         else:
-            error_message = f"Commande invalide: '{message_text}'"
-            response_text = "Yelen - Commande invalide. Envoyez AIDE pour obtenir la liste des commandes disponibles."
+            # Message libre du parent : lu dans « Messages reçus » ; accusé de réception au plus une fois par
+            # jour et par numéro — jamais de « Commande invalide » en rafale.
+            error_message = f"Message libre : '{message_text}'"
+            if not _accuse_deja_envoye(sender_number):
+                response_text = ACCUSE_MESSAGE_LIBRE
 
     if response_text and len(re.sub(r'\D', '', sender_number)) < 8:
         # Code court ou expéditeur alphanumérique (« Orange », « 144 ») : rien à qui répondre, et un SMS facturé en moins.
@@ -223,6 +278,7 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
         message_id=message_id,
         command_type=command_type,
         commande=commande,
+        message_parent=message_parent,
         eleve=eleve,
         response_text=response_text[:160],
         is_authorized=is_authorized,

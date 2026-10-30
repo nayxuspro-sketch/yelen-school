@@ -95,6 +95,11 @@ class MessageParent(BaseModel):
     )
     sms_envoye = models.BooleanField(default=False, verbose_name=_("SMS envoyé"))
     date_envoi_sms = models.DateTimeField(null=True, blank=True, verbose_name=_("Date envoi SMS"))
+    sms = models.ForeignKey(
+        'core.SmsSortant', on_delete=models.SET_NULL, null=True, blank=True, related_name='+',
+        verbose_name=_("SMS envoyé au parent"),
+        help_text=_("Ligne de la file d'envoi : texte exact, état (en attente / envoyé / échec) et motif."),
+    )
     # S3 — expiration du lien de réponse parent (30 jours par défaut)
     date_expiration = models.DateTimeField(
         null=True, blank=True,
@@ -180,9 +185,12 @@ class IncomingSMSLog(BaseModel):
         ('ABS', 'Demande de relevé d\'absences'),
         ('HELP', 'Aide / Instructions'),
         ('PERSO', 'Commande définie par l\'école'),
+        ('REPONSE', 'Réponse à un message de l\'école'),
         ('INVALID', 'Message libre ou commande inconnue'),
     ]
     LIBRE = 'INVALID'  # tout SMS qui n'est pas une commande : un message du parent, à lire dans « Messages reçus »
+    REPONSE = 'REPONSE'  # réponse par SMS à un message de la communication bidirectionnelle
+    A_LIRE = (LIBRE, REPONSE)
 
     sender_number = models.CharField(
         max_length=20,
@@ -206,6 +214,10 @@ class IncomingSMSLog(BaseModel):
         blank=True,
         related_name='utilisations',
         verbose_name=_("Commande définie par l'école"),
+    )
+    message_parent = models.ForeignKey(
+        MessageParent, on_delete=models.SET_NULL, null=True, blank=True, related_name='sms_recus',
+        verbose_name=_("Message de l'école auquel ce SMS répond"),
     )
     command_type = models.CharField(
         max_length=10,
@@ -263,7 +275,7 @@ class IncomingSMSLog(BaseModel):
 
     @property
     def est_libre(self):
-        return self.command_type == self.LIBRE
+        return self.command_type in self.A_LIRE
 
 
 class CommandeSms(BaseModel):

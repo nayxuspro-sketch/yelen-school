@@ -59,7 +59,9 @@
           </td>
           <td style="max-width:420px; white-space:pre-wrap; overflow-wrap:anywhere;">{{ m.message_text }}</td>
           <td>
-            {% if m.est_libre %}<span class="badge badge-info">Message libre</span>
+            {% if m.message_parent %}<span class="badge badge-success">Réponse</span>
+            <div class="text-xs" style="font-weight:400;"><a href="{% url 'communication:message_detail' m.message_parent.pk %}">{{ m.message_parent.get_type_display }} : {{ m.message_parent.objet }}</a></div>
+            {% elif m.est_libre %}<span class="badge badge-info">Message libre</span>
             {% else %}<span class="badge badge-neutral">{{ m.command_type }}</span>
             {% if m.eleve %}<div class="text-muted text-xs" style="font-weight:400;">{{ m.eleve.get_nom_complet }}</div>{% endif %}{% endif %}
           </td>

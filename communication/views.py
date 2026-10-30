@@ -121,6 +121,19 @@ def message_create(request):
         telephone = eleve.telephone_parent or eleve.tuteur_telephone or ''
         creneaux = [c.strip() for c in creneaux_txt.splitlines() if c.strip()]
 
+        if envoyer_sms_flag:
+            from . import bidirectionnel
+            if not telephone:
+                ctx['error'] = (f"Aucun numéro de parent ni de tuteur sur la fiche de {eleve.prenom} {eleve.nom} : "
+                                "complétez la fiche élève ou décochez l'envoi par SMS.")
+                return render(request, 'communication/partials/message_form.html', ctx)
+            texte_sms = bidirectionnel.texte_sms(MessageParent(type=type_msg, objet=objet, contenu=contenu,
+                                                               creneaux_proposes=creneaux), _sigle(etab))
+            if len(texte_sms) > bidirectionnel.LONGUEUR_SMS:
+                ctx['error'] = (f"Le SMS ferait {len(texte_sms)} caractères pour {bidirectionnel.LONGUEUR_SMS} maximum : "
+                                "raccourcissez l'objet, le contenu ou les créneaux.")
+                return render(request, 'communication/partials/message_form.html', ctx)
+
         msg = MessageParent.objects.create(
             etablissement=etab,
             eleve=eleve,
@@ -134,14 +147,16 @@ def message_create(request):
             date_expiration=timezone.now() + timezone.timedelta(days=30),
         )
 
-        if envoyer_sms_flag and telephone:
+        if envoyer_sms_flag:
             from core.tasks import envoyer_sms_async
-            lien = msg.get_lien_reponse(request)
-            sms_text = f"{objet} — Répondez : {lien}"
-            envoyer_sms_async(telephone, sms_text[:160])
-            msg.sms_envoye = True
-            msg.date_envoi_sms = timezone.now()
-            msg.save(update_fields=['sms_envoye', 'date_envoi_sms'])
+            # Le message est envoyé en clair, le parent répond en répondant au SMS (pas de lien : le serveur
+            # de l'école n'est pas joignable depuis l'extérieur). Le lien reste sur la fiche du message.
+            msg.sms = envoyer_sms_async(telephone, texte_sms)
+            msg.sms_envoye = msg.sms is not None
+            msg.date_envoi_sms = timezone.now() if msg.sms_envoye else None
+            msg.save(update_fields=['sms', 'sms_envoye', 'date_envoi_sms'])
+            if msg.sms is None:
+                messages.warning(request, "Les SMS sont désactivés (Paramètres → Configuration SMS) : message enregistré, SMS non envoyé.")
 
         return HttpResponse('', headers={'HX-Trigger': 'messageCreated'})
 
@@ -654,7 +669,7 @@ def _familles_par_numero(numeros):
 
 def _nb_messages_libres_non_lus():
     from .models import IncomingSMSLog
-    return IncomingSMSLog.objects.filter(command_type=IncomingSMSLog.LIBRE, lu_le__isnull=True).count()
+    return IncomingSMSLog.objects.filter(command_type__in=IncomingSMSLog.A_LIRE, lu_le__isnull=True).count()
 
 
 def _retour_messages_recus(request):
@@ -674,11 +689,11 @@ def messages_recus(request):
 
     type_ = request.GET.get('type') if request.GET.get('type') in ('commandes', 'tous') else 'libres'
     etat = request.GET.get('etat') if request.GET.get('etat') in ('non_lus', 'lus') else ''
-    qs = IncomingSMSLog.objects.select_related('eleve', 'lu_par')
+    qs = IncomingSMSLog.objects.select_related('eleve', 'lu_par', 'message_parent')
     if type_ == 'libres':
-        qs = qs.filter(command_type=IncomingSMSLog.LIBRE)
+        qs = qs.filter(command_type__in=IncomingSMSLog.A_LIRE)
     elif type_ == 'commandes':
-        qs = qs.exclude(command_type=IncomingSMSLog.LIBRE)
+        qs = qs.exclude(command_type__in=IncomingSMSLog.A_LIRE)
     if etat:
         qs = qs.filter(lu_le__isnull=(etat == 'non_lus'))
     page_obj = Paginator(qs, 50).get_page(request.GET.get('page'))
@@ -719,7 +734,7 @@ def messages_recus_marquer(request, pk):
 def messages_recus_tout_lu(request):
     """Marque lus tous les messages libres non lus."""
     from .models import IncomingSMSLog
-    nb = IncomingSMSLog.objects.filter(command_type=IncomingSMSLog.LIBRE, lu_le__isnull=True) \
+    nb = IncomingSMSLog.objects.filter(command_type__in=IncomingSMSLog.A_LIRE, lu_le__isnull=True) \
         .update(lu_le=timezone.now(), lu_par=request.user)
     messages.success(request, f"{nb} message(s) marqué(s) comme lu(s).")
     return _retour_messages_recus(request)

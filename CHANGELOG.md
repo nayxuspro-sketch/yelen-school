@@ -3,6 +3,15 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.18.0 — 2026-10-30
+
+### Communication bidirectionnelle par SMS, fin des « Commande invalide » en rafale
+- **Cause** : le SMS envoyé au parent ne contenait que l'objet et un lien `https://<IP du réseau local>:8443/communication/repondre/…`, injoignable depuis le téléphone d'un parent (et l'envoi n'était pas coché par défaut) ; le parent répondait donc par SMS et chaque réponse recevait « Commande invalide. Envoyez AIDE… ». Un numéro de la SIM du téléphone passerelle présent sur une fiche élève faisait de plus boucler cette réponse sur elle-même toutes les 15 secondes.
+- **Message en clair** : le SMS contient le sigle, l'objet, le contenu et la consigne de réponse selon le type (créneaux numérotés, « Repondez OK », date de règlement, motif) ; envoi coché par défaut ; refus explicite si le SMS dépasse 160 caractères ou si la fiche n'a aucun numéro ; `MessageParent.sms` (migration `communication 0007`) relie le message à sa ligne d'envoi — la fiche affiche le texte exact et l'état réel (en attente / envoyé le … / échec et motif).
+- **Réponse du parent par SMS** (`communication/bidirectionnel.py`) : rattachée au dernier message envoyé à ce numéro depuis moins de 30 jours ; créneau (`2`, « je prends le 2 », libellé), accusé de réception, date de règlement (`15/11`) reconnus ; texte intégral conservé en commentaire horodaté ; message « Répondu » ; accusé « Reponse bien recue, merci… » ; journalisée `REPONSE` (`IncomingSMSLog.message_parent`) et affichée dans Messages reçus avec le lien vers le message.
+- **Plus jamais de rafale** : un SMS libre reçoit « Votre message a bien ete recu par l'ecole… » au plus une fois par 24 h et par numéro ; une commande intégrée sans matricule (`NOTE`) reçoit le rappel du format ; un SMS identique à un SMS envoyé par l'école à ce même numéro depuis moins de 24 h est un écho : journalisé, jamais de réponse.
+- 6 tests (`test_bidirectionnel.py`) ; guide §29, §10.3, §10.6.
+
 ## 5.17.1 — 2026-10-29
 
 ### Correctif de test
