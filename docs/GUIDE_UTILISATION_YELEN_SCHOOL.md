@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.21.0
+version_logiciel: 5.22.0
 version_guide: 5.16
-date_mise_a_jour: 30/10/2026 (5.21.0 : suppression des messages parents par type et statut, §29.4)
+date_mise_a_jour: 30/10/2026 (5.22.0 : suppression des messages parents par ligne et par sélection, suppression des campagnes SMS, §29.4 et §9.24)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -3064,6 +3064,7 @@ Une période clôturée (`Paramètres → Périodes`) est en lecture seule. Le d
 2. Le message accepte des **variables** remplacées pour chaque destinataire : `{eleve}` (nom de l'élève, ou des enfants joints sur ce numéro), `{classe}`, `{reste}` (reste à payer de la famille en FCFA), `{etablissement}` (sigle), `{nom}` (agent, campagne personnel). Exemple : `Reunion des parents de {classe} samedi 8h. {etablissement}`.
 3. **Aperçu** : nombre de destinataires joignables, élèves ou agents **sans numéro valide**, les textes rendus et la longueur du plus long message (au-delà de 160 caractères, le SMS est tronqué par la passerelle). Un numéro partagé par plusieurs enfants reçoit **un seul SMS** ; les élèves partis (abandon) ne sont jamais joints. Le numéro utilisé est, dans l'ordre, celui du parent, du tuteur, puis le numéro d'urgence de la fiche élève.
 4. **Envoyer n SMS** : les SMS sont mis en file et partent en arrière-plan par paquets de 50 ; la page de suivi montre envoyés / échecs / en attente et, par destinataire, le statut et l'erreur éventuelle. **Renvoyer les échecs** remet en file les SMS en échec définitif (numéro invalide corrigé entre-temps, passerelle revenue).
+5. **Supprimer** (droit *Campagnes SMS → supprimer*, secrétariat et direction par défaut), sur la ligne de la campagne ou sur sa page de suivi : la campagne et ses SMS disparaissent de l'historique après confirmation ; les SMS encore en attente ne sont pas envoyés (utile pour annuler une campagne lancée par erreur).
 
 ### 9.25 Paie du mois
 
@@ -6206,7 +6207,7 @@ La liste des messages affiche :
 - L'état réel du **SMS** : *Non envoyé* (case décochée, SMS désactivés à l'époque), *En attente* (file d'envoi, nouvelles tentatives automatiques), *Échec* (motif au survol) ou *Envoyé*
 - **Envoyer le SMS** / **Renvoyer** (droit *Envoyer un message*) sur les lignes *Non envoyé* et *Échec*, et sur la fiche du message (avec confirmation si un SMS est déjà parti) : le texte est recomposé au format actuel (sigle, objet, contenu, consigne) et le numéro relu sur la fiche élève (parent, sinon tuteur) — utile aussi pour les messages anciens envoyés avec le lien. Refus explicite si la fiche n'a aucun numéro, si le SMS dépasserait 160 caractères ou si les SMS sont désactivés.
 
-**Supprimer des messages** (droit *Messages parents → supprimer*, secrétariat et direction par défaut) : choisir un **type** et / ou un **statut** dans les filtres (la recherche éventuelle s'applique aussi), puis **Supprimer les messages affichés** — le bouton indique le nombre concerné et demande confirmation ; sans type ni statut, la suppression est refusée (jamais toute la boîte d'un clic). La fiche d'un message propose **Supprimer** pour un message isolé. La suppression est définitive : la réponse du parent et son justificatif sont effacés avec le message ; les SMS reçus restent dans Messages reçus, détachés du message.
+**Supprimer des messages** (droit *Messages parents → supprimer*, secrétariat et direction par défaut) : bouton **Supprimer** sur chaque ligne de la liste et sur la fiche du message ; cases à cocher (case d'en-tête = toute la liste affichée) puis **Supprimer la sélection** ; enfin, avec un **type** et / ou un **statut** choisis dans les filtres (la recherche éventuelle s'applique aussi), **Supprimer les messages affichés** vide d'un coup la vue courante — le bouton indique le nombre concerné ; sans type ni statut, cette suppression globale est refusée (jamais toute la boîte d'un clic). Chaque suppression demande confirmation et est définitive : la réponse du parent et son justificatif sont effacés avec le message ; les SMS reçus restent dans Messages reçus, détachés du message.
 - Un accès rapide au **détail** de chaque message et à la réponse du parent
 
 ---

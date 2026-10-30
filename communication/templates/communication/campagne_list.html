@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load droits_tags %}
 
 {% block title %}Campagnes SMS{% endblock %}
 
@@ -20,7 +21,7 @@
       <thead>
         <tr>
           <th>Date</th><th>Titre</th><th>Public</th><th style="text-align:center;">Destinataires</th>
-          <th style="text-align:center;">Envoyés</th><th style="text-align:center;">Échecs</th><th style="text-align:center;">En attente</th><th>Par</th>
+          <th style="text-align:center;">Envoyés</th><th style="text-align:center;">Échecs</th><th style="text-align:center;">En attente</th><th>Par</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -34,9 +35,17 @@
           <td style="text-align:center;">{% if c.suivi.echecs %}<span class="badge badge-danger">{{ c.suivi.echecs }}</span>{% else %}<span class="text-muted">0</span>{% endif %}</td>
           <td style="text-align:center;">{% if c.suivi.en_attente %}<span class="badge badge-warning">{{ c.suivi.en_attente }}</span>{% else %}<span class="text-muted">0</span>{% endif %}</td>
           <td class="text-secondary">{{ c.envoyee_par.get_full_name|default:"—" }}</td>
+          <td>
+            {% if request|autorise_url:'communication:campagne_supprimer' %}
+            <form method="post" action="{% url 'communication:campagne_supprimer' c.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn-danger btn-sm" data-csp-confirm="Supprimer la campagne « {{ c.titre }} » et ses SMS ? Ceux encore en attente ne seront pas envoyés.">Supprimer</button>
+            </form>
+            {% endif %}
+          </td>
         </tr>
         {% empty %}
-        <tr><td colspan="8" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucune campagne envoyée.</td></tr>
+        <tr><td colspan="9" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucune campagne envoyée.</td></tr>
         {% endfor %}
       </tbody>
     </table>

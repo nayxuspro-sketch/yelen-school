@@ -239,4 +239,26 @@ def test_suppression_des_messages_parents_refusee_par_la_matrice_des_droits(clie
     refus = client.post(reverse('communication:message_supprimer_filtre'), {'type': 'AVERTISSEMENT'})
 
     assert 'Supprimer les messages affichés' not in liste and 'Supprimer définitivement ce message' not in detail
+    assert 'cocher-tout-messages' not in liste and 'name="ids"' not in liste
     assert refus.status_code == 302 and refus.url == '/' and MessageParent.objects.filter(pk=msg.pk).exists()
+
+
+def test_suppression_par_selection_et_depuis_la_ligne(client, ecole, directeur):
+    liste_url, selection_url = reverse('communication:message_list'), reverse('communication:message_supprimer_selection')
+    conv = message(ecole, 'CONVOCATION', 'Entretien', 'Venir.')
+    relance = message(ecole, 'RELANCE', 'Scolarite', 'Reste 50 000 F.')
+    avert = message(ecole, 'AVERTISSEMENT', 'Retards', '3 retards.')
+
+    html = client.get(liste_url, {'type': 'RELANCE'}).content.decode()
+    assert 'id="cocher-tout-messages"' in html and f'name="ids" value="{relance.pk}"' in html
+    assert 'Supprimer la sélection' in html and f'action="{reverse("communication:message_supprimer", args=[relance.pk])}"' in html
+
+    vide = client.post(selection_url, {'next': f'{liste_url}?type=RELANCE'}, follow=True)
+    assert vide.redirect_chain[0][0] == f'{liste_url}?type=RELANCE' and 'Cochez au moins un message' in vide.content.decode()
+
+    cochee = client.post(selection_url, {'ids': [str(conv.pk), str(avert.pk), 'pas-un-uuid']}, follow=True)
+    assert '2 message(s) parent(s) supprimé(s).' in cochee.content.decode()
+    assert list(MessageParent.objects.values_list('pk', flat=True)) == [relance.pk]
+
+    ligne = client.post(reverse('communication:message_supprimer', args=[relance.pk]), {'next': 'https://ailleurs.example/'})
+    assert ligne.status_code == 302 and ligne.url == liste_url and MessageParent.objects.count() == 0   # next externe ignoré

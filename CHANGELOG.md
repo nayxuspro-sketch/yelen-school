@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.22.0 — 2026-10-30
+
+### Suppression des messages envoyés aux parents
+- Messages parents : bouton **Supprimer** sur chaque ligne de la liste (retour à la vue filtrée), cases à cocher avec case d'en-tête et **Supprimer la sélection** — en plus de la suppression par type / statut de 5.21.0. Même droit `Messages parents → supprimer`.
+- Campagnes SMS : **Supprimer** sur la ligne de la campagne et sur sa page de suivi — la campagne et ses SMS sont effacés, les SMS encore en attente ne partent pas. Nouveau droit `Campagnes SMS → supprimer` (secrétariat et direction par défaut). 2 tests.
+
 ## 5.21.0 — 2026-10-30
 
 ### Communication bidirectionnelle : suppression par type et statut

@@ -1,13 +1,19 @@
 {% load droits_tags %}
+{% with peut_supprimer=request|autorise_url:'communication:message_supprimer_filtre' %}
 <div id="comm-list-container"
      hx-get="{% url 'communication:message_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
      hx-trigger="messageCreated from:body"
      hx-target="this"
      hx-swap="outerHTML"
      class="table-wrapper">
-  {% if nb_affiches and request|autorise_url:'communication:message_supprimer_filtre' %}
+  {% if nb_affiches and peut_supprimer %}
   <div class="d-flex align-center gap-3" style="padding:var(--space-2) var(--space-3); flex-wrap:wrap;">
     <span class="text-muted text-sm">{{ nb_affiches }} message{{ nb_affiches|pluralize }} affiché{{ nb_affiches|pluralize }}</span>
+    <form method="post" action="{% url 'communication:message_supprimer_selection' %}" id="form-selection-messages">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button type="submit" class="btn-danger btn-sm" data-csp-confirm="Supprimer définitivement les messages cochés (et les réponses des parents) ?">Supprimer la sélection</button>
+    </form>
     {% if type_filter or statut_filter %}
     <form method="post" action="{% url 'communication:message_supprimer_filtre' %}">
       {% csrf_token %}
@@ -17,7 +23,7 @@
       <button type="submit" class="btn-danger btn-sm" data-csp-confirm="Supprimer définitivement les {{ nb_affiches }} message{{ nb_affiches|pluralize }} affiché{{ nb_affiches|pluralize }} (et les réponses des parents) ?">Supprimer les messages affichés</button>
     </form>
     {% else %}
-    <span class="text-muted text-xs">Choisissez un type et / ou un statut pour pouvoir supprimer les messages affichés.</span>
+    <span class="text-muted text-xs">Choisissez un type et / ou un statut pour supprimer d'un coup tous les messages affichés.</span>
     {% endif %}
   </div>
   {% endif %}
@@ -25,6 +31,7 @@
     <table class="data-table">
       <thead>
         <tr>
+          {% if peut_supprimer %}<th style="width:2rem;"><input type="checkbox" id="cocher-tout-messages" aria-label="Tout cocher"></th>{% endif %}
           <th>Élève</th>
           <th>Type</th>
           <th>Objet</th>
@@ -37,6 +44,7 @@
       <tbody>
         {% for m in messages_parents %}
         <tr>
+          {% if peut_supprimer %}<td><input type="checkbox" name="ids" value="{{ m.pk }}" form="form-selection-messages" aria-label="Sélectionner ce message"></td>{% endif %}
           <td class="fw-medium">{{ m.eleve.prenom }} {{ m.eleve.nom }}</td>
           <td>
             {% if m.type == 'CONVOCATION' %}
@@ -78,7 +86,14 @@
             {% endif %}
           </td>
           <td class="text-secondary text-sm">{{ m.created_at|date:"d/m/Y" }}</td>
-          <td>
+          <td style="white-space:nowrap;">
+            {% if peut_supprimer %}
+            <form method="post" action="{% url 'communication:message_supprimer' m.pk %}" style="display:inline; margin-right:.3rem;">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="btn-danger btn-sm" data-csp-confirm="Supprimer définitivement ce message{% if m.statut == 'REPONDU' %} et la réponse du parent{% endif %} ?">Supprimer</button>
+            </form>
+            {% endif %}
             <a href="{% url 'communication:message_detail' m.pk %}" class="btn-icon" title="Voir le détail">
               <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -89,7 +104,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="7">
+          <td colspan="{% if peut_supprimer %}8{% else %}7{% endif %}">
             <div class="empty-state">
               <p class="empty-state-text">Aucun message envoyé pour le moment.</p>
             </div>
@@ -100,3 +115,4 @@
     </table>
   </div>
 </div>
+{% endwith %}

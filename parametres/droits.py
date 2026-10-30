@@ -269,8 +269,8 @@ MODULES = (
     Module('communication', 'Communication', SECTION_ADMINISTRATION, (
         _f('/communication/', 'Messages parents', actions=(
             _a('envoyer', 'Envoyer un message, renvoyer son SMS', 'message_create', 'message_renvoyer_sms'),
-            _a('supprimer', 'Supprimer des messages (un message, ou par type et statut)',
-               'message_supprimer', 'message_supprimer_filtre', roles=_SECRETARIAT),
+            _a('supprimer', 'Supprimer des messages (un message, une sélection, ou par type et statut)',
+               'message_supprimer', 'message_supprimer_selection', 'message_supprimer_filtre', roles=_SECRETARIAT),
         )),
         _f('/communication/sms-direct/', 'SMS Direct', actions=(
             _a('envoyer', 'Envoyer un SMS', 'sms_direct_envoyer'),
@@ -288,6 +288,7 @@ MODULES = (
         )),
         _f('/communication/campagnes/', 'Campagnes SMS', actions=(
             _a('envoyer', 'Composer et envoyer une campagne', 'campagne_nouvelle', 'campagne_renvoyer'),
+            _a('supprimer', 'Supprimer une campagne et ses SMS', 'campagne_supprimer', roles=_SECRETARIAT),
         )),
     )),
     Module('manuels', 'Manuels scolaires', SECTION_ADMINISTRATION, (

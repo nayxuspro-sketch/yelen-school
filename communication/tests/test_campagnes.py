@@ -148,3 +148,34 @@ def test_reserve_a_la_direction_secretariat_comptabilite(client, ecole):
     client.force_login(baker.make('accounts.User', etablissement=ecole['etab'], role='ENSEIGNANT', must_change_password=False))
     assert client.get(reverse('communication:campagne_list')).status_code == 403
     assert client.get(reverse('communication:campagne_nouvelle')).status_code == 403
+
+
+def test_suppression_d_une_campagne_et_de_ses_sms(client, ecole):
+    from parametres import droits
+    from parametres.models import DroitAcces
+    e = ecole
+    campagne = CampagneSms.objects.create(etablissement=e['etab'], annee_scolaire=e['annee'], titre='Rentrée',
+                                          message='Bonjour', cible='PARENTS_TOUS', nb_destinataires=2, envoyee_par=e['directeur'])
+    SmsSortant.objects.create(numero='+22670123456', message='Bonjour', campagne=campagne, statut='ENVOYE')
+    SmsSortant.objects.create(numero='+22676000001', message='Bonjour', campagne=campagne)   # encore en attente
+    autre = SmsSortant.objects.create(numero='+22678888888', message='Hors campagne')
+    liste_url, detail_url = reverse('communication:campagne_list'), reverse('communication:campagne_detail', args=[campagne.pk])
+    url = reverse('communication:campagne_supprimer', args=[campagne.pk])
+
+    assert f'action="{url}"' in client.get(liste_url).content.decode()
+    assert 'Supprimer cette campagne et ses 2 SMS' in client.get(detail_url).content.decode()
+
+    DroitAcces.objects.create(role='DIRECTEUR', module='communication', fonctionnalite='/communication/campagnes/',
+                              action='supprimer', autorise=False)
+    droits.invalider_cache()
+    refus = client.post(url)
+    assert refus.status_code == 302 and refus.url == '/' and CampagneSms.objects.filter(pk=campagne.pk).exists()
+    assert f'action="{url}"' not in client.get(liste_url).content.decode()
+    assert 'Supprimer la campagne' not in client.get(detail_url).content.decode()
+    DroitAcces.objects.all().delete()
+    droits.invalider_cache()
+
+    retour = client.post(url, follow=True)
+    assert retour.redirect_chain[0][0] == liste_url and 'Campagne « Rentrée » supprimée (2 SMS).' in retour.content.decode()
+    assert not CampagneSms.objects.filter(pk=campagne.pk).exists()
+    assert list(SmsSortant.objects.values_list('pk', flat=True)) == [autre.pk]

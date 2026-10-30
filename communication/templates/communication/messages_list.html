@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load droits_tags %}
 
 {% block title %}Communication — YELEN SCHOOL{% endblock %}
 
@@ -53,4 +54,14 @@
 </form>
 
 {% include 'communication/partials/message_list.html' %}
+
+{% if request|autorise_url:'communication:message_supprimer_filtre' %}
+<script nonce="{{ request.csp_nonce }}">
+  // Case d'en-tête « Tout cocher » : délégué au document, le tableau étant remplacé par HTMX à chaque filtre.
+  document.addEventListener('change', function (e) {
+    if (!e.target || e.target.id !== 'cocher-tout-messages') return;
+    document.querySelectorAll('input[name="ids"][form="form-selection-messages"]').forEach(function (c) { c.checked = e.target.checked; });
+  });
+</script>
+{% endif %}
 {% endblock %}

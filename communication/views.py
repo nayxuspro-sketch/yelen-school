@@ -174,10 +174,7 @@ def message_renvoyer_sms(request, pk):
 
     etab = _get_etab(request)
     msg = get_object_or_404(MessageParent.objects.select_related('eleve'), pk=pk, etablissement=etab)
-    suivant = request.POST.get('next', '')
-    if not (suivant and url_has_allowed_host_and_scheme(suivant, allowed_hosts={request.get_host()},
-                                                        require_https=request.is_secure())):
-        suivant = reverse('communication:message_detail', args=[msg.pk])
+    suivant = _suivant_ou(request, reverse('communication:message_detail', args=[msg.pk]))
 
     telephone = msg.eleve.telephone_parent or msg.eleve.tuteur_telephone or msg.telephone_utilise
     texte = bidirectionnel.texte_sms(msg, _sigle(etab))
@@ -199,6 +196,15 @@ def message_renvoyer_sms(request, pk):
     msg.save(update_fields=['sms', 'sms_envoye', 'date_envoi_sms', 'telephone_utilise'])
     messages.success(request, f"SMS mis en file pour {telephone} : « {msg.objet} ».")
     return redirect(suivant)
+
+
+def _suivant_ou(request, defaut):
+    """URL de retour ``next`` du formulaire si elle est locale, sinon ``defaut``."""
+    suivant = request.POST.get('next', '')
+    if suivant and url_has_allowed_host_and_scheme(suivant, allowed_hosts={request.get_host()},
+                                                   require_https=request.is_secure()):
+        return suivant
+    return defaut
 
 
 def _supprimer_messages_parents(request, qs, suivant):
@@ -230,10 +236,23 @@ def message_supprimer_filtre(request):
 
 @login_required
 @require_POST
+def message_supprimer_selection(request):
+    """Supprime les messages cochés dans la liste (``ids``)."""
+    suivant = _suivant_ou(request, reverse('communication:message_list'))
+    ids = [i for i in request.POST.getlist('ids') if re.fullmatch(r'[0-9a-fA-F-]{36}', i)]
+    if not ids:
+        messages.error(request, "Cochez au moins un message à supprimer.")
+        return redirect(suivant)
+    qs = MessageParent.objects.filter(pk__in=ids, etablissement=_get_etab(request))
+    return _supprimer_messages_parents(request, qs, suivant)
+
+
+@login_required
+@require_POST
 def message_supprimer(request, pk):
     qs = MessageParent.objects.filter(pk=pk, etablissement=_get_etab(request))
     get_object_or_404(qs)
-    return _supprimer_messages_parents(request, qs, reverse('communication:message_list'))
+    return _supprimer_messages_parents(request, qs, _suivant_ou(request, reverse('communication:message_list')))
 
 
 # ─── DÉTAIL ───────────────────────────────────────────────────────────
@@ -707,6 +726,21 @@ def campagne_renvoyer(request, pk):
     nb = campagnes.renvoyer_echecs(campagne)
     messages.success(request, f"{nb} SMS remis en file." if nb else "Aucun SMS en échec.")
     return redirect('communication:campagne_detail', pk=campagne.pk)
+
+
+@login_required
+@require_POST
+def campagne_supprimer(request, pk):
+    """Supprime une campagne et ses SMS ; ceux encore en attente ne partiront pas."""
+    from core.models import CampagneSms
+    refus = _refus_campagne(request)
+    if refus:
+        return refus
+    campagne = get_object_or_404(CampagneSms, pk=pk, etablissement=_get_etab(request))
+    titre, nb_sms = campagne.titre, campagne.sms.count()
+    campagne.delete()
+    messages.success(request, f"Campagne « {titre} » supprimée ({nb_sms} SMS).")
+    return redirect('communication:campagne_list')
 
 
 # ─── MESSAGES REÇUS — BOÎTE DES SMS DES PARENTS ───────────────────────

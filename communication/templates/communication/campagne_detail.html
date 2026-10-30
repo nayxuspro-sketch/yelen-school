@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load droits_tags %}
 
 {% block title %}Campagne — {{ campagne.titre }}{% endblock %}
 
@@ -18,6 +19,11 @@
     </form>
     {% endif %}
     <a href="{% url 'communication:campagne_detail' campagne.pk %}" class="btn-secondary">Actualiser</a>
+    {% if request|autorise_url:'communication:campagne_supprimer' %}
+    <form method="post" action="{% url 'communication:campagne_supprimer' campagne.pk %}">{% csrf_token %}
+      <button type="submit" class="btn-danger" data-csp-confirm="Supprimer cette campagne et ses {{ sms|length }} SMS ? Ceux encore en attente ne seront pas envoyés.">Supprimer la campagne</button>
+    </form>
+    {% endif %}
   </div>
 </div>
 
