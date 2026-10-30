@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.18.0
+version_logiciel: 5.19.0
 version_guide: 5.16
-date_mise_a_jour: 30/10/2026 (5.18.0 : communication bidirectionnelle par SMS — message en clair, réponse du parent par SMS ; fin des « Commande invalide » en rafale, §29 et §10.3)
+date_mise_a_jour: 30/10/2026 (5.19.0 : suppression des messages reçus — ligne, sélection, tous les lus, §10.6)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -6637,6 +6637,8 @@ Pour chaque message : date de réception, numéro de l'expéditeur et **famille 
 Actions (droit *Marquer lu / non lu et répondre par SMS* de la fonctionnalité, matrice des droits 2.19) :
 - **Marquer lu** / **Marquer non lu** ; **Tout marquer comme lu** (en-tête : les messages libres non lus).
 - **Répondre** : ouvre un champ de 160 caractères ; le SMS part par la file SMS (`Exploitation → File SMS`) vers le numéro de l'expéditeur et le message est marqué lu. Bouton absent si les SMS sont désactivés (2.17).
+
+**Supprimer des messages** (droit `Messages reçus → supprimer`, secrétariat et direction par défaut) : bouton **Supprimer** sur la ligne, ou cases à cocher (case d'en-tête = toute la page) puis **Supprimer la sélection** ; **Supprimer tous les lus** vide d'un coup les messages déjà lus de la vue courante (libres, commandes ou tous) — pour nettoyer une boîte encombrée : *Tout marquer comme lu* puis *Supprimer tous les lus*. Un message supprimé disparaît de la boîte, des compteurs et du simulateur ; sa ligne reste dans le journal technique (10.7, inactive) afin que la relève du téléphone ne retraite pas le même SMS — il ne réapparaît pas et le parent ne reçoit pas de seconde réponse.
 
 > Les requêtes saisies dans le simulateur (10.5) sont enregistrées déjà lues : la boîte ne compte que les vrais SMS des parents.
 

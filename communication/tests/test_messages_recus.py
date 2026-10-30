@@ -141,3 +141,46 @@ def test_action_refusee_par_la_matrice_des_droits(boite, client):
     assert page.status_code == 200 and 'Marquer lu' not in page.content.decode() and 'name="texte"' not in page.content.decode()
     assert refus.status_code == 302 and refus.url == '/'
     assert IncomingSMSLog.objects.get(pk=boite['libre'].pk).lu_le is None
+
+
+def test_suppression_unitaire_selection_et_tous_les_lus(boite, client):
+    from communication.sms_recus import traiter_sms_recu
+    url = reverse('communication:messages_recus')
+    IncomingSMSLog.objects.filter(pk=boite['libre'].pk).update(message_id='text:abc')
+
+    retour = client.post(reverse('communication:messages_recus_supprimer', args=[boite['libre'].pk]), {'next': f'{url}?type=tous'})
+    html = client.get(url).content.decode()
+    ligne = IncomingSMSLog.objects.get(pk=boite['libre'].pk)
+    journal, cree = traiter_sms_recu('+22670112233', 'Je paierai lundi, merci', message_id='text:abc')
+
+    assert retour.status_code == 302 and retour.url == f'{url}?type=tous'
+    assert 'Je paierai lundi' not in html and 'Bonjour' in html and '1 non lu' in html
+    assert ligne.is_active is False and (journal.pk, cree) == (ligne.pk, False)   # la relève ne le retraite pas
+
+    sans_choix = client.post(reverse('communication:messages_recus_supprimer_selection'), {}, follow=True)
+    assert 'Cochez au moins un message' in sans_choix.content.decode()
+    assert IncomingSMSLog.objects.filter(is_active=True).count() == 2
+
+    client.post(reverse('communication:messages_recus_supprimer_selection'), {'ids': [str(boite['inconnu'].pk)]})
+    assert IncomingSMSLog.objects.get(pk=boite['inconnu'].pk).is_active is False
+
+    IncomingSMSLog.objects.filter(pk=boite['commande'].pk).update(lu_le='2026-10-28T10:00:00Z')
+    baker.make(IncomingSMSLog, sender_number='+22676000001', message_text='Lu mais libre', command_type='INVALID',
+               lu_le='2026-10-28T11:00:00Z')
+    client.post(reverse('communication:messages_recus_supprimer_selection'), {'portee': 'lus', 'type': 'commandes'})
+    assert IncomingSMSLog.objects.get(pk=boite['commande'].pk).is_active is False
+    assert IncomingSMSLog.objects.get(message_text='Lu mais libre').is_active is True   # autre vue : intacte
+
+
+def test_suppression_refusee_par_la_matrice_des_droits(boite, client):
+    from parametres import droits
+    from parametres.models import DroitAcces
+    DroitAcces.objects.create(role='DIRECTEUR', module='communication', fonctionnalite='/communication/messages-recus/',
+                              action='supprimer', autorise=False)
+    droits.invalider_cache()
+
+    page = client.get(reverse('communication:messages_recus')).content.decode()
+    refus = client.post(reverse('communication:messages_recus_supprimer', args=[boite['libre'].pk]))
+
+    assert 'Supprimer la sélection' not in page and 'name="ids"' not in page and 'Supprimer ce message' not in page
+    assert refus.status_code == 302 and refus.url == '/' and IncomingSMSLog.objects.get(pk=boite['libre'].pk).is_active

@@ -14,13 +14,24 @@
     </h1>
     <p class="page-subtitle">SMS envoyés par les parents au numéro de l'école. Les messages libres sont à lire et à traiter ; les commandes (NOTE, SOLDE, ABS, AIDE et celles définies dans Commandes SMS) ont reçu une réponse automatique.</p>
   </div>
-  {% if non_lus and request|autorise_url:'communication:messages_recus_tout_lu' %}
-  <form method="post" action="{% url 'communication:messages_recus_tout_lu' %}">
-    {% csrf_token %}
-    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-    <button type="submit" class="btn-secondary">Tout marquer comme lu</button>
-  </form>
-  {% endif %}
+  <div class="d-flex gap-2" style="flex-wrap:wrap; justify-content:flex-end;">
+    {% if non_lus and request|autorise_url:'communication:messages_recus_tout_lu' %}
+    <form method="post" action="{% url 'communication:messages_recus_tout_lu' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button type="submit" class="btn-secondary">Tout marquer comme lu</button>
+    </form>
+    {% endif %}
+    {% if page_obj and request|autorise_url:'communication:messages_recus_supprimer_selection' %}
+    <form method="post" action="{% url 'communication:messages_recus_supprimer_selection' %}" id="form-selection">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <input type="hidden" name="type" value="{{ type }}">
+      <button type="submit" class="btn-danger" data-csp-confirm="Supprimer les messages cochés ?">Supprimer la sélection</button>
+      <button type="submit" name="portee" value="lus" class="btn-secondary" data-csp-confirm="Supprimer tous les messages déjà lus de cette vue ?">Supprimer tous les lus</button>
+    </form>
+    {% endif %}
+  </div>
 </div>
 
 <div class="d-flex align-center gap-2 mb-4 animate-fade-up" style="flex-wrap:wrap;">
@@ -42,12 +53,14 @@
     <table class="data-table">
       <thead>
         <tr>
+          {% if request|autorise_url:'communication:messages_recus_supprimer_selection' %}<th style="width:2rem;"><input type="checkbox" id="cocher-tout" aria-label="Tout cocher"></th>{% endif %}
           <th>Reçu le</th><th>Expéditeur</th><th>Message</th><th>Type</th><th>État</th><th style="text-align:right;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for m in page_obj %}
         <tr{% if not m.lu_le %} style="font-weight:600;"{% endif %}>
+          {% if request|autorise_url:'communication:messages_recus_supprimer_selection' %}<td><input type="checkbox" name="ids" value="{{ m.pk }}" form="form-selection" aria-label="Sélectionner ce message"></td>{% endif %}
           <td class="text-secondary" style="white-space:nowrap;">{{ m.created_at|date:"d/m/Y H:i" }}</td>
           <td>
             <div>{{ m.sender_number }}</div>
@@ -94,10 +107,17 @@
               </form>
             </details>
             {% endif %}
+            {% if request|autorise_url:'communication:messages_recus_supprimer' %}
+            <form method="post" action="{% url 'communication:messages_recus_supprimer' m.pk %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="btn-danger btn-sm" data-csp-confirm="Supprimer ce message de {{ m.sender_number }} ?">Supprimer</button>
+            </form>
+            {% endif %}
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucun message{% if etat == 'non_lus' %} non lu{% elif etat == 'lus' %} lu{% endif %}{% if type == 'libres' %} libre{% elif type == 'commandes' %} de commande{% endif %}.</td></tr>
+        <tr><td colspan="7" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucun message{% if etat == 'non_lus' %} non lu{% elif etat == 'lus' %} lu{% endif %}{% if type == 'libres' %} libre{% elif type == 'commandes' %} de commande{% endif %}.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -118,5 +138,17 @@
   </a>
   {% endif %}
 </div>
+{% endif %}
+
+{% if request|autorise_url:'communication:messages_recus_supprimer_selection' %}
+<script nonce="{{ request.csp_nonce }}">
+  (function () {
+    var tout = document.getElementById('cocher-tout');
+    if (!tout) return;
+    tout.addEventListener('change', function () {
+      document.querySelectorAll('input[name="ids"]').forEach(function (c) { c.checked = tout.checked; });
+    });
+  })();
+</script>
 {% endif %}
 {% endblock %}

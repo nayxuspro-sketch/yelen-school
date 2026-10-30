@@ -271,7 +271,7 @@ def repondre(request, token):
 def sms_direct_simulateur(request):
     """Interface HTMX de simulation du SMS Direct (Parent-SMS)."""
     from .models import IncomingSMSLog
-    logs = IncomingSMSLog.objects.all()[:20]
+    logs = IncomingSMSLog.objects.filter(is_active=True)[:20]
     if request.headers.get('HX-Request') and request.GET.get('_partial') == 'history':
         return render(request, 'communication/partials/sms_direct_history.html', {
             'logs': logs,
@@ -669,7 +669,7 @@ def _familles_par_numero(numeros):
 
 def _nb_messages_libres_non_lus():
     from .models import IncomingSMSLog
-    return IncomingSMSLog.objects.filter(command_type__in=IncomingSMSLog.A_LIRE, lu_le__isnull=True).count()
+    return IncomingSMSLog.objects.filter(is_active=True, command_type__in=IncomingSMSLog.A_LIRE, lu_le__isnull=True).count()
 
 
 def _retour_messages_recus(request):
@@ -689,7 +689,7 @@ def messages_recus(request):
 
     type_ = request.GET.get('type') if request.GET.get('type') in ('commandes', 'tous') else 'libres'
     etat = request.GET.get('etat') if request.GET.get('etat') in ('non_lus', 'lus') else ''
-    qs = IncomingSMSLog.objects.select_related('eleve', 'lu_par', 'message_parent')
+    qs = IncomingSMSLog.objects.filter(is_active=True).select_related('eleve', 'lu_par', 'message_parent')
     if type_ == 'libres':
         qs = qs.filter(command_type__in=IncomingSMSLog.A_LIRE)
     elif type_ == 'commandes':
@@ -734,10 +734,50 @@ def messages_recus_marquer(request, pk):
 def messages_recus_tout_lu(request):
     """Marque lus tous les messages libres non lus."""
     from .models import IncomingSMSLog
-    nb = IncomingSMSLog.objects.filter(command_type__in=IncomingSMSLog.A_LIRE, lu_le__isnull=True) \
+    nb = IncomingSMSLog.objects.filter(is_active=True, command_type__in=IncomingSMSLog.A_LIRE, lu_le__isnull=True) \
         .update(lu_le=timezone.now(), lu_par=request.user)
     messages.success(request, f"{nb} message(s) marqué(s) comme lu(s).")
     return _retour_messages_recus(request)
+
+
+def _supprimer_messages_recus(request, qs):
+    """Retire des messages de la boîte. La ligne est conservée inactive : la relève de la boîte du téléphone
+    reconnaît encore l'identifiant du SMS et ne le retraite pas (sinon il réapparaîtrait avec une nouvelle
+    réponse automatique au parent)."""
+    from .models import IncomingSMSLog
+    nb = IncomingSMSLog.objects.filter(pk__in=list(qs.values_list('pk', flat=True))) \
+        .update(is_active=False, updated_at=timezone.now())
+    messages.success(request, f"{nb} message(s) supprimé(s).")
+    return _retour_messages_recus(request)
+
+
+@login_required
+@require_POST
+def messages_recus_supprimer(request, pk):
+    from .models import IncomingSMSLog
+    return _supprimer_messages_recus(request, IncomingSMSLog.objects.filter(pk=pk, is_active=True))
+
+
+@login_required
+@require_POST
+def messages_recus_supprimer_selection(request):
+    """Supprime les messages cochés (``ids``) ou, avec ``portee=lus``, tous les messages lus de la vue courante
+    (``type`` = libres / commandes / tous)."""
+    from .models import IncomingSMSLog
+    qs = IncomingSMSLog.objects.filter(is_active=True)
+    if request.POST.get('portee') == 'lus':
+        qs = qs.filter(lu_le__isnull=False)
+        if request.POST.get('type') == 'libres':
+            qs = qs.filter(command_type__in=IncomingSMSLog.A_LIRE)
+        elif request.POST.get('type') == 'commandes':
+            qs = qs.exclude(command_type__in=IncomingSMSLog.A_LIRE)
+    else:
+        ids = [i for i in request.POST.getlist('ids') if re.fullmatch(r'[0-9a-fA-F-]{36}', i)]
+        if not ids:
+            messages.error(request, "Cochez au moins un message à supprimer.")
+            return _retour_messages_recus(request)
+        qs = qs.filter(pk__in=ids)
+    return _supprimer_messages_recus(request, qs)
 
 
 @login_required

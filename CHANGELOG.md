@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.19.0 — 2026-10-30
+
+### Suppression des messages reçus
+- `Communication → Messages reçus` : bouton **Supprimer** par ligne, cases à cocher (en-tête = toute la page) + **Supprimer la sélection**, et **Supprimer tous les lus** de la vue courante (libres / commandes / tous), chacun avec confirmation. Nouveau droit `Messages reçus → supprimer` (secrétariat et direction par défaut).
+- Un message supprimé disparaît de la boîte, de la pastille du menu et du simulateur SMS Direct ; la ligne est conservée inactive (`is_active=False`) pour que la relève de la boîte du téléphone, qui dédoublonne par identifiant de SMS, ne le retraite pas (il réapparaîtrait sinon dans les 15 secondes avec une nouvelle réponse au parent). Aucune migration. 2 tests.
+
 ## 5.18.0 — 2026-10-30
 
 ### Communication bidirectionnelle par SMS, fin des « Commande invalide » en rafale

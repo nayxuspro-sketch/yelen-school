@@ -276,6 +276,8 @@ MODULES = (
         _f('/communication/messages-recus/', 'Messages reçus', actions=(
             _a('traiter', 'Marquer lu / non lu et répondre par SMS',
                'messages_recus_marquer', 'messages_recus_tout_lu', 'messages_recus_repondre'),
+            _a('supprimer', 'Supprimer des messages reçus',
+               'messages_recus_supprimer', 'messages_recus_supprimer_selection', roles=_SECRETARIAT),
         )),
         _f('/communication/commandes-sms/', 'Commandes SMS', actions=(
             _a('gerer', 'Créer, modifier, activer / désactiver, supprimer une commande',
