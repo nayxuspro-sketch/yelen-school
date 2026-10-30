@@ -38,7 +38,7 @@ class TestPresencesViews:
 def test_appel_saisie_compteurs_sans_inline(client):
     """Les compteurs de l'appel sont recalculés par un écouteur du formulaire, sans attribut onchange (CSP)."""
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', etablissement=etab))
+    client.force_login(baker.make('accounts.User', role='AVS', etablissement=etab))
     classe = baker.make('parametres.Classe', etablissement=etab)
     appel = baker.make('presences.Appel', classe=classe, est_clos=False)
     presence = baker.make('presences.Presence', appel=appel, inscription__classe=classe, statut='PRESENT')

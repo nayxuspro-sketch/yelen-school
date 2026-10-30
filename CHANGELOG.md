@@ -3,6 +3,18 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.26.1 — 2026-10-30
+
+### Un enseignant ne fait l'appel que de ses classes
+
+- Module Présences : pour un compte **Enseignant**, les classes proposées (`Faire l'appel`), l'historique des appels,
+  son export CSV et son impression se limitent aux classes de ses **enseignements actifs de l'année**
+  (`Pédagogie › Enseignements`, fiche du personnel reliée par l'adresse e-mail) — même règle que la saisie des notes.
+- La création d'un appel, sa saisie, le scanner QR, le pointage et les cartes QR d'une autre classe sont refusés avec
+  un message explicite (classe non attribuée, ou fiche du personnel absente) ; la file hors réseau reçoit ce refus.
+- Dans sa classe, la liste des matières se limite à celles qu'il y enseigne ; l'appel général reste possible.
+- Direction, censeur, AVS, secrétariat : inchangé (toutes les classes). Guide §7.1.
+
 ## 5.26.0 — 2026-10-30
 
 ### Compte rendu quotidien du promoteur par SMS

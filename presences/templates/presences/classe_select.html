@@ -13,7 +13,7 @@
     </a>
     <div>
       <h1 class="page-title">Sélectionner une classe</h1>
-      <p class="page-subtitle">Choisissez la classe pour démarrer un appel{% if annee %} · {{ annee.libelle }}{% endif %}</p>
+      <p class="page-subtitle">{{ sous_titre }}{% if annee %} · {{ annee.libelle }}{% endif %}</p>
     </div>
   </div>
 </div>
@@ -39,7 +39,7 @@
 {% empty %}
 <div class="card animate-fade-up delay-1">
   <div class="card-body" style="text-align:center; padding:3rem 1.5rem;">
-    <p class="text-muted">Aucune classe active trouvée.</p>
+    <p class="text-muted">{{ message_vide }}</p>
   </div>
 </div>
 {% endfor %}

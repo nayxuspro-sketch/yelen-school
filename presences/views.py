@@ -35,6 +35,27 @@ def _get_etab(request):
     return getattr(request.user, 'etablissement', None)
 
 
+def _classes_appel(request, etab, annee):
+    """Classes dont l'utilisateur peut faire l'appel : toutes les classes actives de l'établissement ; pour un
+    enseignant, uniquement celles de ses enseignements actifs de l'année (Pédagogie › Enseignements)."""
+    classes = Classe.objects.filter(etablissement=etab, actif=True)
+    if request.user.role == 'ENSEIGNANT':
+        classes = classes.filter(enseignements__personnel=filtre_enseignant(request.user),
+                                 enseignements__annee_scolaire=annee, enseignements__est_actif=True).distinct()
+    return classes.select_related('cycle').order_by('cycle__ordre', 'nom')
+
+
+def _refus_classe(request, classe, annee):
+    """Motif pour lequel un enseignant ne peut pas faire l'appel de ``classe`` (None si autorisé)."""
+    if request.user.role != 'ENSEIGNANT' or _classes_appel(request, classe.etablissement_id, annee).filter(pk=classe.pk).exists():
+        return None
+    if get_membre_personnel(request.user) is None:
+        return (f"aucune fiche du personnel ne porte l'adresse de votre compte ({request.user.email}) ; "
+                "l'administration doit la renseigner sur votre fiche (Personnel) pour vous relier à vos classes.")
+    return (f"la classe {classe.nom} ne vous est pas attribuée cette année (Pédagogie › Enseignements) ; "
+            "un enseignant ne fait l'appel que de ses classes.")
+
+
 # ─── Appels ────────────────────────────────────────────────────────────────────
 
 def _build_appel_groupes(qs):
@@ -85,12 +106,14 @@ def appel_list(request):
     if classe_id:
         qs = qs.filter(classe_id=classe_id)
 
+    classes = _classes_appel(request, etab, annee)
+    if request.user.role == 'ENSEIGNANT':
+        qs = qs.filter(classe__in=classes)
+
     qs = qs.order_by('-date', 'classe__nom')
     page_number = request.GET.get('page', 1)
     paginator = Paginator(qs, 100)
     page_obj = paginator.get_page(page_number)
-
-    classes = Classe.objects.filter(etablissement=etab, actif=True).select_related('cycle').order_by('cycle__ordre', 'nom')
 
     nb_justifications_attente = Justification.objects.filter(
         inscription__annee_scolaire=annee,
@@ -131,6 +154,8 @@ def appel_csv(request):
         qs = qs.filter(date__lte=date_fin)
     if classe_id:
         qs = qs.filter(classe_id=classe_id)
+    if request.user.role == 'ENSEIGNANT':
+        qs = qs.filter(classe__in=_classes_appel(request, etab, annee))
     
     qs = qs.order_by('-date', 'classe__nom')
     
@@ -187,6 +212,8 @@ def appel_print(request):
         qs = qs.filter(date__lte=date_fin)
     if classe_id:
         qs = qs.filter(classe_id=classe_id)
+    if request.user.role == 'ENSEIGNANT':
+        qs = qs.filter(classe__in=_classes_appel(request, etab, annee))
 
     qs = qs.order_by('date', 'classe__nom')
     groupes_dates = _build_appel_groupes(qs)
@@ -227,9 +254,7 @@ def classe_select(request):
     annee = _get_annee_courante(etab)
 
     cycles = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
-    classes_qs = Classe.objects.filter(
-        etablissement=etab, actif=True
-    ).select_related('cycle').order_by('cycle__ordre', 'nom')
+    classes_qs = _classes_appel(request, etab, annee)
 
     # Regrouper par cycle
     classes_par_cycle = []
@@ -238,9 +263,15 @@ def classe_select(request):
         if classes:
             classes_par_cycle.append({'cycle': cycle, 'classes': classes})
 
+    enseignant = request.user.role == 'ENSEIGNANT'
     return render(request, 'presences/classe_select.html', {
         'classes_par_cycle': classes_par_cycle,
         'annee': annee,
+        'sous_titre': "Vos classes de l'année : choisissez celle dont vous faites l'appel" if enseignant
+                      else "Choisissez la classe pour démarrer un appel",
+        'message_vide': ("Aucune classe ne vous est attribuée pour l'année en cours. L'administration vous rattache "
+                         "à vos classes dans Pédagogie › Enseignements ; votre fiche du personnel doit porter "
+                         "l'adresse e-mail de votre compte.") if enseignant else "Aucune classe active trouvée.",
     })
 
 
@@ -250,10 +281,23 @@ def appel_create(request, classe_id):
     etab = _get_etab(request)
     classe = get_object_or_404(Classe, pk=classe_id, etablissement=etab)
     annee = _get_annee_courante(etab)
+    refus = _refus_classe(request, classe, annee)
+    if refus:
+        messages.error(request, f"Appel impossible : {refus}")
+        return redirect('presences:classe_select')
+
+    matieres = Matiere.objects.order_by('code')
+    if request.user.role == 'ENSEIGNANT':   # ses matières dans cette classe (l'appel général reste possible)
+        matieres = matieres.filter(enseignements__classe=classe, enseignements__annee_scolaire=annee,
+                                   enseignements__personnel=filtre_enseignant(request.user),
+                                   enseignements__est_actif=True).distinct()
 
     if request.method == 'POST':
         date_appel = request.POST.get('date') or date.today()
         matiere_id = request.POST.get('matiere') or None
+        if matiere_id and request.user.role == 'ENSEIGNANT' and not matieres.filter(pk=matiere_id).exists():
+            messages.error(request, f"Appel impossible : cette matière ne vous est pas attribuée en {classe.nom}.")
+            return redirect('presences:appel_create', classe_id=classe.pk)
 
         # Vérifier si un appel existe déjà pour cette combinaison
         appel_existant = Appel.objects.filter(
@@ -293,8 +337,6 @@ def appel_create(request, classe_id):
 
         return redirect('presences:appel_saisie', appel_id=appel.pk)
 
-    matieres = Matiere.objects.order_by('code')
-
     return render(request, 'presences/appel_form.html', {
         'classe': classe,
         'matieres': matieres,
@@ -310,6 +352,10 @@ def appel_saisie(request, appel_id):
         Appel.objects.select_related('classe', 'matiere'),
         pk=appel_id, classe__etablissement=_get_etab(request),
     )
+    refus = _refus_classe(request, appel.classe, appel.annee_scolaire_id)
+    if refus:
+        messages.error(request, f"Saisie impossible : {refus}")
+        return redirect('presences:appel_list')
 
     if appel.est_clos:
         messages.warning(request, "Cet appel est clôturé, la saisie n'est plus possible.")
@@ -736,6 +782,10 @@ def cartes_qr_classe(request, classe_id):
     etab   = _get_etab(request)
     classe = get_object_or_404(Classe, pk=classe_id, etablissement=etab)
     annee  = _get_annee_courante(etab)
+    refus = _refus_classe(request, classe, annee)
+    if refus:
+        messages.error(request, f"Impression impossible : {refus}")
+        return redirect('presences:classe_select')
 
     inscriptions = (
         Inscription.objects
@@ -760,6 +810,10 @@ def qr_scanner(request, appel_id):
         pk=appel_id,
         classe__etablissement=etab,
     )
+    refus = _refus_classe(request, appel.classe, appel.annee_scolaire_id)
+    if refus:
+        messages.error(request, f"Pointage impossible : {refus}")
+        return redirect('presences:appel_list')
     if appel.est_clos:
         messages.warning(request, "Cet appel est clôturé — le pointage QR n'est plus possible.")
         return redirect('presences:appel_saisie', appel_id=appel_id)
@@ -789,6 +843,12 @@ def api_qr_pointer(request, appel_id):
     """
     etab  = _get_etab(request)
     appel = get_object_or_404(Appel, pk=appel_id, classe__etablissement=etab)
+    refus = _refus_classe(request, appel.classe, appel.annee_scolaire_id)
+    if refus:
+        return HttpResponse(
+            _json.dumps({'ok': False, 'message': f"Pointage impossible : {refus}"}),
+            content_type='application/json', status=403,
+        )
 
     if appel.est_clos:
         return HttpResponse(

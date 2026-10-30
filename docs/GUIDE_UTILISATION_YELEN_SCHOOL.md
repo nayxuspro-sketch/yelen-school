@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.26.0
-version_guide: 5.18
-date_mise_a_jour: 30/10/2026 (5.26.0 : compte rendu quotidien du promoteur par SMS, §2.20)
+version_logiciel: 5.26.1
+version_guide: 5.19
+date_mise_a_jour: 30/10/2026 (5.26.1 : un enseignant ne fait l'appel que de ses classes, §7.1)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -1359,6 +1359,18 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 **À quoi ça sert :** Enregistre les présences et absences des élèves pour chaque séance de cours.
 
 **Accès :** `Présences → Faire l'appel`
+
+**Qui fait l'appel de quelle classe :**
+
+- **Direction, censeur, AVS, secrétariat** : toutes les classes actives de l'établissement.
+- **Enseignant** : uniquement **ses classes**, c'est-à-dire celles de ses enseignements actifs de l'année en cours
+  (`Pédagogie → Enseignements`), comme pour la saisie des notes. La page de choix de classe, l'historique des appels,
+  son export CSV et son impression ne montrent que ces classes ; dans sa classe, la liste des matières se limite à
+  celles qu'il y enseigne (l'appel général de la classe reste possible). Un appel, une saisie, un scan QR ou une
+  impression de cartes QR tenté sur une autre classe est refusé avec le motif (« la classe 5e B ne vous est pas
+  attribuée cette année »), y compris pour une saisie faite hors réseau puis synchronisée.
+- **Prérequis côté administration :** la fiche du personnel de l'enseignant porte la **même adresse e-mail** que son
+  compte et ses enseignements de l'année sont créés. Sinon, la page lui indique qu'aucune classe ne lui est attribuée.
 
 **Interface de saisie (`/presences/appel/<id>/saisie/`) :**
 
