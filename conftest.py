@@ -20,6 +20,18 @@ def disable_audit_for_tests():
 
 
 @pytest.fixture(autouse=True)
+def cache_des_droits_isole():
+    """La matrice des droits est mise en cache sous une clé unique : avec un cache qui survit à la transaction du
+    test (Redis en mode serveur), un refus posé par un test contaminerait les suivants. Le cache en base, lui, est
+    annulé avec la transaction et n'est pas touché (les tests sans base ne doivent pas l'ouvrir)."""
+    yield
+    from django.conf import settings as reglages
+    if 'DatabaseCache' not in reglages.CACHES['default']['BACKEND']:
+        from parametres import droits
+        droits.invalider_cache()
+
+
+@pytest.fixture(autouse=True)
 def two_factor_non_obligatoire(settings):
     """Les tests existants connectent des Super Admin/Directeurs sans TOTP ; les tests dédiés réactivent l'obligation."""
     settings.TWO_FACTOR_REQUIRED = False

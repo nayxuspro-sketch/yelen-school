@@ -3,6 +3,9 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.22.1 — 2026-10-30
+- Tests : isolation du cache de la matrice des droits entre les tests (fixture globale) — en mode serveur (Redis), un refus posé par un test survivait à sa transaction et faisait échouer le test suivant en CI. Aucun changement fonctionnel.
+
 ## 5.22.0 — 2026-10-30
 
 ### Suppression des messages envoyés aux parents

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.22.0
+version_logiciel: 5.22.1
 version_guide: 5.16
-date_mise_a_jour: 30/10/2026 (5.22.0 : suppression des messages parents par ligne et par sélection, suppression des campagnes SMS, §29.4 et §9.24)
+date_mise_a_jour: 30/10/2026 (5.22.1 : suppression des messages parents par ligne et par sélection, suppression des campagnes SMS, §29.4 et §9.24)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
