@@ -1,6 +1,7 @@
 """Communication bidirectionnelle par SMS : le message est envoyé en clair (sans lien), le parent répond en
 répondant au SMS (créneau, accusé de réception, date de règlement, motif) ; un SMS libre reçoit un accusé au plus
 une fois par jour — plus jamais « Commande invalide » en rafale — et l'école ne répond jamais à ses propres SMS."""
+import os
 from datetime import date
 from unittest.mock import patch
 
@@ -192,3 +193,50 @@ def test_renvoi_refuse_par_la_matrice_des_droits(client, ecole, directeur):
 
     assert 'Non envoyé' in liste and 'Envoyer le SMS' not in liste
     assert refus.status_code == 302 and refus.url == '/' and SmsSortant.objects.count() == 0
+
+
+def test_suppression_par_type_et_statut_et_d_un_message(client, ecole, directeur, settings, tmp_path):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    settings.MEDIA_ROOT = tmp_path
+    liste_url, suppr_url = reverse('communication:message_list'), reverse('communication:message_supprimer_filtre')
+    conv_repondue = message(ecole, 'CONVOCATION', 'Entretien', 'Venir.', statut='REPONDU')
+    conv_envoyee = message(ecole, 'CONVOCATION', 'Entretien 2', 'Venir.', statut='ENVOYE')
+    relance = message(ecole, 'RELANCE', 'Scolarite', 'Reste 50 000 F.', statut='REPONDU')
+    justif = ReponseParent.objects.create(message=conv_repondue, commentaire='ok',
+                                          justificatif=SimpleUploadedFile('certif.txt', b'certificat'))
+    chemin = justif.justificatif.path
+
+    sans_filtre = client.post(suppr_url, {}, follow=True)
+    assert 'Choisissez un type et / ou un statut' in sans_filtre.content.decode() and MessageParent.objects.count() == 3
+
+    affiche = client.get(liste_url, {'type': 'CONVOCATION', 'statut': 'REPONDU'}).content.decode()
+    assert '1 message affiché' in affiche and 'Supprimer définitivement les 1 message affiché' in affiche
+    assert 'Choisissez un type et / ou un statut' in client.get(liste_url).content.decode()
+
+    retour = client.post(suppr_url, {'type': 'CONVOCATION', 'statut': 'REPONDU'}, follow=True)
+    assert retour.redirect_chain[0][0] == f'{liste_url}?type=CONVOCATION&statut=REPONDU&q='
+    assert '1 message(s) parent(s) supprimé(s).' in retour.content.decode()   # flash visible : la clé « messages » n'est plus masquée
+    assert set(MessageParent.objects.values_list('pk', flat=True)) == {conv_envoyee.pk, relance.pk}
+    assert not ReponseParent.objects.filter(pk=justif.pk).exists() and not os.path.exists(chemin)
+
+    client.post(suppr_url, {'statut': 'REPONDU'})
+    assert list(MessageParent.objects.values_list('pk', flat=True)) == [conv_envoyee.pk]
+
+    seul = client.post(reverse('communication:message_supprimer', args=[conv_envoyee.pk]))
+    assert seul.status_code == 302 and seul.url == liste_url and MessageParent.objects.count() == 0
+
+
+def test_suppression_des_messages_parents_refusee_par_la_matrice_des_droits(client, ecole, directeur):
+    from parametres import droits
+    from parametres.models import DroitAcces
+    msg = message(ecole, 'AVERTISSEMENT', 'Retards', '3 retards.')
+    DroitAcces.objects.create(role='DIRECTEUR', module='communication', fonctionnalite='/communication/',
+                              action='supprimer', autorise=False)
+    droits.invalider_cache()
+
+    liste = client.get(reverse('communication:message_list'), {'type': 'AVERTISSEMENT'}).content.decode()
+    detail = client.get(reverse('communication:message_detail', args=[msg.pk])).content.decode()
+    refus = client.post(reverse('communication:message_supprimer_filtre'), {'type': 'AVERTISSEMENT'})
+
+    assert 'Supprimer les messages affichés' not in liste and 'Supprimer définitivement ce message' not in detail
+    assert refus.status_code == 302 and refus.url == '/' and MessageParent.objects.filter(pk=msg.pk).exists()

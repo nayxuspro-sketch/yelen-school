@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.20.0
+version_logiciel: 5.21.0
 version_guide: 5.16
-date_mise_a_jour: 30/10/2026 (5.20.0 : renvoi du SMS d'un message parent non envoyé ou en échec, §29.4)
+date_mise_a_jour: 30/10/2026 (5.21.0 : suppression des messages parents par type et statut, §29.4)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -6205,6 +6205,8 @@ La liste des messages affiche :
 - Le **statut** : Envoyé → Lu (ouverture du lien) → Répondu (réponse par SMS ou par le lien)
 - L'état réel du **SMS** : *Non envoyé* (case décochée, SMS désactivés à l'époque), *En attente* (file d'envoi, nouvelles tentatives automatiques), *Échec* (motif au survol) ou *Envoyé*
 - **Envoyer le SMS** / **Renvoyer** (droit *Envoyer un message*) sur les lignes *Non envoyé* et *Échec*, et sur la fiche du message (avec confirmation si un SMS est déjà parti) : le texte est recomposé au format actuel (sigle, objet, contenu, consigne) et le numéro relu sur la fiche élève (parent, sinon tuteur) — utile aussi pour les messages anciens envoyés avec le lien. Refus explicite si la fiche n'a aucun numéro, si le SMS dépasserait 160 caractères ou si les SMS sont désactivés.
+
+**Supprimer des messages** (droit *Messages parents → supprimer*, secrétariat et direction par défaut) : choisir un **type** et / ou un **statut** dans les filtres (la recherche éventuelle s'applique aussi), puis **Supprimer les messages affichés** — le bouton indique le nombre concerné et demande confirmation ; sans type ni statut, la suppression est refusée (jamais toute la boîte d'un clic). La fiche d'un message propose **Supprimer** pour un message isolé. La suppression est définitive : la réponse du parent et son justificatif sont effacés avec le message ; les SMS reçus restent dans Messages reçus, détachés du message.
 - Un accès rapide au **détail** de chaque message et à la réponse du parent
 
 ---

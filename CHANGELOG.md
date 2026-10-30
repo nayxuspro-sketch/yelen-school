@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.21.0 — 2026-10-30
+
+### Communication bidirectionnelle : suppression par type et statut
+- Liste des messages parents : avec un type et / ou un statut sélectionnés (recherche comprise), bouton **Supprimer les messages affichés** (nombre indiqué, confirmation) ; sans type ni statut, refus explicite. Fiche du message : **Supprimer**. Nouveau droit `Messages parents → supprimer` (secrétariat et direction par défaut).
+- Suppression définitive : réponses du parent en cascade, fichiers justificatifs effacés du disque, SMS reçus conservés dans Messages reçus (détachés). Le compteur annoncé ne compte que les messages, pas les réponses supprimées en cascade.
+- **Correction** : la page utilisait la clé de contexte `messages`, qui masquait les messages flash de Django (confirmation d'envoi, erreurs) sur la liste des messages parents et les rejouait sur la page suivante — clé renommée `messages_parents`. 2 tests.
+
 ## 5.20.0 — 2026-10-30
 
 ### Communication bidirectionnelle : renvoyer les messages non envoyés

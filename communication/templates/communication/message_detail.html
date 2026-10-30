@@ -13,12 +13,20 @@
     </p>
     <h1 class="page-title">{{ msg.get_type_display }}</h1>
   </div>
-  <a href="{% url 'communication:message_list' %}" class="btn-secondary btn-sm">
-    <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-    </svg>
-    Retour
-  </a>
+  <div class="d-flex gap-2">
+    {% if request|autorise_url:'communication:message_supprimer' %}
+    <form method="post" action="{% url 'communication:message_supprimer' msg.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-danger btn-sm" data-csp-confirm="Supprimer définitivement ce message{% if reponse %} et la réponse du parent{% endif %} ?">Supprimer</button>
+    </form>
+    {% endif %}
+    <a href="{% url 'communication:message_list' %}" class="btn-secondary btn-sm">
+      <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </a>
+  </div>
 </div>
 
 {# Bannière de statut #}

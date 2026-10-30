@@ -5,6 +5,22 @@
      hx-target="this"
      hx-swap="outerHTML"
      class="table-wrapper">
+  {% if nb_affiches and request|autorise_url:'communication:message_supprimer_filtre' %}
+  <div class="d-flex align-center gap-3" style="padding:var(--space-2) var(--space-3); flex-wrap:wrap;">
+    <span class="text-muted text-sm">{{ nb_affiches }} message{{ nb_affiches|pluralize }} affiché{{ nb_affiches|pluralize }}</span>
+    {% if type_filter or statut_filter %}
+    <form method="post" action="{% url 'communication:message_supprimer_filtre' %}">
+      {% csrf_token %}
+      <input type="hidden" name="type" value="{{ type_filter }}">
+      <input type="hidden" name="statut" value="{{ statut_filter }}">
+      <input type="hidden" name="q" value="{{ q }}">
+      <button type="submit" class="btn-danger btn-sm" data-csp-confirm="Supprimer définitivement les {{ nb_affiches }} message{{ nb_affiches|pluralize }} affiché{{ nb_affiches|pluralize }} (et les réponses des parents) ?">Supprimer les messages affichés</button>
+    </form>
+    {% else %}
+    <span class="text-muted text-xs">Choisissez un type et / ou un statut pour pouvoir supprimer les messages affichés.</span>
+    {% endif %}
+  </div>
+  {% endif %}
   <div class="table-scroll">
     <table class="data-table">
       <thead>
@@ -19,7 +35,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for m in messages %}
+        {% for m in messages_parents %}
         <tr>
           <td class="fw-medium">{{ m.eleve.prenom }} {{ m.eleve.nom }}</td>
           <td>

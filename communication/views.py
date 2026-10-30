@@ -28,6 +28,16 @@ def _get_etab(request):
 
 # ─── LISTE ────────────────────────────────────────────────────────────
 
+def _filtrer_messages(qs, type_filter, statut_filter, q):
+    if type_filter:
+        qs = qs.filter(type=type_filter)
+    if statut_filter:
+        qs = qs.filter(statut=statut_filter)
+    if q:
+        qs = qs.filter(Q(eleve__nom__icontains=q) | Q(eleve__prenom__icontains=q) | Q(objet__icontains=q))
+    return qs
+
+
 @login_required
 def message_list(request):
     etab = _get_etab(request)
@@ -45,21 +55,11 @@ def message_list(request):
     type_filter = request.GET.get('type', '')
     statut_filter = request.GET.get('statut', '')
     q = request.GET.get('q', '')
-
-    qs = base_qs
-    if type_filter:
-        qs = qs.filter(type=type_filter)
-    if statut_filter:
-        qs = qs.filter(statut=statut_filter)
-    if q:
-        qs = qs.filter(
-            Q(eleve__nom__icontains=q) |
-            Q(eleve__prenom__icontains=q) |
-            Q(objet__icontains=q)
-        )
+    qs = _filtrer_messages(base_qs, type_filter, statut_filter, q)
 
     ctx = {
-        'messages': qs,
+        'messages_parents': qs,   # pas « messages » : la clé masquerait les messages flash de Django dans base.html
+        'nb_affiches': qs.count(),
         'type_choices': MessageParent.TYPE_CHOICES,
         'statut_choices': MessageParent.STATUT_CHOICES,
         'type_filter': type_filter,
@@ -199,6 +199,41 @@ def message_renvoyer_sms(request, pk):
     msg.save(update_fields=['sms', 'sms_envoye', 'date_envoi_sms', 'telephone_utilise'])
     messages.success(request, f"SMS mis en file pour {telephone} : « {msg.objet} ».")
     return redirect(suivant)
+
+
+def _supprimer_messages_parents(request, qs, suivant):
+    """Supprime les messages (réponses en cascade, fichiers justificatifs effacés) ; les SMS reçus des parents
+    restent dans Messages reçus, détachés du message."""
+    for reponse in ReponseParent.objects.filter(message__in=qs).exclude(justificatif=''):
+        reponse.justificatif.delete(save=False)
+    _, details = qs.delete()
+    nb = details.get(MessageParent._meta.label, 0)   # les réponses supprimées en cascade ne sont pas comptées
+    messages.success(request, f"{nb} message(s) parent(s) supprimé(s).")
+    return redirect(suivant)
+
+
+@login_required
+@require_POST
+def message_supprimer_filtre(request):
+    """Supprime les messages de la vue courante : type et / ou statut obligatoires (jamais toute la boîte d'un
+    clic), recherche éventuelle comprise."""
+    type_filter = request.POST.get('type', '') if request.POST.get('type', '') in dict(MessageParent.TYPE_CHOICES) else ''
+    statut_filter = request.POST.get('statut', '') if request.POST.get('statut', '') in dict(MessageParent.STATUT_CHOICES) else ''
+    q = request.POST.get('q', '').strip()
+    suivant = reverse('communication:message_list') + '?' + urlencode({'type': type_filter, 'statut': statut_filter, 'q': q})
+    if not (type_filter or statut_filter):
+        messages.error(request, "Choisissez un type et / ou un statut avant de supprimer.")
+        return redirect(suivant)
+    qs = _filtrer_messages(MessageParent.objects.filter(etablissement=_get_etab(request)), type_filter, statut_filter, q)
+    return _supprimer_messages_parents(request, qs, suivant)
+
+
+@login_required
+@require_POST
+def message_supprimer(request, pk):
+    qs = MessageParent.objects.filter(pk=pk, etablissement=_get_etab(request))
+    get_object_or_404(qs)
+    return _supprimer_messages_parents(request, qs, reverse('communication:message_list'))
 
 
 # ─── DÉTAIL ───────────────────────────────────────────────────────────
