@@ -370,6 +370,10 @@ if os.environ.get('EMAIL_HOST'):
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Notifications push du portail parent (core/push.py) : contact VAPID transmis aux services de notifications
+# (mailto: ou https://) ; les clés sont générées automatiquement et conservées en base.
+WEBPUSH_CONTACT = os.environ.get('WEBPUSH_CONTACT', 'mailto:noreply@yelenSchool.bf')
+
 # Authentification
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'

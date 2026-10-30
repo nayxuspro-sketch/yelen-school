@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 
@@ -657,9 +658,12 @@ def portail_parent(request):
             'devoirs_a_venir': devoirs_a_venir,
         })
 
+    from core import push
+
     return render(request, 'core/portail_parent.html', {
         'enfants': enfants,
         'annee': annee,
+        'push_cle_publique': push.cle_publique(),
     })
 
 
@@ -737,10 +741,84 @@ def portail_parent_notifications(request):
     qs.filter(lu=False).update(lu=True)
     notifications = qs.order_by('-created_at')[:50]
 
+    from core import push
+
     return render(request, 'core/portail_parent_notifications.html', {
         'notifications': notifications,
         'nb_non_lues': nb_non_lues,
+        'push_cle_publique': push.cle_publique(),
     })
+
+
+# ── Notifications push (appareils du parent) ─────────────────────────────────
+
+def _reponse_push(ok, message, statut=200):
+    return JsonResponse({'ok': ok, 'message': message}, status=statut)
+
+
+def _requete_push(request):
+    """(utilisateur parent, corps JSON) ou (None, réponse de refus)."""
+    if request.user.role != 'PARENT':
+        return None, _reponse_push(False, "Réservé aux parents.", 403)
+    try:
+        return json.loads(request.body or b'{}'), None
+    except ValueError:
+        return None, _reponse_push(False, "Requête illisible.", 400)
+
+
+@login_required
+@require_POST
+@requires_licence_feature('portail_parents', api_mode=True)
+def push_abonner(request):
+    """Enregistre l'abonnement Web Push de l'appareil (``PushSubscription.toJSON()``)."""
+    from core import push
+    donnees, refus = _requete_push(request)
+    if refus:
+        return refus
+    try:
+        push.enregistrer_abonnement(request.user, donnees, request.META.get('HTTP_USER_AGENT', ''))
+    except ValueError as erreur:
+        return _reponse_push(False, str(erreur), 400)
+    return _reponse_push(True, "Notifications activées sur cet appareil.")
+
+
+@login_required
+@require_POST
+@requires_licence_feature('portail_parents', api_mode=True)
+def push_desabonner(request):
+    """Retire l'abonnement de l'appareil (``{endpoint}``)."""
+    from core import push
+    donnees, refus = _requete_push(request)
+    if refus:
+        return refus
+    push.supprimer_abonnement(request.user, (donnees or {}).get('endpoint'))
+    return _reponse_push(True, "Notifications désactivées sur cet appareil.")
+
+
+@login_required
+@require_POST
+@requires_licence_feature('portail_parents', api_mode=True)
+def push_test(request):
+    """Envoie immédiatement une notification de test à l'appareil (``{endpoint}``) et rend compte du résultat."""
+    from core import push
+    from core.models import AbonnementPush
+    donnees, refus = _requete_push(request)
+    if refus:
+        return refus
+    abonnement = AbonnementPush.objects.filter(utilisateur=request.user, endpoint=(donnees or {}).get('endpoint') or '').first()
+    if abonnement is None:
+        return _reponse_push(False, "Cet appareil n'est pas abonné : activez d'abord les notifications.", 404)
+    resultat = push.envoyer(abonnement, {
+        'titre': "Notification de test", 'message': "Les notifications de YELEN SCHOOL fonctionnent sur cet appareil.",
+        'url': reverse('core:portail_parent_notifications'), 'tag': 'test',
+    })
+    messages_resultat = {
+        push.OK: "Notification de test envoyée : elle s'affiche dans quelques secondes.",
+        push.EXPIRE: "Cet appareil n'est plus abonné : désactivez puis réactivez les notifications.",
+        push.INJOIGNABLE: "Le serveur de l'école n'a pas pu joindre le service de notifications (accès Internet du serveur ?).",
+        push.REFUSE: "Le service de notifications a refusé l'envoi ; réessayez plus tard.",
+    }
+    return _reponse_push(resultat == push.OK, messages_resultat[resultat])
 
 
 @login_required
@@ -1499,8 +1577,8 @@ def pwa_icon(request, size):
 def pwa_service_worker(request):
     """Service Worker — cache le portail parent pour un accès hors ligne."""
     sw = (
-        "const CACHE='yelen-parent-v2';\n"
-        "const PRECACHE=['/portail/parent/','/static/css/yelen.css','/static/js/pwa.js'];\n"
+        "const CACHE='yelen-parent-v3';\n"
+        "const PRECACHE=['/portail/parent/','/static/css/yelen.css','/static/js/pwa.js','/static/js/push_parent.js'];\n"
         "self.addEventListener('install',e=>{"
         "e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting()));});\n"
         "self.addEventListener('activate',e=>{"
@@ -1515,6 +1593,19 @@ def pwa_service_worker(request):
         "if(r.ok){const c=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,c));}"
         "return r;}).catch(()=>caches.match(e.request)"
         ".then(cached=>cached||caches.match('/portail/parent/'))));});\n"
+        # Notifications push (core/push.py) : affichage, puis ouverture de la page du portail au toucher.
+        "self.addEventListener('push',e=>{"
+        "let d={};try{d=e.data?e.data.json():{};}catch(_){d={message:e.data?e.data.text():''};}"
+        "e.waitUntil(self.registration.showNotification(d.titre||'YELEN SCHOOL',{"
+        f"body:d.message||'',icon:'{static('img/pwa/icon-192.png')}',badge:'{static('img/pwa/icon-192.png')}',"
+        "tag:d.tag||'yelen-parent',renotify:true,data:{url:d.url||'/portail/parent/notifications/'}}));});\n"
+        "self.addEventListener('notificationclick',e=>{"
+        "e.notification.close();"
+        "const url=(e.notification.data&&e.notification.data.url)||'/portail/parent/';"
+        "e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(liste=>{"
+        "const c=liste.find(w=>new URL(w.url).pathname.startsWith('/portail/parent/'));"
+        "if(c){return c.navigate(url).then(()=>c.focus()).catch(()=>clients.openWindow(url));}"
+        "return clients.openWindow(url);}));});\n"
     )
     return HttpResponse(sw, content_type='application/javascript')
 

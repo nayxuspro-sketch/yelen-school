@@ -44,11 +44,13 @@ if not exist ".venv\Scripts\python.exe" (
     python -m venv .venv || (echo [ERREUR] Creation du venv impossible & pause & exit /b 1)
 )
 call .venv\Scripts\activate.bat
-if not exist ".venv\.deps_ok" (
-    echo [2/5] Installation des dependances ^(une seule fois, quelques minutes^)...
+:: Reinstallation si requirements\base.txt a change depuis la derniere installation (copie temoin .venv\.deps_ok)
+fc /b requirements\base.txt .venv\.deps_ok >nul 2>&1
+if errorlevel 1 (
+    echo [2/5] Installation des dependances ^(premiere execution ou mise a jour, quelques minutes^)...
     python -m pip install --upgrade pip -q
     pip install -r requirements\base.txt -q || (echo [ERREUR] Installation des dependances echouee & pause & exit /b 1)
-    echo ok > .venv\.deps_ok
+    copy /y requirements\base.txt .venv\.deps_ok >nul
 ) else (
     echo [2/5] Dependances deja installees
 )

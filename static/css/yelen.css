@@ -9477,6 +9477,9 @@ input::-webkit-strong-password-auto-fill-button {
 .pp-banner-body { flex: 1; }
 .pp-banner-body strong { display: block; color: #fff; margin-bottom: 2px; }
 .pp-banner-body p { color: var(--color-text-secondary); margin: 0; font-size: 0.75rem; }
+.pp-banner--push { background: var(--color-bg-card); flex-wrap: wrap; }
+.pp-banner--push .pp-banner-body { min-width: 160px; }
+.pp-push-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
 /* Enfant card */
 .pp-card {

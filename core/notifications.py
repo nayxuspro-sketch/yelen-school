@@ -43,6 +43,12 @@ def creer_notification(destinataire, type_notif, titre, message, lien='',
         lien=lien,
     )
 
+    try:
+        from core.push import notifier as notifier_push
+        notifier_push(notif)      # appareils abonnés du destinataire (portail parent), après validation
+    except Exception:
+        logger.exception("Planification de la notification push échouée pour %s", destinataire)
+
     if envoyer_email and destinataire.email:
         try:
             contenu_html = render_to_string('core/emails/notification.html', {

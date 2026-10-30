@@ -22,6 +22,7 @@ django-storages==1.14.6
 django==5.2.18
 djangorestframework==3.18.3
 fonttools==4.67.0
+http-ece==1.2.1
 jmespath==1.1.0
 kombu==5.6.2
 markdown==3.11.2
@@ -29,6 +30,7 @@ openpyxl==3.1.5
 packaging==26.3
 pillow==13.0.0
 pyotp==2.10.0
+py-vapid==1.9.6
 qrcode==8.2
 prompt_toolkit==3.0.53
 psycopg2-binary==2.9.13

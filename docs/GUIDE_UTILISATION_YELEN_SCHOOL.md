@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.26.1
-version_guide: 5.19
-date_mise_a_jour: 30/10/2026 (5.26.1 : un enseignant ne fait l'appel que de ses classes, §7.1)
+version_logiciel: 5.27.0
+version_guide: 5.20
+date_mise_a_jour: 30/10/2026 (5.27.0 : notifications push du portail parent, §20.3)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -5454,6 +5454,26 @@ Page PWA dédiée accessible via l'onglet "Notifs" de la navigation basse.
 - Bouton d'installation : `.btn-primary.btn-sm` (classes design system)
 - Variable `--color-primary-border` remplacée par `rgba(0,168,107,0.25)` directement
 - Animations via `.animate-fade-up` (keyframe `fadeUp` partagée dans `yelen.css`)
+
+**Notifications push sur le téléphone (carte « Notifications sur cet appareil ») :**
+
+Le parent peut recevoir chaque notification (absence, retard, bulletin publié, sanction, rappel de paiement,
+réunion) **comme une notification de son téléphone**, application fermée comprise — l'équivalent des alertes des
+applications natives, sans boutique d'applications ni composant payant.
+
+- **Activer :** page Notifications (ou invitation en haut de l'accueil tant qu'elles ne sont pas actives) → bouton
+  **Activer** → le téléphone demande l'autorisation → la carte affiche « Activées sur cet appareil ». **Tester** envoie
+  aussitôt une notification de test et indique le résultat ; **Désactiver** retire l'appareil. L'activation vaut pour
+  **cet appareil et ce navigateur** : un parent l'active sur chaque téléphone qu'il utilise.
+- **Android (Chrome) :** fonctionne dans le navigateur comme dans l'application installée. **iPhone / iPad :** il faut
+  d'abord installer l'application (Partager → Sur l'écran d'accueil, iOS 16.4 ou plus) puis l'ouvrir depuis l'écran
+  d'accueil ; la carte le rappelle. Dans les deux cas, l'adresse `https://` de l'école est nécessaire (§20.1).
+- **Côté serveur :** rien à configurer — les clés de l'installation (VAPID) sont générées à la première utilisation et
+  conservées avec la base. Le serveur de l'école doit **accéder à Internet** pour remettre les notifications au service
+  du navigateur (Google, Mozilla, Apple) ; sinon « Tester » le signale et la notification reste visible dans le portail.
+- **Toucher la notification** ouvre la page concernée du portail (vie scolaire pour une sanction, sinon les
+  notifications). Un appareil qui a révoqué l'abonnement est retiré automatiquement au prochain envoi ; la
+  notification interne, l'e-mail et le SMS ne changent pas.
 
 ### 20.4 Bulletins parent
 

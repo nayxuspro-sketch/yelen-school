@@ -53,6 +53,8 @@
       <button class="btn-primary btn-sm" data-csp-action="pwa-trigger-install" >Installer</button>
     </div>
 
+    {% include 'core/partials/portail_push.html' with mode='invitation' %}
+
     {% if not enfants %}
     <div class="pp-empty animate-fade-up">
       <div class="pp-empty-icon">
@@ -201,6 +203,7 @@
   {% include 'core/partials/portail_parent_nav.html' with actif='accueil' %}
 
   <script src="{% static 'js/pwa.js' %}" defer></script>
+  <script src="{% static 'js/push_parent.js' %}" defer></script>
 <script nonce="{{ request.csp_nonce }}" src="{% static 'js/csp_handlers.js' %}"></script>
 </body>
 </html>

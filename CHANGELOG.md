@@ -3,6 +3,26 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.27.0 — 2026-10-30
+
+### Notifications push du portail parent
+
+- Le parent active, depuis la page Notifications du portail (ou l'invitation de l'accueil), les **notifications sur
+  son téléphone** : chaque notification interne (absence, retard, bulletin publié, sanction, rappel de paiement,
+  réunion) est poussée sur l'appareil, application fermée comprise ; **Tester** envoie une notification de test et
+  rend compte du résultat ; **Désactiver** retire l'appareil. Toucher la notification ouvre la page du portail.
+- Web Push standard (`core/push.py` : chiffrement aes128gcm, signature VAPID, remise HTTP) sans service tiers ni
+  composant payant ; clés de l'installation générées à la première utilisation et conservées en base
+  (`ClesWebPush`), abonnements par appareil (`AbonnementPush`, migration `core 0007`) ; un abonnement révoqué par le
+  navigateur (404/410) est supprimé à l'envoi. Dépendances ajoutées : `py-vapid`, `http-ece`.
+- Service worker du portail : affichage des notifications et ouverture de la page au toucher ; bannières
+  d'installation et de mode hors ligne du portail de nouveau visibles (classe `pp-hidden`).
+- Correctif : pour un parent connecté, le contrôle d'accès par rôle renvoyait `/sw.js`, `/manifest.json` et les icônes
+  vers le portail — l'application ne pouvait ni s'installer ni recevoir de notifications ; ces ressources sont
+  désormais autorisées (`RoleAccessMiddleware`).
+- Mode autonome : les dépendances sont réinstallées quand `requirements/base.txt` change (`demarrer-autonome.bat`
+  / `.sh`), au lieu d'une installation unique. Guide §20.3.
+
 ## 5.26.1 — 2026-10-30
 
 ### Un enseignant ne fait l'appel que de ses classes

@@ -30,11 +30,12 @@ if [ ! -x .venv/bin/python ]; then
 fi
 # shellcheck disable=SC1091
 source .venv/bin/activate
-if [ ! -f .venv/.deps_ok ]; then
-    echo "[2/5] Installation des dépendances (une seule fois)…"
+# Réinstallation si requirements/base.txt a changé depuis la dernière installation (copie témoin .venv/.deps_ok)
+if ! cmp -s requirements/base.txt .venv/.deps_ok; then
+    echo "[2/5] Installation des dépendances (première exécution ou mise à jour)…"
     pip install --upgrade pip -q
     pip install -r requirements/base.txt -q
-    touch .venv/.deps_ok
+    cp requirements/base.txt .venv/.deps_ok
 else
     echo "[2/5] Dépendances déjà installées"
 fi

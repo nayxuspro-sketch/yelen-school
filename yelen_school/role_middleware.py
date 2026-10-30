@@ -4,7 +4,8 @@ yelen_school/role_middleware.py — Restriction d'accès par rôle
 Bloque les utilisateurs avec le rôle PARENT ou ÉLÈVE sur toutes les URLs
 qui ne leur sont pas explicitement destinées, et les redirige vers leur portail.
 
-Rôle PARENT  → accès limité à : /accounts/, /portail/parent/, /bulletins/parent/ (lien du bulletin), /notifications/
+Rôle PARENT  → accès limité à : /accounts/, /portail/parent/, /bulletins/parent/ (lien du bulletin), /notifications/,
+               ressources de l'application installable (/manifest.json, /sw.js, /pwa/)
 Rôle ÉLÈVE   → accès limité à : /accounts/, /portail/eleve/, /notifications/
 
 Pour les autres rôles, l'accès aux modules (espace de noms d'URL), à leurs
@@ -27,6 +28,7 @@ _COMMON_ALLOWED = (
     '/notifications/', # badge et liste des notifications
     '/static/',       # fichiers statiques
     '/media/',        # fichiers médias (photos élèves, logos)
+    '/manifest.json', '/sw.js', '/pwa/',   # application installable du portail parent (manifeste, service worker, icônes)
 )
 
 _ROLE_CONFIG = {

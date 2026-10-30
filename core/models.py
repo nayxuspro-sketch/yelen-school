@@ -298,6 +298,38 @@ class Notification(models.Model):
         return f"{self.destinataire} — {self.titre}"
 
 
+class ClesWebPush(models.Model):
+    """Paire de clés VAPID de l'installation (notifications push du portail parent) : générée à la première
+    utilisation par ``core.push.cles`` et conservée avec la base — une seule ligne (pk=1)."""
+    cle_privee = models.CharField(max_length=100)      # 32 octets, base64url
+    cle_publique = models.CharField(max_length=100)    # point non compressé (65 octets), base64url, remise au navigateur
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Clés Web Push'
+        verbose_name_plural = 'Clés Web Push'
+
+
+class AbonnementPush(models.Model):
+    """Abonnement Web Push d'un navigateur (un appareil) d'un parent ; un parent peut en avoir plusieurs. Un abonnement
+    que le service de notifications déclare expiré (404/410) est supprimé à l'envoi."""
+    utilisateur = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='abonnements_push')
+    endpoint = models.CharField(max_length=1000, unique=True)
+    p256dh = models.CharField(max_length=200)
+    auth = models.CharField(max_length=100)
+    navigateur = models.CharField(max_length=200, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    dernier_envoi = models.DateTimeField(null=True, blank=True)
+    echecs = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Abonnement push'
+        verbose_name_plural = 'Abonnements push'
+
+    def __str__(self):
+        return f"{self.utilisateur} — {self.navigateur or self.endpoint[:40]}"
+
+
 class CampagneSms(models.Model):
     """Campagne SMS ciblée : un message libre (variables {eleve}, {classe}, {reste}, {etablissement}) envoyé à un
     public choisi — parents de l'école, de classes, redevables, parents d'élèves absents un jour donné, personnel.

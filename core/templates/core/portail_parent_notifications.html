@@ -36,6 +36,8 @@
   <!-- Contenu -->
   <main class="pp-content">
 
+    {% include 'core/partials/portail_push.html' %}
+
     {% if not notifications %}
     <div class="pp-empty animate-fade-up">
       <div class="pp-empty-icon">
@@ -91,5 +93,6 @@
 
   {% include 'core/partials/portail_parent_nav.html' with actif='notifs' %}
 
+  <script src="{% static 'js/push_parent.js' %}" defer></script>
 </body>
 </html>

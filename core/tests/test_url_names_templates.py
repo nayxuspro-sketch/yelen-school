@@ -31,3 +31,16 @@ def test_noms_d_url_des_gabarits_existent():
                 ligne = texte.count('\n', 0, m.start()) + 1
                 inconnus.append(f"{gabarit.relative_to(settings.BASE_DIR)}:{ligne} → '{m.group(1)}'")
     assert not inconnus, "Noms d'URL introuvables :\n" + "\n".join(inconnus)
+
+
+def test_aucun_commentaire_court_sur_plusieurs_lignes():
+    """Django n'accepte `{# … #}` que sur une ligne : étalé sur plusieurs, il est affiché tel quel aux utilisateurs."""
+    fautifs = []
+    for gabarit in Path(settings.BASE_DIR).rglob('*.html'):
+        if any(partie in EXCLUS for partie in gabarit.parts):
+            continue
+        texte = gabarit.read_text(encoding='utf-8', errors='ignore')
+        for m in re.finditer(r'{#.*?#}', texte, re.S):
+            if '\n' in m.group(0):
+                fautifs.append(f"{gabarit.relative_to(settings.BASE_DIR)}:{texte.count(chr(10), 0, m.start()) + 1}")
+    assert not fautifs, "Commentaires `{# #}` multi-lignes (utiliser {% comment %}) :\n" + "\n".join(fautifs)
