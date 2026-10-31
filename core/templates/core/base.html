@@ -1,10 +1,12 @@
 {% load static static_v droits_tags %}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="{{ request.user.theme|default:'sombre' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}YELEN SCHOOL{% endblock %}</title>
+  {# Apparence « selon l'appareil » : résolue avant le premier rendu (static/css/yelen.css, [data-theme="clair"]) #}
+  <script nonce="{{ request.csp_nonce }}" src="{% static 'js/theme.js' %}"></script>
   {% if request.user.is_authenticated %}
   {# ── Saisie hors réseau : auteur d'une saisie, lu dans la copie en cache par le Service Worker ── #}
   <meta name="yelen-utilisateur" content="{{ request.user.pk }}">

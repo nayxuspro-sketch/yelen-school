@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.31.0
-version_guide: 5.24
-date_mise_a_jour: 31/10/2026 (5.31.0 : cahier de textes et devoirs dans le portail parent, §20.5)
+version_logiciel: 5.32.0
+version_guide: 5.25
+date_mise_a_jour: 31/10/2026 (5.32.0 : thème clair au choix, §1 Mon profil)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -384,6 +384,12 @@ Le formulaire est organisé en 4 sections à **2 colonnes côte à côte** :
 **Réinitialisation par l'administrateur :** dans `Utilisateurs → Changer le mot de passe`, le Super Admin ou le Directeur peut soit saisir un nouveau mot de passe, soit cliquer sur **Réinitialiser le mot de passe** : le mot de passe actuel est supprimé et l'utilisateur crée lui-même le nouveau à sa prochaine connexion (adresse e-mail seule). La liste des utilisateurs signale ces comptes par le badge « Mot de passe à créer ».
 
 **Mon profil (tous les rôles) :** un clic sur le bloc utilisateur en haut du menu latéral (avatar, nom, e-mail) ouvre *Mon profil* (`/accounts/profile/`), où chaque utilisateur met à jour ses informations et **change lui-même son mot de passe** (mot de passe actuel + nouveau + confirmation, même politique de robustesse).
+
+**Apparence (5.32.0) :** dans *Mon profil*, le champ **Apparence** choisit le thème de l'application — **Sombre**
+(par défaut, inchangé), **Clair** pour les salles éclairées et la projection, ou **Selon l'appareil** (suit le réglage
+clair / sombre de Windows ou du téléphone, et ses changements). Le choix est enregistré avec le compte : il suit
+l'utilisateur sur tous les postes et n'affecte pas les autres comptes d'un PC partagé. Les documents PDF, la page de
+connexion et le portail parent gardent leur présentation.
 
 En mode **modification**, la section mot de passe est remplacée par une case à cocher **Compte actif** (pour activer / désactiver un compte sans le supprimer).
 

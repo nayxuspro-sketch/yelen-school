@@ -135,6 +135,19 @@ class User(AbstractUser, BaseModel):
         default='',
         verbose_name='Téléphone',
     )
+
+    class Theme(models.TextChoices):
+        SOMBRE = 'sombre', 'Sombre'
+        CLAIR = 'clair', 'Clair'
+        AUTO = 'auto', "Selon l'appareil"
+
+    theme = models.CharField(
+        max_length=10,
+        choices=Theme.choices,
+        default=Theme.SOMBRE,
+        verbose_name='Apparence',
+        help_text="Thème de l'application : sombre, clair, ou celui de l'appareil (réglage « Apparence » de Mon profil).",
+    )
     eleves_lies = models.ManyToManyField(
         'inscriptions.Eleve',
         blank=True,

@@ -199,12 +199,13 @@ class ProfileUpdateForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'telephone']
+        fields = ['first_name', 'last_name', 'email', 'telephone', 'theme']
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'input'}),
             'last_name':  forms.TextInput(attrs={'class': 'input'}),
             'email':      forms.EmailInput(attrs={'class': 'input', 'autocomplete': 'email'}),
             'telephone':  forms.TextInput(attrs={'class': 'input', 'placeholder': 'ex: +226 70 00 00 00'}),
+            'theme':      forms.Select(attrs={'class': 'input'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -225,7 +226,7 @@ class ProfileUpdateForm(forms.ModelForm):
         user = super().save(commit=False)
         user.username = user.email
         if commit:
-            user.save(update_fields=['first_name', 'last_name', 'email', 'telephone', 'username'])
+            user.save(update_fields=['first_name', 'last_name', 'email', 'telephone', 'theme', 'username'])
         return user
 
 

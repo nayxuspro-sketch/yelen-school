@@ -57,6 +57,13 @@
         {% if form.telephone.errors %}<p class="form-error">{{ form.telephone.errors.0 }}</p>{% endif %}
       </div>
 
+      <div class="form-group">
+        <label class="form-label" for="{{ form.theme.id_for_label }}">Apparence</label>
+        {{ form.theme }}
+        <p class="text-muted" style="font-size:0.8rem; margin-top:var(--space-1);">Thème sombre (par défaut), clair pour les salles éclairées et le projecteur, ou celui de l'appareil.</p>
+        {% if form.theme.errors %}<p class="form-error">{{ form.theme.errors.0 }}</p>{% endif %}
+      </div>
+
       {# Infos non modifiables #}
       <div style="margin-top:var(--space-4); padding-top:var(--space-4); border-top:1px solid var(--color-border);">
         <div class="d-flex justify-between" style="font-size:0.85rem; padding:var(--space-2) 0;">

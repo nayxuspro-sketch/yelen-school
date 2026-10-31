@@ -3,6 +3,18 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.32.0 — 2026-10-31
+
+### Thème clair au choix
+
+- *Mon profil → Apparence* : **Sombre** (par défaut, inchangé), **Clair** ou **Selon l'appareil** (`prefers-color-scheme`,
+  suivi en direct par `static/js/theme.js`). Préférence enregistrée sur le compte (`User.theme`, migration
+  `accounts.0009`), rendue par l'attribut `data-theme` de `<html>` avant le premier affichage : aucun scintillement.
+- Feuille de style : palette claire par surcharge des variables (`:root[data-theme="clair"]`), teintes blanches
+  translucides exprimées via `--ink` (114 occurrences, identiques en sombre), fonds codés en dur du coffre de
+  l'application (barre latérale, en-têtes de tableaux, champs, fenêtres modales) ramenés aux variables.
+- Portail parent, page de connexion et PDF inchangés.
+
 ## 5.31.0 — 2026-10-31
 
 ### Cahier de textes et devoirs dans le portail parent
