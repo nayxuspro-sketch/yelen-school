@@ -1,6 +1,6 @@
 {% extends "core/base.html" %}
 
-{% block title %}Aide — Guide d'utilisation — YELEN SCHOOL{% endblock %}
+{% block title %}Aide — {% if rapide %}Guide de démarrage rapide{% else %}Guide d'utilisation{% endif %} — YELEN SCHOOL{% endblock %}
 
 {% block content %}
 <div class="page-header animate-fade-up">
@@ -10,11 +10,20 @@
       <span class="text-muted"> / </span>
       <span>Aide</span>
     </p>
+    {% if rapide %}
+    <h1 class="page-title">Guide de démarrage rapide</h1>
+    <p class="page-subtitle">L'essentiel en dix pages : paramétrage, rentrée, quotidien, bulletins, fin d'année — chaque étape renvoie au guide complet.</p>
+    {% else %}
     <h1 class="page-title">Guide d'utilisation</h1>
     <p class="page-subtitle">Documentation complète de YELEN SCHOOL v{{ yelen_version }}, consultable hors connexion Internet — Ctrl+F pour chercher dans tout le guide.</p>
+    {% endif %}
   </div>
   <div class="page-actions">
-    <a href="{% url 'licences:guide' %}" class="btn-secondary btn-sm">Prise en main rapide</a>
+    {% if rapide %}
+    <a href="{% url 'core:aide' %}" class="btn-secondary btn-sm">Guide complet</a>
+    {% else %}
+    <a href="{% url 'core:aide_demarrage' %}" class="btn-secondary btn-sm">Démarrage rapide</a>
+    {% endif %}
   </div>
 </div>
 
@@ -48,7 +57,7 @@
 </div>
 {% else %}
 <div class="card">
-  <p>Le guide d'utilisation (<code>docs/GUIDE_UTILISATION_YELEN_SCHOOL.md</code>) n'est pas présent sur ce serveur.
+  <p>Le guide (<code>docs/{% if rapide %}GUIDE_DEMARRAGE_RAPIDE{% else %}GUIDE_UTILISATION_YELEN_SCHOOL{% endif %}.md</code>) n'est pas présent sur ce serveur.
   Mettre à jour l'application (<code>mettre-a-jour.bat</code>) pour le rétablir.</p>
 </div>
 {% endif %}

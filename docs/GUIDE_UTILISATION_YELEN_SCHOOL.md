@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.32.0
-version_guide: 5.25
-date_mise_a_jour: 31/10/2026 (5.32.0 : thème clair au choix, §1 Mon profil)
+version_logiciel: 5.33.0
+version_guide: 5.26
+date_mise_a_jour: 31/10/2026 (5.33.0 : numérotation continue, guide de démarrage rapide §2.5, favicon)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.0 — Octobre 2026 (Guide v3.4)
+### Version 5.33.0 — Octobre 2026 (Guide v5.26)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -18,124 +18,297 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 ## TABLE DES MATIÈRES
 
-- [0. Introduction](#0-introduction)
-- [1. Connexion et Tableau de Bord](#1-connexion-et-tableau-de-bord)
-  - [1.4 Tableau de bord direction (Pilotage)](#14-tableau-de-bord-direction-pilotage)
-  - [1.5 Aide en ligne](#15-aide-en-ligne)
-  - [1.6 Gestion des Comptes Utilisateurs](#16-gestion-des-comptes-utilisateurs)
-  - [1.7 Double Authentification (2FA) — Activer la Sécurité Renforcée](#17-double-authentification-2fa--activer-la-sécurité-renforcée)
-  - [1.8 Se Connecter avec la 2FA Activée](#18-se-connecter-avec-la-2fa-activée)
-  - [1.9 Désactiver la 2FA](#19-désactiver-la-2fa)
-- [2. Paramètres de l'Établissement](#2-paramètres-de-létablissement)
-  - [2.1 Identité de l'établissement](#21-identité-de-létablissement)
-  - [2.2 Gestion des Années Scolaires](#22-gestion-des-années-scolaires)
-  - [2.3 Création Manuelle d'une Année Scolaire (recommandé)](#23-création-manuelle-dune-année-scolaire-recommandé)
-  - [2.17 Configuration SMS](#217-configuration-sms)
-  - [2.18 Exploitation (santé du serveur)](#218-exploitation-santé-du-serveur)
-  - [2.7 Appréciations et Moyennes (Secondaire)](#27-appréciations-et-moyennes)
-  - [2.10 Signataires des Documents PDF](#210-signataires-des-documents-pdf)
-  - [2.11 Appréciations — Cycle Primaire](#211-appréciations-de-moyenne--cycle-primaire)
-  - [2.14 Types d'Évaluation](#214-types-dévaluation)
-  - [2.15 Calendrier Scolaire](#215-calendrier-scolaire)
-  - [2.16 Modèles de Messages SMS](#216-modèles-de-messages-sms)
-  - [2.19 Droits d'accès par rôle](#219-droits-daccès-par-rôle)
-- [3. Enregistrement des Élèves](#3-enregistrement-des-élèves)
-  - [3.8 Page Profil Élève — Vue d'ensemble](#38-page-profil-élève--vue-densemble)
-- [4. Inscription et Réinscription](#4-inscription-et-réinscription)
+- [1. INTRODUCTION](#1-introduction)
+  - [1.1 Présentation de YELEN SCHOOL](#11-présentation-de-yelen-school)
+  - [1.2 Les 4 Cycles Scolaires Couverts](#12-les-4-cycles-scolaires-couverts)
+  - [1.3 Les 9 Profils Utilisateurs](#13-les-9-profils-utilisateurs)
+  - [1.4 Comment Lire et Naviguer dans ce Guide](#14-comment-lire-et-naviguer-dans-ce-guide)
+  - [1.5 Lexique des Termes Utilisés](#15-lexique-des-termes-utilisés)
+- [2. CONNEXION ET TABLEAU DE BORD](#2-connexion-et-tableau-de-bord)
+  - [2.1 Accès à l'Application](#21-accès-à-lapplication)
+  - [2.2 Écran de Connexion](#22-écran-de-connexion)
+  - [2.3 Tableau de Bord selon le Rôle](#23-tableau-de-bord-selon-le-rôle)
+  - [2.4 Tableau de bord direction (Pilotage)](#24-tableau-de-bord-direction-pilotage)
+  - [2.5 Aide en ligne](#25-aide-en-ligne)
+  - [2.6 Gestion des Comptes Utilisateurs](#26-gestion-des-comptes-utilisateurs)
+- [3. PARAMÈTRES DE L'ÉTABLISSEMENT](#3-paramètres-de-létablissement)
+  - [3.1 Identité de l'établissement](#31-identité-de-létablissement)
+  - [3.2 Gestion des Années Scolaires](#32-gestion-des-années-scolaires)
+  - [3.3 Création Manuelle d'une Année Scolaire (recommandé)](#33-création-manuelle-dune-année-scolaire-recommandé)
+  - [3.4 Périodes d'évaluation et clôture de trimestre](#34-périodes-dévaluation-et-clôture-de-trimestre)
+  - [3.5 Configuration SMS](#35-configuration-sms)
+  - [3.6 Exploitation (santé du serveur)](#36-exploitation-santé-du-serveur)
+  - [3.7 Droits d'accès par rôle](#37-droits-daccès-par-rôle)
+  - [3.8 SMS automatiques planifiés — alertes parents et compte rendu quotidien du promoteur](#38-sms-automatiques-planifiés--alertes-parents-et-compte-rendu-quotidien-du-promoteur)
+- [4. INSCRIPTION ET RÉINSCRIPTION](#4-inscription-et-réinscription)
   - [4.1 Créer un élève — détection des homonymes](#41-créer-un-élève--détection-des-homonymes)
   - [4.2 Inscrire un élève — capacité des classes et année clôturée](#42-inscrire-un-élève--capacité-des-classes-et-année-clôturée)
   - [4.3 Passage de classe (réinscription pour l'année suivante)](#43-passage-de-classe-réinscription-pour-lannée-suivante)
-  - [4.5 Carte Scolaire de l'Élève](#45-carte-scolaire-de-lélève)
-  - [4.7 Marquer Abandon / Annuler l'Abandon](#47-marquer-abandon--annuler-labandon)
-- [5. Gestion du Personnel](#5-gestion-du-personnel)
-  - [5.1 Profil du Personnel (Page de Détail)](#51-profil-du-personnel-page-de-détail)
-  - [5.10 Gestion des Congés du Personnel](#510-gestion-des-congés-du-personnel)
-  - [5.11 Gestion des Salaires du Personnel](#511-gestion-des-salaires-du-personnel)
-- [6. Scolarité et Notes](#6-scolarité-et-notes)
-  - [6.1 Référentiel des Matières](#61-référentiel-des-matières)
-  - [6.6 Conseil de Classe](#66-conseil-de-classe)
-  - [6.7 Bulletins Trimestriels PDF](#67-bulletins-trimestriels-pdf)
-  - [6.7.0 Duplicata du Bulletin Trimestriel](#670-duplicata-du-bulletin-trimestriel)
-  - [6.7.1 Bulletin Annuel](#671-bulletin-annuel)
-  - [6.7.2 Palmarès Annuel](#672-palmarès-annuel)
-  - [6.8 Moyennes par Discipline](#68-moyennes-par-discipline)
-  - [6.9 Relevé de Notes par Discipline](#69-relevé-de-notes-par-discipline)
-  - [6.10 Analyse du Risque de Décrochage (IA)](#610-analyse-du-risque-de-décrochage-ia)
-- [7. Présences et Absences](#7-présences-et-absences)
-  - [7.3 Justifications d'absences](#73-justifications-dabsences)
-  - [7.4 Bilan des présences par élève](#74-bilan-des-présences-par-élève)
+- [5. GESTION DU PERSONNEL](#5-gestion-du-personnel)
+  - [5.1 Liste du personnel et exports (CSV, Excel, PDF)](#51-liste-du-personnel-et-exports-csv-excel-pdf)
+  - [5.2 Profil du Personnel (Page de Détail)](#52-profil-du-personnel-page-de-détail)
+  - [5.3 Gestion des Congés du Personnel](#53-gestion-des-congés-du-personnel)
+  - [5.4 Gestion des Salaires du Personnel](#54-gestion-des-salaires-du-personnel)
+- [6. SCOLARITÉ ET NOTES](#6-scolarité-et-notes)
+  - [6.1 Cahier de textes numérique](#61-cahier-de-textes-numérique)
+  - [6.2 Référentiel des Matières](#62-référentiel-des-matières)
+  - [6.3 Bulletins Trimestriels PDF](#63-bulletins-trimestriels-pdf)
+  - [6.4 Moyennes par Discipline](#64-moyennes-par-discipline)
+  - [6.5 Relevé de Notes par Discipline](#65-relevé-de-notes-par-discipline)
+  - [6.6 Analyse du Risque de Décrochage (IA)](#66-analyse-du-risque-de-décrochage-ia)
+- [7. PRÉSENCES ET ABSENCES](#7-présences-et-absences)
+  - [7.1 Faire l'Appel](#71-faire-lappel)
+  - [7.2 Enregistrer une Absence](#72-enregistrer-une-absence)
+  - [7.3 Justifications d'Absences](#73-justifications-dabsences)
+  - [7.4 Bilan des Présences par Élève](#74-bilan-des-présences-par-élève)
   - [7.5 Pointage par QR Code](#75-pointage-par-qr-code)
+  - [7.6 Historique des Appels](#76-historique-des-appels)
+  - [7.7 Impression de la Liste des Appels](#77-impression-de-la-liste-des-appels)
   - [7.8 Appel depuis le smartphone (Mes cours) et SMS d'absence](#78-appel-depuis-le-smartphone-mes-cours-et-sms-dabsence)
-- [8. Vie Scolaire](#8-vie-scolaire)
-  - [8.2 Activités Parascolaires](#82-activités-parascolaires)
-  - [8.3 Participation des Élèves](#83-participation-des-élèves-aux-activités)
-  - [8.4 Capital de Points Discipline](#84-capital-de-points-discipline)
-  - [8.5 Configuration du Système de Points](#85-configuration-du-système-de-points)
-  - [8.6 Appels de Décision du Conseil de Classe](#86-appels-de-décision-du-conseil-de-classe)
-- [9. Finances et Scolarité](#9-finances-et-scolarité)
-  - [9.2 Tableau de bord financier](#92-tableau-de-bord-financier)
-  - [9.4 Échéancier de Paiement](#94-gérer-un-échéancier-de-paiement)
-  - [9.6 Reçu de paiement PDF](#96-imprimer-un-reçu-de-paiement-pdf)
-  - [9.7 Historique des versements PDF](#97-historique-des-versements-pdf)
+- [8. VIE SCOLAIRE](#8-vie-scolaire)
+  - [8.1 Fiche de Suivi d'un Élève](#81-fiche-de-suivi-dun-élève)
+  - [8.2 Enregistrer une Sanction Disciplinaire](#82-enregistrer-une-sanction-disciplinaire)
+  - [8.3 Activités Parascolaires](#83-activités-parascolaires)
+  - [8.4 Participation des Élèves aux Activités](#84-participation-des-élèves-aux-activités)
+  - [8.5 Capital de Points Discipline](#85-capital-de-points-discipline)
+  - [8.6 Configuration du Système de Points](#86-configuration-du-système-de-points)
+  - [8.7 Appels de Décision du Conseil de Classe](#87-appels-de-décision-du-conseil-de-classe)
+- [9. FINANCES ET SCOLARITÉ](#9-finances-et-scolarité)
+  - [9.1 Enregistrer un Paiement](#91-enregistrer-un-paiement)
+  - [9.2 Tableau de Bord Financier](#92-tableau-de-bord-financier)
+  - [9.3 Consulter les Frais d'un Élève — Situation Financière](#93-consulter-les-frais-dun-élève--situation-financière)
+  - [9.4 Gérer un Échéancier de Paiement](#94-gérer-un-échéancier-de-paiement)
+  - [9.5 Rapport des Paiements](#95-rapport-des-paiements)
+  - [9.6 Imprimer un Reçu de Paiement (PDF)](#96-imprimer-un-reçu-de-paiement-pdf)
+  - [9.7 Historique des Versements (PDF)](#97-historique-des-versements-pdf)
   - [9.8 Liste des Élèves Redevables](#98-liste-des-élèves-redevables)
   - [9.9 Bilan des Encaissements](#99-bilan-des-encaissements)
   - [9.10 Certificat de Non-Redevabilité](#910-certificat-de-non-redevabilité)
   - [9.11 Relances de Paiement PDF](#911-relances-de-paiement-pdf)
   - [9.12 Élèves Exonérés de Paiement](#912-élèves-exonérés-de-paiement)
   - [9.13 Bourses et Aides Financières](#913-bourses-et-aides-financières)
-  - [9.14 Paiements Mobile Money](#914-paiements-mobile-money-orange-money)
+  - [9.14 Paiements Mobile Money (Orange Money)](#914-paiements-mobile-money-orange-money)
   - [9.15 Relevés Mobile Money et rapprochement](#915-relevés-mobile-money-et-rapprochement)
-- [10. Examens](#10-examens)
-- [20. Portail Parent PWA](#20-portail-parent-pwa)
-- [21. Signature Électronique des Bulletins](#21-signature-électronique-des-bulletins)
+  - [9.16 Journal et arrêté de caisse](#916-journal-et-arrêté-de-caisse)
+  - [9.17 Familles et remise fratrie](#917-familles-et-remise-fratrie)
+  - [9.18 Pénalités de retard et blocage des bulletins](#918-pénalités-de-retard-et-blocage-des-bulletins)
+  - [9.19 Portail parent — frais de scolarité](#919-portail-parent--frais-de-scolarité)
+  - [9.20 Portail parent — vie scolaire et justificatifs](#920-portail-parent--vie-scolaire-et-justificatifs)
+  - [9.21 Portail élève](#921-portail-élève)
+  - [9.22 Appréciations par matière (enseignant)](#922-appréciations-par-matière-enseignant)
+  - [9.23 Comptes parents en masse et connexion par téléphone](#923-comptes-parents-en-masse-et-connexion-par-téléphone)
+  - [9.24 Campagnes SMS ciblées](#924-campagnes-sms-ciblées)
+  - [9.25 Paie du mois](#925-paie-du-mois)
+  - [9.26 Statistiques d'une session d'examen](#926-statistiques-dune-session-dexamen)
+  - [9.27 Statistiques par enseignant](#927-statistiques-par-enseignant)
+  - [9.28 Seuil d'absences — alertes direction et parents](#928-seuil-dabsences--alertes-direction-et-parents)
+  - [9.29 Santé et personnes autorisées (fiche élève)](#929-santé-et-personnes-autorisées-fiche-élève)
+  - [9.30 Salles : référentiel, suggestions et occupation](#930-salles--référentiel-suggestions-et-occupation)
+  - [9.31 Pré-inscriptions (dossier avant inscription)](#931-pré-inscriptions-dossier-avant-inscription)
+  - [9.32 Sauvegarde depuis l'interface (mode autonome)](#932-sauvegarde-depuis-linterface-mode-autonome)
+  - [9.33 Absences du personnel et retenue sur la paie](#933-absences-du-personnel-et-retenue-sur-la-paie)
+  - [9.34 Sanction : prévenir le parent (portail + SMS)](#934-sanction--prévenir-le-parent-portail--sms)
+  - [9.35 Fiche individuelle de l'élève (PDF)](#935-fiche-individuelle-de-lélève-pdf)
+  - [9.36 Attestation de travail (personnel)](#936-attestation-de-travail-personnel)
+- [10. EXAMENS](#10-examens)
+  - [10.1 Créer une Session d'Examen](#101-créer-une-session-dexamen)
+  - [10.2 Configurer les Centres et Salles](#102-configurer-les-centres-et-salles)
+  - [10.3 Inscrire les Élèves aux Examens](#103-inscrire-les-élèves-aux-examens)
+  - [10.4 Saisir les Résultats d'un Examen Officiel](#104-saisir-les-résultats-dun-examen-officiel)
   - [10.5 Liste des Candidats — Filtre par Centre](#105-liste-des-candidats--filtre-par-centre)
   - [10.6 Fichier d'inscription des candidats (Excel)](#106-fichier-dinscription-des-candidats-excel)
-- [11. Vacations](#11-vacations)
+- [11. VACATIONS](#11-vacations)
+  - [11.1 Créer un Contrat de Vacation](#111-créer-un-contrat-de-vacation)
+  - [11.2 Saisir les Heures Effectuées](#112-saisir-les-heures-effectuées)
   - [11.3 Générer un Bulletin de Vacation](#113-générer-un-bulletin-de-vacation)
-- [12. Documents Administratifs](#12-documents-administratifs)
-  - [12.1 Certificat de Scolarité](#121-certificat-de-scolarité)
-  - [12.2 Attestation de Fréquentation](#122-attestation-de-fréquentation)
-  - [12.3 Relevé de Notes / Cursus Scolaire](#123-relevé-de-notes--cursus-scolaire)
-  - [12.4 Autorisation d'Absence](#124-autorisation-dabsence)
-  - [12.5 Carte d'Identité Scolaire](#125-carte-didentité-scolaire)
-  - [12.6 Liste Alphabétique d'une Classe](#126-liste-alphabétique-dune-classe-pdf)
-  - [12.7 Liste du Personnel](#127-liste-du-personnel-pdf)
-  - [12.8 Accès aux Documents Archivés](#128-accès-aux-documents-archivés)
-  - [12.9 Archivage et Consultation](#129-archivage-et-consultation-des-documents-générés)
-  - [12.10 Codes QR dans les documents](#1210-codes-qr-dans-les-documents-générés)
-  - [12.11 Convocations](#1211-convocations)
-  - [12.12 Circulaires](#1212-circulaires)
-  - [12.13 Attestation de Non-Redevabilité](#1213-attestation-de-non-redevabilité)
-  - [12.14 Statistiques officielles](#1214-statistiques-officielles-rentrée-et-fin-dannée)
-- [13. Gestion des Licences](#13-gestion-des-licences-super-admin-uniquement)
-- [14. Statistiques et Rapports](#14-statistiques-et-rapports)
+- [12. DOCUMENTS ADMINISTRATIFS](#12-documents-administratifs)
+  - [12.1 Impression Noir et Blanc — Règles communes à tous les documents PDF](#121-impression-noir-et-blanc--règles-communes-à-tous-les-documents-pdf)
+  - [12.2 Certificat de Scolarité](#122-certificat-de-scolarité)
+  - [12.3 Attestation de Fréquentation](#123-attestation-de-fréquentation)
+  - [12.4 Relevé de Notes / Cursus Scolaire](#124-relevé-de-notes--cursus-scolaire)
+  - [12.5 Autorisation d'Absence](#125-autorisation-dabsence)
+  - [12.6 Carte d'Identité Scolaire](#126-carte-didentité-scolaire)
+  - [12.7 Liste Alphabétique d'une Classe (PDF)](#127-liste-alphabétique-dune-classe-pdf)
+  - [12.8 Liste du Personnel (PDF)](#128-liste-du-personnel-pdf)
+  - [12.9 Accès aux Documents Archivés](#129-accès-aux-documents-archivés)
+  - [12.10 Archivage et Consultation des Documents Générés](#1210-archivage-et-consultation-des-documents-générés)
+  - [12.11 Codes QR dans les Documents Générés](#1211-codes-qr-dans-les-documents-générés)
+  - [12.12 Convocations](#1212-convocations)
+  - [12.13 Circulaires](#1213-circulaires)
+  - [12.14 Attestation de Non-Redevabilité](#1214-attestation-de-non-redevabilité)
+  - [12.15 Statistiques officielles (rentrée et fin d'année)](#1215-statistiques-officielles-rentrée-et-fin-dannée)
+- [13. GESTION DES LICENCES (Super Admin Uniquement)](#13-gestion-des-licences-super-admin-uniquement)
+  - [13.1 Mode de contrôle des licences (anti-fraude)](#131-mode-de-contrôle-des-licences-anti-fraude)
+  - [13.2 Page Guide d'utilisation (`/licences/guide/`)](#132-page-guide-dutilisation-licencesguide)
+  - [13.3 Tableau de Bord des Licences (`/licences/`)](#133-tableau-de-bord-des-licences-licences)
+  - [13.4 Les 4 Niveaux de Licence](#134-les-4-niveaux-de-licence)
+  - [13.5 Activer une Licence](#135-activer-une-licence)
+  - [13.6 Consulter les Alertes de Licence](#136-consulter-les-alertes-de-licence)
+  - [13.7 Historique des Activations](#137-historique-des-activations)
+- [14. STATISTIQUES ET RAPPORTS](#14-statistiques-et-rapports)
+  - [14.1 Statistiques des Élèves](#141-statistiques-des-élèves)
+  - [14.2 Rapports de Présences](#142-rapports-de-présences)
+  - [14.3 Rapports Financiers](#143-rapports-financiers)
   - [14.4 Emploi du Temps](#144-emploi-du-temps)
-    - [14.4.1 Emploi du Temps par Professeur](#1441-emploi-du-temps-par-professeur)
-- [15. État des Fonctionnalités et Limites](#15-état-des-fonctionnalités-et-limites)
-- [16. Questions Fréquentes (FAQ)](#16-questions-fréquentes-faq)
-- [17. Glossaire](#17-glossaire)
-- [18. Design System et Interface](#18-design-system-et-interface)
+- [15. ÉTAT DES FONCTIONNALITÉS ET LIMITES](#15-état-des-fonctionnalités-et-limites)
+  - [15.1 État Global du Développement](#151-état-global-du-développement)
+  - [15.2 Emploi du Temps — Interface Complète](#152-emploi-du-temps--interface-complète)
+  - [15.3 Transfert Inter-Établissements](#153-transfert-inter-établissements)
+  - [15.4 Gestion des Échéanciers](#154-gestion-des-échéanciers)
+  - [15.5 Procès-verbal du Conseil de Classe (PDF)](#155-procès-verbal-du-conseil-de-classe-pdf)
+  - [15.6 Bulletin de Vacation (PDF)](#156-bulletin-de-vacation-pdf)
+  - [15.7 Portail Parent](#157-portail-parent)
+  - [15.8 Exports Excel / CSV](#158-exports-excel--csv)
+  - [15.9 Gestion des Licences — Interface Complète](#159-gestion-des-licences--interface-complète)
+  - [15.10 Analyse des Risques de Décrochage (IA locale)](#1510-analyse-des-risques-de-décrochage-ia-locale)
+  - [15.11 Multi-Établissements — Tableau de Bord Réseau](#1511-multi-établissements--tableau-de-bord-réseau)
+- [16. QUESTIONS FRÉQUENTES (FAQ)](#16-questions-fréquentes-faq)
+  - [Q1. J'ai oublié mon mot de passe. Que faire ?](#q1-jai-oublié-mon-mot-de-passe-que-faire-)
+  - [Q2. Le matricule d'un élève s'affiche « BF-CEN-2526-0001 » — est-ce normal pour le premier élève ?](#q2-le-matricule-dun-élève-saffiche--bf-cen-2526-0001---est-ce-normal-pour-le-premier-élève-)
+  - [Q3. Je veux inscrire un élève mais son matricule n'est pas reconnu. Que faire ?](#q3-je-veux-inscrire-un-élève-mais-son-matricule-nest-pas-reconnu-que-faire-)
+  - [Q4. J'ai saisi une note incorrecte. Puis-je la modifier ?](#q4-jai-saisi-une-note-incorrecte-puis-je-la-modifier-)
+  - [Q5. Un parent veut un certificat de scolarité. Comment le générer ?](#q5-un-parent-veut-un-certificat-de-scolarité-comment-le-générer-)
+  - [Q6. Plusieurs établissements partagent le même logiciel. Est-ce possible ?](#q6-plusieurs-établissements-partagent-le-même-logiciel-est-ce-possible-)
+  - [Q7. Un élève change d'établissement. Son dossier peut-il être transféré ?](#q7-un-élève-change-détablissement-son-dossier-peut-il-être-transféré-)
+  - [Q8. Les paiements peuvent-ils être annulés ?](#q8-les-paiements-peuvent-ils-être-annulés-)
+  - [Q9. Comment sauvegarder les données ?](#q9-comment-sauvegarder-les-données-)
+  - [Q10. L'application est lente. Que faire ?](#q10-lapplication-est-lente-que-faire-)
+- [17. GLOSSAIRE](#17-glossaire)
+- [18. DESIGN SYSTEM ET INTERFACE](#18-design-system-et-interface)
   - [18.1 Principes de Design YELEN SCHOOL](#181-principes-de-design-yelen-school)
-  - [18.2 Fonctionnement Hors Ligne](#182-fonctionnement-hors-ligne-complet)
+  - [18.2 Fonctionnement Hors Ligne Complet](#182-fonctionnement-hors-ligne-complet)
   - [18.3 Design System v4 — Refonte Aura](#183-design-system-v4--refonte-aura)
   - [18.4 Guide Administrateur Technique](#184-guide-administrateur-technique)
-    - [Distribution locale autonome et sauvegardes](#distribution-locale-autonome-et-sauvegardes)
   - [18.5 Système de Notifications](#185-système-de-notifications)
   - [18.6 Journal d'Audit (Traçabilité)](#186-journal-daudit-traçabilité)
-  - [18.7 Réunion de Parents](#187-réunion-de-parents-reunion-parents)
-  - [18.8 Galerie de Captures d'Écran](#188-galerie-de-captures-décran)
-- [34. Import depuis vos fichiers existants (élèves, parents, notes)](#34-import-depuis-vos-fichiers-existants-élèves-parents-notes)
-  - [34.1 Importer des élèves et leurs parents](#341-importer-des-élèves-et-leurs-parents)
-  - [34.2 Importer les notes d'une classe](#342-importer-les-notes-dune-classe)
-- [35. Services annexes facturés et vue consolidée réseau](#35-services-annexes-facturés-et-vue-consolidée-réseau)
-  - [35.1 Cantine, transport, internat](#351-cantine-transport-internat)
-  - [35.2 Vue consolidée multi-sites (licence RESEAU)](#352-vue-consolidée-multi-sites-licence-reseau)
+  - [18.7 Réunion de Parents (`/reunion-parents/`)](#187-réunion-de-parents-reunion-parents)
+  - [18.8 Navigation Moderne — Sidebar v5.0](#188-navigation-moderne--sidebar-v50)
+  - [18.9 Journal des Modifications](#189-journal-des-modifications)
+- [19. Portail Parent PWA](#19-portail-parent-pwa)
+  - [19.1 Installer l'application sur Android](#191-installer-lapplication-sur-android)
+  - [19.2 Design system — classes pp-*](#192-design-system--classes-pp-)
+  - [19.3 Notifications parent](#193-notifications-parent)
+  - [19.4 Bulletins parent](#194-bulletins-parent)
+  - [19.5 Cahier de textes et devoirs (5.31.0)](#195-cahier-de-textes-et-devoirs-5310)
+- [20. Signature Électronique des Bulletins](#20-signature-électronique-des-bulletins)
+  - [20.1 Vue d'ensemble](#201-vue-densemble)
+  - [20.2 Workflow complet](#202-workflow-complet)
+  - [20.3 Page de signature parent](#203-page-de-signature-parent)
+  - [20.4 Cas particuliers](#204-cas-particuliers)
+- [21. Prédiction de Réussite aux Examens Officiels](#21-prédiction-de-réussite-aux-examens-officiels)
+  - [21.1 Accès](#211-accès)
+  - [21.2 Algorithme de calcul](#212-algorithme-de-calcul)
+  - [21.3 Pronostics](#213-pronostics)
+  - [21.4 Workflow](#214-workflow)
+  - [21.5 Examen cible détecté automatiquement](#215-examen-cible-détecté-automatiquement)
+  - [21.6 Widget sur la fiche de suivi élève](#216-widget-sur-la-fiche-de-suivi-élève)
+  - [21.7 Notes importantes](#217-notes-importantes)
+- [22. Carnet APC Sahélien — Évaluation par Compétences (Préscolaire / Primaire)](#22-carnet-apc-sahélien--évaluation-par-compétences-préscolaire--primaire)
+  - [22.1 Catégories de compétences APC](#221-catégories-de-compétences-apc)
+  - [22.2 Accès](#222-accès)
+  - [22.3 Étape 1 — Configurer le référentiel](#223-étape-1--configurer-le-référentiel)
+  - [22.4 Étape 2 — Saisir les évaluations (HTMX)](#224-étape-2--saisir-les-évaluations-htmx)
+  - [22.5 Étape 3 — Générer le bulletin PDF](#225-étape-3--générer-le-bulletin-pdf)
+  - [22.6 Intégration au bulletin trimestriel](#226-intégration-au-bulletin-trimestriel)
+  - [22.7 Niveaux d'acquisition](#227-niveaux-dacquisition)
+  - [22.8 Compatibilité avec le système de notes](#228-compatibilité-avec-le-système-de-notes)
+- [23. Bourses et Aides Financières](#23-bourses-et-aides-financières)
+  - [23.1 Accès au formulaire d'attribution](#231-accès-au-formulaire-dattribution)
+  - [23.2 Champs du formulaire](#232-champs-du-formulaire)
+  - [23.3 Calcul automatique du montant](#233-calcul-automatique-du-montant)
+  - [23.4 Page Relances de paiement (`/finances/relances/`)](#234-page-relances-de-paiement-financesrelances)
+  - [23.5 Types de bourses](#235-types-de-bourses)
+- [24. Assistant IA Conversationnel (Chatbot Directeur)](#24-assistant-ia-conversationnel-chatbot-directeur)
+  - [24.1 Accès](#241-accès)
+  - [24.2 Prérequis](#242-prérequis)
+  - [24.3 Exemples de questions sur les données](#243-exemples-de-questions-sur-les-données)
+  - [24.4 Exemples de questions sur le fonctionnement](#244-exemples-de-questions-sur-le-fonctionnement)
+  - [24.5 Base de connaissances intégrée](#245-base-de-connaissances-intégrée)
+  - [24.6 Interface](#246-interface)
+  - [24.7 Limites](#247-limites)
+- [25. Budget & Dépenses](#25-budget--dépenses)
+  - [25.1 Catégories de Dépenses](#251-catégories-de-dépenses)
+  - [25.2 Enregistrer une Dépense](#252-enregistrer-une-dépense)
+  - [25.3 Budget Prévisionnel](#253-budget-prévisionnel)
+  - [25.4 Tableau de Bord Trésorerie](#254-tableau-de-bord-trésorerie)
+  - [25.5 Règles métier](#255-règles-métier)
+- [26. Gestion des Manuels Scolaires](#26-gestion-des-manuels-scolaires)
+  - [26.1 Catalogue des Manuels](#261-catalogue-des-manuels)
+  - [26.2 Gestion des Exemplaires](#262-gestion-des-exemplaires)
+  - [26.3 Attribution Nominative](#263-attribution-nominative)
+  - [26.4 Enregistrer un Retour](#264-enregistrer-un-retour)
+  - [26.5 Manuels Non Rendus — Alerte de Fin d'Année](#265-manuels-non-rendus--alerte-de-fin-dannée)
+  - [26.6 Export PDF des Attributions Annuelles](#266-export-pdf-des-attributions-annuelles)
+  - [26.7 Export PDF de l'Inventaire par Classe](#267-export-pdf-de-linventaire-par-classe)
+  - [26.8 Règles Métier](#268-règles-métier)
+- [27. Mode Hors Ligne Complet (PWA)](#27-mode-hors-ligne-complet-pwa)
+  - [27.1 Bandeau de Connexion Perdue](#271-bandeau-de-connexion-perdue)
+  - [27.2 Page Hors Ligne](#272-page-hors-ligne)
+  - [27.3 Cache des Assets Statiques](#273-cache-des-assets-statiques)
+  - [27.4 Installer l'Application (A2HS)](#274-installer-lapplication-a2hs)
+  - [27.5 Architecture PWA](#275-architecture-pwa)
+  - [27.6 Saisie Hors Réseau — Notes et Appels (enseignants)](#276-saisie-hors-réseau--notes-et-appels-enseignants)
+- [28. Communication Bidirectionnelle Établissement ↔ Parent](#28-communication-bidirectionnelle-établissement--parent)
+  - [28.1 Types de messages](#281-types-de-messages)
+  - [28.2 Envoyer un message](#282-envoyer-un-message)
+  - [28.3 Lien de réponse](#283-lien-de-réponse)
+  - [28.4 Suivi des réponses](#284-suivi-des-réponses)
+  - [28.5 Page de détail du message](#285-page-de-détail-du-message)
+  - [28.6 Page de réponse (côté parent)](#286-page-de-réponse-côté-parent)
+- [29. Génération Automatique d'Emploi du Temps](#29-génération-automatique-demploi-du-temps)
+  - [29.1 Principe de l'algorithme](#291-principe-de-lalgorithme)
+  - [29.2 Créneaux horaires utilisés](#292-créneaux-horaires-utilisés)
+  - [29.3 Flux d'utilisation](#293-flux-dutilisation)
+  - [29.4 Modèles de données liés](#294-modèles-de-données-liés)
+  - [29.5 Limites et conseils](#295-limites-et-conseils)
+- [30. Localisations des Postes](#30-localisations-des-postes)
+  - [30.1 Liste des Localisations](#301-liste-des-localisations)
+  - [30.2 Créer une Localisation](#302-créer-une-localisation)
+  - [30.3 Modifier / Supprimer](#303-modifier--supprimer)
+- [31. Mode autonome — Installation sur un serveur d'école sans Docker (SQLite)](#31-mode-autonome--installation-sur-un-serveur-décole-sans-docker-sqlite)
+- [32. COMMUNICATION PARENTS — SMS DIRECT](#32-communication-parents--sms-direct)
+  - [32.1 Présentation de Parent-SMS Direct](#321-présentation-de-parent-sms-direct)
+  - [32.2 Commandes SMS Disponibles](#322-commandes-sms-disponibles)
+  - [32.3 Codes d'Erreur et Situations Spéciales](#323-codes-derreur-et-situations-spéciales)
+  - [32.4 Configuration Technique (Administrateur)](#324-configuration-technique-administrateur)
+  - [32.5 Simulateur Web (Administrateur)](#325-simulateur-web-administrateur)
+  - [32.6 Messages reçus (boîte des SMS des parents)](#326-messages-reçus-boîte-des-sms-des-parents)
+  - [32.7 Journal des SMS (Audit Log)](#327-journal-des-sms-audit-log)
+- [33. Galerie de Captures d'Écran](#33-galerie-de-captures-décran)
+  - [33.1 Page de Connexion](#331-page-de-connexion)
+  - [33.2 Tableau de Bord](#332-tableau-de-bord)
+  - [33.3 Gestion des Élèves](#333-gestion-des-élèves)
+  - [33.4 Paramètres — Classes](#334-paramètres--classes)
+  - [33.5 Pédagogie — Matières](#335-pédagogie--matières)
+  - [33.6 Gestion du Personnel](#336-gestion-du-personnel)
+  - [33.7 Finances](#337-finances)
+  - [33.8 Documents](#338-documents)
+  - [33.9 Présences](#339-présences)
+- [34. SÉCURITÉ DE L'APPLICATION](#34-sécurité-de-lapplication)
+  - [34.1 Rapport d'Audit de Sécurité](#341-rapport-daudit-de-sécurité)
+  - [34.2 19.1.A API REST — Tokens et cloisonnement d'accès](#342-191a-api-rest--tokens-et-cloisonnement-daccès)
+  - [34.3 Bonnes Pratiques pour les Administrateurs](#343-bonnes-pratiques-pour-les-administrateurs)
+  - [34.4 Déploiement Local (Quick Start)](#344-déploiement-local-quick-start)
+  - [34.5 Déploiement Production](#345-déploiement-production)
+  - [34.6 Architecture des conteneurs](#346-architecture-des-conteneurs)
+  - [34.7 Correctifs de Sécurité (Juillet 2026)](#347-correctifs-de-sécurité-juillet-2026)
+- [35. Source de vérité unique : GitHub `main` (réconciliation d'octobre 2026)](#35-source-de-vérité-unique--github-main-réconciliation-doctobre-2026)
+  - [35.1 Ce qui change pour l'exploitation](#351-ce-qui-change-pour-lexploitation)
+  - [35.2 Mettre à jour une installation client existante (Docker)](#352-mettre-à-jour-une-installation-client-existante-docker)
+  - [35.3 Assainissement technique d'octobre 2026 (dette)](#353-assainissement-technique-doctobre-2026-dette)
+- [36. Import depuis vos fichiers existants (élèves, parents, notes)](#36-import-depuis-vos-fichiers-existants-élèves-parents-notes)
+  - [36.1 Importer des élèves et leurs parents](#361-importer-des-élèves-et-leurs-parents)
+  - [36.2 Importer les notes d'une classe](#362-importer-les-notes-dune-classe)
+- [37. Services annexes facturés et vue consolidée réseau](#37-services-annexes-facturés-et-vue-consolidée-réseau)
+  - [37.1 Cantine, transport, internat](#371-cantine-transport-internat)
+  - [37.2 Créances individuelles](#372-créances-individuelles)
+  - [37.3 Vue consolidée multi-sites (licence RESEAU)](#373-vue-consolidée-multi-sites-licence-reseau)
 
 ---
 
-## 0. INTRODUCTION
+## 1. INTRODUCTION
 
-### 0.1 Présentation de YELEN SCHOOL
+### 1.1 Présentation de YELEN SCHOOL
 
 YELEN SCHOOL est un logiciel de gestion scolaire conçu spécifiquement pour les établissements d'enseignement du **Burkina Faso**.
 
@@ -158,7 +331,7 @@ YELEN SCHOOL est développé par et pour le contexte burkinabè. Il respecte les
 
 ---
 
-### 0.2 Les 4 Cycles Scolaires Couverts
+### 1.2 Les 4 Cycles Scolaires Couverts
 
 | Cycle | Niveaux | Diplôme visé |
 |-------|---------|--------------|
@@ -169,7 +342,7 @@ YELEN SCHOOL est développé par et pour le contexte burkinabè. Il respecte les
 
 ---
 
-### 0.3 Les 9 Profils Utilisateurs
+### 1.3 Les 9 Profils Utilisateurs
 
 | Profil | Rôle | Accès principal |
 |--------|------|-----------------|
@@ -183,11 +356,11 @@ YELEN SCHOOL est développé par et pour le contexte burkinabè. Il respecte les
 | **Agent de Vie Scolaire (AVS)** | Surveillance et discipline | Présences, vie scolaire |
 | **Parent** | Père ou mère d'élève | Portail parent et consultation autorisée |
 
-> **Accès configurables :** l'accès de chaque rôle du personnel aux modules est réglé par le Super Admin dans `Paramètres → Droits d'accès` (section 2.19).
+> **Accès configurables :** l'accès de chaque rôle du personnel aux modules est réglé par le Super Admin dans `Paramètres → Droits d'accès` (section 3.7).
 
 ---
 
-### 0.4 Comment Lire et Naviguer dans ce Guide
+### 1.4 Comment Lire et Naviguer dans ce Guide
 
 Ce guide est organisé **par module**. Chaque section suit le même schéma :
 
@@ -207,7 +380,7 @@ Ce guide est organisé **par module**. Chaque section suit le même schéma :
 
 ---
 
-### 0.5 Lexique des Termes Utilisés
+### 1.5 Lexique des Termes Utilisés
 
 | Terme | Définition |
 |-------|-----------|
@@ -229,9 +402,9 @@ Ce guide est organisé **par module**. Chaque section suit le même schéma :
 
 ---
 
-## 1. CONNEXION ET TABLEAU DE BORD
+## 2. CONNEXION ET TABLEAU DE BORD
 
-### 1.1 Accès à l'Application
+### 2.1 Accès à l'Application
 
 YELEN SCHOOL fonctionne dans ton navigateur web. L'adresse dépend de ton installation :
 
@@ -242,7 +415,7 @@ YELEN SCHOOL fonctionne dans ton navigateur web. L'adresse dépend de ton instal
 
 ---
 
-### 1.2 Écran de Connexion
+### 2.2 Écran de Connexion
 
 Ouvre ton navigateur et saisis l'adresse du logiciel. Tu arrives sur la page de connexion :
 
@@ -299,7 +472,7 @@ Ce compte possède tous les droits (SUPER_ADMIN). L'installateur affiche le mot 
 
 ---
 
-### 1.3 Tableau de Bord selon le Rôle
+### 2.3 Tableau de Bord selon le Rôle
 
 Une fois connecté, le tableau de bord s'adapte à ton rôle :
 
@@ -307,11 +480,11 @@ Une fois connecté, le tableau de bord s'adapte à ton rôle :
 
 ![Tableau de bord YELEN SCHOOL](screenshots/02-dashboard.png)
 
-**Tableau de bord — Enseignant :** les compteurs « Enseignements » et le tableau **Évaluations récentes** (évaluation, classe, matière, date prévue, statut) ne portent que sur ses propres enseignements (fiche du personnel reliée par e-mail, voir §2.19).
+**Tableau de bord — Enseignant :** les compteurs « Enseignements » et le tableau **Évaluations récentes** (évaluation, classe, matière, date prévue, statut) ne portent que sur ses propres enseignements (fiche du personnel reliée par e-mail, voir §3.7).
 
 ---
 
-### 1.4 Tableau de bord direction (Pilotage)
+### 2.4 Tableau de bord direction (Pilotage)
 
 **À quoi ça sert :** une seule page, imprimable sur une feuille A4, qui donne au promoteur ou au chef d'établissement la situation de l'école : recouvrement, impayés par classe, effectifs, absences et élèves à risque.
 
@@ -344,7 +517,7 @@ Une fois connecté, le tableau de bord s'adapte à ton rôle :
 - **Impayés par classe** : classes triées du reste le plus élevé au plus faible, avec effectif, nombre de redevables et taux de recouvrement de la classe ; lien vers la liste nominative des redevables.
 - **Effectifs** : inscriptions actives (abandons exclus et comptés à part), garçons / filles, redoublants, par cycle ; **remplissage** = effectif / Σ des capacités maximales des classes.
 - **Absences** : statut *Absent* des appels de l'établissement — aujourd'hui, 7 jours, 30 jours ; **taux** = absences / pointages relevés sur 30 jours ; classes les plus touchées (30 jours), élèves les plus absents (année), justifications en attente.
-- **Élèves à risque** : résultat de l'analyse de décrochage (§6.10) — compteurs par niveau et les dix scores les plus élevés (critique, élevé) avec leur facteur principal. Si aucune analyse n'a été calculée, la page invite à la lancer.
+- **Élèves à risque** : résultat de l'analyse de décrochage (§6.6) — compteurs par niveau et les dix scores les plus élevés (critique, élevé) avec leur facteur principal. Si aucune analyse n'a été calculée, la page invite à la lancer.
 
 Le sélecteur d'année permet de revoir une année passée. **Imprimer** produit la page sur une feuille A4 (en-tête « établissement — année — situation au jj/mm/aaaa »).
 
@@ -352,7 +525,7 @@ Le sélecteur d'année permet de revoir une année passée. **Imprimer** produit
 
 ---
 
-### 1.5 Aide en ligne
+### 2.5 Aide en ligne
 
 **Accès :** bouton **Aide** (icône livre, en bas du menu latéral) ou `/aide/`.
 
@@ -360,7 +533,11 @@ Le présent guide est consultable dans l'application, sans connexion Internet. L
 
 ---
 
-### 1.6 Gestion des Comptes Utilisateurs
+**Guide de démarrage rapide (5.33.0) :** bouton **Démarrage rapide** en haut de la page d'aide (ou `/aide/demarrage/`) — dix pages qui donnent, dans l'ordre, le paramétrage du premier jour, la rentrée, le quotidien, les bulletins et la fin d'année, chaque étape renvoyant à la section correspondante du présent guide (`docs/GUIDE_DEMARRAGE_RAPIDE.md`). Depuis la même version, les chapitres et sections de ce guide sont numérotés en continu (1 à 37) : les renvois des versions antérieures du journal des versions suivent l'ancienne numérotation.
+
+---
+
+### 2.6 Gestion des Comptes Utilisateurs
 
 **À quoi ça sert :** Permet aux administrateurs (SUPER_ADMIN, DIRECTEUR) de créer, modifier et désactiver les comptes des membres du personnel qui utilisent YELEN SCHOOL.
 
@@ -418,9 +595,9 @@ En mode **modification**, la section mot de passe est remplacée par une case à
 
 ---
 
-## 2. PARAMÈTRES DE L'ÉTABLISSEMENT
+## 3. PARAMÈTRES DE L'ÉTABLISSEMENT
 
-### 2.1 Identité de l'établissement
+### 3.1 Identité de l'établissement
 
 > **Accès :** `Paramètres → Identité Établissement`
 
@@ -437,7 +614,7 @@ En mode **modification**, la section mot de passe est remplacée par une case à
 
 ---
 
-### 2.2 Gestion des Années Scolaires
+### 3.2 Gestion des Années Scolaires
 
 > **Accès :** `Paramètres → Années scolaires`
 
@@ -461,14 +638,14 @@ En mode **modification**, la section mot de passe est remplacée par une case à
 **Clôturer une année scolaire (bouton « Clôturer », après confirmation) :**
 - l'année courante ne se clôture pas : définissez d'abord la nouvelle année comme courante, puis clôturez l'ancienne ;
 - les inscriptions de l'année clôturée sont verrouillées : plus de création, de modification, de transfert de classe ni de marquage d'abandon (message « L'année scolaire … est clôturée ») ; les encaissements d'arriérés restent possibles ;
-- toutes ses périodes d'évaluation sont clôturées d'un coup (notes, moyennes et bulletins figés — § 2.4) ;
+- toutes ses périodes d'évaluation sont clôturées d'un coup (notes, moyennes et bulletins figés — § 3.4) ;
 - une année clôturée porte le badge **Clôturée** et ne peut plus être définie comme courante ; **Rouvrir** lève le verrou des inscriptions (les périodes restent clôturées et se rouvrent une à une dans `Paramètres → Périodes`).
 
-> Action « Clôturer / rouvrir une année scolaire » de la matrice des droits (§ 2.19) : Directeur et Censeur par défaut, Super Admin toujours.
+> Action « Clôturer / rouvrir une année scolaire » de la matrice des droits (§ 3.7) : Directeur et Censeur par défaut, Super Admin toujours.
 
 ---
 
-### 2.3 Création Manuelle d'une Année Scolaire (recommandé)
+### 3.3 Création Manuelle d'une Année Scolaire (recommandé)
 
 > **L'année scolaire se crée manuellement** via l'interface `Paramètres → Années scolaires`.
 
@@ -489,7 +666,7 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 ---
 
-### 2.4 Périodes d'évaluation et clôture de trimestre
+### 3.4 Périodes d'évaluation et clôture de trimestre
 
 **À quoi ça sert :** `Paramètres → Périodes` définit les trimestres (ou semestres) de l'année : nom, numéro, dates. C'est aussi là que la direction **clôture** une période une fois les bulletins édités, pour que plus rien ne bouge.
 
@@ -501,11 +678,11 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 **Rouvrir :** le même bouton (cadenas ouvert « Rouvrir ») lève le verrou ; chaque clôture / réouverture est journalisée dans `Système → Journal d'audit` (qui, quand).
 
-> Action « Clôturer / rouvrir une période (verrouillage des notes) » de la matrice des droits (§ 2.19) : Directeur et Censeur par défaut, Super Admin toujours. Une période clôturée porte le badge **Clôturée** dans la liste.
+> Action « Clôturer / rouvrir une période (verrouillage des notes) » de la matrice des droits (§ 3.7) : Directeur et Censeur par défaut, Super Admin toujours. Une période clôturée porte le badge **Clôturée** dans la liste.
 
 ---
 
-### 2.17 Configuration SMS
+### 3.5 Configuration SMS
 
 > **Accès :** `Menu principal → Core → Configuration SMS`
 >
@@ -536,7 +713,7 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 ---
 
-### 2.18 Exploitation (santé du serveur)
+### 3.6 Exploitation (santé du serveur)
 
 > **Accès :** `Administration → Exploitation` — Super Admin et Directeur.
 
@@ -563,7 +740,7 @@ ne répond plus : elle la redémarre et alerte par SMS (`ALERTE_SMS_NUMEROS` du 
 
 ---
 
-### 2.19 Droits d'accès par rôle
+### 3.7 Droits d'accès par rôle
 
 > **Accès :** `Paramètres → Droits d'accès` (carte de la page Paramètres ou menu `Configuration → Droits d'accès`)
 >
@@ -575,7 +752,7 @@ ne répond plus : elle la redémarre et alerte par SMS (`ALERTE_SMS_NUMEROS` du 
 
 **Règle d'application :** chaque page est rattachée à la fonctionnalité dont elle porte l'adresse (ex. le reçu d'un paiement relève de « Paiements », les types de bourses de « Bourses & Aides ») ; une page du module sans entrée de menu suit l'accès au module (au moins une fonctionnalité cochée). Une action est reconnue par la page qu'elle appelle (même hors de l'adresse de sa fonctionnalité, ex. l'annulation d'un remboursement relève de « Paiements ») et n'est accessible que si sa fonctionnalité l'est : cocher une action dont la fonctionnalité est décochée n'ouvre rien. Un **enseignant** n'intervient, en plus, que sur ses propres enseignements (classe × matière qui lui sont attribués dans Pédagogie › Enseignements) : la saisie des notes, la création et la modification d'évaluations, la sélection par classe et le cahier de textes sont limités à ceux-ci. Le lien entre son compte et sa fiche du personnel se fait par l'adresse e-mail : si la fiche ne porte pas l'adresse du compte, l'enseignant est prévenu par un message explicite et ne peut rien saisir tant que l'administration n'a pas corrigé l'adresse sur la fiche (Personnel).
 
-**Valeurs par défaut (à la première ouverture) :** toutes les fonctionnalités sont ouvertes à tous les rôles du personnel, sauf **Finances** (fermé aux enseignants et AVS) et **Paramètres** (réservé au Directeur / Proviseur et au Censeur). Elles reproduisent le fonctionnement antérieur ; le tableau de la section 0.3 décrit la répartition recommandée que le Super Admin peut appliquer depuis cette page. Les actes qui étaient déjà réservés à certains rôles gardent exactement ces rôles : encaissements, échéanciers, bourses, relances SMS, Mobile Money, saisie des dépenses et budget prévisionnel → Directeur, Censeur, Comptable ; remboursements et validation / annulation des dépenses → Directeur Réseau, Directeur, Censeur ; export CSV / Excel de la liste des élèves → Directeur, Censeur, Secrétaire, Comptable ; approbation d'un transfert inter-établissements → Directeur ; sanctions → Directeur, Censeur, Secrétaire, AVS. Ces actes ne s'ouvrent à un autre rôle qu'en cochant leur propre case : cocher la fonctionnalité ou le module ne les ouvre pas.
+**Valeurs par défaut (à la première ouverture) :** toutes les fonctionnalités sont ouvertes à tous les rôles du personnel, sauf **Finances** (fermé aux enseignants et AVS) et **Paramètres** (réservé au Directeur / Proviseur et au Censeur). Elles reproduisent le fonctionnement antérieur ; le tableau de la section 1.3 décrit la répartition recommandée que le Super Admin peut appliquer depuis cette page. Les actes qui étaient déjà réservés à certains rôles gardent exactement ces rôles : encaissements, échéanciers, bourses, relances SMS, Mobile Money, saisie des dépenses et budget prévisionnel → Directeur, Censeur, Comptable ; remboursements et validation / annulation des dépenses → Directeur Réseau, Directeur, Censeur ; export CSV / Excel de la liste des élèves → Directeur, Censeur, Secrétaire, Comptable ; approbation d'un transfert inter-établissements → Directeur ; sanctions → Directeur, Censeur, Secrétaire, AVS. Ces actes ne s'ouvrent à un autre rôle qu'en cochant leur propre case : cocher la fonctionnalité ou le module ne les ouvre pas.
 
 **Rôles personnalisés :** en haut de la page, le Super Admin crée de nouveaux rôles (ex. « Surveillant général », « Caissier ») en indiquant un libellé et un **rôle de référence** parmi les sept rôles du personnel. Le rôle de référence fixe le comportement métier (tableau de bord, périmètre d'un enseignant limité à ses classes…) et les droits de départ ; le nouveau rôle devient aussitôt une colonne de la matrice, où ses droits se règlent ensuite indépendamment de sa référence. Il est proposé dans le champ « Rôle » de la fiche utilisateur (groupe « Rôles personnalisés ») et affiché dans la liste des utilisateurs, qui peut le filtrer. Un rôle ne peut être supprimé que lorsqu'aucun utilisateur ne le porte ; sa suppression efface ses droits enregistrés.
 
@@ -583,13 +760,13 @@ ne répond plus : elle la redémarre et alerte par SMS (`ALERTE_SMS_NUMEROS` du 
 
 ---
 
-### 2.20 SMS automatiques planifiés — alertes parents et compte rendu quotidien du promoteur
+### 3.8 SMS automatiques planifiés — alertes parents et compte rendu quotidien du promoteur
 
 > **Accès :** `Configuration → SMS automatiques` (`/parametres/sms-auto/`)
 >
 > **Qui peut accéder :** SUPER_ADMIN, DIRECTEUR
 
-**À quoi ça sert :** activer, régler et tester les SMS que l'application envoie d'elle-même. Chaque ligne (« déclencheur ») a un interrupteur, une description, la date de sa dernière exécution et un bouton **Tester** (envoi réel immédiat, visible seulement si les SMS sont activés, §2.17).
+**À quoi ça sert :** activer, régler et tester les SMS que l'application envoie d'elle-même. Chaque ligne (« déclencheur ») a un interrupteur, une description, la date de sa dernière exécution et un bouton **Tester** (envoi réel immédiat, visible seulement si les SMS sont activés, §3.5).
 
 | Déclencheur | Ce qui part | Quand |
 |---|---|---|
@@ -608,12 +785,12 @@ LPB 30/10: Encaisse 1 250 000 F (23 recus), especes 950 000 F. Depenses 185 000 
 - **Depenses** : dépenses **validées** datées du jour (les brouillons n'y sont pas).
 - **Caisses arretees k/n** : arrêtés de caisse faits (§9.16) sur le nombre de caissiers ayant opéré ; **ecart** apparaît si la somme des écarts n'est pas nulle (écart ≠ 0 = à vérifier).
 - **Absents / retards** : élèves distincts absents ou en retard sur les appels du jour, et nombre d'appels saisis ; « Aucun appel saisi » si aucun.
-- Le sigle de l'établissement (Identité, §2.1) ouvre le message ; sans sigle, son code. Les accents absents du jeu de caractères SMS sont évités pour ne pas doubler le coût du message.
+- Le sigle de l'établissement (Identité, §3.1) ouvre le message ; sans sigle, son code. Les accents absents du jeu de caractères SMS sont évités pour ne pas doubler le coût du message.
 - Si le texte dépasse 160 caractères (gros montants, remboursement et écart le même jour), il est allégé dans cet ordre : retards, nombre de reçus, espèces et écart — jamais tronqué au milieu d'un chiffre.
 
 **Réglage :** sur la ligne du compte rendu, indiquer l'**heure d'envoi** (18:00 par défaut ; choisir une heure où les encaissements du jour sont tous saisis, 18:30 ou 19:00 par exemple) et les **numéros du promoteur** (1 à 5, séparés par des virgules ; 8 chiffres ou +226…), puis **Enregistrer** et activer l'interrupteur. L'**aperçu du jour** affiché sous la description est le message tel qu'il partirait à l'instant, avec son nombre de caractères. **Tester** envoie ce message tout de suite aux numéros enregistrés, sans empêcher l'envoi automatique du jour.
 
-**Fonctionnement :** le SMS part par le **service SMS** — celui qui relève les SMS reçus des parents (chapitre Communication Parents, 10.4 « Configuration technique ») — démarré avec l'application (service `sms` de Docker Compose, ou processus `sms_recus --boucle` du mode autonome) : aucune tâche planifiée à ajouter. Il part **une seule fois par jour**, dès que l'heure est passée ; si le service était arrêté à cette heure, le compte rendu part à son redémarrage le même jour (après minuit, le jour manqué n'est pas rattrapé). Comme tout SMS, il passe par la file d'envoi (§2.17) : passerelle injoignable → nouvelles tentatives automatiques, suivi dans *Administration → Exploitation*. La ligne « Dernière exécution » indique l'heure du dernier envoi automatique et le total de SMS envoyés (tests compris). Le compte rendu n'est pas concerné par la tâche quotidienne `sms_auto` du matin ; en ligne de commande, `python manage.py sms_auto --type COMPTE_RENDU` l'envoie à la demande, `--dry-run` le simule.
+**Fonctionnement :** le SMS part par le **service SMS** — celui qui relève les SMS reçus des parents (chapitre Communication Parents, 32.4 « Configuration technique ») — démarré avec l'application (service `sms` de Docker Compose, ou processus `sms_recus --boucle` du mode autonome) : aucune tâche planifiée à ajouter. Il part **une seule fois par jour**, dès que l'heure est passée ; si le service était arrêté à cette heure, le compte rendu part à son redémarrage le même jour (après minuit, le jour manqué n'est pas rattrapé). Comme tout SMS, il passe par la file d'envoi (§3.5) : passerelle injoignable → nouvelles tentatives automatiques, suivi dans *Administration → Exploitation*. La ligne « Dernière exécution » indique l'heure du dernier envoi automatique et le total de SMS envoyés (tests compris). Le compte rendu n'est pas concerné par la tâche quotidienne `sms_auto` du matin ; en ligne de commande, `python manage.py sms_auto --type COMPTE_RENDU` l'envoie à la demande, `--dry-run` le simule.
 
 **Pour un promoteur de plusieurs établissements :** chaque établissement a son propre déclencheur (réglé par son directeur) ; le sigle en tête du SMS distingue les messages.
 
@@ -634,7 +811,7 @@ LPB 30/10: Encaisse 1 250 000 F (23 recus), especes 950 000 F. Depenses 185 000 
 > **Accès :** fiche élève → `Inscrire`, ou `Élèves → Inscriptions`
 
 - **Capacité :** chaque classe a une capacité maximale (`Paramètres → Classes`). Inscrire ou transférer un élève dans une classe pleine est refusé : « Classe 6e A complète : 50/50 places occupées pour 2025-2026 ». Les abandons ne comptent pas dans l'effectif. Augmentez la capacité de la classe ou choisissez-en une autre.
-- **Année clôturée :** aucune inscription ne peut être créée ni modifiée sur une année clôturée (§ 2.2).
+- **Année clôturée :** aucune inscription ne peut être créée ni modifiée sur une année clôturée (§ 3.2).
 - Le formulaire ne propose que les années scolaires, classes et statuts élève de **votre établissement**.
 
 ### 4.3 Passage de classe (réinscription pour l'année suivante)
@@ -660,7 +837,7 @@ Un élève refusé n'empêche pas les autres : chaque refus est affiché nommém
 
 ## 5. GESTION DU PERSONNEL
 
-### 5.0 Liste du personnel et exports (CSV, Excel, PDF)
+### 5.1 Liste du personnel et exports (CSV, Excel, PDF)
 
 **Accès :** `Personnel` (`/personnel/`). La liste affiche les membres **actifs** de l'établissement,
 regroupés par cycle ; la recherche (nom, prénom ou matricule) filtre en direct et le lien
@@ -669,7 +846,7 @@ regroupés par cycle ; la recherche (nom, prénom ou matricule) filtre en direct
 **Colonne « Inscription <année courante> » :** pour chaque membre, badge vert **Inscrit** suivi du
 cycle et du poste de son inscription annuelle active (une ligne par inscription), ou badge orange
 **Non inscrit** avec un lien **Inscrire** qui ouvre directement le formulaire d'inscription annuelle
-(voir §12.7 : c'est cette inscription qui alimente la liste du personnel par cycle). Seules les
+(voir §12.8 : c'est cette inscription qui alimente la liste du personnel par cycle). Seules les
 inscriptions *actives* de l'*année scolaire courante* comptent ; sans année courante, la colonne
 affiche « — ».
 
@@ -687,7 +864,7 @@ Le PDF s'ouvre dans un nouvel onglet (`personnel_<code établissement>.pdf`). Le
 partagent la même requête (`personnel/selectors.py` → `personnel_filtre`) : une modification des
 filtres de la liste s'applique automatiquement aux trois formats.
 
-### 5.1 Profil du Personnel (Page de Détail)
+### 5.2 Profil du Personnel (Page de Détail)
 
 **À quoi ça sert :** Affiche la fiche détaillée d'un membre du personnel : informations personnelles, coordonnées, affectations, inscriptions annuelles, bulletins de salaire récents et congés.
 
@@ -743,7 +920,7 @@ La page de détail du personnel a été intégralement refactorisée pour être 
 
 Titre (fonction), titre honorifique, **titre de capacité** (diplôme professionnel ou académique : CAPES, CAP-CEG, Licence, Master — 35 caractères, facultatif), date d'embauche, établissement, poste principal, n° CNI, cases Contractuel / Vacataire / Directeur / Censeur, cycles d'enseignement. Le titre de capacité est repris sur la fiche du membre (bandeau Téléphone · E-mail · Titre de capacité · Embauche · Contrat).
 
-### 5.10 Gestion des Congés du Personnel
+### 5.3 Gestion des Congés du Personnel
 
 **À quoi ça sert :** Permet d'enregistrer et de suivre les demandes de congé des membres du personnel (annuels, maladie, formation, etc.) avec affichage du solde de jours restants.
 
@@ -784,7 +961,7 @@ Le formulaire de demande de congé a été refactorisé pour être en conformit�
 
 Affiche dynamiquement les droits annuels, jours pris et solde restant pour l'année en cours. Apparaît uniquement si `jours_info` est présent dans le contexte. Le design utilise `.stat-value` pour le solde en grand chiffre, `.text-muted` pour les libellés, et `.fw-bold` + `.color-primary` pour la mise en valeur du solde.
 
-### 5.11 Gestion des Salaires du Personnel
+### 5.4 Gestion des Salaires du Personnel
 
 **À quoi ça sert :** Permet de créer et de modifier les bulletins de salaire mensuels des membres du personnel (salaire de base, primes, indemnités, retenues CNSS/IUTS, net à payer).
 
@@ -828,7 +1005,7 @@ Le formulaire de bulletin de salaire a été refactorisé pour être en conformi
 
 ---
 
-### 6.0 Cahier de textes numérique
+### 6.1 Cahier de textes numérique
 
 **À quoi ça sert :** Permet à chaque enseignant de renseigner après chaque cours le contenu traité et les devoirs donnés. Le directeur dispose d'une vue consolidée de l'avancement des programmes par classe.
 
@@ -876,7 +1053,7 @@ Le formulaire de bulletin de salaire a été refactorisé pour être en conformi
 - Toutes les couleurs sont converties en noir/gris pour une impression N&B lisible.
 ---
 
-### 6.1 Référentiel des Matières
+### 6.2 Référentiel des Matières
 
 **À quoi ça sert :** Gérer la liste des matières enseignées dans l'établissement : code, nom, catégorie, coefficient par défaut, barème, et surcharges par cycle, par niveau et par série du bac.
 
@@ -902,7 +1079,7 @@ Le formulaire de bulletin de salaire a été refactorisé pour être en conformi
 
 **Recherche :** Saisir dans le champ déclenche un filtrage HTMX après 500 ms sur le nom ou le code.
 
-#### 6.1.1 Configuration par cycle, par niveau et par série
+#### 6.2.1 Configuration par cycle, par niveau et par série
 
 **Accès :** `Pédagogie → Matières → crayon` (fiche de la matière, carte **Configuration par cycle et par niveau**)
 
@@ -925,9 +1102,9 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 
 ---
 
-### 6.7 Bulletins Trimestriels PDF
+### 6.3 Bulletins Trimestriels PDF
 
-#### 6.7.A Modale de saisie du bulletin (bouton « Saisir »)
+#### 6.3.1 Modale de saisie du bulletin (bouton « Saisir »)
 
 **À quoi ça sert :** Permet de renseigner les absences, les mentions / distinctions et l'appréciation du conseil de classe pour un élève donné, depuis la vue liste de la classe.
 
@@ -1018,7 +1195,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 
 ---
 
-#### 6.7.0 Duplicata du Bulletin Trimestriel
+#### 6.3.2 Duplicata du Bulletin Trimestriel
 
 **À quoi ça sert :** Génère une copie officielle (duplicata) du bulletin trimestriel d'un élève, identique à l'original dans son contenu et son signataire, mais distinguée visuellement par des marquages explicites.
 
@@ -1049,7 +1226,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 
 ---
 
-#### 6.7.1 Bulletin Annuel
+#### 6.3.3 Bulletin Annuel
 
 **À quoi ça sert :** Génère le bulletin annuel de notes agrégé pour l'ensemble de l'année scolaire (tous trimestres confondus), avec la moyenne annuelle de passage, le rang et la décision (PASSE EN CLASSE SUPÉRIEURE ou REDOUBLE LA CLASSE).
 
@@ -1149,7 +1326,7 @@ bulletins = generer_bulletins_annuels_classe(classe, annee)
 
 ---
 
-#### 6.7.2 Palmarès Annuel
+#### 6.3.4 Palmarès Annuel
 
 **À quoi ça sert :** Génère un tableau récapitulatif de toute la classe classant les élèves par moyenne annuelle décroissante, avec leur rang, matricule et la décision du conseil (Admis(e) en classe supérieure ou Redouble la classe). Disponible en aperçu HTML et en PDF imprimable.
 
@@ -1196,7 +1373,7 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 
 ---
 
-### 6.8 Moyennes par Discipline
+### 6.4 Moyennes par Discipline
 
 **À quoi ça sert :** Affiche, pour une classe et une période donnée, le tableau complet des moyennes de chaque élève dans chaque matière, avec la moyenne générale et le rang. Permet d'imprimer ce tableau en PDF.
 
@@ -1250,7 +1427,7 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 
 ---
 
-### 6.9 Relevé de Notes par Discipline
+### 6.5 Relevé de Notes par Discipline
 
 **À quoi ça sert :** Affiche le tableau croisé élèves × évaluations pour une discipline donnée — toutes les notes de chaque évaluation, la moyenne individuelle, le rang et les statistiques de classe (moy. min/max/classe). Permet d'imprimer le relevé en PDF.
 
@@ -1326,7 +1503,7 @@ Le bandeau de statistiques affiche : nombre d'élèves, admis, redoublants, taux
 
 **Comportement si aucun enseignant assigné :** La zone de signature affiche *(Aucun enseignant assigné à cette discipline)* en grisé.
 
-### 6.10 Analyse du Risque de Décrochage (IA)
+### 6.6 Analyse du Risque de Décrochage (IA)
 
 **À quoi ça sert :** Utilise un algorithme d'analyse statistique pour identifier les élèves présentant un risque de décrochage scolaire (abandon, échec massif). Le système calcule un score sur 100 basé sur les notes, l'assiduité et les antécédents.
 
@@ -1752,7 +1929,7 @@ La page d'impression s'ouvre dans un nouvel onglet et reprend automatiquement le
 2. Un SMS part pour chaque élève **Absent** (modèle `ABSENCE`) ou **En retard** (modèle `RETARD`) vers le numéro du parent (téléphone parent, sinon tuteur, sinon urgence). Les élèves *Excusés* ne génèrent rien.
 3. Chaque présence n'est notifiée **qu'une seule fois** (horodatage « Parents notifiés le ») : rouvrir ou re-clôturer un appel ne renvoie pas de SMS.
 4. Le message de confirmation indique le nombre de familles informées ; la bannière de l'appel clôturé le rappelle.
-5. Les modèles de texte se personnalisent dans `Paramètres → Modèles de messages` (variables `{nom_eleve}`, `{date}`, `{matiere}`, `{etablissement}`) ; l'envoi suppose la passerelle SMS activée (2.17 Configuration SMS). SMS désactivés : les parents disposant d'un compte reçoivent tout de même la notification interne.
+5. Les modèles de texte se personnalisent dans `Paramètres → Modèles de messages` (variables `{nom_eleve}`, `{date}`, `{matiere}`, `{etablissement}`) ; l'envoi suppose la passerelle SMS activée (3.5 Configuration SMS). SMS désactivés : les parents disposant d'un compte reçoivent tout de même la notification interne.
 
 **Cas concret :** À 8 h, M. Zongo ouvre *Mes cours* sur son téléphone, touche **Faire l'appel** sur « 6e A · Mathématiques », marque deux absents, puis **Clôturer la séance**. À 8 h 05, les deux familles ont reçu : « Bonjour, votre enfant OUEDRAOGO AWA a été absent(e) le 21/10/2026 en Mathématiques. Contactez LE SAVOIR pour régularisation. »
 
@@ -1766,7 +1943,7 @@ La page d'impression s'ouvre dans un nouvel onglet et reprend automatiquement le
 
 ---
 
-### 8.0 Fiche de Suivi d'un Élève
+### 8.1 Fiche de Suivi d'un Élève
 
 **À quoi ça sert :** Centralise toutes les informations de suivi d'un élève pour une année scolaire donnée : présences/retards, résultats par trimestre, sanctions, décisions de conseil et activités parascolaires. Accessible depuis `/viescolaire/eleve/<uuid>/fiche-suivi/`.
 
@@ -1784,7 +1961,7 @@ La page d'impression s'ouvre dans un nouvel onglet et reprend automatiquement le
 
 ---
 
-### 8.1 Enregistrer une Sanction Disciplinaire
+### 8.2 Enregistrer une Sanction Disciplinaire
 
 **À quoi ça sert :** Documente officiellement une sanction appliquée à un élève.
 
@@ -1825,7 +2002,7 @@ La page d'impression s'ouvre dans un nouvel onglet et reprend automatiquement le
 
 ---
 
-### 8.2 Activités Parascolaires
+### 8.3 Activités Parascolaires
 
 **À quoi ça sert :** Enregistre et gère les clubs, associations et activités extrascolaires de l'établissement. Chaque activité a une capacité maximale et un type.
 
@@ -1876,7 +2053,7 @@ Le formulaire est en deux colonnes : **Identification + Organisation** à gauche
 
 ---
 
-### 8.3 Participation des Élèves aux Activités
+### 8.4 Participation des Élèves aux Activités
 
 **À quoi ça sert :** Inscrit des élèves dans une activité parascolaire et consulte la liste des participants.
 
@@ -1915,7 +2092,7 @@ Le formulaire est en deux colonnes : **Identification + Organisation** à gauche
 
 ---
 
-### 8.4 Capital de Points Discipline
+### 8.5 Capital de Points Discipline
 
 **À quoi ça sert :** YELEN SCHOOL attribue à chaque élève un **capital de points** qui évolue au fil de l'année selon les sanctions reçues. Chaque sanction confirmée déduit des points. Quand le solde atteint certains seuils, le système déclenche automatiquement une alerte.
 
@@ -1980,7 +2157,7 @@ Dans le tableau, clique sur le nom d'un élève pour accéder à sa **fiche de s
 
 ---
 
-### 8.5 Configuration du Système de Points
+### 8.6 Configuration du Système de Points
 
 **À quoi ça sert :** Le Directeur ou le Proviseur définit les règles du capital de points : le nombre de points de départ, les seuils d'alerte, et les messages affichés aux surveillants.
 
@@ -2027,7 +2204,7 @@ Les points déduits sont définis pour chaque **type de sanction** dans `Paramè
 
 ---
 
-### 8.6 Appels de Décision du Conseil de Classe
+### 8.7 Appels de Décision du Conseil de Classe
 
 **À quoi ça sert :** Permet à un parent ou à un élève de contester officiellement une décision prise en conseil de classe (passage en classe supérieure refusé, redoublement imposé, orientation…). Le directeur ou le censeur traite ensuite l'appel en le confirmant ou en le révisant.
 
@@ -2342,185 +2519,6 @@ Ce champ est visible dans l'historique des versements de l'élève et sur le re�
 
 ---
 
-### 14.4 Emploi du Temps
-
-**À quoi ça sert :** Permet de créer, consulter et imprimer l'emploi du temps hebdomadaire des classes. La grille est calculée dynamiquement : chaque ligne = un créneau horaire unique, chaque colonne = un jour (Lun–Sam).
-
-**Qui peut accéder :** Directeur, Proviseur, Censeur
-
-**Accès :** `Vie Scolaire → Emploi du temps → [Classe]`
-
-**Page d'index (Design System v4.0) :**
-
-- En-tête avec bouton **Vue par professeur** dans `page-actions`
-- Sections par cycle avec badge coloré (vert Préscolaire, bleu Primaire, or Post-primaire, violet Secondaire) + séparateur horizontal + compteur de classes
-- Cartes `module-card` avec icône calendrier, nom de classe, cycle + "Emploi du temps hebdomadaire", flèche animée au survol
-
-#### Consulter l'Emploi du Temps d'une Classe
-
-1. Va dans **Vie Scolaire → Emploi du temps**
-2. Sélectionne la classe souhaitée dans la grille, organisée par cycle
-3. Choisis l'**année scolaire** dans le sélecteur en haut à droite
-4. La grille s'affiche avec les créneaux en lignes et les jours en colonnes
-
-**Interface :**
-
-- Chaque cours est une carte colorée (8 couleurs en rotation par matière)
-- La carte affiche : nom de la matière, enseignant, salle
-- Légende des matières avec point de couleur au-dessus de la grille
-- Colonne horaire : heure de début en vert, heure de fin en gris
-- Cellule vide affichée avec `—` si aucun cours à ce créneau/jour
-
-#### Ajouter une Séance
-
-1. Remplis le formulaire **Ajouter une séance** en bas de page :
-   - **Matière / Enseignant** : sélection parmi les enseignements configurés
-   - **Jour** : lundi au samedi
-   - **Heure début / fin** : créneau horaire
-   - **Salle** : optionnel
-2. Clique sur **Ajouter** pour enregistrer
-
-> Si aucun enseignement n'est configuré pour la classe, le formulaire n'est pas affiché. Configurez d'abord les enseignements dans **Pédagogie**.
-
-**Conflits refusés :** une séance n'est jamais ajoutée si, au même moment, **la classe** a déjà cours, si **l'enseignant** est déjà en cours dans une autre classe, ou si **la salle** indiquée est déjà occupée (message « Séance non ajoutée : … »). Deux séances qui s'enchaînent (08:00–08:50 puis 08:50–09:40) ne sont pas en conflit. La génération automatique tient compte des cours que les professeurs donnent déjà dans les autres classes et, à l'application, écarte toute séance qui créerait un chevauchement (message « n séance(s) non placée(s) pour éviter un conflit »). Les chevauchements déjà présents dans une grille (saisis avant cette règle) sont listés en tête de page dans un encadré rouge « conflits d'emploi du temps » : retirez l'une des séances concernées.
-
-#### Imprimer l'Emploi du Temps en PDF (par Classe)
-
-1. Affiche l'emploi du temps de la classe souhaitée
-2. Clique sur **PDF** dans l'en-tête
-3. Le PDF s'ouvre dans un nouvel onglet (format A4 paysage)
-
----
-
-#### 14.4.1 Emploi du Temps par Professeur
-
-**À quoi ça sert :** Génère l'emploi du temps personnel d'un enseignant sur toute la semaine. Montre toutes ses classes, matières, créneaux et salles regroupés dans une grille hebdomadaire. Le PDF inclut un récapitulatif des enseignements et le total d'heures hebdomadaires.
-
-**Qui peut accéder :** Directeur, Proviseur, Censeur
-
-**Accès :** `Vie Scolaire → Emploi du temps → Par professeur`
-
-##### Consulter la Liste des Professeurs
-
-1. Clique sur **Vie Scolaire → Emploi du temps**
-2. Clique sur le lien **Par professeur** dans l'en-tête
-3. La liste de tous les enseignants actifs cette année s'affiche :
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║  👨‍🏫 Emplois du temps par professeur         [2025-2026 ▼]       ║
-╠══════════════════════════════════════════════════════════════════╣
-║  Liste des professeurs                               12 profs    ║
-╠═══════════════╦══════════════════╦══════════════════════════════╣
-║  ┌────────────┐  ┌─────────────────┐  ┌──────────────────────┐  ║
-║  │ 👤         │  │ 👤              │  │ 👤                   │  ║
-║  │ KABORÉ Ali │  │ TRAORÉ Mariam   │  │ OUÉDRAOGO Jean       │  ║
-║  │ 3 matières │  │ 2 matières      │  │ 4 matières           │  ║
-║  │ enseignées │  │ enseignées      │  │ enseignées           │  ║
-║  └────────────┘  └─────────────────┘  └──────────────────────┘  ║
-╚══════════════════════════════════════════════════════════════════╝
-```
-
-4. Clique sur la **carte d'un professeur** pour voir son emploi du temps
-
-##### Consulter l'Emploi du Temps d'un Professeur
-
-Une fois sur la page du professeur, tu vois :
-
-```
-╔══════════════════════════════════════════════════════════════════════╗
-║  ← Emploi du temps — KABORÉ ALIMATA         [2025-2026 ▼]  [PDF]   ║
-║  Enseignante de Mathématiques                                        ║
-╠════════════╦══════════════╦════════════════════════════════════════╣
-║  3 matières║  12h/semaine ║  Maths — Tle A · Maths — 1ère C · … ║
-╠════════════╩══════════════╩════════════════════════════════════════╣
-║  Lundi         Mardi         Mercredi     Jeudi     Vendredi  Sam   ║
-╠══════════════════════════════════════════════════════════════════════╣
-║  ┌──────────┐               ┌──────────┐                            ║
-║  │ Maths    │               │ Maths    │                            ║
-║  │ 07h00–   │               │ 08h00–   │                            ║
-║  │   09h00  │               │   10h00  │                            ║
-║  │ Tle A    │               │ 1ère C   │                            ║
-║  │ Salle 3  │               │ Salle 5  │                            ║
-║  └──────────┘               └──────────┘                            ║
-╚══════════════════════════════════════════════════════════════════════╝
-```
-
-**Informations affichées par séance :**
-- Nom de la matière
-- Créneau horaire (ex : 07h00 – 09h00)
-- Classe concernée (ex : Terminale A)
-- Salle (si renseignée)
-
-**Statistiques en en-tête :**
-- Nombre de matières enseignées
-- Total d'heures hebdomadaires calculé automatiquement
-- Résumé par matière avec le nombre de séances
-
-##### Retirer une séance au professeur
-
-1. Survole la séance dans la grille du professeur et clique sur le bouton **×** en haut à droite de la carte
-2. Confirme le retrait : la séance est supprimée de l'emploi du temps de la classe concernée et tu restes sur la grille du professeur (message « Séance retirée : … »)
-
-Le bouton n'apparaît qu'avec le droit *Modifier l'emploi du temps* (matrice des droits).
-
-##### Imprimer l'Emploi du Temps en PDF
-
-1. Clique sur le bouton **Imprimer PDF** en haut à droite
-2. Le PDF s'ouvre dans un nouvel onglet
-3. Imprime ou enregistre le fichier
-
-**Contenu du PDF :**
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║  LYCEE ZINDA          Emploi du temps — Professeur               ║
-║  ─────────────────────  KABORÉ ALIMATA                           ║
-║  Année 2025-2026        Enseignante de Mathématiques             ║
-║ ──────────────────────────────────────────────────────────────── ║
-║  3 matières     12h/sem.     PERS-LZ-2025-0042                   ║
-╠══════════════════════════════════════════════════════════════════╣
-║  LUNDI     MARDI   MERCREDI   JEUDI   VENDREDI   SAMEDI          ║
-╠══════════════════════════════════════════════════════════════════╣
-║  ┌──────┐          ┌───────┐                                     ║
-║  │Maths │          │Maths  │                                     ║
-║  │07h00 │          │08h00  │                                     ║
-║  │ Tle A│          │1ère C │                                     ║
-║  └──────┘          └───────┘                                     ║
-╠══════════════════════════════════════════════════════════════════╣
-║  Récapitulatif des enseignements                                  ║
-║  Matière        Classe   Coeff.  H/sem.                          ║
-║  Mathématiques  Tle A    3,00    3h                              ║
-║  Mathématiques  1ère C   3,00    3h                              ║
-╠══════════════════════════════════════════════════════════════════╣
-║  Ouagadougou, le 21 avril 2026       Le Directeur               ║
-║                                       NOM Prénom                 ║
-╚══════════════════════════════════════════════════════════════════╝
-```
-
-**Caractéristiques du PDF :**
-- Format **A4 paysage** pour une lecture optimale
-- En-tête avec nom de l'établissement, matricule du professeur et année scolaire
-- Barre de statistiques (nombre de matières, total heures / semaine, matricule)
-- Grille à 6 colonnes (Lundi → Samedi)
-- Tableau récapitulatif des enseignements avec coefficients
-- Signature configurable (selon la configuration Signataires)
-- Pied de page avec date et heure de génération
-
-##### Pré-requis
-
-Pour que l'emploi du temps d'un professeur soit visible :
-
-| Condition | Où configurer |
-|-----------|--------------|
-| Le professeur doit avoir une inscription active pour l'année | `Personnel → Inscriptions` |
-| Des enseignements doivent lui être assignés | `Pédagogie → Enseignements` |
-| Des séances doivent être saisies pour ses enseignements | `Vie Scolaire → Emploi du temps → [Classe]` |
-
-**Cas concret :** En début d'année, le Censeur du Lycée Zinda saisit les séances de cours pour chaque classe. Il imprime ensuite les emplois du temps de toutes les classes et les affiche dans les couloirs. Chaque enseignant reçoit son emploi du temps personnel imprimé et signé par le Directeur.
-
----
-
 ### 9.5 Rapport des Paiements
 
 **Accès :** `Finances → Rapports`
@@ -2794,7 +2792,7 @@ Le document contient :
 
 **Qui est redevable, et de combien (depuis la 5.14.2) :** le compteur, le PDF et les SMS désignent exactement les mêmes élèves, avec le même reste à payer, calculé comme au formulaire de paiement : tarif de la rubrique **pour le niveau, l'année et le statut de l'élève** (un élève sans statut n'a pas de tarif), plus ses services souscrits et créances sur cette rubrique, moins ses bourses ciblées sur la rubrique ; moins ses versements (remboursements déduits) ; le montant réclamé ne dépasse jamais le reste global de l'élève (bourse globale comprise). Un élève à jour n'est donc jamais relancé.
 
-**SMS de relance (section SMS de la page) :** un SMS par élève redevable, adressé au numéro de **sa propre fiche** (téléphone du parent ; à défaut celui du tuteur ; à défaut le numéro d'urgence — le premier numéro valide à 8 chiffres ou `+226…`), avec **son** nom, la rubrique choisie et **son** reste à payer. Les élèves sans numéro valide sont comptés dans le message d'avertissement et ne sont pas tracés. Le texte vient de `Paramètres → Modèles de messages → Relance paiement` (variables `{nom_eleve}`, `{montant}`, `{rubrique}`, `{etablissement}`) ; l'enregistrement d'un modèle refuse une variable inconnue, une accolade isolée ou un texte qui dépasserait 160 caractères, et un ancien modèle citant une variable inconnue est signalé **Ignoré — variable inconnue** : le texte par défaut est envoyé à sa place, jamais un `{nom_eleve}` brut. Si l'envoi de SMS est désactivé (2.17), la campagne est refusée avec un message clair au lieu d'annoncer des envois. Chaque SMS apparaît dans la file SMS (`Administration → Exploitation`) au nom de l'élève et de la rubrique, et dans **Historique des relances** avec le numéro utilisé.
+**SMS de relance (section SMS de la page) :** un SMS par élève redevable, adressé au numéro de **sa propre fiche** (téléphone du parent ; à défaut celui du tuteur ; à défaut le numéro d'urgence — le premier numéro valide à 8 chiffres ou `+226…`), avec **son** nom, la rubrique choisie et **son** reste à payer. Les élèves sans numéro valide sont comptés dans le message d'avertissement et ne sont pas tracés. Le texte vient de `Paramètres → Modèles de messages → Relance paiement` (variables `{nom_eleve}`, `{montant}`, `{rubrique}`, `{etablissement}`) ; l'enregistrement d'un modèle refuse une variable inconnue, une accolade isolée ou un texte qui dépasserait 160 caractères, et un ancien modèle citant une variable inconnue est signalé **Ignoré — variable inconnue** : le texte par défaut est envoyé à sa place, jamais un `{nom_eleve}` brut. Si l'envoi de SMS est désactivé (3.5), la campagne est refusée avec un message clair au lieu d'annoncer des envois. Chaque SMS apparaît dans la file SMS (`Administration → Exploitation`) au nom de l'élève et de la rubrique, et dans **Historique des relances** avec le numéro utilisé.
 
 > **Configurer le signataire des relances :** Va dans `Paramètres → Signataires des documents`, puis clique **Nouveau signataire**. Le formulaire est organisé en 3 sections à 2 colonnes côte à côte : **Période & Périmètre** (année + cycle), **Type de document** (catégorie + fonction), **Signataire** (nom + titre honorifique). Sélectionne la catégorie **Finance** et associe le membre du personnel signataire.
 
@@ -2948,7 +2946,7 @@ Avant d'attribuer une bourse, il faut configurer les types disponibles.
 
 **Accès :** `Finances → Mobile Money`
 
-**Prérequis :** Le module SMS doit être configuré (voir section 2.17). Tout détenteur d'un numéro Orange BF a accès à Orange Money via `*144#`.
+**Prérequis :** Le module SMS doit être configuré (voir section 3.5). Tout détenteur d'un numéro Orange BF a accès à Orange Money via `*144#`.
 
 **Flux complet :**
 
@@ -3197,7 +3195,7 @@ Dans le formulaire élève, section **Santé & personnes autorisées** : groupe 
 
 ### 9.32 Sauvegarde depuis l'interface (mode autonome)
 
-**Accès :** menu latéral, section **Administration** → `Exploitation` (adresse `/exploitation/`) — Super Admin et Directeur (voir aussi §2.18).
+**Accès :** menu latéral, section **Administration** → `Exploitation` (adresse `/exploitation/`) — Super Admin et Directeur (voir aussi §3.6).
 
 - `Sauvegarder maintenant` (case `inclure les médias` cochée par défaut) : copie à chaud de la base SQLite (`yelen_school_<date>.sqlite3.gz`, intégrité vérifiée) et archive `yelen_school_<date>_medias.zip` (photos, signatures, justificatifs) dans le dossier de sauvegarde (`BACKUP_DIR` ou `data\backups`), avec rotation (`BACKUP_KEEP`, défaut 30). L'application reste utilisable pendant la copie.
 - Le tableau liste les sauvegardes disponibles (fichier, type, date, taille) : `Télécharger` pour les **copier sur une clé USB ou un disque externe** — une sauvegarde qui reste sur le même PC ne protège pas d'une panne de disque.
@@ -3218,7 +3216,7 @@ Dans le formulaire élève, section **Santé & personnes autorisées** : groupe 
 
 **Accès :** `Vie scolaire → Sanctions → Nouvelle sanction`.
 
-- La case **« Prévenir le parent »** (cochée par défaut) envoie, à l'enregistrement : une **notification sur le portail parent** (comptes parents liés à l'élève, type « Sanction ») et un **SMS** au numéro du parent (fiche élève : téléphone parent, sinon tuteur, sinon urgence) si les SMS sont activés (§10).
+- La case **« Prévenir le parent »** (cochée par défaut) envoie, à l'enregistrement : une **notification sur le portail parent** (comptes parents liés à l'élève, type « Sanction ») et un **SMS** au numéro du parent (fiche élève : téléphone parent, sinon tuteur, sinon urgence) si les SMS sont activés (§3.5).
 - **Modèle SMS** `Sanction disciplinaire` (`Paramètres → Modèles de messages`), variables `{nom_eleve}`, `{classe}`, `{date}`, `{sanction}`, `{motif}`, `{etablissement}`. Texte par défaut : « Bonjour, votre enfant {nom_eleve} ({classe}) a reçu une sanction le {date} : {sanction}. Motif : {motif}. — {etablissement} ».
 - La liste des sanctions indique « informé jj/mm » sous la colonne des parents convoqués ; si aucun compte parent n'est lié et qu'aucun numéro n'est connu, un avertissement le signale à la saisie.
 - **Portail parent → Vie scolaire** : section « Sanctions disciplinaires » (date, type, durée, motif, convocation) ; les sanctions **annulées** n'y figurent pas. L'ancienne notification automatique à chaque création a été retirée : seule la case décide.
@@ -3479,7 +3477,7 @@ M. le Proviseur KONÉ Seydou
 
 ---
 
-### 12.0 Impression Noir et Blanc — Règles communes à tous les documents PDF
+### 12.1 Impression Noir et Blanc — Règles communes à tous les documents PDF
 
 L'établissement ne dispose pas d'imprimante couleur. Tous les documents PDF générés par YELEN SCHOOL respectent les règles d'impression N&B suivantes :
 
@@ -3536,7 +3534,7 @@ L'établissement ne dispose pas d'imprimante couleur. Tous les documents PDF gé
 
 ---
 
-### 12.1 Certificat de Scolarité
+### 12.2 Certificat de Scolarité
 
 **À quoi ça sert :** Atteste qu'un élève est bien inscrit dans l'établissement pour l'année en cours.
 
@@ -3595,7 +3593,7 @@ Le système génère automatiquement un PDF signé par le responsable configuré
 
 ---
 
-### 12.2 Attestation de Fréquentation
+### 12.3 Attestation de Fréquentation
 
 **À quoi ça sert :** Atteste que l'élève a fréquenté l'établissement pendant une période donnée (utile pour les bourses, les transferts, les administrations).
 
@@ -3605,7 +3603,7 @@ Le système génère automatiquement un PDF signé par le responsable configuré
 
 ---
 
-### 12.3 Relevé de Notes / Cursus Scolaire
+### 12.4 Relevé de Notes / Cursus Scolaire
 
 **À quoi ça sert :** Récapitule toutes les notes et moyennes d'un élève sur une ou plusieurs années scolaires.
 
@@ -3617,7 +3615,7 @@ Le système génère automatiquement un PDF signé par le responsable configuré
 
 ---
 
-### 12.4 Autorisation d'Absence
+### 12.5 Autorisation d'Absence
 
 **À quoi ça sert :** Autorise officiellement un élève à s'absenter pour une période donnée.
 
@@ -3632,13 +3630,13 @@ Le système génère automatiquement un PDF signé par le responsable configuré
 
 ---
 
-### 12.5 Carte d'Identité Scolaire
+### 12.6 Carte d'Identité Scolaire
 
 **À quoi ça sert :** Génère une carte scolaire individuelle (format carte plastifiable, face unique) pour l'élève : en-tête avec le nom, le type et le téléphone de l'établissement (`Paramètres → Identité Établissement`), puis son nom, sa classe, sa date de naissance, son matricule, son lieu de résidence, les noms de ses père et mère, le numéro d'urgence en gras (à défaut, le téléphone des parents), sous la photo, la signature scannée du signataire de la Carte d'Identité Scolaire suivie de son nom et de son prénom (voir section 7) et, au bas de la carte, la mention en gras « VALABLE POUR L'ANNÉE SCOLAIRE : » suivie de l'année en cours.
 
 **Accès :** `Inscriptions → [fiche de l'élève] → Carte scolaire`
 
-> **Note :** La carte scolaire se génère depuis le module **Inscriptions**, pas depuis le module Documents. Consulte la section 4.5 pour les étapes complètes.
+> **Note :** La carte scolaire se génère depuis le module **Inscriptions**, pas depuis le module Documents.
 
 **Étapes rapides :**
 
@@ -3654,7 +3652,7 @@ La carte générée contient : nom, prénom, photo (ou initiales si absente), cl
 
 ---
 
-### 12.6 Liste Alphabétique d'une Classe (PDF)
+### 12.7 Liste Alphabétique d'une Classe (PDF)
 
 **À quoi ça sert :** Génère la liste officielle de tous les élèves inscrits dans une classe, triés alphabétiquement. Utilisée pour les appels, les compositions et les remises de bulletin.
 
@@ -3674,7 +3672,7 @@ Le document contient : en-tête de l'établissement, numéro d'ordre, matricule,
 
 ---
 
-### 12.7 Liste du Personnel (PDF)
+### 12.8 Liste du Personnel (PDF)
 
 **À quoi ça sert :** Génère la liste officielle du personnel d'un cycle et d'une année scolaire, triée alphabétiquement, avec ventilation par catégorie professionnelle et par genre. Utilisée pour les états nominatifs transmis au Ministère.
 
@@ -3709,7 +3707,7 @@ Le document contient : en-tête de l'établissement, numéro d'ordre, matricule,
 
 ---
 
-### 12.8 Accès aux Documents Archivés
+### 12.9 Accès aux Documents Archivés
 
 **À quoi ça sert :** Affiche la liste de tous les documents officiels générés par le système (certificats, listes, reçus…), avec la possibilité de les retrouver par élève, type ou date.
 
@@ -3729,7 +3727,7 @@ Le document contient : en-tête de l'établissement, numéro d'ordre, matricule,
 
 ---
 
-### 12.9 Archivage et Consultation des Documents Générés
+### 12.10 Archivage et Consultation des Documents Générés
 
 Tous les documents générés sont **archivés automatiquement** dans le système. Tu peux les retrouver à tout moment.
 
@@ -3742,7 +3740,7 @@ Tous les documents générés sont **archivés automatiquement** dans le systèm
 
 ---
 
-### 12.10 Codes QR dans les Documents Générés
+### 12.11 Codes QR dans les Documents Générés
 
 Tous les documents PDF générés par YELEN SCHOOL contiennent un **code QR** lisible **sans connexion internet**.
 
@@ -3764,7 +3762,7 @@ Tous les documents PDF générés par YELEN SCHOOL contiennent un **code QR** li
 
 ---
 
-### 12.11 Convocations
+### 12.12 Convocations
 
 **À quoi ça sert :** Génère des lettres de convocation officielles à destination des parents d'élèves. Une convocation peut concerner un ou plusieurs élèves à la fois, pour différents motifs : conseil de classe, sanction disciplinaire, réunion parents-professeurs, ou autre.
 
@@ -3835,7 +3833,7 @@ Le PDF de convocation contient pour chaque élève :
 
 ---
 
-### 12.12 Circulaires
+### 12.13 Circulaires
 
 **À quoi ça sert :** Rédige et imprime des circulaires officielles destinées aux familles ou au personnel. Une circulaire est un document de communication générale (réunion, information, rappel de règlement…) diffusé à tout l'établissement ou à des classes spécifiques.
 
@@ -3894,7 +3892,7 @@ La circulaire PDF contient :
 
 ---
 
-### 12.13 Attestation de Non-Redevabilité
+### 12.14 Attestation de Non-Redevabilité
 
 **À quoi ça sert :** Génère une attestation officielle certifiant qu'un élève est à jour de ses paiements de scolarité. Ce document est souvent exigé en fin d'année pour le retrait des bulletins, les transferts ou les inscriptions aux examens officiels.
 
@@ -3938,7 +3936,7 @@ Le PDF généré certifie que l'élève **ne doit rien** à l'établissement. Si
 
 **Cas concret :** En fin d'année, Mme SAWADOGO se présente au secrétariat du Lycée Zinda pour récupérer le bulletin de sa fille. La secrétaire vérifie la situation financière, constate que tout est réglé, génère l'attestation en PDF et la remet à la famille.
 
-### 12.14 Statistiques officielles (rentrée et fin d'année)
+### 12.15 Statistiques officielles (rentrée et fin d'année)
 
 **À quoi ça sert :** Remplir le questionnaire statistique du ministère (DGESS) sans recompter à la main : effectifs par niveau et par sexe, redoublants, nouveaux entrants, répartition par âge, abandons, décisions des conseils de classe et résultats aux examens officiels.
 
@@ -3960,7 +3958,7 @@ Le PDF généré certifie que l'élève **ne doit rien** à l'établissement. Si
 >
 > **Accès menu :** `Menu principal → Licences`
 
-### 13.A Mode de contrôle des licences (anti-fraude)
+### 13.1 Mode de contrôle des licences (anti-fraude)
 
 Le fichier `.env` du serveur contrôle l'application des licences via la variable
 `LICENSE_ENFORCEMENT` :
@@ -4079,7 +4077,7 @@ n'est configurée : la signature s'appuie alors sur `SECRET_KEY`. Pour ajouter
 une clé dédiée plus tard : contrôle désactivé, renseigner la clé dans `.env`,
 redémarrer, ré-signer la licence (`licence.save()`), puis réactiver le contrôle.
 Dès que `LICENCE_PUBLIC_KEY` est renseignée, ré-signer côté école n'est plus
-possible : seul un code de licence émis par l'éditeur est accepté (§13.2).
+possible : seul un code de licence émis par l'éditeur est accepté (§13.5).
 
 
 **Licence signée par l'éditeur et liée au serveur (anti-copie) :**
@@ -4095,13 +4093,13 @@ possible : seul un code de licence émis par l'éditeur est accepté (§13.2).
   `LICENCE_ANTITAMPER_ENABLED=true`, l'application entière répond 503 (hors connexion et activation).
 - **Changement légitime de serveur** (panne, renouvellement, réinstallation de Windows) : la page
   `Licences → Activer` affiche le nouvel identifiant ; l'éditeur émet un nouveau code, le Super Admin
-  le colle (§13.2). Données et comptes sont conservés.
+  le colle (§13.5). Données et comptes sont conservés.
 - **Verrouillage du serveur Windows** (permissions NTFS, `.env`, partages, audit, BitLocker) :
   `installer\outils-editeur\verrouiller-serveur.bat`, procédure complète dans
   `docs/GUIDE_DEPLOIEMENT_WINDOWS.md` §3.5.
 
 
-### 13.Guide Page Guide d'utilisation (`/licences/guide/`)
+### 13.2 Page Guide d'utilisation (`/licences/guide/`)
 
 Page de documentation intégrée présentant les 9 modules principaux de YELEN SCHOOL.
 
@@ -4121,7 +4119,7 @@ Page de documentation intégrée présentant les 9 modules principaux de YELEN S
 
 ---
 
-### 13.0 Tableau de Bord des Licences (`/licences/`)
+### 13.3 Tableau de Bord des Licences (`/licences/`)
 
 La page d'accueil liste toutes les licences sous forme de cartes. Chaque carte présente :
 
@@ -4134,7 +4132,7 @@ La page d'accueil liste toutes les licences sous forme de cartes. Chaque carte p
 
 ---
 
-### 13.1 Les 4 Niveaux de Licence
+### 13.4 Les 4 Niveaux de Licence
 
 YELEN SCHOOL propose 4 niveaux de licence adaptés à chaque type d'établissement :
 
@@ -4195,7 +4193,7 @@ Pour les congrégations religieuses, les fondations et les réseaux d'écoles.
 
 ---
 
-### 13.2 Activer une Licence
+### 13.5 Activer une Licence
 
 **Accès :** `Licences → Mon abonnement → Activer un code de licence` (page `/licences/activer/`,
 aussi proposée automatiquement quand l'établissement n'a pas de licence valide). Lecture pour tous
@@ -4237,7 +4235,7 @@ code déjà expiré, `LICENCE_PUBLIC_KEY` non configurée sur le serveur.
 
 ---
 
-### 13.3 Consulter les Alertes de Licence
+### 13.6 Consulter les Alertes de Licence
 
 Le système envoie des alertes automatiques quand :
 
@@ -4267,7 +4265,7 @@ Le système envoie des alertes automatiques quand :
 
 ---
 
-### 13.4 Historique des Activations
+### 13.7 Historique des Activations
 
 **Accès :** `Licences → Historique`
 
@@ -4353,47 +4351,180 @@ Sélectionne la période et obtiens :
 
 ### 14.4 Emploi du Temps
 
-**À quoi ça sert :** Permet de créer, consulter et imprimer l'emploi du temps hebdomadaire des classes. Chaque séance indique la matière, l'enseignant, la salle et le créneau horaire.
+**À quoi ça sert :** Permet de créer, consulter et imprimer l'emploi du temps hebdomadaire des classes. La grille est calculée dynamiquement : chaque ligne = un créneau horaire unique, chaque colonne = un jour (Lun–Sam).
 
 **Qui peut accéder :** Directeur, Proviseur, Censeur
 
-**Accès :** `Vie Scolaire → Emploi du temps`
+**Accès :** `Vie Scolaire → Emploi du temps → [Classe]`
+
+**Page d'index (Design System v4.0) :**
+
+- En-tête avec bouton **Vue par professeur** dans `page-actions`
+- Sections par cycle avec badge coloré (vert Préscolaire, bleu Primaire, or Post-primaire, violet Secondaire) + séparateur horizontal + compteur de classes
+- Cartes `module-card` avec icône calendrier, nom de classe, cycle + "Emploi du temps hebdomadaire", flèche animée au survol
 
 #### Consulter l'Emploi du Temps d'une Classe
 
-1. Clique sur **Vie Scolaire → Emploi du temps**
-2. Sélectionne l'**année scolaire** dans le menu déroulant
-3. L'emploi du temps hebdomadaire s'affiche sous forme de grille moderne
+1. Va dans **Vie Scolaire → Emploi du temps**
+2. Sélectionne la classe souhaitée dans la grille, organisée par cycle
+3. Choisis l'**année scolaire** dans le sélecteur en haut à droite
+4. La grille s'affiche avec les créneaux en lignes et les jours en colonnes
 
 **Interface :**
-- Grille à 6 colonnes (lundi au samedi)
-- Cards jours avec header vert subtil
-- Séances affichées en lignes propres (heure · matière · salle · prof)
-- Design premium et épuré
+
+- Chaque cours est une carte colorée (8 couleurs en rotation par matière)
+- La carte affiche : nom de la matière, enseignant, salle
+- Légende des matières avec point de couleur au-dessus de la grille
+- Colonne horaire : heure de début en vert, heure de fin en gris
+- Cellule vide affichée avec `—` si aucun cours à ce créneau/jour
 
 #### Ajouter une Séance
 
-1. Remplis le formulaire "Ajouter une séance" en bas de page :
+1. Remplis le formulaire **Ajouter une séance** en bas de page :
    - **Matière / Enseignant** : sélection parmi les enseignements configurés
    - **Jour** : lundi au samedi
    - **Heure début / fin** : créneau horaire
    - **Salle** : optionnel
-
 2. Clique sur **Ajouter** pour enregistrer
 
-#### Supprimer une Séance
+> Si aucun enseignement n'est configuré pour la classe, le formulaire n'est pas affiché. Configurez d'abord les enseignements dans **Pédagogie**.
 
-1. Survole la séance dans la grille
-2. Clique sur le bouton **×** qui apparaît
-3. Confirme la suppression
+**Conflits refusés :** une séance n'est jamais ajoutée si, au même moment, **la classe** a déjà cours, si **l'enseignant** est déjà en cours dans une autre classe, ou si **la salle** indiquée est déjà occupée (message « Séance non ajoutée : … »). Deux séances qui s'enchaînent (08:00–08:50 puis 08:50–09:40) ne sont pas en conflit. La génération automatique tient compte des cours que les professeurs donnent déjà dans les autres classes et, à l'application, écarte toute séance qui créerait un chevauchement (message « n séance(s) non placée(s) pour éviter un conflit »). Les chevauchements déjà présents dans une grille (saisis avant cette règle) sont listés en tête de page dans un encadré rouge « conflits d'emploi du temps » : retirez l'une des séances concernées.
 
-#### Imprimer l'Emploi du Temps en PDF
+#### Imprimer l'Emploi du Temps en PDF (par Classe)
 
 1. Affiche l'emploi du temps de la classe souhaitée
-2. Clique sur **Imprimer PDF**
-3. Le PDF s'ouvre dans un nouvel onglet — imprime ou enregistre
+2. Clique sur **PDF** dans l'en-tête
+3. Le PDF s'ouvre dans un nouvel onglet (format A4 paysage)
 
-**Cas concret :** En début d'année, le Censeur du Lycée Zinda saisit les séances de cours pour chaque classe. Il imprime ensuite les emplois du temps de toutes les classes et les affiche dans les couloirs. Les enseignants peuvent consulter leur planning personnel depuis leur tableau de bord.
+---
+
+#### 14.4.1 Emploi du Temps par Professeur
+
+**À quoi ça sert :** Génère l'emploi du temps personnel d'un enseignant sur toute la semaine. Montre toutes ses classes, matières, créneaux et salles regroupés dans une grille hebdomadaire. Le PDF inclut un récapitulatif des enseignements et le total d'heures hebdomadaires.
+
+**Qui peut accéder :** Directeur, Proviseur, Censeur
+
+**Accès :** `Vie Scolaire → Emploi du temps → Par professeur`
+
+##### Consulter la Liste des Professeurs
+
+1. Clique sur **Vie Scolaire → Emploi du temps**
+2. Clique sur le lien **Par professeur** dans l'en-tête
+3. La liste de tous les enseignants actifs cette année s'affiche :
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  👨‍🏫 Emplois du temps par professeur         [2025-2026 ▼]       ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Liste des professeurs                               12 profs    ║
+╠═══════════════╦══════════════════╦══════════════════════════════╣
+║  ┌────────────┐  ┌─────────────────┐  ┌──────────────────────┐  ║
+║  │ 👤         │  │ 👤              │  │ 👤                   │  ║
+║  │ KABORÉ Ali │  │ TRAORÉ Mariam   │  │ OUÉDRAOGO Jean       │  ║
+║  │ 3 matières │  │ 2 matières      │  │ 4 matières           │  ║
+║  │ enseignées │  │ enseignées      │  │ enseignées           │  ║
+║  └────────────┘  └─────────────────┘  └──────────────────────┘  ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+4. Clique sur la **carte d'un professeur** pour voir son emploi du temps
+
+##### Consulter l'Emploi du Temps d'un Professeur
+
+Une fois sur la page du professeur, tu vois :
+
+```
+╔══════════════════════════════════════════════════════════════════════╗
+║  ← Emploi du temps — KABORÉ ALIMATA         [2025-2026 ▼]  [PDF]   ║
+║  Enseignante de Mathématiques                                        ║
+╠════════════╦══════════════╦════════════════════════════════════════╣
+║  3 matières║  12h/semaine ║  Maths — Tle A · Maths — 1ère C · … ║
+╠════════════╩══════════════╩════════════════════════════════════════╣
+║  Lundi         Mardi         Mercredi     Jeudi     Vendredi  Sam   ║
+╠══════════════════════════════════════════════════════════════════════╣
+║  ┌──────────┐               ┌──────────┐                            ║
+║  │ Maths    │               │ Maths    │                            ║
+║  │ 07h00–   │               │ 08h00–   │                            ║
+║  │   09h00  │               │   10h00  │                            ║
+║  │ Tle A    │               │ 1ère C   │                            ║
+║  │ Salle 3  │               │ Salle 5  │                            ║
+║  └──────────┘               └──────────┘                            ║
+╚══════════════════════════════════════════════════════════════════════╝
+```
+
+**Informations affichées par séance :**
+- Nom de la matière
+- Créneau horaire (ex : 07h00 – 09h00)
+- Classe concernée (ex : Terminale A)
+- Salle (si renseignée)
+
+**Statistiques en en-tête :**
+- Nombre de matières enseignées
+- Total d'heures hebdomadaires calculé automatiquement
+- Résumé par matière avec le nombre de séances
+
+##### Retirer une séance au professeur
+
+1. Survole la séance dans la grille du professeur et clique sur le bouton **×** en haut à droite de la carte
+2. Confirme le retrait : la séance est supprimée de l'emploi du temps de la classe concernée et tu restes sur la grille du professeur (message « Séance retirée : … »)
+
+Le bouton n'apparaît qu'avec le droit *Modifier l'emploi du temps* (matrice des droits).
+
+##### Imprimer l'Emploi du Temps en PDF
+
+1. Clique sur le bouton **Imprimer PDF** en haut à droite
+2. Le PDF s'ouvre dans un nouvel onglet
+3. Imprime ou enregistre le fichier
+
+**Contenu du PDF :**
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  LYCEE ZINDA          Emploi du temps — Professeur               ║
+║  ─────────────────────  KABORÉ ALIMATA                           ║
+║  Année 2025-2026        Enseignante de Mathématiques             ║
+║ ──────────────────────────────────────────────────────────────── ║
+║  3 matières     12h/sem.     PERS-LZ-2025-0042                   ║
+╠══════════════════════════════════════════════════════════════════╣
+║  LUNDI     MARDI   MERCREDI   JEUDI   VENDREDI   SAMEDI          ║
+╠══════════════════════════════════════════════════════════════════╣
+║  ┌──────┐          ┌───────┐                                     ║
+║  │Maths │          │Maths  │                                     ║
+║  │07h00 │          │08h00  │                                     ║
+║  │ Tle A│          │1ère C │                                     ║
+║  └──────┘          └───────┘                                     ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Récapitulatif des enseignements                                  ║
+║  Matière        Classe   Coeff.  H/sem.                          ║
+║  Mathématiques  Tle A    3,00    3h                              ║
+║  Mathématiques  1ère C   3,00    3h                              ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Ouagadougou, le 21 avril 2026       Le Directeur               ║
+║                                       NOM Prénom                 ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+**Caractéristiques du PDF :**
+- Format **A4 paysage** pour une lecture optimale
+- En-tête avec nom de l'établissement, matricule du professeur et année scolaire
+- Barre de statistiques (nombre de matières, total heures / semaine, matricule)
+- Grille à 6 colonnes (Lundi → Samedi)
+- Tableau récapitulatif des enseignements avec coefficients
+- Signature configurable (selon la configuration Signataires)
+- Pied de page avec date et heure de génération
+
+##### Pré-requis
+
+Pour que l'emploi du temps d'un professeur soit visible :
+
+| Condition | Où configurer |
+|-----------|--------------|
+| Le professeur doit avoir une inscription active pour l'année | `Personnel → Inscriptions` |
+| Des enseignements doivent lui être assignés | `Pédagogie → Enseignements` |
+| Des séances doivent être saisies pour ses enseignements | `Vie Scolaire → Emploi du temps → [Classe]` |
+
+**Cas concret :** En début d'année, le Censeur du Lycée Zinda saisit les séances de cours pour chaque classe. Il imprime ensuite les emplois du temps de toutes les classes et les affiche dans les couloirs. Chaque enseignant reçoit son emploi du temps personnel imprimé et signé par le Directeur.
 
 ---
 
@@ -4403,7 +4534,7 @@ Cette section distingue les fonctions livrées dans le dépôt des fonctions enc
 
 ---
 
-### État Global du Développement
+### 15.1 État Global du Développement
 
 | Module | État actuel | Disponible dans |
 |--------|-------------|-----------------|
@@ -4436,13 +4567,13 @@ Cette section distingue les fonctions livrées dans le dépôt des fonctions enc
 
 ---
 
-### 15.1 Emploi du Temps — Interface Complète
+### 15.2 Emploi du Temps — Interface Complète
 
 > ✅ **Disponible** — Voir la section [14.4 Emploi du Temps](#144-emploi-du-temps)
 
 ---
 
-### 15.2 Transfert Inter-Établissements
+### 15.3 Transfert Inter-Établissements
 
 > **✅ Livré dans la branche actuelle**
 
@@ -4456,7 +4587,7 @@ Le transfert ne déplace pas automatiquement les données vers un autre serveur 
 
 ---
 
-### 15.3 Gestion des Échéanciers
+### 15.4 Gestion des Échéanciers
 
 > **✅ Disponible dans la version actuelle**
 
@@ -4476,11 +4607,11 @@ Les fonctionnalités suivantes restent planifiées pour une version ultérieure 
 
 ---
 
-### 15.4 Procès-verbal du Conseil de Classe (PDF)
+### 15.5 Procès-verbal du Conseil de Classe (PDF)
 
-> **✅ Disponible dans la version actuelle** — Voir la section [6.6 Conseil de Classe](#66-conseil-de-classe)
+> **✅ Disponible dans la version actuelle** — Voir la section [8.7 Appels de Décision du Conseil de Classe](#87-appels-de-décision-du-conseil-de-classe)
 
-Après la saisie des décisions du conseil de classe (section 6.6), le système génère automatiquement un **procès-verbal officiel** en PDF, incluant :
+Après la saisie des décisions du conseil de classe (section 8.7), le système génère automatiquement un **procès-verbal officiel** en PDF, incluant :
 
 - La liste des élèves avec décision, mention et appréciation individuelle
 - L'appréciation générale de la classe
@@ -4491,7 +4622,7 @@ Après la saisie des décisions du conseil de classe (section 6.6), le système 
 
 ---
 
-### 15.5 Bulletin de Vacation (PDF)
+### 15.6 Bulletin de Vacation (PDF)
 
 > **✅ Disponible dans la version actuelle**
 
@@ -4504,7 +4635,7 @@ Le bulletin de vacation saisi dans le module Vacations (section 11.3) peut être
 
 ---
 
-### 15.6 Portail Parent
+### 15.7 Portail Parent
 
 > **✅ Livré dans la branche actuelle**
 
@@ -4518,7 +4649,7 @@ L'accès dépend d'un compte parent configuré par l'établissement. Les donnée
 
 ---
 
-### 15.7 Exports Excel / CSV
+### 15.8 Exports Excel / CSV
 
 > **✅ Livré dans la branche actuelle**
 
@@ -4530,7 +4661,7 @@ En complément des exports PDF, les exports disponibles permettent notamment de 
 
 ---
 
-### 15.8 Gestion des Licences — Interface Complète
+### 15.9 Gestion des Licences — Interface Complète
 
 > **Disponible dans :** Version 4.0
 
@@ -4574,7 +4705,7 @@ Réservé au super-administrateur, cet espace offre deux fonctions :
 
 ---
 
-### 15.9 Analyse des Risques de Décrochage (IA locale)
+### 15.10 Analyse des Risques de Décrochage (IA locale)
 
 > **✅ Livré dans la branche actuelle**
 
@@ -4584,7 +4715,7 @@ La commande `python manage.py calculer_risques --strict` peut être planifiée a
 
 ---
 
-### 15.10 Multi-Établissements — Tableau de Bord Réseau
+### 15.11 Multi-Établissements — Tableau de Bord Réseau
 
 > **Disponible dans :** Licence Réseau — Version 4.x
 
@@ -4627,7 +4758,7 @@ Cela signifie que l'élève n'a pas encore été **enregistré** dans le systèm
 
 ### Q4. J'ai saisi une note incorrecte. Puis-je la modifier ?
 
-Oui. Va dans **Pédagogie → Saisie des notes**, retrouve la classe et l'évaluation concernées, puis modifie la note. Seul l'enseignant concerné, le Directeur ou le Proviseur peuvent modifier une note — tant que la période n'est pas **clôturée** (§ 2.4) ; après clôture, un responsable doit d'abord la rouvrir dans `Paramètres → Périodes`.
+Oui. Va dans **Pédagogie → Saisie des notes**, retrouve la classe et l'évaluation concernées, puis modifie la note. Seul l'enseignant concerné, le Directeur ou le Proviseur peuvent modifier une note — tant que la période n'est pas **clôturée** (§ 3.4) ; après clôture, un responsable doit d'abord la rouvrir dans `Paramètres → Périodes`.
 
 ---
 
@@ -5132,9 +5263,9 @@ Après l'exécution, vérifier l'application, quelques données importantes et p
 > **Badge numérique :** Le chiffre rouge sur la cloche indique le nombre de notifications non lues. Il disparaît quand toutes les notifications ont été consultées.
 
 **Notifications sur votre téléphone ou votre PC (5.30.0) :** la carte « Notifications sur cet appareil », en haut de la
-page Notifications, fonctionne pour le personnel comme pour les parents (§20.3). **Activer** → le navigateur demande
+page Notifications, fonctionne pour le personnel comme pour les parents (§19.3). **Activer** → le navigateur demande
 l'autorisation → chaque notification qui vous est destinée — seuil d'absences atteint (directeur, censeur), alerte du
-serveur (§2.18), rappel de licence (§13.3) — s'affiche comme une notification de l'appareil, application fermée
+serveur (§3.6), rappel de licence (§13.6) — s'affiche comme une notification de l'appareil, application fermée
 comprise ; la toucher ouvre la page concernée. **Tester** envoie aussitôt une notification d'essai, **Désactiver** retire
 l'appareil. L'activation vaut pour cet appareil et ce navigateur ; elle nécessite l'adresse `https://` de l'école et un
 accès Internet du serveur (qui remet la notification au service du navigateur) — l'e-mail et le SMS ne changent pas.
@@ -5350,9 +5481,9 @@ Le texte du SMS envoyé est défini dans **Paramètres → Modèles de messages*
 
 ---
 
-## 20. Portail Parent PWA
+## 19. Portail Parent PWA
 
-### 20.1 Installer l'application sur Android
+### 19.1 Installer l'application sur Android
 
 **À quoi ça sert :** Le portail parent de YELEN SCHOOL est une **Progressive Web App (PWA)** — une application web installable sur n'importe quel smartphone Android, sans passer par le Play Store. Une fois installée, elle fonctionne partiellement **hors ligne** et apparaît sur l'écran d'accueil comme une vraie application.
 
@@ -5446,7 +5577,7 @@ Le parent reçoit les bulletins, absences et notifications pour chaque élève c
 
 > **Note :** Le portail parent dispose de son propre design mobile-first (sans sidebar d'administration), optimisé pour les petits écrans Android.
 
-### 20.2 Design system — classes pp-*
+### 19.2 Design system — classes pp-*
 
 Le portail parent utilise exclusivement des classes préfixées `pp-` définies dans `yelen.css`. Aucun style inline ni bloc `<style>` n'est présent dans le template.
 
@@ -5468,7 +5599,7 @@ Le portail parent utilise exclusivement des classes préfixées `pp-` définies 
 | Footer | `pp-footer`, `pp-footer-logo`, `pp-footer-tagline` |
 | Masquage | `pp-hidden` (remplace `style="display:none"`) |
 
-### 20.3 Notifications parent
+### 19.3 Notifications parent
 
 **URL :** `/portail/parent/notifications/`
 
@@ -5509,7 +5640,7 @@ applications natives, sans boutique d'applications ni composant payant.
   **cet appareil et ce navigateur** : un parent l'active sur chaque téléphone qu'il utilise.
 - **Android (Chrome) :** fonctionne dans le navigateur comme dans l'application installée. **iPhone / iPad :** il faut
   d'abord installer l'application (Partager → Sur l'écran d'accueil, iOS 16.4 ou plus) puis l'ouvrir depuis l'écran
-  d'accueil ; la carte le rappelle. Dans les deux cas, l'adresse `https://` de l'école est nécessaire (§20.1).
+  d'accueil ; la carte le rappelle. Dans les deux cas, l'adresse `https://` de l'école est nécessaire (§19.1).
 - **Côté serveur :** rien à configurer — les clés de l'installation (VAPID) sont générées à la première utilisation et
   conservées avec la base. Le serveur de l'école doit **accéder à Internet** pour remettre les notifications au service
   du navigateur (Google, Mozilla, Apple) ; sinon « Tester » le signale et la notification reste visible dans le portail.
@@ -5517,7 +5648,7 @@ applications natives, sans boutique d'applications ni composant payant.
   notifications). Un appareil qui a révoqué l'abonnement est retiré automatiquement au prochain envoi ; la
   notification interne, l'e-mail et le SMS ne changent pas.
 
-### 20.4 Bulletins parent
+### 19.4 Bulletins parent
 
 **URL :** `/portail/parent/bulletins/`
 
@@ -5531,9 +5662,9 @@ Page PWA dédiée accessible via l'onglet "Bulletins" de la navigation basse.
 - Bouton "Consulter & Signer" redirige vers la page publique de signature (`/bulletins/parent/<token>/`)
 - État vide avec SVG si aucun bulletin n'est encore publié
 
-### 20.5 Cahier de textes et devoirs (5.31.0)
+### 19.5 Cahier de textes et devoirs (5.31.0)
 
-Ce que l'enseignant saisit dans le cahier de textes (§6.0) est visible du parent, sans autre action :
+Ce que l'enseignant saisit dans le cahier de textes (§6.1) est visible du parent, sans autre action :
 
 - **Accueil** : la section **« Travail à faire »** de chaque enfant liste les cinq prochains devoirs de sa classe
   (date de remise, matière, consigne) ; « Aucun devoir à rendre pour l'instant » sinon. Le lien **Cahier de textes →**
@@ -5545,9 +5676,9 @@ Ce que l'enseignant saisit dans le cahier de textes (§6.0) est visible du paren
 
 ---
 
-## 21. Signature Électronique des Bulletins
+## 20. Signature Électronique des Bulletins
 
-### 21.1 Vue d'ensemble
+### 20.1 Vue d'ensemble
 
 **À quoi ça sert :** À la publication de chaque bulletin trimestriel, un lien sécurisé à usage unique (valable 15 jours) est envoyé par SMS au parent. Le parent consulte le bulletin sur son téléphone et appose une signature numérique horodatée. L'école dispose ainsi d'une preuve légale de réception, sans cahier de correspondance papier ni retour physique.
 
@@ -5557,7 +5688,7 @@ Ce que l'enseignant saisit dans le cahier de textes (§6.0) est visible du paren
 
 ---
 
-### 21.2 Workflow complet
+### 20.2 Workflow complet
 
 **Côté établissement :**
 
@@ -5580,7 +5711,7 @@ Ce que l'enseignant saisit dans le cahier de textes (§6.0) est visible du paren
 
 ---
 
-### 21.3 Page de signature parent
+### 20.3 Page de signature parent
 
 La page est publique (sans compte), mobile-first, en langue française. Elle affiche :
 
@@ -5617,7 +5748,7 @@ Après signature, la page affiche :
 
 ---
 
-### 21.4 Cas particuliers
+### 20.4 Cas particuliers
 
 | Situation | Comportement |
 |---|---|
@@ -5630,17 +5761,17 @@ Après signature, la page affiche :
 
 ---
 
-## 22. Prédiction de Réussite aux Examens Officiels
+## 21. Prédiction de Réussite aux Examens Officiels
 
 Ce module prédit la probabilité qu'un élève réussisse son examen officiel (BEPC, BAC ou CEP) en s'appuyant sur ses moyennes trimestrielles et son assiduité.
 
-### 22.1 Accès
+### 21.1 Accès
 
 `Pédagogie → Prédictions examens`
 
 Seules les classes des cycles **Primaire**, **Post-primaire** et **Secondaire** apparaissent (cycles avec examen officiel). Les classes de Préscolaire sont exclues.
 
-### 22.2 Algorithme de calcul
+### 21.2 Algorithme de calcul
 
 ```
 Score final = Score de base ± Bonus tendance ± Malus assiduité
@@ -5660,7 +5791,7 @@ Score final = Score de base ± Bonus tendance ± Malus assiduité
 
 Le score est borné entre **0 et 100**.
 
-### 22.3 Pronostics
+### 21.3 Pronostics
 
 | Pronostic | Seuil | Couleur |
 | --- | --- | --- |
@@ -5669,7 +5800,7 @@ Le score est borné entre **0 et 100**.
 | **Risqué** | 30 – 49 % | Orange `#E67E22` |
 | **Critique** | < 30 % | Rouge `#DC3545` |
 
-### 22.4 Workflow
+### 21.4 Workflow
 
 1. Aller dans **Pédagogie → Prédictions examens**
 2. Cliquer sur une classe
@@ -5681,7 +5812,7 @@ Le score est borné entre **0 et 100**.
    - Score et badge de pronostic
 5. Télécharger le **Rapport PDF** pour impression ou archivage
 
-### 22.5 Examen cible détecté automatiquement
+### 21.5 Examen cible détecté automatiquement
 
 | Cycle | Examen |
 |---|---|
@@ -5690,7 +5821,7 @@ Le score est borné entre **0 et 100**.
 | Primaire | CEP |
 | Autre | AUTRE |
 
-### 22.6 Widget sur la fiche de suivi élève
+### 21.6 Widget sur la fiche de suivi élève
 
 Si une prédiction a été calculée, un widget apparaît automatiquement sur la fiche de suivi de l'élève (`Vie Scolaire → [Élève]`) affichant :
 
@@ -5699,7 +5830,7 @@ Si une prédiction a été calculée, un widget apparaît automatiquement sur la
 - La moyenne actuelle, la tendance, les absences NJ
 - La date du dernier calcul
 
-### 22.7 Notes importantes
+### 21.7 Notes importantes
 
 - Au minimum les moyennes du **1er trimestre** doivent être saisies pour lancer le calcul
 - Les résultats sont **indicatifs** — ils ne se substituent pas au jugement du conseil de classe
@@ -5707,11 +5838,11 @@ Si une prédiction a été calculée, un widget apparaît automatiquement sur la
 
 ---
 
-## 23. Carnet APC Sahélien — Évaluation par Compétences (Préscolaire / Primaire)
+## 22. Carnet APC Sahélien — Évaluation par Compétences (Préscolaire / Primaire)
 
 Ce module implémente l'**Approche Par Compétences (APC)** obligatoire pour les cycles Préscolaire et Primaire au Burkina Faso. Il remplace les notes chiffrées sur 20 par une évaluation par **feux tricolores** (Acquis / En cours / Non acquis) adaptée au développement du jeune enfant et au contexte sahélien.
 
-### 23.1 Catégories de compétences APC
+### 22.1 Catégories de compétences APC
 
 Les compétences sont classées en **6 catégories** adaptées au contexte burkinabè :
 
@@ -5724,13 +5855,13 @@ Les compétences sont classées en **6 catégories** adaptées au contexte burki
 | **Citoyenneté et patrimoine** | Éducation civique et culturelle | Respect des aînés, patrimoine local |
 | **Compétence transversale** | Compétence interdisciplinaire | Travail en groupe, résolution de problèmes |
 
-### 23.2 Accès
+### 22.2 Accès
 
 `Pédagogie → Bulletins compétences`
 
 Seuls les cycles **Préscolaire** (code PRES) et **Primaire** (code PRIM) sont affichés.
 
-### 23.3 Étape 1 — Configurer le référentiel
+### 22.3 Étape 1 — Configurer le référentiel
 
 Avant toute saisie, il faut définir les compétences à évaluer :
 
@@ -5755,7 +5886,7 @@ Exemples de compétences par catégorie :
 | Environnement | Trie les déchets dans la poubelle adaptée |
 | Patrimoine | Connaît les symboles de la nation |
 
-### 23.4 Étape 2 — Saisir les évaluations (HTMX)
+### 22.4 Étape 2 — Saisir les évaluations (HTMX)
 
 1. Sur la page d'accueil, cliquer sur le nom de la **classe** sous le cycle
 2. Sélectionner le **trimestre**
@@ -5769,7 +5900,7 @@ Exemples de compétences par catégorie :
 
 Les 3 premières cartes sont dépliées par défaut. Cliquer sur l'en-tête d'une carte pour la déplier/replier.
 
-### 23.5 Étape 3 — Générer le bulletin PDF
+### 22.5 Étape 3 — Générer le bulletin PDF
 
 Depuis la page de saisie, section **Bulletins individuels PDF** :
 
@@ -5782,7 +5913,7 @@ Depuis la page de saisie, section **Bulletins individuels PDF** :
   - Synthèse des acquisitions (Acquis / En cours / Non acquis)
   - Zone de signatures (enseignant · parent · cachet)
 
-### 23.6 Intégration au bulletin trimestriel
+### 22.6 Intégration au bulletin trimestriel
 
 Pour les cycles Préscolaire et Primaire, la section **Évaluation par compétences (APC)** est automatiquement intégrée au bulletin de notes trimestriel standard, entre les notes et la conduite.
 
@@ -5791,7 +5922,7 @@ Le bulletin inclut :
 - Des barres de progression colorées
 - Un récapitulatif chiffré des acquisitions
 
-### 23.7 Niveaux d'acquisition
+### 22.7 Niveaux d'acquisition
 
 | Niveau | Couleur | Signification |
 | --- | --- | --- |
@@ -5800,21 +5931,21 @@ Le bulletin inclut :
 | Non acquis | Rouge | Accompagnement nécessaire |
 | Non évalué | Gris | Pas encore observé |
 
-### 23.8 Compatibilité avec le système de notes
+### 22.8 Compatibilité avec le système de notes
 
 Ce module est une **extension** du système existant — il ne remplace pas les notes chiffrées. Pour les classes Primaire qui utilisent à la fois des notes ET des compétences, les deux évaluations coexistent indépendamment dans le bulletin.
 
 ---
 
-## 24. Bourses et Aides Financières
+## 23. Bourses et Aides Financières
 
-### 24.1 Accès au formulaire d'attribution
+### 23.1 Accès au formulaire d'attribution
 
 Depuis la **Situation financière de l'élève** (`/finances/situation/<id>/`), cliquer sur le bouton **Attribuer une bourse / aide**.
 
 URL : `/finances/bourses/eleve/<inscription_id>/attribuer/`
 
-### 24.2 Champs du formulaire
+### 23.2 Champs du formulaire
 
 Le formulaire est présenté en **deux colonnes** côte à côte (une seule colonne sur mobile) :
 
@@ -5826,7 +5957,7 @@ Le formulaire est présenté en **deux colonnes** côte à côte (une seule colo
 
 Le **Type de bourse** et l'**Observation** occupent toute la largeur (pleine colonne).
 
-### 24.3 Calcul automatique du montant
+### 23.3 Calcul automatique du montant
 
 Lors de la sélection d'un type de bourse, le montant est calculé automatiquement :
 
@@ -5835,7 +5966,7 @@ Lors de la sélection d'un type de bourse, le montant est calculé automatiqueme
 
 Le champ reste modifiable pour saisir un montant différent.
 
-### 24.5 Page Relances de paiement (`/finances/relances/`)
+### 23.4 Page Relances de paiement (`/finances/relances/`)
 
 Le formulaire est organisé en **une seule carte** avec deux sections et une disposition **2 colonnes** :
 
@@ -5859,7 +5990,7 @@ La note d'information utilise le composant `.alert.alert-warning` du design syst
 
 ---
 
-### 24.4 Types de bourses
+### 23.5 Types de bourses
 
 Gérés dans `/finances/bourses/types/`. Le formulaire de création/modification (`/finances/types-bourses/nouveau/`) est organisé en **3 blocs** avec disposition 2 colonnes :
 
@@ -5886,7 +6017,7 @@ Chaque type définit :
 
 ---
 
-## 25. Assistant IA Conversationnel (Chatbot Directeur)
+## 24. Assistant IA Conversationnel (Chatbot Directeur)
 
 Ce module répond à deux types de questions en langage naturel :
 
@@ -5895,18 +6026,18 @@ Ce module répond à deux types de questions en langage naturel :
 
 **Aucune API externe, aucun abonnement.** Le moteur est entièrement local : il analyse les mots-clés et interroge directement la base de données Django ou la base de connaissances du guide.
 
-### 25.1 Accès
+### 24.1 Accès
 
 `Administration → Assistant IA`
 
 Disponible pour les rôles : **Directeur**, **Censeur**, **Directeur réseau**, **Super Admin** (tout autre profil reçoit un refus).
 L'assistant ne voit que l'établissement de l'utilisateur connecté : effectifs, finances, absences, moyennes et recherche d'élève sont limités à cet établissement et à son année scolaire courante.
 
-### 25.2 Prérequis
+### 24.2 Prérequis
 
 Aucun. Le moteur fonctionne hors ligne, sans clé API, sans configuration supplémentaire.
 
-### 25.3 Exemples de questions sur les données
+### 24.3 Exemples de questions sur les données
 
 | Question | Ce que l'assistant fait |
 | --- | --- |
@@ -5917,7 +6048,7 @@ Aucun. Le moteur fonctionne hors ligne, sans clé API, sans configuration suppl�
 | "Cherche l'élève Ouédraogo et donne sa situation" | Recherche par nom, retourne classe, moyenne, montant payé |
 | "Quels élèves ont une moyenne sous 8/20 ce trimestre ?" | Filtre MoyenneGenerale < 8 sur le trimestre le plus récent |
 
-### 25.3b Exemples de questions sur le fonctionnement
+### 24.4 Exemples de questions sur le fonctionnement
 
 | Question | Ce que l'assistant répond |
 | --- | --- |
@@ -5930,7 +6061,7 @@ Aucun. Le moteur fonctionne hors ligne, sans clé API, sans configuration suppl�
 | "Comment envoyer des relances ?" | Sélection classe + rubrique + date → générer PDF ou envoyer SMS |
 | "Comment créer un compte utilisateur ?" | Formulaire, rôles disponibles, règles de sécurité |
 
-### 25.4 Base de connaissances intégrée
+### 24.5 Base de connaissances intégrée
 
 La base de connaissances couvre **21 sujets** extraits du guide d'utilisation :
 
@@ -5958,7 +6089,7 @@ La base de connaissances couvre **21 sujets** extraits du guide d'utilisation :
 | Statistiques | statistique, rapport, bilan, export csv |
 | FAQ | aide, problème, lenteur, sauvegarde |
 
-### 25.5 Interface
+### 24.6 Interface
 
 - **État vide** : à l'ouverture, un écran d'accueil avec icône et message de bienvenue invite l'utilisateur à poser une question
 - **Chips de suggestion** : des exemples cliquables s'affichent sous la fenêtre de messages tant que la conversation est vide ; ils se masquent automatiquement après le premier échange
@@ -5968,7 +6099,7 @@ La base de connaissances couvre **21 sujets** extraits du guide d'utilisation :
 - L'historique est conservé dans la session navigateur (perdu à la déconnexion)
 - Le design est entièrement conforme au Design System v4.2 : zéro CSS inline, toutes les classes proviennent de `yelen.css`
 
-### 25.6 Limites
+### 24.7 Limites
 
 - Les données dépendent de ce qui est saisi dans le logiciel — si les moyennes ne sont pas calculées, l'assistant l'indique
 - L'assistant ne modifie **jamais** les données — il est en lecture seule
@@ -5980,7 +6111,7 @@ La base de connaissances couvre **21 sujets** extraits du guide d'utilisation :
 
 ---
 
-## 26. Budget & Dépenses
+## 25. Budget & Dépenses
 
 > **Accès menu :** `Finances → Dépenses / Trésorerie / Budget prévisionnel`
 
@@ -5988,7 +6119,7 @@ Ce module comble le manque majeur du module Finances existant : la gestion des *
 
 ---
 
-### 26.1 Catégories de Dépenses
+### 25.1 Catégories de Dépenses
 
 **Accès :** `Finances → Budget prévisionnel → Gérer les catégories`
 
@@ -6005,7 +6136,7 @@ Les types prédéfinis correspondent aux grands postes de dépense d'un établis
 
 ---
 
-### 26.2 Enregistrer une Dépense
+### 25.2 Enregistrer une Dépense
 
 **Accès :** `Finances → Dépenses → + Nouvelle dépense`
 
@@ -6030,7 +6161,7 @@ Chaque dépense est créée en **brouillon** puis **validée** par un responsabl
 
 ---
 
-### 26.3 Budget Prévisionnel
+### 25.3 Budget Prévisionnel
 
 **Accès :** `Finances → Budget prévisionnel`
 
@@ -6044,7 +6175,7 @@ Le total prévisionnel s'affiche en temps réel.
 
 ---
 
-### 26.4 Tableau de Bord Trésorerie
+### 25.4 Tableau de Bord Trésorerie
 
 **Accès :** `Finances → Trésorerie`
 
@@ -6069,7 +6200,7 @@ Vue consolidée pour le directeur :
 
 ---
 
-### 26.5 Règles métier
+### 25.5 Règles métier
 
 - Les dépenses sont **toujours en FCFA**
 - Le numéro de dépense est généré automatiquement (`DEP-AAAA-NNNNN`)
@@ -6079,7 +6210,7 @@ Vue consolidée pour le directeur :
 
 ---
 
-## 27. Gestion des Manuels Scolaires
+## 26. Gestion des Manuels Scolaires
 
 **Accès :** Menu latéral → **Manuels**
 
@@ -6087,7 +6218,7 @@ Ce module assure la traçabilité complète des manuels scolaires : du stock jus
 
 ---
 
-### 27.1 Catalogue des Manuels
+### 26.1 Catalogue des Manuels
 
 **Accès :** `Manuels → Catalogue`
 
@@ -6106,7 +6237,7 @@ Le catalogue liste tous les manuels référencés dans l'établissement.
 
 ---
 
-### 27.2 Gestion des Exemplaires
+### 26.2 Gestion des Exemplaires
 
 **Accès :** `Manuels → Catalogue → [titre du manuel] → + Exemplaire`
 
@@ -6131,7 +6262,7 @@ La fiche détail d'un manuel affiche :
 
 ---
 
-### 27.3 Attribution Nominative
+### 26.3 Attribution Nominative
 
 **Accès :** `Manuels → Attributions → + Attribution`
 
@@ -6146,7 +6277,7 @@ Chaque attribution est nominative et horodatée. Un exemplaire déjà attribué 
 
 ---
 
-### 27.4 Enregistrer un Retour
+### 26.4 Enregistrer un Retour
 
 **Accès :** `Manuels → Attributions → [ligne] → Retour`
 
@@ -6162,7 +6293,7 @@ L'état de l'exemplaire est automatiquement mis à jour après le retour.
 
 ---
 
-### 27.5 Manuels Non Rendus — Alerte de Fin d'Année
+### 26.5 Manuels Non Rendus — Alerte de Fin d'Année
 
 **Accès :** `Manuels → Non rendus`
 
@@ -6170,11 +6301,11 @@ Ce tableau liste tous les exemplaires qui n'ont pas été retournés pour l'ann�
 
 **Facturation :** bouton `Facturer` → émet une **créance « Manuel non rendu »** au nom de l'élève, du montant défini comme **Prix de remplacement** du manuel. Rien n'est encaissé à ce stade : la créance s'ajoute au *reste à payer* de l'élève (situation financière, redevables, relances) et se règle au guichet comme une rubrique ordinaire (rubrique *Manuel non rendu*, plafonnée au montant dû). Les parents sont notifiés (SMS si activé, notification in-app). La colonne **Créance émise** indique les attributions déjà facturées ; une attribution ne peut être facturée qu'une fois.
 
-Si le manuel est finalement rendu (bouton `Retour`), la créance est **annulée automatiquement** et disparaît du reste à payer ; un versement déjà encaissé demeure. La Direction peut aussi annuler une créance à la main depuis la situation financière de l'élève (§ 35.1 bis).
+Si le manuel est finalement rendu (bouton `Retour`), la créance est **annulée automatiquement** et disparaît du reste à payer ; un versement déjà encaissé demeure. La Direction peut aussi annuler une créance à la main depuis la situation financière de l'élève (§ 37.1 bis).
 
 ---
 
-### 27.6 Export PDF des Attributions Annuelles
+### 26.6 Export PDF des Attributions Annuelles
 
 **Accès :** `/manuels/attributions/pdf/?annee=<uuid>`
 
@@ -6196,7 +6327,7 @@ Génère un document PDF en **paysage A4** listant toutes les attributions de ma
 
 ---
 
-### 27.7 Export PDF de l'Inventaire par Classe
+### 26.7 Export PDF de l'Inventaire par Classe
 
 **Accès :** depuis la page d'une classe (ou via l'URL `/manuels/inventaire/classe/<id>/pdf/`)
 
@@ -6204,7 +6335,7 @@ Génère un document PDF listant tous les manuels attribués aux élèves de la 
 
 ---
 
-### 27.7 Règles Métier
+### 26.8 Règles Métier
 
 - Le code exemplaire est généré automatiquement (`EX-AAAA-NNNNN`) et non modifiable
 - Un exemplaire ne peut être attribué qu'à **un seul élève** à la fois
@@ -6215,7 +6346,7 @@ Génère un document PDF listant tous les manuels attribués aux élèves de la 
 
 ---
 
-## 28. Mode Hors Ligne Complet (PWA)
+## 27. Mode Hors Ligne Complet (PWA)
 
 **Accès :** Automatique — aucune configuration requise
 
@@ -6223,7 +6354,7 @@ YELEN SCHOOL fonctionne nativement sur le réseau local de l'établissement. Le 
 
 ---
 
-### 28.1 Bandeau de Connexion Perdue
+### 27.1 Bandeau de Connexion Perdue
 
 Dès que le navigateur perd l'accès au serveur (réseau LAN coupé, serveur redémarré…), un **bandeau orange** s'affiche en haut de toutes les pages :
 
@@ -6233,7 +6364,7 @@ Le bandeau disparaît automatiquement dès que la connexion est rétablie.
 
 ---
 
-### 28.2 Page Hors Ligne
+### 27.2 Page Hors Ligne
 
 Si une page demandée n'est pas en cache et que le serveur est inaccessible, le navigateur affiche la **page `/offline/`** :
 
@@ -6243,7 +6374,7 @@ Si une page demandée n'est pas en cache et que le serveur est inaccessible, le 
 
 ---
 
-### 28.3 Cache des Assets Statiques
+### 27.3 Cache des Assets Statiques
 
 Le Service Worker (`/app-sw.js`, portée `/`) met en cache :
 
@@ -6256,7 +6387,7 @@ Le Service Worker (`/app-sw.js`, portée `/`) met en cache :
 
 ---
 
-### 28.4 Installer l'Application (A2HS)
+### 27.4 Installer l'Application (A2HS)
 
 Sur les navigateurs compatibles (Chrome, Edge, Safari iOS), un bouton **"Installer l'application"** apparaît en bas du menu latéral. Il permet d'ajouter YELEN SCHOOL à l'écran d'accueil ou au bureau :
 
@@ -6268,19 +6399,19 @@ Le bouton n'apparaît que si le navigateur détecte que l'app peut être install
 
 ---
 
-### 28.5 Architecture PWA
+### 27.5 Architecture PWA
 
 | Élément | URL | Description |
 |---|---|---|
 | Service Worker | `/app-sw.js` | Cache, stratégies fetch, fallback offline |
 | Manifest | `/app-manifest.json` | Métadonnées d'installation |
 | Page offline | `/offline/` | Fallback quand le serveur est inaccessible |
-| Saisies hors réseau | `/hors-ligne/saisies/` | File des notes et appels conservés sur l'appareil (§28.6) |
+| Saisies hors réseau | `/hors-ligne/saisies/` | File des notes et appels conservés sur l'appareil (§27.6) |
 | Portail parent | `/sw.js` + `/manifest.json` | PWA séparée pour les parents |
 
 ---
 
-### 28.6 Saisie Hors Réseau — Notes et Appels (enseignants)
+### 27.6 Saisie Hors Réseau — Notes et Appels (enseignants)
 
 **Accès :** Automatique sur les pages **Saisie des notes** (`/pedagogie/evaluations/…/saisie/`) et **Appel** (`/presences/appel/…/saisie/`) — aucune configuration.
 
@@ -6308,11 +6439,11 @@ Le bouton n'apparaît que si le navigateur détecte que l'app peut être install
 - Une saisie transmise est traitée **exactement comme une saisie en ligne** (mêmes contrôles : barème, période clôturée, appel clôturé, droits, SMS d'absence à la clôture de l'appel) ; la date enregistrée est celle de la transmission.
 - Les données attendent dans le navigateur de l'appareil (pas dans le serveur) : verrouiller l'appareil, ne pas effacer les données du navigateur tant que la pastille est visible.
 
-> **Prérequis technique :** le navigateur doit avoir accepté le Service Worker de l'application, ce qui exige un accès **HTTPS** (mode serveur Docker avec l'autorité locale installée, §20.1) ou `http://localhost`. En mode autonome HTTP sur le réseau (port 8000), la saisie hors réseau n'est pas disponible.
+> **Prérequis technique :** le navigateur doit avoir accepté le Service Worker de l'application, ce qui exige un accès **HTTPS** (mode serveur Docker avec l'autorité locale installée, §19.1) ou `http://localhost`. En mode autonome HTTP sur le réseau (port 8000), la saisie hors réseau n'est pas disponible.
 
 ---
 
-## 29. Communication Bidirectionnelle Établissement ↔ Parent
+## 28. Communication Bidirectionnelle Établissement ↔ Parent
 
 **Accès :** Menu latéral → **Communication → Messages parents**
 
@@ -6320,7 +6451,7 @@ Ce module permet d'envoyer des messages structurés aux parents et de recevoir l
 
 ---
 
-### 29.1 Types de messages
+### 28.1 Types de messages
 
 | Type | Description | Réponse attendue |
 |---|---|---|
@@ -6333,7 +6464,7 @@ Toute réponse est conservée intégralement en commentaire (horodatée `[SMS 12
 
 ---
 
-### 29.2 Envoyer un message
+### 28.2 Envoyer un message
 
 1. Cliquer sur **Nouveau message**
 2. Remplir le formulaire :
@@ -6347,7 +6478,7 @@ Toute réponse est conservée intégralement en commentaire (horodatée `[SMS 12
 
 ---
 
-### 29.3 Lien de réponse
+### 28.3 Lien de réponse
 
 Chaque message génère un **lien unique sécurisé** de la forme `/communication/repondre/<token>/`.
 
@@ -6357,7 +6488,7 @@ Le lien est accessible **sans connexion** — le parent n'a pas besoin de compte
 
 ---
 
-### 29.4 Suivi des réponses
+### 28.4 Suivi des réponses
 
 La liste des messages affiche :
 - Le **statut** : Envoyé → Lu (ouverture du lien) → Répondu (réponse par SMS ou par le lien)
@@ -6369,7 +6500,7 @@ La liste des messages affiche :
 
 ---
 
-### 29.4.1 Page de détail du message
+### 28.5 Page de détail du message
 
 Accessible depuis l'icône œil de la liste, la page de détail affiche :
 
@@ -6396,7 +6527,7 @@ Accessible depuis l'icône œil de la liste, la page de détail affiche :
 
 ---
 
-### 29.5 Page de réponse (côté parent)
+### 28.6 Page de réponse (côté parent)
 
 Quand le parent ouvre le lien SMS, il accède à une page autonome affichant :
 - Le nom de l'établissement
@@ -6412,7 +6543,7 @@ Une fois soumis, le statut passe automatiquement à **Répondu** et la réponse 
 
 ---
 
-## 30. Génération Automatique d'Emploi du Temps
+## 29. Génération Automatique d'Emploi du Temps
 
 **Accès :** Menu latéral → **Vie Scolaire → Emploi du temps** → sélectionner une classe → bouton **Générer automatiquement**
 
@@ -6420,7 +6551,7 @@ Ce module génère un emploi du temps hebdomadaire complet à partir des enseign
 
 ---
 
-### 30.1 Principe de l'algorithme
+### 29.1 Principe de l'algorithme
 
 Le générateur utilise une approche **greedy avec random restarts** (jusqu'à 40 tentatives) :
 
@@ -6435,7 +6566,7 @@ Le générateur utilise une approche **greedy avec random restarts** (jusqu'à 4
 
 ---
 
-### 30.2 Créneaux horaires utilisés
+### 29.2 Créneaux horaires utilisés
 
 **Sans configuration** : créneaux par défaut Burkina Faso (séances de 50 min) :
 
@@ -6455,9 +6586,9 @@ Le générateur utilise une approche **greedy avec random restarts** (jusqu'à 4
 
 Jours : Lundi à Samedi (6 jours).
 
-**Avec une configuration enregistrée** (§ 30.2.1) : les créneaux sont calculés depuis les horaires configurés (plages matin et après-midi découpées par la durée de séance) et les jours de classe cochés.
+**Avec une configuration enregistrée** (§ 29.2.1) : les créneaux sont calculés depuis les horaires configurés (plages matin et après-midi découpées par la durée de séance) et les jours de classe cochés.
 
-#### 30.2.1 Configurer les horaires et les jours de classe
+#### 29.2.1 Configurer les horaires et les jours de classe
 
 **Accès :** **Vie Scolaire → Emploi du temps** → bouton **Horaires et jours de classe** (Directeur et Censeur par défaut ; droit *Configurer les horaires de cours et les jours de classe* attribuable dans la matrice des droits).
 
@@ -6476,7 +6607,7 @@ La page affiche l'aperçu des créneaux obtenus (ex. 9 séances de 50 min). Une 
 
 ---
 
-### 30.3 Flux d'utilisation
+### 29.3 Flux d'utilisation
 
 1. Aller sur l'EDT d'une classe (`Vie Scolaire → Emploi du temps → [Classe]`)
 2. Cliquer sur **Générer automatiquement** dans la barre d'actions
@@ -6492,7 +6623,7 @@ La page affiche l'aperçu des créneaux obtenus (ex. 9 séances de 50 min). Une 
 
 ---
 
-### 30.4 Modèles de données liés
+### 29.4 Modèles de données liés
 
 | Modèle | Rôle |
 |--------|------|
@@ -6503,7 +6634,7 @@ La `ConfigEDT` et les indisponibilités sont administrables via l'interface Djan
 
 ---
 
-### 30.5 Limites et conseils
+### 29.5 Limites et conseils
 
 - Si le taux de placement est inférieur à 100 %, c'est que le nombre de créneaux disponibles est insuffisant par rapport au volume horaire total des enseignements. Réduire les heures hebdomadaires ou ajouter des jours/créneaux dans la ConfigEDT.
 - La génération est **déterministe sur plusieurs tentatives** — chaque clic sur "Générer l'aperçu" peut donner un résultat légèrement différent (algorithme aléatoire). Régénérer si le résultat ne convient pas.
@@ -6512,7 +6643,7 @@ La `ConfigEDT` et les indisponibilités sont administrables via l'interface Djan
 
 ---
 
-## 31. Localisations des Postes
+## 30. Localisations des Postes
 
 **Accès :** `Paramètres → Localisations`
 
@@ -6520,7 +6651,7 @@ Ce module permet de référencer les emplacements physiques de l'établissement 
 
 ---
 
-### 31.1 Liste des Localisations
+### 30.1 Liste des Localisations
 
 La liste affiche toutes les localisations configurées pour l'établissement, avec les colonnes suivantes :
 
@@ -6534,7 +6665,7 @@ La liste affiche toutes les localisations configurées pour l'établissement, av
 
 ---
 
-### 31.2 Créer une Localisation
+### 30.2 Créer une Localisation
 
 1. Cliquer sur **Nouvelle localisation**
 2. Remplir le formulaire :
@@ -6547,7 +6678,7 @@ La liste affiche toutes les localisations configurées pour l'établissement, av
 
 ---
 
-### 31.3 Modifier / Supprimer
+### 30.3 Modifier / Supprimer
 
 - **Modifier :** icône crayon → modifier les champs → Enregistrer
 - **Supprimer :** icône corbeille → confirmer la suppression
@@ -6565,7 +6696,7 @@ La liste affiche toutes les localisations configurées pour l'établissement, av
 ---
 
 
-## 32. Mode autonome — Installation sur un serveur d'école sans Docker (SQLite)
+## 31. Mode autonome — Installation sur un serveur d'école sans Docker (SQLite)
 
 Depuis septembre 2026, YELEN SCHOOL peut fonctionner **sans Docker, sans
 PostgreSQL et sans Redis** : la base de données est un simple fichier SQLite sur
@@ -6612,9 +6743,9 @@ l'application par navigateur à l'adresse `http://IP-DU-SERVEUR:8000`.
 
 Guide détaillé : [`docs/GUIDE_MODE_AUTONOME_SQLITE.md`](GUIDE_MODE_AUTONOME_SQLITE.md).
 
-## 10. COMMUNICATION PARENTS — SMS DIRECT
+## 32. COMMUNICATION PARENTS — SMS DIRECT
 
-### 10.1 Présentation de Parent-SMS Direct
+### 32.1 Présentation de Parent-SMS Direct
 
 Le système **Parent-SMS Direct** permet aux parents et tuteurs d'interroger YELEN SCHOOL par SMS **sans connexion Internet** ni application mobile. Il suffit d'envoyer un SMS à partir du numéro de téléphone enregistré dans la fiche de l'élève.
 
@@ -6622,7 +6753,7 @@ Le système **Parent-SMS Direct** permet aux parents et tuteurs d'interroger YEL
 
 ---
 
-### 10.2 Commandes SMS Disponibles
+### 32.2 Commandes SMS Disponibles
 
 Toutes les commandes sont **insensibles à la casse** (majuscules ou minuscules). Les réponses sont limitées à 160 caractères (1 SMS standard).
 
@@ -6707,11 +6838,11 @@ En plus de NOTE, SOLDE, ABS et AIDE, l'école crée ses **propres mots-clés** a
    Variables remplacées à l'envoi — toutes portées : `{etablissement}` (sigle), `{date}` (jj/mm/aaaa), `{annee}` (année scolaire) ; portée élève : `{eleve}`, `{prenom}`, `{nom}`, `{matricule}`, `{classe}`, `{moyenne}`, `{rang}`, `{trimestre}` (dernier trimestre calculé), `{absences}`, `{excusees}` (année en cours), `{total_du}`, `{total_paye}`, `{reste}` (montants en FCFA, `1 000`). Une variable inconnue ou réservée à la portée élève est refusée à l'enregistrement.
 5. **Enregistrer**. Exemple : `HORAIRES` → « {etablissement} - Cours de 7h a 12h et de 15h a 17h. Secretariat ouvert de 7h30 a 16h. » ; `FRAIS` (portée élève) → « {eleve} ({classe}) : paye {total_paye} F, reste {reste} F. Merci de regulariser au secretariat. »
 
-La page liste les commandes de l'école avec leur nombre d'utilisations ; **Désactiver** suspend une commande sans la supprimer (le parent reçoit alors « Commande invalide ») ; **Supprimer** la retire (les SMS déjà reçus restent dans Messages reçus). Les commandes intégrées gardent la priorité : un message `NOTE …` n'est jamais interprété comme une commande de l'école. Tester sans téléphone : **Communication → SMS Direct** (10.5), où les commandes de l'école figurent dans le tableau des commandes. Droit : `Communication → Commandes SMS → gérer` (secrétariat, direction et administration par défaut) ; la consultation suit le module Communication.
+La page liste les commandes de l'école avec leur nombre d'utilisations ; **Désactiver** suspend une commande sans la supprimer (le parent reçoit alors « Commande invalide ») ; **Supprimer** la retire (les SMS déjà reçus restent dans Messages reçus). Les commandes intégrées gardent la priorité : un message `NOTE …` n'est jamais interprété comme une commande de l'école. Tester sans téléphone : **Communication → SMS Direct** (32.5), où les commandes de l'école figurent dans le tableau des commandes. Droit : `Communication → Commandes SMS → gérer` (secrétariat, direction et administration par défaut) ; la consultation suit le module Communication.
 
 ---
 
-### 10.3 Codes d'Erreur et Situations Spéciales
+### 32.3 Codes d'Erreur et Situations Spéciales
 
 | Situation | Réponse SMS reçue |
 |-----------|-------------------|
@@ -6720,13 +6851,13 @@ La page liste les commandes de l'école avec leur nombre d'utilisations ; **Dés
 | Élève sans inscription active | `Yelen - [Prénom] [Nom] n'est inscrit dans aucune classe.` |
 | Aucune moyenne pour la période | `Yelen - Aucune moyenne trouvee pour [Prénom] [Nom] (T1).` |
 | Commande intégrée sans matricule (`NOTE` seul) | `Yelen - Format: NOTE <matricule> [T1] (ex: NOTE BF-2026-0001 T1). Envoyez AIDE pour la liste des commandes.` |
-| Réponse à un message de l'école (§29) | `Yelen - Reponse bien recue, merci. L'ecole en est informee.` |
+| Réponse à un message de l'école (§28) | `Yelen - Reponse bien recue, merci. L'ecole en est informee.` |
 | Message libre (ni commande, ni réponse attendue) | `Yelen - Votre message a bien ete recu par l'ecole. Pour une information automatique (notes, solde, absences), envoyez AIDE.` — **au plus une fois par jour et par numéro** ; les SMS suivants sont lus dans Messages reçus sans réponse automatique |
 | SMS envoyé par l'école elle-même (numéro de la SIM du téléphone sur une fiche élève, test) | aucune réponse : l'écho est journalisé et ignoré, jamais de boucle |
 
 ---
 
-### 10.4 Configuration Technique (Administrateur)
+### 32.4 Configuration Technique (Administrateur)
 
 #### Passerelle SMS (Android SMS Gateway) — recevoir les SMS des parents
 Les SMS reçus par le téléphone passerelle arrivent dans YELEN par deux chemins complémentaires :
@@ -6756,7 +6887,7 @@ Formats acceptés par le webhook (`POST /communication/webhook/sms/`) :
 
 Authentification : jeton `?token=` (`SMS_WEBHOOK_TOKEN`, déjà dans l'URL affichée) ou, si `SMS_WEBHOOK_HMAC_SECRET` est défini dans `.env`, signature obligatoire — soit `X-SMS-Signature` = HMAC-SHA256(corps), soit la signature native de l'app `X-Signature` = HMAC-SHA256(corps + `X-Timestamp`) avec la **Signing Key** de l'app (`Settings → Webhooks`) comme secret, horodatage toléré à ± 5 minutes.
 
-> **Réponses libres des parents** (« Je paierai lundi ») : si le parent répond à un message de la communication bidirectionnelle (§29), sa réponse est rattachée au message ; sinon il reçoit au plus une fois par jour « Votre message a bien ete recu par l'ecole… » et le message est à lire dans **Communication → Messages reçus** (10.6).
+> **Réponses libres des parents** (« Je paierai lundi ») : si le parent répond à un message de la communication bidirectionnelle (§28), sa réponse est rattachée au message ; sinon il reçoit au plus une fois par jour « Votre message a bien ete recu par l'ecole… » et le message est à lire dans **Communication → Messages reçus** (10.6).
 
 #### Numéros Administrateurs Maîtres
 Pour permettre à des numéros d'administration de consulter les données de n'importe quel élève, ajouter dans `settings.py` :
@@ -6770,7 +6901,7 @@ MASTER_SMS_NUMBERS = [
 
 ---
 
-### 10.5 Simulateur Web (Administrateur)
+### 32.5 Simulateur Web (Administrateur)
 
 Une interface de **simulation** est disponible pour les administrateurs qui souhaitent tester le système SMS Direct sans passerelle SMS réelle :
 
@@ -6785,25 +6916,25 @@ Le simulateur :
 - Enregistre la requête dans le journal d'audit (`IncomingSMSLog`)
 - Affiche l'historique des 20 dernières requêtes
 
-### 10.6 Messages reçus (boîte des SMS des parents)
+### 32.6 Messages reçus (boîte des SMS des parents)
 
 **Communication → Messages reçus** présente tous les SMS arrivés au numéro de l'école ; la pastille rouge du menu indique le nombre de **messages libres non lus** (rafraîchie toutes les 60 secondes).
 
-- **Messages libres** (vue par défaut) : tout SMS qui n'est pas une commande — question, justification d'absence… Le parent a reçu au plus une fois par jour « Votre message a bien ete recu par l'ecole… » ; son message est à lire et à traiter ici. Les **réponses aux messages de l'école** (§29) y figurent avec le badge *Réponse* et le lien vers le message d'origine.
+- **Messages libres** (vue par défaut) : tout SMS qui n'est pas une commande — question, justification d'absence… Le parent a reçu au plus une fois par jour « Votre message a bien ete recu par l'ecole… » ; son message est à lire et à traiter ici. Les **réponses aux messages de l'école** (§28) y figurent avec le badge *Réponse* et le lien vers le message d'origine.
 - **Commandes automatiques** : `NOTE`, `SOLDE`, `ABS`, `AIDE`, déjà traitées par YELEN (élève concerné affiché).
 - **Filtres** *Lus et non lus* / *Non lus* / *Lus* ; 50 messages par page, les plus récents d'abord.
 
 Pour chaque message : date de réception, numéro de l'expéditeur et **famille identifiée** d'après les fiches élèves (« Famille de OUEDRAOGO AWA (6e A) », tous formats de numéro confondus : `70 11 22 33` = `+22670112233`) ou « Numéro inconnu des fiches élèves », texte complet, état **Lu** (date, utilisateur) ou **Non lu** (ligne en gras).
 
-Actions (droit *Marquer lu / non lu et répondre par SMS* de la fonctionnalité, matrice des droits 2.19) :
+Actions (droit *Marquer lu / non lu et répondre par SMS* de la fonctionnalité, matrice des droits 3.7) :
 - **Marquer lu** / **Marquer non lu** ; **Tout marquer comme lu** (en-tête : les messages libres non lus).
 - **Répondre** : ouvre un champ de 160 caractères ; le SMS part par la file SMS (`Exploitation → File SMS`) vers le numéro de l'expéditeur et le message est marqué lu. Bouton absent si les SMS sont désactivés (2.17).
 
 **Supprimer des messages** (droit `Messages reçus → supprimer`, secrétariat et direction par défaut) : bouton **Supprimer** sur la ligne, ou cases à cocher (case d'en-tête = toute la page) puis **Supprimer la sélection** ; **Supprimer tous les lus** vide d'un coup les messages déjà lus de la vue courante (libres, commandes ou tous) — pour nettoyer une boîte encombrée : *Tout marquer comme lu* puis *Supprimer tous les lus*. Un message supprimé disparaît de la boîte, des compteurs et du simulateur ; sa ligne reste dans le journal technique (10.7, inactive) afin que la relève du téléphone ne retraite pas le même SMS — il ne réapparaît pas et le parent ne reçoit pas de seconde réponse.
 
-> Les requêtes saisies dans le simulateur (10.5) sont enregistrées déjà lues : la boîte ne compte que les vrais SMS des parents.
+> Les requêtes saisies dans le simulateur (32.5) sont enregistrées déjà lues : la boîte ne compte que les vrais SMS des parents.
 
-### 10.7 Journal des SMS (Audit Log)
+### 32.7 Journal des SMS (Audit Log)
 
 Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via l'administration Django :
 
@@ -6821,21 +6952,21 @@ Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via
 
 ---
 
-## 18.8 Galerie de Captures d'Écran
+## 33. Galerie de Captures d'Écran
 
 > Les captures d'écran ci-dessous montrent l'interface réelle de YELEN SCHOOL. Elles sont situées dans le dossier `docs/screenshots/`.
 
-### 18.8.1 Page de Connexion
+### 33.1 Page de Connexion
 
 ![Écran de connexion](screenshots/01-login.png)
 *Page de connexion avec panneau branding à gauche et formulaire à droite.*
 
-### 18.8.2 Tableau de Bord
+### 33.2 Tableau de Bord
 
 ![Tableau de bord](screenshots/02-dashboard.png)
 *Tableau de bord après connexion (vue Super Admin).*
 
-### 18.8.3 Gestion des Élèves
+### 33.3 Gestion des Élèves
 
 ![Liste des élèves](screenshots/03-eleves-list.png)
 *Liste des élèves inscrits avec recherche et filtres.*
@@ -6843,41 +6974,41 @@ Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via
 ![Fiche détail d'un élève](screenshots/04-eleve-detail.png)
 *Page profil d'un élève avec informations complètes.*
 
-### 18.8.4 Paramètres — Classes
+### 33.4 Paramètres — Classes
 
 ![Liste des classes](screenshots/05-classes-list.png)
 *Liste des classes configurées par cycle.*
 
-### 18.8.5 Pédagogie — Matières
+### 33.5 Pédagogie — Matières
 
 ![Liste des matières](screenshots/06-matieres.png)
 *Référentiel des matières enseignées.*
 
-### 18.8.6 Gestion du Personnel
+### 33.6 Gestion du Personnel
 
 ![Liste du personnel](screenshots/07-personnel.png)
 *Liste du personnel enseignant et administratif.*
 
-### 18.8.7 Finances
+### 33.7 Finances
 
 ![Paiements et finances](screenshots/08-paiements.png)
 *Gestion des paiements de scolarité.*
 
-### 18.8.8 Documents
+### 33.8 Documents
 
 ![Documents administratifs](screenshots/09-documents.png)
 *Génération des documents officiels.*
 
-### 18.8.9 Présences
+### 33.9 Présences
 
 ![Présences et appels](screenshots/10-presences.png)
 *Sélection de classe pour l'appel.*
 
 ---
 
-## 19. SÉCURITÉ DE L'APPLICATION
+## 34. SÉCURITÉ DE L'APPLICATION
 
-### 19.1 Rapport d'Audit de Sécurité
+### 34.1 Rapport d'Audit de Sécurité
 
 YELEN SCHOOL fait l'objet d'audits de sécurité réguliers. Le rapport complet est disponible dans `docs/AUDIT_SECURITE.md`.
 
@@ -6905,7 +7036,7 @@ Les gates non validés sont marqués **BLOCKED**, et non **FAIL**, lorsque l'env
 | Dépendances | ✅ Versions mises à niveau ; audit local sans vulnérabilité connue le 14/09/2026, CI à rejouer |
 | Sauvegarde/restauration | ⏳ Test réel Windows restant |
 
-### 19.1.A API REST — Tokens et cloisonnement d'accès
+### 34.2 19.1.A API REST — Tokens et cloisonnement d'accès
 
 L'API REST (`/api/`) sert les applications externes (PWA) via des tokens
 d'authentification.
@@ -6945,7 +7076,7 @@ prochaine rotation). Si le token est déjà expiré, le refresh répond `401`
 Toute requête hors périmètre reçoit `404` (aucune information sur
 l'existence de l'élève). Un parent sans enfant lié reçoit `403`.
 
-### 19.2 Bonnes Pratiques pour les Administrateurs
+### 34.3 Bonnes Pratiques pour les Administrateurs
 
 **Ne jamais :**
 - Partager ou afficher la clé `SECRET_KEY` Django ni les clés API
@@ -6959,7 +7090,7 @@ l'existence de l'élève). Un parent sans enfant lié reçoit `403`.
 - Contrôler les logs SMS entrants pour détecter des tentatives d'énumération
 - Mettre à jour les dépendances Python (`pip-audit`)
 
-### 19.3 Déploiement Local (Quick Start)
+### 34.4 Déploiement Local (Quick Start)
 
 #### Prérequis
 
@@ -7063,7 +7194,7 @@ docker compose -f docker-compose.dev.yml restart web
 docker compose -f docker-compose.dev.yml logs -f
 ```
 
-### 19.4 Déploiement Production
+### 34.5 Déploiement Production
 
 #### Prérequis
 
@@ -7136,7 +7267,7 @@ git pull
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-### 19.5 Architecture des conteneurs
+### 34.6 Architecture des conteneurs
 
 ```
 Utilisateur
@@ -7155,7 +7286,7 @@ Utilisateur
                                                └──────────┘        └──────────┘
 ```
 
-### 19.6 Correctifs de Sécurité (Juillet 2026)
+### 34.7 Correctifs de Sécurité (Juillet 2026)
 
 **Correctifs appliqués dans le cadre de la mise en production :**
 
@@ -7184,7 +7315,7 @@ Utilisateur
 
 ---
 
-## 33. Source de vérité unique : GitHub `main` (réconciliation d'octobre 2026)
+## 35. Source de vérité unique : GitHub `main` (réconciliation d'octobre 2026)
 
 Depuis le 09/10/2026, la branche `main` du dépôt GitHub `nayxuspro-sketch/yelen-school`
 est **l'unique source de vérité**. Elle fusionne :
@@ -7192,13 +7323,13 @@ est **l'unique source de vérité**. Elle fusionne :
 - la distribution client réellement installée (`C:\YELEN-SCHOOL`, importée via la branche
   `import-production`) : Django **5.2.17**, WeasyPrint 70, `docker-compose.client.yml`,
   dossier `installer/`, changement de mot de passe obligatoire à la première connexion ;
-- le chantier GitHub : mode autonome SQLite (§32), durcissement sécurité, contrôle des
+- le chantier GitHub : mode autonome SQLite (§31), durcissement sécurité, contrôle des
   licences, CI PostgreSQL + SQLite.
 - la branche `arena/01a0af51` (v5.0) : triggers financiers conditionnels, journal d'audit
   chaîné, lanceur 1 clic réseau local + pare-feu (fusionné depuis dans `demarrer-autonome.bat`),
   outils éditeur anti-copie.
 
-### 33.1 Ce qui change pour l'exploitation
+### 35.1 Ce qui change pour l'exploitation
 
 | Point | Comportement après fusion |
 |-------|---------------------------|
@@ -7218,12 +7349,12 @@ est **l'unique source de vérité**. Elle fusionne :
 | `verify_audit_chain` après migration | Les entrées d'audit antérieures à la version 5.0 n'ont pas de hash : elles sont tolérées **uniquement en tête** de journal et comptées à part (« N entrée(s) antérieure(s) au chaînage »). Toute entrée sans hash apparaissant après le début de la chaîne est signalée comme invalide. |
 | Photos, logos, cachets et signatures (fichiers `/media/`) | Servis **dans tous les modes** (Docker sans reverse proxy, mode autonome, développement) par l'application elle-même, **après connexion** (`core/media.py`) ; auparavant ils n'étaient servis qu'en `DEBUG=True`, d'où des photos absentes du badge du personnel, des fiches et des PDF en production. Les PDF (badges, bulletins, reçus, fiches…) lisent désormais ces fichiers et les fichiers statiques directement sur le disque du serveur (`core/pdf.py`, utilisé à la place de `weasyprint.HTML`) : la photo du badge et le logo d'en-tête apparaissent quel que soit le port ou le réseau par lequel l'utilisateur accède au serveur. |
 
-### 33.2 Mettre à jour une installation client existante (Docker)
+### 35.2 Mettre à jour une installation client existante (Docker)
 
 Double-cliquer sur `C:\YELEN-SCHOOL\mettre-a-jour.bat`. Le script sauvegarde (chiffré), récupère la
 nouvelle version sur GitHub, reconstruit l'image, redémarre les services (`start-local.ps1`, qui
 transmet l'empreinte du serveur au conteneur `web` — indispensable quand la licence est liée au
-serveur, §13.A) et vérifie `/health/` ; en cas d'échec il remet la version précédente. S'il n'y a rien
+serveur, §13.1) et vérifie `/health/` ; en cas d'échec il remet la version précédente. S'il n'y a rien
 de nouveau : « YELEN SCHOOL est déjà à jour ». Journal : `logs\mise-a-jour.log`. Détail, procédure
 manuelle équivalente et retour arrière : guide de déploiement, §8.
 
@@ -7239,7 +7370,7 @@ reconstruire l'image ne les touche pas. Le fichier `.env` n'est pas versionné e
 > plus jamais une copie manuelle : c'est ce qui garantit qu'une correction appliquée sur
 > GitHub se retrouve à l'identique chez chaque client.
 
-### 33.3 Assainissement technique d'octobre 2026 (dette)
+### 35.3 Assainissement technique d'octobre 2026 (dette)
 
 Troisième et dernier volet des corrections post-fusion (après *sécurité* et *performance*).
 Aucun changement fonctionnel pour les utilisateurs ; ce qui change pour l'exploitation :
@@ -7260,7 +7391,7 @@ La version Word de ce guide se régénère depuis le Markdown :
 
 ---
 
-## 34. Import depuis vos fichiers existants (élèves, parents, notes)
+## 36. Import depuis vos fichiers existants (élèves, parents, notes)
 
 Une école qui adopte YELEN SCHOOL possède déjà ses listes d'élèves et ses relevés de notes
 dans Excel (souvent un fichier par classe, avec des colonnes qui lui sont propres). Les deux
@@ -7274,10 +7405,10 @@ Excel (*Fichier → Enregistrer sous*). Les lignes de titre au-dessus du tableau
 vides sont ignorées : l'assistant repère lui-même la ligne d'entête. Si le classeur a plusieurs
 feuilles, la feuille se choisit à l'étape 2.
 
-### 34.1 Importer des élèves et leurs parents
+### 36.1 Importer des élèves et leurs parents
 
 **Qui peut accéder :** Directeur, Censeur, Secrétaire, Comptable (droit *Élèves → Importer des
-élèves depuis un fichier Excel / CSV*, modifiable dans §2.19). **Où :** `Élèves → Importer`.
+élèves depuis un fichier Excel / CSV*, modifiable dans §3.7). **Où :** `Élèves → Importer`.
 
 1. **Fichier** — choisir le fichier et l'année scolaire d'inscription (l'année en cours est
    proposée). Un modèle Excel vide est téléchargeable, mais il n'est pas obligatoire.
@@ -7306,12 +7437,12 @@ Corriger le fichier puis le réimporter est donc sans risque. Les matricules du 
 conservés ; sinon YELEN SCHOOL en attribue un. Un lieu de naissance absent ne bloque pas
 l'import, mais la fiche sera à compléter (il figure sur les certificats et dossiers d'examen).
 
-### 34.2 Importer les notes d'une classe
+### 36.2 Importer les notes d'une classe
 
 **Qui peut accéder :** Directeur, Censeur, Secrétaire (droit *Évaluations → Importer les notes
 d'une classe*). Les enseignants saisissent leurs notes depuis *Évaluations*. **Où :**
 `Pédagogie → Évaluations → Importer des notes`. Prérequis : les élèves sont inscrits dans la
-classe (§34.1), les enseignements de la classe existent (§6.1), le trimestre et au moins un type
+classe (§36.1), les enseignements de la classe existent (§6.2), le trimestre et au moins un type
 d'évaluation sont définis.
 
 1. **Fichier et période** — fichier, classe, trimestre, type d'évaluation (devoir, composition…),
@@ -7333,14 +7464,14 @@ Un nouvel import avec le même titre, le même trimestre et le même type **met 
 au lieu de les dupliquer : importer un fichier corrigé est sans risque.
 
 > **Mise en route type (une classe en moins de dix minutes) :** importer la liste d'élèves de la
-> classe (§34.1), créer ou vérifier les enseignements de la classe (§6.1), importer le relevé de
-> notes du trimestre (§34.2), lancer le calcul des moyennes, imprimer les bulletins (§6.7).
+> classe (§36.1), créer ou vérifier les enseignements de la classe (§6.2), importer le relevé de
+> notes du trimestre (§36.2), lancer le calcul des moyennes, imprimer les bulletins (§6.3).
 
 ---
 
-## 35. Services annexes facturés et vue consolidée réseau
+## 37. Services annexes facturés et vue consolidée réseau
 
-### 35.1 Cantine, transport, internat
+### 37.1 Cantine, transport, internat
 
 **Qui peut accéder :** rôles ayant accès aux Finances (droit *Finances → Services annexes* ;
 actions *Créer / modifier les services et leurs formules* et *Abonner un élève ou une classe*,
@@ -7370,10 +7501,10 @@ financière, le formulaire de paiement (rubrique du service, plafonnée au monta
 filtre par classe et formule, dû / versé / reste par élève, totaux, export Excel avec le
 téléphone des parents.
 
-### 35.1 bis Créances individuelles
+### 37.2 Créances individuelles
 
 Une **créance** est un montant dû par un seul élève, hors tarif de scolarité et hors abonnement :
-aujourd'hui la pénalité **« Manuel non rendu »** émise depuis `Manuels → Non rendus` (§ 27.5).
+aujourd'hui la pénalité **« Manuel non rendu »** émise depuis `Manuels → Non rendus` (§ 26.5).
 Elle apparaît dans la carte *Créances individuelles* de la situation financière (libellé, date,
 rubrique d'encaissement, montant) et compte dans le total dû exactement comme un service annexe :
 reste à payer, formulaire de paiement (sa rubrique devient encaissable, plafonnée au montant dû),
@@ -7381,14 +7512,14 @@ reste à payer, formulaire de paiement (sa rubrique devient encaissable, plafonn
 individuelle* de la matrice des droits) retire la créance du reste à payer sans toucher aux
 versements déjà encaissés ; l'annulation est automatique quand le manuel est rendu.
 
-### 35.2 Vue consolidée multi-sites (licence RESEAU)
+### 37.3 Vue consolidée multi-sites (licence RESEAU)
 
 **Qui peut accéder :** Directeur Réseau (son groupe) et Super Admin (tous les groupes, avec
 sélecteur). Nécessite la fonctionnalité *multi-établissements* de la licence RESEAU. **Où :**
 menu `Réseau` (ou `Établissements → Réseau`).
 
 La page consolide, pour l'**année courante de chaque établissement** du groupe, les indicateurs
-du *Tableau de bord direction* (§1.4) : effectifs (G/F, classes, remplissage), recouvrement
+du *Tableau de bord direction* (§2.4) : effectifs (G/F, classes, remplissage), recouvrement
 (attendu, encaissé, reste, taux, redevables), absences des 30 derniers jours et élèves à risque.
 La ligne **Total réseau** additionne les volumes ; ses taux sont **pondérés** (150 000 encaissés
 sur 300 000 attendus = 50 %, et non la moyenne des pourcentages des sites). Un établissement sans

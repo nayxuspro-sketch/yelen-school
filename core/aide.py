@@ -13,28 +13,29 @@ from django.shortcuts import render
 
 DOSSIER_DOCS = Path(settings.BASE_DIR) / 'docs'
 GUIDE = DOSSIER_DOCS / 'GUIDE_UTILISATION_YELEN_SCHOOL.md'
+GUIDE_RAPIDE = DOSSIER_DOCS / 'GUIDE_DEMARRAGE_RAPIDE.md'
 CAPTURES = DOSSIER_DOCS / 'screenshots'
 
 # Préfixe d'URL → ancre de la section du guide (du plus spécifique au plus général).
 SECTIONS = [
     ('/pedagogie/', '6-scolarité-et-notes'),
-    ('/bulletins/', '67-bulletins-trimestriels-pdf'),
+    ('/bulletins/', '63-bulletins-trimestriels-pdf'),
     ('/presences/', '7-présences-et-absences'),
     ('/examens/', '10-examens'),
     ('/viescolaire/', '8-vie-scolaire'),
     ('/personnel/', '5-gestion-du-personnel'),
     ('/finances/', '9-finances-et-scolarité'),
     ('/vacations/', '11-vacations'),
-    ('/communication/', '29-communication-bidirectionnelle-établissement--parent'),
-    ('/manuels/', '27-gestion-des-manuels-scolaires'),
+    ('/communication/', '28-communication-bidirectionnelle-établissement--parent'),
+    ('/manuels/', '26-gestion-des-manuels-scolaires'),
     ('/documents/', '12-documents-administratifs'),
-    ('/parametres/', '2-paramètres-de-létablissement'),
+    ('/parametres/', '3-paramètres-de-létablissement'),
     ('/licences/', '13-gestion-des-licences-super-admin-uniquement'),
-    ('/accounts/', '16-gestion-des-comptes-utilisateurs'),
-    ('/pilotage/', '14-tableau-de-bord-direction-pilotage'),
-    ('/portail/', '20-portail-parent-pwa'),
+    ('/accounts/', '26-gestion-des-comptes-utilisateurs'),
+    ('/pilotage/', '24-tableau-de-bord-direction-pilotage'),
+    ('/portail/', '19-portail-parent-pwa'),
 ]
-ANCRE_ACCUEIL = '1-connexion-et-tableau-de-bord'
+ANCRE_ACCUEIL = '2-connexion-et-tableau-de-bord'
 ANCRE_SOMMAIRE = 'table-des-matières'
 
 
@@ -73,28 +74,31 @@ def _listes_imbriquees(texte):
     return '\n'.join(lignes)
 
 
-@lru_cache(maxsize=2)
-def _rendu(cle_cache):
+@lru_cache(maxsize=4)
+def _rendu(chemin, cle_cache):
     md = markdown.Markdown(
         extensions=['toc', 'tables', 'fenced_code', 'sane_lists'],
         extension_configs={'toc': {'slugify': slug_github, 'toc_depth': '2-3'}},
     )
-    html = md.convert(_listes_imbriquees(_sans_en_tete_yaml(GUIDE.read_text(encoding='utf-8'))))
+    html = md.convert(_listes_imbriquees(_sans_en_tete_yaml(Path(chemin).read_text(encoding='utf-8'))))
     return html, [t for t in md.toc_tokens if t['level'] == 2]
 
 
-def rendre_guide():
+def rendre_guide(fichier=None):
     """(html, sommaire) ou None si le fichier est absent ; recalculé quand le fichier change."""
-    if not GUIDE.exists():
+    fichier = fichier or GUIDE
+    if not fichier.exists():
         return None
-    stat = GUIDE.stat()
-    return _rendu((stat.st_mtime_ns, stat.st_size))
+    stat = fichier.stat()
+    return _rendu(str(fichier), (stat.st_mtime_ns, stat.st_size))
 
 
 @login_required
-def aide(request):
-    rendu = rendre_guide()
+def aide(request, rapide=False):
+    """Guide complet (/aide/) ou guide de démarrage rapide (/aide/demarrage/), même gabarit."""
+    rendu = rendre_guide(GUIDE_RAPIDE if rapide else GUIDE)
     contexte = dict(zip(('contenu', 'sommaire'), rendu)) if rendu else {}
+    contexte['rapide'] = rapide
     return render(request, 'core/aide.html', contexte)
 
 

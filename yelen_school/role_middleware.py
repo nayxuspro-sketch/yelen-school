@@ -29,6 +29,7 @@ _COMMON_ALLOWED = (
     '/static/',       # fichiers statiques
     '/media/',        # fichiers médias (photos élèves, logos)
     '/manifest.json', '/sw.js', '/pwa/',   # application installable du portail parent (manifeste, service worker, icônes)
+    '/favicon.ico',   # icône demandée d'office par le navigateur
 )
 
 _ROLE_CONFIG = {

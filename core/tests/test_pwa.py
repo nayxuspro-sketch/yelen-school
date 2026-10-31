@@ -23,6 +23,14 @@ def test_fichiers_icones_presents():
         assert finders.find(f'img/pwa/{nom}'), nom
 
 
+def test_favicon_ico_redirige_vers_licone_png(client):
+    """`/favicon.ico` est demandé d'office par les navigateurs sur toute page (404, impression…)."""
+    reponse = client.get(reverse('core:favicon'))
+    assert reponse.status_code == 302 and 'img/pwa/icon-192' in reponse['Location']
+    assert 'max-age=86400' in reponse['Cache-Control']
+    assert finders.find('img/favicon.svg')
+
+
 @pytest.mark.django_db
 def test_icone_ios_dans_les_pages(client, settings):
     settings.TWO_FACTOR_REQUIRED = False
@@ -34,6 +42,7 @@ def test_icone_ios_dans_les_pages(client, settings):
 
     assert 'rel="apple-touch-icon"' in page
     assert 'img/pwa/apple-touch-icon' in page
+    assert 'rel="icon" type="image/svg+xml"' in page and 'img/favicon' in page
 
 
 @pytest.mark.django_db

@@ -32,6 +32,7 @@ urlpatterns = [
     path('risques/recalculer/', views.risque_recalculer, name='risque_recalculer'),
 
     # PWA — portail parent
+    path('favicon.ico', views.favicon, name='favicon'),
     path('manifest.json', views.pwa_manifest, name='pwa_manifest'),
     path('pwa/icon/<int:size>/', views.pwa_icon, name='pwa_icon'),
     path('certificat-autorite/', views.certificat_autorite, name='certificat_autorite'),
@@ -48,5 +49,6 @@ urlpatterns = [
     # Healthcheck pour load balancer / monitoring
     path('health/', views.health_check, name='health_check'),
     path('aide/', aide.aide, name='aide'),
+    path('aide/demarrage/', aide.aide, {'rapide': True}, name='aide_demarrage'),
     path('aide/screenshots/<str:nom>', aide.aide_capture, name='aide_capture'),
 ]

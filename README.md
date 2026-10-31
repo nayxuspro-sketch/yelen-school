@@ -41,6 +41,11 @@ demarrer-autonome.bat        :: Windows
 La base est un fichier SQLite (`data/yelen_school.sqlite3`), sélectionné par `DB_ENGINE=sqlite` dans `.env`.
 Voir [`docs/GUIDE_MODE_AUTONOME_SQLITE.md`](docs/GUIDE_MODE_AUTONOME_SQLITE.md).
 
+## Documentation utilisateur
+
+- Guide de démarrage rapide (dix pages, du premier jour à la fin d'année) : [`docs/GUIDE_DEMARRAGE_RAPIDE.md`](docs/GUIDE_DEMARRAGE_RAPIDE.md)
+- Guide d'utilisation complet (37 chapitres, rendu dans l'application via le menu **Aide**) : [`docs/GUIDE_UTILISATION_YELEN_SCHOOL.md`](docs/GUIDE_UTILISATION_YELEN_SCHOOL.md)
+
 ## Déploiement
 
 - Mode serveur (Docker, PostgreSQL, Redis) : [`docs/GUIDE_DEPLOIEMENT_WINDOWS.md`](docs/GUIDE_DEPLOIEMENT_WINDOWS.md)

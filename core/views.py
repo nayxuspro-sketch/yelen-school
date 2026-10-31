@@ -8,9 +8,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.views.decorators.http import require_POST
-from django.views.decorators.cache import never_cache
+from django.views.decorators.cache import cache_control, never_cache
 
-from django.http import FileResponse, Http404, HttpResponseForbidden, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponseForbidden, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.middleware.csrf import get_token
 from django.templatetags.static import static
 from django.urls import reverse
@@ -1592,6 +1592,13 @@ def certificat_autorite(request):
         raise Http404("HTTPS local non activé : aucune autorité à télécharger.")
     return FileResponse(chemin.open('rb'), content_type='application/x-x509-ca-cert',
                         as_attachment=True, filename='yelen-ca.crt')
+
+
+@cache_control(max_age=86400, public=True)
+def favicon(request):
+    """`/favicon.ico` demandé d'office par les navigateurs : renvoie l'icône PNG de l'application
+    (les gabarits principaux déclarent en plus l'icône SVG `img/favicon.svg`)."""
+    return HttpResponseRedirect(static('img/pwa/icon-192.png'))
 
 
 def pwa_icon(request, size):

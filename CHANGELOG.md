@@ -3,6 +3,24 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.33.0 — 2026-10-31
+
+### Remise en ordre du guide, guide de démarrage rapide, favicon
+
+- **Numérotation continue** du guide d'utilisation : chapitres 1 à 37 et sections N.1…N.k dans l'ordre du
+  document (plus de chapitre 3 manquant, de doublons « 10 » / « 14.4 » / « 27.7 », de « 6.0 », « 13.A » ou
+  « 25.3b »). Table des matières régénérée (287 liens vérifiés), renvois internes `§ x.y` et ancres du plan
+  contextuel de l'aide (`core/aide.py`) mis à jour ; copie égarée de « Emploi du temps » retirée du chapitre
+  Finances. Un test impose désormais la continuité à chaque ajout. Les renvois des entrées antérieures de ce
+  journal suivent l'ancienne numérotation.
+- **Guide de démarrage rapide** (`docs/GUIDE_DEMARRAGE_RAPIDE.md`, dix pages) : premier jour, rentrée,
+  quotidien, trimestre, fin d'année, communication, sécurité, dépannage, qui fait quoi, liste de contrôle —
+  chaque étape renvoie au guide complet (75 renvois vérifiés par test). Rendu dans l'application à
+  `/aide/demarrage/`, bouton **Démarrage rapide** ↔ **Guide complet** sur la page d'aide.
+- **Favicon** : icône SVG `img/favicon.svg` déclarée dans l'application, la page de connexion et le portail
+  parent ; route `/favicon.ico` (redirection vers l'icône PNG, cache 24 h, autorisée aux rôles Parent/Élève)
+  pour toutes les autres pages — fin des 404 dans les journaux.
+
 ## 5.32.0 — 2026-10-31
 
 ### Thème clair au choix

@@ -47,6 +47,23 @@ def test_guide_rendu_complet_et_ancres_du_sommaire_resolues():
     assert 'version_guide' not in html  # en-tête YAML non affiché
 
 
+def test_numerotation_continue_du_guide():
+    """Chapitres 1..N et sections N.1..N.k consécutifs, dans l'ordre du document (remise en ordre 5.33.0)."""
+    chapitre, section, dans_code = 0, 0, False
+    for ligne in aide.GUIDE.read_text(encoding='utf-8').splitlines():
+        if ligne.startswith('```'):
+            dans_code = not dans_code
+        elif dans_code or ligne.startswith('## TABLE DES'):
+            continue
+        elif ligne.startswith('## '):
+            chapitre, section = chapitre + 1, 0
+            assert ligne.startswith(f'## {chapitre}. '), ligne
+        elif ligne.startswith('### ') and chapitre and not re.match(r'^### Q\d+\. ', ligne):
+            section += 1
+            assert ligne.startswith(f'### {chapitre}.{section} '), ligne
+    assert chapitre >= 30
+
+
 def test_ancre_contextuelle_par_module():
     assert aide.ancre_pour('/') == aide.ANCRE_ACCUEIL
     assert aide.ancre_pour('/finances/paiements/') == '9-finances-et-scolarité'
@@ -63,6 +80,17 @@ def test_page_aide_avec_sommaire_et_lien_du_menu(connecte):
     assert 'id="aide-sommaire-liste"' in page and 'data-section="9-finances-et-scolarité"' in page
     assert reverse('licences:guide') in page
     assert 'src="screenshots/01-login.png"' in page
+
+
+def test_guide_de_demarrage_rapide(connecte):
+    """Dix pages rendues à /aide/demarrage/ ; tout renvoi « § x.y » existe dans le guide complet."""
+    page = connecte.get(reverse('core:aide_demarrage')).content.decode()
+    assert 'Guide de démarrage rapide' in page and 'Liste de contrôle de rentrée' in page
+    assert f'href="{reverse("core:aide")}"' in page
+    titres = set(re.findall(r'^#{2,4} (\d+(?:\.\d+)*)[. ]', aide.GUIDE.read_text(encoding='utf-8'), re.M))
+    renvois = set(re.findall(r'§ (\d+(?:\.\d+)*)', aide.GUIDE_RAPIDE.read_text(encoding='utf-8')))
+    assert renvois and renvois <= titres, sorted(renvois - titres)
+    assert f'href="{reverse("core:aide_demarrage")}"' in connecte.get(reverse('core:aide')).content.decode()
 
 
 def test_page_aide_exige_connexion(client):
