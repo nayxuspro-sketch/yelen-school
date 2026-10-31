@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#06101E">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Cahier de textes — YELEN SCHOOL</title>
+  <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
+</head>
+
+<body class="pp-app">
+
+  <!-- Topbar -->
+  <header class="pp-topbar">
+    <a href="{% url 'core:portail_parent' %}" class="pp-topbar-back" aria-label="Retour">
+      <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div class="pp-topbar-logo">Cahier de textes</div>
+    <div></div>
+  </header>
+
+  <!-- Contenu -->
+  <main class="pp-content">
+
+    {% if not enfants %}
+    <div class="pp-empty animate-fade-up">
+      <div class="pp-empty-icon">
+        <svg aria-hidden="true" width="52" height="52" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+      </div>
+      <h3 class="pp-empty-title">Aucune inscription en cours</h3>
+      <p class="pp-empty-text">Le cahier de textes apparaîtra ici dès l'inscription de votre enfant pour l'année en cours.</p>
+    </div>
+    {% else %}
+
+    {% for enfant in enfants %}
+    <div class="animate-fade-up">
+
+      <!-- En-tête enfant -->
+      <div class="pp-bul-enfant-header">
+        <div class="pp-avatar pp-avatar--sm">{{ enfant.eleve.prenom|first|upper }}</div>
+        <div>
+          <div class="pp-nom">{{ enfant.eleve.get_nom_complet }}</div>
+          <div class="pp-classe">{{ enfant.inscription.classe.nom }} · {{ annee.libelle }}</div>
+        </div>
+      </div>
+
+      <div class="pp-card">
+
+        <!-- Travail à faire -->
+        <div class="pp-section">
+          <div class="pp-section-title">
+            <svg aria-hidden="true" class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+            <span class="pp-section-label">Travail à faire</span>
+          </div>
+          {% for devoir in enfant.devoirs %}
+          <div class="pp-devoir">
+            <div class="pp-devoir-date">
+              <span class="pp-devoir-day">{{ devoir.date_remise_devoirs|date:"d" }}</span>
+              <span class="pp-devoir-month">{{ devoir.date_remise_devoirs|date:"M" }}</span>
+            </div>
+            <div class="pp-devoir-detail">
+              <div class="pp-devoir-subject">{{ devoir.enseignement.matiere.nom }}{% if devoir.date_remise_devoirs == today %} · <span class="text-danger">pour aujourd'hui</span>{% endif %}</div>
+              <div class="pp-devoir-text pp-devoir-text--complet">{{ devoir.devoirs }}</div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="pp-bul-empty">Aucun devoir à rendre pour l'instant.</div>
+          {% endfor %}
+        </div>
+
+        <!-- Cours récents -->
+        <div class="pp-section">
+          <div class="pp-section-title">
+            <svg aria-hidden="true" class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            <span class="pp-section-label">Cours des 30 derniers jours</span>
+          </div>
+          {% for cours in enfant.cours %}
+          <div class="pp-devoir">
+            <div class="pp-devoir-date">
+              <span class="pp-devoir-day">{{ cours.date|date:"d" }}</span>
+              <span class="pp-devoir-month">{{ cours.date|date:"M" }}</span>
+            </div>
+            <div class="pp-devoir-detail">
+              <div class="pp-devoir-subject">{{ cours.enseignement.matiere.nom }}{% if cours.heure_debut %} · {{ cours.heure_debut|time:"H:i" }}{% if cours.heure_fin %}–{{ cours.heure_fin|time:"H:i" }}{% endif %}{% endif %}</div>
+              <div class="pp-devoir-text pp-devoir-text--complet">{{ cours.contenu }}</div>
+              {% if cours.a_des_devoirs %}
+              <div class="pp-devoir-text pp-devoir-text--complet"><strong>Devoirs{% if cours.date_remise_devoirs %} pour le {{ cours.date_remise_devoirs|date:"d/m" }}{% endif %} :</strong> {{ cours.devoirs }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="pp-bul-empty">Aucun cours renseigné par les enseignants sur la période.</div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+
+    {% endif %}
+
+  </main>
+
+  {% include 'core/partials/portail_parent_nav.html' with actif='accueil' %}
+
+</body>
+</html>

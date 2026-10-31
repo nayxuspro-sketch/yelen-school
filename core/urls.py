@@ -15,6 +15,7 @@ urlpatterns = [
     path('portail/parent/bulletins/', views.portail_parent_bulletins, name='portail_parent_bulletins'),
     path('portail/parent/notifications/', views.portail_parent_notifications, name='portail_parent_notifications'),
     path('portail/parent/vie-scolaire/', views.portail_parent_vie_scolaire, name='portail_parent_vie_scolaire'),
+    path('portail/parent/cahier/', views.portail_parent_cahier, name='portail_parent_cahier'),
     path('portail/parent/vie-scolaire/justifier/', views.portail_parent_justifier, name='portail_parent_justifier'),
     path('portail/eleve/', views.portail_eleve, name='portail_eleve'),
     path('notifications/', views.notifications_list, name='notifications_list'),

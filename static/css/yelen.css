@@ -9603,6 +9603,7 @@ input::-webkit-strong-password-auto-fill-button {
   letter-spacing: 0.1em;
 }
 .pp-section-icon { color: var(--color-primary); }
+.pp-section-link { margin-left: auto; font-size: 0.75rem; font-weight: 700; color: var(--color-primary-light); text-decoration: none; white-space: nowrap; }
 
 /* Devoir row */
 .pp-devoir {
@@ -9631,6 +9632,7 @@ input::-webkit-strong-password-auto-fill-button {
 .pp-devoir-detail { flex: 1; min-width: 0; }
 .pp-devoir-subject { font-size: 0.75rem; font-weight: 700; color: var(--color-text-primary); }
 .pp-devoir-text    { font-size: 0.8125rem; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pp-devoir-text--complet { white-space: pre-line; }   /* cahier de textes : contenu et devoirs en entier */
 
 /* Bottom nav */
 .pp-nav {

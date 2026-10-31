@@ -584,10 +584,10 @@ def portail_parent(request):
         return HttpResponseForbidden("Accès réservé aux parents.")
 
     from presences.models import Presence
-    from pedagogie.models import MoyenneGenerale, CahierTextes
+    from pedagogie.models import MoyenneGenerale
     from finances.models import Echeancier, Paiement
     from finances.views.commun import _situations_financieres_en_lot
-    from django.utils import timezone
+    from core import portail
 
     today = timezone.now().date()
     annee = AnneeScolaire.objects.filter(
@@ -635,19 +635,6 @@ def portail_parent(request):
             .order_by('-date_paiement', '-created_at')[:5]
         ) if inscription else []
 
-        # Devoirs à venir (de la classe de l'élève, non encore échus)
-        devoirs_a_venir = []
-        if inscription:
-            devoirs_a_venir = list(
-                CahierTextes.objects.filter(
-                    enseignement__classe=inscription.classe,
-                    enseignement__annee_scolaire=annee,
-                    date_remise_devoirs__gte=today,
-                    devoirs__gt='',
-                ).select_related('enseignement__matiere')
-                .order_by('date_remise_devoirs')[:5]
-            )
-
         enfants.append({
             'eleve': eleve,
             'inscription': inscription,
@@ -657,7 +644,7 @@ def portail_parent(request):
             'situation': situation,
             'prochaine_echeance': prochaine_echeance,
             'derniers_paiements': derniers_paiements,
-            'devoirs_a_venir': devoirs_a_venir,
+            'devoirs_a_venir': portail.devoirs_a_venir(inscription) if inscription else [],
         })
 
     from core import push
@@ -845,6 +832,35 @@ def portail_parent_vie_scolaire(request):
             'sanctions': portail.sanctions(inscription),
         })
     return render(request, 'core/portail_parent_vie_scolaire.html', {
+        'enfants': enfants,
+        'annee': annee,
+        'today': timezone.localdate(),
+    })
+
+
+@login_required
+@requires_licence_feature('portail_parents')
+def portail_parent_cahier(request):
+    """Cahier de textes PWA : travail à faire et cours des 30 derniers jours, pour chaque enfant."""
+    if request.user.role != 'PARENT':
+        return HttpResponseForbidden("Accès réservé aux parents.")
+    from core import portail
+
+    annee = AnneeScolaire.objects.filter(etablissement=request.user.etablissement, est_courante=True).first()
+    enfants = []
+    for eleve in request.user.eleves_lies.all():
+        inscription = (
+            Inscription.objects.filter(eleve=eleve, annee_scolaire=annee).select_related('classe').first()
+        ) if annee else None
+        if inscription is None:
+            continue
+        enfants.append({
+            'eleve': eleve,
+            'inscription': inscription,
+            'devoirs': portail.devoirs_a_venir(inscription, limite=50),
+            'cours': portail.cahier_de_textes(inscription),
+        })
+    return render(request, 'core/portail_parent_cahier.html', {
         'enfants': enfants,
         'annee': annee,
         'today': timezone.localdate(),

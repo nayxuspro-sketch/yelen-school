@@ -40,6 +40,32 @@ def famille():
             'maths': maths, 'parent': parent, 'aujourdhui': aujourdhui}
 
 
+# ── Portail parent : cahier de textes (5.31.0) ────────────────────────────────
+
+def test_cahier_de_textes_du_portail_parent(client, famille):
+    """Travail à faire (tous les devoirs non échus) et cours des 30 derniers jours de la classe, par enfant."""
+    aujourdhui = famille['aujourdhui']
+    baker.make('pedagogie.CahierTextes', enseignement=famille['maths'], date=aujourdhui - timedelta(days=1),
+               heure_debut=time(7, 30), heure_fin=time(9, 30), contenu='Fractions : addition et soustraction',
+               devoirs='Exercices 4 et 5 p. 32', date_remise_devoirs=aujourdhui + timedelta(days=2))
+    baker.make('pedagogie.CahierTextes', enseignement=famille['maths'], date=aujourdhui - timedelta(days=45),
+               contenu='Nombres décimaux', devoirs='', date_remise_devoirs=None)          # hors période
+    client.force_login(famille['parent'])
+    reponse = client.get(reverse('core:portail_parent_cahier'))
+    assert reponse.status_code == 200
+    enfant = reponse.context['enfants'][0]
+    assert [c.contenu for c in enfant['cours']] == ['Fractions : addition et soustraction']
+    assert [d.devoirs for d in enfant['devoirs']] == ['Exercices 4 et 5 p. 32']
+    html = reponse.content.decode()
+    for attendu in ('Cahier de textes', 'Travail à faire', 'Fractions : addition et soustraction',
+                    'Devoirs pour le', 'Exercices 4 et 5 p. 32', '07:30–09:30'):
+        assert attendu in html, attendu
+    accueil = client.get(reverse('core:portail_parent')).content.decode()
+    assert reverse('core:portail_parent_cahier') in accueil and 'Exercices 4 et 5 p. 32' in accueil
+    client.force_login(baker.make('accounts.User', etablissement=famille['etab'], role='DIRECTEUR', must_change_password=False))
+    assert client.get(reverse('core:portail_parent_cahier')).status_code == 403
+
+
 # ── G2 : portail parent, vie scolaire ─────────────────────────────────────────
 
 def test_vie_scolaire_edt_absences_et_navigation(client, famille):

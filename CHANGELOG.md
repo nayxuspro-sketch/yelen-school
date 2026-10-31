@@ -3,6 +3,16 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.31.0 — 2026-10-31
+
+### Cahier de textes et devoirs dans le portail parent
+
+- Nouvelle page **Cahier de textes** (`/portail/parent/cahier/`), par enfant : tous les devoirs non échus (« pour
+  aujourd'hui » signalé) puis les cours des 30 derniers jours — date, matière, horaire, contenu traité, devoirs donnés
+  et date de remise.
+- Accueil : la section « Travail à faire » est toujours affichée pour un enfant inscrit, avec le lien vers le cahier
+  de textes et un état vide explicite ; sa requête réutilise `core.portail.devoirs_a_venir` (doublon supprimé).
+
 ## 5.30.0 — 2026-10-31
 
 ### Notifications push pour le personnel

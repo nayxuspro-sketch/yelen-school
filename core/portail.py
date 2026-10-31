@@ -1,5 +1,5 @@
-"""Portails parent et élève : données d'un enfant (emploi du temps, assiduité, justificatifs, notes, devoirs) et dépôt
-d'un justificatif d'absence par le parent."""
+"""Portails parent et élève : données d'un enfant (emploi du temps, assiduité, justificatifs, notes, devoirs, cahier de
+textes) et dépôt d'un justificatif d'absence par le parent."""
 from datetime import date, timedelta
 
 from django.db.models import Count
@@ -69,12 +69,24 @@ def moyennes_par_periode(inscription):
 
 
 def devoirs_a_venir(inscription, limite=5):
+    """Devoirs de la classe non encore échus, par date de remise."""
     today = timezone.localdate()
     return list(
         CahierTextes.objects.filter(enseignement__classe=inscription.classe,
                                     enseignement__annee_scolaire=inscription.annee_scolaire,
                                     date_remise_devoirs__gte=today, devoirs__gt='')
         .select_related('enseignement__matiere').order_by('date_remise_devoirs')[:limite]
+    )
+
+
+def cahier_de_textes(inscription, jours=30):
+    """Cours des ``jours`` derniers jours de la classe (contenu traité, devoirs donnés), du plus récent au plus ancien."""
+    today = timezone.localdate()
+    return list(
+        CahierTextes.objects.filter(enseignement__classe=inscription.classe,
+                                    enseignement__annee_scolaire=inscription.annee_scolaire,
+                                    date__lte=today, date__gte=today - timedelta(days=jours))
+        .select_related('enseignement__matiere').order_by('-date', '-heure_debut', '-created_at')
     )
 
 

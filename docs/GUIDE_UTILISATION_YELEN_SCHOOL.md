@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.30.0
-version_guide: 5.23
-date_mise_a_jour: 31/10/2026 (5.30.0 : notifications push pour le personnel, §18.5)
+version_logiciel: 5.31.0
+version_guide: 5.24
+date_mise_a_jour: 31/10/2026 (5.31.0 : cahier de textes et devoirs dans le portail parent, §20.5)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -5524,6 +5524,18 @@ Page PWA dédiée accessible via l'onglet "Bulletins" de la navigation basse.
 - Badge statut : **Signé** (vert), **À signer** (or, token valide), **Publié** (neutre)
 - Bouton "Consulter & Signer" redirige vers la page publique de signature (`/bulletins/parent/<token>/`)
 - État vide avec SVG si aucun bulletin n'est encore publié
+
+### 20.5 Cahier de textes et devoirs (5.31.0)
+
+Ce que l'enseignant saisit dans le cahier de textes (§6.0) est visible du parent, sans autre action :
+
+- **Accueil** : la section **« Travail à faire »** de chaque enfant liste les cinq prochains devoirs de sa classe
+  (date de remise, matière, consigne) ; « Aucun devoir à rendre pour l'instant » sinon. Le lien **Cahier de textes →**
+  ouvre la page complète.
+- **Page Cahier de textes** (`/portail/parent/cahier/`), par enfant : **Travail à faire** — tous les devoirs non
+  encore échus, « pour aujourd'hui » signalé en rouge — puis **Cours des 30 derniers jours** — date, matière, horaire,
+  contenu traité et devoirs donnés avec leur date de remise, du plus récent au plus ancien.
+- Les données sont celles de la classe de l'enfant pour l'année en cours ; aucune notification n'est envoyée.
 
 ---
 
