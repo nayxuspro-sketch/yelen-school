@@ -1,6 +1,8 @@
 """Jeu de démonstration (5.41.0) : un établissement complet en une commande, rejouable et réinitialisable."""
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
+from django.db import connection
 
 from core.demarrage import avancement, etapes
 from etablissements.models import Etablissement
@@ -67,14 +69,33 @@ def test_commande_rejouable_sans_doublon():
     assert IdentiteEtablissement.objects.filter(etablissement=etab).count() == 1
 
 
-def test_reset_recree_l_etablissement():
+def test_reset_recree_l_etablissement_ou_explique_l_immutabilite():
+    """Sous PostgreSQL le paiement est immuable (trigger 0016) : --reset refuse en l'expliquant ; sous SQLite,
+    l'établissement est réellement supprimé puis recréé."""
     etab = charger()
     ancienne_identite = IdentiteEtablissement.objects.get(etablissement=etab).pk
+    if connection.vendor == 'postgresql':
+        with pytest.raises(CommandError, match='immuable'):
+            call_command('charger_demo', '--eleves', '8', '--reset', verbosity=0)
+        assert IdentiteEtablissement.objects.get(etablissement=etab).pk == ancienne_identite
+        return
     call_command('charger_demo', '--eleves', '8', '--reset', verbosity=0)
     nouveau = Etablissement.objects.get(code='DEMO')
     assert nouveau.pk != etab.pk                                    # établissement recréé, pas complété
     assert IdentiteEtablissement.objects.get(etablissement=nouveau).pk != ancienne_identite
-    assert Eleve.objects.count() == 8 and not Etablissement.objects.filter(code='DEMO').count() > 1
+    assert Eleve.objects.count() == 8 and Etablissement.objects.filter(code='DEMO').count() == 1
+
+
+def test_reset_refuse_proprement_un_historique_financier_immuable(mocker):
+    """Le garde-fou PostgreSQL (trigger 0016) répond par une erreur SQL : la commande la traduit en message."""
+    from django.db import IntegrityError
+    charger()
+    mocker.patch(
+        'core.management.commands.charger_demo.Etablissement.objects.filter').return_value.delete.side_effect = \
+        IntegrityError('Un paiement comptabilisé est immuable et ne peut pas être supprimé.')
+    with pytest.raises(CommandError, match='immuable'):
+        call_command('charger_demo', '--eleves', '8', '--reset', verbosity=0)
+    assert Etablissement.objects.filter(code='DEMO').exists()
 
 
 def test_refuse_moins_d_eleves_que_de_classes():

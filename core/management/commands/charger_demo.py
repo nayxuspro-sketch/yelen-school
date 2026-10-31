@@ -15,8 +15,8 @@ import datetime as dt
 import random
 from decimal import Decimal
 
-from django.core.management.base import BaseCommand
-from django.db import transaction
+from django.core.management.base import BaseCommand, CommandError
+from django.db import IntegrityError, transaction
 
 from accounts.models import User
 from core.models import RoleChoices
@@ -97,8 +97,7 @@ class Command(BaseCommand):
             raise SystemExit(f"Au moins {len(CLASSES)} élèves sont nécessaires pour remplir les classes.")
 
         if options['reset']:
-            supprimes = Etablissement.objects.filter(code=code).delete()
-            self.stdout.write(f"Établissement {code} supprimé ({supprimes[0]} objet(s)).")
+            self._supprimer(code)
 
         with transaction.atomic():
             etab = self._etablissement(code)
@@ -122,6 +121,21 @@ class Command(BaseCommand):
         self._compte_rendu(etab, identite, courante, nb_eleves)
 
     # ── Établissement ────────────────────────────────────────────────────────────────────────────
+    def _supprimer(self, code):
+        """Supprime l'établissement de démonstration, sauf si son historique financier est protégé.
+
+        Sous PostgreSQL, un paiement comptabilisé est immuable (`finances/migrations/0016`) : la suppression
+        est alors refusée proprement, avec la marche à suivre, au lieu de laisser remonter une erreur SQL."""
+        try:
+            with transaction.atomic():
+                supprimes = Etablissement.objects.filter(code=code).delete()
+        except IntegrityError as exc:
+            raise CommandError(
+                f"Établissement {code} non supprimé : son historique financier est immuable (paiements "
+                "comptabilisés). Choisissez un autre code (--etablissement ESSAI) ou une base d'essai SQLite."
+            ) from exc
+        self.stdout.write(f"Établissement {code} supprimé ({supprimes[0]} objet(s)).")
+
     def _etablissement(self, code):
         return Etablissement.objects.get_or_create(
             code=code, defaults={'nom': 'Complexe Scolaire Laafi', 'ville': 'Ouagadougou',

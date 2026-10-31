@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.42.1 — 2026-10-31
+
+- `charger_demo --reset` : sous PostgreSQL, la suppression de l'établissement cascade vers des paiements
+  comptabilisés que le trigger d'immuabilité (`finances/0016`) refuse de supprimer. La commande traduit l'erreur
+  SQL en message explicite (« choisissez un autre code ou une base d'essai SQLite ») ; sous SQLite (installation
+  autonome) le comportement est inchangé. Tests (7), dont la traduction du garde-fou et le cas PostgreSQL.
+
 ## 5.42.0 — 2026-10-31
 
 ### Parcours navigateur vérifiés à chaque livraison (chantier C1)
