@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.29.0
-version_guide: 5.22
-date_mise_a_jour: 31/10/2026 (5.29.0 : alertes d'exploitation relayées à la direction, §2.18)
+version_logiciel: 5.30.0
+version_guide: 5.23
+date_mise_a_jour: 31/10/2026 (5.30.0 : notifications push pour le personnel, §18.5)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -5124,6 +5124,14 @@ Après l'exécution, vérifier l'application, quelques données importantes et p
 - Clique sur **Tout marquer comme lu** pour effacer le compteur du badge
 
 > **Badge numérique :** Le chiffre rouge sur la cloche indique le nombre de notifications non lues. Il disparaît quand toutes les notifications ont été consultées.
+
+**Notifications sur votre téléphone ou votre PC (5.30.0) :** la carte « Notifications sur cet appareil », en haut de la
+page Notifications, fonctionne pour le personnel comme pour les parents (§20.3). **Activer** → le navigateur demande
+l'autorisation → chaque notification qui vous est destinée — seuil d'absences atteint (directeur, censeur), alerte du
+serveur (§2.18), rappel de licence (§13.3) — s'affiche comme une notification de l'appareil, application fermée
+comprise ; la toucher ouvre la page concernée. **Tester** envoie aussitôt une notification d'essai, **Désactiver** retire
+l'appareil. L'activation vaut pour cet appareil et ce navigateur ; elle nécessite l'adresse `https://` de l'école et un
+accès Internet du serveur (qui remet la notification au service du navigateur) — l'e-mail et le SMS ne changent pas.
 
 #### Notifications des Absences aux Parents
 

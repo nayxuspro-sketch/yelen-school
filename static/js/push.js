@@ -1,6 +1,8 @@
-/* YELEN SCHOOL — notifications push du portail parent (core/push.py).
+/* YELEN SCHOOL — notifications push (core/push.py), portail parent et application du personnel.
    Pilote la carte [data-push-cle] : état de l'appareil, activation (permission + abonnement envoyé au serveur),
-   test, désactivation. Un abonnement déjà présent est resynchronisé avec le serveur à chaque ouverture. */
+   test, désactivation. Un abonnement déjà présent est resynchronisé avec le serveur à chaque ouverture.
+   data-push-sw / data-push-scope désignent le service worker qui reçoit les notifications (/sw.js du portail,
+   /app-sw.js de l'application) ; data-push-texte-actif, le texte affiché une fois les notifications activées. */
 (function () {
   'use strict';
   var carte = document.querySelector('[data-push-cle]');
@@ -12,6 +14,11 @@
     desabonner: carte.getAttribute('data-push-desabonner'),
     tester: carte.getAttribute('data-push-test')
   };
+  var worker = {
+    script: carte.getAttribute('data-push-sw') || '/sw.js',
+    scope: carte.getAttribute('data-push-scope') || '/portail/parent/'
+  };
+  var texteActif = carte.getAttribute('data-push-texte-actif') || 'Activées sur cet appareil.';
   var invitation = carte.getAttribute('data-push-mode') === 'invitation';
   var texte = carte.querySelector('[data-push-texte]');
   var boutons = {};
@@ -63,13 +70,13 @@
     }
     if (abonnement) {
       if (invitation) return carte.classList.add('pp-hidden');
-      return afficher("Activées sur cet appareil : absences, retards, bulletins et informations de l'école.", ['tester', 'desactiver']);
+      return afficher(texteActif, ['tester', 'desactiver']);
     }
     afficher(null, ['activer']);
   }
 
   function enregistrement() {
-    return navigator.serviceWorker.register('/sw.js', { scope: '/portail/parent/' })
+    return navigator.serviceWorker.register(worker.script, { scope: worker.scope })
       .then(function () { return navigator.serviceWorker.ready; });
   }
 
@@ -92,7 +99,7 @@
   }
 
   function abonnementCourant() {
-    return navigator.serviceWorker.getRegistration('/portail/parent/')
+    return navigator.serviceWorker.getRegistration(worker.scope)
       .then(function (reg) { return reg ? reg.pushManager.getSubscription() : null; });
   }
 

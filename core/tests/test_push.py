@@ -1,5 +1,6 @@
-"""Notifications push du portail parent (core/push.py) : clés de l'installation, abonnement des appareils, envoi chiffré
-et signé à la création d'une notification, abonnements expirés, test depuis le portail, service worker et pages."""
+"""Notifications push (core/push.py), portail parent et application du personnel : clés de l'installation, abonnement
+des appareils, envoi chiffré et signé à la création d'une notification, abonnements expirés, test depuis la page,
+service workers et pages."""
 import json
 import urllib.error
 from unittest.mock import patch
@@ -70,13 +71,29 @@ def test_abonner_cree_puis_rattache_le_meme_appareil(client, parent):
     assert AbonnementPush.objects.count() == 1 and AbonnementPush.objects.get().utilisateur == autre
 
 
-def test_abonnement_invalide_ou_hors_parent_refuse(client, parent):
+def test_abonnement_invalide_refuse(client, parent):
     assert _json(client, 'core:push_abonner', {'endpoint': 'http://pas-https', 'keys': {}}).status_code == 400
     assert client.post(reverse('core:push_abonner'), 'pas du json', content_type='application/json').status_code == 400
-    client.force_login(baker.make('accounts.User', etablissement=parent.etablissement, role='DIRECTEUR',
-                                  must_change_password=False))
-    assert _json(client, 'core:push_abonner', _appareil()[1]).status_code == 403
+    client.logout()
+    assert _json(client, 'core:push_abonner', _appareil()[1]).status_code == 302
     assert not AbonnementPush.objects.exists()
+
+
+def test_personnel_abonne_son_appareil_et_recoit_ses_notifications(client, parent):
+    """Le personnel (5.30.0) active les notifications depuis la page Notifications de l'application : les alertes qui
+    lui sont destinées (seuil d'absences, serveur, licence) ouvrent la page de l'application concernée."""
+    directeur = baker.make('accounts.User', etablissement=parent.etablissement, role='DIRECTEUR', must_change_password=False)
+    client.force_login(directeur)
+    assert _json(client, 'core:push_abonner', _appareil()[1]).json()['ok'] is True
+    assert AbonnementPush.objects.get().utilisateur == directeur
+
+    alerte = baker.make('core.Notification', destinataire=directeur, lien='/exploitation/', titre='Serveur : Espace disque faible')
+    sans_lien = baker.make('core.Notification', destinataire=directeur, lien='', titre='Licence')
+    assert push.charge_utile(alerte)['url'] == '/exploitation/'
+    assert push.charge_utile(sans_lien)['url'] == reverse('core:notifications_list')
+    with patch.object(push, 'envoyer', return_value=push.OK) as envoyer:
+        assert _json(client, 'core:push_test', {'endpoint': ENDPOINT}).json()['ok'] is True
+    assert envoyer.call_args[0][1]['url'] == reverse('core:notifications_list')
 
 
 def test_desabonner_ne_retire_que_son_appareil(client, parent, abonne):
@@ -177,10 +194,25 @@ def test_ressources_pwa_accessibles_au_parent_connecte(client, parent):
         assert client.get(url).status_code == 200, url
 
 
+def test_service_worker_de_l_application_affiche_et_ouvre_les_notifications(client):
+    script = client.get('/app-sw.js').content.decode()
+    assert "addEventListener('push'" in script and 'showNotification(' in script
+    assert "addEventListener('notificationclick'" in script and "'/notifications/'" in script
+
+
 def test_pages_du_portail_portent_le_reglage(client, parent):
     publique = push.cle_publique()
     for nom in ('core:portail_parent', 'core:portail_parent_notifications'):
         html = client.get(reverse(nom)).content.decode()
-        assert f'data-push-cle="{publique}"' in html and 'js/push_parent' in html, nom
+        assert f'data-push-cle="{publique}"' in html and 'js/push.' in html, nom
         assert reverse('core:push_abonner') in html and 'data-push-action="activer"' in html
+        assert 'data-push-sw="/sw.js"' in html and 'data-push-scope="/portail/parent/"' in html
     assert 'data-push-mode="invitation"' in client.get(reverse('core:portail_parent')).content.decode()
+
+
+def test_page_notifications_du_personnel_porte_le_reglage(client, parent):
+    client.force_login(baker.make('accounts.User', etablissement=parent.etablissement, role='COMPTABLE', must_change_password=False))
+    html = client.get(reverse('core:notifications_list')).content.decode()
+    assert f'data-push-cle="{push.cle_publique()}"' in html and 'js/push.' in html
+    assert 'data-push-sw="/app-sw.js"' in html and 'data-push-scope="/"' in html and 'data-push-action="activer"' in html
+    assert 'data-push-cle' not in client.get(reverse('core:notifications_list') + '?_partial=header').content.decode()

@@ -299,7 +299,7 @@ class Notification(models.Model):
 
 
 class ClesWebPush(models.Model):
-    """Paire de clés VAPID de l'installation (notifications push du portail parent) : générée à la première
+    """Paire de clés VAPID de l'installation (notifications push, ``core.push``) : générée à la première
     utilisation par ``core.push.cles`` et conservée avec la base — une seule ligne (pk=1)."""
     cle_privee = models.CharField(max_length=100)      # 32 octets, base64url
     cle_publique = models.CharField(max_length=100)    # point non compressé (65 octets), base64url, remise au navigateur
@@ -311,8 +311,8 @@ class ClesWebPush(models.Model):
 
 
 class AbonnementPush(models.Model):
-    """Abonnement Web Push d'un navigateur (un appareil) d'un parent ; un parent peut en avoir plusieurs. Un abonnement
-    que le service de notifications déclare expiré (404/410) est supprimé à l'envoi."""
+    """Abonnement Web Push d'un navigateur (un appareil) d'un utilisateur — parent ou personnel —, qui peut en avoir
+    plusieurs. Un abonnement que le service de notifications déclare expiré (404/410) est supprimé à l'envoi."""
     utilisateur = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='abonnements_push')
     endpoint = models.CharField(max_length=1000, unique=True)
     p256dh = models.CharField(max_length=200)

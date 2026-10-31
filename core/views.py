@@ -525,6 +525,8 @@ def notifications_list(request):
     }
     if request.GET.get('_partial') == 'header':
         return render(request, 'core/partials/notifications_header.html', context)
+    from core import push
+    context['push_cle_publique'] = push.cle_publique()      # carte « Notifications sur cet appareil »
     return render(request, 'core/notifications.html', context)
 
 
@@ -750,16 +752,14 @@ def portail_parent_notifications(request):
     })
 
 
-# ── Notifications push (appareils du parent) ─────────────────────────────────
+# ── Notifications push (appareils de l'utilisateur : parent ou personnel) ─────
 
 def _reponse_push(ok, message, statut=200):
     return JsonResponse({'ok': ok, 'message': message}, status=statut)
 
 
 def _requete_push(request):
-    """(utilisateur parent, corps JSON) ou (None, réponse de refus)."""
-    if request.user.role != 'PARENT':
-        return None, _reponse_push(False, "Réservé aux parents.", 403)
+    """(corps JSON, None) ou (None, réponse de refus)."""
     try:
         return json.loads(request.body or b'{}'), None
     except ValueError:
@@ -768,7 +768,6 @@ def _requete_push(request):
 
 @login_required
 @require_POST
-@requires_licence_feature('portail_parents', api_mode=True)
 def push_abonner(request):
     """Enregistre l'abonnement Web Push de l'appareil (``PushSubscription.toJSON()``)."""
     from core import push
@@ -784,7 +783,6 @@ def push_abonner(request):
 
 @login_required
 @require_POST
-@requires_licence_feature('portail_parents', api_mode=True)
 def push_desabonner(request):
     """Retire l'abonnement de l'appareil (``{endpoint}``)."""
     from core import push
@@ -797,7 +795,6 @@ def push_desabonner(request):
 
 @login_required
 @require_POST
-@requires_licence_feature('portail_parents', api_mode=True)
 def push_test(request):
     """Envoie immédiatement une notification de test à l'appareil (``{endpoint}``) et rend compte du résultat."""
     from core import push
@@ -810,7 +807,7 @@ def push_test(request):
         return _reponse_push(False, "Cet appareil n'est pas abonné : activez d'abord les notifications.", 404)
     resultat = push.envoyer(abonnement, {
         'titre': "Notification de test", 'message': "Les notifications de YELEN SCHOOL fonctionnent sur cet appareil.",
-        'url': reverse('core:portail_parent_notifications'), 'tag': 'test',
+        'url': push.page_notifications(request.user), 'tag': 'test',
     })
     messages_resultat = {
         push.OK: "Notification de test envoyée : elle s'affiche dans quelques secondes.",
@@ -1488,6 +1485,25 @@ self.addEventListener('fetch', e => {
       )
   );
 });
+
+// ── Notifications push (core/push.py) : affichage, puis ouverture de la page concernée au toucher ──
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { message: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.titre || 'YELEN SCHOOL', {
+    body: d.message || '', icon: '__ICONE__', badge: '__ICONE__',
+    tag: d.tag || 'yelen-app', renotify: true, data: { url: d.url || '__PAGE_NOTIFICATIONS__' }
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '__PAGE_NOTIFICATIONS__';
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(liste => {
+    const c = liste.find(w => new URL(w.url).origin === STATIC_ORIGIN);
+    if (c) return c.navigate(url).then(() => c.focus()).catch(() => clients.openWindow(url));
+    return clients.openWindow(url);
+  }));
+});
 """
     remplacements = {
         '__VERSION__': settings.YELEN_VERSION,
@@ -1496,6 +1512,8 @@ self.addEventListener('fetch', e => {
         '__HTMX__': static('js/htmx.min.js'),
         '__JS_SAISIES__': static('js/saisies_hors_ligne.js'),
         '__SW_SAISIES__': static('js/sw_saisies.js'),
+        '__ICONE__': static('img/pwa/icon-192.png'),
+        '__PAGE_NOTIFICATIONS__': reverse('core:notifications_list'),
     }
     script = sw.strip()
     for marqueur, valeur in remplacements.items():
@@ -1577,8 +1595,8 @@ def pwa_icon(request, size):
 def pwa_service_worker(request):
     """Service Worker — cache le portail parent pour un accès hors ligne."""
     sw = (
-        "const CACHE='yelen-parent-v3';\n"
-        "const PRECACHE=['/portail/parent/','/static/css/yelen.css','/static/js/pwa.js','/static/js/push_parent.js'];\n"
+        "const CACHE='yelen-parent-v4';\n"
+        "const PRECACHE=['/portail/parent/','/static/css/yelen.css','/static/js/pwa.js','/static/js/push.js'];\n"
         "self.addEventListener('install',e=>{"
         "e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting()));});\n"
         "self.addEventListener('activate',e=>{"

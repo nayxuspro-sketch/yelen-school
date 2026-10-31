@@ -1,10 +1,11 @@
-"""Notifications push du portail parent (Web Push : RFC 8030 remise, RFC 8291 chiffrement, RFC 8292 VAPID).
+"""Notifications push (Web Push : RFC 8030 remise, RFC 8291 chiffrement, RFC 8292 VAPID).
 
-Le parent active les notifications depuis son téléphone (page Notifications du portail) ; chaque notification interne
-qui lui est destinée — absence, retard, bulletin publié, sanction, rappel de paiement, réunion — lui est alors poussée
-sur l'appareil, application fermée comprise. Les clés VAPID de l'installation sont générées à la première
+L'utilisateur active les notifications depuis son appareil (page Notifications du portail parent ou de l'application) ;
+chaque notification interne qui lui est destinée — pour un parent : absence, retard, bulletin publié, sanction, rappel
+de paiement, réunion ; pour le personnel : seuil d'absences, alerte du serveur, rappel de licence — lui est alors
+poussée sur l'appareil, application fermée comprise. Les clés VAPID de l'installation sont générées à la première
 utilisation et conservées en base ; la remise passe par le service de notifications du navigateur (Google, Mozilla,
-Apple), le serveur doit donc accéder à Internet. Rien ne part pour un parent sans appareil abonné.
+Apple), le serveur doit donc accéder à Internet. Rien ne part pour un utilisateur sans appareil abonné.
 """
 import json
 import logging
@@ -80,9 +81,17 @@ def supprimer_abonnement(utilisateur, endpoint):
 
 # ── Envoi ─────────────────────────────────────────────────────────────────────────────────────────
 
+def page_notifications(utilisateur):
+    """Liste des notifications de ``utilisateur`` : celle du portail pour un parent, celle de l'application sinon."""
+    return reverse('core:portail_parent_notifications' if utilisateur.role == 'PARENT' else 'core:notifications_list')
+
+
 def charge_utile(notification):
-    """Contenu poussé : titre, message et page du portail à ouvrir (un lien de gestion renvoie aux notifications)."""
-    lien = notification.lien if notification.lien.startswith(PREFIXE_PORTAIL) else reverse('core:portail_parent_notifications')
+    """Contenu poussé : titre, message et page à ouvrir — le lien de la notification s'il est consultable par son
+    destinataire (page du portail pour un parent, page de l'application pour le personnel), sinon ses notifications."""
+    lien, destinataire = notification.lien, notification.destinataire
+    if not lien.startswith(PREFIXE_PORTAIL if destinataire.role == 'PARENT' else '/'):
+        lien = page_notifications(destinataire)
     return {'titre': notification.titre, 'message': notification.message[:300], 'url': lien,
             'tag': f'notification-{notification.pk}'}
 
@@ -115,7 +124,7 @@ def envoyer_notification(notification_id):
     """Envoie la notification à chaque appareil de son destinataire ; retourne le nombre de remises acceptées."""
     from core.models import AbonnementPush, Notification
 
-    notification = Notification.objects.filter(pk=notification_id).first()
+    notification = Notification.objects.select_related('destinataire').filter(pk=notification_id).first()
     if notification is None:
         return 0
     contenu = charge_utile(notification)

@@ -3,6 +3,19 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.30.0 — 2026-10-31
+
+### Notifications push pour le personnel
+
+- La carte « Notifications sur cet appareil » du portail parent est reprise en haut de la page Notifications de
+  l'application : chaque membre du personnel peut recevoir sur son téléphone ou son PC, application fermée comprise,
+  les notifications qui lui sont destinées — seuil d'absences atteint, alertes du serveur (5.29.0), rappels de
+  licence. Toucher la notification ouvre la page concernée de l'application.
+- Même mécanisme que pour les parents (`core/push.py`, clés VAPID de l'installation) : le service worker de
+  l'application (`/app-sw.js`) affiche les notifications, le script `push.js` (ex-`push_parent.js`) pilote la carte
+  pour les deux publics ; points d'abonnement déplacés sous `/notifications/push/…` et ouverts à tout utilisateur
+  connecté. Aucune migration.
+
 ## 5.29.0 — 2026-10-31
 
 ### Alertes d'exploitation relayées à la direction

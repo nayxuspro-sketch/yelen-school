@@ -45,7 +45,7 @@ def creer_notification(destinataire, type_notif, titre, message, lien='',
 
     try:
         from core.push import notifier as notifier_push
-        notifier_push(notif)      # appareils abonnés du destinataire (portail parent), après validation
+        notifier_push(notif)      # appareils abonnés du destinataire (parent ou personnel), après validation
     except Exception:
         logger.exception("Planification de la notification push échouée pour %s", destinataire)
 

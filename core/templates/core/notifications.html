@@ -1,9 +1,12 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}Notifications{% endblock %}
 
 {% block content %}
 {% include 'core/partials/notifications_header.html' %}
+
+{% include 'core/partials/portail_push.html' with sw='/app-sw.js' scope='/' texte="Seuils d'absences, alertes du serveur, licence : soyez prévenu même l'application fermée." texte_actif="Activées sur cet appareil : seuils d'absences, alertes du serveur et licence vous parviennent même l'application fermée." %}
 
 <div class="card animate-fade-up" style="overflow:hidden;">
   {% if notifications %}
@@ -23,4 +26,8 @@
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/push.js' %}" defer></script>
 {% endblock %}
