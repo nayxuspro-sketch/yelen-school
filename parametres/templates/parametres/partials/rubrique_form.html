@@ -36,6 +36,10 @@
             <input type="checkbox" name="obligatoire" {% if rubrique.obligatoire or not rubrique %}checked{% endif %} style="width:16px; height:16px; accent-color:var(--color-primary); cursor:pointer;">
             <span style="font-size:var(--text-sm); color:var(--color-text-secondary);">Obligatoire</span>
           </label>
+          <label class="d-flex align-center gap-3" style="cursor:pointer;" title="Décochez pour les services annexes (cantine, transport, internat) et les frais autorisés par la tutelle">
+            <input type="checkbox" name="soumise_plafond" {% if rubrique.soumise_plafond or not rubrique %}checked{% endif %} style="width:16px; height:16px; accent-color:var(--color-primary); cursor:pointer;">
+            <span style="font-size:var(--text-sm); color:var(--color-text-secondary);">Frais plafonnés</span>
+          </label>
           <div class="d-flex align-center gap-3">
             <label class="input-label" style="margin-bottom:0;">Ordre</label>
             <input type="number" name="ordre" value="{{rubrique.ordre|default:1}}" min="1" class="input text-mono" style="width:64px; padding:6px; text-align:center;" id="id_ordre">

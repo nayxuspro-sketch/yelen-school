@@ -3,6 +3,19 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.34.0 — 2026-10-31
+
+### Grille tarifaire réglementaire (décret n° 2026-0761)
+
+- *Identité Établissement* : **catégorie réglementaire** (1 à 3) et **zone d'implantation** ; *Rubriques* : case
+  **Frais plafonnés** (décochée pour cantine, transport, internat et frais autorisés par la tutelle).
+- Grille des plafonds par cycle × catégorie × zone (`parametres/plafonds.py`, arrêté n° 2026-101 du 10/07/2026) ;
+  **refus à la saisie** d'un tarif qui porterait le total plafonné d'une classe/statut au-delà du plafond, message
+  explicite ; établissement non classé = aucun contrôle.
+- Page *Tarifs → Conformité réglementaire* (total plafonné, plafond, écart, hors plafond par classe et statut) et
+  **attestation de conformité tarifaire** PDF A4, délivrée seulement si tout est conforme, signée par le signataire
+  du nouveau type de document (migration `parametres.0042`). Tests (5), guide §3.9.
+
 ## 5.33.1 — 2026-10-31
 
 - CI : le paquet `libgdk-pixbuf-xlib-2.0-0` n'existe plus sur l'image `ubuntu-latest` (Ubuntu 26.04) et WeasyPrint 70

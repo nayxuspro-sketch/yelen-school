@@ -7,6 +7,7 @@ from django.db import DatabaseError
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
@@ -20,6 +21,7 @@ from ..models import (
 
 logger = logging.getLogger(__name__)
 from .commun import _get_etab, _delete_view
+from ..plafonds import REFERENCE, conformite, verifier_tarif
 
 
 # ─── RUBRIQUES PAIEMENT ──────────────────────────────────────────────
@@ -214,6 +216,7 @@ def tarif_form(request, pk=None):
                         f"Un tarif existe déjà pour cette combinaison "
                         f"({tarif.classe.nom} / {tarif.statut_eleve.nom} / {rub.nom} / {annee.libelle})."
                     )
+                verifier_tarif(etab, annee, tarif.classe, tarif.statut_eleve, rub, montant, exclure_pk=tarif.pk)
                 tarif.save()
             else:
                 # Création : résoudre niveaux et statuts cibles
@@ -253,6 +256,9 @@ def tarif_form(request, pk=None):
                 if cycle_val and cycle_val != '__all__':
                     cycle_obj = get_object_or_404(Cycle, pk=cycle_val, etablissement=etab)
 
+                for classe in classes_cibles:
+                    for statut in statuts_cibles:
+                        verifier_tarif(etab, annee, classe, statut, rub, montant)
                 for classe in classes_cibles:
                     for statut in statuts_cibles:
                         TarifScolarite.objects.update_or_create(
@@ -357,3 +363,47 @@ def tarif_simulation_resultat(request):
         'vide': False,
         'aucun_tarif': not tarifs.exists(),
     })
+
+
+# ─── CONFORMITÉ RÉGLEMENTAIRE ─────────────────────────────────────────────────
+
+def _annee_conformite(request, etab):
+    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-libelle') if etab else AnneeScolaire.objects.none()
+    annee = annees.filter(pk=request.GET.get('annee')).first() if request.GET.get('annee') else None
+    return annees, annee or annees.filter(est_courante=True).first() or annees.first()
+
+
+@login_required
+def tarif_conformite(request):
+    """Total des frais de scolarité plafonnés par classe et statut, comparé au plafond du décret n° 2026-0761."""
+    etab = _get_etab(request)
+    annees, annee = _annee_conformite(request, etab)
+    ctx = {'annees': annees, 'annee': annee, 'reference': REFERENCE}
+    if etab and annee:
+        ctx.update(conformite(etab, annee))
+    return render(request, 'parametres/tarifs_conformite.html', ctx)
+
+
+@login_required
+def tarif_conformite_pdf(request):
+    """Attestation de conformité tarifaire (A4), délivrée seulement si toutes les lignes respectent le plafond."""
+    from datetime import date
+    from django.shortcuts import redirect
+    from core.utils import get_etablissement_context
+    etab = _get_etab(request)
+    annees, annee = _annee_conformite(request, etab)
+    if not (etab and annee):
+        return redirect('parametres:tarif_conformite')
+    bilan = conformite(etab, annee)
+    if not bilan['tout_conforme'] or not bilan['classe_connue']:
+        return redirect(f"{reverse('parametres:tarif_conformite')}?annee={annee.pk}")
+    etab_ctx = get_etablissement_context(etab, request)
+    html = render(request, 'parametres/pdf/attestation_conformite_tarifaire.html', {
+        **bilan, 'annee': annee, 'reference': REFERENCE, 'today': date.today(), 'etab': etab,
+        'identite': etab_ctx.get('identite'), 'logo_url': etab_ctx.get('logo_url') or etab_ctx.get('etab_logo_url'),
+    }).content.decode('utf-8')
+    from core.pdf import HTML as WP
+    pdf = WP(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="attestation_conformite_tarifaire_{annee.libelle}.pdf"'
+    return response

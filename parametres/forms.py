@@ -69,7 +69,7 @@ class StatutEleveForm(forms.ModelForm):
 class RubriquePaiementForm(forms.ModelForm):
     class Meta:
         model = RubriquePaiement
-        fields = ['nom', 'code', 'description', 'montant', 'obligatoire', 'ordre', 'actif']
+        fields = ['nom', 'code', 'description', 'montant', 'obligatoire', 'soumise_plafond', 'ordre', 'actif']
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
 
 
@@ -198,7 +198,7 @@ class IdentiteEtablissementForm(forms.ModelForm):
         model = IdentiteEtablissement
         fields = [
             'nom_etablissement', 'sigle', 'type_etablissement',
-            'numero_agrement_mena', 'date_agrement',
+            'numero_agrement_mena', 'date_agrement', 'categorie_reglementaire', 'zone_implantation',
             'adresse_complete', 'ville', 'province', 'region',
             'telephone', 'email', 'site_web',
             'nom_directeur', 'devise',

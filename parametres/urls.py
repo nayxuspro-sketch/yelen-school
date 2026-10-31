@@ -52,6 +52,8 @@ urlpatterns = [
     # Tarifs de scolarité
     path('tarifs/', views.tarif_list, name='tarif_list'),
     path('tarifs/simulation/', views.tarif_simulation, name='tarif_simulation'),
+    path('tarifs/conformite/', views.tarif_conformite, name='tarif_conformite'),
+    path('tarifs/conformite/attestation.pdf', views.tarif_conformite_pdf, name='tarif_conformite_pdf'),
     path('tarifs/simulation/resultat/', views.tarif_simulation_resultat, name='tarif_simulation_resultat'),
     path('tarifs/create/', views.tarif_form, name='tarif_create'),
     path('tarifs/<uuid:pk>/edit/', views.tarif_form, name='tarif_edit'),

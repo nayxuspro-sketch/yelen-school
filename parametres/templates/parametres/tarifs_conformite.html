@@ -1,0 +1,82 @@
+{% extends "core/base.html" %}
+
+{% block title %}Conformité réglementaire des tarifs — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+            <span class="text-muted"> / </span>
+            <a href="{% url 'parametres:tarif_list' %}" class="text-secondary">Tarifs de scolarité</a>
+            <span class="text-muted"> / </span>
+            <span>Conformité réglementaire</span>
+        </p>
+        <h1 class="page-title">Conformité réglementaire des tarifs</h1>
+        <p class="page-subtitle">Plafonds des frais de scolarité des structures privées — {{ reference }}.</p>
+    </div>
+    <div class="page-actions">
+        {% if tout_conforme and classe_connue %}
+        <a href="{% url 'parametres:tarif_conformite_pdf' %}?annee={{ annee.pk }}" class="btn-primary" target="_blank" rel="noopener">Attestation de conformité (PDF)</a>
+        {% endif %}
+        <a href="{% url 'parametres:tarif_list' %}" class="btn-secondary">Retour aux tarifs</a>
+    </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="margin-bottom:1rem;">
+    <form method="get" style="padding:1rem 1.25rem; display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+        <div class="form-group" style="margin:0;">
+            <label class="input-label" for="id_annee">Année scolaire</label>
+            <select name="annee" id="id_annee" class="input select" data-csp-submit-on-change>
+                {% for a in annees %}<option value="{{ a.pk }}" {% if a.pk == annee.pk %}selected{% endif %}>{{ a.libelle }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="text-sm text-secondary" style="padding-bottom:.5rem;">
+            {% if classe_connue %}
+            Établissement de <strong>{{ identite.get_categorie_reglementaire_display }}</strong>, zone : <strong>{{ identite.get_zone_implantation_display }}</strong>
+            — <a href="{% url 'parametres:identite_etablissement' %}">modifier</a>.
+            {% else %}
+            Catégorie réglementaire et zone d'implantation non renseignées : aucun plafond n'est appliqué.
+            <a href="{% url 'parametres:identite_etablissement' %}">Les renseigner dans l'identité de l'établissement</a>.
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+{% if lignes %}
+<div class="card animate-fade-up delay-2">
+    <div style="padding:1rem 1.25rem; display:flex; gap:1.5rem; flex-wrap:wrap; align-items:center;">
+        {% if classe_connue %}
+            {% if tout_conforme %}<span class="badge badge-success">Tous les tarifs respectent le plafond</span>
+            {% else %}<span class="badge badge-danger">{{ nb_non_conformes }} ligne{{ nb_non_conformes|pluralize }} au-dessus du plafond</span>{% endif %}
+        {% endif %}
+        <span class="text-sm text-secondary">Le plafond porte sur le total annuel des rubriques « frais plafonnés » ; les services annexes et frais autorisés par la tutelle (rubriques décochées) sont hors plafond.</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Classe</th><th>Statut</th><th class="text-right">Frais plafonnés</th><th class="text-right">Plafond</th>
+                    <th class="text-right">Écart</th><th class="text-right">Hors plafond</th><th>État</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in lignes %}
+                <tr>
+                    <td>{{ l.classe.nom }}</td>
+                    <td>{{ l.statut.nom }}</td>
+                    <td class="text-right text-mono">{{ l.plafonne|floatformat:"0g" }} F</td>
+                    <td class="text-right text-mono">{% if l.plafond is not None %}{{ l.plafond|floatformat:"0g" }} F{% else %}—{% endif %}</td>
+                    <td class="text-right text-mono {% if l.ecart is not None and l.ecart < 0 %}text-danger{% endif %}">{% if l.ecart is not None %}{{ l.ecart|floatformat:"0g" }} F{% else %}—{% endif %}</td>
+                    <td class="text-right text-mono">{{ l.hors_plafond|floatformat:"0g" }} F</td>
+                    <td>{% if l.plafond is None %}<span class="text-muted">non classé</span>{% elif l.conforme %}<span class="badge badge-success">Conforme</span>{% else %}<span class="badge badge-danger">Dépassement</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card"><p class="text-secondary" style="padding:1rem 1.25rem;">Aucun tarif actif pour cette année scolaire.</p></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "pdf/base_rapport.html" %}
+{% load signataire_tags %}
+{% block page %}@page { size: A4 portrait; margin: 14mm 14mm 16mm 14mm; }{% endblock %}
+{% block css %}
+.titre { text-align:center; margin:8mm 0 4mm; }
+.titre h1 { font-size:15pt; letter-spacing:.04em; margin:0 0 2mm; text-transform:uppercase; }
+.titre .ref { font-size:9pt; color:#444; }
+.texte { font-size:10.5pt; line-height:1.5; text-align:justify; margin:4mm 0; }
+table.tarifs { width:100%; border-collapse:collapse; font-size:9pt; margin:4mm 0; }
+table.tarifs th { background:#eef2f5; color:#111; border:1px solid #999; padding:2mm 1.5mm; text-align:left; }
+table.tarifs td { border:1px solid #bbb; padding:1.6mm 1.5mm; }
+table.tarifs td.n { text-align:right; font-variant-numeric:tabular-nums; }
+.footer { margin-top:6mm; font-size:8pt; color:#555; display:flex; justify-content:space-between; }
+{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
+<div class="page">
+  {% include "pdf/partials/entete.html" %}
+  <div class="titre">
+    <h1>Attestation de conformité tarifaire</h1>
+    <div class="ref">Année scolaire {{ annee.libelle }} — {{ reference }}</div>
+  </div>
+  <p class="texte">
+    L'établissement <strong>{{ identite.nom_etablissement|default:etab.nom }}</strong>{% if identite.numero_agrement_mena %} (N° Agrément {{ identite.numero_agrement_mena }}){% endif %},
+    structure privée de <strong>{{ identite.get_categorie_reglementaire_display|lower }}</strong> implantée en zone
+    « {{ identite.get_zone_implantation_display|lower }} », atteste que les frais de scolarité appliqués pour l'année scolaire
+    {{ annee.libelle }} respectent, pour chaque classe et chaque statut d'élève, les plafonds fixés par le {{ reference }}.
+  </p>
+  <table class="tarifs">
+    <thead><tr><th>Classe</th><th>Statut</th><th>Frais de scolarité plafonnés</th><th>Plafond réglementaire</th><th>Écart</th></tr></thead>
+    <tbody>
+      {% for l in lignes %}
+      <tr>
+        <td>{{ l.classe.nom }}</td><td>{{ l.statut.nom }}</td>
+        <td class="n">{{ l.plafonne|floatformat:"0g" }} F</td>
+        <td class="n">{{ l.plafond|floatformat:"0g" }} F</td>
+        <td class="n">{{ l.ecart|floatformat:"0g" }} F</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="texte">Les services annexes (cantine, transport, internat) et les frais autorisés par la tutelle ne sont pas compris dans les montants ci-dessus.</p>
+  <p class="texte" style="text-align:right;">Fait le {{ today|date:"d/m/Y" }}</p>
+  {% signataire_auto "ATTESTATION_CONFORMITE_TARIFAIRE" %}
+  <div class="footer">
+    <div>{% if identite and identite.ville %}{{ identite.ville }}{% elif etab.ville %}{{ etab.ville }}{% endif %}</div>
+    <div>YELEN SCHOOL — Document généré automatiquement</div>
+  </div>
+</div>
+{% endblock %}

@@ -118,6 +118,21 @@ class IdentiteEtablissement(BaseModel):
     date_agrement = models.DateField(
         verbose_name=_("Date d'agrément")
     )
+    categorie_reglementaire = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        choices=[(1, _('Catégorie 1')), (2, _('Catégorie 2')), (3, _('Catégorie 3'))],
+        verbose_name=_("Catégorie réglementaire"),
+        help_text=_("Classement de la structure privée (décret n° 2026-0761) ; vide = non classée, aucun plafond appliqué"),
+    )
+    zone_implantation = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        choices=[
+            (1, _('Ouagadougou et Bobo-Dioulasso')),
+            (2, _('Chefs-lieux de province et communes périurbaines')),
+            (3, _('Zones rurales et zones non loties')),
+        ],
+        verbose_name=_("Zone d'implantation"),
+    )
     
     # Adresse complète
     adresse_complete = models.TextField(
@@ -606,6 +621,11 @@ class RubriquePaiement(BaseModel):
         verbose_name=_("Description")
     )
     
+    soumise_plafond = models.BooleanField(
+        default=True,
+        verbose_name=_("Comptée dans les frais de scolarité plafonnés"),
+        help_text=_("Décochez pour les services annexes (cantine, transport, internat) et les frais autorisés par la tutelle"),
+    )
     obligatoire = models.BooleanField(
         default=True,
         verbose_name=_("Rubrique obligatoire"),

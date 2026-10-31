@@ -80,6 +80,8 @@ from .tarifs import (  # noqa: F401
     tarif_delete,
     tarif_simulation,
     tarif_simulation_resultat,
+    tarif_conformite,
+    tarif_conformite_pdf,
 )
 from .signataires import (  # noqa: F401
     signataire_config,

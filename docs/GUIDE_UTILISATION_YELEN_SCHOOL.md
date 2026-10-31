@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.33.1
-version_guide: 5.26
-date_mise_a_jour: 31/10/2026 (5.33.0 : numérotation continue, guide de démarrage rapide §2.5, favicon)
+version_logiciel: 5.34.0
+version_guide: 5.27
+date_mise_a_jour: 31/10/2026 (5.34.0 : plafonds réglementaires des frais de scolarité §3.9)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.33.0 — Octobre 2026 (Guide v5.26)
+### Version 5.34.0 — Octobre 2026 (Guide v5.27)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -40,6 +40,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [3.6 Exploitation (santé du serveur)](#36-exploitation-santé-du-serveur)
   - [3.7 Droits d'accès par rôle](#37-droits-daccès-par-rôle)
   - [3.8 SMS automatiques planifiés — alertes parents et compte rendu quotidien du promoteur](#38-sms-automatiques-planifiés--alertes-parents-et-compte-rendu-quotidien-du-promoteur)
+  - [3.9 Plafonds réglementaires des frais de scolarité (5.34.0)](#39-plafonds-réglementaires-des-frais-de-scolarité-5340)
 - [4. INSCRIPTION ET RÉINSCRIPTION](#4-inscription-et-réinscription)
   - [4.1 Créer un élève — détection des homonymes](#41-créer-un-élève--détection-des-homonymes)
   - [4.2 Inscrire un élève — capacité des classes et année clôturée](#42-inscrire-un-élève--capacité-des-classes-et-année-clôturée)
@@ -793,6 +794,28 @@ LPB 30/10: Encaisse 1 250 000 F (23 recus), especes 950 000 F. Depenses 185 000 
 **Fonctionnement :** le SMS part par le **service SMS** — celui qui relève les SMS reçus des parents (chapitre Communication Parents, 32.4 « Configuration technique ») — démarré avec l'application (service `sms` de Docker Compose, ou processus `sms_recus --boucle` du mode autonome) : aucune tâche planifiée à ajouter. Il part **une seule fois par jour**, dès que l'heure est passée ; si le service était arrêté à cette heure, le compte rendu part à son redémarrage le même jour (après minuit, le jour manqué n'est pas rattrapé). Comme tout SMS, il passe par la file d'envoi (§3.5) : passerelle injoignable → nouvelles tentatives automatiques, suivi dans *Administration → Exploitation*. La ligne « Dernière exécution » indique l'heure du dernier envoi automatique et le total de SMS envoyés (tests compris). Le compte rendu n'est pas concerné par la tâche quotidienne `sms_auto` du matin ; en ligne de commande, `python manage.py sms_auto --type COMPTE_RENDU` l'envoie à la demande, `--dry-run` le simule.
 
 **Pour un promoteur de plusieurs établissements :** chaque établissement a son propre déclencheur (réglé par son directeur) ; le sigle en tête du SMS distingue les messages.
+
+---
+
+### 3.9 Plafonds réglementaires des frais de scolarité (5.34.0)
+
+**Référence :** décret n° 2026-0761 et arrêté n° 2026-101 du 10 juillet 2026, applicables dès la rentrée 2026-2027 aux structures privées. Le plafond porte sur le **total annuel** des frais de scolarité d'un apprenant (dossier, inscription, formation, examens…) et dépend du **cycle**, de la **catégorie** de l'établissement (1 à 3, grille d'évaluation sur 100 points de la tutelle) et de sa **zone d'implantation** (Ouagadougou et Bobo-Dioulasso ; chefs-lieux de province et communes périurbaines ; zones rurales et non loties).
+
+| Cycle | Catégorie 1 (Z1 / Z2 / Z3) | Catégorie 2 | Catégorie 3 |
+|---|---|---|---|
+| Préscolaire | 50 000 / 40 000 / 30 000 | 100 000 / 80 000 / 50 000 | 150 000 / 125 000 / 75 000 |
+| Primaire | 40 000 / 30 000 / 25 000 | 80 000 / 60 000 / 40 000 | 150 000 / 125 000 / 60 000 |
+| Post-primaire | 90 000 / 80 000 / 60 000 | 120 000 / 100 000 / 80 000 | 130 000 / 110 000 / 90 000 |
+| Secondaire | 130 000 / 110 000 / 90 000 | 170 000 / 130 000 / 110 000 | 200 000 / 170 000 / 140 000 |
+
+**Paramétrage (une fois) :**
+
+1. `Paramètres → Identité Établissement` : renseigner **Catégorie réglementaire** et **Zone d'implantation**. Tant qu'ils sont vides, aucun plafond n'est appliqué (établissement public ou non encore classé).
+2. `Paramètres → Rubriques` : la case **Frais plafonnés** (cochée par défaut) indique les rubriques comptées dans le plafond. La décocher pour les **services annexes** (cantine, transport, internat) et les **frais autorisés par la tutelle**.
+
+**Contrôle à la saisie :** `Paramètres → Tarifs` refuse tout tarif qui porterait le total des rubriques plafonnées d'une classe et d'un statut au-delà du plafond : « Plafond réglementaire dépassé pour 6e A / Nouveau : 95 000 F de frais de scolarité pour un plafond de 90 000 F ». Réduire le montant, ou décocher « Frais plafonnés » sur la rubrique concernée s'il s'agit d'un service annexe.
+
+**Conformité et attestation :** `Paramètres → Tarifs → Conformité réglementaire` affiche, par classe et statut, le total plafonné, le plafond, l'écart et les rubriques hors plafond, pour l'année choisie. Quand toutes les lignes sont conformes, le bouton **Attestation de conformité (PDF)** délivre une attestation A4 (en-tête de l'établissement, tableau des tarifs, signataire du type de document *Attestation de conformité tarifaire*, catégorie Finance — `Paramètres → Signataires des documents`), à présenter à l'inspection ou aux parents.
 
 ---
 

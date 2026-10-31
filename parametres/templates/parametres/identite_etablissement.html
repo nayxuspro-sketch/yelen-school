@@ -77,6 +77,26 @@
                 <input type="date" name="date_agrement" value="{{ identite.date_agrement|date:'Y-m-d'|default:'' }}"
                     class="input" id="id_date_agrement">
             </div>
+
+            <div class="form-group">
+                <label class="input-label" for="id_categorie_reglementaire">Catégorie réglementaire (décret n° 2026-0761)</label>
+                <select name="categorie_reglementaire" class="input select" id="id_categorie_reglementaire">
+                    <option value="">Non classée — aucun plafond appliqué</option>
+                    <option value="1" {% if identite.categorie_reglementaire == 1 %}selected{% endif %}>Catégorie 1</option>
+                    <option value="2" {% if identite.categorie_reglementaire == 2 %}selected{% endif %}>Catégorie 2</option>
+                    <option value="3" {% if identite.categorie_reglementaire == 3 %}selected{% endif %}>Catégorie 3</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="input-label" for="id_zone_implantation">Zone d'implantation</label>
+                <select name="zone_implantation" class="input select" id="id_zone_implantation">
+                    <option value="">—</option>
+                    <option value="1" {% if identite.zone_implantation == 1 %}selected{% endif %}>Ouagadougou et Bobo-Dioulasso</option>
+                    <option value="2" {% if identite.zone_implantation == 2 %}selected{% endif %}>Chefs-lieux de province et communes périurbaines</option>
+                    <option value="3" {% if identite.zone_implantation == 3 %}selected{% endif %}>Zones rurales et zones non loties</option>
+                </select>
+            </div>
         </div>
 
         <div class="card-header">
