@@ -3,6 +3,22 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.45.5 — 2026-10-31
+
+- **Barre latérale : les sous-menus sont classés par ordre alphabétique.** Dans les treize menus
+  (Inscriptions, Pédagogie, Bulletins, Présences, Examens, Vie scolaire, Personnel, Finances, Vacations,
+  Communication, Manuels, Documents, Paramètres), les entrées de chaque sous-menu apparaissent désormais
+  de A à Z, selon l'ordre alphabétique **français** : accents et casse sont ignorés (« Élèves » à E,
+  « Évaluations » entre « Enseignements » et « Matières »), « & » compte comme séparateur (« Bourses &
+  Aides » à Bourses).
+- L'ordre des menus de premier niveau ne change pas ; aucun lien n'apparaît ni ne disparaît. Les entrées
+  conditionnelles suivent la même règle : « Mes cours » (réservé aux enseignants) est sortie de l'imbrication
+  « Appels » sans changer sa condition d'affichage, et « Paie du mois » (même droit que « Salaires ») a été
+  séparée pour être triable.
+- Vérifié : visibilité strictement identique pour les 8 comptes de démonstration (494 entrées), rendu réel
+  contrôlé dans le navigateur ; nouveau test `core/tests/test_menu_alphabetique.py` (ordre lu sur la page
+  rendue, les 13 sous-menus).
+
 ## 5.45.4 — 2026-10-31
 
 - **Guide d'aide : cliquer une entrée du sommaire n'affichait pas la section.** Le script du sommaire appelait

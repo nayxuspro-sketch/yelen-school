@@ -30,12 +30,15 @@ class TestPedagogieViews:
         assert 'classes_groupes' in response.context
 
     def test_enseignements_dans_le_menu_pedagogie(self, logged_in_client):
-        """L'entrée « Enseignements » de la barre latérale (retirée par erreur dans d402ea0) suit « Matières »."""
+        """L'entrée « Enseignements » de la barre latérale (retirée par erreur dans d402ea0) est présente.
+
+        Depuis la 5.45.5 les sous-menus sont classés par ordre alphabétique (core/tests/test_menu_alphabetique.py) :
+        l'ordre historique « Matières → Enseignements → Évaluations » n'est plus la règle.
+        """
         html = logged_in_client.get(reverse('pedagogie:matiere_list')).content.decode()
         menu = html.split('id="pedagogie-submenu"')[1].split('</div>')[0]
         lien = f'href="{reverse("pedagogie:enseignement_list")}" class="sb-item-submodern" data-url="/pedagogie/enseignements/"'
         assert lien in menu
-        assert menu.index('>Matières<') < menu.index('>Enseignements<') < menu.index('>Évaluations<')
 
     def test_evaluation_list_view(self, logged_in_client):
         """Vérifie l'accès à la liste des évaluations."""
