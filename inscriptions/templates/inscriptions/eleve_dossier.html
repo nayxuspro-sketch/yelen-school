@@ -1,0 +1,108 @@
+{% extends "core/base.html" %}
+
+{% block title %}Dossier documentaire — {{ eleve.get_nom_complet }}{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'inscriptions:eleve_list' %}" class="text-secondary">Élèves</a>
+            <span class="text-muted"> / </span>
+            <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="text-secondary">{{ eleve.matricule }}</a>
+            <span class="text-muted"> / </span>
+            <span>Dossier documentaire</span>
+        </p>
+        <h1 class="page-title">Dossier documentaire — {{ eleve.get_nom_complet }}</h1>
+        <p class="page-subtitle">
+            {% if inscription %}{{ inscription.classe.nom }} · {{ inscription.annee_scolaire.libelle }} · {% endif %}
+            {{ pieces|length }} pièce{{ pieces|length|pluralize }} déposée{{ pieces|length|pluralize }} · {{ documents|length }} document{{ documents|length|pluralize }} délivré{{ documents|length|pluralize }}
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'inscriptions:eleve_detail' eleve.pk %}" class="btn-secondary">Retour à la fiche</a>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} mb-4"><span>{{ message }}</span></div>
+{% endfor %}
+{% endif %}
+
+<div class="card animate-fade-up delay-1 mb-4">
+    <div class="card-header"><div class="card-title">Déposer une pièce</div></div>
+    <form method="post" enctype="multipart/form-data" class="card-body">
+        {% csrf_token %}
+        {% if form.errors %}<div class="alert alert-error mb-4"><span>{{ form.errors|join:" " }}</span></div>{% endif %}
+        <div class="form-grid-3">
+            <div class="form-group">
+                <label class="input-label" for="id_type_piece">Type de pièce</label>
+                <select name="type_piece" id="id_type_piece" class="input select" required>
+                    {% for valeur, libelle in form.fields.type_piece.choices %}<option value="{{ valeur }}">{{ libelle }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="input-label" for="id_libelle">Précision (facultatif)</label>
+                <input type="text" name="libelle" id="id_libelle" class="input" maxlength="120" placeholder="Ex. : copie légalisée 2026">
+            </div>
+            <div class="form-group">
+                <label class="input-label" for="id_fichier">Fichier (PDF ou image, 5 Mo au plus)</label>
+                <input type="file" name="fichier" id="id_fichier" class="input" accept=".pdf,.jpg,.jpeg,.png" required>
+            </div>
+        </div>
+        <div class="flex justify-end"><button type="submit" class="btn-primary">Déposer</button></div>
+    </form>
+</div>
+
+<div class="card animate-fade-up delay-2 mb-4">
+    <div class="card-header"><div class="card-title">Pièces du dossier d'inscription</div></div>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead><tr><th>Type</th><th>Précision</th><th>Déposée le</th><th>Par</th><th class="text-right">Fichier</th></tr></thead>
+            <tbody>
+                {% for p in pieces %}
+                <tr>
+                    <td><strong>{{ p.get_type_piece_display }}</strong></td>
+                    <td>{{ p.libelle|default:"—" }}</td>
+                    <td>{{ p.created_at|date:"d/m/Y" }}</td>
+                    <td>{{ p.created_by.get_full_name|default:"—" }}</td>
+                    <td class="text-right">
+                        <a href="{% url 'inscriptions:piece_dossier_telecharger' p.pk %}" class="dash-btn-sm">Télécharger</a>
+                        <form method="post" action="{% url 'inscriptions:piece_dossier_supprimer' p.pk %}" class="d-inline" data-csp-confirm-submit="Supprimer définitivement cette pièce du dossier ?">
+                            {% csrf_token %}
+                            <button type="submit" class="dash-btn-sm text-danger">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-muted">Aucune pièce déposée pour l'instant.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card animate-fade-up delay-3">
+    <div class="card-header"><div class="card-title">Documents délivrés</div></div>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead><tr><th>Document</th><th>N°</th><th>Année</th><th>Émis le</th><th>Signataire</th><th>Par</th><th class="text-right">PDF</th></tr></thead>
+            <tbody>
+                {% for d in documents %}
+                <tr>
+                    <td><strong>{{ d.type_document.libelle }}</strong>{% if d.version > 1 %} · v{{ d.version }}{% endif %}</td>
+                    <td class="text-mono">{{ d.numero_document|default:"—" }}</td>
+                    <td>{{ d.annee_scolaire.libelle }}</td>
+                    <td>{{ d.created_at|date:"d/m/Y" }}</td>
+                    <td>{{ d.signataire_nom|default:d.signataire }}</td>
+                    <td>{{ d.genere_par.get_full_name|default:"—" }}</td>
+                    <td class="text-right"><a href="{{ d.fichier.url }}" target="_blank" rel="noopener">Ouvrir</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-muted">Aucun document délivré pour l'instant.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

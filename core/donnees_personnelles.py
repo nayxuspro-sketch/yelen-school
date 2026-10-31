@@ -98,6 +98,9 @@ def anonymiser(etablissement, user=None, request=None, annees=None):
             nb_fichiers += _effacer_fichier(document.fichier)
             document.fichier = ''
             document.save(update_fields=['fichier'])
+        for piece in eleve.pieces_dossier.all():
+            nb_fichiers += _effacer_fichier(piece.fichier)
+            piece.delete()
         DemandePaiementMobile.objects.filter(inscription__in=inscriptions).exclude(telephone='').update(telephone='')
         LigneReleve.objects.filter(paiement__inscription__in=inscriptions) \
             .exclude(nom_payeur='', telephone_payeur='').update(nom_payeur='', telephone_payeur='')
@@ -158,5 +161,6 @@ def exporter_dossier(eleve):
         'sanctions': [_serialiser(s) for s in SanctionDisciplinaire.objects.filter(inscription__in=inscriptions)],
         'parcours': [_serialiser(e) for e in eleve.evenements_parcours.all()],
         'documents_generes': [_serialiser(d) for d in Document.objects.filter(inscription__in=inscriptions)],
+        'pieces_dossier': [_serialiser(p) for p in eleve.pieces_dossier.all()],
         'comptes_lies': [{'identifiant': u.username, 'role': u.role, 'actif': u.is_active} for u in eleve.utilisateurs_lies.all()],
     }

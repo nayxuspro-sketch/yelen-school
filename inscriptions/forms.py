@@ -294,3 +294,17 @@ class PreInscriptionForm(forms.ModelForm):
         self.instance.nom = ' '.join(self.instance.nom.split()).upper()
         self.instance.prenom = ' '.join(self.instance.prenom.split())
         return super().save(commit)
+
+
+class PieceDossierForm(forms.ModelForm):
+    """Dépôt d'une pièce du dossier (PDF ou image, 5 Mo au plus — validation du contenu réel)."""
+    class Meta:
+        from .models import PieceDossier
+        model = PieceDossier
+        fields = ['type_piece', 'libelle', 'fichier']
+
+    def clean_fichier(self):
+        from core.validators import validate_piece_jointe
+        fichier = self.cleaned_data['fichier']
+        validate_piece_jointe(fichier)
+        return fichier

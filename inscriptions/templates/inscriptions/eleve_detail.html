@@ -34,6 +34,12 @@
       </svg>
       Exporter le dossier
     </a>
+    <a href="{% url 'inscriptions:eleve_dossier' eleve.pk %}" class="dash-btn-secondary">
+      <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+      </svg>
+      Dossier documentaire
+    </a>
     <a href="{% url 'inscriptions:inscription_create' eleve.pk %}" class="btn-primary">
       <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>

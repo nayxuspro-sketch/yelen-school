@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.36.0
-version_guide: 5.29
-date_mise_a_jour: 31/10/2026 (5.36.0 : portail élève aligné sur le portail parent §19.6)
+version_logiciel: 5.37.0
+version_guide: 5.30
+date_mise_a_jour: 31/10/2026 (5.37.0 : dossier documentaire de l'élève §4.4)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.36.0 — Octobre 2026 (Guide v5.29)
+### Version 5.37.0 — Octobre 2026 (Guide v5.30)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -42,6 +42,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [3.8 SMS automatiques planifiés — alertes parents et compte rendu quotidien du promoteur](#38-sms-automatiques-planifiés--alertes-parents-et-compte-rendu-quotidien-du-promoteur)
   - [3.9 Plafonds réglementaires des frais de scolarité (5.34.0)](#39-plafonds-réglementaires-des-frais-de-scolarité-5340)
   - [3.10 Données personnelles : conservation, anonymisation, registre (5.35.0)](#310-données-personnelles--conservation-anonymisation-registre-5350)
+  - [4.4 Dossier documentaire de l'élève (5.37.0)](#44-dossier-documentaire-de-lélève-5370)
 - [4. INSCRIPTION ET RÉINSCRIPTION](#4-inscription-et-réinscription)
   - [4.1 Créer un élève — détection des homonymes](#41-créer-un-élève--détection-des-homonymes)
   - [4.2 Inscrire un élève — capacité des classes et année clôturée](#42-inscrire-un-élève--capacité-des-classes-et-année-clôturée)
@@ -877,6 +878,15 @@ Un élève refusé n'empêche pas les autres : chaque refus est affiché nommém
 **Un par un :** le bouton **Détail** ouvre la réinscription individuelle avec la classe proposée et le statut élève modifiable.
 
 ---
+
+### 4.4 Dossier documentaire de l'élève (5.37.0)
+
+**Accès :** fiche d'un élève → **Dossier documentaire** (`/inscriptions/eleve/<id>/dossier/`). Fini les classeurs : toutes les pièces et tous les documents d'un élève sont sur une page.
+
+1. **Pièces du dossier d'inscription** — type (acte de naissance, photo d'identité, bulletin de l'année précédente, certificat de transfert, carnet de vaccination, autre), précision libre, fichier **PDF ou image (JPEG/PNG) de 5 Mo au plus** — le contenu réel est vérifié, une extension trompeuse est refusée. Chaque ligne indique la **date de dépôt** et **qui l'a déposée** ; téléchargement et suppression (confirmation) à tout moment.
+2. **Documents délivrés** — tous les documents émis pour l'élève par l'application (certificat de scolarité, attestation de non-redevabilité, convocation, bulletin archivé…) avec leur **numéro**, l'**année scolaire**, la **date d'émission**, le **signataire** et l'agent qui les a générés ; le PDF s'ouvre d'un clic. Les documents sans fichier archivé ne sont pas listés.
+3. **Portail parent et élève** : les documents délivrés sont aussi téléchargeables par la famille (`§19.4`).
+4. **Données personnelles** : les pièces figurent dans l'export du dossier (`§3.10`) et leurs fichiers sont supprimés avec les autres données lors de l'anonymisation d'un élève sorti ; le droit d'accès « Élèves » de la matrice couvre la page.
 
 ## 5. GESTION DU PERSONNEL
 

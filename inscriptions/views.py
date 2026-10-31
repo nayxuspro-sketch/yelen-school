@@ -2,11 +2,13 @@ import logging
 import uuid
 
 from django.shortcuts import render, get_object_or_404, redirect
+import os
+
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -471,6 +473,64 @@ def eleve_list_pdf(request):
 
 
 @login_required
+@login_required
+def eleve_dossier(request, pk):
+    """Dossier documentaire de l'élève : pièces d'inscription déposées et documents délivrés (date, signataire)."""
+    from documents.models import Document
+    from .forms import PieceDossierForm
+    eleve = get_object_or_404(Eleve, pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+    if etab and eleve.inscriptions.exists() and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+        messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
+    inscription = eleve.inscriptions.select_related('annee_scolaire', 'classe').order_by('-annee_scolaire__date_debut').first()
+    if request.method == 'POST':
+        form = PieceDossierForm(request.POST, request.FILES)
+        if form.is_valid():
+            piece = form.save(commit=False)
+            piece.eleve = eleve
+            piece.inscription = inscription
+            piece.created_by = request.user
+            piece.save()
+            messages.success(request, f"Pièce déposée : {piece.get_type_piece_display()}.")
+            return redirect('inscriptions:eleve_dossier', pk=eleve.pk)
+    else:
+        form = PieceDossierForm()
+    pieces = eleve.pieces_dossier.select_related('inscription__annee_scolaire')
+    documents = (
+        Document.objects.filter(inscription__eleve=eleve).exclude(fichier='')
+        .select_related('type_document', 'annee_scolaire').order_by('-created_at')
+    )
+    return render(request, 'inscriptions/eleve_dossier.html', {
+        'eleve': eleve, 'inscription': inscription, 'pieces': pieces, 'documents': documents, 'form': form,
+    })
+
+
+@login_required
+def piece_dossier_telecharger(request, pk):
+    from .models import PieceDossier
+    piece = get_object_or_404(PieceDossier.objects.select_related('eleve'), pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+    if etab and piece.eleve.inscriptions.exists() and not piece.eleve.inscriptions.filter(classe__etablissement=etab).exists():
+        raise Http404
+    return FileResponse(piece.fichier.open('rb'), as_attachment=True, filename=os.path.basename(piece.fichier.name))
+
+
+@login_required
+@require_POST
+def piece_dossier_supprimer(request, pk):
+    from .models import PieceDossier
+    piece = get_object_or_404(PieceDossier, pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+    if etab and piece.eleve.inscriptions.exists() and not piece.eleve.inscriptions.filter(classe__etablissement=etab).exists():
+        raise Http404
+    eleve_pk = piece.eleve_id
+    piece.fichier.delete(save=False)
+    piece.delete()
+    messages.success(request, "Pièce supprimée du dossier.")
+    return redirect('inscriptions:eleve_dossier', pk=eleve_pk)
+
+
 @login_required
 def eleve_export_donnees(request, pk):
     """Dossier complet d'un élève en JSON (droit d'accès — loi n° 001-2021/AN)."""

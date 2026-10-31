@@ -698,3 +698,36 @@ class PreInscription(BaseModel):
 
     def get_nom_complet(self):
         return f"{self.nom.upper()} {self.prenom}".strip()
+
+
+class TypePieceDossier(models.TextChoices):
+    ACTE_NAISSANCE = 'ACTE_NAISSANCE', _('Acte de naissance')
+    PHOTO = 'PHOTO', _('Photo d\'identité')
+    BULLETIN = 'BULLETIN', _('Bulletin de l\'année précédente')
+    TRANSFERT = 'TRANSFERT', _('Certificat de transfert')
+    VACCINATION = 'VACCINATION', _('Carnet de vaccination')
+    AUTRE = 'AUTRE', _('Autre pièce')
+
+
+class PieceDossier(BaseModel):
+    """Pièce du dossier d'inscription déposée par la famille (acte de naissance, bulletin, certificat…).
+    Conservée sous ``media/eleves/dossier/`` ; effacée avec les données personnelles de l'élève (§3.10)."""
+    eleve = models.ForeignKey(Eleve, on_delete=models.CASCADE, related_name='pieces_dossier', verbose_name=_("Élève"))
+    inscription = models.ForeignKey('Inscription', on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='pieces_dossier', verbose_name=_("Inscription"))
+    type_piece = models.CharField(max_length=20, choices=TypePieceDossier.choices, verbose_name=_("Type de pièce"))
+    libelle = models.CharField(max_length=120, blank=True, default='', verbose_name=_("Précision"),
+                               help_text=_("Facultatif : précision affichée à côté du type"))
+    fichier = models.FileField(upload_to='eleves/dossier/%Y/', verbose_name=_("Fichier (PDF ou image)"))
+
+    class Meta:
+        verbose_name = _("Pièce du dossier")
+        verbose_name_plural = _("Pièces du dossier")
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.get_type_piece_display()} — {self.eleve}"
+
+    def clean(self):
+        from core.validators import validate_piece_jointe
+        validate_piece_jointe(self.fichier)

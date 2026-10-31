@@ -3,6 +3,18 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.37.0 — 2026-10-31
+
+### Dossier documentaire par élève
+
+- Modèle `inscriptions.PieceDossier` (migration `0023`) : type de pièce, précision, fichier PDF/image validé
+  (`core.validators.validate_piece_jointe`, 5 Mo), inscription, déposant ; sous `media/eleves/dossier/`.
+- Page *fiche élève → Dossier documentaire* (`inscriptions:eleve_dossier`) : **pièces déposées** (date, déposant,
+  téléchargement, suppression) et **documents délivrés** (type, numéro, année, date d'émission, signataire, agent,
+  PDF). Dépôt/téléchargement/suppression isolés par établissement.
+- Export du dossier (§3.10) enrichi des pièces ; leurs fichiers sont supprimés à l'anonymisation.
+- Tests (4), guide §4.4.
+
 ## 5.36.0 — 2026-10-31
 
 ### Portail élève au niveau du portail parent
