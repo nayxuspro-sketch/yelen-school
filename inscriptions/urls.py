@@ -10,6 +10,7 @@ urlpatterns = [
     path('pdf/', views.eleve_list_pdf, name='eleve_list_pdf'),
     path('eleve/nouveau/', views.eleve_create, name='eleve_create'),
     path('eleve/<uuid:pk>/', views.eleve_detail, name='eleve_detail'),
+    path('eleve/<uuid:pk>/donnees.json', views.eleve_export_donnees, name='eleve_export_donnees'),
     path('eleve/<uuid:pk>/modifier/', views.eleve_update, name='eleve_update'),
     path('eleve/<uuid:pk>/supprimer/', views.eleve_delete, name='eleve_delete'),
     path('eleve/<uuid:pk>/inscrire/', views.inscription_create, name='inscription_create'),

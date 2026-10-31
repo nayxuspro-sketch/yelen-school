@@ -223,6 +223,10 @@ class Eleve(BaseModel):
                                         help_text=_("Nom et téléphone"))
     personnes_autorisees = models.TextField(blank=True, default='', verbose_name=_("Personnes autorisées à récupérer l'élève"),
                                             help_text=_("Une personne par ligne : Nom — lien — téléphone"))
+    anonymise_le = models.DateTimeField(
+        null=True, blank=True, editable=False, verbose_name=_("Anonymisé le"),
+        help_text=_("Données personnelles effacées à l'expiration de la durée de conservation"),
+    )
 
     class Meta:
         verbose_name = _("Élève")

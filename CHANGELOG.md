@@ -3,6 +3,21 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.35.0 — 2026-10-31
+
+### Cycle de vie des données personnelles (loi n° 001-2021/AN)
+
+- *Paramètres → Données personnelles* : **durée de conservation** (10 ans par défaut après la dernière année
+  d'inscription), responsable du traitement, compte et aperçu des élèves sortis, bouton **Anonymiser** (confirmation,
+  journal d'audit), **registre des traitements** (`parametres.PolitiqueDonnees`, migration 0044).
+- Anonymisation (`core/donnees_personnelles.py`) : identité, contacts, parents/tuteur, santé, photo, justificatifs
+  d'absence et PDF archivés (fichiers supprimés), payeur Mobile Money, pré-inscriptions expirées ; comptes parent/élève
+  sans élève identifiable fermés ; inscriptions, notes et paiements conservés anonymes (`Eleve.anonymise_le`,
+  migration `inscriptions.0022`).
+- Fiche élève → **Exporter le dossier** (JSON complet, journalisé) : `inscriptions:eleve_export_donnees`.
+- Commande `anonymiser_donnees [--dry-run]` pour une exécution planifiée.
+- Guide §3.10.
+
 ## 5.34.1 — 2026-10-31
 
 - Migration `parametres.0042` : le code du type de document « Attestation de conformité tarifaire » dépassait les

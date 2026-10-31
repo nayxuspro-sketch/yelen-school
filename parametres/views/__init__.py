@@ -116,3 +116,4 @@ from .messages_sms import (  # noqa: F401
     sms_auto_save,
     sms_auto_executer,
 )
+from .donnees import anonymiser, donnees_personnelles  # noqa: F401

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.34.1
-version_guide: 5.27
-date_mise_a_jour: 31/10/2026 (5.34.0 : plafonds réglementaires des frais de scolarité §3.9)
+version_logiciel: 5.35.0
+version_guide: 5.28
+date_mise_a_jour: 31/10/2026 (5.35.0 : données personnelles — conservation, anonymisation, registre §3.10)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.34.0 — Octobre 2026 (Guide v5.27)
+### Version 5.35.0 — Octobre 2026 (Guide v5.28)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -41,6 +41,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [3.7 Droits d'accès par rôle](#37-droits-daccès-par-rôle)
   - [3.8 SMS automatiques planifiés — alertes parents et compte rendu quotidien du promoteur](#38-sms-automatiques-planifiés--alertes-parents-et-compte-rendu-quotidien-du-promoteur)
   - [3.9 Plafonds réglementaires des frais de scolarité (5.34.0)](#39-plafonds-réglementaires-des-frais-de-scolarité-5340)
+  - [3.10 Données personnelles : conservation, anonymisation, registre (5.35.0)](#310-données-personnelles--conservation-anonymisation-registre-5350)
 - [4. INSCRIPTION ET RÉINSCRIPTION](#4-inscription-et-réinscription)
   - [4.1 Créer un élève — détection des homonymes](#41-créer-un-élève--détection-des-homonymes)
   - [4.2 Inscrire un élève — capacité des classes et année clôturée](#42-inscrire-un-élève--capacité-des-classes-et-année-clôturée)
@@ -818,6 +819,24 @@ LPB 30/10: Encaisse 1 250 000 F (23 recus), especes 950 000 F. Depenses 185 000 
 **Conformité et attestation :** `Paramètres → Tarifs → Conformité réglementaire` affiche, par classe et statut, le total plafonné, le plafond, l'écart et les rubriques hors plafond, pour l'année choisie. Quand toutes les lignes sont conformes, le bouton **Attestation de conformité (PDF)** délivre une attestation A4 (en-tête de l'établissement, tableau des tarifs, signataire du type de document *Attestation de conformité tarifaire*, catégorie Finance — `Paramètres → Signataires des documents`), à présenter à l'inspection ou aux parents.
 
 ---
+
+### 3.10 Données personnelles : conservation, anonymisation, registre (5.35.0)
+
+**Référence :** loi n° 001-2021/AN du 30 mars 2021 portant protection des personnes à l'égard du traitement des données à caractère personnel. Un établissement ne conserve pas indéfiniment l'identité, les contacts, la photo et les données de santé d'élèves partis depuis des années.
+
+**Accès :** *Paramètres → Données personnelles* (Direction).
+
+1. **Politique de conservation** — durée (par défaut **10 ans** après la fin de la dernière année scolaire d'inscription, de 2 à 50 ans), responsable du traitement et son contact. Ces mentions figurent au bas du registre.
+2. **Anonymisation des élèves sortis** — la page compte les élèves dont **toutes** les années d'inscription sont terminées depuis plus longtemps que la durée choisie (aperçu des 20 premiers) ; le bouton **Anonymiser** (confirmation) efface, de façon **irréversible** et journalisée (journal d'audit) :
+   - identité (nom → « ANONYMISÉ »), lieux de naissance et de résidence, téléphones, e-mail, parents et tuteur, établissement d'origine, **photo** (fichier supprimé), données de **santé** (groupe sanguin, allergies, informations médicales, médecin, personnes autorisées) ;
+   - les **justificatifs d'absence** et les **PDF archivés** (bulletins, certificats…) de l'élève — la trace du document émis (type, date, signataire) est conservée sans le fichier ;
+   - le nom et le numéro du payeur des lignes **Mobile Money** ; les **pré-inscriptions** des années expirées sont effacées ;
+   - les **comptes parent ou élève** qui n'ont plus aucun élève identifiable sont fermés (identifiant, nom, téléphone et e-mail effacés, mot de passe inutilisable).
+   Les inscriptions, notes, absences et **paiements** (registre comptable immuable) restent, désormais anonymes : les statistiques pluriannuelles ne changent pas.
+3. **Registre des traitements** — tableau des finalités (scolarité, évaluation, présences et discipline, frais, communication, personnel, comptes), données traitées, personnes concernées, durée et destinataires ; imprimable depuis le navigateur.
+4. **Export du dossier d'un élève** (droit d'accès) — fiche élève → **Exporter le dossier** : fichier JSON `dossier-<matricule>.json` contenant identité, inscriptions, paiements, notes, présences, justifications, sanctions, parcours, documents émis et comptes liés. Chaque export est journalisé.
+
+**Automatisation :** `python manage.py anonymiser_donnees --dry-run` compte les élèves concernés par établissement ; sans `--dry-run`, il applique la politique de chaque établissement (à planifier une fois par an, par exemple en septembre).
 
 ## 4. INSCRIPTION ET RÉINSCRIPTION
 

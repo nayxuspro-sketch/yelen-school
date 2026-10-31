@@ -1,0 +1,106 @@
+{% extends "core/base.html" %}
+{% load l10n %}
+
+{% block title %}Données personnelles — Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+            <span class="text-muted"> / </span>
+            <span>Données personnelles</span>
+        </p>
+        <h1 class="page-title">Données personnelles</h1>
+        <p class="page-subtitle">Durée de conservation, anonymisation des élèves sortis et registre des traitements — loi n° 001-2021/AN du 30 mars 2021.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'parametres:index' %}" class="btn-secondary">Retour</a>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} mb-4"><span>{{ message }}</span></div>
+{% endfor %}
+{% endif %}
+
+<div class="card animate-fade-up delay-1 mb-4">
+    <div class="card-header"><div class="card-title">Politique de conservation</div></div>
+    <form method="post" class="card-body">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-error mb-4"><span>{{ form.non_field_errors|join:" " }}</span></div>{% endif %}
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="input-label" for="id_duree_conservation_annees">Durée de conservation après la dernière inscription (années)</label>
+                <input type="number" name="duree_conservation_annees" value="{{ form.duree_conservation_annees.value|unlocalize }}" min="2" max="50" class="input" id="id_duree_conservation_annees" required>
+                {% if form.duree_conservation_annees.errors %}<p class="form-error">{{ form.duree_conservation_annees.errors|join:" " }}</p>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="input-label" for="id_responsable_traitement">Responsable du traitement</label>
+                <input type="text" name="responsable_traitement" value="{{ form.responsable_traitement.value|default:'' }}" class="input" id="id_responsable_traitement" placeholder="Ex. : le Directeur">
+            </div>
+            <div class="form-group">
+                <label class="input-label" for="id_contact_responsable">Contact du responsable</label>
+                <input type="text" name="contact_responsable" value="{{ form.contact_responsable.value|default:'' }}" class="input" id="id_contact_responsable" placeholder="Téléphone ou e-mail">
+            </div>
+        </div>
+        <div class="flex justify-end gap-2">
+            <button type="submit" class="btn-primary">Enregistrer</button>
+        </div>
+    </form>
+</div>
+
+<div class="card animate-fade-up delay-2 mb-4">
+    <div class="card-header">
+        <div class="card-title">Anonymisation des élèves sortis</div>
+        <div class="text-sm text-muted">
+            Dernière anonymisation : {% if politique.derniere_anonymisation %}{{ politique.derniere_anonymisation|date:"d/m/Y H:i" }}{% else %}jamais{% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="mb-3">
+            <strong>{{ nb_candidats }}</strong> élève{{ nb_candidats|pluralize }} dont la dernière année scolaire s'est achevée avant le {{ date_limite|date:"d/m/Y" }}.
+            L'anonymisation efface l'identité, les contacts, la photo, les données de santé, les justificatifs et les PDF archivés ;
+            les inscriptions, notes et paiements sont conservés sans nom. Les comptes parent ou élève sans autre élève identifiable sont fermés. Cette opération est irréversible et journalisée.
+        </p>
+        {% if candidats %}
+        <div class="table-wrapper mb-3">
+            <table class="table">
+                <thead><tr><th>Élève</th><th>Matricule</th><th>Dernière année</th></tr></thead>
+                <tbody>
+                    {% for e in candidats %}
+                    <tr><td>{{ e.nom }} {{ e.prenom }}</td><td>{{ e.matricule }}</td><td>{{ e.fin_derniere|date:"d/m/Y" }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if nb_candidats > 20 %}<p class="text-sm text-muted">Aperçu limité aux 20 premiers.</p>{% endif %}
+        </div>
+        <form method="post" action="{% url 'parametres:anonymiser_donnees' %}" data-csp-confirm-submit="Anonymiser définitivement {{ nb_candidats }} élève(s) ? Cette opération est irréversible.">
+            {% csrf_token %}
+            <button type="submit" class="btn-danger">Anonymiser {{ nb_candidats }} élève{{ nb_candidats|pluralize }}</button>
+        </form>
+        {% else %}
+        <span class="badge badge-success">Aucun élève à anonymiser</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card animate-fade-up delay-3">
+    <div class="card-header"><div class="card-title">Registre des traitements</div></div>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead><tr><th>Finalité</th><th>Données</th><th>Personnes</th><th>Conservation</th><th>Destinataires</th></tr></thead>
+            <tbody>
+                {% for finalite, donnees, personnes, duree, destinataires in registre %}
+                <tr><td><strong>{{ finalite }}</strong></td><td>{{ donnees }}</td><td>{{ personnes }}</td><td>{{ duree }}</td><td>{{ destinataires }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-body text-sm text-muted">
+        Responsable du traitement : {{ politique.responsable_traitement|default:"non renseigné" }}{% if politique.contact_responsable %} — {{ politique.contact_responsable }}{% endif %}.
+        Durée de conservation des dossiers élèves : {{ politique.duree_conservation_annees }} ans après la dernière inscription.
+    </div>
+</div>
+{% endblock %}

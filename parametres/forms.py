@@ -342,3 +342,16 @@ class RolePersonnaliseForm(forms.ModelForm):
             raise forms.ValidationError(f"Un rôle de code « {code} » existe déjà.")
         self.instance.code = code
         return libelle
+
+
+class PolitiqueDonneesForm(forms.ModelForm):
+    class Meta:
+        from .models import PolitiqueDonnees
+        model = PolitiqueDonnees
+        fields = ['duree_conservation_annees', 'responsable_traitement', 'contact_responsable']
+
+    def clean_duree_conservation_annees(self):
+        duree = self.cleaned_data['duree_conservation_annees']
+        if not 2 <= duree <= 50:
+            raise forms.ValidationError("La durée de conservation doit être comprise entre 2 et 50 ans.")
+        return duree

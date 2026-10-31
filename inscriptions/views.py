@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -471,6 +471,22 @@ def eleve_list_pdf(request):
 
 
 @login_required
+@login_required
+def eleve_export_donnees(request, pk):
+    """Dossier complet d'un élève en JSON (droit d'accès — loi n° 001-2021/AN)."""
+    from core.audit import record_audit
+    from core.donnees_personnelles import exporter_dossier
+    eleve = get_object_or_404(Eleve, pk=pk)
+    etab = getattr(request.user, 'etablissement', None)
+    if etab and eleve.inscriptions.exists() and not eleve.inscriptions.filter(classe__etablissement=etab).exists():
+        messages.error(request, "Accès refusé. Cet élève n'appartient pas à votre établissement.")
+        return redirect('inscriptions:eleve_list')
+    record_audit(instance=eleve, action='EXPORT', user=request.user, request=request, reason="Export du dossier de l'élève (droit d'accès)")
+    reponse = JsonResponse(exporter_dossier(eleve), json_dumps_params={'ensure_ascii': False, 'indent': 2})
+    reponse['Content-Disposition'] = f'attachment; filename="dossier-{eleve.matricule or eleve.pk}.json"'
+    return reponse
+
+
 def eleve_detail(request, pk):
     """Détails d'un élève."""
     eleve = get_object_or_404(Eleve, pk=pk)

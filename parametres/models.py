@@ -2056,3 +2056,26 @@ class DroitAcces(BaseModel):
     def __str__(self):
         cible = f"{self.module} {self.fonctionnalite} {self.action}".strip()
         return f"{self.role} → {cible} : {'autorisé' if self.autorise else 'refusé'}"
+
+
+class PolitiqueDonnees(BaseModel):
+    """Cycle de vie des données personnelles (loi n° 001-2021/AN) : durée de conservation après la dernière
+    inscription, responsable du traitement, dernière anonymisation."""
+    etablissement = models.OneToOneField(
+        'etablissements.Etablissement', on_delete=models.CASCADE, related_name='politique_donnees',
+        verbose_name=_("Établissement"),
+    )
+    duree_conservation_annees = models.PositiveSmallIntegerField(
+        default=10, verbose_name=_("Durée de conservation (années)"),
+        help_text=_("Après la fin de la dernière année scolaire d'inscription, les données de l'élève et de ses parents sont anonymisées"),
+    )
+    responsable_traitement = models.CharField(max_length=150, blank=True, default='', verbose_name=_("Responsable du traitement"))
+    contact_responsable = models.CharField(max_length=150, blank=True, default='', verbose_name=_("Contact du responsable"))
+    derniere_anonymisation = models.DateTimeField(null=True, blank=True, verbose_name=_("Dernière anonymisation"))
+
+    class Meta:
+        verbose_name = _("Politique de données personnelles")
+        verbose_name_plural = _("Politiques de données personnelles")
+
+    def __str__(self):
+        return f"Conservation {self.duree_conservation_annees} ans — {self.etablissement}"

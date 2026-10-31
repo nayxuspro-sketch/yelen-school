@@ -28,6 +28,12 @@
       </svg>
       Modifier
     </a>
+    <a href="{% url 'inscriptions:eleve_export_donnees' eleve.pk %}" class="dash-btn-secondary" title="Toutes les données détenues sur l'élève (JSON)">
+      <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      Exporter le dossier
+    </a>
     <a href="{% url 'inscriptions:inscription_create' eleve.pk %}" class="btn-primary">
       <svg aria-hidden="true" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>

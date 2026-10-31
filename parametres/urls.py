@@ -143,6 +143,8 @@ urlpatterns = [
     # Établissement
     path('etablissement/', views.etablissement_edit, name='etablissement'),
     path('identite-etablissement/', views.identite_etablissement, name='identite_etablissement'),
+    path('donnees-personnelles/', views.donnees_personnelles, name='donnees_personnelles'),
+    path('donnees-personnelles/anonymiser/', views.anonymiser, name='anonymiser_donnees'),
 
     # Calendrier scolaire
     path('calendrier/', views.calendrier, name='calendrier'),

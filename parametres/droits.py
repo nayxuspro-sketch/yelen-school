@@ -344,6 +344,7 @@ MODULES = (
         _f('/parametres/mentions-distinctions/', 'Mentions / distinctions'),
         _f('/parametres/titres-fonctions/', 'Titres Fonctions'),
         _f('/parametres/salles/', 'Salles'),
+        _f('/parametres/donnees-personnelles/', 'Données personnelles (conservation, anonymisation)', roles=_DIRECTION),
         _f('/parametres/titres-honorifiques/', 'Titres Honorifiques'),
     )),
 )
