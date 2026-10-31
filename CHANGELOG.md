@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.33.1 — 2026-10-31
+
+- CI : le paquet `libgdk-pixbuf-xlib-2.0-0` n'existe plus sur l'image `ubuntu-latest` (Ubuntu 26.04) et WeasyPrint 70
+  ne l'utilise pas — retiré des deux jobs (`libpangoft2-1.0-0` ajouté). L'image Docker (Debian) est inchangée.
+
 ## 5.33.0 — 2026-10-31
 
 ### Remise en ordre du guide, guide de démarrage rapide, favicon
