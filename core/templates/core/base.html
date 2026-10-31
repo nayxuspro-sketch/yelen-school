@@ -33,6 +33,8 @@
 <body class="app-layout{% if yelen_environnement_test %} env-test{% endif %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <a href="#main-content" class="skip-link">Aller au contenu</a>
 
+  {% include "core/includes/bandeau_demo.html" %}
+
   {# ── Bandeau hors-ligne (masqué par défaut, affiché via JS) ── #}
   <div id="offline-banner" role="alert" aria-live="assertive">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"

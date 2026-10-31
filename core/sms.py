@@ -69,7 +69,11 @@ def get_sms_val(key: str):
 
 def sms_actifs() -> bool:
     """SMS_ENABLED interprété quelle que soit sa source (booléen des settings ou chaîne « True »/« False » du .env
-    et de la configuration runtime)."""
+    et de la configuration runtime). En mode démonstration, les SMS sont toujours inactifs : rien n'est mis en
+    file et la passerelle n'est jamais sollicitée."""
+    from core import mode_demo
+    if mode_demo.actif():
+        return False
     valeur = get_sms_val('SMS_ENABLED')
     return valeur is True or str(valeur).strip().lower() in {'1', 'true', 'yes', 'on'}
 

@@ -99,8 +99,11 @@ def charge_utile(notification):
 def notifier(notification):
     """Pousse ``notification`` sur les appareils abonnés de son destinataire, en arrière-plan une fois la transaction
     validée. Retourne False (et ne fait rien) si le destinataire n'a aucun appareil abonné."""
+    from core import mode_demo
     from core.models import AbonnementPush
 
+    if mode_demo.actif():
+        return False
     if not AbonnementPush.objects.filter(utilisateur_id=notification.destinataire_id).exists():
         return False
     transaction.on_commit(lambda: _en_arriere_plan(envoyer_notification, notification.pk))

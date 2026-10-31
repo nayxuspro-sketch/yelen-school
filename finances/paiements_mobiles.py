@@ -55,6 +55,11 @@ def confirmer_demande(demande, utilisateur, reference, raison):
 # ── CinetPay ────────────────────────────────────────────────────────────────
 
 def cinetpay_configure():
+    """Vrai si la passerelle CinetPay est configurée. En mode démonstration, elle n'est jamais sollicitée :
+    la demande Mobile Money est traitée comme « non configurée » (aucun lien, aucun appel sortant)."""
+    from core import mode_demo
+    if mode_demo.actif():
+        return False
     return bool(settings.CINETPAY_API_KEY and settings.CINETPAY_SITE_ID and settings.CINETPAY_URL_PUBLIQUE)
 
 

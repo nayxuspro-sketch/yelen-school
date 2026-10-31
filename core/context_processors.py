@@ -16,3 +16,9 @@ def aide(request):
 def environnement(request):
     """Bandeau « ENVIRONNEMENT DE TEST » (YELEN_ENVIRONNEMENT=test, copie isolée de la production)."""
     return {'yelen_environnement_test': settings.YELEN_ENVIRONNEMENT_TEST}
+
+
+def demo(request):
+    """Bandeau « DÉMONSTRATION » (DEMO_MODE=true, instance d'essai publique de l'offre hébergée)."""
+    from core import mode_demo
+    return {'yelen_mode_demo': mode_demo.actif()}

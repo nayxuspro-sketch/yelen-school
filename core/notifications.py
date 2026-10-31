@@ -49,6 +49,10 @@ def creer_notification(destinataire, type_notif, titre, message, lien='',
     except Exception:
         logger.exception("Planification de la notification push échouée pour %s", destinataire)
 
+    from core import mode_demo
+    if mode_demo.actif():
+        envoyer_email = envoyer_sms = False       # aucune sortie : ni e-mail, ni SMS
+
     if envoyer_email and destinataire.email:
         try:
             contenu_html = render_to_string('core/emails/notification.html', {

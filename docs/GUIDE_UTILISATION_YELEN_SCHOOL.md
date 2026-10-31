@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.44.2
+version_logiciel: 5.45.0
 version_guide: 5.35
-date_mise_a_jour: 31/10/2026 (5.44.0 : organisation du code et des styles §38.4)
+date_mise_a_jour: 31/10/2026 (5.45.0 : offre hébergée et instance de démonstration §39)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -316,6 +316,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [38.2 Parcours navigateur vérifiés à chaque livraison (5.42.0)](#382-parcours-navigateur-vérifiés-à-chaque-livraison-5420)
   - [38.3 Modules transverses couverts (5.43.0)](#383-modules-transverses-couverts-5430)
   - [38.4 Organisation du code et des styles (5.44.0)](#384-organisation-du-code-et-des-styles-5440)
+- [39. Offre hébergée et instance de démonstration (5.45.0)](#39-offre-hébergée-et-instance-de-démonstration-5450)
 
 ---
 
@@ -7762,3 +7763,42 @@ ni pour le code appelant** : chaque nom reste importable à son ancienne adresse
   navigateur et reste soumise à la politique de sécurité de contenu.
 - Les tests gardent leurs cibles habituelles ; seuls les tests qui simulent la génération PDF désignent
   désormais le module de la vue concernée.
+
+## 39. Offre hébergée et instance de démonstration (5.45.0)
+
+Deux façons d'utiliser YELEN SCHOOL, à partir de **la même image** :
+
+| | Installation d'école (par défaut) | Instance de démonstration |
+|---|---|---|
+| Où | le serveur de l'école, sans internet | un serveur distant (VPS), derrière le proxy de l'hébergeur |
+| Base | SQLite, fichier local | PostgreSQL + Redis (volumes Docker) |
+| Licence | requise (`LICENSE_ENFORCEMENT=true`) | aucune |
+| Sorties | SMS, e-mail, push, Mobile Money actifs | **toutes coupées** |
+| Données | celles de l'école | jeu de démonstration, remis à zéro chaque nuit |
+
+### 39.1 Mise en service de la démonstration
+
+1. Copier `.env.demo.example` en `.env.demo` et renseigner `DB_PASSWORD`, `SECRET_KEY`, `ALLOWED_HOSTS`
+   et `CSRF_TRUSTED_ORIGINS` (avec le domaine public).
+2. Lancer : `docker compose -f docker-compose.demo.yml up -d --build`.
+3. Vérifier : `curl https://demo.votre-domaine/health/` → `{"status": "ok", ..., "demo": true}`.
+4. Se connecter avec les comptes du jeu de démonstration (`direction@demo.bf`, `comptabilite@demo.bf`,
+   `parent@demo.bf`… — mot de passe `Demo2026!`, affiché par `charger_demo`).
+
+### 39.2 Ce que le mode démonstration garantit
+
+- **Aucune sortie** : `DEMO_MODE=true` rend les SMS inactifs (rien n'est même mis en file), retient l'e-mail
+  des notifications, coupe les notifications push et fait considérer la passerelle Mobile Money comme non
+  configurée. Le bandeau le rappelle à l'écran.
+- **Traçabilité visuelle** : bandeau DÉMONSTRATION sur toutes les pages et à l'impression ; `/health/` porte
+  `"demo": true`, ce qui permet à la supervision de distinguer les deux offres.
+- **Remise à zéro** : `docker compose -f docker-compose.demo.yml run --rm reset` vide la base et recharge le
+  jeu. À programmer une fois par nuit sur l'hébergeur ; la commande refuse de s'exécuter hors démonstration.
+- **Garde-fou de configuration** : démarrer avec `DEMO_MODE=true` et `LICENSE_ENFORCEMENT=true` échoue
+  immédiatement — une démonstration n'est pas licenciée.
+
+### 39.3 Ce qui n'est pas automatisé
+
+La démonstration ne fournit ni nom de domaine, ni certificat, ni sauvegarde : ce sont les outils de
+l'hébergeur (proxy, `certbot`, instantanés du volume PostgreSQL). Elle ne doit jamais recevoir de données
+réelles d'élève — c'est la raison du jeu de démonstration reconstruit à chaque remise à zéro.

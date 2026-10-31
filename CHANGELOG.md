@@ -3,6 +3,26 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.45.0 — 2026-10-31
+
+### Offre hébergée et instance de démonstration (chantier B8)
+
+Une instance d'essai publique peut désormais tourner sur un VPS avec **la même image que l'installation
+d'école**, sans qu'aucune donnée ni message n'en sorte.
+
+- `DEMO_MODE=true` (réglage, `.env.demo`) : commutateur unique, vérifié aux quatre points de sortie —
+  `core.sms.sms_actifs()` (aucun SMS, rien n'est mis en file), `core.notifications` (e-mail retenu),
+  `core.push.notifier()` (aucune poussée), `finances.paiements_mobiles.cinetpay_configure()` (demande Mobile
+  Money réputée non configurée, aucun appel sortant). Détail : `core/mode_demo.py`.
+- Bandeau **DÉMONSTRATION** fixe sur toutes les pages et sur l'écran de connexion, y compris à l'impression ;
+  `/health/` expose `"demo": true`.
+- Commande **`reinitialiser_demo`** : vide la base et recharge le jeu de démonstration (C4) ; refuse de
+  s'exécuter hors mode démonstration, où elle effacerait les données d'une école.
+- `docker-compose.demo.yml` + `entrypoint.demo.sh` + `.env.demo.example` : PostgreSQL, Redis, chargement du
+  jeu au premier démarrage, service `reset` pour la remise à zéro nocturne.
+- Garde-fou de configuration : `DEMO_MODE=true` avec `LICENSE_ENFORCEMENT=true` empêche le démarrage.
+- Tests (14), guide §39.
+
 ## 5.44.2 — 2026-10-31
 
 - Tests : le quota de connexion de l'API (5 tentatives par minute, tenu par le cache) n'était pas remis à zéro

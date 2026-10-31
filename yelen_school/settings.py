@@ -16,6 +16,8 @@ import os
 import sys
 import warnings
 
+from django.core.exceptions import ImproperlyConfigured
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,6 +29,16 @@ YELEN_VERSION = (BASE_DIR / 'VERSION').read_text(encoding='utf-8').strip()
 # Environnement de test créé par installer\creer-environnement-test.ps1 (copie isolée de la
 # production) : YELEN_ENVIRONNEMENT=test affiche le bandeau « ENVIRONNEMENT DE TEST » sur toutes les pages.
 YELEN_ENVIRONNEMENT_TEST = os.environ.get('YELEN_ENVIRONNEMENT', '').strip().lower() == 'test'
+
+# Mode démonstration : instance d'essai publique (offre hébergée). Aucune sortie vers l'extérieur — SMS,
+# e-mail, notifications push, demande Mobile Money — un bandeau « DÉMONSTRATION » sur toutes les pages, et
+# la commande `reinitialiser_demo` reconstruit le jeu de démonstration. Jamais activé sur une école.
+DEMO_MODE = os.environ.get('DEMO_MODE', 'false').strip().lower() in ('true', '1', 'yes', 'on')
+if DEMO_MODE and os.environ.get('LICENSE_ENFORCEMENT', '').strip().lower() == 'true':
+    raise ImproperlyConfigured(
+        "DEMO_MODE=true est incompatible avec LICENSE_ENFORCEMENT=true : une instance de démonstration "
+        "n'est pas licenciée."
+    )
 
 
 # Quick-start development settings - unsuitable for production
@@ -279,6 +291,7 @@ TEMPLATES = [
                 'core.context_processors.version',
                 'core.context_processors.aide',
                 'core.context_processors.environnement',
+                'core.context_processors.demo',
                 'licences.rappels.contexte',
             ],
         },

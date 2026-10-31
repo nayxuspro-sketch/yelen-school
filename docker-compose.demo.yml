@@ -1,0 +1,101 @@
+# Instance de démonstration publique — offre hébergée optionnelle (chantier B8)
+#
+#   docker compose -f docker-compose.demo.yml up -d --build
+#
+# Différences avec l'installation d'une école (docker-compose.client.yml) :
+#   - DEMO_MODE=true  : aucune sortie vers l'extérieur (SMS, e-mail, push, Mobile Money), bandeau
+#                       « DÉMONSTRATION » sur toutes les pages, /health/ expose "demo": true ;
+#   - mot de passe de la base et SECRET_KEY tirés de .env.demo (jamais ceux d'une école) ;
+#   - service `reset` : nuit de remise à zéro du jeu de démonstration (profil `reset`) ;
+#   - aucun volume de sauvegarde, aucun HTTPS interne : l'instance est publiée derrière le proxy de l'hébergeur.
+#
+# Variables attendues dans .env.demo : DB_PASSWORD, SECRET_KEY, ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS,
+# YELEN_HTTP_PORT (défaut 8001).
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${DB_NAME:-yelen_demo}
+      POSTGRES_USER: ${DB_USER:-yelen_demo}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD doit être défini dans .env.demo}
+    volumes:
+      - yelen_demo_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-yelen_demo} -d ${DB_NAME:-yelen_demo}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - yelen_demo_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    image: ${YELEN_IMAGE:-yelen-school:demo}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["./entrypoint.demo.sh"]
+    env_file:
+      - .env.demo
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+      DEMO_MODE: "true"
+      LICENSE_ENFORCEMENT: "false"
+    ports:
+      - "${YELEN_HTTP_PORT:-8001}:8000"
+    volumes:
+      - yelen_demo_media:/app/media
+      - yelen_demo_staticfiles:/app/staticfiles
+      - yelen_demo_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request as u; r = u.urlopen('http://localhost:8000/health/', timeout=5); exit(0 if r.status == 200 else 1)\""]
+      interval: 10s
+      timeout: 8s
+      retries: 12
+      start_period: 60s
+    restart: unless-stopped
+
+  # Remise à zéro du jeu de démonstration. Lancé par le planificateur de l'hébergeur :
+  #   docker compose -f docker-compose.demo.yml run --rm reset
+  # (cron quotidien à 4 h : `docker compose -f docker-compose.demo.yml run --rm reset`).
+  reset:
+    image: ${YELEN_IMAGE:-yelen-school:demo}
+    profiles: ["reset"]
+    entrypoint: ["python", "manage.py", "reinitialiser_demo"]
+    env_file:
+      - .env.demo
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+      DEMO_MODE: "true"
+      LICENSE_ENFORCEMENT: "false"
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  yelen_demo_postgres:
+  yelen_demo_redis:
+  yelen_demo_media:
+  yelen_demo_staticfiles:
+  yelen_demo_logs:

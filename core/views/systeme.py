@@ -73,5 +73,8 @@ def health_check(request):
         logger.exception("Health check : cache indisponible")
     health['cache'] = 'ok' if cache_ok else 'error'
 
+    from core import mode_demo
+    health['demo'] = mode_demo.actif()
+
     status_code = 200 if (db_ok and cache_ok) else 503
     return JsonResponse(health, status=status_code)

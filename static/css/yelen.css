@@ -11199,3 +11199,23 @@ body.env-test { padding-bottom: 1.7rem; }
 .sidebar-overlay {
   display: none; position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, 0.6);
 }
+
+/* ─── Bandeau « DÉMONSTRATION » (DEMO_MODE=true, instance d'essai publique) ──────────────────
+   Toujours visible, y compris à l'impression : un visiteur ne doit jamais confondre une capture de la
+   démonstration avec les données d'une école réelle. */
+#demo-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: #b45309;
+  color: #fff7ed;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: 0.3rem 1rem;
+  pointer-events: none;
+}
+body:has(#demo-banner) { padding-top: 1.7rem; }
+body.login-clean-body:has(#demo-banner) { padding-top: 1.7rem; }
+@media print { #demo-banner { position: static; } }
