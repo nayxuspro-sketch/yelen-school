@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.38.1
-version_guide: 5.31
-date_mise_a_jour: 31/10/2026 (5.38.0 : assistant de démarrage §3.11)
+version_logiciel: 5.39.0
+version_guide: 5.32
+date_mise_a_jour: 31/10/2026 (5.39.0 : évolution pluriannuelle des indicateurs §3.12)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.38.0 — Octobre 2026 (Guide v5.31)
+### Version 5.39.0 — Octobre 2026 (Guide v5.32)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -43,6 +43,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [3.9 Plafonds réglementaires des frais de scolarité (5.34.0)](#39-plafonds-réglementaires-des-frais-de-scolarité-5340)
   - [3.10 Données personnelles : conservation, anonymisation, registre (5.35.0)](#310-données-personnelles--conservation-anonymisation-registre-5350)
   - [3.11 Assistant de démarrage (5.38.0)](#311-assistant-de-démarrage-5380)
+  - [3.12 Évolution pluriannuelle des indicateurs (5.39.0)](#312-évolution-pluriannuelle-des-indicateurs-5390)
   - [4.4 Dossier documentaire de l'élève (5.37.0)](#44-dossier-documentaire-de-lélève-5370)
 - [4. INSCRIPTION ET RÉINSCRIPTION](#4-inscription-et-réinscription)
   - [4.1 Créer un élève — détection des homonymes](#41-créer-un-élève--détection-des-homonymes)
@@ -860,6 +861,23 @@ Une seule page pour la mise en route d'un établissement : les **huit étapes** 
 | 8 | Signataires des documents | à configurer selon l'organisation (indicateur à vérifier manuellement) |
 
 La barre de progression donne l'avancement (étape « À faire » en orange, « Fait » en vert). Rien n'est bloquant : l'application fonctionne dès que l'année et les classes existent ; la page sert aussi de **liste de contrôle de rentrée** chaque année.
+---
+
+### 3.12 Évolution pluriannuelle des indicateurs (5.39.0)
+
+**Accès :** `Pilotage → Évolution pluriannuelle` (direction), ou `Paramètres → Assistant de démarrage` pour la mise en route. L'écran fige, pour chaque année scolaire, six indicateurs calculés dans la base :
+
+| Indicateur | Calcul |
+|---|---|
+| **Effectif** | inscriptions de l'année hors abandons (avec la part de filles et de garçons) |
+| **Moyenne générale** | moyenne des moyennes générales des trimestres |
+| **Taux de réussite** | part des moyennes générales supérieures ou égales à 10 sur 20 |
+| **Taux de recouvrement** | encaissé / attendu sur les frais de scolarité de l'année |
+| **Taux d'absentéisme** | absences / pointages de l'année |
+
+- **Recalculer toutes les années** (bouton) ou la commande `python manage.py historiser_indicateurs [--etablissement <uuid>]` : une ligne par année, mise à jour sans doublon. À lancer en fin d'année, avant l'archivage.
+- La colonne des **écarts** compare chaque année à la précédente : effectif en nombre d'élèves, taux en points de pourcentage (vert = progrès ; pour l'absentéisme, une baisse est un progrès). La tendance n'apparaît qu'à partir de la deuxième année.
+- Le tableau de bord direction (Pilotage) mène directement à cet écran ; aucun droit supplémentaire n'est nécessaire au-delà de l'accès au Pilotage.
 
 ## 4. INSCRIPTION ET RÉINSCRIPTION
 

@@ -3,6 +3,19 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.39.0 — 2026-10-31
+
+### Historisation pluriannuelle des indicateurs
+
+- Modèle `core.IndicateurAnnee` (migration `core.0008`) : une ligne par établissement et par année — effectif
+  (dont filles / garçons), moyenne générale, taux de réussite, de recouvrement et d'absentéisme, détails chiffrés,
+  date de calcul.
+- `core/indicateurs.py` : `calculer`, `mettre_a_jour` (idempotent) et `evolution` (écarts par rapport à l'année
+  précédente) ; commande `historiser_indicateurs [--etablissement <uuid>]`.
+- Page *Pilotage → Évolution pluriannuelle* (`core:indicateurs_evolution`, direction) : tableau des années, écarts
+  colorés, bouton de recalcul ; lien depuis le tableau de bord direction.
+- Tests (4), guide §3.12.
+
 ## 5.38.1 — 2026-10-31
 
 - `core/demarrage.py` : `except NoReverseMatch` au lieu de `except Exception` (test « aucun except silencieux »).

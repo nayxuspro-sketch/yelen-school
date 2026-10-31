@@ -18,6 +18,7 @@
     </div>
   </div>
   <div class="dash-section-actions">
+    <a href="{% url 'core:indicateurs_evolution' %}" class="dash-btn-secondary">Évolution pluriannuelle</a>
     {% if annees %}
     <form method="get" class="edt-toolbar">
       {% if etab_reseau %}<input type="hidden" name="etab" value="{{ etab_reseau.pk }}">{% endif %}

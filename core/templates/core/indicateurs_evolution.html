@@ -1,0 +1,76 @@
+{% extends "core/base.html" %}
+{% load l10n %}
+
+{% block title %}Évolution des indicateurs — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'core:pilotage' %}" class="text-secondary">Pilotage</a>
+            <span class="text-muted"> / </span>
+            <span>Évolution des indicateurs</span>
+        </p>
+        <h1 class="page-title">Évolution des indicateurs</h1>
+        <p class="page-subtitle">Effectifs, résultats, recouvrement et assiduité de chaque année scolaire, figés à la date du calcul — la tendance apparaît dès la deuxième année.</p>
+    </div>
+    <div class="page-actions">
+        <form method="post">{% csrf_token %}
+            <button type="submit" class="btn-primary">Recalculer toutes les années</button>
+        </form>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} mb-4"><span>{{ message }}</span></div>
+{% endfor %}
+{% endif %}
+
+{% if lignes %}
+<div class="card animate-fade-up delay-1">
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Année</th>
+                    <th class="text-right">Effectif</th>
+                    <th class="text-right">dont filles</th>
+                    <th class="text-right">Moyenne</th>
+                    <th class="text-right">Réussite</th>
+                    <th class="text-right">Recouvrement</th>
+                    <th class="text-right">Absentéisme</th>
+                    <th>Calculé le</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in lignes %}
+                <tr>
+                    <td><strong>{{ l.annee_scolaire.libelle }}</strong></td>
+                    <td class="text-right text-mono">{{ l.effectif }}{% if l.ecarts.effectif is not None %}<span class="text-sm {% if l.ecarts.effectif > 0 %}text-success{% elif l.ecarts.effectif < 0 %}text-danger{% endif %}"> {{ l.ecarts.effectif|stringformat:"+d" }}</span>{% endif %}</td>
+                    <td class="text-right text-mono">{{ l.effectif_filles }}</td>
+                    <td class="text-right text-mono">{% if l.moyenne_generale is not None %}{{ l.moyenne_generale|floatformat:2 }}{% else %}—{% endif %}</td>
+                    <td class="text-right text-mono">{% if l.taux_reussite is not None %}{{ l.taux_reussite|floatformat:1 }} %{% if l.ecarts.taux_reussite is not None %}<span class="text-sm {% if l.ecarts.taux_reussite > 0 %}text-success{% elif l.ecarts.taux_reussite < 0 %}text-danger{% endif %}"> {{ l.ecarts.taux_reussite|stringformat:"+.1f" }}</span>{% endif %}{% else %}—{% endif %}</td>
+                    <td class="text-right text-mono">{% if l.taux_recouvrement is not None %}{{ l.taux_recouvrement|floatformat:1 }} %{% if l.ecarts.taux_recouvrement is not None %}<span class="text-sm {% if l.ecarts.taux_recouvrement > 0 %}text-success{% elif l.ecarts.taux_recouvrement < 0 %}text-danger{% endif %}"> {{ l.ecarts.taux_recouvrement|stringformat:"+.1f" }}</span>{% endif %}{% else %}—{% endif %}</td>
+                    <td class="text-right text-mono">{% if l.taux_absenteisme is not None %}{{ l.taux_absenteisme|floatformat:1 }} %{% if l.ecarts.taux_absenteisme is not None %}<span class="text-sm {% if l.ecarts.taux_absenteisme < 0 %}text-success{% elif l.ecarts.taux_absenteisme > 0 %}text-danger{% endif %}"> {{ l.ecarts.taux_absenteisme|stringformat:"+.1f" }}</span>{% endif %}{% else %}—{% endif %}</td>
+                    <td class="text-sm text-secondary">{% if l.calcule_le %}{{ l.calcule_le|date:"d/m/Y H:i" }}{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-body text-sm text-secondary">
+        Les écarts comparent chaque année à la précédente : effectif en nombre d'élèves, taux en points de pourcentage
+        (vert = progrès ; pour l'absentéisme, une baisse est un progrès). Recalculer met à jour toutes les années avec
+        les données actuelles — à faire en fin d'année, avant l'archivage.
+    </div>
+</div>
+{% else %}
+<div class="card animate-fade-up delay-1">
+    <div class="card-body">
+        <p class="mb-3">Aucun indicateur n'a encore été calculé.</p>
+        <form method="post">{% csrf_token %}<button type="submit" class="btn-primary">Calculer les indicateurs</button></form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

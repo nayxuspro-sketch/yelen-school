@@ -16,6 +16,7 @@ import uuid
 from django.core.exceptions import ValidationError
 from django.db import connection, models, transaction
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 # ──────────────────────────────────────────────
@@ -402,3 +403,33 @@ class SmsSortant(models.Model):
 
     def __str__(self):
         return f"{self.numero} — {self.get_statut_display()}"
+
+
+class IndicateurAnnee(BaseModel):
+    """Indicateurs figés d'une année scolaire (5.39.0) : une ligne par établissement et par année, recalculée par
+    la commande ``historiser_indicateurs`` ou depuis la page « Évolution des indicateurs »."""
+    etablissement = models.ForeignKey('etablissements.Etablissement', on_delete=models.CASCADE,
+                                      related_name='indicateurs_annee', verbose_name=_("Établissement"))
+    annee_scolaire = models.ForeignKey('parametres.AnneeScolaire', on_delete=models.CASCADE,
+                                       related_name='indicateurs', verbose_name=_("Année scolaire"))
+    effectif = models.PositiveIntegerField(default=0, verbose_name=_("Effectif"))
+    effectif_filles = models.PositiveIntegerField(default=0, verbose_name=_("dont filles"))
+    effectif_garcons = models.PositiveIntegerField(default=0, verbose_name=_("dont garçons"))
+    moyenne_generale = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
+                                           verbose_name=_("Moyenne générale moyenne"))
+    taux_reussite = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
+                                        verbose_name=_("Taux de réussite (%)"))
+    taux_recouvrement = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
+                                            verbose_name=_("Taux de recouvrement (%)"))
+    taux_absenteisme = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
+                                           verbose_name=_("Taux d'absentéisme (%)"))
+    details = models.JSONField(default=dict, blank=True, verbose_name=_("Détails chiffrés"))
+    calcule_le = models.DateTimeField(null=True, blank=True, verbose_name=_("Calculé le"))
+
+    class Meta:
+        verbose_name = _("Indicateurs de l'année")
+        verbose_name_plural = _("Indicateurs de l'année")
+        unique_together = [['etablissement', 'annee_scolaire']]
+
+    def __str__(self):
+        return f"{self.annee_scolaire.libelle} — {self.effectif} élèves"

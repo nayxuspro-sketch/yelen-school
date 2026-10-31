@@ -302,6 +302,26 @@ def recherche_globale(request):
 
 
 @login_required
+def indicateurs_evolution(request):
+    """Évolution pluriannuelle : effectifs, résultats, recouvrement et assiduité, année après année."""
+    from core import indicateurs
+    from core.pilotage import ROLES_PILOTAGE
+    if request.user.role not in ROLES_PILOTAGE and not request.user.is_superuser:
+        return render(request, 'core/access_denied.html', {
+            'message': "L'évolution des indicateurs est réservée à la direction.",
+        }, status=403)
+    etab = getattr(request.user, 'etablissement', None)
+    if not etab:
+        messages.error(request, "Votre compte n'est associé à aucun établissement.")
+        return redirect('core:home')
+    if request.method == 'POST':
+        lignes = indicateurs.mettre_a_jour(etab)
+        messages.success(request, f"Indicateurs recalculés pour {len(lignes)} année(s).")
+        return redirect('core:indicateurs_evolution')
+    return render(request, 'core/indicateurs_evolution.html', {'lignes': indicateurs.evolution(etab)})
+
+
+@login_required
 def demarrage(request):
     """Assistant de première configuration : étapes de mise en route, état réel et lien direct."""
     from parametres.droits import peut_acceder
