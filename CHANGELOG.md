@@ -3,6 +3,20 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.29.0 — 2026-10-31
+
+### Alertes d'exploitation relayées à la direction
+
+- Les alertes de la page Exploitation — aucune sauvegarde ou sauvegarde de plus de 36 h, espace disque faible, erreurs
+  applicatives répétées, SMS en difficulté — ne sont plus seulement affichées : elles sont **relayées aux Directeurs /
+  Proviseurs et Super Admin** par notification interne (+ e-mail si configuré) et, pour le niveau danger (sauvegarde,
+  disque), par **SMS**. Une fois par jour tant que l'alerte dure ; registre = table des notifications (valable pour
+  tous les processus, survit aux redémarrages).
+- Sans planificateur ni configuration : `core/veille.py` (`VeilleMiddleware`) lance la vérification en arrière-plan à
+  la première requête du jour de chaque processus (`/health/` de la surveillance compris). La surveillance Windows
+  reste nécessaire pour le seul cas d'un serveur arrêté.
+- Titre stable de l'alerte « Erreurs applicatives répétées » (le nombre passe dans le détail).
+
 ## 5.28.0 — 2026-10-31
 
 ### Rappels d'expiration de la licence

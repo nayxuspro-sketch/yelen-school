@@ -32,6 +32,15 @@ def cache_des_droits_isole():
 
 
 @pytest.fixture(autouse=True)
+def veille_exploitation_inactive(monkeypatch):
+    """La veille d'exploitation (core.veille) part de la première requête du jour dans un fil d'arrière-plan :
+    neutralisée pour les tests, qui l'appellent explicitement."""
+    from datetime import date
+    from core import veille
+    monkeypatch.setattr(veille, '_verifie_le', date.today())
+
+
+@pytest.fixture(autouse=True)
 def two_factor_non_obligatoire(settings):
     """Les tests existants connectent des Super Admin/Directeurs sans TOTP ; les tests dédiés réactivent l'obligation."""
     settings.TWO_FACTOR_REQUIRED = False

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.28.0
-version_guide: 5.21
-date_mise_a_jour: 31/10/2026 (5.28.0 : rappels d'expiration de la licence, §13.3)
+version_logiciel: 5.29.0
+version_guide: 5.22
+date_mise_a_jour: 31/10/2026 (5.29.0 : alertes d'exploitation relayées à la direction, §2.18)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -543,7 +543,17 @@ La page rassemble ce que la direction doit savoir sur le serveur sans ouvrir une
 | **Erreurs applicatives** | lignes `ERROR`/`CRITICAL` de `logs\django.log` sur 24 h, avec les 5 dernières | au moins une erreur |
 | **File SMS** | SMS en attente, en nouvelle tentative, abandonnés sur 7 jours, envoyés en 24 h | SMS en nouvelle tentative ou abandonnés |
 
-Cette page complète la surveillance Windows (`programmer-surveillance.bat`), qui redémarre l'application et alerte par SMS quand elle ne répond plus.
+**Alertes relayées à la direction (5.29.0) :** il n'est plus nécessaire d'ouvrir la page pour être prévenu. Chaque
+alerte en cours est envoyée aux **Directeurs / Proviseurs et Super Admin** sous forme de notification interne (cloche,
+titre « Serveur : … », lien vers la page) et, pour les alertes de niveau **danger** (aucune sauvegarde, sauvegarde trop
+ancienne, espace disque faible), par **SMS** sur le numéro de leur compte si les SMS de l'école sont actifs — les
+alertes de niveau avertissement (erreurs applicatives, SMS en difficulté) restent en notification seule. Une alerte
+est relayée **une fois par jour tant qu'elle dure**, quel que soit le nombre de processus ou de redémarrages. Rien à
+programmer : la vérification part de la première requête du jour reçue par l'application (une consultation, le point
+de santé `/health/` interrogé par la surveillance…), en arrière-plan.
+
+Cette page complète la surveillance Windows (`programmer-surveillance.bat`), seule à pouvoir constater que l'application
+ne répond plus : elle la redémarre et alerte par SMS (`ALERTE_SMS_NUMEROS` du `.env`).
 
 ---
 

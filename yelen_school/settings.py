@@ -245,6 +245,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'yelen_school.audit_middleware.AuditRequestMiddleware',
+    # Veille d'exploitation : relais quotidien des alertes (sauvegarde, disque, erreurs, SMS) à la direction
+    'core.veille.VeilleMiddleware',
     # Génération automatique de l'année scolaire (désactivé — création manuelle)
     # 'parametres.middleware.AnneeScolaireAutoMiddleware',
 ]
