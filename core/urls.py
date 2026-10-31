@@ -17,7 +17,16 @@ urlpatterns = [
     path('portail/parent/vie-scolaire/', views.portail_parent_vie_scolaire, name='portail_parent_vie_scolaire'),
     path('portail/parent/cahier/', views.portail_parent_cahier, name='portail_parent_cahier'),
     path('portail/parent/vie-scolaire/justifier/', views.portail_parent_justifier, name='portail_parent_justifier'),
-    path('portail/eleve/', views.portail_eleve, name='portail_eleve'),
+    path('portail/parent/bulletins/<uuid:pk>/', views.portail_bulletin, name='portail_parent_bulletin'),
+    path('portail/parent/documents/<uuid:pk>/', views.portail_document, name='portail_parent_document'),
+    # Portail élève : mêmes vues, préfixe /portail/eleve/ (rôle ELEVE — yelen_school/role_middleware.py)
+    path('portail/eleve/', views.portail_parent, name='portail_eleve'),
+    path('portail/eleve/bulletins/', views.portail_parent_bulletins, name='portail_eleve_bulletins'),
+    path('portail/eleve/bulletins/<uuid:pk>/', views.portail_bulletin, name='portail_eleve_bulletin'),
+    path('portail/eleve/notifications/', views.portail_parent_notifications, name='portail_eleve_notifications'),
+    path('portail/eleve/vie-scolaire/', views.portail_parent_vie_scolaire, name='portail_eleve_vie_scolaire'),
+    path('portail/eleve/cahier/', views.portail_parent_cahier, name='portail_eleve_cahier'),
+    path('portail/eleve/documents/<uuid:pk>/', views.portail_document, name='portail_eleve_document'),
     path('notifications/', views.notifications_list, name='notifications_list'),
     path('notifications/tout-lu/', views.notifications_marquer_tout_lu, name='notifications_tout_lu'),
     path('notifications/<int:pk>/lu/', views.notification_marquer_lu, name='notification_marquer_lu'),
@@ -34,6 +43,7 @@ urlpatterns = [
     # PWA — portail parent
     path('favicon.ico', views.favicon, name='favicon'),
     path('manifest.json', views.pwa_manifest, name='pwa_manifest'),
+    path('manifest-eleve.json', views.pwa_manifest, {'role': 'ELEVE'}, name='pwa_manifest_eleve'),
     path('pwa/icon/<int:size>/', views.pwa_icon, name='pwa_icon'),
     path('certificat-autorite/', views.certificat_autorite, name='certificat_autorite'),
 

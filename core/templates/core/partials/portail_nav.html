@@ -1,6 +1,6 @@
-{# Navigation basse du portail parent — paramètre « actif » : accueil | vie_scolaire | bulletins | notifs #}
+{# Navigation basse des portails parent et élève (URL via « portail ») — paramètre « actif » : accueil | vie_scolaire | bulletins | notifs #}
 <nav class="pp-nav">
-  <a href="{% url 'core:portail_parent' %}" class="pp-nav-item{% if actif == 'accueil' %} pp-nav-item--active{% endif %}">
+  <a href="{% url portail.accueil %}" class="pp-nav-item{% if actif == 'accueil' %} pp-nav-item--active{% endif %}">
     <span class="pp-nav-icon">
       <svg aria-hidden="true" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
@@ -8,7 +8,7 @@
     </span>
     Accueil
   </a>
-  <a href="{% url 'core:portail_parent_vie_scolaire' %}" class="pp-nav-item{% if actif == 'vie_scolaire' %} pp-nav-item--active{% endif %}">
+  <a href="{% url portail.vie_scolaire %}" class="pp-nav-item{% if actif == 'vie_scolaire' %} pp-nav-item--active{% endif %}">
     <span class="pp-nav-icon">
       <svg aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -17,7 +17,7 @@
     </span>
     Vie scol.
   </a>
-  <a href="{% url 'core:portail_parent_bulletins' %}" class="pp-nav-item{% if actif == 'bulletins' %} pp-nav-item--active{% endif %}">
+  <a href="{% url portail.bulletins %}" class="pp-nav-item{% if actif == 'bulletins' %} pp-nav-item--active{% endif %}">
     <span class="pp-nav-icon">
       <svg aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -26,7 +26,7 @@
     </span>
     Bulletins
   </a>
-  <a href="{% url 'core:portail_parent_notifications' %}" class="pp-nav-item{% if actif == 'notifs' %} pp-nav-item--active{% endif %}">
+  <a href="{% url portail.notifications %}" class="pp-nav-item{% if actif == 'notifs' %} pp-nav-item--active{% endif %}">
     <span class="pp-nav-icon">
       <svg aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"

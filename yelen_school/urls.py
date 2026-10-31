@@ -25,6 +25,7 @@ from core.media import media_protege
 urlpatterns = [
     # Service Workers servis à la racine (scope = /)
     path('sw.js', core_views.pwa_service_worker, name='pwa_service_worker'),
+    path('sw-eleve.js', core_views.pwa_service_worker, {'role': 'ELEVE'}, name='pwa_service_worker_eleve'),
     path('app-sw.js', core_views.app_service_worker, name='app_service_worker'),
     path('', include('core.urls')),
     path('admin/', admin.site.urls),

@@ -3,6 +3,23 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.36.0 — 2026-10-31
+
+### Portail élève au niveau du portail parent
+
+- `/portail/eleve/` sert désormais les **mêmes vues et gabarits** que le portail parent (configuration `PORTAILS`
+  dans `core/views.py`, navigation `core/partials/portail_nav.html`) : accueil, vie scolaire, cahier de textes,
+  bulletins, notifications ; l'ancien gabarit `portail_eleve.html` est supprimé.
+- **PWA élève** : manifeste `/manifest-eleve.json`, service worker `/sw-eleve.js` (cache `yelen-eleve-v1`),
+  `static/js/pwa.js` lit `data-pwa-sw` / `data-pwa-scope` sur `<body>` ; notifications push via le partiel commun.
+- **Bulletins** : consultation en lecture seule `portail_bulletin` (`/portail/{parent,eleve}/bulletins/<pk>/`) ;
+  **Documents délivrés** (certificats, attestations…) listés sur la page Bulletins et téléchargeables par
+  `portail_document` (`/portail/{parent,eleve}/documents/<pk>/`), restreints aux élèves liés au compte.
+- Page Vie scolaire : sections **Notes récentes** et **Moyennes par matière** (parent et élève) ; le dépôt de
+  justificatif reste réservé au parent.
+- `notifier_bulletin_publie` notifie aussi le compte élève (lien `/portail/eleve/bulletins/`, sans SMS).
+- Guide §19.6 (et §9.21 renvoyé).
+
 ## 5.35.0 — 2026-10-31
 
 ### Cycle de vie des données personnelles (loi n° 001-2021/AN)

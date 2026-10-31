@@ -100,7 +100,7 @@ def _get_sms_message(etablissement, type_msg, variables):
 
 
 def notifier_bulletin_publie(bulletin):
-    """Notifie les parents quand un bulletin est publié."""
+    """Notifie les parents (et le compte élève) quand un bulletin est publié."""
     try:
         eleve = bulletin.inscription.eleve
         classe = bulletin.inscription.classe.nom
@@ -117,6 +117,9 @@ def notifier_bulletin_publie(bulletin):
             'trimestre': trimestre,
             'etablissement': etab.nom,
         })
+        for compte_eleve in eleve.utilisateurs_lies.filter(role='ELEVE', is_active=True):
+            creer_notification(compte_eleve, 'BULLETIN', titre, message_inapp,
+                               lien='/portail/eleve/bulletins/', envoyer_email=False, envoyer_sms=False)
         parents = eleve.utilisateurs_lies.filter(role='PARENT', is_active=True)
         for parent in parents:
             creer_notification(parent, 'BULLETIN', titre, message_inapp,

@@ -12,11 +12,11 @@
   <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
 </head>
 
-<body class="pp-app">
+<body class="pp-app" data-pwa-sw="{{ portail.sw }}" data-pwa-scope="{{ portail.prefixe }}">
 
   <!-- Topbar -->
   <header class="pp-topbar">
-    <a href="{% url 'core:portail_parent' %}" class="pp-topbar-back" aria-label="Retour">
+    <a href="{% url portail.accueil %}" class="pp-topbar-back" aria-label="Retour">
       <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
       </svg>
@@ -124,7 +124,9 @@
 
         <!-- Actions -->
         <div class="pp-bul-actions">
-          {% if b.token_signature %}
+          {% if portail.role == 'ELEVE' %}
+          <a href="{% url portail.bulletin b.pk %}" class="btn-primary btn-sm">Consulter</a>
+          {% elif b.token_signature %}
           <a href="{% url 'bulletins:bulletin_parent_consulter' token=b.token_signature %}"
              class="btn-primary btn-sm">
             <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,9 +151,35 @@
 
     {% endif %}
 
+    <!-- Documents délivrés (certificats, attestations, convocations…) -->
+    <div class="pp-card animate-fade-up">
+      <div class="pp-section">
+        <div class="pp-section-title">
+          <svg aria-hidden="true" class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          </svg>
+          <span class="pp-section-label">Documents délivrés</span>
+        </div>
+        {% for d in documents %}
+        <div class="pp-devoir">
+          <div class="pp-devoir-date">
+            <span class="pp-devoir-day">{{ d.created_at|date:"d" }}</span>
+            <span class="pp-devoir-month">{{ d.created_at|date:"M" }}</span>
+          </div>
+          <div class="pp-devoir-detail">
+            <div class="pp-devoir-subject">{{ d.type_document.libelle }}{% if portail.role == 'PARENT' %} — {{ d.inscription.eleve.prenom }}{% endif %}</div>
+            <div class="pp-devoir-text">{{ d.annee_scolaire.libelle }} · <a href="{% url portail.document d.pk %}">Télécharger (PDF)</a></div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="pp-bul-empty">Aucun document délivré pour l'instant.</div>
+        {% endfor %}
+      </div>
+    </div>
+
   </main>
 
-  {% include 'core/partials/portail_parent_nav.html' with actif='bulletins' %}
+  {% include 'core/partials/portail_nav.html' with actif='bulletins' %}
 
 </body>
 </html>

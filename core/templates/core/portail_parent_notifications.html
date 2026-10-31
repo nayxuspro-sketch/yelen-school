@@ -12,11 +12,11 @@
   <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
 </head>
 
-<body class="pp-app">
+<body class="pp-app" data-pwa-sw="{{ portail.sw }}" data-pwa-scope="{{ portail.prefixe }}">
 
   <!-- Topbar -->
   <header class="pp-topbar">
-    <a href="{% url 'core:portail_parent' %}" class="pp-topbar-back" aria-label="Retour">
+    <a href="{% url portail.accueil %}" class="pp-topbar-back" aria-label="Retour">
       <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
       </svg>
@@ -36,7 +36,7 @@
   <!-- Contenu -->
   <main class="pp-content">
 
-    {% include 'core/partials/portail_push.html' %}
+    {% include 'core/partials/portail_push.html' with sw=portail.sw scope=portail.prefixe %}
 
     {% if not notifications %}
     <div class="pp-empty animate-fade-up">
@@ -91,7 +91,7 @@
 
   </main>
 
-  {% include 'core/partials/portail_parent_nav.html' with actif='notifs' %}
+  {% include 'core/partials/portail_nav.html' with actif='notifs' %}
 
   <script src="{% static 'js/push.js' %}" defer></script>
 </body>

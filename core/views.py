@@ -1,9 +1,10 @@
 import json
 import logging
+import os
 from pathlib import Path
 
 from django.conf import settings
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Count, Q
@@ -576,12 +577,42 @@ def notifications_badge(request):
     return render(request, 'core/partials/notifications_badge.html', {'nb': nb})
 
 
+# ── Portails parent et élève : mêmes vues, mêmes gabarits, un préfixe d'URL par rôle ──────────────
+PORTAILS = {
+    'PARENT': {
+        'role': 'PARENT', 'prefixe': '/portail/parent/', 'titre': 'Portail Parent', 'court': 'YELEN Parent',
+        'manifest': '/manifest.json', 'sw': '/sw.js', 'cache': 'yelen-parent-v4',
+        'accueil': 'core:portail_parent', 'vie_scolaire': 'core:portail_parent_vie_scolaire',
+        'bulletins': 'core:portail_parent_bulletins', 'bulletin': 'core:portail_parent_bulletin',
+        'cahier': 'core:portail_parent_cahier', 'notifications': 'core:portail_parent_notifications',
+        'document': 'core:portail_parent_document',
+    },
+    'ELEVE': {
+        'role': 'ELEVE', 'prefixe': '/portail/eleve/', 'titre': 'Portail Élève', 'court': 'YELEN Élève',
+        'manifest': '/manifest-eleve.json', 'sw': '/sw-eleve.js', 'cache': 'yelen-eleve-v1',
+        'accueil': 'core:portail_eleve', 'vie_scolaire': 'core:portail_eleve_vie_scolaire',
+        'bulletins': 'core:portail_eleve_bulletins', 'bulletin': 'core:portail_eleve_bulletin',
+        'cahier': 'core:portail_eleve_cahier', 'notifications': 'core:portail_eleve_notifications',
+        'document': 'core:portail_eleve_document',
+    },
+}
+_REFUS_PORTAIL = "Accès réservé aux parents et aux élèves."
+
+
+def _portail(request):
+    """Configuration du portail du rôle connecté (PARENT ou ELEVE) — None pour les autres rôles. Le parent voit
+    tous ses enfants (``eleves_lies``), l'élève son propre dossier (un seul élève lié). Les vues la nomment ``config``
+    pour ne pas masquer le module ``core.portail``."""
+    return PORTAILS.get(getattr(request.user, 'role', None))
+
+
 @login_required
 @requires_licence_feature('portail_parents')
 def portail_parent(request):
-    """Tableau de bord pour le rôle PARENT (PWA-ready)."""
-    if request.user.role != 'PARENT':
-        return HttpResponseForbidden("Accès réservé aux parents.")
+    """Accueil du portail (parent : chaque enfant ; élève : son dossier) — PWA installable."""
+    config = _portail(request)
+    if not config:
+        return HttpResponseForbidden(_REFUS_PORTAIL)
 
     from presences.models import Presence
     from pedagogie.models import MoyenneGenerale
@@ -652,6 +683,7 @@ def portail_parent(request):
     return render(request, 'core/portail_parent.html', {
         'enfants': enfants,
         'annee': annee,
+        'portail': config,
         'push_cle_publique': push.cle_publique(),
     })
 
@@ -660,8 +692,9 @@ def portail_parent(request):
 @requires_licence_feature('portail_parents')
 def portail_parent_bulletins(request):
     """Page bulletins PWA pour les parents."""
-    if request.user.role != 'PARENT':
-        return HttpResponseForbidden("Accès réservé aux parents.")
+    config = _portail(request)
+    if not config:
+        return HttpResponseForbidden(_REFUS_PORTAIL)
 
     from bulletins.models import Bulletin
     from finances.blocage import motif_blocage_bulletin
@@ -706,24 +739,70 @@ def portail_parent_bulletins(request):
                 'blocage': blocage,
             })
 
+    from documents.models import Document
+    documents = list(
+        Document.objects.filter(inscription__eleve__in=eleves).exclude(fichier='')
+        .select_related('type_document', 'inscription__eleve', 'annee_scolaire').order_by('-created_at')[:30]
+    )
     return render(request, 'core/portail_parent_bulletins.html', {
         'enfants': enfants,
         'annee': annee,
+        'portail': config,
+        'documents': documents,
     })
+
+
+@login_required
+@requires_licence_feature('portail_parents')
+def portail_bulletin(request, pk):
+    """Consultation d'un bulletin publié depuis le portail (élève : lecture seule, sans accusé de réception)."""
+    config = _portail(request)
+    if not config:
+        return HttpResponseForbidden(_REFUS_PORTAIL)
+    from bulletins.models import Bulletin
+    from finances.blocage import motif_blocage_bulletin
+    from pedagogie.models import MoyenneGenerale
+    bulletin = get_object_or_404(
+        Bulletin.objects.select_related('inscription__eleve', 'inscription__classe', 'trimestre'),
+        pk=pk, est_publie=True, inscription__eleve__in=request.user.eleves_lies.all(),
+    )
+    blocage = motif_blocage_bulletin(bulletin.inscription)
+    if blocage:
+        return render(request, 'bulletins/bulletin_parent.html', {'erreur': blocage})
+    mg = MoyenneGenerale.objects.filter(inscription=bulletin.inscription, trimestre=bulletin.trimestre).first()
+    return render(request, 'bulletins/bulletin_parent.html', {
+        'bulletin': bulletin, 'mg': mg, 'token_valide': False, 'eleve': bulletin.inscription.eleve,
+        'classe': bulletin.inscription.classe, 'trimestre': bulletin.trimestre,
+    })
+
+
+@login_required
+@requires_licence_feature('portail_parents')
+def portail_document(request, pk):
+    """Téléchargement d'un document délivré à l'élève (certificat, attestation…) depuis le portail."""
+    config = _portail(request)
+    if not config:
+        return HttpResponseForbidden(_REFUS_PORTAIL)
+    from documents.models import Document
+    document = get_object_or_404(Document.objects.exclude(fichier=''), pk=pk,
+                                 inscription__eleve__in=request.user.eleves_lies.all())
+    return FileResponse(document.fichier.open('rb'), as_attachment=True,
+                        filename=os.path.basename(document.fichier.name))
 
 
 @login_required
 @requires_licence_feature('portail_parents')
 def portail_parent_notifications(request):
     """Page notifications PWA pour les parents."""
-    if request.user.role != 'PARENT':
-        return HttpResponseForbidden("Accès réservé aux parents.")
+    config = _portail(request)
+    if not config:
+        return HttpResponseForbidden(_REFUS_PORTAIL)
 
     from core.models import Notification
 
     if request.method == 'POST' and request.POST.get('action') == 'tout_lu':
         Notification.objects.filter(destinataire=request.user, lu=False).update(lu=True)
-        return redirect('core:portail_parent_notifications')
+        return redirect(config['notifications'])
 
     qs = Notification.objects.filter(destinataire=request.user)
     nb_non_lues = qs.filter(lu=False).count()
@@ -735,6 +814,7 @@ def portail_parent_notifications(request):
     return render(request, 'core/portail_parent_notifications.html', {
         'notifications': notifications,
         'nb_non_lues': nb_non_lues,
+        'portail': config,
         'push_cle_publique': push.cle_publique(),
     })
 
@@ -808,9 +888,11 @@ def push_test(request):
 @login_required
 @requires_licence_feature('portail_parents')
 def portail_parent_vie_scolaire(request):
-    """Vie scolaire PWA : emploi du temps, absences et retards, justificatifs déposés, pour chaque enfant."""
-    if request.user.role != 'PARENT':
-        return HttpResponseForbidden("Accès réservé aux parents.")
+    """Vie scolaire PWA : emploi du temps, absences et retards, justificatifs, sanctions, notes récentes et moyennes
+    par matière, pour chaque enfant (parent) ou pour l'élève connecté."""
+    config = _portail(request)
+    if not config:
+        return HttpResponseForbidden(_REFUS_PORTAIL)
     from core import portail
 
     annee = AnneeScolaire.objects.filter(etablissement=request.user.etablissement, est_courante=True).first()
@@ -830,10 +912,13 @@ def portail_parent_vie_scolaire(request):
             'absences': absences,
             'justifications': portail.justifications(inscription),
             'sanctions': portail.sanctions(inscription),
+            'notes_recentes': portail.notes_recentes(inscription),
+            'moyennes_periodes': portail.moyennes_par_periode(inscription),
         })
     return render(request, 'core/portail_parent_vie_scolaire.html', {
         'enfants': enfants,
         'annee': annee,
+        'portail': config,
         'today': timezone.localdate(),
     })
 
@@ -842,8 +927,9 @@ def portail_parent_vie_scolaire(request):
 @requires_licence_feature('portail_parents')
 def portail_parent_cahier(request):
     """Cahier de textes PWA : travail à faire et cours des 30 derniers jours, pour chaque enfant."""
-    if request.user.role != 'PARENT':
-        return HttpResponseForbidden("Accès réservé aux parents.")
+    config = _portail(request)
+    if not config:
+        return HttpResponseForbidden(_REFUS_PORTAIL)
     from core import portail
 
     annee = AnneeScolaire.objects.filter(etablissement=request.user.etablissement, est_courante=True).first()
@@ -863,6 +949,7 @@ def portail_parent_cahier(request):
     return render(request, 'core/portail_parent_cahier.html', {
         'enfants': enfants,
         'annee': annee,
+        'portail': config,
         'today': timezone.localdate(),
     })
 
@@ -896,93 +983,6 @@ def portail_parent_justifier(request):
                               f"({justification.nb_jours} jour{'s' if justification.nb_jours > 1 else ''}). "
                               "Le secrétariat l'examinera.")
     return redirect('core:portail_parent_vie_scolaire')
-
-
-# ── Portail Élève ─────────────────────────────────────────────────────────────
-
-@login_required
-def portail_eleve(request):
-    """Tableau de bord pour le rôle ELEVE."""
-    if request.user.role != 'ELEVE':
-        return HttpResponseForbidden("Accès réservé aux élèves.")
-
-    from presences.models import Presence
-    from pedagogie.models import MoyenneGenerale
-    from finances.models import Paiement
-    from django.utils import timezone
-
-    annee = AnneeScolaire.objects.filter(
-        etablissement=request.user.etablissement, est_courante=True
-    ).first()
-
-    eleve = request.user.eleves_lies.first()
-    if not eleve:
-        return render(request, 'core/portail_eleve.html', {
-            'erreur': "Aucun élève associé à votre compte. Contactez l'administration.",
-            'annee': annee,
-        })
-
-    inscription = (
-        Inscription.objects
-        .filter(eleve=eleve, annee_scolaire=annee)
-        .select_related('classe', 'statut_eleve')
-        .first()
-    ) if annee else None
-
-    # Moyennes par trimestre
-    moyennes = []
-    if inscription:
-        moyennes = (
-            MoyenneGenerale.objects
-            .filter(inscription=inscription)
-            .select_related('trimestre')
-            .order_by('trimestre__numero')
-        )
-
-    # Absences du mois
-    nb_absences = 0
-    nb_retards = 0
-    if inscription:
-        depuis = timezone.now().date() - timezone.timedelta(days=30)
-        nb_absences = Presence.objects.filter(
-            inscription=inscription, statut='ABSENT', appel__date__gte=depuis
-        ).count()
-        nb_retards = Presence.objects.filter(
-            inscription=inscription, statut='RETARD', appel__date__gte=depuis
-        ).count()
-
-    # Paiements
-    paiements = []
-    if inscription:
-        paiements = (
-            Paiement.objects
-            .filter(inscription=inscription)
-            .order_by('-date_paiement')[:5]
-        )
-
-    from core import portail
-    vie_scolaire = {}
-    if inscription:
-        compteurs, absences = portail.assiduite(inscription, limite=15)
-        vie_scolaire = {
-            'edt': portail.emploi_du_temps(inscription),
-            'compteurs': compteurs,
-            'absences': absences,
-            'notes_recentes': portail.notes_recentes(inscription),
-            'moyennes_periodes': portail.moyennes_par_periode(inscription),
-            'devoirs_a_venir': portail.devoirs_a_venir(inscription),
-        }
-
-    return render(request, 'core/portail_eleve.html', {
-        'eleve': eleve,
-        'inscription': inscription,
-        'moyennes': moyennes,
-        'nb_absences': nb_absences,
-        'nb_retards': nb_retards,
-        'paiements': paiements,
-        'annee': annee,
-        **vie_scolaire,
-    })
 
 
 _ADRESSES_LOCALES = ('localhost', '127.0.0.1', '[::1]')
@@ -1562,14 +1562,15 @@ def saisies_contexte(request):
     })
 
 
-def pwa_manifest(request):
-    """Web App Manifest pour le portail parent (installable sur Android)."""
+def pwa_manifest(request, role='PARENT'):
+    """Web App Manifest du portail parent (``/manifest.json``) ou élève (``/manifest-eleve.json``)."""
+    portail = PORTAILS[role]
     manifest = {
-        "name": "YELEN SCHOOL — Portail Parent",
-        "short_name": "YELEN Parent",
-        "description": "Suivez la scolarité de vos enfants en temps réel",
-        "start_url": "/portail/parent/",
-        "scope": "/portail/parent/",
+        "name": f"YELEN SCHOOL — {portail['titre']}",
+        "short_name": portail['court'],
+        "description": "Suivez la scolarité de vos enfants en temps réel" if role == 'PARENT' else "Votre scolarité en temps réel",
+        "start_url": portail['prefixe'],
+        "scope": portail['prefixe'],
         "display": "standalone",
         "orientation": "portrait",
         "background_color": "#0A1628",
@@ -1615,11 +1616,13 @@ def pwa_icon(request, size):
     return HttpResponse(svg, content_type='image/svg+xml')
 
 
-def pwa_service_worker(request):
-    """Service Worker — cache le portail parent pour un accès hors ligne."""
+def pwa_service_worker(request, role='PARENT'):
+    """Service Worker — cache le portail (parent : ``/sw.js`` ; élève : ``/sw-eleve.js``) pour un accès hors ligne."""
+    portail = PORTAILS[role]
+    racine = portail['prefixe']
     sw = (
-        "const CACHE='yelen-parent-v4';\n"
-        "const PRECACHE=['/portail/parent/','/static/css/yelen.css','/static/js/pwa.js','/static/js/push.js'];\n"
+        f"const CACHE='{portail['cache']}';\n"
+        f"const PRECACHE=['{racine}','/static/css/yelen.css','/static/js/pwa.js','/static/js/push.js'];\n"
         "self.addEventListener('install',e=>{"
         "e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting()));});\n"
         "self.addEventListener('activate',e=>{"
@@ -1633,18 +1636,18 @@ def pwa_service_worker(request):
         "e.respondWith(fetch(e.request).then(r=>{"
         "if(r.ok){const c=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,c));}"
         "return r;}).catch(()=>caches.match(e.request)"
-        ".then(cached=>cached||caches.match('/portail/parent/'))));});\n"
+        f".then(cached=>cached||caches.match('{racine}'))));}});\n"
         # Notifications push (core/push.py) : affichage, puis ouverture de la page du portail au toucher.
         "self.addEventListener('push',e=>{"
         "let d={};try{d=e.data?e.data.json():{};}catch(_){d={message:e.data?e.data.text():''};}"
         "e.waitUntil(self.registration.showNotification(d.titre||'YELEN SCHOOL',{"
         f"body:d.message||'',icon:'{static('img/pwa/icon-192.png')}',badge:'{static('img/pwa/icon-192.png')}',"
-        "tag:d.tag||'yelen-parent',renotify:true,data:{url:d.url||'/portail/parent/notifications/'}}));});\n"
+        f"tag:d.tag||'{portail['cache'].rsplit('-', 1)[0]}',renotify:true,data:{{url:d.url||'{racine}notifications/'}}}}));}});\n"
         "self.addEventListener('notificationclick',e=>{"
         "e.notification.close();"
-        "const url=(e.notification.data&&e.notification.data.url)||'/portail/parent/';"
+        f"const url=(e.notification.data&&e.notification.data.url)||'{racine}';"
         "e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(liste=>{"
-        "const c=liste.find(w=>new URL(w.url).pathname.startsWith('/portail/parent/'));"
+        f"const c=liste.find(w=>new URL(w.url).pathname.startsWith('{racine}'));"
         "if(c){return c.navigate(url).then(()=>c.focus()).catch(()=>clients.openWindow(url));}"
         "return clients.openWindow(url);}));});\n"
     )

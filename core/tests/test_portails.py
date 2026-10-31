@@ -156,6 +156,8 @@ def test_parent_accede_a_la_signature_du_bulletin(client, famille):
 # ── G1 : portail élève ────────────────────────────────────────────────────────
 
 def test_portail_eleve_enrichi(client, famille):
+    """L'élève retrouve, sur les mêmes pages que le portail parent, son travail à faire, ses notes, ses moyennes,
+    son emploi du temps et ses absences (5.36.0 : portail élève aligné sur le portail parent)."""
     eleve_user = baker.make('accounts.User', etablissement=famille['etab'], role='ELEVE', must_change_password=False)
     eleve_user.eleves_lies.add(famille['eleve'])
     t1 = baker.make('pedagogie.Trimestre', annee_scolaire=famille['annee'], numero=1, nom='Trimestre 1',
@@ -172,11 +174,18 @@ def test_portail_eleve_enrichi(client, famille):
     client.force_login(eleve_user)
     reponse = client.get(reverse('core:portail_eleve'))
     assert reponse.status_code == 200
-    ctx = reponse.context
-    assert ctx['compteurs'] == {'absences': 1, 'retards': 1, 'excusees': 0}
-    assert [n.valeur for n in ctx['notes_recentes']] == [Decimal('15.5')]
-    assert [d.devoirs for d in ctx['devoirs_a_venir']] == ['Exercices 4 et 5 p. 32']
-    assert [(t.nom, [r.moyenne for r in rs]) for t, rs in ctx['moyennes_periodes']] == [('Trimestre 1', [Decimal('15.50')])]
+    moi = reponse.context['enfants'][0]
+    assert moi['eleve'] == famille['eleve']
+    assert [d.devoirs for d in moi['devoirs_a_venir']] == ['Exercices 4 et 5 p. 32']
     html = reponse.content.decode()
-    for attendu in ('Travail à faire', 'Exercices 4 et 5 p. 32', '15,50', 'S12', 'Mes absences et retards'):
+    for attendu in ('Travail à faire', 'Exercices 4 et 5 p. 32', 'Portail Élève', '/manifest-eleve.json', '/sw-eleve.js'):
         assert attendu in html, attendu
+    reponse = client.get(reverse('core:portail_eleve_vie_scolaire'))
+    moi = reponse.context['enfants'][0]
+    assert moi['compteurs'] == {'absences': 1, 'retards': 1, 'excusees': 0}
+    assert [n.valeur for n in moi['notes_recentes']] == [Decimal('15.5')]
+    assert [(t.nom, [r.moyenne for r in rs]) for t, rs in moi['moyennes_periodes']] == [('Trimestre 1', [Decimal('15.50')])]
+    html = reponse.content.decode()
+    for attendu in ('15,50', 'S12', 'Absences et retards récents', 'Notes récentes', 'Moyennes par matière'):
+        assert attendu in html, attendu
+    assert 'Justifier une absence' not in html          # dépôt de justificatif réservé au parent

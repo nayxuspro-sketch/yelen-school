@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.35.0
-version_guide: 5.28
-date_mise_a_jour: 31/10/2026 (5.35.0 : données personnelles — conservation, anonymisation, registre §3.10)
+version_logiciel: 5.36.0
+version_guide: 5.29
+date_mise_a_jour: 31/10/2026 (5.36.0 : portail élève aligné sur le portail parent §19.6)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.35.0 — Octobre 2026 (Guide v5.28)
+### Version 5.36.0 — Octobre 2026 (Guide v5.29)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -192,6 +192,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [19.3 Notifications parent](#193-notifications-parent)
   - [19.4 Bulletins parent](#194-bulletins-parent)
   - [19.5 Cahier de textes et devoirs (5.31.0)](#195-cahier-de-textes-et-devoirs-5310)
+  - [19.6 Portail élève (5.36.0)](#196-portail-élève-5360)
 - [20. Signature Électronique des Bulletins](#20-signature-électronique-des-bulletins)
   - [20.1 Vue d'ensemble](#201-vue-densemble)
   - [20.2 Workflow complet](#202-workflow-complet)
@@ -3138,7 +3139,8 @@ Par enfant : emploi du temps de la semaine (jour courant mis en évidence), comp
 
 ### 9.21 Portail élève
 
-L'élève retrouve sur son portail : le **travail à faire** (devoirs du cahier de textes dont la date de remise n'est pas passée), ses quinze dernières notes, ses moyennes par matière et par période, son emploi du temps et ses absences / retards de l'année.
+Depuis la version 5.36.0, l'élève dispose du **même portail que le parent** (application installable, notifications,
+bulletins et documents délivrés, cahier de textes, vie scolaire) à l'adresse `/portail/eleve/` : voir §19.6.
 
 ### 9.22 Appréciations par matière (enseignant)
 
@@ -5715,6 +5717,23 @@ Ce que l'enseignant saisit dans le cahier de textes (§6.1) est visible du paren
   encore échus, « pour aujourd'hui » signalé en rouge — puis **Cours des 30 derniers jours** — date, matière, horaire,
   contenu traité et devoirs donnés avec leur date de remise, du plus récent au plus ancien.
 - Les données sont celles de la classe de l'enfant pour l'année en cours ; aucune notification n'est envoyée.
+
+### 19.6 Portail élève (5.36.0)
+
+Le compte **ELEVE** (lié à sa fiche élève, `Utilisateurs`) ouvre `/portail/eleve/` : les **mêmes pages** que le portail
+parent, pour son seul dossier — identité, moyenne, absences, frais et derniers paiements, **Travail à faire**,
+**Vie scolaire** (emploi du temps, absences et retards, sanctions, **notes récentes**, **moyennes par matière**),
+**Bulletins** (consultation en lecture seule des bulletins publiés — l'accusé de réception reste réservé au parent)
+et **Documents délivrés** (certificats, attestations, convocations… téléchargeables en PDF), **Notifications**.
+
+- **Application installable** : manifeste `/manifest-eleve.json` et service worker `/sw-eleve.js` propres au portail
+  élève (« YELEN Élève » sur l'écran d'accueil, hors ligne sur les pages déjà visitées) ; installation et
+  notifications push comme au §19.1 et §19.3.
+- **Notifications** : la publication d'un bulletin notifie désormais le compte élève (application et push, sans SMS).
+- L'élève ne dépose pas de justificatif d'absence (parent uniquement) et n'accède à aucun module de gestion :
+  toute autre adresse le ramène à son portail.
+- Les sections **Notes récentes** et **Moyennes par matière** sont également affichées au parent sur la page
+  Vie scolaire.
 
 ---
 

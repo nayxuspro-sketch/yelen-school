@@ -8,22 +8,22 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="YELEN Parent">
-  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-title" content="{{ portail.court }}">
+  <link rel="manifest" href="{{ portail.manifest }}">
   <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
   <link rel="apple-touch-icon" href="{% static 'img/pwa/apple-touch-icon.png' %}">
-  <title>Portail Parent — YELEN SCHOOL</title>
+  <title>{{ portail.titre }} — YELEN SCHOOL</title>
   <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
 </head>
 
-<body class="pp-app">
+<body class="pp-app" data-pwa-sw="{{ portail.sw }}" data-pwa-scope="{{ portail.prefixe }}">
 
   <!-- Topbar -->
   <header class="pp-topbar">
     <div class="pp-topbar-logo">YELEN SCHOOL</div>
     <div class="pp-topbar-user">
       <div class="pp-user-name">{{ request.user.get_full_name }}</div>
-      <div class="pp-user-etab">{% if annee %}{{ annee.libelle }}{% else %}Parent{% endif %}</div>
+      <div class="pp-user-etab">{% if annee %}{{ annee.libelle }}{% else %}{{ portail.titre }}{% endif %}</div>
     </div>
   </header>
 
@@ -54,7 +54,7 @@
       <button class="btn-primary btn-sm" data-csp-action="pwa-trigger-install" >Installer</button>
     </div>
 
-    {% include 'core/partials/portail_push.html' with mode='invitation' %}
+    {% include 'core/partials/portail_push.html' with mode='invitation' sw=portail.sw scope=portail.prefixe %}
 
     {% if not enfants %}
     <div class="pp-empty animate-fade-up">
@@ -66,7 +66,7 @@
       </div>
       <h3 class="pp-empty-title">Dossier vide</h3>
       <p class="pp-empty-text">
-        Aucun élève n'est encore lié à votre compte parent. Veuillez contacter l'administration pour régulariser votre dossier.
+        {% if portail.role == 'ELEVE' %}Aucun dossier élève n'est encore lié à votre compte.{% else %}Aucun élève n'est encore lié à votre compte parent.{% endif %} Veuillez contacter l'administration pour régulariser votre dossier.
       </p>
     </div>
     {% else %}
@@ -171,7 +171,7 @@
                   d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
           </svg>
           <span class="pp-section-label">Travail à faire</span>
-          <a href="{% url 'core:portail_parent_cahier' %}" class="pp-section-link">Cahier de textes →</a>
+          <a href="{% url portail.cahier %}" class="pp-section-link">Cahier de textes →</a>
         </div>
 
         {% for devoir in enfant.devoirs_a_venir %}
@@ -204,7 +204,7 @@
 
   </main>
 
-  {% include 'core/partials/portail_parent_nav.html' with actif='accueil' %}
+  {% include 'core/partials/portail_nav.html' with actif='accueil' %}
 
   <script src="{% static 'js/pwa.js' %}" defer></script>
   <script src="{% static 'js/push.js' %}" defer></script>

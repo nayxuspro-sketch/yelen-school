@@ -12,11 +12,11 @@
   <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
 </head>
 
-<body class="pp-app">
+<body class="pp-app" data-pwa-sw="{{ portail.sw }}" data-pwa-scope="{{ portail.prefixe }}">
 
   <!-- Topbar -->
   <header class="pp-topbar">
-    <a href="{% url 'core:portail_parent' %}" class="pp-topbar-back" aria-label="Retour">
+    <a href="{% url portail.accueil %}" class="pp-topbar-back" aria-label="Retour">
       <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
       </svg>
@@ -43,7 +43,7 @@
         </svg>
       </div>
       <h3 class="pp-empty-title">Aucune inscription en cours</h3>
-      <p class="pp-empty-text">L'emploi du temps et les absences apparaîtront ici dès l'inscription de votre enfant pour l'année en cours.</p>
+      <p class="pp-empty-text">L'emploi du temps et les absences apparaîtront ici dès {% if portail.role == 'ELEVE' %}votre inscription{% else %}l'inscription de votre enfant{% endif %} pour l'année en cours.</p>
     </div>
     {% else %}
 
@@ -140,6 +140,55 @@
           {% endfor %}
         </div>
 
+        <!-- Notes récentes -->
+        <div class="pp-section">
+          <div class="pp-section-title">
+            <svg aria-hidden="true" class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+            <span class="pp-section-label">Notes récentes</span>
+          </div>
+          {% for n in enfant.notes_recentes %}
+          <div class="pp-devoir">
+            <div class="pp-devoir-date">
+              <span class="pp-devoir-day">{{ n.evaluation.date_planifiee|date:"d" }}</span>
+              <span class="pp-devoir-month">{{ n.evaluation.date_planifiee|date:"M" }}</span>
+            </div>
+            <div class="pp-devoir-detail">
+              <div class="pp-devoir-subject">{{ n.evaluation.enseignement.matiere.nom }} · <span class="{% if n.note_sur_20 >= 10 %}text-success{% else %}text-danger{% endif %}">{{ n.valeur|floatformat:2 }} / {{ n.evaluation.bareme|floatformat:"0g" }}</span></div>
+              <div class="pp-devoir-text">{{ n.evaluation.type_evaluation.nom }} — {{ n.evaluation.titre }}</div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="pp-bul-empty">Aucune note saisie pour l'instant.</div>
+          {% endfor %}
+        </div>
+
+        <!-- Moyennes par matière -->
+        {% if enfant.moyennes_periodes %}
+        <div class="pp-section">
+          <div class="pp-section-title">
+            <svg aria-hidden="true" class="pp-section-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            <span class="pp-section-label">Moyennes par matière</span>
+          </div>
+          {% for trimestre, resultats in enfant.moyennes_periodes %}
+          <details {% if forloop.last %}open{% endif %} style="margin-bottom:var(--space-2);">
+            <summary style="cursor:pointer; font-weight:600; padding:var(--space-2) 0;">{{ trimestre.nom }}</summary>
+            {% for r in resultats %}
+            <div class="pp-devoir">
+              <div class="pp-devoir-detail">
+                <div class="pp-devoir-subject">{{ r.enseignement.matiere.nom }} · <span class="{% if r.moyenne >= 10 %}text-success{% else %}text-danger{% endif %}">{% if r.dispense %}Dispensé{% elif r.moyenne is None %}—{% else %}{{ r.moyenne|floatformat:2 }}{% endif %}</span>{% if r.rang %} · {{ r.rang }}<sup>e</sup>{% endif %}</div>
+                {% if r.appreciation %}<div class="pp-devoir-text">{{ r.appreciation }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </details>
+          {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- Sanctions -->
         <div class="pp-section">
           <div class="pp-section-title">
@@ -188,6 +237,7 @@
           </div>
           {% endfor %}
 
+          {% if portail.role == 'PARENT' %}
           <form method="post" action="{% url 'core:portail_parent_justifier' %}" enctype="multipart/form-data" style="margin-top:var(--space-3); display:grid; gap:var(--space-3);">
             {% csrf_token %}
             <input type="hidden" name="inscription" value="{{ enfant.inscription.pk }}">
@@ -208,6 +258,7 @@
             </label>
             <button type="submit" class="btn-primary btn-sm">Envoyer le justificatif</button>
           </form>
+          {% endif %}
         </div>
 
       </div>
@@ -218,7 +269,7 @@
 
   </main>
 
-  {% include 'core/partials/portail_parent_nav.html' with actif='vie_scolaire' %}
+  {% include 'core/partials/portail_nav.html' with actif='vie_scolaire' %}
 
 </body>
 </html>

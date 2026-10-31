@@ -12,11 +12,11 @@
   <link rel="stylesheet" href="{% static 'css/yelen.css' %}">
 </head>
 
-<body class="pp-app">
+<body class="pp-app" data-pwa-sw="{{ portail.sw }}" data-pwa-scope="{{ portail.prefixe }}">
 
   <!-- Topbar -->
   <header class="pp-topbar">
-    <a href="{% url 'core:portail_parent' %}" class="pp-topbar-back" aria-label="Retour">
+    <a href="{% url portail.accueil %}" class="pp-topbar-back" aria-label="Retour">
       <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
       </svg>
@@ -37,7 +37,7 @@
         </svg>
       </div>
       <h3 class="pp-empty-title">Aucune inscription en cours</h3>
-      <p class="pp-empty-text">Le cahier de textes apparaîtra ici dès l'inscription de votre enfant pour l'année en cours.</p>
+      <p class="pp-empty-text">Le cahier de textes apparaîtra ici dès {% if portail.role == 'ELEVE' %}votre inscription{% else %}l'inscription de votre enfant{% endif %} pour l'année en cours.</p>
     </div>
     {% else %}
 
@@ -115,7 +115,7 @@
 
   </main>
 
-  {% include 'core/partials/portail_parent_nav.html' with actif='accueil' %}
+  {% include 'core/partials/portail_nav.html' with actif='accueil' %}
 
 </body>
 </html>

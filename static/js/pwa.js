@@ -1,9 +1,10 @@
-/* YELEN SCHOOL — PWA Client (Portail Parent) */
+/* YELEN SCHOOL — PWA Client (portails parent et élève : data-pwa-sw / data-pwa-scope sur <body>) */
 
 // ── Service Worker Registration ───────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/portail/parent/' })
+    const cfg = document.body.dataset;
+    navigator.serviceWorker.register(cfg.pwaSw || '/sw.js', { scope: cfg.pwaScope || '/portail/parent/' })
       .catch(() => {});
   });
 }
