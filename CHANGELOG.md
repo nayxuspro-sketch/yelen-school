@@ -3,6 +3,10 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.38.1 — 2026-10-31
+
+- `core/demarrage.py` : `except NoReverseMatch` au lieu de `except Exception` (test « aucun except silencieux »).
+
 ## 5.38.0 — 2026-10-31
 
 ### Assistant de première configuration

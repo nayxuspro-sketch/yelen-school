@@ -1,7 +1,7 @@
 """Assistant de première configuration : chaque étape de mise en route de l'établissement, son état réel et son
 lien direct. Les étapes ne bloquent rien (l'application fonctionne sans), elles indiquent seulement l'ordre
 conseillé — la page sert aussi de tableau de bord de rentrée."""
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 
 from inscriptions.models import Eleve
 from parametres.models import (
@@ -27,7 +27,7 @@ def etapes(etablissement, user=None):
     def url(nom, espace='parametres'):
         try:
             return reverse(f'{espace}:{nom}')
-        except Exception:                      # nom absent : l'étape reste affichée sans lien
+        except NoReverseMatch:                 # nom absent : l'étape reste affichée sans lien
             return ''
 
     identite_complete = bool(identite and identite.nom_etablissement and identite.numero_agrement_mena)
