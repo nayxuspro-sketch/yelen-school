@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.41.0
-version_guide: 5.34
-date_mise_a_jour: 31/10/2026 (5.41.0 : jeu de démonstration en une commande §3.13)
+version_logiciel: 5.42.0
+version_guide: 5.35
+date_mise_a_jour: 31/10/2026 (5.42.0 : parcours navigateur vérifiés à chaque livraison §38)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.41.0 — Octobre 2026 (Guide v5.34)
+### Version 5.42.0 — Octobre 2026 (Guide v5.35)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -311,6 +311,9 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [37.1 Cantine, transport, internat](#371-cantine-transport-internat)
   - [37.2 Créances individuelles](#372-créances-individuelles)
   - [37.3 Vue consolidée multi-sites (licence RESEAU)](#373-vue-consolidée-multi-sites-licence-reseau)
+- [38. Contrôle qualité automatisé](#38-contrôle-qualité-automatisé)
+  - [38.1 Suite de tests](#381-suite-de-tests)
+  - [38.2 Parcours navigateur vérifiés à chaque livraison (5.42.0)](#382-parcours-navigateur-vérifiés-à-chaque-livraison-5420)
 
 ---
 
@@ -7685,3 +7688,38 @@ Directeur Réseau ne peut ouvrir que les sites de son groupe. **Excel** exporte 
 
 Les groupes se créent dans `Établissements → Gérer les groupes` (Super Admin) : rattacher chaque
 établissement au groupe, puis le compte Directeur Réseau à ce même groupe.
+
+---
+
+## 38. Contrôle qualité automatisé
+
+### 38.1 Suite de tests
+
+La suite couvre les services, les vues et les gabarits de tous les modules (`pytest`, base SQLite ou
+PostgreSQL selon l'installation). Elle protège les règles qui ne se voient pas à l'écran : immuabilité
+des paiements, matrice des droits, formats décimaux, absence de style en ligne, journal d'audit.
+
+```
+python -m pytest                 # suite complète (les parcours navigateur sont exclus)
+python -m pytest --cov           # avec la couverture ; le seuil de la CI est de 73 %
+```
+
+### 38.2 Parcours navigateur vérifiés à chaque livraison (5.42.0)
+
+Cinq gestes critiques sont désormais parcourus dans un vrai navigateur (Chromium piloté par Playwright),
+sur un serveur de test et le jeu de démonstration (`§3.13`) :
+
+| Parcours | Ce qui est vérifié |
+|---|---|
+| **Connexion** | l'écran de connexion mène au tableau de bord, sans page blanche ni redirection parasite |
+| **Encaissement** | sélection de l'élève, rubrique en attente, enregistrement, puis **reçu PDF** réellement généré |
+| **Saisie de notes** | l'enseignant titulaire saisit une note, le message de confirmation s'affiche et la note est en base |
+| **Bulletin PDF** | l'aperçu s'ouvre sur le bon élève et le bulletin PDF est produit (signature `%PDF`) |
+| **Portail parent** | le parent retrouve ses enfants et l'onglet Bulletins du portail |
+
+- Ces parcours tournent dans un **job CI dédié** (`parcours`), à chaque poussée : ils voient ce que les
+  tests de vues ne voient pas — mise en page cassée, feuille de style absente, commentaire de gabarit
+  affiché, service worker qui renvoie une page vide.
+- En local : `python -m playwright install chromium` une seule fois, puis `python -m pytest -m e2e`.
+- Les parcours ne modifient rien d'autre que la base de test : ils utilisent un établissement de
+  démonstration recréé pour l'occasion.

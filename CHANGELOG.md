@@ -3,6 +3,21 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.42.0 — 2026-10-31
+
+### Parcours navigateur vérifiés à chaque livraison (chantier C1)
+
+- `core/tests/e2e/test_parcours.py` : cinq parcours dans un vrai navigateur (Chromium/Playwright) sur un
+  serveur de test et le jeu de démonstration — connexion, encaissement avec reçu PDF, saisie de notes, bulletin
+  PDF, portail parent. Balises `pytest.mark.e2e`, exclues de la suite ordinaire (`addopts`), ignorées sans
+  Playwright.
+- Job CI **`parcours`** : installation de Chromium (`python -m playwright install --with-deps chromium`),
+  migrations, manifeste statique, puis `pytest -m e2e`.
+- `requirements/dev.txt` : `playwright` ; `pytest.ini` : marqueur `e2e` et exclusion par défaut.
+- `core/management/commands/charger_demo.py` : la fiche du personnel porte l'adresse du compte (l'enseignant
+  titulaire est reconnu par son e-mail — `core.utils.get_membre_personnel`).
+- Tests (5), guide §38.2.
+
 ## 5.41.0 — 2026-10-31
 
 ### Jeu de données de démonstration (chantier C4)

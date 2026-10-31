@@ -197,14 +197,18 @@ class Command(BaseCommand):
 
     def _personnel(self, etab):
         membres = {}
-        for matricule, nom, prenom, fonction, directeur, censeur, _ in PERSONNEL:
-            membres[matricule] = MembrePersonnel.objects.get_or_create(
+        for matricule, nom, prenom, fonction, directeur, censeur, (email, _role) in PERSONNEL:
+            membre = MembrePersonnel.objects.get_or_create(
                 etablissement=etab, matricule=matricule,
                 defaults={'nom': nom, 'prenom': prenom, 'genre': 'F' if prenom in PRENOMS_F else 'M',
                           'date_naissance': dt.date(1985, 5, 12), 'lieu_naissance': 'Ouagadougou',
                           'fonction': fonction, 'date_embauche': dt.date(2019, 9, 2),
                           'telephone': '+226 70 00 00 00', 'est_directeur': directeur, 'est_censeur': censeur},
             )[0]
+            if membre.email != email:                       # relie la fiche au compte (enseignant titulaire)
+                membre.email = email
+                membre.save(update_fields=['email'])
+            membres[matricule] = membre
         return membres
 
     def _comptes(self, etab, personnel):
