@@ -1,7 +1,6 @@
 """Dossier documentaire par élève (5.37.0) : dépôt d'une pièce, téléchargement, suppression, isolation par
 établissement, export et anonymisation."""
 from datetime import date
-from io import BytesIO
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile

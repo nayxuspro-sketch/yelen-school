@@ -3,6 +3,10 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.37.1 — 2026-10-31
+
+- Tests du dossier documentaire : import inutilisé retiré (ruff F401, job « Lint » de la CI).
+
 ## 5.37.0 — 2026-10-31
 
 ### Dossier documentaire par élève
