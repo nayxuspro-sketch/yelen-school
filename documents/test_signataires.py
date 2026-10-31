@@ -17,7 +17,7 @@ PNG = (b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08
 @pytest.fixture
 def cycle():
     etab = baker.make('etablissements.Etablissement')
-    return baker.make('parametres.Cycle', etablissement=etab, code='PRIMAIRE')
+    return baker.make('parametres.Cycle', etablissement=etab, code='PRIM')   # code de cycle : 4 caractères
 
 
 @pytest.fixture

@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.44.1 — 2026-10-31
+
+- `documents/test_signataires.py` : le cycle de test utilisait le code `PRIMAIRE` alors que
+  `Cycle.code` est limité à 4 caractères (`PRES`, `PRIM`, `POST`, `SEC`). SQLite tolérait la valeur,
+  PostgreSQL la refuse : la CI serveur échouait. Code corrigé en `PRIM`.
+
 ## 5.44.0 — 2026-10-31
 
 ### Découpage des gros fichiers et styles du gabarit (chantier C2)
