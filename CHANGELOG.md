@@ -3,6 +3,17 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.45.3 — 2026-10-31
+
+- **Disposition des boutons des en-têtes de page** (liste des élèves, et les 37 écrans qui partagent le même
+  gabarit). Trois défauts corrigés, sans toucher aux gabarits :
+  - sous 1 366 px, les cinq boutons du bandeau « Gestion des Élèves » sortaient de l'écran (633 px de large
+    dans 480 px de place) : le bloc se replie désormais sous le titre, les boutons passant à la ligne ;
+  - sur téléphone, le titre et les boutons débordaient horizontalement (page de 390 px élargie) : les actions
+    occupent la largeur, les exports se rangent trois par ligne, l'action principale reste intacte à côté ;
+  - une page dont l'en-tête ne contient que des boutons ne subit plus la largeur du bloc de titre.
+- CSS seulement (`static/css/yelen.css`) : aucune modification de gabarit, aucun test modifié.
+
 ## 5.45.2 — 2026-10-31
 
 - **Dossier documentaire d'un élève (page « Dossier documentaire ») : erreur 500 corrigée.** Le gabarit

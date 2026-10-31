@@ -825,14 +825,24 @@ a.sb-user-modern:hover {
   justify-content: space-between;
   margin-bottom: var(--space-6);
   gap: var(--space-4);
+  flex-wrap: wrap;        /* le bloc d'actions descend d'une ligne quand la place manque */
+}
+
+/* Le titre cède la place avant les boutons, sans jamais provoquer de défilement horizontal.
+   Ciblé sur le bloc `<div>` du titre : une page dont l'en-tête ne contient que des boutons les garde à leur taille. */
+.page-header > div:first-child {
+  flex: 1 1 20rem;
+  min-width: 0;
 }
 
 .page-actions {
   display: flex;
   gap: var(--space-3);
   align-items: center;
-  flex-shrink: 0;
-  flex-wrap: nowrap;
+  flex: 0 0 auto;
+  flex-wrap: wrap;        /* les boutons passent à la ligne plutôt que de sortir de l'écran */
+  justify-content: flex-end;
+  max-width: 100%;
 }
 
 .page-title {
@@ -6454,7 +6464,46 @@ input::-webkit-strong-password-auto-fill-button {
   .page-header {
     flex-direction: column;
     align-items: flex-start;
+    justify-content: flex-start;
   }
+
+  /* En colonne, le titre reprend sa hauteur naturelle (la base de 20rem vaut pour la ligne unique). */
+  .page-header > div:first-child {
+    flex: 0 1 auto;
+  }
+
+  /* Titre sur plusieurs lignes si besoin ; actions en grille souple sous le titre. */
+  .page-title {
+    white-space: normal;
+  }
+
+  .page-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: var(--space-2);
+  }
+
+  /* Actions secondaires (exports, import) : compactes, plusieurs par ligne. */
+  .page-actions > a.btn-secondary,
+  .page-actions > button.btn-secondary,
+  .page-actions > form > button.btn-secondary {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 10px 0.85rem;
+    justify-content: center;
+  }
+
+  /* Action principale : elle ne se comprime pas et partage la dernière ligne avec les restes. */
+  .page-actions > a.btn-primary,
+  .page-actions > button.btn-primary,
+  .page-actions > form > button.btn-primary {
+    flex: 0 0 auto;
+    justify-content: center;
+  }
+
+  .page-actions > form { flex: 0 1 auto; }
+
+  .page-actions > form > button { width: 100%; }
 
   .content {
     padding: var(--space-4);
