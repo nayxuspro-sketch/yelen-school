@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.34.1 — 2026-10-31
+
+- Migration `parametres.0042` : le code du type de document « Attestation de conformité tarifaire » dépassait les
+  20 caractères de `TypeDocument.code` (refusé par PostgreSQL, toléré par SQLite) → code `CONFORMITE_TARIFAIRE` ;
+  migration `0043` corrige les installations SQLite déjà migrées.
+
 ## 5.34.0 — 2026-10-31
 
 ### Grille tarifaire réglementaire (décret n° 2026-0761)

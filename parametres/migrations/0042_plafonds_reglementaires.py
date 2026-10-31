@@ -6,7 +6,7 @@ from django.db import migrations, models
 def ajouter_type_document(apps, schema_editor):
     """Type « Attestation de conformité tarifaire » (catégorie Finance) pour le signataire configuré."""
     TypeDocument = apps.get_model('parametres', 'TypeDocument')
-    TypeDocument.objects.get_or_create(code='ATTESTATION_CONFORMITE_TARIFAIRE', defaults={
+    TypeDocument.objects.get_or_create(code='CONFORMITE_TARIFAIRE', defaults={
         'libelle': 'Attestation de conformité tarifaire', 'categorie': 'FINANCE', 'actif': True,
         'description': 'Respect des plafonds de frais de scolarité (décret n° 2026-0761)',
     })

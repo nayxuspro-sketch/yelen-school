@@ -41,7 +41,7 @@ table.tarifs td.n { text-align:right; font-variant-numeric:tabular-nums; }
   </table>
   <p class="texte">Les services annexes (cantine, transport, internat) et les frais autorisés par la tutelle ne sont pas compris dans les montants ci-dessus.</p>
   <p class="texte" style="text-align:right;">Fait le {{ today|date:"d/m/Y" }}</p>
-  {% signataire_auto "ATTESTATION_CONFORMITE_TARIFAIRE" %}
+  {% signataire_auto "CONFORMITE_TARIFAIRE" %}
   <div class="footer">
     <div>{% if identite and identite.ville %}{{ identite.ville }}{% elif etab.ville %}{{ etab.ville }}{% endif %}</div>
     <div>YELEN SCHOOL — Document généré automatiquement</div>
