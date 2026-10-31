@@ -3,6 +3,28 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.44.0 — 2026-10-31
+
+### Découpage des gros fichiers et styles du gabarit (chantier C2)
+
+Aucune ligne de code métier n'a été réécrite : les fichiers ont été répartis par domaine, chaque nom reste
+importable à son ancienne adresse (réexport dans `__init__.py`).
+
+| Avant | Après | Contenu |
+|---|---|---|
+| `parametres/models.py` (2 081 l.) | paquet `parametres/models/` — 8 modules | `etablissement`, `structure`, `annee`, `evaluation`, `tarifs`, `documents`, `vie_scolaire`, `droits` |
+| `core/views.py` (1 766 l.) | paquet `core/views/` — 8 modules | `accueil`, `audit`, `notifications`, `portail`, `sms`, `exploitation`, `pwa`, `systeme` |
+| `inscriptions/views.py` (1 634 l.) | paquet `inscriptions/views/` — 7 modules | `eleves`, `inscriptions`, `documents`, `rentree`, `parcours`, `transferts`, `preinscriptions` |
+| `core/templates/core/base.html` | gabarit sans style en ligne ni bloc `<style>` | styles déplacés dans `static/css/yelen.css` (section « structure du gabarit de base ») |
+
+- Chaque module ne reçoit que les imports qu'il utilise ; les dépendances internes au paquet sont explicites
+  (`from .tarifs import RubriquePaiement`), les imports relatifs au module d'origine remontent d'un cran.
+- `base.html` : les 15 attributs `style="…"` et le bloc `<style>` du sous-menu sont devenus des classes
+  (`.sb-item-modern.is-info`, `.topbar-mobile`, `.app-footer`, `.sidebar-overlay`…). Le gabarit n'émet plus
+  de CSS, la feuille reste mise en cache et soumise à la CSP.
+- Tests : deux cibles de patch PDF suivent leur module (`inscriptions.views.eleves` / `.documents`) ; suite
+  complète 1 530 tests, parcours navigateur 5/5, couverture 82,04 %.
+
 ## 5.43.0 — 2026-10-31
 
 ### Tests des modules transverses et deux défauts d'API corrigés (chantier C3)

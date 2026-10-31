@@ -134,7 +134,7 @@ def test_liste_des_eleves_pdf_entete_avec_logo(client, settings, tmp_path, mocke
             document = self.render()
             documents.append(document)
             return document.write_pdf(target, **kwargs)
-    mocker.patch('inscriptions.views._WeasyHTML', HTMLEspion)
+    mocker.patch('inscriptions.views.eleves._WeasyHTML', HTMLEspion)
 
     def images(box):
         propres = [box.element.get('alt')] if getattr(box, 'element_tag', None) == 'img' else []
@@ -179,7 +179,7 @@ class TestEleveListStatistiques:
         partiel = client.get(reverse('inscriptions:eleve_list'), {'classe': classe.pk}, HTTP_HX_REQUEST='true').content.decode()
         assert self._lignes(partiel, 'Effectif par genre') == ['Garçons 2', 'Filles 2', 'EFFECTIF TOTAL 4']
 
-        rendu = mocker.patch('inscriptions.views._WeasyHTML')
+        rendu = mocker.patch('inscriptions.views.eleves._WeasyHTML')
         rendu.return_value.write_pdf.return_value = b'%PDF-1.7 test'
         assert client.get(reverse('inscriptions:eleve_list_pdf'), {'classe': classe.pk}).status_code == 200
         html_pdf = rendu.call_args.kwargs['string']
@@ -202,7 +202,7 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
                        lieu_residence='Secteur 30 (Karpala)', nom_pere='OUEDRAOGO Boukary', nom_mere='SAWADOGO Mariam',
                        telephone_urgence='', telephone_parent='70 11 22 33', photo='')
     baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee)
-    weasy = mocker.patch('inscriptions.views._WeasyHTML')
+    weasy = mocker.patch('inscriptions.views.documents._WeasyHTML')
     weasy.return_value.write_pdf.return_value = b'%PDF-1.7 test'
     attendu = ['Résidence :', 'Secteur 30 (Karpala)', 'Père :', 'OUEDRAOGO Boukary', 'Mère :', 'SAWADOGO Mariam',
                "N° d'urgence :", '70 11 22 33']   # sans numéro d'urgence dédié, le téléphone des parents est utilisé
@@ -267,7 +267,7 @@ def test_carte_scolaire_signature_du_signataire_sous_la_photo(client, settings, 
             document = self.render()
             documents.append(document)
             return document.write_pdf(target, **kwargs)
-    mocker.patch('inscriptions.views._WeasyHTML', HTMLEspion)
+    mocker.patch('inscriptions.views.documents._WeasyHTML', HTMLEspion)
 
     def boite(box, classe_css):
         if classe_css in (box.element.get('class', '') if getattr(box, 'element', None) is not None else '').split():

@@ -668,7 +668,7 @@ a.sb-user-modern:hover {
   display: none;
 }
 
-.sb-submenu-modern.open { display: block; }
+/* état ouvert : déclaré une seule fois, plus bas (bloc « structure du gabarit de base ») */
 
 .sb-item-submodern {
   display: flex;
@@ -11156,3 +11156,46 @@ body.env-test { padding-bottom: 1.7rem; }
 .sms-compte-rendu-form label { font-size: 0.8rem; color: var(--color-text-secondary); white-space: nowrap; }
 .sms-compte-rendu-form input[type="time"] { width: 130px; padding: 4px 6px; }
 .sms-compte-rendu-form input[type="text"] { width: 280px; padding: 4px 8px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   STRUCTURE DU GABARIT DE BASE (base.html)
+   Styles auparavant écrits en ligne ou dans un bloc <style> du gabarit : cacheables, non réémis à
+   chaque page et compatibles avec la CSP (aucun style en ligne dans base.html).
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Sous-menu de la barre latérale : masqué par défaut (règle ci-dessus), ouvert par la classe .open
+   (état piloté en JS) ; !important conserve le comportement qu'avait le bloc <style> du gabarit. */
+.sb-submenu-modern.open { display: block !important; }
+
+/* Éléments non cliquables de la barre latérale (informations, compteur, année scolaire) */
+.sb-item-modern.is-info { cursor: default; opacity: 0.75; }
+.sb-item-modern.is-attenue { cursor: default; opacity: 0.5; font-size: 0.8rem; }
+.sb-item-modern.is-colonne { cursor: default; opacity: 0.75; flex-direction: column; align-items: flex-start; gap: 2px; }
+.sb-eleve-nom { font-weight: 600; font-size: 0.85rem; }
+.sb-eleve-matricule { font-size: 0.75rem; opacity: 0.6; }
+.sb-section-modern.is-espacee { margin-top: 12px; }
+.sb-footer-btn.is-relative { position: relative; }
+.sb-form-deconnexion { display: inline; margin: 0; }
+
+/* Barre supérieure mobile (affichée en dessous de 768 px par le script de mise en page) */
+.topbar-mobile { display: none; justify-content: space-between; padding: 0 var(--space-4); }
+.topbar-menu-btn {
+  background: none; border: none; color: var(--color-text-secondary);
+  cursor: pointer; padding: var(--space-2);
+}
+.logo-app-name-lg { font-size: var(--text-lg); }
+.espace-32 { width: 32px; }
+
+/* Pied de page de l'application */
+.app-footer {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-4) var(--space-6);
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* Voile de la barre latérale en affichage mobile (l'état est piloté en JS) */
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, 0.6);
+}

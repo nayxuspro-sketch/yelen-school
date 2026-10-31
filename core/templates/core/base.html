@@ -109,7 +109,7 @@
       <div class="nav-separator"></div>
       <span class="sb-section-modern">Mes enfants</span>
       {% for eleve in user.eleves_lies.all %}
-      <div class="sb-item-modern" style="cursor:default; opacity:0.75;">
+      <div class="sb-item-modern is-info">
           <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
           <circle cx="12" cy="7" r="4"/>
@@ -117,7 +117,7 @@
         {{ eleve.get_nom_complet }}
       </div>
       {% empty %}
-      <div class="sb-item-modern" style="cursor:default; opacity:0.5; font-size:0.8rem;">
+      <div class="sb-item-modern is-attenue">
         Aucun élève associé
       </div>
       {% endfor %}
@@ -135,9 +135,9 @@
       {% if eleve %}
       <div class="nav-separator"></div>
       <span class="sb-section-modern">Ma scolarité</span>
-      <div class="sb-item-modern" style="cursor:default; opacity:0.75; flex-direction:column; align-items:flex-start; gap:2px;">
-        <span style="font-weight:600; font-size:0.85rem;">{{ eleve.get_nom_complet }}</span>
-        <span style="font-size:0.75rem; opacity:0.6;">{{ eleve.matricule|default:"" }}</span>
+      <div class="sb-item-modern is-colonne">
+        <span class="sb-eleve-nom">{{ eleve.get_nom_complet }}</span>
+        <span class="sb-eleve-matricule">{{ eleve.matricule|default:"" }}</span>
       </div>
       {% endif %}
       {% endwith %}
@@ -707,7 +707,7 @@
 
       {# Utilisateurs (admin uniquement) #}
       {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' or user.role == 'CENSEUR' %}
-      <span class="sb-section-modern" style="margin-top: 12px;">Administration</span>
+      <span class="sb-section-modern is-espacee">Administration</span>
       <a href="{% url 'core:chatbot' %}" class="sb-item-modern" data-url="/assistant/">
         <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
@@ -757,7 +757,7 @@
 
       {# Système : réservé au Super Admin (rôle SUPER_ADMIN ou superuser) #}
       {% if user.est_super_admin %}
-      <span class="sb-section-modern" style="margin-top: 12px;">Système</span>
+      <span class="sb-section-modern is-espacee">Système</span>
       <a href="{% url 'licences:statut' %}" class="sb-item-modern" data-url="/licences/mon-abonnement/">
           <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -796,7 +796,7 @@
           </svg>
         </a>
         {% if user.is_authenticated %}
-        <a href="{% url 'core:notifications_list' %}" class="sb-footer-btn" title="Notifications" aria-label="Notifications" style="position:relative;">
+        <a href="{% url 'core:notifications_list' %}" class="sb-footer-btn is-relative" title="Notifications" aria-label="Notifications">
           <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
           </svg>
@@ -806,7 +806,7 @@
                 hx-target="this"
                 hx-swap="innerHTML"></span>
         </a>
-        <form method="post" action="{% url 'accounts:logout' %}" style="display:inline; margin:0;">
+        <form method="post" action="{% url 'accounts:logout' %}" class="sb-form-deconnexion">
             {% csrf_token %}
             <button type="submit" class="sb-footer-btn danger" title="Déconnexion" aria-label="Déconnexion">
               <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -825,16 +825,14 @@
   <div class="main-wrapper">
 
     {# ── Topbar mobile (masquée sur desktop via JS) ── #}
-    <header id="topbar-mobile" class="topbar"
-            style="display:none; justify-content:space-between; padding:0 var(--space-4);">
-      <button id="menu-btn" type="button" aria-label="Ouvrir le menu" aria-controls="sidebar" aria-expanded="false"
-              style="background:none; border:none; color:var(--color-text-secondary); cursor:pointer; padding:var(--space-2);">
+    <header id="topbar-mobile" class="topbar topbar-mobile">
+      <button id="menu-btn" type="button" aria-label="Ouvrir le menu" aria-controls="sidebar" aria-expanded="false" class="topbar-menu-btn">
         <svg aria-hidden="true" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
-      <span class="logo-app-name" style="font-size:var(--text-lg);">YELEN SCHOOL</span>
-      <div style="width:32px;"></div>
+      <span class="logo-app-name logo-app-name-lg">YELEN SCHOOL</span>
+      <div class="espace-32"></div>
     </header>
 
     {# ── Rappel d'expiration de la licence (administrateurs, dès J-30 — licences/rappels.py) ── #}
@@ -872,29 +870,14 @@
     </main>
 
     {# ── Footer ── #}
-    <footer style="border-top:1px solid var(--color-border);
-                   padding:var(--space-4) var(--space-6);
-                   text-align:center;
-                   font-size:var(--text-xs);
-                   color:var(--color-text-muted);">
+    <footer class="app-footer">
       &copy; 2026 YELEN SCHOOL — Système de Gestion Scolaire (Burkina Faso)
     </footer>
 
   </div>{# /main-wrapper #}
 
   {# ── Overlay sidebar mobile ── #}
-  <div id="sidebar-overlay"
-       style="display:none; position:fixed; inset:0; z-index:30; background:rgba(0,0,0,0.6);"
-       aria-hidden="true"></div>
-
-<style nonce="{{ request.csp_nonce }}">
-.sb-submenu-modern {
-  display: none;
-}
-.sb-submenu-modern.open {
-  display: block !important;
-}
-</style>
+  <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
 
   {# ════════════════════════════════ SCRIPTS (zéro Alpine.js) ════════════════════════════════ #}
   <script nonce="{{ request.csp_nonce }}">

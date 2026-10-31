@@ -30,7 +30,7 @@ def ecole(client):
 
 
 def test_la_fiche_reprend_identite_famille_sante_personnes_et_parcours(ecole, mocker):
-    weasy = mocker.patch('inscriptions.views._WeasyHTML')
+    weasy = mocker.patch('inscriptions.views.documents._WeasyHTML')
     weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
     reponse = ecole['client'].get(reverse('inscriptions:eleve_fiche_pdf', args=[ecole['eleve'].pk]))
     assert reponse.status_code == 200 and reponse['Content-Type'] == 'application/pdf'
@@ -59,7 +59,7 @@ def test_un_eleve_d_un_autre_etablissement_est_refuse(ecole):
 
 
 def test_la_fiche_sans_inscription_ni_personnes_autorisees(ecole, mocker):
-    weasy = mocker.patch('inscriptions.views._WeasyHTML')
+    weasy = mocker.patch('inscriptions.views.documents._WeasyHTML')
     weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
     eleve = baker.make('inscriptions.Eleve', nom='NOUVEAU', prenom='Venu', photo='', date_naissance=date(2013, 2, 2),
                        personnes_autorisees='')

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.43.0
+version_logiciel: 5.44.0
 version_guide: 5.35
-date_mise_a_jour: 31/10/2026 (5.43.0 : tests des modules transverses §38.3)
+date_mise_a_jour: 31/10/2026 (5.44.0 : organisation du code et des styles §38.4)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -315,6 +315,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [38.1 Suite de tests](#381-suite-de-tests)
   - [38.2 Parcours navigateur vérifiés à chaque livraison (5.42.0)](#382-parcours-navigateur-vérifiés-à-chaque-livraison-5420)
   - [38.3 Modules transverses couverts (5.43.0)](#383-modules-transverses-couverts-5430)
+  - [38.4 Organisation du code et des styles (5.44.0)](#384-organisation-du-code-et-des-styles-5440)
 
 ---
 
@@ -7743,3 +7744,21 @@ seulement sur leur affichage :
   champs inexistants — une erreur 500 sur toute réponse contenant une moyenne, un paiement ou une présence.
 - Lancer un module seul : `python -m pytest api/ vacations/ etablissements/ manuels/ documents/`.
 
+### 38.4 Organisation du code et des styles (5.44.0)
+
+Les quatre fichiers les plus volumineux ont été répartis par domaine. **Rien n'a changé pour l'utilisateur
+ni pour le code appelant** : chaque nom reste importable à son ancienne adresse.
+
+| Ancien emplacement | Nouveau | Modules |
+|---|---|---|
+| `parametres/models.py` | `parametres/models/` | `etablissement`, `structure`, `annee`, `evaluation`, `tarifs`, `documents`, `vie_scolaire`, `droits` |
+| `core/views.py` | `core/views/` | `accueil`, `audit`, `notifications`, `portail`, `sms`, `exploitation`, `pwa`, `systeme` |
+| `inscriptions/views.py` | `inscriptions/views/` | `eleves`, `inscriptions`, `documents`, `rentree`, `parcours`, `transferts`, `preinscriptions` |
+| `core/templates/core/base.html` | `static/css/yelen.css` | styles du gabarit (sous-menu, barre mobile, pied de page, voile de la barre latérale) |
+
+- Pour retrouver une vue ou un modèle, chercher dans le module de son domaine
+  (`grep -rn "def ma_vue" core/views/`).
+- Le gabarit `base.html` n'écrit plus aucune règle de style : la feuille `yelen.css` est mise en cache par le
+  navigateur et reste soumise à la politique de sécurité de contenu.
+- Les tests gardent leurs cibles habituelles ; seuls les tests qui simulent la génération PDF désignent
+  désormais le module de la vue concernée.
