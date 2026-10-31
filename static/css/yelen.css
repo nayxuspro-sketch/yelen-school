@@ -11163,6 +11163,10 @@ body.env-test { padding-bottom: 1.7rem; }
 /* ─────────────────────────────────────────────────────────────── */
 /*  AIDE EN LIGNE — guide d'utilisation rendu depuis le Markdown      */
 /* ─────────────────────────────────────────────────────────────── */
+/* Le guide fait ~255 000 px : un défilement « doux » y mettrait plusieurs secondes par saut.
+   Sur cette page seulement, les ancres du sommaire amènent la section immédiatement. */
+html:has(.aide-layout) { scroll-behavior: auto; }
+
 .aide-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: var(--space-6); align-items: start; }
 .aide-sommaire { position: sticky; top: var(--space-4); max-height: calc(100vh - var(--space-8)); overflow-y: auto; padding-right: var(--space-2); }
 .aide-sommaire ol { list-style: none; margin: var(--space-3) 0 0; padding: 0; }

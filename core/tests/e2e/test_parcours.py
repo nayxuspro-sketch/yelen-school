@@ -1,8 +1,8 @@
-"""Parcours navigateur (5.42.0) — les cinq gestes critiques vus depuis un vrai navigateur.
+"""Parcours navigateur (5.42.0) — les six gestes critiques vus depuis un vrai navigateur.
 
 Un serveur de test et Chromium piloté par Playwright : connexion, encaissement avec reçu PDF, saisie de
-notes, bulletin PDF, portail parent. Les régressions visuelles (commentaire de gabarit affiché, page
-blanche, redirection d'un service worker) ne se voient que là.
+notes, bulletin PDF, portail parent, sommaire du guide d'aide. Les régressions visuelles (commentaire de
+gabarit affiché, page blanche, redirection d'un service worker) ne se voient que là.
 
 Lancés par le job CI « parcours » (`pytest -m e2e`) ; ignorés du reste de la suite :
     pytest -m e2e              # avec Playwright et Chromium installés
@@ -145,3 +145,25 @@ def test_portail_parent(page, live_server, demo):
     page.goto(f'{live_server.url}{reverse("core:portail_parent_bulletins")}')
     expect(page.locator('.pp-topbar-logo')).to_have_text('Bulletins')
     assert any(enfant.nom in page.content() for enfant in enfants)
+
+
+def test_guide_sommaire_amene_a_la_section(page, live_server, demo):
+    """Le sommaire du guide amène réellement à la section cliquée (5.45.4).
+
+    Régression : le script du sommaire appelait `scrollIntoView` sur le lien actif, ce qui faisait aussi
+    défiler la page — elle revenait au sommaire (y ≈ 230 px) pendant que la section visée restait à 10 000 px.
+    Aucun test serveur ne pouvait le voir : il faut un navigateur qui mesure la position après le clic.
+    """
+    connecter(page, live_server, 'direction@demo.bf')
+    page.goto(f'{live_server.url}{reverse("core:aide")}')
+
+    liens = page.locator('#aide-sommaire-liste a[data-section]')
+    assert liens.count() > 50                      # guide complet rendu, sommaire alimenté
+    lien = liens.nth(10)
+    cible = lien.get_attribute('data-section')
+    lien.click()
+
+    titre = page.locator(f'#aide-contenu [id="{cible}"]')
+    expect(titre).to_be_in_viewport()
+    assert page.evaluate(f'document.getElementById({cible!r}).getBoundingClientRect().top') < 120
+    assert page.evaluate('decodeURIComponent(location.hash.slice(1))') == cible   # le navigateur encode les accents

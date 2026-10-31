@@ -3,6 +3,19 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.45.4 — 2026-10-31
+
+- **Guide d'aide : cliquer une entrée du sommaire n'affichait pas la section.** Le script du sommaire appelait
+  `scrollIntoView` sur le lien devenu actif ; cette méthode fait défiler **tous** les conteneurs de la page,
+  y compris le document. Le guide mesurant ~255 000 px et le sommaire commençant à ~230 px, chaque titre
+  observé ramenait la page en haut du sommaire : la section visée restait à 10 000 px et le clic semblait
+  sans effet. Le sommaire fait désormais défiler son propre cadre (`scrollTop`), jamais la page.
+- Sur cette page, les ancres amènent la section **immédiatement** (`html:has(.aide-layout) { scroll-behavior:
+  auto }`) : le défilement « doux » parcourait des dizaines de milliers de pixels à chaque clic.
+- Vérifié : ancre dans l'URL, clic dans le sommaire (305 entrées), liens de la table des matières du guide
+  (301 liens, 0 cassé) ; défilement manuel stable. Nouveau parcours navigateur (6ᵉ) : il échoue sur le code
+  d'origine, passe après correction.
+
 ## 5.45.3 — 2026-10-31
 
 - **Disposition des boutons des en-têtes de page** (liste des élèves, et les 37 écrans qui partagent le même

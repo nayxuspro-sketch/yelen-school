@@ -88,10 +88,23 @@
   liens.forEach(function (a) { parId[a.dataset.section] = a; });
   var titres = Array.prototype.slice.call(document.querySelectorAll('#aide-contenu h2[id], #aide-contenu h3[id]'))
     .filter(function (h) { return parId[h.id]; });
+  // Le sommaire est le seul conteneur à faire défiler. `scrollIntoView` est proscrit : il entraîne aussi la
+  // page, qui revenait au sommaire (y ≈ 230 px) à chaque titre observé — le guide mesure ~255 000 px, donc le
+  // clic sur une section ne menait nulle part.
+  var cadre = liste.closest('.aide-sommaire');
+  function montrerDansLeSommaire(lien) {
+    if (!cadre || cadre.scrollHeight <= cadre.clientHeight) { return; }
+    var r = lien.getBoundingClientRect(), c = cadre.getBoundingClientRect();
+    if (r.top < c.top) { cadre.scrollTop += r.top - c.top - 8; }
+    else if (r.bottom > c.bottom) { cadre.scrollTop += r.bottom - c.bottom + 8; }
+  }
+
   function marquer(id) {
-    liens.forEach(function (a) { a.classList.toggle('active', a.dataset.section === id); });
-    var actif = parId[id];
-    if (actif && actif.scrollIntoView) { actif.scrollIntoView({ block: 'nearest' }); }
+    liens.forEach(function (a) {
+      var actif = a.dataset.section === id;
+      a.classList.toggle('active', actif);
+      if (actif) { montrerDansLeSommaire(a); }
+    });
   }
   if ('IntersectionObserver' in window && titres.length) {
     var visibles = new Set();
