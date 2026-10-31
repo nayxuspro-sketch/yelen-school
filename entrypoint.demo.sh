@@ -14,7 +14,7 @@ python manage.py collectstatic --noinput --clear
 # Base vierge (premier démarrage ou volume recréé) : chargement du jeu de démonstration.
 if ! python manage.py shell -c "from etablissements.models import Etablissement; raise SystemExit(0 if Etablissement.objects.exists() else 1)"; then
     echo "[DEMO] Base vide : chargement du jeu de démonstration."
-    python manage.py reinitialiser_demo --sans-vidage
+    python manage.py reinitialiser_demo
 fi
 
 exec "$@"

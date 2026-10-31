@@ -1,6 +1,6 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.45.0
+version_logiciel: 5.45.1
 version_guide: 5.35
 date_mise_a_jour: 31/10/2026 (5.45.0 : offre hébergée et instance de démonstration §39)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
@@ -7771,15 +7771,15 @@ Deux façons d'utiliser YELEN SCHOOL, à partir de **la même image** :
 | | Installation d'école (par défaut) | Instance de démonstration |
 |---|---|---|
 | Où | le serveur de l'école, sans internet | un serveur distant (VPS), derrière le proxy de l'hébergeur |
-| Base | SQLite, fichier local | PostgreSQL + Redis (volumes Docker) |
+| Base | SQLite, fichier local | SQLite, volume Docker |
 | Licence | requise (`LICENSE_ENFORCEMENT=true`) | aucune |
 | Sorties | SMS, e-mail, push, Mobile Money actifs | **toutes coupées** |
 | Données | celles de l'école | jeu de démonstration, remis à zéro chaque nuit |
 
 ### 39.1 Mise en service de la démonstration
 
-1. Copier `.env.demo.example` en `.env.demo` et renseigner `DB_PASSWORD`, `SECRET_KEY`, `ALLOWED_HOSTS`
-   et `CSRF_TRUSTED_ORIGINS` (avec le domaine public).
+1. Copier `.env.demo.example` en `.env.demo` et renseigner `SECRET_KEY`, `ALLOWED_HOSTS` et
+   `CSRF_TRUSTED_ORIGINS` (avec le domaine public).
 2. Lancer : `docker compose -f docker-compose.demo.yml up -d --build`.
 3. Vérifier : `curl https://demo.votre-domaine/health/` → `{"status": "ok", ..., "demo": true}`.
 4. Se connecter avec les comptes du jeu de démonstration (`direction@demo.bf`, `comptabilite@demo.bf`,
@@ -7792,13 +7792,16 @@ Deux façons d'utiliser YELEN SCHOOL, à partir de **la même image** :
   configurée. Le bandeau le rappelle à l'écran.
 - **Traçabilité visuelle** : bandeau DÉMONSTRATION sur toutes les pages et à l'impression ; `/health/` porte
   `"demo": true`, ce qui permet à la supervision de distinguer les deux offres.
-- **Remise à zéro** : `docker compose -f docker-compose.demo.yml run --rm reset` vide la base et recharge le
-  jeu. À programmer une fois par nuit sur l'hébergeur ; la commande refuse de s'exécuter hors démonstration.
+- **Remise à zéro** : `docker compose -f docker-compose.demo.yml run --rm reset` reconstruit l'établissement
+  de démonstration et efface les traces des visiteurs. À programmer une fois par nuit sur l'hébergeur
+  (`0 4 * * *`) ; la commande refuse de s'exécuter hors démonstration. La base est SQLite, comme une
+  installation autonome : sous PostgreSQL, un paiement comptabilisé est immuable et la suppression serait
+  refusée.
 - **Garde-fou de configuration** : démarrer avec `DEMO_MODE=true` et `LICENSE_ENFORCEMENT=true` échoue
   immédiatement — une démonstration n'est pas licenciée.
 
 ### 39.3 Ce qui n'est pas automatisé
 
 La démonstration ne fournit ni nom de domaine, ni certificat, ni sauvegarde : ce sont les outils de
-l'hébergeur (proxy, `certbot`, instantanés du volume PostgreSQL). Elle ne doit jamais recevoir de données
+l'hébergeur (proxy, `certbot`, instantanés des volumes Docker). Elle ne doit jamais recevoir de données
 réelles d'élève — c'est la raison du jeu de démonstration reconstruit à chaque remise à zéro.

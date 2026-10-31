@@ -2,24 +2,23 @@
 
     python manage.py reinitialiser_demo
 
-Vide **toutes** les tables puis recharge l'établissement de démonstration (``charger_demo``) : c'est la
-réinitialisation nocturne d'une instance publique, où les visiteurs créent, modifient et suppriment sans
-conséquence. La commande refuse de s'exécuter hors mode démonstration : sur une école, elle effacerait les
-données réelles.
+Supprime l'établissement de démonstration et le recharge (``charger_demo --reset``) : c'est la remise à zéro
+d'une instance publique, où les visiteurs créent, modifient et suppriment sans conséquence. La commande
+refuse de s'exécuter hors mode démonstration : sur une école, elle effacerait les données réelles.
+
+L'instance de démonstration tourne sur SQLite (comme une installation d'école autonome) : sous PostgreSQL,
+un paiement comptabilisé est immuable et la suppression est refusée, avec la marche à suivre.
 """
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
 
 
 class Command(BaseCommand):
-    help = "Vide la base et recharge le jeu de démonstration (réservé à DEMO_MODE=true)."
+    help = "Recharge le jeu de démonstration (réservé à DEMO_MODE=true, base SQLite)."
 
     def add_arguments(self, parser):
         parser.add_argument('--eleves', type=int, default=48, help="Nombre d'élèves du jeu (48).")
         parser.add_argument('--etablissement', default='DEMO', help="Code de l'établissement (DEMO).")
-        parser.add_argument('--sans-vidage', action='store_true',
-                            help="Recharge le jeu sans vider la base (base déjà vide, premier démarrage).")
 
     def handle(self, *args, **options):
         from core import mode_demo
@@ -30,12 +29,11 @@ class Command(BaseCommand):
                 "sur une école, elle effacerait les données réelles."
             )
 
-        etablissement = options['etablissement'].upper()
-        if not options['sans_vidage']:
-            with transaction.atomic():
-                call_command('flush', interactive=False, verbosity=0)
-            self.stdout.write("Base vidée.")
-
-        call_command('charger_demo', '--etablissement', etablissement, '--eleves', str(options['eleves']),
-                     verbosity=0)
-        self.stdout.write(self.style.SUCCESS(f"Démonstration reconstruite : {etablissement}."))
+        call_command('charger_demo', '--etablissement', options['etablissement'],
+                     '--eleves', str(options['eleves']), '--reset', verbosity=0)
+        # Traces laissées par les visiteurs en dehors de l'établissement (élève créé puis abandonné avant son
+        # inscription) : la démonstration ne doit rien conserver d'une session à l'autre.
+        from inscriptions.models import Eleve
+        Eleve.objects.filter(inscriptions__isnull=True).delete()
+        self.stdout.write(self.style.SUCCESS(
+            f"Démonstration reconstruite : {options['etablissement'].upper()}."))

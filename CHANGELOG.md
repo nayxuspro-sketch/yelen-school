@@ -3,6 +3,15 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.45.1 — 2026-10-31
+
+- `reinitialiser_demo` ne vide plus la base : la commande s'appuie sur `charger_demo --reset` et supprime en
+  plus les élèves restés sans inscription (traces d'un visiteur). Sous PostgreSQL, un paiement comptabilisé
+  est immuable : la commande s'arrête avec un message explicite au lieu d'échouer sur le vidage.
+- `docker-compose.demo.yml` passe en SQLite (volume Docker), comme l'installation autonome : la remise à zéro
+  nocturne redevient possible. Services `db`/`redis` retirés, `entrypoint.demo.sh` n'utilise plus
+  `--sans-vidage` ; `.env.demo.example` et guide §39 alignés.
+
 ## 5.45.0 — 2026-10-31
 
 ### Offre hébergée et instance de démonstration (chantier B8)
@@ -16,10 +25,10 @@ d'école**, sans qu'aucune donnée ni message n'en sorte.
   Money réputée non configurée, aucun appel sortant). Détail : `core/mode_demo.py`.
 - Bandeau **DÉMONSTRATION** fixe sur toutes les pages et sur l'écran de connexion, y compris à l'impression ;
   `/health/` expose `"demo": true`.
-- Commande **`reinitialiser_demo`** : vide la base et recharge le jeu de démonstration (C4) ; refuse de
-  s'exécuter hors mode démonstration, où elle effacerait les données d'une école.
-- `docker-compose.demo.yml` + `entrypoint.demo.sh` + `.env.demo.example` : PostgreSQL, Redis, chargement du
-  jeu au premier démarrage, service `reset` pour la remise à zéro nocturne.
+- Commande **`reinitialiser_demo`** : reconstruit l'établissement de démonstration (C4) et efface les traces
+  des visiteurs ; refuse de s'exécuter hors mode démonstration, où elle effacerait les données d'une école.
+- `docker-compose.demo.yml` + `entrypoint.demo.sh` + `.env.demo.example` : même image que l'école, base SQLite
+  dans un volume, chargement du jeu au premier démarrage, service `reset` pour la remise à zéro nocturne.
 - Garde-fou de configuration : `DEMO_MODE=true` avec `LICENSE_ENFORCEMENT=true` empêche le démarrage.
 - Tests (14), guide §39.
 

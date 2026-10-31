@@ -124,12 +124,23 @@ def test_reinitialiser_demo_refuse_hors_demonstration(settings):
         call_command('reinitialiser_demo')
 
 
-def test_reinitialiser_demo_vide_puis_recharge(demo):
+def test_reinitialiser_demo_recharge_le_jeu(demo):
+    """Sous PostgreSQL, l'historique financier est immuable (finances/0016) : la remise à zéro est refusée
+    explicitement, comme pour `charger_demo --reset`. La démonstration tourne donc sur SQLite."""
+    from django.db import connection
+
     from etablissements.models import Etablissement
     from inscriptions.models import Eleve
+
     call_command('charger_demo', '--eleves', '8', verbosity=0)
     identite = Etablissement.objects.get(code='DEMO')
     baker.make('inscriptions.Eleve', nom='INTRUS')       # trace laissée par un visiteur
+
+    if connection.vendor == 'postgresql':
+        with pytest.raises(CommandError, match='immuable'):
+            call_command('reinitialiser_demo', '--eleves', '8', verbosity=0)
+        assert Eleve.objects.filter(nom='INTRUS').exists()
+        return
 
     call_command('reinitialiser_demo', '--eleves', '8', verbosity=0)
 
