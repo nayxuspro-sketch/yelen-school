@@ -56,7 +56,7 @@
       <dt style="color:var(--color-text-muted);">Date demande</dt>
       <dd>{{ transfert.date_demande|date:"d/m/Y" }}</dd>
       <dt style="color:var(--color-text-muted);">Demandé par</dt>
-      <dd>{{ transfert.demandeur.get_full_name|default:transfert.demandeur.username|default:"—" }}</dd>
+      <dd>{% firstof transfert.demandeur.get_full_name transfert.demandeur.username "—" %}</dd>
       {% if transfert.date_traitement %}
       <dt style="color:var(--color-text-muted);">Traité le</dt>
       <dd>{{ transfert.date_traitement|date:"d/m/Y" }}</dd>

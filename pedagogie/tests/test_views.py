@@ -176,6 +176,28 @@ class TestCahierTextesCreate:
 
 
 @pytest.mark.django_db
+class TestCahierTextesListe:
+    """Affichage du cahier de textes (5.45.2).
+
+    ``redige_par`` est facultatif (auteur supprimé, jeu de démonstration) ; le gabarit écrivait
+    ``entree.redige_par.get_full_name|default:entree.redige_par.email`` : l'argument du filtre était évalué, donc
+    une entrée sans auteur faisait échouer la page en 500.
+    """
+
+    def test_entree_sans_auteur_affichee(self, client):
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', etablissement=etab, role='SUPER_ADMIN'))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+        classe = baker.make('parametres.Classe', etablissement=etab)
+        enseignement = baker.make('pedagogie.Enseignement', classe=classe, annee_scolaire=annee, est_actif=True)
+        baker.make('pedagogie.CahierTextes', enseignement=enseignement, redige_par=None, contenu='Les fractions')
+        reponse = client.get(reverse('pedagogie:cahier_textes_classe', args=[classe.pk]))
+        assert reponse.status_code == 200
+        html = reponse.content.decode()
+        assert 'Les fractions' in html and 'Saisi par —' in html
+
+
+@pytest.mark.django_db
 class TestBilanPeriodesPdf:
     """PDF du bilan des périodes : moyennes à deux décimales et intitulé de la colonne des admis."""
 

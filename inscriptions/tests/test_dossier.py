@@ -64,6 +64,31 @@ def test_isolation_par_etablissement(client, ecole):
     assert client.post(reverse('inscriptions:piece_dossier_supprimer', args=[piece.pk])).status_code == 404
 
 
+def test_documents_delivres_affiches(client, ecole):
+    """Chaque document délivré est listé, signataire connu ou non (5.45.2).
+
+    Le gabarit écrivait ``d.signataire_nom|default:d.signataire`` : Django évalue l'argument d'un filtre et
+    ``signataire`` n'existe pas sur ``Document`` (le nom est un instantané) → la page répondait 500 dès qu'un
+    document généré — bulletin, reçu — figurait au dossier. Le repli est désormais le tiret cadratin.
+    """
+    from documents.models import Document
+    inscription = ecole['eleve'].inscriptions.first()
+    type_doc = baker.make('parametres.TypeDocument', code='CERT', libelle='Certificat de scolarité')
+    baker.make(Document, inscription=inscription, annee_scolaire=ecole['annee'], type_document=type_doc,
+               fichier=_pdf('bulletin.pdf'), signataire_nom='Issa OUÉDRAOGO')
+    baker.make(Document, inscription=inscription, annee_scolaire=ecole['annee'], type_document=type_doc,
+               fichier=_pdf('certificat.pdf'), signataire_nom='')
+    baker.make(Document, inscription=inscription, annee_scolaire=ecole['annee'], type_document=type_doc,
+               fichier='')                                    # jamais généré : hors liste
+
+    reponse = client.get(reverse('inscriptions:eleve_dossier', args=[ecole['eleve'].pk]))
+    assert reponse.status_code == 200
+    html = reponse.content.decode()
+    assert 'Issa OUÉDRAOGO' in html
+    assert html.count('Certificat de scolarité') == 2          # deux lignes, la troisième est exclue
+    assert '<td>—</td>' in html                                # signataire absent : tiret, pas d'erreur
+
+
 def test_pieces_dans_l_export_et_effacees_a_l_anonymisation(ecole):
     from core import donnees_personnelles as dp
     piece = baker.make(PieceDossier, eleve=ecole['eleve'], type_piece='AUTRE', fichier=_pdf())

@@ -324,3 +324,25 @@ def test_api_classe_et_statut_reservees_aux_utilisateurs_connectes(client):
     assert client.get(urls[0]).json() == {'niveau': '6e'}
     assert client.get(urls[1]).json() == {'cycle': 'Secondaire', 'cycle_id': str(cycle.pk)}
     assert client.get(urls[2]).json() == {'code': 'NOUV', 'nom': 'Nouveau'}
+
+
+@pytest.mark.django_db
+def test_transfert_sans_demandeur_affiche(client):
+    """Page d'un transfert inter-établissements dont le demandeur a été supprimé (5.45.2).
+
+    ``demandeur`` est facultatif (SET_NULL) ; le gabarit écrivait
+    ``transfert.demandeur.get_full_name|default:transfert.demandeur.username`` et Django évalue l'argument du
+    filtre : la page répondait 500.
+    """
+    import datetime
+    etab = baker.make('etablissements.Etablissement')
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False))
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    classe = baker.make('parametres.Classe', etablissement=etab)
+    inscription = baker.make('inscriptions.Inscription', annee_scolaire=annee, classe=classe)
+    transfert = baker.make('inscriptions.TransfertEleve', inscription=inscription, demandeur=None,
+                           etablissement_destination='Lycée X', motif='Déménagement',
+                           date_demande=datetime.date(2026, 11, 2))
+    reponse = client.get(reverse('inscriptions:transfert_inter_detail', args=[transfert.pk]))
+    assert reponse.status_code == 200
+    assert 'Déménagement' in reponse.content.decode()

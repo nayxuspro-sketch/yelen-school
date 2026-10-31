@@ -94,7 +94,7 @@
                     <td class="text-mono">{{ d.numero_document|default:"—" }}</td>
                     <td>{{ d.annee_scolaire.libelle }}</td>
                     <td>{{ d.created_at|date:"d/m/Y" }}</td>
-                    <td>{{ d.signataire_nom|default:d.signataire }}</td>
+                    <td>{{ d.signataire_nom|default:"—" }}</td>
                     <td>{{ d.genere_par.get_full_name|default:"—" }}</td>
                     <td class="text-right"><a href="{{ d.fichier.url }}" target="_blank" rel="noopener">Ouvrir</a></td>
                 </tr>

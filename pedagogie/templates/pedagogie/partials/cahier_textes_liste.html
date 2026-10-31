@@ -84,7 +84,7 @@
       <!-- Métadonnées -->
       <div class="d-flex align-center gap-3 mt-3">
         <span class="text-xs text-muted">
-          Saisi par {{ entree.redige_par.get_full_name|default:entree.redige_par.email }}
+          Saisi par {% firstof entree.redige_par.get_full_name entree.redige_par.username "—" %}
         </span>
         <span class="text-xs text-muted">·</span>
         <span class="text-xs text-muted">{{ entree.created_at|date:"d/m/Y à H\hi" }}</span>

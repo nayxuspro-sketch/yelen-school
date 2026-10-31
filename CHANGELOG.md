@@ -3,6 +3,17 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.45.2 — 2026-10-31
+
+- **Dossier documentaire d'un élève (page « Dossier documentaire ») : erreur 500 corrigée.** Le gabarit
+  écrivait `{{ d.signataire_nom|default:d.signataire }}` ; Django évalue l'argument d'un filtre, et un
+  `Document` n'a pas d'attribut `signataire` (le nom y est un instantané). La page échouait dès qu'un document
+  généré — bulletin, reçu, certificat — figurait au dossier ; elle affiche désormais le tiret cadratin.
+- Même défaut corrigé là où le gabarit citait un objet facultatif (`SET_NULL`) comme argument de `default:` :
+  cahier de textes sans auteur, page d'un transfert sans demandeur. Les deux passent par `{% firstof %}`, qui
+  tolère une variable absente ; les autres occurrences du projet (63 relevées) ne citent que des objets
+  obligatoires. Couverture : un test par page, chacun vérifié en échec sur le gabarit d'origine.
+
 ## 5.45.1 — 2026-10-31
 
 - `reinitialiser_demo` ne vide plus la base : la commande s'appuie sur `charger_demo --reset` et supprime en
