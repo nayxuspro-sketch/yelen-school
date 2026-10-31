@@ -1,0 +1,53 @@
+{% extends "core/base.html" %}
+
+{% block title %}Assistant de démarrage — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+    <div>
+        <p class="page-subtitle">
+            <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
+            <span class="text-muted"> / </span>
+            <span>Assistant de démarrage</span>
+        </p>
+        <h1 class="page-title">Assistant de démarrage</h1>
+        <p class="page-subtitle">Les huit étapes de mise en route de l'établissement, dans l'ordre conseillé. Aucune n'est obligatoire : l'application fonctionne dès que l'année et les classes existent.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'parametres:index' %}" class="btn-secondary">Paramètres</a>
+    </div>
+</div>
+
+<div class="card animate-fade-up delay-1 mb-4">
+    <div class="card-body">
+        <div class="d-flex align-center justify-between mb-2">
+            <strong>{% if avancement.termine %}Configuration terminée{% else %}Configuration en cours{% endif %}</strong>
+            <span class="text-mono">{{ avancement.faits }} / {{ avancement.total }} étapes</span>
+        </div>
+        <div style="height:10px; border-radius:999px; background:var(--color-border); overflow:hidden;">
+            <div style="height:100%; width:{{ avancement.pourcentage }}%; background:var(--color-primary);"></div>
+        </div>
+    </div>
+</div>
+
+<div class="card animate-fade-up delay-2">
+    <div class="table-wrapper">
+        <table class="table">
+            <thead><tr><th style="width:44px;">#</th><th>Étape</th><th>État</th><th class="text-right">Action</th></tr></thead>
+            <tbody>
+                {% for e in etapes %}
+                <tr>
+                    <td class="text-mono">{{ forloop.counter }}</td>
+                    <td>
+                        <strong>{{ e.titre }}</strong>
+                        <div class="text-sm text-secondary">{{ e.detail }}</div>
+                    </td>
+                    <td>{% if e.fait %}<span class="badge badge-success">Fait</span>{% else %}<span class="badge badge-warning">À faire</span>{% endif %}</td>
+                    <td class="text-right">{% if e.url %}<a href="{{ e.url }}" class="dash-btn-sm">{% if e.fait %}Vérifier{% else %}{{ e.action }}{% endif %}</a>{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

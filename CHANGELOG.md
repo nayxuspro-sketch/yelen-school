@@ -3,6 +3,17 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.38.0 — 2026-10-31
+
+### Assistant de première configuration
+
+- `core/demarrage.py` : les 8 étapes de mise en route (identité, année courante, cycles et classes, rubriques et
+  tarifs, personnel, comptes de gestion, élèves, signataires) avec leur état **calculé dans la base** et le lien
+  direct vers l'écran concerné ; fonction `avancement` (fait / total / pourcentage).
+- Page `/demarrage/` (`core:demarrage`, réservée aux rôles accédant aux paramètres), barre de progression, état
+  « Fait » / « À faire », carte d'accès dans *Paramètres*.
+- Tests (2), guide §3.11.
+
 ## 5.37.1 — 2026-10-31
 
 - Tests du dossier documentaire : import inutilisé retiré (ruff F401, job « Lint » de la CI).

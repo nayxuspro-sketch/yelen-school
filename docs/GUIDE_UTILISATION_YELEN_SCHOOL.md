@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.37.1
-version_guide: 5.30
-date_mise_a_jour: 31/10/2026 (5.37.0 : dossier documentaire de l'élève §4.4)
+version_logiciel: 5.38.0
+version_guide: 5.31
+date_mise_a_jour: 31/10/2026 (5.38.0 : assistant de démarrage §3.11)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.37.0 — Octobre 2026 (Guide v5.30)
+### Version 5.38.0 — Octobre 2026 (Guide v5.31)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -42,6 +42,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [3.8 SMS automatiques planifiés — alertes parents et compte rendu quotidien du promoteur](#38-sms-automatiques-planifiés--alertes-parents-et-compte-rendu-quotidien-du-promoteur)
   - [3.9 Plafonds réglementaires des frais de scolarité (5.34.0)](#39-plafonds-réglementaires-des-frais-de-scolarité-5340)
   - [3.10 Données personnelles : conservation, anonymisation, registre (5.35.0)](#310-données-personnelles--conservation-anonymisation-registre-5350)
+  - [3.11 Assistant de démarrage (5.38.0)](#311-assistant-de-démarrage-5380)
   - [4.4 Dossier documentaire de l'élève (5.37.0)](#44-dossier-documentaire-de-lélève-5370)
 - [4. INSCRIPTION ET RÉINSCRIPTION](#4-inscription-et-réinscription)
   - [4.1 Créer un élève — détection des homonymes](#41-créer-un-élève--détection-des-homonymes)
@@ -839,6 +840,26 @@ LPB 30/10: Encaisse 1 250 000 F (23 recus), especes 950 000 F. Depenses 185 000 
 4. **Export du dossier d'un élève** (droit d'accès) — fiche élève → **Exporter le dossier** : fichier JSON `dossier-<matricule>.json` contenant identité, inscriptions, paiements, notes, présences, justifications, sanctions, parcours, documents émis et comptes liés. Chaque export est journalisé.
 
 **Automatisation :** `python manage.py anonymiser_donnees --dry-run` compte les élèves concernés par établissement ; sans `--dry-run`, il applique la politique de chaque établissement (à planifier une fois par an, par exemple en septembre).
+---
+
+### 3.11 Assistant de démarrage (5.38.0)
+
+**Accès :** `Paramètres → Assistant de démarrage` (ou `/demarrage/`), pour les rôles qui accèdent aux paramètres.
+
+Une seule page pour la mise en route d'un établissement : les **huit étapes** dans l'ordre conseillé, chacune avec son **état réel** calculé dans la base (jamais une simple case à cocher) et le bouton qui ouvre l'écran concerné.
+
+| # | Étape | Considérée faite quand… |
+|---|---|---|
+| 1 | Identité de l'établissement | nom et N° Agrément renseignés (ils figurent sur tous les PDF) |
+| 2 | Année scolaire en cours | une année est marquée « en cours » |
+| 3 | Cycles et classes | au moins un cycle et une classe actifs |
+| 4 | Rubriques et tarifs | au moins une rubrique et un tarif actifs |
+| 5 | Fiches du personnel | au moins un membre du personnel actif |
+| 6 | Comptes de connexion | plus d'un compte de gestion actif (au-delà du compte d'installation) |
+| 7 | Élèves et inscriptions | au moins un élève enregistré |
+| 8 | Signataires des documents | à configurer selon l'organisation (indicateur à vérifier manuellement) |
+
+La barre de progression donne l'avancement (étape « À faire » en orange, « Fait » en vert). Rien n'est bloquant : l'application fonctionne dès que l'année et les classes existent ; la page sert aussi de **liste de contrôle de rentrée** chaque année.
 
 ## 4. INSCRIPTION ET RÉINSCRIPTION
 

@@ -302,6 +302,25 @@ def recherche_globale(request):
 
 
 @login_required
+def demarrage(request):
+    """Assistant de première configuration : étapes de mise en route, état réel et lien direct."""
+    from parametres.droits import peut_acceder
+    if not (request.user.is_superuser or peut_acceder(request.user, 'parametres')):
+        return render(request, 'core/access_denied.html', {
+            'message': "L'assistant de démarrage est réservé aux rôles qui accèdent aux paramètres.",
+        }, status=403)
+    etab = getattr(request.user, 'etablissement', None)
+    if not etab:
+        messages.error(request, "Votre compte n'est associé à aucun établissement.")
+        return redirect('core:home')
+    from core import demarrage as etapes_module
+    liste = etapes_module.etapes(etab, request.user)
+    return render(request, 'core/demarrage.html', {
+        'etapes': liste, 'avancement': etapes_module.avancement(liste),
+    })
+
+
+@login_required
 def pilotage(request):
     """Tableau de bord direction : recouvrement, impayés par classe, effectifs, absences, élèves à risque."""
     from django.core.exceptions import ValidationError
