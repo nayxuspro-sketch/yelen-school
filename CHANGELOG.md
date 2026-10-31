@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.44.2 — 2026-10-31
+
+- Tests : le quota de connexion de l'API (5 tentatives par minute, tenu par le cache) n'était pas remis à zéro
+  entre deux tests. Sous Redis — job CI « mode serveur » — les tentatives des tests d'API s'additionnaient et un
+  test d'authentification réussie recevait 429. Le cache est vidé avant chaque test quand il n'est pas
+  transactionnel (`conftest.py::quota_api_isole`).
+
 ## 5.44.1 — 2026-10-31
 
 - `documents/test_signataires.py` : le cycle de test utilisait le code `PRIMAIRE` alors que

@@ -32,6 +32,21 @@ def cache_des_droits_isole():
 
 
 @pytest.fixture(autouse=True)
+def quota_api_isole():
+    """Le quota des connexions à l'API (5 par minute, scope « login ») est tenu par le cache : sous Redis, il
+    survit d'un test à l'autre et un test d'authentification réussie finit en 429. Vidé avant chaque test quand
+    le cache n'est pas transactionnel (en base, il est annulé avec la transaction du test)."""
+    from django.conf import settings as reglages
+    if 'DatabaseCache' in reglages.CACHES['default']['BACKEND']:
+        yield
+        return
+    from django.core.cache import cache
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.fixture(autouse=True)
 def veille_exploitation_inactive(monkeypatch):
     """La veille d'exploitation (core.veille) part de la première requête du jour dans un fil d'arrière-plan :
     neutralisée pour les tests, qui l'appellent explicitement."""
