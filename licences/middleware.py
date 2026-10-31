@@ -288,47 +288,10 @@ class LicenceCheckMiddleware:
         return True, None
     
     def _generer_alertes_expiration(self, licence: Licence) -> None:
-        """
-        Génère les alertes d'expiration automatiques.
-        
-        Crée des alertes à J-30, J-15, J-7, J-1 si elles n'existent pas.
-        
-        Args:
-            licence: Instance de Licence
-        """
-        jours_restants = licence.jours_restants()
-        
-        # Définir les seuils d'alerte
-        seuils = {
-            30: 'J-30',
-            15: 'J-15',
-            7: 'J-7',
-            1: 'J-1',
-        }
-        
-        for seuil, type_alerte in seuils.items():
-            if jours_restants <= seuil:
-                # Vérifier si l'alerte existe déjà
-                alerte_existe = LicenceAlert.objects.filter(
-                    licence=licence,
-                    type_alerte=type_alerte
-                ).exists()
-                
-                if not alerte_existe:
-                    # Créer l'alerte
-                    LicenceAlert.objects.create(
-                        licence=licence,
-                        type_alerte=type_alerte
-                    )
-                    
-                    # Logger dans l'audit
-                    self._log_audit(
-                        licence,
-                        'VERIFICATION',
-                        f"Alerte {type_alerte} créée ({jours_restants} jours restants)",
-                        None
-                    )
-    
+        """Alertes J-30 / J-15 / J-7 / J-1 et rappels à la direction — logique commune dans ``licences.rappels``."""
+        from .rappels import emettre_rappels
+        emettre_rappels(licence)
+
     def _creer_alerte_expiration(self, licence: Licence, type_alerte: str) -> None:
         """
         Crée une alerte d'expiration.

@@ -10277,6 +10277,24 @@ input::-webkit-strong-password-auto-fill-button {
 /* Décale le contenu quand le bandeau est visible */
 body.offline-active { padding-top: 2rem; }
 
+/* ─── Rappel d'expiration de la licence (administrateurs, dès J-30 — licences/rappels.py) ─── */
+.licence-rappel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  background: rgba(245,166,35,0.10);
+  border-bottom: 1px solid rgba(245,166,35,0.30);
+  color: var(--color-gold);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.licence-rappel svg { flex-shrink: 0; }
+.licence-rappel a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.licence-rappel--urgent { background: rgba(220,53,69,0.10); border-bottom-color: rgba(220,53,69,0.35); color: #f87171; }
+
 /* ─── Saisie hors réseau (notes, appels) — static/js/saisies_hors_ligne.js ─── */
 .saisies-attente {
   position: fixed;

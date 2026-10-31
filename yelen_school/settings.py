@@ -277,6 +277,7 @@ TEMPLATES = [
                 'core.context_processors.version',
                 'core.context_processors.aide',
                 'core.context_processors.environnement',
+                'licences.rappels.contexte',
             ],
         },
     },

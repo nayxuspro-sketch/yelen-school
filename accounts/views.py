@@ -30,6 +30,7 @@ from .services import (  # verrouillage et message unique : source unique
     LOGIN_FAILURE_MESSAGE, authenticate_with_lockout,
 )
 from licences.models import Licence
+from licences.rappels import ROLES_BANDEAU
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,13 @@ def _check_licence_post_login(request, user, on_expired_redirect='accounts:login
         today = timezone.now().date()
         date_alerte = licence.date_expiration - timedelta(days=_LICENCE_ALERT_DAYS)
         if licence.date_expiration < today:
+            if user.est_super_admin:        # seul habilité à saisir le code de renouvellement : il doit pouvoir entrer
+                messages.error(
+                    request,
+                    f"La licence de votre établissement a expiré le "
+                    f"{licence.date_expiration.strftime('%d/%m/%Y')}. Saisissez le nouveau code de licence."
+                )
+                return redirect('licences:activer')
             logout(request)
             messages.error(
                 request,
@@ -77,6 +85,8 @@ def _check_licence_post_login(request, user, on_expired_redirect='accounts:login
                 f"Veuillez contacter l'administrateur pour le renouvellement."
             )
             return redirect(on_expired_redirect)
+        if user.est_super_admin or user.role in ROLES_BANDEAU:
+            return None                     # les administrateurs ont le bandeau permanent (licences.rappels)
         if date_alerte <= today <= licence.date_expiration:
             jours_restants = (licence.date_expiration - today).days
             messages.warning(

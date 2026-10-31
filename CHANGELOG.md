@@ -3,6 +3,24 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.28.0 — 2026-10-31
+
+### Rappels d'expiration de la licence
+
+- **Bandeau** discret en tête de chaque page pour les administrateurs (Super Admin, Directeur / Proviseur, Directeur
+  Réseau) dès **J-30** : « La licence expire dans N jours (date) », rouge à partir de J-7, puis « Licence expirée le … »
+  tant qu'elle n'est pas renouvelée ; lien **Renouveler** pour le Super Admin.
+- **Notification interne + SMS** (+ e-mail si configuré) au **Directeur / Proviseur** à **J-15** et à **J-7** — à défaut
+  de compte Directeur, aux Super Admin de l'établissement. Un seul envoi par palier et par période de licence
+  (alertes `J-30` / `J-15` / `J-7` / `J-1` de `Licences → Alertes`, marquées envoyées avec leurs destinataires).
+- Sans planificateur ni configuration : la vérification part de la première page affichée chaque jour, et du contrôle
+  des licences lorsqu'il est actif (`LicenceCheckMiddleware` délègue à `licences/rappels.py`, plus d'alertes
+  silencieuses). Fonctionne quel que soit `LICENSE_ENFORCEMENT`.
+- Connexion : les administrateurs ne reçoivent plus le message « Attention : la licence … expire » en double du
+  bandeau (il reste affiché aux autres rôles). **Correctif** : licence expirée, le Super Admin — seul habilité à saisir
+  le code de renouvellement — pouvait être refusé à la connexion comme tout le monde (impasse) ; il est désormais
+  dirigé vers la page d'activation.
+
 ## 5.27.0 — 2026-10-30
 
 ### Notifications push du portail parent

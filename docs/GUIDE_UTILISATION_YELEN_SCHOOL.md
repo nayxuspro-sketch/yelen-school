@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.27.0
-version_guide: 5.20
-date_mise_a_jour: 30/10/2026 (5.27.0 : notifications push du portail parent, §20.3)
+version_logiciel: 5.28.0
+version_guide: 5.21
+date_mise_a_jour: 31/10/2026 (5.28.0 : rappels d'expiration de la licence, §13.3)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -4230,6 +4230,24 @@ Le système envoie des alertes automatiques quand :
 - La licence a **expiré**
 
 **Accès :** `Licences → Alertes`
+
+**Rappels d'expiration (5.28.0) :**
+
+- **Dès J-30**, un bandeau discret apparaît en tête de chaque page pour les administrateurs (Super Admin, Directeur /
+  Proviseur, Directeur Réseau) : « La licence expire dans N jours (date) » — rouge à partir de J-7, puis « Licence
+  expirée le … » tant qu'elle n'est pas renouvelée. Le Super Admin y trouve le lien **Renouveler**. Les autres rôles
+  (secrétariat, enseignants, parents) ne voient rien.
+- **À J-15 et à J-7**, le **Directeur / Proviseur** reçoit une notification interne (cloche) et un **SMS** sur le numéro
+  de son compte (si les SMS de l'école sont actifs), ainsi qu'un e-mail si la messagerie est configurée. Sans compte
+  Directeur, ce sont les Super Admin de l'établissement qui sont prévenus.
+- Chaque palier (J-30, J-15, J-7, J-1) n'est émis **qu'une fois par période de licence** ; un renouvellement ouvre une
+  nouvelle période. Les alertes apparaissent dans `Licences → Alertes` avec la mention « envoyée » et leurs
+  destinataires.
+- Aucune programmation à faire : la vérification part de la première page affichée chaque jour, que le contrôle des
+  licences soit actif ou non (`LICENSE_ENFORCEMENT`).
+- **À la connexion** (quel que soit le mode de contrôle) : à moins de 30 jours, les rôles sans bandeau reçoivent un
+  message d'avertissement ; **licence expirée**, la connexion est refusée à tous — sauf au **Super Admin**, dirigé vers
+  la page d'activation pour saisir le nouveau code de licence.
 
 ---
 

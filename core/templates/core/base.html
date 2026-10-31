@@ -834,6 +834,21 @@
       <div style="width:32px;"></div>
     </header>
 
+    {# ── Rappel d'expiration de la licence (administrateurs, dès J-30 — licences/rappels.py) ── #}
+    {% if rappel_licence %}
+    <div class="licence-rappel{% if rappel_licence.expiree or rappel_licence.jours <= 7 %} licence-rappel--urgent{% endif %}" role="status">
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <span>
+        {% if rappel_licence.expiree %}Licence expirée le {{ rappel_licence.date_expiration|date:"d/m/Y" }} : renouvelez-la pour éviter l'interruption du service.
+        {% elif rappel_licence.jours == 0 %}La licence expire aujourd'hui ({{ rappel_licence.date_expiration|date:"d/m/Y" }}).
+        {% else %}La licence expire dans {{ rappel_licence.jours }} jour{{ rappel_licence.jours|pluralize }} ({{ rappel_licence.date_expiration|date:"d/m/Y" }}).{% endif %}
+      </span>
+      {% if rappel_licence.lien %}<a href="{{ rappel_licence.lien }}">Renouveler</a>{% endif %}
+    </div>
+    {% endif %}
+
     {# ── Messages Django (toast) ── #}
     {% if messages %}
     <div id="django-messages">
