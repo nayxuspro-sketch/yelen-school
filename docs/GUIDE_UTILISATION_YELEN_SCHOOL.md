@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.40.0
-version_guide: 5.33
-date_mise_a_jour: 31/10/2026 (5.40.0 : export comptable SYSCOHADA §9.37)
+version_logiciel: 5.41.0
+version_guide: 5.34
+date_mise_a_jour: 31/10/2026 (5.41.0 : jeu de démonstration en une commande §3.13)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.40.0 — Octobre 2026 (Guide v5.33)
+### Version 5.41.0 — Octobre 2026 (Guide v5.34)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -44,6 +44,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [3.10 Données personnelles : conservation, anonymisation, registre (5.35.0)](#310-données-personnelles--conservation-anonymisation-registre-5350)
   - [3.11 Assistant de démarrage (5.38.0)](#311-assistant-de-démarrage-5380)
   - [3.12 Évolution pluriannuelle des indicateurs (5.39.0)](#312-évolution-pluriannuelle-des-indicateurs-5390)
+  - [3.13 Jeu de démonstration en une commande (5.41.0)](#313-jeu-de-démonstration-en-une-commande-5410)
   - [4.4 Dossier documentaire de l'élève (5.37.0)](#44-dossier-documentaire-de-lélève-5370)
 - [4. INSCRIPTION ET RÉINSCRIPTION](#4-inscription-et-réinscription)
   - [4.1 Créer un élève — détection des homonymes](#41-créer-un-élève--détection-des-homonymes)
@@ -879,6 +880,38 @@ La barre de progression donne l'avancement (étape « À faire » en orange, « 
 - **Recalculer toutes les années** (bouton) ou la commande `python manage.py historiser_indicateurs [--etablissement <uuid>]` : une ligne par année, mise à jour sans doublon. À lancer en fin d'année, avant l'archivage.
 - La colonne des **écarts** compare chaque année à la précédente : effectif en nombre d'élèves, taux en points de pourcentage (vert = progrès ; pour l'absentéisme, une baisse est un progrès). La tendance n'apparaît qu'à partir de la deuxième année.
 - Le tableau de bord direction (Pilotage) mène directement à cet écran ; aucun droit supplémentaire n'est nécessaire au-delà de l'accès au Pilotage.
+
+### 3.13 Jeu de démonstration en une commande (5.41.0)
+
+Un établissement complet — prêt à visiter, à former ou à photographier pour le guide — se crée en une commande :
+
+```
+python manage.py charger_demo                 # établissement « DEMO », 48 élèves
+python manage.py charger_demo --eleves 240    # effectif plus large (test de charge)
+python manage.py charger_demo --reset         # supprime le démonstrateur puis le recrée
+```
+
+Ce que la commande installe, dans l'ordre de la mise en route (`§3.11`) :
+
+| Élément | Contenu |
+|---|---|
+| **Identité** | Complexe Scolaire Laafi (Ouagadougou), N° Agrément, catégorie réglementaire 2, zone 1, directeur |
+| **Années** | année en cours marquée « en cours » + année précédente clôturée (l'évolution `§3.12` a donc un historique) |
+| **Cycles et classes** | préscolaire, primaire et post-primaire ; 8 classes (PS, GS, CP1, CP2, CM1, CM2, 6e A, 5e A) |
+| **Tarifs** | 4 rubriques (inscription, scolarité, cantine, tenue) et des tarifs **conformes aux plafonds** (`§3.9`) |
+| **Personnel et comptes** | 8 fiches (directeur, censeur, secrétaire, comptable, 4 enseignants) et 10 comptes |
+| **Élèves** | élèves burkinabè inscrits, avec leurs deux inscriptions (année précédente et année en cours) |
+| **Pédagogie** | matières par cycle, enseignements, devoirs et compositions du 1er trimestre, notes, moyennes et rangs calculés |
+| **Finances** | paiements d'inscription et tranches de scolarité (espèces et Mobile Money), avec leurs reçus |
+| **Signataires** | bulletins, reçus et certificats signés par le directeur ou le comptable de chaque cycle |
+
+- **Comptes de démonstration** (mot de passe `Demo2026!`) : `direction@demo.bf`, `censeur@demo.bf`,
+  `secretariat@demo.bf`, `comptabilite@demo.bf`, quatre enseignants `e.…@demo.bf`, `parent@demo.bf`
+  (deux enfants, portail parent `§19`) et `eleve@demo.bf` (portail élève `§19.6`).
+- La commande **ne touche qu'à l'établissement qu'elle crée** : les données réelles de la base restent intactes.
+  Elle est rejouable sans doublon (elle complète ce qui manque) ; `--reset` repart de zéro pour cet établissement.
+- Les mots de passe de démonstration sont volontairement triviaux : à n'utiliser que sur une base d'essai, jamais
+  sur la base de production.
 
 ## 4. INSCRIPTION ET RÉINSCRIPTION
 

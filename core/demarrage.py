@@ -5,7 +5,7 @@ from django.urls import NoReverseMatch, reverse
 
 from inscriptions.models import Eleve
 from parametres.models import (
-    AnneeScolaire, Classe, Cycle, IdentiteEtablissement, RubriquePaiement, TarifScolarite,
+    AnneeScolaire, Classe, Cycle, IdentiteEtablissement, RubriquePaiement, SignataireDocument, TarifScolarite,
 )
 from personnel.models import MembrePersonnel
 
@@ -23,6 +23,7 @@ def etapes(etablissement, user=None):
     nb_personnel = MembrePersonnel.objects.filter(etablissement=etablissement, is_active=True).count()
     nb_comptes = User.objects.filter(etablissement=etablissement, is_active=True).exclude(role='PARENT').exclude(role='ELEVE').count()
     nb_eleves = Eleve.objects.filter(inscriptions__classe__etablissement=etablissement).distinct().count()
+    nb_signataires = SignataireDocument.objects.filter(cycle__etablissement=etablissement, actif=True).count()
 
     def url(nom, espace='parametres'):
         try:
@@ -56,8 +57,10 @@ def etapes(etablissement, user=None):
          'detail': f"{nb_eleves} élève(s) enregistré(s)",
          'fait': nb_eleves > 0, 'url': reverse('inscriptions:eleve_list'), 'action': 'Inscrire les élèves'},
         {'cle': 'signataires', 'titre': 'Signataires des documents',
-         'detail': 'Qui signe les bulletins, certificats, reçus et attestations (nom, fonction, signature scannée)',
-         'fait': False, 'url': url('signataire_config'), 'action': 'Configurer les signataires'},
+         'detail': (f"{nb_signataires} signataire(s) configuré(s) : bulletins, certificats, reçus et attestations"
+                    if nb_signataires else
+                    'Qui signe les bulletins, certificats, reçus et attestations (nom, fonction, signature scannée)'),
+         'fait': nb_signataires > 0, 'url': url('signataire_config'), 'action': 'Configurer les signataires'},
     ]
 
 

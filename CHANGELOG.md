@@ -3,6 +3,21 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.41.0 — 2026-10-31
+
+### Jeu de données de démonstration (chantier C4)
+
+- `core/management/commands/charger_demo.py` : un établissement complet en une commande — identité et agrément
+  (catégorie 2, zone 1), année en cours et année précédente, 3 cycles et 8 classes, statuts, 4 rubriques et tarifs
+  conformes aux plafonds, 8 fiches de personnel et 10 comptes, élèves inscrits sur deux années, matières,
+  enseignements, devoirs et compositions du 1er trimestre, notes, moyennes et rangs (via `CalculateurMoyenne`),
+  paiements avec reçus, signataires des documents.
+- Options `--eleves`, `--etablissement`, `--reset` ; commande **rejouable sans doublon**, limitée à l'établissement
+  qu'elle crée.
+- `core/demarrage.py` : l'étape « Signataires des documents » de l'assistant est désormais **calculée** (elle était
+  toujours affichée comme non faite) ; un établissement de démonstration atteint 8/8.
+- Tests (6), guide §3.13.
+
 ## 5.40.0 — 2026-10-31
 
 ### Export comptable SYSCOHADA
