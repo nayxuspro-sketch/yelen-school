@@ -113,6 +113,21 @@ def categorie_depense_delete(request, pk):
 
 
 @login_required
+def export_comptable(request):
+    """Export comptable SYSCOHADA (Excel) : journal de caisse, journal des dépenses, récapitulatif par compte."""
+    _require_finance_role(request, FINANCE_VIEW_ROLES)
+    etab, annee_courante = _etab_and_annee(request)
+    annees = _get_annees(etab)
+    annee = annees.filter(pk=request.GET.get('annee')).first() if request.GET.get('annee') else annee_courante
+    if not (etab and annee):
+        messages.error(request, "Aucune année scolaire à exporter.")
+        return redirect('finances:depense_list')
+    from ..export_comptable import classeur
+    wb = classeur(etab, annee)
+    return wb.response(f"Export_comptable_SYSCOHADA_{annee.libelle}".replace('/', '-').replace(' ', '_') + '.xlsx')
+
+
+@login_required
 def depense_list(request):
     _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab, annee_courante = _etab_and_annee(request)

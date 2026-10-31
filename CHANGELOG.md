@@ -3,6 +3,18 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.40.0 — 2026-10-31
+
+### Export comptable SYSCOHADA
+
+- `finances/export_comptable.py` : journal de caisse des recettes (571 Caisse / 521 Banques ↔ 706 Prestations de
+  services, 707 Produits accessoires pour cantine, transport, internat) et journal des dépenses validées (661, 604,
+  624, 605, 628, 625, 633, 658 → 571/521), récapitulatif débit/crédit/solde par compte ; comptes paramétrés dans
+  `COMPTES_DEPENSES`.
+- Vue `finances:export_comptable` (`/finances/export-comptable/`), fichier XLSX `ExcelExport`, bouton sur la page
+  Dépenses, sélecteur d'année.
+- Tests (2), guide §9.37.
+
 ## 5.39.0 — 2026-10-31
 
 ### Historisation pluriannuelle des indicateurs

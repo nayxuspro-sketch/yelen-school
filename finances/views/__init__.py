@@ -92,6 +92,7 @@ from .budget import (  # noqa: F401
     budget_previsionnel,
     tableau_bord_budget,
     tableau_bord_budget_xlsx,
+    export_comptable,
 )
 from .creances import creance_annuler  # noqa: F401
 from .services import (  # noqa: F401

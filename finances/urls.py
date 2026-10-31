@@ -112,6 +112,7 @@ urlpatterns = [
 
     # ── Budget & Dépenses ──────────────────────────────────────────────────
     path('depenses/', views.depense_list, name='depense_list'),
+    path('export-comptable/', views.export_comptable, name='export_comptable'),
     path('depenses/nouvelle/', views.depense_form, name='depense_create'),
     path('depenses/<uuid:pk>/modifier/', views.depense_form, name='depense_edit'),
     path('depenses/<uuid:pk>/supprimer/', views.depense_delete, name='depense_delete'),

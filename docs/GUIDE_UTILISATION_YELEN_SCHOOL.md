@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.39.0
-version_guide: 5.32
-date_mise_a_jour: 31/10/2026 (5.39.0 : évolution pluriannuelle des indicateurs §3.12)
+version_logiciel: 5.40.0
+version_guide: 5.33
+date_mise_a_jour: 31/10/2026 (5.40.0 : export comptable SYSCOHADA §9.37)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.39.0 — Octobre 2026 (Guide v5.32)
+### Version 5.40.0 — Octobre 2026 (Guide v5.33)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -115,6 +115,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [9.34 Sanction : prévenir le parent (portail + SMS)](#934-sanction--prévenir-le-parent-portail--sms)
   - [9.35 Fiche individuelle de l'élève (PDF)](#935-fiche-individuelle-de-lélève-pdf)
   - [9.36 Attestation de travail (personnel)](#936-attestation-de-travail-personnel)
+  - [9.37 Export comptable SYSCOHADA (5.40.0)](#937-export-comptable-syscohada-5400)
 - [10. EXAMENS](#10-examens)
   - [10.1 Créer une Session d'Examen](#101-créer-une-session-dexamen)
   - [10.2 Configurer les Centres et Salles](#102-configurer-les-centres-et-salles)
@@ -3331,6 +3332,18 @@ Dans le formulaire élève, section **Santé & personnes autorisées** : groupe 
 - Document établi à la date du jour ; la signature scannée du signataire s'imprime si elle est enregistrée (`Paramètres → Signataires des documents`).
 
 ---
+
+### 9.37 Export comptable SYSCOHADA (5.40.0)
+
+**Accès :** `Finances → Dépenses → Export comptable SYSCOHADA` (profils financiers), pour l'année choisie dans le sélecteur.
+
+Le fichier Excel (une feuille) contient trois blocs prêts pour la saisie au cabinet :
+
+1. **Journal de caisse — recettes** : date, n° de reçu, libellé (rubrique, élève, classe), **compte débit** (571 Caisse pour les espèces, 521 Banques pour virement, chèque et Mobile Money), **compte crédit** (706 Prestations de services pour la scolarité, l'inscription et les examens ; 707 Produits accessoires pour la cantine, le transport et l'internat), débit, crédit, mode, référence ; ligne **TOTAL**.
+2. **Journal des dépenses** : dépenses **validées uniquement** (brouillons et annulées exclues), débit du compte de charge selon la catégorie — 661 Salaires et charges, 604 Fournitures et matériel, 624 Maintenance, 605 Eau/électricité/internet, 628 Communication, 625 Transport, 633 Formation, 658 Autres — et crédit du compte de trésorerie (571 ou 521).
+3. **Récapitulatif par compte** : total débit, total crédit et solde de chaque compte, pour le contrôle de la balance.
+
+Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMPTES_DEPENSES`) : un cabinet qui utilise une autre codification les adapte sans toucher au reste. Les écritures sont en **francs CFA entiers**, dans l'ordre chronologique ; aucun paiement n'est modifié ni supprimé (registre de caisse immuable, §9.7).
 
 ## 10. EXAMENS
 
