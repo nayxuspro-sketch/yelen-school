@@ -3,6 +3,26 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.43.0 — 2026-10-31
+
+### Tests des modules transverses et deux défauts d'API corrigés (chantier C3)
+
+- **Corrigés** — `api/urls.py` : `/api/annees/<id>/periodes/` était déclarée en `<int:annee_id>` alors que les
+  clés de l'application sont des UUID : la route répondait 404 quelle que soit l'année demandée.
+- **Corrigés** — `api/serializers.py` : `MoyenneGeneraleSerializer`, `PaiementSerializer` et
+  `PresenceSerializer` déclaraient des champs inexistants (`nb_absences`, `nb_retards`, `statut`,
+  `justifiee`) et une relation `inscription.resultats_trimestre` qui n'existe pas ; toute réponse contenant
+  une moyenne, un paiement ou une présence levait une erreur 500. Les champs réels les remplacent
+  (`moyenne_sur_20`, `nb_matieres_*`, `appreciation`, `mode_paiement`, `reference`, `minutes_retard`,
+  `observations`).
+- Tests (66) — vacations (validation des heures, bulletins mensuels et PDF, formulaire de contrat),
+  établissements (fiche de configuration, périmètre du réseau, groupes, export XLSX), signataires de PDF
+  (détection du cycle, replis, mono/multi-signataires, signature scannée), API (rotation et révocation des
+  jetons, cloisonnement de chaque endpoint, permissions, licences absente/inactive) et manuels.
+- Couverture des fichiers visés : `api/views.py` 78 → 98 %, `etablissements/views.py` 65 → 96 %,
+  `vacations/views.py` 72 → 95 %, `manuels/views.py` 98 → 100 %, `signataire_tags.py` 77 → 92 %.
+  Suite complète : 1 530 tests, couverture globale 81,90 %.
+
 ## 5.42.1 — 2026-10-31
 
 - `charger_demo --reset` : sous PostgreSQL, la suppression de l'établissement cascade vers des paiements

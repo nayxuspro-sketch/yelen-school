@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.42.1
+version_logiciel: 5.43.0
 version_guide: 5.35
-date_mise_a_jour: 31/10/2026 (5.42.0 : parcours navigateur vérifiés à chaque livraison §38)
+date_mise_a_jour: 31/10/2026 (5.43.0 : tests des modules transverses §38.3)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -314,6 +314,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 - [38. Contrôle qualité automatisé](#38-contrôle-qualité-automatisé)
   - [38.1 Suite de tests](#381-suite-de-tests)
   - [38.2 Parcours navigateur vérifiés à chaque livraison (5.42.0)](#382-parcours-navigateur-vérifiés-à-chaque-livraison-5420)
+  - [38.3 Modules transverses couverts (5.43.0)](#383-modules-transverses-couverts-5430)
 
 ---
 
@@ -7723,3 +7724,22 @@ sur un serveur de test et le jeu de démonstration (`§3.13`) :
 - En local : `python -m playwright install chromium` une seule fois, puis `python -m pytest -m e2e`.
 - Les parcours ne modifient rien d'autre que la base de test : ils utilisent un établissement de
   démonstration recréé pour l'occasion.
+
+### 38.3 Modules transverses couverts (5.43.0)
+
+Les modules qui touchent la sécurité et l'argent sont désormais éprouvés sur leurs décisions, pas
+seulement sur leur affichage :
+
+| Module | Ce qui est vérifié en test |
+|---|---|
+| **API** | rotation du jeton (l'ancien est invalidé), révocation, cloisonnement de chaque endpoint (staff → son établissement, parent → ses enfants, super admin → tout), refus des permissions, licence absente ou inactive |
+| **Établissements** | rattachement du super-admin au premier établissement, mise à jour de la fiche, statistiques d'en-tête, périmètre du réseau (même groupe), création et affectation d'un groupe, export consolidé XLSX |
+| **Vacations** | validation et invalidation d'heures, refus inter-établissements, génération des bulletins mensuels et de leurs totaux, filtres de la liste, PDF |
+| **Signataires PDF** | détection du cycle et de l'année depuis le contexte du gabarit, repli progressif quand un type de document n'est pas configuré, disposition à un ou plusieurs signataires, signature scannée |
+| **Manuels** | prix de remplacement tolérant (« 4 500 », « quatre mille » → 0), présélection d'un exemplaire, facturation d'un non-rendu même si l'envoi du SMS échoue |
+
+- Deux défauts trouvés par ces tests et corrigés dans la même version : la route
+  `/api/annees/<id>/periodes/` refusait les UUID (`<int:annee_id>`), et trois sérialiseurs déclaraient des
+  champs inexistants — une erreur 500 sur toute réponse contenant une moyenne, un paiement ou une présence.
+- Lancer un module seul : `python -m pytest api/ vacations/ etablissements/ manuels/ documents/`.
+

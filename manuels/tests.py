@@ -212,3 +212,50 @@ def test_migration_convertit_les_faux_paiements_en_creances(monde):
     assert Creance.objects.count() == 2
     migration.convertir_faux_paiements(apps, None)                      # rejouable sans doublon
     assert Creance.objects.count() == 2
+
+
+def test_prix_de_remplacement_illisible_vaut_zero(monde):
+    """« 4 500 » ou « 4500,5 » sont acceptés ; une valeur non numérique ne bloque pas la création (prix 0)."""
+    c = monde.client
+    donnees = {'titre': 'Histoire 6e', 'auteur': '', 'editeur': '', 'isbn': '', 'cycle': 'SECONDAIRE',
+               'classe': str(monde.classe.pk), 'matiere': '', 'annee_edition': '2024',
+               'prix_remplacement': 'quatre mille'}
+    assert c.post(reverse('manuels:manuel_create'), donnees).status_code == 302
+    assert ManuelScolaire.objects.get(titre='Histoire 6e').prix_remplacement == Decimal('0')
+
+    donnees['titre'] = 'Géographie 6e'
+    donnees['prix_remplacement'] = '4 500'          # espace de milliers, prix FCFA (unités entières)
+    c.post(reverse('manuels:manuel_create'), donnees)
+    assert ManuelScolaire.objects.get(titre='Géographie 6e').prix_remplacement == Decimal('4500')
+
+    reponse = c.post(reverse('manuels:manuel_create'), {**donnees, 'titre': ' '}, follow=True)
+    assert 'Le titre est obligatoire.' in reponse.content.decode()
+    assert not ManuelScolaire.objects.filter(titre='').exists()
+
+
+def test_attribution_depuis_un_exemplaire_preselectionne(monde):
+    c = monde.client
+    exemplaire = baker.make(ExemplaireManuel, manuel=monde.manuel)
+    url = reverse('manuels:attribution_depuis_exemplaire', kwargs={'exemplaire_pk': exemplaire.pk})
+    assert exemplaire.code_exemplaire in c.get(url).content.decode()
+
+    etranger = baker.make(ExemplaireManuel, manuel=monde.etranger)
+    perdu = reverse('manuels:attribution_depuis_exemplaire', kwargs={'exemplaire_pk': etranger.pk})
+    assert c.get(perdu).status_code == 404
+
+
+def test_echec_d_envoi_sms_ne_bloque_pas_la_facturation(monde, mocker):
+    """Un SMS impossible (passerelle absente) est journalisé : la créance reste émise et l'écran répond."""
+    c = monde.client
+    exemplaire = baker.make(ExemplaireManuel, manuel=monde.manuel)
+    attribution = baker.make(AttributionManuel, exemplaire=exemplaire, inscription=monde.inscription,
+                             date_attribution=date(2026, 10, 5))
+    monde.inscription.eleve.telephone_parent = '70 00 00 01'
+    monde.inscription.eleve.save(update_fields=['telephone_parent'])
+    mocker.patch('core.sms.sms_actifs', return_value=True)
+    mocker.patch('core.tasks.envoyer_sms_async', side_effect=RuntimeError('passerelle injoignable'))
+
+    reponse = c.post(reverse('manuels:facturer_non_rendu', kwargs={'pk': attribution.pk}), follow=True)
+    attribution.refresh_from_db()
+    assert reponse.status_code == 200 and attribution.facture_genere
+    assert 'Créance de' in reponse.content.decode()

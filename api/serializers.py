@@ -72,14 +72,16 @@ class ResultatSerializer(serializers.ModelSerializer):
 
 class MoyenneGeneraleSerializer(serializers.ModelSerializer):
     trimestre_nom = serializers.CharField(source='trimestre.nom', read_only=True)
-    resultats = ResultatSerializer(many=True, read_only=True, source='inscription.resultats_trimestre')
+    # ``resultats`` est construit par ``to_representation`` pour le trimestre de la moyenne (aucune
+    # relation ``inscription.resultats_trimestre`` n'existe) : le déclarer ici faisait échouer la
+    # sérialisation dès qu'une moyenne existait.
 
     class Meta:
         model = MoyenneGenerale
         fields = [
-            'id', 'trimestre_nom', 'moyenne', 'rang',
+            'id', 'trimestre_nom', 'moyenne', 'moyenne_sur_20', 'rang',
             'total_points', 'total_coefficients',
-            'nb_absences', 'nb_retards',
+            'nb_matieres_validees', 'nb_matieres_total', 'appreciation',
         ]
 
     def to_representation(self, instance):
@@ -98,7 +100,8 @@ class PaiementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Paiement
-        fields = ['id', 'rubrique', 'montant', 'date_paiement', 'numero_recu', 'statut']
+        fields = ['id', 'rubrique', 'montant', 'date_paiement', 'numero_recu',
+                  'mode_paiement', 'reference']
 
 
 class PresenceSerializer(serializers.ModelSerializer):
@@ -107,7 +110,7 @@ class PresenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Presence
-        fields = ['id', 'statut', 'date', 'matiere', 'justifiee']
+        fields = ['id', 'statut', 'date', 'matiere', 'minutes_retard', 'observations']
 
     def get_matiere(self, obj):
         if obj.appel and obj.appel.matiere:

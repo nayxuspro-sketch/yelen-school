@@ -15,7 +15,7 @@ urlpatterns = [
 
     # ── Années scolaires ──────────────────────────────────────────
     path('annees/',                          views.AnneesListView.as_view(),     name='annees_list'),
-    path('annees/<int:annee_id>/periodes/',  views.AnneePeriodesView.as_view(),  name='annee_periodes'),
+    path('annees/<uuid:annee_id>/periodes/', views.AnneePeriodesView.as_view(),  name='annee_periodes'),
 
     # ── Élèves ────────────────────────────────────────────────────
     path('eleves/',                           views.ElevesListView.as_view(),      name='eleves_list'),
