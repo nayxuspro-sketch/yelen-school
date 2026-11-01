@@ -1080,7 +1080,7 @@ Relancer le script est sans effet de bord : rien n'est dupliqué, seul le servic
 #### 3. Redémarrer le serveur pour relire `.env`
 
 - **Mode autonome** — fermer la fenêtre « YELEN SCHOOL - Serveur », puis double-cliquer sur `demarrer-autonome.bat`. La bannière affiche alors `Depuis Internet (parents) : https://yelenschoola.nayxus.com/`.
-- **Installation Docker** — fermer l'application (ou exécuter `stop` dans le dossier), puis double-cliquer sur `demarrer.bat` : les conteneurs sont recréés et relisent `.env` (un simple redémarrage de service ne suffit pas). Vérifier ensuite `curl http://localhost:<YELEN_HTTP_PORT>/health/`.
+- **Installation Docker** — fermer l'application, puis double-cliquer sur **`demarrage.bat`** : les conteneurs sont recréés et relisent `.env` (un simple redémarrage de service ne suffit pas). Vérifier ensuite `curl http://localhost:<YELEN_HTTP_PORT>/health/`. Le fichier `demarrer.bat` n'existe pas ; `demarrer-autonome.bat` ne concerne que le mode sans Docker.
 
 Le nom public reste inutilisable jusqu'à ce redémarrage : le serveur répond alors **HTTP 400** au domaine (il ne l'autorise pas encore).
 
@@ -1107,7 +1107,7 @@ Message type aux parents : « Vos notes, absences et frais : **https://yelenscho
 | Service `cloudflared` arrêté | jeton invalide ou réseau | relancer le script avec un jeton recopié depuis la page « Configurer » |
 | Page lente aux heures de pointe | bande passante de l'école partagée | le portail est léger (PWA) ; le tunnel n'ajoute pas de latence notable |
 
-#### Si le nom de domaine n'est pas disponible (5.46.4)
+#### Mode recommandé sans domaine : Tailscale Funnel (5.46.4)
 
 Un nom de domaine peut être détenu par un compte Cloudflare auquel l'école n'a pas accès (zone « Serveurs de noms invalides ») : l'itinéraire est alors enregistré mais jamais publié. Pour rendre le portail joignable **sans domaine**, Tailscale Funnel fournit une adresse HTTPS stable, gratuite, qui traverse les box sans IP publique (CGNAT) :
 
@@ -1127,11 +1127,15 @@ Le portail devient public à l'adresse affichée : `https://<nom-du-serveur>.<ta
 activer-acces-distance.bat -Domaine <nom-du-serveur>.<tailnet>.ts.net -EnvSeulement
 ```
 
-`-EnvSeulement` met à jour `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` et `ACCES_DISTANCE_DOMAINE` **sans installer de service Cloudflare**. Puis redémarrer le serveur (`demarrer.bat` en Docker, `demarrer-autonome.bat` sinon).
+`-EnvSeulement` met à jour `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` et `ACCES_DISTANCE_DOMAINE` **sans installer de service Cloudflare**. Puis redémarrer le serveur (`demarrage.bat` en Docker, `demarrer-autonome.bat` sinon).
 
 5. **Vérifier** depuis un téléphone en 4G : `https://<nom-du-serveur>.<tailnet>.ts.net/health/` → `{"status": "ok", ...}`.
 
-Limites : trafic relayé par Tailscale (débit modéré, suffisant pour le portail), adresse en `.ts.net`, aucun domaine personnalisé. À utiliser comme solution d'attente ou définitive si le domaine reste inaccessible ; le tunnel Cloudflare déjà configuré reste utilisable dès que le DNS du domaine sera rétabli.
+**Vérifications utiles** : `tailscale funnel status` (adresse et port publiés) ; `curl http://127.0.0.1:<port>/health/` doit répondre `{"status": "ok", ...}` **avant** de publier ; après toute modification du `.env`, redémarrer l'application (`demarrage.bat` en Docker, `demarrer-autonome.bat` sinon) — sans cela Django répond **400 Bad Request**.
+
+**Éprouvé en production** (école de Ouagadougou, 01/11/2026) : portail parents accessible depuis un téléphone en 4G et une tablette en Wi-Fi, certificat HTTPS valide, adresse stable après redémarrage du serveur.
+
+Limites : trafic relayé par Tailscale (débit modéré, suffisant pour le portail), adresse en `.ts.net`, aucun domaine personnalisé. À utiliser comme solution définitive si le domaine reste inaccessible ; le tunnel Cloudflare déjà configuré reste utilisable dès que le DNS du domaine sera rétabli.
 
 #### Sécurité
 

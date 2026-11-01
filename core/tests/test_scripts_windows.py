@@ -42,3 +42,22 @@ def test_script_acces_distance_ne_divulgue_pas_le_jeton():
         if '$Jeton' in ligne:
             assert 'Set-DotEnvValue' not in ligne
             assert 'Write-AccesLog' not in ligne
+
+
+def test_aucun_document_ne_cite_un_lanceur_inexistant():
+    """`demarrer.bat` n'existe pas (le fichier est `demarrage.bat`, et `demarrer-autonome.bat` pour le mode sans
+    Docker) : une consigne de redémarrage erronée laisse l'administrateur bloqué devant « n'est pas reconnu »."""
+    racine = RACINE
+    lanceurs = {p.name for p in racine.glob('*.bat')}
+    assert 'demarrage.bat' in lanceurs and 'demarrer.bat' not in lanceurs
+
+    fautifs = []
+    documents = [f for f in (racine / 'docs').glob('*.md')] + list(racine.glob('*.md'))
+    for fichier in documents:
+        if fichier.name == 'CHANGELOG.md':      # journal des versions : il documente le correctif
+            continue
+        for numero, ligne in enumerate(fichier.read_text(encoding='utf-8').splitlines(), 1):
+            instruction = ligne.replace('demarrer-autonome.bat', '')
+            if 'demarrer.bat' in instruction and "n'existe pas" not in instruction:
+                fautifs.append(f'{fichier.name}:{numero}')
+    assert not fautifs, f'Lanceur inexistant cité : {fautifs}'

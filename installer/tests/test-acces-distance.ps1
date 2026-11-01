@@ -161,7 +161,7 @@ $script:Sortie.Clear()
 Invoke-AccesDistance -Root $work -Domaine 'yelenschoola.nayxus.com' -Jeton $jeton 6>$null
 Assert ($script:Calls -contains 'GET http://127.0.0.1:8081/health/') 'le port Docker est lu dans YELEN_HTTP_PORT'
 $messages = $script:Sortie -join "`n"
-Assert ($messages -match 'demarrer\.bat') 'le redémarrage Docker passe par demarrer.bat (conteneurs recréés)'
+Assert ($messages -match 'demarrage\.bat') 'le redémarrage Docker passe par demarrage.bat (conteneurs recréés)'
 Assert (-not ($messages -match 'demarrer-autonome\.bat')) 'aucune consigne autonome pour une installation Docker'
 
 Write-Host 'Mode autonome'

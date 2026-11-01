@@ -3,6 +3,16 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.5 — 2026-11-01
+
+- **Consigne de redémarrage corrigée** : `demarrer.bat` n'existe pas — le lanceur Docker est **`demarrage.bat`**
+  (`demarrer-autonome.bat` ne concerne que le mode sans Docker). Corrigé dans le script d'accès à distance, les
+  deux guides et le journal ; un test interdit désormais qu'un document cite un lanceur absent de la racine.
+- Guide de déploiement §9.4 : Tailscale Funnel présenté comme **mode recommandé sans domaine**, avec les
+  vérifications (`tailscale funnel status`, `/health/` local) et le rappel du redémarrage obligatoire après
+  modification du `.env` (sinon `400 Bad Request`).
+- Mise en service réelle le 01/11/2026 : portail parents joignable en 4G et en Wi-Fi via `https://<serveur>.<tailnet>.ts.net`.
+
 ## 5.46.4 — 2026-11-01
 
 - **Accès à distance sans nom de domaine.** `activer-acces-distance.bat -Domaine <nom> -EnvSeulement` autorise
@@ -36,7 +46,7 @@ troisième chiffre, les évolutions fonctionnelles le deuxième, les changements
 
 - **Accès à distance sur une installation Docker.** `activer-acces-distance.ps1` reconnaît le mode de
   déploiement : si le conteneur `web` tourne (`docker compose … ps -q web`), il lit le port dans
-  `YELEN_HTTP_PORT` et demande de relancer par **`demarrer.bat`** — les conteneurs doivent être recréés pour
+  `YELEN_HTTP_PORT` et demande de relancer par **`demarrage.bat`** — les conteneurs doivent être recréés pour
   relire `.env`, un simple redémarrage ne suffit pas. En mode autonome, rien ne change (`PORT`,
   `demarrer-autonome.bat`). Guide de déploiement §9.4 complété (redémarrage selon le mode).
 

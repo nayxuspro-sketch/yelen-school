@@ -149,7 +149,7 @@ function Get-InstructionRedemarrage {
     # Le mode autonome relit .env à chaque démarrage ; Docker seulement à la création des conteneurs.
     param([string]$Mode)
     if ($Mode -eq 'docker') {
-        return 'fermez l''application puis double-cliquez sur demarrer.bat (les conteneurs sont recréés et relisent .env).'
+        return 'fermez l''application puis double-cliquez sur demarrage.bat (les conteneurs sont recréés et relisent .env).'
     }
     return 'fermez la fenêtre « YELEN SCHOOL - Serveur », puis double-cliquez sur demarrer-autonome.bat.'
 }

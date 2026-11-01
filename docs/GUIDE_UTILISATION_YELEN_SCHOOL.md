@@ -1,6 +1,6 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.46.4
+version_logiciel: 5.46.5
 version_guide: 5.35
 date_mise_a_jour: 31/10/2026 (5.45.0 : offre hébergée et instance de démonstration §39)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
@@ -3333,7 +3333,7 @@ Dans le formulaire élève, section **Santé & personnes autorisées** : groupe 
 
 - `Sauvegarder maintenant` (case `inclure les médias` cochée par défaut) : copie à chaud de la base SQLite (`yelen_school_<date>.sqlite3.gz`, intégrité vérifiée) et archive `yelen_school_<date>_medias.zip` (photos, signatures, justificatifs) dans le dossier de sauvegarde (`BACKUP_DIR` ou `data\backups`), avec rotation (`BACKUP_KEEP`, défaut 30). L'application reste utilisable pendant la copie.
 - Le tableau liste les sauvegardes disponibles (fichier, type, date, taille) : `Télécharger` pour les **copier sur une clé USB ou un disque externe** — une sauvegarde qui reste sur le même PC ne protège pas d'une panne de disque.
-- **Restauration** : arrêter YELEN SCHOOL (`arreter.bat`), renommer `data\db.sqlite3` en `db.sqlite3.avant`, décompresser le `.sqlite3.gz` choisi (7-Zip ou `gzip -d`) et le renommer `db.sqlite3` dans `data\`, extraire le ZIP des médias dans `media\`, redémarrer (`demarrer.bat`).
+- **Restauration** : arrêter YELEN SCHOOL (`arreter.bat`), renommer `data\db.sqlite3` en `db.sqlite3.avant`, décompresser le `.sqlite3.gz` choisi (7-Zip ou `gzip -d`) et le renommer `db.sqlite3` dans `data\`, extraire le ZIP des médias dans `media\`, redémarrer (`demarrage.bat`).
 - En mode serveur (PostgreSQL), la page rappelle la tâche planifiée `installer\backup-windows.bat` : pas de bouton.
 
 ### 9.33 Absences du personnel et retenue sur la paie
