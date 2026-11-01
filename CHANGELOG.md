@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.2 — 2026-11-01
+
+- **Le contrôle de l'adresse publique ne confond plus un autre site avec YELEN.** `Test-PointDeSante` lisait
+  le seul code HTTP : une page étrangère répondant 200 (page générique du domaine, `*.domaine`) était annoncée
+  « [OK] ». Le script exige désormais le contenu de `/health/` (`"status"`) et distingue trois états : YELEN
+  répond, **un autre site répond** (message rouge + consigne du tunnel), rien ne répond. Même exigence sur le
+  port local, pour repérer un port occupé par une autre application. Tests PowerShell : 31 vérifications.
+
 ## 5.46.1 — 2026-11-01
 
 - **Accès à distance sur une installation Docker.** `activer-acces-distance.ps1` reconnaît le mode de

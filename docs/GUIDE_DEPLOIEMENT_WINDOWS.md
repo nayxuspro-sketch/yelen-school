@@ -1086,7 +1086,7 @@ Le nom public reste inutilisable jusqu'à ce redémarrage : le serveur répond a
 
 #### 4. Vérifier et communiquer l'adresse
 
-Depuis un téléphone **en données mobiles** (hors Wi-Fi de l'école) : `https://yelenschoola.nayxus.com/health/` → `{"status": "ok", "version": "5.46.0", ...}`, puis la page de connexion. Se connecter avec un compte parent (numéro de téléphone, §9.23) et installer l'application (guide d'utilisation §19.1).
+Depuis un téléphone **en données mobiles** (hors Wi-Fi de l'école) : `https://yelenschoola.nayxus.com/health/` → `{"status": "ok", "version": "…", ...}`, puis la page de connexion. Si le navigateur affiche **autre chose** qu'une page JSON à cette adresse, le nom public n'est pas relié au tunnel : voir le tableau de dépannage ci-dessous (c'est symptomatique d'un enregistrement générique `*.nayxus.com`). Se connecter avec un compte parent (numéro de téléphone, §9.23) et installer l'application (guide d'utilisation §19.1).
 
 Message type aux parents : « Vos notes, absences et frais : **https://yelenschoola.nayxus.com** — identifiant : votre numéro de téléphone, mot de passe remis par l'école. »
 
@@ -1099,6 +1099,7 @@ Message type aux parents : « Vos notes, absences et frais : **https://yelenscho
 
 | Symptôme | Cause probable | Correctif |
 |---|---|---|
+| **Un autre site s'affiche** à l'adresse publique (page d'accueil du domaine, jeu, page générique) et `/health/` renvoie du HTML | le nom n'est relié à aucun tunnel : un enregistrement générique `*.domaine` répond à sa place | ajouter le **nom d'hôte public** dans le tunnel (tableau de bord, §1 ci-dessus), puis redémarrer le serveur. Contrôle : `curl https://<domaine>/health/` doit renvoyer `{"status": "ok", ...}`, jamais du HTML. Le script distingue les deux cas et l'annonce en rouge |
 | `400 Bad Request (400)` sur le domaine | serveur non redémarré après l'activation | fermer la fenêtre du serveur, relancer `demarrer-autonome.bat` |
 | Erreur 1033 Cloudflare | serveur arrêté ou port différent | démarrer le serveur ; vérifier `PORT` dans `.env` et le service `http://localhost:<port>` du tunnel |
 | Erreur 1034 ou lenteur DNS | nom d'hôte public absent, DNS non propagé | ajouter le nom d'hôte public, attendre quelques minutes |

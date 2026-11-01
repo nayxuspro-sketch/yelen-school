@@ -63,8 +63,11 @@ function Invoke-WebRequest {
     $script:Calls.Add("GET $Uri")
     $joignable = if ($Uri -like 'http://127.0.0.1*') { $script:SanteLocale } else { $script:SantePublique }
     if (-not $joignable) { throw 'connexion refusée' }
-    [pscustomobject]@{ StatusCode = 200 }
+    $corps = if ($Uri -like 'http://127.0.0.1*') { $script:CorpsLocal } else { $script:CorpsPublic }
+    [pscustomobject]@{ StatusCode = 200; Content = $corps }
 }
+$script:CorpsLocal = '{"status": "ok", "version": "5.46.2"}'
+$script:CorpsPublic = '{"status": "ok", "version": "5.46.2"}'
 function Read-Host { param($Prompt) $script:ReponseJeton }
 function docker { param([Parameter(ValueFromRemainingArguments = $true)]$Arguments) if ($script:ConteneurWeb) { $script:ConteneurWeb } }
 $script:ConteneurWeb = ''
@@ -169,6 +172,24 @@ Invoke-AccesDistance -Root $work -Domaine 'yelenschoola.nayxus.com' -Jeton $jeto
 $messages = $script:Sortie -join "`n"
 Assert ($messages -match 'demarrer-autonome\.bat') 'le mode autonome redémarre par demarrer-autonome.bat'
 $script:ConteneurWeb = ''
+
+# ── 7. Un autre site répond pour le nom public ───────────────────────────────
+Write-Host 'Autre site sur le nom public'
+$script:CorpsPublic = '<!DOCTYPE html><html><body>GAME OVER</body></html>'
+$script:Sortie.Clear()
+Invoke-AccesDistance -Root $work -Domaine 'yelenschoola.nayxus.com' -Jeton $jeton 6>$null
+$messages = $script:Sortie -join "`n"
+Assert ($messages -match "ce n'est PAS YELEN SCHOOL") 'une page étrangère est signalée comme telle'
+Assert ($messages -match 'Nom d.hôte public') 'la consigne du tunnel est donnée'
+Assert (-not ($messages -match '\[OK\]')) 'aucun faux succès lorsque le nom public sert un autre site'
+
+Write-Host 'Port local occupé par autre chose'
+$script:CorpsPublic = '{"status": "ok", "version": "5.46.2"}'
+$script:CorpsLocal = '<html>autre application</html>'
+$script:Sortie.Clear()
+Invoke-AccesDistance -Root $work -Domaine 'yelenschoola.nayxus.com' -Jeton $jeton 6>$null
+Assert ((($script:Sortie -join "`n") -match 'Serveur muet')) 'un port local servi par autre chose est signalé'
+$script:CorpsLocal = '{"status": "ok", "version": "5.46.2"}'
 
 # ── Nettoyage ────────────────────────────────────────────────────────────────
 Remove-Item -Recurse -Force $work

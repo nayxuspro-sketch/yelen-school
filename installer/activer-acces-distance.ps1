@@ -190,17 +190,25 @@ function Invoke-Cloudflared {
 }
 
 function Test-PointDeSante {
-    param([string]$Url, [int]$Tentatives = 1, [int]$AttenteSecondes = 5)
+    # Retourne 'ok' (YELEN répond), 'autre' (un autre site répond pour ce nom : tunnel non relié ou
+    # enregistrement *.domaine générique) ou 'muet' (rien ne répond).
+    param([string]$Url, [int]$Tentatives = 1, [int]$AttenteSecondes = 5, [switch]$YelenSeulement)
+    $dernier = 'muet'
     for ($essai = 1; $essai -le $Tentatives; $essai++) {
         try {
             $reponse = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
-            if ($reponse.StatusCode -eq 200) { return $true }
+            if ($reponse.StatusCode -eq 200) {
+                if (-not $YelenSeulement) { return 'ok' }
+                # /health/ de YELEN renvoie {"status": "ok", "version": ...} ; une page HTML ne compte pas.
+                if ("$($reponse.Content)" -match '"status"') { return 'ok' }
+                $dernier = 'autre'
+            }
         } catch {
             # Adresse pas encore joignable : nouvel essai.
         }
         if ($essai -lt $Tentatives) { Start-Sleep -Seconds $AttenteSecondes }
     }
-    return $false
+    return $dernier
 }
 
 function Invoke-AccesDistance {
@@ -303,7 +311,7 @@ function Invoke-AccesDistance {
 
     Write-Host '[4/5] Contrôle du serveur local...' -ForegroundColor Cyan
     $adresseLocale = "http://127.0.0.1:$Port/health/"
-    if (Test-PointDeSante -Url $adresseLocale -Tentatives 2 -AttenteSecondes 2) {
+    if ((Test-PointDeSante -Url $adresseLocale -Tentatives 2 -AttenteSecondes 2 -YelenSeulement) -eq 'ok') {
         Write-Host "        Serveur joignable ($adresseLocale)." -ForegroundColor Green
     } else {
         Write-Host "        Serveur muet sur $adresseLocale : démarrez-le (demarrer-autonome.bat)." -ForegroundColor Yellow
@@ -312,9 +320,15 @@ function Invoke-AccesDistance {
 
     Write-Host '[5/5] Contrôle de l''adresse publique (jusqu''à 60 s)...' -ForegroundColor Cyan
     $adressePublique = "https://$Domaine/health/"
-    $atteint = Test-PointDeSante -Url $adressePublique -Tentatives 12 -AttenteSecondes 5
-    if ($atteint) {
-        Write-Host "        [OK] $adressePublique répond." -ForegroundColor Green
+    $etat = Test-PointDeSante -Url $adressePublique -Tentatives 12 -AttenteSecondes 5 -YelenSeulement
+    if ($etat -eq 'ok') {
+        Write-Host "        [OK] $adressePublique répond (YELEN SCHOOL)." -ForegroundColor Green
+    } elseif ($etat -eq 'autre') {
+        Write-Host "        $Domaine répond, mais ce n'est PAS YELEN SCHOOL : un autre site occupe ce nom." -ForegroundColor Red
+        Write-Host "        Le tunnel n'est donc pas relié à ce nom d'hôte. Dans Cloudflare Zero Trust :" -ForegroundColor Yellow
+        Write-Host "          - Tunnels -> votre tunnel -> Nom d'hôte public : $Domaine -> HTTP localhost:$Port" -ForegroundColor Yellow
+        Write-Host "          - puis redémarrer le serveur (le .env n'est lu qu'au démarrage)." -ForegroundColor Yellow
+        Write-Host '        Un enregistrement générique *.nayxus.com explique souvent cette page générique.' -ForegroundColor Yellow
     } else {
         Write-Host "        $adressePublique ne répond pas encore. Vérifiez dans le tableau de bord :" -ForegroundColor Yellow
         Write-Host "          - Nom d'hôte public : $Domaine" -ForegroundColor Yellow
