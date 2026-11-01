@@ -3,6 +3,18 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.6 — 2026-11-01
+
+- **Messages reçus : lisibles sur téléphone.** La boîte n'est plus un tableau de sept colonnes à défilement
+  horizontal : chaque SMS occupe une carte pleine largeur (numéro et date en tête, famille identifiée,
+  texte complet, badges compacts, actions sous le message). Sur téléphone la colonne « Message » tombait à
+  **un caractère par ligne** (tableau de 934 px dans 356 px visibles, lignes de 235 px) ; le message occupe
+  désormais 311 px de large et les cartes s'empilent sans défilement latéral. Sur ordinateur, le texte passe
+  de 158 px à 1024 px, les trois actions de chaque message tiennent sur une ligne alignée à droite et le
+  badge « Message libre » n'est plus répété quand la vue ne contient que des messages libres.
+- Guide d'utilisation §32.6 : présentation en cartes décrite ; test de non-régression sur la structure de la
+  liste (une carte par message, aucun tableau à défilement).
+
 ## 5.46.5 — 2026-11-01
 
 - **Consigne de redémarrage corrigée** : `demarrer.bat` n'existe pas — le lanceur Docker est **`demarrage.bat`**

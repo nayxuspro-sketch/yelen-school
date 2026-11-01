@@ -1,6 +1,6 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.46.5
+version_logiciel: 5.46.6
 version_guide: 5.35
 date_mise_a_jour: 31/10/2026 (5.45.0 : offre hébergée et instance de démonstration §39)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
@@ -7106,7 +7106,7 @@ Le simulateur :
 - **Commandes automatiques** : `NOTE`, `SOLDE`, `ABS`, `AIDE`, déjà traitées par YELEN (élève concerné affiché).
 - **Filtres** *Lus et non lus* / *Non lus* / *Lus* ; 50 messages par page, les plus récents d'abord.
 
-Pour chaque message : date de réception, numéro de l'expéditeur et **famille identifiée** d'après les fiches élèves (« Famille de OUEDRAOGO AWA (6e A) », tous formats de numéro confondus : `70 11 22 33` = `+22670112233`) ou « Numéro inconnu des fiches élèves », texte complet, état **Lu** (date, utilisateur) ou **Non lu** (ligne en gras).
+Chaque message occupe une **carte** : numéro de l'expéditeur et date de réception en tête, **famille identifiée** d'après les fiches élèves (« Famille de OUEDRAOGO AWA (6e A) », tous formats de numéro confondus : `70 11 22 33` = `+22670112233`) ou « Numéro inconnu des fiches élèves », texte complet en pleine largeur, état **Lu** (date, utilisateur) ou **Non lu** (liseré et texte en gras). La présentation s'adapte à l'écran : sur téléphone les cartes s'empilent, sans défilement horizontal, et les actions passent sous le message.
 
 Actions (droit *Marquer lu / non lu et répondre par SMS* de la fonctionnalité, matrice des droits 3.7) :
 - **Marquer lu** / **Marquer non lu** ; **Tout marquer comme lu** (en-tête : les messages libres non lus).

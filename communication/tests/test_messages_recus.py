@@ -45,6 +45,17 @@ def test_liste_les_messages_libres_avec_la_famille_identifiee_par_le_numero(boit
     assert 'name="texte"' in html and 'Marquer lu' in html
 
 
+def test_affichage_en_cartes_sans_tableau_a_defilement(boite, client):
+    """Chaque message occupe une carte pleine largeur : plus de tableau à défilement horizontal dont la
+    colonne « Message » s'écrasait sur téléphone (un caractère par ligne)."""
+    html = client.get(reverse('communication:messages_recus')).content.decode()
+
+    assert html.count('class="boite-sms-item') == 2          # une carte par message de la page
+    assert 'boite-sms-texte' in html and 'je paierai lundi' in html.lower()
+    assert 'table-scroll' not in html and 'class="data-table' not in html
+    assert 'Tout cocher sur cette page' in html and 'name="ids"' in html
+
+
 def test_filtres_type_et_etat(boite, client):
     url = reverse('communication:messages_recus')
     IncomingSMSLog.objects.filter(pk=boite['libre'].pk).update(lu_le='2026-10-28T10:00:00Z', lu_par=boite['directeur'])

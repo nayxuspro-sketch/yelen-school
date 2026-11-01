@@ -12,14 +12,14 @@
     <h1 class="page-title">Messages reçus
       {% if non_lus %}<span class="badge badge-danger" style="font-size:0.75rem; margin-left:8px;">{{ non_lus }} non lu{{ non_lus|pluralize }}</span>{% endif %}
     </h1>
-    <p class="page-subtitle">SMS envoyés par les parents au numéro de l'école. Les messages libres sont à lire et à traiter ; les commandes (NOTE, SOLDE, ABS, AIDE et celles définies dans Commandes SMS) ont reçu une réponse automatique.</p>
+    <p class="page-subtitle">SMS envoyés par les parents au numéro de l'école. Les messages libres sont à lire et à traiter ; les commandes reçoivent une réponse automatique.</p>
   </div>
-  <div class="d-flex gap-2" style="flex-wrap:wrap; justify-content:flex-end;">
+  <div class="page-actions">
     {% if non_lus and request|autorise_url:'communication:messages_recus_tout_lu' %}
     <form method="post" action="{% url 'communication:messages_recus_tout_lu' %}">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
-      <button type="submit" class="btn-secondary">Tout marquer comme lu</button>
+      <button type="submit" class="btn-secondary btn-sm">Tout marquer comme lu</button>
     </form>
     {% endif %}
     {% if page_obj and request|autorise_url:'communication:messages_recus_supprimer_selection' %}
@@ -27,8 +27,8 @@
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
       <input type="hidden" name="type" value="{{ type }}">
-      <button type="submit" class="btn-danger" data-csp-confirm="Supprimer les messages cochés ?">Supprimer la sélection</button>
-      <button type="submit" name="portee" value="lus" class="btn-secondary" data-csp-confirm="Supprimer tous les messages déjà lus de cette vue ?">Supprimer tous les lus</button>
+      <button type="submit" class="btn-danger btn-sm" data-csp-confirm="Supprimer les messages cochés ?">Supprimer la sélection</button>
+      <button type="submit" name="portee" value="lus" class="btn-secondary btn-sm" data-csp-confirm="Supprimer tous les messages déjà lus de cette vue ?">Supprimer tous les lus</button>
     </form>
     {% endif %}
   </div>
@@ -38,7 +38,7 @@
   <a href="?type=libres{% if etat %}&etat={{ etat }}{% endif %}" class="{% if type == 'libres' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Messages libres</a>
   <a href="?type=commandes{% if etat %}&etat={{ etat }}{% endif %}" class="{% if type == 'commandes' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Commandes automatiques</a>
   <a href="?type=tous{% if etat %}&etat={{ etat }}{% endif %}" class="{% if type == 'tous' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Tous</a>
-  <span class="text-muted" style="margin:0 var(--space-2);">|</span>
+  <span class="boite-sms-separateur" aria-hidden="true"></span>
   <a href="?type={{ type }}" class="{% if not etat %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Lus et non lus</a>
   <a href="?type={{ type }}&etat=non_lus" class="{% if etat == 'non_lus' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Non lus</a>
   <a href="?type={{ type }}&etat=lus" class="{% if etat == 'lus' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Lus</a>
@@ -48,44 +48,55 @@
 <div class="alert alert-warning mb-4 animate-fade-up">Les SMS sont désactivés (Paramètres → Configuration SMS) : les réponses ne peuvent pas être envoyées.</div>
 {% endif %}
 
-<div class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
-  <div class="table-scroll">
-    <table class="data-table">
-      <thead>
-        <tr>
-          {% if request|autorise_url:'communication:messages_recus_supprimer_selection' %}<th style="width:2rem;"><input type="checkbox" id="cocher-tout" aria-label="Tout cocher"></th>{% endif %}
-          <th>Reçu le</th><th>Expéditeur</th><th>Message</th><th>Type</th><th>État</th><th style="text-align:right;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in page_obj %}
-        <tr{% if not m.lu_le %} style="font-weight:600;"{% endif %}>
-          {% if request|autorise_url:'communication:messages_recus_supprimer_selection' %}<td><input type="checkbox" name="ids" value="{{ m.pk }}" form="form-selection" aria-label="Sélectionner ce message"></td>{% endif %}
-          <td class="text-secondary" style="white-space:nowrap;">{{ m.created_at|date:"d/m/Y H:i" }}</td>
-          <td>
-            <div>{{ m.sender_number }}</div>
-            {% for eleve in m.famille %}
-            <div class="text-muted text-xs" style="font-weight:400;">Famille de {{ eleve.get_nom_complet }}{% if eleve.classe_courante %} ({{ eleve.classe_courante }}){% endif %}</div>
-            {% empty %}
-            <div class="text-muted text-xs" style="font-weight:400;">Numéro inconnu des fiches élèves</div>
-            {% endfor %}
-          </td>
-          <td style="max-width:420px; white-space:pre-wrap; overflow-wrap:anywhere;">{{ m.message_text }}</td>
-          <td>
-            {% if m.message_parent %}<span class="badge badge-success">Réponse</span>
-            <div class="text-xs" style="font-weight:400;"><a href="{% url 'communication:message_detail' m.message_parent.pk %}">{{ m.message_parent.get_type_display }} : {{ m.message_parent.objet }}</a></div>
-            {% elif m.est_libre %}<span class="badge badge-info">Message libre</span>
-            {% else %}<span class="badge badge-neutral">{{ m.command_type }}</span>
-            {% if m.eleve %}<div class="text-muted text-xs" style="font-weight:400;">{{ m.eleve.get_nom_complet }}</div>{% endif %}{% endif %}
-          </td>
-          <td style="white-space:nowrap;">
-            {% if m.lu_le %}<span class="badge badge-success">Lu</span>
-            <div class="text-muted text-xs" style="font-weight:400;">{{ m.lu_le|date:"d/m H:i" }}{% if m.lu_par %} · {{ m.lu_par.get_full_name|default:m.lu_par.username }}{% endif %}</div>
-            {% else %}<span class="badge badge-warning">Non lu</span>{% endif %}
-          </td>
-          <td style="text-align:right; white-space:nowrap;">
+<div class="boite-sms-barre animate-fade-up">
+  <p class="boite-sms-compte text-muted">
+    <strong>{{ page_obj.paginator.count }}</strong> message{{ page_obj.paginator.count|pluralize }}
+    · {% if type == 'libres' %}messages libres{% elif type == 'commandes' %}commandes automatiques{% else %}tous types{% endif %}{% if etat == 'non_lus' %} · non lus{% elif etat == 'lus' %} · déjà lus{% endif %}{% if page_obj.has_other_pages %} · page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}{% endif %}
+  </p>
+  {% if page_obj.paginator.count and request|autorise_url:'communication:messages_recus_supprimer_selection' %}
+  <label class="boite-sms-tout text-muted text-sm">
+    <input type="checkbox" id="cocher-tout"> Tout cocher sur cette page
+  </label>
+  {% endif %}
+</div>
+
+<div class="card boite-sms animate-fade-up delay-1">
+  <ul class="boite-sms-liste">
+    {% for m in page_obj %}
+    <li class="boite-sms-item{% if not m.lu_le %} est-non-lu{% endif %}">
+      {% if request|autorise_url:'communication:messages_recus_supprimer_selection' %}
+      <div class="boite-sms-case">
+        <input type="checkbox" name="ids" value="{{ m.pk }}" form="form-selection" aria-label="Sélectionner le message de {{ m.sender_number }}">
+      </div>
+      {% endif %}
+      <div class="boite-sms-corps">
+        <div class="boite-sms-entete">
+          <span class="boite-sms-pastille" aria-hidden="true"></span>
+          <span class="boite-sms-numero">{{ m.sender_number }}</span>
+          {% if m.message_parent %}<span class="badge badge-success">Réponse</span>
+          {% elif not m.est_libre %}<span class="badge badge-neutral">{{ m.command_type }}</span>
+          {% elif type != 'libres' %}<span class="badge badge-info">Message libre</span>{% endif %}
+          {% if m.lu_le and etat != 'lus' %}<span class="badge badge-success">Lu</span>
+          {% elif not m.lu_le and etat != 'non_lus' %}<span class="badge badge-warning">Non lu</span>{% endif %}
+          <time class="boite-sms-date" datetime="{{ m.created_at|date:'c' }}">{{ m.created_at|date:"d/m/Y H:i" }}</time>
+        </div>
+        {% for eleve in m.famille %}
+        <p class="boite-sms-famille">Famille de {{ eleve.get_nom_complet }}{% if eleve.classe_courante %} ({{ eleve.classe_courante }}){% endif %}</p>
+        {% empty %}
+        <p class="boite-sms-famille est-inconnue">Numéro inconnu des fiches élèves</p>
+        {% endfor %}
+
+        <p class="boite-sms-texte">{{ m.message_text }}</p>
+
+        <div class="boite-sms-pied">
+          <span class="boite-sms-meta">
+            {% if m.message_parent %}<a href="{% url 'communication:message_detail' m.message_parent.pk %}">{{ m.message_parent.get_type_display }} : {{ m.message_parent.objet }}</a>{% endif %}
+            {% if m.eleve %}{% if m.message_parent %} · {% endif %}{{ m.eleve.get_nom_complet }}{% endif %}
+            {% if m.lu_le %}{% if m.message_parent or m.eleve %} · {% endif %}Lu le {{ m.lu_le|date:"d/m H:i" }}{% if m.lu_par %} · {{ m.lu_par.get_full_name|default:m.lu_par.username }}{% endif %}{% endif %}
+          </span>
+          <div class="boite-sms-actions">
             {% if request|autorise_url:'communication:messages_recus_marquer' %}
-            <form method="post" action="{% url 'communication:messages_recus_marquer' m.pk %}" style="display:inline;">
+            <form method="post" action="{% url 'communication:messages_recus_marquer' m.pk %}">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ request.get_full_path }}">
               {% if m.lu_le %}
@@ -96,32 +107,37 @@
             </form>
             {% endif %}
             {% if sms_actifs and request|autorise_url:'communication:messages_recus_repondre' %}
-            <details style="display:inline-block; vertical-align:top; text-align:left;">
-              <summary class="btn-primary btn-sm" style="display:inline-flex; list-style:none; cursor:pointer;">Répondre</summary>
-              <form method="post" action="{% url 'communication:messages_recus_repondre' m.pk %}" style="width:300px; margin-top:var(--space-2); white-space:normal; font-weight:400;">
+            <details class="boite-sms-repondre">
+              <summary class="btn-primary btn-sm">Répondre</summary>
+              <form method="post" action="{% url 'communication:messages_recus_repondre' m.pk %}">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
                 <label class="text-muted text-xs" for="reponse-{{ m.pk }}">SMS à {{ m.sender_number }} (160 caractères max.)</label>
-                <textarea id="reponse-{{ m.pk }}" name="texte" class="input" rows="3" maxlength="160" required style="margin:var(--space-2) 0;"></textarea>
+                <textarea id="reponse-{{ m.pk }}" name="texte" class="input" rows="3" maxlength="160" required></textarea>
                 <button type="submit" class="btn-primary btn-sm">Envoyer le SMS</button>
               </form>
             </details>
             {% endif %}
             {% if request|autorise_url:'communication:messages_recus_supprimer' %}
-            <form method="post" action="{% url 'communication:messages_recus_supprimer' m.pk %}" style="display:inline;">
+            <form method="post" action="{% url 'communication:messages_recus_supprimer' m.pk %}">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ request.get_full_path }}">
               <button type="submit" class="btn-danger btn-sm" data-csp-confirm="Supprimer ce message de {{ m.sender_number }} ?">Supprimer</button>
             </form>
             {% endif %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="7" class="text-muted" style="text-align:center; padding:var(--space-6);">Aucun message{% if etat == 'non_lus' %} non lu{% elif etat == 'lus' %} lu{% endif %}{% if type == 'libres' %} libre{% elif type == 'commandes' %} de commande{% endif %}.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+          </div>
+        </div>
+      </div>
+    </li>
+    {% empty %}
+    <li class="boite-sms-vide">
+      <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <p class="boite-sms-vide-titre">Aucun message{% if etat == 'non_lus' %} non lu{% elif etat == 'lus' %} lu{% endif %}{% if type == 'libres' %} libre{% elif type == 'commandes' %} de commande{% endif %}.</p>
+      <p class="text-muted text-sm">Les SMS envoyés par les parents au numéro de l'école apparaîtront ici.</p>
+      {% if etat or type != 'libres' %}<a href="?" class="btn-secondary btn-sm">Voir tous les messages libres</a>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
 </div>
 
 {% if page_obj.has_other_pages %}
