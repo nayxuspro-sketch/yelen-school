@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.8 — 2026-11-01
+
+- **Consigne de redémarrage contradictoire dans `activer-acces-distance.bat`.** Le lanceur affichait
+  « Redemarrez le serveur (`demarrer-autonome.bat`) » après avoir imprimé, une ligne plus haut, la consigne
+  propre au mode d'installation (`demarrage.bat` en Docker). En production Docker, suivre la seconde relançait
+  le serveur autonome. Le lanceur renvoie désormais à la consigne affichée par le script, qui seule connaît le
+  mode. Exemple d'entrée Tailscale Serve ajouté à son en-tête.
+
 ## 5.46.7 — 2026-11-01
 
 - **Accès du personnel par Tailscale Serve, avec port.** `activer-acces-distance.bat` accepte désormais

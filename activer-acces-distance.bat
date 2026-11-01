@@ -6,6 +6,7 @@ rem Ouvre l'acces a distance (Internet) au portail parents par un tunnel Cloudfl
 rem Prerequis : tunnel cree dans Cloudflare Zero Trust, nom public et jeton disponibles.
 rem Exemples : activer-acces-distance.bat
 rem             activer-acces-distance.bat -Jeton "eyJhIjoi..."
+rem             activer-acces-distance.bat -Domaine bureau.tail1234.ts.net:8443 -EnvSeulement
 rem             activer-acces-distance.bat -Desactiver
 
 net session >nul 2>&1
@@ -24,7 +25,9 @@ set "EXIT_CODE=%ERRORLEVEL%"
 if "%EXIT_CODE%"=="0" (
     echo.
     echo Operation terminee.
-    echo Redemarrez le serveur ^(demarrer-autonome.bat^) pour appliquer le fichier .env.
+    rem La consigne de redemarrage depend du mode (Docker : demarrage.bat ; autonome :
+    rem demarrer-autonome.bat) : elle est affichee juste au-dessus par le script PowerShell.
+    echo Pour appliquer le fichier .env, redemarrez l'application ^(consigne ci-dessus^).
 ) else (
     echo.
     echo Echec de l'acces a distance ^(details ci-dessus^).
