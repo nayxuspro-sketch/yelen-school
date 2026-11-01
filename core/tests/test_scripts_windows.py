@@ -61,3 +61,21 @@ def test_aucun_document_ne_cite_un_lanceur_inexistant():
             if 'demarrer.bat' in instruction and "n'existe pas" not in instruction:
                 fautifs.append(f'{fichier.name}:{numero}')
     assert not fautifs, f'Lanceur inexistant cité : {fautifs}'
+
+
+def test_le_guide_enseigne_la_saisie_de_la_cle_tailscale_dans_l_application():
+    """Une clé Tailscale se saisit dans l'application (menu ⋯ → « Use an auth key »), jamais dans la page web
+    `login.tailscale.com` : y chercher un champ clé mène à une fenêtre de clé d'accès (passkey) et bloque
+    l'enseignant. Deux réglages, s'ils sont manqués, coûtent une réinstallation : la clé ne doit pas être
+    *ephemeral* (l'appareil serait supprimé à la première déconnexion) et l'expiration de clé doit être
+    désactivée sur chaque appareil (180 jours par défaut)."""
+    guide = (RACINE / 'docs' / 'GUIDE_DEPLOIEMENT_WINDOWS.md').read_text(encoding='utf-8')
+    section = guide.split('### 9.5 Accès du personnel par Tailscale Serve', 1)
+    assert len(section) == 2, 'la section 9.5 du guide est introuvable'
+    texte = section[1].split('\n---', 1)[0]
+
+    assert 'Use an auth key' in texte
+    assert 'tailscale up --authkey' in texte          # application Windows : pas de champ clé
+    assert 'Ne jamais cocher' in texte and 'Ephemeral' in texte
+    assert 'Disable key expiry' in texte
+    assert 'Éphémère' in texte and 'Cheminée' in texte  # lecture des badges de la liste Machines

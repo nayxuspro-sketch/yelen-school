@@ -1181,10 +1181,38 @@ CSRF_TRUSTED_ORIGINS=https://desktop-nkqmf8l.taild2095f.ts.net,https://desktop-n
 
 **Inscrire les enseignants** — l'offre gratuite Tailscale *Personal* autorise **3 utilisateurs et 100 appareils** : on utilise donc **un compte unique « école »** et une **clé d'authentification** pour les appareils, pas un compte par enseignant.
 
-1. Console <https://login.tailscale.com> → **Settings → Keys → Generate auth key** : *reusable*, *pre-approved*, expiration 90 jours.
-2. Sur chaque appareil (Windows, Android, iOS) : installer Tailscale, puis **Sign in with auth key** et coller la clé. Renommer l'appareil au nom de l'enseignant (*Machines → … → Edit name*).
-3. **Access controls** : n'autoriser le tailnet qu'à joindre la machine du serveur, ports 443 et 8443 — le téléphone d'un enseignant ne voit rien d'autre.
-4. Appareil perdu ou enseignant parti : **Machines → Revoke**.
+1. Console <https://login.tailscale.com> → **Settings → Keys → Generate auth key** : **reusable** ✔,
+   **pre-approved** ✔, **ephemeral ✘**, expiration 90 jours.
+2. Sur chaque appareil : installer Tailscale, puis **dans l'application** — écran de connexion → menu **⋯** en haut
+   à droite → **« Use an auth key »** → coller la clé. (L'application Windows n'a pas de champ clé : utiliser
+   `tailscale up --authkey tskey-auth-…` dans un PowerShell administrateur.) La page web `login.tailscale.com`
+   et ses fenêtres de *clé d'accès* (passkey) ne servent à rien ici : la clé se saisit dans l'application.
+3. Renommer l'appareil au nom de l'enseignant (*Machines → … → Edit name*) : tous les appareils partagent le
+   même propriétaire, le nom est le seul registre fiable.
+4. **Machines → … → Disable key expiry** pour chaque appareil : sans cela, il est déconnecté au bout de
+   **180 jours** par défaut, en pleine année scolaire.
+5. **Access controls** : n'autoriser le tailnet qu'à joindre la machine du serveur, ports 443 et 8443 — le
+   téléphone d'un enseignant ne voit rien d'autre.
+6. Quand tous les appareils sont inscrits : **Settings → Keys → Revoke** sur la clé (les appareils déjà
+   inscrits restent connectés). Appareil perdu ou enseignant parti : **Machines → Revoke**.
+
+> **Ne jamais cocher *Ephemeral*.** La clé « éphémère » crée un appareil automatiquement supprimé du tailnet
+> dès qu'il passe hors ligne (écran éteint, redémarrage, changement de réseau). L'enseignant serait obligé de
+> recommencer l'inscription à chaque fois — inutilisable à 34 appareils.
+
+**Lire la liste *Machines*** — une clé ordinaire ne laisse aucune marque : l'appareil apparaît sous l'adresse du
+compte qui a créé la clé, comme s'il s'était connecté avec ce compte.
+
+| Badge sous le nom | Signification |
+|---|---|
+| *(aucun)* | appareil durable — l'état à obtenir |
+| **Éphémère** | inscrit avec une clé *ephemeral* : sera supprimé à la première déconnexion → **refaire l'inscription** avec une clé sans *ephemeral* |
+| **Cheminée** | Tailscale **Funnel** actif : doit apparaître **uniquement** sur la machine du serveur (accès parents) |
+| Nom, puis adresse du compte | propriétaire : toujours le compte « école », quel que soit le mode d'inscription |
+
+Pour une traçabilité stricte, une clé peut porter un **tag** : *Access controls* déclare `tagOwners`, la clé est
+générée avec ce tag, et l'appareil apparaît alors sous `tag:enseignant` au lieu de l'adresse du compte. Les
+appareils tagués ont en plus l'expiration de clé désactivée par défaut.
 
 **Charge et performances** : 34 enseignants qui saisissent produisent 2 à 4 requêtes par seconde, très en dessous du banc d'essai du projet (40 navigateurs simultanés, 0 erreur). Le facteur limitant reste le **débit montant** de la ligne de l'école, pas Tailscale. Chaque requête est chiffrée de bout en bout (WireGuard) et va directement au serveur, sans relais.
 
@@ -1198,6 +1226,8 @@ CSRF_TRUSTED_ORIGINS=https://desktop-nkqmf8l.taild2095f.ts.net,https://desktop-n
 | Page inaccessible depuis un téléphone | appareil non connecté au tailnet | ouvrir l'application Tailscale sur le téléphone ; vérifier la machine dans la console |
 | `400 Bad Request` après l'ajout du port | serveur non redémarré (le `.env` n'est lu qu'au démarrage) | `demarrage.bat` en Docker, `demarrer-autonome.bat` en mode autonome |
 | La console refuse un nouvel appareil | limite de l'offre gratuite (100 appareils / 3 utilisateurs) | révoquer les appareils inutilisés ; un seul compte suffit pour tous les enseignants |
+| L'appareil disparaît seul de la liste | clé générée avec *Ephemeral* | générer une clé **sans** *ephemeral*, puis réinscrire l'appareil |
+| L'application ouvre une fenêtre « Choisir une clé d'accès » (passkey) | l'écran « Se connecter » du navigateur a été choisi au lieu de la clé | annuler ; application → écran de connexion → menu **⋯** → **« Use an auth key »** |
 | L'adresse répond aussi depuis Internet | Funnel encore actif sur le même port | `tailscale funnel --https=443 off`, puis `tailscale serve status` |
 
 ---

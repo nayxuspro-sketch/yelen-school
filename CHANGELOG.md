@@ -3,6 +3,17 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.9 — 2026-11-01
+
+- **Guide §9.5 : inscription des enseignants détaillée.** La clé se saisit **dans l'application**
+  (écran de connexion → menu ⋯ → « Use an auth key »), jamais dans la page web ; l'application Windows n'a
+  pas de champ clé (`tailscale up --authkey`). Ajout de deux consignes qui évitent une réinstallation :
+  **ne jamais cocher *Ephemeral*** (l'appareil est supprimé à la première déconnexion) et **désactiver
+  l'expiration de clé** de chaque appareil (180 jours par défaut, sinon déconnexion en pleine année scolaire).
+- Tableau de lecture de la liste *Machines* : pas de badge = durable, **Éphémère** = à refaire, **Cheminée** =
+  Funnel actif (uniquement sur le serveur) ; piste des **tags** pour une traçabilité stricte des appareils.
+  Dépannage : fenêtre « Choisir une clé d'accès » (passkey) et appareil qui disparaît de la liste.
+
 ## 5.46.8 — 2026-11-01
 
 - **Consigne de redémarrage contradictoire dans `activer-acces-distance.bat`.** Le lanceur affichait
