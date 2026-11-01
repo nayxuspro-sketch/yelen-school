@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.4 — 2026-11-01
+
+- **Accès à distance sans nom de domaine.** `activer-acces-distance.bat -Domaine <nom> -EnvSeulement` autorise
+  seulement le nom public dans `.env` (`ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `ACCES_DISTANCE_DOMAINE`) sans
+  installer de service Cloudflare : utilisable avec un accès assuré autrement — procédure **Tailscale Funnel**
+  ajoutée au guide de déploiement §9.4, pour les cas où le domaine appartient à un compte Cloudflare
+  inaccessible (zone « Serveurs de noms invalides »). Tests PowerShell : 36 vérifications.
+
 ## 5.46.3 — 2026-11-01
 
 - **Parcours navigateur : plus d'échec intermittent « 500 » sur les pages lourdes.** La base de test d'un

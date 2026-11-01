@@ -22,6 +22,9 @@
 
     -Domaine : yelenschoola.nayxus.com par défaut à l'activation ; à la
     désactivation, le nom mémorisé dans .env (ACCES_DISTANCE_DOMAINE).
+    -EnvSeulement : n'autorise que le nom public dans .env, sans installer de
+    tunnel Cloudflare (cas d'un accès assuré autrement, par exemple Tailscale
+    Funnel : -Domaine machine.tailnet.ts.net -EnvSeulement).
 
 .EXAMPLE
     .\activer-acces-distance.bat
@@ -35,7 +38,8 @@ param(
     [string]$Jeton = '',
     [ValidateRange(0, 65535)]
     [int]$Port = 0,
-    [switch]$Desactiver
+    [switch]$Desactiver,
+    [switch]$EnvSeulement
 )
 
 # ── Définitions ──────────────────────────────────────────────────────────────
@@ -217,7 +221,8 @@ function Invoke-AccesDistance {
         [string]$Domaine = '',
         [string]$Jeton = '',
         [int]$Port = 0,
-        [switch]$Desactiver
+        [switch]$Desactiver,
+        [switch]$EnvSeulement
     )
 
     $EnvFile = Join-Path $Root '.env'
@@ -268,6 +273,23 @@ function Invoke-AccesDistance {
 
     Assert-NomPublic -Nom $Domaine
     $Port = Resolve-PortApplication -EnvFile $EnvFile -Port $Port
+
+    if ($EnvSeulement) {
+        # Aucun tunnel Cloudflare : seul .env est mis à jour (Tailscale Funnel, autre tunnel déjà installé).
+        Write-Host '[1/2] Autorisation du nom public dans .env...' -ForegroundColor Cyan
+        $ajoutHost = Add-DotEnvList -EnvFile $EnvFile -Name 'ALLOWED_HOSTS' -Value $Domaine
+        $ajoutCsrf = Add-DotEnvList -EnvFile $EnvFile -Name 'CSRF_TRUSTED_ORIGINS' -Value "https://$Domaine"
+        Set-DotEnvValue -EnvFile $EnvFile -Name 'ACCES_DISTANCE_DOMAINE' -Value $Domaine
+        Write-Host "        ALLOWED_HOSTS : $(if ($ajoutHost) { 'ajouté' } else { 'déjà autorisé' })." -ForegroundColor Gray
+        Write-Host "        CSRF_TRUSTED_ORIGINS : $(if ($ajoutCsrf) { 'ajouté' } else { 'déjà autorisé' })." -ForegroundColor Gray
+
+        Write-Host '[2/2] Terminé (aucun service Cloudflare installé).' -ForegroundColor Cyan
+        Write-AccesLog -LogFile $LogFile -Message "Nom public autorisé dans .env : https://$Domaine (sans tunnel Cloudflare)."
+        Write-Host ''
+        Write-Host "Nom public autorisé : https://$Domaine/" -ForegroundColor Green
+        Write-Host "Pour appliquer le .env : $(Get-InstructionRedemarrage -Mode $Mode)"
+        return
+    }
 
     if (-not $Jeton) {
         Write-Host ''
@@ -353,4 +375,4 @@ function Invoke-AccesDistance {
 
 # ── Exécution ────────────────────────────────────────────────────────────────
 $Root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-Invoke-AccesDistance -Root $Root -Domaine $Domaine -Jeton $Jeton -Port $Port -Desactiver:$Desactiver
+Invoke-AccesDistance -Root $Root -Domaine $Domaine -Jeton $Jeton -Port $Port -Desactiver:$Desactiver -EnvSeulement:$EnvSeulement

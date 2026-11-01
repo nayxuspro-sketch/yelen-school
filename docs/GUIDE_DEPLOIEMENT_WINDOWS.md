@@ -1107,6 +1107,32 @@ Message type aux parents : « Vos notes, absences et frais : **https://yelenscho
 | Service `cloudflared` arrêté | jeton invalide ou réseau | relancer le script avec un jeton recopié depuis la page « Configurer » |
 | Page lente aux heures de pointe | bande passante de l'école partagée | le portail est léger (PWA) ; le tunnel n'ajoute pas de latence notable |
 
+#### Si le nom de domaine n'est pas disponible (5.46.4)
+
+Un nom de domaine peut être détenu par un compte Cloudflare auquel l'école n'a pas accès (zone « Serveurs de noms invalides ») : l'itinéraire est alors enregistré mais jamais publié. Pour rendre le portail joignable **sans domaine**, Tailscale Funnel fournit une adresse HTTPS stable, gratuite, qui traverse les box sans IP publique (CGNAT) :
+
+1. **Compte** : <https://login.tailscale.com> — connexion Google/Microsoft/GitHub, forfait *Personal* (gratuit). Dans **DNS**, activer **HTTPS Certificates** (généralement déjà fait).
+2. **Serveur** : installer Tailscale pour Windows (<https://tailscale.com/download/windows>), se connecter avec le même compte.
+3. **Publier le portail** — dans `cmd` sur le serveur :
+
+```cmd
+tailscale funnel --bg 8000
+```
+
+Le portail devient public à l'adresse affichée : `https://<nom-du-serveur>.<tailnet>.ts.net/` (stable, elle ne change pas au redémarrage ; certificat Let's Encrypt géré par Tailscale). Si le message indique que Funnel doit être autorisé, suivre le lien affiché (console d'administration → machine → *Funnel*).
+
+4. **Autoriser l'adresse dans l'application** — clic droit sur `activer-acces-distance.bat` → *Exécuter en tant qu'administrateur* :
+
+```cmd
+activer-acces-distance.bat -Domaine <nom-du-serveur>.<tailnet>.ts.net -EnvSeulement
+```
+
+`-EnvSeulement` met à jour `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` et `ACCES_DISTANCE_DOMAINE` **sans installer de service Cloudflare**. Puis redémarrer le serveur (`demarrer.bat` en Docker, `demarrer-autonome.bat` sinon).
+
+5. **Vérifier** depuis un téléphone en 4G : `https://<nom-du-serveur>.<tailnet>.ts.net/health/` → `{"status": "ok", ...}`.
+
+Limites : trafic relayé par Tailscale (débit modéré, suffisant pour le portail), adresse en `.ts.net`, aucun domaine personnalisé. À utiliser comme solution d'attente ou définitive si le domaine reste inaccessible ; le tunnel Cloudflare déjà configuré reste utilisable dès que le DNS du domaine sera rétabli.
+
 #### Sécurité
 
 Le jeton autorise l'ouverture du tunnel : ne le transmettre à personne, ne pas le coller dans un message. Le service tourne sous le compte système. Ne jamais publier `:8000` sur la box : c'est précisément ce que le tunnel évite. Les mots de passe des parents ne circulent qu'en HTTPS ; l'application reste seule juge des droits (rôle PARENT, enfants rattachés).

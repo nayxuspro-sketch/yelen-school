@@ -191,6 +191,20 @@ Invoke-AccesDistance -Root $work -Domaine 'yelenschoola.nayxus.com' -Jeton $jeto
 Assert ((($script:Sortie -join "`n") -match 'Serveur muet')) 'un port local servi par autre chose est signalé'
 $script:CorpsLocal = '{"status": "ok", "version": "5.46.2"}'
 
+# ── 8. .env seulement (tunnel assuré autrement : Tailscale Funnel) ───────────
+Write-Host '.env seulement'
+Set-EnvContent "SECRET_KEY=abc`nALLOWED_HOSTS=localhost`nCSRF_TRUSTED_ORIGINS=http://localhost:8000`nPORT=8000`n"
+$script:Calls.Clear()
+$script:Sortie.Clear()
+Invoke-AccesDistance -Root $work -Domaine 'bureau-nkqmf8l.tail1234.ts.net' -EnvSeulement 6>$null
+$hotes = (Get-EnvLine 'ALLOWED_HOSTS') -join ''
+$csrf = (Get-EnvLine 'CSRF_TRUSTED_ORIGINS') -join ''
+Assert ($hotes -match 'bureau-nkqmf8l\.tail1234\.ts\.net') 'le nom public est autorisé'
+Assert ($csrf -match 'https://bureau-nkqmf8l\.tail1234\.ts\.net') "l'origine HTTPS est autorisée"
+Assert (-not ($script:Calls -join "`n" -match 'cloudflared')) 'aucun service Cloudflare installé'
+Assert (-not ($script:Calls -join "`n" -match 'GET ')) 'aucun contrôle réseau effectué'
+Assert ((($script:Sortie -join "`n")) -match 'aucun service Cloudflare') 'le mode est annoncé'
+
 # ── Nettoyage ────────────────────────────────────────────────────────────────
 Remove-Item -Recurse -Force $work
 Write-Host 'Tous les tests sont passés.'
