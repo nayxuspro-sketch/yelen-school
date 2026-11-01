@@ -30,6 +30,7 @@
 8. [Mise à jour sans perte de données](#8-mise-à-jour-sans-perte-de-données)
    - [8.1 Mise à jour en un clic : `mettre-a-jour.bat`](#81-mise-à-jour-en-un-clic--mettre-a-jourbat)
 9. [Accès depuis le réseau local](#9-accès-depuis-le-réseau-local)
+   - [9.4 Accès à distance — portail parents par Internet](#94-accès-à-distance--portail-parents-par-internet-5460)
 10. [Dépannage et vérifications](#10-dépannage-et-vérifications)
 11. [Reprise sur une nouvelle machine](#11-reprise-sur-une-nouvelle-machine)
 
@@ -1046,6 +1047,63 @@ Rouvrir ensuite `https://NOMPC.local:8443/` : le cadenas doit apparaître sans a
 **Retour en HTTP** — `activer-https.bat -Desactiver` (administrateur) : retire le proxy, rouvre le port HTTP sur le réseau et supprime la règle de pare-feu HTTPS. Les fichiers `certs\` sont conservés.
 
 Les fichiers `certs\yelen-ca.key` et `certs\yelen-serveur.key` sont des clés privées : ils restent sur le serveur (dossier protégé par le verrouillage §3.5) et ne doivent jamais être copiés sur les postes.
+
+---
+
+### 9.4 Accès à distance — portail parents par Internet (5.46.0)
+
+Par défaut, l'application ne répond qu'aux postes du réseau de l'école. Pour que **les parents consultent le portail depuis chez eux**, sans ouvrir de port sur la box, le serveur établit une connexion **sortante** vers Cloudflare : le tunnel fournit le HTTPS, le certificat et le nom de domaine. La base reste sur le serveur et n'est jamais exposée.
+
+Adresse retenue : **`https://yelenschoola.nayxus.com/`** — le domaine `nayxus.com` doit être géré par Cloudflare.
+
+**Prérequis** — le serveur démarre normalement (§3.6) et dispose d'une connexion Internet ; aucune règle à ajouter sur la box. Si `nayxus.com` n'est pas encore chez Cloudflare, créer l'enregistrement `CNAME` `yelenschoola` vers la valeur `.cfargotunnel.com` affichée par le tunnel.
+
+#### 1. Créer le tunnel (une fois, dans le navigateur)
+
+1. Ouvrir <https://one.dash.cloudflare.com> → **Réseaux → Tunnels → Créer un tunnel** → connecteur **Cloudflared** → nom `yelen-school` → **Enregistrer**.
+2. Onglet **Nom d'hôte public → Ajouter** : sous-domaine `yelenschoola`, domaine `nayxus.com`, service **HTTP** `localhost:8000` (le port est la valeur de `PORT` dans `.env`). Enregistrer : l'enregistrement DNS est créé automatiquement.
+3. Onglet **Configurer** → **Windows** → copier le **jeton** (texte long commençant par `eyJ`).
+
+#### 2. Activer sur le serveur
+
+Clic droit sur `activer-acces-distance.bat` (racine du dossier) → **Exécuter en tant qu'administrateur**, puis coller le jeton demandé. En ligne de commande : `activer-acces-distance.bat -Jeton "eyJ..."`. Le script :
+
+1. installe `cloudflared` s'il manque (winget) ;
+2. autorise le nom public dans `.env` : `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` et `ACCES_DISTANCE_DOMAINE` — les lignes existantes sont conservées ;
+3. installe et démarre le service Windows `cloudflared` avec le jeton, **qui n'est jamais écrit dans un fichier** ;
+4. contrôle `http://127.0.0.1:8000/health/`, puis `https://yelenschoola.nayxus.com/health/` pendant 60 s au plus.
+
+Relancer le script est sans effet de bord : rien n'est dupliqué, seul le service est réinstallé.
+
+#### 3. Redémarrer le serveur
+
+Fermer la fenêtre « YELEN SCHOOL - Serveur » puis double-cliquer sur `demarrer-autonome.bat` : le `.env` n'est lu qu'au démarrage. La bannière affiche alors `Depuis Internet (parents) : https://yelenschoola.nayxus.com/`.
+
+#### 4. Vérifier et communiquer l'adresse
+
+Depuis un téléphone **en données mobiles** (hors Wi-Fi de l'école) : `https://yelenschoola.nayxus.com/health/` → `{"status": "ok", "version": "5.46.0", ...}`, puis la page de connexion. Se connecter avec un compte parent (numéro de téléphone, §9.23) et installer l'application (guide d'utilisation §19.1).
+
+Message type aux parents : « Vos notes, absences et frais : **https://yelenschoola.nayxus.com** — identifiant : votre numéro de téléphone, mot de passe remis par l'école. »
+
+#### 5. Surveiller, arrêter
+
+- service : `Get-Service cloudflared` ; côté application, journal `logs\acces-distance.log` ; côté Cloudflare, la page du tunnel (état, trafic, erreurs) ;
+- arrêt : `activer-acces-distance.bat -Desactiver` (administrateur) → service supprimé, nom public retiré du `.env` ; supprimer aussi le nom d'hôte public dans le tableau de bord. Aucun port n'a été ouvert : il n'y a rien à refermer sur la box.
+
+#### Dépannage
+
+| Symptôme | Cause probable | Correctif |
+|---|---|---|
+| `400 Bad Request (400)` sur le domaine | serveur non redémarré après l'activation | fermer la fenêtre du serveur, relancer `demarrer-autonome.bat` |
+| Erreur 1033 Cloudflare | serveur arrêté ou port différent | démarrer le serveur ; vérifier `PORT` dans `.env` et le service `http://localhost:<port>` du tunnel |
+| Erreur 1034 ou lenteur DNS | nom d'hôte public absent, DNS non propagé | ajouter le nom d'hôte public, attendre quelques minutes |
+| « CSRF verification failed » à la connexion | `CSRF_TRUSTED_ORIGINS` sans le domaine | relancer le script, puis redémarrer le serveur |
+| Service `cloudflared` arrêté | jeton invalide ou réseau | relancer le script avec un jeton recopié depuis la page « Configurer » |
+| Page lente aux heures de pointe | bande passante de l'école partagée | le portail est léger (PWA) ; le tunnel n'ajoute pas de latence notable |
+
+#### Sécurité
+
+Le jeton autorise l'ouverture du tunnel : ne le transmettre à personne, ne pas le coller dans un message. Le service tourne sous le compte système. Ne jamais publier `:8000` sur la box : c'est précisément ce que le tunnel évite. Les mots de passe des parents ne circulent qu'en HTTPS ; l'application reste seule juge des droits (rôle PARENT, enfants rattachés).
 
 ---
 

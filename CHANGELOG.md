@@ -3,6 +3,25 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.0 — 2026-11-01
+
+- **Accès à distance du portail parents.** Nouveau `activer-acces-distance.bat` et
+  `installer/activer-acces-distance.ps1` : le serveur publie le portail parents sur
+  `https://yelenschoola.nayxus.com/` par un **tunnel Cloudflare sortant** — aucun port ouvert sur la box,
+  HTTPS et certificat fournis, base de données jamais exposée. Le script installe `cloudflared` au besoin,
+  autorise le nom public dans `.env` (`ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `ACCES_DISTANCE_DOMAINE`),
+  installe le service Windows avec le jeton du tunnel (jamais écrit dans un fichier), puis contrôle
+  `/health/` en local et sur l'adresse publique. `-Desactiver` referme l'accès ; relancer est sans effet
+  de bord.
+- **Correctif : le serveur autonome ignorait `.env`.** `demarrer-autonome.bat` lance `waitress-serve
+  yelen_school.wsgi`, qui ne passe pas par `manage.py` : `SECRET_KEY`, `ALLOWED_HOSTS` et
+  `CSRF_TRUSTED_ORIGINS` n'étaient pas lus (clé régénérée à chaque démarrage, donc sessions perdues ;
+  nom public refusé en 400). Le lanceur charge désormais `.env` dans l'environnement du processus, comme
+  `demarrer-autonome.sh` le faisait déjà, et ajoute l'adresse locale détectée aux hôtes autorisés.
+  **Seule conséquence : les sessions ouvertes sont à renouveler une fois.**
+- Guide de déploiement §9.4 (procédure, dépannage, sécurité) et guide d'utilisation §19.7.
+- Tests : `installer/tests/test-acces-distance.ps1` (22 vérifications, exécuté dans l'intégration continue).
+
 ## 5.45.5 — 2026-10-31
 
 - **Barre latérale : les sous-menus sont classés par ordre alphabétique.** Dans les treize menus

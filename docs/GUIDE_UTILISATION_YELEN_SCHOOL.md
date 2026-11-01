@@ -1,6 +1,6 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.45.5
+version_logiciel: 5.46.0
 version_guide: 5.35
 date_mise_a_jour: 31/10/2026 (5.45.0 : offre hébergée et instance de démonstration §39)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
@@ -198,6 +198,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [19.4 Bulletins parent](#194-bulletins-parent)
   - [19.5 Cahier de textes et devoirs (5.31.0)](#195-cahier-de-textes-et-devoirs-5310)
   - [19.6 Portail élève (5.36.0)](#196-portail-élève-5360)
+  - [19.7 Accès à distance des parents (5.46.0)](#197-accès-à-distance-des-parents-5460)
 - [20. Signature Électronique des Bulletins](#20-signature-électronique-des-bulletins)
   - [20.1 Vue d'ensemble](#201-vue-densemble)
   - [20.2 Workflow complet](#202-workflow-complet)
@@ -5835,6 +5836,25 @@ et **Documents délivrés** (certificats, attestations, convocations… téléch
   toute autre adresse le ramène à son portail.
 - Les sections **Notes récentes** et **Moyennes par matière** sont également affichées au parent sur la page
   Vie scolaire.
+
+---
+
+### 19.7 Accès à distance des parents (5.46.0)
+
+**À quoi ça sert :** le portail parent fonctionne depuis n'importe où — domicile, téléphone en données mobiles — dès que l'établissement a activé son adresse publique (guide de déploiement Windows, §9.4).
+
+**Adresse :** `https://yelenschoola.nayxus.com/` (toujours celle que communique l'école).
+
+1. Le parent ouvre l'adresse, saisit son **numéro de téléphone** dans le champ « Adresse e-mail » et le mot de passe remis par l'école (§9.23).
+2. Il installe l'application depuis le navigateur (§19.1) : en HTTPS, Chrome propose « Installer l'application » ; sinon « Ajouter à l'écran d'accueil ».
+3. Il retrouve ses enfants, les notes, les absences, les frais et les notifications, sans être sur le réseau de l'école.
+
+**Bon à savoir**
+
+- le serveur de l'école doit être allumé et connecté : hors de ces périodes, l'adresse ne répond pas ;
+- un compte par famille, enfants rattachés ; le téléphone est l'identifiant ;
+- le personnel continue d'utiliser l'adresse locale : les deux fonctionnent en même temps, sans réglage ;
+- les documents délivrés (bulletins, reçus) restent téléchargeables depuis le portail, avec les mêmes droits.
 
 ---
 

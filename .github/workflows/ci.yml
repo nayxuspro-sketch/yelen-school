@@ -121,6 +121,8 @@ jobs:
         run: pwsh -NoProfile -File installer/tests/test-mettre-a-jour.ps1
       - name: Tests PowerShell (installer/creer-environnement-test.ps1)
         run: pwsh -NoProfile -File installer/tests/test-creer-environnement-test.ps1
+      - name: Tests PowerShell (installer/activer-acces-distance.ps1)
+        run: pwsh -NoProfile -File installer/tests/test-acces-distance.ps1
       - name: Run tests (SQLite)
         run: python -m pytest --tb=short -x
         env:

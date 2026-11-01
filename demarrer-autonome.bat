@@ -37,6 +37,22 @@ if not exist ".env" (
 )
 
 :: ------------------------------------------------------------------
+:: 2 bis. Variables du .env dans l'environnement du serveur
+:: ------------------------------------------------------------------
+:: Django lance par waitress-serve (yelen_school.wsgi) ne lit PAS le fichier .env :
+:: sans cette etape, SECRET_KEY etait regeneree a chaque demarrage (sessions perdues)
+:: et ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS ignores (acces a distance impossible).
+:: Chargement sans expansion differee pour conserver les valeurs contenant un point d'exclamation ;
+:: les adresses locales restent autorisees meme si le .env vient d'un autre reseau.
+setlocal DisableDelayedExpansion
+call :charger_env
+setlocal EnableDelayedExpansion
+if defined ALLOWED_HOSTS (
+    set "ALLOWED_HOSTS=!ALLOWED_HOSTS!,localhost,127.0.0.1"
+    if defined LANIP set "ALLOWED_HOSTS=!ALLOWED_HOSTS!,!LANIP!,%COMPUTERNAME%"
+)
+
+:: ------------------------------------------------------------------
 :: 3. Environnement virtuel + dependances
 :: ------------------------------------------------------------------
 if not exist ".venv\Scripts\python.exe" (
@@ -92,6 +108,7 @@ echo.
 echo       http://!LANIP!:!PORT!
 echo.
 echo   Sur ce poste :   http://localhost:!PORT!
+if defined ACCES_DISTANCE_DOMAINE echo   Depuis Internet ^(parents^) :  https://!ACCES_DISTANCE_DOMAINE!/
 echo   Laissez cette fenetre ouverte. Ctrl+C pour arreter.
 echo ============================================================
 echo.
@@ -100,3 +117,11 @@ start "" "http://localhost:!PORT!/accounts/login/"
 start "" /b python manage.py sms_recus --boucle
 waitress-serve --listen=0.0.0.0:!PORT! --threads=!WEB_THREADS! --channel-timeout=120 yelen_school.wsgi:application
 pause
+
+exit /b 0
+
+:charger_env
+for /f "usebackq eol=# tokens=1,* delims==" %%a in (".env") do (
+    if not "%%~a"=="" set "%%~a=%%~b"
+)
+exit /b 0
