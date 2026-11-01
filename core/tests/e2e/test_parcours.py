@@ -31,6 +31,25 @@ from inscriptions.models import Inscription  # noqa: E402
 from pedagogie.models import Evaluation, Note  # noqa: E402
 
 
+@pytest.fixture(scope='session')
+def django_db_modify_db_settings(tmp_path_factory):
+    """Base de test SQLite **sur fichier**, comme en production, et non en mémoire partagée.
+
+    Par défaut, la base de test d'un SQLite est ``file:memorydb_default?mode=memory&cache=shared`` : deux
+    requêtes simultanées (une page et les compteurs htmx qu'elle déclenche) se bloquent alors au niveau de
+    la table — ``database table is locked`` — que ``busy_timeout`` n'atténue pas (SQLITE_LOCKED, pas
+    SQLITE_BUSY) : la page répond 500 et le parcours échoue une fois sur deux. Sur fichier, les PRAGMA de
+    ``core/db_sqlite.py`` s'appliquent (WAL) : les lectures ne sont plus bloquées par les écritures.
+    """
+    from django.conf import settings
+
+    if settings.IS_SQLITE:
+        dossier = tmp_path_factory.mktemp('base-e2e')
+        # Seule la clé NAME change : pytest-django complète le reste (MIRROR, etc.).
+        settings.DATABASES['default'].setdefault('TEST', {})
+        settings.DATABASES['default']['TEST']['NAME'] = str(dossier / 'e2e.sqlite3')
+
+
 @pytest.fixture(autouse=True)
 def hachage_rapide(settings):
     settings.PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']

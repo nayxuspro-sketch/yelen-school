@@ -3,6 +3,19 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.3 — 2026-11-01
+
+- **Parcours navigateur : plus d'échec intermittent « 500 » sur les pages lourdes.** La base de test d'un
+  SQLite Django est `file:memorydb_default?mode=memory&cache=shared` : en mémoire **partagée**, SQLite verrouille
+  au niveau de la **table** et non de la base. Deux requêtes simultanées — une page et les compteurs htmx
+  qu'elle déclenche (`/notifications/badge/`, `/communication/messages-recus/compteur/`) — se bloquent donc sur
+  `django_session`, avec `database table is locked` : `busy_timeout` n'y change rien (code SQLITE_LOCKED, pas
+  SQLITE_BUSY). Reproduit hors navigateur : la même lecture réussit sur fichier + WAL, échoue en mémoire
+  partagée. Les parcours utilisent désormais une base de test **sur fichier** (`core/tests/e2e/test_parcours.py`,
+  via `django_db_modify_db_settings`), comme la production : trois exécutions consécutives vertes.
+- **Sans effet en production** : une école utilise un fichier SQLite en WAL (`core/db_sqlite.py`) ; la mémoire
+  partagée n'existe que dans les tests. Les 500 observés en CI n'ont jamais concerné les utilisateurs.
+
 ## 5.46.2 — 2026-11-01
 
 - **Le contrôle de l'adresse publique ne confond plus un autre site avec YELEN.** `Test-PointDeSante` lisait
