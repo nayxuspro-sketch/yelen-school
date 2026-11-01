@@ -205,6 +205,41 @@ Assert (-not ($script:Calls -join "`n" -match 'cloudflared')) 'aucun service Clo
 Assert (-not ($script:Calls -join "`n" -match 'GET ')) 'aucun contrôle réseau effectué'
 Assert ((($script:Sortie -join "`n")) -match 'aucun service Cloudflare') 'le mode est annoncé'
 
+# ── 9. Port Tailscale Serve (accès réservé au personnel, guide §9.5) ─────────
+Write-Host 'Port Tailscale Serve'
+Set-EnvContent "SECRET_KEY=abc`nALLOWED_HOSTS=localhost,127.0.0.1`nCSRF_TRUSTED_ORIGINS=http://localhost:8000,https://bureau-nkqmf8l.tail1234.ts.net`nYELEN_HTTP_PORT=8001`n"
+$script:Calls.Clear()
+$script:Sortie.Clear()
+Invoke-AccesDistance -Root $work -Domaine 'bureau-nkqmf8l.tail1234.ts.net:8443' -EnvSeulement 6>$null
+$hotes = (Get-EnvLine 'ALLOWED_HOSTS') -join ''
+$csrf = (Get-EnvLine 'CSRF_TRUSTED_ORIGINS') -join ''
+Assert ($hotes -match 'bureau-nkqmf8l\.tail1234\.ts\.net') 'le nom est autorisé dans ALLOWED_HOSTS'
+Assert (-not ($hotes -match '8443')) 'ALLOWED_HOSTS ne reçoit jamais le port'
+Assert ($csrf -match 'https://bureau-nkqmf8l\.tail1234\.ts\.net:8443') "l'origine avec port est autorisée (CSRF)"
+Assert ([regex]::Matches($csrf, 'https://bureau-nkqmf8l\.tail1234\.ts\.net,|https://bureau-nkqmf8l\.tail1234\.ts\.net$').Count -eq 1) "l'accès Funnel du 443 est conservé"
+Assert (((Get-EnvLine 'ACCES_DISTANCE_DOMAINE') -join '') -eq 'ACCES_DISTANCE_DOMAINE=bureau-nkqmf8l.tail1234.ts.net:8443') 'le nom et le port sont mémorisés'
+$messages = $script:Sortie -join "`n"
+Assert ($messages -match 'tailscale serve --bg --https=8443 8001') 'la commande Tailscale Serve est rappelée avec le port de l''application'
+Assert (-not ($messages -match 'cloudflared')) 'aucun service Cloudflare installé'
+
+Write-Host 'Port refusé'
+$echec = $false
+try { Invoke-AccesDistance -Root $work -Domaine 'ecole.test:70000' -EnvSeulement 6>$null } catch { $echec = $true }
+Assert $echec 'un port hors limites est refusé'
+$echec = $false
+try { Invoke-AccesDistance -Root $work -Domaine 'ecole.test:84a' -EnvSeulement 6>$null } catch { $echec = $true }
+Assert $echec 'un port non numérique est refusé'
+
+Write-Host 'Désactivation du port'
+$script:Calls.Clear()
+$script:Sortie.Clear()
+Invoke-AccesDistance -Root $work -Desactiver -Domaine 'bureau-nkqmf8l.tail1234.ts.net:8443' 6>$null
+$csrf = (Get-EnvLine 'CSRF_TRUSTED_ORIGINS') -join ''
+$hotes = (Get-EnvLine 'ALLOWED_HOSTS') -join ''
+Assert (-not ($csrf -match '8443')) "l'origine avec port est retirée"
+Assert ($csrf -match 'https://bureau-nkqmf8l\.tail1234\.ts\.net') "l'accès Funnel du même nom reste autorisé"
+Assert ($hotes -match 'bureau-nkqmf8l') "l'hôte reste autorisé (autre entrée sur le même nom)"
+
 # ── Nettoyage ────────────────────────────────────────────────────────────────
 Remove-Item -Recurse -Force $work
 Write-Host 'Tous les tests sont passés.'

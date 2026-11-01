@@ -26,10 +26,18 @@
     tunnel Cloudflare (cas d'un accès assuré autrement, par exemple Tailscale
     Funnel : -Domaine machine.tailnet.ts.net -EnvSeulement).
 
+    Un port facultatif désigne une autre entrée Tailscale que le 443, par
+    exemple « tailscale serve --https=8443 » réservé au personnel :
+    -Domaine machine.tailnet.ts.net:8443. Le nom part dans ALLOWED_HOSTS sans
+    le port (Django compare l'en-tête Host sans port) et l'origine complète,
+    port compris, dans CSRF_TRUSTED_ORIGINS — sans quoi chaque enregistrement
+    de notes serait refusé (403).
+
 .EXAMPLE
     .\activer-acces-distance.bat
     .\activer-acces-distance.bat -Jeton "eyJhIjoi..."
     .\activer-acces-distance.bat -Domaine parents.mon-ecole.bf -Port 8000
+    .\activer-acces-distance.bat -Domaine bureau.tail1234.ts.net:8443 -EnvSeulement
     .\activer-acces-distance.bat -Desactiver
 #>
 [CmdletBinding()]
@@ -113,10 +121,24 @@ function Assert-Administrateur {
     }
 }
 
+function Get-HotePublic {
+    # ALLOWED_HOSTS ne contient que le nom : Django compare l'en-tête Host sans son port. Le port reste
+    # dans CSRF_TRUSTED_ORIGINS, qui exige l'origine exacte (https://nom:8443).
+    param([string]$Nom)
+    return (($Nom -split ':')[0])
+}
+
 function Assert-NomPublic {
     param([string]$Nom)
-    if ($Nom -notmatch '^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$') {
-        throw "Nom public invalide : « $Nom ». Attendu : un nom complet en minuscules, par exemple yelenschoola.nayxus.com."
+    $motif = '^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(:(?<port>\d{1,5}))?$'
+    if ($Nom -notmatch $motif) {
+        throw "Nom public invalide : « $Nom ». Attendu : un nom complet en minuscules, par exemple yelenschoola.nayxus.com ou bureau.tail1234.ts.net:8443."
+    }
+    if ($Matches['port']) {
+        $numero = [int]$Matches['port']
+        if ($numero -lt 1 -or $numero -gt 65535) {
+            throw "Port invalide dans « $Nom » : attendu entre 1 et 65535 (Tailscale accepte 443, 8443 ou 10000)."
+        }
     }
 }
 
@@ -258,7 +280,11 @@ function Invoke-AccesDistance {
         }
 
         Write-Host '[2/3] Retrait du nom public de .env...' -ForegroundColor Cyan
-        $null = Remove-DotEnvList -EnvFile $EnvFile -Name 'ALLOWED_HOSTS' -Value $Domaine
+        # Avec un port (Tailscale Serve), une autre entrée peut viser le même nom sur le 443 : l'hôte
+        # reste alors autorisé, seule l'origine avec port est retirée.
+        if ($Domaine -notmatch ':') {
+            $null = Remove-DotEnvList -EnvFile $EnvFile -Name 'ALLOWED_HOSTS' -Value (Get-HotePublic -Nom $Domaine)
+        }
         $null = Remove-DotEnvList -EnvFile $EnvFile -Name 'CSRF_TRUSTED_ORIGINS' -Value "https://$Domaine"
         Remove-DotEnvKey -EnvFile $EnvFile -Name 'ACCES_DISTANCE_DOMAINE'
 
@@ -277,16 +303,24 @@ function Invoke-AccesDistance {
     if ($EnvSeulement) {
         # Aucun tunnel Cloudflare : seul .env est mis à jour (Tailscale Funnel, autre tunnel déjà installé).
         Write-Host '[1/2] Autorisation du nom public dans .env...' -ForegroundColor Cyan
-        $ajoutHost = Add-DotEnvList -EnvFile $EnvFile -Name 'ALLOWED_HOSTS' -Value $Domaine
+        $hote = Get-HotePublic -Nom $Domaine
+        $ajoutHost = Add-DotEnvList -EnvFile $EnvFile -Name 'ALLOWED_HOSTS' -Value $hote
         $ajoutCsrf = Add-DotEnvList -EnvFile $EnvFile -Name 'CSRF_TRUSTED_ORIGINS' -Value "https://$Domaine"
         Set-DotEnvValue -EnvFile $EnvFile -Name 'ACCES_DISTANCE_DOMAINE' -Value $Domaine
-        Write-Host "        ALLOWED_HOSTS : $(if ($ajoutHost) { 'ajouté' } else { 'déjà autorisé' })." -ForegroundColor Gray
-        Write-Host "        CSRF_TRUSTED_ORIGINS : $(if ($ajoutCsrf) { 'ajouté' } else { 'déjà autorisé' })." -ForegroundColor Gray
+        Write-Host "        ALLOWED_HOSTS : $hote $(if ($ajoutHost) { 'ajouté' } else { 'déjà autorisé' })." -ForegroundColor Gray
+        Write-Host "        CSRF_TRUSTED_ORIGINS : https://$Domaine $(if ($ajoutCsrf) { 'ajouté' } else { 'déjà autorisé' })." -ForegroundColor Gray
 
         Write-Host '[2/2] Terminé (aucun service Cloudflare installé).' -ForegroundColor Cyan
         Write-AccesLog -LogFile $LogFile -Message "Nom public autorisé dans .env : https://$Domaine (sans tunnel Cloudflare)."
         Write-Host ''
         Write-Host "Nom public autorisé : https://$Domaine/" -ForegroundColor Green
+        if ($Domaine -match ':(?<port>\d+)$') {
+            # Entrée Tailscale Serve (guide §9.5) : accès réservé aux appareils du tailnet, sans plafond Funnel.
+            Write-Host ''
+            Write-Host 'Accès réservé au personnel (Tailscale Serve) : sur le serveur, exécutez' -ForegroundColor Yellow
+            Write-Host "  tailscale serve --bg --https=$($Matches['port']) $Port" -ForegroundColor Yellow
+            Write-Host 'puis contrôlez avec « tailscale serve status » (mention « tailnet only »).' -ForegroundColor Yellow
+        }
         Write-Host "Pour appliquer le .env : $(Get-InstructionRedemarrage -Mode $Mode)"
         return
     }
@@ -306,10 +340,11 @@ function Invoke-AccesDistance {
     Write-Host "        $cloudflared" -ForegroundColor Gray
 
     Write-Host '[2/5] Autorisation du nom public dans .env...' -ForegroundColor Cyan
-    $ajoutHost = Add-DotEnvList -EnvFile $EnvFile -Name 'ALLOWED_HOSTS' -Value $Domaine
+    $hote = Get-HotePublic -Nom $Domaine
+    $ajoutHost = Add-DotEnvList -EnvFile $EnvFile -Name 'ALLOWED_HOSTS' -Value $hote
     $ajoutCsrf = Add-DotEnvList -EnvFile $EnvFile -Name 'CSRF_TRUSTED_ORIGINS' -Value "https://$Domaine"
     Set-DotEnvValue -EnvFile $EnvFile -Name 'ACCES_DISTANCE_DOMAINE' -Value $Domaine
-    if ($ajoutHost) { Write-Host "        ALLOWED_HOSTS : $Domaine ajouté." -ForegroundColor Gray }
+    if ($ajoutHost) { Write-Host "        ALLOWED_HOSTS : $hote ajouté." -ForegroundColor Gray }
     else { Write-Host '        ALLOWED_HOSTS : déjà autorisé.' -ForegroundColor Gray }
     if ($ajoutCsrf) { Write-Host "        CSRF_TRUSTED_ORIGINS : https://$Domaine ajouté." -ForegroundColor Gray }
     else { Write-Host '        CSRF_TRUSTED_ORIGINS : déjà autorisé.' -ForegroundColor Gray }

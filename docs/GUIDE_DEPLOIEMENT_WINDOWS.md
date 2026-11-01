@@ -31,6 +31,7 @@
    - [8.1 Mise à jour en un clic : `mettre-a-jour.bat`](#81-mise-à-jour-en-un-clic--mettre-a-jourbat)
 9. [Accès depuis le réseau local](#9-accès-depuis-le-réseau-local)
    - [9.4 Accès à distance — portail parents par Internet](#94-accès-à-distance--portail-parents-par-internet-5460)
+   - [9.5 Accès du personnel par Tailscale Serve (sans Funnel)](#95-accès-du-personnel-par-tailscale-serve-sans-funnel-5467)
 10. [Dépannage et vérifications](#10-dépannage-et-vérifications)
 11. [Reprise sur une nouvelle machine](#11-reprise-sur-une-nouvelle-machine)
 
@@ -1140,6 +1141,64 @@ Limites : trafic relayé par Tailscale (débit modéré, suffisant pour le porta
 #### Sécurité
 
 Le jeton autorise l'ouverture du tunnel : ne le transmettre à personne, ne pas le coller dans un message. Le service tourne sous le compte système. Ne jamais publier `:8000` sur la box : c'est précisément ce que le tunnel évite. Les mots de passe des parents ne circulent qu'en HTTPS ; l'application reste seule juge des droits (rôle PARENT, enfants rattachés).
+
+### 9.5 Accès du personnel par Tailscale Serve (sans Funnel) — 5.46.7
+
+Pendant la **saisie des notes de fin de trimestre**, l'accès doit être réservé aux **enseignants** : Tailscale **Serve** publie la même application, mais **uniquement vers les appareils du tailnet** (réseau privé Tailscale). Aucun plafond de débit Funnel, aucun visiteur anonyme, et l'application continue d'exiger le compte YELEN de chaque enseignant.
+
+**Deux configurations**
+
+| Objectif | Commandes sur le serveur | Adresse des enseignants |
+|---|---|---|
+| **A. Personnel seul** (les parents n'ont pas besoin du portail pendant la saisie) | `tailscale funnel --https=443 off` puis `tailscale serve --bg <port>` | l'adresse habituelle `https://<serveur>.<tailnet>.ts.net/` |
+| **B. Les deux en parallèle** (parents en Funnel, personnel en Serve) | `tailscale funnel --bg <port>` puis `tailscale serve --bg --https=8443 <port>` | `https://<serveur>.<tailnet>.ts.net:8443/` |
+
+`<port>` est le port HTTP local de l'application : `YELEN_HTTP_PORT` en Docker (8001 chez l'école), `PORT` en mode autonome.
+
+**Configuration A — une seule entrée, rien à modifier dans `.env`** : l'adresse ne change pas, elle est déjà autorisée. Vérifier avec `tailscale serve status` : la mention *tailnet only* (et non *Funnel on*) confirme que l'accès est privé. Pour rouvrir aux parents : `tailscale funnel --bg <port>`.
+
+**Configuration B — deux entrées, port 8443 à autoriser**
+
+```cmd
+tailscale funnel --bg 8001
+tailscale serve --bg --https=8443 8001
+tailscale serve status
+```
+
+Puis, dans `cmd` **administrateur**, à la racine du dossier de l'application :
+
+```cmd
+activer-acces-distance.bat -Domaine <serveur>.<tailnet>.ts.net:8443 -EnvSeulement
+demarrage.bat
+```
+
+Le script écrit le nom **sans le port** dans `ALLOWED_HOSTS` (Django compare l'en-tête `Host` sans port) et l'origine **avec le port** dans `CSRF_TRUSTED_ORIGINS`. **Sans cette origine complète, chaque enregistrement de notes échoue en `403 CSRF verification failed`** — c'est le seul piège de cette configuration. Le `.env` contient alors les deux entrées, par exemple :
+
+```dotenv
+ALLOWED_HOSTS=localhost,127.0.0.1,desktop-nkqmf8l.taild2095f.ts.net
+CSRF_TRUSTED_ORIGINS=https://desktop-nkqmf8l.taild2095f.ts.net,https://desktop-nkqmf8l.taild2095f.ts.net:8443
+```
+
+**Inscrire les enseignants** — l'offre gratuite Tailscale *Personal* autorise **3 utilisateurs et 100 appareils** : on utilise donc **un compte unique « école »** et une **clé d'authentification** pour les appareils, pas un compte par enseignant.
+
+1. Console <https://login.tailscale.com> → **Settings → Keys → Generate auth key** : *reusable*, *pre-approved*, expiration 90 jours.
+2. Sur chaque appareil (Windows, Android, iOS) : installer Tailscale, puis **Sign in with auth key** et coller la clé. Renommer l'appareil au nom de l'enseignant (*Machines → … → Edit name*).
+3. **Access controls** : n'autoriser le tailnet qu'à joindre la machine du serveur, ports 443 et 8443 — le téléphone d'un enseignant ne voit rien d'autre.
+4. Appareil perdu ou enseignant parti : **Machines → Revoke**.
+
+**Charge et performances** : 34 enseignants qui saisissent produisent 2 à 4 requêtes par seconde, très en dessous du banc d'essai du projet (40 navigateurs simultanés, 0 erreur). Le facteur limitant reste le **débit montant** de la ligne de l'école, pas Tailscale. Chaque requête est chiffrée de bout en bout (WireGuard) et va directement au serveur, sans relais.
+
+**Arrêter** : `tailscale serve --https=8443 off` (configuration B) ou `tailscale serve reset` ; rétablir les parents avec `tailscale funnel --bg 8001`.
+
+**Dépannage**
+
+| Symptôme | Cause probable | Correctif |
+|---|---|---|
+| `403 CSRF verification failed` à l'enregistrement des notes | origine avec port absente de `CSRF_TRUSTED_ORIGINS` | relancer `activer-acces-distance.bat -Domaine <serveur>.<tailnet>.ts.net:8443 -EnvSeulement`, puis `demarrage.bat` |
+| Page inaccessible depuis un téléphone | appareil non connecté au tailnet | ouvrir l'application Tailscale sur le téléphone ; vérifier la machine dans la console |
+| `400 Bad Request` après l'ajout du port | serveur non redémarré (le `.env` n'est lu qu'au démarrage) | `demarrage.bat` en Docker, `demarrer-autonome.bat` en mode autonome |
+| La console refuse un nouvel appareil | limite de l'offre gratuite (100 appareils / 3 utilisateurs) | révoquer les appareils inutilisés ; un seul compte suffit pour tous les enseignants |
+| L'adresse répond aussi depuis Internet | Funnel encore actif sur le même port | `tailscale funnel --https=443 off`, puis `tailscale serve status` |
 
 ---
 

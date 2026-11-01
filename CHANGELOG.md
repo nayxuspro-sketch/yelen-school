@@ -3,6 +3,22 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.7 — 2026-11-01
+
+- **Accès du personnel par Tailscale Serve, avec port.** `activer-acces-distance.bat` accepte désormais
+  `-Domaine <serveur>.<tailnet>.ts.net:8443 -EnvSeulement` : le nom part dans `ALLOWED_HOSTS` **sans** le port
+  et l'origine complète, port compris, dans `CSRF_TRUSTED_ORIGINS` — sans quoi chaque enregistrement de notes
+  était refusé (`403 CSRF verification failed`). Port hors limites ou non numérique : refusé avant toute
+  écriture. `-Desactiver` avec port ne retire que l'origine avec port : une entrée Funnel sur le 443 du même
+  nom reste utilisable.
+- Cas d'usage : **saisie des notes de fin de trimestre** par les enseignants, sur un canal privé (réseau
+  Tailscale), sans plafond de débit et sans exposition publique ; les parents gardent le Funnel sur le 443.
+- Guide de déploiement **§9.5** : deux configurations (personnel seul / les deux en parallèle), inscription des
+  enseignants (offre gratuite : 3 utilisateurs, 100 appareils — un compte « école » et une clé
+  d'authentification), restriction du tailnet à la machine du serveur, charge attendue, dépannage.
+- Tests PowerShell de `activer-acces-distance.ps1` : section « Port Tailscale Serve » (11 vérifications
+  supplémentaires).
+
 ## 5.46.6 — 2026-11-01
 
 - **Messages reçus : lisibles sur téléphone.** La boîte n'est plus un tableau de sept colonnes à défilement
