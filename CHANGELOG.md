@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.46.1 — 2026-11-01
+
+- **Accès à distance sur une installation Docker.** `activer-acces-distance.ps1` reconnaît le mode de
+  déploiement : si le conteneur `web` tourne (`docker compose … ps -q web`), il lit le port dans
+  `YELEN_HTTP_PORT` et demande de relancer par **`demarrer.bat`** — les conteneurs doivent être recréés pour
+  relire `.env`, un simple redémarrage ne suffit pas. En mode autonome, rien ne change (`PORT`,
+  `demarrer-autonome.bat`). Guide de déploiement §9.4 complété (redémarrage selon le mode).
+
 ## 5.46.0 — 2026-11-01
 
 - **Accès à distance du portail parents.** Nouveau `activer-acces-distance.bat` et

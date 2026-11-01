@@ -119,11 +119,35 @@ function Assert-NomPublic {
 function Resolve-PortApplication {
     param([string]$EnvFile, [int]$Port)
     if ($Port -gt 0) { return $Port }
-    foreach ($cle in @('PORT', 'YELEN_HTTP_PORT')) {
+    # YELEN_HTTP_PORT : installation Docker ; PORT : mode autonome (les deux .env coexistent).
+    foreach ($cle in @('YELEN_HTTP_PORT', 'PORT')) {
         $valeur = Get-DotEnvValue -EnvFile $EnvFile -Name $cle
         if ($valeur -match '^\d+$') { return [int]$valeur }
     }
     return 8000
+}
+
+function Resolve-ModeDeploiement {
+    # « docker » si le conteneur web tourne (installation Docker, C:\YELEN-SCHOOL) ; sinon mode autonome
+    # (Waitress lancé par demarrer-autonome.bat). Le dépôt est le même : seul le conteneur les distingue.
+    param([string]$Root)
+    if (-not (Get-Command 'docker' -ErrorAction SilentlyContinue)) { return 'autonome' }
+    $compose = Join-Path $Root 'docker-compose.client.yml'
+    if (-not (Test-Path $compose)) { return 'autonome' }
+    $ErrorActionPreference = 'Continue'
+    $conteneur = ''
+    try { $conteneur = "$(& docker compose -f $compose ps -q web 2>$null)".Trim() } catch { $conteneur = '' }
+    if ($conteneur) { return 'docker' }
+    return 'autonome'
+}
+
+function Get-InstructionRedemarrage {
+    # Le mode autonome relit .env à chaque démarrage ; Docker seulement à la création des conteneurs.
+    param([string]$Mode)
+    if ($Mode -eq 'docker') {
+        return 'fermez l''application puis double-cliquez sur demarrer.bat (les conteneurs sont recréés et relisent .env).'
+    }
+    return 'fermez la fenêtre « YELEN SCHOOL - Serveur », puis double-cliquez sur demarrer-autonome.bat.'
 }
 
 function Resolve-Cloudflared {
@@ -196,6 +220,7 @@ function Invoke-AccesDistance {
     }
     $LogFile = Join-Path (Join-Path $Root 'logs') 'acces-distance.log'
     New-Item -ItemType Directory -Path (Join-Path $Root 'logs') -Force | Out-Null
+    $Mode = Resolve-ModeDeploiement -Root $Root
 
     if (-not $Domaine) {
         # Désactivation : reprendre le nom mémorisé par l'activation ; sinon, nom de l'établissement.
@@ -229,7 +254,7 @@ function Invoke-AccesDistance {
         Write-Host ''
         Write-Host "Accès à distance fermé. $Domaine n'est plus autorisé par le serveur." -ForegroundColor Green
         Write-Host "Supprimez au besoin le nom d'hôte public du tunnel dans le tableau de bord Cloudflare."
-        Write-Host 'Redémarrez le serveur (demarrer-autonome.bat) pour appliquer le .env.'
+        Write-Host "Pour appliquer le .env : $(Get-InstructionRedemarrage -Mode $Mode)"
         return
     }
 
@@ -306,7 +331,7 @@ function Invoke-AccesDistance {
     Write-Host "  Service local     : http://localhost:$Port"
     Write-Host ''
     Write-Host 'IMPORTANT : redémarrez le serveur pour appliquer le .env' -ForegroundColor Yellow
-    Write-Host '  fermez la fenêtre « YELEN SCHOOL - Serveur », puis double-cliquez sur demarrer-autonome.bat.'
+    Write-Host "  $(Get-InstructionRedemarrage -Mode $Mode)"
     Write-Host ''
     Write-Host 'Communiquez ensuite l''adresse aux parents : ils se connectent avec leur numéro de'
     Write-Host 'téléphone et installent l''application depuis le navigateur (guide, §19.1 et §19.7).'

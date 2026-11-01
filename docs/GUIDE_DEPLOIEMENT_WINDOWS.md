@@ -1056,6 +1056,8 @@ Par défaut, l'application ne répond qu'aux postes du réseau de l'école. Pour
 
 Adresse retenue : **`https://yelenschoola.nayxus.com/`** — le domaine `nayxus.com` doit être géré par Cloudflare.
 
+**Les deux installations sont prises en charge** : le script reconnaît le mode tout seul (conteneur `web` en marche → installation Docker `C:\YELEN-SCHOOL` ; sinon mode autonome Waitress) et donne la consigne de redémarrage correspondante. Dans les deux cas le tunnel vise le port HTTP local de l'application (`YELEN_HTTP_PORT`, `PORT` en autonome, 8000 par défaut) : il n'y a rien à changer dans `docker-compose.client.yml`, même quand le HTTPS local (Caddy, §9.3) est actif — le port HTTP reste publié sur `127.0.0.1`, donc joignable par le tunnel.
+
 **Prérequis** — le serveur démarre normalement (§3.6) et dispose d'une connexion Internet ; aucune règle à ajouter sur la box. Si `nayxus.com` n'est pas encore chez Cloudflare, créer l'enregistrement `CNAME` `yelenschoola` vers la valeur `.cfargotunnel.com` affichée par le tunnel.
 
 #### 1. Créer le tunnel (une fois, dans le navigateur)
@@ -1075,9 +1077,12 @@ Clic droit sur `activer-acces-distance.bat` (racine du dossier) → **Exécuter 
 
 Relancer le script est sans effet de bord : rien n'est dupliqué, seul le service est réinstallé.
 
-#### 3. Redémarrer le serveur
+#### 3. Redémarrer le serveur pour relire `.env`
 
-Fermer la fenêtre « YELEN SCHOOL - Serveur » puis double-cliquer sur `demarrer-autonome.bat` : le `.env` n'est lu qu'au démarrage. La bannière affiche alors `Depuis Internet (parents) : https://yelenschoola.nayxus.com/`.
+- **Mode autonome** — fermer la fenêtre « YELEN SCHOOL - Serveur », puis double-cliquer sur `demarrer-autonome.bat`. La bannière affiche alors `Depuis Internet (parents) : https://yelenschoola.nayxus.com/`.
+- **Installation Docker** — fermer l'application (ou exécuter `stop` dans le dossier), puis double-cliquer sur `demarrer.bat` : les conteneurs sont recréés et relisent `.env` (un simple redémarrage de service ne suffit pas). Vérifier ensuite `curl http://localhost:<YELEN_HTTP_PORT>/health/`.
+
+Le nom public reste inutilisable jusqu'à ce redémarrage : le serveur répond alors **HTTP 400** au domaine (il ne l'autorise pas encore).
 
 #### 4. Vérifier et communiquer l'adresse
 

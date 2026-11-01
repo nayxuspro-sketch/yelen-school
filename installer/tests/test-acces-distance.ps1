@@ -49,6 +49,7 @@ function Stop-Service {
 function Get-Command {
     param([string]$Name, $ErrorAction)
     if ($Name -eq 'cloudflared') { [pscustomobject]@{ Name = 'cloudflared'; Source = '/opt/cloudflared' } }
+    if ($Name -eq 'docker') { [pscustomobject]@{ Name = 'docker'; Source = '/usr/bin/docker' } }
 }
 function Invoke-Cloudflared {
     param([string]$Cloudflared, [string[]]$Arguments)
@@ -65,6 +66,17 @@ function Invoke-WebRequest {
     [pscustomobject]@{ StatusCode = 200 }
 }
 function Read-Host { param($Prompt) $script:ReponseJeton }
+function docker { param([Parameter(ValueFromRemainingArguments = $true)]$Arguments) if ($script:ConteneurWeb) { $script:ConteneurWeb } }
+$script:ConteneurWeb = ''
+$script:Sortie = [System.Collections.Generic.List[string]]::new()
+function Write-Host {
+    # Les messages sont conservés (vérification des consignes de redémarrage) et affichés.
+    param([Parameter(Position = 0)]$Object, [string]$ForegroundColor, [switch]$NoNewline)
+    if ($null -ne $Object) {
+        $script:Sortie.Add("$Object")
+        [Console]::WriteLine("$Object")
+    }
+}
 
 # ── Utilitaires ──────────────────────────────────────────────────────────────
 function Assert($condition, $message) {
@@ -135,6 +147,28 @@ Assert (-not ($csrf -match 'nayxus')) "l'origine publique est retirée"
 Assert (-not (Get-EnvLine 'ACCES_DISTANCE_DOMAINE')) 'la mémorisation du nom public est supprimée'
 Assert ($script:Calls -contains 'Stop-Service cloudflared') 'le service est arrêté'
 Assert ((($script:Calls -join "`n") -match 'cloudflared service uninstall')) 'le service est supprimé'
+
+# ── 6. Installation Docker (conteneur web) ───────────────────────────────────
+Write-Host 'Installation Docker'
+Set-EnvContent "SECRET_KEY=abc`nYELEN_HTTP_PORT=8081`nALLOWED_HOSTS=localhost`nCSRF_TRUSTED_ORIGINS=http://localhost:8081`n"
+Set-Content -Path (Join-Path $work 'docker-compose.client.yml') -Value 'services: {}'   # installation Docker
+$script:ConteneurWeb = 'a1b2c3'
+$script:Calls.Clear()
+$script:Sortie.Clear()
+Invoke-AccesDistance -Root $work -Domaine 'yelenschoola.nayxus.com' -Jeton $jeton 6>$null
+Assert ($script:Calls -contains 'GET http://127.0.0.1:8081/health/') 'le port Docker est lu dans YELEN_HTTP_PORT'
+$messages = $script:Sortie -join "`n"
+Assert ($messages -match 'demarrer\.bat') 'le redémarrage Docker passe par demarrer.bat (conteneurs recréés)'
+Assert (-not ($messages -match 'demarrer-autonome\.bat')) 'aucune consigne autonome pour une installation Docker'
+
+Write-Host 'Mode autonome'
+$script:ConteneurWeb = ''
+Remove-Item -Path (Join-Path $work 'docker-compose.client.yml') -Force
+$script:Sortie.Clear()
+Invoke-AccesDistance -Root $work -Domaine 'yelenschoola.nayxus.com' -Jeton $jeton 6>$null
+$messages = $script:Sortie -join "`n"
+Assert ($messages -match 'demarrer-autonome\.bat') 'le mode autonome redémarre par demarrer-autonome.bat'
+$script:ConteneurWeb = ''
 
 # ── Nettoyage ────────────────────────────────────────────────────────────────
 Remove-Item -Recurse -Force $work
