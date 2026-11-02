@@ -80,5 +80,6 @@ def test_titre_stable_des_erreurs_applicatives(tmp_path, settings):
     erreurs = exploitation.erreurs_recentes(fichier=journal)
     assert erreurs['nombre'] == 1 and erreurs['dernieres'][0]['message'] == 'Boom'
     settings.LOG_DIR = tmp_path
-    alerte = next(a for a in exploitation.etat_exploitation()['alertes'] if a['niveau'] == 'warning')
+    alerte = next(a for a in exploitation.etat_exploitation()['alertes']
+                  if a['titre'] == 'Erreurs applicatives répétées')
     assert alerte['titre'] == 'Erreurs applicatives répétées' and alerte['detail'].startswith('1 erreur(s) en 24 h. Dernière : Boom')

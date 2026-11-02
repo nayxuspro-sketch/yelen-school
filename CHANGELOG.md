@@ -3,6 +3,38 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.2 — 2026-11-02
+
+- **Une sauvegarde jamais restaurée n'est pas une sauvegarde.** Nouveau `installer\tester-restauration.ps1` :
+  il importe la dernière sauvegarde (chiffrée ou non) dans une base temporaire `<DB_NAME>_test_restauration`,
+  vérifie le nombre de tables et les effectifs (élèves, inscriptions, paiements), puis supprime cette base.
+  **La production n'est pas touchée** — l'application reste en marche, aucune donnée n'est remplacée.
+  Le résultat est consigné dans `backups\restauration.log` et apparaît dans *Exploitation*, nouvelle carte
+  **Restauration testée** ; sans essai depuis plus de 120 jours, une alerte y figure et le relais quotidien la reprend.
+- **Surveillance extérieure documentée** (guide de déploiement §9.6) : les alertes de la veille sont internes,
+  elles ne peuvent pas prévenir si le serveur est éteint. Procédure complète, pas à pas, avec deux services
+  gratuits — UptimeRobot sur `/health/` (le serveur répond-il ?) et Healthchecks.io sur la sauvegarde
+  (a-t-elle eu lieu ?), avec la commande `&& curl` à ajouter à la tâche planifiée.
+- **Mesures de référence** (guide de déploiement §9.4/§9.6, audit P1-9) : commande `manage.py mesure_reference`
+  qui chronomètre les six écrans du quotidien, sur les données réelles, et peut servir de garde-fou planifié
+  (`--seuil-ms`, `--json`). Mesuré sur 1 500 élèves (SQLite, 5 passes, médiane) :
+
+  | Écran | Durée | Requêtes SQL | Page |
+  |---|---|---|---|
+  | Accueil | 28 ms | 25 | 66 Ko |
+  | Élèves | 43 ms | 13 | 225 Ko |
+  | Évaluations (saisie des notes) | 91 ms | 15 | 148 Ko |
+  | Redevables | 325 à 402 ms | 16 | 2 161 Ko |
+  | Paiements | 29 ms | 10 | 165 Ko |
+  | Bulletins | 10 ms | 12 | 59 Ko |
+
+  La liste des redevables (2,1 Mo de HTML pour 1 500 lignes) est la plus lente et la plus variable : elle reste
+  sous le seuil de 2 000 ms, mais c'est la page à paginer en premier si l'effectif double.
+- Documentation : guide d'utilisation §3.6 (carte « Restauration testée »), guide de déploiement §9.6 et §9.7
+  (procédure d'essai trimestriel avec sortie attendue et consignation).
+- Tests : 11 nouveaux (lecture du journal de restauration, alertes d'absence et d'ancienneté, lignes
+  illisibles, sortie tableau et JSON de la commande, seuil, utilisateur inconnu).
+
 ## 5.47.1 — 2026-11-02
 
 - **Couverture des modules sensibles.** Les écrans qui engagent une décision (conseil de classe, transfert,

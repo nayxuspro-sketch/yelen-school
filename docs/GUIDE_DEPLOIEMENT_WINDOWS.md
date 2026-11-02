@@ -32,6 +32,8 @@
 9. [Accès depuis le réseau local](#9-accès-depuis-le-réseau-local)
    - [9.4 Accès à distance — portail parents par Internet](#94-accès-à-distance--portail-parents-par-internet-5460)
    - [9.5 Accès du personnel par Tailscale Serve (sans Funnel)](#95-accès-du-personnel-par-tailscale-serve-sans-funnel-5467)
+   - [9.6 Surveillance du serveur (supervision externe)](#96-surveillance-du-serveur-supervision-externe-5472)
+   - [9.7 Vérifier qu'une sauvegarde est restaurable](#97-vérifier-quune-sauvegarde-est-restaurable--essai-trimestriel-5472)
 10. [Dépannage et vérifications](#10-dépannage-et-vérifications)
 11. [Reprise sur une nouvelle machine](#11-reprise-sur-une-nouvelle-machine)
 
@@ -1229,6 +1231,85 @@ appareils tagués ont en plus l'expiration de clé désactivée par défaut.
 | L'appareil disparaît seul de la liste | clé générée avec *Ephemeral* | générer une clé **sans** *ephemeral*, puis réinscrire l'appareil |
 | L'application ouvre une fenêtre « Choisir une clé d'accès » (passkey) | l'écran « Se connecter » du navigateur a été choisi au lieu de la clé | annuler ; application → écran de connexion → menu **⋯** → **« Use an auth key »** |
 | L'adresse répond aussi depuis Internet | Funnel encore actif sur le même port | `tailscale funnel --https=443 off`, puis `tailscale serve status` |
+
+### 9.6 Surveillance du serveur (supervision externe) — 5.47.2
+
+Les alertes de l'application (*Administration → Exploitation*) sont **internes** : elles ne peuvent pas
+prévenir si le serveur est éteint, si Docker est arrêté ou si le disque a lâché. Seul un **service
+extérieur** le peut. Deux surveillances gratuites suffisent ; elles n'ouvrent aucun port et n'exposent
+aucune donnée.
+
+**1. Le serveur répond-il ?** — <https://uptimerobot.com> (offre gratuite : 50 moniteurs, contrôle toutes
+les 5 minutes).
+
+1. Créer un compte, puis **Add New Monitor** → type **HTTP(s)**.
+2. *Friendly Name* : `YELEN SCHOOL — serveur`. *URL* : l'adresse réellement utilisée par l'école —
+   `http://<ip-locale>:8001/health/` sur le réseau, ou l'adresse Tailscale Funnel
+   `https://<serveur>.<tailnet>.ts.net/health/` si le portail parents est publié (voir 9.4).
+3. **Alert Contacts** : l'adresse e-mail du directeur (et celle de l'éditeur). La notification part
+   après 2 échecs consécutifs, soit **10 minutes** : c'est le délai voulu, il ignore une coupure d'électricité
+   de quelques secondes.
+4. Aucune clé, aucun compte à créer dans YELEN SCHOOL : `/health/` est public et ne révèle que l'état.
+
+Réponse attendue, en 200 :
+
+```json
+{"status": "ok", "version": "5.47.2", "database": "ok", "cache": "ok", "demo": false}
+```
+
+Si la base est injoignable ou le cache indisponible, le service répond **503** : UptimeRobot alerte donc
+sur un serveur qui « tourne » mais ne peut plus servir (cas le plus fréquent : disque plein).
+
+**2. Les sauvegardes sont-elles faites ?** — <https://healthchecks.io> (offre gratuite : 20 contrôles).
+C'est une surveillance « chien de garde » : le service alerte quand la sauvegarde **n'a pas eu lieu**.
+
+1. Créer un compte → **New Check** : nom `YELEN SCHOOL — sauvegarde`, *Period* **1 jour**, *Grace* **6 heures**.
+2. Copier l'URL de ping affichée (`https://hc-ping.com/<identifiant>`).
+3. L'ajouter à la fin de la sauvegarde planifiée : ouvrir **Planificateur de tâches** → tâche
+   *YELEN SCHOOL — Sauvegarde* → **Modifier** → *Actions* → modifier l'action existante en
+   `cmd /c "C:\YELEN-SCHOOL\installer\backup-windows.bat && curl -fsS -m 10 https://hc-ping.com/<identifiant>"`.
+4. Aucun ping reçu pendant 30 heures → alerte e-mail/SMS.
+
+> **Pourquoi deux services et pas un ?** UptimeRobot surveille le serveur, Healthchecks surveille la
+> sauvegarde. Un serveur qui tourne sans sauvegarde est aussi dangereux qu'un serveur arrêté.
+
+**En cas d'alerte.** Ne pas redémarrer à l'aveugle : consulter d'abord *Administration → Exploitation*
+(dernière sauvegarde, espace disque, erreurs) puis `logs\surveillance.log`. Si le serveur est injoignable,
+la marche à suivre est celle du chapitre 10.
+
+### 9.7 Vérifier qu'une sauvegarde est restaurable — essai trimestriel (5.47.2)
+
+Une sauvegarde jamais restaurée n'est pas une sauvegarde : fichier tronqué, phrase secrète perdue,
+disque défaillant ne se voient qu'au moment où l'on en a besoin. `installer\tester-restauration.ps1`
+fait cet essai **sans toucher à la production** : il importe la dernière sauvegarde dans une base
+temporaire (`<DB_NAME>_test_restauration`), compte les tables, les élèves et les paiements, puis
+supprime cette base. L'application reste en marche.
+
+**Une fois par trimestre**, dans un `cmd` :
+
+```
+cd /d C:\YELEN-SCHOOL
+powershell -NoProfile -ExecutionPolicy Bypass -File installer\tester-restauration.ps1
+```
+
+Sortie attendue :
+
+```
+Essai de restauration de yelen_school_20261102_020000.dump.enc dans yelen_school_db_test_restauration (la production n'est pas touchée).
+[OK] Restauration vérifiée en 38 s : 61 tables, 1 502 élèves, 1 533 paiements.
+Consigné dans C:\YELEN-SCHOOL\backups\restauration.log
+```
+
+Options : `-BackupFile .\backups\<fichier>` pour essayer une sauvegarde précise (la plus ancienne
+conservée, par exemple), `-KeepBase` pour garder la base temporaire en cas d'examen approfondi.
+
+**Consignation.** Chaque essai écrit une ligne datée dans `backups\restauration.log` ; la date et le
+résultat apparaissent dans *Administration → Exploitation*, carte **Restauration testée**. Sans essai
+depuis plus de **120 jours**, une alerte y figure — et le relais quotidien de la veille la reprend.
+Un échec est conservé tel quel (`ECHEC … motif=…`) : c'est la ligne à transmettre à l'éditeur.
+
+> **Avant la rentrée**, faire un essai complet de *restauration réelle* sur un poste de test
+> (chapitre 7) : l'essai trimestriel prouve que le fichier est lisible, pas que l'on saurait remplacer le serveur.
 
 ---
 

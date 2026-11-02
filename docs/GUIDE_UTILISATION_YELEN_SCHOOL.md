@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.47.1
+version_logiciel: 5.47.2
 version_guide: 5.35
-date_mise_a_jour: 02/11/2026 (5.47.1 : couverture des écrans de décision — aucune règle d'usage modifiée)
+date_mise_a_jour: 02/11/2026 (5.47.2 : restauration testée §3.6, surveillance extérieure)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -738,6 +738,7 @@ La page rassemble ce que la direction doit savoir sur le serveur sans ouvrir une
 | Carte | Ce qui est mesuré | Alerte |
 |---|---|---|
 | **Sauvegarde** | fichier `yelen_school_*` le plus récent dans `BACKUP_DIR`, `backups\` (mode serveur : dossier du poste lu par le conteneur) ou `data\backups\` (mode autonome) | aucune sauvegarde visible, ou dernière sauvegarde de plus de 36 h |
+| **Restauration testée** *(5.47.2)* | dernier essai consigné dans `backups\restauration.log` par `installer\tester-restauration.ps1` (date, réussite ou échec) | aucun essai, ou essai de plus de 120 jours |
 | **Espace disque** | espace libre du disque qui héberge l'application | moins de 5 Go ou moins de 10 % libres |
 | **Erreurs applicatives** | lignes `ERROR`/`CRITICAL` de `logs\django.log` sur 24 h, avec les 5 dernières | au moins une erreur |
 | **File SMS** | SMS en attente, en nouvelle tentative, abandonnés sur 7 jours, envoyés en 24 h | SMS en nouvelle tentative ou abandonnés |
@@ -753,6 +754,14 @@ de santé `/health/` interrogé par la surveillance…), en arrière-plan.
 
 Cette page complète la surveillance Windows (`programmer-surveillance.bat`), seule à pouvoir constater que l'application
 ne répond plus : elle la redémarre et alerte par SMS (`ALERTE_SMS_NUMEROS` du `.env`).
+
+> **Une sauvegarde jamais restaurée n'est pas une sauvegarde (5.47.2).** Une fois par trimestre, lancer
+> `installer\tester-restauration.ps1` : il importe la dernière sauvegarde dans une base temporaire, en vérifie le
+> contenu, puis la supprime — la production n'est pas touchée. Le résultat s'affiche dans la carte
+> **Restauration testée** ci-dessus. Procédure complète : guide de déploiement, §9.7.
+>
+> **Et si le serveur est éteint ?** Aucune alerte interne ne peut partir : ajouter une surveillance extérieure
+> gratuite de `/health/` (guide de déploiement, §9.6).
 
 ---
 
