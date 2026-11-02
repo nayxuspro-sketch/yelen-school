@@ -3,6 +3,30 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.1 — 2026-11-02
+
+- **Couverture des modules sensibles.** Les écrans qui engagent une décision (conseil de classe, transfert,
+  dépense, licence, prédiction) étaient les moins testés. Couverture des vues, mesurée module par module :
+
+  | Module | Avant | Après |
+  |---|---|---|
+  | `pedagogie/views/predictions.py` | 25 % | **100 %** |
+  | `viescolaire/views/conseils.py` | 36 % | **100 %** |
+  | `finances/views/budget.py` | 39 % | **100 %** |
+  | `inscriptions/views/transferts.py` | 40 % | **98 %** |
+  | `licences/views.py` | 57 % | **100 %** |
+
+- Nouveaux tests de parcours (77 tests) : risque de décrochage (filtres, recalcul unitaire, recalcul global,
+  fragment htmx, PDF), prédictions (cycles à examen, pronostics, calcul POST, PDF), conseils de classe
+  (création sans les abandons, décisions et mentions, PV PDF), appels de décision (contestabilité, instruction,
+  modification de la décision, verrouillage), budget (catégories, dépenses, refus de dépassement, séparation
+  saisie / approbation, trésorerie, export Excel), transferts (demande, approbation qui clôt le dossier et
+  trace le parcours, refus, dossier PDF), licences (création, activation par jeton, renouvellement, révocation,
+  outils de développement désactivés en production).
+- **Aucun code de production modifié** : les seules lignes non couvertes sont les replis « WeasyPrint absent »
+  des transferts (`import` en échec). Deux comportements réels ont été figés au passage : le saisisseur ne
+  valide pas sa propre dépense, une échéance réglée n'apparaît plus dans le reste à payer d'un transfert.
+
 ## 5.47.0 — 2026-11-02
 
 - **Listes lisibles sur téléphone.** Les tableaux de liste (élèves, paiements, personnel, classes, reçus,

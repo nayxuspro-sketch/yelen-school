@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.47.0
+version_logiciel: 5.47.1
 version_guide: 5.35
-date_mise_a_jour: 31/10/2026 (5.45.0 : offre hébergée et instance de démonstration §39)
+date_mise_a_jour: 02/11/2026 (5.47.1 : couverture des écrans de décision — aucune règle d'usage modifiée)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
