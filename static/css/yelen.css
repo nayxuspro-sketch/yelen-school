@@ -11425,3 +11425,97 @@ body.login-clean-body:has(#demo-banner) { padding-top: 1.7rem; }
   .boite-sms-actions > .boite-sms-repondre[open] > summary { width: auto; }
   .boite-sms-repondre form { width: 100%; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Tableaux de liste sur téléphone (5.47.0)
+   Sous 768 px, chaque ligne d'un tableau de liste devient une carte étiquetée.
+   Les libellés sont posés par static/js/tableaux_mobile.js ; les matrices et
+   plannings (data-cartes="non", table-stats, edt-table) restent défilants.
+   Sans JavaScript, aucune règle ne s'applique : le tableau reste tel quel.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .table-scroll.table-cartes { overflow-x: visible; }
+
+  table[data-cartes="oui"] {
+    display: block;
+    width: 100%;
+    font-size: var(--text-sm);
+  }
+  table[data-cartes="oui"] thead { display: none; }
+  table[data-cartes="oui"] tbody,
+  table[data-cartes="oui"] tfoot { display: block; }
+
+  table[data-cartes="oui"] tr {
+    display: block;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  table[data-cartes="oui"] tbody tr:last-child { border-bottom: none; }
+  table[data-cartes="oui"] tbody tr:hover td { background: transparent; }
+
+  table[data-cartes="oui"] td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: auto;
+    padding: 3px 0;
+    border: none !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+
+  /* Libellé de colonne, repris du <thead> : à gauche ; valeur à droite. */
+  table[data-cartes="oui"] td::before {
+    content: attr(data-label);
+    flex: 0 0 38%;
+    max-width: 38%;
+    color: var(--color-text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    line-height: 1.6;
+  }
+
+  /* Cellule de titre : premier élément de la carte, sans libellé. */
+  table[data-cartes="oui"] td[data-titre] {
+    display: block;
+    padding: 0 0 var(--space-1);
+    font-size: var(--text-base);
+    font-weight: 600;
+  }
+  table[data-cartes="oui"] td[data-titre]::before { display: none; }
+
+  /* Cellule sans libellé (case à cocher, vignette) : à droite, sans colonne vide. */
+  table[data-cartes="oui"] td[data-label=""] { justify-content: flex-end; }
+  table[data-cartes="oui"] td:empty { display: none; }
+
+  /* Actions : alignées à droite en bas de carte. */
+  table[data-cartes="oui"] td[data-actions] {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    padding-top: var(--space-2);
+  }
+  table[data-cartes="oui"] td[data-actions]::before { display: none; }
+  table[data-cartes="oui"] td[data-actions] > form { display: inline-flex; }
+
+  /* Ligne pleine largeur (« Aucun résultat ») : centrée, sans étiquettes. */
+  table[data-cartes="oui"] tr[data-pleine-largeur] td {
+    display: block;
+    text-align: center !important;
+    padding: var(--space-2) 0;
+  }
+  table[data-cartes="oui"] tr[data-pleine-largeur] td::before { display: none; }
+}
+
+/* Impression : le tableau reprend sa forme tabulaire (listes, états à signer). */
+@media print {
+  table[data-cartes="oui"] { display: table; width: 100%; }
+  table[data-cartes="oui"] thead { display: table-header-group; }
+  table[data-cartes="oui"] tbody { display: table-row-group; }
+  table[data-cartes="oui"] tfoot { display: table-footer-group; }
+  table[data-cartes="oui"] tr { display: table-row; padding: 0; }
+  table[data-cartes="oui"] td { display: table-cell; padding: var(--space-3) var(--space-4); }
+  table[data-cartes="oui"] td::before { display: none; }
+}

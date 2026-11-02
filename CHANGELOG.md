@@ -3,6 +3,24 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.0 — 2026-11-02
+
+- **Listes lisibles sur téléphone.** Les tableaux de liste (élèves, paiements, personnel, classes, reçus,
+  redevables, commandes, documents…) n'imposent plus de défilement horizontal : **sous 768 px**, chaque ligne
+  devient une carte — nom en tête, informations avec leur libellé de colonne, actions en bas. Mesures sur la
+  liste des élèves à 390 px : tableau de **809 px dans 356 px visibles avant**, **356 px sans débordement
+  après** ; paiements 941 px → 356 px ; personnel 860 px → 356 px. Sur ordinateur, aucun changement.
+- Mécanique unique et réversible : `static/js/tableaux_mobile.js` reprend les libellés du `<thead>` (aucun
+  gabarit de liste modifié), `static/css/yelen.css` met la ligne en carte. Sans JavaScript, le tableau reste
+  défilant — aucune régression possible.
+- **Exclusions** : les matrices (`table-stats`, `edt-table`) et les tableaux marqués `data-cartes="non"` — la
+  matrice des bulletins par classe et par trimestre reste un tableau. À l'impression, les listes reprennent
+  leur forme tabulaire.
+- Guide §18.9 ; tests : 4 garde-fous statiques et un parcours navigateur à 390 px (cartes, libellés, titre
+  unique, absence de débordement, matrice préservée).
+- Vérifié sans modification : la **saisie de notes sur téléphone** est déjà adaptée (champ de 88 × 52 px,
+  police 22,4 px, clavier décimal, boutons Absent / Dispensé, enregistrement hors réseau).
+
 ## 5.46.9 — 2026-11-01
 
 - **Guide §9.5 : inscription des enseignants détaillée.** La clé se saisit **dans l'application**

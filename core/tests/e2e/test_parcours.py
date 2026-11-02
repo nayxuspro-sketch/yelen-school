@@ -186,3 +186,47 @@ def test_guide_sommaire_amene_a_la_section(page, live_server, demo):
     expect(titre).to_be_in_viewport()
     assert page.evaluate(f'document.getElementById({cible!r}).getBoundingClientRect().top') < 120
     assert page.evaluate('decodeURIComponent(location.hash.slice(1))') == cible   # le navigateur encode les accents
+
+
+def test_listes_en_cartes_sur_telephone(page, live_server, demo):
+    """Liste des élèves sur un écran de 390 px (5.47.0).
+
+    Régression : le tableau mesurait 809 px dans 356 px visibles — défilement horizontal et colonnes
+    écrasées. Chaque ligne doit devenir une carte étiquetée, sans débordement latéral. La matrice des
+    bulletins (classes × trimestres) reste, elle, un tableau.
+    """
+    page.set_viewport_size({'width': 390, 'height': 844})
+    connecter(page, live_server, 'direction@demo.bf')
+
+    page.goto(f'{live_server.url}{reverse("inscriptions:eleve_list")}')
+    table = page.locator('table.data-table').first
+    table.wait_for()
+    expect(table).to_have_attribute('data-cartes', 'oui')
+
+    mesures = page.evaluate("""() => {
+        const t = document.querySelector('table.data-table');
+        const conteneur = t.closest('.table-scroll');
+        const premiere = t.tBodies[0].rows[0];
+        return {
+            largeur: Math.round(t.getBoundingClientRect().width),
+            visible: Math.round((conteneur || t).clientWidth),
+            enTeteMasquee: getComputedStyle(t.tHead).display === 'none',
+            titres: premiere.querySelectorAll('td[data-titre]').length,
+            libelles: premiere.querySelectorAll('td[data-label]:not([data-label=""])').length,
+            texteTitre: (premiere.querySelector('td[data-titre]') || {}).textContent || '',
+            debordement: document.documentElement.scrollWidth > window.innerWidth + 1,
+        };
+    }""")
+    assert not mesures['debordement'], 'la page défile latéralement sur téléphone'
+    assert mesures['largeur'] <= mesures['visible'] + 1, f"tableau {mesures['largeur']} px pour {mesures['visible']} px visibles"
+    assert mesures['enTeteMasquee'], "l'en-tête du tableau doit être masqué en mode cartes"
+    assert mesures['titres'] == 1, 'chaque ligne doit avoir une seule cellule de titre'
+    assert mesures['libelles'] >= 2, 'les libellés de colonnes doivent être posés'
+    assert mesures['texteTitre'].strip(), 'la cellule de titre doit porter un contenu'
+
+    # Une matrice reste un tableau : aucune carte, pas de cartes fabriquées.
+    page.goto(f'{live_server.url}{reverse("bulletins:index")}')
+    matrice = page.locator('table.bul-idx-table')
+    matrice.wait_for()
+    expect(matrice).to_have_attribute('data-cartes', 'non')
+    assert page.evaluate("() => getComputedStyle(document.querySelector('table.bul-idx-table')).display") == 'table'

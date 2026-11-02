@@ -1,6 +1,6 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.46.9
+version_logiciel: 5.47.0
 version_guide: 5.35
 date_mise_a_jour: 31/10/2026 (5.45.0 : offre hébergée et instance de démonstration §39)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
@@ -190,7 +190,8 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [18.6 Journal d'Audit (Traçabilité)](#186-journal-daudit-traçabilité)
   - [18.7 Réunion de Parents (`/reunion-parents/`)](#187-réunion-de-parents-reunion-parents)
   - [18.8 Navigation Moderne — Sidebar v5.0](#188-navigation-moderne--sidebar-v50)
-  - [18.9 Journal des Modifications](#189-journal-des-modifications)
+  - [18.9 Listes sur téléphone (5.47.0)](#189-listes-sur-téléphone-5470)
+  - [18.10 Journal des Modifications](#1810-journal-des-modifications)
 - [19. Portail Parent PWA](#19-portail-parent-pwa)
   - [19.1 Installer l'application sur Android](#191-installer-lapplication-sur-android)
   - [19.2 Design system — classes pp-*](#192-design-system--classes-pp-)
@@ -5591,7 +5592,26 @@ Le texte du SMS envoyé est défini dans **Paramètres → Modèles de messages*
 
 ---
 
-### 18.9 Journal des Modifications
+### 18.9 Listes sur téléphone (5.47.0)
+
+> **À qui s'adresse cette section :** tout utilisateur qui consulte l'application depuis un téléphone.
+
+Les listes (élèves, paiements, personnel, classes, reçus, redevables…) n'imposent plus de défiler
+latéralement. **Sous 768 px de large**, chaque ligne devient une **carte** : le nom (élève, membre du personnel,
+article) en tête, puis les informations avec leur libellé de colonne (« Matricule · DEM026-0007 »), et les
+actions alignées en bas de carte.
+
+- Aucun réglage à faire : la présentation s'adapte à la largeur de l'écran.
+- Les **matrices** gardent leur forme tabulaire et leur défilement horizontal : statistiques officielles,
+  matrice des bulletins par classe et par trimestre, emplois du temps.
+- **À l'impression**, les listes reprennent leur forme de tableau, comme avant.
+- Sur ordinateur, l'affichage est inchangé.
+
+*Note technique : les libellés sont posés par `static/js/tableaux_mobile.js` (à partir des en-têtes du
+tableau), la mise en carte par `static/css/yelen.css`. Un tableau peut être exclu avec `data-cartes="non"`,
+ou en lui donnant la classe `table-stats` (matrice chiffrée) ou `edt-table` (planning).*
+
+### 18.10 Journal des Modifications
 
 > **À qui s'adresse cette section :** Administrateurs techniques et développeurs souhaitant suivre l'évolution du code.
 
