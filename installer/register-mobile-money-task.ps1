@@ -24,7 +24,8 @@ if (-not (Test-Path $Script)) {
 New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
 
 $arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Script`""
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
+. (Join-Path $PSScriptRoot 'yelen-scheduled-task.ps1')
+$action = New-YelenHeadlessTaskAction -PowerShellArguments $arguments
 # En arrière-plan (S4U, sans mot de passe enregistré) : aucune fenêtre dans la session ouverte.
 $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `

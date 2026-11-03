@@ -3,6 +3,20 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.7 — 2026-11-03
+
+- **Suppression de la fenêtre noire furtive des tâches planifiées Windows.** Sous Windows 10/11 (en particulier
+  Windows 11 avec Windows Terminal par défaut), lancer directement `powershell.exe -WindowStyle Hidden` depuis
+  le Planificateur de tâches alloue et affiche brièvement une fenêtre noire avant que PowerShell ne la masque
+  (toutes les minutes pour *Agent de mise a jour*, toutes les 5 minutes pour *Surveillance et alerte SMS*, et
+  lors des sauvegardes / SMS quotidiens). Désormais, les 8 scripts `installer\register-*-task.ps1` s'appuient
+  sur `installer\yelen-scheduled-task.ps1` (`conhost.exe --headless`), qui attache PowerShell et ses processus
+  enfants à une console sans fenêtre dès la création du processus, et `Update-YelenTasksHeadless` migre
+  automatiquement sur place les tâches `YELEN SCHOOL - *` déjà enregistrées.
+- Documentation : guide de déploiement Windows **§6.1** mis à jour.
+- Tests : garde-fou `test_taches_planifiees_windows_sans_fenetre_noire` dans `core/tests/test_scripts_windows.py`
+  sur l'ensemble des scripts `installer/register-*-task.ps1`.
+
 ## 5.47.6 — 2026-11-03
 
 - **Bouton « Mise à jour en ligne » dans la rubrique Configuration.** Ajout du bouton **Mise à jour en ligne**

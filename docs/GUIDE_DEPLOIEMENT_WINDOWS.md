@@ -697,6 +697,8 @@ Une tâche nommée `YELEN SCHOOL - Sauvegarde PostgreSQL et médias` est créée
 
 Dans le Planificateur de tâches, cliquer sur **Exécuter** pour effectuer un premier test. Vérifier ensuite l'apparition d'une paire de fichiers dans `backups\`.
 
+> **Exécution sans fenêtre noire (5.47.7) :** toutes les tâches planifiées YELEN SCHOOL s'exécutent via `conhost.exe --headless` (`installer\yelen-scheduled-task.ps1`), de sorte qu'aucune fenêtre console ou Windows Terminal n'apparaît brièvement à l'écran. Lors d'une mise à jour, `start-local.ps1` met automatiquement à niveau les tâches existantes.
+
 La tâche nécessite que Docker Desktop et son moteur soient disponibles à l'heure prévue. Pour une exécution fiable, configurer Docker Desktop pour démarrer avec Windows et laisser la session qui l'exécute autorisée à utiliser Docker. Les erreurs éventuelles sont visibles dans l'historique du Planificateur et dans les journaux Docker.
 
 ### 6.2 Analyse automatique du risque de décrochage

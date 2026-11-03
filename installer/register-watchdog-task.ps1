@@ -24,7 +24,8 @@ if (-not (Test-Path $WatchScript)) {
 New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
 
 $arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$WatchScript`""
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
+. (Join-Path $PSScriptRoot 'yelen-scheduled-task.ps1')
+$action = New-YelenHeadlessTaskAction -PowerShellArguments $arguments
 # Toutes les N minutes, en arrière-plan (S4U : « exécuter même si l'utilisateur n'est pas connecté »,
 # sans mot de passe enregistré) : aucune fenêtre PowerShell n'apparaît dans la session ouverte.
 $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name

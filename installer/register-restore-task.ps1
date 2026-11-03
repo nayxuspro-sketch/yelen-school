@@ -64,7 +64,8 @@ if ($runAt -le (Get-Date)) {
 # quotidienne pourrait écraser les nouvelles données de l'établissement.
 # Avec -File, « *> » serait transmis au script comme simple argument ; la redirection n'existe qu'avec -Command.
 $arguments = "-NoProfile -ExecutionPolicy Bypass -Command `"try { & '$RestoreScript' -BackupFile '$BackupFile' -Yes *> '$LogFile' } catch { Add-Content -LiteralPath '$LogFile' -Value ('[ERREUR] ' + `$_); exit 1 }`""
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
+. (Join-Path $PSScriptRoot 'yelen-scheduled-task.ps1')
+$action = New-YelenHeadlessTaskAction -PowerShellArguments $arguments
 $trigger = New-ScheduledTaskTrigger -Once -At $runAt
 $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType Interactive -RunLevel Highest

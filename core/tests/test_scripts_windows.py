@@ -155,3 +155,23 @@ def test_mise_a_jour_interface_sans_docker_sock_et_agent_hote():
     reg = (RACINE / 'installer' / 'register-update-agent-task.ps1') \
         .read_text(encoding='utf-8-sig').replace('\r\n', '\n')
     assert "if ($existante.State -eq 'Running') { exit 0 }" in reg
+
+
+def test_taches_planifiees_windows_sans_fenetre_noire():
+    """Sous Windows 10/11, lancer directement powershell.exe -WindowStyle Hidden depuis le Planificateur
+    de tâches dessine brièvement une fenêtre noire avant que PowerShell ne la masque. Toutes les tâches
+    planifiées YELEN SCHOOL doivent passer par conhost.exe --headless et migrer les tâches existantes."""
+    helper = (RACINE / 'installer' / 'yelen-scheduled-task.ps1') \
+        .read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+    assert 'conhost.exe' in helper and '--headless' in helper
+    assert 'function New-YelenHeadlessTaskAction' in helper
+    assert 'function Update-YelenTasksHeadless' in helper
+    assert 'Set-ScheduledTask' in helper
+
+    scripts = sorted((RACINE / 'installer').glob('register-*-task.ps1'))
+    assert len(scripts) >= 7
+    for fichier in scripts:
+        texte = fichier.read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+        assert "New-ScheduledTaskAction -Execute 'powershell.exe'" not in texte, fichier.name
+        assert 'yelen-scheduled-task.ps1' in texte, fichier.name
+        assert 'New-YelenHeadlessTaskAction' in texte, fichier.name

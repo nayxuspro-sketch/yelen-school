@@ -1,7 +1,7 @@
 ﻿#requires -Version 5.1
 <##
 .SYNOPSIS
-    Programme l'agent hôte de mise à jour (appliquer-mise-a-jour-en-attente.ps1) chaque minute.
+    Programme l'agent hôte de mise à jour (appliquer-mise-a-jour-en-attente.ps1) sans fenêtre console.
 #>
 [CmdletBinding()]
 param(
@@ -11,9 +11,15 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $AgentScript = Join-Path $PSScriptRoot 'appliquer-mise-a-jour-en-attente.ps1'
+$TaskHelper = Join-Path $PSScriptRoot 'yelen-scheduled-task.ps1'
 
 if (-not (Get-Command Register-ScheduledTask -ErrorAction SilentlyContinue)) { exit 0 }
 if (-not (Test-Path -LiteralPath $AgentScript)) { exit 0 }
+if (-not (Test-Path -LiteralPath $TaskHelper)) { exit 0 }
+. $TaskHelper
+
+# Met à niveau silencieusement toute tâche YELEN existante encore liée directement à powershell.exe.
+[void](Update-YelenTasksHeadless)
 
 $existante = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
 if ($null -ne $existante) {
@@ -26,7 +32,7 @@ $estAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIde
 )
 $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$AgentScript`""
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
+$action = New-YelenHeadlessTaskAction -PowerShellArguments $arguments
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
     -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 3650)
 
@@ -46,5 +52,5 @@ Register-ScheduledTask `
     -Trigger $trigger `
     -Principal $principal `
     -Settings $settings `
-    -Description 'Applique les archives .zip déposées depuis Configuration > Mise à jour' `
+    -Description 'Applique sans fenêtre les mises à jour demandées depuis Configuration' `
     -Force | Out-Null

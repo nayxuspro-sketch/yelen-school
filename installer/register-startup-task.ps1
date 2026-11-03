@@ -24,7 +24,8 @@ if (-not (Test-Path $StartScript)) {
 New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
 $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$StartScript`""
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
+. (Join-Path $PSScriptRoot 'yelen-scheduled-task.ps1')
+$action = New-YelenHeadlessTaskAction -PowerShellArguments $arguments
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $userId
 $principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType Interactive -RunLevel Highest
 
