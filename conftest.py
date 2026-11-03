@@ -59,3 +59,12 @@ def veille_exploitation_inactive(monkeypatch):
 def two_factor_non_obligatoire(settings):
     """Les tests existants connectent des Super Admin/Directeurs sans TOTP ; les tests dédiés réactivent l'obligation."""
     settings.TWO_FACTOR_REQUIRED = False
+
+
+@pytest.fixture(autouse=True)
+def tampon_usage_isole():
+    """Vide le tampon mémoire du compteur d'usage entre deux tests sans ouvrir la base."""
+    from core import usage
+    usage.reinitialiser_tampon_usage()
+    yield
+    usage.reinitialiser_tampon_usage()

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.47.9
-version_guide: 5.40
-date_mise_a_jour: 03/11/2026 (5.47.9 : correctif mise à jour en ligne LogonType Interactive et Git non interactif)
+version_logiciel: 5.48.0
+version_guide: 5.41
+date_mise_a_jour: 03/11/2026 (5.48.0 : compteur d'usage anonyme des modules en Exploitation et guide de démarrage rapide 5.48)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -746,6 +746,7 @@ La page rassemble ce que la direction doit savoir sur le serveur sans ouvrir une
 | **Espace disque** | espace libre du disque qui héberge l'application | moins de 5 Go ou moins de 10 % libres |
 | **Erreurs applicatives** | lignes `ERROR`/`CRITICAL` de `logs\django.log` sur 24 h, avec les 5 dernières | au moins une erreur |
 | **File SMS** | SMS en attente, en nouvelle tentative, abandonnés sur 7 jours, envoyés en 24 h | SMS en nouvelle tentative ou abandonnés |
+| **Usage des modules (anonyme)** *(5.48.0)* | nombre d'appels de pages par module sur 7 et 30 jours glissants (aucun identifiant utilisateur, aucune IP ni paramètre d'URL conservé) | aucune (carte d'information) |
 
 **Alertes relayées à la direction (5.29.0) :** il n'est plus nécessaire d'ouvrir la page pour être prévenu. Chaque
 alerte en cours est envoyée aux **Directeurs / Proviseurs et Super Admin** sous forme de notification interne (cloche,

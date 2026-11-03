@@ -1,7 +1,7 @@
 ---
 titre: Guide de démarrage rapide — YELEN SCHOOL
-version_logiciel: 5.33.0
-date_mise_a_jour: 31/10/2026
+version_logiciel: 5.48.0
+date_mise_a_jour: 03/11/2026
 public: direction, secrétariat, comptabilité, enseignants d'un établissement qui démarre
 ---
 
@@ -23,12 +23,12 @@ le point d'interrogation en haut de chaque page ouvre directement la section du 
 
 **Ce qu'il faut**
 
-- Le serveur de l'école allumé, avec YELEN SCHOOL démarré (mode autonome : double-clic sur
-  `demarrer-autonome.bat` ; mode Docker : `C:\YELEN-SCHOOL`). Détails : § 31 et § 34.3.
-- L'adresse à saisir dans le navigateur des postes, affichée au démarrage
-  (`http://IP-DU-SERVEUR:8000`, ou `https://IP-DU-SERVEUR:8443` quand le HTTPS est activé).
-  Sur les téléphones et tablettes, le certificat de l'école doit avoir été installé une fois
-  (guide de déploiement Windows, § 9.3).
+- Le serveur de l'école allumé, avec YELEN SCHOOL démarré (mode serveur Docker `C:\YELEN-SCHOOL` :
+  double-clic sur `demarrage.bat` ; mode autonome sans Docker : `demarrer-autonome.bat`). Détails : § 31 et § 34.3.
+- L'adresse à saisir dans le navigateur des postes du réseau local, affichée au démarrage
+  (`http://IP-DU-SERVEUR:8001` ou `https://IP-DU-SERVEUR:8443` quand le HTTPS local est activé), et,
+  pour la **saisie à distance des enseignants hors de l'établissement**, l'accès sécurisé **Tailscale**
+  configuré sur le serveur (*Guide de déploiement Windows*, section 9.5).
 - Un navigateur récent : Chrome, Edge ou Firefox. L'application fonctionne entièrement sur le
   réseau local, sans Internet ; seuls les SMS, les e-mails et les notifications push sortent.
 - Le compte **Super Admin** remis à l'installation. À la première connexion, l'application impose
@@ -141,8 +141,8 @@ partir automatiquement vers le parent (§ 3.8). Les justificatifs se traitent da
 3. Un paiement enregistré **ne se supprime pas** : en cas d'erreur, un **remboursement** ou une
    écriture corrective est saisi, et tout reste tracé (§ 9.1).
 4. **Fin de journée** : `Finances → Journal de caisse` → arrêté de caisse (§ 9.16).
-5. **Chaque semaine** : `Finances → Redevables` (§ 9.8) et, si besoin, `Finances → Relances`
-   pour générer les lettres et les SMS de relance (§ 9.11).
+5. **Chaque semaine** : `Finances → Redevables` (paginé par 50 élèves et filtrable par classe, § 9.8) et,
+   si besoin, `Finances → Relances` pour générer les lettres et les SMS de relance (§ 9.11).
 
 Mobile Money (Orange Money, Moov Money) : encaissement, relevés et rapprochement, § 9.14 et § 9.15.
 
@@ -168,8 +168,9 @@ notes et paiements (§ 8.1). Le **capital de points discipline** est optionnel (
 1. **Vérifier la saisie** : `Pilotage → Enseignants` indique, par enseignant, le taux de notes
    saisies — en rouge sous 80 % (§ 9.27).
 2. **Appréciations par matière** : chaque enseignant renseigne les siennes (§ 9.22).
-3. **Clôturer la période** : `Paramètres → Périodes` → **Clôturer**. Les notes sont figées ;
-   la direction peut rouvrir si nécessaire (§ 3.4).
+3. **Clôture de la période** : la période se verrouille **automatiquement** dès que sa date de fin est
+   dépassée (ou manuellement via `Paramètres → Périodes` → **Clôturer**). Seule la **direction** peut
+   rouvrir temporairement une période échue en saisissant un motif obligatoire, tracé au journal d'audit (§ 3.4).
 4. **Conseil de classe** : `Bulletins → [Classe] → [Trimestre]` → bouton **Saisir** sur chaque
    élève (absences, mention, appréciation du conseil) ; décisions et procès-verbal (§ 6.3, § 8.7).
 5. **Générer les bulletins** : bouton **PDF** de la classe — un bulletin A4 par élève, toutes les
@@ -217,16 +218,20 @@ Les données des années passées restent consultables (bulletins, paiements, ar
 ## 9. Sécurité et sauvegardes (direction)
 
 - **Exploitation** : `Administration → Exploitation` — santé du serveur, espace disque, file SMS,
-  erreurs applicatives, sauvegardes (§ 3.6). Une alerte apparaît sur le tableau de bord dès qu'un
-  point est en défaut.
-- **Sauvegarder** : bouton **Sauvegarder maintenant** puis **Télécharger** la sauvegarde sur un
-  support externe, chaque semaine. La sauvegarde automatique nocturne est planifiée à
-  l'installation (§ 9.32). Restauration : § 9.32.
+  erreurs applicatives, sauvegardes, **restauration testée** et **usage anonyme des modules** sur 7 et
+  30 jours (§ 3.6). Une alerte apparaît sur le tableau de bord dès qu'un point critique est en défaut.
+- **Sauvegarder et tester la restauration** : bouton **Sauvegarder maintenant** puis **Télécharger** la
+  sauvegarde sur un support externe chaque semaine (en plus de la sauvegarde automatique nocturne, § 9.32).
+  **Une fois par trimestre**, double-cliquer sur `C:\YELEN-SCHOOL\tester-restauration.bat` : la dernière
+  sauvegarde est vérifiée dans une base temporaire sans toucher aux données de l'école et le résultat
+  s'affiche dans `Exploitation` (§ 3.6).
 - **Mots de passe** : jamais partagés, changés au départ d'un agent ; compte **désactivé** (pas
   supprimé) quand une personne quitte l'établissement (§ 2.6).
 - **Journal d'audit** : `Paramètres → Journal d'audit` — qui a fait quoi, quand (§ 18.6).
-- **Mises à jour** : double-clic sur `mettre-a-jour.bat` sur le serveur, hors heures de travail ;
-  l'application se sauvegarde avant et revient en arrière seule en cas d'échec (§ 35.2).
+- **Mises à jour** : directement depuis le menu latéral **Configuration → Mise à jour en ligne** (ou
+  **Configuration → Mise à jour** avec une archive `.zip` hors connexion), ou sur le serveur via
+  `C:\YELEN-SCHOOL\mettre-a-jour.bat` hors heures de pointe ; l'application effectue une sauvegarde
+  chiffrée préalable et revient en arrière seule en cas d'anomalie (§ 35.2).
 - **Licence** : `Mon abonnement` indique l'échéance ; un bandeau prévient 30 jours avant (§ 13).
 
 ---
@@ -273,4 +278,4 @@ sur les données et le fonctionnement (§ 24).
 - [ ] Élèves importés ou saisis, inscrits dans leur classe
 - [ ] Comptes parents créés, adresse du portail communiquée
 - [ ] Configuration SMS testée, SMS automatiques choisis
-- [ ] Première sauvegarde téléchargée sur un support externe
+- [ ] Première sauvegarde téléchargée sur un support externe et essai `tester-restauration.bat` validé

@@ -259,6 +259,8 @@ MIDDLEWARE = [
     'yelen_school.audit_middleware.AuditRequestMiddleware',
     # Veille d'exploitation : relais quotidien des alertes (sauvegarde, disque, erreurs, SMS) à la direction
     'core.veille.VeilleMiddleware',
+    # Compteur d'usage anonyme par module (tampon mémoire reversé périodiquement, consultable en Exploitation)
+    'core.usage.UsageModuleMiddleware',
     # Génération automatique de l'année scolaire (désactivé — création manuelle)
     # 'parametres.middleware.AnneeScolaireAutoMiddleware',
 ]

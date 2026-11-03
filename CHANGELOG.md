@@ -3,6 +3,22 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.48.0 — 2026-11-03
+
+- **Compteur d'usage anonyme par module dans *Exploitation* (audit P1-10).**
+  - Nouveau module `core/usage.py` + modèle `core.UsageModuleQuotidien(date, module, appels)` (sans champ
+    d'horodatage `BaseModel`, donc exclu de `AuditLog`) et middleware `UsageModuleMiddleware` : cumule en
+    mémoire dans chaque processus les pages servies aux utilisateurs connectés (hors `/health/` et routes de
+    rafraîchissement automatique) sans aucune donnée personnelle (ni utilisateur, ni IP, ni paramètres d'URL),
+    puis reverse en base au plus une fois par minute afin d'éviter toute contention SQLite.
+  - Nouvelle carte **Usage des modules (anonyme)** dans *Administration → Exploitation* (totaux et répartition
+    par module sur 7 et 30 jours glissants, sans alerte supplémentaire).
+- **Guide court de démarrage actualisé en 5.48.0 (audit P2-15)** : mise à niveau de
+  `docs/GUIDE_DEMARRAGE_RAPIDE.md` (`/aide/demarrage/`) avec l'accès distant enseignant Tailscale, la clôture
+  automatique des périodes d'évaluation, les boutons **Mise à jour en ligne** / **Mise à jour (`.zip`)**,
+  l'essai trimestriel `tester-restauration.bat` et la carte d'usage des modules.
+- Tests : `core/tests/test_usage_modules.py` + `core/tests/test_aide.py`.
+
 ## 5.47.9 — 2026-11-03
 
 - **Correctif de la mise à jour en ligne (`Configuration → Mise à jour en ligne`).**

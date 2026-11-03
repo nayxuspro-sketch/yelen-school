@@ -433,3 +433,27 @@ class IndicateurAnnee(BaseModel):
 
     def __str__(self):
         return f"{self.annee_scolaire.libelle} — {self.effectif} élèves"
+
+
+class UsageModuleQuotidien(models.Model):
+    """Compteur quotidien anonyme d'appels par module applicatif (P1-10, 5.48.0).
+
+    Aucune donnée personnelle (ni utilisateur, ni adresse IP, ni paramètres d'URL) : uniquement
+    ``(date, module, appels)`` pour afficher dans *Exploitation* quels modules servent réellement.
+    N'hérite volontairement pas de ``BaseModel`` (pas de ``created_at``) afin d'exclure l'audit.
+    """
+
+    date = models.DateField(db_index=True, verbose_name=_("Jour"))
+    module = models.CharField(max_length=40, verbose_name=_("Module"))
+    appels = models.PositiveIntegerField(default=0, verbose_name=_("Nombre d'appels"))
+
+    class Meta:
+        verbose_name = _("Usage quotidien de module")
+        verbose_name_plural = _("Usages quotidiens de modules")
+        ordering = ['-date', '-appels', 'module']
+        constraints = [
+            models.UniqueConstraint(fields=['date', 'module'], name='core_usage_date_module_uniq'),
+        ]
+
+    def __str__(self):
+        return f"{self.date:%d/%m/%Y} · {self.module} ({self.appels})"
