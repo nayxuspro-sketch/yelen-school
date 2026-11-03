@@ -119,6 +119,19 @@ function Get-LanIPv4Addresses {
     }
 }
 
+$DemandeMaj = Join-Path $Root 'mises-a-jour\demande.json'
+$AgentMaj = Join-Path $PSScriptRoot 'appliquer-mise-a-jour-en-attente.ps1'
+if (Test-Path -LiteralPath $DemandeMaj) {
+    try {
+        $infoMaj = Get-Content -LiteralPath $DemandeMaj -Raw | ConvertFrom-Json
+        if ($infoMaj.statut -eq 'EN_COURS') { exit 0 }
+        if ($infoMaj.statut -eq 'EN_ATTENTE' -and (Test-Path -LiteralPath $AgentMaj)) {
+            [void](Invoke-NativeQuiet { powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $AgentMaj })
+            exit 0
+        }
+    } catch { }
+}
+
 $etat = Get-Etat
 $nomServeur = $env:COMPUTERNAME
 

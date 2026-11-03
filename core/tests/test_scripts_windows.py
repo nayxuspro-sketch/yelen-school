@@ -128,3 +128,27 @@ def test_outil_editeur_produit_une_archive_verifiable():
     assert '"$empreinte  $nom"' in script
     # Un fichier non suivi ne part pas dans le bundle : il ne doit pas bloquer l'éditeur.
     assert '--untracked-files=no' in script
+    # L'archive .zip destinée au bouton Configuration > Mise à jour embarque le bundle et son .sha256.
+    assert 'Compress-Archive -LiteralPath $archive, $fichierEmpreinte -DestinationPath $archiveZip -Force' in script
+
+
+def test_mise_a_jour_interface_sans_docker_sock_et_agent_hote():
+    """Le conteneur web ne monte jamais docker.sock : l'archive vérifiée passe par ./mises-a-jour
+    et l'agent planifié côté hôte Windows valide strictement le nom et l'empreinte avant exécution."""
+    compose = (RACINE / 'docker-compose.client.yml').read_text(encoding='utf-8')
+    assert 'docker.sock' not in compose
+    assert './mises-a-jour:/app/mises-a-jour' in compose
+
+    maj = (RACINE / 'installer' / 'mettre-a-jour.ps1').read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+    assert 'function Expand-ZipMiseAJour' in maj
+    assert "if ([System.IO.Path]::GetExtension($Chemin).ToLower() -eq '.zip')" in maj
+
+    agent = (RACINE / 'installer' / 'appliquer-mise-a-jour-en-attente.ps1') \
+        .read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+    assert '^yelen-school-\\d+\\.\\d+\\.\\d+\\.bundle$' in agent
+    assert '^[0-9a-f]{64}$' in agent
+    assert '-File $UpdateScript -DepuisArchive $cheminArchive -Empreinte $empreinte' in agent
+
+    reg = (RACINE / 'installer' / 'register-update-agent-task.ps1') \
+        .read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+    assert "if ($existante.State -eq 'Running') { exit 0 }" in reg

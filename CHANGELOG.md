@@ -3,6 +3,28 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.5 — 2026-11-03
+
+- **Bouton « Mise à jour » par archive `.zip` dans la rubrique Configuration.** La direction (*Directeur* /
+  *Super Admin*) dispose désormais d'un bouton **Mise à jour** dans la rubrique **Configuration** du menu
+  latéral (ainsi que d'une carte dans *Paramètres*). Au clic, la boîte de sélection de fichier s'ouvre
+  immédiatement filtrée sur `.zip` ; après choix de `yelen-school-<version>.zip`, le serveur vérifie en
+  mémoire/flux l'absence de traversée de chemin, le plafond de taille (300 Mo), l'en-tête Git bundle,
+  l'empreinte **SHA-256** et la progression de version avant toute écriture, consigne l'acte dans `AuditLog`
+  et dépose atomiquement le bundle vérifié + `demande.json` dans `mises-a-jour/`.
+- **Exécution automatique côté hôte Windows sans exposer `docker.sock` et suivi en direct.** Le conteneur
+  `web` monte uniquement `./mises-a-jour:/app/mises-a-jour` ; côté Windows, l'agent planifié silencieux
+  `installer\appliquer-mise-a-jour-en-attente.ps1` (enregistré par `start-local.ps1` et relayé par
+  `surveiller-yelen.ps1`) valide le nom du bundle et l'empreinte, exécute `mettre-a-jour.ps1 -DepuisArchive`
+  (sauvegarde chiffrée, reconstruction, `/health/`, retour arrière automatique) et met à jour `demande.json`
+  relu toutes les 5 s en HTMX sur `/mise-a-jour/`.
+- **Outil éditeur et CLI unifiés `.zip` / `.bundle`.** `installer\outils-editeur\creer-archive-mise-a-jour.ps1`
+  génère désormais `yelen-school-<version>.zip` en plus du couple `.bundle` + `.sha256`, et
+  `mettre-a-jour.bat -DepuisArchive` accepte indifféremment `.zip` ou `.bundle`.
+- Documentation : guide d'utilisation **§35.2** et guide de déploiement Windows **§8.2** mis à jour.
+- Tests : 13 nouveaux tests dans `core/tests/test_mise_a_jour.py` + contrat PowerShell/Docker dans
+  `core/tests/test_scripts_windows.py`.
+
 ## 5.47.4 — 2026-11-03
 
 - **Clôture automatique des périodes en fin de trimestre.** Tant que personne ne cliquait sur « Clôturer »

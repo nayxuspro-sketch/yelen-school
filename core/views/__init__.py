@@ -51,6 +51,8 @@ from .sms import (  # noqa: F401 — réexporté tel quel
 from .exploitation import (  # noqa: F401 — réexporté tel quel
     exploitation,
     sauvegarde_telecharger,
+    mise_a_jour,
+    mise_a_jour_etat,
     reunion_parents,
     risque_recalculer,
 )
@@ -110,6 +112,8 @@ __all__ = [
     '_etat_reception_sms',
     'exploitation',
     'sauvegarde_telecharger',
+    'mise_a_jour',
+    'mise_a_jour_etat',
     'reunion_parents',
     'risque_recalculer',
     'app_manifest',

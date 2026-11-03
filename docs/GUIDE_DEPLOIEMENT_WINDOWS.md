@@ -927,21 +927,33 @@ symptôme : `fatal: unable to access ... Could not resolve host: github.com`), l
 **archive de version** que l'école applique localement. Le reste de la procédure est identique :
 sauvegarde, reconstruction, contrôle `/health/`, retour arrière automatique.
 
-**Ce que l'éditeur vous remet** — deux fichiers, à copier **ensemble** :
+**Ce que l'éditeur vous remet** — une archive unique `.zip` (regroupant le `.bundle` et son `.sha256`) :
 
 ```
-yelen-school-5.47.3.bundle          code de la version (26 Mo environ, aucune donnée de l'école)
-yelen-school-5.47.3.bundle.sha256   empreinte qui prouve que le fichier est intact
+yelen-school-5.47.5.zip             archive complète pour le bouton Configuration > Mise à jour
+  ├── yelen-school-5.47.5.bundle        code de la version (26 Mo environ, aucune donnée de l'école)
+  └── yelen-school-5.47.5.bundle.sha256 empreinte qui prouve que le fichier est intact
 ```
 
-**Ce que vous faites** — `cmd` :
+**Option A — depuis l'application web (recommandée à partir de 5.47.5)** :
+
+1. Ouvrir YELEN SCHOOL avec un compte **Directeur** ou **Super Admin**.
+2. Dans le menu latéral, rubrique **Configuration**, cliquer sur **Mise à jour** : la fenêtre de sélection
+   s'ouvre filtrée sur `.zip` (dossier *Téléchargements* par défaut du navigateur).
+3. Choisir `yelen-school-5.47.5.zip` et cliquer sur *Ouvrir* : l'application contrôle l'empreinte SHA-256 avant toute
+   écriture, enregistre la demande dans `mises-a-jour\demande.json`, et l'agent planifié Windows
+   (`installer\appliquer-mise-a-jour-en-attente.ps1`, enregistré par `start-local.ps1` sans exposer
+   `docker.sock`) lance `mettre-a-jour.ps1` en arrière-plan. La page `/mise-a-jour/` affiche l'avancement en
+   direct toutes les 5 secondes jusqu'au retour de `/health/` dans la nouvelle version.
+
+**Option B — en ligne de commande sur le serveur** (`cmd`, `.zip` ou `.bundle`) :
 
 ```
 cd /d C:\YELEN-SCHOOL
-mettre-a-jour.bat -DepuisArchive yelen-school-5.47.3.bundle
+mettre-a-jour.bat -DepuisArchive yelen-school-5.47.5.zip
 ```
 
-L'archive peut être désignée par un chemin complet (`D:\livraisons\yelen-school-5.47.3.bundle`).
+L'archive peut être désignée par un chemin complet (`D:\livraisons\yelen-school-5.47.5.zip` ou `.bundle`).
 
 **Ce que fait le script, dans cet ordre** :
 

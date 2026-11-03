@@ -709,6 +709,16 @@
         <a href="{% url 'parametres:type_sanction_list' %}" class="sb-item-submodern" data-url="/parametres/types-sanctions/"><span class="sub-item-dot"></span>Types Sanctions</a>
         {% endif %}
       </div>
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' or user.is_superuser %}
+      <button type="button" id="btn-maj-sidebar" class="sb-item-modern{% if request.path == '/mise-a-jour/' %} active{% endif %}" data-csp-trigger-click="input-maj-zip" data-url="/mise-a-jour/">
+        <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Mise à jour
+      </button>
+      {% endif %}
       {% endif %}
 
       {# Utilisateurs (admin uniquement) #}
@@ -1191,5 +1201,11 @@
     };
   })();
   </script>
+  {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' or user.is_superuser %}
+  <form id="form-maj-sidebar" method="post" action="{% url 'core:mise_a_jour' %}" enctype="multipart/form-data" hidden>
+    {% csrf_token %}
+    <input type="file" id="input-maj-zip" name="archive_zip" accept=".zip,application/zip" aria-label="Choisir l'archive de mise à jour (.zip)" data-csp-submit-on-change>
+  </form>
+  {% endif %}
 </body>
 </html>

@@ -57,6 +57,8 @@ services:
       - ./certs:/app/certs
       # Sauvegardes du poste serveur (backup-windows.ps1) : lues par la page Exploitation, jamais modifiées.
       - ./backups:/app/backups:ro
+      # Archives de mise à jour déposées depuis Configuration > Mise à jour et appliquées côté hôte Windows.
+      - ./mises-a-jour:/app/mises-a-jour
     depends_on:
       db:
         condition: service_healthy

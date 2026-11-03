@@ -56,7 +56,9 @@ $Sortie = (Resolve-Path -LiteralPath $Sortie).Path
 $nom = "yelen-school-$version.bundle"
 $archive = Join-Path $Sortie $nom
 $fichierEmpreinte = "$archive.sha256"
-Remove-Item -LiteralPath $archive, $fichierEmpreinte -Force -ErrorAction SilentlyContinue
+$nomZip = "yelen-school-$version.zip"
+$archiveZip = Join-Path $Sortie $nomZip
+Remove-Item -LiteralPath $archive, $fichierEmpreinte, $archiveZip -Force -ErrorAction SilentlyContinue
 
 if ($SansHistorique) {
     $arguments = @('-C', $Root, 'bundle', 'create', $archive, $Branche)
@@ -72,18 +74,20 @@ if ($LASTEXITCODE -ne 0) { Fail 'Le bundle créé ne passe pas la vérification 
 $empreinte = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLower()
 # Format lisible par `sha256sum -c` et par mettre-a-jour.ps1 (premier champ = empreinte).
 Set-Content -LiteralPath $fichierEmpreinte -Value "$empreinte  $nom" -Encoding ASCII
-$taille = [math]::Round((Get-Item -LiteralPath $archive).Length / 1MB, 1)
+Compress-Archive -LiteralPath $archive, $fichierEmpreinte -DestinationPath $archiveZip -Force
+$taille = [math]::Round((Get-Item -LiteralPath $archiveZip).Length / 1MB, 1)
 
 Write-Host ''
 Write-Host "Archive prête pour la version $version ($commit) :" -ForegroundColor Green
+Write-Host "  $archiveZip  (interface web : Configuration > Mise à jour)"
 Write-Host "  $archive"
 Write-Host "  $fichierEmpreinte"
-Write-Host "  Taille : $taille Mo"
-Write-Host "  SHA-256 : $empreinte"
+Write-Host "  Taille (.zip) : $taille Mo"
+Write-Host "  SHA-256 (.bundle) : $empreinte"
 Write-Host ''
-Write-Host "À l'école : copier les DEUX fichiers ensemble, puis dans un cmd :" -ForegroundColor Cyan
-Write-Host "  cd /d C:\YELEN-SCHOOL"
-Write-Host "  mettre-a-jour.bat -DepuisArchive $nom"
+Write-Host "À l'école :" -ForegroundColor Cyan
+Write-Host "  1) Depuis l'application web : Configuration > Mise à jour > choisir $nomZip"
+Write-Host "  2) Ou en ligne de commande : cd /d C:\YELEN-SCHOOL puis mettre-a-jour.bat -DepuisArchive $nomZip"
 Write-Host ''
 Write-Host "Communiquer l'empreinte par un autre canal que le fichier (téléphone, SMS) :" -ForegroundColor DarkGray
 Write-Host "c'est elle qui prouve que l'archive n'a pas été altérée en route."

@@ -1,0 +1,52 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Mise à jour — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Mise à jour</h1>
+    <p class="page-subtitle">Installation d'une archive officielle <code>.zip</code> livrée par l'éditeur</p>
+  </div>
+  <div>
+    <span class="badge badge-success">Version active : {{ version_actuelle }}</span>
+  </div>
+</div>
+
+{% if messages %}
+<div class="mb-6">
+  {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }}" role="alert">{{ msg }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% include 'core/partials/mise_a_jour_etat.html' %}
+
+<div class="card mb-6 animate-fade-up delay-1">
+  <div class="card-header">
+    <span class="card-title">Installer une nouvelle version</span>
+  </div>
+  <div class="card-body">
+    <p class="mb-4">
+      Cliquez sur le bouton ci-dessous (ou sur <strong>Mise à jour</strong> dans la rubrique <strong>Configuration</strong> du menu latéral) et sélectionnez le fichier <code>yelen-school-&lt;version&gt;.zip</code> enregistré dans votre dossier <strong>Téléchargements</strong>.
+    </p>
+
+    <form id="form-maj-page" method="post" action="{% url 'core:mise_a_jour' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" id="input-maj-page" name="archive_zip" accept=".zip,application/zip" aria-label="Choisir l'archive de mise à jour (.zip)" data-csp-submit-on-change hidden>
+      <button type="button" class="btn-primary" data-csp-trigger-click="input-maj-page">
+        Choisir l'archive de mise à jour (.zip)
+      </button>
+    </form>
+
+    <ul class="text-sm text-secondary mt-4 mb-0">
+      <li>Contrôle automatique de l'empreinte <strong>SHA-256</strong> et de la structure du bundle avant toute modification.</li>
+      <li>Sauvegarde chiffrée automatique de la base de données avant l'application de la mise à jour.</li>
+      <li>Vérification de <code>/health/</code> après redémarrage et retour arrière automatique en cas d'anomalie.</li>
+    </ul>
+  </div>
+</div>
+
+{% endblock %}

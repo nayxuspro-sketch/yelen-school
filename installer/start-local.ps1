@@ -448,6 +448,16 @@ try {
     }
     Write-StartupLog 'Services YELEN SCHOOL démarrés.'
 
+    New-Item -ItemType Directory -Path (Join-Path $Root 'mises-a-jour') -Force | Out-Null
+    $registerUpdateAgent = Join-Path $PSScriptRoot 'register-update-agent-task.ps1'
+    if (Test-Path -LiteralPath $registerUpdateAgent) {
+        try {
+            & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $registerUpdateAgent *> $null
+        } catch {
+            # Tâche planifiée facultative : ne bloque jamais le démarrage des services.
+        }
+    }
+
     if ($OpenBrowser) {
         $port = Get-DotEnvValue 'YELEN_HTTP_PORT'
         if ([string]::IsNullOrWhiteSpace($port)) { $port = '8000' }

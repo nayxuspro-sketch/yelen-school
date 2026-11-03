@@ -104,13 +104,59 @@ function Wait-ForHealth {
     return $false
 }
 
+$script:TempArchiveDir = ''
+
+function Expand-ZipMiseAJour {
+    # Extrait de façon sûre yelen-school-<version>.bundle (+ .sha256) depuis une archive .zip.
+    param([string]$CheminZip)
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $script:TempArchiveDir = Join-Path $LogDirectory "maj-zip-$PID"
+    Remove-Item -LiteralPath $script:TempArchiveDir -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path $script:TempArchiveDir -Force | Out-Null
+
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($CheminZip)
+    try {
+        $entreeBundle = $null
+        $entreeSha = $null
+        foreach ($entree in $zip.Entries) {
+            if ([string]::IsNullOrEmpty($entree.Name)) { continue }
+            $normalise = $entree.FullName -replace '\\', '/'
+            if ($normalise.StartsWith('/') -or ($normalise -split '/') -contains '..') {
+                throw "Chemin interdit dans l'archive .zip : $($entree.FullName)"
+            }
+            if ($entree.Name -match '^yelen-school-\d+\.\d+\.\d+\.bundle$') {
+                $entreeBundle = $entree
+            }
+        }
+        if ($null -eq $entreeBundle) {
+            throw "Archive .zip incomplète : aucun fichier yelen-school-<version>.bundle trouvé."
+        }
+        $nomAttenduSha = "$($entreeBundle.Name).sha256"
+        foreach ($entree in $zip.Entries) {
+            if ($entree.Name -eq $nomAttenduSha) { $entreeSha = $entree; break }
+        }
+        $cibleBundle = Join-Path $script:TempArchiveDir $entreeBundle.Name
+        [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entreeBundle, $cibleBundle, $true)
+        if ($null -ne $entreeSha) {
+            $cibleSha = Join-Path $script:TempArchiveDir $entreeSha.Name
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entreeSha, $cibleSha, $true)
+        }
+        return $cibleBundle
+    } finally {
+        $zip.Dispose()
+    }
+}
+
 function Resolve-ArchiveMiseAJour {
-    # Archive de mise à jour hors ligne (bundle git) : l'empreinte SHA-256 est vérifiée avant tout usage,
+    # Archive de mise à jour hors ligne (.zip ou .bundle git) : l'empreinte SHA-256 est vérifiée avant tout usage,
     # puis le bundle est contrôlé (git bundle verify, qui exige aussi ses prérequis dans le dépôt).
     # Une archive absente, altérée ou incomplète arrête la mise à jour AVANT la sauvegarde et toute écriture.
     param([string]$Chemin, [string]$Empreinte)
     if (-not [System.IO.Path]::IsPathRooted($Chemin)) { $Chemin = Join-Path $Root $Chemin }
     if (-not (Test-Path -LiteralPath $Chemin)) { throw "Archive introuvable : $Chemin" }
+    if ([System.IO.Path]::GetExtension($Chemin).ToLower() -eq '.zip') {
+        $Chemin = Expand-ZipMiseAJour -CheminZip $Chemin
+    }
     $nom = Split-Path -Leaf $Chemin
     $attendu = ($Empreinte -replace '\s', '').ToLower()
     $fichierEmpreinte = "$Chemin.sha256"
@@ -230,4 +276,8 @@ try {
 } catch {
     Write-Log "ERREUR : $($_.Exception.Message)"
     exit 1
+} finally {
+    if ($script:TempArchiveDir -and (Test-Path -LiteralPath $script:TempArchiveDir)) {
+        Remove-Item -LiteralPath $script:TempArchiveDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }

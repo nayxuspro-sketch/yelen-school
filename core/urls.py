@@ -39,6 +39,8 @@ urlpatterns = [
     path('sms/configuration/', views.sms_configuration, name='sms_configuration'),
     path('exploitation/', views.exploitation, name='exploitation'),
     path('exploitation/sauvegardes/<str:nom>', views.sauvegarde_telecharger, name='sauvegarde_telecharger'),
+    path('mise-a-jour/', views.mise_a_jour, name='mise_a_jour'),
+    path('mise-a-jour/etat/', views.mise_a_jour_etat, name='mise_a_jour_etat'),
     path('reunion-parents/', views.reunion_parents, name='reunion_parents'),
     path('risques/recalculer/', views.risque_recalculer, name='risque_recalculer'),
 

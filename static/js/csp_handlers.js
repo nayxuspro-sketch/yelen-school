@@ -333,6 +333,9 @@
     if (confirmMsg) {
       if (!confirm(confirmMsg)) {
         e.preventDefault();
+        form.querySelectorAll('input[type="file"][data-csp-submit-on-change]').forEach(function(inp) {
+          inp.value = '';
+        });
         return;
       }
     }
@@ -403,6 +406,7 @@
       return;
     }
     if ('cspSubmitOnChange' in sel.dataset && sel.form) {
+      if (sel.type === 'file' && (!sel.files || !sel.files.length)) return;
       if (typeof sel.form.requestSubmit === 'function') sel.form.requestSubmit();
       else sel.form.submit();
       return;
