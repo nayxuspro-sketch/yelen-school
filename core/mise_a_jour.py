@@ -33,6 +33,7 @@ from core.audit import record_audit
 logger = logging.getLogger(__name__)
 
 TAILLE_MAX_DECOMPRESSEE = 300 * 1024 * 1024  # 300 Mo
+DELAI_EXPIRATION_ATTENTE = timedelta(minutes=2)
 DELAI_EXPIRATION_EN_COURS = timedelta(minutes=30)
 DEPOT_GITHUB_DEFAUT = 'nayxuspro-sketch/yelen-school'
 _RE_BUNDLE = re.compile(r'^yelen-school-(\d+\.\d+\.\d+)\.bundle$')
@@ -57,6 +58,18 @@ def parser_version(texte: str) -> tuple[int, int, int]:
     return int(m.group(1)), int(m.group(2)), int(m.group(3))
 
 
+def _horodatage_demande(demande: dict, *cles: str):
+    for cle in cles:
+        valeur = demande.get(cle)
+        if valeur:
+            dt = parse_datetime(str(valeur))
+            if dt is not None:
+                if timezone.is_naive(dt):
+                    dt = timezone.make_aware(dt, timezone.get_current_timezone())
+                return dt
+    return None
+
+
 def etat_demande() -> dict | None:
     """Retourne l'état courant de `mises-a-jour/demande.json` (ou `None` s'il n'y en a pas)."""
     fichier = dossier_mises_a_jour() / 'demande.json'
@@ -75,25 +88,46 @@ def etat_demande() -> dict | None:
     if statut in ('EN_ATTENTE', 'EN_COURS') and cible:
         try:
             if parser_version(settings.YELEN_VERSION) >= parser_version(cible):
-                demande = {
+                return {
                     **demande,
                     'statut': 'TERMINEE',
                     'message': f"Mise à jour vers {cible} appliquée avec succès.",
                 }
         except ErreurArchiveMiseAJour as exc:
             logger.warning("Version cible illisible dans demande.json : %s", exc)
+
+    if statut in ('VERIFICATION', 'EN_ATTENTE'):
+        debut = _horodatage_demande(demande, 'demande_le')
+        if debut is not None and (timezone.now() - debut) >= DELAI_EXPIRATION_ATTENTE:
+            return {
+                **demande,
+                'statut': 'ECHEC',
+                'message': (
+                    "L'agent de mise à jour Windows n'a pas répondu dans le délai imparti : "
+                    "lancez une fois C:\\YELEN-SCHOOL\\mettre-a-jour.bat en Administrateur sur le "
+                    "serveur pour réparer la tâche planifiée, ou utilisez une archive .zip."
+                ),
+            }
+    elif statut == 'EN_COURS':
+        debut = _horodatage_demande(demande, 'debut_le', 'demande_le')
+        if debut is not None and (timezone.now() - debut) >= DELAI_EXPIRATION_EN_COURS:
+            return {
+                **demande,
+                'statut': 'ECHEC',
+                'message': (
+                    "Délai maximal de mise à jour dépassé : consultez logs\\mise-a-jour.log sur le "
+                    "serveur ou relancez C:\\YELEN-SCHOOL\\mettre-a-jour.bat."
+                ),
+            }
     return demande
 
 
 def _est_en_cours_recent(demande: dict | None) -> bool:
     if not demande or demande.get('statut') != 'EN_COURS':
         return False
-    horodatage = demande.get('debut_le') or demande.get('demande_le') or ''
-    debut = parse_datetime(str(horodatage)) if horodatage else None
+    debut = _horodatage_demande(demande, 'debut_le', 'demande_le')
     if debut is None:
         return False
-    if timezone.is_naive(debut):
-        debut = timezone.make_aware(debut, timezone.get_current_timezone())
     return (timezone.now() - debut) < DELAI_EXPIRATION_EN_COURS
 
 

@@ -42,6 +42,9 @@ function Test-IsAdministrator {
 }
 
 function Invoke-Elevated {
+    if ($env:YELEN_UNATTENDED -eq '1') {
+        return 1
+    }
     $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$script:ScriptPath`" -Port $Port"
     if ($Remove) {
         $arguments += ' -Remove'

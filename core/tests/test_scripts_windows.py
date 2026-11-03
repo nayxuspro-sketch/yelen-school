@@ -183,3 +183,25 @@ def test_lanceur_tester_restauration():
     assert 'cd /d "%~dp0"' in bat
     assert 'installer\\tester-restauration.ps1" %*' in bat
     assert 'exit /b %EXIT_CODE%' in bat
+
+
+def test_agent_mise_a_jour_en_ligne_interactive_et_git_non_interactif():
+    """L'agent de mise à jour doit tourner en LogonType Interactive (jamais S4U, qui bloque Windows
+    Credential Manager sur dépôt privé et Docker Desktop), réparer automatiquement une ancienne
+    tâche S4U, et désactiver toute invite interactive Git/UAC."""
+    reg = (RACINE / 'installer' / 'register-update-agent-task.ps1') \
+        .read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+    assert '-LogonType S4U' not in reg
+    assert reg.count('-LogonType Interactive') == 2
+    assert 'Principal.LogonType' in reg
+
+    agent = (RACINE / 'installer' / 'appliquer-mise-a-jour-en-attente.ps1') \
+        .read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+    assert "$env:GIT_TERMINAL_PROMPT = '0'" in agent
+    assert "$env:GCM_INTERACTIVE = 'never'" in agent
+    assert "$env:GIT_CONFIG_KEY_0 = 'safe.directory'" in agent
+    assert "$env:YELEN_UNATTENDED = '1'" in agent
+
+    fw = (RACINE / 'installer' / 'configure-firewall.ps1') \
+        .read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+    assert "$env:YELEN_UNATTENDED -eq '1'" in fw

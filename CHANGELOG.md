@@ -3,6 +3,27 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.9 — 2026-11-03
+
+- **Correctif de la mise à jour en ligne (`Configuration → Mise à jour en ligne`).**
+  - **Cause principale corrigée (`LogonType S4U` → `Interactive`)** : lorsque `mettre-a-jour.bat` était exécuté en
+    Administrateur, `installer\register-update-agent-task.ps1` enregistrait la tâche `YELEN SCHOOL - Agent de mise a jour`
+    en `LogonType S4U` (*« Ne pas stocker le mot de passe »*), mode dans lequel Windows bloque l'accès au Gestionnaire
+    d'identification Windows (`CredRead` → `1312`) et au contexte Docker Desktop utilisateur ; `git fetch origin main`
+    échouait alors sur le dépôt privé et retournait un faux message *« Dépôt GitHub injoignable »*. Désormais, la tâche
+    est toujours enregistrée en `LogonType Interactive` et répare automatiquement toute ancienne inscription `S4U`.
+  - **Fiabilisation Git / Docker sans fenêtre** (`appliquer-mise-a-jour-en-attente.ps1`, `mettre-a-jour.ps1`,
+    `configure-firewall.ps1`, `Dockerfile`) : `GIT_TERMINAL_PROMPT=0` + `GCM_INTERACTIVE=never`, `safe.directory=*`
+    en mémoire (`GIT_CONFIG_COUNT`), ajout automatique des chemins standards `Git` et `Docker` au `PATH`, relais
+    optionnel de `YELEN_GITHUB_TOKEN` (`.env`) en mémoire sans écriture disque, écriture atomique à tentatives sur
+    `mises-a-jour\demande.json`, diagnostic exact dans `logs\mise-a-jour.log`, désactivation de toute invite UAC
+    bloquante en arrière-plan (`YELEN_UNATTENDED=1`), normalisation des seules différences CRLF/LF avant fusion et
+    expiration propre dans l'interface si l'agent hôte ne répond pas (`core/mise_a_jour.py`).
+- Documentation : guide de déploiement Windows (**§8.1**) et guide d'utilisation mis à jour.
+- Tests : `installer/tests/test-agent-mise-a-jour.ps1` (exécuté en CI `pwsh`),
+  `test_expiration_demande_bloquee_en_verification_ou_en_cours` (`core/tests/test_mise_a_jour.py`) et
+  `test_agent_mise_a_jour_en_ligne_interactive_et_git_non_interactif` (`core/tests/test_scripts_windows.py`).
+
 ## 5.47.8 — 2026-11-03
 
 - **Maintenance rapide (dépendances, performances `Redevables`, lanceur `tester-restauration.bat`).**

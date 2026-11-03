@@ -199,6 +199,30 @@ function Restore-PreviousVersion {
     Write-Log "Version précédente rétablie ($Commit). Journaux : docker compose -f docker-compose.client.yml logs --tail 50 web"
 }
 
+# En exécution planifiée ou sans fenêtre, compléter le PATH standard et désactiver toute invite Git interactive.
+$sepPath = [System.IO.Path]::PathSeparator
+$candidatsPath = @()
+if ($env:ProgramFiles) {
+    $candidatsPath += (Join-Path $env:ProgramFiles 'Git\cmd')
+    $candidatsPath += (Join-Path $env:ProgramFiles 'Git\bin')
+    $candidatsPath += (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin')
+}
+if ($env:LOCALAPPDATA) {
+    $candidatsPath += (Join-Path $env:LOCALAPPDATA 'Programs\Git\cmd')
+}
+foreach ($dossierOutil in $candidatsPath) {
+    if ($dossierOutil -and (Test-Path -LiteralPath $dossierOutil) -and (($env:PATH -split [regex]::Escape([string]$sepPath)) -notcontains $dossierOutil)) {
+        $env:PATH = "$dossierOutil$sepPath$env:PATH"
+    }
+}
+$env:GIT_TERMINAL_PROMPT = '0'
+$env:GCM_INTERACTIVE = 'never'
+if (-not $env:GIT_CONFIG_COUNT) {
+    $env:GIT_CONFIG_COUNT = '1'
+    $env:GIT_CONFIG_KEY_0 = 'safe.directory'
+    $env:GIT_CONFIG_VALUE_0 = '*'
+}
+
 New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
 try {
     foreach ($outil in @('git', 'docker')) {
@@ -222,8 +246,21 @@ try {
         }
     } else {
         Write-Log 'Recherche d''une nouvelle version (GitHub, branche main)...'
-        if ((Invoke-Native { git fetch --quiet origin main }) -ne 0) {
-            throw 'GitHub injoignable : vérifier la connexion Internet puis réessayer, ou utiliser -DepuisArchive pour une mise à jour hors ligne.'
+        $fetchOk = ((Invoke-Native { git fetch --quiet origin main }) -eq 0)
+        if (-not $fetchOk) {
+            $jetonEnv = Get-DotEnvValue 'YELEN_GITHUB_TOKEN'
+            if (-not [string]::IsNullOrWhiteSpace($jetonEnv)) {
+                $b64 = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$jetonEnv"))
+                $env:GIT_CONFIG_COUNT = '2'
+                $env:GIT_CONFIG_KEY_1 = 'http.https://github.com/.extraheader'
+                $env:GIT_CONFIG_VALUE_1 = "AUTHORIZATION: basic $b64"
+                $fetchOk = ((Invoke-Native { git fetch --quiet origin main }) -eq 0)
+                $env:GIT_CONFIG_COUNT = '1'
+                Remove-Item Env:GIT_CONFIG_KEY_1, Env:GIT_CONFIG_VALUE_1 -ErrorAction SilentlyContinue
+            }
+        }
+        if (-not $fetchOk) {
+            throw 'GitHub injoignable ou authentification Git refusée : vérifier la connexion Internet et les identifiants Git du serveur, ou utiliser -DepuisArchive pour une mise à jour hors ligne.'
         }
     }
     $commitCible = Get-GitOutput @('rev-parse', 'FETCH_HEAD')
@@ -247,6 +284,10 @@ try {
     # Les fichiers de documentation peuvent apparaître modifiés (fins de ligne) : ils sont remis
     # à l'état du dépôt ; toute autre modification locale bloque volontairement l'avance rapide.
     [void](Invoke-Native { git checkout --quiet -- docs })
+    $modifsSuivies = Get-GitOutput @('status', '--porcelain', '--untracked-files=no')
+    if ($modifsSuivies -and (Invoke-Native { git diff --ignore-cr-at-eol --quiet }) -eq 0) {
+        [void](Invoke-Native { git checkout --quiet -- . })
+    }
     if ((Invoke-Native { git merge --ff-only FETCH_HEAD }) -ne 0) {
         throw 'Des fichiers ont été modifiés localement (git status) : mise à jour annulée.'
     }

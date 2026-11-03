@@ -1,4 +1,4 @@
-﻿FROM python:3.11-slim
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements/base.txt .
-RUN pip install --no-cache-dir -r base.txt
+RUN pip install --no-cache-dir --retries 5 --timeout 60 -r base.txt
 
 COPY . .
 

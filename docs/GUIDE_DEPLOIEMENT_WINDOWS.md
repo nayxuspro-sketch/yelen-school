@@ -903,9 +903,12 @@ Une fois la restauration validée, cette copie peut être supprimée pour libér
 Depuis l'application web (**5.47.6**, comptes **Directeur** / **Super Admin**), ouvrir la rubrique
 **Configuration** du menu latéral et cliquer sur **Mise à jour en ligne** :
 - si une version plus récente est publiée sur le dépôt officiel, un message annonce la nouvelle version et la
-  mise à jour démarre immédiatement en arrière-plan (relais `installer\appliquer-mise-a-jour-en-attente.ps1`,
+  mise à jour démarre immédiatement en arrière-plan (relais `installer\appliquer-mise-a-jour-en-attente.ps1` en
+  session `LogonType Interactive` pour lire le Gestionnaire d'identification Git Windows et Docker Desktop,
   suivi toutes les 3 s sur `/mise-a-jour/`) ;
 - sinon, un message informe qu'il n'y a pas de mise à jour disponible et les services restent inchangés.
+- *(Optionnel, dépôt privé)* : si `YELEN_GITHUB_TOKEN=<jeton lecture seule>` figure dans `.env`, l'application
+  et l'agent l'utilisent directement en mémoire sans dépendre du Gestionnaire d'identification Windows.
 
 Sur le poste serveur, la même opération s'exécute en double-cliquant sur `C:\YELEN-SCHOOL\mettre-a-jour.bat`
 (ou dans `cmd`). Le script enchaîne, sans autre intervention :

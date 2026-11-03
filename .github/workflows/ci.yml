@@ -119,6 +119,8 @@ jobs:
         run: pwsh -NoProfile -File installer/tests/test-start-local.ps1
       - name: Tests PowerShell (installer/mettre-a-jour.ps1)
         run: pwsh -NoProfile -File installer/tests/test-mettre-a-jour.ps1
+      - name: Tests PowerShell (installer/appliquer-mise-a-jour-en-attente.ps1)
+        run: pwsh -NoProfile -File installer/tests/test-agent-mise-a-jour.ps1
       - name: Tests PowerShell (installer/creer-environnement-test.ps1)
         run: pwsh -NoProfile -File installer/tests/test-creer-environnement-test.ps1
       - name: Tests PowerShell (installer/activer-acces-distance.ps1)

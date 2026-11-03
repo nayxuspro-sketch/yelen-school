@@ -335,3 +335,45 @@ def test_plafond_taille_archive_bloque_bombe_zip(client, settings, mocker):
 
     reponse = client.post(reverse('core:mise_a_jour'), {'archive_zip': archive}, follow=True)
     assert 'Archive trop volumineuse' in reponse.content.decode()
+
+
+def test_expiration_demande_bloquee_en_verification_ou_en_cours(client, settings, dossier_maj_isole):
+    """Une demande restée sans réponse de l'agent hôte Windows ne laisse pas la page tourner en boucle."""
+    from datetime import timedelta
+
+    settings.YELEN_VERSION = '5.47.8'
+    _connecter(client, 'DIRECTEUR')
+    dossier_maj_isole.mkdir(parents=True, exist_ok=True)
+
+    (dossier_maj_isole / 'demande.json').write_text(
+        json.dumps({
+            'id': 'bloquee',
+            'mode': 'EN_LIGNE',
+            'version_avant': '5.47.8',
+            'version_cible': '',
+            'statut': 'VERIFICATION',
+            'demande_le': (timezone.now() - timedelta(minutes=3)).isoformat(),
+            'message': 'Vérification...',
+        }),
+        encoding='utf-8',
+    )
+    fragment = html_lib.unescape(client.get(reverse('core:mise_a_jour_etat')).content.decode())
+    assert 'Échec' in fragment
+    assert 'mettre-a-jour.bat' in fragment
+    assert 'hx-trigger="every 3s"' not in fragment
+
+    (dossier_maj_isole / 'demande.json').write_text(
+        json.dumps({
+            'id': 'en-cours-expiree',
+            'mode': 'EN_LIGNE',
+            'version_avant': '5.47.8',
+            'version_cible': '5.47.9',
+            'statut': 'EN_COURS',
+            'debut_le': (timezone.now() - timedelta(minutes=35)).isoformat(),
+            'message': 'En cours...',
+        }),
+        encoding='utf-8',
+    )
+    fragment2 = html_lib.unescape(client.get(reverse('core:mise_a_jour_etat')).content.decode())
+    assert 'Échec' in fragment2
+    assert 'hx-trigger="every 3s"' not in fragment2

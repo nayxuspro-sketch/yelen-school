@@ -24,7 +24,10 @@ if (-not (Test-Path -LiteralPath $TaskHelper)) { exit 0 }
 $existante = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
 if ($null -ne $existante) {
     if ($existante.State -eq 'Running') { exit 0 }
-    if (-not $Force) { exit 0 }
+    # Une ancienne inscription en LogonType S4U bloque Windows Credential Manager (git fetch sur dépôt privé)
+    # et le contexte Docker Desktop utilisateur : elle est réparée automatiquement vers Interactive.
+    $logonConforme = ([string]$existante.Principal.LogonType -match '^Interactive')
+    if (-not $Force -and $logonConforme) { exit 0 }
 }
 
 $estAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
@@ -32,12 +35,14 @@ $estAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIde
 )
 $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$AgentScript`""
-$action = New-YelenHeadlessTaskAction -PowerShellArguments $arguments
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
+$action = New-YelenHeadlessTaskAction -PowerShellArguments $arguments -WorkingDirectory (Split-Path -Parent $PSScriptRoot)
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(5) `
     -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 3650)
 
+# LogonType Interactive indispensable pour accéder au Gestionnaire d'identification Windows (jeton GitHub)
+# ainsi qu'au moteur Docker Desktop de la session ouverte.
 if ($estAdmin) {
-    $principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType S4U -RunLevel Highest
+    $principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType Interactive -RunLevel Highest
 } else {
     $principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType Interactive -RunLevel Limited
 }
@@ -46,11 +51,16 @@ $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
     -ExecutionTimeLimit (New-TimeSpan -Minutes 30) `
     -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 
-Register-ScheduledTask `
-    -TaskName $TaskName `
-    -Action $action `
-    -Trigger $trigger `
-    -Principal $principal `
-    -Settings $settings `
-    -Description 'Applique sans fenêtre les mises à jour demandées depuis Configuration' `
-    -Force | Out-Null
+try {
+    Register-ScheduledTask `
+        -TaskName $TaskName `
+        -Action $action `
+        -Trigger $trigger `
+        -Principal $principal `
+        -Settings $settings `
+        -Description 'Applique sans fenêtre les mises à jour demandées depuis Configuration' `
+        -Force -ErrorAction Stop | Out-Null
+    Start-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+} catch {
+    # Si une tâche existante avait été créée avec RunLevel Highest et qu'on tourne sans élévation, ne pas bloquer.
+}

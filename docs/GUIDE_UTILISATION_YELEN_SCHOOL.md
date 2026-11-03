@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.47.8
-version_guide: 5.39
-date_mise_a_jour: 03/11/2026 (5.47.8 : pagination/filtre Redevables, Gunicorn 26.2.0, lanceur tester-restauration.bat)
+version_logiciel: 5.47.9
+version_guide: 5.40
+date_mise_a_jour: 03/11/2026 (5.47.9 : correctif mise à jour en ligne LogonType Interactive et Git non interactif)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
