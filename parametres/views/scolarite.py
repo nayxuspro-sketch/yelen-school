@@ -8,7 +8,9 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
+
+from ..droits import autorise_url
 
 from ..forms import (
     AnneeScolaireForm, CycleForm, ClasseForm, PeriodeEvaluationForm, TypeEvaluationForm,
@@ -121,10 +123,13 @@ def annee_cloture(request, pk):
     if annee.est_courante:
         return _toast('error', "Impossible de clôturer l'année courante : définissez d'abord la nouvelle année "
                                "comme courante.")
-    for periode in PeriodeEvaluation.objects.filter(annee_scolaire=annee, cloturee=False):
-        Trimestre.objects.pour_periode(periode).cloturer(ouvert=False)
+    for periode in PeriodeEvaluation.objects.filter(annee_scolaire=annee).filter(Q(cloturee=False) | Q(derogation_ouverte=True)):
+        Trimestre.objects.pour_periode(periode).cloturer(
+            ouvert=False, utilisateur=request.user, motif=f"Clôture de l'année {annee.libelle}",
+        )
         periode.cloturee = True
-        periode.save(update_fields=['cloturee', 'updated_at'])
+        periode.derogation_ouverte = False
+        periode.save(update_fields=['cloturee', 'derogation_ouverte', 'updated_at'])
     annee.cloturee = True
     annee.save(update_fields=['cloturee', 'updated_at'])
     return _toast('success', f"{annee.libelle} clôturée : inscriptions et notes verrouillées.", rafraichir=True)
@@ -218,16 +223,27 @@ def classe_form(request, pk=None):
 
 @login_required
 def periode_list(request):
+    from pedagogie.models import Trimestre
     etab = _get_etab(request)
-    periodes = PeriodeEvaluation.objects.filter(etablissement=etab).select_related('annee_scolaire') if etab else PeriodeEvaluation.objects.none()
+    periodes = list(PeriodeEvaluation.objects.filter(etablissement=etab).select_related('annee_scolaire')) if etab else []
+    journaux = {
+        (t.annee_scolaire_id, t.numero): t.journal_cloture
+        for t in Trimestre.objects.filter(annee_scolaire__etablissement=etab).only('annee_scolaire_id', 'numero', 'journal_cloture')
+    } if etab else {}
+    for p in periodes:
+        lignes = [ligne for ligne in journaux.get((p.annee_scolaire_id, p.numero), '').splitlines() if ligne.strip()]
+        p.dernier_acte = lignes[-1] if lignes else ''
     tpl = 'parametres/partials/periode_list.html' if request.headers.get('HX-Request') else 'parametres/periodes.html'
     return render(request, tpl, {'periodes': periodes})
 
 
 @login_required
 def periode_form(request, pk=None):
+    from pedagogie.models import Trimestre
     etab = _get_etab(request)
     periode = get_object_or_404(PeriodeEvaluation, pk=pk, etablissement=etab) if pk else None
+    etait_verrouillee = periode.verrouillee if periode else False
+    ancienne_date_fin = periode.date_fin if periode else None
     annees = AnneeScolaire.objects.filter(etablissement=etab) if etab else AnneeScolaire.objects.none()
     ctx = {'periode': periode, 'annees': annees, 'type_choices': PeriodeEvaluation.TYPE_CHOICES}
 
@@ -236,10 +252,25 @@ def periode_form(request, pk=None):
             return render(request, 'parametres/partials/periode_form.html', {**ctx, 'error': "Votre compte n'est pas associé à un établissement."})
         form = PeriodeEvaluationForm(request.POST, instance=periode, etablissement=etab)
         if form.is_valid():
+            if etait_verrouillee and form.cleaned_data['date_fin'] != ancienne_date_fin and not autorise_url(request, 'parametres:periode_cloture'):
+                return render(request, 'parametres/partials/periode_form.html', {
+                    **ctx, 'error': "Seule la direction peut modifier l'échéance d'une période clôturée.",
+                })
             instance = form.save(commit=False)
             if not periode:
                 instance.etablissement = etab
+            if not instance.echue and instance.derogation_ouverte:
+                instance.derogation_ouverte = False
             instance.save()
+            trimestre = Trimestre.objects.filter(annee_scolaire=instance.annee_scolaire, numero=instance.numero).first()
+            if trimestre is not None:
+                trimestre.nom = instance.nom
+                trimestre.type_periode = 'TRIMESTRE' if instance.type_periode == 'TRIMESTRE' else 'SEMESTRE'
+                trimestre.date_debut = instance.date_debut
+                trimestre.date_fin = instance.date_fin
+                if not trimestre.echue and trimestre.derogation_ouverte:
+                    trimestre.derogation_ouverte = False
+                trimestre.save(update_fields=['nom', 'type_periode', 'date_debut', 'date_fin', 'derogation_ouverte', 'updated_at'])
             return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
         return render(request, 'parametres/partials/periode_form.html', {**ctx, 'error': form.errors.as_text()})
 
@@ -322,18 +353,37 @@ def periode_delete(request, pk):
 
 
 @login_required
-@require_POST
+@require_http_methods(['GET', 'POST'])
 def periode_cloture(request, pk):
-    """Clôture ou rouvre une période : notes, évaluations, moyennes et rangs du trimestre correspondant deviennent
-    (ou redeviennent) modifiables. Le changement est journalisé par l'audit."""
+    """Clôture une période ouverte (POST) ou accorde une dérogation motivée sur une période verrouillée (GET modale + POST).
+    Chaque ouverture et refermeture consigne l'auteur et le motif, en plus du journal d'audit."""
     from pedagogie.models import Trimestre
     etab = _get_etab(request)
-    periode = get_object_or_404(PeriodeEvaluation, pk=pk, etablissement=etab)
-    ouvrir = periode.cloturee
-    Trimestre.objects.pour_periode(periode).cloturer(ouvert=ouvrir)
-    periode.cloturee = not ouvrir
-    periode.save(update_fields=['cloturee', 'updated_at'])
-    messages.success(request, f"{periode.nom} {'rouvert' if ouvrir else 'clôturé'} : les notes sont "
+    periode = get_object_or_404(PeriodeEvaluation.objects.select_related('annee_scolaire'), pk=pk, etablissement=etab)
+    trimestre = Trimestre.objects.pour_periode(periode)
+    ouvrir = trimestre.verrouille or periode.verrouillee
+    lignes_journal = list(reversed([ligne for ligne in trimestre.journal_cloture.splitlines() if ligne.strip()]))
+
+    if request.method == 'GET':
+        return render(request, 'parametres/partials/periode_reouverture_modal.html', {
+            'periode': periode, 'trimestre': trimestre, 'lignes_journal': lignes_journal,
+        })
+
+    motif = ' '.join(request.POST.get('motif', '').split())
+    if ouvrir and not motif:
+        if request.headers.get('HX-Target') == 'modal-container':
+            return render(request, 'parametres/partials/periode_reouverture_modal.html', {
+                'periode': periode, 'trimestre': trimestre, 'lignes_journal': lignes_journal,
+                'error': "Le motif de réouverture est obligatoire.",
+            })
+        return HttpResponse("Le motif de réouverture est obligatoire.", status=400)
+
+    trimestre.cloturer(ouvert=ouvrir, utilisateur=request.user, motif=motif)
+    periode.cloturee = trimestre.notes_saisies
+    periode.derogation_ouverte = trimestre.derogation_ouverte
+    periode.save(update_fields=['cloturee', 'derogation_ouverte', 'updated_at'])
+    etat = 'rouvert par dérogation' if (ouvrir and trimestre.echue) else ('rouvert' if ouvrir else 'clôturé')
+    messages.success(request, f"{periode.nom} {etat} : les notes sont "
                               f"{'de nouveau modifiables' if ouvrir else 'verrouillées'}.")
     return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
 

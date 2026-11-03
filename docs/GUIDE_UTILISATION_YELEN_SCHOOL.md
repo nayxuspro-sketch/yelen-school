@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.47.3
+version_logiciel: 5.47.4
 version_guide: 5.35
-date_mise_a_jour: 02/11/2026 (5.47.3 : mise à jour sans Internet)
+date_mise_a_jour: 03/11/2026 (5.47.4 : clôture automatique de trimestre et dérogation motivée)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -684,17 +684,21 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 
 ### 3.4 Périodes d'évaluation et clôture de trimestre
 
-**À quoi ça sert :** `Paramètres → Périodes` définit les trimestres (ou semestres) de l'année : nom, numéro, dates. C'est aussi là que la direction **clôture** une période une fois les bulletins édités, pour que plus rien ne bouge.
+**À quoi ça sert :** `Paramètres → Périodes` définit les trimestres (ou semestres) de l'année : nom, numéro, dates de début et de fin. Le verrouillage protège les notes et les moyennes une fois le trimestre terminé.
 
-**Clôturer une période (bouton cadenas « Clôturer ») :**
-- la saisie des notes de ses évaluations est verrouillée (formulaire grisé, bandeau « … est clôturé ») ;
-- la création et la modification d'évaluations sur cette période, l'import Excel de notes, la saisie des compétences APC et le bouton **Calculer les moyennes** sont refusés avec le même message ;
+**Clôture automatique en fin de trimestre :**
+- la saisie reste ouverte jusqu'à **23 h 59 le jour de la Date de fin** de la période ; dès le lendemain, la période passe automatiquement à **Clôturée (fin JJ/MM/AAAA)** côté serveur, sans tâche planifiée ni action à penser ;
+- la direction conserve aussi le bouton cadenas **Clôturer la période** pour verrouiller avant l'échéance dès que les bulletins sont édités ;
+- une fois verrouillée, la saisie des notes (en direct comme hors réseau), la création et la modification d'évaluations, l'import Excel de notes, les appréciations par matière, la saisie des compétences APC et le recalcul des moyennes sont refusés (bandeau « … est clôturé ») ;
 - moyennes par discipline, moyennes générales, rangs et bulletins restent exactement ceux imprimés — une sanction prononcée après la clôture ne modifie plus la moyenne du trimestre ;
-- la fiche du conseil de classe (absences, mentions, appréciation) et la publication des bulletins restent possibles : le conseil se tient après le gel des notes.
+- la consultation, la fiche du conseil de classe (absences, mentions, appréciation) et l'édition des bulletins restent accessibles.
 
-**Rouvrir :** le même bouton (cadenas ouvert « Rouvrir ») lève le verrou ; chaque clôture / réouverture est journalisée dans `Système → Journal d'audit` (qui, quand).
+**Dérogation temporaire réservée à la direction :**
+- cliquer sur le cadenas ouvert (**Rouvrir la période**) ouvre une fenêtre où le **motif de la dérogation est obligatoire** ;
+- tant que la dérogation est active sur une période échue, la liste affiche le badge ambre **Dérogation ouverte** accompagné de la trace `[JJ/MM/AAAA HH:MM] Réouverture par … : motif` ;
+- une fois la correction saisie, cliquer sur **Refermer la dérogation** rétablit le verrou et consigne `[JJ/MM/AAAA HH:MM] Clôture par …`. L'historique complet est affiché dans la fenêtre de réouverture et enregistré dans `Système → Journal d'audit` ; la clôture d'une année scolaire referme aussi toute dérogation restée ouverte.
 
-> Action « Clôturer / rouvrir une période (verrouillage des notes) » de la matrice des droits (§ 3.7) : Directeur et Censeur par défaut, Super Admin toujours. Une période clôturée porte le badge **Clôturée** dans la liste.
+> Action « Clôturer / rouvrir une période (verrouillage des notes) » de la matrice des droits (§ 3.7) : réservée à la direction (Directeur et Censeur par défaut, Super Admin toujours). Reporter la date de fin d'une période déjà clôturée requiert le même droit.
 
 ---
 

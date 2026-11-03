@@ -3,6 +3,34 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.4 — 2026-11-03
+
+- **Clôture automatique des périodes en fin de trimestre.** Tant que personne ne cliquait sur « Clôturer »
+  dans *Paramètres → Périodes*, un trimestre échu restait ouvert en écriture : un enseignant pouvait encore
+  saisir ou corriger des notes après l'impression des bulletins. Désormais, la saisie reste ouverte jusqu'à
+  **23 h 59 le jour de la date de fin** de la période, puis le verrou s'applique **automatiquement** dès le
+  lendemain côté serveur — sans tâche planifiée ni action manuelle (saisie en ligne et hors réseau, création
+  et modification d'évaluations, import Excel, appréciations, compétences APC et recalcul des moyennes).
+  Consultation, conseils de classe, bulletins et exports ne changent pas ; la clôture anticipée par la
+  direction reste possible.
+- **Dérogation temporaire réservée à la direction, motif obligatoire et journal intégré.** Rouvrir une
+  période verrouillée exige désormais un **motif** saisi dans la modale de réouverture ; la liste *Périodes*
+  affiche un badge ambre **Dérogation ouverte** tant qu'elle n'est pas refermée, ainsi que le dernier acte
+  enregistré (`[JJ/MM/AAAA HH:MM] Réouverture par … : motif`, puis `Clôture par …`), et la modale restitue
+  l'historique complet en complément de `AuditLog`. Une réouverture accordée *avant* la date de fin laisse
+  le verrou automatique agir normalement à l'échéance ; la clôture d'une année scolaire referme toute
+  dérogation restée ouverte.
+- **Défense en profondeur et formulaire de période.** Modifier la date de fin d'une période déjà verrouillée
+  exige le droit de clôture de la direction, et toute mise à jour des dates dans *Paramètres → Périodes*
+  synchronise le trimestre pédagogique correspondant ; correction au passage de l'affichage des dates ISO et
+  du bandeau d'erreur dans la modale `periode_form.html`.
+- Documentation : guide d'utilisation **§3.4** mis à jour (clôture automatique, dérogation motivée,
+  refermeture).
+- Tests : 5 nouveaux tests de parcours dans `pedagogie/tests/test_cloture_automatique.py` (ouverture jusqu'au
+  dernier jour puis blocage automatique le lendemain sur toutes les écritures, modale et motif obligatoire,
+  journalisation ouverture/refermeture, refus hors direction et blocage du contournement par `date_fin`,
+  maintien de la clôture automatique après réouverture anticipée, refermeture lors de la clôture d'année).
+
 ## 5.47.3 — 2026-11-02
 
 - **Mise à jour sans Internet.** L'école ne pouvait se mettre à jour que par GitHub : une coupure de

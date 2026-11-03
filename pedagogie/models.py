@@ -262,6 +262,8 @@ class TrimestreManager(models.Manager):
                 'nom': periode.nom,
                 'type_periode': 'TRIMESTRE' if periode.type_periode == 'TRIMESTRE' else 'SEMESTRE',
                 'date_debut': periode.date_debut, 'date_fin': periode.date_fin,
+                'notes_saisies': periode.cloturee,
+                'derogation_ouverte': periode.derogation_ouverte,
             },
         )
         if trimestre.nom != periode.nom:
@@ -284,7 +286,9 @@ class Trimestre(BaseModel):
     date_debut = models.DateField(verbose_name=_("Date de début"))
     date_fin = models.DateField(verbose_name=_("Date de fin"))
     notes_saisies = models.BooleanField(default=False, verbose_name=_("Saisie des notes terminée"))
+    derogation_ouverte = models.BooleanField(default=False, verbose_name=_("Dérogation ouverte"))
     date_fermeture = models.DateField(blank=True, null=True, verbose_name=_("Date de fermeture"))
+    journal_cloture = models.TextField(blank=True, default='', verbose_name=_("Journal des clôtures et dérogations"))
 
     objects = TrimestreManager()
     
@@ -298,21 +302,43 @@ class Trimestre(BaseModel):
         return f"{self.nom} - {self.annee_scolaire.libelle}"
 
     @property
+    def echue(self):
+        """True dès le lendemain de la date de fin de la période."""
+        from django.utils import timezone
+        return bool(self.date_fin and timezone.localdate() > self.date_fin)
+
+    @property
     def verrouille(self):
-        """Période clôturée : notes, évaluations, moyennes et rangs ne sont plus modifiables."""
-        return self.notes_saisies
+        """Période verrouillée : clôturée manuellement, ou échue sans dérogation ouverte."""
+        if self.notes_saisies:
+            return True
+        return self.echue and not self.derogation_ouverte
 
     @property
     def message_verrouillage(self):
-        return (f"{self.nom} ({self.annee_scolaire.libelle}) est clôturé : les notes, les évaluations et les moyennes "
-                "ne peuvent plus être modifiées. Un responsable peut le rouvrir dans Paramètres → Périodes.")
+        echeance = f" depuis le {self.date_fin:%d/%m/%Y}" if self.echue and not self.notes_saisies else ""
+        return (f"{self.nom} ({self.annee_scolaire.libelle}) est clôturé{echeance} : les notes, les évaluations et les moyennes "
+                "ne peuvent plus être modifiées. La direction peut accorder une dérogation dans Paramètres → Périodes.")
 
-    def cloturer(self, ouvert):
-        """Clôture (``ouvert=False``) ou rouvre (``ouvert=True``) la période ; l'audit journalise le changement."""
+    def cloturer(self, ouvert, utilisateur=None, motif=''):
+        """Clôture (``ouvert=False``) ou rouvre (``ouvert=True``) la période ; consigne l'auteur et le motif."""
         from django.utils import timezone
+        motif = ' '.join((motif or '').split())
+        if ouvert and not motif and utilisateur is not None:
+            raise ValueError("Le motif de réouverture est obligatoire.")
+        maintenant = timezone.localtime()
         self.notes_saisies = not ouvert
-        self.date_fermeture = None if ouvert else timezone.localdate()
-        self.save(update_fields=['notes_saisies', 'date_fermeture', 'updated_at'])
+        self.derogation_ouverte = bool(ouvert and self.echue)
+        self.date_fermeture = None if ouvert else maintenant.date()
+        champs = ['notes_saisies', 'derogation_ouverte', 'date_fermeture', 'updated_at']
+        if utilisateur is not None or motif:
+            auteur = (utilisateur.get_full_name().strip() or utilisateur.username) if utilisateur else 'Système'
+            acte = 'Réouverture' if ouvert else 'Clôture'
+            detail = f" : {motif}" if motif else ""
+            entree = f"[{maintenant:%d/%m/%Y %H:%M}] {acte} par {auteur}{detail}"
+            self.journal_cloture = f"{self.journal_cloture}\n{entree}".strip()
+            champs.append('journal_cloture')
+        self.save(update_fields=champs)
 
 
 # ═══════════════════════════════════════════════════════════════════

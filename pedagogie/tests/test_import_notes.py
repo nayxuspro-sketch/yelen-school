@@ -1,6 +1,6 @@
 """Import des notes d'une classe depuis le fichier existant : reconnaissance des matières et des élèves, assistant."""
 import io
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 import openpyxl
@@ -23,8 +23,9 @@ def ecole(settings, tmp_path):
                        date_debut=date(2025, 10, 1), date_fin=date(2026, 6, 30))
     cycle = baker.make('parametres.Cycle', etablissement=etab, ordre=1)
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6ème A', niveau='6ème')
+    auj = date.today()
     trimestre = baker.make('pedagogie.Trimestre', annee_scolaire=annee, nom='1er trimestre', numero=1,
-                           date_debut=date(2025, 10, 1), date_fin=date(2025, 12, 20))
+                           date_debut=auj - timedelta(days=30), date_fin=auj + timedelta(days=30))
     devoir = baker.make('pedagogie.TypeEvaluation', code='DEV', nom='Devoir', ordre=1)
     matieres = {
         'MATH': baker.make('pedagogie.Matiere', code='MATH', nom='Mathématiques'),

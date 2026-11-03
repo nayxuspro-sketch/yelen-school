@@ -20,24 +20,36 @@
                     <td class="text-secondary">{{ p.annee_scolaire.libelle }}</td>
                     <td class="text-secondary text-xs">{{ p.date_debut }} → {{ p.date_fin }}</td>
                     <td>
-                        {% if p.est_en_cours %}
+                        {% if p.verrouillee %}
+                        <span class="badge badge-neutral">{% if p.echue and not p.cloturee %}Clôturée (fin {{ p.date_fin|date:"d/m/Y" }}){% else %}Clôturée{% endif %}</span>
+                        {% elif p.derogation_ouverte %}
+                        <span class="badge badge-warning">Dérogation ouverte</span>
+                        {% elif p.est_en_cours %}
                         <span class="badge badge-success">En cours</span>
-                        {% elif p.cloturee %}
-                        <span class="badge badge-neutral">Clôturée</span>
                         {% else %}
                         <span class="badge badge-info">À venir</span>
+                        {% endif %}
+                        {% if p.dernier_acte %}
+                        <div class="text-xs text-muted" style="margin-top:.2rem;">{{ p.dernier_acte }}</div>
                         {% endif %}
                     </td>
                     <td class="td-right">
                         <div class="d-flex justify-end gap-2">
                             {% if request|autorise_url:'parametres:periode_cloture' %}
+                            {% if p.verrouillee %}
+                            <button hx-get="{% url 'parametres:periode_cloture' p.pk %}"
+                                hx-target="#modal-container" hx-swap="innerHTML"
+                                class="btn-icon" title="Rouvrir la période (dérogation motivée)">
+                                <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6-6h12a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5a2 2 0 012-2z"/></svg>
+                            </button>
+                            {% else %}
                             <button hx-post="{% url 'parametres:periode_cloture' p.pk %}"
                                 hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                hx-confirm="{% if p.cloturee %}Rouvrir « {{ p.nom }} » ? Les notes, évaluations et moyennes redeviendront modifiables.{% else %}Clôturer « {{ p.nom }} » ? Les notes, les évaluations et les moyennes de cette période ne pourront plus être modifiées.{% endif %}"
-                                class="btn-icon" title="{% if p.cloturee %}Rouvrir la période{% else %}Clôturer la période (verrouiller les notes){% endif %}">
-                                {% if p.cloturee %}<svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6-6h12a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5a2 2 0 012-2z"/></svg>
-                                {% else %}<svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>{% endif %}
+                                hx-confirm="{% if p.derogation_ouverte %}Refermer la dérogation de « {{ p.nom }} » ? Les notes et moyennes seront de nouveau verrouillées.{% else %}Clôturer « {{ p.nom }} » ? Les notes, les évaluations et les moyennes de cette période ne pourront plus être modifiées.{% endif %}"
+                                class="btn-icon" title="{% if p.derogation_ouverte %}Refermer la dérogation (clôturer la période){% else %}Clôturer la période (verrouiller les notes){% endif %}">
+                                <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             </button>
+                            {% endif %}
                             {% endif %}
                             <button hx-get="{% url 'parametres:periode_edit' p.pk %}" hx-target="#modal-container" hx-swap="innerHTML"
                                 class="btn-icon" title="Modifier">

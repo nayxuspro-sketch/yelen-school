@@ -1,6 +1,6 @@
 """Lot G — appréciation par matière : saisie par l'enseignant titulaire (ou la direction), impression sur le bulletin
 en lieu et place de la grille des moyennes, conservation au recalcul et verrouillage de la période clôturée."""
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -23,7 +23,7 @@ def cours(client):
     cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='3e A', actif=True)
     t1 = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=1, nom='Trimestre 1',
-                    date_debut=date(2026, 10, 1), date_fin=date(2026, 12, 20))
+                    date_debut=date(2026, 10, 1), date_fin=max(date(2026, 12, 20), date.today() + timedelta(days=30)))
     baker.make('parametres.AppreciationMoyenneSecondaire', etablissement=etab, libelle='Bien',
                moy_min=Decimal('0'), moy_max=Decimal('20'), actif=True)
     prof = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Salif',

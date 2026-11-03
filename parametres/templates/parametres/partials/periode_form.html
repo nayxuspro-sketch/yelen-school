@@ -12,6 +12,9 @@
               hx-swap="innerHTML">
             {% csrf_token %}
             <div class="modal-body">
+                {% if error %}
+                <div class="alert alert-danger" role="alert" style="margin-bottom:.75rem;">{{ error }}</div>
+                {% endif %}
                 <div class="form-group">
                     <label class="input-label" for="id_nom">Nom <span style="color:#FF6B7A;">*</span></label>
                     <input type="text" name="nom" value="{{ periode.nom|default:'' }}" placeholder="Ex: Trimestre 1" required class="input" id="id_nom">
@@ -39,11 +42,11 @@
                 <div class="form-grid-2">
                     <div class="form-group">
                         <label class="input-label" for="id_date_debut">Date de début <span style="color:#FF6B7A;">*</span></label>
-                        <input type="date" name="date_debut" value="{{ periode.date_debut|default:'' }}" required class="input" id="id_date_debut">
+                        <input type="date" name="date_debut" value="{{ periode.date_debut|date:'Y-m-d'|default:'' }}" required class="input" id="id_date_debut">
                     </div>
                     <div class="form-group">
                         <label class="input-label" for="id_date_fin">Date de fin <span style="color:#FF6B7A;">*</span></label>
-                        <input type="date" name="date_fin" value="{{ periode.date_fin|default:'' }}" required class="input" id="id_date_fin">
+                        <input type="date" name="date_fin" value="{{ periode.date_fin|date:'Y-m-d'|default:'' }}" required class="input" id="id_date_fin">
                     </div>
                 </div>
 

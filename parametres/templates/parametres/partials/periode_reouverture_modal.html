@@ -1,0 +1,51 @@
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title" style="max-width:34rem;">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title">Rouvrir « {{ periode.nom }} »</span>
+            <button type="button" data-csp-remove="modal-overlay" class="btn-icon" aria-label="Fermer">
+                <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form hx-post="{% url 'parametres:periode_cloture' periode.pk %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#modal-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if error %}
+                <div class="alert alert-danger" role="alert" style="margin-bottom:.75rem;">{{ error }}</div>
+                {% endif %}
+                <p class="text-sm text-secondary" style="margin-top:0;">
+                    {% if periode.echue and not periode.cloturee %}
+                    Cette période est clôturée automatiquement depuis le <strong>{{ periode.date_fin|date:"d/m/Y" }}</strong>.
+                    {% else %}
+                    Cette période ({{ periode.annee_scolaire.libelle }}) est clôturée.
+                    {% endif %}
+                    La réouverture accorde une dérogation temporaire et journalisée : pensez à refermer la période dès la correction effectuée.
+                </p>
+
+                <div class="form-group">
+                    <label class="input-label" for="id_motif">Motif de la dérogation <span style="color:#FF6B7A;">*</span></label>
+                    <textarea name="motif" id="id_motif" rows="3" maxlength="300" required class="input"
+                              placeholder="Ex. : Correction d'une erreur matérielle sur le devoir de mathématiques (3e A)"></textarea>
+                </div>
+
+                {% if lignes_journal %}
+                <div style="margin-top:.75rem;">
+                    <div class="text-xs text-muted fw-medium" style="margin-bottom:.25rem;">Historique des clôtures et dérogations</div>
+                    <ul class="text-xs text-secondary" style="margin:0; padding-left:1.1rem; max-height:8rem; overflow-y:auto;">
+                        {% for ligne in lignes_journal %}
+                        <li>{{ ligne }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <div class="modal-footer">
+                    <button type="button" data-csp-remove="modal-overlay" class="btn-secondary">Annuler</button>
+                    <button type="submit" class="btn-primary">Rouvrir la période</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

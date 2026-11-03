@@ -311,10 +311,12 @@ class Command(BaseCommand):
         composition, _ = TypeEvaluation.objects.get_or_create(
             code='COMP', defaults={'nom': 'Composition', 'coefficient': Decimal('2'), 'ordre': 2})
 
+        fin_t1 = dt.date(annee.date_debut.year, 12, 19)
+        if annee.est_courante and fin_t1 < dt.date.today():
+            fin_t1 = dt.date.today() + dt.timedelta(days=30)
         trimestre, _ = Trimestre.objects.get_or_create(
             annee_scolaire=annee, numero=1,
-            defaults={'nom': '1er trimestre', 'date_debut': annee.date_debut,
-                      'date_fin': dt.date(annee.date_debut.year, 12, 19)},
+            defaults={'nom': '1er trimestre', 'date_debut': annee.date_debut, 'date_fin': fin_t1},
         )
         hasard = random.Random(GRAINE + annee.date_debut.year)
         for nom_classe, classe in classes.items():
@@ -338,7 +340,9 @@ class Command(BaseCommand):
                             defaults={'valeur': Decimal(hasard.randint(60, 185)) / 10,
                                       'statut': Note.StatutNoteChoices.VALIDEE},
                         )
+            trimestre.derogation_ouverte = True                         # peuplement de l'historique sans persister de dérogation
             CalculateurMoyenne.recalculer_classe(classe, trimestre)     # moyennes, rangs et bulletins prêts
+            trimestre.derogation_ouverte = False
 
     def _paiements(self, annee, eleves, rubriques, statuts):
         for rang, inscription in enumerate(eleves):

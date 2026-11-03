@@ -9,7 +9,7 @@ barème 10), un devoir chacun au trimestre 1.
   Désiré   statut ABANDON       → exclu de tous les calculs
 """
 import re
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -42,12 +42,14 @@ def classe_notee(client):
                        date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
     cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='3e A', actif=True)
+    fin_t1 = max(date(2026, 12, 20), date.today() + timedelta(days=30))
     t1 = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=1, nom='Trimestre 1',
-                    date_debut=date(2026, 10, 1), date_fin=date(2026, 12, 20))
+                    date_debut=date(2026, 10, 1), date_fin=fin_t1)
     t2 = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=2, nom='Trimestre 2',
-                    date_debut=date(2027, 1, 5), date_fin=date(2027, 3, 31))
+                    date_debut=fin_t1 + timedelta(days=15), date_fin=fin_t1 + timedelta(days=100))
     periode1 = baker.make('parametres.PeriodeEvaluation', etablissement=etab, annee_scolaire=annee,
-                          type_periode='TRIMESTRE', nom='Trimestre 1', numero=1)
+                          type_periode='TRIMESTRE', nom='Trimestre 1', numero=1,
+                          date_debut=date(2026, 10, 1), date_fin=fin_t1)
     for libelle, moy_min, moy_max in APPRECIATIONS:
         baker.make('parametres.AppreciationMoyenneSecondaire', etablissement=etab, libelle=libelle,
                    moy_min=Decimal(moy_min), moy_max=Decimal(moy_max), actif=True)
@@ -605,8 +607,10 @@ class TestClotureDePeriode:
     """Paramètres → Périodes → « Clôturer » verrouille le trimestre : plus aucune note, évaluation ou moyenne ne
     bouge jusqu'à la réouverture (journalisée par l'audit)."""
 
-    def _cloturer(self, c):
-        reponse = c.client.post(reverse('parametres:periode_cloture', kwargs={'pk': c.periode1.pk}), HTTP_HX_REQUEST='true')
+    def _cloturer(self, c, motif=''):
+        donnees = {'motif': motif} if motif else {}
+        reponse = c.client.post(reverse('parametres:periode_cloture', kwargs={'pk': c.periode1.pk}), donnees,
+                                HTTP_HX_REQUEST='true')
         assert reponse.status_code == 204 and reponse['HX-Trigger'] == 'parametreUpdated'
         c.t1.refresh_from_db()
         c.periode1.refresh_from_db()
@@ -668,8 +672,11 @@ class TestClotureDePeriode:
         from pedagogie.utils import CalculateurMoyenne
         assert CalculateurMoyenne.recalculer_classe(c.classe, c.t1) == 0
 
-        # Réouverture : tout redevient modifiable
-        self._cloturer(c)
+        # Réouverture sans motif refusée ; avec motif : tout redevient modifiable
+        refus = c.client.post(reverse('parametres:periode_cloture', kwargs={'pk': c.periode1.pk}), HTTP_HX_REQUEST='true')
+        c.t1.refresh_from_db()
+        assert refus.status_code == 400 and c.t1.verrouille
+        self._cloturer(c, motif='Erreur matérielle signalée au conseil')
         assert not c.t1.verrouille and c.t1.date_fermeture is None and not c.periode1.cloturee
         assert c.client.post(saisie, {f'note_{c.awa.pk}': '5'}).url == saisie
         assert MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1).moyenne == Decimal('9.71')   # (5×4 + 16×3) / 7

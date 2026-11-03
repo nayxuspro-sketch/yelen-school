@@ -149,6 +149,12 @@ class PeriodeEvaluation(BaseModel):
         help_text=_("Si True, aucune modification des notes possible")
     )
 
+    derogation_ouverte = models.BooleanField(
+        default=False,
+        verbose_name=_("Dérogation ouverte"),
+        help_text=_("Si True, autorise temporairement la saisie sur une période échue")
+    )
+
     class Meta:
         verbose_name = _("Période d'Évaluation")
         verbose_name_plural = _("Périodes d'Évaluation")
@@ -157,3 +163,16 @@ class PeriodeEvaluation(BaseModel):
 
     def __str__(self):
         return f"{self.nom} ({self.annee_scolaire.libelle})"
+
+    @property
+    def echue(self):
+        """True dès le lendemain de la date de fin de la période."""
+        from django.utils import timezone
+        return bool(self.date_fin and timezone.localdate() > self.date_fin)
+
+    @property
+    def verrouillee(self):
+        """Période verrouillée : clôturée manuellement, ou échue sans dérogation ouverte."""
+        if self.cloturee:
+            return True
+        return self.echue and not self.derogation_ouverte
