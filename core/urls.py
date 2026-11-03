@@ -21,6 +21,7 @@ urlpatterns = [
     path('portail/parent/vie-scolaire/justifier/', views.portail_parent_justifier, name='portail_parent_justifier'),
     path('portail/parent/bulletins/<uuid:pk>/', views.portail_bulletin, name='portail_parent_bulletin'),
     path('portail/parent/documents/<uuid:pk>/', views.portail_document, name='portail_parent_document'),
+    path('portail/parent/carte/<uuid:pk>/', views.portail_carte_scolaire, name='portail_parent_carte'),
     # Portail élève : mêmes vues, préfixe /portail/eleve/ (rôle ELEVE — yelen_school/role_middleware.py)
     path('portail/eleve/', views.portail_parent, name='portail_eleve'),
     path('portail/eleve/bulletins/', views.portail_parent_bulletins, name='portail_eleve_bulletins'),
@@ -29,6 +30,7 @@ urlpatterns = [
     path('portail/eleve/vie-scolaire/', views.portail_parent_vie_scolaire, name='portail_eleve_vie_scolaire'),
     path('portail/eleve/cahier/', views.portail_parent_cahier, name='portail_eleve_cahier'),
     path('portail/eleve/documents/<uuid:pk>/', views.portail_document, name='portail_eleve_document'),
+    path('portail/eleve/carte/<uuid:pk>/', views.portail_carte_scolaire, name='portail_eleve_carte'),
     path('notifications/', views.notifications_list, name='notifications_list'),
     path('notifications/tout-lu/', views.notifications_marquer_tout_lu, name='notifications_tout_lu'),
     path('notifications/<int:pk>/lu/', views.notification_marquer_lu, name='notification_marquer_lu'),

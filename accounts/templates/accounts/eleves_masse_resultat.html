@@ -1,0 +1,48 @@
+{% extends "core/base.html" %}
+
+{% block title %}Comptes élèves créés{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Comptes élèves créés</h1>
+    <p class="page-subtitle">
+      {{ resultats|length }} élève{{ resultats|length|pluralize }} — identifiant = matricule, mot de passe provisoire à
+      changer à la première connexion sur {{ url }}.
+      {% if sms_actifs %}Un SMS d'accueil a été envoyé aux familles joignables ; {% endif %}imprimez cette page pour la
+      remise sur papier : <strong>elle ne sera plus affichée</strong>.
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn-primary" data-csp-action="print">Imprimer</button>
+    <a href="{% url 'accounts:user_list' %}" class="btn-secondary">Utilisateurs</a>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Classe</th>
+          <th>Identifiant (matricule)</th>
+          <th>Mot de passe provisoire</th>
+          {% if sms_actifs %}<th>SMS</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in resultats %}
+        <tr>
+          <td class="fw-semibold">{{ r.enfants.0.get_nom_complet }}</td>
+          <td>{{ r.classe }}</td>
+          <td class="text-mono">{{ r.identifiant }}</td>
+          <td class="text-mono fw-semibold">{{ r.mot_de_passe }}</td>
+          {% if sms_actifs %}<td>{% if r.sms %}<span class="badge badge-success">Mis en file</span>{% elif r.compte.telephone %}<span class="badge badge-warning">Non envoyé</span>{% else %}<span class="text-muted">Sans numéro</span>{% endif %}</td>{% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

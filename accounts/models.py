@@ -192,7 +192,8 @@ class User(AbstractUser, BaseModel):
 
     @property
     def identifiant_connexion(self):
-        """E-mail, ou numéro de téléphone pour un compte parent créé en masse (adresse technique)."""
+        """E-mail, ou identifiant court (téléphone d'un compte parent, matricule d'un compte élève) — jamais
+        l'adresse technique interne."""
         from .parents_masse import identifiant_connexion
         return identifiant_connexion(self)
 

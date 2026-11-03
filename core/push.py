@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 TTL = 3 * 24 * 3600         # le service garde la notification trois jours si le téléphone est éteint
 DELAI = 10                  # secondes accordées au service de notifications
 PREFIXE_PORTAIL = '/portail/parent/'
+PREFIXE_PORTAIL_ELEVE = '/portail/eleve/'
 OK, EXPIRE, INJOIGNABLE, REFUSE = 'ok', 'expire', 'injoignable', 'refuse'
 
 
@@ -82,15 +83,25 @@ def supprimer_abonnement(utilisateur, endpoint):
 # ── Envoi ─────────────────────────────────────────────────────────────────────────────────────────
 
 def page_notifications(utilisateur):
-    """Liste des notifications de ``utilisateur`` : celle du portail pour un parent, celle de l'application sinon."""
-    return reverse('core:portail_parent_notifications' if utilisateur.role == 'PARENT' else 'core:notifications_list')
+    """Liste des notifications de ``utilisateur`` : portail parent, portail élève, ou application."""
+    if utilisateur.role == 'PARENT':
+        return reverse('core:portail_parent_notifications')
+    if utilisateur.role == 'ELEVE':
+        return reverse('core:portail_eleve_notifications')
+    return reverse('core:notifications_list')
 
 
 def charge_utile(notification):
     """Contenu poussé : titre, message et page à ouvrir — le lien de la notification s'il est consultable par son
-    destinataire (page du portail pour un parent, page de l'application pour le personnel), sinon ses notifications."""
-    lien, destinataire = notification.lien, notification.destinataire
-    if not lien.startswith(PREFIXE_PORTAIL if destinataire.role == 'PARENT' else '/'):
+    destinataire (portail parent, portail élève ou application), sinon sa page de notifications."""
+    lien, destinataire = notification.lien or '', notification.destinataire
+    if destinataire.role == 'PARENT':
+        prefixe = PREFIXE_PORTAIL
+    elif destinataire.role == 'ELEVE':
+        prefixe = PREFIXE_PORTAIL_ELEVE
+    else:
+        prefixe = '/'
+    if not lien.startswith(prefixe):
         lien = page_notifications(destinataire)
     return {'titre': notification.titre, 'message': notification.message[:300], 'url': lien,
             'tag': f'notification-{notification.pk}'}

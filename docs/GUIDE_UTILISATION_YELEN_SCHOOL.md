@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.48.0
-version_guide: 5.41
-date_mise_a_jour: 03/11/2026 (5.48.0 : compteur d'usage anonyme des modules en Exploitation et guide de démarrage rapide 5.48)
+version_logiciel: 5.49.0
+version_guide: 5.42
+date_mise_a_jour: 03/11/2026 (5.49.0 : portail élève complet — carte scolaire, documents, notifications ; comptes élèves en masse par matricule)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.42.0 — Octobre 2026 (Guide v5.35)
+### Version 5.49.0 — Novembre 2026 (Guide v5.36)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -102,7 +102,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [9.20 Portail parent — vie scolaire et justificatifs](#920-portail-parent--vie-scolaire-et-justificatifs)
   - [9.21 Portail élève](#921-portail-élève)
   - [9.22 Appréciations par matière (enseignant)](#922-appréciations-par-matière-enseignant)
-  - [9.23 Comptes parents en masse et connexion par téléphone](#923-comptes-parents-en-masse-et-connexion-par-téléphone)
+  - [9.23 Comptes parents et élèves en masse, connexion par téléphone ou matricule](#923-comptes-parents-et-élèves-en-masse-connexion-par-téléphone-ou-matricule)
   - [9.24 Campagnes SMS ciblées](#924-campagnes-sms-ciblées)
   - [9.25 Paie du mois](#925-paie-du-mois)
   - [9.26 Statistiques d'une session d'examen](#926-statistiques-dune-session-dexamen)
@@ -591,6 +591,11 @@ En mode **modification**, la section mot de passe est remplacée par une case à
 - **Double authentification obligatoire** pour le Super Admin et le Directeur / Proviseur : dès la première connexion suivant l'attribution du rôle, l'application n'ouvre que la page *Activer la 2FA* (application d'authentification sur téléphone : Google Authenticator, Microsoft Authenticator, Aegis…) jusqu'à l'activation. Ces rôles ne peuvent pas la désactiver. La 2FA fonctionne **sans Internet** : le code dépend du secret scanné et de l'heure ; les écrans de saisie affichent l'**heure du serveur** à comparer avec le téléphone (plus de 30 s d'écart = code refusé → corriger l'heure du serveur). Téléphone perdu ou changé : dans `Utilisateurs → Changer le mot de passe`, un administrateur clique sur **Réinitialiser la double authentification** ; l'utilisateur la configure de nouveau à sa prochaine connexion.
 - **Un seul Super Admin par établissement** : la création, la modification ou la réactivation d'un second compte Super Admin actif est refusée (« Un seul Super Admin par établissement : … détient déjà ce rôle »). Pour transmettre le rôle, rétrograder d'abord le titulaire actuel.
 - **Caisse** : la session d'un Comptable expire après **15 minutes d'inactivité** ; un bandeau rouge prévient 60 secondes avant la déconnexion automatique, et tout mouvement de souris ou frappe clavier remet le compteur à zéro.
+
+**Comptes en masse (5.49.0) :** `Utilisateurs → Comptes parents en masse` (identifiant = le téléphone de la famille)
+et `Utilisateurs → Comptes élèves en masse` (identifiant = le matricule, inscrit au dos de la carte scolaire)
+équipent une année entière en quelques clics ; mots de passe provisoires remis par SMS ou sur la page récapitulative
+imprimable (§19.6).
 
 **Rôles disponibles :**
 
@@ -3258,7 +3263,7 @@ bulletins et documents délivrés, cahier de textes, vie scolaire) à l'adresse 
 
 Une période clôturée (`Paramètres → Périodes`) est en lecture seule. Le droit « Saisir les appréciations de ses disciplines » se retire dans la matrice des droits.
 
-### 9.23 Comptes parents en masse et connexion par téléphone
+### 9.23 Comptes parents et élèves en masse, connexion par téléphone ou matricule
 
 **Accès :** `Utilisateurs → Comptes parents en masse` (Super Admin, Directeur).
 
@@ -3267,6 +3272,12 @@ Une période clôturée (`Paramètres → Périodes`) est en lecture seule. Le d
 3. Le récapitulatif (identifiant, mot de passe, enfants) **n'est affiché qu'une fois** : imprime-le pour la remise sur papier. Une famille dont le compte existe déjà sur ce numéro est simplement complétée (enfants rattachés, mot de passe inchangé).
 
 **Connexion :** le parent saisit son numéro de téléphone (avec ou sans espaces, +226, tirets) dans le champ « Adresse e-mail », puis son mot de passe. La liste des utilisateurs affiche le téléphone comme identifiant de ces comptes.
+
+**Comptes élèves en masse (5.49.0) :** `Utilisateurs → Comptes élèves en masse` suit la même logique pour les élèves.
+
+1. La page liste les **élèves inscrits de l'année sans compte actif**, avec leur matricule, leur classe et le téléphone du parent.
+2. Coche les élèves, **Créer les comptes cochés** : un compte ELEVE par élève, **identifiant = le matricule** — celui qui figure au dos de la carte scolaire, donc toujours sous la main de l'élève ; mot de passe provisoire de 12 caractères, élève rattaché à son dossier. Si les SMS sont activés et que la fiche porte un numéro, un SMS d'accueil part au parent ; sinon le récapitulatif imprimable sert de remise sur papier.
+3. À la connexion, l'élève saisit son **matricule** (`LS-2026-01`, majuscules ou minuscules indifférentes) dans le champ « Adresse e-mail », puis son mot de passe, qu'il doit changer. Il arrive directement sur son portail (§19.6), où il retrouve sa **carte scolaire** en PDF.
 
 ---
 
@@ -5866,7 +5877,20 @@ et **Documents délivrés** (certificats, attestations, convocations… téléch
 - **Application installable** : manifeste `/manifest-eleve.json` et service worker `/sw-eleve.js` propres au portail
   élève (« YELEN Élève » sur l'écran d'accueil, hors ligne sur les pages déjà visitées) ; installation et
   notifications push comme au §19.1 et §19.3.
-- **Notifications** : la publication d'un bulletin notifie désormais le compte élève (application et push, sans SMS).
+- **Notifications (5.49.0)** : le compte élève reçoit, comme les parents et dans son propre portail, les avis de
+  **bulletin publié**, d'**absence**, de **retard**, de **sanction** et de **document délivré** (application et push,
+  sans SMS : le SMS de la famille part au numéro du parent). Un appareil abonné ouvre directement la page du portail
+  élève concernée.
+- **Ma carte scolaire (5.49.0)** : sur l'accueil du portail, l'élève télécharge en PDF sa **carte scolaire** — la pièce
+  qu'il présente à l'entrée de l'école ; elle porte son **matricule**, qui est aussi son identifiant de connexion. Le
+  parent trouve la même carte pour chacun de ses enfants depuis son propre portail.
+- **Comptes élèves créés en masse (5.49.0)** : `Utilisateurs → Comptes élèves en masse` crée en une fois le compte de
+  tous les élèves inscrits qui n'en ont pas encore. L'**identifiant est le matricule** (saisi tel quel à la connexion,
+  majuscules ou minuscules indifférentes) ; le mot de passe provisoire est envoyé par SMS au numéro du parent, sinon
+  remis sur papier grâce à la page récapitulative imprimable. Mot de passe à changer à la première connexion.
+- **Documents et API (5.49.0)** : les documents délivrés (certificats, attestations, convocations) sont annoncés dans le
+  portail dès leur génération, et l'API REST expose `GET /api/eleves/<pk>/documents/` (mêmes droits que le portail :
+  soi-même pour un élève, ses enfants pour un parent).
 - L'élève ne dépose pas de justificatif d'absence (parent uniquement) et n'accède à aucun module de gestion :
   toute autre adresse le ramène à son portail.
 - Les sections **Notes récentes** et **Moyennes par matière** sont également affichées au parent sur la page

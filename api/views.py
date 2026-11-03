@@ -299,6 +299,28 @@ class EleveBulletinsView(APIView):
         return Response(serializer.data)
 
 
+class EleveDocumentsView(APIView):
+    """GET /api/eleves/<pk>/documents/ — Documents officiels délivrés à un élève (certificats, attestations,
+    convocations), avec le lien de téléchargement de son portail."""
+    permission_classes = [EleveScopeAccess]
+    authentication_classes = [ExpiringTokenAuthentication]
+
+    def get(self, request, pk):
+        eleve = get_eleve_scope(request.user, pk)
+        if eleve is None:
+            return Response(
+                {'erreur': 'Élève introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        from documents.models import Document
+        from .serializers import DocumentPortailSerializer
+        documents = (
+            Document.objects.filter(inscription__eleve=eleve).exclude(fichier='')
+            .select_related('type_document', 'annee_scolaire').order_by('-created_at')
+        )
+        return Response(DocumentPortailSerializer(documents, many=True).data)
+
+
 class EleveMoyennesView(APIView):
     """GET /api/eleves/<pk>/moyennes/ — Moyennes générales d'un élève."""
     permission_classes = [EleveScopeAccess]

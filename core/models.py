@@ -266,6 +266,7 @@ class Notification(models.Model):
         BULLETIN   = 'BULLETIN',   'Bulletin publié'
         ABSENCE    = 'ABSENCE',    'Absence signalée'
         SANCTION   = 'SANCTION',   'Sanction disciplinaire'
+        DOCUMENT   = 'DOCUMENT',   'Document délivré'
         GENERAL    = 'GENERAL',    'Information générale'
 
     destinataire = models.ForeignKey(

@@ -207,6 +207,10 @@ def pwa_manifest(request, role='PARENT'):
             {"src": static('img/pwa/icon-512.png'), "sizes": "512x512", "type": "image/png", "purpose": "any"},
             {"src": static('img/pwa/icon-maskable-512.png'), "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
         ],
+        "shortcuts": [
+            {"name": "Mes bulletins", "short_name": "Bulletins", "url": portail['prefixe'] + 'bulletins/'},
+            {"name": "Ma vie scolaire", "short_name": "Vie scol.", "url": portail['prefixe'] + 'vie-scolaire/'},
+        ],
     }
     return JsonResponse(manifest)
 
@@ -248,7 +252,8 @@ def pwa_service_worker(request, role='PARENT'):
     racine = portail['prefixe']
     sw = (
         f"const CACHE='{portail['cache']}';\n"
-        f"const PRECACHE=['{racine}','/static/css/yelen.css','/static/js/pwa.js','/static/js/push.js'];\n"
+        f"const PRECACHE=['{racine}','{racine}bulletins/','{racine}vie-scolaire/',"
+        f"'{racine}cahier/','{racine}notifications/','/static/css/yelen.css','/static/js/pwa.js','/static/js/push.js'];\n"
         "self.addEventListener('install',e=>{"
         "e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting()));});\n"
         "self.addEventListener('activate',e=>{"

@@ -150,10 +150,13 @@ def notifier_absence(presence):
             + (f" en {matiere}" if matiere else "") + "."
         )
         
-        # Créer les notifications in-app pour les parents (utilisateurs liés avec role PARENT)
+        # Créer les notifications in-app pour l'élève et les parents liés
+        for compte_eleve in eleve.utilisateurs_lies.filter(role='ELEVE', is_active=True):
+            creer_notification(compte_eleve, 'ABSENCE', titre, message_inapp,
+                               lien='/portail/eleve/vie-scolaire/', envoyer_email=False, envoyer_sms=False)
         parents = eleve.utilisateurs_lies.filter(role='PARENT', is_active=True)
         for parent in parents:
-            creer_notification(parent, 'ABSENCE', titre, message_inapp, lien='')
+            creer_notification(parent, 'ABSENCE', titre, message_inapp, lien='/portail/parent/vie-scolaire/')
         
         # Envoyer le SMS
         sms_message = _get_sms_message(etab, 'ABSENCE', {
@@ -190,6 +193,9 @@ def notifier_sanction(sanction):
         titre = f"Sanction disciplinaire — {date_str}"
         message_inapp = f"{eleve.get_nom_complet()} a reçu la sanction « {libelle} » le {date_str}. Motif : {sanction.motif}"
         envoye = False
+        for compte_eleve in eleve.utilisateurs_lies.filter(role='ELEVE', is_active=True):
+            creer_notification(compte_eleve, 'SANCTION', titre, message_inapp, lien='/portail/eleve/vie-scolaire/',
+                               envoyer_email=False, envoyer_sms=False)
         for parent in eleve.utilisateurs_lies.filter(role='PARENT', is_active=True):
             creer_notification(parent, 'SANCTION', titre, message_inapp, lien='/portail/parent/vie-scolaire/',
                                envoyer_email=False, envoyer_sms=False)
@@ -208,6 +214,28 @@ def notifier_sanction(sanction):
         return False
 
 
+
+def notifier_document_delivre(document):
+    """Prévient l'élève et ses parents qu'un document officiel est disponible dans leur portail (sans e-mail ni SMS :
+    le document reste consultable dans le portail, la notification ne fait que l'annoncer)."""
+    try:
+        inscription = document.inscription
+        if inscription is None:
+            return
+        eleve = inscription.eleve
+        libelle = document.type_document.libelle
+        titre = f"Document disponible — {libelle}"
+        message_inapp = f"{libelle} de {eleve.get_nom_complet()} ({inscription.classe.nom}) disponible."
+        for compte_eleve in eleve.utilisateurs_lies.filter(role='ELEVE', is_active=True):
+            creer_notification(compte_eleve, 'DOCUMENT', titre, message_inapp,
+                               lien='/portail/eleve/bulletins/', envoyer_email=False, envoyer_sms=False)
+        for parent in eleve.utilisateurs_lies.filter(role='PARENT', is_active=True):
+            creer_notification(parent, 'DOCUMENT', titre, message_inapp,
+                               lien='/portail/parent/bulletins/', envoyer_email=False, envoyer_sms=False)
+    except Exception:
+        logger.exception("notifier_document_delivre échoué")
+
+
 def notifier_retard(presence):
     """Notifie les parents quand un retard est enregistré."""
     try:
@@ -221,10 +249,13 @@ def notifier_retard(presence):
             + (f" en {matiere}" if matiere else "") + "."
         )
         
-        # Créer les notifications in-app pour les parents
+        # Créer les notifications in-app pour l'élève et les parents liés
+        for compte_eleve in eleve.utilisateurs_lies.filter(role='ELEVE', is_active=True):
+            creer_notification(compte_eleve, 'ABSENCE', titre, message_inapp,
+                               lien='/portail/eleve/vie-scolaire/', envoyer_email=False, envoyer_sms=False)
         parents = eleve.utilisateurs_lies.filter(role='PARENT', is_active=True)
         for parent in parents:
-            creer_notification(parent, 'ABSENCE', titre, message_inapp, lien='')
+            creer_notification(parent, 'ABSENCE', titre, message_inapp, lien='/portail/parent/vie-scolaire/')
         
         # Envoyer le SMS
         sms_message = _get_sms_message(etab, 'RETARD', {

@@ -25,6 +25,7 @@ urlpatterns = [
     path('eleves/<uuid:pk>/moyennes/',         views.EleveMoyennesView.as_view(),   name='eleve_moyennes'),
     path('eleves/<uuid:pk>/paiements/',        views.ElevePaiementsView.as_view(),  name='eleve_paiements'),
     path('eleves/<uuid:pk>/presences/',        views.ElevePresencesView.as_view(),  name='eleve_presences'),
+    path('eleves/<uuid:pk>/documents/',         views.EleveDocumentsView.as_view(),  name='eleve_documents'),
 
     # ── Licences (P2 IsLicenseActive) ─────────────────────────────
     path('licences/active/',  views.LicenceActiveView.as_view(),  name='licences_active'),

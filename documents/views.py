@@ -21,6 +21,7 @@ from parametres.models import TypeDocument, AnneeScolaire, Classe, Cycle, Signat
 from inscriptions.models import Inscription, StatutInscriptionChoices
 
 from .models import Document
+from .archivage import archiver_pdf_document
 from core.utils import get_etablissement_context
 from core.statistiques import statistiques_eleves
 from core.models import RoleChoices
@@ -163,7 +164,6 @@ def certificat_scolarite(request, inscription_id):
         try:
             from core.pdf import HTML
             from django.template.loader import render_to_string
-            from django.core.files.base import ContentFile
 
             sig_nom = ''
             if sig_membre:
@@ -193,10 +193,7 @@ def certificat_scolarite(request, inscription_id):
             )
 
             nom = inscription.eleve.nom.replace(' ', '_')
-            doc.fichier.save(
-                f"certificat_{nom}_{doc.numero_document}.pdf",
-                ContentFile(pdf), save=True
-            )
+            archiver_pdf_document(doc, 'certificat', pdf)
 
             response = HttpResponse(pdf, content_type='application/pdf')
             response['Content-Disposition'] = f'inline; filename="certificat_{nom}.pdf"'
@@ -619,7 +616,6 @@ def convocation_form(request):
             if format_out == 'pdf':
                 from core.pdf import HTML
                 from django.template.loader import render_to_string
-                from django.core.files.base import ContentFile
 
                 base_url = request.build_absolute_uri('/')
                 pages = []
@@ -669,13 +665,9 @@ def convocation_form(request):
 
                 pdf = HTML(string=''.join(pages), base_url=base_url).write_pdf()
 
-                # Archive le PDF sur chaque document créé
+                # Archive le PDF sur chaque document créé (et prévient la famille dans son portail)
                 for doc in docs_created:
-                    nom_el = doc.inscription.eleve.nom.replace(' ', '_')
-                    doc.fichier.save(
-                        f"convocation_{nom_el}_{doc.numero_document}.pdf",
-                        ContentFile(pdf), save=True
-                    )
+                    archiver_pdf_document(doc, 'convocation', pdf)
 
                 response = HttpResponse(pdf, content_type='application/pdf')
                 response['Content-Disposition'] = 'inline; filename="convocations.pdf"'
@@ -895,7 +887,6 @@ def attestation_non_redevabilite(request, inscription_id):
         from core.pdf import HTML
         from django.template.loader import render_to_string
 
-        from django.core.files.base import ContentFile
 
         doc = Document(
             type_document=type_doc,
@@ -915,10 +906,7 @@ def attestation_non_redevabilite(request, inscription_id):
         )
         pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
         nom = inscription.eleve.nom.replace(' ', '_')
-        doc.fichier.save(
-            f"attestation_{nom}_{doc.numero_document}.pdf",
-            ContentFile(pdf), save=True
-        )
+        archiver_pdf_document(doc, 'attestation', pdf)
         response = HttpResponse(pdf, content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="attestation_{nom}.pdf"'
         return response

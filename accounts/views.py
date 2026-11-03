@@ -546,6 +546,49 @@ def parents_masse(request):
 
 
 @_admin_required
+def eleves_masse(request):
+    """Comptes élèves en masse : élèves inscrits de l'année sans compte, création des comptes cochés avec le matricule
+    pour identifiant (inscrit au dos de la carte scolaire) et mot de passe provisoire, SMS d'accueil si les SMS sont
+    activés, récapitulatif imprimable."""
+    from parametres.models import AnneeScolaire, IdentiteEtablissement
+    from core.sms import sms_actifs
+    from core.tasks import envoyer_sms_async
+    from . import parents_masse as service
+
+    etab = request.user.etablissement
+    annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first() if etab else None
+    fiches = service.eleves_sans_compte(etab, annee)
+
+    if request.method == 'POST':
+        matricules = set(request.POST.getlist('matricules'))
+        resultats = service.creer_comptes_eleves(etab, fiches, matricules, request.user)
+        if not resultats:
+            messages.error(request, "Cochez au moins un élève.")
+            return redirect('accounts:eleves_masse')
+        identite = IdentiteEtablissement.objects.filter(etablissement=etab).first()
+        sigle = (identite.sigle if identite and identite.sigle else '').strip()
+        url = request.build_absolute_uri('/')
+        sms = sms_actifs()
+        for r in resultats:
+            if sms and (r['compte'].telephone or '').strip():
+                r['sms'] = envoyer_sms_async(r['compte'].telephone,
+                                             service.message_sms_eleve(sigle, r['identifiant'], r['mot_de_passe'], url))
+        messages.success(request, f"{len(resultats)} compte{'s' if len(resultats) > 1 else ''} élève créé"
+                                  f"{'s' if len(resultats) > 1 else ''}. Les mots de passe provisoires ci-dessous ne "
+                                  "seront plus affichés.")
+        return render(request, 'accounts/eleves_masse_resultat.html', {
+            'resultats': resultats, 'sms_actifs': sms, 'url': url, 'annee': annee,
+        })
+
+    return render(request, 'accounts/eleves_masse.html', {
+        'fiches': fiches,
+        'annee': annee,
+        'nb_sans_compte': len(fiches),
+        'sms_actifs': sms_actifs(),
+    })
+
+
+@_admin_required
 def user_update(request, pk):
     """Modification d'un utilisateur existant."""
     edited_user = get_object_or_404(User, pk=pk)

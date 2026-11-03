@@ -1,6 +1,6 @@
 ---
 titre: Guide de démarrage rapide — YELEN SCHOOL
-version_logiciel: 5.48.0
+version_logiciel: 5.49.0
 date_mise_a_jour: 03/11/2026
 public: direction, secrétariat, comptabilité, enseignants d'un établissement qui démarre
 ---
@@ -111,13 +111,16 @@ années clôturées sont verrouillées (§ 4.2). Pour les dossiers reçus avant 
 - **Cartes scolaires** avec photo et QR code (§ 12.6).
 - **Certificats de scolarité** à la demande (§ 12.2).
 
-### 4.4 Ouvrir le portail aux parents
+### 4.4 Ouvrir le portail aux parents et aux élèves
 
-1. `Élèves → Comptes parents` : création **en masse** des comptes parents à partir des numéros de
-   téléphone des fiches ; identifiant = numéro de téléphone (§ 9.23).
-2. Communiquer l'adresse du portail et la procédure d'installation sur Android (§ 19.1).
-3. Le parent voit : frais et paiements, absences et justificatifs, bulletins, devoirs et cahier de
-   textes, notifications (§ 19).
+1. `Utilisateurs → Comptes parents en masse` : création **en masse** des comptes parents à partir des
+   numéros de téléphone des fiches ; identifiant = numéro de téléphone (§ 9.23).
+2. `Utilisateurs → Comptes élèves en masse` : création **en masse** des comptes élèves ; identifiant =
+   **matricule**, celui qui figure au dos de la carte scolaire (§ 9.23, § 19.6).
+3. Communiquer l'adresse du portail et la procédure d'installation sur Android (§ 19.1).
+4. Le parent voit : frais et paiements, absences et justificatifs, bulletins, devoirs et cahier de
+   textes, documents délivrés, notifications (§ 19). L'élève voit son dossier, son bulletin en lecture,
+   sa carte scolaire, ses documents et ses notifications (§ 19.6).
 
 **Vérification** : `Pilotage` affiche l'effectif par classe, le taux de remplissage et le nombre de
 comptes parents actifs.

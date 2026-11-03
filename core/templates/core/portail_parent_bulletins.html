@@ -160,6 +160,15 @@
           </svg>
           <span class="pp-section-label">Documents délivrés</span>
         </div>
+        {% if portail.role == 'ELEVE' and enfants %}
+        <div class="pp-devoir">
+          <div class="pp-devoir-detail">
+            <div class="pp-devoir-subject">Carte scolaire — matricule {{ enfants.0.eleve.matricule }}</div>
+            <div class="pp-devoir-text">Pièce à présenter à l'entrée :
+              <a href="{% url portail.carte enfants.0.eleve.pk %}" target="_blank" rel="noopener">télécharger (PDF)</a></div>
+          </div>
+        </div>
+        {% endif %}
         {% for d in documents %}
         <div class="pp-devoir">
           <div class="pp-devoir-date">

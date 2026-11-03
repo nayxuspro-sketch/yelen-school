@@ -3,6 +3,35 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.49.0 — 2026-11-03
+
+- **Portail élève au niveau du portail parent (audit P2-12).**
+  - **Comptes élèves en masse** : nouvelle page `Utilisateurs → Comptes élèves en masse`
+    (`/accounts/utilisateurs/eleves/masse/`) qui liste les élèves inscrits de l'année dépourvus de compte actif et
+    crée en une fois un compte ELEVE par élève coché, **identifiant = le matricule** (inscrit au dos de la carte
+    scolaire), mot de passe provisoire de 12 caractères, SMS d'accueil au numéro du parent si les SMS sont activés,
+    récapitulatif imprimable (mots de passe affichés une seule fois). Service : `accounts/parents_masse.py`
+    (`eleves_sans_compte`, `creer_comptes_eleves`, `message_sms_eleve`, domaine technique `eleve.invalid`) ;
+    la connexion accepte le **matricule** comme identifiant (`email_depuis_identifiant`, insensible à la casse).
+  - **Notifications de l'élève** : `Notification` reçoit la valeur `DOCUMENT` (migration `core/0010`) ; les avis
+    d'**absence**, de **retard**, de **sanction**, de **bulletin publié** et de **document délivré** parviennent
+    désormais aussi au compte élève, avec le lien de son propre portail ; `core/push.py` ouvre le portail élève pour
+    un destinataire ELEVE (`page_notifications`, `charge_utile`).
+  - **Documents délivrés** : `documents/archivage.py::archiver_pdf_document` archive le PDF (certificat, attestation,
+    convocation) puis prévient la famille dans son portail (`notifier_document_delivre`).
+  - **Carte scolaire dans le portail** : `core:portail_eleve_carte` / `core:portail_parent_carte` téléchargent la
+    carte scolaire en PDF (pièce d'entrée portant le matricule) pour l'élève lui-même ou ses parents ;
+    `inscriptions/views/documents.py` expose `contexte_carte_scolaire` et `pdf_carte_scolaire` partagés avec l'écran
+    d'administration.
+  - **PWA élève** : raccourcis « Mes bulletins » / « Ma vie scolaire » dans `/manifest-eleve.json` et pages du
+    portail pré-cachées par `/sw-eleve.js` pour l'accès hors réseau.
+  - **API REST** : `GET /api/eleves/<pk>/documents/` (documents délivrés, lien de téléchargement du portail, mêmes
+    droits que le portail — soi-même pour un élève, ses enfants pour un parent).
+- Guides : `docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` § 9.23 (comptes en masse, connexion par numéro **ou matricule**)
+  et § 19.6 (portail élève complet) ; `docs/GUIDE_DEMARRAGE_RAPIDE.md` § 4.4.
+- Tests : `accounts/tests/test_eleves_masse.py`, `api/test_documents_portail.py`, compléments de
+  `core/tests/test_portail_eleve.py` et `core/tests/test_push.py`.
+
 ## 5.48.1 — 2026-11-03
 
 - **Allègement de `core/templates/core/base.html` (audit P1-8)** : extraction de la barre latérale vers

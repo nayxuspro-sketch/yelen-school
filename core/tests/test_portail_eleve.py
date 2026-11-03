@@ -89,3 +89,66 @@ def test_bulletin_publie_en_lecture_seule_et_notification_du_compte_eleve(client
     # Le bulletin d'un autre élève n'est pas consultable
     autre = baker.make('bulletins.Bulletin', inscription=ecole['b']['inscription'], trimestre=t1, est_publie=True)
     assert client.get(reverse('core:portail_eleve_bulletin', args=[autre.pk])).status_code == 404
+
+
+def test_carte_scolaire_telechargeable_depuis_le_portail(client, ecole, mocker):
+    """L'élève télécharge sa carte scolaire (pièce d'entrée portant son matricule) ; celle d'un autre élève est refusée,
+    et le parent retrouve celle de ses enfants."""
+    from inscriptions.views import documents as vues_documents
+
+    class _PDF:
+        def __init__(self, string, base_url=''):
+            self.string = string
+
+        def write_pdf(self):
+            return b'%PDF-1.4 carte'
+
+    mocker.patch.object(vues_documents, '_WeasyHTML', _PDF)
+    client.force_login(ecole['a']['compte'])
+    reponse = client.get(reverse('core:portail_eleve_carte', args=[ecole['a']['eleve'].pk]))
+    assert reponse.status_code == 200 and reponse['Content-Type'] == 'application/pdf'
+    assert b''.join(reponse.streaming_content) == b'%PDF-1.4 carte'
+    accueil = client.get(reverse('core:portail_eleve')).content.decode()
+    assert reverse('core:portail_eleve_carte', args=[ecole['a']['eleve'].pk]) in accueil
+    assert ecole['a']['eleve'].matricule in accueil, 'matricule rappelé : identifiant de connexion'
+    assert client.get(reverse('core:portail_eleve_carte', args=[ecole['b']['eleve'].pk])).status_code == 404
+
+    parent = baker.make('accounts.User', etablissement=ecole['etab'], role='PARENT', must_change_password=False)
+    parent.eleves_lies.add(ecole['a']['eleve'])
+    client.force_login(parent)
+    assert client.get(reverse('core:portail_parent_carte', args=[ecole['a']['eleve'].pk])).status_code == 200
+    assert client.get(reverse('core:portail_parent_carte', args=[ecole['b']['eleve'].pk])).status_code == 404
+
+
+def test_notifications_d_absence_de_sanction_et_de_document_recues_par_l_eleve(ecole, settings):
+    """Les avis qui ne concernaient que les parents arrivent aussi au compte élève, avec le lien de son portail."""
+    from core.models import Notification
+    from core.notifications import notifier_absence, notifier_document_delivre, notifier_sanction
+    from presences.models import Presence
+
+    settings.SMS_ENABLED = False
+    parent = baker.make('accounts.User', etablissement=ecole['etab'], role='PARENT', must_change_password=False)
+    parent.eleves_lies.add(ecole['a']['eleve'])
+    inscription = ecole['a']['inscription']
+
+    appel = baker.make('presences.Appel', classe=ecole['classe'], annee_scolaire=ecole['annee'],
+                       date=timezone.localdate(), est_clos=True)
+    presence = baker.make('presences.Presence', appel=appel, inscription=inscription,
+                          statut=Presence.StatutChoices.ABSENT)
+    notifier_absence(presence)
+    avis = Notification.objects.get(destinataire=ecole['a']['compte'], type='ABSENCE')
+    assert avis.lien == '/portail/eleve/vie-scolaire/'
+    assert Notification.objects.get(destinataire=parent, type='ABSENCE').lien == '/portail/parent/vie-scolaire/'
+
+    type_sanction = baker.make('parametres.TypeSanction', libelle='Avertissement')
+    sanction = baker.make('viescolaire.SanctionDisciplinaire', inscription=inscription, type_sanction=type_sanction,
+                          date_sanction=timezone.localdate(), motif='Bavardages')
+    notifier_sanction(sanction)
+    assert Notification.objects.get(destinataire=ecole['a']['compte'], type='SANCTION').lien == \
+        '/portail/eleve/vie-scolaire/'
+
+    notifier_document_delivre(ecole['a']['document'])
+    avis = Notification.objects.get(destinataire=ecole['a']['compte'], type='DOCUMENT')
+    assert avis.titre == 'Document disponible — Certificat de scolarité'
+    assert avis.lien == '/portail/eleve/bulletins/'
+    assert Notification.objects.filter(destinataire=parent, type='DOCUMENT', lien='/portail/parent/bulletins/').exists()

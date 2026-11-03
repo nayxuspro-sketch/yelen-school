@@ -216,3 +216,19 @@ def test_page_notifications_du_personnel_porte_le_reglage(client, parent):
     assert f'data-push-cle="{push.cle_publique()}"' in html and 'js/push.' in html
     assert 'data-push-sw="/app-sw.js"' in html and 'data-push-scope="/"' in html and 'data-push-action="activer"' in html
     assert 'data-push-cle' not in client.get(reverse('core:notifications_list') + '?_partial=header').content.decode()
+
+
+def test_les_notifications_de_l_eleve_ouvrent_son_portail(parent):
+    """Un élève abonné reçoit ses avis vers son propre portail (et non vers celui de ses parents)."""
+    eleve = baker.make('accounts.User', etablissement=parent.etablissement, role='ELEVE', must_change_password=False)
+    assert push.page_notifications(eleve) == reverse('core:portail_eleve_notifications')
+    assert push.page_notifications(parent) == reverse('core:portail_parent_notifications')
+    assert push.page_notifications(baker.make('accounts.User', etablissement=parent.etablissement, role='CENSEUR',
+                                              must_change_password=False)) == reverse('core:notifications_list')
+
+    avis = baker.make('core.Notification', destinataire=eleve, type='ABSENCE',
+                      lien='/portail/eleve/vie-scolaire/', titre='Absence', message='x')
+    assert push.charge_utile(avis)['url'] == '/portail/eleve/vie-scolaire/'
+    # Un lien du portail parent n'est pas proposé à l'élève : repli sur ses notifications
+    avis.lien = '/portail/parent/vie-scolaire/'
+    assert push.charge_utile(avis)['url'] == reverse('core:portail_eleve_notifications')

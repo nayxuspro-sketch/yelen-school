@@ -63,16 +63,13 @@ def eleve_fiche_pdf(request, pk):
     return response
 
 
-@login_required
-def eleve_carte(request, pk):
-    """Aperçu et génération PDF de la carte scolaire d'un élève."""
-    eleve = get_object_or_404(Eleve, pk=pk)
-    inscription = _get_inscription_courante(eleve)
-
+def contexte_carte_scolaire(request, eleve, inscription=None):
+    """Contexte de rendu de la carte scolaire (portail élève compris) : identité, logo et signataire de l'établissement."""
+    if inscription is None:
+        inscription = _get_inscription_courante(eleve)
     etab = inscription.classe.etablissement if inscription else None
     etab_context = get_etablissement_context(etab, request) if etab else {}
-
-    context = {
+    return {
         'eleve': eleve,
         'inscription': inscription,
         'identite': etab_context.get('identite'),
@@ -83,12 +80,27 @@ def eleve_carte(request, pk):
                                         inscription.annee_scolaire if inscription else None),
     }
 
+
+def pdf_carte_scolaire(request, eleve, inscription=None):
+    """PDF de la carte scolaire d'un élève (octets), ou None si WeasyPrint est indisponible."""
+    if _WeasyHTML is None:
+        return None
+    context = contexte_carte_scolaire(request, eleve, inscription)
+    html_str = render_to_string('inscriptions/pdf/carte_scolaire.html', context, request=request)
+    return _WeasyHTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()
+
+
+@login_required
+def eleve_carte(request, pk):
+    """Aperçu et génération PDF de la carte scolaire d'un élève."""
+    eleve = get_object_or_404(Eleve, pk=pk)
+    context = contexte_carte_scolaire(request, eleve)
+
     if request.GET.get('format') == 'pdf':
-        if _WeasyHTML is None:
+        pdf = pdf_carte_scolaire(request, eleve, context['inscription'])
+        if pdf is None:
             messages.error(request, "WeasyPrint n'est pas installé.")
             return redirect('inscriptions:eleve_detail', pk=pk)
-        html_str = render_to_string('inscriptions/pdf/carte_scolaire.html', context, request=request)
-        pdf = _WeasyHTML(string=html_str, base_url=request.build_absolute_uri()).write_pdf()
         filename = f"Carte_{eleve.nom}_{eleve.prenom}.pdf".replace(" ", "_")
         response = HttpResponse(pdf, content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="{filename}"'

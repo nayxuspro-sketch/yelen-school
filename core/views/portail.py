@@ -1,5 +1,6 @@
 """Portails parent et élève (notes, bulletins, vie scolaire, notifications, push)."""
 
+import io
 import json
 import os
 from django.shortcuts import get_object_or_404, redirect, render
@@ -20,7 +21,7 @@ PORTAILS = {
         'accueil': 'core:portail_parent', 'vie_scolaire': 'core:portail_parent_vie_scolaire',
         'bulletins': 'core:portail_parent_bulletins', 'bulletin': 'core:portail_parent_bulletin',
         'cahier': 'core:portail_parent_cahier', 'notifications': 'core:portail_parent_notifications',
-        'document': 'core:portail_parent_document',
+        'document': 'core:portail_parent_document', 'carte': 'core:portail_parent_carte',
     },
     'ELEVE': {
         'role': 'ELEVE', 'prefixe': '/portail/eleve/', 'titre': 'Portail Élève', 'court': 'YELEN Élève',
@@ -28,7 +29,7 @@ PORTAILS = {
         'accueil': 'core:portail_eleve', 'vie_scolaire': 'core:portail_eleve_vie_scolaire',
         'bulletins': 'core:portail_eleve_bulletins', 'bulletin': 'core:portail_eleve_bulletin',
         'cahier': 'core:portail_eleve_cahier', 'notifications': 'core:portail_eleve_notifications',
-        'document': 'core:portail_eleve_document',
+        'document': 'core:portail_eleve_document', 'carte': 'core:portail_eleve_carte',
     },
 }
 
@@ -225,6 +226,34 @@ def portail_document(request, pk):
                                  inscription__eleve__in=request.user.eleves_lies.all())
     return FileResponse(document.fichier.open('rb'), as_attachment=True,
                         filename=os.path.basename(document.fichier.name))
+
+
+@login_required
+@requires_licence_feature('portail_parents')
+def portail_carte_scolaire(request, pk):
+    """Carte scolaire en PDF depuis le portail : l'élève pour lui-même, le parent pour ses enfants. C'est la pièce que
+    l'élève présente à l'entrée ; le matricule qui y figure est son identifiant de connexion."""
+    config = _portail(request)
+    if not config:
+        return HttpResponseForbidden(_REFUS_PORTAIL)
+    from django.http import Http404
+    from inscriptions.models import Eleve
+    from inscriptions.views.documents import pdf_carte_scolaire
+
+    eleve = get_object_or_404(Eleve, pk=pk, pk__in=request.user.eleves_lies.values('pk'))
+    inscription = (
+        Inscription.objects.filter(eleve=eleve, annee_scolaire__etablissement=request.user.etablissement,
+                                   annee_scolaire__est_courante=True)
+        .select_related('classe', 'annee_scolaire').first()
+    ) or Inscription.objects.filter(eleve=eleve).select_related('classe', 'annee_scolaire').first()
+    if inscription is None:
+        raise Http404("Aucune inscription : la carte scolaire ne peut pas être établie.")
+    pdf = pdf_carte_scolaire(request, eleve, inscription)
+    if pdf is None:
+        messages.error(request, "WeasyPrint n'est pas installé : la carte scolaire est indisponible.")
+        return redirect(config['accueil'])
+    return FileResponse(io.BytesIO(pdf), as_attachment=False, content_type='application/pdf',
+                        filename=f"Carte_{eleve.nom}_{eleve.prenom}.pdf".replace(' ', '_'))
 
 
 @login_required

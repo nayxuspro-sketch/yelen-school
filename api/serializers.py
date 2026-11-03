@@ -10,6 +10,7 @@ from pedagogie.models import MoyenneGenerale, Resultat
 from finances.models import Paiement
 from presences.models import Presence
 from bulletins.models import Bulletin
+from documents.models import Document
 
 
 class EleveSerializer(serializers.ModelSerializer):
@@ -138,3 +139,18 @@ class BulletinSerializer(serializers.ModelSerializer):
             inscription=obj.inscription, trimestre=obj.trimestre
         ).first()
         return str(mg.moyenne) if mg else None
+
+
+class DocumentPortailSerializer(serializers.ModelSerializer):
+    """Document officiel délivré à un élève : métadonnées et lien de téléchargement du portail."""
+    libelle = serializers.CharField(source='type_document.libelle', read_only=True)
+    annee = serializers.CharField(source='annee_scolaire.libelle', read_only=True)
+    telechargement = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Document
+        fields = ['id', 'numero_document', 'libelle', 'annee', 'created_at', 'telechargement']
+
+    def get_telechargement(self, obj):
+        from django.urls import reverse
+        return reverse('core:portail_eleve_document', kwargs={'pk': obj.pk})

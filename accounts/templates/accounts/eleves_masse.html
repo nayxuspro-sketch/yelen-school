@@ -1,0 +1,69 @@
+{% extends "core/base.html" %}
+
+{% block title %}Comptes élèves en masse{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <div class="d-flex align-center gap-2 text-muted mb-2" style="font-size:.8rem; text-transform:uppercase; font-weight:600; letter-spacing:.06em;">
+      <span>Utilisateurs</span><span>›</span><span>Comptes élèves en masse</span>
+    </div>
+    <h1 class="page-title">Comptes élèves en masse</h1>
+    <p class="page-subtitle">
+      {% if annee %}{{ annee.libelle }} — {% endif %}un compte par élève inscrit ; l'identifiant de connexion est le
+      <strong>matricule</strong> (inscrit au dos de la carte scolaire), le mot de passe provisoire est envoyé par SMS au
+      numéro du parent{% if not sms_actifs %} (SMS désactivés : remise sur papier){% endif %} et doit être changé à la
+      première connexion.
+    </p>
+  </div>
+  <a href="{% url 'accounts:user_list' %}" class="btn-secondary">Retour</a>
+</div>
+
+{% if fiches %}
+<form method="post" class="card animate-fade-up delay-1" style="padding:0; overflow:hidden;">
+  {% csrf_token %}
+  <div class="d-flex align-center gap-3 flex-wrap" style="padding:var(--space-4); border-bottom:1px solid var(--color-border);">
+    <span class="badge badge-info">{{ nb_sans_compte }} élève{{ nb_sans_compte|pluralize }}</span>
+    <span class="text-muted" style="font-size:.8rem;">Les élèves disposant déjà d'un compte actif n'apparaissent pas.</span>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:2.5rem;"><input type="checkbox" id="tout-cocher" checked aria-label="Tout cocher"></th>
+          <th>Matricule (identifiant)</th>
+          <th>Élève</th>
+          <th>Classe</th>
+          <th>Téléphone du parent</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in fiches %}
+        <tr>
+          <td><input type="checkbox" class="case-eleve" name="matricules" value="{{ f.matricule }}" checked aria-label="Élève {{ f.eleve.get_nom_complet }}"></td>
+          <td class="text-mono fw-semibold">{{ f.matricule }}</td>
+          <td>{{ f.eleve.get_nom_complet }}</td>
+          <td>{{ f.classe }}</td>
+          <td>{% if f.eleve.telephone_parent %}{{ f.eleve.telephone_parent }}{% else %}<span class="badge badge-warning">Aucun — remise sur papier</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="d-flex align-center gap-3" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
+    <button type="submit" class="btn-primary" data-csp-confirm="Créer les comptes des élèves cochés ? Les mots de passe provisoires ne seront affichés qu'une fois.">Créer les comptes cochés</button>
+  </div>
+</form>
+<script nonce="{{ request.csp_nonce }}">
+  document.getElementById('tout-cocher').addEventListener('change', function () {
+    document.querySelectorAll('.case-eleve').forEach(function (case_) { case_.checked = this.checked; }, this);
+  });
+</script>
+{% else %}
+<div class="card animate-fade-up" style="padding:var(--space-6); text-align:center;">
+  <p class="text-muted" style="margin:0;">
+    {% if not annee %}Aucune année scolaire courante.{% else %}Tous les élèves inscrits de l'année disposent déjà d'un compte.{% endif %}
+  </p>
+</div>
+{% endif %}
+{% endblock %}
