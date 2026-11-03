@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.47.7
-version_guide: 5.38
-date_mise_a_jour: 03/11/2026 (5.47.7 : tâches planifiées Windows sans fenêtre console noire)
+version_logiciel: 5.47.8
+version_guide: 5.39
+date_mise_a_jour: 03/11/2026 (5.47.8 : pagination/filtre Redevables, Gunicorn 26.2.0, lanceur tester-restauration.bat)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -742,7 +742,7 @@ La page rassemble ce que la direction doit savoir sur le serveur sans ouvrir une
 | Carte | Ce qui est mesuré | Alerte |
 |---|---|---|
 | **Sauvegarde** | fichier `yelen_school_*` le plus récent dans `BACKUP_DIR`, `backups\` (mode serveur : dossier du poste lu par le conteneur) ou `data\backups\` (mode autonome) | aucune sauvegarde visible, ou dernière sauvegarde de plus de 36 h |
-| **Restauration testée** *(5.47.2)* | dernier essai consigné dans `backups\restauration.log` par `installer\tester-restauration.ps1` (date, réussite ou échec) | aucun essai, ou essai de plus de 120 jours |
+| **Restauration testée** *(5.47.2 / 5.47.8)* | dernier essai consigné dans `backups\restauration.log` par `tester-restauration.bat` (`installer\tester-restauration.ps1`) | aucun essai, ou essai de plus de 120 jours |
 | **Espace disque** | espace libre du disque qui héberge l'application | moins de 5 Go ou moins de 10 % libres |
 | **Erreurs applicatives** | lignes `ERROR`/`CRITICAL` de `logs\django.log` sur 24 h, avec les 5 dernières | au moins une erreur |
 | **File SMS** | SMS en attente, en nouvelle tentative, abandonnés sur 7 jours, envoyés en 24 h | SMS en nouvelle tentative ou abandonnés |
@@ -759,10 +759,11 @@ de santé `/health/` interrogé par la surveillance…), en arrière-plan.
 Cette page complète la surveillance Windows (`programmer-surveillance.bat`), seule à pouvoir constater que l'application
 ne répond plus : elle la redémarre et alerte par SMS (`ALERTE_SMS_NUMEROS` du `.env`).
 
-> **Une sauvegarde jamais restaurée n'est pas une sauvegarde (5.47.2).** Une fois par trimestre, lancer
-> `installer\tester-restauration.ps1` : il importe la dernière sauvegarde dans une base temporaire, en vérifie le
-> contenu, puis la supprime — la production n'est pas touchée. Le résultat s'affiche dans la carte
-> **Restauration testée** ci-dessus. Procédure complète : guide de déploiement, §9.7.
+> **Une sauvegarde jamais restaurée n'est pas une sauvegarde (5.47.2 / 5.47.8).** Une fois par trimestre, lancer
+> `C:\YELEN-SCHOOL\tester-restauration.bat` (qui appelle `installer\tester-restauration.ps1`) : il importe la
+> dernière sauvegarde dans une base temporaire, en vérifie le contenu, puis la supprime — la production n'est pas
+> touchée. Le résultat s'affiche dans la carte **Restauration testée** ci-dessus. Procédure complète : guide de
+> déploiement, §9.7.
 >
 > **Et si le serveur est éteint ?** Aucune alerte interne ne peut partir : ajouter une surveillance extérieure
 > gratuite de `/health/` (guide de déploiement, §9.6).
@@ -2753,11 +2754,11 @@ Le document contient :
 
 **Fonctionnalités :**
 
-- **Regroupement** : Les élèves sont triés par cycle, puis par classe, puis par ordre alphabétique
-- **Totaux** : Chaque classe et chaque cycle affiche son total
+- **Regroupement et pagination *(5.47.8)*** : Les élèves sont triés par cycle, puis par classe, puis par ordre alphabétique, et affichés par pages de **50 élèves** pour rester fluides sur smartphone et grand effectif
+- **Totaux globaux exacts** : Le nombre total de redevables, le montant global redevable et les sous-totaux par cycle et par classe portent toujours sur l'ensemble des élèves filtrés, quelle que soit la page affichée
 - **Actions** : Bouton "Payer" pour enregistrer un paiement, "Situation" pour voir les détails
-- **Recherche** : Barre de recherche par nom, prénom, matricule ou classe
-- **Impression PDF** : Génère un document PDF imprimable de la liste
+- **Recherche et filtre par classe *(5.47.8)*** : Barre de recherche (nom, prénom, matricule, classe) + sélecteur direct **Toutes les classes / Classe**
+- **Impression PDF** : Génère le PDF complet de l'établissement (ou de la classe / recherche sélectionnée)
 
 ---
 

@@ -5,7 +5,8 @@ Issu du découpage mécanique de ``finances/views.py`` (octobre 2026) : code inc
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import F, Sum, Count, Q
+from django.core.paginator import Paginator
+from django.db.models import F, Max, Sum, Count, Q
 from django.core.exceptions import ValidationError
 from django.http import Http404, HttpResponse
 from django.template.loader import render_to_string
@@ -13,9 +14,9 @@ from django.utils import timezone
 from decimal import Decimal
 import csv
 import io
-from ..models import Paiement
+from ..models import HistoriqueRelance, Paiement
 from inscriptions.models import Inscription, StatutInscriptionChoices
-from parametres.models import AnneeScolaire, RubriquePaiement
+from parametres.models import AnneeScolaire, Classe, RubriquePaiement
 from core.utils import get_etablissement_context
 from ..permissions import FINANCE_VIEW_ROLES
 from .commun import (
@@ -26,123 +27,154 @@ from .commun import (
     _calcul_situation_financiere,
 )
 
+REDEVABLES_PAR_PAGE = 50
+
+
+def _inscriptions_redevables_filtrees(etab, annee_courante, request):
+    """Retourne ``(inscriptions, classes_etab, classe_id, query)`` triées par cycle, classe et élève."""
+    query = request.GET.get('q', '').strip()
+    classe_id = request.GET.get('classe', '').strip()
+    classes_etab = list(
+        Classe.objects.filter(etablissement=etab)
+        .select_related('cycle')
+        .order_by('cycle__nom', 'nom')
+    )
+    classe_selectionnee = next((c for c in classes_etab if str(c.pk) == classe_id), None)
+    if classe_selectionnee is None:
+        classe_id = ''
+
+    inscriptions = (
+        Inscription.objects.filter(annee_scolaire=annee_courante, classe__etablissement=etab)
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
+        .select_related('eleve', 'classe', 'classe__cycle')
+        .only(
+            'id',
+            'annee_scolaire_id',
+            'statut_eleve_id',
+            'eleve_id',
+            'eleve__id',
+            'eleve__matricule',
+            'eleve__nom',
+            'eleve__prenom',
+            'classe_id',
+            'classe__id',
+            'classe__nom',
+            'classe__niveau',
+            'classe__etablissement_id',
+            'classe__cycle_id',
+            'classe__cycle__id',
+            'classe__cycle__nom',
+        )
+    )
+    if classe_selectionnee is not None:
+        inscriptions = inscriptions.filter(classe_id=classe_selectionnee.pk)
+    if query:
+        inscriptions = inscriptions.filter(
+            Q(eleve__nom__icontains=query)
+            | Q(eleve__prenom__icontains=query)
+            | Q(eleve__matricule__icontains=query)
+            | Q(classe__nom__icontains=query)
+        )
+    return (
+        list(inscriptions.order_by('classe__cycle__nom', 'classe__nom', 'eleve__nom', 'eleve__prenom')),
+        classes_etab,
+        classe_id,
+        query,
+    )
+
 
 @login_required
 def liste_redevables(request):
-    """Liste des élèves redevables (ayant un reste à payer > 0)."""
+    """Liste paginée des élèves redevables (reste à payer > 0) avec totaux globaux exacts."""
     _require_finance_role(request, FINANCE_VIEW_ROLES)
     etab = request.user.etablissement
     if not etab:
         messages.error(request, "Votre compte n'est pas associé à un établissement.")
         return redirect('finances:paiement_list')
-    
+
     annee_courante = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
     if not annee_courante:
         messages.warning(request, "Aucune année scolaire active.")
         return redirect('finances:paiement_list')
-    
-    query = request.GET.get('q', '').strip()
-    
-    # Toutes les inscriptions de l'année
-    inscriptions = Inscription.objects.filter(
-        annee_scolaire=annee_courante,
-        classe__etablissement=etab,
-    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe', 'classe__cycle', 'statut_eleve')
-    
-    if query:
-        inscriptions = inscriptions.filter(
-            Q(eleve__nom__icontains=query) |
-            Q(eleve__prenom__icontains=query) |
-            Q(eleve__matricule__icontains=query) |
-            Q(classe__nom__icontains=query)
-        )
-    
-    # Regrouper par cycle puis par classe
-    cycles_dict = {}
-    total_redevable = Decimal('0')
-    nb_redevables = 0
-    
-    # Situations financières calculées en lot (4 requêtes) au lieu de 4 par élève
+
+    inscriptions, classes_etab, classe_id, query = _inscriptions_redevables_filtrees(
+        etab, annee_courante, request
+    )
     situations = _situations_financieres_en_lot(inscriptions)
 
+    redevables = []
+    totaux_cycles = {}
+    totaux_classes = {}
+    total_redevable = Decimal('0')
+    nb_redevables = 0
+
     for inscr in inscriptions:
+        sit = situations[inscr.pk]
+        reste = sit['reste_a_payer']
+        if reste <= 0:
+            continue
         classe = inscr.classe
         cycle = classe.cycle
+        nb_redevables += 1
+        total_redevable += reste
+        totaux_cycles[cycle.nom] = totaux_cycles.get(cycle.nom, Decimal('0')) + reste
+        cle_classe = (cycle.nom, classe.nom)
+        totaux_classes[cle_classe] = totaux_classes.get(cle_classe, Decimal('0')) + reste
+        redevables.append({
+            'inscription': inscr,
+            'cycle': cycle,
+            'classe': classe,
+            'total_du': sit['total_du'],
+            'total_paye': sit['total_paye'],
+            'reste': reste,
+            'derniere_relance': None,
+        })
 
-        sit = situations[inscr.pk]
-        total_du = sit['total_du']
-        total_paye = sit['total_paye']
-        reste = sit['reste_a_payer']
+    paginator = Paginator(redevables, REDEVABLES_PAR_PAGE)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
 
-        if reste > 0:
-            nb_redevables += 1
-            total_redevable += reste
-
-            # Ajouter au cycle
-            if cycle.nom not in cycles_dict:
-                cycles_dict[cycle.nom] = {
-                    'cycle': cycle,
-                    'classes': {},
-                    'total': Decimal('0'),
-                }
-            
-            # Ajouter à la classe
-            if classe.nom not in cycles_dict[cycle.nom]['classes']:
-                cycles_dict[cycle.nom]['classes'][classe.nom] = {
-                    'classe': classe,
-                    'eleves': [],
-                    'total': Decimal('0'),
-                }
-            
-            cycles_dict[cycle.nom]['classes'][classe.nom]['eleves'].append({
-                'inscription': inscr,
-                'total_du': total_du,
-                'total_paye': total_paye,
-                'reste': reste,
-                'derniere_relance': None,  # rempli après la boucle
-            })
-            cycles_dict[cycle.nom]['classes'][classe.nom]['total'] += reste
-            cycles_dict[cycle.nom]['total'] += reste
-
-    # Enrichir chaque élève avec sa dernière relance
-    from ..models import HistoriqueRelance
-    inscription_ids = [
-        item['inscription'].pk
-        for c in cycles_dict.values()
-        for cl in c['classes'].values()
-        for item in cl['eleves']
-    ]
-    if inscription_ids:
-        from django.db.models import Max
+    # Dernière relance limitée aux seuls élèves affichés sur la page courante.
+    page_ids = [item['inscription'].pk for item in page_obj.object_list]
+    if page_ids:
         relances_map = {
             r['inscription_id']: r['date_relance__max']
-            for r in HistoriqueRelance.objects.filter(inscription_id__in=inscription_ids)
+            for r in HistoriqueRelance.objects.filter(inscription_id__in=page_ids)
             .values('inscription_id')
             .annotate(date_relance__max=Max('date_relance'))
         }
-        for c in cycles_dict.values():
-            for cl in c['classes'].values():
-                for item in cl['eleves']:
-                    item['derniere_relance'] = relances_map.get(item['inscription'].pk)
+        for item in page_obj.object_list:
+            item['derniere_relance'] = relances_map.get(item['inscription'].pk)
 
-    # Convertir en liste triée
-    cycles_list = []
-    for cycle_nom in sorted(cycles_dict.keys()):
-        cycle_data = cycles_dict[cycle_nom]
-        classes_list = []
-        for classe_nom in sorted(cycle_data['classes'].keys()):
-            classe_data = cycle_data['classes'][classe_nom]
-            # Trier les élèves par reste décroissant
-            classe_data['eleves'].sort(key=lambda x: (x['inscription'].eleve.nom, x['inscription'].eleve.prenom))
-            classes_list.append(classe_data)
-        cycles_list.append({
-            'cycle': cycle_data['cycle'],
-            'classes': classes_list,
-            'total': cycle_data['total'],
+    cycles_dict = {}
+    for item in page_obj.object_list:
+        cycle = item['cycle']
+        classe = item['classe']
+        cycle_entry = cycles_dict.setdefault(cycle.nom, {
+            'cycle': cycle,
+            'classes': {},
+            'total': totaux_cycles[cycle.nom],
         })
-    
+        classe_entry = cycle_entry['classes'].setdefault(classe.nom, {
+            'classe': classe,
+            'eleves': [],
+            'total': totaux_classes[(cycle.nom, classe.nom)],
+        })
+        classe_entry['eleves'].append(item)
+
+    cycles_list = [
+        {
+            'cycle': cycle_data['cycle'],
+            'classes': list(cycle_data['classes'].values()),
+            'total': cycle_data['total'],
+        }
+        for cycle_data in cycles_dict.values()
+    ]
+
     context = {
         'cycles_list': cycles_list,
+        'page_obj': page_obj,
+        'classes': classes_etab,
+        'classe_id': classe_id,
         'total_redevable': total_redevable,
         'nb_redevables': nb_redevables,
         'annee_courante': annee_courante,
@@ -529,11 +561,8 @@ def liste_redevables_pdf(request):
         return redirect('finances:paiement_list')
     
     etab_context = get_etablissement_context(etab, request)
-    
-    inscriptions = Inscription.objects.filter(
-        annee_scolaire=annee_courante,
-        classe__etablissement=etab,
-    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe', 'classe__cycle', 'statut_eleve')
+
+    inscriptions, _, _, _ = _inscriptions_redevables_filtrees(etab, annee_courante, request)
 
     cycles_dict = {}
     total_redevable = Decimal('0')

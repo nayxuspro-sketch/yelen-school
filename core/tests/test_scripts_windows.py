@@ -175,3 +175,11 @@ def test_taches_planifiees_windows_sans_fenetre_noire():
         assert "New-ScheduledTaskAction -Execute 'powershell.exe'" not in texte, fichier.name
         assert 'yelen-scheduled-task.ps1' in texte, fichier.name
         assert 'New-YelenHeadlessTaskAction' in texte, fichier.name
+
+
+def test_lanceur_tester_restauration():
+    """Le lanceur à la racine relaie tous les arguments vers installer\\tester-restauration.ps1."""
+    bat = (RACINE / 'tester-restauration.bat').read_text(encoding='ascii')
+    assert 'cd /d "%~dp0"' in bat
+    assert 'installer\\tester-restauration.ps1" %*' in bat
+    assert 'exit /b %EXIT_CODE%' in bat

@@ -3,6 +3,23 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.8 — 2026-11-03
+
+- **Maintenance rapide (dépendances, performances `Redevables`, lanceur `tester-restauration.bat`).**
+  - **Dépendances de production** : montée de `gunicorn` en `26.2.0` (`pip check` et `pip-audit` sans anomalie) et
+    exclusion explicite de `python-dateutil >= 3.0.0` dans `.github/dependabot.yml` tant que `botocore` impose
+    `python-dateutil<3.0.0,>=2.1`.
+  - **Allègement et pagination de `finances:liste_redevables`** : pagination par lots de 50 élèves, filtre direct
+    par classe (`?classe=`) repris à l'impression PDF, chargement de `HistoriqueRelance` limité aux élèves de la
+    page courante et projection SQL `.only(...)` tout en conservant `nb_redevables` et `total_redevable` globaux
+    exacts. Sur 1 500 élèves redevables (`manage.py mesure_reference`), la réponse passe de **397 ms / 2 176 Ko**
+    à **170 ms / 137 Ko** (-94 % de poids HTML).
+  - **Lanceur racine `tester-restauration.bat`** : relais direct vers `installer\tester-restauration.ps1` depuis
+    `C:\YELEN-SCHOOL\tester-restauration.bat`, cité dans l'alerte et l'écran *Exploitation*.
+- Documentation : guide d'utilisation (**§3.6**, **§9.8**) et guide de déploiement Windows (**§9.7**) mis à jour.
+- Tests : `test_page_redevables_pagination_et_filtre_classe` (`finances/tests/test_views.py`) et
+  `test_lanceur_tester_restauration` (`core/tests/test_scripts_windows.py`).
+
 ## 5.47.7 — 2026-11-03
 
 - **Suppression de la fenêtre noire furtive des tâches planifiées Windows.** Sous Windows 10/11 (en particulier

@@ -300,6 +300,41 @@ class TestSituationsFinancieresEnLot:
         assert client.get(reverse('finances:liste_redevables')).status_code == 200
         assert client.get(reverse('finances:liste_redevables_pdf')).status_code == 200
 
+    def test_page_redevables_pagination_et_filtre_classe(self, jeu, client, monkeypatch):
+        """La pagination conserve les totaux globaux exacts ; le filtre par classe isole la classe choisie."""
+        from decimal import Decimal
+        from finances.views import etats
+        annee, (i_normal, i_boursier, i_rembourse, _, _) = jeu
+        etab = i_normal.classe.etablissement
+        annee.etablissement = etab
+        annee.save(update_fields=['etablissement'])
+        baker.make('finances.HistoriqueRelance', inscription=i_boursier, canal='SMS')
+
+        monkeypatch.setattr(etats, 'REDEVABLES_PAR_PAGE', 2)
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab)
+        client.force_login(user)
+
+        p1 = client.get(reverse('finances:liste_redevables'))
+        assert p1.status_code == 200
+        assert p1.context['nb_redevables'] == 3
+        assert p1.context['total_redevable'] == Decimal('130000')
+        assert len(p1.context['page_obj'].object_list) == 2
+        assert '?page=2' in p1.content.decode()
+
+        p2 = client.get(reverse('finances:liste_redevables'), {'page': 2})
+        assert p2.status_code == 200
+        assert p2.context['nb_redevables'] == 3
+        assert p2.context['total_redevable'] == Decimal('130000')
+        assert len(p2.context['page_obj'].object_list) == 1
+        assert p2.context['page_obj'].object_list[0]['derniere_relance'] is not None
+
+        filtre = client.get(reverse('finances:liste_redevables'), {'classe': str(i_rembourse.classe_id)})
+        assert filtre.status_code == 200
+        assert filtre.context['nb_redevables'] == 1
+        assert filtre.context['total_redevable'] == Decimal('25000')
+        assert client.get(reverse('finances:liste_redevables'), {'classe': 'invalide'}).status_code == 200
+        assert client.get(reverse('finances:liste_redevables_pdf'), {'classe': str(i_rembourse.classe_id)}).status_code == 200
+
     def test_bilan_encaissements_et_pdf(self, jeu, client):
         """Le bilan regroupe les paiements par jour : date_paiement est un DateField,
         TruncDate le faisait échouer sous SQLite (mode autonome)."""

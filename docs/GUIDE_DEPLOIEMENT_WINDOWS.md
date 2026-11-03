@@ -1362,19 +1362,18 @@ C'est une surveillance « chien de garde » : le service alerte quand la sauvega
 (dernière sauvegarde, espace disque, erreurs) puis `logs\surveillance.log`. Si le serveur est injoignable,
 la marche à suivre est celle du chapitre 10.
 
-### 9.7 Vérifier qu'une sauvegarde est restaurable — essai trimestriel (5.47.2)
+### 9.7 Vérifier qu'une sauvegarde est restaurable — essai trimestriel (5.47.2 / 5.47.8)
 
 Une sauvegarde jamais restaurée n'est pas une sauvegarde : fichier tronqué, phrase secrète perdue,
-disque défaillant ne se voient qu'au moment où l'on en a besoin. `installer\tester-restauration.ps1`
-fait cet essai **sans toucher à la production** : il importe la dernière sauvegarde dans une base
-temporaire (`<DB_NAME>_test_restauration`), compte les tables, les élèves et les paiements, puis
-supprime cette base. L'application reste en marche.
+disque défaillant ne se voient qu'au moment où l'on en a besoin. Le lanceur `tester-restauration.bat`
+(qui appelle `installer\tester-restauration.ps1`) fait cet essai **sans toucher à la production** :
+il importe la dernière sauvegarde dans une base temporaire (`<DB_NAME>_test_restauration`), compte
+les tables, les élèves et les paiements, puis supprime cette base. L'application reste en marche.
 
-**Une fois par trimestre**, dans un `cmd` :
+**Une fois par trimestre**, double-cliquer sur `C:\YELEN-SCHOOL\tester-restauration.bat` ou lancer dans un `cmd` :
 
 ```
-cd /d C:\YELEN-SCHOOL
-powershell -NoProfile -ExecutionPolicy Bypass -File installer\tester-restauration.ps1
+C:\YELEN-SCHOOL\tester-restauration.bat
 ```
 
 Sortie attendue :

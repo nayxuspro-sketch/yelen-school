@@ -16,6 +16,10 @@ updates:
       python-mineures:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    ignore:
+      # botocore impose encore python-dateutil<3.0.0,>=2.1 : ignorer >=3.0.0 tant que cette borne tient.
+      - dependency-name: "python-dateutil"
+        versions: [">= 3.0.0"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
