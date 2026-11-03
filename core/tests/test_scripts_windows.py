@@ -79,3 +79,52 @@ def test_le_guide_enseigne_la_saisie_de_la_cle_tailscale_dans_l_application():
     assert 'Ne jamais cocher' in texte and 'Ephemeral' in texte
     assert 'Disable key expiry' in texte
     assert 'Éphémère' in texte and 'Cheminée' in texte  # lecture des badges de la liste Machines
+
+
+# ── Mise à jour hors ligne (5.47.3) ──────────────────────────────────────────
+
+def test_mise_a_jour_hors_ligne_verifie_l_empreinte_avant_tout():
+    """Une archive de mise à jour n'est utilisée qu'après vérification de son empreinte SHA-256, et cette
+    vérification passe AVANT la sauvegarde et avant toute écriture : une archive altérée ne change rien."""
+    script = (RACINE / 'installer' / 'mettre-a-jour.ps1').read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+
+    assert '[string]$DepuisArchive' in script and '[string]$Empreinte' in script
+    assert 'Get-FileHash -LiteralPath $Chemin -Algorithm SHA256' in script
+    assert "if ($reel -ne $attendu)" in script and 'Mise à jour annulée' in script
+    # Empreinte absente ou mal formée : refus explicite, jamais de passage silencieux.
+    assert 'Empreinte SHA-256 absente' in script and 'Empreinte SHA-256 mal formée' in script
+
+    verification = script.index('$ArchivePath = Resolve-ArchiveMiseAJour')
+    sauvegarde = script.index('if (-not $SansSauvegarde)')
+    fusion = script.index('git merge --ff-only FETCH_HEAD')
+    assert verification < sauvegarde < fusion, 'empreinte → sauvegarde → fusion'
+
+
+def test_mise_a_jour_hors_ligne_utilise_le_bundle_et_reste_compatible_git():
+    """L'archive est un bundle git : elle emprunte exactement le chemin de GitHub (fetch puis avance rapide),
+    ce qui conserve le retour arrière et la détection « déjà à jour »."""
+    script = (RACINE / 'installer' / 'mettre-a-jour.ps1').read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+
+    assert 'git -C $Root bundle verify --quiet $Chemin' in script, 'vérification indépendante du répertoire courant'
+    assert 'git fetch --quiet $ArchivePath main' in script
+    assert 'git fetch --quiet origin main' in script, 'le chemin GitHub doit rester intact'
+    # Le message de panne réseau doit indiquer la solution hors ligne.
+    assert '-DepuisArchive pour une mise à jour hors ligne' in script
+
+    bat = (RACINE / 'mettre-a-jour.bat').read_text(encoding='utf-8')
+    assert '%*' in bat, 'les options doivent être transmises au script PowerShell'
+
+
+def test_outil_editeur_produit_une_archive_verifiable():
+    """Côté éditeur, l'archive et son empreinte sont produites ensemble et le bundle est contrôlé avant livraison."""
+    script = (RACINE / 'installer' / 'outils-editeur' / 'creer-archive-mise-a-jour.ps1') \
+        .read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+
+    assert 'git' in script and "'bundle', 'create'" in script
+    assert 'bundle verify' in script and 'ne pas le livrer' in script
+    assert 'Get-FileHash -LiteralPath $archive -Algorithm SHA256' in script
+    assert '"$archive.sha256"' in script
+    # Format lisible par `sha256sum -c` : empreinte, deux espaces, nom du fichier.
+    assert '"$empreinte  $nom"' in script
+    # Un fichier non suivi ne part pas dans le bundle : il ne doit pas bloquer l'éditeur.
+    assert '--untracked-files=no' in script

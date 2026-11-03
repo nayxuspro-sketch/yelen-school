@@ -10,13 +10,23 @@
     Ne pas lancer installer\backup-windows.ps1 avant la mise à jour.
 .PARAMETER DelaiAttente
     Secondes accordées à la nouvelle version pour répondre sur /health/ (migrations comprises).
+.PARAMETER DepuisArchive
+    Mise à jour HORS LIGNE : archive fournie par l'éditeur (fichier .bundle) au lieu de GitHub.
+    L'empreinte SHA-256 est vérifiée avant toute écriture ; en cas d'écart, rien n'est appliqué.
+.PARAMETER Empreinte
+    Empreinte SHA-256 attendue de l'archive (64 caractères hexadécimaux). À défaut, le fichier
+    <archive>.sha256 placé à côté de l'archive est lu.
+.EXAMPLE
+    .\mettre-a-jour.bat -DepuisArchive .\yelen-school-5.47.3.bundle
 #>
 
 [CmdletBinding()]
 param(
     [switch]$SansSauvegarde,
     [ValidateRange(10, 3600)]
-    [int]$DelaiAttente = 180
+    [int]$DelaiAttente = 180,
+    [string]$DepuisArchive = '',
+    [string]$Empreinte = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -94,6 +104,37 @@ function Wait-ForHealth {
     return $false
 }
 
+function Resolve-ArchiveMiseAJour {
+    # Archive de mise à jour hors ligne (bundle git) : l'empreinte SHA-256 est vérifiée avant tout usage,
+    # puis le bundle est contrôlé (git bundle verify, qui exige aussi ses prérequis dans le dépôt).
+    # Une archive absente, altérée ou incomplète arrête la mise à jour AVANT la sauvegarde et toute écriture.
+    param([string]$Chemin, [string]$Empreinte)
+    if (-not [System.IO.Path]::IsPathRooted($Chemin)) { $Chemin = Join-Path $Root $Chemin }
+    if (-not (Test-Path -LiteralPath $Chemin)) { throw "Archive introuvable : $Chemin" }
+    $nom = Split-Path -Leaf $Chemin
+    $attendu = ($Empreinte -replace '\s', '').ToLower()
+    $fichierEmpreinte = "$Chemin.sha256"
+    if (-not $attendu -and (Test-Path -LiteralPath $fichierEmpreinte)) {
+        $ligne = Get-Content -LiteralPath $fichierEmpreinte -TotalCount 1
+        $attendu = (($ligne -split '\s+')[0] -replace '\s', '').ToLower()
+    }
+    if (-not $attendu) {
+        throw "Empreinte SHA-256 absente : placer « $nom.sha256 » à côté de l'archive, ou indiquer -Empreinte."
+    }
+    if ($attendu -notmatch '^[0-9a-f]{64}$') {
+        throw "Empreinte SHA-256 mal formée : 64 caractères hexadécimaux attendus."
+    }
+    $reel = (Get-FileHash -LiteralPath $Chemin -Algorithm SHA256).Hash.ToLower()
+    if ($reel -ne $attendu) {
+        throw "Empreinte SHA-256 incorrecte : archive altérée ou incomplète. Mise à jour annulée, rien n'a été modifié."
+    }
+    Write-Log "Empreinte SHA-256 vérifiée : $reel"
+    if ((Invoke-Native { git -C $Root bundle verify --quiet $Chemin }) -ne 0) {
+        throw "L'archive n'est pas une mise à jour YELEN SCHOOL valide : mise à jour annulée."
+    }
+    return $Chemin
+}
+
 function Restore-PreviousVersion {
     # Rétablit le code précédent et, si l'image a déjà été reconstruite, la reconstruit et redémarre.
     param([string]$Commit, [bool]$Rebuild)
@@ -127,9 +168,17 @@ try {
     $versionAvant = Get-VersionAt 'HEAD'
     Write-Log "Version installée : $versionAvant ($($commitAvant.Substring(0, 7)))"
 
-    Write-Log 'Recherche d''une nouvelle version (GitHub, branche main)...'
-    if ((Invoke-Native { git fetch --quiet origin main }) -ne 0) {
-        throw 'GitHub injoignable : vérifier la connexion Internet puis réessayer.'
+    if ($DepuisArchive) {
+        $ArchivePath = Resolve-ArchiveMiseAJour -Chemin $DepuisArchive -Empreinte $Empreinte
+        Write-Log "Mise à jour hors ligne depuis l'archive : $(Split-Path -Leaf $ArchivePath)"
+        if ((Invoke-Native { git fetch --quiet $ArchivePath main }) -ne 0) {
+            throw 'Archive inutilisable (branche main absente ou dépôt incomplet) : mise à jour annulée.'
+        }
+    } else {
+        Write-Log 'Recherche d''une nouvelle version (GitHub, branche main)...'
+        if ((Invoke-Native { git fetch --quiet origin main }) -ne 0) {
+            throw 'GitHub injoignable : vérifier la connexion Internet puis réessayer, ou utiliser -DepuisArchive pour une mise à jour hors ligne.'
+        }
     }
     $commitCible = Get-GitOutput @('rev-parse', 'FETCH_HEAD')
     if ($commitCible -eq $commitAvant) {

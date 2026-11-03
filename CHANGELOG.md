@@ -3,6 +3,33 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.3 — 2026-11-02
+
+- **Mise à jour sans Internet.** L'école ne pouvait se mettre à jour que par GitHub : une coupure de
+  l'opérateur ou une panne de DNS (`Could not resolve host: github.com`) bloquait tout, la production
+  restant sur sa version du moment. `mettre-a-jour.bat -DepuisArchive <archive>` applique désormais une
+  archive de version fournie par l'éditeur, **sans réseau**.
+- L'archive est un bundle git : elle emprunte **exactement le même chemin** que GitHub (`fetch` puis
+  avance rapide), donc la sauvegarde préalable, le contrôle `/health/` et le **retour arrière automatique**
+  restent inchangés. Aucune nouvelle logique de copie de fichiers à maintenir.
+- **Empreinte SHA-256 obligatoire**, vérifiée *avant* la sauvegarde et avant toute écriture : archive
+  absente, incomplète, altérée ou mal formée → arrêt immédiat, « rien n'a été modifié ». Puis
+  `git bundle verify` contrôle que l'archive est bien une mise à jour YELEN SCHOOL applicable sur la
+  version installée.
+- Panne réseau : le message d'erreur indique maintenant la solution hors ligne au lieu de laisser
+  l'administrateur devant « GitHub injoignable ».
+- Nouvel outil éditeur `installer\outils-editeur\creer-archive-mise-a-jour.ps1` : produit
+  `yelen-school-<version>.bundle` (26 Mo environ) et son `.sha256`, refuse un dépôt modifié, ne livre rien
+  si `git bundle verify` échoue, et affiche les commandes à communiquer.
+- Guide de déploiement **§8.2** (nouvelle section) : ce que reçoit l'école, les cinq refus prévus avec la
+  cause et la conduite à tenir ; anciens §8.2 et §8.3 deviennent §8.3 et §8.4.
+- Éprouvé de bout en bout : archive d'une version publiée appliquée sur un clone en 5.47.2 → 5.47.3 sans
+  réseau, second passage « déjà à jour » sans effet, et cinq cas de refus (archive absente, empreinte
+  absente, mal formée, incorrecte, bundle étranger).
+- Tests : 3 garde-fous dans `core/tests/test_scripts_windows.py` — l'empreinte est vérifiée avant la
+  sauvegarde et avant la fusion, le bundle utilise `git -C`, le chemin GitHub reste intact, et l'archive
+  éditeur porte une empreinte au format `sha256sum`.
+
 ## 5.47.2 — 2026-11-02
 
 - **Une sauvegarde jamais restaurée n'est pas une sauvegarde.** Nouveau `installer\tester-restauration.ps1` :

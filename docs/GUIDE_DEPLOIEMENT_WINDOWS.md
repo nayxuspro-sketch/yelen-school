@@ -29,6 +29,7 @@
 7. [Restauration après incident](#7-restauration-après-incident)
 8. [Mise à jour sans perte de données](#8-mise-à-jour-sans-perte-de-données)
    - [8.1 Mise à jour en un clic : `mettre-a-jour.bat`](#81-mise-à-jour-en-un-clic--mettre-a-jourbat)
+   - [8.2 Mise à jour sans Internet (archive hors ligne)](#82-mise-à-jour-sans-internet-archive-hors-ligne-5473)
 9. [Accès depuis le réseau local](#9-accès-depuis-le-réseau-local)
    - [9.4 Accès à distance — portail parents par Internet](#94-accès-à-distance--portail-parents-par-internet-5460)
    - [9.5 Accès du personnel par Tailscale Serve (sans Funnel)](#95-accès-du-personnel-par-tailscale-serve-sans-funnel-5467)
@@ -919,7 +920,70 @@ Les postes déjà connectés reçoivent la nouvelle version automatiquement : le
 identifié par la version et la page se recharge d'elle-même à la navigation suivante (plus de Ctrl+F5).
 La version en service est visible en bas du menu latéral, sur la page de connexion et dans `/health/`.
 
-### 8.2 Prérequis et procédure manuelle équivalente
+### 8.2 Mise à jour sans Internet (archive hors ligne) — 5.47.3
+
+La mise à jour normale lit GitHub. Quand la connexion manque (coupure de l'opérateur, panne de DNS —
+symptôme : `fatal: unable to access ... Could not resolve host: github.com`), l'éditeur fournit une
+**archive de version** que l'école applique localement. Le reste de la procédure est identique :
+sauvegarde, reconstruction, contrôle `/health/`, retour arrière automatique.
+
+**Ce que l'éditeur vous remet** — deux fichiers, à copier **ensemble** :
+
+```
+yelen-school-5.47.3.bundle          code de la version (26 Mo environ, aucune donnée de l'école)
+yelen-school-5.47.3.bundle.sha256   empreinte qui prouve que le fichier est intact
+```
+
+**Ce que vous faites** — `cmd` :
+
+```
+cd /d C:\YELEN-SCHOOL
+mettre-a-jour.bat -DepuisArchive yelen-school-5.47.3.bundle
+```
+
+L'archive peut être désignée par un chemin complet (`D:\livraisons\yelen-school-5.47.3.bundle`).
+
+**Ce que fait le script, dans cet ordre** :
+
+1. **empreinte SHA-256** de l'archive comparée à celle du fichier `.sha256` (ou à l'option `-Empreinte`
+   si la vôtre a été communiquée séparément) — un écart arrête tout, **rien n'a été modifié** ;
+2. contrôle `git bundle verify` : l'archive est bien une mise à jour YELEN SCHOOL, complète, et
+   applicable directement sur votre version ;
+3. lecture de la version contenue ; si elle est identique à celle installée : « déjà à jour », arrêt ;
+4. sauvegarde chiffrée, récupération du code depuis l'archive, reconstruction, `/health/` — étapes
+   **identiques** à `§8.1`, avec le même retour arrière en cas d'échec.
+
+```
+2026-11-02 23:40:12 Mise à jour hors ligne depuis l'archive : yelen-school-5.47.3.bundle
+2026-11-02 23:40:13 Empreinte SHA-256 vérifiée : 833ac473830dee2004d8e065d36e51dc07e752526addd006114c29e908fc32e9
+2026-11-02 23:40:14 Nouvelle version disponible : 5.47.2 -> 5.47.3 (1dbb797)
+```
+
+**Refus prévus, avec la raison écrite** :
+
+| Message | Cause | Que faire |
+|---|---|---|
+| `Empreinte SHA-256 absente` | fichier `.sha256` non copié | recopier les deux fichiers, ou passer `-Empreinte <64 caractères>` |
+| `Empreinte SHA-256 incorrecte` | transfert incomplet (clé USB retirée trop tôt, e-mail tronqué) | recopier l'archive ; **ne jamais forcer** |
+| `Archive introuvable` | chemin ou nom erroné | vérifier le nom exact du fichier |
+| `L'archive n'est pas une mise à jour YELEN SCHOOL valide` | fichier d'un autre produit, ou version trop ancienne pour l'avance rapide | demander l'archive de la version intermédiaire à l'éditeur |
+| `Des fichiers ont été modifiés localement` | dépôt modifié sur le serveur | `git status` puis §8.4 |
+
+> **Sécurité** : demandez l'empreinte par un autre canal que le fichier (téléphone, SMS). C'est elle qui
+> prouve que l'archive n'a pas été remplacée en route. Le script refuse toute archive dont l'empreinte
+> diffère, même d'un caractère.
+
+**Côté éditeur** — créer l'archive, depuis un clone à jour de `main`, après le commit et le tag :
+
+```powershell
+.\installer\outils-editeur\creer-archive-mise-a-jour.ps1 -Sortie D:\livraisons
+```
+
+Le script refuse un dépôt sale et ne livre rien si `git bundle verify` échoue ; il affiche la taille,
+l'empreinte et les deux commandes à communiquer. `-SansHistorique` produit une archive plus légère,
+utilisable seulement si l'école a la même généalogie.
+
+### 8.3 Prérequis et procédure manuelle équivalente
 
 `C:\YELEN-SCHOOL` doit être un clone Git (`git -C C:\YELEN-SCHOOL rev-parse --is-inside-work-tree`
 répond `true`) avec Git et Docker Desktop dans le `PATH`. Ne jamais remplacer `.env` par
@@ -941,14 +1005,14 @@ laisse `YELEN_HOST_ID` vide et la licence liée au serveur est refusée — §3.
 
 Ne pas utiliser `docker compose down -v`, `docker volume prune` ou la suppression manuelle de `yelen_postgres_data` et `yelen_media`. Ces commandes peuvent supprimer définitivement les données.
 
-### 8.3 Retour arrière manuel
+### 8.4 Retour arrière manuel
 
 Si la nouvelle version ne démarre pas et que le retour automatique de `mettre-a-jour.bat` n'a pas abouti :
 
 1. arrêter les utilisateurs ;
 2. consulter `logs\mise-a-jour.log` et `docker compose -f docker-compose.client.yml logs --tail=100 web` ;
 3. remettre le code précédent : `git reset --hard <hash affiché dans le journal>` ;
-4. reconstruire et redémarrer (`build` puis `start-local.ps1`, §8.2) ;
+4. reconstruire et redémarrer (`build` puis `start-local.ps1`, §8.3) ;
 5. restaurer la paire créée avant la mise à jour uniquement si les migrations ont rendu la base incompatible.
 
 Une sauvegarde est indispensable avant toute migration de schéma.
