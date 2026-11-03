@@ -1,0 +1,5 @@
+"""Modèles du module Finances — façade rétrocompatible."""
+from .gestion import TypeDepense, StatutDepense, CategorieDepense, BudgetAnnuel, Depense, OperateurMobileMoney, ReleveMobileMoney, LigneReleve, TypeService, PeriodiciteService, CODES_RUBRIQUE_SERVICE, ServiceAnnexe, FormuleService, AbonnementService, OrigineCreance, Creance, ModePenalite, ParametresFinances, ClotureCaisse
+from .scolarite import TypeFrais, FraisScolarite, ModePaiement, Paiement, Remboursement, Echeancier, TypeReduction, SourceBourse, TypeBourse, BourseEleve, CanalRelance, HistoriqueRelance, DemandePaiementMobile
+
+__all__ = ['TypeFrais', 'FraisScolarite', 'ModePaiement', 'Paiement', 'Remboursement', 'Echeancier', 'TypeReduction', 'SourceBourse', 'TypeBourse', 'BourseEleve', 'CanalRelance', 'HistoriqueRelance', 'DemandePaiementMobile', 'TypeDepense', 'StatutDepense', 'CategorieDepense', 'BudgetAnnuel', 'Depense', 'OperateurMobileMoney', 'ReleveMobileMoney', 'LigneReleve', 'TypeService', 'PeriodiciteService', 'CODES_RUBRIQUE_SERVICE', 'ServiceAnnexe', 'FormuleService', 'AbonnementService', 'OrigineCreance', 'Creance', 'ModePenalite', 'ParametresFinances', 'ClotureCaisse']

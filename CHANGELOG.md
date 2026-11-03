@@ -3,6 +3,22 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.48.1 — 2026-11-03
+
+- **Allègement de `core/templates/core/base.html` (audit P1-8)** : extraction de la barre latérale vers
+  `core/templates/core/partials/sidebar.html` (`base.html` passe de `1 223` à `433` lignes, `0` attribut
+  `style=` inline).
+- **Découpage rétrocompatible des 5 modules Python ≥ 1 000 lignes (audit P2-16b)** — `0` migration, `0`
+  fichier applicatif `.py` ≥ 1 000 lignes :
+  - `licences/models.py` (`1 350` l.) → `licences/models/` (`licence.py`, `activations_audit.py`, `__init__.py`
+    + mise à jour de la vérification d'intégrité `licences/boot_check.py`).
+  - `core/chatbot.py` (`1 116` l.) → `core/chatbot/` (`guide.py`, `requetes.py`, `__init__.py`).
+  - `personnel/views.py` (`1 101` l.) → `personnel/views/` (`membres.py`, `paie_conges.py`, `__init__.py`).
+  - `finances/models.py` (`1 025` l.) → `finances/models/` (`scolarite.py`, `gestion.py`, `__init__.py`).
+  - `communication/views.py` (`1 000` l.) → `communication/views/` (`commun.py`, `messages.py`,
+    `campagnes_recus.py`, `__init__.py`).
+- Garde-fou statique permanent : `core/tests/test_architecture_modules.py`.
+
 ## 5.48.0 — 2026-11-03
 
 - **Compteur d'usage anonyme par module dans *Exploitation* (audit P1-10).**

@@ -64,7 +64,7 @@ def _check_antitamper() -> dict:
 
         # 3. Vérifier que les fichiers critiques existent et ne sont pas vides / stub
         base_dir = Path(__file__).parent
-        critical_files = ['models.py', 'middleware.py', 'boot_check.py', 'heartbeat.py']
+        critical_files = ['models/licence.py', 'models/activations_audit.py', 'middleware.py', 'boot_check.py', 'heartbeat.py']
         for fname in critical_files:
             fpath = base_dir / fname
             if not fpath.exists():

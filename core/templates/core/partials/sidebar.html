@@ -1,0 +1,792 @@
+{% load static static_v droits_tags %}
+  <aside id="sidebar" class="sb-modern">
+
+    {# ── Header Logo ── #}
+    <div class="sb-header">
+      <div class="sb-logo-modern">
+        <div class="sb-logo-icon">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+          </svg>
+        </div>
+        <div class="sb-logo-text">
+          <span class="sb-logo-name">YELEN SCHOOL</span>
+          <span class="sb-logo-tagline">Gestion scolaire</span>
+        </div>
+      </div>
+    </div>
+
+    {# ── Utilisateur ── #}
+    {% if user.is_authenticated %}
+    <a href="{% url 'accounts:profile' %}" class="sb-user-modern" title="Mon profil — informations et mot de passe">
+      <div class="sb-avatar-modern">{{ user.get_full_name|default:user.username|first|upper }}</div>
+      <div class="sb-user-details">
+        <span class="sb-user-name">{{ user.get_full_name|default:user.username }}</span>
+        <span class="sb-user-email">{{ user.email }}</span>
+      </div>
+      <div class="sb-online-dot"></div>
+    </a>
+    {% endif %}
+
+    {# ── Recherche ── #}
+    {% if user.is_authenticated %}
+    <div class="sb-search-modern">
+      <input type="search" class="sb-search-input" placeholder="Rechercher..."
+             hx-get="{% url 'core:recherche' %}"
+             hx-trigger="keyup changed delay:300ms"
+             hx-target="#sb-search-drop"
+             name="q"
+             aria-label="Recherche">
+    </div>
+    <div id="sb-search-drop"></div>
+    {% endif %}
+
+    {# ── Navigation ── #}
+    <nav class="sb-nav-modern" aria-label="Navigation principale">
+
+      {# ══ PORTAIL PARENT ══ #}
+      {% if user.role == 'PARENT' %}
+      <a href="{% url 'core:portail_parent' %}" class="sb-item-modern" data-url="/portail/parent/">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9,22 9,12 15,12 15,22"/>
+        </svg>
+        Mon espace famille
+      </a>
+      <div class="nav-separator"></div>
+      <span class="sb-section-modern">Mes enfants</span>
+      {% for eleve in user.eleves_lies.all %}
+      <div class="sb-item-modern is-info">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        {{ eleve.get_nom_complet }}
+      </div>
+      {% empty %}
+      <div class="sb-item-modern is-attenue">
+        Aucun élève associé
+      </div>
+      {% endfor %}
+
+      {# ══ PORTAIL ÉLÈVE ══ #}
+      {% elif user.role == 'ELEVE' %}
+      <a href="{% url 'core:portail_eleve' %}" class="sb-item-modern" data-url="/portail/eleve/">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9,22 9,12 15,12 15,22"/>
+        </svg>
+        Mon espace élève
+      </a>
+      {% with eleve=user.eleves_lies.first %}
+      {% if eleve %}
+      <div class="nav-separator"></div>
+      <span class="sb-section-modern">Ma scolarité</span>
+      <div class="sb-item-modern is-colonne">
+        <span class="sb-eleve-nom">{{ eleve.get_nom_complet }}</span>
+        <span class="sb-eleve-matricule">{{ eleve.matricule|default:"" }}</span>
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      {# ══ NAVIGATION STANDARD (tous les autres rôles) ══ #}
+      {% else %}
+
+      {# Accueil #}
+      <a href="/" class="sb-item-modern" data-url="/">
+          <svg aria-hidden="true" class="sb-icon-modern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9,22 9,12 15,12 15,22"/>
+        </svg>
+        Tableau de bord
+      </a>
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR_RESEAU' or user.role == 'DIRECTEUR' or user.role == 'CENSEUR' %}
+      <a href="{% url 'core:pilotage' %}" class="sb-item-modern" data-url="/pilotage/">
+        <svg aria-hidden="true" class="sb-icon-modern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>
+        </svg>
+        Pilotage
+      </a>
+      {% endif %}
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR_RESEAU' %}
+      <a href="{% url 'etablissements:reseau_dashboard' %}" class="sb-item-modern" data-url="/etablissements/reseau/">
+        <svg aria-hidden="true" class="sb-icon-modern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18"/><path d="M5 21V7l4-4v18"/><path d="M19 21V11l-6-4v14"/><path d="M9 9h1m-1 4h1m-1 4h1m5-4h1m-1 4h1"/>
+        </svg>
+        Réseau
+      </a>
+      {% endif %}
+
+      {# ── SCOLARITÉ ── #}
+      {% if droits_scolarite %}
+      <div class="sb-sep-modern"></div>
+      <span class="sb-section-modern">Scolarité</span>
+      {% endif %}
+
+      {# Inscriptions #}
+      {% if 'inscriptions' in droits_modules %}
+      <button class="accordion-toggle" id="inscriptions-toggle" data-submenu="inscriptions-submenu" data-chevron="inscriptions-chevron" type="button" aria-expanded="false" aria-controls="inscriptions-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Inscriptions
+        </span>
+        <svg aria-hidden="true" id="inscriptions-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="inscriptions-submenu" class="sb-submenu-modern">
+        {% if '/inscriptions/' in droits_fonctionnalites %}
+        <a href="{% url 'inscriptions:eleve_list' %}" class="sb-item-submodern" data-url="/inscriptions/"><span class="sub-item-dot"></span>Élèves</a>
+        {% endif %}
+        {% if '/inscriptions/pre-inscriptions/' in droits_fonctionnalites %}
+        <a href="{% url 'inscriptions:preinscription_list' %}" class="sb-item-submodern" data-url="/inscriptions/pre-inscriptions/"><span class="sub-item-dot"></span>Pré-inscriptions</a>
+        {% endif %}
+        {% if '/inscriptions/reinscription/' in droits_fonctionnalites %}
+        <a href="{% url 'inscriptions:reinscription_list' %}" class="sb-item-submodern" data-url="/inscriptions/reinscription/"><span class="sub-item-dot"></span>Réinscription</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Pédagogie #}
+      {% if 'pedagogie' in droits_modules %}
+      <button class="accordion-toggle" id="pedagogie-toggle" data-submenu="pedagogie-submenu" data-chevron="pedagogie-chevron" type="button" aria-expanded="false" aria-controls="pedagogie-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+            <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+            <path d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
+          </svg>
+          Pédagogie
+        </span>
+        <svg aria-hidden="true" id="pedagogie-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="pedagogie-submenu" class="sb-submenu-modern">
+        {% if '/pedagogie/appreciations/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:appreciations_index' %}" class="sb-item-submodern" data-url="/pedagogie/appreciations/"><span class="sub-item-dot"></span>Appréciations par matière</a>
+        {% endif %}
+        {% if '/pedagogie/competences/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:competences_index' %}" class="sb-item-submodern" data-url="/pedagogie/competences/"><span class="sub-item-dot"></span>Bulletins compétences</a>
+        {% endif %}
+        {% if '/pedagogie/cahier-textes/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:cahier_textes_index' %}" class="sb-item-submodern" data-url="/pedagogie/cahier-textes/"><span class="sub-item-dot"></span>Cahier de textes</a>
+        {% endif %}
+        {% if '/pedagogie/enseignements/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:enseignement_list' %}" class="sb-item-submodern" data-url="/pedagogie/enseignements/"><span class="sub-item-dot"></span>Enseignements</a>
+        {% endif %}
+        {% if '/pedagogie/evaluations/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:evaluation_list' %}" class="sb-item-submodern" data-url="/pedagogie/evaluations/"><span class="sub-item-dot"></span>Évaluations</a>
+        {% endif %}
+        {% if '/pedagogie/matieres/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:matiere_list' %}" class="sb-item-submodern" data-url="/pedagogie/matieres/"><span class="sub-item-dot"></span>Matières</a>
+        {% endif %}
+        {% if '/pedagogie/resultats/moyennes-disciplines/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:moyennes_disciplines' %}" class="sb-item-submodern" data-url="/pedagogie/resultats/moyennes-disciplines/"><span class="sub-item-dot"></span>Moyennes par discipline</a>
+        {% endif %}
+        {% if '/pedagogie/predictions/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:prediction_index' %}" class="sb-item-submodern" data-url="/pedagogie/predictions/"><span class="sub-item-dot"></span>Prédictions examens</a>
+        {% endif %}
+        {% if '/pedagogie/releve-notes/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:releve_notes' %}" class="sb-item-submodern" data-url="/pedagogie/releve-notes/"><span class="sub-item-dot"></span>Relevé de notes</a>
+        {% endif %}
+        {% if '/pedagogie/resultats/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:classe_result_list' %}" class="sb-item-submodern" data-url="/pedagogie/resultats/"><span class="sub-item-dot"></span>Résultats</a>
+        {% endif %}
+        {% if '/pedagogie/risque-decrochage/' in droits_fonctionnalites %}
+        <a href="{% url 'pedagogie:risque_decrochage' %}" class="sb-item-submodern" data-url="/pedagogie/risque-decrochage/"><span class="sub-item-dot"></span>Risque de décrochage</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Bulletins #}
+      {% if 'bulletins' in droits_modules %}
+      <button class="accordion-toggle" id="bulletins-toggle" data-submenu="bulletins-submenu" data-chevron="bulletins-chevron" type="button" aria-expanded="false" aria-controls="bulletins-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Bulletins
+        </span>
+        <svg aria-hidden="true" id="bulletins-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="bulletins-submenu" class="sb-submenu-modern">
+        {% if '/bulletins/annuel/' in droits_fonctionnalites %}
+        <a href="{% url 'bulletins:bulletin_annuel_index' %}" class="sb-item-submodern" data-url="/bulletins/annuel/"><span class="sub-item-dot"></span>Bulletin annuel</a>
+        {% endif %}
+        {% if '/bulletins/' in droits_fonctionnalites %}
+        <a href="{% url 'bulletins:index' %}" class="sb-item-submodern" data-url="/bulletins/"><span class="sub-item-dot"></span>Bulletins trimestriels</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Présences #}
+      {% if 'presences' in droits_modules %}
+      <button class="accordion-toggle" id="presences-toggle" data-submenu="presences-submenu" data-chevron="presences-chevron" type="button" aria-expanded="false" aria-controls="presences-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22,4 12,14.01 9,11.01"/>
+          </svg>
+          Présences
+        </span>
+        <svg aria-hidden="true" id="presences-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="presences-submenu" class="sb-submenu-modern">
+        {% if '/presences/alertes/' in droits_fonctionnalites %}
+        <a href="{% url 'presences:alertes_absences' %}" class="sb-item-submodern" data-url="/presences/alertes/"><span class="sub-item-dot"></span>Alertes d'absences</a>
+        {% endif %}
+        {% if '/presences/' in droits_fonctionnalites %}
+        <a href="{% url 'presences:appel_list' %}" class="sb-item-submodern" data-url="/presences/"><span class="sub-item-dot"></span>Appels</a>
+        {% endif %}
+        {% if '/presences/justifications/' in droits_fonctionnalites %}
+        <a href="{% url 'presences:justification_list' %}" class="sb-item-submodern" data-url="/presences/justifications/"><span class="sub-item-dot"></span>Justifications</a>
+        {% endif %}
+        {% if request|autorise_url:'presences:mes_cours' %}
+        <a href="{% url 'presences:mes_cours' %}" class="sb-item-submodern" data-url="/presences/mes-cours/"><span class="sub-item-dot"></span>Mes cours</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Examens #}
+      {% if 'examens' in droits_modules %}
+      <button class="accordion-toggle" id="examens-toggle" data-submenu="examens-submenu" data-chevron="examens-chevron" type="button" aria-expanded="false" aria-controls="examens-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          Examens
+        </span>
+        <svg aria-hidden="true" id="examens-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="examens-submenu" class="sb-submenu-modern">
+        {% if '/examens/' in droits_fonctionnalites %}
+        <a href="{% url 'examens:session_list' %}" class="sb-item-submodern" data-url="/examens/"><span class="sub-item-dot"></span>Sessions d'examens</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Vie Scolaire #}
+      {% if 'viescolaire' in droits_modules %}
+      <button class="accordion-toggle" id="viescolaire-toggle" data-submenu="viescolaire-submenu" data-chevron="viescolaire-chevron" type="button" aria-expanded="false" aria-controls="viescolaire-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Vie Scolaire
+        </span>
+        <svg aria-hidden="true" id="viescolaire-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="viescolaire-submenu" class="sb-submenu-modern">
+        {% if '/viescolaire/activites/' in droits_fonctionnalites %}
+        <a href="{% url 'viescolaire:activite_list' %}" class="sb-item-submodern" data-url="/viescolaire/activites/"><span class="sub-item-dot"></span>Activités parascolaires</a>
+        {% endif %}
+        {% if '/viescolaire/appels-decision/' in droits_fonctionnalites %}
+        <a href="{% url 'viescolaire:appel_decision_list' %}" class="sb-item-submodern" data-url="/viescolaire/appels-decision/"><span class="sub-item-dot"></span>Appels de décision</a>
+        {% endif %}
+        {% if '/viescolaire/discipline/capital/' in droits_fonctionnalites %}
+        <a href="{% url 'viescolaire:capital_points_list' %}" class="sb-item-submodern" data-url="/viescolaire/discipline/capital/"><span class="sub-item-dot"></span>Capital points discipline</a>
+        {% endif %}
+        {% if '/viescolaire/conseils/' in droits_fonctionnalites %}
+        <a href="{% url 'viescolaire:conseil_list' %}" class="sb-item-submodern" data-url="/viescolaire/conseils/"><span class="sub-item-dot"></span>Conseils de classe</a>
+        {% endif %}
+        {% if '/viescolaire/emploi-du-temps/' in droits_fonctionnalites %}
+        <a href="{% url 'viescolaire:emploi_du_temps_index' %}" class="sb-item-submodern" data-url="/viescolaire/emploi-du-temps/"><span class="sub-item-dot"></span>Emploi du temps</a>
+        {% endif %}
+        {% if '/viescolaire/fiches-suivi/' in droits_fonctionnalites %}
+        <a href="{% url 'viescolaire:fiches_suivi_list' %}" class="sb-item-submodern" data-url="/viescolaire/fiches-suivi/"><span class="sub-item-dot"></span>Fiches de suivi</a>
+        {% endif %}
+        {% comment %}
+        {% if '/viescolaire/emploi-du-temps/professeur/' in droits_fonctionnalites %}
+        <a href="{% url 'viescolaire:emploi_du_temps_prof_index' %}" class="sb-item-submodern" data-url="/viescolaire/emploi-du-temps/professeur/"><span class="sub-item-dot"></span>Par professeur</a>
+        {% endif %}
+        {% endcomment %}
+        {% if '/viescolaire/sanctions/' in droits_fonctionnalites %}
+        <a href="{% url 'viescolaire:sanction_list' %}" class="sb-item-submodern" data-url="/viescolaire/sanctions/"><span class="sub-item-dot"></span>Sanctions disciplinaires</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# ── ADMINISTRATION ── #}
+      {% if droits_administration %}
+      <div class="sb-sep-modern"></div>
+      <span class="sb-section-modern">Administration</span>
+      {% endif %}
+
+      {# Personnel #}
+      {% if 'personnel' in droits_modules %}
+      <button class="accordion-toggle" id="personnel-toggle" data-submenu="personnel-submenu" data-chevron="personnel-chevron" type="button" aria-expanded="false" aria-controls="personnel-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Personnel
+        </span>
+        <svg aria-hidden="true" id="personnel-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="personnel-submenu" class="sb-submenu-modern">
+        {% if '/personnel/absences/' in droits_fonctionnalites %}
+        <a href="{% url 'personnel:absence_list' %}" class="sb-item-submodern" data-url="/personnel/absences/"><span class="sub-item-dot"></span>Absences</a>
+        {% endif %}
+        {% if '/personnel/conges/' in droits_fonctionnalites %}
+        <a href="{% url 'personnel:conge_list' %}" class="sb-item-submodern" data-url="/personnel/conges/"><span class="sub-item-dot"></span>Congés</a>
+        {% endif %}
+        {% if '/personnel/' in droits_fonctionnalites %}
+        <a href="{% url 'personnel:personnel_list' %}" class="sb-item-submodern" data-url="/personnel/"><span class="sub-item-dot"></span>Liste du personnel</a>
+        {% endif %}
+        {% if '/personnel/salaires/' in droits_fonctionnalites %}
+        <a href="{% url 'personnel:paie_mois' %}" class="sb-item-submodern" data-url="/personnel/salaires/paie/"><span class="sub-item-dot"></span>Paie du mois</a>
+        {% endif %}
+        {% if '/personnel/salaires/' in droits_fonctionnalites %}
+        <a href="{% url 'personnel:salaire_list' %}" class="sb-item-submodern" data-url="/personnel/salaires/"><span class="sub-item-dot"></span>Salaires</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Finances #}
+      {% if 'finances' in droits_modules %}
+      <button class="accordion-toggle" id="finances-toggle" data-submenu="finances-submenu" data-chevron="finances-chevron" type="button" aria-expanded="false" aria-controls="finances-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          Finances
+        </span>
+        <svg aria-hidden="true" id="finances-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="finances-submenu" class="sb-submenu-modern">
+        {% if '/finances/bilan/encaissements/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:bilan_encaissements' %}" class="sb-item-submodern" data-url="/finances/bilan/encaissements/"><span class="sub-item-dot"></span>Bilan encaissements</a>
+        {% endif %}
+        {% if '/finances/bourses/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:boursiers_list' %}" class="sb-item-submodern" data-url="/finances/bourses/"><span class="sub-item-dot"></span>Bourses &amp; Aides</a>
+        {% endif %}
+        {% if '/finances/budget/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:budget_previsionnel' %}" class="sb-item-submodern" data-url="/finances/budget/"><span class="sub-item-dot"></span>Budget prévisionnel</a>
+        {% endif %}
+        {% if '/finances/depenses/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:depense_list' %}" class="sb-item-submodern" data-url="/finances/depenses/"><span class="sub-item-dot"></span>Dépenses</a>
+        {% endif %}
+        {% if '/finances/exoneres/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:liste_exoneres' %}" class="sb-item-submodern" data-url="/finances/exoneres/"><span class="sub-item-dot"></span>Exonérés</a>
+        {% endif %}
+        {% if '/finances/familles/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:familles_list' %}" class="sb-item-submodern" data-url="/finances/familles/"><span class="sub-item-dot"></span>Familles</a>
+        {% endif %}
+        {% if '/finances/relances/historique/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:historique_relances' %}" class="sb-item-submodern" data-url="/finances/relances/historique/"><span class="sub-item-dot"></span>Historique relances</a>
+        {% endif %}
+        {% if '/finances/caisse/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:journal_caisse' %}" class="sb-item-submodern" data-url="/finances/caisse/"><span class="sub-item-dot"></span>Journal de caisse</a>
+        {% endif %}
+        {% if '/finances/mobile-money/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:mobile_money_list' %}" class="sb-item-submodern" data-url="/finances/mobile-money/"><span class="sub-item-dot"></span>Mobile Money</a>
+        {% endif %}
+        {% if '/finances/paiements/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:paiement_list' %}" class="sb-item-submodern" data-url="/finances/paiements/"><span class="sub-item-dot"></span>Paiements</a>
+        {% endif %}
+        {% if '/finances/parametres/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:parametres_finances' %}" class="sb-item-submodern" data-url="/finances/parametres/"><span class="sub-item-dot"></span>Paramètres financiers</a>
+        {% endif %}
+        {% if '/finances/redevables/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:liste_redevables' %}" class="sb-item-submodern" data-url="/finances/redevables/"><span class="sub-item-dot"></span>Redevables</a>
+        {% endif %}
+        {% if '/finances/relances/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:relance_paiement' %}" class="sb-item-submodern" data-url="/finances/relances/"><span class="sub-item-dot"></span>Relances</a>
+        {% endif %}
+        {% if '/finances/services/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:service_list' %}" class="sb-item-submodern" data-url="/finances/services/"><span class="sub-item-dot"></span>Services annexes</a>
+        {% endif %}
+        {% if '/finances/budget/tresorerie/' in droits_fonctionnalites %}
+        <a href="{% url 'finances:tableau_bord_budget' %}" class="sb-item-submodern" data-url="/finances/budget/tresorerie/"><span class="sub-item-dot"></span>Trésorerie</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Vacations #}
+      {% if 'vacations' in droits_modules %}
+      <button class="accordion-toggle" id="vacations-toggle" data-submenu="vacations-submenu" data-chevron="vacations-chevron" type="button" aria-expanded="false" aria-controls="vacations-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Vacations
+        </span>
+        <svg aria-hidden="true" id="vacations-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="vacations-submenu" class="sb-submenu-modern">
+        {% if '/vacations/bulletins/' in droits_fonctionnalites %}
+        <a href="{% url 'vacations:bulletin_list' %}" class="sb-item-submodern" data-url="/vacations/bulletins/"><span class="sub-item-dot"></span>Bulletins de vacation</a>
+        {% endif %}
+        {% if '/vacations/' in droits_fonctionnalites %}
+        <a href="{% url 'vacations:contrat_list' %}" class="sb-item-submodern" data-url="/vacations/"><span class="sub-item-dot"></span>Contrats</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Communication bidirectionnelle #}
+      {% if 'communication' in droits_modules %}
+      <button class="accordion-toggle" id="communication-toggle" data-submenu="communication-submenu" data-chevron="communication-chevron" type="button" aria-expanded="false" aria-controls="communication-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          </svg>
+          Communication
+        </span>
+        <svg aria-hidden="true" id="communication-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="communication-submenu" class="sb-submenu-modern">
+        {% if '/communication/campagnes/' in droits_fonctionnalites %}
+        <a href="{% url 'communication:campagne_list' %}" class="sb-item-submodern" data-url="/communication/campagnes/"><span class="sub-item-dot"></span>Campagnes SMS</a>
+        {% endif %}
+        {% if '/communication/commandes-sms/' in droits_fonctionnalites %}
+        <a href="{% url 'communication:commandes_sms' %}" class="sb-item-submodern" data-url="/communication/commandes-sms/"><span class="sub-item-dot"></span>Commandes SMS</a>
+        {% endif %}
+        {% if '/communication/' in droits_fonctionnalites %}
+        <a href="{% url 'communication:message_list' %}" class="sb-item-submodern" data-url="/communication/"><span class="sub-item-dot"></span>Messages parents</a>
+        {% endif %}
+        {% if '/communication/messages-recus/' in droits_fonctionnalites %}
+        <a href="{% url 'communication:messages_recus' %}" class="sb-item-submodern" data-url="/communication/messages-recus/"><span class="sub-item-dot"></span>Messages reçus
+          <span hx-get="{% url 'communication:messages_recus_compteur' %}" hx-trigger="load, every 60s" hx-target="this" hx-swap="innerHTML"></span>
+        </a>
+        {% endif %}
+        {% if '/communication/sms-direct/' in droits_fonctionnalites %}
+        <a href="{% url 'communication:sms_direct' %}" class="sb-item-submodern" data-url="/communication/sms-direct/"><span class="sub-item-dot"></span>SMS Direct</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Manuels scolaires #}
+      {% if 'manuels' in droits_modules %}
+      <button class="accordion-toggle" id="manuels-toggle" data-submenu="manuels-submenu" data-chevron="manuels-chevron" type="button" aria-expanded="false" aria-controls="manuels-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          Manuels
+        </span>
+        <svg aria-hidden="true" id="manuels-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="manuels-submenu" class="sb-submenu-modern">
+        {% if '/manuels/attributions/' in droits_fonctionnalites %}
+        <a href="{% url 'manuels:attributions_list' %}" class="sb-item-submodern" data-url="/manuels/attributions/"><span class="sub-item-dot"></span>Attributions</a>
+        {% endif %}
+        {% if '/manuels/' in droits_fonctionnalites %}
+        <a href="{% url 'manuels:catalogue' %}" class="sb-item-submodern" data-url="/manuels/"><span class="sub-item-dot"></span>Catalogue</a>
+        {% endif %}
+        {% if '/manuels/non-rendus/' in droits_fonctionnalites %}
+        <a href="{% url 'manuels:non_rendus' %}" class="sb-item-submodern" data-url="/manuels/non-rendus/"><span class="sub-item-dot"></span>Non rendus</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Documents #}
+      {% if 'documents' in droits_modules %}
+      <button class="accordion-toggle" id="documents-toggle" data-submenu="documents-submenu" data-chevron="documents-chevron" type="button" aria-expanded="false" aria-controls="documents-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10,9 9,9 8,9"/>
+          </svg>
+          Documents
+        </span>
+        <svg aria-hidden="true" id="documents-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="documents-submenu" class="sb-submenu-modern">
+        {% if '/documents/circulaires/' in droits_fonctionnalites %}
+        <a href="{% url 'documents:circulaire_form' %}" class="sb-item-submodern" data-url="/documents/circulaires/"><span class="sub-item-dot"></span>Circulaires</a>
+        {% endif %}
+        {% if '/documents/convocations/' in droits_fonctionnalites %}
+        <a href="{% url 'documents:convocation_form' %}" class="sb-item-submodern" data-url="/documents/convocations/"><span class="sub-item-dot"></span>Convocations</a>
+        {% endif %}
+        {% if '/documents/personnel/' in droits_fonctionnalites %}
+        <a href="{% url 'documents:liste_personnel_selector' %}" class="sb-item-submodern" data-url="/documents/personnel/"><span class="sub-item-dot"></span>Liste du personnel</a>
+        {% endif %}
+        {% if '/documents/listes/' in droits_fonctionnalites %}
+        <a href="{% url 'documents:liste_classes_selector' %}" class="sb-item-submodern" data-url="/documents/listes/"><span class="sub-item-dot"></span>Listes de classes</a>
+        {% endif %}
+        {% if '/parametres/signataires/formulaire/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:signataire_formulaire' %}" class="sb-item-submodern" data-url="/parametres/signataires/formulaire/"><span class="sub-item-dot"></span>Signataires</a>
+        {% endif %}
+        {% if '/documents/statistiques-officielles/' in droits_fonctionnalites %}
+        <a href="{% url 'documents:statistiques_officielles' %}" class="sb-item-submodern" data-url="/documents/statistiques-officielles/"><span class="sub-item-dot"></span>Statistiques officielles</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# ── CONFIGURATION ── #}
+      {% if 'parametres' in droits_modules %}
+      <div class="sb-sep-modern"></div>
+      <span class="sb-section-modern">Configuration</span>
+
+      <button class="accordion-toggle" id="params-toggle" data-submenu="params-submenu" data-chevron="params-chevron" type="button" aria-expanded="false" aria-controls="params-submenu">
+        <span class="accordion-label">
+          <svg aria-hidden="true" class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Paramètres
+        </span>
+        <svg aria-hidden="true" id="params-chevron" class="sb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
+      <div id="params-submenu" class="sb-submenu-modern">
+        {% if '/parametres/annees/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:annee_list' %}" class="sb-item-submodern" data-url="/parametres/annees/"><span class="sub-item-dot"></span>Années scolaires</a>
+        {% endif %}
+        {% if '/parametres/appreciations-primaire/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:appreciation_primaire_list' %}" class="sb-item-submodern" data-url="/parametres/appreciations-primaire/"><span class="sub-item-dot"></span>Appréciation Primaire</a>
+        {% endif %}
+        {% if '/parametres/appreciations/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:appreciation_list' %}" class="sb-item-submodern" data-url="/parametres/appreciations/"><span class="sub-item-dot"></span>Appréciation Secondaire</a>
+        {% endif %}
+        {% if '/parametres/calendrier/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:calendrier' %}" class="sb-item-submodern" data-url="/parametres/calendrier/"><span class="sub-item-dot"></span>Calendrier scolaire</a>
+        {% endif %}
+        {% if '/parametres/categories-disciplines/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:categorie_discipline_list' %}" class="sb-item-submodern" data-url="/parametres/categories-disciplines/"><span class="sub-item-dot"></span>Catégories disciplines</a>
+        {% endif %}
+        {% if '/parametres/classes/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:classe_list' %}" class="sb-item-submodern" data-url="/parametres/classes/"><span class="sub-item-dot"></span>Classes</a>
+        {% endif %}
+        {% if '/parametres/signataires/configurer/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:signataire_config' %}" class="sb-item-submodern" data-url="/parametres/signataires/configurer/"><span class="sub-item-dot"></span>Configurer signataires</a>
+        {% endif %}
+        {% if '/parametres/cycles/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:cycle_list' %}" class="sb-item-submodern" data-url="/parametres/cycles/"><span class="sub-item-dot"></span>Cycles</a>
+        {% endif %}
+        {% if '/parametres/disciplines/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:discipline_list' %}" class="sb-item-submodern" data-url="/parametres/disciplines/"><span class="sub-item-dot"></span>Disciplines</a>
+        {% endif %}
+        {% if user.role == 'SUPER_ADMIN' %}
+        <a href="{% url 'parametres:droits_acces' %}" class="sb-item-submodern" data-url="/parametres/droits-acces/"><span class="sub-item-dot"></span>Droits d'accès</a>
+        {% endif %}
+        {% if '/parametres/etablissement/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:etablissement' %}" class="sb-item-submodern" data-url="/parametres/etablissement/"><span class="sub-item-dot"></span>Établissement</a>
+        {% endif %}
+        {% if '/parametres/identite-etablissement/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:identite_etablissement' %}" class="sb-item-submodern" data-url="/parametres/identite-etablissement/"><span class="sub-item-dot"></span>Identité établissement</a>
+        {% endif %}
+        {% if '/parametres/mentions-distinctions/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:distinction_list' %}" class="sb-item-submodern" data-url="/parametres/mentions-distinctions/"><span class="sub-item-dot"></span>Mentions / distinctions</a>
+        {% endif %}
+        {% if '/parametres/modeles-messages/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:modeles_messages' %}" class="sb-item-submodern" data-url="/parametres/modeles-messages/"><span class="sub-item-dot"></span>Modèles de messages</a>
+        {% endif %}
+        {% if '/parametres/periodes/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:periode_list' %}" class="sb-item-submodern" data-url="/parametres/periodes/"><span class="sub-item-dot"></span>Périodes</a>
+        {% endif %}
+        {% if '/parametres/postes/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:poste_list' %}" class="sb-item-submodern" data-url="/parametres/postes/"><span class="sub-item-dot"></span>Postes</a>
+        {% endif %}
+        {% if '/parametres/rubriques/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:rubrique_list' %}" class="sb-item-submodern" data-url="/parametres/rubriques/"><span class="sub-item-dot"></span>Rubriques paiement</a>
+        {% endif %}
+        {% if '/parametres/salles/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:salle_list' %}" class="sb-item-submodern" data-url="/parametres/salles/"><span class="sub-item-dot"></span>Salles</a>
+        {% endif %}
+        {% if '/parametres/signataires/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:signataires_list' %}" class="sb-item-submodern" data-url="/parametres/signataires/"><span class="sub-item-dot"></span>Signataires</a>
+        {% endif %}
+        {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' %}
+        {% if '/parametres/sms-auto/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:sms_auto_config' %}" class="sb-item-submodern" data-url="/parametres/sms-auto/"><span class="sub-item-dot"></span>SMS automatiques</a>
+        {% endif %}
+        {% endif %}
+        {% if '/parametres/statuts/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:statut_list' %}" class="sb-item-submodern" data-url="/parametres/statuts/"><span class="sub-item-dot"></span>Statuts élèves</a>
+        {% endif %}
+        {% if '/parametres/tarifs/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:tarif_list' %}" class="sb-item-submodern" data-url="/parametres/tarifs/"><span class="sub-item-dot"></span>Tarifs de scolarité</a>
+        {% endif %}
+        {% if '/parametres/titres-fonctions/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:titre_fonction_list' %}" class="sb-item-submodern" data-url="/parametres/titres-fonctions/"><span class="sub-item-dot"></span>Titres Fonctions</a>
+        {% endif %}
+        {% if '/parametres/titres-honorifiques/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:titre_honorifique_list' %}" class="sb-item-submodern" data-url="/parametres/titres-honorifiques/"><span class="sub-item-dot"></span>Titres Honorifiques</a>
+        {% endif %}
+        {% if '/parametres/types-evaluations/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:type_evaluation_list' %}" class="sb-item-submodern" data-url="/parametres/types-evaluations/"><span class="sub-item-dot"></span>Types d'évaluation</a>
+        {% endif %}
+        {% if '/parametres/types-documents/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:type_document_list' %}" class="sb-item-submodern" data-url="/parametres/types-documents/"><span class="sub-item-dot"></span>Types Documents</a>
+        {% endif %}
+        {% if '/parametres/types-sanctions/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:type_sanction_list' %}" class="sb-item-submodern" data-url="/parametres/types-sanctions/"><span class="sub-item-dot"></span>Types Sanctions</a>
+        {% endif %}
+      </div>
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' or user.is_superuser %}
+      <button type="button" id="btn-maj-sidebar" class="sb-item-modern{% if request.path == '/mise-a-jour/' %} active{% endif %}" data-csp-trigger-click="input-maj-zip" data-url="/mise-a-jour/">
+        <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Mise à jour
+      </button>
+      <button type="button" id="btn-maj-en-ligne-sidebar" class="sb-item-modern" data-csp-trigger-click="submit-maj-en-ligne">
+        <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Mise à jour en ligne
+      </button>
+      {% endif %}
+      {% endif %}
+
+      {# Utilisateurs (admin uniquement) #}
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' or user.role == 'CENSEUR' %}
+      <span class="sb-section-modern is-espacee">Administration</span>
+      <a href="{% url 'core:chatbot' %}" class="sb-item-modern" data-url="/assistant/">
+        <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+        Assistant IA
+      </a>
+      <a href="{% url 'core:audit_log_list' %}" class="sb-item-modern" data-url="/core/audit/">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Journal d'audit
+      </a>
+      {% endif %}
+      {% if user.role == 'SUPER_ADMIN' or user.role == 'DIRECTEUR' %}
+      <a href="{% url 'accounts:user_list' %}" class="sb-item-modern" data-url="/accounts/utilisateurs/">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Utilisateurs
+      </a>
+      <a href="{% url 'core:sms_configuration' %}" class="sb-item-modern" data-url="/sms/configuration/">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+          <line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+        Configuration SMS
+      </a>
+      <a href="{% url 'core:exploitation' %}" class="sb-item-modern" data-url="/exploitation/">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+        Exploitation
+      </a>
+      <a href="{% url 'core:reunion_parents' %}" class="sb-item-modern" data-url="/reunion-parents/">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Réunion parents
+      </a>
+      {% endif %}
+
+      {# Système : réservé au Super Admin (rôle SUPER_ADMIN ou superuser) #}
+      {% if user.est_super_admin %}
+      <span class="sb-section-modern is-espacee">Système</span>
+      <a href="{% url 'licences:statut' %}" class="sb-item-modern" data-url="/licences/mon-abonnement/">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        Mon abonnement
+      </a>
+      <a href="/licences/" class="sb-item-modern" data-url="/licences/">
+          <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Licences
+      </a>
+      {% endif %}
+
+      {% endif %}{# fin bloc role PARENT / ELEVE / autre #}
+
+    </nav>
+
+    {# ── Pied de sidebar ── #}
+    <div class="sb-footer-modern">
+      <button id="pwa-install-btn" data-csp-action="pwa-install" title="Installer l'application">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Installer l'application
+      </button>
+      <span class="sb-version">YELEN SCHOOL v{{ yelen_version }}</span>
+      <div class="sb-footer-actions">
+        <a href="{% url 'core:aide' %}#{{ aide_ancre }}" class="sb-footer-btn" title="Aide — guide d'utilisation" aria-label="Aide — guide d'utilisation">
+          <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.02 2.788-1.12.143-2.15.672-2.838 1.56-.46.594-.722 1.315-.722 2.152 0 1.65 1.35 3 3 3 1.5 0 2.77-.98 3.06-2.28"/>
+          </svg>
+        </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'core:notifications_list' %}" class="sb-footer-btn is-relative" title="Notifications" aria-label="Notifications">
+          <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          <span id="notif-badge-wrap"
+                hx-get="{% url 'core:notifications_badge' %}"
+                hx-trigger="load, every 60s, notificationsUpdated from:body"
+                hx-target="this"
+                hx-swap="innerHTML"></span>
+        </a>
+        <form method="post" action="{% url 'accounts:logout' %}" class="sb-form-deconnexion">
+            {% csrf_token %}
+            <button type="submit" class="sb-footer-btn danger" title="Déconnexion" aria-label="Déconnexion">
+              <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+  </aside>
