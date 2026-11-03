@@ -2,20 +2,30 @@
 <div id="maj-etat"
      class="card mb-6 animate-fade-up"
      aria-live="polite"
-     {% if demande.statut == 'EN_ATTENTE' or demande.statut == 'EN_COURS' %}
+     {% if demande.statut == 'VERIFICATION' or demande.statut == 'EN_ATTENTE' or demande.statut == 'EN_COURS' %}
      hx-get="{% url 'core:mise_a_jour_etat' %}"
-     hx-trigger="every 5s"
+     hx-trigger="every 3s"
      hx-target="#maj-etat"
      hx-swap="outerHTML"
      {% endif %}>
   <div class="card-header d-flex justify-between align-center flex-wrap gap-2">
-    <span class="card-title">Suivi de la mise à jour vers {{ demande.version_cible }}</span>
+    <span class="card-title">
+      {% if demande.version_cible and demande.statut != 'AUCUNE_MAJ' %}
+        Suivi de la mise à jour vers {{ demande.version_cible }}
+      {% else %}
+        État de la mise à jour
+      {% endif %}
+    </span>
     {% if demande.statut == 'TERMINEE' %}
       <span class="badge badge-success">Terminée</span>
+    {% elif demande.statut == 'AUCUNE_MAJ' %}
+      <span class="badge badge-info">À jour</span>
     {% elif demande.statut == 'ECHEC' %}
       <span class="badge badge-danger">Échec</span>
     {% elif demande.statut == 'EN_COURS' %}
       <span class="badge badge-warning">Installation en cours…</span>
+    {% elif demande.statut == 'VERIFICATION' %}
+      <span class="badge badge-info">Vérification…</span>
     {% else %}
       <span class="badge badge-info">En attente du serveur…</span>
     {% endif %}
@@ -23,9 +33,9 @@
   <div class="card-body">
     <p class="mb-2"><strong>État :</strong> {{ demande.message }}</p>
     <p class="text-sm text-secondary mb-2">
-      Version avant : <code>{{ demande.version_avant }}</code> ·
-      Version cible : <code>{{ demande.version_cible }}</code> ·
-      Version active : <code>{{ version_actuelle }}</code>
+      Version avant : <code>{{ demande.version_avant }}</code>
+      {% if demande.version_cible %} · Version cible : <code>{{ demande.version_cible }}</code>{% endif %}
+      · Version active : <code>{{ version_actuelle }}</code>
       {% if demande.demande_par %} · Demandée par <strong>{{ demande.demande_par }}</strong>{% endif %}
     </p>
     {% if demande.empreinte %}
@@ -33,9 +43,9 @@
       Empreinte SHA-256 vérifiée : <code>{{ demande.empreinte }}</code>
     </p>
     {% endif %}
-    {% if demande.statut == 'EN_ATTENTE' %}
+    {% if demande.statut == 'EN_ATTENTE' or demande.statut == 'VERIFICATION' %}
     <p class="text-sm text-secondary mt-3 mb-0">
-      Cette page s'actualise automatiquement toutes les 5 secondes. Si l'agent planifié n'a pas encore été activé sur le serveur Windows, lancez une fois : <code>C:\YELEN-SCHOOL\mettre-a-jour.bat -DepuisArchive mises-a-jour\{{ demande.archive }}</code>.
+      Cette page s'actualise automatiquement toutes les 3 secondes. Si l'agent planifié n'a pas encore été activé sur le serveur Windows, lancez une fois <code>C:\YELEN-SCHOOL\mettre-a-jour.bat</code>.
     </p>
     {% elif demande.statut == 'EN_COURS' %}
     <p class="text-sm text-secondary mt-3 mb-0">

@@ -718,6 +718,14 @@
         </svg>
         Mise à jour
       </button>
+      <button type="button" id="btn-maj-en-ligne-sidebar" class="sb-item-modern" data-csp-trigger-click="submit-maj-en-ligne">
+        <svg aria-hidden="true" class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Mise à jour en ligne
+      </button>
       {% endif %}
       {% endif %}
 
@@ -1205,6 +1213,10 @@
   <form id="form-maj-sidebar" method="post" action="{% url 'core:mise_a_jour' %}" enctype="multipart/form-data" hidden>
     {% csrf_token %}
     <input type="file" id="input-maj-zip" name="archive_zip" accept=".zip,application/zip" aria-label="Choisir l'archive de mise à jour (.zip)" data-csp-submit-on-change>
+  </form>
+  <form id="form-maj-en-ligne-sidebar" method="post" action="{% url 'core:mise_a_jour_en_ligne' %}" hidden>
+    {% csrf_token %}
+    <button type="submit" id="submit-maj-en-ligne">Mise à jour en ligne</button>
   </form>
   {% endif %}
 </body>

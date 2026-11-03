@@ -125,8 +125,8 @@ if (Test-Path -LiteralPath $DemandeMaj) {
     try {
         $infoMaj = Get-Content -LiteralPath $DemandeMaj -Raw | ConvertFrom-Json
         if ($infoMaj.statut -eq 'EN_COURS') { exit 0 }
-        if ($infoMaj.statut -eq 'EN_ATTENTE' -and (Test-Path -LiteralPath $AgentMaj)) {
-            [void](Invoke-NativeQuiet { powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $AgentMaj })
+        if ($infoMaj.statut -in @('VERIFICATION', 'EN_ATTENTE') -and (Test-Path -LiteralPath $AgentMaj)) {
+            [void](Invoke-NativeQuiet { powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $AgentMaj -UnePasse })
             exit 0
         }
     } catch { }

@@ -896,10 +896,17 @@ Une fois la restauration validée, cette copie peut être supprimée pour libér
 
 ## 8. Mise à jour sans perte de données
 
-### 8.1 Mise à jour en un clic : `mettre-a-jour.bat`
+### 8.1 Mise à jour en un clic (`Mise à jour en ligne` ou `mettre-a-jour.bat`)
 
-Double-cliquer sur `C:\YELEN-SCHOOL\mettre-a-jour.bat` (ou l'exécuter dans `cmd`). Le script enchaîne,
-sans autre intervention :
+Depuis l'application web (**5.47.6**, comptes **Directeur** / **Super Admin**), ouvrir la rubrique
+**Configuration** du menu latéral et cliquer sur **Mise à jour en ligne** :
+- si une version plus récente est publiée sur le dépôt officiel, un message annonce la nouvelle version et la
+  mise à jour démarre immédiatement en arrière-plan (relais `installer\appliquer-mise-a-jour-en-attente.ps1`,
+  suivi toutes les 3 s sur `/mise-a-jour/`) ;
+- sinon, un message informe qu'il n'y a pas de mise à jour disponible et les services restent inchangés.
+
+Sur le poste serveur, la même opération s'exécute en double-cliquant sur `C:\YELEN-SCHOOL\mettre-a-jour.bat`
+(ou dans `cmd`). Le script enchaîne, sans autre intervention :
 
 1. lecture de la version installée (fichier `VERSION`) et recherche d'une nouvelle version sur GitHub
    (branche `main`) — s'il n'y en a pas : « YELEN SCHOOL est déjà à jour » ;

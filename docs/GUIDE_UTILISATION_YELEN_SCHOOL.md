@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.47.5
-version_guide: 5.36
-date_mise_a_jour: 03/11/2026 (5.47.5 : bouton Mise à jour par archive .zip dans Configuration)
+version_logiciel: 5.47.6
+version_guide: 5.37
+date_mise_a_jour: 03/11/2026 (5.47.6 : bouton Mise à jour en ligne dans Configuration)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -7566,9 +7566,15 @@ est **l'unique source de vérité**. Elle fusionne :
 
 ### 35.2 Mettre à jour une installation client existante (Docker)
 
-Deux modes sont disponibles :
+Trois modes sont disponibles (les deux premiers directement depuis la rubrique **Configuration** du menu latéral, réservés au **Directeur** et au **Super Admin**) :
 
-1. **Depuis l'interface web (archive `.zip`, 5.47.5)** — réservé au **Directeur** et au **Super Admin** :
+1. **Depuis l'interface web en ligne (`Mise à jour en ligne`, 5.47.6)** : cliquer sur **Mise à jour en ligne**
+   dans la rubrique **Configuration**. Si une version plus récente est disponible dans le dépôt officiel, un
+   message l'annonce (*« Nouvelle version X.Y.Z disponible : la mise à jour commence. »*), l'opération est
+   tracée dans le `Journal d'audit` et la mise à jour démarre automatiquement avec suivi en direct sur
+   `/mise-a-jour/`. Dans le cas contraire, un message informe qu'aucune mise à jour n'est disponible et rien
+   n'est redémarré.
+2. **Depuis l'interface web hors ligne (archive `.zip`, 5.47.5)** :
    dans le menu latéral, rubrique **Configuration**, cliquer sur **Mise à jour** ; la boîte de sélection de
    fichier s'ouvre filtrée sur `.zip` (dossier *Téléchargements* par défaut du navigateur). Choisir
    `yelen-school-<version>.zip` livré par l'éditeur et cliquer sur *Ouvrir* : l'application vérifie immédiatement
@@ -7576,7 +7582,7 @@ Deux modes sont disponibles :
    `Journal d'audit`, dépose la demande dans `mises-a-jour\` et affiche le suivi en direct (`/mise-a-jour/`)
    jusqu'au redémarrage sur la nouvelle version (pris en charge automatiquement en moins d'une minute par
    l'agent planifié `installer\appliquer-mise-a-jour-en-attente.ps1`).
-2. **En un clic sur le poste serveur** — double-cliquer sur `C:\YELEN-SCHOOL\mettre-a-jour.bat` (depuis
+3. **En un clic sur le poste serveur** — double-cliquer sur `C:\YELEN-SCHOOL\mettre-a-jour.bat` (depuis
    GitHub, ou hors ligne avec `-DepuisArchive yelen-school-<version>.zip`). Le script sauvegarde (chiffré),
    récupère la nouvelle version, reconstruit l'image, redémarre les services (`start-local.ps1`, qui transmet
    l'empreinte du serveur au conteneur `web` — indispensable quand la licence est liée au serveur, §13.1) et

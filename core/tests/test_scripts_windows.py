@@ -145,6 +145,9 @@ def test_mise_a_jour_interface_sans_docker_sock_et_agent_hote():
 
     agent = (RACINE / 'installer' / 'appliquer-mise-a-jour-en-attente.ps1') \
         .read_text(encoding='utf-8-sig').replace('\r\n', '\n')
+    assert "if ([string]$donnees['mode'] -eq 'EN_LIGNE')" in agent
+    assert 'git -C $Root fetch --quiet origin main' in agent
+    assert "$donnees['statut'] = 'AUCUNE_MAJ'" in agent
     assert '^yelen-school-\\d+\\.\\d+\\.\\d+\\.bundle$' in agent
     assert '^[0-9a-f]{64}$' in agent
     assert '-File $UpdateScript -DepuisArchive $cheminArchive -Empreinte $empreinte' in agent

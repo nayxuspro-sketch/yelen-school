@@ -1,9 +1,13 @@
-"""Dépôt et vérification d'une archive de mise à jour `.zip` depuis l'interface web.
+"""Dépôt d'archive `.zip` et mise à jour en ligne depuis Configuration > Mise à jour.
 
-L'application web ne monte jamais `/var/run/docker.sock` : elle vérifie l'intégrité du `.zip`
-(absence de traversée de chemin, plafond de taille, en-tête git bundle, empreinte SHA-256 et
-progression de version), dépose atomiquement le bundle vérifié et `demande.json` dans le dossier
-partagé `mises-a-jour/`, puis l'agent planifié côté hôte Windows exécute `mettre-a-jour.ps1`.
+L'application web ne monte jamais `/var/run/docker.sock` :
+- **Hors ligne (`.zip`)** : vérifie en flux l'intégrité du `.zip` (absence de traversée de chemin,
+  plafond de taille, en-tête git bundle, empreinte SHA-256 et progression de version), puis dépose
+  atomiquement le bundle vérifié et `demande.json` dans `mises-a-jour/`.
+- **En ligne (GitHub)** : interroge la version publiée sur `main` (directement si accessible ou muni
+  d'un jeton `YELEN_GITHUB_TOKEN`, sinon par délégation immédiate à l'agent hôte Windows qui dispose
+  du Gestionnaire d'identification Git), informe l'utilisateur s'il n'y a aucune mise à jour
+  disponible ou démarre automatiquement `mettre-a-jour.ps1`.
 """
 from __future__ import annotations
 
@@ -12,6 +16,9 @@ import json
 import logging
 import os
 import re
+import time
+import urllib.error
+import urllib.request
 import uuid
 import zipfile
 from datetime import timedelta
@@ -27,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 TAILLE_MAX_DECOMPRESSEE = 300 * 1024 * 1024  # 300 Mo
 DELAI_EXPIRATION_EN_COURS = timedelta(minutes=30)
+DEPOT_GITHUB_DEFAUT = 'nayxuspro-sketch/yelen-school'
 _RE_BUNDLE = re.compile(r'^yelen-school-(\d+\.\d+\.\d+)\.bundle$')
 _RE_VERSION = re.compile(r'^(\d+)\.(\d+)\.(\d+)$')
 _RE_SHA256 = re.compile(r'^[0-9a-f]{64}$')
@@ -34,7 +42,7 @@ _ENTETES_BUNDLE = (b'# v2 git bundle\n', b'# v3 git bundle\n')
 
 
 class ErreurArchiveMiseAJour(ValueError):
-    """Archive absente, corrompue, mal formée ou d'une version antérieure."""
+    """Archive absente, corrompue, mal formée ou mise à jour déjà en cours."""
 
 
 def dossier_mises_a_jour() -> Path:
@@ -158,6 +166,137 @@ def _ecrire_json_atomique(cible: Path, donnees: dict) -> None:
             tmp.unlink(missing_ok=True)
 
 
+def verifier_version_depot_distant() -> str | None:
+    """Lit `VERSION` sur la branche `main` du dépôt GitHub si accessible depuis le conteneur.
+
+    Retourne `None` lorsque le dépôt est privé sans `YELEN_GITHUB_TOKEN` (cas standard Docker sous
+    Windows : la vérification est alors exécutée par l'agent hôte via `git fetch origin main`).
+    """
+    depot = (
+        getattr(settings, 'YELEN_UPDATE_REPO', None)
+        or os.environ.get('YELEN_UPDATE_REPO')
+        or DEPOT_GITHUB_DEFAUT
+    ).strip()
+    if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', depot):
+        logger.warning("Nom de dépôt YELEN_UPDATE_REPO invalide : %s", depot)
+        return None
+
+    jeton = (
+        getattr(settings, 'YELEN_GITHUB_TOKEN', None)
+        or os.environ.get('YELEN_GITHUB_TOKEN')
+        or ''
+    ).strip()
+    entetes = {
+        'Accept': 'application/vnd.github.raw',
+        'User-Agent': 'YELEN-SCHOOL-Updater',
+    }
+    if jeton:
+        entetes['Authorization'] = f'Bearer {jeton}'
+
+    url = f'https://api.github.com/repos/{depot}/contents/VERSION?ref=main'
+    requete = urllib.request.Request(url, headers=entetes)
+    try:
+        with urllib.request.urlopen(requete, timeout=6) as reponse:
+            version = reponse.read(64).decode('utf-8', errors='replace').strip()
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError) as exc:
+        logger.info("Lecture directe de VERSION sur GitHub non disponible (%s) ; relais hôte.", exc)
+        return None
+
+    try:
+        parser_version(version)
+    except ErreurArchiveMiseAJour as exc:
+        logger.warning("VERSION distante invalide sur %s : %s", depot, exc)
+        return None
+    return version
+
+
+def demander_mise_a_jour_en_ligne(*, utilisateur, request=None) -> dict:
+    """Vérifie si une version plus récente existe dans le dépôt et démarre la mise à jour en ligne."""
+    if _est_en_cours_recent(etat_demande()):
+        raise ErreurArchiveMiseAJour(
+            "Une mise à jour est déjà en cours d'application sur le serveur. Patientez jusqu'à la fin de l'opération."
+        )
+
+    t_actuelle = parser_version(settings.YELEN_VERSION)
+    version_distante = verifier_version_depot_distant()
+
+    if version_distante is not None:
+        if parser_version(version_distante) <= t_actuelle:
+            return {
+                'mode': 'EN_LIGNE',
+                'statut': 'AUCUNE_MAJ',
+                'version_avant': settings.YELEN_VERSION,
+                'version_cible': settings.YELEN_VERSION,
+                'message': f"Il n'y a pas de mise à jour disponible (version actuelle : {settings.YELEN_VERSION}).",
+            }
+
+        dossier = dossier_mises_a_jour()
+        dossier.mkdir(parents=True, exist_ok=True)
+        demande = {
+            'id': uuid.uuid4().hex,
+            'mode': 'EN_LIGNE',
+            'version_avant': settings.YELEN_VERSION,
+            'version_cible': version_distante,
+            'statut': 'EN_ATTENTE',
+            'demande_le': timezone.now().isoformat(),
+            'demande_par': getattr(utilisateur, 'username', '') or str(utilisateur),
+            'message': f"Nouvelle version {version_distante} disponible : la mise à jour commence.",
+        }
+        _ecrire_json_atomique(dossier / 'demande.json', demande)
+        record_audit(
+            action='SECURITY',
+            user=utilisateur,
+            request=request,
+            app_label='core',
+            model_name='miseajour',
+            object_id=version_distante,
+            object_repr=f"Mise à jour en ligne {settings.YELEN_VERSION} -> {version_distante}",
+            reason='Mise à jour en ligne depuis le dépôt',
+            changes={
+                'mode': 'EN_LIGNE',
+                'version_avant': settings.YELEN_VERSION,
+                'version_cible': version_distante,
+            },
+        )
+        return demande
+
+    # Dépôt privé sans jeton dans le conteneur : délégation immédiate à l'agent hôte Windows.
+    dossier = dossier_mises_a_jour()
+    dossier.mkdir(parents=True, exist_ok=True)
+    id_demande = uuid.uuid4().hex
+    demande = {
+        'id': id_demande,
+        'mode': 'EN_LIGNE',
+        'version_avant': settings.YELEN_VERSION,
+        'version_cible': '',
+        'statut': 'VERIFICATION',
+        'demande_le': timezone.now().isoformat(),
+        'demande_par': getattr(utilisateur, 'username', '') or str(utilisateur),
+        'message': "Vérification d'une nouvelle version auprès du dépôt en cours...",
+    }
+    _ecrire_json_atomique(dossier / 'demande.json', demande)
+    record_audit(
+        action='SECURITY',
+        user=utilisateur,
+        request=request,
+        app_label='core',
+        model_name='miseajour',
+        object_id='en-ligne',
+        object_repr=f"Vérification de mise à jour en ligne depuis {settings.YELEN_VERSION}",
+        reason='Vérification et mise à jour en ligne via agent hôte',
+        changes={'mode': 'EN_LIGNE', 'version_avant': settings.YELEN_VERSION},
+    )
+
+    attente_max = float(getattr(settings, 'YELEN_UPDATE_SYNC_WAIT_SECONDS', 8.0))
+    echeance = time.monotonic() + max(0.0, attente_max)
+    while time.monotonic() < echeance:
+        time.sleep(0.25)
+        courant = etat_demande()
+        if courant and courant.get('id') == id_demande and courant.get('statut') != 'VERIFICATION':
+            return courant
+    return demande
+
+
 def deposer_archive_zip(fichier_upload, *, utilisateur, request=None) -> dict:
     """Valide une archive `.zip` de mise à jour et prépare son exécution dans `mises-a-jour/`."""
     if not fichier_upload:
@@ -229,6 +368,8 @@ def deposer_archive_zip(fichier_upload, *, utilisateur, request=None) -> dict:
         (dossier / f'{nom_bundle}.sha256').write_text(f'{attendu}  {nom_bundle}\n', encoding='utf-8')
 
         demande = {
+            'id': uuid.uuid4().hex,
+            'mode': 'ARCHIVE',
             'version_avant': settings.YELEN_VERSION,
             'version_cible': version_cible,
             'archive': nom_bundle,
@@ -238,7 +379,7 @@ def deposer_archive_zip(fichier_upload, *, utilisateur, request=None) -> dict:
             'demande_par': getattr(utilisateur, 'username', '') or str(utilisateur),
             'message': (
                 "Archive vérifiée (SHA-256). En attente d'application automatique par le serveur "
-                "(délai habituel : moins d'une minute)."
+                "(prise en charge en quelques secondes)."
             ),
         }
         _ecrire_json_atomique(dossier / 'demande.json', demande)
@@ -253,6 +394,7 @@ def deposer_archive_zip(fichier_upload, *, utilisateur, request=None) -> dict:
             object_repr=f"Mise à jour {settings.YELEN_VERSION} -> {version_cible}",
             reason='Dépôt archive .zip vérifiée',
             changes={
+                'mode': 'ARCHIVE',
                 'version_avant': settings.YELEN_VERSION,
                 'version_cible': version_cible,
                 'archive': nom_bundle,

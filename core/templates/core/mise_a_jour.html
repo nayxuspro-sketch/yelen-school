@@ -7,36 +7,45 @@
 <div class="page-header animate-fade-up">
   <div>
     <h1 class="page-title">Mise à jour</h1>
-    <p class="page-subtitle">Installation d'une archive officielle <code>.zip</code> livrée par l'éditeur</p>
+    <p class="page-subtitle">Mise à jour en ligne depuis le dépôt officiel ou hors ligne par archive <code>.zip</code></p>
   </div>
   <div>
     <span class="badge badge-success">Version active : {{ version_actuelle }}</span>
   </div>
 </div>
 
-{% if messages %}
-<div class="mb-6">
-  {% for msg in messages %}
-    <div class="alert alert-{{ msg.tags }}" role="alert">{{ msg }}</div>
-  {% endfor %}
-</div>
-{% endif %}
-
 {% include 'core/partials/mise_a_jour_etat.html' %}
 
 <div class="card mb-6 animate-fade-up delay-1">
   <div class="card-header">
-    <span class="card-title">Installer une nouvelle version</span>
+    <span class="card-title">Mise à jour en ligne (dépôt officiel)</span>
   </div>
   <div class="card-body">
     <p class="mb-4">
-      Cliquez sur le bouton ci-dessous (ou sur <strong>Mise à jour</strong> dans la rubrique <strong>Configuration</strong> du menu latéral) et sélectionnez le fichier <code>yelen-school-&lt;version&gt;.zip</code> enregistré dans votre dossier <strong>Téléchargements</strong>.
+      Vérifie immédiatement si une nouvelle version est disponible dans le dépôt : si oui, la mise à jour démarre automatiquement ; sinon, un message confirme qu'aucune mise à jour n'est disponible.
+    </p>
+    <form method="post" action="{% url 'core:mise_a_jour_en_ligne' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary">
+        Mise à jour en ligne
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-6 animate-fade-up delay-2">
+  <div class="card-header">
+    <span class="card-title">Mise à jour hors ligne (archive <code>.zip</code>)</span>
+  </div>
+  <div class="card-body">
+    <p class="mb-4">
+      Sans connexion Internet vers GitHub, sélectionnez le fichier <code>yelen-school-&lt;version&gt;.zip</code> enregistré dans votre dossier <strong>Téléchargements</strong>.
     </p>
 
     <form id="form-maj-page" method="post" action="{% url 'core:mise_a_jour' %}" enctype="multipart/form-data">
       {% csrf_token %}
       <input type="file" id="input-maj-page" name="archive_zip" accept=".zip,application/zip" aria-label="Choisir l'archive de mise à jour (.zip)" data-csp-submit-on-change hidden>
-      <button type="button" class="btn-primary" data-csp-trigger-click="input-maj-page">
+      <button type="button" class="btn-secondary" data-csp-trigger-click="input-maj-page">
         Choisir l'archive de mise à jour (.zip)
       </button>
     </form>

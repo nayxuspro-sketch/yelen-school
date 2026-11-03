@@ -3,6 +3,25 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.47.6 — 2026-11-03
+
+- **Bouton « Mise à jour en ligne » dans la rubrique Configuration.** Ajout du bouton **Mise à jour en ligne**
+  dans la rubrique **Configuration** du menu latéral (et sur `/mise-a-jour/`), réservé aux rôles *Directeur*
+  et *Super Admin*. Au clic :
+  - si une nouvelle version est disponible sur la branche `main` du dépôt officiel, l'utilisateur reçoit le
+    message *« Nouvelle version X.Y.Z disponible : la mise à jour commence. »*, l'opération est journalisée
+    dans `AuditLog` et la mise à jour démarre automatiquement (sauvegarde chiffrée, reconstruction, `/health/`,
+    retour arrière automatique) avec suivi en direct toutes les 3 s sur `/mise-a-jour/` ;
+  - sinon, le message *« Il n'y a pas de mise à jour disponible (version actuelle : X.Y.Z). »* s'affiche sans
+    redémarrage ni sauvegarde inutile.
+- **Compatibilité dépôt privé sans configuration supplémentaire.** Si le conteneur ne dispose pas de
+  `YELEN_GITHUB_TOKEN`, la vérification est relayée en quelques secondes à l'agent hôte Windows
+  (`installer\appliquer-mise-a-jour-en-attente.ps1`), qui utilise les identifiants Git du serveur Windows
+  sans jamais exposer `docker.sock`.
+- Documentation : guide d'utilisation **§35.2** et guide de déploiement Windows **§8.1** mis à jour.
+- Tests : 5 nouveaux tests dans `core/tests/test_mise_a_jour.py` (18 au total sur le module de mise à jour)
+  + contrat `EN_LIGNE` dans `core/tests/test_scripts_windows.py`.
+
 ## 5.47.5 — 2026-11-03
 
 - **Bouton « Mise à jour » par archive `.zip` dans la rubrique Configuration.** La direction (*Directeur* /
