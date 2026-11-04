@@ -1,7 +1,7 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 5.52.0
-version_guide: 5.45
+version_guide: 5.46
 date_mise_a_jour: 04/11/2026 (5.50.0 : prêts d'ouvrages — échéances, retards, relance des familles par portail et SMS)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
@@ -298,6 +298,11 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [33.7 Finances](#337-finances)
   - [33.8 Documents](#338-documents)
   - [33.9 Présences](#339-présences)
+  - [33.10 Utilisateurs — Comptes élèves en masse](#3310-utilisateurs--comptes-élèves-en-masse)
+  - [33.11 Manuels — Prêts et retards](#3311-manuels--prêts-et-retards)
+  - [33.12 Personnel — Pointage du jour](#3312-personnel--pointage-du-jour)
+  - [33.13 Personnel — Évaluations annuelles](#3313-personnel--évaluations-annuelles)
+  - [33.14 Configuration — Réception des SMS](#3314-configuration--réception-des-sms)
 - [34. SÉCURITÉ DE L'APPLICATION](#34-sécurité-de-lapplication)
   - [34.1 Rapport d'Audit de Sécurité](#341-rapport-daudit-de-sécurité)
   - [34.2 19.1.A API REST — Tokens et cloisonnement d'accès](#342-191a-api-rest--tokens-et-cloisonnement-daccès)
@@ -323,6 +328,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [38.3 Modules transverses couverts (5.43.0)](#383-modules-transverses-couverts-5430)
   - [38.4 Organisation du code et des styles (5.44.0)](#384-organisation-du-code-et-des-styles-5440)
 - [39. Offre hébergée et instance de démonstration (5.45.0)](#39-offre-hébergée-et-instance-de-démonstration-5450)
+- [40. Exemples de saisie, champ par champ (5.52.2)](#40-exemples-de-saisie-champ-par-champ-5522)
 
 ---
 
@@ -936,6 +942,9 @@ Ce que la commande installe, dans l'ordre de la mise en route (`§3.11`) :
 | **Pédagogie** | matières par cycle, enseignements, devoirs et compositions du 1er trimestre, notes, moyennes et rangs calculés |
 | **Finances** | paiements d'inscription et tranches de scolarité (espèces et Mobile Money), avec leurs reçus |
 | **Signataires** | bulletins, reçus et certificats signés par le directeur ou le comptable de chaque cycle |
+| **Pointage (5.51.0)** | trois semaines de pointage des 8 agents — présences, retards et absences — et l'heure limite à 07:30 |
+| **Évaluations annuelles (5.51.0)** | un entretien par agent, notes de 3 à 5 et avis motivé |
+| **Bibliothèque (5.50.0)** | 4 titres, 48 exemplaires et 3 prêts en cours dont 2 en retard |
 
 - **Comptes de démonstration** (mot de passe `Demo2026!`) : `direction@demo.bf`, `censeur@demo.bf`,
   `secretariat@demo.bf`, `comptabilite@demo.bf`, quatre enseignants `e.…@demo.bf`, `parent@demo.bf`
@@ -7291,7 +7300,9 @@ Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via
 
 ## 33. Galerie de Captures d'Écran
 
-> Les captures d'écran ci-dessous montrent l'interface réelle de YELEN SCHOOL. Elles sont situées dans le dossier `docs/screenshots/`.
+> Les captures d'écran ci-dessous montrent l'interface réelle de YELEN SCHOOL (dossier `docs/screenshots/`),
+> prises sur le jeu de démonstration (§3.13) — écran 1440 px, thème sombre. Elles sont **régénérées à chaque
+> livraison** : un écran qui change de place est immédiatement visible dans le guide.
 
 ### 33.1 Page de Connexion
 
@@ -7301,45 +7312,74 @@ Chaque SMS entrant est enregistré dans la table `IncomingSMSLog` accessible via
 ### 33.2 Tableau de Bord
 
 ![Tableau de bord](screenshots/02-dashboard.png)
-*Tableau de bord après connexion (vue Super Admin).*
+*Tableau de bord direction : compteurs du jour, répartition par cycle, accès rapides (§2.3).*
 
 ### 33.3 Gestion des Élèves
 
 ![Liste des élèves](screenshots/03-eleves-list.png)
-*Liste des élèves inscrits avec recherche et filtres.*
+*Liste des élèves de l'année : recherche, filtres par classe et statut, exports CSV / Excel / PDF (§4).*
 
 ![Fiche détail d'un élève](screenshots/04-eleve-detail.png)
-*Page profil d'un élève avec informations complètes.*
+*Fiche d'un élève : identité, famille, situation financière, parcours et documents (§4.5).*
 
 ### 33.4 Paramètres — Classes
 
 ![Liste des classes](screenshots/05-classes-list.png)
-*Liste des classes configurées par cycle.*
+*Classes de l'établissement, rangées par cycle, avec effectif et capacité (§3.4).*
 
 ### 33.5 Pédagogie — Matières
 
 ![Liste des matières](screenshots/06-matieres.png)
-*Référentiel des matières enseignées.*
+*Référentiel des matières et de leurs coefficients par cycle (§6.1).*
 
 ### 33.6 Gestion du Personnel
 
 ![Liste du personnel](screenshots/07-personnel.png)
-*Liste du personnel enseignant et administratif.*
+*Liste du personnel : fonction, matricule, état actif, accès aux fiches et aux documents (§5.1).*
 
 ### 33.7 Finances
 
 ![Paiements et finances](screenshots/08-paiements.png)
-*Gestion des paiements de scolarité.*
+*Paiements de l'année : recherche, totaux encaissés, situation par élève et reçus (§9).*
 
 ### 33.8 Documents
 
 ![Documents administratifs](screenshots/09-documents.png)
-*Génération des documents officiels.*
+*Documents administratifs : certificats, attestations, listes officielles et leurs PDF signés (§12).*
 
 ### 33.9 Présences
 
 ![Présences et appels](screenshots/10-presences.png)
-*Sélection de classe pour l'appel.*
+*Appels : sélection de la classe et de la date, puis saisie des présences (§7).*
+
+### 33.10 Utilisateurs — Comptes élèves en masse
+
+![Comptes élèves en masse](screenshots/11-comptes-eleves.png)
+*Création en une fois des comptes élèves manquants : identifiant = matricule, mot de passe provisoire affiché une
+seule fois, SMS d'accueil facultatif (§9.23, version 5.49.0).*
+
+### 33.11 Manuels — Prêts et retards
+
+![Prêts et retards](screenshots/12-prets-retards.png)
+*Prêts en cours avec échéance, jours de retard, relance des familles et liste des retards en PDF (§26.5 bis,
+version 5.50.0).*
+
+### 33.12 Personnel — Pointage du jour
+
+![Pointage du personnel](screenshots/13-pointage-personnel.png)
+*Pointage d'une journée : une ligne par agent (arrivée, départ, statut, observation), heure limite de l'établissement
+et enregistrement en une passe (§5.5, version 5.51.0).*
+
+### 33.13 Personnel — Évaluations annuelles
+
+![Évaluations annuelles](screenshots/14-evaluation-annuelle.png)
+*Entretiens annuels de l'année choisie : moyenne sur 20, avis, reprise et compte rendu PDF signé (§5.6, version 5.51.0).*
+
+### 33.14 Configuration — Réception des SMS
+
+![Configuration SMS](screenshots/15-configuration-sms.png)
+*Configuration SMS : état de la relève automatique, webhook instantané, interrupteur « N'accepter que les SMS des
+numéros enregistrés » et paramètres de la passerelle (§32.4 et §32.6 bis, version 5.52.0).*
 
 ---
 
@@ -7996,3 +8036,109 @@ Deux façons d'utiliser YELEN SCHOOL, à partir de **la même image** :
 La démonstration ne fournit ni nom de domaine, ni certificat, ni sauvegarde : ce sont les outils de
 l'hébergeur (proxy, `certbot`, instantanés des volumes Docker). Elle ne doit jamais recevoir de données
 réelles d'élève — c'est la raison du jeu de démonstration reconstruit à chaque remise à zéro.
+
+---
+
+## 40. Exemples de saisie, champ par champ (5.52.2)
+
+Chaque tableau donne, pour un formulaire courant, une **valeur d'exemple réaliste** et la **règle** que le champ
+applique. Les valeurs proviennent du jeu de démonstration (§3.13) : elles s'affichent telles quelles sur une base
+d'essai, et se recopient telles quelles sur une base réelle en remplaçant noms et montants.
+
+> **Deux règles de saisie valables partout** : les montants s'écrivent en chiffres, sans espace ni « FCFA »
+> (`150000`, pas « 150 000 FCFA ») ; les dates se choisissent au calendrier du champ (`15/10/2026` à l'écran,
+> `2026-10-15` dans le champ).
+
+### 40.1 Élève — `Élèves → Nouvel élève`
+
+| Champ | Exemple | Règle |
+|---|---|---|
+| Nom / Prénom(s) | `OUÉDRAOGO` / `Aminata` | nom en majuscules, prénom en minuscules avec majuscule initiale ; un homonyme déclenche un avertissement, pas un blocage |
+| Genre | Féminin | conditionne les statistiques G / F |
+| Date de naissance | `12/03/2014` | obligatoire ; l'âge affiché suit l'année scolaire |
+| Lieu de naissance | `Ouagadougou` | facultatif |
+| Nationalité | `Burkinabè` | valeur pré-remplie |
+| Lieu de résidence | `Secteur 30, Ouagadougou` | quartier et ville, utile aux convocations |
+| Téléphone du père / de la mère | `70 11 22 33` | 8 chiffres ; c'est ce numéro qui reçoit les SMS et qui identifie la famille dans *Messages reçus* ; le format international (`+22670112233`) est accepté |
+| Nom et profession du père / de la mère | `OUÉDRAOGO Salif` / `Commerçant` | facultatifs, imprimés sur la fiche et le certificat |
+| Tuteur (nom, téléphone, adresse) | `SAWADOGO Rasmata` · `76 45 67 89` · `Karpala` | à renseigner quand l'élève ne vit pas chez ses parents |
+| Téléphone d'urgence | `78 90 12 34` | joint en cas d'incident, même si le parent est absent |
+| Personnes autorisées | `OUÉDRAOGO Salif — oncle — 70 00 00 00` | une personne par ligne |
+| Groupe sanguin, allergies, médecin | `O+` · `Aucune` · `Dr Kaboré — 70 33 44 55` | portés sur la fiche sanitaire |
+| Photo | fichier JPG ou PNG | 5 Mo au plus ; recadrée automatiquement |
+
+### 40.2 Personnel — `Personnel → Nouveau membre`
+
+| Champ | Exemple | Règle |
+|---|---|---|
+| Nom / Prénom(s) | `KABORÉ` / `Salifou` | l'initiale du prénom sert au matricule (`CEN-01`, `ENS-03`…) |
+| Fonction | `Enseignant` | les fonctions « Directeur » et « Censeur » ouvrent les accès correspondants |
+| Date de naissance | `04/05/1988` | facultative |
+| Téléphone | `70 55 44 33` | reçoit les notifications ; ce numéro est aussi reconnu pour les SMS reçus (§32.6 bis) |
+| E-mail | `e.moussa@demo.bf` | sert de compte de connexion quand le personnel a un accès |
+| Numéro CNI / passeport | `B1234567` | **chiffré en base**, affiché masqué |
+| Titre de capacité | `CAP-CEG` | imprimé sur l'attestation de travail |
+| Date d'embauche | `01/10/2018` | base du calcul de l'ancienneté |
+| Contractuel / vacataire | Contractuel | un vacataire est payé à l'heure (§11) |
+| Cycles | Primaire + Post-primaire | limite les classes proposées à cet agent |
+
+### 40.3 Encaissement — `Finances → Nouveau paiement`
+
+| Champ | Exemple | Règle |
+|---|---|---|
+| Élève | `BATIONO Aminata — 6e A` | recherché par nom ou par matricule |
+| Rubrique | `Scolarité — 1re tranche` | les rubriques de l'année, avec leur reste ; une rubrique soldée est grisée |
+| Montant | `25000` | **plafonné au reste de la rubrique** (« Maximum autorisé : 25 000 FCFA ») ; jamais de montant négatif |
+| Mode de paiement | Espèces | Espèces, Mobile Money, virement ou chèque selon la configuration |
+| Référence | `MM-2026-00417` | obligatoire pour Mobile Money, virement et chèque |
+| Échéance | `30/11/2026` | facultative ; sert aux relances |
+| Observation | `Versement du père` | facultative, reprise sur le reçu |
+
+Après enregistrement, le **reçu PDF signé** est disponible : le paiement devient immuable, une correction se fait
+par annulation motivée (direction), jamais par modification.
+
+### 40.4 Manuel et prêt — `Manuels → Catalogue`, puis `Attribution`
+
+| Champ | Exemple | Règle |
+|---|---|---|
+| Titre / Auteur / Éditeur | `Mathématiques 6e` / `—` / `CIAM` | un titre par manuel et par cycle |
+| Cycle / Classe / Matière | Post-primaire / 6e A / Mathématiques | filtre les élèves proposés à l'attribution |
+| Prix de remplacement | `2500` | facturé en cas de non-retour (**non rendu**, §26.5) |
+| Exemplaires | 12 | le code `EX-2026-00001` est généré automatiquement |
+| Élève attributaire | `ILBOUDO Salamata — 6e A` | un exemplaire n'est prêté qu'à un élève à la fois |
+| État à la sortie | Bon état | Neuf, Bon état, Usagé, Détérioré |
+| Retour prévu | `23/10/2026` | au-delà, le prêt passe **en retard** et la famille peut être relancée |
+
+### 40.5 Pointage — `Personnel → Pointage`
+
+| Champ | Exemple | Règle |
+|---|---|---|
+| Heure d'arrivée limite | `07:30` | réglage de l'établissement ; au-delà, le pointage est compté **en retard** |
+| Arrivée / Départ | `07:15` / `16:05` | heures au format 24 h ; le départ seul donne 0 h travaillée |
+| Statut | *(automatique)* | déduit de l'heure d'arrivée ; choisir **Absent** ou **En congé** pour forcer |
+| Observation | `Retard signalé` | 200 caractères, repris sur la feuille mensuelle |
+| Ligne vide | — | une ligne entièrement vide n'est pas enregistrée |
+
+### 40.6 Entretien annuel — `Personnel → Évaluations annuelles → Nouvel entretien`
+
+| Champ | Exemple | Règle |
+|---|---|---|
+| Agent évalué | `ZONGO Awa` | une seule évaluation par agent et par année scolaire |
+| Année scolaire | `2026-2027` | l'année courante est proposée par défaut |
+| Date de l'entretien | `15/11/2026` | facultative (date du jour par défaut) |
+| Évaluateur | `OUÉDRAOGO Issa` | membre du personnel qui conduit l'entretien |
+| Ponctualité / Compétence / Qualité / Relations / Initiative | `5` · `4` · `4` · `5` · `3` | notes entières de **0 à 5** ; total sur 25 et moyenne sur 20 calculés |
+| Bilan de l'année | *Année régulière : les élèves progressent et le cahier de textes est tenu à jour.* | texte libre |
+| Objectifs | *Poursuivre l'accompagnement des élèves en difficulté et participer aux concertations.* | texte libre, remis à l'agent |
+| Avis | Favorable | Favorable, Favorable avec réserves, Défavorable |
+
+### 40.7 Réception des SMS — `Configuration → Configuration SMS`
+
+| Champ | Exemple | Règle |
+|---|---|---|
+| Activer le service SMS | coché | sans cela, aucune réponse ne part |
+| N'accepter que les SMS des numéros enregistrés | coché | les expéditeurs inconnus sont ignorés sans réponse (§32.6 bis) |
+| URL de la passerelle | `http://192.168.1.45:8080/message` | adresse du téléphone sur le WiFi de l'école |
+| Utilisateur / Mot de passe | `admin` / secret de l'app | identiques à ceux de l'app SMS Gateway |
+| Délai (s) | `10` | au-delà, l'envoi est considéré en échec |
+| Numéro de test | `70 11 22 33` | reçoit le message de vérification du bouton **Tester** |

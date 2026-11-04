@@ -2027,6 +2027,8 @@ select.input {
 
 .align-center    { align-items: center; }
 .align-start     { align-items: flex-start; }
+.align-end       { align-items: flex-end; }
+.align-items-end { align-items: flex-end; }
 .justify-between { justify-content: space-between; }
 .justify-end     { justify-content: flex-end; }
 .flex-wrap       { flex-wrap: wrap; }

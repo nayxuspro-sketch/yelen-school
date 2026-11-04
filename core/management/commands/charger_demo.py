@@ -29,6 +29,8 @@ from parametres.models import (
 )
 from personnel.models import MembrePersonnel
 from pedagogie.models import Enseignement, Evaluation, Matiere, MatiereCycle, Note, Trimestre, TypeEvaluation
+from manuels.models import AttributionManuel, EtatManuel, ExemplaireManuel, ManuelScolaire
+from personnel.models import EvaluationAnnuelle, PointagePersonnel, ReglagePointage
 from pedagogie.utils import CalculateurMoyenne
 
 MOT_DE_PASSE = 'Demo2026!'
@@ -117,6 +119,9 @@ class Command(BaseCommand):
             self._paiements(precedente, precedentes, rubriques, statuts)
             self._paiements(courante, courantes, rubriques, statuts)
             self._signataires(courante, personnel)
+            self._pointages(courante, personnel)
+            self._evaluations(courante, personnel)
+            self._bibliotheque(courante, courantes)
 
         self._compte_rendu(etab, identite, courante, nb_eleves)
 
@@ -382,12 +387,100 @@ class Command(BaseCommand):
                     signataire.set_membre_personnel(personnel['CPT-01' if code == 'RECU_PAIEMENT' else 'DIR-01'])
                     signataire.save(update_fields=['membre_personnel_id'])
 
+    def _pointages(self, annee, personnel):
+        """Trois semaines de pointage : présences à l'heure, quelques retards et une absence — de quoi lire la
+        feuille mensuelle et son PDF signé (5.51.0)."""
+        agents = list(MembrePersonnel.objects.filter(etablissement=annee.etablissement, is_active=True))
+        if not agents:
+            return
+        ReglagePointage.pour(annee.etablissement)
+        hasard = random.Random(GRAINE + 7)
+        jour = dt.date.today()
+        jours = []
+        while len(jours) < 15:
+            if jour.weekday() < 5:                                  # du lundi au vendredi
+                jours.append(jour)
+            jour -= dt.timedelta(days=1)
+        for agent in agents:
+            for date_jour in jours:
+                if hasard.random() < 0.06:                          # absence isolée
+                    PointagePersonnel.objects.get_or_create(
+                        personnel=agent, date=date_jour,
+                        defaults={'statut': PointagePersonnel.StatutChoices.ABSENT,
+                                  'observation': 'Absence non justifiée'})
+                    continue
+                retard = hasard.random() < 0.15
+                arrivee = dt.time(7, 31 + hasard.randint(0, 28)) if retard else dt.time(7, hasard.randint(0, 29))
+                depart = dt.time(12, 30) if hasard.random() < 0.5 else dt.time(16, hasard.randint(0, 30))
+                PointagePersonnel.objects.get_or_create(
+                    personnel=agent, date=date_jour,
+                    defaults={
+                        'heure_arrivee': arrivee, 'heure_depart': depart,
+                        'statut': (PointagePersonnel.StatutChoices.RETARD if retard
+                                   else PointagePersonnel.StatutChoices.PRESENT),
+                        'observation': 'Retard signalé' if retard else '',
+                    })
+
+    def _evaluations(self, annee, personnel):
+        """Un entretien annuel par agent, notes variées : la liste, la grille et le PDF ne sont pas vides (5.51.0)."""
+        directeur = personnel.get('DIR-01') or personnel.get('CEN-01')
+        hasard = random.Random(GRAINE + 11)
+        for agent in MembrePersonnel.objects.filter(etablissement=annee.etablissement, is_active=True):
+            notes = [hasard.randint(3, 5) for _ in EvaluationAnnuelle.CRITERES]
+            EvaluationAnnuelle.objects.get_or_create(
+                personnel=agent, annee_scolaire=annee,
+                defaults={
+                    'date_entretien': annee.date_debut + dt.timedelta(days=45),
+                    'evaluateur': directeur,
+                    'ponctualite': notes[0], 'competence': notes[1], 'qualite': notes[2],
+                    'relations': notes[3], 'initiative': notes[4],
+                    'bilan': "Année régulière : les élèves progressent et le cahier de textes est tenu à jour.",
+                    'objectifs': "Poursuivre l'accompagnement des élèves en difficulté et participer aux concertations.",
+                    'avis': (EvaluationAnnuelle.AvisChoices.FAVORABLE if sum(notes) >= 20
+                             else EvaluationAnnuelle.AvisChoices.RESERVE),
+                })
+
+    def _bibliotheque(self, annee, eleves):
+        """Catalogue de manuels et prêts en cours, dont deux en retard : la page « Prêts et retards » est
+        exploitable dès la démonstration (5.50.0)."""
+        etab = annee.etablissement
+        ouvrages = (('Mathématiques 6e', 'CIAM', 2500), ('Français 6e', 'Hachette', 2500),
+                    ('Sciences d’observation 6e', 'NEI', 2000), ('Histoire-Géographie 6e', 'NEI', 2000))
+        aujourdhui = dt.date.today()
+        for rang, (titre, editeur, prix) in enumerate(ouvrages):
+            manuel, cree = ManuelScolaire.objects.get_or_create(
+                etablissement=etab, titre=titre,
+                defaults={'auteur': '', 'editeur': editeur, 'cycle': 'POST_PRIMAIRE',
+                          'annee_edition': aujourdhui.year - 2, 'prix_remplacement': Decimal(prix),
+                          'actif': True},
+            )
+            if not cree:
+                continue
+            for _ in range(12):
+                ExemplaireManuel.objects.create(
+                    manuel=manuel, etat=EtatManuel.BON, annee_acquisition=aujourdhui.year - 1, actif=True)
+        exemplaires = list(ExemplaireManuel.objects.filter(manuel__etablissement=etab).order_by('code_exemplaire'))
+        # Trois prêts sur des élèves du post-primaire : deux échus, un en cours — la relance et la liste des retards
+        # ont toujours du contenu, quel que soit l'effectif demandé.
+        post = [i for i in eleves if i.classe.cycle.code == 'POST']
+        for rang, inscription in enumerate(post[:3]):
+            if not exemplaires:
+                return
+            AttributionManuel.objects.get_or_create(
+                exemplaire=exemplaires.pop(0), inscription=inscription,
+                defaults={'date_attribution': aujourdhui - dt.timedelta(days=40 + rang),
+                          'etat_sortie': EtatManuel.BON,
+                          'date_retour_prevue': aujourdhui + dt.timedelta(days=-12 if rang % 2 == 0 else 10)},
+            )
+
     def _compte_rendu(self, etab, identite, annee, nb_eleves):
         self.stdout.write(self.style.SUCCESS(
             f"Établissement {identite.nom_etablissement} ({etab.code}) — année {annee.libelle} prête."))
         self.stdout.write(
             f"{nb_eleves} élèves inscrits, {Note.objects.filter(inscription__annee_scolaire=annee).count()} notes, "
-            f"{Paiement.objects.filter(inscription__annee_scolaire=annee).count()} paiements.")
+            f"{Paiement.objects.filter(inscription__annee_scolaire=annee).count()} paiements, "
+            f"{PointagePersonnel.objects.count()} pointages, {EvaluationAnnuelle.objects.count()} évaluations "
+            f"annuelles, {AttributionManuel.objects.count()} prêts d'ouvrages.")
         self.stdout.write("Comptes de démonstration :")
         for _, _, _, fonction, _, _, (email, role) in PERSONNEL:
             self.stdout.write(f"  {email:24} {role:12} {fonction}")

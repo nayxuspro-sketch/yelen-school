@@ -3,6 +3,28 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.52.2 — 2026-11-04
+
+- **Guide d'utilisation : captures d'écran régénérées et exemples de saisie.** Vérification de
+  `docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` contre l'application réelle (jeu de démonstration, navigateur Chromium).
+  - **15 captures réelles** (contre 10, dont plusieurs antérieures à 5.46) : les 10 existantes sont reprises sur la
+    version courante et cinq écrans récents sont ajoutés — *Comptes élèves en masse* (5.49.0), *Prêts et retards*
+    (5.50.0), *Pointage du jour* (5.51.0), *Évaluations annuelles* (5.51.0) et *Configuration SMS* avec la réception
+    filtrée (5.52.0). Légendes réécrites (§33), sommaire complété.
+  - **Nouvelle section §40 « Exemples de saisie, champ par champ »** : sept formulaires courants (élève, personnel,
+    encaissement, manuel et prêt, pointage, entretien annuel, configuration SMS) avec une valeur d'exemple réaliste
+    et la règle appliquée par chaque champ.
+  - **§3.13** : le jeu de démonstration annonce désormais son contenu 5.50 à 5.52 (pointages, évaluations annuelles,
+    prêts d'ouvrages) — il sert de base aux captures.
+- **Jeu de démonstration enrichi** (`charger_demo`) : trois semaines de pointage des 8 agents (présences, retards,
+  absences), un entretien annuel par agent et trois prêts d'ouvrages dont deux échus. Contrôlé par un test
+  (`core/tests/test_demo.py`).
+- **Correctif d'affichage** : les classes utilitaires `.align-end` et `.align-items-end` étaient utilisées par
+  seize gabarits sans être définies dans `yelen.css` — les barres de filtres concernées n'étaient pas alignées
+  (visible sur *Pointage du jour*). Ajout des deux règles (alignement bas).
+- Guides : `docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` (§3.13, §33, §40) et sa version Word régénérée.
+- Tests : `core/tests/test_demo.py` (+1 test).
+
 ## 5.52.1 — 2026-11-04
 
 - **Guide de déploiement Windows remis à niveau (5.52.1).** Vérification complète contre le dépôt et la

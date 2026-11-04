@@ -23,7 +23,7 @@
 <form method="post" class="card animate-fade-up delay-1 mb-4">
   {% csrf_token %}
   <input type="hidden" name="date" value="{{ jour|date:'Y-m-d' }}">
-  <div class="card-body d-flex gap-3 align-end flex-wrap">
+  <div class="card-body d-flex gap-3 align-center flex-wrap">
     <div class="form-group">
       <label class="input-label" for="id_limite">Heure d'arrivée limite</label>
       <input type="time" id="id_limite" name="heure_arrivee_limite" value="{{ reglage.heure_arrivee_limite|time:'H:i' }}" class="input">

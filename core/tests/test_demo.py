@@ -1,4 +1,6 @@
 """Jeu de démonstration (5.41.0) : un établissement complet en une commande, rejouable et réinitialisable."""
+import datetime
+
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -43,6 +45,20 @@ def test_etablissement_complet_en_une_commande():
     assert MoyenneGenerale.objects.filter(inscription__annee_scolaire=courante, moyenne__isnull=False).count() == 8
     assert Paiement.objects.filter(inscription__annee_scolaire=courante).count() >= 8
     assert Matiere.objects.count() >= 10
+
+
+def test_pointage_evaluations_et_prets_pour_les_captures_du_guide():
+    """5.52.2 — les écrans du guide (pointage, évaluations annuelles, prêts) ne sont jamais vides en démonstration."""
+    from manuels.models import AttributionManuel
+    from personnel.models import EvaluationAnnuelle, PointagePersonnel
+
+    etab = charger()
+    courante = AnneeScolaire.objects.get(etablissement=etab, est_courante=True)
+    assert PointagePersonnel.objects.filter(personnel__etablissement=etab).count() >= 100
+    assert PointagePersonnel.objects.filter(statut=PointagePersonnel.StatutChoices.RETARD).exists()
+    assert EvaluationAnnuelle.objects.filter(annee_scolaire=courante).count() == 8
+    assert AttributionManuel.objects.filter(inscription__annee_scolaire=courante).count() >= 2
+    assert AttributionManuel.objects.filter(date_retour__isnull=True, date_retour_prevue__lt=datetime.date.today()).exists()
 
 
 def test_les_tarifs_respectent_les_plafonds():
