@@ -146,10 +146,15 @@ strong { font-weight: 600; color: #0A1628; }
 em { font-style: italic; }
 a { color: #0A1628; text-decoration: none; }
 a[href^="http"] { color: #067955; }
-code, kbd, samp { font-family: "Mono", "DejaVu Sans Mono", monospace; font-size: 8.1pt; color: #16202E; background: #F5F2EC; padding: 0.2mm 1mm; border-radius: 1pt; }
+code, kbd, samp {
+  font-family: "Mono", "DejaVu Sans Mono", monospace; font-size: 8.1pt; color: #16202E;
+  background: #F5F2EC; padding: 0.2mm 1mm; border-radius: 1pt;
+  overflow-wrap: break-word; hyphens: none;
+}
 hr { border: 0; border-top: 0.4pt solid #E2E6EB; margin: 5mm 0; }
 
-ul, ol { margin: 0 0 3mm; padding-left: 5.4mm; }
+ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+ol { padding-left: 7mm; }
 li { margin-bottom: 1.5mm; text-align: justify; hyphens: auto; }
 li::marker { color: #B0803A; }
 ul ul, ol ol, ul ol, ol ul { margin-top: 1.5mm; margin-bottom: 1.5mm; }
@@ -236,6 +241,7 @@ h5 {
 /* ── Pages liminaires ────────────────────────────────────────────────────── */
 
 .front { page: front; break-after: page; }
+.front.dernier { break-after: auto; }
 .front-titre {
   font-family: "Serif"; font-weight: 600; font-size: 22pt; color: #0A1628; margin: 0 0 2mm;
 }
@@ -299,6 +305,25 @@ h5 {
   text-transform: uppercase; color: #7E8B9A;
 }
 
+/* ── Tableau de synthèse (avant-propos) ─────────────────────────────────── */
+
+.brief-cadre {
+  margin: 4mm 0 6mm; border: 0.4pt solid #E2E6EB; border-top: 2pt solid #B0803A;
+  background: #FDFCFA; padding: 1mm 5mm 2mm;
+}
+table.brief { width: 100%; border-collapse: collapse; }
+table.brief th {
+  text-align: left; width: 38mm; padding: 3mm 4mm 3mm 0; vertical-align: top;
+  border-bottom: 0.3pt solid #E8E2D6; background: none;
+  font-size: 7pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #8A6A32;
+}
+table.brief td {
+  padding: 3mm 0; border-bottom: 0.3pt solid #E8E2D6; font-size: 9pt; line-height: 1.55; color: #24303F;
+}
+table.brief tr:last-child th, table.brief tr:last-child td { border-bottom: 0; }
+table.brief td p { margin: 0 0 1.4mm; }
+table.brief td p:last-child { margin-bottom: 0; }
+
 /* ── Sommaire ────────────────────────────────────────────────────────────── */
 
 .sommaire { page: front; break-after: page; }
@@ -348,7 +373,8 @@ h5 {
   font-family: "Serif"; font-weight: 400; font-size: 52pt; line-height: .9; color: #DCD3C2;
   margin-right: 6mm; letter-spacing: .02em;
 }
-.chapeau h2 { margin: 0; font-size: 23pt; line-height: 1.14; string-set: chapitre-courant content(); }
+.chapeau h2 { margin: 0; font-size: 23pt; line-height: 1.14; }
+.chapeau .num-bloc.sans-num h2 { font-size: 21pt; }
 .chapeau .chapeau-resume { font-size: 9.2pt; color: #6C7787; font-style: italic; margin-top: 3.5mm; }
 .chapeau .dans {
   margin-top: 5.5mm; background: #FBF8F2; border-left: 1.6pt solid #D8B675;
@@ -446,6 +472,18 @@ figure figcaption {
 }
 figure figcaption b {
   color: #0A1628; font-weight: 600; letter-spacing: .04em;
+}
+
+/* ── Schémas vectoriels ──────────────────────────────────────────────────── */
+
+figure.figure-schema { margin: 5mm 0 6mm; }
+.schema-cadre {
+  background: #FDFCFA; border: 0.4pt solid #E2E6EB; border-radius: 2pt;
+  padding: 5mm 4mm 4mm;
+}
+.schema-cadre svg { width: 100%; height: auto; display: block; }
+figure.figure-schema figcaption {
+  margin-top: 2.6mm; border-top: 0.8pt solid #B0803A; padding-top: 1.8mm;
 }
 
 /* ── Blocs de code et sorties console ────────────────────────────────────── */

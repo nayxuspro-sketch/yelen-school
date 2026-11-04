@@ -19,6 +19,9 @@ from urllib.parse import quote
 from bs4 import BeautifulSoup, NavigableString
 from weasyprint import CSS, HTML
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from guide_pdf.documents import DOCUMENTS  # noqa: E402
+
 ICI = Path(__file__).resolve().parent
 GABARIT = ICI / 'guide_pdf'
 RACINE = ICI.parent
@@ -255,27 +258,113 @@ def lire_entete(txt):
     return meta, txt[m.end():]
 
 
-def decouper(txt):
-    """Renvoie (entête, [(numéro, titre, bloc_markdown)]) en s'appuyant sur les titres de niveau 2."""
+def decouper(txt, config):
+    """Sépare le Markdown en avant-propos et chapitres, selon le dossier documentaire fourni."""
     entete, corps = lire_entete(txt)
     blocs, courant, tampon = [], None, []
     for ligne in corps.split('\n'):
-        m = re.match(r'^##\s+(\d+|[IVX]+)?\.?\s*(.*)$', ligne)
-        if m and not ligne.startswith('###'):
-            if courant:
+        m = re.match(r'^##\s+(.*)$', ligne)
+        if m:
+            if courant is not None:
                 courant['md'] = '\n'.join(tampon)
                 blocs.append(courant)
-            courant = {'num': int(m.group(1)) if (m.group(1) or '').isdigit() else None, 'titre': m.group(2)}
+            courant = {'titre': m.group(1).strip()}
             tampon = []
         elif courant is not None:
             tampon.append(ligne)
-    if courant:
+    if courant is not None:
         courant['md'] = '\n'.join(tampon)
         blocs.append(courant)
-    return entete, [b for b in blocs if b['num'] is not None]
+
+    avant, chapitres = [], []
+    for bloc in blocs:
+        titre = bloc['titre']
+        if titre in config.get('ignorer', ()):
+            continue
+        m = re.match(r'^(\d+)[.)]?\s+(.*)$', titre)
+        sous = re.match(r'^(\d+)\.\d+\s+(.*)$', titre)
+        if sous:
+            chapitres.append({'num': None, 'parent': int(sous.group(1)), 'titre': titre,
+                              'md': bloc['md'], 'kind': 'sous-chapitre'})
+        elif m:
+            chapitres.append({'num': int(m.group(1)), 'titre': m.group(2), 'md': bloc['md'], 'kind': 'chapitre'})
+        elif titre in config.get('annexes', ()):
+            chapitres.append({'num': None, 'titre': titre, 'md': bloc['md'], 'kind': 'annexe'})
+        elif chapitres:
+            chapitres.append({'num': None, 'titre': titre, 'md': bloc['md'], 'kind': 'annexe'})
+        else:
+            avant.append(bloc['md'])
+    return entete, avant, chapitres
 
 
-# ── Conversion Markdown → HTML ──────────────────────────────────────────────
+def reparer_listes(markdown_src):
+    """Rend lisibles les listes qui contiennent un bloc de code ou un paragraphe indenté.
+
+    python-markdown abandonne une liste dès qu'un contenu indenté atteint exactement la
+    largeur du marqueur (« 1. » → 3 espaces) : le point suivant repart alors dans une
+    nouvelle liste et le bloc de code sort du cadre. Les continuations sont donc réindentées
+    à quatre espaces, et les blocs ``` convertis en jetons réinjectés ensuite en `<pre>`.
+    """
+    blocs = {}
+    lignes = markdown_src.split('\n')
+    sortie = []
+    indent_liste = None
+    i = 0
+    while i < len(lignes):
+        ligne = lignes[i]
+        m_item = re.match(r'^(\s*)(\d+\.|[-*+])\s', ligne)
+        if m_item:
+            indent_liste = len(m_item.group(1))
+            sortie.append(ligne)
+            i += 1
+            continue
+
+        vide = not ligne.strip()
+        indentation = len(ligne) - len(ligne.lstrip(' '))
+        if indent_liste is not None and not vide and indentation > indent_liste:
+            supplement = indentation - indent_liste
+            ligne = ' ' * 4 + ' ' * max(0, supplement - 3) + ligne.lstrip(' ')
+            m_bloc = re.match(r'^(\s{4,})```[a-zA-Z0-9]*\s*$', ligne)
+            if m_bloc:
+                contenu = []
+                i += 1
+                while i < len(lignes) and not re.match(r'^\s*```\s*$', lignes[i]):
+                    contenu.append(lignes[i])
+                    i += 1
+                i += 1                                 # fermeture du bloc
+                jeton = f'YELENBLOC{len(blocs)}CODE'
+                corps = '\n'.join(l.strip() for l in contenu)
+                corps = corps.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                blocs[jeton] = f'<pre class="code"><code>{corps}</code></pre>'
+                sortie.append(' ' * 4 + jeton)
+                continue
+            sortie.append(ligne)
+            i += 1
+            continue
+
+        if not vide and indentation <= (indent_liste or 0):
+            indent_liste = None
+        sortie.append(ligne)
+        i += 1
+
+    # une liste collée au paragraphe précédent est avalée par celui-ci : on aère
+    aeree = []
+    for ligne in sortie:
+        if re.match(r'^(\d+\.|[-*+])\s', ligne) and aeree:
+            precedente = aeree[-1].strip()
+            if precedente and not re.match(r'^(\d+\.|[-*+])\s', aeree[-1]) and not precedente.startswith('|'):
+                aeree.append('')
+        aeree.append(ligne)
+    return '\n'.join(aeree), blocs
+
+
+def injecter_blocs(html, blocs):
+    """Remet les blocs de code à la place de leurs jetons."""
+    for jeton, code in blocs.items():
+        html = re.sub(rf'<p>\s*{jeton}\s*</p>', lambda _: code, html)
+        html = html.replace(jeton, code)
+    return html
+
 
 def md_vers_html(markdown_src):
     import markdown as md_lib
@@ -370,6 +459,16 @@ def _construire_encadre(soup, contenu):
         div.append(entete)
     for noeud in contenu:
         div.append(noeud.extract())
+    # après retrait de l'étiquette, la phrase reprend par une majuscule
+    for paragraphe in div.find_all('p'):
+        for enfant in paragraphe.contents:
+            if isinstance(enfant, NavigableString) and enfant.strip():
+                texte = str(enfant)
+                if texte.lstrip()[:1].islower():
+                    position = len(texte) - len(texte.lstrip())
+                    enfant.replace_with(NavigableString(
+                        texte[:position] + texte[position].upper() + texte[position + 1:]))
+                break
     for paragraphe in div.find_all('p'):
         if not paragraphe.get_text(strip=True) and not paragraphe.find('img'):
             paragraphe.decompose()
@@ -468,82 +567,103 @@ def traiter_images(html, etat):
     return corps.decode_contents()
 
 
-def assembler(source: Path, sortie: Path):
-    texte = source.read_text(encoding='utf-8')
-    entete, chapitres_md = decouper(texte)
-    etat = {'figures': 0, 'liste_figures': [], 'sections': []}
+def _brief(html):
+    """Transforme une suite d'encadrés étiquetés en un tableau de synthèse compact (avant-propos)."""
+    soup = BeautifulSoup(html, 'lxml')
+    corps = soup.body or soup
+    encadres = corps.find_all('div', class_='callout')
+    if len(encadres) < 2:
+        return html
+    table = soup.new_tag('table', attrs={'class': 'brief'})
+    for encadre in encadres:
+        etiquette = encadre.find('div', class_='label')
+        libelle = etiquette.get_text(' ', strip=True) if etiquette else ''
+        if etiquette:
+            etiquette.decompose()
+        ligne = soup.new_tag('tr')
+        cap = soup.new_tag('th')
+        cap.string = libelle
+        cellule = soup.new_tag('td')
+        for enfant in list(encadre.contents):
+            cellule.append(enfant.extract())
+        ligne.append(cap)
+        ligne.append(cellule)
+        table.append(ligne)
+        encadre.decompose()
+    cadre = soup.new_tag('div', attrs={'class': 'brief-cadre'})
+    cadre.append(table)
+    corps.insert(0, cadre)
+    return corps.decode_contents()
 
-    import markdown as md_lib
-    chapitres = []
-    vues_chap = {}
-    for bloc in chapitres_md:
-        etat['sections'] = []
-        html = md_lib.markdown(bloc['md'], extensions=['tables', 'fenced_code', 'sane_lists', 'attr_list'],
-                               output_format='html5')
-        contenu = traiter_fragment(html, etat)
-        contenu = traiter_images(contenu, etat)
-        titre_html = joli_titre(bloc['titre'])
-        cid = ancre(f"chapitre-{bloc['num']}-{bloc['titre']}", vues=vues_chap)
-        chapitres.append({'num': bloc['num'], 'titre': titre_html, 'titre_brut': bloc['titre'],
-                          'id': cid, 'html': contenu, 'sections': list(etat['sections'])})
 
-    version = entete.get('version_logiciel', '')
-    date_txt = entete.get('date_mise_a_jour', '').split('(')[0].strip()
+def _figures_index(etat):
+    """Sommaire des illustrations (captures et schémas), avec la page imprimée."""
+    if not etat['liste_figures']:
+        return ''
+    lignes = ''.join(
+        f'<div class="item"><span class="t"><b>{label}</b> — {alt}</span>'
+        f'<span class="p" data-ref="#{fid}"></span></div>'
+        for label, alt, fid in etat['liste_figures'])
+    return f"""
+<section class="front dernier">
+  <div class="front-kicker">Illustrations</div>
+  <h1 class="front-titre">Index des figures et schémas</h1>
+  <div class="front-rule"></div>
+  <div class="som-figures">{lignes}</div>
+</section>"""
 
-    # ── Couverture ─────────────────────────────────────────────────────────
-    logo = (RACINE / 'yelen-school-icon.svg').resolve()
-    couverture = f"""
+
+def _schema_html(schema, etat):
+    """Insère un schéma vectoriel en figure légendée."""
+    etat['schemas'] = etat.get('schemas', 0) + 1
+    numero = etat['schemas']
+    fid = f'schema-{numero}'
+    etat['liste_figures'].append((f'Schéma {numero}', schema['titre'], fid))
+    return (f'<figure class="figure-schema" id="{fid}"><div class="schema-cadre">{schema["svg"]}</div>'
+            f'<figcaption><b>Schéma {numero} — </b>{schema["titre"]}</figcaption></figure>')
+
+
+def _couverture(config, version, date_txt, nb_chapitres, logo):
+    return f"""
 <section class="couverture">
   <div class="cv-halo"></div>
   <div class="cv-cadre"></div>
   <div class="cv-inner">
-    <div class="cv-surtitre">Édition {version} · Manuel officiel</div>
+    <div class="cv-surtitre">{config['surtitre'].format(version=version)}</div>
     <div class="cv-filet-or"></div>
     <img class="cv-logo" src="{logo}">
     <div class="cv-marque">YELEN<span>SCHOOL</span></div>
-    <div class="cv-titre">Guide<br>d'utilisation</div>
-    <div class="cv-sous-titre">Gestion scolaire complète — inscriptions, pédagogie,<br>finances, documents et
-      communication avec les familles.</div>
+    <div class="cv-titre">{config['couverture_titre']}</div>
+    <div class="cv-sous-titre">{config['couverture_sous_titre']}</div>
   </div>
   <div class="cv-bas">
     <div class="rule"></div>
     <table><tr>
-      <td style="width:34%">Document<b>Guide d'utilisation</b></td>
+      <td style="width:34%">Document<b>{config['titre_court'].split('· ')[-1]}</b></td>
       <td style="width:22%">Version<b>{version}</b></td>
       <td style="width:22%">Mise à jour<b>{date_txt}</b></td>
-      <td class="g" style="width:22%">Chapitres<b>{len(chapitres):02d}</b></td>
+      <td class="g" style="width:22%">Chapitres<b>{nb_chapitres:02d}</b></td>
     </tr></table>
   </div>
 </section>"""
 
-    # ── Page de fiche documentaire ─────────────────────────────────────────
-    modules = entete.get('modules_documentes', '')
-    fiche = f"""
+
+def _fiche(config, valeurs):
+    lignes = ''.join(f'<tr><th>{libelle}</th><td>{valeur.format(**valeurs)}</td></tr>'
+                     for libelle, valeur in config['fiche'])
+    intro = ''.join(f'<p style="font-size:9.1pt; color:#3B4655">{p.format(**valeurs)}</p>'
+                    for p in config['fiche_intro'])
+    return f"""
 <section class="front">
   <div class="front-kicker">Fiche du document</div>
-  <h1 class="front-titre">YELEN SCHOOL<br>Guide d'utilisation</h1>
+  <h1 class="front-titre">{config['fiche_titre']}</h1>
   <div class="front-rule"></div>
-  <table class="fiche">
-    <tr><th>Logiciel</th><td>YELEN SCHOOL — gestion d'établissement scolaire (Django, mode autonome SQLite ou
-      serveur PostgreSQL), interface en français.</td></tr>
-    <tr><th>Version documentée</th><td>{version}</td></tr>
-    <tr><th>Édition du guide</th><td>{entete.get('version_guide', '')} — {date_txt}</td></tr>
-    <tr><th>Public</th><td>Direction, secrétariat, comptabilité, enseignants, surveillants, parents et élèves.</td></tr>
-    <tr><th>Portée</th><td>40 chapitres : de la connexion jusqu'aux fonctions les plus récentes, avec les écrans
-      réels de l'application et des exemples de saisie champ par champ.</td></tr>
-    <tr><th>Modules couverts</th><td>{modules}</td></tr>
-    <tr><th>Rédaction</th><td>{entete.get('redige_par', 'Équipe YELEN SCHOOL')}</td></tr>
-  </table>
-  <p style="font-size:9.1pt; color:#3B4655">Ce manuel décrit le comportement réel du logiciel : chaque écran cité
-  existe, chaque libellé de champ correspond à celui affiché par l'application. Les captures proviennent d'une base de
-  démonstration, avec des noms et des montants fictifs.</p>
-  <p style="font-size:9.1pt; color:#3B4655">Il s'utilise de deux façons : en lecture linéaire pour une prise en main
-  complète, ou comme référence — le sommaire donne la page de chaque chapitre, et chaque ouverture de chapitre liste
-  ses sections avec leur page.</p>
+  <table class="fiche">{lignes}</table>
+  {intro}
 </section>"""
 
-    # ── Comment lire ce guide (légende) ────────────────────────────────────
-    legende = """
+
+LEGENDE = """
 <section class="front">
   <div class="front-kicker">Mode d'emploi du manuel</div>
   <h1 class="front-titre">Comment lire ce guide</h1>
@@ -571,57 +691,134 @@ def assembler(source: Path, sortie: Path):
 
   <h3 style="margin-top:9mm">Repères typographiques</h3>
   <table class="fiche">
-    <tr><th>Chemins de menu</th><td>Écrits entre accents graves, par exemple <code>Finances → Paiements</code> :
-      ce sont les libellés que vous voyez à l'écran.</td></tr>
+    <tr><th>Chemins de menu</th><td>Écrits en clair ou entre accents graves, par exemple
+      <code>Finances → Paiements</code> : ce sont les libellés que vous voyez à l'écran.</td></tr>
     <tr><th>Champs à saisir</th><td>Le nom exact du champ est cité entre guillemets droits, suivi d'un exemple de
       valeur lorsque plusieurs formats existent.</td></tr>
-    <tr><th>Blocs sombres</th><td>Commandes à recopier, sorties de console ou arborescences de fichiers ; ils
-      n'ont pas à être traduits.</td></tr>
-    <tr><th>Figures</th><td>Chaque capture est numérotée et légendée ; l'index des figures en fin de sommaire donne
-      sa page.</td></tr>
-    <tr><th>Tableaux</th><td>Les tableaux reprennent la structure exacte des écrans : la première ligne est l'en-tête
-      affiché par l'application.</td></tr>
+    <tr><th>Blocs monospace</th><td>Commandes à recopier telles quelles, sorties de console ou arborescences de
+      fichiers ; ils se lisent en largeur et n'ont pas à être traduits.</td></tr>
+    <tr><th>Figures et schémas</th><td>Chaque capture et chaque schéma est numéroté et légendé ; l'index des
+      illustrations donne sa page.</td></tr>
+    <tr><th>Tableaux</th><td>Les tableaux reprennent la structure exacte des écrans ou des fichiers : la première
+      ligne est l'en-tête affiché.</td></tr>
   </table>
 </section>"""
 
-    # ── Sommaire ───────────────────────────────────────────────────────────
-    par_num = {c['num']: c for c in chapitres}
-    som = ['<section class="sommaire">',
-           '<div class="front-kicker">Navigation</div>',
-           '<h1 class="som-titre">Sommaire</h1>',
-           '<p class="som-intro">Les numéros renvoient à la page imprimée. Chaque ouverture de chapitre détaille '
-           'ensuite ses sections, avec leur page.</p>']
-    for lettre, nom, resume, nums in PARTIES:
-        som.append(f'<div class="som-part">Partie {lettre} <span>· {nom}</span></div>')
-        for n in nums:
-            c = par_num.get(n)
+
+def _sommaire(config, chapitres, version):
+    par_num = {c['num']: c for c in chapitres if c['num'] is not None}
+    par_titre = {c['titre_brut']: c for c in chapitres}
+    blocs = ['<section class="sommaire">',
+             '<div class="front-kicker">Navigation</div>',
+             '<h1 class="som-titre">Sommaire</h1>',
+             f'<p class="som-intro">{config["som_intro"]}</p>']
+    for lettre, nom, resume, refs in config['parties']:
+        blocs.append(f'<div class="som-part">Partie {lettre} <span>· {nom}</span></div>')
+        for ref in refs:
+            c = par_num.get(ref) if isinstance(ref, int) else par_titre.get(ref)
             if not c:
                 continue
             nb = len(c['sections'])
-            detail = (f'<small>{nb} section{"s" if nb > 1 else ""}</small>' if nb else '')
-            som.append(f'<div class="som-chap"><span class="n">{n}</span>'
-                       f'<span class="t">{c["titre"]}{detail}</span>'
-                       f'<span class="p" data-ref="#{c["id"]}"></span></div>')
-    som.append('</section>')
-    sommaire = '\n'.join(som)
+            detail = f'<small>{nb} section{"s" if nb > 1 else ""}</small>' if nb else ''
+            num = f'{c["num"]}' if c['num'] is not None else ''
+            blocs.append(f'<div class="som-chap"><span class="n">{num}</span>'
+                         f'<span class="t">{c["titre"]}{detail}</span>'
+                         f'<span class="p" data-ref="#{c["id"]}"></span></div>')
+    blocs.append('</section>')
+    return '\n'.join(blocs)
 
-    # ── Index des figures (après le sommaire) ──────────────────────────────
-    figs = ['<section class="front">',
-            '<div class="front-kicker">Illustrations</div>',
-            '<h1 class="front-titre">Index des captures d\'écran</h1>',
-            '<div class="front-rule"></div>',
-            '<div class="som-figures">']
-    for num, alt, fid in etat['liste_figures']:
-        figs.append(f'<div class="item"><span class="t"><b>Figure {num}</b> — {alt}</span>'
-                    f'<span class="p" data-ref="#{fid}"></span></div>')
-    figs.append('</div></section>')
-    index_figures = '\n'.join(figs)
+
+def assembler(source: Path, sortie: Path, cle='utilisation'):
+    """Compose le PDF éditorial d'un guide à partir de son dossier documentaire."""
+    config = DOCUMENTS[cle]
+    texte = source.read_text(encoding='utf-8')
+    entete, avant_md, chapitres_md = decouper(texte, config)
+    version = entete.get('version_logiciel') or (RACINE / 'VERSION').read_text(encoding='utf-8').strip()
+    date_txt = entete.get('date_mise_a_jour', '').split('(')[0].strip()
+    if not date_txt:
+        auj = __import__('datetime').date.today()
+        date_txt = f'{auj:%d/%m/%Y}'
+    etat = {'figures': 0, 'schemas': 0, 'liste_figures': [], 'sections': []}
+
+    # les sections numérotées « 3.5 … » sont rendues dans leur chapitre parent
+    fusionnes = []
+    for bloc in chapitres_md:
+        if bloc.get('kind') == 'sous-chapitre':
+            parent = next((c for c in reversed(fusionnes) if c['num'] == bloc['parent']), None)
+            if parent is not None:
+                parent['md'] += f"\n\n### {bloc['titre']}\n\n{bloc['md']}"
+                continue
+        fusionnes.append(bloc)
+    chapitres_md = fusionnes
+
+    import markdown as md_lib
+    chapitres = []
+    vues_chap = {}
+    for bloc in chapitres_md:
+        etat['sections'] = []
+        source_md, blocs_code = reparer_listes(bloc['md'])
+        html = md_lib.markdown(source_md, extensions=['tables', 'fenced_code', 'sane_lists', 'attr_list'],
+                               output_format='html5')
+        html = injecter_blocs(html, blocs_code)
+        contenu = traiter_fragment(html, etat)
+        contenu = traiter_images(contenu, etat)
+        if bloc['num'] is not None:
+            for schema in config['schemas']:
+                if schema['chapitre'] == bloc['num']:
+                    contenu = _schema_html(schema, etat) + contenu
+        cid = ancre(f"chapitre-{bloc['num']}-{bloc['titre']}", vues=vues_chap)
+        chapitres.append({'num': bloc['num'], 'titre': joli_titre(bloc['titre']), 'titre_brut': bloc['titre'],
+                          'id': cid, 'html': contenu, 'sections': list(etat['sections']),
+                          'kind': bloc['kind']})
+
+    # ── Pages liminaires ───────────────────────────────────────────────────
+    logo = (RACINE / 'yelen-school-icon.svg').resolve()
+    valeurs = {
+        'version': version, 'date': date_txt,
+        'version_guide': entete.get('version_guide', ''),
+        'modules': entete.get('modules_documentes', ''),
+        'redaction': entete.get('redige_par', 'Équipe YELEN SCHOOL'),
+    }
+    nb_numerotes = len([c for c in chapitres if c['num'] is not None])
+    couverture = _couverture(config, version, date_txt, nb_numerotes, logo)
+    fiche = _fiche(config, valeurs)
+
+    avant_propos = ''
+    if config.get('avant_propos') and avant_md:
+        source_avant, blocs_avant = reparer_listes('\n'.join(avant_md))
+        html_avant = md_lib.markdown(source_avant, extensions=['tables', 'fenced_code', 'sane_lists',
+                                                              'attr_list'], output_format='html5')
+        corps_avant = traiter_fragment(injecter_blocs(html_avant, blocs_avant), etat)
+        corps_avant = _brief(corps_avant)
+        avant_propos = f"""
+<section class="front">
+  <div class="front-kicker">À lire en premier</div>
+  <h1 class="front-titre">{config['avant_propos']}</h1>
+  <div class="front-rule"></div>
+  {corps_avant}
+</section>"""
+
+    sommaire = _sommaire(config, chapitres, version)
+    index_figures = _figures_index(etat)
 
     # ── Corps : parties + chapitres ────────────────────────────────────────
+    par_num = {c['num']: c for c in chapitres if c['num'] is not None}
+    par_titre = {c['titre_brut']: c for c in chapitres}
+    referencees = {ref for _, _, _, refs in config['parties'] for ref in refs}
+    orphelins = [c for c in chapitres
+                 if c['num'] not in referencees and c['titre_brut'] not in referencees]
+    if orphelins:
+        parties = [list(p) for p in config['parties']]
+        parties[-1][3] = list(parties[-1][3]) + [c['titre_brut'] for c in orphelins]
+        config = dict(config, parties=[tuple(p) for p in parties])
+
     corps = ['<div class="corps-debut"></div>']
     styles_chapitres = []
-    for lettre, nom, resume, nums in PARTIES:
-        titres = ''.join(f'<div><b>{n}</b>{par_num[n]["titre"]}</div>' for n in nums if n in par_num)
+    for lettre, nom, resume, refs in config['parties']:
+        membres = [par_num.get(ref) if isinstance(ref, int) else par_titre.get(ref) for ref in refs]
+        membres = [c for c in membres if c]
+        liste = ''.join(f'<div><b>{c["num"] if c["num"] is not None else "·"}</b>{c["titre"]}</div>'
+                        for c in membres)
         corps.append(f"""
 <section class="ouverture">
   <div class="halo"></div>
@@ -631,43 +828,44 @@ def assembler(source: Path, sortie: Path):
     <div class="part-titre">{nom}</div>
     <div class="part-filet"></div>
     <div class="part-resume">{resume}</div>
-    <div class="part-liste">{titres}</div>
+    <div class="part-liste">{liste}</div>
   </div>
-  <div class="part-folio">YELEN SCHOOL · Guide d'utilisation · Édition {version}</div>
+  <div class="part-folio">{config['titre_court']} · Édition {version}</div>
 </section>""")
-        for n in nums:
-            c = par_num.get(n)
-            if not c:
-                continue
+        for c in membres:
             sections = ''.join(f'<li><a href="#{sid}">{st}</a></li>' for st, sid in c['sections'])
             bloc_dans = (f'<div class="dans"><div class="label">Dans ce chapitre</div><ul>{sections}</ul></div>'
                          if c['sections'] else '')
+            if c['num'] is not None:
+                kicker = f'Chapitre {c["num"]}'
+                num_html = f'<div class="num">{c["num"]:02d}</div>'
+            else:
+                kicker = 'Repères'
+                num_html = ''
+            classe_num = 'num-bloc' if num_html else 'num-bloc sans-num'
             court = re.split(r'\s+—\s+|\s+\(', c['titre'])[0][:38]
-            styles_chapitres.append(f'#{c["id"]} .chapeau h2 {{ string-set: chapitre-courant "{court}"; }}')
+            styles_chapitres.append(
+                f'#{c["id"]} .chapeau h2 {{ string-set: chapitre-courant "{court}"; }}')
             corps.append(f"""
 <section class="chapitre" id="{c['id']}">
   <div class="chapeau">
-    <div class="sur-titre">Chapitre {c['num']}</div>
-    <div class="num-bloc"><div class="num">{c['num']:02d}</div><h2>{c['titre']}</h2></div>
+    <div class="sur-titre">{kicker}</div>
+    <div class="{classe_num}">{num_html}<h2>{c['titre']}</h2></div>
     {bloc_dans}
   </div>
   {c['html']}
 </section>""")
 
-    # ── Dernière page ──────────────────────────────────────────────────────
+    fin_paragraphes = ''.join(f'<p>{p.format(version=version)}</p>' for p in config['fin'])
     fin = f"""
 <section class="fin">
   <div class="bloc">
     <div class="marque">YELEN<span>SCHOOL</span></div>
     <div class="devise">« Illuminer chaque parcours scolaire »</div>
     <div class="filet"></div>
-    <p>Ce manuel décrit la version {version} du logiciel. Il est régénéré à chaque évolution de l'interface :
-    seule l'édition en ligne, à jour, fait foi.</p>
-    <p>Une question qui n'a pas de réponse ici ? Le chapitre 16 rassemble les questions fréquentes, le chapitre 17
-    le vocabulaire, et le guide de déploiement Windows (<i>docs/GUIDE_DEPLOIEMENT_WINDOWS</i>) traite de
-    l'installation, des sauvegardes et de la mise à jour du serveur.</p>
+    {fin_paragraphes}
   </div>
-  <div class="mentions">Document interne — YELEN SCHOOL · Guide d'utilisation · Édition {version} — {date_txt} ·
+  <div class="mentions">Document interne — {config['titre_court']} · Édition {version} — {date_txt} ·
     composé en Inter, Source Serif 4 et JetBrains Mono</div>
 </section>"""
 
@@ -675,10 +873,10 @@ def assembler(source: Path, sortie: Path):
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>YELEN SCHOOL — Guide d'utilisation {version}</title>
+<title>{config['titre_court']} {version}</title>
 <meta name="author" content="YELEN SCHOOL">
-<meta name="description" content="Manuel officiel YELEN SCHOOL, version {version} : inscriptions, pédagogie, finances, documents et communication avec les familles.">
-<meta name="keywords" content="YELEN SCHOOL, guide d'utilisation, gestion scolaire, Burkina Faso, {version}">
+<meta name="description" content="{config['titre_court']}, version {version} : {config['couverture_sous_titre']}">
+<meta name="keywords" content="YELEN SCHOOL, {config['cle']}, gestion scolaire, Burkina Faso, {version}">
 <meta name="generator" content="scripts/md_vers_pdf.py">
 <style>
 {css_icones()}
@@ -688,7 +886,8 @@ def assembler(source: Path, sortie: Path):
 <body>
 {couverture}
 {fiche}
-{legende}
+{LEGENDE}
+{avant_propos}
 {sommaire}
 {index_figures}
 {''.join(corps)}
@@ -698,8 +897,8 @@ def assembler(source: Path, sortie: Path):
 
     # ── Rendu : passes successives pour que chaque renvoi indique la page imprimée ──
     css_version = CSS(string="""
-      html { string-set: livre "YELEN SCHOOL · Guide d'utilisation"; }
-    """)
+      html { string-set: livre "__LIVRE__"; }
+    """.replace('__LIVRE__', config['titre_court']))
     css_folios = CSS(string="""
       .corps-debut { counter-reset: page 0; }
     """)
@@ -713,7 +912,7 @@ def assembler(source: Path, sortie: Path):
     """)
 
     feuille = _feuille(version, date_txt)
-    premiere_cible = chapitres[0]['id'] if chapitres else ''
+    premiere_cible = next((c['id'] for c in chapitres), '')
     numeros = {}
     for _ in range(3):
         html_passe = _injecter_pages(document, numeros)
@@ -730,10 +929,9 @@ def assembler(source: Path, sortie: Path):
         numeros = nouveaux
 
     document = _injecter_pages(document, numeros)
-    sortie.with_suffix('.html').write_text(document, encoding='utf-8')
     HTML(string=document, base_url=str(GABARIT)).write_pdf(
         str(sortie), stylesheets=[feuille, css_version, css_folios, css_renvois],
-        metadata_title=f"YELEN SCHOOL — Guide d'utilisation {version}",
+        metadata_title=f"{config['titre_court']} {version}",
         attachments=[str(RACINE / 'VERSION')],
     )
     return sortie
@@ -758,10 +956,14 @@ def _injecter_pages(document, numeros):
 
 
 def main():
-    args = sys.argv[1:]
-    source = Path(args[0]) if args else DOCS / 'GUIDE_UTILISATION_YELEN_SCHOOL.md'
-    sortie = Path(args[1]) if len(args) > 1 else DOCS / 'GUIDE_UTILISATION_YELEN_SCHOOL.pdf'
-    assembler(source, sortie)
+    args = [a for a in sys.argv[1:]]
+    cle = 'utilisation'
+    if args and args[0] in DOCUMENTS:
+        cle = args.pop(0)
+    config = DOCUMENTS[cle]
+    source = Path(args[0]) if args else DOCS / config['fichier']
+    sortie = Path(args[1]) if len(args) > 1 else DOCS / config['sortie']
+    assembler(source, sortie, cle)
     print(f'{sortie} ({sortie.stat().st_size / 1_048_576:.1f} Mo)')
 
 

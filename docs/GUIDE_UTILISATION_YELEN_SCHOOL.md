@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.52.3
+version_logiciel: 5.52.6
 version_guide: 5.47
-date_mise_a_jour: 04/11/2026 (5.52.3 : pré-inscription — le nom du parent arrive dans « Nom du père »)
+date_mise_a_jour: 04/11/2026 (5.52.6 : guides composés en PDF éditorial)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL

@@ -3,6 +3,24 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.52.6 — 2026-11-04
+
+- **Guide de déploiement Windows en PDF éditorial prêt à imprimer** (`docs/GUIDE_DEPLOIEMENT_WINDOWS.pdf`,
+  71 pages A4, 1,4 Mo) : couverture marine et or, fiche documentaire, mode d'emploi, avant-propos présenté en
+  tableau de synthèse, sommaire paginé en 6 parties, **3 schémas vectoriels** (architecture des cinq conteneurs,
+  cycle de vie d'une sauvegarde, mise à jour en un clic), 11 chapitres et leur annexe de règles essentielles.
+- **Moteur de composition généralisé** : `scripts/md_vers_pdf.py` s'appuie désormais sur un dossier
+  documentaire (`scripts/guide_pdf/documents.py`) qui décrit couverture, fiche, parties, schémas et page de
+  clôture de chaque guide. Les deux PDF se régénèrent avec `python scripts/md_vers_pdf.py utilisation` et
+  `python scripts/md_vers_pdf.py deploiement`.
+- **Correctifs de composition** relevés en relecture des épreuves :
+  - listes numérotées interrompues par un bloc de code indenté (les points suivants repartaient dans une nouvelle
+    liste, hors du cadre) — continuations réindentées, blocs rétrogradés en jetons puis réinjectés ;
+  - étiquettes d'encadrés laissant la phrase commencer en minuscule ;
+  - dernière page liminaire produisant une page blanche ;
+  - en-têtes de page repliés sur quatre lignes pour les titres de chapitre longs.
+- Guides `.docx` régénérés ; versions alignées sur `5.52.6` (`VERSION`, en-têtes des deux guides).
+
 ## 5.52.5 — 2026-11-04
 
 - `lxml` porté de 6.0.2 à **6.1.0** (correction de la vulnérabilité PYSEC-2026-87 relevée par `pip-audit`
