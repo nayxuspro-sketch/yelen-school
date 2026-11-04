@@ -3,6 +3,28 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.50.0 — 2026-11-04
+
+- **Prêts d'ouvrages et retards de la bibliothèque (audit P2-13).** Le circuit d'attribution des manuels gagne son
+  échéance et sa relance, côté école comme côté familles.
+  - **Modèle** : `AttributionManuel.date_retour_prevue` (échéance fixée à la sortie, facultative) et
+    `derniere_relance_le`, avec `est_en_retard` / `jours_de_retard` (migration `manuels/0003`). Le formulaire
+    d'attribution accepte l'échéance.
+  - **Page `Manuels → Prêts et retards`** (`/manuels/prets/`) : prêts en cours triés par échéance, filtres
+    *En retard* / *À rendre sous 7 jours*, compteurs, pagination à 50, relance groupée des prêts cochés et
+    **liste des retards en PDF** (A4 signé, `prets_retards_pdf`).
+  - **Relance** : `core.notifications.notifier_pret_retard` avise le compte élève et les comptes parents dans leur
+    portail (notification in-app + push), envoie le SMS au numéro de la famille si les SMS sont activés (nouveau
+    modèle de message `PRET`, personnalisable) et date la relance.
+  - **Relance automatique quotidienne** : nouveau déclencheur `PRETS_RETARD` de `Paramètres → SMS automatiques`
+    (commande `sms_auto`, migration `parametres/0046`) — une relance par prêt au plus tous les 3 jours (champ
+    « jours avant »), jamais deux le même jour, jamais pour un ouvrage rendu.
+  - **Portail** : section *Ouvrages à rendre* de la vie scolaire (parent et élève) — ouvrage, code, échéance et
+    jours de retard (`core.portail.prets_en_cours`).
+  - **Droits** : fonctionnalité *Manuels scolaires › Prêts et retards* avec l'action *Relancer les familles*.
+- Guides : `docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` § 26.4 et § 26.5 bis ; `docs/GUIDE_DEMARRAGE_RAPIDE.md` § 7 et § 8.
+- Tests : `manuels/test_prets.py` (8 tests).
+
 ## 5.49.0 — 2026-11-03
 
 - **Portail élève au niveau du portail parent (audit P2-12).**

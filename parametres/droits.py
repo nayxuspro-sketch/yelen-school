@@ -304,6 +304,9 @@ MODULES = (
         _f('/manuels/non-rendus/', 'Non rendus', actions=(
             _a('facturer', 'Facturer un manuel non rendu', 'facturer_non_rendu'),
         )),
+        _f('/manuels/prets/', 'Prêts et retards', actions=(
+            _a('relancer', 'Relancer les familles pour un ouvrage non rendu', 'relancer_prets'),
+        )),
     )),
     Module('documents', 'Documents', SECTION_ADMINISTRATION, (
         _f('/documents/listes/', 'Listes de classes'),

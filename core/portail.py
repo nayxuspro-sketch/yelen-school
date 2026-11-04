@@ -68,6 +68,20 @@ def moyennes_par_periode(inscription):
     return list(periodes.items())
 
 
+def prets_en_cours(inscription):
+    """Ouvrages et manuels non rendus de l'élève, échéance la plus proche d'abord (prêts en retard signalés)."""
+    from manuels.models import AttributionManuel
+    prets = (
+        AttributionManuel.objects
+        .filter(inscription=inscription, date_retour__isnull=True)
+        .select_related('exemplaire__manuel')
+        .order_by('date_retour_prevue', 'date_attribution')
+    )
+    return [{'pret': p, 'titre': p.exemplaire.manuel.titre, 'code': p.exemplaire.code_exemplaire,
+             'echeance': p.date_retour_prevue, 'en_retard': p.est_en_retard, 'retard': p.jours_de_retard}
+            for p in prets]
+
+
 def devoirs_a_venir(inscription, limite=5):
     """Devoirs de la classe non encore échus, par date de remise."""
     today = timezone.localdate()

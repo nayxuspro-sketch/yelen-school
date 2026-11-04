@@ -34,7 +34,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             '--type',
-            choices=['ABSENCE_J1', 'ECHEANCIER', 'RESULTATS', 'COMPTE_RENDU'],
+            choices=['ABSENCE_J1', 'ECHEANCIER', 'RESULTATS', 'PRETS_RETARD', 'COMPTE_RENDU'],
             help="Exécuter uniquement ce type de déclencheur",
         )
         parser.add_argument(
@@ -105,6 +105,8 @@ class Command(BaseCommand):
             nb = self._echeancier_rappel(declencheur, etab, dry_run)
         elif t == 'RESULTATS':
             nb = self._resultats_dispo(declencheur, etab, dry_run)
+        elif t == 'PRETS_RETARD':
+            nb = self._prets_retard(declencheur, etab, dry_run)
 
         if not dry_run:
             declencheur.last_run = timezone.now()
@@ -270,4 +272,37 @@ class Command(BaseCommand):
             nb += 1
             logger.info(f"SMS bulletin → {numero} ({eleve})")
 
+        return nb
+
+    # ── PRÊTS D'OUVRAGES EN RETARD ─────────────────────────────────
+
+    def _prets_retard(self, declencheur, etab, dry_run):
+        """Relance les familles des ouvrages non rendus à l'échéance : un avis par prêt et par période de
+        ``jours_avant`` jours (3 par défaut), jamais deux pour le même prêt."""
+        from django.utils import timezone
+        from core.notifications import notifier_pret_retard
+        from manuels.models import AttributionManuel
+
+        today = timezone.localdate()
+        intervalle = timedelta(days=declencheur.jours_avant or 3)
+        retards = (
+            AttributionManuel.objects
+            .filter(
+                exemplaire__manuel__etablissement=etab,
+                date_retour__isnull=True,
+                date_retour_prevue__lt=today,
+            )
+            .select_related('exemplaire__manuel', 'inscription__eleve', 'inscription__classe')
+        )
+
+        nb = 0
+        for attribution in retards:
+            deja = attribution.derniere_relance_le
+            if deja and timezone.now() - deja < intervalle:
+                continue
+            if dry_run:
+                nb += 1
+                continue
+            if notifier_pret_retard(attribution):
+                nb += 1
         return nb

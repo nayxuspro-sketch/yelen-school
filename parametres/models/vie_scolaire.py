@@ -170,6 +170,7 @@ class ModeleMessage(BaseModel):
       PAIEMENT  : {nom_eleve}, {montant}, {rubrique}, {etablissement}
       REUNION   : {date}, {heure}, {lieu}, {objet}, {etablissement}
       SANCTION  : {nom_eleve}, {classe}, {date}, {sanction}, {motif}, {etablissement}
+      PRET      : {nom_eleve}, {classe}, {ouvrage}, {date}, {etablissement}
     """
 
     class TypeChoices(models.TextChoices):
@@ -179,6 +180,7 @@ class ModeleMessage(BaseModel):
         SEUIL_ABSENCES = 'SEUIL_ABSENCES', "Seuil d'absences atteint"
         SANCTION = 'SANCTION', 'Sanction disciplinaire'
         PAIEMENT = 'PAIEMENT', 'Relance paiement'
+        PRET     = 'PRET',     "Prêt d'ouvrage en retard"
         REUNION  = 'REUNION',  'Réunion parents d\'élèves'
 
     DEFAUTS = {
@@ -205,6 +207,10 @@ class ModeleMessage(BaseModel):
         'PAIEMENT': (
             "Bonjour, un rappel de paiement : {rubrique} de {montant} FCFA "
             "pour {nom_eleve} est en attente. Contactez {etablissement}."
+        ),
+        'PRET': (
+            "Bonjour, l'ouvrage « {ouvrage} » emprunté par {nom_eleve} ({classe}) devait être rendu le {date}. "
+            "Merci de le rapporter à {etablissement}."
         ),
         'REUNION': (
             "Bonjour, une réunion parents-élèves est prévue le {date} à {heure} "
@@ -282,6 +288,7 @@ class DeclencheurSMS(BaseModel):
       ABSENCE_J1   — SMS J+1 pour absences non justifiées de la veille
       ECHEANCIER   — Rappel N jours avant l'échéance impayée
       RESULTATS    — SMS à la publication d'un nouveau bulletin
+      PRETS_RETARD — Relance des prêts d'ouvrages échus (bibliothèque)
       COMPTE_RENDU — Compte rendu quotidien du promoteur (encaissements, caisse, absences), envoyé à
                      ``heure_envoi`` par le service SMS (``communication.compte_rendu``)
     """
@@ -290,6 +297,7 @@ class DeclencheurSMS(BaseModel):
         ABSENCE_J1 = 'ABSENCE_J1', _('Absences non justifiées (J+1)')
         ECHEANCIER = 'ECHEANCIER', _("Rappel d'échéancier")
         RESULTATS  = 'RESULTATS',  _('Bulletin disponible')
+        PRETS_RETARD = 'PRETS_RETARD', _("Prêt d'ouvrage en retard")
         COMPTE_RENDU = 'COMPTE_RENDU', _('Compte rendu quotidien du promoteur')
 
     etablissement = models.ForeignKey(

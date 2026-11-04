@@ -306,6 +306,52 @@ def notifier_relance_paiement(inscription, rubrique, montant):
         logger.exception("notifier_relance_paiement échoué")
 
 
+
+def notifier_pret_retard(attribution, envoyer_sms=True):
+    """Relance la famille d'un prêt d'ouvrage échu : avis in-app du compte élève et des parents (lien vers la vie
+    scolaire du portail) et, si demandé, SMS au numéro de la famille (modèle « Prêt d'ouvrage en retard »).
+    Retourne True si au moins un canal a été utilisé."""
+    try:
+        from django.utils import timezone
+
+        inscription = attribution.inscription
+        eleve = inscription.eleve
+        etab = inscription.classe.etablissement
+        ouvrage = attribution.exemplaire.manuel.titre
+        echeance = attribution.date_retour_prevue.strftime('%d/%m/%Y') if attribution.date_retour_prevue else ''
+        retard = attribution.jours_de_retard
+        titre = f"Prêt à rendre — {ouvrage}"
+        message_inapp = (
+            f"« {ouvrage} » emprunté par {eleve.get_nom_complet()} ({inscription.classe.nom}) devait être rendu "
+            f"le {echeance} ({retard} jour{'s' if retard > 1 else ''} de retard)."
+        )
+        envoye = False
+        for compte_eleve in eleve.utilisateurs_lies.filter(role='ELEVE', is_active=True):
+            creer_notification(compte_eleve, 'GENERAL', titre, message_inapp,
+                               lien='/portail/eleve/vie-scolaire/', envoyer_email=False, envoyer_sms=False)
+            envoye = True
+        for parent in eleve.utilisateurs_lies.filter(role='PARENT', is_active=True):
+            creer_notification(parent, 'GENERAL', titre, message_inapp,
+                               lien='/portail/parent/vie-scolaire/', envoyer_email=False, envoyer_sms=False)
+            envoye = True
+        numero = (eleve.telephone_parent or eleve.tuteur_telephone or eleve.telephone_urgence or '').strip()
+        if envoyer_sms and sms_actifs() and numero:
+            from core.tasks import envoyer_sms_async
+            sms_message = _get_sms_message(etab, 'PRET', {
+                'nom_eleve': eleve.get_nom_complet(), 'classe': inscription.classe.nom, 'ouvrage': ouvrage,
+                'date': echeance, 'etablissement': etab.nom,
+            })
+            envoyer_sms_async(numero, sms_message)
+            envoye = True
+        if envoye:
+            attribution.derniere_relance_le = timezone.now()
+            attribution.save(update_fields=['derniere_relance_le'])
+        return envoye
+    except Exception:
+        logger.exception("notifier_pret_retard échoué")
+        return False
+
+
 def notifier_reunion(etablissement, date, heure, lieu, objet, parents_numeros):
     """
     Envoie une convocation de réunion parents-élèves.

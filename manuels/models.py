@@ -175,6 +175,16 @@ class AttributionManuel(BaseModel):
         default=EtatManuel.BON,
         verbose_name=_("État à la sortie"),
     )
+    date_retour_prevue = models.DateField(
+        null=True, blank=True,
+        verbose_name=_("Retour prévu"),
+        help_text=_("Échéance du prêt ; au-delà, le prêt passe en retard et les familles peuvent être relancées."),
+    )
+    derniere_relance_le = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name=_("Dernière relance"),
+        help_text=_("Date de la dernière relance envoyée à la famille pour ce prêt."),
+    )
     date_retour = models.DateField(
         null=True, blank=True,
         verbose_name=_("Date de retour"),
@@ -212,3 +222,18 @@ class AttributionManuel(BaseModel):
     @property
     def est_rendu(self):
         return self.date_retour is not None
+
+    @property
+    def est_en_retard(self):
+        """Prêt non rendu dont l'échéance est dépassée."""
+        from django.utils import timezone
+        if self.est_rendu or self.date_retour_prevue is None:
+            return False
+        return self.date_retour_prevue < timezone.localdate()
+
+    @property
+    def jours_de_retard(self):
+        from django.utils import timezone
+        if not self.est_en_retard:
+            return 0
+        return (timezone.localdate() - self.date_retour_prevue).days

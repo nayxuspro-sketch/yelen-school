@@ -1,7 +1,7 @@
 ---
 titre: Guide de démarrage rapide — YELEN SCHOOL
-version_logiciel: 5.49.0
-date_mise_a_jour: 03/11/2026
+version_logiciel: 5.50.0
+date_mise_a_jour: 04/11/2026
 public: direction, secrétariat, comptabilité, enseignants d'un établissement qui démarre
 ---
 
@@ -192,6 +192,7 @@ notes et paiements (§ 8.1). Le **capital de points discipline** est optionnel (
 |-------|----|-------|
 | Bulletin **annuel** et palmarès (moyenne des trimestres, décision finale) | `Bulletins → Annuel` | § 6.3.3, § 6.3.4 |
 | **Statistiques officielles** de fin d'année (MENAPLN) et fichiers d'inscription aux examens | `Documents → Statistiques officielles`, `Examens` | § 12.15, § 10.6 |
+| **Prêts et retards** : relancer les familles (portail + SMS), imprimer la liste des retards | `Manuels → Prêts et retards` | § 26.5 bis |
 | **Manuels non rendus** | `Manuels → Non rendus` | § 26.5 |
 | **Clôturer l'année** : plus aucune inscription ni paiement modifiable sur cette année | `Paramètres → Années scolaires` | § 3.2 |
 | Créer l'**année suivante** (sans la rendre courante tout de suite) | `Paramètres → Années scolaires` | § 3.3 |
@@ -206,8 +207,9 @@ Les données des années passées restent consultables (bulletins, paiements, ar
 
 - **Configuration SMS** : `Paramètres → Configuration SMS` — un téléphone Android avec la
   passerelle SMS installée, ou un fournisseur en ligne ; bouton **Tester** (§ 3.5).
-- **SMS automatiques** : absence du jour, retard de paiement, publication des bulletins, compte
-  rendu quotidien à la direction — activables ligne par ligne (§ 3.8).
+- **SMS automatiques** : absence du jour, retard de paiement, publication des bulletins, prêt
+  d'ouvrage en retard (relance tous les 3 jours, § 26.5 bis), compte rendu quotidien à la direction
+  — activables ligne par ligne (§ 3.8).
 - **Campagnes ciblées** : une classe, les redevables, tous les parents (§ 9.24) ; **circulaires**
   et **convocations** PDF (§ 12.12, § 12.13).
 - **Messages avec réponse** : le parent répond par un lien ou par SMS ; les réponses sont suivies

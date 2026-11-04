@@ -22,6 +22,11 @@ urlpatterns = [
     path('attributions/depuis/<uuid:exemplaire_pk>/', views.attribution_form, name='attribution_depuis_exemplaire'),
     path('attributions/<uuid:pk>/retour/', views.attribution_retour, name='attribution_retour'),
 
+    # Prêts et retards
+    path('prets/', views.prets_en_cours, name='prets_en_cours'),
+    path('prets/relancer/', views.relancer_prets, name='relancer_prets'),
+    path('prets/retards/pdf/', views.prets_retards_pdf, name='prets_retards_pdf'),
+
     # Manuels non rendus
     path('non-rendus/', views.non_rendus, name='non_rendus'),
     path('non-rendus/<uuid:pk>/facturer/', views.facturer_non_rendu, name='facturer_non_rendu'),

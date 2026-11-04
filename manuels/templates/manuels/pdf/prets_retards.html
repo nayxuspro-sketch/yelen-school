@@ -1,0 +1,256 @@
+{% extends "pdf/base.html" %}
+{% load signataire_tags %}
+{% block page %}@page {
+    size: A4;
+    margin: 0;
+}{% endblock %}
+{% block css %}
+/* ── Page ── */
+
+body {
+  margin: 0; padding: 0;
+  width: 21cm; min-height: 29.7cm;
+  font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif;
+  font-size: 10pt;
+  color: #111;
+  background: #fff;
+}
+
+/* ── Barres encadrement ── */
+.barre-top    { height: 5pt; background: #111; }
+.barre-bottom { height: 4pt; background: #111; margin-top: 0.3cm; }
+
+/* ── Zone contenu ── */
+.page { padding: 0.5cm 1.8cm 0.4cm; }
+
+/* ── Titre document ── */
+.doc-titre {
+  text-align: center;
+  margin: 0.25cm 0 0.3cm;
+}
+.doc-titre h1 {
+  font-size: 13pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #111;
+  border-top: 1.5pt solid #111;
+  border-bottom: 1.5pt solid #111;
+  padding: 4pt 1cm;
+  display: inline-block;
+  margin: 0;
+}
+.doc-titre .annee {
+  font-size: 8.5pt;
+  color: #333;
+  font-weight: bold;
+  margin-top: 4pt;
+  letter-spacing: 0.3px;
+}
+
+/* ── Stats ── */
+.stats-bar {
+  display: table;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 8pt 0;
+  margin: 0.3cm 0 0.4cm;
+}
+.stat-cell {
+  display: table-cell;
+  background: #fff;
+  border: 1pt solid #555;
+  border-left: 3pt solid #111;
+  border-radius: 2pt;
+  padding: 5pt 8pt;
+  font-size: 8.5pt;
+  color: #111;
+  vertical-align: middle;
+  width: 33%;
+}
+.stat-cell.rouge {
+  background: #fff;
+  border-color: #555;
+  border-left-color: #111;
+}
+.stat-cell .stat-val {
+  font-size: 15pt;
+  font-weight: bold;
+  display: block;
+  line-height: 1.1;
+  color: #111;
+}
+.stat-cell.rouge .stat-val { color: #111; }
+.stat-cell .stat-lbl { font-size: 7.5pt; color: #333; }
+
+/* ── Table ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+  margin-top: 0.1cm;
+}
+thead th {
+  background: #1a1a1a;
+  color: #fff;
+  padding: 5pt 7pt;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 8pt;
+  font-weight: 600;
+}
+thead th.text-right { text-align: right; }
+tbody td {
+  padding: 4.5pt 7pt;
+  border-bottom: 0.5pt solid #ccc;
+  vertical-align: middle;
+}
+tbody tr:nth-child(even) td { background: #f2f2f2; }
+
+/* ── Ligne séparateur de classe ── */
+.tr-classe td {
+  background: #ddd;
+  border-top: 1pt solid #999;
+  border-bottom: 1pt solid #999;
+  color: #111;
+  font-weight: bold;
+  font-size: 8pt;
+  padding: 3.5pt 7pt;
+}
+
+/* ── Ligne total général ── */
+.tr-total td {
+  background: #fff;
+  font-weight: bold;
+  font-size: 9pt;
+  border-top: 2pt solid #111;
+  border-bottom: 2pt solid #111;
+  padding: 5pt 7pt;
+}
+
+/* ── Badges ── */
+.badge {
+  display: inline-block;
+  padding: 1pt 5pt;
+  border-radius: 2pt;
+  font-size: 7.5pt;
+  font-weight: 600;
+  border: 1pt solid #111;
+  color: #111;
+  background: #fff;
+}
+.badge-ok   { background: #fff; }
+.badge-warn { background: #eee; }
+
+/* ── Code exemplaire ── */
+.mono {
+  font-family: 'DejaVu Sans Mono', monospace;
+  font-size: 7.5pt;
+  background: #eeeeee;
+  padding: 1pt 4pt;
+  border-radius: 2pt;
+}
+
+.text-right { text-align: right; }
+.fw-bold { font-weight: bold; }
+
+/* ── Pied de page ── */
+.footer {
+  margin-top: 0.4cm;
+  display: table;
+  width: 100%;
+  border-top: 0.5pt solid #999;
+  padding-top: 4pt;
+  font-size: 7.5pt;
+  color: #666;
+}
+.footer-left  { display: table-cell; text-align: left; }
+.footer-right { display: table-cell; text-align: right; }
+{% endblock %}
+{% block entete %}{% endblock %}
+{% block corps %}
+<div class="barre-top"></div>
+
+<div class="page">
+
+  {% include "pdf/partials/entete.html" %}
+
+  <!-- Titre -->
+  <div class="doc-titre">
+    <h1>Prêts en retard</h1>
+    <div class="annee">Année scolaire {{ annee }} — Imprimé le {{ today|date:"d/m/Y" }}</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-cell rouge">
+      <span class="stat-val">{{ prets|length }}</span>
+      <span class="stat-lbl">Prêt{% if prets|length > 1 %}s{% endif %} en retard</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-val">
+        {% for p in prets %}{% if forloop.first %}{{ p.jours_de_retard }}{% endif %}{% endfor %}
+      </span>
+      <span class="stat-lbl">Retard le plus ancien (jours)</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-val">{{ prets|length }}</span>
+      <span class="stat-lbl">Famille{% if prets|length > 1 %}s{% endif %} à relancer</span>
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  {% if prets %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Élève</th>
+        <th>Classe</th>
+        <th>Ouvrage</th>
+        <th>Code</th>
+        <th>Sortie</th>
+        <th>Retour prévu</th>
+        <th class="text-right">Retard</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in prets %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td class="fw-bold">{{ p.inscription.eleve.nom }} {{ p.inscription.eleve.prenom }}</td>
+        <td>{{ p.inscription.classe.nom }}</td>
+        <td>{{ p.exemplaire.manuel.titre }}</td>
+        <td><span class="mono">{{ p.exemplaire.code_exemplaire }}</span></td>
+        <td>{{ p.date_attribution|date:"d/m/Y" }}</td>
+        <td>{{ p.date_retour_prevue|date:"d/m/Y" }}</td>
+        <td class="text-right">{{ p.jours_de_retard }} j</td>
+      </tr>
+      {% endfor %}
+      <tr class="tr-total">
+        <td colspan="7">Total — {{ prets|length }} prêt{% if prets|length > 1 %}s{% endif %} en retard</td>
+        <td class="text-right">—</td>
+      </tr>
+    </tbody>
+  </table>
+  {% else %}
+  <p style="margin-top:1cm; text-align:center; color:#555; font-style:italic;">
+    Aucun prêt en retard pour cette année scolaire.
+  </p>
+  {% endif %}
+
+  {% signataire_auto "MANUELS_SCOLAIRES" %}
+
+  <!-- Pied de page -->
+  <div class="footer">
+    <div class="footer-left">
+      {% if identite and identite.ville %}{{ identite.ville }}{% elif etab and etab.ville %}{{ etab.ville }}{% endif %}
+      {% if identite and identite.telephone %}&nbsp;|&nbsp; Tél. {{ identite.telephone }}{% elif etab and etab.telephone %}&nbsp;|&nbsp; Tél. {{ etab.telephone }}{% endif %}
+    </div>
+    <div class="footer-right">YELEN SCHOOL — Document généré automatiquement</div>
+  </div>
+
+</div>
+
+<div class="barre-bottom"></div>
+{% endblock %}

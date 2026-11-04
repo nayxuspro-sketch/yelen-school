@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.49.0
-version_guide: 5.42
-date_mise_a_jour: 03/11/2026 (5.49.0 : portail élève complet — carte scolaire, documents, notifications ; comptes élèves en masse par matricule)
+version_logiciel: 5.50.0
+version_guide: 5.43
+date_mise_a_jour: 04/11/2026 (5.50.0 : prêts d'ouvrages — échéances, retards, relance des familles par portail et SMS)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -10,7 +10,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
 
 # 🎓 Guide d'Utilisation — YELEN SCHOOL
 ### *"Illuminer chaque parcours scolaire"*
-### Version 5.49.0 — Novembre 2026 (Guide v5.36)
+### Version 5.50.0 — Novembre 2026 (Guide v5.37)
 
 > **Note de version 5.0 :** Intégration de la distribution autonome (`installer/`), des règles d'immuabilité et triggers financiers PostgreSQL (paiements non modifiables/non supprimables, gardes de remboursement anti-dépassement) et du journal d'audit append-only avec chaînage cryptographique SHA-256.
 
@@ -248,6 +248,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [26.3 Attribution Nominative](#263-attribution-nominative)
   - [26.4 Enregistrer un Retour](#264-enregistrer-un-retour)
   - [26.5 Manuels Non Rendus — Alerte de Fin d'Année](#265-manuels-non-rendus--alerte-de-fin-dannée)
+  - [26.5 bis Prêts et retards, relance des familles (5.50.0)](#265-bis-prêts-et-retards-relance-des-familles-5500)
   - [26.6 Export PDF des Attributions Annuelles](#266-export-pdf-des-attributions-annuelles)
   - [26.7 Export PDF de l'Inventaire par Classe](#267-export-pdf-de-linventaire-par-classe)
   - [26.8 Règles Métier](#268-règles-métier)
@@ -6524,6 +6525,9 @@ Chaque attribution est nominative et horodatée. Un exemplaire déjà attribué 
 
 ou depuis la fiche détail du manuel : colonne **Retour** de l'exemplaire concerné.
 
+À l'attribution, le champ **Retour prévu** (facultatif) fixe l'échéance du prêt : au-delà, le prêt passe en
+retard (§ 26.5 bis).
+
 Lors du retour, saisir :
 
 - La **date de retour**
@@ -6543,6 +6547,29 @@ Ce tableau liste tous les exemplaires qui n'ont pas été retournés pour l'ann�
 **Facturation :** bouton `Facturer` → émet une **créance « Manuel non rendu »** au nom de l'élève, du montant défini comme **Prix de remplacement** du manuel. Rien n'est encaissé à ce stade : la créance s'ajoute au *reste à payer* de l'élève (situation financière, redevables, relances) et se règle au guichet comme une rubrique ordinaire (rubrique *Manuel non rendu*, plafonnée au montant dû). Les parents sont notifiés (SMS si activé, notification in-app). La colonne **Créance émise** indique les attributions déjà facturées ; une attribution ne peut être facturée qu'une fois.
 
 Si le manuel est finalement rendu (bouton `Retour`), la créance est **annulée automatiquement** et disparaît du reste à payer ; un versement déjà encaissé demeure. La Direction peut aussi annuler une créance à la main depuis la situation financière de l'élève (§ 37.1 bis).
+
+---
+
+#### 26.5 bis Prêts et retards, relance des familles (5.50.0)
+
+**Accès :** `Manuels → Prêts et retards` (droit *Manuels scolaires › Prêts et retards*).
+
+1. La page liste les **prêts en cours** (attributions sans date de retour) avec l'échéance fixée à la sortie, triés
+   par échéance. Deux filtres : **En retard** (échéance dépassée, nombre de jours affiché) et **À rendre sous
+   7 jours**. Le compteur en tête donne le total et le nombre de retards.
+2. **Relancer les familles cochées** : chaque prêt sélectionné envoie un avis dans le **portail** (compte élève et
+   comptes parents, page Vie scolaire → *Ouvrages à rendre*, avec notification push sur les appareils abonnés) et,
+   si les SMS sont activés, un **SMS au numéro de la famille** (modèle *Prêt d'ouvrage en retard*, personnalisable
+   dans `Paramètres → Modèles de messages`). La colonne **Dernière relance** garde la date du dernier envoi.
+3. **Liste des retards (PDF)** : document A4 signé par le signataire des manuels, une ligne par prêt en retard
+   (élève, classe, ouvrage, code, sortie, échéance, jours de retard) — à remettre au surveillant ou à la bibliothèque.
+
+**Relance automatique :** `Paramètres → SMS automatiques`, déclencheur **Prêt d'ouvrage en retard** (à activer) :
+l'exécution quotidienne relance chaque prêt échu **au plus une fois tous les 3 jours** (réglable par le champ
+« jours avant »), jamais deux fois le même jour. Un prêt rendu n'est plus relancé.
+
+**Côté familles :** le parent et l'élève voient leurs **ouvrages à rendre** sur la page Vie scolaire du portail, avec
+l'échéance et, le cas échéant, le nombre de jours de retard.
 
 ---
 

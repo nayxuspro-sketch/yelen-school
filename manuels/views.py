@@ -226,6 +226,7 @@ def attribution_form(request, exemplaire_pk=None):
         ex_pk = request.POST.get('exemplaire')
         insc_pk = request.POST.get('inscription')
         date_attr = request.POST.get('date_attribution') or str(date.today())
+        date_prevue = request.POST.get('date_retour_prevue') or None
         etat_sortie = request.POST.get('etat_sortie', EtatManuel.BON)
 
         exemplaire = get_object_or_404(ExemplaireManuel, pk=ex_pk, manuel__etablissement=etab)
@@ -238,6 +239,7 @@ def attribution_form(request, exemplaire_pk=None):
                 exemplaire=exemplaire,
                 inscription=inscription,
                 date_attribution=date_attr,
+                date_retour_prevue=date_prevue,
                 etat_sortie=etat_sortie,
             )
             messages.success(
@@ -538,6 +540,120 @@ def attributions_annee_pdf(request):
     response = HttpResponse(pdf, content_type='application/pdf')
     annee_label = str(annee_sel).replace('/', '-') if annee_sel else 'export'
     response['Content-Disposition'] = f'inline; filename="attributions_{annee_label}.pdf"'
+    return response
+
+
+# ── Prêts et retards (bibliothèque) ────────────────────────────────────────
+
+def _prets_etablissement(etab, annee_sel):
+    """Prêts non rendus de l'établissement (année scolaire donnée ou toutes), échéance la plus proche d'abord."""
+    qs = (
+        AttributionManuel.objects
+        .filter(exemplaire__manuel__etablissement=etab, date_retour__isnull=True)
+        .select_related('exemplaire__manuel', 'inscription__eleve', 'inscription__classe',
+                        'inscription__annee_scolaire')
+    )
+    if annee_sel:
+        qs = qs.filter(inscription__annee_scolaire=annee_sel)
+    return qs
+
+
+@login_required
+def prets_en_cours(request):
+    """Prêts d'ouvrages en cours : échéance, retard, relance des familles et impression de la liste des retards."""
+    from django.core.paginator import Paginator
+    from django.utils import timezone
+
+    etab = _etab(request)
+    annees = _get_annees(etab)
+    annee_id = request.GET.get('annee')
+    annee_sel = annees.filter(pk=annee_id).first() if annee_id else _annee_courante(etab)
+    filtre = request.GET.get('etat', '')
+
+    prets = list(_prets_etablissement(etab, annee_sel).order_by('date_retour_prevue', 'inscription__eleve__nom'))
+    today = timezone.localdate()
+    for pret in prets:
+        pret.en_retard = pret.est_en_retard
+        pret.retard_jours = pret.jours_de_retard
+        pret.echeance_proche = bool(
+            not pret.en_retard and pret.date_retour_prevue
+            and (pret.date_retour_prevue - today).days <= 7
+        )
+
+    nb_total = len(prets)
+    nb_retards = sum(1 for p in prets if p.en_retard)
+    nb_echeances = sum(1 for p in prets if p.echeance_proche)
+    if filtre == 'retard':
+        prets = [p for p in prets if p.en_retard]
+    elif filtre == 'echeance':
+        prets = [p for p in prets if p.echeance_proche]
+
+    page_obj = Paginator(prets, 50).get_page(request.GET.get('page'))
+
+    return render(request, 'manuels/prets_en_cours.html', {
+        'page_obj': page_obj,
+        'prets': page_obj.object_list,
+        'nb_total': nb_total,
+        'nb_retards': nb_retards,
+        'nb_echeances': nb_echeances,
+        'annees': annees,
+        'annee_sel': annee_sel,
+        'filtre': filtre,
+        'today': today,
+    })
+
+
+@login_required
+@require_POST
+def relancer_prets(request):
+    """Relance les familles des prêts cochés (avis dans le portail, push, SMS au numéro de la famille)."""
+    from core.notifications import notifier_pret_retard
+
+    etab = _etab(request)
+    ids = request.POST.getlist('prets')
+    if not ids:
+        messages.error(request, "Cochez au moins un prêt à relancer.")
+        return redirect('manuels:prets_en_cours')
+
+    attributions = _prets_etablissement(etab, None).filter(pk__in=ids)
+    nb = sum(1 for attribution in attributions if notifier_pret_retard(attribution))
+    if nb:
+        messages.success(request, f"{nb} famille{'s' if nb > 1 else ''} relancée{'s' if nb > 1 else ''} "
+                                  "pour un ouvrage non rendu.")
+    else:
+        messages.warning(request, "Aucune relance envoyée : ces prêts n'ont ni compte de famille ni numéro joignable.")
+    return redirect('manuels:prets_en_cours')
+
+
+@login_required
+def prets_retards_pdf(request):
+    """Liste des prêts en retard (A4 portrait) pour la bibliothèque."""
+    from django.utils import timezone
+
+    etab = _etab(request)
+    annees = _get_annees(etab)
+    annee_id = request.GET.get('annee')
+    annee_sel = annees.filter(pk=annee_id).first() if annee_id else _annee_courante(etab)
+
+    prets = [p for p in _prets_etablissement(etab, annee_sel)
+             .order_by('date_retour_prevue', 'inscription__classe__nom', 'inscription__eleve__nom')
+             if p.est_en_retard]
+    etab_ctx = get_etablissement_context(etab, request)
+
+    html = render(request, 'manuels/pdf/prets_retards.html', {
+        'annee': annee_sel,
+        'prets': prets,
+        'today': timezone.localdate(),
+        'etab': etab,
+        'identite': etab_ctx.get('identite'),
+        'logo_url': etab_ctx.get('logo_url') or etab_ctx.get('etab_logo_url'),
+    }).content.decode('utf-8')
+
+    from core.pdf import HTML as WP
+    pdf = WP(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    annee_label = str(annee_sel).replace('/', '-') if annee_sel else 'export'
+    response['Content-Disposition'] = f'inline; filename="prets_retards_{annee_label}.pdf"'
     return response
 
 

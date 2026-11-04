@@ -511,6 +511,9 @@
         {% if '/manuels/non-rendus/' in droits_fonctionnalites %}
         <a href="{% url 'manuels:non_rendus' %}" class="sb-item-submodern" data-url="/manuels/non-rendus/"><span class="sub-item-dot"></span>Non rendus</a>
         {% endif %}
+        {% if '/manuels/prets/' in droits_fonctionnalites %}
+        <a href="{% url 'manuels:prets_en_cours' %}" class="sb-item-submodern" data-url="/manuels/prets/"><span class="sub-item-dot"></span>Prêts et retards</a>
+        {% endif %}
       </div>
       {% endif %}
 

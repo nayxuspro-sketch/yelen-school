@@ -378,6 +378,7 @@ def portail_parent_vie_scolaire(request):
             'sanctions': portail.sanctions(inscription),
             'notes_recentes': portail.notes_recentes(inscription),
             'moyennes_periodes': portail.moyennes_par_periode(inscription),
+            'prets': portail.prets_en_cours(inscription),
         })
     return render(request, 'core/portail_parent_vie_scolaire.html', {
         'enfants': enfants,
