@@ -3,6 +3,23 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.52.4 — 2026-11-04
+
+- **Guide d'utilisation en PDF éditorial, prêt à imprimer** (`docs/GUIDE_UTILISATION_YELEN_SCHOOL.pdf`,
+  268 pages A4, 8,4 Mo) :
+  - couverture marine et or, fiche documentaire, mode d'emploi du manuel, sommaire paginé en 8 parties,
+    index des 17 figures, ouvertures de partie, 40 chapitres avec chapeau et renvois de sections, page de clôture ;
+  - composition typographique : Inter (titres et texte), Source Serif 4 (titres de chapitre, exergues),
+    JetBrains Mono (commandes et arborescences) — polices embarquées ;
+  - encadrés normalisés (astuce, avertissement, accès, règle de sécurité) avec pictogrammes vectoriels,
+    tableaux à en-tête marine, captures d'écran en figures numérotées et légendées ;
+  - en-têtes et pieds de page symétriques (titre du guide / chapitre courant, folio, édition et date),
+    signets de navigation sur deux niveaux, métadonnées du document ;
+  - **numérotation en deux passes** : les renvois du sommaire indiquent la page imprimée du corps
+    (le folio du corps repart de 1 après les pages liminaires).
+- Outil de production : `scripts/md_vers_pdf.py` + `scripts/guide_pdf/` (feuille de style éditoriale et polices).
+  Dépendances de développement ajoutées : `beautifulsoup4`, `lxml`.
+
 ## 5.52.3 — 2026-11-04
 
 - **Pré-inscription : le nom du parent arrive dans « Nom du père », plus dans « Nom du tuteur ».**
