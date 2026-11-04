@@ -3,6 +3,15 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.51.1 — 2026-11-04
+
+- **Vue consolidée du réseau — le bouton *Tableau de bord* était inaccessible.** Il occupait la douzième et dernière
+  colonne du tableau, au-delà de onze colonnes de chiffres : il fallait faire défiler le tableau horizontalement
+  pour l'atteindre, et il restait hors écran en dessous de 1 400 px. Le lien est désormais placé dans la **première
+  colonne**, sous le nom du site — visible dès l'ouverture de la page, sans défilement — et la colonne d'action
+  devenue vide est supprimée (en-tête, corps et pied de tableau restent cohérents à 11 colonnes).
+- Tests : `etablissements/tests/test_reseau.py` (1 test de non-régression).
+
 ## 5.51.0 — 2026-11-04
 
 - **Pointage du personnel et entretien annuel d'évaluation (audit P2-14).** Dernier chantier de l'audit : le suivi

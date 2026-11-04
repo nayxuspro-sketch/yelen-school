@@ -81,6 +81,19 @@ def test_directeur_reseau_voit_son_groupe_seulement(client, reseau):
 
 
 @pytest.mark.django_db
+def test_bouton_tableau_de_bord_dans_la_premiere_colonne(client, reseau):
+    """Le lien vers le tableau de bord du site est placé dans la colonne « Établissement » : il reste visible
+    sans faire défiler le tableau horizontalement (retour utilisateur du 04/11/2026 sur /etablissements/reseau/)."""
+    _directeur_reseau(client, reseau)
+    html = client.get(reverse('etablissements:reseau_dashboard')).content.decode()
+    ligne = next(l for l in html.split('<tr>') if 'Site B' in l)
+    premiere_cellule = ligne.split('</td>')[0]
+    assert f"{reverse('core:pilotage')}?etab={reseau['b'].pk}" in premiere_cellule, \
+        'le bouton Tableau de bord doit être dans la première cellule de la ligne'
+    assert 'Tableau de bord' not in ligne.split('</td>')[-2], 'plus aucune colonne d’action en fin de ligne'
+
+
+@pytest.mark.django_db
 def test_directeur_reseau_sans_groupe(client, reseau):
     _directeur_reseau(client, reseau, groupe=False)
     reponse = client.get(reverse('etablissements:reseau_dashboard'))

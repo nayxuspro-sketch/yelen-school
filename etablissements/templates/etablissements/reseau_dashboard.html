@@ -83,7 +83,6 @@
           <th class="text-right">Redevables</th>
           <th class="text-right">Abs. 30 j</th>
           <th class="text-right">À risque</th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -92,6 +91,7 @@
           <td>
             <div class="fw-semibold">{{ l.etablissement.nom }}</div>
             <div class="text-muted text-sm">{{ l.etablissement.code }}{% if l.etablissement.ville %} — {{ l.etablissement.ville }}{% endif %}{% if l.annee %} · {{ l.annee.libelle }}{% endif %}</div>
+            <a href="{% url 'core:pilotage' %}?etab={{ l.etablissement.pk }}" class="btn-secondary btn-sm mt-2">Tableau de bord</a>
           </td>
           {% if l.annee %}
           <td class="text-right fw-semibold">{{ l.effectifs.total|intcomma }}<div class="text-muted text-sm">{{ l.effectifs.garcons }} G · {{ l.effectifs.filles }} F</div></td>
@@ -104,10 +104,8 @@
           <td class="text-right">{{ l.recouvrement.redevables }}</td>
           <td class="text-right">{{ l.absences.trente_jours }}<div class="text-muted text-sm">{{ l.absences.taux_30j|floatformat:1 }} %</div></td>
           <td class="text-right {% if l.risque.prioritaires_nb %}text-warning fw-semibold{% endif %}">{{ l.risque.prioritaires_nb }}</td>
-          <td class="text-right"><a href="{% url 'core:pilotage' %}?etab={{ l.etablissement.pk }}" class="btn-secondary btn-sm">Tableau de bord</a></td>
           {% else %}
           <td colspan="10" class="text-muted text-sm">Aucune année scolaire courante : indicateurs indisponibles.</td>
-          <td></td>
           {% endif %}
         </tr>
         {% endfor %}
@@ -125,7 +123,6 @@
           <td class="text-right">{{ totaux.recouvrement.redevables }}</td>
           <td class="text-right">{{ totaux.absences.trente_jours }}</td>
           <td class="text-right">{{ totaux.risque.prioritaires_nb }}</td>
-          <td></td>
         </tr>
       </tfoot>
     </table>
