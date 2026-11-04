@@ -6,7 +6,7 @@
 >
 > **Objectif :** installer YELEN SCHOOL sur une machine Windows avec PostgreSQL et Redis gérés localement par Docker Desktop. Après l'installation initiale, l'application fonctionne sur le réseau local sans connexion Internet quotidienne.
 >
-> **Version couverte : 5.53.0 (4 novembre 2026).** Cette édition décrit les cinq conteneurs de
+> **Version couverte : 5.53.1 (4 novembre 2026).** Cette édition décrit les cinq conteneurs de
 > `docker-compose.client.yml` (réception des SMS et proxy HTTPS compris), la totalité des variables de `.env`,
 > les journaux de `logs\` et les contrôles à faire après chaque mise à jour.
 >
@@ -1074,7 +1074,9 @@ L'archive peut être désignée par un chemin complet (`D:\livraisons\yelen-scho
 | `Empreinte SHA-256 incorrecte` | transfert incomplet (clé USB retirée trop tôt, e-mail tronqué) | recopier l'archive ; **ne jamais forcer** |
 | `Archive introuvable` | chemin ou nom erroné | vérifier le nom exact du fichier |
 | `L'archive n'est pas une mise à jour YELEN SCHOOL valide` | fichier d'un autre produit, ou version trop ancienne pour l'avance rapide | demander l'archive de la version intermédiaire à l'éditeur |
-| `Des fichiers ont été modifiés localement` | dépôt modifié sur le serveur | `git status` puis §8.4 |
+| `Des fichiers ont été modifiés localement` | un fichier **suivi** a été modifié sur le serveur | `git status --short`, puis `git checkout -- .` et relancer ; les données (`.env`, `backups/`, `media/`) ne sont pas concernées |
+| `fatal: Not possible to fast-forward` | l'historique local a divergé de `main` (commit réécrit côté éditeur) | depuis la 5.53.1, le script réaligne seul la copie ; sur une version antérieure : `git fetch origin main` puis `git reset --hard FETCH_HEAD`, et relancer |
+| `Historique local divergent… réalignement` | cas ci-dessus traité automatiquement | information : la copie de production a été réalignée sur `main` après sauvegarde |
 
 > **Sécurité** : demandez l'empreinte par un autre canal que le fichier (téléphone, SMS). C'est elle qui
 > prouve que l'archive n'a pas été remplacée en route. Le script refuse toute archive dont l'empreinte
@@ -1100,12 +1102,18 @@ répond `true`) avec Git et Docker Desktop dans le `PATH`. Ne jamais remplacer `
 Set-Location C:\YELEN-SCHOOL
 installer\backup-windows.bat
 git checkout -- docs
-git pull --ff-only origin main
+git fetch origin main
+git merge --ff-only FETCH_HEAD || git reset --hard FETCH_HEAD
 git checkout -- docs
 docker compose -f docker-compose.client.yml build
 powershell -NoProfile -ExecutionPolicy Bypass -File installer\start-local.ps1
 docker compose -f docker-compose.client.yml ps
 ```
+
+La troisième ligne couvre les deux cas : avance rapide normale, ou **historique local divergent** (commit réécrit
+côté éditeur — `fatal: Not possible to fast-forward`) ; dans ce second cas `git reset --hard FETCH_HEAD` réaligne la
+copie de production sur `main`. `C:\YELEN-SCHOOL` n'est pas un dépôt de travail : aucun développement local ne doit
+y être perdu. La sauvegarde de l'étape précédente reste la référence en cas de doute.
 
 (`start-local.ps1` transmet l'empreinte du serveur au conteneur `web` ; un `up -d` lancé sans lui
 laisse `YELEN_HOST_ID` vide et la licence liée au serveur est refusée — §3.5.)

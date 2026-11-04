@@ -289,7 +289,16 @@ try {
         [void](Invoke-Native { git checkout --quiet -- . })
     }
     if ((Invoke-Native { git merge --ff-only FETCH_HEAD }) -ne 0) {
-        throw 'Des fichiers ont été modifiés localement (git status) : mise à jour annulée.'
+        # C:\YELEN-SCHOOL est une copie de production, pas un dépôt de travail : l'historique distant peut avoir
+        # été réécrit (amendement, rebase) et l'avance rapide devenir impossible alors que l'arbre est propre.
+        $modifsSuivies = Get-GitOutput @('status', '--porcelain', '--untracked-files=no')
+        if ($modifsSuivies) {
+            throw "Mise à jour annulée : fichiers suivis modifiés localement ($modifsSuivies). Exécuter git checkout -- . puis relancer."
+        }
+        Write-Log 'Historique local divergent (avance rapide impossible) : réalignement de la copie de production sur la branche main distante...'
+        if ((Invoke-Native { git reset --hard FETCH_HEAD }) -ne 0) {
+            throw 'Réalignement impossible : exécuter manuellement git fetch origin main puis git reset --hard FETCH_HEAD.'
+        }
     }
     [void](Invoke-Native { git checkout --quiet -- docs })
 

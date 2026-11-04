@@ -3,6 +3,18 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.53.1 — 2026-11-04
+
+- **Mise à jour d'une copie de production dont l'historique local a divergé de `main`.** Sur
+  `C:\YELEN-SCHOOL`, `mettre-a-jour.bat` s'arrêtait sur `fatal: Not possible to fast-forward` puis affichait
+  « Des fichiers ont été modifiés localement », message trompeur : la copie de production était restée sur un
+  commit réécrit côté éditeur (amendement), donc l'avance rapide était impossible alors que l'arbre de travail
+  était propre. Le script **réaligne désormais la copie de production sur `main`** (`git reset --hard FETCH_HEAD`)
+  après la sauvegarde et après avoir vérifié qu'aucun fichier suivi n'est modifié ; s'il en reste, il s'arrête en
+  nommant les fichiers et la commande à lancer. Aucune donnée n'est touchée : `.env`, `backups/` et `media/` ne
+  sont pas versionnés.
+- Guide de déploiement : procédure manuelle et tableau de dépannage complétés (§8.3 et §8.6).
+
 ## 5.53.0 — 2026-11-04
 
 - **Pointage : horaires propres à chaque agent et à chaque profil.** Un enseignant qui commence à 9h00 et finit à
