@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.52.5 — 2026-11-04
+
+- `lxml` porté de 6.0.2 à **6.1.0** (correction de la vulnérabilité PYSEC-2026-87 relevée par `pip-audit`
+  dans la CI) ; aucune autre modification.
+
 ## 5.52.4 — 2026-11-04
 
 - **Guide d'utilisation en PDF éditorial, prêt à imprimer** (`docs/GUIDE_UTILISATION_YELEN_SCHOOL.pdf`,

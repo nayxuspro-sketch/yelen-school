@@ -22,6 +22,6 @@ mammoth==1.13.0
 cobble==0.1.4
 python-docx==1.2.0
 beautifulsoup4==4.14.2
-lxml==6.0.2
+lxml==6.1.0
 # Le PDF éditorial du guide (scripts/md_vers_pdf.py) utilise weasyprint (base.txt), markdown (base.txt),
 # beautifulsoup4 et lxml ci-dessus, et les polices livrées dans scripts/guide_pdf/fonts.
