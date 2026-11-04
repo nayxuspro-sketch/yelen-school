@@ -148,8 +148,16 @@ tr:nth-child(even) td { background-color: #f5f5f5; }
     </div>
     {% endif %}
 
-    <!-- Signataire -->
+    <!-- Signataires : enseignant titulaire de la classe, puis signataire paramétré du cycle -->
+    {% signataire_classe as bloc_classe %}
+    {% if bloc_classe %}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12pt;">
+      <div>{{ bloc_classe }}</div>
+      <div>{% signataire_auto "LISTE_CLASSE" %}</div>
+    </div>
+    {% else %}
     {% signataire_auto "LISTE_CLASSE" %}
+    {% endif %}
 
     <!-- Code QR établissement en bas de page -->
     {% with etab_nom=identite.nom_etablissement|default:etablissement.nom %}

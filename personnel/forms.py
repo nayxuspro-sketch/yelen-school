@@ -44,20 +44,24 @@ class MembrePersonnelForm(forms.ModelForm):
             'profil_pointage', 'heure_arrivee_limite', 'heure_depart_normale',
             'est_vacataire', 'est_directeur', 'est_censeur',
             'situation_matrimoniale', 'nombre_enfants', 'photo',
-            'etablissement', 'poste_principal_code', 'cycles'
+            'etablissement', 'poste_principal_code', 'cycles', 'classe_affectation'
         ]
         widgets = {
             'date_naissance': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'date_embauche': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'adresse': forms.Textarea(attrs={'rows': 3}),
             'cycles': forms.CheckboxSelectMultiple(),
+            'classe_affectation': forms.Select(),
             'heure_arrivee_limite': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
             'heure_depart_normale': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
         }
 
     def __init__(self, *args, **kwargs):
+        # Établissement du membre : limite la liste des classes proposées à celles de son établissement.
+        etablissement = kwargs.pop('etablissement', None)
         super().__init__(*args, **kwargs)
-        
+        self._filtrer_classes(etablissement)
+
         # Pré-remplir le champ numero_cni avec la valeur déchiffrée (masquée)
         if self.instance and self.instance.pk:
             cni = self.instance.numero_cni
@@ -76,6 +80,30 @@ class MembrePersonnelForm(forms.ModelForm):
                 choices=[('', '---------')] + [(t, t) for t in titres_h]
             )
         _apply_yelen_classes(self.fields)
+
+    def _filtrer_classes(self, etablissement=None):
+        """Classe d'affectation : uniquement les classes de l'établissement du membre (fondé sur la valeur saisie
+        lors d'une création, sur l'instance lors d'une modification, ou sur l'établissement de l'utilisateur)."""
+        from parametres.models import Classe
+
+        etablissement = etablissement or (self.instance.etablissement if self.instance.pk else None)
+        if etablissement is None:
+            saisie = self.data.get('etablissement') if self.data else None
+            etablissement = Classe._meta.get_field('etablissement').related_model.objects.filter(pk=saisie).first() \
+                if saisie else None
+        classes = Classe.objects.all()
+        if etablissement is not None:
+            classes = classes.filter(etablissement=etablissement)
+        self.fields['classe_affectation'].queryset = classes.select_related('cycle').order_by('cycle__ordre', 'nom')
+
+    def clean(self):
+        """La classe d'affectation doit appartenir à l'établissement du membre."""
+        donnees = super().clean()
+        classe, etablissement = donnees.get('classe_affectation'), donnees.get('etablissement')
+        if classe and etablissement and classe.etablissement_id != etablissement.pk:
+            self.add_error('classe_affectation',
+                           "Cette classe n'appartient pas à l'établissement choisi pour le membre.")
+        return donnees
 
     def clean_photo(self):
         photo = self.cleaned_data.get('photo')

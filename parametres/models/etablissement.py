@@ -318,6 +318,11 @@ class Classe(BaseModel):
     def __str__(self):
         return f"{self.nom} ({self.cycle.nom})"
 
+    @property
+    def enseignant_titulaire(self):
+        """Enseignant affecté à cette classe : il signe les bulletins de notes et la liste alphabétique."""
+        return (self.enseignants_titulaires.filter(is_active=True).order_by('nom', 'prenom').first())
+
 
 class Salle(BaseModel):
     """Salle de classe de l'établissement : nom unique, capacité indicative. Alimente la saisie de l'emploi du temps

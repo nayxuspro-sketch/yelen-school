@@ -233,14 +233,15 @@ def personnel_detail(request, pk):
 def personnel_create(request):
     """Création d'un nouveau membre du personnel."""
     if request.method == 'POST':
-        form = MembrePersonnelForm(request.POST, request.FILES)
+        form = MembrePersonnelForm(request.POST, request.FILES,
+                                   etablissement=getattr(request.user, 'etablissement', None))
         if form.is_valid():
             membre = form.save()
             messages.success(request, f"Membre {membre.get_nom_complet()} créé avec succès.")
             return redirect('personnel:detail', pk=membre.pk)
     else:
-        form = MembrePersonnelForm()
-    
+        form = MembrePersonnelForm(etablissement=getattr(request.user, 'etablissement', None))
+
     return render(request, 'personnel/personnel_form.html', {'form': form, 'title': "Ajouter un membre"})
 
 @login_required
@@ -255,13 +256,14 @@ def personnel_update(request, pk):
         return redirect('personnel:personnel_list')
     
     if request.method == 'POST':
-        form = MembrePersonnelForm(request.POST, request.FILES, instance=membre)
+        form = MembrePersonnelForm(request.POST, request.FILES, instance=membre,
+                                   etablissement=etab)
         if form.is_valid():
             membre = form.save()
             messages.success(request, f"Membre {membre.get_nom_complet()} mis à jour.")
             return redirect('personnel:detail', pk=membre.pk)
     else:
-        form = MembrePersonnelForm(instance=membre)
+        form = MembrePersonnelForm(instance=membre, etablissement=etab)
     
     return render(request, 'personnel/personnel_form.html', {'form': form, 'title': "Modifier le membre", 'membre': membre})
 

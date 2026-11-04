@@ -175,6 +175,25 @@ class TestBulletinTrimestriel:
             assert c.client.get(reponse.context['retour_url']).status_code == 200
             assert c.client.get(pdf_url)['Content-Type'] == 'application/pdf'
 
+    def test_bulletin_signe_par_l_enseignant_titulaire_de_sa_classe(self, classe_notee, mocker):
+        """Au primaire ou au secondaire, le titulaire de la classe signe les bulletins de sa classe (5.55.0)."""
+        c = classe_notee
+        _calculer(c)
+        baker.make('personnel.MembrePersonnel', etablissement=c.classe.etablissement, nom='KABORE', prenom='Salif',
+                   fonction='Enseignant', classe_affectation=c.classe)
+        weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+
+        c.client.get(reverse('pedagogie:bulletin_pdf',
+                             kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
+        html = _html(weasy)
+        assert 'KABORE Salif' in html and 'L&#x27;Enseignant titulaire' in html
+        assert 'bul-sig-grid bul-sig-grid-3' in html, 'grille à trois colonnes : QR, titulaire, direction'
+
+        # Bulletin annuel : même signature.
+        c.client.get(reverse('pedagogie:bulletin_annuel_pdf', kwargs={'inscription_id': c.awa.pk}))
+        assert 'KABORE Salif' in _html(weasy)
+
     def test_pdf_individuel_batch_et_duplicata(self, classe_notee, mocker):
         c = classe_notee
         _calculer(c)

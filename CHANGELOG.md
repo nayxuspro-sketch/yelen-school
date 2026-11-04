@@ -3,6 +3,24 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.55.0 — 2026-11-04
+
+- **Classe d'affectation de l'enseignant.** La fenêtre **Ajouter un membre** (et *Modifier le membre*) propose,
+  dans la section *Cycles d'enseignement*, le choix de la **classe dont l'agent est titulaire** — la liste est
+  limitée aux classes de l'établissement choisi et une classe d'un autre établissement est refusée.
+  `MembrePersonnel.classe_affectation` (facultatif, `SET_NULL` : la classe survit au départ de l'agent).
+- **Le titulaire signe les bulletins de notes et la liste alphabétique de sa classe.** Nouveau bloc de signature
+  `{% signataire_classe %}` : fonction « L'Enseignant titulaire », nom de l'agent, date et lieu, signature scannée
+  s'il en possède une. Il est apposé sur le **bulletin trimestriel**, le **bulletin annuel** (grille à trois
+  colonnes : code QR, titulaire, signataire du cycle) et la **liste alphabétique** (titulaire à gauche, signataire
+  du cycle à droite).
+- **Repli inchangé** : sans classe d'affectation, ou si l'agent est désactivé, les documents sont signés
+  exactement comme avant (signataire paramétré par cycle × type × année) ; la liste globale des élèves (toutes
+  classes) ne porte pas de bloc titulaire. La fiche du personnel affiche la classe d'affectation et rappelle ce
+  qu'elle implique.
+- Migration `personnel/0015` (une colonne, aucun pointage ni fiche perdue).
+- Guide d'utilisation : §5.1 (fiche du personnel) et §24.2 (signataires des documents).
+
 ## 5.54.0 — 2026-11-04
 
 - **Pointage en deux plages : matin et après-midi.** Un enseignant qui a cours de 9h00 à 11h00 puis de 15h00 à

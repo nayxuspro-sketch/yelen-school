@@ -221,6 +221,8 @@ html, body {
     break-inside: avoid;
 }
 .bul-sig-col { text-align: center; font-size: 8pt; }
+/* Classe titulaire présente : QR + enseignant titulaire + direction */
+.bul-sig-grid-3 { grid-template-columns: 0.7fr 1fr 1fr; }
 .bul-qr img { width: 50pt; height: 50pt; margin: 0 auto; }
 /* Bloc signataire compacté pour le format A5 (prime sur les styles injectés par signataire_auto). */
 .bul-sig-col .msig-zone { margin-top: 0; }
@@ -365,8 +367,10 @@ html, body {
 {% endif %}
 
 <!-- ══ SIGNATURES ══ -->
-<div class="bul-sig-grid">
+{% signataire_classe as bloc_classe %}
+<div class="bul-sig-grid{% if bloc_classe %} bul-sig-grid-3{% endif %}">
     <div class="bul-sig-col bul-qr">{% qr_bulletin_annuel inscription.eleve.matricule inscription.classe.nom annee_scolaire.libelle moyenne_annuelle.moyenne_annuelle|floatformat:2 %}</div>
+    {% if bloc_classe %}<div class="bul-sig-col">{{ bloc_classe }}</div>{% endif %}
     <div class="bul-sig-col">{% signataire_auto "BULLETIN" %}</div>
 </div>
 {% endblock %}

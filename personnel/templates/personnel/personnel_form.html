@@ -85,6 +85,19 @@
           {% endfor %}
         </div>
       </div>
+
+      <div class="form-group" style="margin-top:var(--space-4);">
+        <label for="{{ form.classe_affectation.id_for_label }}" class="input-label">
+          {{ form.classe_affectation.label }}
+        </label>
+        {{ form.classe_affectation }}
+        {% if form.classe_affectation.errors %}<p class="input-error">{{ form.classe_affectation.errors.0 }}</p>{% endif %}
+        <p class="text-muted" style="font-size:.78rem; margin-top:var(--space-1);">
+          Au primaire, la classe dont l'enseignant est titulaire. Il signe alors les <strong>bulletins de notes</strong>
+          et la <strong>liste alphabétique</strong> de cette classe ; la direction continue de signer les autres
+          documents. Laisser vide pour un agent sans classe (administration, enseignant non titulaire).
+        </p>
+      </div>
     </div>
 
     <div class="divider"></div>

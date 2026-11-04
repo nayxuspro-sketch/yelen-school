@@ -293,9 +293,11 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
 {% endif %}
 
 <!-- ══ SIGNATURES ══ -->
-<div class="bul-sig-grid">
+{% signataire_classe as bloc_classe %}
+<div class="bul-sig-grid{% if bloc_classe %} bul-sig-grid-3{% endif %}">
     <div class="bul-sig-col bul-qr">
         {% qr_bulletin inscription.eleve.matricule inscription.classe.nom trimestre.nom trimestre.annee_scolaire.libelle mg.moyenne|floatformat:2 %}
     </div>
+    {% if bloc_classe %}<div class="bul-sig-col">{{ bloc_classe }}</div>{% endif %}
     <div class="bul-sig-col">{% signataire_auto "BULLETIN" %}</div>
 </div>

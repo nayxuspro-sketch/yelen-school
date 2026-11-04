@@ -47,6 +47,8 @@ logger = logging.getLogger(__name__)
 
 register = template.Library()
 
+_FONCTION_TITULAIRE = "L'Enseignant titulaire"   # fonction affichée sous la signature du titulaire de classe
+
 # CSS commun — injecté une seule fois par document (WeasyPrint l'applique globalement)
 _SIGNATAIRE_CSS = """
 <style>
@@ -219,6 +221,53 @@ def _bloc_signataire_html(fonction, membre, titres_honorifiques=None, titre_hono
         f'<div class="msig-name">{nom_html}</div>'
         f'{titres_html}'
     )
+
+
+@register.simple_tag(takes_context=True)
+def signataire_classe(context, fonction=''):
+    """Bloc de signature de l'enseignant **titulaire de la classe** (5.55.0).
+
+    Au primaire, l'enseignant affecté à une classe signe les bulletins de notes et la liste alphabétique de
+    cette classe : ``MembrePersonnel.classe_affectation``. La classe est lue dans le contexte du gabarit
+    (``classe`` ou ``inscription.classe``). Sans titulaire désigné, le bloc est vide et seul le signataire
+    paramétré par cycle signe le document (comportement antérieur inchangé).
+
+    Usage :
+        {% signataire_classe as bloc %}{% if bloc %}<div class="…">{{ bloc }}</div>{% endif %}
+    """
+    try:
+        classe = context.get('classe')
+        if classe is None:
+            classe = getattr(context.get('inscription'), 'classe', None)
+        if classe is None:
+            return mark_safe('')
+
+        membre = getattr(classe, 'enseignant_titulaire', None)
+        if not membre:
+            return mark_safe('')
+
+        identite = context.get('identite')
+        ville_prefix = ''
+        if identite and getattr(identite, 'ville', None):
+            ville_prefix = f"{_e(identite.ville)}, "
+
+        from django.utils.formats import date_format
+        date_str = date_format(timezone.now(), 'd F Y', use_l10n=True)
+
+        interieur = _bloc_signataire_html(
+            fonction or _FONCTION_TITULAIRE, membre,
+        )
+        return mark_safe(
+            f'{_SIGNATAIRE_CSS}'
+            f'<div class="msig-zone" style="text-align:center;">'
+            f'<div class="msig-date" style="text-align:center;">{ville_prefix}le {date_str}</div>'
+            f'{interieur}'
+            f'</div>'
+        )
+
+    except Exception:
+        logger.exception("Signataire : bloc de la classe non rendu")
+        return mark_safe('')
 
 
 @register.simple_tag(takes_context=True)

@@ -329,6 +329,17 @@ class MembrePersonnel(BaseModel):
         blank=True,
         verbose_name=_("Cycles d'enseignement")
     )
+
+    classe_affectation = models.ForeignKey(
+        'parametres.Classe',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='enseignants_titulaires',
+        verbose_name=_("Classe d'affectation"),
+        help_text=_("Classe dont l'agent est titulaire : il signe les bulletins de notes et la liste "
+                    "alphabétique de cette classe.")
+    )
     
     class Meta:
         verbose_name = _("Membre du Personnel")

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.54.0
+version_logiciel: 5.55.0
 version_guide: 5.47
-date_mise_a_jour: 04/11/2026 (5.54.0 : pointage en deux plages, matin et après-midi)
+date_mise_a_jour: 04/11/2026 (5.55.0 : classe d'affectation et signature du titulaire)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -1017,6 +1017,12 @@ cycle et du poste de son inscription annuelle active (une ligne par inscription)
 inscriptions *actives* de l'*année scolaire courante* comptent ; sans année courante, la colonne
 affiche « — ».
 
+**Fiche du membre — classe d'affectation (5.55.0) :** la fenêtre *Ajouter un membre* / *Modifier le membre*
+propose, dans la section **Cycles d'enseignement**, le choix de la **classe d'affectation** de l'enseignant
+(par exemple `CP1` au primaire) ; la liste ne contient que les classes de l'établissement choisi. La fiche du
+membre rappelle cette classe et son effet : l'agent **signe les bulletins de notes et la liste alphabétique de
+sa classe** (§24.2). Laisser vide pour l'administration ou un enseignant non titulaire.
+
 **Exports :** les trois boutons **CSV**, **Excel** et **PDF** en haut à droite exportent
 **exactement la liste affichée** (mêmes filtres : recherche et inactifs). La barre d'actions
 groupées (cases à cocher) exporte la sélection. Le PDF et l'Excel sont titrés
@@ -1415,6 +1421,15 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 - **Assiduité, mentions et appréciation du conseil** : valeurs saisies dans `Bulletins → [classe] → Saisir` (fiche élève × trimestre). Sans fiche, les compteurs s'impriment à 0 ; les mentions cochées s'impriment sur la ligne « Mentions / distinctions », en dernière position de la carte du conseil (après l'appréciation) ; sans appréciation saisie, le commentaire généré automatiquement à partir des résultats est imprimé à la place.
 
 **Signataire :** Détecté automatiquement selon le cycle de la classe et l'année scolaire (`Paramètres → Signataires des documents`, type `BULLETIN`).
+
+**Enseignant titulaire de la classe (5.55.0) :** lorsqu'une classe a un **enseignant titulaire** (`Personnel →
+Modifier le membre → Classe d'affectation`, §5.1), celui-ci signe en plus les **bulletins de notes (trimestriels
+et annuels)** de sa classe et la **liste alphabétique** de cette classe, sous la fonction « L'Enseignant
+titulaire », avec sa signature scannée s'il en possède une. La grille des signatures du bulletin passe alors à
+trois colonnes — code QR, enseignant titulaire, signataire du cycle — et la liste alphabétique présente le
+titulaire à gauche et le signataire du cycle à droite. Sans classe d'affectation (ou si l'agent est désactivé),
+les documents sont signés exactement comme auparavant ; la **liste globale des élèves** (toutes classes) ne porte
+pas de bloc titulaire.
 
 **Signature scannée (facultatif) :** dans la fenêtre `Paramètres → Signataires → Configurer les Signataires`, chaque carte propose un champ **Signature scannée** (PNG à fond transparent recommandé ; photo ou scan jusqu'à 5 Mo, l'image est automatiquement ramenée à 800 px et allégée pour l'impression — il en va de même pour la signature du directeur et le cachet de `Paramètres → Identité de l'établissement`). L'image est enregistrée sur la fiche du membre du personnel choisi et apposée automatiquement, à l'emplacement prévu pour sa signature, sur **tous** les documents qu'il signe (bulletins trimestriels et annuels, certificats de scolarité, attestations, convocations, circulaires, emplois du temps, cartes scolaires — sous la photo de l'élève —, autorisations, reçus, relances de paiement, listes, états…), sans modifier la mise en page. Sans image, l'espace reste vierge pour la signature manuscrite ; la case **Retirer la signature** supprime l'image enregistrée.
 
