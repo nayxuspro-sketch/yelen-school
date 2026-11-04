@@ -3,6 +3,26 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.52.1 — 2026-11-04
+
+- **Guide de déploiement Windows remis à niveau (5.52.1).** Vérification complète contre le dépôt et la
+  production, puis mise à jour de `docs/GUIDE_DEPLOIEMENT_WINDOWS.md` (et de sa version Word).
+  - **Cinq conteneurs** : le tableau de §1.1 décrivait encore `web`, `db` et `redis` ; il documente désormais
+    `sms` (réception des SMS, `sms_recus --boucle`, ajouté en 5.46) et `proxy` (Caddy, profil `https`), avec les
+    ports publiés et les **sept** volumes Docker à ne jamais supprimer.
+  - **Référence complète du `.env`** (§3.2) : 30 lignes de variables — Django, base, ports, HTTPS, licence,
+    image, jeton Git, passerelle SMS, `SMS_RECEPTION_FILTREE` (5.52.0), alertes, sauvegardes, CinetPay, MinIO,
+    e-mails — avec la valeur attendue en production et les variables écrites automatiquement par les scripts.
+  - **Nouvelle §4.4 « Où sont les journaux »** : les dix journaux de `logs\` et `backups\` avec le script qui les
+    écrit, plus la distinction avec les journaux Django du volume `yelen_logs`.
+  - **Nouvelle §6.7 « Réception des SMS des parents (conteneur `sms`) »** : état, redémarrage, contrôle de la
+    carte *Réception des SMS* (relève de moins de 15 s), interrupteur de réception filtrée, diagnostic.
+  - **Nouvelle §8.5 « Après chaque mise à jour : trois contrôles »** : `/health/` comparé à `VERSION`, état des
+    conteneurs, recette de deux minutes ; rappel que migrations et fichiers statiques passent par `entrypoint.sh`.
+  - **Dépannage** : trois entrées ajoutées (§10) — service `sms` arrêté, parent sans réponse à cause de la
+    réception filtrée, page ou PDF sans mise en forme après une mise à jour.
+  - En-tête, sommaire, §3.4 (« trois services » → cinq conteneurs) et §4.1 (journaux `web` et `sms`) alignés.
+
 ## 5.52.0 — 2026-11-04
 
 - **Réception filtrée des SMS : n'accepter que les numéros enregistrés sur la plateforme.** Nouveau réglage

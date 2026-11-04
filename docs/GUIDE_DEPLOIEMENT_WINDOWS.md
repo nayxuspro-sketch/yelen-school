@@ -6,6 +6,10 @@
 >
 > **Objectif :** installer YELEN SCHOOL sur une machine Windows avec PostgreSQL et Redis gérés localement par Docker Desktop. Après l'installation initiale, l'application fonctionne sur le réseau local sans connexion Internet quotidienne.
 >
+> **Version couverte : 5.52.1 (4 novembre 2026).** Cette édition décrit les cinq conteneurs de
+> `docker-compose.client.yml` (réception des SMS et proxy HTTPS compris), la totalité des variables de `.env`,
+> les journaux de `logs\` et les contrôles à faire après chaque mise à jour.
+>
 > **État de référence :** 15 septembre 2026. Le parcours client Windows a été validé sur `C:\YELEN-SCHOOL` avec PostgreSQL et Redis conservés dans leurs volumes Docker. Les contrôles de restauration et les autres gates de commercialisation restent à exécuter selon l'environnement.
 >
 > **Validation client confirmée :** `YELEN_HTTP_PORT=8001`, accès local par `http://localhost:8001/`, accès réseau local par `http://DESKTOP-NKQMF8L:8001/`, redirection normale vers `/accounts/login/?next=/`, sans erreur `Invalid HTTP_HOST header` ni erreur CSRF signalée.
@@ -24,12 +28,15 @@
    - [Validation après installation](#34-validation-après-installation)
    - [3.5 Licence signée, liaison au serveur et verrouillage du dossier](#35-licence-signée-liaison-au-serveur-et-verrouillage-du-dossier-procédure-éditeur)
 4. [Utilisation quotidienne](#4-utilisation-quotidienne)
+   - [4.4 Où sont les journaux](#44-où-sont-les-journaux)
 5. [Sauvegardes PostgreSQL et médias](#5-sauvegardes-postgresql-et-médias)
 6. [Programmation automatique](#6-programmation-automatique)
+   - [6.7 Réception des SMS des parents (conteneur `sms`)](#67-réception-des-sms-des-parents-conteneur-sms)
 7. [Restauration après incident](#7-restauration-après-incident)
 8. [Mise à jour sans perte de données](#8-mise-à-jour-sans-perte-de-données)
    - [8.1 Mise à jour en un clic : `mettre-a-jour.bat`](#81-mise-à-jour-en-un-clic--mettre-a-jourbat)
    - [8.2 Mise à jour sans Internet (archive hors ligne)](#82-mise-à-jour-sans-internet-archive-hors-ligne-5473)
+   - [8.5 Après chaque mise à jour : trois contrôles](#85-après-chaque-mise-à-jour--trois-contrôles)
 9. [Accès depuis le réseau local](#9-accès-depuis-le-réseau-local)
    - [9.4 Accès à distance — portail parents par Internet](#94-accès-à-distance--portail-parents-par-internet-5460)
    - [9.5 Accès du personnel par Tailscale Serve (sans Funnel)](#95-accès-du-personnel-par-tailscale-serve-sans-funnel-5467)
@@ -48,11 +55,15 @@ La distribution client utilise le fichier `docker-compose.client.yml` :
 
 | Service | Rôle | Persistance |
 |---|---|---|
-| `web` | Application Django et Gunicorn | volume médias, fichiers statiques et journaux |
-| `db` | PostgreSQL 15 | volume `yelen_postgres_data` |
-| `redis` | Cache et sessions | volume `yelen_redis_data` |
+| `web` | Application Django et Gunicorn (4 processus, délai 120 s) ; applique migrations et fichiers statiques à chaque démarrage | `yelen_media`, `yelen_staticfiles`, `yelen_logs`, `certs\`, `backups\` (lecture seule), `mises-a-jour\` |
+| `db` | PostgreSQL 15 | `yelen_postgres_data` |
+| `redis` | Redis 7, persistance `appendonly` (cache, sessions, files) | `yelen_redis_data` |
+| `sms` | Même image que `web`, sans port : relève la boîte de réception du téléphone passerelle toutes les 15 s (`manage.py sms_recus --boucle`) | `yelen_logs` |
+| `proxy` | Caddy 2 — HTTPS sur le réseau local, **profil `https` seulement** (activé par `activer-https.bat`) | `yelen_caddy_data`, `yelen_caddy_config`, `certs\` |
 
-Les volumes Docker `yelen_postgres_data`, `yelen_redis_data`, `yelen_media`, `yelen_staticfiles` et `yelen_logs` ne doivent jamais être supprimés pendant une opération normale. La commande `docker compose down -v` efface les données et est interdite sauf si une restauration complète est prévue.
+Quatre conteneurs tournent en permanence ; le cinquième (`proxy`) n'existe que si le HTTPS est activé (`COMPOSE_PROFILES=https` dans `.env`). Ports publiés : `web` sur `${YELEN_WEB_BIND}:${YELEN_HTTP_PORT}` (défaut `0.0.0.0:8000`, installation cliente `8001`) et `proxy` sur `${YELEN_HTTPS_PORT}` (défaut `8443`). `db`, `redis` et `sms` n'exposent aucun port sur le réseau.
+
+Les sept volumes Docker `yelen_postgres_data`, `yelen_redis_data`, `yelen_media`, `yelen_staticfiles`, `yelen_logs`, `yelen_caddy_data` et `yelen_caddy_config` ne doivent jamais être supprimés pendant une opération normale. La commande `docker compose down -v` efface les données et est interdite sauf si une restauration complète est prévue.
 
 Le fichier `docker-compose.dev.yml` est réservé au développement. Pour une installation client, utiliser exclusivement `docker-compose.client.yml` et les scripts du dossier `installer`.
 
@@ -286,6 +297,37 @@ Pendant le premier démarrage, l'installateur fournit temporairement cette varia
 
 Ne pas remplacer `DB_PASSWORD` sur une installation existante sans procédure de migration : PostgreSQL a été initialisé avec ce mot de passe. Les scripts d'installation ne réécrivent pas une valeur existante valide.
 
+#### Référence des variables (version 5.52.1)
+
+Les valeurs marquées « automatique » sont écrites par les scripts d'installation et ne doivent pas être modifiées à la main.
+
+| Variable | Rôle | Valeur en production |
+|---|---|---|
+| `SECRET_KEY` | Signature des sessions et des jetons Django | générée à l'installation ; la changer déconnecte tout le monde |
+| `DEBUG` | Mode de développement | `False` |
+| `LICENSE_ENFORCEMENT` | Contrôle de la licence signée (§3.5) | `true` ; `false` en démonstration et en test |
+| `DEMO_MODE` | Démonstration : aucun SMS n'est envoyé | `false` |
+| `YELEN_ENVIRONNEMENT` | Étiquette affichée dans l'interface | `production` (ou `test`) |
+| `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` | Adresses acceptées par Django | automatique (`start-local.ps1`, §9.1) ; jamais `*` |
+| `DISABLE_HTTPS_REDIRECT` | Pas de redirection HTTPS | `true` sans HTTPS, sinon retirée |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | Base PostgreSQL | fixées à l'installation ; ne jamais changer après coup |
+| `REDIS_URL` | Cache, sessions et files | `redis://redis:6379/0` |
+| `YELEN_HTTP_PORT` | Port HTTP publié | `8001` ; plage `8000`–`8005` essayée si le port est occupé |
+| `YELEN_WEB_BIND` | Interface d'écoute HTTP | `0.0.0.0` ; `127.0.0.1` ferme l'accès réseau une fois le HTTPS actif |
+| `YELEN_HTTPS`, `YELEN_HTTPS_PORT`, `YELEN_HTTPS_HOSTS`, `COMPOSE_PROFILES` | HTTPS local et profil `proxy` | automatique (`activer-https.bat`, §9.3) |
+| `YELEN_IMAGE` | Image utilisée par `web` et `sms` | `yelen-school:client` ; `yelen-school:test` dans l'environnement de test (§3.5.7) |
+| `YELEN_GITHUB_TOKEN` | Jeton Git en lecture seule, dépôt privé (facultatif) | vide si le Gestionnaire d'identification Windows est utilisé (§8.1) |
+| `SMS_ENABLED`, `SMS_BACKEND`, `SMS_HTTP_URL`, `SMS_HTTP_USER`, `SMS_HTTP_PASSWORD`, `SMS_HTTP_TIMEOUT` | Passerelle SMS | réécrites par la page *Configuration SMS* |
+| `SMS_RECEPTION_FILTREE` | `True` : seuls les SMS des numéros enregistrés sont traités (5.52.0) | `False` par défaut ; voir guide d'utilisation § 32.6 bis |
+| `SMS_WEBHOOK_TOKEN`, `SMS_WEBHOOK_HMAC_SECRET`, `SMS_ALLOWED_IPS`, `SMS_WEBHOOK_RATE_LIMIT` | Sécurité du webhook entrant | automatique pour le jeton ; le reste facultatif |
+| `ALERTE_SMS_NUMEROS` | Numéros alertés par la surveillance (§6.5) | séparés par des virgules, format `+226…` |
+| `YELEN_BACKUP_PASSPHRASE`, `YELEN_BACKUP_OFFSITE` | Chiffrement et copie hors site des sauvegardes (§5.4) | renseignées avec le client |
+| `CINETPAY_API_KEY`, `CINETPAY_SITE_ID`, `CINETPAY_URL_PUBLIQUE` | Mobile Money en ligne (§6.6) | facultatives |
+| `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET` | Stockage objet externe | facultatives |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` | Envoi d'e-mails | facultatives (backend console si vides) |
+| `WEBPUSH_CONTACT`, `TWO_FACTOR_REQUIRED`, `LOG_LEVEL` | Notifications push, double authentification, verbosité | facultatives (valeurs par défaut du code) |
+| `INITIAL_ADMIN_PASSWORD`, `ENSURE_ADMIN` | Premier démarrage seulement (§3.1, §3.4) | secrète puis vide ; `ENSURE_ADMIN=false` |
+
 Les sauvegardes `.dump` et `_media.tar.gz` ne contiennent pas `.env`. Sauvegarder donc `.env` séparément, dans un emplacement protégé, si une reprise complète est prévue.
 
 ### 3.3 Adresse locale
@@ -345,7 +387,7 @@ Si `NOMPC` n'est pas résolu, configurer le nom dans le DNS ou le serveur DHCP d
 
 ### 3.4 Validation après installation
 
-Sur le serveur Windows, vérifier l'état des trois services et le port publié :
+Sur le serveur Windows, vérifier l'état des conteneurs et le port publié :
 
 ```powershell
 Set-Location C:\YELEN-SCHOOL
@@ -353,7 +395,7 @@ docker compose -f .\docker-compose.client.yml ps
 docker compose -f .\docker-compose.client.yml port web 8000
 ```
 
-Le résultat attendu est `db` et `redis` en `healthy`, `web` en fonctionnement et un port publié sur `0.0.0.0:8001` lorsque `YELEN_HTTP_PORT=8001`.
+Le résultat attendu est `db` et `redis` en `healthy`, `web` et `sms` en fonctionnement, `proxy` en plus si le HTTPS est actif, et un port publié sur `0.0.0.0:8001` lorsque `YELEN_HTTP_PORT=8001`.
 
 Tester ensuite les deux adresses sans suivre automatiquement la redirection :
 
@@ -541,15 +583,16 @@ Pour passer ensuite au mode PostgreSQL en conservant toutes les données :
 ### 4.1 Démarrer, arrêter et vérifier
 
 ```powershell
-# Démarrer ou remettre les trois services en arrière-plan
+# Démarrer ou remettre tous les services en arrière-plan (db, redis, web, sms et proxy si HTTPS)
 # (calcule l'empreinte du serveur pour la licence, puis docker compose up -d)
 powershell -NoProfile -ExecutionPolicy Bypass -File installer\start-local.ps1
 
 # Vérifier l'état et les healthchecks
 docker compose -f docker-compose.client.yml ps
 
-# Afficher les journaux de l'application
+# Afficher les journaux de l'application, puis de la réception des SMS
 docker compose -f docker-compose.client.yml logs -f web
+docker compose -f docker-compose.client.yml logs --tail 100 sms
 
 # Arrêter les services sans supprimer les volumes
 docker compose -f docker-compose.client.yml down
@@ -581,6 +624,25 @@ Pour passer à une nouvelle version, utiliser `mettre-a-jour.bat` (§8.1). Le d�
 1. Vérifier qu'aucune restauration ou mise à jour n'est en cours.
 2. Vérifier que la sauvegarde quotidienne précédente est présente.
 3. Arrêter Windows normalement ; ne pas supprimer les volumes Docker.
+
+### 4.4 Où sont les journaux
+
+Les scripts PowerShell écrivent dans le dossier `logs\` du projet ; les conteneurs écrivent leurs propres journaux Django dans le volume `yelen_logs` (monté sur `/app/logs`), lisibles par `docker compose -f docker-compose.client.yml logs` ou `… exec web tail -50 logs/django.log`.
+
+| Fichier | Écrit par | Contenu |
+|---|---|---|
+| `logs\startup.log` | `installer\start-local.ps1` | démarrage, port retenu, pare-feu, certificat HTTPS |
+| `logs\mise-a-jour.log` | `mettre-a-jour.bat` (§8.1) | version recherchée, sauvegarde, reconstruction, retour arrière |
+| `logs\surveillance.log`, `logs\surveillance.json` | `installer\surveiller-yelen.ps1` (§6.5) | santé, relances, alertes SMS ; dernier état |
+| `logs\sms-auto.log` | `installer\run-sms-auto.ps1` (§6.3) | déclencheurs SMS automatiques |
+| `logs\risques.log` | `installer\run-risk-analysis.ps1` (§6.2) | analyse du risque de décrochage |
+| `logs\paiements-en-ligne.log` | `installer\verifier-paiements-mobiles.ps1` (§6.6) | confirmation des paiements CinetPay |
+| `logs\acces-distance.log` | `installer\activer-acces-distance.ps1` (§9.4) | activation de l'accès à distance |
+| `logs\environnement-test.log` | `installer\creer-environnement-test.ps1` (§3.5.7) | création de l'environnement de test |
+| `logs\django.log`, `logs\security.log` | application (dans le volume) | requêtes applicatives, événements de sécurité |
+| `backups\backup.log`, `backups\restauration.log` | `installer\backup-windows.ps1` (§5.1), `installer\tester-restauration.ps1` (§9.7) | sauvegardes et essais de restauration |
+
+La sortie standard des conteneurs (`docker compose logs web`, `… logs sms`) complète ces fichiers pour le diagnostic immédiat.
 
 ---
 
@@ -794,6 +856,27 @@ La tâche s'exécute en arrière-plan (« Exécuter même si l'utilisateur n'est
 Renseigner dans `.env` les clés du compte marchand CinetPay : `CINETPAY_API_KEY`, `CINETPAY_SITE_ID` et `CINETPAY_URL_PUBLIQUE` (page publique de l'école affichée au parent après paiement), puis relancer `installer\start-local.ps1`. Sans ces clés, la fonction est inactive et les demandes Mobile Money fonctionnent comme avant (SMS d'instructions `*144#`).
 
 Pour confirmer automatiquement les paiements reçus, faire un clic droit sur `programmer-verification-paiements.bat`, puis **Exécuter en tant qu'administrateur**. La tâche `YELEN SCHOOL - Paiements Mobile Money en ligne` exécute `installer\verifier-paiements-mobiles.ps1` toutes les 10 minutes, en arrière-plan ; elle se termine sans rien faire si Docker est arrêté ou si `CINETPAY_API_KEY` est vide. Journal : `logs\paiements-en-ligne.log`.
+
+### 6.7 Réception des SMS des parents (conteneur `sms`) — 5.52.0
+
+Le conteneur **`sms`** (même image que `web`, sans port) démarre une fois `web` sain et exécute
+`python manage.py sms_recus --boucle` : il relève la **boîte de réception du téléphone passerelle** toutes les
+15 secondes (API locale de l'app SMS Gateway), traite les commandes (`AIDE`, `NOTE`, `SOLDE`, `ABS`), les réponses
+aux messages de l'école et les messages libres, puis renvoie la file sortante. Il n'écrit aucune migration.
+
+1. **État** : `docker compose -f docker-compose.client.yml ps` doit montrer `sms` en fonctionnement ; sinon
+   `docker compose -f docker-compose.client.yml restart sms` puis `logs --tail 100 sms`.
+2. **Contrôle dans l'application** : *Paramètres → Configuration SMS*, carte **Réception des SMS des parents** —
+   la ligne *Relève automatique* doit être verte, datée de moins de 15 secondes, avec le nombre de SMS de la
+   boîte et la date du dernier reçu. Le bouton **Relever maintenant** force une relève.
+3. **Filtrage (5.52.0)** : l'interrupteur **N'accepter que les SMS des numéros enregistrés** (`SMS_RECEPTION_FILTREE`)
+   limite la réception aux numéros des fiches élèves, du personnel et des comptes. Les autres expéditeurs sont
+   journalisés sans réponse dans *Communication → Messages reçus → Numéros inconnus*. Laisser désactivé tant que
+   les fiches familles ne sont pas complètes.
+4. **Diagnostic** : si la carte indique « le service `sms` semble arrêté », vérifier que Docker Desktop tourne, que
+   le démarrage automatique (§4.2) relance bien tous les services, puis exécuter `installer\start-local.ps1`.
+   Si elle indique « aucun SMS dans la boîte de l'app », contrôler sur le téléphone l'autorisation **SMS** de
+   SMS Gateway et que le numéro appelé est bien celui de la carte SIM.
 
 ---
 
@@ -1040,6 +1123,27 @@ Si la nouvelle version ne démarre pas et que le retour automatique de `mettre-a
 5. restaurer la paire créée avant la mise à jour uniquement si les migrations ont rendu la base incompatible.
 
 Une sauvegarde est indispensable avant toute migration de schéma.
+
+### 8.5 Après chaque mise à jour : trois contrôles
+
+Les migrations de base et la collecte des fichiers statiques sont appliquées par `entrypoint.sh` à chaque
+démarrage du conteneur `web` : aucune commande n'est à lancer à la main.
+
+1. **Version en service** — `VERSION` sur le disque et la réponse du serveur doivent être identiques :
+
+   ```powershell
+   Get-Content C:\YELEN-SCHOOL\VERSION
+   curl.exe http://localhost:8001/health/
+   # attendu : {"status": "ok", "version": "<identique au fichier VERSION>", "database": "ok",
+   #            "cache": "ok", "demo": false}
+   ```
+
+2. **Conteneurs** — `docker compose -f docker-compose.client.yml ps` : `db` et `redis` `healthy`, `web` et `sms`
+   en fonctionnement, `proxy` si le HTTPS est actif ; aucun conteneur `Restarting`.
+
+3. **Recette de deux minutes** — connexion au compte de direction, ouverture de *Configuration SMS* (ligne de
+   relève verte et datée), d'un bulletin ou d'un reçu en PDF, et de *Messages reçus*. En cas d'anomalie :
+   `logs\mise-a-jour.log` puis §8.4 (retour arrière).
 
 ---
 
@@ -1573,6 +1677,29 @@ Après une réparation ou une recréation du service Web, valider les deux URL d
 ### Les médias ont disparu après un incident
 
 Ne pas supprimer `yelen_media`. Rechercher la paire de sauvegarde correspondante et exécuter la restauration complète avec le dump `.dump`. L'archive `_media.tar.gz` est restaurée automatiquement par `restore-windows.ps1`.
+
+### La carte de réception SMS indique « le service `sms` semble arrêté »
+
+- `docker compose -f docker-compose.client.yml ps` : le conteneur `sms` doit exister ; s'il manque, le
+  démarrage a été lancé avec une ancienne copie du fichier compose : exécuter `demarrage.bat` ou
+  `installer\start-local.ps1`.
+- `docker compose -f docker-compose.client.yml logs --tail 100 sms` : adresse de passerelle injoignable,
+  identifiants `SMS_HTTP_*` erronés ou téléphone hors du réseau WiFi.
+- Après correction : `docker compose -f docker-compose.client.yml restart sms`.
+
+### Un parent ne reçoit plus de réponse à ses SMS alors que la passerelle fonctionne
+
+La réception filtrée est probablement active (5.52.0) : le numéro n'est pas enregistré sur la plateforme.
+Ajouter le numéro sur la fiche élève (parent, tuteur ou urgence) — il est pris en compte dans les dix minutes —
+ou décocher *N'accepter que les SMS des numéros enregistrés* dans *Configuration SMS*. Les messages concernés
+restent consultables dans *Messages reçus → Numéros inconnus*.
+
+### Après une mise à jour, les pages ou les PDF s'affichent sans mise en forme
+
+`entrypoint.sh` a vidé et reconstruit les fichiers statiques ; le navigateur garde parfois l'ancienne feuille de
+style. Recharger la page (le cache est identifié par la version), puis vérifier que le volume
+`yelen_staticfiles` est bien monté : `docker compose -f docker-compose.client.yml exec web ls staticfiles/css`.
+En dernier recours : `docker compose -f docker-compose.client.yml restart web`.
 
 ### La tâche planifiée n'a rien produit
 
