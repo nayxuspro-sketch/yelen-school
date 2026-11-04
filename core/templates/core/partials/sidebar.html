@@ -352,11 +352,17 @@
         {% if '/personnel/conges/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:conge_list' %}" class="sb-item-submodern" data-url="/personnel/conges/"><span class="sub-item-dot"></span>Congés</a>
         {% endif %}
+        {% if '/personnel/evaluations/' in droits_fonctionnalites %}
+        <a href="{% url 'personnel:evaluation_list' %}" class="sb-item-submodern" data-url="/personnel/evaluations/"><span class="sub-item-dot"></span>Évaluations annuelles</a>
+        {% endif %}
         {% if '/personnel/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:personnel_list' %}" class="sb-item-submodern" data-url="/personnel/"><span class="sub-item-dot"></span>Liste du personnel</a>
         {% endif %}
         {% if '/personnel/salaires/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:paie_mois' %}" class="sb-item-submodern" data-url="/personnel/salaires/paie/"><span class="sub-item-dot"></span>Paie du mois</a>
+        {% endif %}
+        {% if '/personnel/pointage/' in droits_fonctionnalites %}
+        <a href="{% url 'personnel:pointage_jour' %}" class="sb-item-submodern" data-url="/personnel/pointage/"><span class="sub-item-dot"></span>Pointage</a>
         {% endif %}
         {% if '/personnel/salaires/' in droits_fonctionnalites %}
         <a href="{% url 'personnel:salaire_list' %}" class="sb-item-submodern" data-url="/personnel/salaires/"><span class="sub-item-dot"></span>Salaires</a>

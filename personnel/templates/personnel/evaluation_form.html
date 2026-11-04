@@ -1,0 +1,103 @@
+{% extends "core/base.html" %}
+
+{% block title %}Entretien annuel d'évaluation — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'core:home' %}" class="text-secondary">Accueil</a>
+      <span class="text-muted"> / </span><span>Personnel</span><span class="text-muted"> / </span>
+      <a href="{% url 'personnel:evaluation_list' %}" class="text-secondary">Évaluations</a>
+    </p>
+    <h1 class="page-title">{% if evaluation %}Entretien annuel — {{ evaluation.personnel.get_nom_complet }}{% else %}Nouvel entretien annuel{% endif %}</h1>
+  </div>
+  <a href="{% url 'personnel:evaluation_list' %}" class="btn-secondary">Retour</a>
+</div>
+
+{% if erreur %}
+<div class="alert-danger-accent animate-fade-up mb-4">{{ erreur }}</div>
+{% endif %}
+
+<form method="post" class="card animate-fade-up delay-1">
+  {% csrf_token %}
+  <div class="card-body">
+    <div class="d-flex gap-3 flex-wrap mb-4">
+      <div class="form-group flex-1">
+        <label class="input-label required" for="id_personnel">Agent évalué</label>
+        <select name="personnel" id="id_personnel" class="input select" required>
+          {% for m in membres %}
+          <option value="{{ m.pk }}" {% if evaluation and evaluation.personnel_id == m.pk %}selected{% endif %}>{{ m.get_nom_complet }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group flex-1">
+        <label class="input-label required" for="id_annee">Année scolaire</label>
+        <select name="annee_scolaire" id="id_annee" class="input select" required>
+          {% for a in annees %}
+          <option value="{{ a.pk }}" {% if evaluation and evaluation.annee_scolaire_id == a.pk or not evaluation and annee_courante and annee_courante.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group flex-1">
+        <label class="input-label" for="id_date">Date de l'entretien</label>
+        <input type="date" name="date_entretien" id="id_date" class="input"
+               value="{% if evaluation %}{{ evaluation.date_entretien|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
+      </div>
+      <div class="form-group flex-1">
+        <label class="input-label" for="id_evaluateur">Évaluateur</label>
+        <select name="evaluateur" id="id_evaluateur" class="input select">
+          <option value="">—</option>
+          {% for m in membres %}
+          <option value="{{ m.pk }}" {% if evaluation and evaluation.evaluateur_id == m.pk %}selected{% endif %}>{{ m.get_nom_complet }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <h3 class="section-title">Notes par critère <span class="text-muted" style="font-size:.8rem; font-weight:400;">(0 à 5)</span></h3>
+    <div class="table-scroll mb-4">
+      <table class="data-table">
+        <thead><tr><th>Critère</th><th style="width:9rem;">Note</th></tr></thead>
+        <tbody>
+          {% for champ, libelle, valeur in criteres_notes %}
+          <tr>
+            <td>{{ libelle }}</td>
+            <td>
+              <select name="{{ champ }}" class="input select" aria-label="{{ libelle }}">
+                {% for note in notes_possibles %}
+                <option value="{{ note }}"{% if note == valeur %} selected{% endif %}>{{ note }}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="form-group mb-4">
+      <label class="input-label" for="id_bilan">Bilan de l'année</label>
+      <textarea name="bilan" id="id_bilan" class="input" rows="4">{{ evaluation.bilan|default:'' }}</textarea>
+    </div>
+    <div class="form-group mb-4">
+      <label class="input-label" for="id_objectifs">Objectifs de l'année suivante</label>
+      <textarea name="objectifs" id="id_objectifs" class="input" rows="3">{{ evaluation.objectifs|default:'' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="input-label" for="id_avis">Avis</label>
+      <select name="avis" id="id_avis" class="input select">
+        {% for valeur, libelle in avis_choices %}
+        <option value="{{ valeur }}" {% if evaluation and evaluation.avis == valeur %}selected{% endif %}>{{ libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="d-flex align-center gap-3" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
+    <button type="submit" class="btn-primary">Enregistrer l'entretien</button>
+    <span class="text-muted" style="font-size:.8rem;">Le compte rendu PDF signé est disponible depuis la liste.</span>
+  </div>
+</form>
+
+{% endblock %}

@@ -3,6 +3,33 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.51.0 — 2026-11-04
+
+- **Pointage du personnel et entretien annuel d'évaluation (audit P2-14).** Dernier chantier de l'audit : le suivi
+  des présences quotidiennes des agents et leur évaluation annuelle, avec documents signés.
+  - **Modèles** (migration `personnel/0012`) : `ReglagePointage` (une ligne par établissement, heure d'arrivée limite,
+    07:30 par défaut, au-delà de laquelle le pointage est compté en retard), `PointagePersonnel` (arrivée, départ,
+    statut *Présent / En retard / Absent / En congé*, observation, `heures_travaillees`, un pointage par agent et par
+    jour) et `EvaluationAnnuelle` (cinq critères notés de 0 à 5 — ponctualité, compétence, qualité, relations,
+    initiative —, bilan, objectifs, avis *favorable / avec réserves / défavorable*, `total_points` et
+    `moyenne_sur_20`, une évaluation par agent et par année scolaire).
+  - **Page `Personnel → Pointage`** (`/personnel/pointage/`) : journée sélectionnable, une ligne par agent actif avec
+    arrivée, départ, statut et observation, enregistrement en une passe ; les lignes laissées vides ne sont pas
+    enregistrées et le statut est déduit automatiquement de l'heure limite (modifiable depuis la page).
+  - **Page `Personnel → Pointage du mois`** (`/personnel/pointage/mois/`) : jours pointés, heures, retards, absences
+    et congés par agent, totaux, navigation mois précédent / suivant et **feuille de pointage en PDF** (A4 signé,
+    `pointage_mois_pdf`).
+  - **Page `Personnel → Évaluations annuelles`** (`/personnel/evaluations/`) : évaluations de l'année scolaire choisie,
+    liste des agents restant à évaluer, saisie de l'entretien (grille de notes 0 à 5, bilan, objectifs, avis, contrôle
+    des bornes et du doublon), **compte rendu en PDF** (A4 signé, `evaluation_pdf`) et suppression d'une saisie erronée.
+  - **Signature** : deux nouveaux documents signables (migration `parametres/0047`) — `FEUILLE_POINTAGE` et
+    `EVALUATION_PERSONNEL`, qui héritent du signataire déjà configuré pour la catégorie *Personnel*.
+  - **Droits** : fonctionnalités *Pointage du personnel* (action *Pointer les arrivées et départs*) et *Évaluations
+    annuelles* (actions *Saisir un entretien annuel*, *Supprimer une évaluation*), entrées du menu latéral rangées
+    par ordre alphabétique.
+- Guides : `docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` § 5.5 et § 5.6 ; `docs/GUIDE_DEMARRAGE_RAPIDE.md` § 5 bis et § 7.
+- Tests : `personnel/test_pointage_evaluations.py` (12 tests).
+
 ## 5.50.0 — 2026-11-04
 
 - **Prêts d'ouvrages et retards de la bibliothèque (audit P2-13).** Le circuit d'attribution des manuels gagne son

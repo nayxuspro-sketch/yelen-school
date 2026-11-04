@@ -1,0 +1,62 @@
+{% extends "pdf/base.html" %}{% load signataire_tags %}
+{% block page %}@page { size: A4 portrait; margin: 12mm 12mm; }{% endblock %}
+{% block css %}
+body { font-family: Arial, sans-serif; font-size: 10pt; color: #000; }
+.titre-doc { text-align: center; margin: 0 0 0.5cm; }
+.titre-doc h1 { font-size: 13pt; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; margin: 0;
+  padding: 5px 16px; border: 2px solid #111; display: inline-block; }
+.periode { text-align: center; font-size: 10pt; color: #333; margin-top: 4px; }
+table.pt { width: 100%; border-collapse: collapse; margin-top: 0.4cm; font-size: 9pt; }
+table.pt th { background: #e9e9e9; border: 1px solid #888; padding: 5px 6px; font-size: 8.5pt; text-transform: uppercase; }
+table.pt td { border: 1px solid #999; padding: 4px 6px; }
+table.pt tfoot td { background: #f3f3f3; font-weight: bold; }
+.c { text-align: center; }
+.r { text-align: right; }
+.mention { font-style: italic; color: #333; font-size: 8.5pt; margin-top: 0.35cm; }
+{% endblock %}
+{% block corps %}
+<div class="titre-doc"><h1>Feuille de pointage du personnel</h1>
+  <div class="periode">Période du {{ debut|date:"d/m/Y" }} au {{ fin|date:"d/m/Y" }} — {% firstof identite.nom_etablissement etab.nom %}</div>
+</div>
+
+<table class="pt">
+  <thead>
+    <tr>
+      <th style="width:38%;">Agent</th>
+      <th class="c">Jours pointés</th>
+      <th class="c">Heures</th>
+      <th class="c">Retards</th>
+      <th class="c">Absences</th>
+      <th class="c">Congés</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ligne in lignes %}
+    <tr>
+      <td>{{ ligne.membre.nom|upper }} {{ ligne.membre.prenom }}</td>
+      <td class="c">{{ ligne.jours }}</td>
+      <td class="c">{{ ligne.heures|floatformat:1 }} h</td>
+      <td class="c">{{ ligne.retards }}</td>
+      <td class="c">{{ ligne.absences }}</td>
+      <td class="c">{{ ligne.conges }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="c">Aucun agent actif.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td>Total — {{ lignes|length }} agent(s)</td>
+      <td class="c">{{ totaux.jours }}</td>
+      <td class="c">{{ totaux.heures|floatformat:1 }} h</td>
+      <td class="c">{{ totaux.retards }}</td>
+      <td class="c">{{ totaux.absences }}</td>
+      <td class="c">{{ totaux.conges }}</td>
+    </tr>
+  </tfoot>
+</table>
+
+{% signataire_auto "FEUILLE_POINTAGE" %}
+
+<p class="mention">Document établi le {{ today|date:"d/m/Y" }}.</p>
+{% endblock %}

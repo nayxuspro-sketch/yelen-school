@@ -33,6 +33,8 @@ Codes TypeDocument disponibles
   CONGE_PERSONNEL   Autorisation de Congé Personnel
   BILAN_ENCAISSEMENTS  Bilan des Encaissements
   HIST_VERSEMENTS   Historique des Versements
+  FEUILLE_POINTAGE  Feuille de Pointage du Personnel
+  EVALUATION_PERSONNEL  Compte Rendu d'Entretien Annuel
 """
 
 import logging

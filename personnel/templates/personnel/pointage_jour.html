@@ -1,0 +1,90 @@
+{% extends "core/base.html" %}
+
+{% block title %}Pointage du {{ jour|date:"d/m/Y" }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'core:home' %}" class="text-secondary">Accueil</a>
+      <span class="text-muted"> / </span><span>Personnel</span><span class="text-muted"> / </span><span>Pointage</span>
+    </p>
+    <h1 class="page-title">Pointage du {{ jour|date:"l d F Y" }}</h1>
+  </div>
+  <div class="page-actions">
+    <a href="?date={{ veille|date:'Y-m-d' }}" class="btn-secondary btn-sm" aria-label="Jour précédent">← Jour précédent</a>
+    <a href="?date={{ today|date:'Y-m-d' }}" class="btn-secondary btn-sm">Aujourd'hui</a>
+    <a href="?date={{ lendemain|date:'Y-m-d' }}" class="btn-secondary btn-sm" aria-label="Jour suivant">Jour suivant →</a>
+    <a href="{% url 'personnel:pointage_mois' %}?mois={{ jour.month }}&annee={{ jour.year }}" class="btn-secondary btn-sm">Feuille du mois</a>
+  </div>
+</div>
+
+<form method="post" class="card animate-fade-up delay-1 mb-4">
+  {% csrf_token %}
+  <input type="hidden" name="date" value="{{ jour|date:'Y-m-d' }}">
+  <div class="card-body d-flex gap-3 align-end flex-wrap">
+    <div class="form-group">
+      <label class="input-label" for="id_limite">Heure d'arrivée limite</label>
+      <input type="time" id="id_limite" name="heure_arrivee_limite" value="{{ reglage.heure_arrivee_limite|time:'H:i' }}" class="input">
+    </div>
+    <button type="submit" name="action" value="limite" class="btn-secondary">Enregistrer la limite</button>
+    <span class="text-muted" style="font-size:.8rem;">Au-delà de cette heure, un pointage est compté en retard.</span>
+  </div>
+</form>
+
+<form method="post" class="card animate-fade-up delay-2">
+  {% csrf_token %}
+  <input type="hidden" name="date" value="{{ jour|date:'Y-m-d' }}">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Arrivée</th>
+          <th>Départ</th>
+          <th>Statut</th>
+          <th>Observation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes %}
+        <tr{% if ligne.en_retard %} class="row-warning"{% endif %}>
+          <td>
+            <strong>{{ ligne.membre.get_nom_complet }}</strong>
+            <div class="text-muted" style="font-size:.78rem;">{{ ligne.membre.matricule|default:"—" }}</div>
+          </td>
+          <td><input type="time" name="arrivee_{{ ligne.membre.pk }}" class="input"
+                     value="{{ ligne.pointage.heure_arrivee|time:'H:i' }}"
+                     aria-label="Heure d'arrivée de {{ ligne.membre.get_nom_complet }}"></td>
+          <td><input type="time" name="depart_{{ ligne.membre.pk }}" class="input"
+                     value="{{ ligne.pointage.heure_depart|time:'H:i' }}"
+                     aria-label="Heure de départ de {{ ligne.membre.get_nom_complet }}"></td>
+          <td>
+            <select name="statut_{{ ligne.membre.pk }}" class="input select"
+                    aria-label="Statut de {{ ligne.membre.get_nom_complet }}">
+              <option value="">— automatique —</option>
+              {% for valeur, libelle in statuts %}
+              <option value="{{ valeur }}" {% if ligne.pointage and ligne.pointage.statut == valeur %}selected{% endif %}>{{ libelle }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td><input type="text" name="observation_{{ ligne.membre.pk }}" class="input" maxlength="200"
+                     value="{{ ligne.pointage.observation|default:'' }}"
+                     aria-label="Observation pour {{ ligne.membre.get_nom_complet }}"></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">Aucun agent actif : créez d'abord les fiches du personnel.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if lignes %}
+  <div class="d-flex align-center gap-3" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
+    <button type="submit" name="action" value="enregistrer" class="btn-primary">Enregistrer le pointage</button>
+    <span class="text-muted" style="font-size:.8rem;">Les lignes laissées entièrement vides ne sont pas enregistrées.</span>
+  </div>
+  {% endif %}
+</form>
+
+{% endblock %}

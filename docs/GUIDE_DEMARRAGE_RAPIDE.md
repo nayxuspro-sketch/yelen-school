@@ -1,6 +1,6 @@
 ---
 titre: Guide de démarrage rapide — YELEN SCHOOL
-version_logiciel: 5.50.0
+version_logiciel: 5.51.0
 date_mise_a_jour: 04/11/2026
 public: direction, secrétariat, comptabilité, enseignants d'un établissement qui démarre
 ---
@@ -166,6 +166,15 @@ notes et paiements (§ 8.1). Le **capital de points discipline** est optionnel (
 
 ---
 
+## 5 bis. Le personnel au quotidien
+
+| Étape | Où | Guide |
+|-------|----|-------|
+| **Pointage du jour** : arrivées, départs, retards et absences (une ligne par agent, enregistrement en une passe) | `Personnel → Pointage` | § 5.5 |
+| **Feuille de pointage du mois** : heures, retards, absences, PDF signé | `Personnel → Pointage du mois` | § 5.5 |
+
+---
+
 ## 6. Chaque trimestre — Des notes aux bulletins
 
 1. **Vérifier la saisie** : `Pilotage → Enseignants` indique, par enseignant, le taux de notes
@@ -192,6 +201,7 @@ notes et paiements (§ 8.1). Le **capital de points discipline** est optionnel (
 |-------|----|-------|
 | Bulletin **annuel** et palmarès (moyenne des trimestres, décision finale) | `Bulletins → Annuel` | § 6.3.3, § 6.3.4 |
 | **Statistiques officielles** de fin d'année (MENAPLN) et fichiers d'inscription aux examens | `Documents → Statistiques officielles`, `Examens` | § 12.15, § 10.6 |
+| **Entretien annuel d'évaluation** de chaque agent (grille 0–5, bilan, objectifs, PDF signé) | `Personnel → Évaluations annuelles` | § 5.6 |
 | **Prêts et retards** : relancer les familles (portail + SMS), imprimer la liste des retards | `Manuels → Prêts et retards` | § 26.5 bis |
 | **Manuels non rendus** | `Manuels → Non rendus` | § 26.5 |
 | **Clôturer l'année** : plus aucune inscription ni paiement modifiable sur cette année | `Paramètres → Années scolaires` | § 3.2 |

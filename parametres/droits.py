@@ -197,6 +197,13 @@ MODULES = (
             _a('enregistrer', 'Enregistrer une absence', 'absence_create', 'absence_create_pour'),
             _a('supprimer', 'Supprimer une absence', 'absence_delete'),
         )),
+        _f('/personnel/pointage/', 'Pointage du personnel', actions=(
+            _a('pointer', 'Pointer les arrivées et départs', 'pointage_jour', 'pointage_mois_pdf'),
+        )),
+        _f('/personnel/evaluations/', 'Évaluations annuelles', actions=(
+            _a('evaluer', 'Saisir un entretien annuel', 'evaluation_create', 'evaluation_update'),
+            _a('supprimer', 'Supprimer une évaluation', 'evaluation_delete'),
+        )),
     )),
     Module('finances', 'Finances', SECTION_ADMINISTRATION, (
         _f('/finances/paiements/', 'Paiements', '/finances/situation/', '/finances/echeancier/', '/finances/echeanciers/', actions=(

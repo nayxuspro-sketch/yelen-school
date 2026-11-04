@@ -1,0 +1,73 @@
+{% extends "core/base.html" %}
+
+{% block title %}Évaluations annuelles — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'core:home' %}" class="text-secondary">Accueil</a>
+      <span class="text-muted"> / </span><span>Personnel</span><span class="text-muted"> / </span><span>Évaluations</span>
+    </p>
+    <h1 class="page-title">Évaluations annuelles{% if annee_sel %} — {{ annee_sel.libelle }}{% endif %}</h1>
+  </div>
+  <div class="page-actions">
+    <form method="get" class="d-flex gap-2 align-center">
+      <label class="input-label" for="id_annee" style="margin:0;">Année</label>
+      <select name="annee" id="id_annee" class="input select" data-csp-submit-on-change>
+        {% for a in annees %}
+        <option value="{{ a.pk }}" {% if annee_sel and annee_sel.pk == a.pk %}selected{% endif %}>{{ a.libelle }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <a href="{% url 'personnel:evaluation_create' %}" class="btn-primary btn-sm">Nouvel entretien</a>
+  </div>
+</div>
+
+{% if a_evaluer %}
+<div class="alert-warning-accent animate-fade-up mb-4">
+  <strong>{{ a_evaluer|length }} agent{{ a_evaluer|length|pluralize }} à évaluer</strong> pour cette année :
+  {% for m in a_evaluer %}{{ m.get_nom_complet }}{% if not forloop.last %} · {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<div class="card animate-fade-up delay-1">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Entretien</th>
+          <th>Évaluateur</th>
+          <th class="text-right">Moyenne</th>
+          <th>Avis</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in evaluations %}
+        <tr>
+          <td><strong>{{ e.personnel.get_nom_complet }}</strong></td>
+          <td>{{ e.date_entretien|date:"d/m/Y" }}</td>
+          <td>{% if e.evaluateur %}{{ e.evaluateur.get_nom_complet }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td class="text-right">{{ e.moyenne_sur_20|floatformat:2 }}/20</td>
+          <td>
+            {% if e.avis == 'FAVORABLE' %}<span class="badge badge-success">{{ e.get_avis_display }}</span>
+            {% elif e.avis == 'RESERVE' %}<span class="badge badge-warning">{{ e.get_avis_display }}</span>
+            {% else %}<span class="badge badge-danger">{{ e.get_avis_display }}</span>{% endif %}
+          </td>
+          <td class="text-right">
+            <a href="{% url 'personnel:evaluation_update' e.pk %}" class="btn-secondary btn-sm">Modifier</a>
+            <a href="{% url 'personnel:evaluation_pdf' e.pk %}" class="btn-secondary btn-sm" target="_blank" rel="noopener">PDF</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-muted">Aucun entretien enregistré pour cette année.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

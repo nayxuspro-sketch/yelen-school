@@ -1,7 +1,7 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.50.0
-version_guide: 5.43
+version_logiciel: 5.51.0
+version_guide: 5.44
 date_mise_a_jour: 04/11/2026 (5.50.0 : prêts d'ouvrages — échéances, retards, relance des familles par portail et SMS)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
@@ -55,6 +55,8 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [5.2 Profil du Personnel (Page de Détail)](#52-profil-du-personnel-page-de-détail)
   - [5.3 Gestion des Congés du Personnel](#53-gestion-des-congés-du-personnel)
   - [5.4 Gestion des Salaires du Personnel](#54-gestion-des-salaires-du-personnel)
+  - [5.5 Pointage du personnel](#55-pointage-du-personnel)
+  - [5.6 Entretien annuel d'évaluation du personnel](#56-entretien-annuel-dévaluation-du-personnel)
 - [6. SCOLARITÉ ET NOTES](#6-scolarité-et-notes)
   - [6.1 Cahier de textes numérique](#61-cahier-de-textes-numérique)
   - [6.2 Référentiel des Matières](#62-référentiel-des-matières)
@@ -1149,6 +1151,52 @@ Le formulaire de bulletin de salaire a été refactorisé pour être en conformi
 2. **Éléments de rémunération** : Salaire de base (obligatoire), Prime d'ancienneté, Indemnités transport/logement, Autres primes (grille 2 colonnes)
 3. **Retenues** : CNSS, IUTS, Autres retenues (grille 3 colonnes)
 4. **Paiement** : Statut, Date de paiement, Référence paiement, Observations (full-width)
+
+---
+
+### 5.5 Pointage du personnel
+
+**À quoi ça sert :** Suivre les arrivées et les départs des agents, repérer les retards et les absences, et produire
+la feuille de pointage mensuelle signée.
+
+**Qui peut accéder :** Direction, Secrétaire (droit *Personnel › Pointage du personnel*).
+
+**Accès :** `Personnel → Pointage` et `Personnel → Pointage du mois`
+
+1. **Heure d'arrivée limite** : réglée une fois pour l'établissement (07:30 par défaut) en haut de la page
+   *Pointage* ; tout pointage postérieur est compté **en retard**. Le bouton *Enregistrer la limite* la met à jour.
+2. **Journée** : la page affiche une ligne par agent actif avec l'arrivée, le départ, le statut et une observation.
+   On peut changer de jour avec *Jour précédent* / *Jour suivant*, ou choisir une date dans le champ. Le bouton
+   *Enregistrer le pointage* enregistre toutes les lignes en une fois ; **une ligne laissée entièrement vide n'est pas
+   enregistrée**, et le statut est déduit de l'heure d'arrivée sauf si l'on choisit *Absent* ou *En congé*.
+3. **Feuille du mois** : `Personnel → Pointage du mois` récapitule par agent les jours pointés, les heures travaillées,
+   les retards, les absences et les congés, avec les totaux. Le bouton **PDF signé** produit la feuille de pointage
+   A4 à archiver ou à remettre à la direction.
+4. Un agent ne peut avoir qu'**un seul pointage par jour** : réenregistrer la journée met à jour la ligne existante.
+
+---
+
+### 5.6 Entretien annuel d'évaluation du personnel
+
+**À quoi ça sert :** Conduire l'entretien annuel de chaque agent selon une grille commune, conserver le bilan et les
+objectifs, et remettre à l'intéressé un compte rendu signé.
+
+**Qui peut accéder :** Direction (droit *Personnel › Évaluations annuelles*).
+
+**Accès :** `Personnel → Évaluations annuelles`
+
+1. La page liste les entretiens de l'**année scolaire choisie** (sélecteur en haut) et rappelle les agents **restant à
+   évaluer**. *Nouvel entretien* ouvre la grille de saisie.
+2. **Grille** : cinq critères notés de **0 à 5** — *ponctualité et assiduité*, *compétence professionnelle*, *qualité
+   du travail rendu*, *relations avec les élèves, les familles et les collègues*, *initiative et respect des
+   consignes* — puis le **bilan de l'année**, les **objectifs de l'année suivante** et l'**avis** (*favorable*,
+   *favorable avec réserves*, *défavorable*).
+3. Le total (sur 25) et la **moyenne ramenée sur 20** sont calculés automatiquement. Un agent ne peut avoir qu'une
+   évaluation par année scolaire ; une note hors des bornes 0–5 est refusée.
+4. **Compte rendu PDF** : depuis la liste, le bouton *PDF* produit le document A4 signé (grille, notes, bilan,
+   objectifs, avis) à remettre à l'agent après l'entretien.
+5. `Modifier` reprend un entretien existant ; la suppression d'une saisie erronée est possible depuis l'action dédiée
+   (droit *Supprimer une évaluation*).
 
 ---
 

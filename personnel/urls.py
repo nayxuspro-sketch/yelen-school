@@ -34,6 +34,16 @@ urlpatterns = [
     path('salaires/<uuid:pk>/payer/', views.salaire_payer, name='salaire_payer'),
     path('salaires/<uuid:pk>/supprimer/', views.salaire_delete, name='salaire_delete'),
 
+    # Pointage et évaluation annuelle
+    path('pointage/', views.pointage_jour, name='pointage_jour'),
+    path('pointage/mois/', views.pointage_mois, name='pointage_mois'),
+    path('pointage/mois.pdf', views.pointage_mois_pdf, name='pointage_mois_pdf'),
+    path('evaluations/', views.evaluation_list, name='evaluation_list'),
+    path('evaluations/nouvelle/', views.evaluation_form, name='evaluation_create'),
+    path('evaluations/<uuid:pk>/', views.evaluation_form, name='evaluation_update'),
+    path('evaluations/<uuid:pk>/pdf/', views.evaluation_pdf, name='evaluation_pdf'),
+    path('evaluations/<uuid:pk>/supprimer/', views.evaluation_delete, name='evaluation_delete'),
+
     # Congés
     path('absences/', views.absence_list, name='absence_list'),
     path('absences/nouvelle/', views.absence_create, name='absence_create'),
