@@ -122,10 +122,40 @@ class TestPreInscriptions:
         assert reponse.status_code == 302 and reponse.url == reverse('inscriptions:inscription_update', args=[inscription.pk])
         eleve = inscription.eleve
         assert eleve.get_nom_complet() == 'SAWADOGO ALI' and eleve.prenom == 'Ali' and eleve.matricule.startswith('SAV')
-        assert eleve.tuteur_nom == 'SAWADOGO Moussa' and eleve.telephone_parent == '70 12 34 56'
+        assert eleve.nom_pere == 'SAWADOGO Moussa' and eleve.tuteur_nom == ''      # parent → père, tuteur vide
+        assert eleve.telephone_parent == '70 12 34 56'
         assert inscription.classe == ecole['classe'] and inscription.statut == 'NON_AFFECTE'
         # idempotent : un second clic ne crée rien
         assert inscrire(pre, ecole['user']) == (inscription, None) and Eleve.objects.count() == 1
+
+    def test_modifier_reprend_le_parent_comme_pere_et_vide_le_tuteur(self, client, ecole):
+        """Élève converti avant 5.52.3 : le nom du parent est encore dans « tuteur ». Le formulaire de modification
+        l'affiche dans « Nom du père » et laisse « Nom du tuteur » vide ; l'enregistrement corrige la fiche."""
+        pre = _demande(ecole, statut=PreInscription.Statut.ACCEPTEE)
+        inscription, erreur = inscrire(pre, ecole['user'])
+        eleve = inscription.eleve
+        Eleve.objects.filter(pk=eleve.pk).update(nom_pere='', tuteur_nom='SAWADOGO Moussa')   # état d'avant le correctif
+
+        page = unescape(client.get(reverse('inscriptions:eleve_update', args=[eleve.pk])).content.decode())
+        assert 'name="nom_pere"' in page and 'value="SAWADOGO Moussa"' in page
+        champ_tuteur = page.split('name="tuteur_nom"')[1].split('>')[0]
+        assert 'name="tuteur_nom"' in page and 'value=' not in champ_tuteur      # champ laissé vide
+
+        client.post(reverse('inscriptions:eleve_update', args=[eleve.pk]), {
+            'nom': eleve.nom, 'prenom': eleve.prenom, 'genre': eleve.genre,
+            'date_naissance': eleve.date_naissance.isoformat(), 'lieu_naissance': 'Kaya',
+            'nationalite': 'Burkinabè', 'lieu_residence': 'Ouagadougou',
+            'nom_pere': 'SAWADOGO Moussa', 'tuteur_nom': '', 'telephone_parent': '70 12 34 56',
+        })
+        eleve.refresh_from_db()
+        assert eleve.nom_pere == 'SAWADOGO Moussa' and eleve.tuteur_nom == ''
+
+    def test_un_eleve_sans_preinscription_n_est_pas_modifie(self, client, ecole):
+        """Hors pré-inscription, une fiche qui porte un tuteur reste telle quelle : aucun déplacement de valeur."""
+        eleve = baker.make('inscriptions.Eleve', nom='KINDA', prenom='Omar', genre='M', photo='',
+                           nom_pere='KINDA Paul', tuteur_nom='SAWADOGO Alima')
+        page = unescape(client.get(reverse('inscriptions:eleve_update', args=[eleve.pk])).content.decode())
+        assert 'value="KINDA Paul"' in page and 'value="SAWADOGO Alima"' in page
 
     def test_inscrire_refuse_classe_complete_date_manquante_et_refusee(self, client, ecole):
         for _ in range(2):

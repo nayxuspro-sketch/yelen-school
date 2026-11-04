@@ -6,7 +6,7 @@
 >
 > **Objectif :** installer YELEN SCHOOL sur une machine Windows avec PostgreSQL et Redis gérés localement par Docker Desktop. Après l'installation initiale, l'application fonctionne sur le réseau local sans connexion Internet quotidienne.
 >
-> **Version couverte : 5.52.1 (4 novembre 2026).** Cette édition décrit les cinq conteneurs de
+> **Version couverte : 5.52.3 (4 novembre 2026).** Cette édition décrit les cinq conteneurs de
 > `docker-compose.client.yml` (réception des SMS et proxy HTTPS compris), la totalité des variables de `.env`,
 > les journaux de `logs\` et les contrôles à faire après chaque mise à jour.
 >

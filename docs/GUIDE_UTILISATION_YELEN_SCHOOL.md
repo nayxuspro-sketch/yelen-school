@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.52.0
-version_guide: 5.46
-date_mise_a_jour: 04/11/2026 (5.50.0 : prêts d'ouvrages — échéances, retards, relance des familles par portail et SMS)
+version_logiciel: 5.52.3
+version_guide: 5.47
+date_mise_a_jour: 04/11/2026 (5.52.3 : pré-inscription — le nom du parent arrive dans « Nom du père »)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -3411,7 +3411,7 @@ Dans le formulaire élève, section **Santé & personnes autorisées** : groupe 
 1. `Nouvelle pré-inscription` : année scolaire (par défaut l'**année suivante** dès qu'elle est créée dans `Paramètres → Années scolaires`, sinon l'année courante), classe demandée, identité, lieu de naissance, école d'origine et dernière classe, parent et téléphone (8 chiffres au moins), observation. Une année clôturée est refusée.
 2. La liste se filtre par année, classe et statut ; la **synthèse par classe** affiche en attente / acceptées / inscrites / effectif inscrit / capacité / places restantes, avec un indicateur de **tension** quand les demandes acceptées dépassent les places.
 3. Décisions sur chaque ligne : `Accepter`, `Refuser`, `Remettre en attente` (auteur et date conservés).
-4. `Inscrire` (dossier accepté ou en attente) : l'élève est créé avec son **matricule**, le tuteur et le téléphone du parent repris, puis inscrit dans la classe demandée au statut « Non affecté » ; le formulaire d'inscription s'ouvre pour compléter (statut, photo, réduction…). Classe complète ou année clôturée : refus avec message ; date de naissance obligatoire ; un dossier refusé ne peut pas être inscrit ; un second clic ne crée rien en double.
+4. `Inscrire` (dossier accepté ou en attente) : l'élève est créé avec son **matricule**, le nom du parent repris dans **Nom du père** (le champ *Nom du tuteur* reste vide, à compléter seulement si l'élève ne vit pas chez ses parents) et son téléphone, puis inscrit dans la classe demandée au statut « Non affecté » ; le formulaire d'inscription s'ouvre pour compléter (statut, photo, réduction…). Classe complète ou année clôturée : refus avec message ; date de naissance obligatoire ; un dossier refusé ne peut pas être inscrit ; un second clic ne crée rien en double.
 
 ### 9.32 Sauvegarde depuis l'interface (mode autonome)
 
@@ -8060,7 +8060,7 @@ d'essai, et se recopient telles quelles sur une base réelle en remplaçant noms
 | Nationalité | `Burkinabè` | valeur pré-remplie |
 | Lieu de résidence | `Secteur 30, Ouagadougou` | quartier et ville, utile aux convocations |
 | Téléphone du père / de la mère | `70 11 22 33` | 8 chiffres ; c'est ce numéro qui reçoit les SMS et qui identifie la famille dans *Messages reçus* ; le format international (`+22670112233`) est accepté |
-| Nom et profession du père / de la mère | `OUÉDRAOGO Salif` / `Commerçant` | facultatifs, imprimés sur la fiche et le certificat |
+| Nom et profession du père / de la mère | `OUÉDRAOGO Salif` / `Commerçant` | facultatifs, imprimés sur la fiche et le certificat ; après une **pré-inscription**, le nom du parent y est repris automatiquement et *Nom du tuteur* reste vide (§9.31) |
 | Tuteur (nom, téléphone, adresse) | `SAWADOGO Rasmata` · `76 45 67 89` · `Karpala` | à renseigner quand l'élève ne vit pas chez ses parents |
 | Téléphone d'urgence | `78 90 12 34` | joint en cas d'incident, même si le parent est absent |
 | Personnes autorisées | `OUÉDRAOGO Salif — oncle — 70 00 00 00` | une personne par ligne |

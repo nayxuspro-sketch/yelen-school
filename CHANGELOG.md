@@ -3,6 +3,20 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.52.3 — 2026-11-04
+
+- **Pré-inscription : le nom du parent arrive dans « Nom du père », plus dans « Nom du tuteur ».**
+  À la conversion d'une demande en élève, `PreInscription.parent_nom` (« Parent / tuteur ») alimentait
+  `Eleve.tuteur_nom` : la fiche s'ouvrait avec un tuteur renseigné et le père vide.
+  - **Conversion** (`inscriptions.preinscriptions.inscrire`) : le nom du parent est désormais écrit dans
+    `nom_pere` ; `tuteur_nom` reste vide jusqu'à ce que l'école désigne un tuteur.
+  - **Élèves déjà convertis** : le formulaire de modification (`/inscriptions/eleve/<id>/modifier/`) présente
+    automatiquement le tuteur enregistré dans **Nom du père** et laisse **Nom du tuteur** vide
+    (`_initial_depuis_preinscription`) ; l'enregistrement reporte la valeur au bon endroit. La reprise ne vaut que
+    pour un élève issu d'une pré-inscription dont `nom_pere` est vide — aucune autre fiche n'est touchée.
+- Guides : `docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` §9.31 et §40.1.
+- Tests : `inscriptions/tests/test_sante_preinscriptions.py` (+2 tests, 1 assertion mise à jour).
+
 ## 5.52.2 — 2026-11-04
 
 - **Guide d'utilisation : captures d'écran régénérées et exemples de saisie.** Vérification de

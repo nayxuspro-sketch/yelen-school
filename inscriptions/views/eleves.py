@@ -587,6 +587,17 @@ def eleve_create(request):
     })
 
 
+def _initial_depuis_preinscription(eleve):
+    """Élève issu d'une pré-inscription : le « parent / tuteur » saisi à la demande a été enregistré comme tuteur
+    alors qu'il s'agit du père. Le formulaire de modification présente donc ce nom dans « Nom du père » et laisse
+    « Nom du tuteur » vide ; l'enregistrement reporte la valeur au bon endroit (5.52.3)."""
+    if eleve.nom_pere or not eleve.tuteur_nom:
+        return {}
+    if not eleve.inscriptions.filter(pre_inscription__isnull=False).exists():
+        return {}
+    return {'nom_pere': eleve.tuteur_nom, 'tuteur_nom': ''}
+
+
 @login_required
 def eleve_update(request, pk):
     """Modification d'un élève."""
@@ -604,7 +615,7 @@ def eleve_update(request, pk):
             messages.success(request, f"Profil de {eleve.get_nom_complet()} mis à jour.")
             return redirect('inscriptions:eleve_detail', pk=eleve.pk)
     else:
-        form = EleveForm(instance=eleve)
+        form = EleveForm(instance=eleve, initial=_initial_depuis_preinscription(eleve))
 
     return render(request, 'inscriptions/eleve_form.html', {
         'form': form,

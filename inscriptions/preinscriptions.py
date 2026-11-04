@@ -44,7 +44,7 @@ def inscrire(pre, par):
         eleve = Eleve(
             nom=pre.nom, prenom=pre.prenom, genre=pre.genre, date_naissance=pre.date_naissance,
             lieu_naissance=pre.lieu_naissance, etablissement_origine=pre.etablissement_origine, last_classe=pre.last_classe,
-            tuteur_nom=pre.parent_nom, telephone_parent=pre.parent_telephone, photo='',
+            nom_pere=pre.parent_nom, telephone_parent=pre.parent_telephone, photo='',
         )
         eleve._etablissement_code = pre.etablissement.code
         eleve.save()
