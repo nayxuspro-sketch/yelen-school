@@ -14,7 +14,7 @@ from core.utils import get_etablissement_context
 from licences.decorators import requires_licence_feature
 from parametres.models import AnneeScolaire
 
-from ..models import EvaluationAnnuelle, MembrePersonnel, PointagePersonnel, ReglagePointage
+from ..models import EvaluationAnnuelle, MembrePersonnel, PointagePersonnel, ProfilPointage, ReglagePointage
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,8 @@ def _date(valeur, defaut=None):
 @login_required
 @requires_licence_feature('gestion_personnel')
 def pointage_jour(request):
-    """Pointage d'une journée : liste des agents actifs avec arrivée, départ et statut ; enregistrement en une passe."""
+    """Pointage d'une journée : arrivée et départ réels de chaque agent, horaires de référence par profil et par
+    agent, statut déduit de l'heure limite qui lui est propre (5.53.0)."""
     etab = _etab(request)
     reglage = ReglagePointage.pour(etab)
     jour = _date(request.GET.get('date') or request.POST.get('date'), timezone.localdate())
@@ -58,14 +59,33 @@ def pointage_jour(request):
     pointages = {p.personnel_id: p for p in PointagePersonnel.objects.filter(personnel__in=membres, date=jour)}
 
     if request.method == 'POST':
-        if request.POST.get('action') == 'limite':
-            limite = _heure(request.POST.get('heure_arrivee_limite'))
-            if limite is None:
-                messages.error(request, "Heure d'arrivée limite invalide.")
-            else:
-                reglage.heure_arrivee_limite = limite
-                reglage.save(update_fields=['heure_arrivee_limite', 'updated_at'])
-                messages.success(request, f"Heure d'arrivée limite fixée à {limite:%H:%M}.")
+        action = request.POST.get('action') or ''
+
+        if action in ('horaires', 'limite'):      # « limite » : ancien bouton, conservé
+            _enregistrer_horaires_etablissement(request, reglage)
+            return redirect(f"{request.path}?date={jour.isoformat()}")
+
+        if action == 'horaires_agents':
+            modifies = 0
+            for membre in membres:
+                champ_limite = request.POST.get(f'limite_{membre.pk}')
+                champ_depart = request.POST.get(f'depart_prevu_{membre.pk}')
+                if champ_limite is None and champ_depart is None:
+                    continue
+                change = False
+                limite = _heure(champ_limite)
+                if limite != membre.heure_arrivee_limite:
+                    membre.heure_arrivee_limite = limite
+                    change = True
+                depart = _heure(champ_depart)
+                if depart != membre.heure_depart_normale:
+                    membre.heure_depart_normale = depart
+                    change = True
+                if change:
+                    membre.save(update_fields=['heure_arrivee_limite', 'heure_depart_normale', 'updated_at'])
+                    modifies += 1
+            messages.success(request, f"Horaires de {modifies} agent{'s' if modifies > 1 else ''} enregistré"
+                                      f"{'s' if modifies > 1 else ''}.")
             return redirect(f"{request.path}?date={jour.isoformat()}")
 
         enregistres = 0
@@ -76,7 +96,7 @@ def pointage_jour(request):
             if not (arrivee or depart or statut):
                 continue                      # ligne laissée vide : rien n'est enregistré
             statut = statut if statut in PointagePersonnel.StatutChoices.values else \
-                PointagePersonnel.statut_depuis(arrivee, reglage.heure_arrivee_limite)
+                PointagePersonnel.statut_depuis(arrivee, membre.heure_limite_pointage(reglage))
             PointagePersonnel.objects.update_or_create(
                 personnel=membre, date=jour,
                 defaults={'heure_arrivee': arrivee, 'heure_depart': depart, 'statut': statut,
@@ -90,10 +110,14 @@ def pointage_jour(request):
     lignes = []
     for membre in membres:
         pointage = pointages.get(membre.pk)
+        depart_normal = membre.heure_depart_pointage(reglage)
         lignes.append({
             'membre': membre,
             'pointage': pointage,
+            'limite': membre.heure_limite_pointage(reglage),
+            'depart_normal': depart_normal,
             'en_retard': pointage is not None and pointage.statut == PointagePersonnel.StatutChoices.RETARD,
+            'depart_anticipe': pointage is not None and pointage.est_depart_anticipe(depart_normal),
         })
 
     return render(request, 'personnel/pointage_jour.html', {
@@ -103,8 +127,39 @@ def pointage_jour(request):
         'lendemain': jour + timedelta(days=1),
         'reglage': reglage,
         'statuts': PointagePersonnel.StatutChoices.choices,
+        'profils': ProfilPointage.choices,
         'today': timezone.localdate(),
     })
+
+
+def _enregistrer_horaires_etablissement(request, reglage):
+    """Enregistre les heures de référence de l'établissement et celles de chaque profil (vides = héritage)."""
+    champs = {
+        'heure_arrivee_limite': request.POST.get('heure_arrivee_limite'),
+        'heure_arrivee_limite_enseignant': request.POST.get('heure_arrivee_limite_enseignant'),
+        'heure_arrivee_limite_administration': request.POST.get('heure_arrivee_limite_administration'),
+        'heure_depart_normale': request.POST.get('heure_depart_normale'),
+        'heure_depart_normale_enseignant': request.POST.get('heure_depart_normale_enseignant'),
+        'heure_depart_normale_administration': request.POST.get('heure_depart_normale_administration'),
+    }
+    if champs['heure_arrivee_limite'] is None:
+        champs.pop('heure_arrivee_limite')                 # formulaire partiel : on ne touche pas au défaut
+    modifiees = []
+    for champ, valeur in champs.items():
+        if valeur is None:
+            continue
+        heure = _heure(valeur)
+        if champ == 'heure_arrivee_limite' and heure is None:
+            messages.error(request, "Heure d'arrivée limite de l'établissement invalide.")
+            continue
+        if getattr(reglage, champ) != heure:
+            setattr(reglage, champ, heure)
+            modifiees.append(champ)
+    if modifiees:
+        reglage.save(update_fields=modifiees + ['updated_at'])
+        messages.success(request, "Horaires de référence de l'établissement enregistrés.")
+    elif not messages.get_messages(request):
+        messages.info(request, "Aucune modification d'horaire à enregistrer.")
 
 
 @login_required
@@ -112,6 +167,7 @@ def pointage_jour(request):
 def pointage_mois(request):
     """Feuille de pointage du mois : jours pointés, retards, absences et heures par agent, et PDF signé."""
     etab = _etab(request)
+    reglage = ReglagePointage.pour(etab)
     today = timezone.localdate()
     try:
         mois = int(request.GET.get('mois') or today.month)
@@ -128,9 +184,12 @@ def pointage_mois(request):
     par_membre = {}
     for pointage in pointages:
         ligne = par_membre.setdefault(pointage.personnel_id, {'jours': 0, 'retards': 0, 'absences': 0,
-                                                              'conges': 0, 'heures': 0.0})
+                                                              'conges': 0, 'heures': 0.0,
+                                                              'departs_anticipes': 0})
         ligne['jours'] += 1
         ligne['heures'] += pointage.heures_travaillees
+        if pointage.est_depart_anticipe(pointage.personnel.heure_depart_pointage(reglage)):
+            ligne['departs_anticipes'] += 1
         if pointage.statut == PointagePersonnel.StatutChoices.RETARD:
             ligne['retards'] += 1
         elif pointage.statut == PointagePersonnel.StatutChoices.ABSENT:
@@ -139,9 +198,11 @@ def pointage_mois(request):
             ligne['conges'] += 1
 
     lignes = [{'membre': membre, **par_membre.get(membre.pk, {'jours': 0, 'retards': 0, 'absences': 0,
-                                                             'conges': 0, 'heures': 0.0})}
+                                                             'conges': 0, 'heures': 0.0,
+                                                             'departs_anticipes': 0})}
               for membre in membres]
-    totaux = {cle: sum(ligne[cle] for ligne in lignes) for cle in ('jours', 'retards', 'absences', 'conges', 'heures')}
+    totaux = {cle: sum(ligne[cle] for ligne in lignes)
+              for cle in ('jours', 'retards', 'absences', 'conges', 'heures', 'departs_anticipes')}
 
     return render(request, 'personnel/pointage_mois.html', {
         'lignes': lignes,
@@ -162,6 +223,7 @@ def pointage_mois_pdf(request):
     from core.pdf import HTML as WeasyPrint
 
     etab = _etab(request)
+    reglage = ReglagePointage.pour(etab)
     today = timezone.localdate()
     try:
         mois = int(request.GET.get('mois') or today.month)
@@ -178,9 +240,12 @@ def pointage_mois_pdf(request):
     par_membre = {}
     for pointage in pointages:
         ligne = par_membre.setdefault(pointage.personnel_id, {'jours': 0, 'retards': 0, 'absences': 0,
-                                                              'conges': 0, 'heures': 0.0})
+                                                              'conges': 0, 'heures': 0.0,
+                                                              'departs_anticipes': 0})
         ligne['jours'] += 1
         ligne['heures'] += pointage.heures_travaillees
+        if pointage.est_depart_anticipe(pointage.personnel.heure_depart_pointage(reglage)):
+            ligne['departs_anticipes'] += 1
         if pointage.statut == PointagePersonnel.StatutChoices.RETARD:
             ligne['retards'] += 1
         elif pointage.statut == PointagePersonnel.StatutChoices.ABSENT:
@@ -188,9 +253,11 @@ def pointage_mois_pdf(request):
         elif pointage.statut == PointagePersonnel.StatutChoices.CONGE:
             ligne['conges'] += 1
     lignes = [{'membre': membre, **par_membre.get(membre.pk, {'jours': 0, 'retards': 0, 'absences': 0,
-                                                             'conges': 0, 'heures': 0.0})}
+                                                             'conges': 0, 'heures': 0.0,
+                                                             'departs_anticipes': 0})}
               for membre in membres]
-    totaux = {cle: sum(ligne[cle] for ligne in lignes) for cle in ('jours', 'retards', 'absences', 'conges', 'heures')}
+    totaux = {cle: sum(ligne[cle] for ligne in lignes)
+              for cle in ('jours', 'retards', 'absences', 'conges', 'heures', 'departs_anticipes')}
 
     etab_ctx = get_etablissement_context(etab, request)
     html = render_to_string('personnel/pdf/feuille_pointage.html', {

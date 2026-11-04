@@ -13,7 +13,7 @@ Version: 3.4
 """
 
 import uuid
-from datetime import date, time
+from datetime import date
 from typing import Optional
 
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -27,6 +27,15 @@ except ImportError:
     encrypt_sensitive_data = decrypt_sensitive_data = lambda x: x
     def mask_cni(x): return x if x else ''
 
+
+# Pointage et évaluation annuelle : définis dans personnel/pointage.py et ré-exportés ici
+# (garde-fou des 1 000 lignes ; « from personnel.models import PointagePersonnel » reste valable).
+from personnel.pointage import (  # noqa: E402,F401
+    EvaluationAnnuelle,
+    PointagePersonnel,
+    ProfilPointage,
+    ReglagePointage,
+)
 
 # Importer BaseModel depuis core
 try:
@@ -166,11 +175,61 @@ class MembrePersonnel(BaseModel):
     def get_numero_cni_masked(self):
         """Retourne le numéro CNI masqué pour l'affichage."""
         return mask_cni(self.numero_cni)
+
+    MOTS_ENSEIGNANT = ('enseignant', 'enseignante', 'professeur', 'maitre', 'maître', 'instituteur',
+                       'institutrice', 'vacataire', 'moniteur', 'formatrice', 'formateur', 'éducateur',
+                       'educateur')
+
+    def deviner_profil_pointage(self):
+        """Profil déduit du titre (« Enseignant », « Professeur de maths »…) : à défaut, administration."""
+        texte = f"{self.fonction or ''} {self.titre_capacite or ''}".lower()
+        if any(mot in texte for mot in self.MOTS_ENSEIGNANT):
+            return ProfilPointage.ENSEIGNANT
+        return ProfilPointage.ADMINISTRATION
+
+    def heure_limite_pointage(self, reglage=None):
+        """Heure limite d'arrivée applicable : celle de l'agent, sinon celle de son profil, sinon celle
+        de l'établissement."""
+        if self.heure_arrivee_limite:
+            return self.heure_arrivee_limite
+        if reglage is not None:
+            return reglage.limite_pour(self.profil_pointage)
+        return ReglagePointage.HEURE_PAR_DEFAUT
+
+    def heure_depart_pointage(self, reglage=None):
+        """Heure normale de départ applicable (None si l'établissement n'en a pas fixé)."""
+        if self.heure_depart_normale:
+            return self.heure_depart_normale
+        return reglage.depart_pour(self.profil_pointage) if reglage is not None else None
     
     # Informations professionnelles
     fonction = models.CharField(
         max_length=100,
         verbose_name=_("Titre")
+    )
+
+    profil_pointage = models.CharField(
+        max_length=15,
+        choices=ProfilPointage.choices,
+        blank=True,
+        default=ProfilPointage.ADMINISTRATION,
+        verbose_name=_("Profil de pointage"),
+        help_text=_("Détermine les horaires appliqués par défaut : enseignant ou administration.")
+    )
+
+    # Horaires de référence propres à l'agent (vides = ceux de son profil, puis de l'établissement)
+    heure_arrivee_limite = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Heure limite d'arrivée"),
+        help_text=_("Vide : l'heure limite de son profil (enseignant ou administration).")
+    )
+
+    heure_depart_normale = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Heure normale de départ"),
+        help_text=_("Vide : l'heure de départ de son profil, puis celle de l'établissement.")
     )
 
     titre_honorifique = models.CharField(
@@ -292,9 +351,12 @@ class MembrePersonnel(BaseModel):
         return None
     
     def save(self, *args, **kwargs):
-        """Générer le matricule automatiquement si vide."""
+        """Générer le matricule automatiquement si vide et déduire le profil de pointage."""
         if not self.matricule:
             self._generate_matricule()
+        if (self._state.adding and self.profil_pointage == ProfilPointage.ADMINISTRATION
+                and self.deviner_profil_pointage() == ProfilPointage.ENSEIGNANT):
+            self.profil_pointage = ProfilPointage.ENSEIGNANT
         super().save(*args, **kwargs)
     
     def _generate_matricule(self):
@@ -801,143 +863,3 @@ class AbsencePersonnel(BaseModel):
         for a in cls.objects.filter(personnel=membre, retenue=True, justifiee=False, date_debut__lte=fin, date_fin__gte=debut):
             total += (min(a.date_fin, fin) - max(a.date_debut, debut)).days + 1
         return total
-
-
-# ═══════════════════════════════════════════════════════════════════
-# POINTAGE DU PERSONNEL ET ÉVALUATION ANNUELLE (5.51.0)
-# ═══════════════════════════════════════════════════════════════════
-
-class ReglagePointage(BaseModel):
-    """Réglages de pointage de l'établissement (une ligne par établissement) : heure d'arrivée retenue comme
-    limite, au-delà de laquelle un pointage est compté en retard."""
-
-    HEURE_PAR_DEFAUT = time(7, 30)
-
-    etablissement = models.OneToOneField('etablissements.Etablissement', on_delete=models.CASCADE,
-                                         related_name='reglage_pointage', verbose_name=_("Établissement"))
-    heure_arrivee_limite = models.TimeField(default=HEURE_PAR_DEFAUT, verbose_name=_("Heure d'arrivée limite"),
-                                            help_text=_("Un pointage postérieur à cette heure est compté en retard."))
-
-    class Meta:
-        verbose_name = _("Réglage du pointage")
-        verbose_name_plural = _("Réglages du pointage")
-
-    def __str__(self):
-        return f"Pointage — {self.etablissement} (limite {self.heure_arrivee_limite:%H:%M})"
-
-    @classmethod
-    def pour(cls, etablissement):
-        reglage, _ = cls.objects.get_or_create(etablissement=etablissement)
-        return reglage
-
-
-class PointagePersonnel(BaseModel):
-    """Pointage d'un agent pour une journée : heure d'arrivée et de départ, aucun pointage valant absence."""
-
-    class StatutChoices(models.TextChoices):
-        PRESENT = 'PRESENT', _('Présent')
-        RETARD  = 'RETARD',  _('En retard')
-        ABSENT  = 'ABSENT',  _('Absent')
-        CONGE   = 'CONGE',   _('En congé')
-
-    personnel = models.ForeignKey(MembrePersonnel, on_delete=models.CASCADE, related_name='pointages',
-                                  verbose_name=_("Membre du personnel"))
-    date = models.DateField(verbose_name=_("Date"))
-    heure_arrivee = models.TimeField(null=True, blank=True, verbose_name=_("Arrivée"))
-    heure_depart = models.TimeField(null=True, blank=True, verbose_name=_("Départ"))
-    statut = models.CharField(max_length=10, choices=StatutChoices.choices, default=StatutChoices.PRESENT,
-                              verbose_name=_("Statut"))
-    observation = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Observation"))
-
-    class Meta:
-        verbose_name = _("Pointage du personnel")
-        verbose_name_plural = _("Pointages du personnel")
-        ordering = ['-date', 'personnel__nom']
-        constraints = [
-            models.UniqueConstraint(fields=['personnel', 'date'], name='pointage_personnel_jour_unique'),
-        ]
-        indexes = [models.Index(fields=['date'], name='pointage_date_idx')]
-
-    def __str__(self):
-        return f"{self.personnel.get_nom_complet()} — {self.date:%d/%m/%Y} ({self.get_statut_display()})"
-
-    @property
-    def heures_travaillees(self):
-        """Amplitude horaire de présence, en heures décimales (0 si l'un des deux pointages manque)."""
-        if not (self.heure_arrivee and self.heure_depart):
-            return 0.0
-        arrivee = self.heure_arrivee.hour * 60 + self.heure_arrivee.minute
-        depart = self.heure_depart.hour * 60 + self.heure_depart.minute
-        return max(0, depart - arrivee) / 60
-
-    @classmethod
-    def statut_depuis(cls, heure_arrivee, heure_limite):
-        """Statut déduit de l'heure d'arrivée comparée à la limite de l'établissement."""
-        if heure_arrivee is None:
-            return cls.StatutChoices.ABSENT
-        return cls.StatutChoices.RETARD if heure_arrivee > heure_limite else cls.StatutChoices.PRESENT
-
-
-class EvaluationAnnuelle(BaseModel):
-    """Entretien annuel d'évaluation d'un agent : cinq critères notés de 0 à 5, bilan, objectifs et avis."""
-
-    class AvisChoices(models.TextChoices):
-        FAVORABLE  = 'FAVORABLE',  _('Favorable')
-        RESERVE    = 'RESERVE',    _('Favorable avec réserves')
-        DEFAVORABLE = 'DEFAVORABLE', _('Défavorable')
-
-    CRITERES = (
-        ('ponctualite', 'Ponctualité et assiduité'),
-        ('competence', 'Compétence professionnelle'),
-        ('qualite', 'Qualité du travail rendu'),
-        ('relations', 'Relations avec les élèves, les familles et les collègues'),
-        ('initiative', 'Initiative et respect des consignes'),
-    )
-
-    personnel = models.ForeignKey(MembrePersonnel, on_delete=models.CASCADE, related_name='evaluations',
-                                  verbose_name=_("Membre du personnel"))
-    annee_scolaire = models.ForeignKey('parametres.AnneeScolaire', on_delete=models.CASCADE,
-                                       related_name='evaluations_personnel', verbose_name=_("Année scolaire"))
-    date_entretien = models.DateField(verbose_name=_("Date de l'entretien"))
-    evaluateur = models.ForeignKey(MembrePersonnel, on_delete=models.SET_NULL, null=True, blank=True,
-                                   related_name='evaluations_conduites', verbose_name=_("Évaluateur"))
-    ponctualite = models.PositiveSmallIntegerField(default=3, verbose_name=_("Ponctualité et assiduité"),
-                                                   help_text=_("Note de 0 à 5"))
-    competence = models.PositiveSmallIntegerField(default=3, verbose_name=_("Compétence professionnelle"),
-                                                  help_text=_("Note de 0 à 5"))
-    qualite = models.PositiveSmallIntegerField(default=3, verbose_name=_("Qualité du travail rendu"),
-                                               help_text=_("Note de 0 à 5"))
-    relations = models.PositiveSmallIntegerField(default=3, verbose_name=_("Relations avec les élèves, les familles "
-                                                                           "et les collègues"),
-                                                 help_text=_("Note de 0 à 5"))
-    initiative = models.PositiveSmallIntegerField(default=3, verbose_name=_("Initiative et respect des consignes"),
-                                                  help_text=_("Note de 0 à 5"))
-    bilan = models.TextField(blank=True, default='', verbose_name=_("Bilan de l'année"))
-    objectifs = models.TextField(blank=True, default='', verbose_name=_("Objectifs de l'année suivante"))
-    avis = models.CharField(max_length=12, choices=AvisChoices.choices, default=AvisChoices.FAVORABLE,
-                            verbose_name=_("Avis"))
-
-    class Meta:
-        verbose_name = _("Évaluation annuelle")
-        verbose_name_plural = _("Évaluations annuelles")
-        ordering = ['-date_entretien']
-        constraints = [
-            models.UniqueConstraint(fields=['personnel', 'annee_scolaire'], name='evaluation_annuelle_unique'),
-        ]
-
-    def __str__(self):
-        return f"{self.personnel.get_nom_complet()} — {self.annee_scolaire.libelle}"
-
-    @property
-    def notes(self):
-        """[(libellé du critère, note)] dans l'ordre d'affichage."""
-        return [(libelle, getattr(self, champ)) for champ, libelle in self.CRITERES]
-
-    @property
-    def total_points(self):
-        return sum(getattr(self, champ) for champ, _libelle in self.CRITERES)
-
-    @property
-    def moyenne_sur_20(self):
-        """Moyenne des cinq critères ramenée sur 20 (note maximale 5 par critère)."""
-        return round(self.total_points / (5 * len(self.CRITERES)) * 20, 2)

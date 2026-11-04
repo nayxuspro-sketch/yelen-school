@@ -30,6 +30,7 @@
           <th class="text-right">Jours pointés</th>
           <th class="text-right">Heures</th>
           <th class="text-right">Retards</th>
+          <th class="text-right">Départs anticipés</th>
           <th class="text-right">Absences</th>
           <th class="text-right">Congés</th>
         </tr>
@@ -41,11 +42,12 @@
           <td class="text-right">{{ ligne.jours }}</td>
           <td class="text-right">{{ ligne.heures|floatformat:1 }} h</td>
           <td class="text-right">{% if ligne.retards %}<span class="badge badge-warning">{{ ligne.retards }}</span>{% else %}0{% endif %}</td>
+          <td class="text-right">{% if ligne.departs_anticipes %}<span class="badge badge-warning">{{ ligne.departs_anticipes }}</span>{% else %}0{% endif %}</td>
           <td class="text-right">{% if ligne.absences %}<span class="badge badge-danger">{{ ligne.absences }}</span>{% else %}0{% endif %}</td>
           <td class="text-right">{{ ligne.conges }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-muted">Aucun agent actif.</td></tr>
+        <tr><td colspan="7" class="text-muted">Aucun agent actif.</td></tr>
         {% endfor %}
       </tbody>
       {% if lignes %}
@@ -55,6 +57,7 @@
           <th class="text-right">{{ totaux.jours }}</th>
           <th class="text-right">{{ totaux.heures|floatformat:1 }} h</th>
           <th class="text-right">{{ totaux.retards }}</th>
+          <th class="text-right">{{ totaux.departs_anticipes }}</th>
           <th class="text-right">{{ totaux.absences }}</th>
           <th class="text-right">{{ totaux.conges }}</th>
         </tr>

@@ -41,6 +41,7 @@ class MembrePersonnelForm(forms.ModelForm):
             'nom', 'prenom', 'genre', 'date_naissance', 'lieu_naissance',
             'nationalite', 'telephone', 'email', 'adresse', 'numero_cni',
             'fonction', 'titre_honorifique', 'titre_capacite', 'date_embauche', 'est_contractuel',
+            'profil_pointage', 'heure_arrivee_limite', 'heure_depart_normale',
             'est_vacataire', 'est_directeur', 'est_censeur',
             'situation_matrimoniale', 'nombre_enfants', 'photo',
             'etablissement', 'poste_principal_code', 'cycles'
@@ -50,6 +51,8 @@ class MembrePersonnelForm(forms.ModelForm):
             'date_embauche': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'adresse': forms.Textarea(attrs={'rows': 3}),
             'cycles': forms.CheckboxSelectMultiple(),
+            'heure_arrivee_limite': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+            'heure_depart_normale': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
         }
 
     def __init__(self, *args, **kwargs):

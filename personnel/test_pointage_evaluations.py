@@ -131,6 +131,109 @@ def test_feuille_de_pointage_du_mois_agrege_et_son_pdf(ecole):
     assert pointage_mois_pdf is not None
 
 
+# ── Horaires individuels et par profil (5.53.0) ─────────────────────────────
+
+def test_heures_de_reference_par_profil_et_par_agent(ecole):
+    reglage = ReglagePointage.pour(ecole['etab'])
+    # Sans réglage de profil : tout le monde suit la limite de l'établissement.
+    assert ecole['agent'].heure_limite_pointage(reglage) == time(7, 30)
+    assert ecole['agent'].heure_depart_pointage(reglage) is None
+
+    reglage.heure_arrivee_limite_enseignant = time(9, 0)
+    reglage.heure_depart_normale_enseignant = time(11, 0)
+    reglage.heure_depart_normale_administration = time(16, 30)
+    reglage.save()
+
+    enseignant = baker.make('personnel.MembrePersonnel', etablissement=ecole['etab'], nom='OUEDRAOGO',
+                            prenom='Awa', fonction='Enseignant', photo='', signature='')
+    assert enseignant.profil_pointage == 'ENSEIGNANT'                     # déduit du titre
+    assert ecole['chef'].profil_pointage == 'ADMINISTRATION'
+    assert enseignant.heure_limite_pointage(reglage) == time(9, 0)        # profil enseignant
+    assert ecole['chef'].heure_limite_pointage(reglage) == time(7, 30)    # profil administration → établissement
+    assert enseignant.heure_depart_pointage(reglage) == time(11, 0)
+    assert ecole['chef'].heure_depart_pointage(reglage) == time(16, 30)
+
+    enseignant.heure_arrivee_limite = time(9, 15)                         # l'horaire de l'agent prime
+    enseignant.heure_depart_normale = time(12, 0)
+    enseignant.save()
+    assert enseignant.heure_limite_pointage(reglage) == time(9, 15)
+    assert enseignant.heure_depart_pointage(reglage) == time(12, 0)
+
+
+def test_horaires_de_reference_enregistres_depuis_le_pointage(ecole):
+    url = reverse('personnel:pointage_jour')
+    ecole['client'].post(url, {'date': '2026-11-04', 'action': 'horaires',
+                               'heure_arrivee_limite': '07:45',
+                               'heure_arrivee_limite_enseignant': '09:00',
+                               'heure_arrivee_limite_administration': '',
+                               'heure_depart_normale': '16:00',
+                               'heure_depart_normale_enseignant': '11:00',
+                               'heure_depart_normale_administration': ''})
+    reglage = ReglagePointage.pour(ecole['etab'])
+    assert reglage.heure_arrivee_limite == time(7, 45)
+    assert reglage.heure_arrivee_limite_enseignant == time(9, 0)
+    assert reglage.heure_arrivee_limite_administration is None            # vide = héritage
+    assert reglage.heure_depart_normale_enseignant == time(11, 0)
+    assert reglage.depart_pour('ADMINISTRATION') == time(16, 0)           # hérite de l'établissement
+
+    ecole['client'].post(url, {'date': '2026-11-04', 'action': 'horaires', 'heure_arrivee_limite': 'xx'})
+    assert ReglagePointage.pour(ecole['etab']).heure_arrivee_limite == time(7, 45)   # illisible : ignoré
+
+
+def test_horaires_individuels_d_un_agent_enregistres(ecole):
+    url = reverse('personnel:pointage_jour')
+    agent = ecole['agent']
+    ecole['client'].post(url, {'date': '2026-11-04', 'action': 'horaires_agents',
+                               f'limite_{agent.pk}': '09:00', f'depart_prevu_{agent.pk}': '11:00'})
+    agent.refresh_from_db()
+    assert (agent.heure_arrivee_limite, agent.heure_depart_normale) == (time(9, 0), time(11, 0))
+
+    ecole['client'].post(url, {'date': '2026-11-04', 'action': 'horaires_agents',
+                               f'limite_{agent.pk}': '', f'depart_prevu_{agent.pk}': ''})
+    agent.refresh_from_db()
+    assert (agent.heure_arrivee_limite, agent.heure_depart_normale) == (None, None)   # retour au profil
+
+
+def test_statut_calcule_sur_la_limite_propre_de_l_enseignant(ecole):
+    url = reverse('personnel:pointage_jour')
+    reglage = ReglagePointage.pour(ecole['etab'])
+    reglage.heure_arrivee_limite_enseignant = time(9, 0)
+    reglage.heure_depart_normale_enseignant = time(11, 0)
+    reglage.save()
+    agent = ecole['agent']
+
+    # 8h05 : en retard pour l'administration (limite 7h30), à l'heure pour un enseignant (limite 9h00).
+    ecole['client'].post(url, {'date': '2026-11-04',
+                               f'arrivee_{agent.pk}': '08:05', f'depart_{agent.pk}': '10:30',
+                               f'statut_{agent.pk}': '', f'observation_{agent.pk}': ''})
+    p = PointagePersonnel.objects.get(personnel=agent, date=date(2026, 11, 4))
+    assert p.statut == PointagePersonnel.StatutChoices.PRESENT
+    assert p.est_depart_anticipe(p.personnel.heure_depart_pointage(reglage))            # parti avant 11h00
+
+    ecole['client'].post(url, {'date': '2026-11-05',
+                               f'arrivee_{agent.pk}': '09:10', f'depart_{agent.pk}': '11:05',
+                               f'statut_{agent.pk}': '', f'observation_{agent.pk}': ''})
+    p = PointagePersonnel.objects.get(personnel=agent, date=date(2026, 11, 5))
+    assert p.statut == PointagePersonnel.StatutChoices.RETARD
+    assert not p.est_depart_anticipe(p.personnel.heure_depart_pointage(reglage))
+
+
+def test_feuille_du_mois_compte_les_departs_anticipes(ecole):
+    reglage = ReglagePointage.pour(ecole['etab'])
+    reglage.heure_depart_normale = time(16, 0)
+    reglage.save()
+    agent = ecole['agent']
+    baker.make(PointagePersonnel, personnel=agent, date=date(2026, 11, 2), heure_arrivee=time(7, 10),
+               heure_depart=time(15, 0), statut=PointagePersonnel.StatutChoices.PRESENT)
+    baker.make(PointagePersonnel, personnel=agent, date=date(2026, 11, 3), heure_arrivee=time(7, 10),
+               heure_depart=time(16, 5), statut=PointagePersonnel.StatutChoices.PRESENT)
+
+    page = ecole['client'].get(reverse('personnel:pointage_mois'), {'mois': 11, 'annee': 2026})
+    ligne = page.context['lignes'][0]
+    assert ligne['departs_anticipes'] == 1 and page.context['totaux']['departs_anticipes'] == 1
+    assert 'Départs anticipés' in page.content.decode()
+
+
 # ── Évaluation annuelle ──────────────────────────────────────────────────────
 
 def test_liste_des_evaluations_et_agents_restant_a_evaluer(ecole):

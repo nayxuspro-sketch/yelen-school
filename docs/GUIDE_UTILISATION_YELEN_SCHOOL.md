@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.52.6
+version_logiciel: 5.53.0
 version_guide: 5.47
-date_mise_a_jour: 04/11/2026 (5.52.6 : guides composés en PDF éditorial)
+date_mise_a_jour: 04/11/2026 (5.53.0 : horaires de pointage par agent et par profil)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -1173,16 +1173,31 @@ la feuille de pointage mensuelle signée.
 
 **Accès :** `Personnel → Pointage` et `Personnel → Pointage du mois`
 
-1. **Heure d'arrivée limite** : réglée une fois pour l'établissement (07:30 par défaut) en haut de la page
-   *Pointage* ; tout pointage postérieur est compté **en retard**. Le bouton *Enregistrer la limite* la met à jour.
-2. **Journée** : la page affiche une ligne par agent actif avec l'arrivée, le départ, le statut et une observation.
+Chaque agent a **ses propres horaires** : un enseignant qui commence ses cours à 9h00 et termine à 11h00 pour la
+demi-journée n'a ni la même heure limite d'arrivée ni la même heure de départ qu'un agent d'administration présent
+toute la journée. Les horaires se règlent à **trois niveaux**, du plus général au plus précis : *établissement*,
+puis *profil* (enseignant / administration), puis *agent*. **Une valeur laissée vide hérite du niveau supérieur ;
+une valeur saisie prime.** Un agent est classé *enseignant* automatiquement d'après son titre (« Enseignant »,
+« Professeur de mathématiques »…), et ce classement reste modifiable.
+
+1. **Horaires de référence** : bloc en haut de la page *Pointage*, six champs — arrivée limite et départ normal de
+   l'établissement, puis les mêmes pour les enseignants et pour l'administration. Le bouton
+   *Enregistrer les horaires de référence* les met à jour. Une arrivée postérieure à la limite applicable est comptée
+   **en retard** ; un départ antérieur au départ normal est compté **en départ anticipé**.
+2. **Horaires individuels** : dans le tableau, les colonnes *Limite d'arrivée* et *Départ prévu* rappellent sous chaque
+   champ la valeur héritée (« défaut 09:00 »). On saisit l'horaire propre à l'agent puis on clique
+   *Enregistrer les horaires individuels* ; vider un champ le fait revenir à l'horaire de son profil.
+3. **Journée** : la page affiche une ligne par agent actif avec l'arrivée, le départ, le statut et une observation.
    On peut changer de jour avec *Jour précédent* / *Jour suivant*, ou choisir une date dans le champ. Le bouton
    *Enregistrer le pointage* enregistre toutes les lignes en une fois ; **une ligne laissée entièrement vide n'est pas
-   enregistrée**, et le statut est déduit de l'heure d'arrivée sauf si l'on choisit *Absent* ou *En congé*.
-3. **Feuille du mois** : `Personnel → Pointage du mois` récapitule par agent les jours pointés, les heures travaillées,
-   les retards, les absences et les congés, avec les totaux. Le bouton **PDF signé** produit la feuille de pointage
-   A4 à archiver ou à remettre à la direction.
-4. Un agent ne peut avoir qu'**un seul pointage par jour** : réenregistrer la journée met à jour la ligne existante.
+   enregistrée**, et le statut est déduit de l'heure d'arrivée comparée à la limite de l'agent, sauf si l'on choisit
+   *Absent* ou *En congé*.
+4. **Feuille du mois** : `Personnel → Pointage du mois` récapitule par agent les jours pointés, les heures travaillées,
+   les retards, les départs anticipés, les absences et les congés, avec les totaux. Le bouton **PDF signé** produit la
+   feuille de pointage A4 à archiver ou à remettre à la direction.
+5. Un agent ne peut avoir qu'**un seul pointage par jour** : réenregistrer la journée met à jour la ligne existante.
+6. Les horaires d'un agent se règlent aussi depuis sa fiche : `Personnel → Modifier` → champs *Profil de pointage*,
+   *Heure limite d'arrivée* et *Heure normale de départ*.
 
 ---
 
@@ -7367,8 +7382,9 @@ version 5.50.0).*
 ### 33.12 Personnel — Pointage du jour
 
 ![Pointage du personnel](screenshots/13-pointage-personnel.png)
-*Pointage d'une journée : une ligne par agent (arrivée, départ, statut, observation), heure limite de l'établissement
-et enregistrement en une passe (§5.5, version 5.51.0).*
+*Pointage d'une journée : une ligne par agent (arrivée, départ, statut, observation), horaires de référence et
+enregistrement en une passe (§5.5). Capture de 5.51.0 : les colonnes d'horaires individuels ajoutées en 5.53.0 sont
+décrites au §5.5.*
 
 ### 33.13 Personnel — Évaluations annuelles
 

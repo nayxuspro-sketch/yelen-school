@@ -20,27 +20,85 @@
   </div>
 </div>
 
+{# ── Horaires de référence : établissement et profils ────────────────────── #}
 <form method="post" class="card animate-fade-up delay-1 mb-4">
   {% csrf_token %}
   <input type="hidden" name="date" value="{{ jour|date:'Y-m-d' }}">
-  <div class="card-body d-flex gap-3 align-center flex-wrap">
-    <div class="form-group">
-      <label class="input-label" for="id_limite">Heure d'arrivée limite</label>
-      <input type="time" id="id_limite" name="heure_arrivee_limite" value="{{ reglage.heure_arrivee_limite|time:'H:i' }}" class="input">
+  <div class="card-header">
+    <h2 class="card-title">Horaires de référence</h2>
+    <p class="text-muted" style="font-size:.8rem; margin:0;">
+      Un enseignant et un agent d'administration n'ont pas les mêmes horaires. Ces valeurs servent de défaut ;
+      une valeur laissée vide hérite du niveau supérieur (agent → profil → établissement).
+    </p>
+  </div>
+  <div class="card-body">
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="input-label" for="id_limite">Arrivée limite de l'établissement</label>
+        <input type="time" id="id_limite" name="heure_arrivee_limite"
+               value="{{ reglage.heure_arrivee_limite|time:'H:i' }}" class="input">
+        <span class="text-muted" style="font-size:.78rem;">Au-delà de cette heure, un pointage est compté en retard.</span>
+      </div>
+      <div class="form-group">
+        <label class="input-label" for="id_depart">Départ normal de l'établissement</label>
+        <input type="time" id="id_depart" name="heure_depart_normale"
+               value="{{ reglage.heure_depart_normale|time:'H:i'|default:'' }}" class="input">
+        <span class="text-muted" style="font-size:.78rem;">Un départ plus tôt est compté en départ anticipé.</span>
+      </div>
+      <div class="form-group">
+        <label class="input-label" for="id_limite_ens">Arrivée limite des enseignants</label>
+        <input type="time" id="id_limite_ens" name="heure_arrivee_limite_enseignant"
+               value="{{ reglage.heure_arrivee_limite_enseignant|time:'H:i'|default:'' }}" class="input"
+               placeholder="{{ reglage.heure_arrivee_limite|time:'H:i' }}">
+        <span class="text-muted" style="font-size:.78rem;">Vide : {{ reglage.heure_arrivee_limite|time:'H:i' }} (établissement).</span>
+      </div>
+      <div class="form-group">
+        <label class="input-label" for="id_depart_ens">Départ normal des enseignants</label>
+        <input type="time" id="id_depart_ens" name="heure_depart_normale_enseignant"
+               value="{{ reglage.heure_depart_normale_enseignant|time:'H:i'|default:'' }}" class="input"
+               placeholder="{{ reglage.heure_depart_normale|time:'H:i' }}">
+        <span class="text-muted" style="font-size:.78rem;">Ex. fin des cours : 11:00 pour une matinée seulement.</span>
+      </div>
+      <div class="form-group">
+        <label class="input-label" for="id_limite_adm">Arrivée limite de l'administration</label>
+        <input type="time" id="id_limite_adm" name="heure_arrivee_limite_administration"
+               value="{{ reglage.heure_arrivee_limite_administration|time:'H:i'|default:'' }}" class="input"
+               placeholder="{{ reglage.heure_arrivee_limite|time:'H:i' }}">
+        <span class="text-muted" style="font-size:.78rem;">Vide : {{ reglage.heure_arrivee_limite|time:'H:i' }} (établissement).</span>
+      </div>
+      <div class="form-group">
+        <label class="input-label" for="id_depart_adm">Départ normal de l'administration</label>
+        <input type="time" id="id_depart_adm" name="heure_depart_normale_administration"
+               value="{{ reglage.heure_depart_normale_administration|time:'H:i'|default:'' }}" class="input"
+               placeholder="{{ reglage.heure_depart_normale|time:'H:i' }}">
+        <span class="text-muted" style="font-size:.78rem;">Ex. 16:30 pour un service de journée complète.</span>
+      </div>
     </div>
-    <button type="submit" name="action" value="limite" class="btn-secondary">Enregistrer la limite</button>
-    <span class="text-muted" style="font-size:.8rem;">Au-delà de cette heure, un pointage est compté en retard.</span>
+  </div>
+  <div class="d-flex align-center gap-3" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
+    <button type="submit" name="action" value="horaires" class="btn-secondary">Enregistrer les horaires de référence</button>
   </div>
 </form>
 
+{# ── Pointage du jour ────────────────────────────────────────────────────── #}
 <form method="post" class="card animate-fade-up delay-2">
   {% csrf_token %}
   <input type="hidden" name="date" value="{{ jour|date:'Y-m-d' }}">
+  <div class="card-header">
+    <h2 class="card-title">Arrivées et départs du jour</h2>
+    <p class="text-muted" style="font-size:.8rem; margin:0;">
+      Arrivée et départ réels de chaque agent. Le statut suit l'heure limite qui lui est propre.
+      Les horaires individuels (colonnes <em>Limite</em> et <em>Départ prévu</em>) sont facultatifs et
+      s'enregistrent séparément.
+    </p>
+  </div>
   <div class="table-scroll">
     <table class="data-table">
       <thead>
         <tr>
           <th>Agent</th>
+          <th>Limite d'arrivée</th>
+          <th>Départ prévu</th>
           <th>Arrivée</th>
           <th>Départ</th>
           <th>Statut</th>
@@ -52,14 +110,38 @@
         <tr{% if ligne.en_retard %} class="row-warning"{% endif %}>
           <td>
             <strong>{{ ligne.membre.get_nom_complet }}</strong>
-            <div class="text-muted" style="font-size:.78rem;">{{ ligne.membre.matricule|default:"—" }}</div>
+            <div class="text-muted" style="font-size:.78rem;">
+              {{ ligne.membre.matricule|default:"—" }} ·
+              {{ ligne.membre.get_profil_pointage_display }}
+            </div>
+          </td>
+          <td>
+            <input type="time" name="limite_{{ ligne.membre.pk }}" class="input"
+                   value="{{ ligne.membre.heure_arrivee_limite|time:'H:i'|default:'' }}"
+                   placeholder="{{ ligne.limite|time:'H:i' }}"
+                   aria-label="Heure limite d'arrivée de {{ ligne.membre.get_nom_complet }}">
+            <div class="text-muted" style="font-size:.72rem;">défaut {{ ligne.limite|time:'H:i' }}</div>
+          </td>
+          <td>
+            <input type="time" name="depart_prevu_{{ ligne.membre.pk }}" class="input"
+                   value="{{ ligne.membre.heure_depart_normale|time:'H:i'|default:'' }}"
+                   placeholder="{{ ligne.depart_normal|time:'H:i'|default:'—' }}"
+                   aria-label="Heure normale de départ de {{ ligne.membre.get_nom_complet }}">
+            <div class="text-muted" style="font-size:.72rem;">
+              défaut {{ ligne.depart_normal|time:'H:i'|default:'non défini' }}
+            </div>
           </td>
           <td><input type="time" name="arrivee_{{ ligne.membre.pk }}" class="input"
                      value="{{ ligne.pointage.heure_arrivee|time:'H:i' }}"
                      aria-label="Heure d'arrivée de {{ ligne.membre.get_nom_complet }}"></td>
-          <td><input type="time" name="depart_{{ ligne.membre.pk }}" class="input"
-                     value="{{ ligne.pointage.heure_depart|time:'H:i' }}"
-                     aria-label="Heure de départ de {{ ligne.membre.get_nom_complet }}"></td>
+          <td>
+            <input type="time" name="depart_{{ ligne.membre.pk }}" class="input"
+                   value="{{ ligne.pointage.heure_depart|time:'H:i' }}"
+                   aria-label="Heure de départ de {{ ligne.membre.get_nom_complet }}">
+            {% if ligne.depart_anticipe %}
+            <div class="text-muted" style="font-size:.72rem;"><span class="badge badge-warning">Départ anticipé</span></div>
+            {% endif %}
+          </td>
           <td>
             <select name="statut_{{ ligne.membre.pk }}" class="input select"
                     aria-label="Statut de {{ ligne.membre.get_nom_complet }}">
@@ -74,15 +156,18 @@
                      aria-label="Observation pour {{ ligne.membre.get_nom_complet }}"></td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="text-muted">Aucun agent actif : créez d'abord les fiches du personnel.</td></tr>
+        <tr><td colspan="7" class="text-muted">Aucun agent actif : créez d'abord les fiches du personnel.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% if lignes %}
-  <div class="d-flex align-center gap-3" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
+  <div class="d-flex align-center gap-3 flex-wrap" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
     <button type="submit" name="action" value="enregistrer" class="btn-primary">Enregistrer le pointage</button>
-    <span class="text-muted" style="font-size:.8rem;">Les lignes laissées entièrement vides ne sont pas enregistrées.</span>
+    <button type="submit" name="action" value="horaires_agents" class="btn-secondary">Enregistrer les horaires individuels</button>
+    <span class="text-muted" style="font-size:.8rem;">
+      Les lignes laissées entièrement vides ne sont pas enregistrées ; un horaire individuel vide suit le profil.
+    </span>
   </div>
   {% endif %}
 </form>

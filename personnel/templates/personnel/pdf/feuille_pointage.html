@@ -26,6 +26,7 @@ table.pt tfoot td { background: #f3f3f3; font-weight: bold; }
       <th class="c">Jours pointés</th>
       <th class="c">Heures</th>
       <th class="c">Retards</th>
+      <th class="c">Départs anticipés</th>
       <th class="c">Absences</th>
       <th class="c">Congés</th>
     </tr>
@@ -37,11 +38,12 @@ table.pt tfoot td { background: #f3f3f3; font-weight: bold; }
       <td class="c">{{ ligne.jours }}</td>
       <td class="c">{{ ligne.heures|floatformat:1 }} h</td>
       <td class="c">{{ ligne.retards }}</td>
+      <td class="c">{{ ligne.departs_anticipes }}</td>
       <td class="c">{{ ligne.absences }}</td>
       <td class="c">{{ ligne.conges }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="6" class="c">Aucun agent actif.</td></tr>
+    <tr><td colspan="7" class="c">Aucun agent actif.</td></tr>
     {% endfor %}
   </tbody>
   <tfoot>
@@ -50,6 +52,7 @@ table.pt tfoot td { background: #f3f3f3; font-weight: bold; }
       <td class="c">{{ totaux.jours }}</td>
       <td class="c">{{ totaux.heures|floatformat:1 }} h</td>
       <td class="c">{{ totaux.retards }}</td>
+      <td class="c">{{ totaux.departs_anticipes }}</td>
       <td class="c">{{ totaux.absences }}</td>
       <td class="c">{{ totaux.conges }}</td>
     </tr>

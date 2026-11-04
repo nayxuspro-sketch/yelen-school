@@ -3,6 +3,26 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.53.0 — 2026-11-04
+
+- **Pointage : horaires propres à chaque agent et à chaque profil.** Un enseignant qui commence à 9h00 et finit à
+  11h00 n'a plus la même heure limite d'arrivée ni la même heure de départ qu'un agent d'administration.
+  Trois niveaux, du plus général au plus précis — **établissement → profil (enseignant / administration) → agent** :
+  une valeur vide hérite du niveau supérieur, une valeur saisie prime.
+- **`MembrePersonnel`** : `profil_pointage` (ENSEIGNANT / ADMINISTRATION, déduit du titre à la création),
+  `heure_arrivee_limite` et `heure_depart_normale` (facultatifs, propres à l'agent) ; accesseurs
+  `heure_limite_pointage(reglage)` et `heure_depart_pointage(reglage)`.
+- **`ReglagePointage`** : `heure_arrivee_limite_enseignant`, `heure_arrivee_limite_administration`,
+  `heure_depart_normale`, `heure_depart_normale_enseignant`, `heure_depart_normale_administration` ; méthodes
+  `limite_pour(profil)` et `depart_pour(profil)`.
+- **Page *Pointage du jour*** : bloc *Horaires de référence* (six champs), colonnes *Limite d'arrivée* et
+  *Départ prévu* éditables par agent, bouton *Enregistrer les horaires individuels* ; le statut retenu est calculé
+  sur la limite de l'agent, un départ antérieur à son heure normale est signalé **Départ anticipé**.
+- **Feuille du mois et PDF signé** : nouvelle colonne *Départs anticipés* (par agent et en total).
+- **Fiche du personnel** : champs *Profil de pointage*, *Heure limite d'arrivée* et *Heure normale de départ*.
+- Migration `personnel/0013` (colonnes ajoutées + classement automatique des fiches dont le titre désigne un
+  enseignant). L'ancien bouton *Enregistrer la limite* reste accepté.
+
 ## 5.52.6 — 2026-11-04
 
 - **Guide de déploiement Windows en PDF éditorial prêt à imprimer** (`docs/GUIDE_DEPLOIEMENT_WINDOWS.pdf`,
