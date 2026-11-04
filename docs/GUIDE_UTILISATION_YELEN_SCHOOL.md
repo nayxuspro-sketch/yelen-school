@@ -1,7 +1,7 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.51.0
-version_guide: 5.44
+version_logiciel: 5.52.0
+version_guide: 5.45
 date_mise_a_jour: 04/11/2026 (5.50.0 : prêts d'ouvrages — échéances, retards, relance des familles par portail et SMS)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
@@ -286,6 +286,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [32.4 Configuration Technique (Administrateur)](#324-configuration-technique-administrateur)
   - [32.5 Simulateur Web (Administrateur)](#325-simulateur-web-administrateur)
   - [32.6 Messages reçus (boîte des SMS des parents)](#326-messages-reçus-boîte-des-sms-des-parents)
+  - [32.6 bis N'accepter que les SMS des numéros enregistrés (5.52.0)](#326-bis-naccepter-que-les-sms-des-numéros-enregistrés-5520)
   - [32.7 Journal des SMS (Audit Log)](#327-journal-des-sms-audit-log)
 - [33. Galerie de Captures d'Écran](#33-galerie-de-captures-décran)
   - [33.1 Page de Connexion](#331-page-de-connexion)
@@ -7249,6 +7250,26 @@ Actions (droit *Marquer lu / non lu et répondre par SMS* de la fonctionnalité,
 **Supprimer des messages** (droit `Messages reçus → supprimer`, secrétariat et direction par défaut) : bouton **Supprimer** sur la ligne, ou cases à cocher (case d'en-tête = toute la page) puis **Supprimer la sélection** ; **Supprimer tous les lus** vide d'un coup les messages déjà lus de la vue courante (libres, commandes ou tous) — pour nettoyer une boîte encombrée : *Tout marquer comme lu* puis *Supprimer tous les lus*. Un message supprimé disparaît de la boîte, des compteurs et du simulateur ; sa ligne reste dans le journal technique (10.7, inactive) afin que la relève du téléphone ne retraite pas le même SMS — il ne réapparaît pas et le parent ne reçoit pas de seconde réponse.
 
 > Les requêtes saisies dans le simulateur (32.5) sont enregistrées déjà lues : la boîte ne compte que les vrais SMS des parents.
+
+#### 32.6 bis N'accepter que les SMS des numéros enregistrés (5.52.0)
+
+**Accès :** `Paramètres → Configuration SMS` → interrupteur **N'accepter que les SMS des numéros enregistrés**
+(désactivé par défaut ; réglage `SMS_RECEPTION_FILTREE`, appliqué immédiatement, sans redémarrage).
+
+- **Activé** : un SMS n'est traité que si son expéditeur est un **numéro enregistré sur la plateforme** — père / mère,
+  tuteur ou numéro d'urgence d'une fiche élève, téléphone d'une fiche du personnel, téléphone d'un compte utilisateur,
+  ou numéro d'alerte de `MASTER_SMS_NUMBERS`. Les commandes (`NOTE`, `SOLDE`, `ABS`, `AIDE`) et les réponses libres
+  ne fonctionnent que pour ces numéros.
+- **Tout autre expéditeur** est **ignoré sans réponse** (donc sans SMS facturé) ; le message reste journalisé pour la
+  direction et se consulte dans **Communication → Messages reçus → Numéros inconnus** (badge *Numéro non enregistré*).
+  Il n'apparaît ni dans *Messages libres*, ni dans les commandes, ni dans la pastille des non-lus.
+- Les numéros sont relus **toutes les 10 minutes** : une fiche élève ou une fiche du personnel créée ou corrigée est
+  prise en compte au plus tard dix minutes plus tard (ou immédiatement après une relève, si le cache a expiré).
+- **Laisser désactivé** si l'école accepte les messages de parents non encore fichés : ils reçoivent alors l'accusé de
+  réception habituel. À activer dès que les fiches familles et personnel sont à jour : c'est la garantie de ne plus
+  recevoir ni payer de réponses aux numéros étrangers à l'école.
+
+---
 
 ### 32.7 Journal des SMS (Audit Log)
 

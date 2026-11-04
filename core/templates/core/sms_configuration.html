@@ -142,6 +142,17 @@
       </div>
     </div>
 
+    <div class="d-flex align-center gap-4 mb-6">
+      <label class="toggle-switch">
+        <input type="checkbox" name="SMS_RECEPTION_FILTREE" value="True" {% if config.SMS_RECEPTION_FILTREE %}checked{% endif %}>
+        <span class="toggle-slider"></span>
+      </label>
+      <div>
+        <div class="fw-medium">N'accepter que les SMS des numéros enregistrés</div>
+        <div class="text-muted text-sm">Un numéro des fiches élèves, du personnel ou des comptes de la plateforme est traité ; tout autre expéditeur est ignoré, sans réponse (aucun SMS facturé) et reste consultable dans <a href="{% url 'communication:messages_recus' %}?type=ignores">Messages reçus → Numéros inconnus</a>.</div>
+      </div>
+    </div>
+
     <div class="form-group mb-4">
       <label class="input-label">Type de passerelle</label>
       <select name="SMS_BACKEND" class="input w-full" id="id_sms_backend">

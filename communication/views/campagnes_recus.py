@@ -212,13 +212,15 @@ def messages_recus(request):
     from core.sms import sms_actifs
     from ..models import IncomingSMSLog
 
-    type_ = request.GET.get('type') if request.GET.get('type') in ('commandes', 'tous') else 'libres'
+    type_ = request.GET.get('type') if request.GET.get('type') in ('commandes', 'ignores', 'tous') else 'libres'
     etat = request.GET.get('etat') if request.GET.get('etat') in ('non_lus', 'lus') else ''
     qs = IncomingSMSLog.objects.filter(is_active=True).select_related('eleve', 'lu_par', 'message_parent')
     if type_ == 'libres':
         qs = qs.filter(command_type__in=IncomingSMSLog.A_LIRE)
     elif type_ == 'commandes':
-        qs = qs.exclude(command_type__in=IncomingSMSLog.A_LIRE)
+        qs = qs.exclude(command_type__in=IncomingSMSLog.A_LIRE + ('REFUSE',))
+    elif type_ == 'ignores':
+        qs = qs.filter(command_type='REFUSE')
     if etat:
         qs = qs.filter(lu_le__isnull=(etat == 'non_lus'))
     page_obj = Paginator(qs, 50).get_page(request.GET.get('page'))

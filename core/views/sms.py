@@ -65,6 +65,7 @@ def sms_configuration(request):
         'SMS_MODEM_PORT':     get_sms_val('SMS_MODEM_PORT'),
         'SMS_MODEM_BAUD':     get_sms_val('SMS_MODEM_BAUD'),
         'SMS_MODEM_TIMEOUT':  get_sms_val('SMS_MODEM_TIMEOUT'),
+        'SMS_RECEPTION_FILTREE': get_sms_val('SMS_RECEPTION_FILTREE'),
     }
 
     # URL que le téléphone passerelle appellera pour chaque SMS reçu. L'app SMS Gateway ne peut pas ajouter
@@ -87,6 +88,7 @@ def sms_configuration(request):
         'SMS_MODEM_PORT',
         'SMS_MODEM_BAUD',
         'SMS_MODEM_TIMEOUT',
+        'SMS_RECEPTION_FILTREE',
     ]
 
     if request.method == 'POST':
@@ -101,6 +103,7 @@ def sms_configuration(request):
                 'SMS_MODEM_PORT':    request.POST.get('SMS_MODEM_PORT', 'COM3'),
                 'SMS_MODEM_BAUD':    request.POST.get('SMS_MODEM_BAUD', '9600'),
                 'SMS_MODEM_TIMEOUT': request.POST.get('SMS_MODEM_TIMEOUT', '10'),
+                'SMS_RECEPTION_FILTREE': request.POST.get('SMS_RECEPTION_FILTREE', 'False'),
             }
 
             try:

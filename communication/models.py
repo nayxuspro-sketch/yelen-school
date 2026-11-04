@@ -187,6 +187,7 @@ class IncomingSMSLog(BaseModel):
         ('PERSO', 'Commande définie par l\'école'),
         ('REPONSE', 'Réponse à un message de l\'école'),
         ('INVALID', 'Message libre ou commande inconnue'),
+        ('REFUSE', 'Numéro non enregistré (ignoré)'),
     ]
     LIBRE = 'INVALID'  # tout SMS qui n'est pas une commande : un message du parent, à lire dans « Messages reçus »
     REPONSE = 'REPONSE'  # réponse par SMS à un message de la communication bidirectionnelle

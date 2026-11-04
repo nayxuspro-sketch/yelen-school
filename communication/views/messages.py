@@ -586,6 +586,9 @@ def webhook_incoming_sms(request):
     log, cree = traiter_sms_recu(sender_number, message_text, identifiant_message(message_id))
     if not cree:
         return JsonResponse({'status': 'duplicate', 'response': log.response_text, 'log_id': str(log.pk)})
+    if log.command_type == 'REFUSE':
+        # Réception filtrée : acquitter sans erreur, sinon le téléphone rejoue le message jusqu'à 14 fois.
+        return JsonResponse({'status': 'ignored', 'log_id': str(log.pk)})
     return JsonResponse({
         'status': 'success' if log.processed_successfully else 'error',
         'response': log.response_text,

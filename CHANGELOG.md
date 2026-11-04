@@ -3,6 +3,23 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.52.0 — 2026-11-04
+
+- **Réception filtrée des SMS : n'accepter que les numéros enregistrés sur la plateforme.** Nouveau réglage
+  `SMS_RECEPTION_FILTREE`, interrupteur **N'accepter que les SMS des numéros enregistrés** de
+  `Paramètres → Configuration SMS` (désactivé par défaut, appliqué sans redémarrage).
+  - **Numéros reconnus** : père / mère, tuteur et urgence des fiches élèves, téléphone des fiches du personnel,
+    téléphone des comptes utilisateurs et `MASTER_SMS_NUMBERS` — comparaison sur les huit derniers chiffres, donc
+    indifférente au format (`70 11 22 33` = `+22670112233`).
+  - **Expéditeur hors périmètre** : journalisé sous le nouveau type `REFUSE` (migration `communication/0008`),
+    **sans réponse automatique** (aucun SMS facturé), invisible dans *Messages libres* et dans la pastille des
+    non-lus, consultable dans **Communication → Messages reçus → Numéros inconnus** avec le badge *Numéro non
+    enregistré*. Le webhook répond `ignored` : le téléphone passerelle ne rejoue pas le message.
+  - Les numéros enregistrés sont mémorisés 10 minutes (`sms_recus.numeros_enregistres`) : la relève ne relit pas
+    les fiches à chaque SMS.
+- Guides : `docs/GUIDE_UTILISATION_YELEN_SCHOOL.md` § 32.6 bis ; `.env.example` documente la variable.
+- Tests : `communication/tests/test_reception_filtree.py` (9 tests).
+
 ## 5.51.1 — 2026-11-04
 
 - **Vue consolidée du réseau — le bouton *Tableau de bord* était inaccessible.** Il occupait la douzième et dernière

@@ -45,6 +45,42 @@ USAGES = {
 USAGES['ABSENCE'] = USAGES['ABS']
 
 
+CLE_NUMEROS_ENREGISTRES = 'sms:numeros_enregistres'
+DUREE_CACHE_NUMEROS = 10 * 60
+
+
+def _cle_numero(numero):
+    """Huit derniers chiffres d'un numéro, quel que soit son format (« +226 70 11 22 33 », « 70112233 »)."""
+    return re.sub(r'\D', '', str(numero or ''))[-8:]
+
+
+def numeros_enregistres():
+    """Clés des numéros enregistrés sur la plateforme : familles (père/mère, tuteur, urgence), personnel, comptes
+    utilisateurs et numéros maîtres. Mémorisées 10 minutes : la relève ne relit pas les fiches à chaque SMS."""
+    from django.conf import settings
+    from accounts.models import User
+    from inscriptions.models import Eleve
+    from personnel.models import MembrePersonnel
+
+    cles = cache.get(CLE_NUMEROS_ENREGISTRES)
+    if cles is not None:
+        return cles
+    cles = set()
+    for champ in ('telephone_parent', 'tuteur_telephone', 'telephone_urgence'):
+        cles.update(_cle_numero(n) for n in Eleve.objects.exclude(**{champ: ''}).values_list(champ, flat=True))
+    for modele, champ in ((MembrePersonnel, 'telephone'), (User, 'telephone')):
+        cles.update(_cle_numero(n) for n in modele.objects.exclude(**{champ: ''}).values_list(champ, flat=True))
+    cles.update(_cle_numero(n) for n in getattr(settings, 'MASTER_SMS_NUMBERS', []) if n)
+    cles = {cle for cle in cles if len(cle) == 8}
+    cache.set(CLE_NUMEROS_ENREGISTRES, cles, DUREE_CACHE_NUMEROS)
+    return cles
+
+
+def numero_enregistre(numero):
+    """Vrai si ce numéro figure sur une fiche élève, une fiche du personnel ou un compte de la plateforme."""
+    return len(_cle_numero(numero)) == 8 and _cle_numero(numero) in numeros_enregistres()
+
+
 def _est_echo(sender_normalized, message_text):
     """Vrai si l'école a envoyé ce texte exact à ce numéro depuis moins de 24 h (le téléphone passerelle reçoit
     ses propres SMS quand le numéro de sa SIM figure sur une fiche élève)."""
@@ -106,7 +142,13 @@ def traiter_sms_recu(sender_number, message_text, message_id=''):
     abs_pattern = re.compile(r'^ABS(?:ENCE)?\s+([A-Z0-9\-]+)$')
 
     commande = None
-    if _est_echo(sender_normalized, message_text):
+    from core.sms import reception_filtree
+    if reception_filtree() and not numero_enregistre(sender_number):
+        # Réception filtrée (Configuration SMS) : seuls les numéros enregistrés sur la plateforme sont traités.
+        # Le message reste tracé pour la direction, mais aucune réponse n'est envoyée.
+        command_type = 'REFUSE'
+        error_message = "Numéro non enregistré : message ignoré, pas de réponse (réception filtrée)."
+    elif _est_echo(sender_normalized, message_text):
         # Le téléphone de l'école a reçu un SMS que l'école vient d'envoyer à ce même numéro (numéro de la SIM
         # enregistré sur une fiche élève, test…) : ne jamais y répondre, sinon la boucle ne s'arrête plus.
         error_message = "Echo d'un SMS envoyé par l'école : ignoré, pas de réponse."

@@ -38,6 +38,7 @@
   <a href="?type=libres{% if etat %}&etat={{ etat }}{% endif %}" class="{% if type == 'libres' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Messages libres</a>
   <a href="?type=commandes{% if etat %}&etat={{ etat }}{% endif %}" class="{% if type == 'commandes' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Commandes automatiques</a>
   <a href="?type=tous{% if etat %}&etat={{ etat }}{% endif %}" class="{% if type == 'tous' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Tous</a>
+  <a href="?type=ignores" class="{% if type == 'ignores' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Numéros inconnus</a>
   <span class="boite-sms-separateur" aria-hidden="true"></span>
   <a href="?type={{ type }}" class="{% if not etat %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Lus et non lus</a>
   <a href="?type={{ type }}&etat=non_lus" class="{% if etat == 'non_lus' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Non lus</a>
@@ -51,7 +52,7 @@
 <div class="boite-sms-barre animate-fade-up">
   <p class="boite-sms-compte text-muted">
     <strong>{{ page_obj.paginator.count }}</strong> message{{ page_obj.paginator.count|pluralize }}
-    · {% if type == 'libres' %}messages libres{% elif type == 'commandes' %}commandes automatiques{% else %}tous types{% endif %}{% if etat == 'non_lus' %} · non lus{% elif etat == 'lus' %} · déjà lus{% endif %}{% if page_obj.has_other_pages %} · page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}{% endif %}
+    · {% if type == 'libres' %}messages libres{% elif type == 'commandes' %}commandes automatiques{% elif type == 'ignores' %}numéros non enregistrés (ignorés){% else %}tous types{% endif %}{% if etat == 'non_lus' %} · non lus{% elif etat == 'lus' %} · déjà lus{% endif %}{% if page_obj.has_other_pages %} · page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}{% endif %}
   </p>
   {% if page_obj.paginator.count and request|autorise_url:'communication:messages_recus_supprimer_selection' %}
   <label class="boite-sms-tout text-muted text-sm">
@@ -73,7 +74,8 @@
         <div class="boite-sms-entete">
           <span class="boite-sms-pastille" aria-hidden="true"></span>
           <span class="boite-sms-numero">{{ m.sender_number }}</span>
-          {% if m.message_parent %}<span class="badge badge-success">Réponse</span>
+          {% if m.command_type == 'REFUSE' %}<span class="badge badge-warning">Numéro non enregistré</span>
+          {% elif m.message_parent %}<span class="badge badge-success">Réponse</span>
           {% elif not m.est_libre %}<span class="badge badge-neutral">{{ m.command_type }}</span>
           {% elif type != 'libres' %}<span class="badge badge-info">Message libre</span>{% endif %}
           {% if m.lu_le and etat != 'lus' %}<span class="badge badge-success">Lu</span>

@@ -32,6 +32,7 @@ SMS_VARS = [
     'SMS_ENABLED', 'SMS_BACKEND',
     'SMS_HTTP_URL', 'SMS_HTTP_USER', 'SMS_HTTP_PASSWORD', 'SMS_HTTP_TIMEOUT',
     'SMS_MODEM_PORT', 'SMS_MODEM_BAUD', 'SMS_MODEM_TIMEOUT',
+    'SMS_RECEPTION_FILTREE',
 ]
 
 SMS_DEFAULTS = {
@@ -44,6 +45,7 @@ SMS_DEFAULTS = {
     'SMS_MODEM_PORT':    'COM3',
     'SMS_MODEM_BAUD':    9600,
     'SMS_MODEM_TIMEOUT': 10,
+    'SMS_RECEPTION_FILTREE': False,
 }
 
 
@@ -75,6 +77,13 @@ def sms_actifs() -> bool:
     if mode_demo.actif():
         return False
     valeur = get_sms_val('SMS_ENABLED')
+    return valeur is True or str(valeur).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def reception_filtree() -> bool:
+    """SMS_RECEPTION_FILTREE interprété quelle que soit sa source (booléen, ou chaîne « True »/« False » du .env) :
+    la réception n'accepte alors que les numéros enregistrés sur la plateforme."""
+    valeur = get_sms_val('SMS_RECEPTION_FILTREE')
     return valeur is True or str(valeur).strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
