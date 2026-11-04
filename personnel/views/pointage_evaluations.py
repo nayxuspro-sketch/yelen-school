@@ -50,8 +50,8 @@ def _date(valeur, defaut=None):
 @login_required
 @requires_licence_feature('gestion_personnel')
 def pointage_jour(request):
-    """Pointage d'une journée : arrivée et départ réels de chaque agent, horaires de référence par profil et par
-    agent, statut déduit de l'heure limite qui lui est propre (5.53.0)."""
+    """Pointage d'une journée en deux plages (matin, après-midi) et horaires de référence par profil et par agent ;
+    statut déduit de l'heure limite propre à l'agent, sur sa première arrivée de la journée (5.54.0)."""
     etab = _etab(request)
     reglage = ReglagePointage.pour(etab)
     jour = _date(request.GET.get('date') or request.POST.get('date'), timezone.localdate())
@@ -92,14 +92,18 @@ def pointage_jour(request):
         for membre in membres:
             arrivee = _heure(request.POST.get(f'arrivee_{membre.pk}'))
             depart = _heure(request.POST.get(f'depart_{membre.pk}'))
+            arrivee_pm = _heure(request.POST.get(f'arrivee_pm_{membre.pk}'))
+            depart_pm = _heure(request.POST.get(f'depart_pm_{membre.pk}'))
             statut = request.POST.get(f'statut_{membre.pk}') or ''
-            if not (arrivee or depart or statut):
+            if not (arrivee or depart or arrivee_pm or depart_pm or statut):
                 continue                      # ligne laissée vide : rien n'est enregistré
             statut = statut if statut in PointagePersonnel.StatutChoices.values else \
-                PointagePersonnel.statut_depuis(arrivee, membre.heure_limite_pointage(reglage))
+                PointagePersonnel.statut_depuis(arrivee or arrivee_pm, membre.heure_limite_pointage(reglage))
             PointagePersonnel.objects.update_or_create(
                 personnel=membre, date=jour,
-                defaults={'heure_arrivee': arrivee, 'heure_depart': depart, 'statut': statut,
+                defaults={'heure_arrivee': arrivee, 'heure_depart': depart,
+                          'heure_arrivee_apres_midi': arrivee_pm, 'heure_depart_apres_midi': depart_pm,
+                          'statut': statut,
                           'observation': (request.POST.get(f'observation_{membre.pk}') or '')[:200]},
             )
             enregistres += 1
@@ -118,6 +122,7 @@ def pointage_jour(request):
             'depart_normal': depart_normal,
             'en_retard': pointage is not None and pointage.statut == PointagePersonnel.StatutChoices.RETARD,
             'depart_anticipe': pointage is not None and pointage.est_depart_anticipe(depart_normal),
+            'heures': pointage.heures_travaillees if pointage else 0.0,
         })
 
     return render(request, 'personnel/pointage_jour.html', {

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.53.0
+version_logiciel: 5.54.0
 version_guide: 5.47
-date_mise_a_jour: 04/11/2026 (5.53.0 : horaires de pointage par agent et par profil)
+date_mise_a_jour: 04/11/2026 (5.54.0 : pointage en deux plages, matin et après-midi)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -1187,16 +1187,23 @@ une valeur saisie prime.** Un agent est classé *enseignant* automatiquement d'a
 2. **Horaires individuels** : dans le tableau, les colonnes *Limite d'arrivée* et *Départ prévu* rappellent sous chaque
    champ la valeur héritée (« défaut 09:00 »). On saisit l'horaire propre à l'agent puis on clique
    *Enregistrer les horaires individuels* ; vider un champ le fait revenir à l'horaire de son profil.
-3. **Journée** : la page affiche une ligne par agent actif avec l'arrivée, le départ, le statut et une observation.
+3. **Journée, en deux plages** : la page affiche une ligne par agent actif et, pour chaque agent, **quatre heures** —
+   arrivée et départ du matin, arrivée et départ de l'après-midi — plus le statut et une observation. La colonne
+   *Total* affiche les heures réellement travaillées, **somme des deux plages**.
+   *Exemple : un enseignant qui a cours de 9h00 à 11h00 puis de 15h00 à 17h05 pointe 08:55 / 11:00 / 15:00 / 17:05 ;
+   la colonne Total indique 4,16 h, et non 8 h 10 comme le ferait une journée continue.*
    On peut changer de jour avec *Jour précédent* / *Jour suivant*, ou choisir une date dans le champ. Le bouton
    *Enregistrer le pointage* enregistre toutes les lignes en une fois ; **une ligne laissée entièrement vide n'est pas
-   enregistrée**, et le statut est déduit de l'heure d'arrivée comparée à la limite de l'agent, sauf si l'on choisit
-   *Absent* ou *En congé*.
-4. **Feuille du mois** : `Personnel → Pointage du mois` récapitule par agent les jours pointés, les heures travaillées,
+   enregistrée**, et le statut est déduit de la **première arrivée** comparée à la limite de l'agent, sauf si l'on
+   choisit *Absent* ou *En congé*.
+4. **Plage sans cours** : un enseignant qui n'a pas cours l'après-midi laisse les deux champs de l'après-midi vides ;
+   ce n'est **pas** une absence et cela ne change ni le statut ni les heures. Seule une journée entièrement vide est
+   ignorée à l'enregistrement.
+5. **Feuille du mois** : `Personnel → Pointage du mois` récapitule par agent les jours pointés, les heures travaillées,
    les retards, les départs anticipés, les absences et les congés, avec les totaux. Le bouton **PDF signé** produit la
    feuille de pointage A4 à archiver ou à remettre à la direction.
-5. Un agent ne peut avoir qu'**un seul pointage par jour** : réenregistrer la journée met à jour la ligne existante.
-6. Les horaires d'un agent se règlent aussi depuis sa fiche : `Personnel → Modifier` → champs *Profil de pointage*,
+6. Un agent ne peut avoir qu'**un seul pointage par jour** : réenregistrer la journée met à jour la ligne existante.
+7. Les horaires d'un agent se règlent aussi depuis sa fiche : `Personnel → Modifier` → champs *Profil de pointage*,
    *Heure limite d'arrivée* et *Heure normale de départ*.
 
 ---
@@ -7383,8 +7390,8 @@ version 5.50.0).*
 
 ![Pointage du personnel](screenshots/13-pointage-personnel.png)
 *Pointage d'une journée : une ligne par agent (arrivée, départ, statut, observation), horaires de référence et
-enregistrement en une passe (§5.5). Capture de 5.51.0 : les colonnes d'horaires individuels ajoutées en 5.53.0 sont
-décrites au §5.5.*
+enregistrement en une passe (§5.5). Capture de 5.51.0 : les colonnes d'horaires individuels (5.53.0) et les plages
+matin / après-midi (5.54.0) sont décrites au §5.5.*
 
 ### 33.13 Personnel — Évaluations annuelles
 

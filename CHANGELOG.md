@@ -3,6 +3,23 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.54.0 — 2026-11-04
+
+- **Pointage en deux plages : matin et après-midi.** Un enseignant qui a cours de 9h00 à 11h00 puis de 15h00 à
+  17h00 pointe désormais **quatre heures** — arrivée et départ du matin, arrivée et départ de l'après-midi —
+  au lieu d'une arrivée et d'un départ uniques qui comptaient la coupure de midi comme du travail.
+- `PointagePersonnel` : `heure_arrivee_apres_midi` et `heure_depart_apres_midi` ; `heures_matin`, `heures_apres_midi`,
+  `heures_travaillees` (somme des deux plages), `heure_arrivee_effective` (première arrivée) et
+  `heure_depart_effective` (dernier départ).
+- **Plages libres, réglées au jour le jour** : une plage sans cours reste vide et **n'est pas comptée comme une
+  absence** ; seule la présence renseignée est mesurée (l'exemple ci-dessus donne 4 h 10, et non 8 h 10).
+- Statut : le retard s'apprécie sur la **première arrivée** de la journée (matin, sinon après-midi) comparée à
+  l'heure limite propre à l'agent ; le **départ anticipé** s'apprécie sur le **dernier départ**.
+- **Page *Pointage du jour*** : en-têtes groupés *Matin* / *Après-midi* (quatre champs horaires) et colonne
+  *Total* du jour par agent ; feuille du mois et PDF signé inchangés côté calcul (les heures sont la somme).
+- Migration `personnel/0014` (deux colonnes ajoutées ; libellés des deux colonnes existantes précisés
+  « (matin) ») — aucune donnée modifiée, aucun pointage existant perdu.
+
 ## 5.53.1 — 2026-11-04
 
 - **Mise à jour d'une copie de production dont l'historique local a divergé de `main`.** Sur

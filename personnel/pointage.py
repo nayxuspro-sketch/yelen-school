@@ -80,7 +80,12 @@ class ReglagePointage(BaseModel):
 
 
 class PointagePersonnel(BaseModel):
-    """Pointage d'un agent pour une journée : heure d'arrivée et de départ, aucun pointage valant absence."""
+    """Pointage d'un agent pour une journée, en **deux plages** : matin et après-midi (5.54.0).
+
+    Un enseignant qui a cours de 9h00 à 11h00 puis de 15h00 à 17h00 pointe son arrivée et son départ dans chaque
+    plage ; les heures travaillées sont la somme des deux présences. Une plage sans cours n'est pas comptée comme
+    une absence : seuls les champs renseignés sont pris en compte.
+    """
 
     class StatutChoices(models.TextChoices):
         PRESENT = 'PRESENT', _('Présent')
@@ -91,8 +96,10 @@ class PointagePersonnel(BaseModel):
     personnel = models.ForeignKey('personnel.MembrePersonnel', on_delete=models.CASCADE, related_name='pointages',
                                   verbose_name=_("Membre du personnel"))
     date = models.DateField(verbose_name=_("Date"))
-    heure_arrivee = models.TimeField(null=True, blank=True, verbose_name=_("Arrivée"))
-    heure_depart = models.TimeField(null=True, blank=True, verbose_name=_("Départ"))
+    heure_arrivee = models.TimeField(null=True, blank=True, verbose_name=_("Arrivée (matin)"))
+    heure_depart = models.TimeField(null=True, blank=True, verbose_name=_("Départ (matin)"))
+    heure_arrivee_apres_midi = models.TimeField(null=True, blank=True, verbose_name=_("Arrivée (après-midi)"))
+    heure_depart_apres_midi = models.TimeField(null=True, blank=True, verbose_name=_("Départ (après-midi)"))
     statut = models.CharField(max_length=10, choices=StatutChoices.choices, default=StatutChoices.PRESENT,
                               verbose_name=_("Statut"))
     observation = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Observation"))
@@ -109,14 +116,41 @@ class PointagePersonnel(BaseModel):
     def __str__(self):
         return f"{self.personnel.get_nom_complet()} — {self.date:%d/%m/%Y} ({self.get_statut_display()})"
 
+    @staticmethod
+    def _minutes(heure):
+        return heure.hour * 60 + heure.minute if heure else None
+
+    @property
+    def heures_matin(self):
+        """Amplitude de la plage du matin, en heures décimales (0 si incomplète)."""
+        arrivee, depart = self._minutes(self.heure_arrivee), self._minutes(self.heure_depart)
+        if arrivee is None or depart is None:
+            return 0.0
+        return round(max(0, depart - arrivee) / 60, 2)
+
+    @property
+    def heures_apres_midi(self):
+        """Amplitude de la plage de l'après-midi, en heures décimales (0 si incomplète)."""
+        arrivee = self._minutes(self.heure_arrivee_apres_midi)
+        depart = self._minutes(self.heure_depart_apres_midi)
+        if arrivee is None or depart is None:
+            return 0.0
+        return round(max(0, depart - arrivee) / 60, 2)
+
     @property
     def heures_travaillees(self):
-        """Amplitude horaire de présence, en heures décimales (0 si l'un des deux pointages manque)."""
-        if not (self.heure_arrivee and self.heure_depart):
-            return 0.0
-        arrivee = self.heure_arrivee.hour * 60 + self.heure_arrivee.minute
-        depart = self.heure_depart.hour * 60 + self.heure_depart.minute
-        return max(0, depart - arrivee) / 60
+        """Somme des deux plages, en heures décimales."""
+        return round(self.heures_matin + self.heures_apres_midi, 2)
+
+    @property
+    def heure_arrivee_effective(self):
+        """Première arrivée de la journée (matin, sinon après-midi)."""
+        return self.heure_arrivee or self.heure_arrivee_apres_midi
+
+    @property
+    def heure_depart_effective(self):
+        """Dernier départ de la journée (après-midi, sinon matin)."""
+        return self.heure_depart_apres_midi or self.heure_depart
 
     @classmethod
     def statut_depuis(cls, heure_arrivee, heure_limite):
@@ -126,9 +160,10 @@ class PointagePersonnel(BaseModel):
         return cls.StatutChoices.RETARD if heure_arrivee > heure_limite else cls.StatutChoices.PRESENT
 
     def est_depart_anticipe(self, heure_depart_normale=None):
-        """Vrai si l'agent est parti avant son heure normale de départ."""
+        """Vrai si l'agent a quitté son service avant son heure normale de départ (dernier départ de la journée)."""
         normale = heure_depart_normale or getattr(self.personnel, 'heure_depart_normale', None)
-        return bool(self.heure_depart and normale and self.heure_depart < normale)
+        depart = self.heure_depart_effective
+        return bool(depart and normale and depart < normale)
 
     @property
     def heures_attendues(self):

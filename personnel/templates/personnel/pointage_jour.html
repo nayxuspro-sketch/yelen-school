@@ -87,22 +87,31 @@
   <div class="card-header">
     <h2 class="card-title">Arrivées et départs du jour</h2>
     <p class="text-muted" style="font-size:.8rem; margin:0;">
-      Arrivée et départ réels de chaque agent. Le statut suit l'heure limite qui lui est propre.
-      Les horaires individuels (colonnes <em>Limite</em> et <em>Départ prévu</em>) sont facultatifs et
-      s'enregistrent séparément.
+      Arrivée et départ réels de chaque agent, <strong>plage par plage</strong> : un enseignant qui a cours de
+      9h00 à 11h00 puis de 15h00 à 17h00 renseigne les quatre heures ; une plage sans cours reste vide et n'est
+      pas comptée comme une absence. Le total du jour est la somme des deux plages et le statut suit l'heure limite
+      propre à l'agent. Les horaires individuels (colonnes <em>Limite</em> et <em>Départ prévu</em>) sont
+      facultatifs et s'enregistrent séparément.
     </p>
   </div>
   <div class="table-scroll">
     <table class="data-table">
       <thead>
         <tr>
-          <th>Agent</th>
-          <th>Limite d'arrivée</th>
-          <th>Départ prévu</th>
+          <th rowspan="2">Agent</th>
+          <th rowspan="2">Limite d'arrivée</th>
+          <th rowspan="2">Départ prévu</th>
+          <th colspan="2" class="text-center">Matin</th>
+          <th colspan="2" class="text-center">Après-midi</th>
+          <th rowspan="2">Total</th>
+          <th rowspan="2">Statut</th>
+          <th rowspan="2">Observation</th>
+        </tr>
+        <tr>
           <th>Arrivée</th>
           <th>Départ</th>
-          <th>Statut</th>
-          <th>Observation</th>
+          <th>Arrivée</th>
+          <th>Départ</th>
         </tr>
       </thead>
       <tbody>
@@ -133,14 +142,23 @@
           </td>
           <td><input type="time" name="arrivee_{{ ligne.membre.pk }}" class="input"
                      value="{{ ligne.pointage.heure_arrivee|time:'H:i' }}"
-                     aria-label="Heure d'arrivée de {{ ligne.membre.get_nom_complet }}"></td>
+                     aria-label="Heure d'arrivée du matin de {{ ligne.membre.get_nom_complet }}"></td>
+          <td><input type="time" name="depart_{{ ligne.membre.pk }}" class="input"
+                     value="{{ ligne.pointage.heure_depart|time:'H:i' }}"
+                     aria-label="Heure de départ du matin de {{ ligne.membre.get_nom_complet }}"></td>
+          <td><input type="time" name="arrivee_pm_{{ ligne.membre.pk }}" class="input"
+                     value="{{ ligne.pointage.heure_arrivee_apres_midi|time:'H:i' }}"
+                     aria-label="Heure d'arrivée de l'après-midi de {{ ligne.membre.get_nom_complet }}"></td>
           <td>
-            <input type="time" name="depart_{{ ligne.membre.pk }}" class="input"
-                   value="{{ ligne.pointage.heure_depart|time:'H:i' }}"
-                   aria-label="Heure de départ de {{ ligne.membre.get_nom_complet }}">
+            <input type="time" name="depart_pm_{{ ligne.membre.pk }}" class="input"
+                   value="{{ ligne.pointage.heure_depart_apres_midi|time:'H:i' }}"
+                   aria-label="Heure de départ de l'après-midi de {{ ligne.membre.get_nom_complet }}">
             {% if ligne.depart_anticipe %}
             <div class="text-muted" style="font-size:.72rem;"><span class="badge badge-warning">Départ anticipé</span></div>
             {% endif %}
+          </td>
+          <td class="text-nowrap">
+            {% if ligne.heures %}{{ ligne.heures|floatformat:2 }} h{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td>
             <select name="statut_{{ ligne.membre.pk }}" class="input select"
@@ -156,7 +174,7 @@
                      aria-label="Observation pour {{ ligne.membre.get_nom_complet }}"></td>
         </tr>
         {% empty %}
-        <tr><td colspan="7" class="text-muted">Aucun agent actif : créez d'abord les fiches du personnel.</td></tr>
+        <tr><td colspan="10" class="text-muted">Aucun agent actif : créez d'abord les fiches du personnel.</td></tr>
         {% endfor %}
       </tbody>
     </table>

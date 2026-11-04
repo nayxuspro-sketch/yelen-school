@@ -234,6 +234,92 @@ def test_feuille_du_mois_compte_les_departs_anticipes(ecole):
     assert 'Départs anticipés' in page.content.decode()
 
 
+# ── Deux plages par jour : matin et après-midi (5.54.0) ─────────────────────
+
+def test_deux_plages_somment_les_heures_du_jour(ecole):
+    # Enseignant : cours de 9h00 à 11h00 puis de 15h00 à 17h00 → 4 h travaillées, pas 8 h.
+    p = PointagePersonnel(personnel=ecole['agent'], date=date(2026, 11, 6),
+                          heure_arrivee=time(8, 55), heure_depart=time(11, 0),
+                          heure_arrivee_apres_midi=time(15, 0), heure_depart_apres_midi=time(17, 5))
+    assert p.heures_matin == 2.08 and p.heures_apres_midi == 2.08          # 8h55→11h00, 15h00→17h05
+    assert p.heures_travaillees == 4.16
+    assert p.heure_arrivee_effective == time(8, 55)                 # première arrivée
+    assert p.heure_depart_effective == time(17, 5)                  # dernier départ
+
+    # Plage de l'après-midi incomplète : elle ne compte pas, le matin reste acquis.
+    p.heure_depart_apres_midi = None
+    assert p.heures_apres_midi == 0.0 and p.heures_travaillees == 2.08
+    assert p.heure_depart_effective == time(11, 0)
+
+
+def test_plages_saisies_et_enregistrees_depuis_le_pointage_du_jour(ecole):
+    url = reverse('personnel:pointage_jour')
+    agent = ecole['agent']
+    reglage = ReglagePointage.pour(ecole['etab'])
+    reglage.heure_arrivee_limite_enseignant = time(9, 0)                 # horaire propre au profil enseignant
+    reglage.save()
+    page = ecole['client'].get(url, {'date': '2026-11-06'})
+    assert page.status_code == 200
+    html = page.content.decode()
+    assert f'name="arrivee_pm_{agent.pk}"' in html and f'name="depart_pm_{agent.pk}"' in html
+    assert 'Après-midi' in html and 'Matin' in html
+
+    ecole['client'].post(url, {'date': '2026-11-06',
+                               f'arrivee_{agent.pk}': '08:55', f'depart_{agent.pk}': '11:00',
+                               f'arrivee_pm_{agent.pk}': '15:00', f'depart_pm_{agent.pk}': '17:05',
+                               f'statut_{agent.pk}': '', f'observation_{agent.pk}': ''})
+    p = PointagePersonnel.objects.get(personnel=agent, date=date(2026, 11, 6))
+    assert (p.heure_arrivee, p.heure_depart) == (time(8, 55), time(11, 0))
+    assert (p.heure_arrivee_apres_midi, p.heure_depart_apres_midi) == (time(15, 0), time(17, 5))
+    assert p.heures_travaillees == 4.16 and p.statut == PointagePersonnel.StatutChoices.PRESENT
+
+
+def test_absence_de_plage_l_apres_midi_n_est_pas_une_absence(ecole):
+    url = reverse('personnel:pointage_jour')
+    agent = ecole['agent']
+    reglage = ReglagePointage.pour(ecole['etab'])
+    reglage.heure_arrivee_limite_enseignant = time(9, 0)
+    reglage.save()
+    # Enseignant sans cours l'après-midi : seule la plage du matin est renseignée.
+    ecole['client'].post(url, {'date': '2026-11-09',
+                               f'arrivee_{agent.pk}': '08:50', f'depart_{agent.pk}': '11:00',
+                               f'arrivee_pm_{agent.pk}': '', f'depart_pm_{agent.pk}': '',
+                               f'statut_{agent.pk}': '', f'observation_{agent.pk}': ''})
+    p = PointagePersonnel.objects.get(personnel=agent, date=date(2026, 11, 9))
+    assert p.statut == PointagePersonnel.StatutChoices.PRESENT
+    assert p.heures_travaillees == 2.17 and p.heure_arrivee_apres_midi is None
+
+
+def test_retard_apprecie_sur_la_premiere_arrivee_et_depart_anticipe_sur_le_dernier(ecole):
+    reglage = ReglagePointage.pour(ecole['etab'])
+    reglage.heure_depart_normale = time(17, 0)
+    reglage.save()
+    agent = ecole['agent']
+
+    # Arrivée de l'après-midi seule, après 07:30 : c'est elle qui fixe le statut.
+    p = PointagePersonnel(personnel=agent, date=date(2026, 11, 10),
+                          heure_arrivee_apres_midi=time(15, 0), heure_depart_apres_midi=time(18, 0))
+    assert PointagePersonnel.statut_depuis(p.heure_arrivee_effective,
+                                          agent.heure_limite_pointage(reglage)) == PointagePersonnel.StatutChoices.RETARD
+    assert not p.est_depart_anticipe(reglage.heure_depart_normale)          # parti à 18h00, après 17h00
+
+    # Le départ anticipé se juge sur le dernier départ de la journée.
+    p = PointagePersonnel(personnel=agent, date=date(2026, 11, 11),
+                          heure_arrivee=time(7, 0), heure_depart=time(11, 0),
+                          heure_arrivee_apres_midi=time(15, 0), heure_depart_apres_midi=time(16, 0))
+    assert p.est_depart_anticipe(reglage.heure_depart_normale)
+
+
+def test_feuille_du_mois_additionne_les_deux_plages(ecole):
+    agent = ecole['agent']
+    baker.make(PointagePersonnel, personnel=agent, date=date(2026, 11, 2),
+               heure_arrivee=time(9, 0), heure_depart=time(11, 0),
+               heure_arrivee_apres_midi=time(15, 0), heure_depart_apres_midi=time(17, 0),
+               statut=PointagePersonnel.StatutChoices.PRESENT)
+    page = ecole['client'].get(reverse('personnel:pointage_mois'), {'mois': 11, 'annee': 2026})
+    assert page.context['lignes'][0]['heures'] == 4.0
+
+
 # ── Évaluation annuelle ──────────────────────────────────────────────────────
 
 def test_liste_des_evaluations_et_agents_restant_a_evaluer(ecole):
