@@ -7,16 +7,21 @@
 <div class="page-header animate-fade-up">
   <div>
     <h1 class="page-title">Absences du personnel</h1>
-    <p class="page-subtitle">{% if membre %}{{ membre.get_nom_complet }} — toutes les absences enregistrées{% else %}Mois de {{ mois_libelle|date:"F Y" }} : les jours non justifiés marqués « retenue » sont proposés sur le brouillon de paie du mois (1/30e du salaire de base par jour).{% endif %}</p>
+    <p class="page-subtitle">{% if membre %}{{ membre.get_nom_complet }} — du {{ periode.debut|date:"d/m/Y" }} au {{ periode.fin|date:"d/m/Y" }}{% else %}Du {{ periode.debut|date:"d/m/Y" }} au {{ periode.fin|date:"d/m/Y" }} : les jours non justifiés marqués « retenue » sont proposés sur le brouillon de paie du mois (1/30e du salaire de base par jour).{% endif %}</p>
   </div>
   <div class="d-flex gap-2 align-center">
     {% if not membre %}
     <form method="get" class="d-flex gap-2 align-center">
       <input type="month" name="mois" value="{{ mois_param }}" class="input" aria-label="Mois" data-csp-submit-on-change>
+      <input type="date" name="du" value="{{ periode.du }}" class="input" aria-label="Du" title="Du">
+      <input type="date" name="au" value="{{ periode.au }}" class="input" aria-label="Au" title="Au">
+      <button type="submit" class="btn-secondary">Afficher</button>
     </form>
     {% else %}
     <a href="{% url 'personnel:absence_list' %}" class="btn-secondary">Tout le personnel</a>
     {% endif %}
+    <a href="{{ lien_impression }}" class="btn-secondary" target="_blank" rel="noopener"
+       title="Imprimer les absences de la période (PDF)">Imprimer la période</a>
     {% if request|autorise_url:'personnel:absence_create' %}
     <a href="{% if membre %}{% url 'personnel:absence_create_pour' membre.pk %}{% else %}{% url 'personnel:absence_create' %}{% endif %}" class="btn-primary">Nouvelle absence</a>
     {% endif %}
@@ -56,8 +61,8 @@
           <td class="fw-semibold"><a href="{% url 'personnel:detail' a.personnel.pk %}">{{ a.personnel.get_nom_complet }}</a></td>
           <td>{{ a.get_motif_display }}</td>
           <td>
-            {% if a.classe or a.matiere %}
-              {{ a.classe.nom|default:"—" }}{% if a.matiere %} · {{ a.matiere.nom }}{% endif %}
+            {% if a.classe or a.matiere or a.toutes_matieres %}
+              {{ a.classe.nom|default:"—" }}{% if a.matiere or a.toutes_matieres %} · {{ a.matiere_libelle }}{% endif %}
               {% if a.heure_debut %}<div class="text-muted text-xs">{{ a.heure_debut|time:'H:i' }}–{{ a.heure_fin|time:'H:i' }}</div>{% endif %}
             {% else %}<span class="text-muted">—</span>{% endif %}
           </td>

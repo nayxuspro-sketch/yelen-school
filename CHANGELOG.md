@@ -3,6 +3,20 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.59.0 — 2026-11-05
+
+- **Impression des absences d'une période.** La liste des absences accepte un **intervalle de dates** (`du` / `au`)
+  à la place du mois, et le bouton **Imprimer la période** produit un PDF A4 portrait signé : détail des séances
+  (professeur, date, classe, matière, horaire, heures, observation, justifiée, jours à retenir), total d'heures, puis
+  bilan par agent sur la même période. Le filtre d'agent est conservé ; une seule borne suffit et des bornes
+  inversées sont remises dans l'ordre. Nouvelle vue `personnel:absence_pdf` (`absences/imprimer/`) et gabarit
+  `personnel/pdf/absences_periode.html` (socle PDF commun).
+- **« Toutes les matières »** dans le champ *Matière* de la saisie : au primaire, un seul enseignant dispense toutes
+  les disciplines de sa classe. La case enregistre `AbsencePersonnel.toutes_matieres` (migration `personnel/0019`) et
+  laisse la matière vide ; la liste et le PDF affichent « Toutes les matières ».
+- Le bilan de la liste est désormais borné à la période affichée (mois ou intervalle) ; l'historique d'un agent
+  choisi sans bornes reste complet, comme auparavant.
+
 ## 5.58.0 — 2026-11-05
 
 - **Saisie des absences quotidiennes des professeurs alignée sur le formulaire de référence.** Le formulaire reprend

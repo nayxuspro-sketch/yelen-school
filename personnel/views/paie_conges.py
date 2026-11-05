@@ -532,10 +532,28 @@ def _mois_demande(request):
         return today.month, today.year
 
 
-def _bilan_absences(etab, mois, annee):
-    """Par agent ayant au moins une absence sur le mois : absences, jours, jours non justifiés, jours retenus."""
+def _date_parametre(valeur):
+    """Date ``AAAA-MM-JJ`` d'un paramètre d'URL, ou ``None`` si elle est absente ou illisible."""
+    from datetime import datetime
+    try:
+        return datetime.strptime((valeur or '').strip(), '%Y-%m-%d').date()
+    except ValueError:
+        return None
+
+
+def _periode_demandee(request):
+    """Intervalle imprimé/affiché : ``du``/``au`` s'ils sont saisis, sinon le mois ``AAAA-MM``."""
+    du, au = _date_parametre(request.GET.get('du')), _date_parametre(request.GET.get('au'))
+    if du or au:
+        du, au = du or au, au or du
+        return min(du, au), max(du, au)
     import calendar
-    debut, fin = date_module(annee, mois, 1), date_module(annee, mois, calendar.monthrange(annee, mois)[1])
+    mois, annee = _mois_demande(request)
+    return date_module(annee, mois, 1), date_module(annee, mois, calendar.monthrange(annee, mois)[1])
+
+
+def _bilan_absences(etab, debut, fin):
+    """Par agent ayant au moins une absence sur la période : absences, jours, jours non justifiés, jours retenus."""
     lignes = {}
     for a in (AbsencePersonnel.objects.filter(personnel__etablissement=etab, date_debut__lte=fin, date_fin__gte=debut)
               .select_related('personnel').order_by('personnel__nom', 'personnel__prenom')):
@@ -547,26 +565,70 @@ def _bilan_absences(etab, mois, annee):
             ligne['non_justifies'] += jours
             if a.retenue:
                 ligne['retenus'] += jours
-    return list(lignes.values()), debut, fin
+    return list(lignes.values())
 
 
-@login_required
-def absence_list(request):
-    """Absences du personnel : liste du mois (ou d'un agent) et bilan par agent."""
-    etab = getattr(request.user, 'etablissement', None)
-    mois, annee = _mois_demande(request)
-    bilan, debut, fin = _bilan_absences(etab, mois, annee) if etab else ([], None, None)
-    qs = AbsencePersonnel.objects.filter(personnel__etablissement=etab).select_related('personnel', 'created_by')
+def _absences_de_la_periode(request, etab):
+    """Absences de la période demandée (et de l'agent filtré), avec le bilan par agent sur la même période."""
+    debut, fin = _periode_demandee(request)
+    qs = (AbsencePersonnel.objects.filter(personnel__etablissement=etab)
+          .select_related('personnel', 'created_by', 'classe', 'matiere')
+          .order_by('-date_debut', 'personnel__nom'))
     membre_id = request.GET.get('personnel')
     membre = MembrePersonnel.objects.filter(pk=membre_id, etablissement=etab).first() if membre_id else None
     if membre:
         qs = qs.filter(personnel=membre)
-    elif debut:
+    # Intervalle explicitement demandé, ou aucune période : bornes appliquées. Un agent choisi sans bornes garde
+    # son historique complet (comportement de la fiche).
+    if membre is None or request.GET.get('du') or request.GET.get('au'):
         qs = qs.filter(date_debut__lte=fin, date_fin__gte=debut)
+    return qs, membre, debut, fin, _bilan_absences(etab, debut, fin)
+
+
+@login_required
+def absence_list(request):
+    """Absences du personnel : liste du mois ou d'un intervalle de dates, et bilan par agent."""
+    etab = getattr(request.user, 'etablissement', None)
+    mois, annee = _mois_demande(request)
+    if etab:
+        qs, membre, debut, fin, bilan = _absences_de_la_periode(request, etab)
+    else:
+        qs, membre, debut, fin, bilan = AbsencePersonnel.objects.none(), None, None, None, []
+    parametres = request.GET.copy()
+    parametres.pop('format', None)
+    parametres['format'] = 'pdf'
     return render(request, 'personnel/absence_list.html', {
         'absences': qs[:300], 'bilan': bilan, 'membre': membre,
         'mois_param': f"{annee:04d}-{mois:02d}", 'mois_libelle': date_module(annee, mois, 1),
+        'periode': {'debut': debut, 'fin': fin, 'du': request.GET.get('du', ''), 'au': request.GET.get('au', '')},
+        'lien_impression': f"{reverse('personnel:absence_pdf')}?{parametres.urlencode()}",
     })
+
+
+@login_required
+def absence_pdf(request):
+    """Impression des absences d'une période (`du`/`au` ou mois), avec le bilan par agent. A4 portrait signé."""
+    from core.pdf import HTML as WeasyPrint
+
+    etab = getattr(request.user, 'etablissement', None)
+    qs, membre, debut, fin, bilan = _absences_de_la_periode(request, etab) if etab else (
+        AbsencePersonnel.objects.none(), None, None, None, [])
+    absences = list(qs[:500])
+    contexte = {
+        'absences': absences, 'bilan': bilan, 'membre': membre, 'debut': debut, 'fin': fin,
+        'total_heures': round(sum(a.nombre_heures for a in absences), 2),
+        'etablissement': etab, 'today': date_module.today(),
+        # Un agent choisi sans bornes garde son historique complet : l'en-tête ne borne pas la période.
+        'periode_bornee': bool(request.GET.get('du') or request.GET.get('au')) or membre is None,
+        'annee_scolaire': (AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+                           if etab else None),
+        **get_etablissement_context(etab, request),
+    }
+    html = render_to_string('personnel/pdf/absences_periode.html', contexte, request=request)
+    pdf = WeasyPrint(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="absences_{debut:%Y%m%d}_{fin:%Y%m%d}.pdf"'
+    return response
 
 
 @login_required

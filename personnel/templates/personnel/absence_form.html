@@ -80,6 +80,9 @@
       <div class="form-group" style="margin-bottom:0; min-width:240px;">
         <label class="input-label" for="{{ form.matiere.id_for_label }}">Matière</label>
         {{ form.matiere }}
+        <label class="d-flex align-center gap-2" style="cursor:pointer; font-size:var(--text-xs); margin-top:var(--space-1);">
+          {{ form.toutes_matieres }} <span>Toutes les matières (primaire)</span>
+        </label>
         {% if form.matiere.errors %}<p class="input-error">{{ form.matiere.errors.0 }}</p>{% endif %}
       </div>
 

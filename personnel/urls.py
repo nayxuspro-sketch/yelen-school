@@ -46,6 +46,7 @@ urlpatterns = [
 
     # Congés
     path('absences/', views.absence_list, name='absence_list'),
+    path('absences/imprimer/', views.absence_pdf, name='absence_pdf'),
     path('absences/nouvelle/', views.absence_create, name='absence_create'),
     path('<uuid:pk>/absence/nouvelle/', views.absence_create, name='absence_create_pour'),
     path('absences/<uuid:pk>/supprimer/', views.absence_delete, name='absence_delete'),

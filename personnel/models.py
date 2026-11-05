@@ -891,6 +891,8 @@ class AbsencePersonnel(BaseModel):
                                related_name='absences_personnel', verbose_name=_("Classe"))
     matiere = models.ForeignKey('pedagogie.Matiere', on_delete=models.SET_NULL, null=True, blank=True,
                                 related_name='absences_personnel', verbose_name=_("Matière"))
+    # Primaire : un seul enseignant dispense toutes les disciplines de sa classe → « Toutes les matières ».
+    toutes_matieres = models.BooleanField(default=False, verbose_name=_("Toutes les matières"))
     heure_debut = models.TimeField(null=True, blank=True, verbose_name=_("Heure de début"))
     heure_fin = models.TimeField(null=True, blank=True, verbose_name=_("Heure de fin"))
     date_debut = models.DateField(verbose_name=_("Du"))
@@ -915,6 +917,13 @@ class AbsencePersonnel(BaseModel):
     @property
     def nombre_jours(self):
         return (self.date_fin - self.date_debut).days + 1
+
+    @property
+    def matiere_libelle(self):
+        """Matière affichée : « Toutes les matières », le nom de la matière retenue, ou un tiret."""
+        if self.toutes_matieres:
+            return "Toutes les matières"
+        return self.matiere.nom if self.matiere_id else "—"
 
     @property
     def nombre_heures(self):

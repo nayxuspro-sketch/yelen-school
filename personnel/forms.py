@@ -214,11 +214,12 @@ class AbsencePersonnelForm(forms.ModelForm):
                                    empty_label="— Choisir —")
     matiere = forms.ModelChoiceField(label="Matière", queryset=Matiere.objects.none(), required=False,
                                      empty_label="— Choisir —")
+    toutes_matieres = forms.BooleanField(label="Toutes les matières", required=False)
 
     class Meta:
         model = AbsencePersonnel
-        fields = ['personnel', 'classe', 'matiere', 'heure_debut', 'heure_fin', 'motif', 'observation',
-                  'justifiee', 'retenue']
+        fields = ['personnel', 'classe', 'matiere', 'toutes_matieres', 'heure_debut', 'heure_fin', 'motif',
+                  'observation', 'justifiee', 'retenue']
         labels = {'personnel': "Nom du professeur", 'heure_debut': "Heure de début",
                   'heure_fin': "Heure de fin"}
         widgets = {
@@ -257,6 +258,8 @@ class AbsencePersonnelForm(forms.ModelForm):
         # La date saisie une seule fois vaut date de début ; « Au » vide = absence d'une journée.
         if self.instance.pk:
             self.fields['date'].initial = self.instance.date_debut
+            if self.instance.toutes_matieres:
+                self.fields['toutes_matieres'].initial = True
             self.fields['date_fin'].initial = (self.instance.date_fin
                                               if self.instance.date_fin != self.instance.date_debut else None)
 
@@ -294,6 +297,9 @@ class AbsencePersonnelForm(forms.ModelForm):
         jour = self.cleaned_data['date']
         absence.date_debut = jour
         absence.date_fin = self.cleaned_data.get('date_fin') or jour     # une séance : une journée
+        absence.toutes_matieres = bool(self.cleaned_data.get('toutes_matieres'))
+        if absence.toutes_matieres:                     # « Toutes les matières » : aucune matière retenue
+            absence.matiere = None
         absence.motif = (self.cleaned_data.get('motif')
                          or _motif_depuis_observation(self.cleaned_data.get('observation')))
         if commit:
