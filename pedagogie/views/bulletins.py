@@ -230,7 +230,7 @@ def _build_bulletin_context(request, inscription, trimestre):
         'inscription': inscription,
         'trimestre': trimestre,
         'mg': mg,
-        'total_points_max': mg.total_coefficients * 20,
+        'total_points_max': mg.total_points_max,
         'resultats_annotes': resultats_annotes,
         'nb_eleves': nb_eleves,
         'moy_max_classe': stats_classe['max_moy'],

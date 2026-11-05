@@ -3,6 +3,16 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.60.1 — 2026-11-05
+
+- **Bulletin trimestriel au barème de la classe.** L'en-tête de colonne affiche « Moy. /10 » au préscolaire et au
+  primaire (au lieu de « Moy. /20 ») et la ligne récapitulative « 7,86 / 10 » (au lieu de « 7,86 / 20 ») ; le
+  maximum du total de points suit le barème (coef × 10). Même règle à l'écran d'aperçu du bulletin.
+- **Colonne « Note pond. » supprimée** du tableau des notes (PDF, lot de classe, duplicata et aperçu) : le tableau
+  passe à six colonnes — matières 27 %, coef 7 %, moyenne 12 %, appréciation 19 %, professeur 24 %, signature 11 %.
+  La note pondérée reste calculée dans le total des points, qui est inchangé.
+- Aucun changement de calcul, aucune migration.
+
 ## 5.60.0 — 2026-11-05
 
 - **Moyennes du primaire sur 10 : la note saisie est la moyenne de la discipline.** Au préscolaire et au primaire

@@ -222,9 +222,11 @@ class TestBulletinTrimestriel:
         assert 'OUEDRAOGO' in _html(weasy) and 'Très bien' in _html(weasy)
         assert 'Total : 112,00&nbsp;/&nbsp;140 pts' in _html(weasy), 'points obtenus / points maximum (7 coef. × 20)'
         maths_awa = Resultat.objects.get(inscription=c.awa, enseignement=c.maths)
-        assert maths_awa.note_ponderee == maths_awa.moyenne * 4, 'note pondérée = moyenne /20 × coefficient'
+        assert maths_awa.note_ponderee == maths_awa.moyenne * 4, 'note pondérée = moyenne × coefficient'
         note = str(maths_awa.note_ponderee).replace('.', ',')
-        assert 'Note pond.' in _html(weasy) and note in _html(weasy) and '>Rang</th>' not in _html(weasy)
+        assert 'Note pond.' not in _html(weasy) and f'>{note}<' not in _html(weasy), \
+            'colonne « Note pond. » supprimée du bulletin'
+        assert '>Rang</th>' not in _html(weasy)
         # Modèle de référence : en-tête avec N° Agrément, titre, cartes, tableau des notes, signatures
         modele = ('N° Agrément : 2019-0123/MENAPLN', 'BULLETIN DE NOTES — TRIMESTRE 1 — 2026-2027',
                   'Identité de l\'élève', 'class="bul-table"', 'Statistiques de la classe', 'class="bul-sig-grid"')
@@ -244,8 +246,8 @@ class TestBulletinTrimestriel:
         qr = f'alt="QR bulletin {c.awa.eleve.matricule}"'
         assert _html(weasy).count('alt="QR bulletin ') == 1 and 'Code QR de vérification' not in _html(weasy)
         assert _html(weasy).index('class="bul-sig-grid"') < _html(weasy).index(qr)
-        # Colonne Professeur élargie (24 %) aux dépens des colonnes Appréciation (14 %) et Signature (11 %)
-        assert '<th style="width:14%;">Appréciation</th>' in _html(weasy)
+        # Six colonnes (la « Note pond. » est supprimée) : Professeur 24 %, Appréciation 19 %, Signature 11 %
+        assert '<th style="width:19%;">Appréciation</th>' in _html(weasy)
         assert '<th style="width:24%;">Professeur</th>' in _html(weasy)
         assert '_____' not in _html(weasy), 'colonne Signature vide (pas de ligne en face des professeurs)'
         assert 'class="bul-card bul-dense"' not in _html(weasy), 'variante dense réservée aux bulletins de plus de 12 matières'
@@ -264,7 +266,7 @@ class TestBulletinTrimestriel:
         assert all(nom in html for nom in ('OUEDRAOGO', 'SAWADOGO', 'ZONGO'))
         assert 'KABORE' not in html and 'TRAORE' not in html, 'sans moyenne : pas de bulletin'
         assert 'Total : 112,00&nbsp;/&nbsp;140 pts' in html and '/ 7,00' not in html, 'même notation que le bulletin individuel'
-        assert 'Note pond.' in html and note in html and '>Rang</th>' not in html
+        assert 'Note pond.' not in html and '>Rang</th>' not in html
         assert all(html.count(m) == 3 for m in modele), 'même modèle que le bulletin individuel, un par élève'
         assert 'page-break-after' not in html, 'un élève par document : pas de saut de page interne'
         assert all(a in html for a in assiduite) and 'Excellent trimestre, félicitations du conseil.' in html
@@ -278,7 +280,7 @@ class TestBulletinTrimestriel:
         assert reponse.status_code == 200
         assert 'DUPLICATA' in _html(weasy).upper() and 'SAWADOGO' in _html(weasy)
         assert '&nbsp;/&nbsp;140 pts' in _html(weasy)
-        assert 'Note pond.' in _html(weasy) and '>Rang</th>' not in _html(weasy)
+        assert 'Note pond.' not in _html(weasy) and '>Rang</th>' not in _html(weasy)
         assert all(m in _html(weasy) for m in modele) and 'Duplicata officiel délivré le' in _html(weasy)
         assert 'Ce document est une reproduction du bulletin original' in _html(weasy) and 'dup-banner' not in _html(weasy)
         assert pied in _html(weasy) and 'Duplicata — Page' in _html(weasy)

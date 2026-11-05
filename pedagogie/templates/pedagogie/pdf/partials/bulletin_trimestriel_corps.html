@@ -78,11 +78,10 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
     <table class="bul-table">
         <thead>
             <tr>
-                <th style="width:25%;">Matières</th>
+                <th style="width:27%;">Matières</th>
                 <th class="bul-tc" style="width:7%;">Coef</th>
-                <th class="bul-tc" style="width:10%;">Moy. /{{ bareme|default:20 }}</th>
-                <th class="bul-tc" style="width:9%;">Note pond.</th>
-                <th style="width:14%;">Appréciation</th>
+                <th class="bul-tc" style="width:12%;">Moy. /{{ bareme|default:20 }}</th>
+                <th style="width:19%;">Appréciation</th>
                 <th style="width:24%;">Professeur</th>
                 <th style="width:11%;">Signature</th>
             </tr>
@@ -97,9 +96,6 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
                     {% elif result.moyenne is None %}<span class="bul-muted">—</span>
                     {% else %}{{ result.moyenne }}{% endif %}
                 </td>
-                <td class="bul-tc bul-muted">
-                    {% if result.note_ponderee is None %}—{% else %}{{ result.note_ponderee|floatformat:2 }}{% endif %}
-                </td>
                 <td class="bul-italic bul-muted">
                     {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle }}{% else %}—{% endif %}
                 </td>
@@ -112,7 +108,7 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
             <!-- Ligne récapitulatif -->
             <tr class="bul-total-row">
                 <td colspan="2" style="text-align:right; font-weight:bold;">Moyenne générale :</td>
-                <td colspan="2" class="bul-tc" style="font-size:12pt; font-weight:bold;">{{ mg.moyenne }}&nbsp;/&nbsp;{{ bareme|default:20 }}</td>
+                <td class="bul-tc" style="font-size:12pt; font-weight:bold;">{{ mg.moyenne }}&nbsp;/&nbsp;{{ bareme|default:20 }}</td>
                 <td class="bul-tc bul-muted">
                     {{ mg.rang }}{% if mg.rang == 1 %}er{% else %}e{% endif %}&nbsp;/&nbsp;{{ nb_eleves }}
                 </td>

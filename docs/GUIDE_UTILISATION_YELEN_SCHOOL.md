@@ -2,7 +2,7 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 5.57.0
 version_guide: 5.47
-date_mise_a_jour: 05/11/2026 (5.60.0 : moyennes du primaire sur 10 et calcul des moyennes fiabilisé)
+date_mise_a_jour: 05/11/2026 (5.60.1 : bulletin au barème de la classe, sans colonne « Note pond. »)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -1418,7 +1418,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 - **En-tête** : badge logo + nom de l'établissement + **N° Agrément** + devise + adresse + téléphone
 - **Titre** : « BULLETIN DE NOTES — TRIMESTRE n — année scolaire »
 - **Identité de l'élève** : matricule, sexe, effectif, nom, classe, date de naissance, cycle, redoublant
-- **Notes du trimestre** : matières / coef / **moy. sur le barème de la classe** (10 au préscolaire et au primaire, 20 au post-primaire et au secondaire) / **note pond.** (= moy. × coef) / appréciation / professeur / signature ; ligne récapitulative : moyenne générale, rang, total des points / maximum (coef × barème)
+- **Notes du trimestre (5.60.1)** — six colonnes : matières / coef / **moy. sur le barème de la classe** (« Moy. /10 » au préscolaire et au primaire, « Moy. /20 » au post-primaire et au secondaire) / appréciation / professeur / signature ; la colonne « Note pond. » est supprimée. Ligne récapitulative : moyenne générale au même barème (« 7,86 / 10 »), rang, total des points / maximum (coef × barème)
 - **Compétences APC** (préscolaire, primaire) · **Assiduité du trimestre** (absences justifiées / non justifiées en heures, retards) · **Conduite** (si sanctions) · **Statistiques de la classe** + rang · **Appréciation du conseil de classe** · **Signature**
 - **Code QR** (zone des signatures, à gauche du signataire, sans légende) : encode le matricule, la classe, le trimestre + année scolaire et la moyenne du trimestre (`MAT:` / `CLA:` / `TRI:` / `MOY: 14,50/20`), lisible avec l'appareil photo d'un téléphone — permet de contrôler qu'un bulletin papier n'a pas été modifié.
 - **Assiduité, mentions et appréciation du conseil** : valeurs saisies dans `Bulletins → [classe] → Saisir` (fiche élève × trimestre). Sans fiche, les compteurs s'impriment à 0 ; les mentions cochées s'impriment sur la ligne « Mentions / distinctions », en dernière position de la carte du conseil (après l'appréciation) ; sans appréciation saisie, le commentaire généré automatiquement à partir des résultats est imprimé à la place.
@@ -3558,6 +3558,8 @@ Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMP
   « Planifiée » ; seules les évaluations **annulées** sont écartées.
 - La page Résultats et les bulletins (trimestriel, annuel, palmarès) affichent le barème réel de la classe
   (« /10 » au primaire) ; le commentaire de bulletin généré automatiquement suit le même barème.
+- **Bulletin trimestriel (5.60.1)** : « Moy. /10 » et moyenne générale « 7,86 / 10 » au primaire, comme à l'écran
+  d'aperçu ; la colonne « Note pond. » a disparu du tableau des notes (elle reste calculée pour le total des points).
 
 ## 10. EXAMENS
 
@@ -3822,7 +3824,7 @@ L'établissement ne dispose pas d'imprimante couleur. Tous les documents PDF gé
 | Convocation | Bannière encart → fond `#111` blanc ; note obligatoire → fond `#f0f0f0` bordure gauche `4pt solid #111` ; carte destinataire → bordure top `3pt solid #111` fond `#f5f5f5` |
 | Liste de classe | En-tête → `#111`/blanc ; lignes paires → `#f5f5f5` ; bordures tableau visibles `1px solid #ccc` |
 | Liste du personnel | Même règles que liste de classe ; ligne total récap → `#111`/blanc |
-| Bulletin trimestriel PDF | En-tête section → fond `#ebebeb` bordure gauche `3pt solid #111` ; tableau notes → en-tête `#111`/blanc, colonnes à largeur fixe Matières 25 % · Coef 7 % · Moy. /20 10 % · Note pond. 9 % · Appréciation 14 % · Professeur 24 % · Signature 11 % (cellules vides, sans ligne), mode dense automatique au-delà de 12 matières ; une seule page A4 par bulletin (marges 8/12/10/12 mm, identité sur deux lignes, Assiduité et Statistiques côte à côte ; primaire APC garanti jusqu'à ≈ 10 compétences) ; impression par lot → un seul PDF, chaque bulletin paginé à part (« Page 1 / 1 ») ; pied de page « Établissement — Généré le JJ/MM/AAAA HH:MM — Document officiel — Toute falsification expose à des poursuites » (idem bulletin annuel, 6 pt en A5) ; ligne totale → `border-top/bottom: 2pt solid #111` fond `#ebebeb` ; stat-box → `border-left: 3pt solid #111` ; badge rang → bordure `1pt solid #555` ; titre bannière → `border: 1.5pt solid #111` |
+| Bulletin trimestriel PDF | En-tête section → fond `#ebebeb` bordure gauche `3pt solid #111` ; tableau notes → en-tête `#111`/blanc, colonnes à largeur fixe Matières 27 % · Coef 7 % · Moy. /barème 12 % · Appréciation 19 % · Professeur 24 % · Signature 11 % (cellules vides, sans ligne), mode dense automatique au-delà de 12 matières ; une seule page A4 par bulletin (marges 8/12/10/12 mm, identité sur deux lignes, Assiduité et Statistiques côte à côte ; primaire APC garanti jusqu'à ≈ 10 compétences) ; impression par lot → un seul PDF, chaque bulletin paginé à part (« Page 1 / 1 ») ; pied de page « Établissement — Généré le JJ/MM/AAAA HH:MM — Document officiel — Toute falsification expose à des poursuites » (idem bulletin annuel, 6 pt en A5) ; ligne totale → `border-top/bottom: 2pt solid #111` fond `#ebebeb` ; stat-box → `border-left: 3pt solid #111` ; badge rang → bordure `1pt solid #555` ; titre bannière → `border: 1.5pt solid #111` |
 | Bulletin annuel PDF | A5 portrait, une page par élève (lot → un seul PDF, chaque bulletin paginé à part « Page 1 / 1 ») ; mêmes règles que bulletin trimestriel (en-tête : nom, **N° Agrément**, devise, adresse, téléphone ; code QR sans légende dans la zone des signatures : `MAT:` / `CLA:` / `ANN: 2025-2026` / `MOY: <moyenne annuelle>/20`) ; **moyenne annuelle = moyenne des moyennes trimestrielles imprimées** (arrondi au centime supérieur à partir de 0,005, comme au trimestre : avec un seul trimestre saisi, l'annuel lui est identique) ; même règle pour le rang, les statistiques de classe et le palmarès annuel ; décision ADMIS → fond `#f5f5f5` bordure `2pt solid #111` ; décision NON ADMIS → fond `#ddd` bordure `2pt solid #111` italique |
 | Bulletin batch (impression groupée) | Mêmes règles bulletin trimestriel ; bloc recap → fond `#f5f5f5` bordure `1.5pt solid #111` ; stat-values → gras sans couleur |
 | Bulletin duplicata | Filigrane `rgba(0,0,0,0.08)` ; tampon → fond `#ddd` bordure `#111` ; titre → fond `#555` blanc ; stat-box → `border-left: 3pt solid #111` |

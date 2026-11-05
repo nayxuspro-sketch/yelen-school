@@ -155,3 +155,27 @@ def test_la_page_des_resultats_affiche_le_bareme_de_la_classe(primaire):
     html = page.content.decode()
     assert '8,00' in html and '/10' in html and '/20' not in html
     assert 'À calculer' in html, 'les élèves sans note restent signalés'
+
+def test_le_bulletin_primaire_s_affiche_sur_10_sans_note_ponderee(primaire, mocker):
+    """Bulletin du primaire : « Moy. /10 », moyenne générale « 7,86 / 10 », et plus de colonne « Note pond. »."""
+    _noter(primaire, _evaluation(primaire, primaire['maths'], '10'),
+           {'OUEDRAOGO': '8', 'SAWADOGO': '6', 'TRAORE': '4'})
+    _noter(primaire, _evaluation(primaire, primaire['francais'], '10', titre='Dictée'),
+           {'OUEDRAOGO': '7,86'.replace(',', '.'), 'SAWADOGO': '8', 'TRAORE': '6'})
+    _bouton(primaire)
+    weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+    weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+    reponse = primaire['client'].get(reverse('pedagogie:bulletin_pdf', kwargs={
+        'inscription_id': primaire['eleves']['OUEDRAOGO'].pk, 'trimestre_id': primaire['trimestre'].pk}))
+    assert reponse.status_code == 200
+    html = weasy.call_args.kwargs['string']
+    assert 'Moy. /10' in html and 'Moy. /20' not in html
+    assert '7,93&nbsp;/&nbsp;10' in html, 'moyenne générale (8,00 + 7,86) / 2 sur 10'
+    assert 'Note pond.' not in html and 'Note pondérée' not in html, 'colonne supprimée'
+    assert 'Total : 15,86&nbsp;/&nbsp;20 pts' in html, 'points obtenus / maximum (2 coef. × 10)'
+
+    apercu = primaire['client'].get(reverse('pedagogie:bulletin_apercu', kwargs={
+        'inscription_id': primaire['eleves']['OUEDRAOGO'].pk, 'trimestre_id': primaire['trimestre'].pk}))
+    ecran = apercu.content.decode()
+    assert 'Moy. / 10' in ecran and 'Moy. / 20' not in ecran and 'Note pond.' not in ecran
+    assert '7,93 / 10' in ecran
