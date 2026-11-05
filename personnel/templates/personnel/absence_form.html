@@ -17,8 +17,28 @@
   </div>
 </div>
 
+<form method="get" class="card animate-fade-up delay-1 mb-4" style="max-width: 820px;">
+  {% if membre %}<input type="hidden" name="membre" value="{{ membre.pk }}">{% endif %}
+  <div class="card-body d-flex gap-3 align-end flex-wrap">
+    <div class="form-group" style="min-width:260px; margin-bottom:0;">
+      <label class="input-label" for="id_filtre_cycle">Cycle</label>
+      <select id="id_filtre_cycle" name="cycle" class="input select">
+        <option value="">Tous les cycles</option>
+        {% for c in cycles %}
+        <option value="{{ c.pk }}" {% if cycle and cycle.pk == c.pk %}selected{% endif %}>{{ c.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-secondary">Afficher les agents du cycle</button>
+    <span class="text-muted" style="font-size:.8rem;">
+      Primaire, post-primaire et secondaire : la liste des agents suit le cycle choisi.
+    </span>
+  </div>
+</form>
+
 <form method="post" class="card animate-fade-up delay-1" style="max-width: 820px;">
   {% csrf_token %}
+  {% if cycle %}<input type="hidden" name="cycle" value="{{ cycle.pk }}">{% endif %}
   {% if form.non_field_errors %}<div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>{% endif %}
   <div class="card-header"><span class="card-title">Détails de l'absence</span></div>
   <div class="form-grid-2">
@@ -30,6 +50,21 @@
           <span class="input-label" style="margin-bottom:0;">{{ field.label }}</span>
         </label>
         {% if field.help_text %}<p class="text-muted text-xs">{{ field.help_text }}</p>{% endif %}
+      </div>
+      {% elif field.name == 'observation' %}
+      <div class="form-group" style="grid-column:1/-1;">
+        <label for="{{ field.id_for_label }}" class="input-label">Observation</label>
+        <div class="d-flex gap-2 align-center">
+          {{ field }}
+          <a class="btn-secondary btn-sm text-nowrap"
+             href="{% url 'personnel:observation_absence_create' %}?membre={% if membre %}{{ membre.pk }}{% endif %}{% if cycle %}&cycle={{ cycle.pk }}{% endif %}"
+             title="Ajouter une observation manquante (raison de santé, congé…)">＋ Ajouter</a>
+        </div>
+        <p class="text-muted" style="font-size:.78rem;">
+          Choisissez l'observation (raison de santé, congé, permission…). Le bouton <strong>＋ Ajouter</strong>
+          complète la liste pour toute l'école ; elle reste modifiable ensuite.
+        </p>
+        {% if field.errors %}<p class="input-error">{{ field.errors.0 }}</p>{% endif %}
       </div>
       {% else %}
       <div class="form-group">

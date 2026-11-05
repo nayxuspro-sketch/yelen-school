@@ -838,6 +838,41 @@ class CongePersonnel(BaseModel):
 # ABSENCES DU PERSONNEL
 # ═══════════════════════════════════════════════════════════════════
 
+class ObservationAbsence(BaseModel):
+    """Observation proposée dans le champ déroulant des absences du personnel (5.57.0).
+
+    Deux niveaux : la ligne **sans établissement** est commune à toutes les écoles (raison de santé, congé…,
+    posées à l'installation) ; une ligne rattachée à un établissement n'apparaît que chez lui. Le bouton
+    « + » du formulaire d'absence en ajoute une ici, sans toucher au code.
+    """
+
+    etablissement = models.ForeignKey('etablissements.Etablissement', on_delete=models.CASCADE, null=True,
+                                      blank=True, related_name='observations_absence',
+                                      verbose_name=_("Établissement"),
+                                      help_text=_("Vide : observation commune à toutes les écoles."))
+    libelle = models.CharField(max_length=80, verbose_name=_("Observation"))
+    actif = models.BooleanField(default=True, verbose_name=_("Active"))
+
+    class Meta:
+        verbose_name = _("Observation d'absence")
+        verbose_name_plural = _("Observations d'absence")
+        ordering = ['libelle']
+        constraints = [
+            models.UniqueConstraint(fields=['etablissement', 'libelle'], name='observation_absence_unique'),
+        ]
+
+    def __str__(self):
+        return self.libelle
+
+    @classmethod
+    def disponibles(cls, etablissement=None):
+        """Observations actives applicables à l'établissement : communes puis les siennes."""
+        condition = models.Q(etablissement__isnull=True)
+        if etablissement is not None:
+            condition |= models.Q(etablissement=etablissement)
+        return cls.objects.filter(condition, actif=True).order_by('libelle')
+
+
 class AbsencePersonnel(BaseModel):
     """Absence d'un agent (jours calendaires) : justifiée ou non ; une absence non justifiée marquée « retenue » est
     proposée en retenue sur le brouillon de paie du mois (1/30e du salaire de base par jour)."""

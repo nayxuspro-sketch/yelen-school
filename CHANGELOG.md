@@ -3,6 +3,23 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.57.0 — 2026-11-04
+
+- **Saisie des absences du personnel : cycle et observations en listes déroulantes.** Le formulaire *Nouvelle
+  absence* (primaire comme post-primaire / secondaire) commence par un champ **Cycle** lié à la table `Cycle` de
+  l'établissement ; le choix recharge la page et **restreint la liste des agents** à ceux qui enseignent dans ce
+  cycle. « Tous les cycles » reste possible.
+- **Champ Observation en liste déroulante**, alimenté par les observations de l'école et les observations communes
+  (`Raison de santé`, `Congé annuel`, `Congé de maternité`, `Permission exceptionnelle`, `Formation / mission`,
+  `Absence non justifiée`, `Autre`, posées à l'installation). Une absence déjà enregistrée avec une observation
+  hors liste reste éditable.
+- **Bouton « ＋ Ajouter »** à côté du champ Observation : ouvre une page courte qui crée l'observation manquante,
+  puis revient au formulaire d'absence avec la valeur déjà sélectionnée. Nouvelle table `ObservationAbsence`
+  (observation commune ou propre à l'établissement, unique par école) — migration `personnel/0017` avec amorçage.
+- Aucune donnée existante modifiée : `AbsencePersonnel` garde ses colonnes, le texte de l'observation est
+  simplement choisi dans la liste.
+- Guide d'utilisation §9.33.
+
 ## 5.56.0 — 2026-11-04
 
 - **Le titulaire de la classe signe le bulletin comme la direction, et son suppléant aussi.** Dans une même

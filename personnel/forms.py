@@ -1,6 +1,7 @@
 from django import forms
-from .models import MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel, AbsencePersonnel
-from parametres.models import TitreFonction, TitreHonorifiquePersonnel
+from .models import (MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel, AbsencePersonnel,
+                    ObservationAbsence)
+from parametres.models import Cycle, TitreFonction, TitreHonorifiquePersonnel
 from core.validators import validate_image_upload
 
 # Import pour le chiffrement
@@ -192,7 +193,16 @@ class CongePersonnelForm(forms.ModelForm):
 
 
 class AbsencePersonnelForm(forms.ModelForm):
-    """Saisie d'une absence d'un agent."""
+    """Saisie d'une absence d'un agent : cycle (primaire, post-primaire / secondaire) puis agent, période,
+    motif, justification et observation choisie dans une liste déroulante (5.57.0)."""
+
+    cycle = forms.ModelChoiceField(
+        label="Cycle",
+        queryset=Cycle.objects.none(),
+        required=False,
+        empty_label="Tous les cycles",
+        help_text="Restreint la liste des agents à ceux du cycle choisi (primaire, post-primaire / secondaire).",
+    )
 
     class Meta:
         model = AbsencePersonnel
@@ -204,12 +214,36 @@ class AbsencePersonnelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         etablissement = kwargs.pop('etablissement', None)
+        cycle = kwargs.pop('cycle', None)
         super().__init__(*args, **kwargs)
+
+        membres = MembrePersonnel.objects.filter(is_active=True)
         if etablissement:
-            self.fields['personnel'].queryset = MembrePersonnel.objects.filter(
-                etablissement=etablissement, is_active=True
-            ).order_by('nom', 'prenom')
+            membres = membres.filter(etablissement=etablissement)
+            self.fields['cycle'].queryset = Cycle.objects.filter(etablissement=etablissement).order_by('ordre', 'nom')
+        if cycle is not None:
+            membres = membres.filter(cycles=cycle)
+            self.fields['cycle'].initial = cycle
+        self.fields['personnel'].queryset = membres.distinct().order_by('nom', 'prenom')
+        if cycle is None and self.data and self.data.get('cycle'):
+            self.fields['personnel'].queryset = membres.filter(cycles_id=self.data.get('cycle')).distinct() \
+                .order_by('nom', 'prenom')
+
+        # Observation : liste déroulante alimentée par la table des observations (communes + celles de l'école).
+        self.fields['observation'].required = False
+        self.fields['observation'].widget = forms.Select()
+        self._alimenter_observations(etablissement)
+
         _apply_yelen_classes(self.fields)
+
+    def _alimenter_observations(self, etablissement=None):
+        """Choix du champ Observation ; une valeur déjà enregistrée hors liste y est ajoutée pour rester éditable."""
+        choix = [('', '— Aucune —')]
+        choix += [(o.libelle, o.libelle) for o in ObservationAbsence.disponibles(etablissement)]
+        valeur = (self.data.get('observation') if self.data else '') or self.initial.get('observation') or ''
+        if valeur and valeur not in [v for v, _ in choix]:
+            choix.append((valeur, valeur))
+        self.fields['observation'].widget.choices = choix
 
     def clean(self):
         cleaned = super().clean()
@@ -217,3 +251,24 @@ class AbsencePersonnelForm(forms.ModelForm):
         if debut and fin and fin < debut:
             self.add_error('date_fin', "La date de fin doit être postérieure ou égale à la date de début.")
         return cleaned
+
+
+class ObservationAbsenceForm(forms.ModelForm):
+    """Ajout d'une observation manquante dans la liste déroulante du formulaire d'absence (5.57.0)."""
+
+    class Meta:
+        model = ObservationAbsence
+        fields = ['libelle']
+        widgets = {'libelle': forms.TextInput(attrs={'placeholder': "Ex. Raison de santé, Congé, Permission…",
+                                                     'maxlength': 80})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['libelle'].required = True
+        _apply_yelen_classes(self.fields)
+
+    def clean_libelle(self):
+        libelle = (self.cleaned_data.get('libelle') or '').strip()
+        if not libelle:
+            raise forms.ValidationError("Indiquez l'observation à ajouter.")
+        return libelle

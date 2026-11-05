@@ -1,0 +1,50 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ titre }} — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-up">
+  <div>
+    <p class="page-subtitle">
+      <a href="{% url 'personnel:absence_list' %}" class="text-secondary">Absences du personnel</a>
+      <span class="text-muted"> / </span><span>Observations</span>
+    </p>
+    <h1 class="page-title">{{ titre }}</h1>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-1" style="max-width: 620px;">
+  <form method="post">
+    {% csrf_token %}
+    {% if membre %}<input type="hidden" name="membre" value="{{ membre }}">{% endif %}
+    <div class="card-body">
+      {% if form.non_field_errors %}<div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="form-group">
+        <label for="{{ form.libelle.id_for_label }}" class="input-label">
+          Observation <span class="required-star">*</span>
+        </label>
+        {{ form.libelle }}
+        {% if form.libelle.errors %}<p class="input-error">{{ form.libelle.errors.0 }}</p>{% endif %}
+        <p class="text-muted" style="font-size:.78rem;">
+          Elle apparaîtra ensuite dans la liste déroulante <strong>Observation</strong> du formulaire d'absence.
+        </p>
+      </div>
+
+      {% if observations %}
+      <div class="form-group" style="margin-top:var(--space-4);">
+        <span class="input-label">Observations déjà disponibles</span>
+        <div class="d-flex flex-wrap gap-2" style="margin-top:var(--space-2);">
+          {% for observation in observations %}
+          <span class="badge badge-info">{{ observation.libelle }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    <div class="d-flex justify-end gap-3" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
+      <a href="{% url 'personnel:absence_create' %}{% if membre %}?membre={{ membre }}{% endif %}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary">Ajouter à la liste</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -5,17 +5,20 @@ from datetime import date as date_module
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+from urllib.parse import quote
+
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from core.utils import get_etablissement_context
 from licences.decorators import requires_licence_feature
-from parametres.models import AnneeScolaire
+from parametres.models import AnneeScolaire, Cycle
 
-from ..forms import AbsencePersonnelForm, CongePersonnelForm, SalairePersonnelForm
-from ..models import AbsencePersonnel, CongePersonnel, MembrePersonnel, SalairePersonnel
+from ..forms import (AbsencePersonnelForm, CongePersonnelForm, ObservationAbsenceForm, SalairePersonnelForm)
+from ..models import AbsencePersonnel, CongePersonnel, MembrePersonnel, ObservationAbsence, SalairePersonnel
 
 logger = logging.getLogger(__name__)
 
@@ -568,11 +571,16 @@ def absence_list(request):
 
 @login_required
 def absence_create(request, pk=None):
-    """Enregistrer une absence (depuis la liste ou la fiche de l'agent)."""
+    """Enregistrer une absence (depuis la liste ou la fiche de l'agent).
+
+    Le **cycle** restreint la liste des agents (primaire, post-prinaire / secondaire) ; l'**observation** se
+    choisit dans une liste déroulante que le bouton « + » du formulaire permet de compléter (5.57.0).
+    """
     etab = getattr(request.user, 'etablissement', None)
     membre = get_object_or_404(MembrePersonnel, pk=pk, etablissement=etab) if pk else None
+    cycle = _cycle_demande(request, etab)
     if request.method == 'POST':
-        form = AbsencePersonnelForm(request.POST, etablissement=etab)
+        form = AbsencePersonnelForm(request.POST, etablissement=etab, cycle=cycle)
         if form.is_valid():
             absence = form.save(commit=False)
             absence.created_by = request.user
@@ -581,9 +589,48 @@ def absence_create(request, pk=None):
                                       f"({absence.nombre_jours} jour(s){', retenue proposée sur la paie' if absence.a_retenir else ''}).")
             return redirect('personnel:detail', pk=membre.pk) if membre else redirect('personnel:absence_list')
     else:
-        form = AbsencePersonnelForm(initial={'personnel': membre, 'date_debut': date_module.today(), 'date_fin': date_module.today()},
-                                    etablissement=etab)
-    return render(request, 'personnel/absence_form.html', {'form': form, 'membre': membre, 'titre': "Nouvelle absence"})
+        observation = request.GET.get('observation') or ''
+        initial = {'personnel': membre, 'date_debut': date_module.today(), 'date_fin': date_module.today()}
+        if observation:
+            initial['observation'] = observation
+        form = AbsencePersonnelForm(initial=initial, etablissement=etab, cycle=cycle)
+    return render(request, 'personnel/absence_form.html', {
+        'form': form, 'membre': membre, 'titre': "Nouvelle absence", 'cycle': cycle,
+        'cycles': Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom') if etab else Cycle.objects.none(),
+    })
+
+
+def _cycle_demande(request, etab):
+    """Cycle choisi dans le formulaire d'absence (GET ou POST), validé contre les cycles de l'établissement."""
+    valeur = request.POST.get('cycle') or request.GET.get('cycle') or ''
+    if not valeur or etab is None:
+        return None
+    return Cycle.objects.filter(pk=valeur, etablissement=etab).first()
+
+
+@login_required
+@requires_licence_feature('gestion_personnel')
+def observation_absence_create(request):
+    """Ajoute une observation manquante au champ déroulant du formulaire d'absence, puis y revient (5.57.0)."""
+    etab = getattr(request.user, 'etablissement', None)
+    if request.method == 'POST':
+        form = ObservationAbsenceForm(request.POST)
+        if form.is_valid():
+            observation = form.save(commit=False)
+            observation.etablissement = etab
+            observation.save()
+            messages.success(request, f"Observation « {observation.libelle} » ajoutée à la liste.")
+            suivant = reverse('personnel:absence_create')
+            if request.POST.get('membre'):
+                suivant = reverse('personnel:absence_create_pour', args=[request.POST['membre']])
+            return redirect(f"{suivant}?observation={quote(observation.libelle)}")
+    else:
+        form = ObservationAbsenceForm()
+    return render(request, 'personnel/observation_absence_form.html', {
+        'form': form, 'titre': "Nouvelle observation d'absence",
+        'membre': request.GET.get('membre') or '', 'cycle': request.GET.get('cycle') or '',
+        'observations': ObservationAbsence.disponibles(etab),
+    })
 
 
 @login_required

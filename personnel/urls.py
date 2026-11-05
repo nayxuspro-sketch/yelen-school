@@ -49,6 +49,7 @@ urlpatterns = [
     path('absences/nouvelle/', views.absence_create, name='absence_create'),
     path('<uuid:pk>/absence/nouvelle/', views.absence_create, name='absence_create_pour'),
     path('absences/<uuid:pk>/supprimer/', views.absence_delete, name='absence_delete'),
+    path('absences/observations/nouvelle/', views.observation_absence_create, name='observation_absence_create'),
     path('conges/', views.conge_list, name='conge_list'),
     path('conges/nouveau/', views.conge_create, name='conge_create'),
     path('<uuid:pk>/conge/nouveau/', views.conge_create, name='conge_create_pour'),
