@@ -13,7 +13,10 @@ class TestCalculateurMoyenne:
     def test_calculer_resultat_matiere_base(self):
         """Vérifie le calcul simple d'une moyenne de matière."""
         inscription = baker.make('inscriptions.Inscription')
-        enseignement = baker.make('pedagogie.Enseignement')
+        # Classe du secondaire : barème 20 (au primaire, les moyennes sont sur 10 — voir
+        # pedagogie/tests/test_moyennes_primaire.py)
+        classe = baker.make('parametres.Classe', cycle=baker.make('parametres.Cycle', code='SEC'))
+        enseignement = baker.make('pedagogie.Enseignement', classe=classe)
         trimestre = baker.make('pedagogie.Trimestre')
         
         type_eval = baker.make('pedagogie.TypeEvaluation', coefficient=Decimal('1.0'))

@@ -250,6 +250,7 @@ def _build_bulletin_context(request, inscription, trimestre):
         'signataire_membre': signataire_membre,
         'date_lieu': date_lieu,
         'competences_data': competences_data,
+        'bareme': inscription.classe.bareme_moyenne,
     }
     # P2 — filigrane licence
     ctx_base['licence_info'] = _pdf_licence_info(request, etab)
@@ -506,7 +507,9 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
     moy_min_classe = min(all_avgs) if all_avgs else None
     moy_avg_classe = CalculateurMoyenne.arrondir(sum(all_avgs) / len(all_avgs)) if all_avgs else None
 
-    nb_admis = sum(1 for m in all_avgs if m >= Decimal('10'))
+    bareme = inscription.classe.bareme_moyenne
+    seuil = bareme / 2                       # 5/10 au primaire, 10/20 ailleurs
+    nb_admis = sum(1 for m in all_avgs if m >= seuil)
     taux_reussite = (nb_admis / nb_eleves * 100) if nb_eleves > 0 else 0
 
     rang_annuel = None
@@ -517,7 +520,7 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
         )
 
     mention = _get_mention(moyenne_annuelle) if moyenne_annuelle else None
-    admis = moyenne_annuelle >= Decimal('10') if moyenne_annuelle else False
+    admis = moyenne_annuelle >= seuil if moyenne_annuelle else False
 
     type_doc_bulletin = (
         TypeDocument.objects.filter(code__icontains='bulletin', cycle=cycle, actif=True).first()
@@ -540,7 +543,7 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
         'moyenne_annuelle': {
             'moyenne_annuelle': moyenne_annuelle,
             'total_points': total_points_annuel,
-            'total_points_max': total_coefficients_annuel * 20,
+            'total_points_max': total_coefficients_annuel * bareme,
             'total_coefficients': total_coefficients_annuel,
             'rang': rang_annuel,
             'mention': mention,
@@ -558,6 +561,8 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
         'signataire': signataire,
         'signataire_membre': signataire_membre,
         'date_lieu': date_lieu,
+        'bareme': bareme,
+        'seuil': seuil,
     }
     ctx_annuel['licence_info'] = _pdf_licence_info(request, etab)
     return ctx_annuel
@@ -696,11 +701,11 @@ def bulletin_annuel_classe_batch_pdf(request, class_id):
 
 def _compute_palmares_annuel(classe, annee_scolaire):
     """Calcule le palmarès annuel d'une classe : moyenne, rang et décision du conseil."""
-    from decimal import Decimal
     from pedagogie.utils import CalculateurMoyenne
 
     trimestres = list(Trimestre.objects.filter(annee_scolaire=annee_scolaire).order_by('numero'))
     avgs_by_ins = _moyennes_annuelles_classe(classe, annee_scolaire, trimestres)
+    seuil = classe.seuil_moyenne
 
     # Classement avec ex-aequo
     sorted_avgs = sorted(avgs_by_ins.items(), key=lambda x: x[1], reverse=True)
@@ -726,7 +731,7 @@ def _compute_palmares_annuel(classe, annee_scolaire):
         rang = rang_by_ins.get(ins.pk)
         if moyenne is not None:
             moyenne_q = moyenne
-            admis = moyenne_q >= Decimal('10')
+            admis = moyenne_q >= seuil
             decision = "Admis(e) en classe supérieure" if admis else "Redouble la classe"
         else:
             moyenne_q = None
@@ -745,7 +750,7 @@ def _compute_palmares_annuel(classe, annee_scolaire):
 
     nb_eleves = len(inscriptions)
     all_avgs = list(avgs_by_ins.values())
-    nb_admis = sum(1 for m in all_avgs if m >= Decimal('10'))
+    nb_admis = sum(1 for m in all_avgs if m >= seuil)
     taux_reussite = round(nb_admis / nb_eleves * 100, 1) if nb_eleves > 0 else 0
     moy_max = max(all_avgs) if all_avgs else None
     moy_min = min(all_avgs) if all_avgs else None
@@ -760,6 +765,7 @@ def _compute_palmares_annuel(classe, annee_scolaire):
         'moy_max': moy_max,
         'moy_min': moy_min,
         'moy_avg': moy_avg,
+        'bareme': classe.bareme_moyenne,
     }
 
 

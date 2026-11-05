@@ -487,9 +487,21 @@ class MoyenneGenerale(BaseModel):
     est_valide = models.BooleanField(default=False, verbose_name=_("Moyenne validée"))
 
     @property
+    def bareme(self):
+        """Barème de la moyenne : 10 au préscolaire et au primaire, 20 au post-primaire et au secondaire."""
+        inscription = self.inscription if self.inscription_id else None
+        classe = inscription.classe if inscription is not None else None
+        return classe.bareme_moyenne if classe is not None else 20
+
+    @property
+    def moyenne_suffisante(self):
+        """Moyenne au moins égale à la moitié du barème (5/10 au primaire, 10/20 ailleurs)."""
+        return self.moyenne is not None and self.moyenne >= self.bareme / 2
+
+    @property
     def total_points_max(self):
-        """Total de points maximum possible = total_coefficients × 20."""
-        return round(self.total_coefficients * 20, 2)
+        """Total de points maximum possible = total_coefficients × barème de la classe."""
+        return round(self.total_coefficients * self.bareme, 2)
 
     class Meta:
         verbose_name = _("Moyenne générale")

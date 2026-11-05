@@ -209,12 +209,20 @@ def evaluation_create(request):
                 messages.success(request, f"Évaluation '{evaluation.titre}' planifiée.")
                 return redirect('pedagogie:evaluation_list')
     else:
-        form = _formulaire_evaluation(request)
+        # Barème proposé : 10 au préscolaire et au primaire (la note saisie est la moyenne de la discipline)
+        form = _formulaire_evaluation(request, initial={'bareme': _bareme_propose(request)})
 
     return render(request, 'pedagogie/evaluation_form.html', {
         'form': form,
         'title': "Planifier une évaluation"
     })
+
+
+def _bareme_propose(request):
+    """Barème initial d'une nouvelle évaluation : celui de la classe choisie, 10 pour le primaire."""
+    classe = (Classe.objects.filter(pk=request.GET.get('classe')).select_related('cycle').first()
+              if request.GET.get('classe') else None)
+    return classe.bareme_moyenne if classe else 20
 
 
 @login_required

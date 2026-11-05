@@ -2,7 +2,7 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 5.57.0
 version_guide: 5.47
-date_mise_a_jour: 05/11/2026 (5.59.0 : impression des absences par période, toutes les matières)
+date_mise_a_jour: 05/11/2026 (5.60.0 : moyennes du primaire sur 10 et calcul des moyennes fiabilisé)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -119,6 +119,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [9.35 Fiche individuelle de l'élève (PDF)](#935-fiche-individuelle-de-lélève-pdf)
   - [9.36 Attestation de travail (personnel)](#936-attestation-de-travail-personnel)
   - [9.37 Export comptable SYSCOHADA (5.40.0)](#937-export-comptable-syscohada-5400)
+  - [9.38 Moyennes du primaire sur 10 et bouton « Calculer les moyennes » (5.60.0)](#938-moyennes-du-primaire-sur-10-et-bouton-calculer-les-moyennes-5600)
 - [10. EXAMENS](#10-examens)
   - [10.1 Créer une Session d'Examen](#101-créer-une-session-dexamen)
   - [10.2 Configurer les Centres et Salles](#102-configurer-les-centres-et-salles)
@@ -1417,7 +1418,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 - **En-tête** : badge logo + nom de l'établissement + **N° Agrément** + devise + adresse + téléphone
 - **Titre** : « BULLETIN DE NOTES — TRIMESTRE n — année scolaire »
 - **Identité de l'élève** : matricule, sexe, effectif, nom, classe, date de naissance, cycle, redoublant
-- **Notes du trimestre** : matières / coef / moy. /20 / **note pond.** (= moy. × coef) / appréciation / professeur / signature ; ligne récapitulative : moyenne générale, rang, total des points / maximum (coef × 20)
+- **Notes du trimestre** : matières / coef / **moy. sur le barème de la classe** (10 au préscolaire et au primaire, 20 au post-primaire et au secondaire) / **note pond.** (= moy. × coef) / appréciation / professeur / signature ; ligne récapitulative : moyenne générale, rang, total des points / maximum (coef × barème)
 - **Compétences APC** (préscolaire, primaire) · **Assiduité du trimestre** (absences justifiées / non justifiées en heures, retards) · **Conduite** (si sanctions) · **Statistiques de la classe** + rang · **Appréciation du conseil de classe** · **Signature**
 - **Code QR** (zone des signatures, à gauche du signataire, sans légende) : encode le matricule, la classe, le trimestre + année scolaire et la moyenne du trimestre (`MAT:` / `CLA:` / `TRI:` / `MOY: 14,50/20`), lisible avec l'appareil photo d'un téléphone — permet de contrôler qu'un bulletin papier n'a pas été modifié.
 - **Assiduité, mentions et appréciation du conseil** : valeurs saisies dans `Bulletins → [classe] → Saisir` (fiche élève × trimestre). Sans fiche, les compteurs s'impriment à 0 ; les mentions cochées s'impriment sur la ligne « Mentions / distinctions », en dernière position de la carte du conseil (après l'appréciation) ; sans appréciation saisie, le commentaire généré automatiquement à partir des résultats est imprimé à la place.
@@ -3537,6 +3538,26 @@ Le fichier Excel (une feuille) contient trois blocs prêts pour la saisie au cab
 3. **Récapitulatif par compte** : total débit, total crédit et solde de chaque compte, pour le contrôle de la balance.
 
 Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMPTES_DEPENSES`) : un cabinet qui utilise une autre codification les adapte sans toucher au reste. Les écritures sont en **francs CFA entiers**, dans l'ordre chronologique ; aucun paiement n'est modifié ni supprimé (registre de caisse immuable, §9.7).
+
+### 9.38 Moyennes du primaire sur 10 et bouton « Calculer les moyennes » (5.60.0)
+
+**Accès :** `Pédagogie → Résultats → [classe]` (`/pedagogie/resultats/classe/<classe>/`).
+
+- **Barème du cycle** : au **préscolaire et au primaire**, toutes les moyennes sont sur **10** — la note saisie pour
+  une discipline **est** la moyenne de cette discipline, sans pondération par type d'évaluation. Au post-primaire et
+  au secondaire, rien ne change : notes pondérées par type et moyennes sur 20.
+- **Note ramenée au barème** : une note saisie sur 20 dans une classe du primaire (barème de l'évaluation à 20) est
+  ramenée sur 10 (16/20 → 8/10). Le barème proposé à la création d'une évaluation part de la classe (`?classe=…`).
+- **Seuil de validation** : la moitié du barème — **5/10** au primaire, 10/20 ailleurs — pour la couleur de la
+  moyenne, le nombre de matières validées et les décisions (admis / redouble) du bulletin annuel et du palmarès.
+- **Bouton « Calculer les moyennes »** : calcule la moyenne de **chaque élève** de la classe (disciplines, moyenne
+  générale, rang) et **annonce le résultat** — « N moyenne(s) calculée(s) sur 10 pour N élève(s) ». S'il n'y a aucune
+  note sur la période, l'écran affiche un avertissement nommant la classe et la période (plus de « calcul terminé »
+  trompeur) ; vérifiez alors les enseignements de la classe (`Pédagogie → Enseignements`) et la saisie des notes.
+- **Évaluations prises en compte** : toute évaluation comportant des notes est moyennée, même si son statut est resté
+  « Planifiée » ; seules les évaluations **annulées** sont écartées.
+- La page Résultats et les bulletins (trimestriel, annuel, palmarès) affichent le barème réel de la classe
+  (« /10 » au primaire) ; le commentaire de bulletin généré automatiquement suit le même barème.
 
 ## 10. EXAMENS
 

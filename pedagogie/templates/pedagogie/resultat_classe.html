@@ -98,8 +98,8 @@
           </td>
           <td style="text-align:center;">
             {% if mg %}
-              <span class="fw-bold" style="font-size:1.2rem; color:{% if mg.moyenne >= 10 %}var(--color-primary){% else %}var(--color-danger){% endif %};">{{ mg.moyenne }}</span>
-              <span class="text-muted" style="font-size:0.75rem;">/20</span>
+              <span class="fw-bold" style="font-size:1.2rem; color:{% if mg.moyenne_suffisante %}var(--color-primary){% else %}var(--color-danger){% endif %};">{{ mg.moyenne }}</span>
+              <span class="text-muted" style="font-size:0.75rem;">/{{ mg.bareme }}</span>
             {% else %}
               <span class="text-muted" style="font-size:0.8rem; font-style:italic;">À calculer</span>
             {% endif %}

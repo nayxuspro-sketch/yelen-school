@@ -11,18 +11,25 @@ class CalculateurMoyenne:
         return Decimal(valeur).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     @classmethod
-    def calculer_resultat_matiere(cls, inscription, enseignement, trimestre):
-        """Calcule la moyenne d'un élève dans une matière pour un trimestre (None : rien à enregistrer)."""
+    def calculer_resultat_matiere(cls, inscription, enseignement, trimestre, bareme=None):
+        """Calcule la moyenne d'un élève dans une matière pour un trimestre (None : rien à enregistrer).
+
+        Au **préscolaire et au primaire** (barème 10), la note saisie est la moyenne de la discipline : moyenne
+        simple des notes ramenées au barème de la classe, sans pondération par type d'évaluation. Ailleurs, les
+        notes sont pondérées par type puis ramenées sur 20. Une note enregistrée vaut évaluation faite : seules
+        les évaluations **annulées** sont écartées.
+        """
         if trimestre.verrouille:
             return None
+        if bareme is None:
+            bareme = enseignement.classe.bareme_moyenne
 
         # 1. Récupérer toutes les évaluations de cet enseignement pour ce trimestre
         evaluations = Evaluation.objects.filter(
             enseignement=enseignement,
             trimestre=trimestre,
-            statut='TERMINEE'
-        )
-        
+        ).exclude(statut=Evaluation.StatutChoices.ANNULEE)
+
         if not evaluations.exists():
             return None
 
@@ -35,7 +42,31 @@ class CalculateurMoyenne:
         if not notes.exists():
             return None
 
-        # 3. Logique de calcul par type d'éval
+        # 3. Primaire : la note saisie est la moyenne de la discipline, sur le barème de la classe
+        def sur_bareme(note):
+            """Note ramenée au barème des moyennes de la classe."""
+            return (note.valeur / note.bareme * bareme) if note.bareme else note.valeur
+
+        notes_sur_bareme = [sur_bareme(n) for n in notes]
+
+        if bareme != 20:
+            moyenne_finale = sum(notes_sur_bareme) / len(notes_sur_bareme)
+            resultat, _ = Resultat.objects.update_or_create(
+                inscription=inscription,
+                enseignement=enseignement,
+                trimestre=trimestre,
+                defaults={
+                    'moyenne': cls.arrondir(moyenne_finale),
+                    'moyenne_sur_20': cls.arrondir(moyenne_finale * 20 / bareme),
+                    'nb_notes': len(notes),
+                    'meilleure_note': cls.arrondir(max(notes_sur_bareme)),
+                    'pire_note': cls.arrondir(min(notes_sur_bareme)),
+                    'coefficient_utilise': enseignement.get_coefficient(),
+                }
+            )
+            return resultat
+
+        # 4. Post-primaire et secondaire : logique de calcul par type d'éval
         # On groupe les notes par type d'évaluation (Interro, Devoir, etc.)
         notes_par_type = {}
         for note in notes:
@@ -68,7 +99,7 @@ class CalculateurMoyenne:
 
         moyenne_finale = somme_moyennes_types / total_ponderation
         
-        # 4. Enregistrer le résultat
+        # 5. Enregistrer le résultat
         resultat, _ = Resultat.objects.update_or_create(
             inscription=inscription,
             enseignement=enseignement,
@@ -77,8 +108,8 @@ class CalculateurMoyenne:
                 'moyenne': cls.arrondir(moyenne_finale),
                 'moyenne_sur_20': cls.arrondir(moyenne_finale),
                 'nb_notes': len(notes),
-                'meilleure_note': max([n.note_sur_20 for n in notes]),
-                'pire_note': min([n.note_sur_20 for n in notes]),
+                'meilleure_note': max(notes_sur_bareme),
+                'pire_note': min(notes_sur_bareme),
                 'coefficient_utilise': enseignement.get_coefficient()
             }
         )
@@ -101,6 +132,9 @@ class CalculateurMoyenne:
             MoyenneGenerale.objects.filter(inscription=inscription, trimestre=trimestre).delete()   # plus rien à moyenner
             return None
 
+        bareme = inscription.classe.bareme_moyenne
+        seuil = bareme / 2                       # 5/10 au primaire, 10/20 ailleurs
+
         total_points = Decimal('0')
         total_coefficients = Decimal('0')
         validees = 0
@@ -111,7 +145,7 @@ class CalculateurMoyenne:
             coeff = res.coefficient_utilise or Decimal('1.00')
             total_points += res.moyenne * coeff
             total_coefficients += coeff
-            if res.moyenne >= 10:
+            if res.moyenne >= seuil:
                 validees += 1
 
         if total_coefficients == 0:
@@ -148,7 +182,7 @@ class CalculateurMoyenne:
             trimestre=trimestre,
             defaults={
                 'moyenne': cls.arrondir(moyenne_gen),
-                'moyenne_sur_20': cls.arrondir(moyenne_gen),
+                'moyenne_sur_20': cls.arrondir(moyenne_gen * 20 / bareme),
                 'total_points': total_points_final,
                 'total_coefficients': total_coefficients,
                 'nb_matieres_validees': validees,
@@ -201,9 +235,10 @@ class CalculateurMoyenne:
         )
         if enseignements is None:
             enseignements = list(Enseignement.objects.filter(classe=classe, annee_scolaire=trimestre.annee_scolaire))
+        bareme = classe.bareme_moyenne
         for ins in inscriptions:
             for ens in enseignements:
-                if cls.calculer_resultat_matiere(ins, ens, trimestre) is None:
+                if cls.calculer_resultat_matiere(ins, ens, trimestre, bareme) is None:
                     sans_note = Resultat.objects.filter(inscription=ins, enseignement=ens, trimestre=trimestre, dispense=False)
                     # L'appréciation rédigée par l'enseignant survit au recalcul : la ligne reste, sans moyenne.
                     sans_note.exclude(appreciation='').update(moyenne=None, moyenne_sur_20=None, nb_notes=0, rang=None,

@@ -243,6 +243,9 @@ def generer_commentaire_eleve(mg, nb_eleves, moy_avg_classe, resultats_annotes, 
         return ""
 
     moyenne = float(mg.moyenne)
+    bareme = getattr(mg, 'bareme', 20) or 20          # 10 au primaire, 20 ailleurs
+    moyenne_20 = moyenne * 20 / float(bareme)          # repère des seuils, exprimés sur 20
+    unite = f"/{float(bareme):g}"
     rang    = mg.rang
     sanctions = sanctions_conduite or []
 
@@ -252,7 +255,7 @@ def generer_commentaire_eleve(mg, nb_eleves, moy_avg_classe, resultats_annotes, 
     for r in resultats_annotes:
         if r.dispense or r.moyenne is None:
             continue
-        m = float(r.moyenne)
+        m = float(r.moyenne) * 20 / float(bareme)      # seuils comparés sur 20
         nom = r.enseignement.matiere.nom
         if m < 10:
             matieres_faibles.append((nom, m))
@@ -266,18 +269,18 @@ def generer_commentaire_eleve(mg, nb_eleves, moy_avg_classe, resultats_annotes, 
     phrases = []
 
     # ── Phrase 1 : niveau global ─────────────────────────────────────
-    if moyenne >= 16:
-        p1 = f"Excellent travail ce trimestre avec une moyenne remarquable de {_fr(moyenne, 2)}/20."
-    elif moyenne >= 14:
-        p1 = f"Très bon travail ce trimestre avec une moyenne de {_fr(moyenne, 2)}/20."
-    elif moyenne >= 12:
-        p1 = f"Bon travail ce trimestre, avec une moyenne satisfaisante de {_fr(moyenne, 2)}/20."
-    elif moyenne >= 10:
-        p1 = f"Résultats passables ce trimestre avec une moyenne de {_fr(moyenne, 2)}/20 ; des progrès sont possibles."
-    elif moyenne >= 8:
-        p1 = f"Trimestre difficile avec une moyenne insuffisante de {_fr(moyenne, 2)}/20 ; un effort soutenu est nécessaire."
+    if moyenne_20 >= 16:
+        p1 = f"Excellent travail ce trimestre avec une moyenne remarquable de {_fr(moyenne, 2)}{unite}."
+    elif moyenne_20 >= 14:
+        p1 = f"Très bon travail ce trimestre avec une moyenne de {_fr(moyenne, 2)}{unite}."
+    elif moyenne_20 >= 12:
+        p1 = f"Bon travail ce trimestre, avec une moyenne satisfaisante de {_fr(moyenne, 2)}{unite}."
+    elif moyenne_20 >= 10:
+        p1 = f"Résultats passables ce trimestre avec une moyenne de {_fr(moyenne, 2)}{unite} ; des progrès sont possibles."
+    elif moyenne_20 >= 8:
+        p1 = f"Trimestre difficile avec une moyenne insuffisante de {_fr(moyenne, 2)}{unite} ; un effort soutenu est nécessaire."
     else:
-        p1 = f"Résultats très insuffisants ce trimestre avec une moyenne de {_fr(moyenne, 2)}/20 ; une remise en question sérieuse s'impose."
+        p1 = f"Résultats très insuffisants ce trimestre avec une moyenne de {_fr(moyenne, 2)}{unite} ; une remise en question sérieuse s'impose."
     phrases.append(p1)
 
     # ── Phrase 2 : position dans la classe ──────────────────────────
@@ -289,7 +292,7 @@ def generer_commentaire_eleve(mg, nb_eleves, moy_avg_classe, resultats_annotes, 
             phrases.append(f"L'élève se situe dans le bon tiers de la classe (rang {rang}/{nb_eleves}).")
         elif pct_rang <= 0.65:
             if moy_avg_classe and moyenne < float(moy_avg_classe):
-                phrases.append(f"L'élève est en dessous de la moyenne de classe de {_fr(moy_avg_classe, 2)}/20 (rang {rang}/{nb_eleves}).")
+                phrases.append(f"L'élève est en dessous de la moyenne de classe de {_fr(moy_avg_classe, 2)}{unite} (rang {rang}/{nb_eleves}).")
             else:
                 phrases.append(f"L'élève se situe dans la moyenne de la classe (rang {rang}/{nb_eleves}).")
         else:

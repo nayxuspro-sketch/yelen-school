@@ -315,7 +315,7 @@ def releve_moyenne_classe_pdf(request):
             'eleve':  mg.inscription.eleve,
             'moyenne': mg.moyenne,
             'appreciation': mg.appreciation,
-            'admis':  bool(mg.moyenne is not None and mg.moyenne >= 10),
+            'admis':  mg.moyenne_suffisante,
         })
 
     # Statistiques récapitulatives
@@ -432,8 +432,16 @@ def calculer_moyennes_classe(request, class_id):
     if trimestre.verrouille:
         messages.error(request, f"Calcul refusé : {trimestre.message_verrouillage}")
     else:
-        CalculateurMoyenne.recalculer_classe(classe, trimestre)
-        messages.success(request, f"Calcul des moyennes terminé pour la classe {classe.nom}.")
+        eleves = CalculateurMoyenne.recalculer_classe(classe, trimestre)
+        calculees = MoyenneGenerale.objects.filter(inscription__classe=classe, trimestre=trimestre,
+                                                   moyenne__isnull=False).count()
+        if calculees:
+            messages.success(request, f"{calculees} moyenne(s) calculée(s) sur {classe.bareme_moyenne} pour "
+                                      f"{eleves} élève(s) de {classe.nom} — {trimestre.nom}.")
+        else:
+            messages.warning(request, f"Aucune moyenne calculée pour {classe.nom} : aucune note n'est saisie sur "
+                                      f"{trimestre.nom} ({trimestre.annee_scolaire.libelle}). Vérifiez les "
+                                      f"enseignements de la classe (Pédagogie › Enseignements) et la saisie des notes.")
 
     from django.urls import reverse
     url = reverse('pedagogie:resultat_classe', kwargs={'class_id': class_id})

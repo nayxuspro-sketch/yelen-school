@@ -3,6 +3,24 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.60.0 — 2026-11-05
+
+- **Moyennes du primaire sur 10 : la note saisie est la moyenne de la discipline.** Au préscolaire et au primaire
+  (`Cycle.code` PRES/PRIM), `CalculateurMoyenne` ne pondère plus les notes par type d'évaluation : la moyenne de la
+  discipline est la moyenne des notes ramenées au barème de la classe (10), la moyenne générale est la moyenne
+  pondérée par coefficient des disciplines sur 10, et le seuil de validation est la moitié du barème (5/10).
+  `MoyenneGenerale.bareme`, `moyenne_suffisante` et le total de points maximum suivent ce barème ; les moyennes sur
+  20 restent enregistrées (`moyenne_sur_20`) pour les états secondaires. Le post-primaire et le secondaire sont
+  inchangés.
+- **Bouton « Calculer les moyennes » fiabilisé** : il calcule la moyenne de chaque élève et **annonce le nombre de
+  moyennes calculées** ; sans aucune note sur la période, il affiche un avertissement explicite (classe, période,
+  enseignements à vérifier) au lieu d'un « calcul terminé » trompeur. Une évaluation **notée** entre désormais dans
+  le calcul même si son statut est resté « Planifiée » ; seules les évaluations **annulées** sont écartées.
+- **Affichage au barème** : page Résultats, bulletin trimestriel, bulletin annuel, palmarès annuel et relevé de
+  moyenne de la classe affichent « /10 » au primaire (seuil 5,00/10) et « /20 » ailleurs ; le commentaire de bulletin
+  généré automatiquement suit le même barème.
+- Aucune migration : `Classe.bareme_moyenne` / `seuil_moyenne` et `MoyenneGenerale.bareme` sont des propriétés.
+
 ## 5.59.0 — 2026-11-05
 
 - **Impression des absences d'une période.** La liste des absences accepte un **intervalle de dates** (`du` / `au`)

@@ -321,7 +321,7 @@ html, body {
         <thead>
             <tr>
                 <th>Période d'évaluation</th>
-                <th>Moyenne /20</th>
+                <th>Moyenne /{{ bareme|default:20 }}</th>
             </tr>
         </thead>
         <tbody>
@@ -336,7 +336,7 @@ html, body {
             <tr class="bul-total-row">
                 <td>Moyenne annuelle</td>
                 <td style="font-size:12pt;">
-                    {{ moyenne_annuelle.moyenne_annuelle|floatformat:2 }}&nbsp;/&nbsp;20
+                    {{ moyenne_annuelle.moyenne_annuelle|floatformat:2 }}&nbsp;/&nbsp;{{ bareme|default:20 }}
                 </td>
             </tr>
         </tbody>
@@ -371,9 +371,9 @@ html, body {
 
 <!-- ══ DÉCISION ══ -->
 {% if moyenne_annuelle.admis %}
-<div class="bul-decision-admis">ADMIS EN CLASSE SUPERIEURE — Moyenne annuelle : {{ moyenne_annuelle.moyenne_annuelle|floatformat:2 }}/20</div>
+<div class="bul-decision-admis">ADMIS EN CLASSE SUPERIEURE — Moyenne annuelle : {{ moyenne_annuelle.moyenne_annuelle|floatformat:2 }}/{{ bareme|default:20 }}</div>
 {% else %}
-<div class="bul-decision-ajourne">NON ADMIS — Moyenne annuelle : {{ moyenne_annuelle.moyenne_annuelle|floatformat:2 }}/20 (seuil suffisant : 10,00/20)</div>
+<div class="bul-decision-ajourne">NON ADMIS — Moyenne annuelle : {{ moyenne_annuelle.moyenne_annuelle|floatformat:2 }}/{{ bareme|default:20 }} (seuil suffisant : {{ seuil|floatformat:2 }}/{{ bareme|default:20 }})</div>
 {% endif %}
 
 <!-- ══ SIGNATURES ══ -->

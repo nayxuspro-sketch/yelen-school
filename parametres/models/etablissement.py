@@ -1,5 +1,7 @@
 """Identité, cycles, classes et salles de l'établissement."""
 
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -317,6 +319,17 @@ class Classe(BaseModel):
 
     def __str__(self):
         return f"{self.nom} ({self.cycle.nom})"
+
+    @property
+    def bareme_moyenne(self):
+        """Barème des moyennes de la classe : **10** au préscolaire et au primaire (la note saisie est la
+        moyenne de la discipline), 20 au post-primaire et au secondaire."""
+        return Decimal('10') if (self.cycle_id and self.cycle.code in ('PRES', 'PRIM')) else Decimal('20')
+
+    @property
+    def seuil_moyenne(self):
+        """Moyenne juste suffisante : la moitié du barème (5/10 au primaire, 10/20 ailleurs)."""
+        return self.bareme_moyenne / 2
 
     @property
     def enseignant_titulaire(self):

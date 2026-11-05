@@ -189,7 +189,7 @@
           <td class="text-center">
             {% if row.moyenne is not None %}
               <span class="pal-moy {% if row.admis %}pal-moy-admis{% else %}pal-moy-echec{% endif %}">{{ row.moyenne }}</span>
-              <span class="pal-moy-base">/20</span>
+              <span class="pal-moy-base">/{{ bareme|default:20 }}</span>
             {% else %}
               <span class="text-muted">À calculer</span>
             {% endif %}

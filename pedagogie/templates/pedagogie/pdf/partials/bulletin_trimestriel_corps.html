@@ -80,7 +80,7 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
             <tr>
                 <th style="width:25%;">Matières</th>
                 <th class="bul-tc" style="width:7%;">Coef</th>
-                <th class="bul-tc" style="width:10%;">Moy. /20</th>
+                <th class="bul-tc" style="width:10%;">Moy. /{{ bareme|default:20 }}</th>
                 <th class="bul-tc" style="width:9%;">Note pond.</th>
                 <th style="width:14%;">Appréciation</th>
                 <th style="width:24%;">Professeur</th>
@@ -112,7 +112,7 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
             <!-- Ligne récapitulatif -->
             <tr class="bul-total-row">
                 <td colspan="2" style="text-align:right; font-weight:bold;">Moyenne générale :</td>
-                <td colspan="2" class="bul-tc" style="font-size:12pt; font-weight:bold;">{{ mg.moyenne }}&nbsp;/&nbsp;20</td>
+                <td colspan="2" class="bul-tc" style="font-size:12pt; font-weight:bold;">{{ mg.moyenne }}&nbsp;/&nbsp;{{ bareme|default:20 }}</td>
                 <td class="bul-tc bul-muted">
                     {{ mg.rang }}{% if mg.rang == 1 %}er{% else %}e{% endif %}&nbsp;/&nbsp;{{ nb_eleves }}
                 </td>
