@@ -97,7 +97,7 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
                     {% else %}{{ result.moyenne }}{% endif %}
                 </td>
                 <td class="bul-italic bul-muted">
-                    {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle }}{% else %}—{% endif %}
+                    {% if result.dispense %}Dispensé{% elif result.appreciation %}{{ result.appreciation.libelle|default:result.appreciation|default:"—" }}{% else %}—{% endif %}
                 </td>
                 <td class="bul-muted bul-prof">
                     {% if result.enseignement.personnel %}{{ result.enseignement.personnel.nom|upper }} {{ result.enseignement.personnel.prenom }}{% else %}&nbsp;{% endif %}

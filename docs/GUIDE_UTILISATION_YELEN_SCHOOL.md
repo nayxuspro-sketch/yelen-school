@@ -2,7 +2,7 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 5.57.0
 version_guide: 5.47
-date_mise_a_jour: 05/11/2026 (5.60.1 : bulletin au barème de la classe, sans colonne « Note pond. »)
+date_mise_a_jour: 05/11/2026 (5.60.2 : colonne Appréciation remplie au primaire, espace pour la signature de l'enseignant)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -3558,8 +3558,10 @@ Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMP
   « Planifiée » ; seules les évaluations **annulées** sont écartées.
 - La page Résultats et les bulletins (trimestriel, annuel, palmarès) affichent le barème réel de la classe
   (« /10 » au primaire) ; le commentaire de bulletin généré automatiquement suit le même barème.
-- **Bulletin trimestriel (5.60.1)** : « Moy. /10 » et moyenne générale « 7,86 / 10 » au primaire, comme à l'écran
-  d'aperçu ; la colonne « Note pond. » a disparu du tableau des notes (elle reste calculée pour le total des points).
+- **Bulletin trimestriel (5.60.2)** : la colonne **Appréciation** affiche bien l'appréciation saisie par
+  l'enseignant pour chaque matière (au primaire comme ailleurs) ; la zone de signature de l'enseignant titulaire
+  comporte maintenant un espace vierge entre le intitulé « Enseignant titulaire » et le nom imprimé, pour la
+  signature manuscrite.
 
 ## 10. EXAMENS
 

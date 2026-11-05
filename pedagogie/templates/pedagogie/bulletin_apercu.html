@@ -124,7 +124,7 @@
             <td style="text-align:center;" class="text-muted">
               {{ r.moy_classe|floatformat:2|default:"—" }}
             </td>
-            <td class="text-secondary" style="font-size:0.8rem;">{{ r.appreciation.libelle|default:"—" }}</td>
+            <td class="text-secondary" style="font-size:0.8rem;">{{ r.appreciation.libelle|default:r.appreciation|default:"—" }}</td>
             <td class="text-muted" style="font-size:0.78rem;">
               {% if r.enseignement.personnel %}{{ r.enseignement.personnel.get_nom_complet }}{% else %}—{% endif %}
             </td>

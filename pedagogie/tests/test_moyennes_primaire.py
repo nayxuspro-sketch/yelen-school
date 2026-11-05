@@ -179,3 +179,24 @@ def test_le_bulletin_primaire_s_affiche_sur_10_sans_note_ponderee(primaire, mock
     ecran = apercu.content.decode()
     assert 'Moy. / 10' in ecran and 'Moy. / 20' not in ecran and 'Note pond.' not in ecran
     assert '7,93 / 10' in ecran
+
+
+def test_appreciation_affiche_sur_bulletin_primaire(primaire, mocker):
+    """Une appréciation saisie sur un résultat primaire s'affiche dans la colonne Appréciation."""
+    _noter(primaire, _evaluation(primaire, primaire['maths'], '10'),
+           {'OUEDRAOGO': '8'})
+    _bouton(primaire)
+    res = Resultat.objects.get(inscription=primaire['eleves']['OUEDRAOGO'],
+                               enseignement=primaire['maths'])
+    res.appreciation = 'Travail sérieux et régulier.'
+    res.save()
+    weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+    weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+    primaire['client'].get(reverse('pedagogie:bulletin_pdf', kwargs={
+        'inscription_id': primaire['eleves']['OUEDRAOGO'].pk, 'trimestre_id': primaire['trimestre'].pk}))
+    html = weasy.call_args.kwargs['string']
+    assert 'Travail sérieux et régulier.' in html, 'appréciation affichée dans le bulletin PDF'
+    apercu = primaire['client'].get(reverse('pedagogie:bulletin_apercu', kwargs={
+        'inscription_id': primaire['eleves']['OUEDRAOGO'].pk, 'trimestre_id': primaire['trimestre'].pk}))
+    ecran = apercu.content.decode()
+    assert 'Travail sérieux et régulier.' in ecran, 'appréciation affichée à l\'aperçu'

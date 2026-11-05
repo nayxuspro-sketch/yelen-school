@@ -3,6 +3,16 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.60.2 — 2026-11-05
+
+- **Colonne Appréciation remplie sur le bulletin primaire.** L'appréciation saisie par l'enseignant pour chaque
+  matière (via « Pédagogie → Appréciations par matière ») s'affiche désormais dans la colonne Appréciation du
+  bulletin trimestriel et de l'aperçu, au primaire comme au post-primaire et au secondaire.
+- **Espace pour la signature de l'enseignant titulaire.** La zone de signature du bloc « Enseignant titulaire »
+  comporte désormais un espace vierge entre le intitulé de fonction et le nom imprimé de l'enseignant, pour
+  permettre la signature manuscrite sur le bulletin imprimé.
+- Aucun changement de calcul, aucune migration.
+
 ## 5.60.1 — 2026-11-05
 
 - **Bulletin trimestriel au barème de la classe.** L'en-tête de colonne affiche « Moy. /10 » au préscolaire et au

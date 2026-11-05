@@ -184,9 +184,10 @@ def _signature_html(membre):
 
 
 def _zone_signature_html(membre):
-    """Zone de signature du bloc signataire : l'image scannée si elle existe, sinon rien (espace vierge)."""
+    """Zone de signature du bloc signataire : l'image scannée si elle existe, sinon un espace vierge
+    pour permettre la signature manuscrite entre la fonction et le nom."""
     img = _signature_html(membre)
-    return f'<div class="msig-sign">{img}</div>' if img else ''
+    return f'<div class="msig-sign">{img}</div>' if img else '<div class="msig-sign"></div>'
 
 
 @register.simple_tag
