@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.60.3 — 2026-11-05
+
+- **Saisie des notes filtrée par scolarité (établissement privé).** Dans un établissement privé, un élève non
+  inscrit ou dont le total dû de scolarité est <= 0 n'apparaît plus dans la page de saisie des notes
+  (`Pédagogie → Évaluations → Saisir les notes`). Cette règle ne s'applique pas aux établissements publics.
+- Aucun changement de calcul, aucune migration.
+
 ## 5.60.2 — 2026-11-05
 
 - **Colonne Appréciation remplie sur le bulletin primaire.** L'appréciation saisie par l'enseignant pour chaque

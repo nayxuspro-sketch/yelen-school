@@ -2,7 +2,7 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 5.57.0
 version_guide: 5.47
-date_mise_a_jour: 05/11/2026 (5.60.2 : colonne Appréciation remplie au primaire, espace pour la signature de l'enseignant)
+date_mise_a_jour: 05/11/2026 (5.60.3 : saisie des notes filtrée par scolarité en privé)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -3538,6 +3538,21 @@ Le fichier Excel (une feuille) contient trois blocs prêts pour la saisie au cab
 3. **Récapitulatif par compte** : total débit, total crédit et solde de chaque compte, pour le contrôle de la balance.
 
 Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMPTES_DEPENSES`) : un cabinet qui utilise une autre codification les adapte sans toucher au reste. Les écritures sont en **francs CFA entiers**, dans l'ordre chronologique ; aucun paiement n'est modifié ni supprimé (registre de caisse immuable, §9.7).
+
+#### 9.39 Saisie des notes et scolarité (établissement privé) (5.60.3)
+
+**Règle métier :** dans un établissement **privé** (`IdentiteEtablissement.type_etablissement = PRIVE`), un élève
+n'apparaît pas dans la page de saisie des notes (`Pédagogie → Évaluations → Saisir les notes`) lorsque :
+
+- il n'a **pas d'inscription** active pour l'année scolaire et la classe concernées, ou
+- sa **scolarité (total dû) est <= 0** — c'est-à-dire qu'aucun frais de scolarité n'est dû (pas de `statut_eleve`,
+  pas de tarifs configurés, exonération, bourse intégrale ou solde déjà réglé).
+
+Cette règle ne s'applique **pas** aux établissements publics : tous les élèves inscrits apparaissent quelle que
+soit leur situation financière.
+
+**Objectif :** éviter la saisie de notes pour des élèves non effectivement scolarisés (non inscrits ou sans
+scolarité due) dans le privé, où la scolarité conditionne l'inscription effective.
 
 ### 9.38 Moyennes du primaire sur 10 et bouton « Calculer les moyennes » (5.60.0)
 
