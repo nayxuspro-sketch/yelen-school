@@ -1,3 +1,5 @@
+from datetime import date, time
+
 import pytest
 from django.urls import reverse
 from model_bakery import baker
@@ -60,12 +62,54 @@ def test_le_bouton_ajoute_une_observation_manquante(ecole):
     assert 'Décès d’un proche' in valeurs                 # la nouvelle observation est proposée
 
 
-def test_absence_enregistree_avec_cycle_et_observation(ecole):
-    reponse = ecole['client'].post(reverse('personnel:absence_create'), {
-        'cycle': ecole['prim'].pk, 'personnel': ecole['maitre'].pk,
-        'date_debut': '2026-11-02', 'date_fin': '2026-11-04', 'motif': 'MALADIE',
-        'justifiee': 'on', 'observation': 'Raison de santé',
-    })
+def _saisie(ecole, **extra):
+    """Champs du formulaire « Saisie des absences quotidiennes des professeurs ». """
+    classe = baker.make('parametres.Classe', etablissement=ecole['etab'], cycle=ecole['prim'], nom='CP1', niveau='CP1')
+    matiere = baker.make('pedagogie.Matiere', code='MATH', nom='Mathématiques')
+    donnees = {
+        'cycle': ecole['prim'].pk, 'personnel': ecole['maitre'].pk, 'date': '2026-11-04',
+        'classe': classe.pk, 'matiere': matiere.pk, 'heure_debut': '09:00', 'heure_fin': '11:00',
+        'observation': 'Raison de santé',
+    }
+    donnees.update(extra)
+    return donnees, classe, matiere
+
+
+def test_absence_quotidienne_enregistree_avec_seance_et_heures(ecole):
+    donnees, classe, matiere = _saisie(ecole)
+    reponse = ecole['client'].post(reverse('personnel:absence_create'), donnees)
     assert reponse.status_code == 302
     absence = AbsencePersonnel.objects.get(personnel=ecole['maitre'])
-    assert absence.observation == 'Raison de santé' and absence.nombre_jours == 3 and absence.motif == 'MALADIE'
+    assert (absence.date_debut, absence.date_fin) == (date(2026, 11, 4), date(2026, 11, 4))
+    assert (absence.classe, absence.matiere) == (classe, matiere)
+    assert (absence.heure_debut, absence.heure_fin) == (time(9, 0), time(11, 0))
+    assert absence.nombre_heures == 2.0 and absence.nombre_jours == 1
+    assert absence.observation == 'Raison de santé' and absence.motif == 'MALADIE'      # motif déduit
+
+
+def test_observation_obligatoire(ecole):
+    donnees, _, _ = _saisie(ecole, observation='')
+    page = ecole['client'].post(reverse('personnel:absence_create'), donnees)
+    assert page.status_code == 200
+    assert 'Sélectionnez obligatoirement une observation' in page.content.decode()
+    assert not AbsencePersonnel.objects.exists()
+
+
+def test_heure_de_fin_anterieure_refusee(ecole):
+    donnees, _, _ = _saisie(ecole, heure_debut='11:00', heure_fin='09:00')
+    page = ecole['client'].post(reverse('personnel:absence_create'), donnees)
+    assert page.status_code == 200 and 'postérieure à l&#x27;heure de début' in page.content.decode()
+    assert not AbsencePersonnel.objects.exists()
+
+
+def test_le_formulaire_reprend_les_champs_de_la_maquette(ecole):
+    baker.make('parametres.AnneeScolaire', etablissement=ecole['etab'], libelle='2026-2027', est_courante=True,
+               date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
+    page = ecole['client'].get(reverse('personnel:absence_create'))
+    html = page.content.decode()
+    for libelle in ('Année scolaire', 'Date', 'Nom du professeur', 'Classe', 'Matière',
+                    'Heure début', 'Heure fin', 'Nb heures', 'Observation'):
+        assert libelle in html, libelle
+    assert '2026-2027' in html
+    assert reverse('personnel:observation_absence_create') in html      # bouton « + » à côté de l'observation
+    assert 'name="observation"' in html and 'Aucune' not in html

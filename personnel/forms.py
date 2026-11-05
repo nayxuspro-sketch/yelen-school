@@ -1,7 +1,8 @@
 from django import forms
 from .models import (MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel, AbsencePersonnel,
                     ObservationAbsence)
-from parametres.models import Cycle, TitreFonction, TitreHonorifiquePersonnel
+from parametres.models import Classe, Cycle, TitreFonction, TitreHonorifiquePersonnel
+from pedagogie.models import Matiere
 from core.validators import validate_image_upload
 
 # Import pour le chiffrement
@@ -193,52 +194,83 @@ class CongePersonnelForm(forms.ModelForm):
 
 
 class AbsencePersonnelForm(forms.ModelForm):
-    """Saisie d'une absence d'un agent : cycle (primaire, post-primaire / secondaire) puis agent, période,
-    motif, justification et observation choisie dans une liste déroulante (5.57.0)."""
+    """Saisie quotidienne des absences des professeurs (5.58.0).
 
-    cycle = forms.ModelChoiceField(
-        label="Cycle",
-        queryset=Cycle.objects.none(),
-        required=False,
-        empty_label="Tous les cycles",
-        help_text="Restreint la liste des agents à ceux du cycle choisi (primaire, post-primaire / secondaire).",
-    )
+    Reprend le formulaire de référence : année scolaire (rappel), date, professeur, classe, matière,
+    heure de début et de fin (le nombre d'heures en découle), observation **obligatoire** choisie dans la
+    liste déroulante. Le cycle reste proposé en filtre au-dessus du formulaire : il restreint les
+    professeurs et les classes (primaire, post-primaire / secondaire).
+    """
+
+    date = forms.DateField(label="Date", widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+                           input_formats=['%Y-%m-%d', '%d/%m/%Y'])
+    date_fin = forms.DateField(label="Au", required=False,
+                               widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+                               input_formats=['%Y-%m-%d', '%d/%m/%Y'],
+                               help_text="Laisser vide pour une absence d'une seule journée.")
+    cycle = forms.ModelChoiceField(label="Cycle", queryset=Cycle.objects.none(), required=False,
+                                   empty_label="Tous les cycles")
+    classe = forms.ModelChoiceField(label="Classe", queryset=Classe.objects.none(), required=False,
+                                   empty_label="— Choisir —")
+    matiere = forms.ModelChoiceField(label="Matière", queryset=Matiere.objects.none(), required=False,
+                                     empty_label="— Choisir —")
 
     class Meta:
         model = AbsencePersonnel
-        fields = ['personnel', 'date_debut', 'date_fin', 'motif', 'justifiee', 'retenue', 'observation']
+        fields = ['personnel', 'classe', 'matiere', 'heure_debut', 'heure_fin', 'motif', 'observation',
+                  'justifiee', 'retenue']
+        labels = {'personnel': "Nom du professeur", 'heure_debut': "Heure de début",
+                  'heure_fin': "Heure de fin"}
         widgets = {
-            'date_debut': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
-            'date_fin': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+            'heure_debut': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+            'heure_fin': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
         }
 
     def __init__(self, *args, **kwargs):
         etablissement = kwargs.pop('etablissement', None)
         cycle = kwargs.pop('cycle', None)
+        self.annee_scolaire = kwargs.pop('annee_scolaire', None)
         super().__init__(*args, **kwargs)
 
         membres = MembrePersonnel.objects.filter(is_active=True)
+        classes = Classe.objects.all()
+        matieres = Matiere.objects.all()
         if etablissement:
             membres = membres.filter(etablissement=etablissement)
+            classes = classes.filter(etablissement=etablissement)
             self.fields['cycle'].queryset = Cycle.objects.filter(etablissement=etablissement).order_by('ordre', 'nom')
+            self.fields['matiere'].queryset = Matiere.objects.order_by('nom')
         if cycle is not None:
             membres = membres.filter(cycles=cycle)
+            classes = classes.filter(cycle=cycle)
             self.fields['cycle'].initial = cycle
-        self.fields['personnel'].queryset = membres.distinct().order_by('nom', 'prenom')
-        if cycle is None and self.data and self.data.get('cycle'):
-            self.fields['personnel'].queryset = membres.filter(cycles_id=self.data.get('cycle')).distinct() \
-                .order_by('nom', 'prenom')
 
-        # Observation : liste déroulante alimentée par la table des observations (communes + celles de l'école).
+        # Cycle choisi au rechargement du formulaire (bouton « Afficher »), sans objet validé.
+        if cycle is None and self.data and self.data.get('cycle'):
+            membres = membres.filter(cycles_id=self.data.get('cycle'))
+            classes = classes.filter(cycle_id=self.data.get('cycle'))
+        self.fields['motif'].required = False                  # déduit de l'observation si non précisé
+        self.fields['personnel'].queryset = membres.distinct().order_by('nom', 'prenom')
+        self.fields['classe'].queryset = classes.select_related('cycle').order_by('cycle__ordre', 'nom')
+        self.fields['matiere'].queryset = matieres.order_by('nom')
+
+        # La date saisie une seule fois vaut date de début ; « Au » vide = absence d'une journée.
+        if self.instance.pk:
+            self.fields['date'].initial = self.instance.date_debut
+            self.fields['date_fin'].initial = (self.instance.date_fin
+                                              if self.instance.date_fin != self.instance.date_debut else None)
+
+        # « Sélectionnez obligatoirement une observation » : message explicite du formulaire (clean), le champ
+        # porte aussi l'attribut HTML `required` pour le navigateur.
         self.fields['observation'].required = False
-        self.fields['observation'].widget = forms.Select()
+        self.fields['observation'].widget = forms.Select(attrs={'required': 'required'})
         self._alimenter_observations(etablissement)
 
         _apply_yelen_classes(self.fields)
 
     def _alimenter_observations(self, etablissement=None):
         """Choix du champ Observation ; une valeur déjà enregistrée hors liste y est ajoutée pour rester éditable."""
-        choix = [('', '— Aucune —')]
+        choix = [('', '— Sélectionner une observation —')]
         choix += [(o.libelle, o.libelle) for o in ObservationAbsence.disponibles(etablissement)]
         valeur = (self.data.get('observation') if self.data else '') or self.initial.get('observation') or ''
         if valeur and valeur not in [v for v, _ in choix]:
@@ -246,11 +278,44 @@ class AbsencePersonnelForm(forms.ModelForm):
         self.fields['observation'].widget.choices = choix
 
     def clean(self):
-        cleaned = super().clean()
-        debut, fin = cleaned.get('date_debut'), cleaned.get('date_fin')
-        if debut and fin and fin < debut:
+        donnees = super().clean()
+        jour, fin_jour = donnees.get('date'), donnees.get('date_fin')
+        if jour and fin_jour and fin_jour < jour:
             self.add_error('date_fin', "La date de fin doit être postérieure ou égale à la date de début.")
-        return cleaned
+        debut, fin = donnees.get('heure_debut'), donnees.get('heure_fin')
+        if debut and fin and fin <= debut:
+            self.add_error('heure_fin', "L'heure de fin doit être postérieure à l'heure de début.")
+        if not donnees.get('observation'):
+            self.add_error('observation', "Sélectionnez obligatoirement une observation.")
+        return donnees
+
+    def save(self, commit=True):
+        absence = super().save(commit=False)
+        jour = self.cleaned_data['date']
+        absence.date_debut = jour
+        absence.date_fin = self.cleaned_data.get('date_fin') or jour     # une séance : une journée
+        absence.motif = (self.cleaned_data.get('motif')
+                         or _motif_depuis_observation(self.cleaned_data.get('observation')))
+        if commit:
+            absence.save()
+            self.save_m2m()
+        return absence
+
+
+MOTIFS_PAR_OBSERVATION = (
+    ('MALADIE', ('santé', 'maladie', 'malade', 'consultation', 'hospital')),
+    ('PERMISSION', ('congé', 'permission', 'absence autorisée')),
+    ('FORMATION', ('formation', 'mission', 'stage', 'séminaire')),
+)
+
+
+def _motif_depuis_observation(observation):
+    """Motif d'absence déduit de l'observation choisie (le formulaire ne demande que l'observation)."""
+    texte = (observation or '').lower()
+    for motif, mots in MOTIFS_PAR_OBSERVATION:
+        if any(mot in texte for mot in mots):
+            return motif
+    return AbsencePersonnel.MotifChoices.AUTRE
 
 
 class ObservationAbsenceForm(forms.ModelForm):

@@ -886,6 +886,13 @@ class AbsencePersonnel(BaseModel):
 
     personnel = models.ForeignKey(MembrePersonnel, on_delete=models.CASCADE, related_name='absences',
                                   verbose_name=_("Membre du personnel"))
+    # Séance manquée (saisie quotidienne des professeurs, 5.58.0) : classe, matière et créneau horaire.
+    classe = models.ForeignKey('parametres.Classe', on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='absences_personnel', verbose_name=_("Classe"))
+    matiere = models.ForeignKey('pedagogie.Matiere', on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name='absences_personnel', verbose_name=_("Matière"))
+    heure_debut = models.TimeField(null=True, blank=True, verbose_name=_("Heure de début"))
+    heure_fin = models.TimeField(null=True, blank=True, verbose_name=_("Heure de fin"))
     date_debut = models.DateField(verbose_name=_("Du"))
     date_fin = models.DateField(verbose_name=_("Au"))
     motif = models.CharField(max_length=15, choices=MotifChoices.choices, default=MotifChoices.NON_JUSTIFIEE,
@@ -908,6 +915,15 @@ class AbsencePersonnel(BaseModel):
     @property
     def nombre_jours(self):
         return (self.date_fin - self.date_debut).days + 1
+
+    @property
+    def nombre_heures(self):
+        """Durée de la séance manquée, en heures décimales (0 si l'un des deux horaires manque)."""
+        if not (self.heure_debut and self.heure_fin):
+            return 0.0
+        debut = self.heure_debut.hour * 60 + self.heure_debut.minute
+        fin = self.heure_fin.hour * 60 + self.heure_fin.minute
+        return round(max(0, fin - debut) / 60, 2)
 
     @property
     def a_retenir(self):

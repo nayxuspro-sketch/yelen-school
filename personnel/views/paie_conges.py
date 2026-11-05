@@ -590,13 +590,19 @@ def absence_create(request, pk=None):
             return redirect('personnel:detail', pk=membre.pk) if membre else redirect('personnel:absence_list')
     else:
         observation = request.GET.get('observation') or ''
-        initial = {'personnel': membre, 'date_debut': date_module.today(), 'date_fin': date_module.today()}
+        classe = request.GET.get('classe') or ''
+        annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first() if etab else None
+        initial = {'personnel': membre, 'date': date_module.today(), 'classe': classe}
         if observation:
             initial['observation'] = observation
-        form = AbsencePersonnelForm(initial=initial, etablissement=etab, cycle=cycle)
+        form = AbsencePersonnelForm(initial=initial, etablissement=etab, cycle=cycle,
+                                    annee_scolaire=annee)
     return render(request, 'personnel/absence_form.html', {
-        'form': form, 'membre': membre, 'titre': "Nouvelle absence", 'cycle': cycle,
+        'form': form, 'membre': membre, 'titre': "Saisie des absences quotidiennes des professeurs",
+        'cycle': cycle,
         'cycles': Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom') if etab else Cycle.objects.none(),
+        'annee_scolaire': (AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+                           if etab else None),
     })
 
 

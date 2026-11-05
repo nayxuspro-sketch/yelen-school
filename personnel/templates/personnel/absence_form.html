@@ -17,7 +17,8 @@
   </div>
 </div>
 
-<form method="get" class="card animate-fade-up delay-1 mb-4" style="max-width: 820px;">
+{# Filtre de cycle : restreint les professeurs et les classes proposés #}
+<form method="get" class="card animate-fade-up delay-1 mb-4" style="max-width: 980px;">
   {% if membre %}<input type="hidden" name="membre" value="{{ membre.pk }}">{% endif %}
   <div class="card-body d-flex gap-3 align-end flex-wrap">
     <div class="form-group" style="min-width:260px; margin-bottom:0;">
@@ -29,55 +30,137 @@
         {% endfor %}
       </select>
     </div>
-    <button type="submit" class="btn-secondary">Afficher les agents du cycle</button>
+    <button type="submit" class="btn-secondary">Afficher</button>
     <span class="text-muted" style="font-size:.8rem;">
-      Primaire, post-primaire et secondaire : la liste des agents suit le cycle choisi.
+      Primaire, post-primaire et secondaire : la liste des professeurs et des classes suit le cycle choisi.
     </span>
   </div>
 </form>
 
-<form method="post" class="card animate-fade-up delay-1" style="max-width: 820px;">
+<form method="post" class="card animate-fade-up delay-1" style="max-width: 980px;">
   {% csrf_token %}
   {% if cycle %}<input type="hidden" name="cycle" value="{{ cycle.pk }}">{% endif %}
   {% if form.non_field_errors %}<div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>{% endif %}
-  <div class="card-header"><span class="card-title">Détails de l'absence</span></div>
-  <div class="form-grid-2">
-    {% for field in form %}
-      {% if field.field.widget.input_type == 'checkbox' %}
-      <div class="form-group">
-        <label class="d-flex align-center gap-3" style="cursor:pointer;">
-          {{ field }}
-          <span class="input-label" style="margin-bottom:0;">{{ field.label }}</span>
-        </label>
-        {% if field.help_text %}<p class="text-muted text-xs">{{ field.help_text }}</p>{% endif %}
+
+  <div class="card-body">
+    {# Ligne 1 : année scolaire, date, professeur, classe #}
+    <div class="d-flex gap-4 align-end flex-wrap mb-4">
+      <div class="form-group" style="margin-bottom:0;">
+        <span class="input-label">Année scolaire</span>
+        <p class="fw-semibold" style="margin:0;">{{ annee_scolaire.libelle|default:"—" }}</p>
       </div>
-      {% elif field.name == 'observation' %}
-      <div class="form-group" style="grid-column:1/-1;">
-        <label for="{{ field.id_for_label }}" class="input-label">Observation</label>
+
+      <div class="form-group" style="margin-bottom:0; width:150px;">
+        <label class="input-label" for="{{ form.date.id_for_label }}">Date</label>
+        {{ form.date }}
+        {% if form.date.errors %}<p class="input-error">{{ form.date.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group" style="margin-bottom:0; width:150px;">
+        <label class="input-label" for="{{ form.date_fin.id_for_label }}">Au</label>
+        {{ form.date_fin }}
+        {% if form.date_fin.errors %}<p class="input-error">{{ form.date_fin.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group" style="margin-bottom:0; min-width:260px;">
+        <label class="input-label" for="{{ form.personnel.id_for_label }}">Nom du professeur</label>
+        {{ form.personnel }}
+        {% if form.personnel.errors %}<p class="input-error">{{ form.personnel.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group" style="margin-bottom:0; min-width:190px;">
+        <label class="input-label" for="{{ form.classe.id_for_label }}">Classe</label>
+        {{ form.classe }}
+        {% if form.classe.errors %}<p class="input-error">{{ form.classe.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+
+    {# Ligne 2 : matière, créneau, nombre d'heures, observation obligatoire et bouton d'ajout #}
+    <div class="d-flex gap-3 align-end flex-wrap">
+      <div class="form-group" style="margin-bottom:0; min-width:240px;">
+        <label class="input-label" for="{{ form.matiere.id_for_label }}">Matière</label>
+        {{ form.matiere }}
+        {% if form.matiere.errors %}<p class="input-error">{{ form.matiere.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group" style="margin-bottom:0; width:130px;">
+        <label class="input-label" for="{{ form.heure_debut.id_for_label }}">Heure début</label>
+        {{ form.heure_debut }}
+        {% if form.heure_debut.errors %}<p class="input-error">{{ form.heure_debut.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group" style="margin-bottom:0; width:130px;">
+        <label class="input-label" for="{{ form.heure_fin.id_for_label }}">Heure fin</label>
+        {{ form.heure_fin }}
+        {% if form.heure_fin.errors %}<p class="input-error">{{ form.heure_fin.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="form-group" style="margin-bottom:0; width:110px;">
+        <span class="input-label">Nb heures</span>
+        <p class="fw-semibold" id="nb-heures" style="margin:0;">0</p>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0; flex:1 1 280px;">
+        <label class="input-label" for="{{ form.observation.id_for_label }}">Observation</label>
         <div class="d-flex gap-2 align-center">
-          {{ field }}
+          {{ form.observation }}
           <a class="btn-secondary btn-sm text-nowrap"
-             href="{% url 'personnel:observation_absence_create' %}?membre={% if membre %}{{ membre.pk }}{% endif %}{% if cycle %}&cycle={{ cycle.pk }}{% endif %}"
-             title="Ajouter une observation manquante (raison de santé, congé…)">＋ Ajouter</a>
+             href="{% url 'personnel:observation_absence_create' %}?{% if membre %}membre={{ membre.pk }}&{% endif %}{% if cycle %}cycle={{ cycle.pk }}{% endif %}"
+             title="Ajouter une observation manquante (raison de santé, congé…)">＋</a>
         </div>
-        <p class="text-muted" style="font-size:.78rem;">
-          Choisissez l'observation (raison de santé, congé, permission…). Le bouton <strong>＋ Ajouter</strong>
-          complète la liste pour toute l'école ; elle reste modifiable ensuite.
+        {% if form.observation.errors %}
+        <p class="input-error">{{ form.observation.errors.0 }}</p>
+        {% else %}
+        <p class="text-muted" style="font-size:.78rem; margin-top:var(--space-1);">
+          Sélectionnez obligatoirement une observation ; le bouton <strong>＋</strong> complète la liste.
         </p>
-        {% if field.errors %}<p class="input-error">{{ field.errors.0 }}</p>{% endif %}
+        {% endif %}
       </div>
-      {% else %}
-      <div class="form-group">
-        <label for="{{ field.id_for_label }}" class="input-label">{{ field.label }}{% if field.field.required %} <span class="required-star">*</span>{% endif %}</label>
-        {{ field }}
-        {% if field.errors %}<p class="input-error">{{ field.errors.0 }}</p>{% endif %}
-      </div>
-      {% endif %}
-    {% endfor %}
+    </div>
   </div>
-  <div class="d-flex justify-end gap-3 mt-6">
+
+  {# Ligne 3 : motif, justification et retenue sur salaire (absences de plusieurs jours, paie) #}
+  <div class="d-flex gap-4 align-center flex-wrap" style="padding:0 var(--space-4) var(--space-4);">
+    <div class="form-group" style="margin-bottom:0; width:200px;">
+      <label class="input-label" for="{{ form.motif.id_for_label }}">Motif</label>
+      {{ form.motif }}
+      {% if form.motif.errors %}<p class="input-error">{{ form.motif.errors.0 }}</p>{% endif %}
+    </div>
+    <label class="d-flex align-center gap-2" style="cursor:pointer; font-size:var(--text-sm);">
+      {{ form.justifiee }} <span>Justifiée (pièce fournie)</span>
+    </label>
+    <label class="d-flex align-center gap-2" style="cursor:pointer; font-size:var(--text-sm);">
+      {{ form.retenue }} <span>Retenue sur salaire</span>
+    </label>
+    <span class="text-muted" style="font-size:.78rem;">
+      « Au » vide = une journée ; le motif suit l'observation s'il n'est pas précisé.
+    </span>
+  </div>
+
+  <div class="d-flex justify-end gap-3" style="padding:var(--space-4); border-top:1px solid var(--color-border);">
     <a href="{% if membre %}{% url 'personnel:detail' membre.pk %}{% else %}{% url 'personnel:absence_list' %}{% endif %}" class="btn-secondary">Annuler</a>
-    <button type="submit" class="btn-primary">Enregistrer</button>
+    <button type="submit" class="btn-primary">Enregistrer l'absence</button>
   </div>
 </form>
+
+{# Nombre d'heures = heure de fin − heure de début, recalculé à la saisie (script autorisé par le nonce CSP) #}
+<script nonce="{{ request.csp_nonce }}">
+  (function () {
+    var debut = document.getElementById('{{ form.heure_debut.id_for_label }}');
+    var fin = document.getElementById('{{ form.heure_fin.id_for_label }}');
+    var cible = document.getElementById('nb-heures');
+    if (!debut || !fin || !cible) { return; }
+    function minutes(valeur) {
+      var parties = (valeur || '').split(':');
+      return parties.length === 2 ? parseInt(parties[0], 10) * 60 + parseInt(parties[1], 10) : null;
+    }
+    function calculer() {
+      var a = minutes(debut.value), b = minutes(fin.value);
+      cible.textContent = (a === null || b === null || b <= a) ? '0' : (Math.round((b - a) / 60 * 100) / 100).toString();
+    }
+    debut.addEventListener('input', calculer);
+    fin.addEventListener('input', calculer);
+    calculer();
+  })();
+</script>
 {% endblock %}

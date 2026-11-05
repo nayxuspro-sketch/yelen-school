@@ -3,6 +3,20 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.58.0 — 2026-11-05
+
+- **Saisie des absences quotidiennes des professeurs alignée sur le formulaire de référence.** Le formulaire reprend
+  exactement ses champs et son ordre : année scolaire (rappel, lecture seule), **date**, **au** (facultatif),
+  **nom du professeur**, **classe**, **matière**, **heure de début**, **heure de fin**, **nombre d'heures** (calculé,
+  deux décimales) et **observation** en liste déroulante **obligatoire** avec le bouton **＋ Ajouter** à sa droite.
+- `AbsencePersonnel` gagne `classe`, `matiere`, `heure_debut`, `heure_fin` (tous facultatifs) et la propriété
+  `nombre_heures` — migration `personnel/0018`. Les absences déjà enregistrées restent valides.
+- **Contrôles** : observation obligatoire (« Sélectionnez obligatoirement une observation. »), date de fin
+  postérieure ou égale à la date, heure de fin postérieure à l'heure de début. Le motif reste facultatif : il est
+  déduit de l'observation choisie quand il n'est pas précisé.
+- La liste du mois affiche désormais la **séance** (classe · matière · horaire), le nombre d'**heures** et
+  l'**observation**.
+
 ## 5.57.0 — 2026-11-04
 
 - **Saisie des absences du personnel : cycle et observations en listes déroulantes.** Le formulaire *Nouvelle

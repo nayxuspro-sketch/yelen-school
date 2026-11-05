@@ -2,7 +2,7 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 5.57.0
 version_guide: 5.47
-date_mise_a_jour: 04/11/2026 (5.57.0 : absences du personnel par cycle et observations en liste)
+date_mise_a_jour: 05/11/2026 (5.58.0 : saisie quotidienne des absences par séance)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -3468,18 +3468,27 @@ Dans le formulaire élève, section **Santé & personnes autorisées** : groupe 
 
 **Accès :** menu latéral **Personnel → Absences** (adresse `/personnel/absences/`), ou bouton `Absence` sur la fiche d'un membre. Droit « Absences du personnel » (actions `enregistrer`, `supprimer`) dans la matrice des droits.
 
-- **Saisie** : **cycle** (primaire, post-primaire / secondaire — liste déroulante liée à la table des cycles, qui
-  restreint les agents proposés), agent, du … au … (une journée = même date aux deux bornes), motif (`Maladie`,
-  `Permission`, `Formation`, `Non justifiée`, `Autre`), case `Justifiée` (certificat ou autorisation présenté), case
-  `Retenue sur salaire` (cochée par défaut), **observation choisie dans une liste déroulante** (`Raison de santé`,
-  `Congé annuel`, `Congé de maternité`, `Permission exceptionnelle`, `Formation / mission`, `Absence non justifiée`,
-  `Autre`).
-- **Ajouter une observation (5.57.0)** : le bouton **＋ Ajouter** placé à côté du champ *Observation* ouvre une page
+- **Saisie quotidienne (5.58.0)** : le formulaire reprend le formulaire papier « SAISIE DES ABSENCES QUOTIDIENNES DES
+  PROFESSEURS », champ par champ et dans le même ordre :
+  1. **Cycle** en tête (primaire, post-primaire / secondaire — liste déroulante liée à la table des cycles) : le
+     bouton `Afficher` recharge la page et **restreint les professeurs et les classes** à ce cycle.
+  2. **Année scolaire** en rappel (lecture seule : l'année courante de `Paramètres → Années scolaires`), **Date**,
+     **Au** (facultatif : laisser vide pour une absence d'une seule journée), **Nom du professeur**, **Classe**.
+  3. **Matière**, **Heure de début**, **Heure de fin** et **Nb heures** — ce dernier est calculé automatiquement
+     (`(fin − début) / 60`, deux décimales) et ne se saisit pas.
+  4. **Observation** : liste déroulante **obligatoire** (`Raison de santé`, `Congé annuel`, `Congé de maternité`,
+     `Permission exceptionnelle`, `Formation / mission`, `Absence non justifiée`, `Autre`) — sans choix, le message
+     « Sélectionnez obligatoirement une observation. » s'affiche. Le bouton **＋ Ajouter** est placé à droite du champ.
+  5. **Motif** (`Maladie`, `Permission`, `Formation`, `Non justifiée`, `Autre` — déduit de l'observation si laissé
+     vide), case `Justifiée` (certificat ou autorisation présenté), case `Retenue sur salaire` (cochée par défaut).
+- **Ajouter une observation (5.57.0)** : le bouton **＋ Ajouter** placé à droite du champ *Observation* ouvre une page
   courte ; l'observation saisie rejoint la liste déroulante pour toute l'école et le formulaire d'absence s'ouvre
   avec cette valeur déjà choisie. Aucune intervention technique n'est nécessaire pour compléter la liste.
 - **Règle** : une absence n'est retenue que si elle est **non justifiée et** que la case `Retenue` est cochée. Une absence justifiée n'est jamais retenue, même la case cochée.
 - **Bilan mensuel** : le sélecteur de mois (`AAAA-MM`) affiche, par agent, le nombre d'absences, de jours, de jours non justifiés et de **jours retenus** sur le mois civil (une absence à cheval sur deux mois est répartie). Le lien sur le nom ouvre l'historique complet de l'agent.
 - **Paie** : `Personnel → Paie du mois → Préparer` reprend ces jours : retenue proposée = **salaire de base / 30 × jours retenus**, arrondie au franc, inscrite dans `Autres retenues` du brouillon avec la mention « Retenue absences : N jour(s) non justifié(s) » dans les observations. Le gestionnaire reste libre de corriger le montant avant validation.
+- **Liste du mois (5.58.0)** : chaque ligne affiche la **séance** (classe · matière · horaire), le nombre
+  d'**heures** et l'**observation** choisie, en plus de l'agent, des dates, du motif et des cases.
 - La fiche du membre liste ses quatre dernières absences (`Voir tout` → historique).
 
 ### 9.34 Sanction : prévenir le parent (portail + SMS)

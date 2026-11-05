@@ -90,8 +90,8 @@ def test_saisie_d_une_absence_depuis_la_liste(ecole):
     assert reponse.status_code == 200
     assert list(reponse.context['form'].fields['personnel'].queryset) == [ecole['agent']], 'agents de l\'établissement seulement'
     reponse = c.post(reverse('personnel:absence_create'), {
-        'personnel': str(ecole['agent'].pk), 'date_debut': '2026-10-05', 'date_fin': '2026-10-06',
-        'motif': 'PERMISSION', 'retenue': 'on', 'observation': 'Décès dans la famille',
+        'personnel': str(ecole['agent'].pk), 'date': '2026-10-05', 'date_fin': '2026-10-06',
+        'observation': 'Décès dans la famille', 'motif': 'PERMISSION', 'retenue': 'on',
     }, follow=True)
     assert reponse.redirect_chain[-1][0] == reverse('personnel:absence_list')
     absence = AbsencePersonnel.objects.get()
@@ -104,11 +104,11 @@ def test_saisie_depuis_la_fiche_de_l_agent_et_dates_incoherentes(ecole):
     url = reverse('personnel:absence_create_pour', args=[ecole['agent'].pk])
     reponse = c.get(url)
     assert reponse.status_code == 200 and reponse.context['form'].initial['personnel'] == ecole['agent']
-    reponse = c.post(url, {'personnel': str(ecole['agent'].pk), 'date_debut': '2026-10-06', 'date_fin': '2026-10-05',
-                           'motif': 'MALADIE', 'justifiee': 'on'})
+    reponse = c.post(url, {'personnel': str(ecole['agent'].pk), 'date': '2026-10-06', 'date_fin': '2026-10-05',
+                           'observation': 'Maladie', 'motif': 'MALADIE', 'justifiee': 'on'})
     assert reponse.status_code == 200 and 'postérieure ou égale' in reponse.context['form'].errors['date_fin'][0]
-    reponse = c.post(url, {'personnel': str(ecole['agent'].pk), 'date_debut': '2026-10-05', 'date_fin': '2026-10-05',
-                           'motif': 'MALADIE', 'justifiee': 'on', 'retenue': 'on'})
+    reponse = c.post(url, {'personnel': str(ecole['agent'].pk), 'date': '2026-10-05',
+                           'observation': 'Maladie', 'motif': 'MALADIE', 'justifiee': 'on', 'retenue': 'on'})
     assert reponse.status_code == 302 and reponse.url == reverse('personnel:detail', args=[ecole['agent'].pk])
     assert not AbsencePersonnel.objects.get().a_retenir, 'justifiée : pas de retenue même si la case est cochée'
     assert c.get(reverse('personnel:absence_create_pour', args=[ecole['etranger'].pk])).status_code == 404
