@@ -187,8 +187,18 @@ class TestBulletinTrimestriel:
         c.client.get(reverse('pedagogie:bulletin_pdf',
                              kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
         html = _html(weasy)
-        assert 'KABORE Salif' in html and 'L&#x27;Enseignant titulaire' in html
+        assert 'KABORE Salif' in html and 'Enseignant titulaire' in html
         assert 'bul-sig-grid bul-sig-grid-3' in html, 'grille à trois colonnes : QR, titulaire, direction'
+
+        # Suppléant de la même classe : troisième signature, à côté du titulaire et de la direction.
+        baker.make('personnel.MembrePersonnel', etablissement=c.classe.etablissement, nom='SAWADOGO', prenom='Aline',
+                   fonction='Enseignante', classe_affectation=c.classe, qualite_affectation='SUPPLEANT')
+        c.client.get(reverse('pedagogie:bulletin_pdf',
+                             kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
+        html = _html(weasy)
+        assert 'SAWADOGO Aline' in html and 'Enseignant suppléant' in html
+        assert 'bul-sig-grid bul-sig-grid-4' in html, 'grille à quatre colonnes : QR, titulaire, suppléant, direction'
+        assert html.index('KABORE') < html.index('SAWADOGO'), 'titulaire avant suppléant'
 
         # Bulletin annuel : même signature.
         c.client.get(reverse('pedagogie:bulletin_annuel_pdf', kwargs={'inscription_id': c.awa.pk}))
@@ -324,6 +334,11 @@ class TestBulletinTrimestriel:
         baker.make('parametres.SignataireDocument', cycle=c.classe.cycle, type_document=type_doc, annee_scolaire=c.annee,
                    membre_personnel_id=membre.id, fonction='Le Directeur des Études',
                    titres_honorifiques=["Chevalier de l'Ordre du Mérite"], actif=True)
+        # Titulaire et suppléant de la classe : deux colonnes de signature de plus dans la grille.
+        for nom, prenom, qualite in (('SAWADOGO', 'Aline', 'TITULAIRE'),
+                                     ('OUEDRAOGO', 'Wendpanga Jean Benoit', 'SUPPLEANT')):
+            baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom=nom, prenom=prenom,
+                       fonction='Enseignant', classe_affectation=c.classe, qualite_affectation=qualite)
         tampon = io.BytesIO()
         Image.new('RGBA', (600, 220), (0, 0, 0, 0)).save(tampon, 'PNG')   # signature large : bornée à 1,1 cm de haut
         membre.signature.save('kabore.png', ContentFile(tampon.getvalue()), save=True)
@@ -345,7 +360,9 @@ class TestBulletinTrimestriel:
         lot = c.client.get(reverse('pedagogie:bulletin_classe_batch_pdf', kwargs={'class_id': c.classe.pk, 'trimestre_id': c.t1.pk}))
         duplicata = c.client.get(reverse('pedagogie:bulletin_duplicata_pdf', kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
         assert individuel.status_code == 200 and lot.status_code == 200 and duplicata.status_code == 200 and len(documents) == 5
-        assert all(len(document.pages) == 1 for document in documents), 'chaque bulletin trimestriel (original, lot, duplicata) tient sur une page A4'
+        assert all(len(document.pages) == 1 for document in documents), \
+            'chaque bulletin trimestriel (original, lot, duplicata) tient sur une page A4, titulaire et suppléant compris'
+        assert all('bul-sig-grid bul-sig-grid-4' in html for html in sources), 'grille à quatre colonnes, sans débordement'
         assert all('class="bul-card bul-dense"' in html and html.count('<tr>') >= 17 for html in sources), '16 matières → variante dense'
         assert all('Chevalier de l&#x27;Ordre du Mérite' in html and 'Tableau d&#x27;honneur' in sources[0] for html in sources)
         signature = f'<div class="msig-sign"><img class="msig-img" src="{membre.signature.url}" alt=""></div><div class="msig-name">'

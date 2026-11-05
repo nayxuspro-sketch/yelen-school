@@ -47,7 +47,8 @@ logger = logging.getLogger(__name__)
 
 register = template.Library()
 
-_FONCTION_TITULAIRE = "L'Enseignant titulaire"   # fonction affichée sous la signature du titulaire de classe
+_FONCTION_TITULAIRE = "Enseignant titulaire"      # fonction affichée sous la signature du titulaire de classe
+_FONCTION_SUPPLEANT = "Enseignant suppléant"      # fonction affichée sous la signature de son suppléant
 
 # CSS commun — injecté une seule fois par document (WeasyPrint l'applique globalement)
 _SIGNATAIRE_CSS = """
@@ -223,6 +224,27 @@ def _bloc_signataire_html(fonction, membre, titres_honorifiques=None, titre_hono
     )
 
 
+def _classe_du_contexte(context):
+    """Classe lue dans le contexte du gabarit : ``classe`` (listes, récapitulatifs) ou ``inscription.classe``
+    (bulletins, certificats)."""
+    classe = context.get('classe')
+    return classe if classe is not None else getattr(context.get('inscription'), 'classe', None)
+
+
+def _bloc_enseignant_classe(membre, fonction, context):
+    """Bloc HTML d'un enseignant de la classe : fonction, signature scannée, nom.
+
+    La date et le lieu figurent déjà sur le document (bloc du signataire de cycle, en-tête, pied de page) :
+    les répéter sous chaque colonne alourdissait la grille de signatures des bulletins.
+    """
+    return (
+        f'{_SIGNATAIRE_CSS}'
+        f'<div class="msig-zone" style="text-align:center;">'
+        f'{_bloc_signataire_html(fonction, membre)}'
+        f'</div>'
+    )
+
+
 @register.simple_tag(takes_context=True)
 def signataire_classe(context, fonction=''):
     """Bloc de signature de l'enseignant **titulaire de la classe** (5.55.0).
@@ -236,38 +258,42 @@ def signataire_classe(context, fonction=''):
         {% signataire_classe as bloc %}{% if bloc %}<div class="…">{{ bloc }}</div>{% endif %}
     """
     try:
-        classe = context.get('classe')
-        if classe is None:
-            classe = getattr(context.get('inscription'), 'classe', None)
-        if classe is None:
-            return mark_safe('')
-
-        membre = getattr(classe, 'enseignant_titulaire', None)
+        classe = _classe_du_contexte(context)
+        membre = getattr(classe, 'enseignant_titulaire', None) if classe is not None else None
         if not membre:
             return mark_safe('')
-
-        identite = context.get('identite')
-        ville_prefix = ''
-        if identite and getattr(identite, 'ville', None):
-            ville_prefix = f"{_e(identite.ville)}, "
-
-        from django.utils.formats import date_format
-        date_str = date_format(timezone.now(), 'd F Y', use_l10n=True)
-
-        interieur = _bloc_signataire_html(
-            fonction or _FONCTION_TITULAIRE, membre,
-        )
-        return mark_safe(
-            f'{_SIGNATAIRE_CSS}'
-            f'<div class="msig-zone" style="text-align:center;">'
-            f'<div class="msig-date" style="text-align:center;">{ville_prefix}le {date_str}</div>'
-            f'{interieur}'
-            f'</div>'
-        )
-
+        return mark_safe(_bloc_enseignant_classe(membre, fonction or _FONCTION_TITULAIRE, context))
     except Exception:
         logger.exception("Signataire : bloc de la classe non rendu")
         return mark_safe('')
+
+
+@register.simple_tag(takes_context=True)
+def signataires_classe(context):
+    """Blocs de signature des **enseignants de la classe**, titulaire puis suppléant (5.56.0).
+
+    Au primaire, le titulaire et son suppléant signent tous deux les bulletins de notes de la classe, à côté
+    du signataire paramétré du cycle (la direction). Liste vide si aucun enseignant n'est affecté : le document
+    est alors signé comme avant.
+
+    Usage :
+        {% signataires_classe as blocs %}{% for bloc in blocs %}<div class="…">{{ bloc }}</div>{% endfor %}
+    """
+    try:
+        classe = _classe_du_contexte(context)
+        if classe is None:
+            return []
+
+        blocs = []
+        for qualite, fonction in (('TITULAIRE', _FONCTION_TITULAIRE),
+                                  ('SUPPLEANT', _FONCTION_SUPPLEANT)):
+            membre = classe.enseignants_de_classe(qualite)
+            if membre:
+                blocs.append(mark_safe(_bloc_enseignant_classe(membre, fonction, context)))
+        return blocs
+    except Exception:
+        logger.exception("Signataire : blocs de la classe non rendus")
+        return []
 
 
 @register.simple_tag(takes_context=True)

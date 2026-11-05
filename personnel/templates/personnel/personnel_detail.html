@@ -106,9 +106,14 @@
         <div class="text-muted text-xs text-uppercase">Classe d'affectation</div>
         {% if membre.classe_affectation %}
           <p class="mt-2"><strong>{{ membre.classe_affectation.nom }}</strong>
-            <span class="text-muted">({{ membre.classe_affectation.cycle.nom }})</span></p>
+            <span class="text-muted">({{ membre.classe_affectation.cycle.nom }})</span>
+            <span class="badge badge-info">{{ membre.get_qualite_affectation_display }}</span></p>
           <p class="text-muted" style="font-size:.8rem; margin:0;">
-            Signe les bulletins de notes et la liste alphabétique de cette classe.
+            {% if membre.qualite_affectation == 'SUPPLEANT' %}
+              Signe les bulletins de notes de cette classe, à côté du titulaire.
+            {% else %}
+              Signe les bulletins de notes et la liste alphabétique de cette classe.
+            {% endif %}
           </p>
         {% else %}
           <p class="mt-2 text-muted">Aucune classe : l'agent ne signe pas de document de classe.</p>

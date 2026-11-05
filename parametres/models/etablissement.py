@@ -320,8 +320,20 @@ class Classe(BaseModel):
 
     @property
     def enseignant_titulaire(self):
-        """Enseignant affecté à cette classe : il signe les bulletins de notes et la liste alphabétique."""
-        return (self.enseignants_titulaires.filter(is_active=True).order_by('nom', 'prenom').first())
+        """Enseignant titulaire de cette classe : il signe les bulletins de notes et la liste alphabétique."""
+        return self.enseignants_de_classe('TITULAIRE')
+
+    @property
+    def enseignant_suppleant(self):
+        """Suppléant de cette classe : il signe les bulletins de notes, à côté du titulaire."""
+        return self.enseignants_de_classe('SUPPLEANT')
+
+    def enseignants_de_classe(self, qualite):
+        """Premier agent **actif** affecté à la classe avec la qualité demandée (None s'il n'y en a aucun)."""
+        return (self.enseignants_titulaires
+                .filter(is_active=True, qualite_affectation=qualite)
+                .order_by('nom', 'prenom')
+                .first())
 
 
 class Salle(BaseModel):

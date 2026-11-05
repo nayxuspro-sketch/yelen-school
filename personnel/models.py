@@ -340,6 +340,19 @@ class MembrePersonnel(BaseModel):
         help_text=_("Classe dont l'agent est titulaire : il signe les bulletins de notes et la liste "
                     "alphabétique de cette classe.")
     )
+
+    class QualiteAffectation(models.TextChoices):
+        TITULAIRE = 'TITULAIRE', _('Titulaire de la classe')
+        SUPPLEANT = 'SUPPLEANT', _('Suppléant de la classe')
+
+    qualite_affectation = models.CharField(
+        max_length=10,
+        choices=QualiteAffectation.choices,
+        default=QualiteAffectation.TITULAIRE,
+        verbose_name=_("Qualité"),
+        help_text=_("Titulaire : signe les bulletins et la liste alphabétique de la classe. "
+                    "Suppléant : signe les bulletins de la classe, à côté du titulaire.")
+    )
     
     class Meta:
         verbose_name = _("Membre du Personnel")

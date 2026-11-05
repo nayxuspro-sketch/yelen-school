@@ -93,9 +93,20 @@
         {{ form.classe_affectation }}
         {% if form.classe_affectation.errors %}<p class="input-error">{{ form.classe_affectation.errors.0 }}</p>{% endif %}
         <p class="text-muted" style="font-size:.78rem; margin-top:var(--space-1);">
-          Au primaire, la classe dont l'enseignant est titulaire. Il signe alors les <strong>bulletins de notes</strong>
-          et la <strong>liste alphabétique</strong> de cette classe ; la direction continue de signer les autres
-          documents. Laisser vide pour un agent sans classe (administration, enseignant non titulaire).
+          Au primaire, la classe à laquelle l'enseignant est affecté : il signe alors les
+          <strong>bulletins de notes</strong> de cette classe, aux côtés de la direction. Le <strong>titulaire</strong>
+          signe en outre la <strong>liste alphabétique</strong>. Laisser vide pour un agent sans classe
+          (administration, enseignant non affecté).
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.qualite_affectation.id_for_label }}" class="input-label">{{ form.qualite_affectation.label }}</label>
+        {{ form.qualite_affectation }}
+        {% if form.qualite_affectation.errors %}<p class="input-error">{{ form.qualite_affectation.errors.0 }}</p>{% endif %}
+        <p class="text-muted" style="font-size:.78rem; margin-top:var(--space-1);">
+          <strong>Titulaire</strong> : bulletins et liste alphabétique de la classe.
+          <strong>Suppléant</strong> : bulletins de la classe, à côté du titulaire (absent, remplacement).
         </p>
       </div>
     </div>

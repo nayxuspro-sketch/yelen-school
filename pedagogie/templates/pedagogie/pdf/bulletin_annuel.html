@@ -223,6 +223,16 @@ html, body {
 .bul-sig-col { text-align: center; font-size: 8pt; }
 /* Classe titulaire présente : QR + enseignant titulaire + direction */
 .bul-sig-grid-3 { grid-template-columns: 0.7fr 1fr 1fr; }
+/* Titulaire + suppléant + direction : QR réduit, trois colonnes de signature */
+.bul-sig-grid-4 { grid-template-columns: 0.55fr 1fr 1fr 1fr; gap: 6pt; }
+/* Deux enseignants de classe : bloc de signature resserré pour que le bulletin reste sur une page */
+.bul-sig-grid-3 .msig-zone, .bul-sig-grid-4 .msig-zone { margin-top: 0; }
+.bul-sig-grid.bul-sig-grid-3 .msig-date, .bul-sig-grid.bul-sig-grid-4 .msig-date { font-size: 7pt; margin-bottom: 2pt; }
+.bul-sig-grid.bul-sig-grid-3 .msig-fonction, .bul-sig-grid.bul-sig-grid-4 .msig-fonction { font-size: 7pt; }
+.bul-sig-grid.bul-sig-grid-3 .msig-name, .bul-sig-grid.bul-sig-grid-4 .msig-name { font-size: 7.5pt; margin-top: 0; line-height: 1.1; }
+.bul-sig-grid.bul-sig-grid-3 .msig-sign, .bul-sig-grid.bul-sig-grid-4 .msig-sign { height: 0.9cm; line-height: 0.9cm; }
+.bul-sig-grid.bul-sig-grid-3 .msig-sign img, .bul-sig-grid.bul-sig-grid-4 .msig-sign img { max-height: 0.9cm; }
+.bul-sig-grid.bul-sig-grid-3 .msig-honors, .bul-sig-grid.bul-sig-grid-4 .msig-honors { font-size: 6.5pt; }
 .bul-qr img { width: 50pt; height: 50pt; margin: 0 auto; }
 /* Bloc signataire compacté pour le format A5 (prime sur les styles injectés par signataire_auto). */
 .bul-sig-col .msig-zone { margin-top: 0; }
@@ -367,10 +377,10 @@ html, body {
 {% endif %}
 
 <!-- ══ SIGNATURES ══ -->
-{% signataire_classe as bloc_classe %}
-<div class="bul-sig-grid{% if bloc_classe %} bul-sig-grid-3{% endif %}">
+{% signataires_classe as blocs_classe %}
+<div class="bul-sig-grid{% if blocs_classe|length == 1 %} bul-sig-grid-3{% elif blocs_classe|length > 1 %} bul-sig-grid-4{% endif %}">
     <div class="bul-sig-col bul-qr">{% qr_bulletin_annuel inscription.eleve.matricule inscription.classe.nom annee_scolaire.libelle moyenne_annuelle.moyenne_annuelle|floatformat:2 %}</div>
-    {% if bloc_classe %}<div class="bul-sig-col">{{ bloc_classe }}</div>{% endif %}
+    {% for bloc in blocs_classe %}<div class="bul-sig-col">{{ bloc }}</div>{% endfor %}
     <div class="bul-sig-col">{% signataire_auto "BULLETIN" %}</div>
 </div>
 {% endblock %}

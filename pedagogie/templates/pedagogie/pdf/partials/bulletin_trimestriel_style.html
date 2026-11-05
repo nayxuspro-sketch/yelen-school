@@ -232,6 +232,10 @@ individuel, du duplicata et des bulletins de classe.
 .bul-sig-col { text-align: center; font-size: 8pt; }
 /* Classe titulaire présente : QR + enseignant titulaire + direction */
 .bul-sig-grid-3 { grid-template-columns: 0.7fr 1fr 1fr; }
+/* Titulaire + suppléant + direction : QR réduit, trois colonnes de signature */
+.bul-sig-grid-4 { grid-template-columns: 0.55fr 1fr 1fr 1fr; gap: 6pt; }
+/* Deux enseignants de classe : bloc de signature resserré pour que le bulletin reste sur une page */
+.bul-sig-grid-3 .msig-zone, .bul-sig-grid-4 .msig-zone { margin-top: 0; }
 .bul-qr img { width: 50pt; height: 50pt; margin: 0 auto; }
 /* Bloc signataire compact (une page par élève) : espace de signature 1,2 cm */
 .bul-sig-grid .msig-zone { margin-top: 2pt; }
@@ -240,3 +244,9 @@ individuel, du duplicata et des bulletins de classe.
 .bul-sig-grid .msig-name { margin-top: 1.1cm; }
 .bul-sig-grid .msig-sign { height: 1.1cm; line-height: 1.1cm; }
 .bul-sig-grid .msig-sign img { max-height: 1.1cm; }
+.bul-sig-grid.bul-sig-grid-3 .msig-date, .bul-sig-grid.bul-sig-grid-4 .msig-date { font-size: 7pt; margin-bottom: 2pt; }
+.bul-sig-grid.bul-sig-grid-3 .msig-fonction, .bul-sig-grid.bul-sig-grid-4 .msig-fonction { font-size: 7pt; }
+.bul-sig-grid.bul-sig-grid-3 .msig-name, .bul-sig-grid.bul-sig-grid-4 .msig-name { font-size: 7.5pt; margin-top: 0; line-height: 1.1; }
+.bul-sig-grid.bul-sig-grid-3 .msig-sign, .bul-sig-grid.bul-sig-grid-4 .msig-sign { height: 0.9cm; line-height: 0.9cm; }
+.bul-sig-grid.bul-sig-grid-3 .msig-sign img, .bul-sig-grid.bul-sig-grid-4 .msig-sign img { max-height: 0.9cm; }
+.bul-sig-grid.bul-sig-grid-3 .msig-honors, .bul-sig-grid.bul-sig-grid-4 .msig-honors { font-size: 6.5pt; }

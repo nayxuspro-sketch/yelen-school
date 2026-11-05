@@ -44,7 +44,7 @@ class MembrePersonnelForm(forms.ModelForm):
             'profil_pointage', 'heure_arrivee_limite', 'heure_depart_normale',
             'est_vacataire', 'est_directeur', 'est_censeur',
             'situation_matrimoniale', 'nombre_enfants', 'photo',
-            'etablissement', 'poste_principal_code', 'cycles', 'classe_affectation'
+            'etablissement', 'poste_principal_code', 'cycles', 'classe_affectation', 'qualite_affectation'
         ]
         widgets = {
             'date_naissance': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
@@ -52,6 +52,7 @@ class MembrePersonnelForm(forms.ModelForm):
             'adresse': forms.Textarea(attrs={'rows': 3}),
             'cycles': forms.CheckboxSelectMultiple(),
             'classe_affectation': forms.Select(),
+            'qualite_affectation': forms.Select(),
             'heure_arrivee_limite': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
             'heure_depart_normale': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
         }
@@ -61,6 +62,7 @@ class MembrePersonnelForm(forms.ModelForm):
         etablissement = kwargs.pop('etablissement', None)
         super().__init__(*args, **kwargs)
         self._filtrer_classes(etablissement)
+        self.fields['qualite_affectation'].required = False      # titulaire par défaut
 
         # Pré-remplir le champ numero_cni avec la valeur déchiffrée (masquée)
         if self.instance and self.instance.pk:
@@ -99,6 +101,8 @@ class MembrePersonnelForm(forms.ModelForm):
     def clean(self):
         """La classe d'affectation doit appartenir à l'établissement du membre."""
         donnees = super().clean()
+        if not donnees.get('qualite_affectation'):
+            donnees['qualite_affectation'] = MembrePersonnel.QualiteAffectation.TITULAIRE
         classe, etablissement = donnees.get('classe_affectation'), donnees.get('etablissement')
         if classe and etablissement and classe.etablissement_id != etablissement.pk:
             self.add_error('classe_affectation',

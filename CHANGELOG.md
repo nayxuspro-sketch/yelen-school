@@ -3,6 +3,23 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.56.0 — 2026-11-04
+
+- **Le titulaire de la classe signe le bulletin comme la direction, et son suppléant aussi.** Dans une même
+  classe, l'enseignant **titulaire** et son **suppléant** sont tous deux signataires des bulletins de notes,
+  aux côtés du signataire paramétré du cycle.
+- `MembrePersonnel.qualite_affectation` (`TITULAIRE` par défaut / `SUPPLEANT`) : la fenêtre *Ajouter un membre*
+  et *Modifier le membre* proposent la **qualité** juste sous la classe d'affectation ; laissée vide, elle vaut
+  *Titulaire* (aucune saisie existante n'est invalidée).
+- `Classe.enseignant_titulaire` et `Classe.enseignant_suppleant` (premier agent **actif** de chaque qualité).
+- Nouveau bloc `{% signataires_classe %}` : le bulletin trimestriel et le bulletin annuel affichent jusqu'à
+  **trois signatures** — enseignant titulaire, enseignant suppléant, direction — dans une grille à quatre colonnes
+  (code QR compris). La **liste alphabétique** reste signée par le titulaire et la direction.
+- Grille resserrée uniquement quand deux enseignants de classe signent (police et espace de signature réduits) :
+  le bulletin **tient toujours sur une page**, vérifié sur le pire cas (16 matières, mentions, honorifiques,
+  signature scannée, duplicata).
+- Migration `personnel/0016` (une colonne). Guide §5.1 et §24.2.
+
 ## 5.55.0 — 2026-11-04
 
 - **Classe d'affectation de l'enseignant.** La fenêtre **Ajouter un membre** (et *Modifier le membre*) propose,

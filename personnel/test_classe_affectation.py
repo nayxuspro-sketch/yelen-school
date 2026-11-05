@@ -31,6 +31,7 @@ def ecole(client):
 
 def _donnees(ecole, **extra):
     base = {
+        'qualite_affectation': 'TITULAIRE',
         'nom': 'OUEDRAOGO', 'prenom': 'Awa', 'genre': 'F', 'date_naissance': '1990-01-01',
         'lieu_naissance': 'Ouagadougou', 'nationalite': 'Burkinabè', 'fonction': 'Enseignant',
         'date_embauche': '2026-09-01', 'situation_matrimoniale': 'CELIBATAIRE', 'nombre_enfants': 0,
@@ -100,7 +101,7 @@ def test_le_titulaire_signe_le_bulletin_et_la_liste_de_sa_classe(ecole):
 
     html = _rendre('{% signataire_classe as bloc %}{{ bloc }}', {'classe': ecole['classe']})
     assert 'KABORE Salif' in html and 'DIRECTRICE' not in html
-    assert 'L&#x27;Enseignant titulaire' in html        # échappement HTML de l'apostrophe
+    assert 'Enseignant titulaire' in html        # échappement HTML de l'apostrophe
 
     # Contexte d'un bulletin : la classe est portée par l'inscription.
     inscription = baker.make('inscriptions.Inscription', classe=ecole['classe'])
@@ -113,6 +114,56 @@ def test_sans_titulaire_le_document_est_signe_comme_avant(ecole):
     assert sortie.strip() == ''
     # Aucun contexte de classe (liste globale des élèves) : pas de bloc non plus.
     assert _rendre('{% signataire_classe as bloc %}{{ bloc }}', {}).strip() == ''
+
+
+# ── Suppléant de la classe : second signataire des bulletins (5.56.0) ───────
+
+def test_titulaire_et_suppleant_signent_tous_deux_le_bulletin(ecole):
+    baker.make('personnel.MembrePersonnel', etablissement=ecole['etab'], nom='KABORE', prenom='Salif',
+               fonction='Enseignant', classe_affectation=ecole['classe'], qualite_affectation='TITULAIRE')
+    baker.make('personnel.MembrePersonnel', etablissement=ecole['etab'], nom='SAWADOGO', prenom='Aline',
+               fonction='Enseignante', classe_affectation=ecole['classe'], qualite_affectation='SUPPLEANT')
+
+    assert ecole['classe'].enseignant_titulaire.nom == 'KABORE'
+    assert ecole['classe'].enseignant_suppleant.nom == 'SAWADOGO'
+
+    blocs = _rendre('{% signataires_classe as blocs %}{% for bloc in blocs %}[{{ bloc }}]{% endfor %}',
+                    {'classe': ecole['classe']})
+    assert blocs.count('[') == 2                          # deux colonnes de signature
+    assert 'KABORE Salif' in blocs and 'SAWADOGO Aline' in blocs
+    assert 'Enseignant titulaire' in blocs and 'Enseignant suppléant' in blocs
+    assert blocs.index('KABORE') < blocs.index('SAWADOGO')          # titulaire en premier
+
+    # Sans suppléant : un seul bloc, comme avant.
+    ecole['classe'].enseignants_titulaires.filter(qualite_affectation='SUPPLEANT').delete()
+    assert len(_rendre('{% signataires_classe as blocs %}{{ blocs|length }}', {'classe': ecole['classe']})) == 1
+
+
+def test_suppleant_desactive_ne_signe_pas(ecole):
+    baker.make('personnel.MembrePersonnel', etablissement=ecole['etab'], nom='KABORE', prenom='Salif',
+               classe_affectation=ecole['classe'], qualite_affectation='TITULAIRE')
+    baker.make('personnel.MembrePersonnel', etablissement=ecole['etab'], nom='SAWADOGO', prenom='Aline',
+               classe_affectation=ecole['classe'], qualite_affectation='SUPPLEANT', is_active=False)
+    assert ecole['classe'].enseignant_suppleant is None
+    blocs = _rendre('{% signataires_classe as blocs %}{{ blocs|length }}', {'classe': ecole['classe']})
+    assert blocs == '1'
+
+
+def test_qualite_du_suppleant_enregistree_depuis_la_fiche(ecole):
+    reponse = ecole['client'].post(reverse('personnel:create'),
+                                   _donnees(ecole, nom='SAWADOGO', prenom='Aline',
+                                            qualite_affectation='SUPPLEANT'))
+    assert reponse.status_code == 302
+    membre = MembrePersonnel.objects.get(nom='SAWADOGO')
+    assert (membre.classe_affectation, membre.qualite_affectation) == (ecole['classe'], 'SUPPLEANT')
+
+
+def test_le_suppleant_ne_signe_pas_la_liste_alphabetique(ecole):
+    """La liste alphabétique reste signée par le titulaire, pas par le suppléant."""
+    baker.make('personnel.MembrePersonnel', etablissement=ecole['etab'], nom='SAWADOGO', prenom='Aline',
+               classe_affectation=ecole['classe'], qualite_affectation='SUPPLEANT')
+    html = _rendre('{% signataire_classe as bloc %}{{ bloc }}', {'classe': ecole['classe']})
+    assert html.strip() == ''
 
 
 def test_la_liste_alphabetique_pdf_porte_la_signature_du_titulaire(ecole, mocker):
@@ -129,7 +180,7 @@ def test_la_liste_alphabetique_pdf_porte_la_signature_du_titulaire(ecole, mocker
     assert ecole['client'].get(url + '?format=pdf').status_code == 200
 
     html = weasy.call_args.kwargs['string']
-    assert 'KABORE Salif' in html and 'L&#x27;Enseignant titulaire' in html
+    assert 'KABORE Salif' in html and 'Enseignant titulaire' in html
     assert maitre.pk and ecole['classe'].nom in html
 
 

@@ -1,8 +1,8 @@
 ---
 titre: Guide d'Utilisation — YELEN SCHOOL
-version_logiciel: 5.55.0
+version_logiciel: 5.56.0
 version_guide: 5.47
-date_mise_a_jour: 04/11/2026 (5.55.0 : classe d'affectation et signature du titulaire)
+date_mise_a_jour: 04/11/2026 (5.56.0 : titulaire et suppléant signent le bulletin)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -1017,11 +1017,13 @@ cycle et du poste de son inscription annuelle active (une ligne par inscription)
 inscriptions *actives* de l'*année scolaire courante* comptent ; sans année courante, la colonne
 affiche « — ».
 
-**Fiche du membre — classe d'affectation (5.55.0) :** la fenêtre *Ajouter un membre* / *Modifier le membre*
-propose, dans la section **Cycles d'enseignement**, le choix de la **classe d'affectation** de l'enseignant
-(par exemple `CP1` au primaire) ; la liste ne contient que les classes de l'établissement choisi. La fiche du
-membre rappelle cette classe et son effet : l'agent **signe les bulletins de notes et la liste alphabétique de
-sa classe** (§24.2). Laisser vide pour l'administration ou un enseignant non titulaire.
+**Fiche du membre — classe d'affectation et qualité (5.55.0, complétée en 5.56.0) :** la fenêtre
+*Ajouter un membre* / *Modifier le membre* propose, dans la section **Cycles d'enseignement**, la **classe
+d'affectation** de l'enseignant (par exemple `CP1` au primaire) et sa **qualité** — *Titulaire de la classe*
+(par défaut) ou *Suppléant de la classe*. La liste ne contient que les classes de l'établissement choisi. La
+fiche du membre rappelle la classe, la qualité et leur effet : **le titulaire et le suppléant signent les
+bulletins de notes de la classe**, le titulaire signe en outre la **liste alphabétique** (§24.2). Laisser vide
+pour l'administration ou un enseignant non affecté.
 
 **Exports :** les trois boutons **CSV**, **Excel** et **PDF** en haut à droite exportent
 **exactement la liste affichée** (mêmes filtres : recherche et inactifs). La barre d'actions
@@ -1422,14 +1424,17 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 
 **Signataire :** Détecté automatiquement selon le cycle de la classe et l'année scolaire (`Paramètres → Signataires des documents`, type `BULLETIN`).
 
-**Enseignant titulaire de la classe (5.55.0) :** lorsqu'une classe a un **enseignant titulaire** (`Personnel →
-Modifier le membre → Classe d'affectation`, §5.1), celui-ci signe en plus les **bulletins de notes (trimestriels
-et annuels)** de sa classe et la **liste alphabétique** de cette classe, sous la fonction « L'Enseignant
-titulaire », avec sa signature scannée s'il en possède une. La grille des signatures du bulletin passe alors à
-trois colonnes — code QR, enseignant titulaire, signataire du cycle — et la liste alphabétique présente le
-titulaire à gauche et le signataire du cycle à droite. Sans classe d'affectation (ou si l'agent est désactivé),
-les documents sont signés exactement comme auparavant ; la **liste globale des élèves** (toutes classes) ne porte
-pas de bloc titulaire.
+**Enseignants de la classe : titulaire et suppléant (5.55.0, complété en 5.56.0) :** lorsqu'une classe a un
+**enseignant titulaire** et, le cas échéant, un **suppléant** (`Personnel → Modifier le membre → Classe
+d'affectation` et *Qualité*, §5.1), **tous deux signent les bulletins de notes** (trimestriels et annuels) de la
+classe, à côté du signataire du cycle — donc aux côtés de la direction. La grille des signatures du bulletin
+passe alors à quatre colonnes (code QR, enseignant titulaire, enseignant suppléant, direction) ou trois si la
+classe n'a pas de suppléant ; chaque signature est précédée de sa fonction (« Enseignant titulaire »,
+« Enseignant suppléant ») et la signature scannée est apposée si l'agent en possède une. La **liste alphabétique**
+reste signée par le **titulaire** (à gauche) et le signataire du cycle (à droite). Le bloc reste compact pour que
+le bulletin tienne sur une page. Sans classe d'affectation (ou si l'agent est désactivé), les documents sont
+signés exactement comme auparavant ; la **liste globale des élèves** (toutes classes) ne porte pas de bloc
+d'enseignant de classe.
 
 **Signature scannée (facultatif) :** dans la fenêtre `Paramètres → Signataires → Configurer les Signataires`, chaque carte propose un champ **Signature scannée** (PNG à fond transparent recommandé ; photo ou scan jusqu'à 5 Mo, l'image est automatiquement ramenée à 800 px et allégée pour l'impression — il en va de même pour la signature du directeur et le cachet de `Paramètres → Identité de l'établissement`). L'image est enregistrée sur la fiche du membre du personnel choisi et apposée automatiquement, à l'emplacement prévu pour sa signature, sur **tous** les documents qu'il signe (bulletins trimestriels et annuels, certificats de scolarité, attestations, convocations, circulaires, emplois du temps, cartes scolaires — sous la photo de l'élève —, autorisations, reçus, relances de paiement, listes, états…), sans modifier la mise en page. Sans image, l'espace reste vierge pour la signature manuscrite ; la case **Retirer la signature** supprime l'image enregistrée.
 
