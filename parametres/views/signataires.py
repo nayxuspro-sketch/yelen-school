@@ -301,8 +301,26 @@ def signataires_matricule(request):
     # ── POST : gestion des signataires et cosignataires ──
     if request.method == 'POST' and annee:
         action = request.POST.get('action', 'save_signataire')
+        cs_id = request.POST.get('cosignataire_id')
         cycle_id = request.POST.get('cycle_id')
         type_document_id = request.POST.get('type_document_id')
+
+        # ── Suppression d'un cosignataire (ne nécessite ni cycle_id ni type_document_id) ──
+        # Traitée en premier, avant toute récupération de Cycle/TypeDocument, afin d'éviter
+        # « Cycle matching query does not exist » quand ces champs sont absents du POST.
+        if cs_id:
+            try:
+                nb = CoSignataire.objects.filter(id=cs_id, actif=True).update(actif=False)
+                if nb:
+                    messages.success(request, "Co-signataire supprimé.")
+                else:
+                    messages.error(request, "Ce co-signataire n'existe plus ou est déjà supprimé.")
+            except (DatabaseError, ValidationError) as e:
+                logger.exception("Suppression du cosignataire impossible")
+                messages.error(request, f"Erreur : {e}")
+            return redirect(f"{request.path}?annee={annee.id if annee else ''}")
+
+        # Pour les autres actions, cycle_id et type_document_id sont requis.
         try:
             cycle = Cycle.objects.get(id=cycle_id, etablissement=etab)
             td = TypeDocument.objects.get(id=type_document_id, actif=True)
@@ -391,7 +409,6 @@ def signataires_matricule(request):
                 logger.exception("Ajout du cosignataire impossible")
                 messages.error(request, f"Erreur : {e}")
 
-        # (delete_cosignataire est traité plus haut, avant la récupération du cycle)
 
         return redirect(f"{request.path}?annee={annee.id if annee else ''}")
 
