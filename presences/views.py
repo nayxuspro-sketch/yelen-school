@@ -24,6 +24,8 @@ from .models import Appel, Presence, Justification, SeuilAbsences, AlerteAbsence
 from .services import notifier_parents_appel
 from .alertes import verifier_seuils
 
+from yelen_school.cycle_filter import filtrer_classe_par_cycle, filtrer_eleve_par_cycle
+
 
 def _get_annee_courante(etablissement):
     return AnneeScolaire.objects.filter(
@@ -107,8 +109,13 @@ def appel_list(request):
         qs = qs.filter(classe_id=classe_id)
 
     classes = _classes_appel(request, etab, annee)
+    classes = filtrer_classe_par_cycle(classes, request)
     if request.user.role == 'ENSEIGNANT':
         qs = qs.filter(classe__in=classes)
+
+    # Filtrage par cycle pour les non-enseignants (appels de leurs classes)
+    if request.user.role != 'ENSEIGNANT':
+        qs = qs.filter(classe__cycle__in=request.cycles_autorises) if request.cycles_autorises else qs.none()
 
     qs = qs.order_by('-date', 'classe__nom')
     page_number = request.GET.get('page', 1)
@@ -156,9 +163,11 @@ def appel_csv(request):
         qs = qs.filter(classe_id=classe_id)
     if request.user.role == 'ENSEIGNANT':
         qs = qs.filter(classe__in=_classes_appel(request, etab, annee))
-    
+    else:
+        qs = qs.filter(classe__cycle__in=request.cycles_autorises) if request.cycles_autorises else qs.none()
+
     qs = qs.order_by('-date', 'classe__nom')
-    
+
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     nom_fichier = f"appels_{date_debut or 'tout'}_{date_fin or 'tout'}.csv".replace(' ', '_')
     response['Content-Disposition'] = f'attachment; filename="{nom_fichier}"'

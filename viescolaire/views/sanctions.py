@@ -23,12 +23,20 @@ from ..models import (
 @login_required
 def sanction_list(request):
     """Liste des sanctions disciplinaires, regroupées par classe."""
-    from django.db.models import Q
+from django.db.models import Q
+from yelen_school.cycle_filter import get_cycle_ids, filtrer_classe_par_cycle
 
-    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-    qs = SanctionDisciplinaire.objects.select_related(
-        'inscription__eleve', 'inscription__classe__cycle', 'prononcee_par', 'trimestre', 'type_sanction'
-    ).order_by('inscription__classe__cycle__ordre', 'inscription__classe__nom', '-date_sanction')
+annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
+qs = SanctionDisciplinaire.objects.select_related(
+    'inscription__eleve', 'inscription__classe__cycle', 'prononcee_par', 'trimestre', 'type_sanction'
+).order_by('inscription__classe__cycle__ordre', 'inscription__classe__nom', '-date_sanction')
+
+# Filtrage par cycle pour les non-réseau
+cycle_ids = get_cycle_ids(request)
+if cycle_ids is not None and not cycle_ids:
+    qs = qs.none()
+elif cycle_ids:
+    qs = qs.filter(inscription__classe__cycle_id__in=cycle_ids)
     if annee_courante:
         qs = qs.filter(inscription__annee_scolaire=annee_courante)
 
@@ -61,6 +69,7 @@ def sanction_list(request):
         classes = Classe.objects.filter(etablissement=etab).select_related('cycle').order_by('cycle__ordre', 'nom')
     else:
         classes = Classe.objects.select_related('cycle').order_by('cycle__ordre', 'nom')
+    classes = filtrer_classe_par_cycle(classes, request)
 
     groupes = {}
     for s in qs:

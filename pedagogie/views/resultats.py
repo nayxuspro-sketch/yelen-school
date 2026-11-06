@@ -18,6 +18,7 @@ from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_etablissement_context
 from licences.decorators import requires_licence_feature
 from .commun import HTML, _pdf_licence_info
+from yelen_school.cycle_filter import filtrer_classe_par_cycle, get_cycle_ids
 
 
 @login_required
@@ -41,6 +42,8 @@ def classe_result_list(request):
             .values('n')
         )
         classes = classes.annotate(nb_eleves=Subquery(nb_sub))
+
+    classes = filtrer_classe_par_cycle(classes, request)
 
     return render(request, 'pedagogie/classe_result_list.html', {
         'classes': classes,
@@ -71,11 +74,14 @@ def bilan_periodes(request):
     classes = list(
         Classe.objects.select_related('cycle').order_by('cycle__ordre', 'nom')
     )
+    classes_qs = filtrer_classe_par_cycle(Classe.objects.filter(pk__in=[c.pk for c in classes]), request)
+    classes = list(classes_qs)
 
     # Une seule requête pour toutes les stats (classe × trimestre)
     mg_stats = (
         MoyenneGenerale.objects
-        .filter(trimestre__in=trimestres, inscription__annee_scolaire=annee)
+        .filter(trimestre__in=trimestres, inscription__annee_scolaire=annee,
+                inscription__classe__in=classes_qs)
         .values('trimestre_id', 'inscription__classe_id')
         .annotate(
             nb_eleves=Count('id'),
@@ -363,6 +369,11 @@ def resultat_classe(request, class_id):
     """Tableau de bord des résultats pour une classe."""
     from inscriptions.models import Inscription
     classe = get_object_or_404(Classe, pk=class_id)
+    # Vérifier l'accès au cycle de la classe
+    cycle_ids = get_cycle_ids(request)
+    if cycle_ids is not None and (not cycle_ids or classe.cycle_id not in cycle_ids):
+        messages.error(request, "Vous n'avez pas accès aux données de ce cycle.")
+        return redirect('pedagogie:classe_result_list')
     annees = AnneeScolaire.objects.all().order_by('-libelle')
 
     # Année sélectionnée (param GET ou année courante par défaut)
@@ -459,6 +470,7 @@ def moyennes_disciplines(request):
 
     annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut') if etab else AnneeScolaire.objects.none()
     classes = Classe.objects.filter(etablissement=etab, actif=True).select_related('cycle').order_by('cycle__ordre', 'nom') if etab else Classe.objects.none()
+    classes = filtrer_classe_par_cycle(classes, request)
 
     annee_id    = request.GET.get('annee')
     trimestre_id = request.GET.get('trimestre')

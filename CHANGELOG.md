@@ -3,6 +3,10 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.62.0 — 2026-11-06
+
+- **Extension du filtrage par cycle aux vues restantes.** Le middleware `CycleAccessMiddleware` et les utilitaires `filtrer_classe_par_cycle` / `get_cycle_ids` sont désormais appliqués à : `appel_list` et `appel_csv` (présences), `sanction_list` (sanctions disciplinaires), `classe_result_list`, `bilan_periodes`, `resultat_classe` et `moyennes_disciplines` (résultats/bulletins). Chaque vue vérifie que l'utilisateur a accès au cycle des données affichées ; sinon, une erreur est renvoyée et l'accès est refusé.
+
 ## 5.61.0 — 2026-11-06
 
 - **Filtrage des données par cycle (isolation des données).** Nouveau middleware `CycleAccessMiddleware` qui détermine, pour chaque utilisateur, les cycles qu'il est autorisé à voir. Deux nouveaux champs sur `User` : `cycles` (ManyToMany vers `Cycle`) et `est_tous_cycles` (booléen). Règles : SUPER_ADMIN / DIRECTEUR_RESEAU voient tous les cycles ; `est_tous_cycles=True` voit tous les cycles ; `cycles` assignés voit seulement ces cycles ; sans aucun des deux → données vides. Utilitaires `filtrer_par_cycle`, `filtrer_eleve_par_cycle`, `filtrer_classe_par_cycle` dans `yelen_school/cycle_filter.py`. Vues filtrées : `classe_list`, `eleve_list`, `evaluation_list`, `saisie_classe_select` (saisie des notes). Une migration `accounts/0010_add_cycles_to_user.py` ajoute les champs.
