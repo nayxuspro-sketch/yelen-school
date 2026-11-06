@@ -61,6 +61,17 @@ def filtrer_par_cycle(
     return queryset.filter(**{f'{cycle_field}__in': cycle_ids})
 
 
+def cycle_queryset(
+    queryset: QuerySet,
+    request,
+    cycle_field: str = 'cycle',
+) -> QuerySet:
+    """
+    Alias de filtrer_par_cycle pour compatibilité avec les vues existantes.
+    """
+    return filtrer_par_cycle(queryset, request, cycle_field=cycle_field)
+
+
 def filtrer_eleve_par_cycle(
     queryset: QuerySet,
     request,
