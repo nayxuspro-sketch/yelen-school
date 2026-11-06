@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
             supprimer_doublons_cosignataire,
             migrations.RunPython.noop,
         ),
-        migrations.UniqueConstraint(
+        models.UniqueConstraint(
             fields=['signataire_principal', 'membre_personnel_id'],
             condition=models.Q(actif=True),
             name='unique_cosignataire_actif_par_membre',
