@@ -309,6 +309,13 @@ def signataires_matricule(request):
             cycle = Cycle.objects.get(id=cycle_id, etablissement=etab)
             td = TypeDocument.objects.get(id=type_document_id, actif=True)
             if not membre_id:
+                existant = SignataireDocument.objects.filter(
+                    cycle=cycle, type_document=td, annee_scolaire=annee,
+                    actif=True,
+                ).first()
+                if existant and existant.membre_personnel_id:
+                    membre_id = existant.membre_personnel_id
+            if not membre_id:
                 messages.error(request, "Veuillez sélectionner un membre du personnel.")
             else:
                 SignataireDocument.objects.update_or_create(
@@ -323,10 +330,10 @@ def signataires_matricule(request):
                         'actif': True,
                     },
                 )
-            messages.success(
-                request,
-                f"Signataire enregistré pour {cycle.nom} · {td.libelle}."
-            )
+                messages.success(
+                    request,
+                    f"Signataire enregistré pour {cycle.nom} · {td.libelle}."
+                )
         except (Cycle.DoesNotExist, TypeDocument.DoesNotExist, DatabaseError, ValidationError) as e:
             logger.exception("Mise à jour du signataire matriciel impossible")
             messages.error(request, f"Erreur : {e}")
