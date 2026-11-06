@@ -52,44 +52,45 @@
   </form>
 </div>
 
-<!-- Grille matricielle : lignes = types de documents, colonnes = cycles -->
-<div class="sm-grid">
-  <div class="sm-sticky-col">
-    <div class="sm-cell sm-cell--head sm-cell--cat">Type de document</div>
-    {% for ligne in matrice %}
-    <div class="sm-cell sm-cell--label" title="{{ ligne.type.libelle }}">
-      <span class="sm-code">{{ ligne.type.code }}</span> {{ ligne.type.libelle }}
-      {% if ligne.type.cycle_id %}<span class="sm-cycle-tag">cycle {{ ligne.type.cycle.code }}</span>{% else %}<span class="sm-cycle-tag sm-cycle-tag--shared">tous cycles</span>{% endif %}
-    </div>
-    {% endfor %}
-  </div>
+{% if not cycles %}
+<div class="alert alert-warning mb-4">
+  Aucun cycle actif n'est configuré pour cet établissement. Les colonnes de la grille ne peuvent pas être affichées.
+</div>
+{% endif %}
 
-  <div class="sm-body">
-    <!-- En-têtes de colonnes = cycles -->
-    <div class="sm-row sm-row--head">
-      <div class="sm-cell sm-cell--head">Cycle</div>
+{% if not personnel %}
+<div class="alert alert-warning mb-4">
+  Aucun membre du personnel actif n'est trouvé pour cet établissement. Vous ne pourrez pas sélectionner de signataire.
+</div>
+{% endif %}
+
+<!-- Grille matricielle : tableau HTML (lignes = types de documents, colonnes = cycles) -->
+{% if cycles and personnel and matrice %}
+<table class="sm-table">
+  <thead>
+    <tr>
+      <th class="sm-th--label">Type de document</th>
       {% for cycle in cycles %}
-      <div class="sm-cell sm-cell--head sm-cell--cycle-head">
-        <div class="sm-cycle-nom">{{ cycle.nom }}</div>
-        <div class="sm-cycle-code">{{ cycle.code }}</div>
-      </div>
+      <th class="sm-th--cycle">
+        <div class="sm-th-nom">{{ cycle.nom }}</div>
+        <div class="sm-th-code">{{ cycle.code }}</div>
+      </th>
       {% endfor %}
-    </div>
-
-    <!-- Lignes = types de documents (groupés visuellement par catégorie) -->
+    </tr>
+  </thead>
+  <tbody>
     {% for ligne in matrice %}
-    <div class="sm-row{% if not forloop.first %} sm-row--cat-sep{% endif %}">
-      <!-- Colonne libellé de catégorie (seulement sur la première ligne de chaque catégorie) -->
+    <tr class="sm-row{% if not forloop.first %} sm-row--cat-sep{% endif %}">
       {% if ligne.is_first_in_category %}
-      <div class="sm-cell sm-cell--cat-label">{{ ligne.cat_label }}</div>
-      {% else %}
-      <div class="sm-cell sm-cell--cat-label--blank"></div>
+      <td class="sm-td--cat" rowspan="{{ ligne.type_cat_count }}">{{ ligne.cat_label }}</td>
       {% endif %}
-
-      <!-- Une cellule par cycle -->
+      <td class="sm-td--label" title="{{ ligne.type.libelle }}">
+        <span class="sm-code">{{ ligne.type.code }}</span> {{ ligne.type.libelle }}
+        {% if ligne.type.cycle_id %}<span class="sm-cycle-tag">cycle {{ ligne.type.cycle.code }}</span>{% else %}<span class="sm-cycle-tag sm-cycle-tag--shared">tous cycles</span>{% endif %}
+      </td>
       {% for cellule in ligne.cellules %}
       {% if cellule.applicable %}
-      <div class="sm-cell sm-cell--input">
+      <td class="sm-td--input">
         <form method="post" class="sm-cell-form">
           {% csrf_token %}
           <input type="hidden" name="annee_id" value="{{ annee.id }}">
@@ -113,62 +114,127 @@
             {{ cellule.configuré|yesno:'Configuré,Non configuré' }}
           </div>
         </form>
-      </div>
+      </td>
       {% else %}
-      <div class="sm-cell sm-cell--na">
+      <td class="sm-td--na">
         <span class="sm-dash">—</span><span class="sm-caption">non applicable</span>
-      </div>
+      </td>
       {% endif %}
       {% endfor %}
-    </div>
+    </tr>
     {% endfor %}
-  </div>
-</div>
+  </tbody>
+</table>
+{% endif %}
 
 <style nonce="{{ request.csp_nonce }}">
-/* ── Grille matricielle ── */
-.sm-grid { display: grid; grid-template-columns: 260px 1fr; gap: 0; margin-top: 1rem; }
-.sm-sticky-col { border: 1px solid var(--color-border); border-right: none; background: var(--color-bg-card); }
-.sm-body { border: 1px solid var(--color-border); display: contents; }
-
-.sm-cell { padding: .5rem .625rem; font-size: .8125rem; border-bottom: 1px solid var(--color-border-light, #e2e8f0); border-right: 1px solid var(--color-border-light, #e2e8f0); overflow: hidden; }
-.sm-cell--head { background: #0A1628; color: #fff; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: .7rem; border-bottom: 2px solid #12233A; }
-.sm-cell--cat { border-bottom: 2px solid #12233A; padding: .625rem; }
-.sm-cell--label { background: #FBF8F2; color: var(--color-text-primary); padding: .5rem .625rem; border-bottom: 1px solid var(--color-border-light); }
-.sm-code { font-family: var(--font-mono); font-size: .7rem; font-weight: 600; color: #B0803A; margin-right: .5rem; }
-.sm-cycle-tag { font-size: .65rem; padding: .1rem .4rem; border-radius: 3px; margin-left: .5rem; vertical-align: middle; }
+/* ── Grille matricielle (table) ── */
+.sm-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: .8125rem;
+}
+.sm-table th,
+.sm-table td {
+  border: 1px solid var(--color-border-light, #e2e8f0);
+  padding: .5rem .625rem;
+  text-align: left;
+  vertical-align: middle;
+}
+.sm-table thead th {
+  background: #0A1628;
+  color: #fff;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-size: .7rem;
+  text-align: center;
+}
+.sm-td--label {
+  background: #FBF8F2;
+  color: var(--color-text-primary);
+  font-size: .8125rem;
+}
+.sm-code {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  font-weight: 600;
+  color: #B0803A;
+  margin-right: .5rem;
+}
+.sm-cycle-tag {
+  font-size: .65rem;
+  padding: .1rem .4rem;
+  border-radius: 3px;
+  margin-left: .5rem;
+  vertical-align: middle;
+}
 .sm-cycle-tag { background: #e2e8f0; color: #475569; }
 .sm-cycle-tag--shared { background: #dbeafe; color: #1e40af; }
 
-.sm-row--head .sm-cell--cycle-head { background: #12233A; color: #cbd5e1; text-align: center; }
-.sm-cycle-nom { font-weight: 600; font-size: .8rem; }
-.sm-cycle-code { font-size: .65rem; color: #94a3b8; font-family: var(--font-mono); }
+.sm-td--input { text-align: center; background: #fff; }
+.sm-td--na { text-align: center; color: #94a3b8; background: #f1f5f9; }
 
-.sm-cell--input { text-align: center; background: #fff; }
-.sm-cell--na { text-align: center; color: #94a3b8; background: #f1f5f9; }
+.sm-fields {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  align-items: center;
+}
+.sm-fields .input-sm {
+  width: 140px;
+  font-size: .75rem;
+  padding: .3rem .5rem;
+}
+.sm-fields button.btn-sm {
+  padding: .3rem .6rem;
+  font-size: .75rem;
+  margin-top: .2rem;
+}
 
-.sm-fields { display: flex; flex-direction: column; gap: .3rem; align-items: center; }
-.sm-fields .input-sm { width: 140px; font-size: .75rem; padding: .3rem .5rem; }
-.sm-fields button.btn-sm { padding: .3rem .6rem; font-size: .75rem; margin-top: .2rem; }
-
-.sm-status { margin-top: .3rem; font-size: .7rem; display: flex; align-items: center; gap: .3rem; justify-content: center; }
-.sm-dot { width: 7px; height: 7px; border-radius: 50%; }
+.sm-status {
+  margin-top: .3rem;
+  font-size: .7rem;
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  justify-content: center;
+}
+.sm-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
 .sm-dot.ok { background: #00A86B; box-shadow: 0 0 6px rgba(0,168,107,.4); }
 .sm-dot.empty { background: #cbd5e1; }
 .sm-status.ok { color: #00A86B; font-weight: 600; }
 .sm-status.empty { color: #94a3b8; }
 
-.sm-cell--cat-label { background: #12233A; color: #94a3b8; font-size: .7rem; font-weight: 600; padding: .5rem .625rem; text-align: left; border-bottom: none; border-right: 1px solid var(--color-border-light); }
-.sm-cell--cat-label--blank { background: #FBF8F2; border-bottom: none; border-right: 1px solid var(--color-border-light); height: 100%; }
-.sm-row--cat-sep { border-top: 2px solid #12233A; }
+.sm-td--cat {
+  background: #12233A;
+  color: #94a3b8;
+  font-size: .7rem;
+  font-weight: 600;
+  text-align: left;
+}
+.sm-row--cat-sep {
+  border-top: 2px solid #12233A;
+}
 .sm-dash { color: #cbd5e1; }
 .sm-caption { font-size: .65rem; color: #94a3b8; }
 
 @media (max-width: 900px) {
-  .sm-grid { grid-template-columns: 1fr; }
-  .sm-sticky-col { display: none; }
-  .sm-row { display: block; }
-  .sm-cell--head { display: none; }
+  .sm-table {
+    font-size: .7rem;
+  }
+  .sm-table th,
+  .sm-table td {
+    padding: .4rem .5rem;
+  }
+  .sm-fields .input-sm {
+    width: 120px;
+  }
 }
 </style>
 

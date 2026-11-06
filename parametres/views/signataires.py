@@ -378,6 +378,7 @@ def signataires_matricule(request):
                 'cat_label': cat_label,
                 'type': td,
                 'is_first_in_category': (cat_val != cat_precedente),
+                'type_cat_count': len(types_cat),
                 'cellules': cellules,
             })
             cat_precedente = cat_val
