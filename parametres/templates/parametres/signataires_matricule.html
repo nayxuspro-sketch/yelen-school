@@ -133,7 +133,7 @@
           <div class="sm-cosig-header">Co-signataires :</div>
           {% for cs in cellule.cosignataires %}
           <div class="sm-cosig-item">
-            <span class="sm-cosig-nom">{{ cs.membre.nom|upper }} {{ cs.membre.prenom }}</span>
+            <span class="sm-cosig-nom">{{ cs.membre.nom|default:'Inconnu'|upper }} {{ cs.membre.prenom|default:'' }}</span>
             {% if cs.fonction %}<span class="sm-cosig-fonction">{{ cs.fonction }}</span>{% endif %}
             <form method="post" class="sm-cosig-form" style="display:inline;">
               {% csrf_token %}

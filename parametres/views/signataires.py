@@ -349,7 +349,7 @@ def signataires_matricule(request):
         # ── 2. Ajout d'un cosignataire ──
         elif action == 'add_cosignataire':
             try:
-                sig, _ = SignataireDocument.objects.update_or_create(
+                sig, _ = SignataireDocument.objects.get_or_create(
                     cycle=cycle,
                     type_document=td,
                     annee_scolaire=annee,
