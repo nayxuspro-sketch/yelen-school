@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.60.4 — 2026-11-05
+
+- **Samedi comme jour de classe dans le champ « Jour » de l'emploi du temps.** Samedi (jour 6) est proposé par défaut dans le menu déroulant lors de l'ajout d'une séance (`Vie Scolaire → Emploi du temps → Ajouter une séance`). La liste respecte la configuration des jours de classe : si seuls Lundi–Vendredi sont actifs, Samedi n'apparaît pas. Une séance ne peut pas être placée un samedi non configuré.
+- Aucun changement de calcul, aucune migration.
+
 ## 5.60.3 — 2026-11-05
 
 - **Saisie des notes filtrée par scolarité (établissement privé).** Dans un établissement privé, un élève non

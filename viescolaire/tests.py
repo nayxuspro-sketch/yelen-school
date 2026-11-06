@@ -351,6 +351,22 @@ class TestConfigEDT:
         assert len(GenerateurEDT(ecole['classe'], ecole['annee'], None).slots) == 54
         assert ConfigEDT.pour(None)._state.adding
 
+    def test_champ_jour_propose_samedi_par_defaut(self, client, ecole):
+        """Le champ « Jour » du formulaire d'ajout de séance propose Samedi par défaut
+        (JOURS_PAR_DEFAUT inclut le jour 6) sans configuration explicite de jours_actifs."""
+        url = reverse('viescolaire:emploi_du_temps', kwargs={'classe_id': ecole['classe'].pk})
+        html = client.get(url, {'annee': ecole['annee'].pk}).content.decode()
+        assert 'Samedi' in html, 'Samedi doit apparaître dans le champ Jour par défaut'
+        assert 'value="6"' in html, 'L’option Samedi (jour 6) doit être proposée'
+
+    def test_champ_jour_respecte_les_jours_actifs(self, client, ecole):
+        """Si seuls Lundi–Vendredi sont configurés, Samedi n’apparaît pas dans le champ Jour."""
+        baker.make('viescolaire.ConfigEDT', etablissement=ecole['etab'], jours_actifs=[1, 2, 3, 4, 5])
+        url = reverse('viescolaire:emploi_du_temps', kwargs={'classe_id': ecole['classe'].pk})
+        html = client.get(url, {'annee': ecole['annee'].pk}).content.decode()
+        assert 'Samedi' not in html, 'Samedi ne doit pas apparaître s’il n’est pas un jour de classe'
+        assert 'value="6"' not in html, 'L’option Samedi ne doit pas être proposée'
+
 
 @pytest.mark.django_db
 class TestRetraitSeance:

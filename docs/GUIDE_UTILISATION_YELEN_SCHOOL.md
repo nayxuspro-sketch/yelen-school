@@ -2,7 +2,7 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 5.57.0
 version_guide: 5.47
-date_mise_a_jour: 05/11/2026 (5.60.3 : saisie des notes filtrée par scolarité en privé)
+date_mise_a_jour: 05/11/2026 (5.60.4 : samedi disponible comme jour de classe dans le champ « Jour » de l'emploi du temps)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -3539,20 +3539,11 @@ Le fichier Excel (une feuille) contient trois blocs prêts pour la saisie au cab
 
 Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMPTES_DEPENSES`) : un cabinet qui utilise une autre codification les adapte sans toucher au reste. Les écritures sont en **francs CFA entiers**, dans l'ordre chronologique ; aucun paiement n'est modifié ni supprimé (registre de caisse immuable, §9.7).
 
-#### 9.39 Saisie des notes et scolarité (établissement privé) (5.60.3)
+##### 9.40 Samedi comme jour de classe (emploi du temps) (5.60.4)
 
-**Règle métier :** dans un établissement **privé** (`IdentiteEtablissement.type_etablissement = PRIVE`), un élève
-n'apparaît pas dans la page de saisie des notes (`Pédagogie → Évaluations → Saisir les notes`) lorsque :
+**Champ « Jour » de l'emploi du temps** : **Samedi** est proposé par défaut dans le menu déroulant « Jour » lors de l'ajout d'une séance (`Vie Scolaire → Emploi du temps → [Classe] → Ajouter une séance`). La liste des jours disponibles suit la configuration des jours de classe (`Vie Scolaire → Horaires et jours de classe`) : si seulement Lundi–Vendredi sont cochés, Samedi n'apparaît pas ; sinon, il est disponible.
 
-- il n'a **pas d'inscription** active pour l'année scolaire et la classe concernées, ou
-- sa **scolarité (total dû) est <= 0** — c'est-à-dire qu'aucun frais de scolarité n'est dû (pas de `statut_eleve`,
-  pas de tarifs configurés, exonération, bourse intégrale ou solde déjà réglé).
-
-Cette règle ne s'applique **pas** aux établissements publics : tous les élèves inscrits apparaissent quelle que
-soit leur situation financière.
-
-**Objectif :** éviter la saisie de notes pour des élèves non effectivement scolarisés (non inscrits ou sans
-scolarité due) dans le privé, où la scolarité conditionne l'inscription effective.
+**Règle de validation** : une séance ne peut pas être ajoutée un samedi si le samedi n'est pas un jour de classe configuré (message : « Samedi n'est pas un jour de classe configuré »).
 
 ### 9.38 Moyennes du primaire sur 10 et bouton « Calculer les moyennes » (5.60.0)
 
@@ -3577,6 +3568,21 @@ scolarité due) dans le privé, où la scolarité conditionne l'inscription effe
   l'enseignant pour chaque matière (au primaire comme ailleurs) ; la zone de signature de l'enseignant titulaire
   comporte maintenant un espace vierge entre le intitulé « Enseignant titulaire » et le nom imprimé, pour la
   signature manuscrite.
+
+### 9.39 Saisie des notes et scolarité (établissement privé) (5.60.3)
+
+**Règle métier :** dans un établissement **privé** (`IdentiteEtablissement.type_etablissement = PRIVE`), un élève
+n'apparaît pas dans la page de saisie des notes (`Pédagogie → Évaluations → Saisir les notes`) lorsque :
+
+- il n'a **pas d'inscription** active pour l'année scolaire et la classe concernées, ou
+- sa **scolarité (total dû) est <= 0** — c'est-à-dire qu'aucun frais de scolarité n'est dû (pas de `statut_eleve`,
+  pas de tarifs configurés, exonération, bourse intégrale ou solde déjà réglé).
+
+Cette règle ne s'applique **pas** aux établissements publics : tous les élèves inscrits apparaissent quelle que
+soit leur situation financière.
+
+**Objectif :** éviter la saisie de notes pour des élèves non effectivement scolarisés (non inscrits ou sans
+scolarité due) dans le privé, où la scolarité conditionne l'inscription effective.
 
 ## 10. EXAMENS
 
