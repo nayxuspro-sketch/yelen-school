@@ -155,15 +155,18 @@
             <input type="hidden" name="cycle_id" value="{{ cellule.cycle.id }}">
             <input type="hidden" name="type_document_id" value="{{ ligne.type.id }}">
             <div class="sm-fields sm-fields--inline">
-              <select name="membre_personnel" class="input input-sm" required>
+              <select name="membre_personnel" class="input input-sm" required {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}disabled{% endif %}>
                 <option value="">—</option>
                 {% for p in personnel %}
                 <option value="{{ p.id }}">{{ p.nom|upper }} {{ p.prenom }}</option>
                 {% endfor %}
               </select>
-              <input type="text" name="fonction" class="input input-sm" placeholder="Fonction">
-              <input type="number" name="ordre" class="input input-sm" placeholder="Ordre" value="2" min="2">
-              <button type="submit" class="btn btn-sm btn-primary">+ Co-signer</button>
+              <input type="text" name="fonction" class="input input-sm" placeholder="Fonction" {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}disabled{% endif %}>
+              <input type="number" name="ordre" class="input input-sm" placeholder="Ordre" value="2" min="2" {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}disabled{% endif %}>
+              <button type="submit" class="btn btn-sm btn-primary" {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}disabled{% endif %}>+ Co-signer</button>
+              {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}
+              <span class="sm-caption" style="color:#ef4444; font-size:.65rem;">Configurez d'abord le signataire principal.</span>
+              {% endif %}
             </div>
           </form>
         </div>

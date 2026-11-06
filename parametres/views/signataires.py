@@ -349,37 +349,44 @@ def signataires_matricule(request):
         # ── 2. Ajout d'un cosignataire ──
         elif action == 'add_cosignataire':
             try:
-                sig, _ = SignataireDocument.objects.get_or_create(
-                    cycle=cycle,
-                    type_document=td,
-                    annee_scolaire=annee,
-                    defaults={
-                        'membre_personnel_id': None,
-                        'fonction': 'Le Directeur',
-                        'titre_honorifique': '',
-                        'titres_honorifiques': [],
-                        'actif': True,
-                    },
-                )
-                membre_id = request.POST.get('membre_personnel') or None
-                fonction = request.POST.get('fonction') or ''
-                try:
-                    ordre = int(request.POST.get('ordre', 2) or 2)
-                except ValueError:
-                    ordre = 2
-                titres = request.POST.getlist('titres_honorifiques') or []
-                if not membre_id:
-                    messages.error(request, "Veuillez sélectionner un membre du personnel.")
+                # Le signataire principal doit déjà exister et avoir un membre.
+                sig = SignataireDocument.objects.filter(
+                    cycle=cycle, type_document=td, annee_scolaire=annee,
+                    actif=True,
+                ).first()
+                if not sig or not sig.membre_personnel_id:
+                    messages.error(
+                        request,
+                        "Configurez d'abord le signataire principal pour ce document."
+                    )
                 else:
-                    CoSignataire.objects.create(
+                    membre_id = request.POST.get('membre_personnel') or None
+                    fonction = request.POST.get('fonction') or ''
+                    try:
+                        ordre = int(request.POST.get('ordre', 2) or 2)
+                    except ValueError:
+                        ordre = 2
+                    if not membre_id:
+                        messages.error(request, "Veuillez sélectionner un membre du personnel.")
+                    elif CoSignataire.objects.filter(
                         signataire_principal=sig,
                         membre_personnel_id=membre_id,
-                        fonction=fonction,
-                        titres_honorifiques=titres,
-                        ordre=ordre,
                         actif=True,
-                    )
-                    messages.success(request, "Co-signataire ajouté.")
+                    ).exists():
+                        messages.error(
+                            request,
+                            "Ce membre est déjà co-signataire de ce document."
+                        )
+                    else:
+                        CoSignataire.objects.create(
+                            signataire_principal=sig,
+                            membre_personnel_id=membre_id,
+                            fonction=fonction,
+                            titres_honorifiques=[],
+                            ordre=ordre,
+                            actif=True,
+                        )
+                        messages.success(request, "Co-signataire ajouté.")
             except (DatabaseError, ValidationError, ValueError) as e:
                 logger.exception("Ajout du cosignataire impossible")
                 messages.error(request, f"Erreur : {e}")
