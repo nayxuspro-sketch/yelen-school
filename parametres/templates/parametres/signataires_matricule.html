@@ -54,19 +54,24 @@
 
 {% if not cycles %}
 <div class="alert alert-warning mb-4">
-  Aucun cycle actif n'est configuré pour cet établissement. Les colonnes de la grille ne peuvent pas être affichées.
+  Aucun cycle actif n'est configuré pour cet établissement.
 </div>
 {% endif %}
 
 {% if not personnel %}
 <div class="alert alert-warning mb-4">
-  Aucun membre du personnel actif n'est trouvé pour cet établissement. Vous ne pourrez pas sélectionner de signataire.
+  Aucun membre du personnel actif n'est trouvé pour cet établissement.
 </div>
 {% endif %}
 
-<!-- Grille matricielle : tableau HTML (lignes = types de documents, colonnes = cycles) -->
 {% if cycles and personnel and matrice %}
 <table class="sm-table">
+  <colgroup>
+    <col class="sm-col--label">
+    {% for cycle in cycles %}
+    <col class="sm-col--cycle">
+    {% endfor %}
+  </colgroup>
   <thead>
     <tr>
       <th class="sm-th--label">Type de document</th>
@@ -82,12 +87,17 @@
     {% for ligne in matrice %}
     <tr class="sm-row{% if not forloop.first %} sm-row--cat-sep{% endif %}">
       {% if ligne.is_first_in_category %}
-      <td class="sm-td--cat" rowspan="{{ ligne.type_cat_count }}">{{ ligne.cat_label }}</td>
-      {% endif %}
+      <td class="sm-td--label" title="{{ ligne.type.libelle }}">
+        <span class="sm-cat">{{ ligne.cat_label }}</span><br>
+        <span class="sm-code">{{ ligne.type.code }}</span> {{ ligne.type.libelle }}
+        {% if ligne.type.cycle_id %}<span class="sm-cycle-tag">cycle {{ ligne.type.cycle.code }}</span>{% else %}<span class="sm-cycle-tag sm-cycle-tag--shared">tous cycles</span>{% endif %}
+      </td>
+      {% else %}
       <td class="sm-td--label" title="{{ ligne.type.libelle }}">
         <span class="sm-code">{{ ligne.type.code }}</span> {{ ligne.type.libelle }}
         {% if ligne.type.cycle_id %}<span class="sm-cycle-tag">cycle {{ ligne.type.cycle.code }}</span>{% else %}<span class="sm-cycle-tag sm-cycle-tag--shared">tous cycles</span>{% endif %}
       </td>
+      {% endif %}
       {% for cellule in ligne.cellules %}
       {% if cellule.applicable %}
       <td class="sm-td--input">
@@ -134,6 +144,7 @@
   border-collapse: collapse;
   margin-top: 1rem;
   font-size: .8125rem;
+  table-layout: fixed;
 }
 .sm-table th,
 .sm-table td {
@@ -155,6 +166,15 @@
   background: #FBF8F2;
   color: var(--color-text-primary);
   font-size: .8125rem;
+}
+.sm-cat {
+  font-size: .65rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  display: block;
+  margin-bottom: .25rem;
 }
 .sm-code {
   font-family: var(--font-mono);
@@ -211,13 +231,6 @@
 .sm-status.ok { color: #00A86B; font-weight: 600; }
 .sm-status.empty { color: #94a3b8; }
 
-.sm-td--cat {
-  background: #12233A;
-  color: #94a3b8;
-  font-size: .7rem;
-  font-weight: 600;
-  text-align: left;
-}
 .sm-row--cat-sep {
   border-top: 2px solid #12233A;
 }
