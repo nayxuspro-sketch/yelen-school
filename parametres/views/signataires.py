@@ -14,7 +14,7 @@ from ..forms import (
 )
 from ..views.commun import _get_etab
 from ..models import (
-    Cycle, AnneeScolaire, TypeDocument, SignataireDocument,
+    Cycle, AnneeScolaire, TypeDocument, SignataireDocument, CoSignataire,
     TitreFonction, TitreHonorifiquePersonnel,
 )
 from personnel.models import MembrePersonnel
@@ -298,45 +298,102 @@ def signataires_matricule(request):
     cycles = Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre', 'nom')
     personnel = MembrePersonnel.objects.filter(etablissement=etab, is_active=True).order_by('nom', 'prenom')
 
-    # ── POST : mise à jour unitaire d'un signataire (cycle × type_document) ──
+    # ── POST : gestion des signataires et cosignataires ──
     if request.method == 'POST' and annee:
+        action = request.POST.get('action', 'save_signataire')
         cycle_id = request.POST.get('cycle_id')
         type_document_id = request.POST.get('type_document_id')
-        membre_id = request.POST.get('membre_personnel_id') or None
-        fonction = request.POST.get('fonction') or 'Le Directeur'
-        titre = request.POST.get('titre_honorifique') or ''
         try:
             cycle = Cycle.objects.get(id=cycle_id, etablissement=etab)
             td = TypeDocument.objects.get(id=type_document_id, actif=True)
-            if not membre_id:
-                existant = SignataireDocument.objects.filter(
-                    cycle=cycle, type_document=td, annee_scolaire=annee,
-                    actif=True,
-                ).first()
-                if existant and existant.membre_personnel_id:
-                    membre_id = existant.membre_personnel_id
-            if not membre_id:
-                messages.error(request, "Veuillez sélectionner un membre du personnel.")
-            else:
-                SignataireDocument.objects.update_or_create(
+        except (Cycle.DoesNotExist, TypeDocument.DoesNotExist) as e:
+            messages.error(request, f"Erreur : {e}")
+            return redirect(f"{request.path}?annee={annee.id if annee else ''}")
+
+        # ── 1. Sauvegarde du signataire principal ──
+        if action == 'save_signataire':
+            membre_id = request.POST.get('membre_personnel_id') or None
+            fonction = request.POST.get('fonction') or 'Le Directeur'
+            titre = request.POST.get('titre_honorifique') or ''
+            try:
+                if not membre_id:
+                    existant = SignataireDocument.objects.filter(
+                        cycle=cycle, type_document=td, annee_scolaire=annee,
+                        actif=True,
+                    ).first()
+                    if existant and existant.membre_personnel_id:
+                        membre_id = existant.membre_personnel_id
+                if not membre_id:
+                    messages.error(request, "Veuillez sélectionner un membre du personnel.")
+                else:
+                    SignataireDocument.objects.update_or_create(
+                        cycle=cycle,
+                        type_document=td,
+                        annee_scolaire=annee,
+                        defaults={
+                            'membre_personnel_id': membre_id,
+                            'fonction': fonction,
+                            'titre_honorifique': titre,
+                            'titres_honorifiques': [titre] if titre else [],
+                            'actif': True,
+                        },
+                    )
+                    messages.success(
+                        request,
+                        f"Signataire enregistré pour {cycle.nom} · {td.libelle}."
+                    )
+            except (DatabaseError, ValidationError) as e:
+                logger.exception("Mise à jour du signataire matriciel impossible")
+                messages.error(request, f"Erreur : {e}")
+
+        # ── 2. Ajout d'un cosignataire ──
+        elif action == 'add_cosignataire':
+            try:
+                sig, _ = SignataireDocument.objects.update_or_create(
                     cycle=cycle,
                     type_document=td,
                     annee_scolaire=annee,
                     defaults={
-                        'membre_personnel_id': membre_id,
-                        'fonction': fonction,
-                        'titre_honorifique': titre,
-                        'titres_honorifiques': [titre] if titre else [],
+                        'membre_personnel_id': None,
+                        'fonction': 'Le Directeur',
+                        'titre_honorifique': '',
+                        'titres_honorifiques': [],
                         'actif': True,
                     },
                 )
-                messages.success(
-                    request,
-                    f"Signataire enregistré pour {cycle.nom} · {td.libelle}."
-                )
-        except (Cycle.DoesNotExist, TypeDocument.DoesNotExist, DatabaseError, ValidationError) as e:
-            logger.exception("Mise à jour du signataire matriciel impossible")
-            messages.error(request, f"Erreur : {e}")
+                membre_id = request.POST.get('membre_personnel_id') or None
+                fonction = request.POST.get('fonction') or ''
+                try:
+                    ordre = int(request.POST.get('ordre', 2) or 2)
+                except ValueError:
+                    ordre = 2
+                titres = request.POST.getlist('titres_honorifiques') or []
+                if not membre_id:
+                    messages.error(request, "Veuillez sélectionner un membre du personnel.")
+                else:
+                    CoSignataire.objects.create(
+                        signataire_principal=sig,
+                        membre_personnel_id=membre_id,
+                        fonction=fonction,
+                        titres_honorifiques=titres,
+                        ordre=ordre,
+                        actif=True,
+                    )
+                    messages.success(request, "Co-signataire ajouté.")
+            except (DatabaseError, ValidationError, ValueError) as e:
+                logger.exception("Ajout du cosignataire impossible")
+                messages.error(request, f"Erreur : {e}")
+
+        # ── 3. Suppression d'un cosignataire ──
+        elif action == 'delete_cosignataire':
+            try:
+                cs_id = request.POST.get('cosignataire_id')
+                CoSignataire.objects.filter(id=cs_id, actif=True).update(actif=False)
+                messages.success(request, "Co-signataire supprimé.")
+            except (DatabaseError, ValidationError) as e:
+                logger.exception("Suppression du cosignataire impossible")
+                messages.error(request, f"Erreur : {e}")
+
         return redirect(f"{request.path}?annee={annee.id if annee else ''}")
 
     if not annee:
@@ -355,6 +412,20 @@ def signataires_matricule(request):
             actif=True,
         )
     }
+
+    # ── Cosignataires par signataire principal ──
+    cosignataires_par_sig = {}
+    for sig in signataires.values():
+        cosignataires_par_sig[sig.id] = [
+            {
+                'id': cs.id,
+                'membre': cs.get_membre_personnel(),
+                'fonction': cs.fonction,
+                'titres_honorifiques': cs.titres_honorifiques or [],
+                'ordre': cs.ordre,
+            }
+            for cs in sig.co_signataires.filter(actif=True).order_by('ordre')
+        ]
 
     # ── Types de documents actifs, groupés par catégorie ──
     types_documents = TypeDocument.objects.filter(actif=True).order_by('categorie', 'libelle')
@@ -379,6 +450,7 @@ def signataires_matricule(request):
                     'signataire': sig,
                     'membre': membre,
                     'configuré': sig is not None,
+                    'cosignataires': cosignataires_par_sig.get(sig.id, []) if sig else [],
                 })
             matrice.append({
                 'categorie': cat_val,
