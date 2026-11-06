@@ -15,6 +15,7 @@ from ..forms import (
 from ..models import (
     Cycle, TypeDocument, Poste, LocalisationPoste, StatutEleve, AppreciationMoyenneSecondaire, AppreciationMoyennePrimaire, Discipline,
     CategorieDiscipline, TypeSanction, Distinction, TitreFonction, TitreHonorifiquePersonnel, Salle,
+    SignataireDocument, AnneeScolaire,
 )
 
 from .commun import _get_etab, _delete_view
@@ -265,7 +266,29 @@ def type_document_form(request, pk=None):
         form = TypeDocumentForm(request.POST, instance=type_doc)
         form.fields['cycle'].queryset = cycles
         if form.is_valid():
-            form.save()
+            type_doc = form.save()
+            # À la création d'un type de document : pré-enregistrer un signataire
+            # (membre à renseigner ensuite dans la grille matricielle) pour
+            # chaque cycle applicable (le cycle du type, ou tous les cycles).
+            if not pk:
+                cycles_cibles = (
+                    [type_doc.cycle] if type_doc.cycle_id
+                    else list(Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre', 'nom'))
+                )
+                annee = AnneeScolaire.objects.get_annee_courante(etablissement=etab)
+                for cycle in cycles_cibles:
+                    SignataireDocument.objects.get_or_create(
+                        cycle=cycle,
+                        type_document=type_doc,
+                        annee_scolaire=annee,
+                        defaults={
+                            'membre_personnel_id': None,
+                            'fonction': 'Le Directeur',
+                            'titre_honorifique': '',
+                            'titres_honorifiques': [],
+                            'actif': True,
+                        },
+                    )
             return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
     else:
         form = TypeDocumentForm(instance=type_doc)
