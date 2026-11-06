@@ -478,6 +478,17 @@ def signataires_matricule(request):
             })
             cat_precedente = cat_val
 
+    # ── Compteur de progression de la grille ──
+    total_cellules = 0
+    cellules_config = 0
+    for ligne in matrice:
+        for cellule in ligne['cellules']:
+            if cellule['applicable']:
+                total_cellules += 1
+                if cellule['configuré']:
+                    cellules_config += 1
+    progression = int(round(100 * cellules_config / total_cellules)) if total_cellules else 0
+
     return render(request, 'parametres/signataires_matricule.html', {
         'annees': annees,
         'annee': annee,
@@ -487,6 +498,9 @@ def signataires_matricule(request):
         'personnel': personnel,
         'fonctions': TitreFonction.objects.filter(actif=True).order_by('nom'),
         'titres_honorifiques': TitreHonorifiquePersonnel.objects.filter(actif=True).order_by('nom'),
+        'progression': progression,
+        'cellules_config': cellules_config,
+        'total_cellules': total_cellules,
     })
 
 

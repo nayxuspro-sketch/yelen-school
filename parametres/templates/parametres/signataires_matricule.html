@@ -65,6 +65,20 @@
 {% endif %}
 
 {% if cycles and personnel and matrice %}
+<!-- Barre de progression -->
+<div class="card sm-progress-card mb-4">
+  <div class="sm-progress-header">
+    <span class="sm-progress-label">Progrès de la grille</span>
+    <span class="sm-progress-value">{{ progression }}%</span>
+  </div>
+  <div class="sm-progress-bar">
+    <div class="sm-progress-fill" style="width: {{ progression }}%;"></div>
+  </div>
+  <div class="sm-progress-stats">
+    <span>{{ cellules_config }} / {{ total_cellules }} cellule(s) configurée(s)</span>
+  </div>
+</div>
+
 <table class="sm-table">
   <colgroup>
     <col class="sm-col--label">
@@ -119,7 +133,12 @@
             </select>
             <input type="text" name="fonction" class="input input-sm" placeholder="Fonction" value="{{ cellule.signataire.fonction|default:'Le Directeur' }}">
             <input type="text" name="titre_honorifique" class="input input-sm" placeholder="Titre" value="{{ cellule.signataire.titre_honorifique|default:'' }}">
-            <button type="submit" class="btn btn-sm btn-primary">{{ cellule.signataire|yesno:'Modifier,Créer' }}</button>
+            <button type="submit" class="btn btn-sm btn-primary">
+              <svg aria-hidden="true" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:4px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              {{ cellule.signataire|yesno:'Modifier,Créer' }}
+            </button>
           </div>
           <div class="sm-status {{ cellule.configuré|yesno:'ok,empty' }}">
             <span class="sm-dot {{ cellule.configuré|yesno:'ok,empty' }}"></span>
@@ -132,7 +151,7 @@
         <div class="sm-cosignataires">
           <div class="sm-cosig-header">Co-signataires :</div>
           {% for cs in cellule.cosignataires %}
-          <div class="sm-cosig-item">
+          <div class="sm-cosig-card">
             <span class="sm-cosig-nom">{{ cs.membre.nom|default:'Inconnu'|upper }} {{ cs.membre.prenom|default:'' }}</span>
             {% if cs.fonction %}<span class="sm-cosig-fonction">{{ cs.fonction }}</span>{% endif %}
             <form method="post" action="{% url 'parametres:signataires_matricule' %}" class="sm-cosig-form" style="display:inline;" onsubmit="return confirm('Supprimer ce co-signataire ?')">
@@ -140,7 +159,7 @@
               <input type="hidden" name="action" value="delete_cosignataire">
               <input type="hidden" name="annee_id" value="{{ annee.id }}">
               <input type="hidden" name="cosignataire_id" value="{{ cs.id }}">
-              <button type="submit" class="btn btn-sm btn-outline" title="Supprimer ce co-signataire">×</button>
+              <button type="submit" class="btn btn-sm btn-outline btn-delete-cosig" title="Supprimer ce co-signataire">×</button>
             </form>
           </div>
           {% endfor %}
@@ -164,9 +183,14 @@
               </select>
               <input type="text" name="fonction" class="input input-sm" placeholder="Fonction" {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}disabled{% endif %}>
               <input type="number" name="ordre" class="input input-sm" placeholder="Ordre" value="2" min="2" {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}disabled{% endif %}>
-              <button type="submit" class="btn btn-sm btn-primary" {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}disabled{% endif %}>+ Co-signer</button>
+              <button type="submit" class="btn btn-sm btn-primary btn-add-cosig" {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}disabled{% endif %}>
+                <svg aria-hidden="true" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:4px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                + Co-signer
+              </button>
               {% if not cellule.signataire or not cellule.signataire.membre_personnel_id %}
-              <span class="sm-caption" style="color:#ef4444; font-size:.65rem;">Configurez d'abord le signataire principal.</span>
+              <span class="sm-caption sm-caption--warn">Configurez d'abord le signataire principal.</span>
               {% endif %}
             </div>
           </form>
@@ -192,6 +216,9 @@
   margin-top: 1rem;
   font-size: .8125rem;
   table-layout: fixed;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  border-radius: 8px;
+  overflow: hidden;
 }
 .sm-table th,
 .sm-table td {
@@ -241,7 +268,57 @@
 .sm-cycle-tag--shared { background: #dbeafe; color: #1e40af; }
 
 .sm-td--input { text-align: center; background: #fff; }
+.sm-td--input:hover {
+  background: #f8fafc;
+}
 .sm-td--na { text-align: center; color: #94a3b8; background: #f1f5f9; }
+
+.sm-row--cat-sep {
+  border-top: 2px solid #12233A;
+}
+
+/* Barre de progression */
+.sm-progress-card {
+  background: #fff;
+  border: 1px solid var(--color-border-light, #e2e8f0);
+  border-radius: 8px;
+  padding: .9rem 1.1rem;
+}
+.sm-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: .5rem;
+}
+.sm-progress-label {
+  font-size: .8rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.sm-progress-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0A1628;
+}
+.sm-progress-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: .4rem;
+}
+.sm-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00A86B, #0A1628);
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+.sm-progress-stats {
+  font-size: .75rem;
+  color: #64748b;
+}
 
 /* Formulaire signataire principal */
 .sm-fields {
@@ -259,6 +336,9 @@
   padding: .3rem .6rem;
   font-size: .75rem;
   margin-top: .2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
 }
 
 /* Cosignataires */
@@ -274,15 +354,15 @@
   letter-spacing: .04em;
   margin-bottom: .2rem;
 }
-.sm-cosig-item {
+.sm-cosig-card {
   display: flex;
   align-items: center;
-  gap: .3rem;
+  gap: .35rem;
   margin-bottom: .2rem;
-  padding: .2rem .4rem;
+  padding: .25rem .5rem;
   background: #f8fafc;
-  border-radius: 4px;
   border: 1px solid var(--color-border-light, #e2e8f0);
+  border-radius: 6px;
 }
 .sm-cosig-nom {
   font-size: .75rem;
@@ -296,6 +376,18 @@
 }
 .sm-cosig-form {
   margin-left: auto;
+}
+.btn-delete-cosig {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: .15rem .4rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+.btn-delete-cosig:hover {
+  background: #fecaca;
+  color: #b91c1c;
 }
 
 /* Ajouter un cosignataire */
@@ -317,6 +409,24 @@
 .sm-fields--inline button.btn-sm {
   width: auto;
   padding: .25rem .5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+}
+.btn-add-cosig {
+  background: #00A86B;
+  border-color: #00A86B;
+}
+.btn-add-cosig:disabled {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+.sm-caption--warn {
+  color: #dc2626;
+  font-size: .65rem;
+  margin-top: .1rem;
 }
 
 .sm-status {
@@ -337,9 +447,6 @@
 .sm-status.ok { color: #00A86B; font-weight: 600; }
 .sm-status.empty { color: #94a3b8; }
 
-.sm-row--cat-sep {
-  border-top: 2px solid #12233A;
-}
 .sm-dash { color: #cbd5e1; }
 .sm-caption { font-size: .65rem; color: #94a3b8; }
 
