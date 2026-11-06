@@ -312,7 +312,7 @@ def signataires_matricule(request):
 
         # ── 1. Sauvegarde du signataire principal ──
         if action == 'save_signataire':
-            membre_id = request.POST.get('membre_personnel_id') or None
+            membre_id = request.POST.get('membre_personnel') or None
             fonction = request.POST.get('fonction') or 'Le Directeur'
             titre = request.POST.get('titre_honorifique') or ''
             try:
@@ -323,8 +323,8 @@ def signataires_matricule(request):
                     ).first()
                     if existant and existant.membre_personnel_id:
                         membre_id = existant.membre_personnel_id
-                if not membre_id:
-                    messages.error(request, "Veuillez sélectionner un membre du personnel.")
+                    if not membre_id:
+                        messages.error(request, "Veuillez sélectionner un membre du personnel.")
                 else:
                     SignataireDocument.objects.update_or_create(
                         cycle=cycle,
@@ -361,7 +361,7 @@ def signataires_matricule(request):
                         'actif': True,
                     },
                 )
-                membre_id = request.POST.get('membre_personnel_id') or None
+                membre_id = request.POST.get('membre_personnel') or None
                 fonction = request.POST.get('fonction') or ''
                 try:
                     ordre = int(request.POST.get('ordre', 2) or 2)
