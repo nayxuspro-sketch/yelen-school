@@ -4,23 +4,19 @@ from django.db import migrations, models
 
 def supprimer_doublons_cosignataire(apps, schema_editor):
     """Garde un seul co-signataire actif par (signataire_principal, membre)."""
-    db_alias = schema_editor.connection.alias
-    # Garder le plus ancien (MIN id) par groupe, supprimer les doublons actifs.
-    schema_editor.execute(
-        """
-        DELETE FROM parametres_cosignataire
-        WHERE actif = 1
-          AND membre_personnel_id IS NOT NULL
-          AND id NOT IN (
-              SELECT MIN(id)
-              FROM parametres_cosignataire
-              WHERE actif = 1
-                AND membre_personnel_id IS NOT NULL
-              GROUP BY signataire_principal_id, membre_personnel_id
-          )
-        """,
-        using=db_alias,
+    CoSignataire = apps.get_model('parametres', 'CoSignataire')
+    doublons = (
+        CoSignataire.objects.filter(actif=True, membre_personnel_id__isnull=False)
+        .values('signataire_principal', 'membre_personnel_id')
+        .annotate(count=models.Count('id'), min_id=models.Min('id'))
+        .filter(count__gt=1)
     )
+    for groupe in doublons:
+        CoSignataire.objects.filter(
+            signataire_principal_id=groupe['signataire_principal'],
+            membre_personnel_id=groupe['membre_personnel_id'],
+            actif=True,
+        ).exclude(id=groupe['min_id']).delete()
 
 
 class Migration(migrations.Migration):
@@ -34,9 +30,12 @@ class Migration(migrations.Migration):
             supprimer_doublons_cosignataire,
             migrations.RunPython.noop,
         ),
-        models.UniqueConstraint(
-            fields=['signataire_principal', 'membre_personnel_id'],
-            condition=models.Q(actif=True),
-            name='unique_cosignataire_actif_par_membre',
+        migrations.AddConstraint(
+            model_name='cosignataire',
+            constraint=models.UniqueConstraint(
+                fields=['signataire_principal', 'membre_personnel_id'],
+                condition=models.Q(actif=True),
+                name='unique_cosignataire_actif_par_membre',
+            ),
         ),
     ]
