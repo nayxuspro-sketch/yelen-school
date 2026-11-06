@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.60.6 — 2026-11-06
+
+- **Paramétrage des signataires en une seule fenêtre (matricule).** Nouvelle page `Paramètres → Signataires — Matricule` affichant, sur une même fenêtre, une grille matricielle : lignes = types de documents par catégorie, colonnes = cycles (Préscolaire, Primaire, Post-primaire, Secondaire). Chaque cellule permet de créer ou modifier le signataire (membre du personnel, fonction, titre honorifique) pour l'intersection cycle × type de document × année scolaire. Les types de documents sans cycle (`cycle=NULL`) s'appliquent à tous les cycles ; chaque cycle peut configurer son propre signataire.
+- Les vues existantes (`signataires_list`, `signataires_list_detail`, `signataire_edit`, `signataire_config`, `signataire_formulaire`) restent intactes.
+- Aucun changement de calcul, aucune migration.
+
 ## 5.60.5 — 2026-11-05
 
 - **Colonne Appréciation du bulletin primaire remplie depuis la grille « Appréciation Moyennes Primaire ».** Au

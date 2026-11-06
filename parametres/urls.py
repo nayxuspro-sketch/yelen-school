@@ -97,6 +97,7 @@ urlpatterns = [
     path('signataires/edit/<uuid:cycle_id>/<uuid:document_type_id>/', views.signataire_edit, name='signataire_edit'),
     path('signataires/formulaire/', views.signataire_formulaire, name='signataire_formulaire'),
     path('signataires/configurer/', views.signataire_config, name='signataire_config'),
+    path('signataires/matricule/', views.signataires_matricule, name='signataires_matricule'),
 
     # Types de documents
     path('types-documents/', views.type_document_list, name='type_document_list'),

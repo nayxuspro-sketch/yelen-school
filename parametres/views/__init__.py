@@ -89,6 +89,7 @@ from .signataires import (  # noqa: F401
     signataires_list_detail,
     signataire_edit,
     signataire_formulaire,
+    signataires_matricule,
 )
 from .etablissement import (  # noqa: F401
     etablissement_edit,

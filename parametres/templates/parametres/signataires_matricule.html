@@ -1,0 +1,189 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Signataires — Matricule (tous les cycles) — YELEN SCHOOL{% endblock %}
+
+{% block content %}
+
+<div class="page-header animate-fade-up">
+  <div>
+    <h1 class="page-title">Signataires — Matricule (tous les cycles)</h1>
+    <p class="page-subtitle">
+      Paramétrez, sur une seule fenêtre, le signataire de chaque type de document
+      pour chaque cycle de l'établissement, sur l'année scolaire choisie.
+    </p>
+  </div>
+  <a href="{% url 'parametres:signataires_list' %}" class="btn btn-outline">
+    <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Retour à la liste des cycles
+  </a>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags|default:'info' }} mb-4">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+{% if error %}
+<div class="alert alert-danger mb-4">{{ error }}</div>
+{% endif %}
+
+{% if not annee %}
+<div class="card mb-4">
+  <div class="empty-state" style="text-align:center; padding:2rem;">
+    <p class="empty-state-text">Aucune année scolaire trouvée pour cet établissement.</p>
+  </div>
+</div>
+{% else %}
+
+<!-- Année scolaire -->
+<div class="card sc-annee mb-4">
+  <form method="get">
+    <label class="input-label" for="sc-annee">Année scolaire</label>
+    <select id="sc-annee" name="annee" class="input select" data-csp-submit-on-change>
+      {% for a in annees %}
+      <option value="{{ a.id }}" {% if annee and annee.id == a.id %}selected{% endif %}>
+        {{ a.libelle }}{% if a.est_courante %} (en cours){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!-- Grille matricielle : lignes = types de documents, colonnes = cycles -->
+<div class="sm-grid">
+  <div class="sm-sticky-col">
+    <div class="sm-cell sm-cell--head sm-cell--cat">Type de document</div>
+    {% for ligne in matrice %}
+    <div class="sm-cell sm-cell--label" title="{{ ligne.type.libelle }}">
+      <span class="sm-code">{{ ligne.type.code }}</span> {{ ligne.type.libelle }}
+      {% if ligne.type.cycle_id %}<span class="sm-cycle-tag">cycle {{ ligne.type.cycle.code }}</span>{% else %}<span class="sm-cycle-tag sm-cycle-tag--shared">tous cycles</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="sm-body">
+    <!-- En-têtes de colonnes = cycles -->
+    <div class="sm-row sm-row--head">
+      <div class="sm-cell sm-cell--head">Cycle</div>
+      {% for cycle in cycles %}
+      <div class="sm-cell sm-cell--head sm-cell--cycle-head">
+        <div class="sm-cycle-nom">{{ cycle.nom }}</div>
+        <div class="sm-cycle-code">{{ cycle.code }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Lignes = types de documents (groupés visuellement par catégorie) -->
+    {% for ligne in matrice %}
+    <div class="sm-row{% if not forloop.first %} sm-row--cat-sep{% endif %}">
+      <!-- Colonne libellé de catégorie (seulement sur la première ligne de chaque catégorie) -->
+      {% if ligne.is_first_in_category %}
+      <div class="sm-cell sm-cell--cat-label">{{ ligne.cat_label }}</div>
+      {% else %}
+      <div class="sm-cell sm-cell--cat-label--blank"></div>
+      {% endif %}
+
+      <!-- Une cellule par cycle -->
+      {% for cellule in ligne.cellules %}
+      {% if cellule.applicable %}
+      <div class="sm-cell sm-cell--input">
+        <form method="post" class="sm-cell-form">
+          {% csrf_token %}
+          <input type="hidden" name="annee_id" value="{{ annee.id }}">
+          <input type="hidden" name="cycle_id" value="{{ cellule.cycle.id }}">
+          <input type="hidden" name="type_document_id" value="{{ ligne.type.id }}">
+          <div class="sm-fields">
+            <select name="membre_personnel" class="input input-sm" {% if not cellule.configuré %}required{% endif %}>
+              <option value="">—</option>
+              {% for p in personnel %}
+              <option value="{{ p.id }}" {% if cellule.signataire and cellule.signataire.membre_personnel_id == p.id %}selected{% endif %}>
+                {{ p.nom|upper }} {{ p.prenom }}
+              </option>
+              {% endfor %}
+            </select>
+            <input type="text" name="fonction" class="input input-sm" placeholder="Fonction" value="{{ cellule.signataire.fonction|default:'Le Directeur' }}">
+            <input type="text" name="titre_honorifique" class="input input-sm" placeholder="Titre" value="{{ cellule.signataire.titre_honorifique|default:'' }}">
+            <button type="submit" class="btn btn-sm btn-primary">{{ cellule.signataire|yesno:'Modifier,Créer' }}</button>
+          </div>
+          <div class="sm-status {{ cellule.configuré|yesno:'ok,empty' }}">
+            <span class="sm-dot {{ cellule.configuré|yesno:'ok,empty' }}"></span>
+            {{ cellule.configuré|yesno:'Configuré,Non configuré' }}
+          </div>
+        </form>
+      </div>
+      {% else %}
+      <div class="sm-cell sm-cell--na">
+        <span class="sm-dash">—</span><span class="sm-caption">non applicable</span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<style nonce="{{ request.csp_nonce }}">
+/* ── Grille matricielle ── */
+.sm-grid { display: grid; grid-template-columns: 260px 1fr; gap: 0; margin-top: 1rem; }
+.sm-sticky-col { border: 1px solid var(--color-border); border-right: none; background: var(--color-bg-card); }
+.sm-body { border: 1px solid var(--color-border); display: contents; }
+
+.sm-cell { padding: .5rem .625rem; font-size: .8125rem; border-bottom: 1px solid var(--color-border-light, #e2e8f0); border-right: 1px solid var(--color-border-light, #e2e8f0); overflow: hidden; }
+.sm-cell--head { background: #0A1628; color: #fff; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: .7rem; border-bottom: 2px solid #12233A; }
+.sm-cell--cat { border-bottom: 2px solid #12233A; padding: .625rem; }
+.sm-cell--label { background: #FBF8F2; color: var(--color-text-primary); padding: .5rem .625rem; border-bottom: 1px solid var(--color-border-light); }
+.sm-code { font-family: var(--font-mono); font-size: .7rem; font-weight: 600; color: #B0803A; margin-right: .5rem; }
+.sm-cycle-tag { font-size: .65rem; padding: .1rem .4rem; border-radius: 3px; margin-left: .5rem; vertical-align: middle; }
+.sm-cycle-tag { background: #e2e8f0; color: #475569; }
+.sm-cycle-tag--shared { background: #dbeafe; color: #1e40af; }
+
+.sm-row--head .sm-cell--cycle-head { background: #12233A; color: #cbd5e1; text-align: center; }
+.sm-cycle-nom { font-weight: 600; font-size: .8rem; }
+.sm-cycle-code { font-size: .65rem; color: #94a3b8; font-family: var(--font-mono); }
+
+.sm-cell--input { text-align: center; background: #fff; }
+.sm-cell--na { text-align: center; color: #94a3b8; background: #f1f5f9; }
+
+.sm-fields { display: flex; flex-direction: column; gap: .3rem; align-items: center; }
+.sm-fields .input-sm { width: 140px; font-size: .75rem; padding: .3rem .5rem; }
+.sm-fields button.btn-sm { padding: .3rem .6rem; font-size: .75rem; margin-top: .2rem; }
+
+.sm-status { margin-top: .3rem; font-size: .7rem; display: flex; align-items: center; gap: .3rem; justify-content: center; }
+.sm-dot { width: 7px; height: 7px; border-radius: 50%; }
+.sm-dot.ok { background: #00A86B; box-shadow: 0 0 6px rgba(0,168,107,.4); }
+.sm-dot.empty { background: #cbd5e1; }
+.sm-status.ok { color: #00A86B; font-weight: 600; }
+.sm-status.empty { color: #94a3b8; }
+
+.sm-cell--cat-label { background: #12233A; color: #94a3b8; font-size: .7rem; font-weight: 600; padding: .5rem .625rem; text-align: left; border-bottom: none; border-right: 1px solid var(--color-border-light); }
+.sm-cell--cat-label--blank { background: #FBF8F2; border-bottom: none; border-right: 1px solid var(--color-border-light); height: 100%; }
+.sm-row--cat-sep { border-top: 2px solid #12233A; }
+.sm-dash { color: #cbd5e1; }
+.sm-caption { font-size: .65rem; color: #94a3b8; }
+
+@media (max-width: 900px) {
+  .sm-grid { grid-template-columns: 1fr; }
+  .sm-sticky-col { display: none; }
+  .sm-row { display: block; }
+  .sm-cell--head { display: none; }
+}
+</style>
+
+<script nonce="{{ request.csp_nonce }}">
+(function(){
+  var forms = document.querySelectorAll('.sm-cell-form');
+  forms.forEach(function(form){
+    form.addEventListener('submit', function(e){
+      var btn = form.querySelector('button[type="submit"]');
+      if(btn){ btn.textContent = '…'; btn.disabled = true; }
+    });
+  });
+})();
+</script>
+
+{% endif %}
+
+{% endblock %}

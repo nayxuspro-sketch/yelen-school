@@ -601,6 +601,9 @@
         {% if '/parametres/signataires/configurer/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:signataire_config' %}" class="sb-item-submodern" data-url="/parametres/signataires/configurer/"><span class="sub-item-dot"></span>Configurer signataires</a>
         {% endif %}
+        {% if '/parametres/signataires/matricule/' in droits_fonctionnalites %}
+        <a href="{% url 'parametres:signataires_matricule' %}" class="sb-item-submodern" data-url="/parametres/signataires/matricule/"><span class="sub-item-dot"></span>Signataires — Matricule</a>
+        {% endif %}
         {% if '/parametres/cycles/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:cycle_list' %}" class="sb-item-submodern" data-url="/parametres/cycles/"><span class="sub-item-dot"></span>Cycles</a>
         {% endif %}

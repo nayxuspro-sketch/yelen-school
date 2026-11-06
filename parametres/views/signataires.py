@@ -12,6 +12,7 @@ from django.http import HttpResponse
 from ..forms import (
     SignataireForm,
 )
+from ..views.commun import _get_etab
 from ..models import (
     Cycle, AnneeScolaire, TypeDocument, SignataireDocument,
     TitreFonction, TitreHonorifiquePersonnel,
@@ -19,7 +20,6 @@ from ..models import (
 from personnel.models import MembrePersonnel
 
 logger = logging.getLogger(__name__)
-from .commun import _get_etab
 
 
 # ─── SIGNATAIRES ─────────────────────────────────────────────────────
@@ -273,6 +273,124 @@ def signataire_edit(request, cycle_id, document_type_id):
         'titres_honorifiques': list(
             TitreHonorifiquePersonnel.objects.filter(actif=True).values_list('nom', flat=True)
         ),
+    })
+
+
+@login_required
+def signataires_matricule(request):
+    """
+    Fenêtre unique de paramétrage des signataires : grille matricielle
+    (lignes = types de documents par catégorie ; colonnes = cycles).
+    Une seule page pour configurer tous les signataires de tous les cycles
+    sur l'année scolaire choisie.
+    """
+    etab = _get_etab(request)
+    if not etab:
+        return render(request, 'parametres/signataires_matricule.html', {
+            'error': "Votre compte n'est pas associé à un établissement.",
+        })
+
+    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
+    annee_id = request.GET.get('annee') or request.POST.get('annee_id')
+    annee = AnneeScolaire.objects.filter(id=annee_id, etablissement=etab).first() \
+        if annee_id else AnneeScolaire.objects.get_annee_courante(etablissement=etab)
+
+    cycles = Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre', 'nom')
+    personnel = MembrePersonnel.objects.filter(etablissement=etab, is_active=True).order_by('nom', 'prenom')
+
+    # ── POST : mise à jour unitaire d'un signataire (cycle × type_document) ──
+    if request.method == 'POST' and annee:
+        cycle_id = request.POST.get('cycle_id')
+        type_document_id = request.POST.get('type_document_id')
+        membre_id = request.POST.get('membre_personnel_id') or None
+        fonction = request.POST.get('fonction') or 'Le Directeur'
+        titre = request.POST.get('titre_honorifique') or ''
+        try:
+            cycle = Cycle.objects.get(id=cycle_id, etablissement=etab)
+            td = TypeDocument.objects.get(id=type_document_id, actif=True)
+            if not membre_id:
+                messages.error(request, "Veuillez sélectionner un membre du personnel.")
+            else:
+                SignataireDocument.objects.update_or_create(
+                    cycle=cycle,
+                    type_document=td,
+                    annee_scolaire=annee,
+                    defaults={
+                        'membre_personnel_id': membre_id,
+                        'fonction': fonction,
+                        'titre_honorifique': titre,
+                        'titres_honorifiques': [titre] if titre else [],
+                        'actif': True,
+                    },
+                )
+            messages.success(
+                request,
+                f"Signataire enregistré pour {cycle.nom} · {td.libelle}."
+            )
+        except (Cycle.DoesNotExist, TypeDocument.DoesNotExist, DatabaseError, ValidationError) as e:
+            logger.exception("Mise à jour du signataire matriciel impossible")
+            messages.error(request, f"Erreur : {e}")
+        return redirect(f"{request.path}?annee={annee.id if annee else ''}")
+
+    if not annee:
+        return render(request, 'parametres/signataires_matricule.html', {
+            'annees': annees,
+            'annee': None,
+            'error': "Aucune année scolaire trouvée.",
+        })
+
+    # ── Signataires existants pour l'année ──
+    signataires = {
+        (s.cycle_id, s.type_document_id): s
+        for s in SignataireDocument.objects.filter(
+            annee_scolaire=annee,
+            cycle__in=cycles,
+            actif=True,
+        )
+    }
+
+    # ── Types de documents actifs, groupés par catégorie ──
+    types_documents = TypeDocument.objects.filter(actif=True).order_by('categorie', 'libelle')
+    categories = TypeDocument.CategorieChoices.choices
+
+    # ── Matrice : une ligne par type de document, une cellule par cycle ──
+    matrice = []
+    cat_precedente = None
+    for cat_val, cat_label in categories:
+        types_cat = [td for td in types_documents if td.categorie == cat_val]
+        if not types_cat:
+            continue
+        for td in types_cat:
+            cellules = []
+            for cycle in cycles:
+                applicable = (td.cycle_id is None) or (td.cycle_id == cycle.id)
+                sig = signataires.get((cycle.id, td.id)) if applicable else None
+                membre = sig.get_membre_personnel() if sig else None
+                cellules.append({
+                    'cycle': cycle,
+                    'applicable': applicable,
+                    'signataire': sig,
+                    'membre': membre,
+                    'configuré': sig is not None,
+                })
+            matrice.append({
+                'categorie': cat_val,
+                'cat_label': cat_label,
+                'type': td,
+                'is_first_in_category': (cat_val != cat_precedente),
+                'cellules': cellules,
+            })
+            cat_precedente = cat_val
+
+    return render(request, 'parametres/signataires_matricule.html', {
+        'annees': annees,
+        'annee': annee,
+        'matrice': matrice,
+        'categories': categories,
+        'cycles': cycles,
+        'personnel': personnel,
+        'fonctions': TitreFonction.objects.filter(actif=True).order_by('nom'),
+        'titres_honorifiques': TitreHonorifiquePersonnel.objects.filter(actif=True).order_by('nom'),
     })
 
 
