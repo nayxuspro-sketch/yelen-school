@@ -129,6 +129,18 @@ class User(AbstractUser, BaseModel):
         verbose_name='Groupe / Réseau',
         help_text='Groupe géré (pour le rôle Directeur Réseau).',
     )
+    cycles = models.ManyToManyField(
+        'parametres.Cycle',
+        blank=True,
+        related_name='utilisateurs',
+        verbose_name='Cycles autorisés',
+        help_text='Cycles dont cet utilisateur peut voir les données. Laissez vide pour « Tous les cycles » (selon le rôle).',
+    )
+    est_tous_cycles = models.BooleanField(
+        default=False,
+        verbose_name='Tous les cycles',
+        help_text='Si coché, l’utilisateur voit les données de tous les cycles (sous réserve des limites de son rôle).',
+    )
     telephone = models.CharField(
         max_length=20,
         blank=True,

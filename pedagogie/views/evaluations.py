@@ -14,6 +14,7 @@ from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_membre_personnel
 from core.hors_ligne import saisie_differee
 from ..utils import CalculateurMoyenne
+from yelen_school.cycle_filter import filtrer_classe_par_cycle, filtrer_eleve_par_cycle
 # Nombre de classes affichées par page dans la liste des évaluations
 # (chaque classe regroupe toutes ses matières et évaluations : ~40 lignes
 # par classe et par trimestre).
@@ -62,6 +63,7 @@ def evaluation_list(request):
         .distinct()
         .order_by('nom')
     )
+    classes = filtrer_classe_par_cycle(classes, request)
     trimestres = Trimestre.objects.filter(annee_scolaire=annee_courante).order_by('numero', 'nom')
 
     classe_ids_valides = {str(c.pk) for c in classes}
@@ -485,5 +487,6 @@ def saisie_classe_select(request):
     if request.user.role == 'ENSEIGNANT':
         classes = classes.filter(enseignements__personnel=filtre_enseignant(request.user),
                                  enseignements__annee_scolaire__est_courante=True).distinct()
+    classes = filtrer_classe_par_cycle(classes, request)
     classes = classes.order_by('cycle__ordre', 'nom')
     return render(request, 'pedagogie/saisie_classe_select.html', {'classes': classes})

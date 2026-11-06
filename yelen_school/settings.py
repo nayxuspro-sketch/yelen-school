@@ -254,6 +254,8 @@ MIDDLEWARE = [
     'yelen_school.csp_middleware.CSPNonceMiddleware',
     # Restriction rôles PARENT/ÉLÈVE — doit être APRÈS AuthenticationMiddleware
     'yelen_school.role_middleware.RoleAccessMiddleware',
+    # Filtrage des données par cycle — doit être APRÈS RoleAccessMiddleware
+    'yelen_school.cycle_middleware.CycleAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'yelen_school.audit_middleware.AuditRequestMiddleware',

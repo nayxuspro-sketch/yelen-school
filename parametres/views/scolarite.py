@@ -23,6 +23,8 @@ from ..models import (
 
 from .commun import _get_etab, _delete_view
 
+from yelen_school.cycle_filter import cycle_queryset
+
 
 # ─── INDEX ───────────────────────────────────────────────────────────
 
@@ -184,6 +186,8 @@ def classe_list(request):
         classes = classes.filter(
             Q(nom__icontains=query) | Q(cycle__nom__icontains=query)
         )
+
+    classes = cycle_queryset(classes, request, cycle_field='cycle')
 
     paginator = Paginator(classes, 30)
     page_obj = paginator.get_page(page_number)

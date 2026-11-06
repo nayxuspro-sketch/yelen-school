@@ -17,6 +17,8 @@ from parametres.models import AnneeScolaire, Classe
 from core.utils import get_etablissement_context
 from core.statistiques import statistiques_eleves
 from parametres.droits import autorise_url
+
+from yelen_school.cycle_filter import filtrer_eleve_par_cycle
 logger = logging.getLogger(__name__)
 try:
     from core.pdf import HTML as _WeasyHTML
@@ -44,6 +46,9 @@ def eleve_list(request):
             Q(inscriptions__classe__etablissement=etab) |
             Q(inscriptions__isnull=True)
         ).distinct()
+
+    # Filtrage par cycle (selon les droits de l'utilisateur)
+    eleves = filtrer_eleve_par_cycle(eleves, request)
 
     if query:
         eleves = eleves.filter(

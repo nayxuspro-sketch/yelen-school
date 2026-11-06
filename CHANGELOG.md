@@ -3,6 +3,10 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.61.0 — 2026-11-06
+
+- **Filtrage des données par cycle (isolation des données).** Nouveau middleware `CycleAccessMiddleware` qui détermine, pour chaque utilisateur, les cycles qu'il est autorisé à voir. Deux nouveaux champs sur `User` : `cycles` (ManyToMany vers `Cycle`) et `est_tous_cycles` (booléen). Règles : SUPER_ADMIN / DIRECTEUR_RESEAU voient tous les cycles ; `est_tous_cycles=True` voit tous les cycles ; `cycles` assignés voit seulement ces cycles ; sans aucun des deux → données vides. Utilitaires `filtrer_par_cycle`, `filtrer_eleve_par_cycle`, `filtrer_classe_par_cycle` dans `yelen_school/cycle_filter.py`. Vues filtrées : `classe_list`, `eleve_list`, `evaluation_list`, `saisie_classe_select` (saisie des notes). Une migration `accounts/0010_add_cycles_to_user.py` ajoute les champs.
+
 ## 5.60.6 — 2026-11-06
 
 - **Paramétrage des signataires en une seule fenêtre (matricule).** Nouvelle page `Paramètres → Signataires — Matricule` affichant, sur une même fenêtre, une grille matricielle : lignes = types de documents par catégorie, colonnes = cycles (Préscolaire, Primaire, Post-primaire, Secondaire). Chaque cellule permet de créer ou modifier le signataire (membre du personnel, fonction, titre honorifique) pour l'intersection cycle × type de document × année scolaire. Les types de documents sans cycle (`cycle=NULL`) s'appliquent à tous les cycles ; chaque cycle peut configurer son propre signataire.
