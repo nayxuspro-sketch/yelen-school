@@ -348,6 +348,7 @@ MODULES = (
         _f('/parametres/signataires/', 'Signataires'),
         _f('/parametres/signataires/configurer/', 'Configurer signataires'),
         _f('/parametres/signataires/formulaire/', 'Formulaire signataires (menu Documents)'),
+        _f('/parametres/signataires/matricule/', 'Signataires — Matricule'),
         _f('/parametres/types-evaluations/', "Types d'évaluation"),
         _f('/parametres/types-documents/', 'Types Documents'),
         _f('/parametres/types-sanctions/', 'Types Sanctions'),
