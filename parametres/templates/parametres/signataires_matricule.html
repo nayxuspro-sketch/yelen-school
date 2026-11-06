@@ -135,11 +135,12 @@
           <div class="sm-cosig-item">
             <span class="sm-cosig-nom">{{ cs.membre.nom|default:'Inconnu'|upper }} {{ cs.membre.prenom|default:'' }}</span>
             {% if cs.fonction %}<span class="sm-cosig-fonction">{{ cs.fonction }}</span>{% endif %}
-            <form method="post" class="sm-cosig-form" style="display:inline;">
+            <form method="post" action="{% url 'parametres:signataires_matricule' %}" class="sm-cosig-form" style="display:inline;" onsubmit="return confirm('Supprimer ce co-signataire ?')">
               {% csrf_token %}
               <input type="hidden" name="action" value="delete_cosignataire">
+              <input type="hidden" name="annee_id" value="{{ annee.id }}">
               <input type="hidden" name="cosignataire_id" value="{{ cs.id }}">
-              <button type="submit" class="btn btn-sm btn-outline">×</button>
+              <button type="submit" class="btn btn-sm btn-outline" title="Supprimer ce co-signataire">×</button>
             </form>
           </div>
           {% endfor %}

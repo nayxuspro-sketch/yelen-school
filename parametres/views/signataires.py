@@ -395,8 +395,14 @@ def signataires_matricule(request):
         elif action == 'delete_cosignataire':
             try:
                 cs_id = request.POST.get('cosignataire_id')
-                CoSignataire.objects.filter(id=cs_id, actif=True).update(actif=False)
-                messages.success(request, "Co-signataire supprimé.")
+                if not cs_id:
+                    messages.error(request, "Co-signataire introuvable (identifiant manquant).")
+                else:
+                    nb = CoSignataire.objects.filter(id=cs_id, actif=True).update(actif=False)
+                    if nb:
+                        messages.success(request, "Co-signataire supprimé.")
+                    else:
+                        messages.error(request, "Ce co-signataire n'existe plus ou est déjà supprimé.")
             except (DatabaseError, ValidationError) as e:
                 logger.exception("Suppression du cosignataire impossible")
                 messages.error(request, f"Erreur : {e}")
