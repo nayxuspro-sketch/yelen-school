@@ -200,3 +200,26 @@ def test_appreciation_affiche_sur_bulletin_primaire(primaire, mocker):
         'inscription_id': primaire['eleves']['OUEDRAOGO'].pk, 'trimestre_id': primaire['trimestre'].pk}))
     ecran = apercu.content.decode()
     assert 'Travail sérieux et régulier.' in ecran, 'appréciation affichée à l\'aperçu'
+
+
+def test_appreciation_grille_primaire_sans_saisie_manuelle(primaire, mocker):
+    """Sans saisie manuelle, l'appréciation de chaque matière provient de la grille
+    « Appréciation Moyennes Primaire » (moyenne sur 10)."""
+    _noter(primaire, _evaluation(primaire, primaire['maths'], '10'),
+           {'OUEDRAOGO': '8'})
+    _bouton(primaire)
+    # Grille primaire : 8,00/10 tombe dans [7,00 ; 9,00] → « Très bien »
+    baker.make('parametres.AppreciationMoyennePrimaire',
+               etablissement=primaire['etab'],
+               libelle='Très bien', moy_min=Decimal('7'), moy_max=Decimal('9'),
+               couleur='#00A86B', ordre=1, actif=True)
+    weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+    weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+    primaire['client'].get(reverse('pedagogie:bulletin_pdf', kwargs={
+        'inscription_id': primaire['eleves']['OUEDRAOGO'].pk, 'trimestre_id': primaire['trimestre'].pk}))
+    html = weasy.call_args.kwargs['string']
+    assert 'Très bien' in html, 'appréciation issue de la grille primaire affichée dans le PDF'
+    apercu = primaire['client'].get(reverse('pedagogie:bulletin_apercu', kwargs={
+        'inscription_id': primaire['eleves']['OUEDRAOGO'].pk, 'trimestre_id': primaire['trimestre'].pk}))
+    ecran = apercu.content.decode()
+    assert 'Très bien' in ecran, 'appréciation issue de la grille primaire affichée à l\'aperçu'

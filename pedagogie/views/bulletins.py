@@ -54,12 +54,21 @@ def _get_appreciation_generale(inscription, mg, etab):
 
 
 def _load_appreciations(etab):
-    """Charge toutes les appréciations actives pour un établissement."""
-    from parametres.models import AppreciationMoyenneSecondaire
-    qs = AppreciationMoyenneSecondaire.objects.filter(actif=True)
+    """Charge toutes les appréciations actives pour un établissement.
+
+    Retourne un dict {'secondaire': [...], 'primaire': [...]} avec les grilles
+    AppreciationMoyenneSecondaire et AppreciationMoyennePrimaire.
+    """
+    from parametres.models import AppreciationMoyennePrimaire, AppreciationMoyenneSecondaire
+    qs_sec = AppreciationMoyenneSecondaire.objects.filter(actif=True)
+    qs_prim = AppreciationMoyennePrimaire.objects.filter(actif=True)
     if etab:
-        qs = qs.filter(etablissement=etab)
-    return list(qs.order_by('moy_min'))
+        qs_sec = qs_sec.filter(etablissement=etab)
+        qs_prim = qs_prim.filter(etablissement=etab)
+    return {
+        'secondaire': list(qs_sec.order_by('moy_min')),
+        'primaire': list(qs_prim.order_by('moy_min')),
+    }
 
 
 def _match_appreciation(moyenne, apprs):
@@ -95,14 +104,23 @@ class AppreciationSaisie:
 def _annotate_resultats(resultats, apprs, cycle_code):
     """
     Annote chaque Resultat avec un attribut .appreciation (objet à ``.libelle``) et retourne la liste : l'appréciation
-    saisie par l'enseignant si elle existe, sinon celle de la grille des moyennes (secondaire).
+    saisie par l'enseignant si elle existe, sinon celle de la grille des moyennes (secondaire ou primaire selon le
+    cycle de la classe).
+
+    - Primaire/préscolaire : grille ``AppreciationMoyennePrimaire`` (moyenne sur 10)
+    - Secondaire : grille ``AppreciationMoyenneSecondaire`` (moyenne sur 20)
     """
+    apprs = apprs or {}
+    apprs_prim = apprs.get('primaire', [])
+    apprs_sec = apprs.get('secondaire', [])
     for r in resultats:
         saisie = (r.appreciation or '').strip()
         if saisie:
             r.appreciation = AppreciationSaisie(saisie)
         elif cycle_code in ('POST', 'SEC') and not r.dispense and r.moyenne is not None:
-            r.appreciation = _match_appreciation(r.moyenne, apprs)
+            r.appreciation = _match_appreciation(r.moyenne, apprs_sec)
+        elif cycle_code in ('PRES', 'PRIM') and not r.dispense and r.moyenne is not None:
+            r.appreciation = _match_appreciation(r.moyenne, apprs_prim)
         else:
             r.appreciation = None
     return resultats

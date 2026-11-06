@@ -2,7 +2,7 @@
 titre: Guide d'Utilisation — YELEN SCHOOL
 version_logiciel: 5.57.0
 version_guide: 5.47
-date_mise_a_jour: 05/11/2026 (5.60.4 : samedi disponible comme jour de classe dans le champ « Jour » de l'emploi du temps)
+date_mise_a_jour: 05/11/2026 (5.60.5 : colonne Appréciation du bulletin primaire depuis la grille « Appréciation Moyennes Primaire »)
 modules_documentés: [accounts, api, bulletins, communication, core, documents, etablissements, examens, finances, inscriptions, licences, manuels, parametres, pedagogie, personnel, presences, vacations, viescolaire]
 modules_en_attente: []
 redige_par: Agent IA — Développement YELEN SCHOOL
@@ -3539,50 +3539,41 @@ Le fichier Excel (une feuille) contient trois blocs prêts pour la saisie au cab
 
 Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMPTES_DEPENSES`) : un cabinet qui utilise une autre codification les adapte sans toucher au reste. Les écritures sont en **francs CFA entiers**, dans l'ordre chronologique ; aucun paiement n'est modifié ni supprimé (registre de caisse immuable, §9.7).
 
-##### 9.40 Samedi comme jour de classe (emploi du temps) (5.60.4)
+### 9.38 Moyennes du primaire sur 10 et bouton « Calculer les moyennes » (5.60.0)
+
+**Accès :** `Pédagogie → Résultats → [classe]` (`/pedagogie/resultats/classe/<classe>/`).
+
+- **Barème du cycle** : au **préscolaire et au primaire**, toutes les moyennes sont sur **10** — la note saisie pour une discipline **est** la moyenne de cette discipline, sans pondération par type d'évaluation. Au post-primaire et au secondaire, rien ne change : notes pondérées par type et moyennes sur 20.
+- **Note ramenée au barème** : une note saisie sur 20 dans une classe du primaire (barème de l'évaluation à 20) est ramenée sur 10 (16/20 → 8/10). Le barème proposé à la création d'une évaluation part de la classe (`?classe=…`).
+- **Seuil de validation** : la moitié du barème — **5/10** au primaire, 10/20 ailleurs — pour la couleur de la moyenne, le nombre de matières validées et les décisions (admis / redouble) du bulletin annuel et du palmarès.
+- **Bouton « Calculer les moyennes »** : calcule la moyenne de **chaque élève** de la classe (disciplines, moyenne générale, rang) et **annonce le résultat** — « N moyenne(s) calculée(s) sur 10 pour N élève(s) ». S'il n'y a aucune note sur la période, l'écran affiche un avertissement nommant la classe et la période (plus de « calcul terminé » trompeur) ; vérifiez alors les enseignements de la classe (`Pédagogie → Enseignements`) et la saisie des notes.
+- **Évaluations prises en compte** : toute évaluation comportant des notes est moyennée, même si son statut est resté « Planifiée » ; seules les évaluations **annulées** sont écartées.
+- La page Résultats et les bulletins (trimestriel, annuel, palmarès) affichent le barème réel de la classe (« /10 » au primaire) ; le commentaire de bulletin généré automatiquement suit le même barème.
+
+### 9.39 Saisie des notes et scolarité (établissement privé) (5.60.3)
+
+**Règle métier :** dans un établissement **privé** (`IdentiteEtablissement.type_etablissement = PRIVE`), un élève n'apparaît pas dans la page de saisie des notes (`Pédagogie → Évaluations → Saisir les notes`) lorsque :
+
+- il n'a **pas d'inscription** active pour l'année scolaire et la classe concernées, ou
+- sa **scolarité (total dû) est <= 0** — c'est-à-dire qu'aucun frais de scolarité n'est dû (pas de `statut_eleve`, pas de tarifs configurés, exonération, bourse intégrale ou solde déjà réglé).
+
+Cette règle ne s'applique **pas** aux établissements publics : tous les élèves inscrits apparaissent quelle que soit leur situation financière.
+
+**Objectif :** éviter la saisie de notes pour des élèves non effectivement scolarisés (non inscrits ou sans scolarité due) dans le privé, où la scolarité conditionne l'inscription effective.
+
+### 9.40 Samedi comme jour de classe (emploi du temps) (5.60.4)
 
 **Champ « Jour » de l'emploi du temps** : **Samedi** est proposé par défaut dans le menu déroulant « Jour » lors de l'ajout d'une séance (`Vie Scolaire → Emploi du temps → [Classe] → Ajouter une séance`). La liste des jours disponibles suit la configuration des jours de classe (`Vie Scolaire → Horaires et jours de classe`) : si seulement Lundi–Vendredi sont cochés, Samedi n'apparaît pas ; sinon, il est disponible.
 
 **Règle de validation** : une séance ne peut pas être ajoutée un samedi si le samedi n'est pas un jour de classe configuré (message : « Samedi n'est pas un jour de classe configuré »).
 
-### 9.38 Moyennes du primaire sur 10 et bouton « Calculer les moyennes » (5.60.0)
+### 9.41 Colonne Appréciation du bulletin primaire (5.60.5)
 
-**Accès :** `Pédagogie → Résultats → [classe]` (`/pedagogie/resultats/classe/<classe>/`).
+**Bulletin trimestriel du primaire :** la colonne **Appréciation** de chaque matière est désormais remplie depuis la grille « Appréciation Moyennes Primaire » (`Paramètres → Appréciation Moyennes Primaire`), qui mappe la moyenne de la matière (sur 10) à un libellé (Excellent, Bien, Passable, Insuffisant, Médiocre…).
 
-- **Barème du cycle** : au **préscolaire et au primaire**, toutes les moyennes sont sur **10** — la note saisie pour
-  une discipline **est** la moyenne de cette discipline, sans pondération par type d'évaluation. Au post-primaire et
-  au secondaire, rien ne change : notes pondérées par type et moyennes sur 20.
-- **Note ramenée au barème** : une note saisie sur 20 dans une classe du primaire (barème de l'évaluation à 20) est
-  ramenée sur 10 (16/20 → 8/10). Le barème proposé à la création d'une évaluation part de la classe (`?classe=…`).
-- **Seuil de validation** : la moitié du barème — **5/10** au primaire, 10/20 ailleurs — pour la couleur de la
-  moyenne, le nombre de matières validées et les décisions (admis / redouble) du bulletin annuel et du palmarès.
-- **Bouton « Calculer les moyennes »** : calcule la moyenne de **chaque élève** de la classe (disciplines, moyenne
-  générale, rang) et **annonce le résultat** — « N moyenne(s) calculée(s) sur 10 pour N élève(s) ». S'il n'y a aucune
-  note sur la période, l'écran affiche un avertissement nommant la classe et la période (plus de « calcul terminé »
-  trompeur) ; vérifiez alors les enseignements de la classe (`Pédagogie → Enseignements`) et la saisie des notes.
-- **Évaluations prises en compte** : toute évaluation comportant des notes est moyennée, même si son statut est resté
-  « Planifiée » ; seules les évaluations **annulées** sont écartées.
-- La page Résultats et les bulletins (trimestriel, annuel, palmarès) affichent le barème réel de la classe
-  (« /10 » au primaire) ; le commentaire de bulletin généré automatiquement suit le même barème.
-- **Bulletin trimestriel (5.60.2)** : la colonne **Appréciation** affiche bien l'appréciation saisie par
-  l'enseignant pour chaque matière (au primaire comme ailleurs) ; la zone de signature de l'enseignant titulaire
-  comporte maintenant un espace vierge entre le intitulé « Enseignant titulaire » et le nom imprimé, pour la
-  signature manuscrite.
-
-### 9.39 Saisie des notes et scolarité (établissement privé) (5.60.3)
-
-**Règle métier :** dans un établissement **privé** (`IdentiteEtablissement.type_etablissement = PRIVE`), un élève
-n'apparaît pas dans la page de saisie des notes (`Pédagogie → Évaluations → Saisir les notes`) lorsque :
-
-- il n'a **pas d'inscription** active pour l'année scolaire et la classe concernées, ou
-- sa **scolarité (total dû) est <= 0** — c'est-à-dire qu'aucun frais de scolarité n'est dû (pas de `statut_eleve`,
-  pas de tarifs configurés, exonération, bourse intégrale ou solde déjà réglé).
-
-Cette règle ne s'applique **pas** aux établissements publics : tous les élèves inscrits apparaissent quelle que
-soit leur situation financière.
-
-**Objectif :** éviter la saisie de notes pour des élèves non effectivement scolarisés (non inscrits ou sans
-scolarité due) dans le privé, où la scolarité conditionne l'inscription effective.
+- Si l'enseignant a saisi une appréciation manuelle pour la matière (via « Pédagogie → Appréciations par matière »), elle s'affiche en priorité.
+- Sinon, l'appréciation est déterminée automatiquement par la grille : la moyenne de la matière sur 10 est comparée aux plages `moy_min`/`moy_max` de la grille, et le libellé correspondant s'affiche.
+- Si aucune grille primaire n'est configurée pour l'établissement, la colonne reste vide (comportement inchangé avant cette version).
 
 ## 10. EXAMENS
 

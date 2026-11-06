@@ -3,6 +3,15 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.60.5 — 2026-11-05
+
+- **Colonne Appréciation du bulletin primaire remplie depuis la grille « Appréciation Moyennes Primaire ».** Au
+  préscolaire et au primaire, l'appréciation de chaque matière sur le bulletin trimestriel provient de la grille
+  `AppreciationMoyennePrimaire` (moyenne de la matière sur 10 → libellé Excellent/Bien/Passable/…), configurée
+  dans `Paramètres → Appréciation Moyennes Primaire`. Une appréciation saisie manuellement par l'enseignant
+  (« Pédagogie → Appréciations par matière ») reste prioritaire. Sans grille configurée, la colonne reste vide.
+- Aucun changement de calcul, aucune migration.
+
 ## 5.60.4 — 2026-11-05
 
 - **Samedi comme jour de classe dans le champ « Jour » de l'emploi du temps.** Samedi (jour 6) est proposé par défaut dans le menu déroulant lors de l'ajout d'une séance (`Vie Scolaire → Emploi du temps → Ajouter une séance`). La liste respecte la configuration des jours de classe : si seuls Lundi–Vendredi sont actifs, Samedi n'apparaît pas. Une séance ne peut pas être placée un samedi non configuré.
