@@ -107,7 +107,7 @@
       </div>
 
       {# ── Section 3 : Accès ── #}
-      <div class="eval-form-section{% if not form.password1 and not form.is_active %} eval-form-section-last{% endif %}">
+      <div class="eval-form-section{% if not edited_user and not form.is_active %} eval-form-section-last{% endif %}">
         <div class="eval-form-section-label">Accès</div>
         <div class="form-grid-2">
 
@@ -183,7 +183,7 @@
 </script>
 
       {# ── Section 4 : Mot de passe (création uniquement) ── #}
-      {% if form.password1 %}
+      {% if not edited_user %}
       <div class="eval-form-section{% if not form.is_active %} eval-form-section-last{% endif %}">
         <div class="eval-form-section-label">Mot de passe</div>
         <p class="form-hint" style="margin-bottom:var(--space-3);">Facultatif : laissé vide, l'utilisateur créera lui-même son mot de passe à sa première connexion (adresse e-mail seule).</p>
