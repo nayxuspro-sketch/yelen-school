@@ -121,13 +121,6 @@ class UserCreateForm(forms.ModelForm):
         else:
             self.fields['cycles'].queryset = Cycle.objects.all().order_by('ordre', 'nom')
 
-    def __init__(self, *args, current_user=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['last_name'].required = True
-        self.fields['first_name'].required = True
-        _configurer_role(self, current_user)
-        self._configure_for_user(current_user)
-
     def _configure_for_user(self, current_user):
         if current_user and current_user.role != RoleChoices.SUPER_ADMIN:
             self.fields['etablissement'].queryset = Etablissement.objects.filter(
