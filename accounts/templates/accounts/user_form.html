@@ -131,6 +131,30 @@
             {% endif %}
           </div>
 
+          <div class="form-group">
+            <label for="{{ form.cycles.id_for_label }}" class="input-label">
+              {{ form.cycles.label }}
+            </label>
+            {{ form.cycles }}
+            {% if form.cycles.help_text %}
+            <span class="form-hint">{{ form.cycles.help_text }}</span>
+            {% endif %}
+            {% if form.cycles.errors %}
+            <p class="input-error">{{ form.cycles.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <div class="form-group dash-checkbox-row">
+            {{ form.est_tous_cycles }}
+            <label class="dash-checkbox-label">{{ form.est_tous_cycles.label }}</label>
+            {% if form.est_tous_cycles.help_text %}
+            <span class="form-hint">{{ form.est_tous_cycles.help_text }}</span>
+            {% endif %}
+            {% if form.est_tous_cycles.errors %}
+            <p class="input-error">{{ form.est_tous_cycles.errors.0 }}</p>
+            {% endif %}
+          </div>
+
         </div>
       </div>
 
