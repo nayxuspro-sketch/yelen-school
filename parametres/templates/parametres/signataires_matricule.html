@@ -79,6 +79,8 @@
   </div>
 </div>
 
+<!-- Conteneur scrollable horizontal pour la grille -->
+<div class="sm-scroll-wrapper">
 <table class="sm-table">
   <colgroup>
     <col class="sm-col--label">
@@ -206,6 +208,7 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endif %}
 
 <style nonce="{{ request.csp_nonce }}">
@@ -384,16 +387,6 @@
   flex: 1;
   font-style: italic;
 }
-.sm-cosig-nom {
-  font-size: .75rem;
-  font-weight: 600;
-  flex: 1;
-}
-.sm-cosig-fonction {
-  font-size: .65rem;
-  color: #64748b;
-  flex: 1;
-}
 .sm-cosig-form {
   margin-left: auto;
 }
@@ -469,6 +462,38 @@
 
 .sm-dash { color: #cbd5e1; }
 .sm-caption { font-size: .65rem; color: #94a3b8; }
+
+/* Conteneur scrollable horizontal */
+.sm-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1rem 0;
+  border: 1px solid var(--color-border-light, #e2e8f0);
+  border-radius: 8px;
+}
+
+/* Scrollbar toujours visible (WebKit) */
+.sm-scroll-wrapper::-webkit-scrollbar {
+  height: 10px;
+}
+.sm-scroll-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+.sm-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+  border: 2px solid #f1f5f9;
+}
+.sm-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Scrollbar Firefox */
+.sm-scroll-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
 
 @media (max-width: 900px) {
   .sm-table {
