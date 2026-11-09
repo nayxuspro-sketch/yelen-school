@@ -195,8 +195,16 @@ class UserUpdateForm(forms.ModelForm):
     def __init__(self, *args, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['last_name'].required = True
+        self.fields['first_name'].required = True
         _configurer_role(self, current_user)
-        self._configure_for_user(current_user)
+
+        if current_user and current_user.role != RoleChoices.SUPER_ADMIN:
+            self.fields['etablissement'].queryset = Etablissement.objects.filter(
+                pk=current_user.etablissement_id
+            )
+            self.fields['etablissement'].initial = current_user.etablissement
+        else:
+            self.fields['etablissement'].queryset = Etablissement.objects.all().order_by('nom')
 
         etab = getattr(current_user, 'etablissement', None) if current_user else None
         if etab:
