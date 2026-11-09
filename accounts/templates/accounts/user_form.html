@@ -136,12 +136,9 @@
               {{ form.cycles.label }}
             </label>
             <div class="cycles-grid" id="cycles-list">
-              {% for cycle in form.cycles.field.queryset %}
+              {% for widget in form.cycles %}
               <label class="cycle-checkbox" style="display:inline-flex;align-items:center;gap:6px;margin:0 8px 8px 0;">
-                <input type="checkbox" name="{{ form.cycles.html_name }}" value="{{ cycle.pk }}"
-                       id="{{ form.cycles.id_for_label }}_{{ forloop.counter }}"
-                       {% if form.cycles.value and str(cycle.pk) in form.cycles.value %}checked{% endif %}>
-                <span>{{ cycle.nom }}</span>
+                {{ widget.tag }} {{ widget.choice_label }}
               </label>
               {% empty %}
               <span class="text-muted">Aucun cycle disponible pour cet établissement.</span>
