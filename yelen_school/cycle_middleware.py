@@ -12,10 +12,8 @@ Règles :
 - Utilisateur avec est_tous_cycles=True : tous les cycles de l'établissement
 - Utilisateur avec cycles assignés (ManyToMany) : seulement ces cycles
 - Utilisateur sans cycles et sans est_tous_cycles : aucun cycle (données vides)
-
-Ce middleware ne filtre pas par classe (enseignants) car il n'existe pas de
-lien direct User → MembrePersonnel dans le modèle actuel. Ce filtrage pourra
-être ajouté dans les vues spécifiques lorsque le lien sera disponible.
+  sauf pour un enseignant (role ENSEIGNANT) : le cycle de sa classe
+  d'affectation est autorisé, afin qu'il voie au moins sa propre classe.
 """
 
 from __future__ import annotations
@@ -70,9 +68,26 @@ class CycleAccessMiddleware:
                     request.cycles_autorises = user.cycles.all()
                 request.est_tous_cycles = False
 
-            # Aucun cycle assigné et pas "Tous les cycles" → données vides
+            # Aucun cycle assigné et pas "Tous les cycles"
             else:
-                request.cycles_autorises = Cycle.objects.none()
-                request.est_tous_cycles = False
+                # Enseignant : autoriser au moins le cycle de sa classe d'affectation
+                if user.role == 'ENSEIGNANT':
+                    from core.utils import get_membre_personnel
+                    membre = get_membre_personnel(user)
+                    if membre and membre.classe_affectation_id:
+                        cycle_id = membre.classe_affectation.cycle_id
+                        if etab:
+                            request.cycles_autorises = Cycle.objects.filter(
+                                id=cycle_id, etablissement=etab
+                            )
+                        else:
+                            request.cycles_autorises = Cycle.objects.filter(id=cycle_id)
+                        request.est_tous_cycles = False
+                    else:
+                        request.cycles_autorises = Cycle.objects.none()
+                        request.est_tous_cycles = False
+                else:
+                    request.cycles_autorises = Cycle.objects.none()
+                    request.est_tous_cycles = False
 
         return self.get_response(request)
