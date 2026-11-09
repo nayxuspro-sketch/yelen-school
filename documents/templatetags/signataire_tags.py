@@ -281,15 +281,39 @@ def signataires_classe(context):
         {% signataires_classe as blocs %}{% for bloc in blocs %}<div class="…">{{ bloc }}</div>{% endfor %}
     """
     try:
+        from parametres.models import SignataireDocument, CoSignataire, TypeDocument
+
         classe = _classe_du_contexte(context)
         if classe is None:
             return []
+
+        cycle = getattr(classe, 'cycle', None)
+        annee = context.get('annee_scolaire') or context.get('annee_courante')
+
+        # Membres déjà configurés comme signataire principal ou cosignataire de BULLETIN
+        # pour ce cycle / année : ils ne doivent pas être réaffichés comme "Enseignant titulaire".
+        membres_deja_presents = set()
+        if cycle and annee:
+            type_doc = TypeDocument.objects.filter(code='BULLETIN', actif=True).first()
+            if type_doc:
+                sig = SignataireDocument.objects.filter(
+                    cycle=cycle, type_document=type_doc, annee_scolaire=annee,
+                    actif=True,
+                ).first()
+                if sig:
+                    m = sig.get_membre_personnel()
+                    if m:
+                        membres_deja_presents.add(m.id)
+                    for co in sig.co_signataires.filter(actif=True):
+                        m2 = co.get_membre_personnel()
+                        if m2:
+                            membres_deja_presents.add(m2.id)
 
         blocs = []
         for qualite, fonction in (('TITULAIRE', _FONCTION_TITULAIRE),
                                   ('SUPPLEANT', _FONCTION_SUPPLEANT)):
             membre = classe.enseignants_de_classe(qualite)
-            if membre:
+            if membre and membre.id not in membres_deja_presents:
                 blocs.append(mark_safe(_bloc_enseignant_classe(membre, fonction, context)))
         return blocs
     except Exception:
