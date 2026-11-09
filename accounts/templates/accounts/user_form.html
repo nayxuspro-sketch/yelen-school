@@ -131,19 +131,55 @@
             {% endif %}
           </div>
 
-          <div class="form-group">
-            <label for="{{ form.cycles.id_for_label }}" class="input-label">
-              {{ form.cycles.label }}
-            </label>
-            <div class="cycles-grid" id="cycles-list">
-              {% for widget in form.cycles %}
-              <label class="cycle-checkbox" style="display:inline-flex;align-items:center;gap:6px;margin:0 8px 8px 0;">
-                {{ widget.tag }} {{ widget.choice_label }}
-              </label>
-              {% empty %}
-              <span class="text-muted">Aucun cycle disponible pour cet établissement.</span>
-              {% endfor %}
-            </div>
+<style>
+.cycles-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.cycle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.cycle-pill input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  accent-color: #2563eb;
+}
+.cycle-pill:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+.cycle-pill input[type="checkbox"]:checked + span {
+  color: #2563eb;
+  font-weight: 600;
+}
+</style>
+<div class="form-group">
+  <label for="{{ form.cycles.id_for_label }}" class="input-label">
+    {{ form.cycles.label }}
+  </label>
+  <div class="cycles-grid" id="cycles-list">
+    {% for widget in form.cycles %}
+    <label class="cycle-pill">
+      {{ widget.tag }}
+      <span>{{ widget.choice_label }}</span>
+    </label>
+    {% empty %}
+    <span class="text-muted">Aucun cycle disponible pour cet établissement.</span>
+    {% endfor %}
+  </div>
             {% if form.cycles.help_text %}
             <span class="form-hint">{{ form.cycles.help_text }}</span>
             {% endif %}
