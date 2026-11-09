@@ -9,6 +9,7 @@ from .models import User
 from core.models import RoleChoices
 from etablissements.models import Etablissement
 from parametres.droits import affecter_role, choix_roles
+from parametres.models import Cycle
 
 
 
@@ -83,10 +84,23 @@ class UserCreateForm(forms.ModelForm):
     )
 
     role = _champ_role()
+    cycles = forms.ModelMultipleChoiceField(
+        queryset=Cycle.objects.none(),
+        required=False,
+        label="Cycles autorisés",
+        help_text="Laissez vide pour « Tous les cycles » (selon le rôle).",
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'input'}),
+    )
+    est_tous_cycles = forms.BooleanField(
+        required=False,
+        label="Tous les cycles",
+        help_text="Si coché, l’utilisateur voit les données de tous les cycles (sous réserve des limites de son rôle).",
+        widget=forms.CheckboxInput(attrs={'class': 'input'}),
+    )
 
     class Meta:
         model = User
-        fields = ['last_name', 'first_name', 'email', 'telephone', 'etablissement']
+        fields = ['last_name', 'first_name', 'email', 'telephone', 'etablissement', 'cycles', 'est_tous_cycles']
         widgets = {
             'last_name':    forms.TextInput(attrs={'class': 'input'}),
             'first_name':   forms.TextInput(attrs={'class': 'input'}),
@@ -94,6 +108,18 @@ class UserCreateForm(forms.ModelForm):
             'telephone':    forms.TextInput(attrs={'class': 'input'}),
             'etablissement': forms.Select(attrs={'class': 'input select'}),
         }
+
+    def __init__(self, *args, current_user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['last_name'].required = True
+        _configurer_role(self, current_user)
+        self._configure_for_user(current_user)
+
+        etab = getattr(current_user, 'etablissement', None) if current_user else None
+        if etab:
+            self.fields['cycles'].queryset = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
+        else:
+            self.fields['cycles'].queryset = Cycle.objects.all().order_by('ordre', 'nom')
 
     def __init__(self, *args, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -142,15 +168,29 @@ class UserCreateForm(forms.ModelForm):
         affecter_role(user, self.cleaned_data['role'])
         if commit:
             user.save()
+            self.save_m2m()
         return user
 
 
 class UserUpdateForm(forms.ModelForm):
     role = _champ_role()
+    cycles = forms.ModelMultipleChoiceField(
+        queryset=Cycle.objects.none(),
+        required=False,
+        label="Cycles autorisés",
+        help_text="Laissez vide pour « Tous les cycles » (selon le rôle).",
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'input'}),
+    )
+    est_tous_cycles = forms.BooleanField(
+        required=False,
+        label="Tous les cycles",
+        help_text="Si coché, l’utilisateur voit les données de tous les cycles (sous réserve des limites de son rôle).",
+        widget=forms.CheckboxInput(attrs={'class': 'input'}),
+    )
 
     class Meta:
         model = User
-        fields = ['last_name', 'first_name', 'email', 'telephone', 'etablissement', 'is_active']
+        fields = ['last_name', 'first_name', 'email', 'telephone', 'etablissement', 'cycles', 'est_tous_cycles', 'is_active']
         widgets = {
             'last_name':    forms.TextInput(attrs={'class': 'input'}),
             'first_name':   forms.TextInput(attrs={'class': 'input'}),
@@ -158,6 +198,21 @@ class UserUpdateForm(forms.ModelForm):
             'telephone':    forms.TextInput(attrs={'class': 'input'}),
             'etablissement': forms.Select(attrs={'class': 'input select'}),
         }
+
+    def __init__(self, *args, current_user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['last_name'].required = True
+        _configurer_role(self, current_user)
+        self._configure_for_user(current_user)
+
+        etab = getattr(current_user, 'etablissement', None) if current_user else None
+        if etab:
+            self.fields['cycles'].queryset = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
+        else:
+            self.fields['cycles'].queryset = Cycle.objects.all().order_by('ordre', 'nom')
+
+        if self.instance and self.instance.pk:
+            self.fields['cycles'].initial = self.instance.cycles.all()
 
     def __init__(self, *args, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
