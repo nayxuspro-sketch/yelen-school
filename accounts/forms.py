@@ -207,18 +207,6 @@ class UserUpdateForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             self.fields['cycles'].initial = self.instance.cycles.all()
 
-    def __init__(self, *args, current_user=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['last_name'].required = True
-        self.fields['first_name'].required = True
-        _configurer_role(self, current_user)
-        if current_user and current_user.role != RoleChoices.SUPER_ADMIN:
-            self.fields['etablissement'].queryset = Etablissement.objects.filter(
-                pk=current_user.etablissement_id
-            )
-        else:
-            self.fields['etablissement'].queryset = Etablissement.objects.all().order_by('nom')
-
     def clean_email(self):
         email = self.cleaned_data.get('email', '').strip().lower()
         qs = User.objects.filter(email=email)
