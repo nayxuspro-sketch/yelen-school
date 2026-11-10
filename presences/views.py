@@ -457,6 +457,20 @@ def bilan_eleve(request, inscription_id):
         qs = qs.filter(classe__etablissement=etab)
     inscription = get_object_or_404(qs, pk=inscription_id)
 
+    # Filtrage par cycle : l'enseignant ne voit que ses classes, les autres uniquement leurs cycles
+    if request.user.role == 'ENSEIGNANT':
+        classes_autorisees = _classes_appel(request, etab, annee)
+        if not classes_autorisees.filter(pk=inscription.classe_id).exists():
+            from django.http import Http404
+            raise Http404("Élève non accessible pour votre cycle.")
+    elif request.cycles_autorises:
+        if inscription.classe.cycle_id not in list(request.cycles_autorises.values_list('id', flat=True)):
+            from django.http import Http404
+            raise Http404("Élève non accessible pour votre cycle.")
+    else:
+        from django.http import Http404
+        raise Http404("Aucun cycle autorisé.")
+
     presences = Presence.objects.filter(
         inscription=inscription
     ).select_related('appel__matiere').order_by('-appel__date')
@@ -497,6 +511,14 @@ def justification_list(request):
         'inscription__eleve', 'inscription__classe', 'traitee_par', 'deposee_par'
     ).order_by('-date_debut')
 
+    # Filtrage par cycle
+    if request.user.role == 'ENSEIGNANT':
+        qs = qs.filter(inscription__classe__in=_classes_appel(request, etab, annee))
+    elif request.cycles_autorises:
+        qs = qs.filter(inscription__classe__cycle__in=request.cycles_autorises)
+    else:
+        qs = qs.none()
+
     if statut:
         qs = qs.filter(statut=statut)
     if classe_id:
@@ -510,6 +532,12 @@ def justification_list(request):
 
     # Statistiques globales
     base_qs = Justification.objects.filter(inscription__annee_scolaire=annee)
+    if request.user.role == 'ENSEIGNANT':
+        base_qs = base_qs.filter(inscription__classe__in=_classes_appel(request, etab, annee))
+    elif request.cycles_autorises:
+        base_qs = base_qs.filter(inscription__classe__cycle__in=request.cycles_autorises)
+    else:
+        base_qs = base_qs.none()
     stats = {
         'total': base_qs.count(),
         'en_attente': base_qs.filter(statut=Justification.StatutChoices.EN_ATTENTE).count(),
