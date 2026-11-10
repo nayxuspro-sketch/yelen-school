@@ -290,6 +290,16 @@ def appel_create(request, classe_id):
     etab = _get_etab(request)
     classe = get_object_or_404(Classe, pk=classe_id, etablissement=etab)
     annee = _get_annee_courante(etab)
+
+    # Filtrage par cycle pour les non-enseignants
+    if request.user.role != 'ENSEIGNANT' and request.cycles_autorises:
+        if classe.cycle_id not in list(request.cycles_autorises.values_list('id', flat=True)):
+            messages.error(request, "Vous n'avez pas accès à cette classe (hors de vos cycles autorisés).")
+            return redirect('presences:classe_select')
+    elif request.user.role != 'ENSEIGNANT' and not request.cycles_autorises:
+        messages.error(request, "Aucun cycle autorisé pour votre compte.")
+        return redirect('presences:classe_select')
+
     refus = _refus_classe(request, classe, annee)
     if refus:
         messages.error(request, f"Appel impossible : {refus}")

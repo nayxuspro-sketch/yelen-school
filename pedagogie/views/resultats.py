@@ -469,8 +469,19 @@ def moyennes_disciplines(request):
     etab = request.user.etablissement
 
     annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut') if etab else AnneeScolaire.objects.none()
-    classes = Classe.objects.filter(etablissement=etab, actif=True).select_related('cycle').order_by('cycle__ordre', 'nom') if etab else Classe.objects.none()
-    classes = filtrer_classe_par_cycle(classes, request)
+
+    # Classes affichées dans le champ « Classe » selon le rôle de l'utilisateur
+    if request.user.role == 'ENSEIGNANT':
+        # Un enseignant ne voit que sa classe d'affectation (via sa fiche personnel)
+        from core.utils import get_membre_personnel
+        membre = get_membre_personnel(request.user)
+        if membre and membre.classe_affectation_id:
+            classes = Classe.objects.filter(pk=membre.classe_affectation_id, etablissement=etab, actif=True).select_related('cycle').order_by('nom')
+        else:
+            classes = Classe.objects.none()
+    else:
+        classes = Classe.objects.filter(etablissement=etab, actif=True).select_related('cycle').order_by('cycle__ordre', 'nom')
+        classes = filtrer_classe_par_cycle(classes, request)
 
     annee_id    = request.GET.get('annee')
     trimestre_id = request.GET.get('trimestre')
