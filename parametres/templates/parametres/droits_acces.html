@@ -48,6 +48,7 @@
         <td>{{ r.base_libelle }}</td>
         <td style="text-align:center;">{{ r.nb_utilisateurs }}</td>
         <td style="text-align:right;">
+          <a href="?edit_role={{ r.pk }}" class="btn-secondary btn-sm" style="margin-right:var(--space-1);">Modifier</a>
           {% if r.nb_utilisateurs == 0 %}
           <form method="post" action="{% url 'parametres:role_personnalise_delete' r.pk %}" data-csp-confirm-submit="Supprimer le rôle « {{ r.libelle }} » et ses droits enregistrés ?" style="display:inline;">
             {% csrf_token %}
@@ -62,17 +63,20 @@
     </tbody>
   </table>
   {% endif %}
-  <form method="post" action="{% url 'parametres:role_personnalise_create' %}" style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:flex-end;">
+  <form method="post" action="{% if role_a_modifier %}{% url 'parametres:role_personnalise_update' role_a_modifier.pk %}{% else %}{% url 'parametres:role_personnalise_create' %}{% endif %}" style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:flex-end;">
     {% csrf_token %}
     <div style="flex:1 1 220px;">
-      <label for="{{ form_role.libelle.id_for_label }}" class="input-label">Nouveau rôle</label>
+      <label for="{{ form_role.libelle.id_for_label }}" class="input-label">{% if role_a_modifier %}Modifier le rôle{% else %}Nouveau rôle{% endif %}</label>
       {{ form_role.libelle }}
     </div>
     <div style="flex:1 1 220px;">
       <label for="{{ form_role.base.id_for_label }}" class="input-label">Rôle de référence</label>
       {{ form_role.base }}
     </div>
-    <button type="submit" class="btn-secondary">Créer le rôle</button>
+    <button type="submit" class="btn-secondary">{% if role_a_modifier %}Modifier le rôle{% else %}Créer le rôle{% endif %}</button>
+    {% if role_a_modifier %}
+    <a href="{% url 'parametres:droits_acces' %}" class="btn-secondary btn-sm" style="margin-left:var(--space-2);">Annuler</a>
+    {% endif %}
   </form>
 </div>
 

@@ -119,6 +119,11 @@ def droits_acces(request):
         messages.success(request, "Droits d'accès enregistrés.")
         return redirect('parametres:droits_acces')
 
+    role_a_modifier = None
+    edit_role_pk = request.GET.get('edit_role')
+    if edit_role_pk:
+        role_a_modifier = get_object_or_404(RolePersonnalise, pk=edit_role_pk)
+
     matrice = droits.matrice_effective()
     libelles = {role.value: role.label for role in droits.ROLES_CONFIGURABLES}
     colonnes = [(r.code, r.libelle, libelles.get(r.base)) for r in droits.roles_configurables()]
@@ -136,11 +141,17 @@ def droits_acces(request):
         'roles': roles,
         'lignes': [ligne(module, f, a) for f in module.fonctionnalites for a in (None, *f.actions)],
     } for module in droits.MODULES]
+
+    if role_a_modifier:
+        form_role = RolePersonnaliseForm(instance=role_a_modifier)
+    else:
+        form_role = RolePersonnaliseForm()
     return render(request, 'parametres/droits_acces.html', {
         'roles': colonnes,
         'blocs': blocs,
         'roles_personnalises': RolePersonnalise.objects.annotate(nb_utilisateurs=Count('utilisateurs')).order_by('libelle'),
-        'form_role': RolePersonnaliseForm(),
+        'form_role': form_role,
+        'role_a_modifier': role_a_modifier,
     })
 
 
@@ -185,4 +196,24 @@ def role_personnalise_delete(request, pk):
         role.delete()
         droits.invalider_cache()
         messages.success(request, f"Rôle « {role.libelle} » supprimé.")
+    return redirect('parametres:droits_acces')
+
+
+@login_required
+@require_POST
+def role_personnalise_update(request, pk):
+    """Modifie le libellé et le rôle de référence d'un rôle personnalisé — Super Admin."""
+    from core.models import RoleChoices
+    from .. import droits
+
+    if request.user.role != RoleChoices.SUPER_ADMIN:
+        return HttpResponseForbidden("Accès réservé au Super Admin.")
+    role = get_object_or_404(RolePersonnalise, pk=pk)
+    form = RolePersonnaliseForm(request.POST, instance=role)
+    if form.is_valid():
+        form.save()
+        droits.invalider_cache()
+        messages.success(request, f"Rôle « {role.libelle} » modifié.")
+    else:
+        messages.error(request, ' '.join(e for erreurs in form.errors.values() for e in erreurs))
     return redirect('parametres:droits_acces')

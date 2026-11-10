@@ -9,6 +9,7 @@ urlpatterns = [
     path('droits-acces/', views.droits_acces, name='droits_acces'),
     path('droits-acces/roles/nouveau/', views.role_personnalise_create, name='role_personnalise_create'),
     path('droits-acces/roles/<uuid:pk>/supprimer/', views.role_personnalise_delete, name='role_personnalise_delete'),
+    path('droits-acces/roles/<uuid:pk>/modifier/', views.role_personnalise_update, name='role_personnalise_update'),
 
     # Années scolaires
     path('annees/', views.annee_list, name='annee_list'),
