@@ -122,7 +122,10 @@ def droits_acces(request):
     role_a_modifier = None
     edit_role_pk = request.GET.get('edit_role')
     if edit_role_pk:
-        role_a_modifier = get_object_or_404(RolePersonnalise, pk=edit_role_pk)
+        try:
+            role_a_modifier = RolePersonnalise.objects.get(pk=edit_role_pk)
+        except (RolePersonnalise.DoesNotExist, ValueError):
+            role_a_modifier = None
 
     matrice = droits.matrice_effective()
     libelles = {role.value: role.label for role in droits.ROLES_CONFIGURABLES}
