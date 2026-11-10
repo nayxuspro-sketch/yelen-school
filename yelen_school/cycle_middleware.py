@@ -58,8 +58,8 @@ class CycleAccessMiddleware:
                     request.cycles_autorises = Cycle.objects.all()
                 request.est_tous_cycles = True
 
-            # Cycles explicitement assignés via ManyToMany
-            elif hasattr(user, 'cycles'):
+            # Cycles explicitement assignés via ManyToMany (au moins un cycle)
+            elif user.cycles.exists():
                 if etab:
                     request.cycles_autorises = user.cycles.filter(
                         etablissement=etab
