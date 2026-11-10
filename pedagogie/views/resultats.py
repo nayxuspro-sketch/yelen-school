@@ -749,7 +749,7 @@ def _build_releve_context(annee_id, enseignement_id, periode_id, bareme=None):
     from parametres.models import PeriodeEvaluation
 
     _convert = bool(bareme is not None and bareme != 20)
-    _facteur = (Decimal(str(bareme)) / Decimal('20')) if _convert else None
+    _facteur = float(Decimal(str(bareme)) / Decimal('20')) if _convert else None
 
     annee = AnneeScolaire.objects.filter(pk=annee_id).first() if annee_id else None
     enseignement = (
