@@ -706,7 +706,10 @@ def releve_notes(request):
     releve_ctx = {}
     if enseignement_id and not _enseignement_refuse(request, enseignement_id):
         effective_annee_id = str(annee.pk) if annee else annee_id
-        releve_ctx = _build_releve_context(effective_annee_id, enseignement_id, periode_id) or {}
+        releve_ctx = _build_releve_context(
+            effective_annee_id, enseignement_id, periode_id,
+            bareme=classe.bareme_moyenne if classe else None,
+        ) or {}
 
     # Resolve periode pour l'affichage des selects même sans releve_ctx
     periode = releve_ctx.get('periode')
@@ -736,10 +739,17 @@ def releve_notes(request):
     return render(request, 'pedagogie/releve_notes.html', context)
 
 
-def _build_releve_context(annee_id, enseignement_id, periode_id):
-    """Construit le contexte commun pour releve_notes et releve_notes_pdf."""
+def _build_releve_context(annee_id, enseignement_id, periode_id, bareme=None):
+    """Construit le contexte commun pour releve_notes et releve_notes_pdf.
+
+    Si ``bareme`` est fourni et differents de 20, les moyennes stockees sur 20
+    sont converties vers ce barème (ex: primaire -> division par 2).
+    """
     from collections import defaultdict
     from parametres.models import PeriodeEvaluation
+
+    _convert = bool(bareme is not None and bareme != 20)
+    _facteur = (Decimal(str(bareme)) / Decimal('20')) if _convert else None
 
     annee = AnneeScolaire.objects.filter(pk=annee_id).first() if annee_id else None
     enseignement = (
@@ -868,6 +878,27 @@ def _build_releve_context(annee_id, enseignement_id, periode_id):
     for i, row in enumerate(table):
         row['rang'] = rank_map.get(i)
 
+    # Conversion des moyennes vers le barème de la classe (ex: primaire -> /10)
+    if _convert:
+        for row in table:
+            # Notes individuelles : convertir sur_20 vers le barème
+            for nd in row['notes']:
+                if nd and nd.get('sur_20') is not None:
+                    nd['sur_20'] = round(nd['sur_20'] * _facteur, 2)
+            if row['moyenne_locale'] is not None:
+                row['moyenne_locale'] = round(float(row['moyenne_locale']) * _facteur, 2)
+            if row['resultat'] and row['resultat'].moyenne_sur_20 is not None:
+                row['resultat'].moyenne_sur_20 = round(float(row['resultat'].moyenne_sur_20) * _facteur, 2)
+        for s in ev_stats:
+            if s['avg'] is not None:
+                s['avg'] = round(s['avg'] * _facteur, 2)
+        if moy_max is not None:
+            moy_max['moy'] = round(moy_max['moy'] * _facteur, 2)
+        if moy_min is not None:
+            moy_min['moy'] = round(moy_min['moy'] * _facteur, 2)
+        if moy_classe is not None:
+            moy_classe = round(moy_classe * _facteur, 2)
+
     # Totaux saisies
     nb_saisies = sum(s['count'] for s in ev_stats)
     nb_max_saisies = nb_rows * len(evaluations_cols)
@@ -910,10 +941,19 @@ def releve_notes_pdf(request):
     if _enseignement_refuse(request, request.GET.get('enseignement')):
         return redirect('pedagogie:releve_notes')
 
+    enseignement_id = request.GET.get('enseignement')
+    enseignement_pdf = (
+        Enseignement.objects.filter(pk=enseignement_id)
+        .select_related('classe__cycle')
+        .first()
+    ) if enseignement_id else None
+    bareme_pdf = enseignement_pdf.classe.bareme_moyenne if enseignement_pdf else None
+
     ctx = _build_releve_context(
         annee_id=request.GET.get('annee'),
-        enseignement_id=request.GET.get('enseignement'),
+        enseignement_id=enseignement_id,
         periode_id=request.GET.get('periode'),
+        bareme=bareme_pdf,
     )
     if not ctx or not ctx['table']:
         messages.warning(request, "Aucune donnée à imprimer. Vérifiez les filtres.")
@@ -954,10 +994,19 @@ def fiche_discipline_pdf(request):
     if _enseignement_refuse(request, request.GET.get('enseignement')):
         return redirect('pedagogie:releve_notes')
 
+    enseignement_id = request.GET.get('enseignement')
+    enseignement_pdf = (
+        Enseignement.objects.filter(pk=enseignement_id)
+        .select_related('classe__cycle')
+        .first()
+    ) if enseignement_id else None
+    bareme_pdf = enseignement_pdf.classe.bareme_moyenne if enseignement_pdf else None
+
     ctx = _build_releve_context(
         annee_id=request.GET.get('annee'),
-        enseignement_id=request.GET.get('enseignement'),
+        enseignement_id=enseignement_id,
         periode_id=request.GET.get('periode'),
+        bareme=bareme_pdf,
     )
     if not ctx or not ctx['table']:
         messages.warning(request, "Aucune donnée à imprimer. Vérifiez les filtres sélectionnés.")

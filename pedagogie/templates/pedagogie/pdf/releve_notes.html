@@ -337,7 +337,7 @@ tfoot td.tf-vide { color: #aaa; }
       {% endfor %}
 
       {% if row.resultat and row.resultat.moyenne_sur_20 is not None %}
-        {% if row.resultat.moyenne_sur_20 >= 10 %}
+        {% if row.resultat.moyenne_sur_20 >= seuil_admis %}
           <td class="td-moy moy-ok">{{ row.resultat.moyenne_sur_20|floatformat:2 }}</td>
         {% else %}
           <td class="td-moy moy-low">{{ row.resultat.moyenne_sur_20|floatformat:2 }}</td>

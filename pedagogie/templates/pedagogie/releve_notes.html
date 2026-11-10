@@ -347,7 +347,7 @@
 
         <td class="rlv-td-moy">
           {% if row.resultat and row.resultat.moyenne_sur_20 is not None %}
-            <span class="{% if row.resultat.moyenne_sur_20 >= 10 %}rlv-moy-good{% else %}rlv-moy-bad{% endif %}">
+            <span class="{% if row.resultat.moyenne_sur_20 >= seuil_admis %}rlv-moy-good{% else %}rlv-moy-bad{% endif %}">
               {{ row.resultat.moyenne_sur_20|floatformat:2 }}
             </span>
           {% elif row.moyenne_locale is not None %}
