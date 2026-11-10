@@ -555,7 +555,15 @@ def justification_list(request):
         'refusees': base_qs.filter(statut=Justification.StatutChoices.REFUSEE).count(),
     }
 
-    classes = Classe.objects.filter(etablissement=etab, actif=True).select_related('cycle').order_by('cycle__ordre', 'nom')
+    if request.user.role == 'ENSEIGNANT':
+        from core.utils import get_membre_personnel
+        membre = get_membre_personnel(request.user)
+        if membre and membre.classe_affectation_id:
+            classes = Classe.objects.filter(pk=membre.classe_affectation_id, etablissement=etab, actif=True).select_related('cycle').order_by('nom')
+        else:
+            classes = Classe.objects.none()
+    else:
+        classes = Classe.objects.filter(etablissement=etab, actif=True).select_related('cycle').order_by('cycle__ordre', 'nom')
 
     return render(request, 'presences/justification_list.html', {
         'justifications': qs,
