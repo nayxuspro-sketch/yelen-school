@@ -4,6 +4,7 @@ Issu du découpage mécanique de ``pedagogie/views.py`` (octobre 2026) : code in
 """
 import json
 import logging
+from decimal import Decimal
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -729,6 +730,8 @@ def releve_notes(request):
         'moy_min': releve_ctx.get('moy_min'),
         'nb_saisies': releve_ctx.get('nb_saisies', 0),
         'nb_max_saisies': releve_ctx.get('nb_max_saisies', 0),
+        'bareme': classe.bareme_moyenne if classe else Decimal('20'),
+        'seuil_admis': (classe.bareme_moyenne / 2) if classe else Decimal('10'),
     }
     return render(request, 'pedagogie/releve_notes.html', context)
 

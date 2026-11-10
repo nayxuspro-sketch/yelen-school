@@ -305,7 +305,7 @@ tfoot td.tf-vide { color: #aaa; }
         <div class="ev-bareme">/{{ ev.bareme }}</div>
       </th>
       {% endfor %}
-      <th class="th-moy">Moy /20</th>
+      <th class="th-moy">Moy /{{ bareme }}</th>
     </tr>
   </thead>
 
@@ -381,7 +381,7 @@ tfoot td.tf-vide { color: #aaa; }
   <div class="recap-card">
     <div class="recap-card-title">Meilleure moyenne</div>
     {% if moy_max %}
-    <div class="recap-card-val">{{ moy_max.moy|floatformat:2 }}<span>/20</span></div>
+    <div class="recap-card-val">{{ moy_max.moy|floatformat:2 }}<span>/{{ bareme }}</span></div>
     <div class="recap-card-sub">
       {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }}
     </div>
@@ -391,10 +391,10 @@ tfoot td.tf-vide { color: #aaa; }
   <div class="recap-card">
     <div class="recap-card-title">Moyenne de la classe</div>
     {% if moy_classe %}
-    {% if moy_classe >= 10 %}
-    <div class="recap-card-val">{{ moy_classe|floatformat:2 }}<span>/20</span></div>
+    {% if moy_classe >= seuil_admis %}
+    <div class="recap-card-val">{{ moy_classe|floatformat:2 }}<span>/{{ bareme }}</span></div>
     {% else %}
-    <div class="recap-card-val-low">{{ moy_classe|floatformat:2 }}<span>/20</span></div>
+    <div class="recap-card-val-low">{{ moy_classe|floatformat:2 }}<span>/{{ bareme }}</span></div>
     {% endif %}
     <div class="recap-card-sub">{{ table|length }} élève{{ table|length|pluralize }}</div>
     {% else %}<div class="recap-card-empty">—</div>{% endif %}
@@ -403,7 +403,7 @@ tfoot td.tf-vide { color: #aaa; }
   <div class="recap-card">
     <div class="recap-card-title">Moyenne la plus faible</div>
     {% if moy_min %}
-    <div class="recap-card-val-low">{{ moy_min.moy|floatformat:2 }}<span>/20</span></div>
+    <div class="recap-card-val-low">{{ moy_min.moy|floatformat:2 }}<span>/{{ bareme }}</span></div>
     <div class="recap-card-sub">
       {{ moy_min.inscription.eleve.nom|upper }} {{ moy_min.inscription.eleve.prenom }}
     </div>
@@ -414,8 +414,8 @@ tfoot td.tf-vide { color: #aaa; }
 {% endif %}
 
 <div class="legende">
-  <div class="leg-item"><span class="leg-dot leg-ok"></span> &ge; 10/20 (gras)</div>
-  <div class="leg-item"><span class="leg-dot leg-low"></span> &lt; 10/20 (gras italique)</div>
+  <div class="leg-item"><span class="leg-dot leg-ok"></span> &ge; {{ seuil_admis }}/{{ bareme }} (gras)</div>
+  <div class="leg-item"><span class="leg-dot leg-low"></span> &lt; {{ seuil_admis }}/{{ bareme }} (gras italique)</div>
   <div class="leg-item"><span class="leg-dot leg-est"></span> Moyenne estimée (non validée, italique)</div>
   <span style="margin-left:auto; font-size:6pt; color:#555;">
     Coloration calculée sur l'équivalent /20 de chaque note (note &divide; barème &times; 20).

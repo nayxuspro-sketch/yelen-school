@@ -242,14 +242,14 @@
       <span class="rlv-chip-lbl">Saisies</span>
     </div>
     {% if moy_classe %}
-    <div class="rlv-chip {% if moy_classe >= 10 %}rlv-chip-good{% else %}rlv-chip-bad{% endif %}">
+    <div class="rlv-chip {% if moy_classe >= seuil_admis %}rlv-chip-good{% else %}rlv-chip-bad{% endif %}">
       <span class="rlv-chip-val">{{ moy_classe|floatformat:2 }}</span>
-      <span class="rlv-chip-lbl">Moy. /20</span>
+      <span class="rlv-chip-lbl">Moy. /{{ bareme }}</span>
     </div>
     {% else %}
     <div class="rlv-chip rlv-chip-muted">
       <span class="rlv-chip-val">—</span>
-      <span class="rlv-chip-lbl">Moy. /20</span>
+      <span class="rlv-chip-lbl">Moy. /{{ bareme }}</span>
     </div>
     {% endif %}
     {% if moy_max %}
@@ -259,7 +259,7 @@
     </div>
     {% endif %}
     {% if moy_min %}
-    <div class="rlv-chip {% if moy_min.moy >= 10 %}rlv-chip-good{% else %}rlv-chip-bad{% endif %}"
+    <div class="rlv-chip {% if moy_min.moy >= seuil_admis %}rlv-chip-good{% else %}rlv-chip-bad{% endif %}"
          title="Min : {{ moy_min.inscription.eleve.nom|upper }} {{ moy_min.inscription.eleve.prenom }}">
       <span class="rlv-chip-val">{{ moy_min.moy|floatformat:2 }}</span>
       <span class="rlv-chip-lbl">Min</span>
@@ -306,7 +306,7 @@
           <div class="rlv-th-ev-meta">{{ ev.date_planifiee|date:"d/m" }}&nbsp;·&nbsp;/{{ ev.bareme }}</div>
         </th>
         {% endfor %}
-        <th class="rlv-th-moy">Moy /20</th>
+        <th class="rlv-th-moy">Moy /{{ bareme }}</th>
         <th class="rlv-th-rang">Rang</th>
       </tr>
     </thead>
@@ -334,7 +334,7 @@
               {{ note_data.valeur|floatformat:2 }}
             </span>
             {% if note_data.sur_20 %}
-            <div class="rlv-note-sub">{{ note_data.sur_20|floatformat:2 }}/20</div>
+            <div class="rlv-note-sub">{{ note_data.sur_20|floatformat:2 }}/{{ bareme }}</div>
             {% endif %}
           </td>
           {% endif %}
@@ -421,7 +421,7 @@
     <span class="rlv-legend-pill">~ Estimation (moyennes non calculées)</span>
     {% if moy_max %}
     <span class="rlv-legend-pill rlv-table-footer-right">
-      🏆 {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }} &nbsp;{{ moy_max.moy|floatformat:2 }}/20
+      🏆 {{ moy_max.inscription.eleve.nom|upper }} {{ moy_max.inscription.eleve.prenom }} &nbsp;{{ moy_max.moy|floatformat:2 }}/{{ bareme }}
     </span>
     {% endif %}
   </div>
