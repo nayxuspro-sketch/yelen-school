@@ -201,7 +201,10 @@ def classe_list(request):
 def classe_form(request, pk=None):
     etab = _get_etab(request)
     classe = get_object_or_404(Classe, pk=pk, etablissement=etab) if pk else None
-    cycles = Cycle.objects.filter(etablissement=etab, actif=True) if etab else Cycle.objects.none()
+    if etab:
+        cycles = Cycle.objects.filter(etablissement=etab, actif=True)
+    else:
+        cycles = Cycle.objects.filter(actif=True)
     ctx = {
         'classe': classe, 'cycles': cycles,
         'type_examen_choices': Classe._meta.get_field('type_examen').choices,

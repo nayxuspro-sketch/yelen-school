@@ -27,7 +27,7 @@
                     <div class="form-group">
                         <label class="input-label" for="id_cycle">Cycle <span style="color:#FF6B7A;">*</span></label>
                         <select name="cycle" required class="input select" id="id_cycle">
-                            {% for cy in cycles %}<option value="{{ cy.pk }}" {% if classe.cycle_id == cy.pk %}selected{% endif %}>{{ cy.nom }}</option>{% endfor %}
+                            {% for cy in cycles %}<option value="{{ cy.pk }}" {% if classe and classe.cycle_id == cy.pk %}selected{% endif %}>{{ cy.nom }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="form-group">
