@@ -96,6 +96,7 @@ from .etablissement import (  # noqa: F401
     identite_etablissement,
     droits_acces,
     role_personnalise_create,
+    role_personnalise_update,
     role_personnalise_delete,
 )
 from .calendrier import (  # noqa: F401
