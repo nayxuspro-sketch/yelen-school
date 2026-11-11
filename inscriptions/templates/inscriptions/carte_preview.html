@@ -73,7 +73,7 @@
         <div style="flex:1; min-width:0;">
           <div style="font-size:0.68rem; font-weight:700; color:#0A1628;
                       text-transform:uppercase; letter-spacing:0.3px; line-height:1.2;
-                      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      word-break: break-word;">
             {% if identite %}{{ identite.nom_etablissement }}{% elif etablissement %}{{ etablissement.nom }}{% else %}Établissement{% endif %}
           </div>
           <div style="font-size:0.5rem; color:#00A86B; margin-top:1px;
