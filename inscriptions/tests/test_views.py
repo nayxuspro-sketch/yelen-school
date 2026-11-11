@@ -209,6 +209,7 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
 
     attendu.append(f"VALABLE POUR L'ANNÉE SCOLAIRE : {annee.libelle}")   # mention en gras au bas de la carte
     attendu.append('Tél : 25 36 47 58')   # téléphone de l'établissement dans l'en-tête
+    attendu.append('BURKINA FASO')   # présent à l'aperçu et dans le HTML imprimé
 
     assert client.get(reverse('inscriptions:eleve_carte', kwargs={'pk': eleve.pk}) + '?format=pdf').status_code == 200
     carte = unescape(weasy.call_args.kwargs['string'])
@@ -221,6 +222,7 @@ def test_carte_scolaire_face_unique_avec_residence_et_parents(client, mocker):
     for html in (carte, cartes):   # en-tête clair, « CARTE SCOLAIRE » en gras lisible, mention en gras
         assert re.search(r'\.carte-header \{[^}]*background: #f5f5f5;', html) and '.carte-header {\n    background: #111' not in html
         assert re.search(r'\.label-carte \{ font-size: 6pt; font-weight: 700; color: #111;', html)
+        assert re.search(r'\.label-pays \{ font-size: 6pt; font-weight: 700; color: #111;', html)
         assert re.search(r'\.validite \{ font-size: 4\.5pt; font-weight: 700;', html)
         assert re.search(r'\.etab-tel \{ font-size: 4pt;', html)
         # lignes Résidence / Père / Mère / N° d'urgence en 5 pt, la dernière en gras
