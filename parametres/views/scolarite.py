@@ -152,6 +152,8 @@ def cycle_form(request, pk=None):
     etab = _get_etab(request)
     cycle = get_object_or_404(Cycle, pk=pk, etablissement=etab) if pk else None
     ctx = {'cycle': cycle, 'code_choices': Cycle.CODE_CHOICES}
+    if not cycle:
+        ctx['code_default'] = 'TOUT'
 
     if request.method == 'POST':
         if not etab:

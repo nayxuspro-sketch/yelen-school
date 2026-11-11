@@ -185,6 +185,7 @@ class Cycle(BaseModel):
         ('PRIM', _('Primaire')),
         ('POST', _('Post-primaire')),
         ('SEC', _('Secondaire')),
+        ('TOUT', _('Tout Cycle')),
     ]
 
     etablissement = models.ForeignKey(

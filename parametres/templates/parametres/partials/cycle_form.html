@@ -24,7 +24,7 @@
                         <label class="input-label" for="id_code">Code <span style="color:#FF6B7A;">*</span></label>
                         <select name="code" required class="input select" id="id_code">
                             {% for val, label in code_choices %}
-                            <option value="{{ val }}" {% if cycle.code == val %}selected{% endif %}>{{ label }}</option>
+                            <option value="{{ val }}" {% if not cycle and val == code_default %}selected{% elif cycle and cycle.code == val %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
