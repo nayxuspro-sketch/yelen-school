@@ -31,6 +31,7 @@ from .matieres import (  # noqa: F401
     matiere_update,
     matiere_cycle_save,
     enseignement_list,
+    enseignement_matieres,
     enseignement_create,
     enseignement_update,
 )

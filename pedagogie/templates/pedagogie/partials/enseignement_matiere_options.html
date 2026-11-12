@@ -1,0 +1,10 @@
+<option value="">-- Sélectionner une matière --</option>
+{% for matiere in matieres %}
+<option value="{{ matiere.pk }}">{{ matiere.code }} — {{ matiere.nom }}</option>
+{% empty %}
+  {% if cycle_selectionne %}
+<option value="" disabled>Aucune matière configurée pour ce cycle</option>
+  {% else %}
+<option value="" disabled>Sélectionnez d’abord une classe</option>
+  {% endif %}
+{% endfor %}

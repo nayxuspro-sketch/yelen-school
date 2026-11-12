@@ -1,6 +1,8 @@
 from django import forms
+from django.urls import reverse_lazy
 from .models import Matiere, MatiereCycle, Enseignement, Evaluation, Note
 from parametres.models import PeriodeEvaluation
+from yelen_school.cycle_filter import filtrer_classe_par_cycle
 
 def _apply_yelen_classes(fields):
     """Apply yelen.css dash-input class to all form fields."""
@@ -50,7 +52,7 @@ class MatiereForm(forms.ModelForm):
 
 
 class EnseignementForm(forms.ModelForm):
-    """Formulaire pour assigner une matière à une classe."""
+    """Formulaire pour assigner une matière à une classe, limitée à son cycle."""
 
     class Meta:
         model = Enseignement
@@ -59,8 +61,45 @@ class EnseignementForm(forms.ModelForm):
             'personnel', 'coefficient', 'heures_hebdomadaires', 'est_actif'
         ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, request=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if request is not None:
+            self.fields['classe'].queryset = filtrer_classe_par_cycle(
+                self.fields['classe'].queryset, request
+            )
+
+        if self.is_bound:
+            classe_id = self.data.get(self.add_prefix('classe'))
+        else:
+            classe = self.initial.get('classe')
+            if classe is None and self.instance and self.instance.pk:
+                classe = self.instance.classe_id
+            classe_id = getattr(classe, 'pk', classe)
+
+        classe = None
+        if classe_id:
+            try:
+                classe = self.fields['classe'].clean(classe_id)
+            except forms.ValidationError:
+                pass
+
+        self.classe_selectionnee = classe is not None
+        if classe is not None:
+            self.fields['matiere'].queryset = Matiere.objects.filter(
+                configurations_cycle__cycle_id=classe.cycle_id
+            ).order_by('code').distinct()
+            self.fields['matiere'].empty_label = '-- Sélectionner une matière --'
+        else:
+            self.fields['matiere'].queryset = Matiere.objects.none()
+            self.fields['matiere'].empty_label = '-- Sélectionner d’abord une classe --'
+
+        self.fields['classe'].widget.attrs.update({
+            'hx-get': reverse_lazy('pedagogie:enseignement_matieres'),
+            'hx-trigger': 'change',
+            'hx-target': '#id_matiere',
+            'hx-swap': 'innerHTML',
+        })
+        self.order_fields(['classe', 'matiere'])
         _apply_yelen_classes(self.fields)
 
 

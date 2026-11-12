@@ -6,6 +6,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from django.views.decorators.http import require_GET
 from ..models import Matiere, MatiereCycle, Enseignement
 from ..forms import MatiereForm, MatiereCycleForm, EnseignementForm
 from ..selectors import configurations_matiere, ligne_configuration
@@ -136,17 +137,28 @@ def enseignement_list(request):
 
 
 @login_required
+@require_GET
+def enseignement_matieres(request):
+    """Options de matières pour le cycle de la classe choisie (chargement HTMX)."""
+    form = EnseignementForm(data={'classe': request.GET.get('classe', '')}, request=request)
+    return render(request, 'pedagogie/partials/enseignement_matiere_options.html', {
+        'matieres': form.fields['matiere'].queryset,
+        'cycle_selectionne': form.classe_selectionnee,
+    })
+
+
+@login_required
 def enseignement_create(request):
     """Nouvelle affectation d'enseignement."""
     if request.method == 'POST':
-        form = EnseignementForm(request.POST)
+        form = EnseignementForm(request.POST, request=request)
         if form.is_valid():
             enseignement = form.save()
             messages.success(request, f"Affectation {enseignement} réussie.")
             return redirect('pedagogie:enseignement_list')
     else:
         annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-        form = EnseignementForm(initial={'annee_scolaire': annee_courante})
+        form = EnseignementForm(initial={'annee_scolaire': annee_courante}, request=request)
     
     return render(request, 'pedagogie/enseignement_form.html', {
         'form': form,
@@ -159,13 +171,13 @@ def enseignement_update(request, pk):
     """Modification d'une affectation."""
     enseignement = get_object_or_404(Enseignement, pk=pk)
     if request.method == 'POST':
-        form = EnseignementForm(request.POST, instance=enseignement)
+        form = EnseignementForm(request.POST, instance=enseignement, request=request)
         if form.is_valid():
             form.save()
             messages.success(request, f"Affectation {enseignement} mise à jour.")
             return redirect('pedagogie:enseignement_list')
     else:
-        form = EnseignementForm(instance=enseignement)
+        form = EnseignementForm(instance=enseignement, request=request)
     
     return render(request, 'pedagogie/enseignement_form.html', {
         'form': form,

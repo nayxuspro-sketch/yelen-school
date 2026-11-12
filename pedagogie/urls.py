@@ -17,6 +17,7 @@ urlpatterns = [
     # Enseignements (Affectations)
     path('enseignements/', views.enseignement_list, name='enseignement_list'),
     path('enseignements/nouveau/', views.enseignement_create, name='enseignement_create'),
+    path('enseignements/matieres/', views.enseignement_matieres, name='enseignement_matieres'),
     path('enseignements/<uuid:pk>/modifier/', views.enseignement_update, name='enseignement_update'),
 
     # Évaluations & Notes
