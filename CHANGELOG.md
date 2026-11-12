@@ -3,6 +3,10 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.63.59 — 2026-09-06
+
+- **Saisie des notes : élargit le contrôle aux types non publics.** Tout type d'établissement configuré autre que `PUBLIC` (notamment `PRIVE` et `CONFESSIONNEL`) déclenche le blocage des élèves non exonérés au montant net de scolarité nul. La saisie directe et les imports sont protégés ; `PUBLIC` reste exclu. Aucun changement de schéma ni migration.
+
 ## 5.63.58 — 2026-09-06
 
 - **Correction du contrôle de paiement avant saisie des notes.** Le blocage des élèves privés non exonérés au montant net nul s'applique désormais même sans tarif actif configuré pour l'année. Le calcul porte sur les paiements des rubriques de scolarité (net des remboursements), et le seuil est exactement zéro. La saisie directe et l'import Excel sont protégés ; exonérés, versements nets non nuls et établissements non privés restent hors blocage.

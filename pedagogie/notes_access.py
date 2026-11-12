@@ -17,21 +17,20 @@ def separer_inscriptions_saisie_notes(
 ) -> tuple[list[Inscription], list[Inscription]]:
     """Sépare les inscriptions autorisées et bloquées pour une même classe et une même année.
 
-    Dans un établissement privé, un élève non exonéré est bloqué si le montant
-    net payé pour les rubriques comptées dans les frais de scolarité de son
-    inscription annuelle est exactement nul. La règle s'applique même sans tarif
-    actif configuré.
+    Dans un établissement configuré comme non public, un élève non exonéré est
+    bloqué si le montant net payé pour les rubriques comptées dans les frais de
+    scolarité de son inscription annuelle est exactement nul. La règle s'applique
+    même sans tarif actif configuré.
     """
     inscriptions = list(inscriptions)
     if not inscriptions:
         return [], []
 
     etablissement_id = inscriptions[0].classe.etablissement_id
-    est_prive = IdentiteEtablissement.objects.filter(
+    type_etablissement = IdentiteEtablissement.objects.filter(
         etablissement_id=etablissement_id,
-        type_etablissement='PRIVE',
-    ).exists()
-    if not est_prive:
+    ).values_list('type_etablissement', flat=True).first()
+    if type_etablissement is None or type_etablissement == 'PUBLIC':
         return inscriptions, []
 
     non_exonerees = [

@@ -130,10 +130,11 @@ class TestPedagogieViews:
         assert response.status_code == 302
         assert not Note.objects.filter(inscription=ins_sans_paiement, evaluation=evaluation).exists()
 
-    def test_saisie_notes_prive_bloque_sans_tarif_configure(self, client):
-        """L'absence de tarif configuré ne désactive pas le contrôle serveur."""
+    @pytest.mark.parametrize('type_etab', ['PRIVE', 'CONFESSIONNEL', 'PRIVE_LAIC'])
+    def test_saisie_notes_prive_bloque_sans_tarif_configure(self, client, type_etab):
+        """Tout type configuré non public bloque sans paiement ni tarif configuré."""
         etab = baker.make('etablissements.Etablissement')
-        annee, classe, _, evaluation, _, _ = self._contexte_saisie(client, etab, 'PRIVE')
+        annee, classe, _, evaluation, _, _ = self._contexte_saisie(client, etab, type_etab)
         ins = baker.make('inscriptions.Inscription', annee_scolaire=annee, classe=classe)
 
         url = reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk})
@@ -207,6 +208,9 @@ class TestPedagogieViews:
         assert response.status_code == 200
         html = response.content.decode()
         assert ins.eleve.nom in html, 'Élève public sans scolarité : doit apparaître dans la saisie'
+        response = client.post(url, {f'note_{ins.pk}': '7'})
+        assert response.status_code == 302
+        assert Note.objects.filter(inscription=ins, evaluation=evaluation).exists()
 
 
 @pytest.mark.django_db
