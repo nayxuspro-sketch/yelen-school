@@ -1,11 +1,13 @@
-"""Règles d'accès à la saisie des notes selon les paiements de scolarité."""
+"""Règles d'accès aux notes et bulletins selon les paiements de scolarité."""
 
+from collections import defaultdict
 from collections.abc import Iterable
 from contextlib import contextmanager
 from contextvars import ContextVar
 from decimal import Decimal
 
 from django.db.models import Sum
+from django.http import Http404
 
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import IdentiteEtablissement
@@ -30,17 +32,61 @@ def controle_note_requis() -> bool:
     return not _CONTROLE_PREALABLE.get()
 
 
+def filtrer_inscriptions_autorisees_notes(inscriptions: Iterable[Inscription]) -> list[Inscription]:
+    """Retourne uniquement les inscriptions autorisées à afficher des notes ou un bulletin."""
+    autorisees, _ = separer_inscriptions_saisie_notes(inscriptions)
+    return autorisees
+
+
+def inscription_autorisee_notes(inscription: Inscription) -> bool:
+    """Indique si une inscription peut accéder à ses notes et bulletins."""
+    return not separer_inscriptions_saisie_notes([inscription])[1]
+
+
+def exiger_inscription_autorisee_notes(inscription: Inscription) -> Inscription:
+    """Masque les fiches individuelles des inscriptions non autorisées (404)."""
+    if not inscription_autorisee_notes(inscription):
+        raise Http404("Fiche de résultats indisponible.")
+    return inscription
+
+
 def separer_inscriptions_saisie_notes(
     inscriptions: Iterable[Inscription],
 ) -> tuple[list[Inscription], list[Inscription]]:
-    """Sépare les inscriptions autorisées et bloquées pour une même classe et une même année.
+    """Sépare les inscriptions autorisées et bloquées pour afficher/saisir des notes ou bulletins.
 
     Dans un établissement configuré comme non public, un élève non exonéré est
     bloqué si le montant net payé pour les rubriques comptées dans les frais de
     scolarité de son inscription annuelle est exactement nul. La règle s'applique
-    même sans tarif actif configuré.
+    même sans tarif actif configuré. Les inscriptions de plusieurs établissements
+    peuvent être fournies ensemble ; chacune est évaluée selon son établissement.
     """
     inscriptions = list(inscriptions)
+    if not inscriptions:
+        return [], []
+
+    par_etablissement = defaultdict(list)
+    for inscription in inscriptions:
+        par_etablissement[inscription.classe.etablissement_id].append(inscription)
+
+    autorisees_ids = set()
+    bloquees_ids = set()
+    for groupe in par_etablissement.values():
+        autorisees, bloquees = _separer_inscriptions_meme_etablissement(groupe)
+        autorisees_ids.update(inscription.pk for inscription in autorisees)
+        bloquees_ids.update(inscription.pk for inscription in bloquees)
+
+    # Préserve l'ordre initial, y compris pour une sélection portant sur plusieurs établissements.
+    return (
+        [inscription for inscription in inscriptions if inscription.pk in autorisees_ids],
+        [inscription for inscription in inscriptions if inscription.pk in bloquees_ids],
+    )
+
+
+def _separer_inscriptions_meme_etablissement(
+    inscriptions: list[Inscription],
+) -> tuple[list[Inscription], list[Inscription]]:
+    """Applique le seuil de paiement aux inscriptions d'un même établissement."""
     if not inscriptions:
         return [], []
 

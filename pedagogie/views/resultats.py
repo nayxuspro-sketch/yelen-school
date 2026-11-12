@@ -19,6 +19,7 @@ from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_etablissement_context
 from licences.decorators import requires_licence_feature
 from .commun import HTML, _pdf_licence_info
+from ..notes_access import filtrer_inscriptions_autorisees_notes
 from yelen_school.cycle_filter import filtrer_classe_par_cycle, get_cycle_ids
 
 
@@ -78,11 +79,16 @@ def bilan_periodes(request):
     classes_qs = filtrer_classe_par_cycle(Classe.objects.filter(pk__in=[c.pk for c in classes]), request)
     classes = list(classes_qs)
 
-    # Une seule requête pour toutes les stats (classe × trimestre)
+    inscriptions_autorisees = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.filter(
+            annee_scolaire=annee, classe__in=classes_qs,
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('classe')
+    ) if annee else []
+
+    # Une seule requête pour toutes les stats (classe × trimestre), après exclusion des inscriptions bloquées.
     mg_stats = (
         MoyenneGenerale.objects
-        .filter(trimestre__in=trimestres, inscription__annee_scolaire=annee,
-                inscription__classe__in=classes_qs)
+        .filter(trimestre__in=trimestres, inscription__in=inscriptions_autorisees)
         .values('trimestre_id', 'inscription__classe_id')
         .annotate(
             nb_eleves=Count('id'),
@@ -216,10 +222,16 @@ def bilan_pdf(request):
         classes_qs = classes_qs.filter(pk=classe_id)
     classes = list(classes_qs)
 
-    # Agrégation SQL
+    inscriptions_autorisees = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.filter(
+            annee_scolaire=annee, classe__in=classes_qs,
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('classe')
+    ) if annee else []
+
+    # Agrégation SQL, limitée aux inscriptions autorisées à consulter leurs résultats.
     mg_stats = (
         MoyenneGenerale.objects
-        .filter(trimestre__in=trimestres, inscription__annee_scolaire=annee)
+        .filter(trimestre__in=trimestres, inscription__in=inscriptions_autorisees)
         .values('trimestre_id', 'inscription__classe_id')
         .annotate(
             nb_eleves=Count('id'),
@@ -296,13 +308,15 @@ def releve_moyenne_classe_pdf(request):
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
 
     # Récupérer toutes les moyennes générales de la classe pour ce trimestre
+    inscriptions = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.filter(
+            classe=classe,
+            annee_scolaire=trimestre.annee_scolaire,
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe')
+    )
     moyennes = (
         MoyenneGenerale.objects
-        .filter(
-            trimestre=trimestre,
-            inscription__classe=classe,
-            inscription__annee_scolaire=trimestre.annee_scolaire,
-        )
+        .filter(trimestre=trimestre, inscription__in=inscriptions)
         .select_related('inscription__eleve')
         .order_by('-moyenne', 'inscription__eleve__nom', 'inscription__eleve__prenom')
     )
@@ -403,15 +417,20 @@ def resultat_classe(request, class_id):
     else:
         trimestre = Trimestre.objects.filter(annee_scolaire=annee_courante).first()
 
-    inscriptions = Inscription.objects.filter(
-        classe=classe,
-        annee_scolaire=annee_courante,
-    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve')
+    inscriptions = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.filter(
+            classe=classe,
+            annee_scolaire=annee_courante,
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe')
+    )
 
-    # Récupérer les moyennes générales existantes
+    # Récupérer uniquement les moyennes générales des inscriptions autorisées
     moyennes_gen = {}
     if trimestre:
-        moyennes_gen = {mg.inscription_id: mg for mg in MoyenneGenerale.objects.filter(trimestre=trimestre)}
+        moyennes_gen = {
+            mg.inscription_id: mg
+            for mg in MoyenneGenerale.objects.filter(trimestre=trimestre, inscription__in=inscriptions)
+        }
 
     # Récupérer les trimestres dispos pour le filtre
     trimestres = Trimestre.objects.filter(annee_scolaire=annee_courante)
@@ -511,11 +530,12 @@ def moyennes_disciplines(request):
             ).select_related('matiere').order_by('matiere__nom')
         )
 
-        inscriptions = list(
+        inscriptions = filtrer_inscriptions_autorisees_notes(
             Inscription.objects.filter(
                 classe=classe,
                 annee_scolaire=annee,
-            ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
+            ).exclude(statut=StatutInscriptionChoices.ABANDON)
+            .select_related('eleve', 'classe').order_by('eleve__nom', 'eleve__prenom')
         )
 
         # Chargement groupé : tous les Resultat d'un coup
@@ -585,10 +605,11 @@ def moyennes_disciplines_pdf(request):
             classe=classe, annee_scolaire=annee, est_actif=True,
         ).select_related('matiere').order_by('matiere__nom')
     )
-    inscriptions = list(
+    inscriptions = filtrer_inscriptions_autorisees_notes(
         Inscription.objects.filter(
             classe=classe, annee_scolaire=annee,
-        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
+        ).exclude(statut=StatutInscriptionChoices.ABANDON)
+        .select_related('eleve', 'classe').order_by('eleve__nom', 'eleve__prenom')
     )
 
     res_map: dict = {}
@@ -775,11 +796,11 @@ def _build_releve_context(annee_id, enseignement_id, periode_id, bareme=None):
         )
     evaluations_cols = list(ev_qs)
 
-    inscriptions = (
+    inscriptions = filtrer_inscriptions_autorisees_notes(
         Inscription.objects
         .filter(classe=enseignement.classe, annee_scolaire=annee)
         .exclude(statut=StatutInscriptionChoices.ABANDON)
-        .select_related('eleve')
+        .select_related('eleve', 'classe')
         .order_by('eleve__nom', 'eleve__prenom')
     )
 

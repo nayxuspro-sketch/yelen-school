@@ -66,10 +66,15 @@ def test_bulletin_annuel_pdf_une_page_a5_portrait(client, mocker):
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6ème A')
     trimestres = [baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=i, nom=f'Trimestre {i}',
                              date_debut=datetime.date(2025, 10, 1), date_fin=datetime.date(2026, 6, 30)) for i in (1, 2, 3)]
+    rubrique = baker.make(
+        'parametres.RubriquePaiement', etablissement=etab, nom='Scolarité', code='SCO',
+        actif=True, soumise_plafond=True,
+    )
     inscriptions = []
     for nom, prenom, base in (('OUEDRAOGO', 'Abdoul Rasmané', '13.5'), ('SAWADOGO', 'Mariam Rasmata', '9.25'), ('KABORE', 'Issouf', '11')):
         eleve = baker.make('inscriptions.Eleve', nom=nom, prenom=prenom, date_naissance=datetime.date(2012, 5, 12), photo='')
         inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee)
+        baker.make('finances.Paiement', inscription=inscription, rubrique=rubrique, montant=Decimal('1'))
         for k, trimestre in enumerate(trimestres):
             moyenne = Decimal(base) + Decimal(k) / 2
             baker.make('pedagogie.MoyenneGenerale', inscription=inscription, trimestre=trimestre, moyenne=moyenne,

@@ -18,13 +18,18 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import AnneeScolaire, Classe, Distinction
 from pedagogie.models import MoyenneGenerale, Trimestre
+from pedagogie.notes_access import (
+    exiger_inscription_autorisee_notes,
+    filtrer_inscriptions_autorisees_notes,
+    inscription_autorisee_notes,
+)
 
 from .models import Bulletin
 from .services import assiduite_bulletin, assiduite_depuis_presences
@@ -57,10 +62,16 @@ def bulletins_index(request):
         if annee else Trimestre.objects.none()
     )
 
-    # Statistiques rapides : nb bulletins publiés par trimestre (1 requête)
+    inscriptions_autorisees = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.filter(
+            classe__in=classes, annee_scolaire=annee,
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('classe')
+    ) if annee else []
+
+    # Statistiques rapides : bulletins des seules inscriptions autorisées.
     stats_qs = (
         Bulletin.objects
-        .filter(trimestre__in=trimestres, inscription__classe__etablissement=etab)
+        .filter(trimestre__in=trimestres, inscription__in=inscriptions_autorisees)
         .values('trimestre_id')
         .annotate(total=Count('id'), publies=Count('id', filter=Q(est_publie=True)))
     )
@@ -95,15 +106,15 @@ def bulletins_classe(request, class_id, trimestre_id):
         classe = get_object_or_404(Classe, pk=class_id)
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
 
-    inscriptions = (
+    inscriptions = filtrer_inscriptions_autorisees_notes(
         Inscription.objects
         .filter(classe=classe, annee_scolaire=trimestre.annee_scolaire)
         .exclude(statut=StatutInscriptionChoices.ABANDON)
-        .select_related('eleve')
+        .select_related('eleve', 'classe')
         .order_by('eleve__nom', 'eleve__prenom')
     )
 
-    # Charger (ou créer) les bulletins pour chaque inscription
+    # Charger (ou créer) les bulletins pour chaque inscription autorisée
     bulletins_par_ins = {
         b.inscription_id: b
         for b in Bulletin.objects.filter(trimestre=trimestre, inscription__in=inscriptions).prefetch_related('distinctions')
@@ -164,8 +175,9 @@ def bulletin_saisir(request, inscription_id, trimestre_id):
     if etab and inscription.classe.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé. Cette inscription n'appartient pas à votre établissement.")
         return redirect('bulletins:bulletin_list')
-    
-    trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
+    exiger_inscription_autorisee_notes(inscription)
+
+    trimestre = get_object_or_404(Trimestre, pk=trimestre_id, annee_scolaire=inscription.annee_scolaire)
     bulletin = Bulletin.objects.obtenir(inscription, trimestre)
     mg = MoyenneGenerale.objects.filter(inscription=inscription, trimestre=trimestre).first()
     # Mentions proposées : celles actives + celles déjà cochées (même désactivées depuis)
@@ -221,8 +233,10 @@ def bulletin_publier(request, inscription_id, trimestre_id):
     if etab and inscription.classe.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé.")
         return JsonResponse({'error': 'Accès refusé'}, status=403)
-    
-    trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
+    if not inscription_autorisee_notes(inscription):
+        return JsonResponse({'error': 'Bulletin indisponible pour cette inscription.'}, status=403)
+
+    trimestre = get_object_or_404(Trimestre, pk=trimestre_id, annee_scolaire=inscription.annee_scolaire)
     bulletin = Bulletin.objects.obtenir(inscription, trimestre)
     mg = MoyenneGenerale.objects.filter(inscription=inscription, trimestre=trimestre).first()
 
@@ -291,12 +305,13 @@ def bulletins_classe_publier(request, class_id, trimestre_id):
     
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
 
-    inscriptions = (
+    inscriptions = filtrer_inscriptions_autorisees_notes(
         Inscription.objects
         .filter(classe=classe, annee_scolaire=trimestre.annee_scolaire)
         .exclude(statut=StatutInscriptionChoices.ABANDON)
+        .select_related('eleve', 'classe')
     )
-    # Seules les inscriptions avec une MoyenneGenerale calculée
+    # Seules les inscriptions autorisées avec une MoyenneGenerale calculée
     ins_avec_mg = set(
         MoyenneGenerale.objects
         .filter(trimestre=trimestre, inscription__in=inscriptions)
@@ -307,7 +322,7 @@ def bulletins_classe_publier(request, class_id, trimestre_id):
     numeros_sms = []  # (numero, nom_eleve) pour envoi SMS après commit
 
     releve = assiduite_depuis_presences(trimestre, inscriptions)
-    for ins in inscriptions.select_related('eleve'):
+    for ins in inscriptions:
         if ins.pk not in ins_avec_mg:
             continue
         bulletin = Bulletin.objects.obtenir(ins, trimestre, releve)
@@ -392,21 +407,25 @@ class BulletinAnnuelIndexView(LoginRequiredMixin, View):
         eleve = None
         
         if classe_id:
-            classe = get_object_or_404(Classe, pk=classe_id)
+            classe = get_object_or_404(classes, pk=classe_id)
         if annee_id:
-            annee = get_object_or_404(AnneeScolaire, pk=annee_id)
+            annee = get_object_or_404(annees, pk=annee_id)
         
         if classe and annee:
-            inscriptions = (
+            inscriptions = filtrer_inscriptions_autorisees_notes(
                 Inscription.objects
                 .filter(classe=classe, annee_scolaire=annee)
                 .exclude(statut=StatutInscriptionChoices.ABANDON)
-                .select_related('eleve')
+                .select_related('eleve', 'classe')
                 .order_by('eleve__nom', 'eleve__prenom')
             )
         
         if eleve_id:
-            eleve = get_object_or_404(Inscription, pk=eleve_id)
+            if not classe or not annee:
+                raise Http404("Bulletin annuel indisponible.")
+            eleve = next((ins for ins in inscriptions if str(ins.pk) == str(eleve_id)), None)
+            if eleve is None:
+                raise Http404("Bulletin annuel indisponible.")
         
         return render(request, self.template_name, {
             'classes': classes,
@@ -502,9 +521,9 @@ class BulletinAnnuelBatchPDFView(LoginRequiredMixin, View):
         classe = get_object_or_404(Classe, pk=class_id)
         annee = get_object_or_404(AnneeScolaire, pk=annee_pk)
 
-        inscriptions = (
+        inscriptions = filtrer_inscriptions_autorisees_notes(
             Inscription.objects
-            .select_related('eleve', 'classe__cycle')
+            .select_related('eleve', 'classe', 'classe__cycle')
             .filter(classe=classe, annee_scolaire=annee)
             .exclude(statut=StatutInscriptionChoices.ABANDON)
             .order_by('eleve__nom', 'eleve__prenom')
@@ -575,6 +594,10 @@ def bulletin_parent_signer(request, token):
     """Enregistre la signature parentale (accès public)."""
     from django.utils import timezone as tz
     bulletin = get_object_or_404(Bulletin, token_signature=token)
+
+    from finances.blocage import motif_blocage_bulletin
+    if motif_blocage_bulletin(bulletin.inscription):
+        return redirect('bulletins:bulletin_parent_consulter', token=token)
 
     if bulletin.est_publie and not bulletin.signe_le and bulletin.token_valide:
         nom = request.POST.get('nom_signataire', '').strip()[:100] or 'Parent'

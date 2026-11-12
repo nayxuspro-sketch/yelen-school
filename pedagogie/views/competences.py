@@ -13,6 +13,7 @@ from parametres.models import AnneeScolaire, Classe, Cycle
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import get_etablissement_context
 from .commun import HTML, _pdf_licence_info
+from ..notes_access import exiger_inscription_autorisee_notes
 
 
 @login_required
@@ -226,7 +227,10 @@ def competences_bulletin_pdf(request, inscription_id, trimestre_id):
         Inscription.objects.select_related('eleve', 'classe__cycle'),
         pk=inscription_id,
     )
-    trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
+    trimestre = get_object_or_404(
+        Trimestre, pk=trimestre_id, annee_scolaire=inscription.annee_scolaire,
+    )
+    exiger_inscription_autorisee_notes(inscription)
     etab = Etablissement.objects.first()
     etab_ctx = get_etablissement_context(etab, request) if etab else {}
 

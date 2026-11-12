@@ -7,8 +7,12 @@ from core.utils import fcfa
 
 
 def motif_blocage_bulletin(inscription):
-    """Message expliquant pourquoi le bulletin n'est pas consultable, ou None si l'élève est à jour (ou si le
-    blocage n'est pas activé)."""
+    """Message expliquant pourquoi le bulletin n'est pas consultable, ou None si l'accès est autorisé."""
+    from pedagogie.notes_access import inscription_autorisee_notes
+
+    if not inscription_autorisee_notes(inscription):
+        return "Bulletin indisponible : aucun paiement net de scolarité n'a été enregistré."
+
     from .views.commun import _situations_financieres_en_lot
     params = ParametresFinances.objects.filter(etablissement=inscription.classe.etablissement_id).first()
     if params is None or not params.bloquer_bulletins_impayes:

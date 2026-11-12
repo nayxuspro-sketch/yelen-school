@@ -333,9 +333,13 @@ class EleveMoyennesView(APIView):
                 {'erreur': 'Élève introuvable.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        from pedagogie.notes_access import filtrer_inscriptions_autorisees_notes
+        inscriptions = filtrer_inscriptions_autorisees_notes(
+            Inscription.objects.filter(eleve=eleve).select_related('classe')
+        )
         annee_id = request.query_params.get('annee')
         qs = MoyenneGenerale.objects.filter(
-            inscription__eleve=eleve,
+            inscription__in=inscriptions,
         ).select_related('trimestre', 'inscription')
         if annee_id:
             qs = qs.filter(inscription__annee_scolaire_id=annee_id)

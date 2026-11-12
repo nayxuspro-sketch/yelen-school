@@ -14,6 +14,10 @@ from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import get_etablissement_context
 from licences.decorators import requires_licence_feature
 from .commun import HTML, _pdf_licence_info
+from ..notes_access import (
+    exiger_inscription_autorisee_notes,
+    filtrer_inscriptions_autorisees_notes,
+)
 
 
 def _get_appreciation_generale(inscription, mg, etab):
@@ -159,20 +163,24 @@ def _build_bulletin_context(request, inscription, trimestre):
     from bulletins.models import Bulletin
     from bulletins.services import assiduite_bulletin
 
+    exiger_inscription_autorisee_notes(inscription)
     mg = get_object_or_404(MoyenneGenerale, inscription=inscription, trimestre=trimestre)
     resultats = Resultat.objects.filter(
         inscription=inscription, trimestre=trimestre
     ).select_related('enseignement__matiere', 'enseignement__personnel')
     enseignements = _enseignements_classe(inscription.classe, trimestre.annee_scolaire)
 
-    nb_eleves = (
-        Inscription.objects
-        .filter(classe=inscription.classe, annee_scolaire=trimestre.annee_scolaire)
-        .exclude(statut=StatutInscriptionChoices.ABANDON).count()
+    inscriptions_classe = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.filter(
+            classe=inscription.classe,
+            annee_scolaire=trimestre.annee_scolaire,
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('classe')
     )
+    inscriptions_autorisees_ids = [ins.pk for ins in inscriptions_classe]
+    nb_eleves = len(inscriptions_classe)
 
     stats_classe = MoyenneGenerale.objects.filter(
-        inscription__classe=inscription.classe, trimestre=trimestre,
+        inscription_id__in=inscriptions_autorisees_ids, trimestre=trimestre,
     ).aggregate(max_moy=Max('moyenne'), min_moy=Min('moyenne'), avg_moy=Avg('moyenne'))
 
     etab = inscription.classe.etablissement
@@ -282,7 +290,11 @@ def bulletin_apercu(request, inscription_id, trimestre_id):
         Inscription.objects.select_related('eleve', 'classe__cycle', 'annee_scolaire'),
         pk=inscription_id,
     )
-    trimestre = get_object_or_404(Trimestre.objects.select_related('annee_scolaire'), pk=trimestre_id)
+    trimestre = get_object_or_404(
+        Trimestre.objects.select_related('annee_scolaire'), pk=trimestre_id,
+        annee_scolaire=inscription.annee_scolaire,
+    )
+    exiger_inscription_autorisee_notes(inscription)
     ctx = _build_bulletin_context(request, inscription, trimestre)
     ctx['pdf_url'] = reverse('pedagogie:bulletin_pdf', kwargs={'inscription_id': inscription_id, 'trimestre_id': trimestre_id})
     ctx['retour_url'] = reverse('bulletins:bulletins_classe', kwargs={'class_id': inscription.classe_id, 'trimestre_id': trimestre_id})
@@ -300,7 +312,10 @@ def bulletin_pdf(request, inscription_id, trimestre_id):
         Inscription.objects.select_related('eleve', 'classe__cycle', 'annee_scolaire'),
         pk=inscription_id,
     )
-    trimestre = get_object_or_404(Trimestre.objects.select_related('annee_scolaire'), pk=trimestre_id)
+    trimestre = get_object_or_404(
+        Trimestre.objects.select_related('annee_scolaire'), pk=trimestre_id,
+        annee_scolaire=inscription.annee_scolaire,
+    )
 
     ctx = _build_bulletin_context(request, inscription, trimestre)
     html_string = render_to_string('pedagogie/pdf/bulletin_trimestriel.html', ctx)
@@ -323,10 +338,12 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     classe = get_object_or_404(Classe, pk=class_id)
     trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
     
-    inscriptions = Inscription.objects.select_related(
-        'eleve', 'classe__cycle'
-    ).filter(classe=classe, annee_scolaire=trimestre.annee_scolaire).exclude(statut=StatutInscriptionChoices.ABANDON)
-    nb_eleves = inscriptions.count()
+    inscriptions = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.select_related('eleve', 'classe', 'classe__cycle')
+        .filter(classe=classe, annee_scolaire=trimestre.annee_scolaire)
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
+    )
+    nb_eleves = len(inscriptions)
 
     etab = classe.etablissement
     cycle_code = classe.cycle.code if classe.cycle_id else None
@@ -366,8 +383,8 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
             competence__in=competences_qs,
             trimestre=trimestre,
         )
-        for ins_pk in inscriptions.values_list('pk', flat=True):
-            competences_par_ins[ins_pk] = {'competences': competences_qs, 'evals_map': {}}
+        for ins in inscriptions:
+            competences_par_ins[ins.pk] = {'competences': competences_qs, 'evals_map': {}}
         for ev in all_evals:
             competences_par_ins.setdefault(ev.inscription_id, {'competences': competences_qs, 'evals_map': {}})
             competences_par_ins[ev.inscription_id]['evals_map'][str(ev.competence_id)] = ev
@@ -472,10 +489,15 @@ def _moyennes_annuelles_classe(classe, annee_scolaire, trimestres):
     """{inscription_id: moyenne annuelle} des élèves actifs de la classe (même règle que le bulletin)."""
     from collections import defaultdict
     par_ins = defaultdict(list)
+    inscriptions_autorisees = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.filter(
+            classe=classe, annee_scolaire=annee_scolaire,
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('classe')
+    )
     lignes = MoyenneGenerale.objects.filter(
-        inscription__classe=classe, inscription__annee_scolaire=annee_scolaire,
+        inscription__in=inscriptions_autorisees,
         trimestre__in=trimestres, moyenne__isnull=False,
-    ).exclude(inscription__statut=StatutInscriptionChoices.ABANDON).values_list('inscription_id', 'moyenne')
+    ).values_list('inscription_id', 'moyenne')
     for ins_id, moyenne in lignes:
         par_ins[ins_id].append(moyenne)
     return {ins_id: _moyenne_annuelle(moyennes) for ins_id, moyennes in par_ins.items()}
@@ -488,14 +510,17 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
     from decimal import Decimal
     from pedagogie.utils import CalculateurMoyenne
 
+    exiger_inscription_autorisee_notes(inscription)
     etab = inscription.classe.etablissement
     etab_context = get_etablissement_context(etab, request)
     cycle = inscription.classe.cycle
 
-    nb_eleves = Inscription.objects.filter(
-        classe=inscription.classe,
-        annee_scolaire=annee_scolaire
-    ).exclude(statut=StatutInscriptionChoices.ABANDON).count()
+    inscriptions_autorisees = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.filter(
+            classe=inscription.classe, annee_scolaire=annee_scolaire,
+        ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('classe')
+    )
+    nb_eleves = len(inscriptions_autorisees)
 
     # Moyennes par trimestre (pour le récapitulatif) + agrégation annuelle
     trimestres = list(Trimestre.objects.filter(annee_scolaire=annee_scolaire).order_by('numero'))
@@ -702,9 +727,11 @@ def bulletin_annuel_classe_batch_pdf(request, class_id):
         messages.error(request, "Aucune année scolaire trouvée.")
         return redirect('pedagogie:resultat_classe', class_id=class_id)
 
-    inscriptions = Inscription.objects.select_related(
-        'eleve', 'classe__cycle'
-    ).filter(classe=classe, annee_scolaire=annee_scolaire).exclude(statut=StatutInscriptionChoices.ABANDON)
+    inscriptions = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.select_related('eleve', 'classe', 'classe__cycle')
+        .filter(classe=classe, annee_scolaire=annee_scolaire)
+        .exclude(statut=StatutInscriptionChoices.ABANDON)
+    )
 
     # Même gabarit que le bulletin individuel ; un document HTML par élève, paginé à part (« Page 1 / 1 »)
     fragments = [render_to_string('pedagogie/pdf/bulletin_annuel.html', _build_bulletin_annuel_context(request, ins, annee_scolaire))
@@ -736,8 +763,8 @@ def _compute_palmares_annuel(classe, annee_scolaire):
             current_avg = avg
         rang_by_ins[ins_id] = current_rank
 
-    inscriptions = list(
-        Inscription.objects.select_related('eleve')
+    inscriptions = filtrer_inscriptions_autorisees_notes(
+        Inscription.objects.select_related('eleve', 'classe')
         .filter(classe=classe, annee_scolaire=annee_scolaire)
         .exclude(statut=StatutInscriptionChoices.ABANDON)
         .order_by('eleve__nom', 'eleve__prenom')

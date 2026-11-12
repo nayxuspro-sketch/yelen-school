@@ -54,6 +54,7 @@ def portail_parent(request):
 
     from presences.models import Presence
     from pedagogie.models import MoyenneGenerale
+    from pedagogie.notes_access import inscription_autorisee_notes
     from finances.models import Echeancier, Paiement
     from finances.views.commun import _situations_financieres_en_lot
     from core import portail
@@ -75,7 +76,7 @@ def portail_parent(request):
         ) if annee else None
 
         derniere_mg = None
-        if inscription and annee:
+        if inscription and annee and inscription_autorisee_notes(inscription):
             derniere_mg = (
                 MoyenneGenerale.objects
                 .filter(inscription=inscription)

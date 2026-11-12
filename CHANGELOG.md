@@ -3,6 +3,10 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.63.61 — 2026-09-06
+
+- **Masquage des résultats et bulletins des élèves sans paiement net admissible.** Les relevés à l'écran et leurs PDF, les tableaux de moyennes, les bulletins trimestriels/annuels individuels et en lot, ainsi que les accès parent/élève et API, appliquent désormais la règle centralisée d'accès aux notes. Un paiement net positif, même partiel, et les exonérations restent autorisés ; aucune note n'est supprimée. Aucun changement de schéma ni migration.
+
 ## 5.63.60 — 2026-09-06
 
 - **Contrôle central des notes impayées.** Le modèle `Note` vérifie aussi chaque création ou modification via `.save()` : l'administration et les autres écritures passant par le modèle ne peuvent plus contourner le blocage des formulaires et imports. Tests de régression couvrant le POST direct et l'écriture modèle. Aucun changement de schéma ni migration.
