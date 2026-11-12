@@ -152,7 +152,54 @@ class TestSuperAdminUnique:
         assert User.objects.create_superuser('tech@yelen.bf', 'tech@yelen.bf', MDP).role == 'SUPER_ADMIN'
 
 
-# ── 3. Caisse : session limitée à l'inactivité ───────────────────────────────
+# ── 3. Protection du compte Super Admin ──────────────────────────────────────
+
+class TestGestionCompteSuperAdmin:
+    def test_directeur_ne_peut_pas_gerer_le_compte_super_admin(self, client, etab):
+        admin = _utilisateur(etab, 'SUPER_ADMIN', email='admin@ecole.bf', first_name='Issa', last_name='Kabore')
+        admin.set_password(MDP)
+        admin.save(update_fields=['password'])
+        directeur = _utilisateur(etab, 'DIRECTEUR', email='dir@ecole.bf')
+        autre = _utilisateur(etab, 'SECRETAIRE', email='sec@ecole.bf')
+        client.force_login(directeur)
+
+        url_modif = reverse('accounts:user_update', args=[admin.pk])
+        url_mdp = reverse('accounts:user_set_password', args=[admin.pk])
+        url_actif = reverse('accounts:user_toggle_active', args=[admin.pk])
+        url_liste = reverse('accounts:user_list')
+        assert client.get(url_modif).url == url_liste
+        assert client.post(url_modif, {
+            'last_name': 'Modifie', 'first_name': 'Compte', 'email': admin.email,
+            'telephone': '', 'etablissement': str(etab.pk), 'role': 'DIRECTEUR', 'is_active': 'on',
+        }).url == url_liste
+        assert client.get(url_mdp).url == url_liste
+        assert client.post(url_mdp, {'action': 'reinitialiser'}).url == url_liste
+        assert client.post(url_actif).url == url_liste
+
+        admin.refresh_from_db()
+        assert admin.role == 'SUPER_ADMIN' and admin.is_active and admin.check_password(MDP)
+        assert (admin.first_name, admin.last_name, admin.email) == ('Issa', 'Kabore', 'admin@ecole.bf')
+
+        contenu = client.get(url_liste).content.decode()
+        assert 'Compte protégé' in contenu
+        assert url_modif not in contenu and url_mdp not in contenu and url_actif not in contenu
+        assert reverse('accounts:user_update', args=[autre.pk]) in contenu
+
+    def test_super_admin_conserve_la_gestion_complete(self, client, etab):
+        super_admin = _utilisateur(etab, 'SUPER_ADMIN', email='admin@ecole.bf')
+        autre_etab = baker.make(Etablissement)
+        cible = _utilisateur(autre_etab, 'SUPER_ADMIN', email='autre-admin@ecole.bf')
+        client.force_login(super_admin)
+
+        url_modif = reverse('accounts:user_update', args=[cible.pk])
+        url_mdp = reverse('accounts:user_set_password', args=[cible.pk])
+        assert client.get(url_modif).status_code == 200
+        assert client.get(url_mdp).status_code == 200
+        contenu = client.get(reverse('accounts:user_list')).content.decode()
+        assert url_modif in contenu and url_mdp in contenu
+
+
+# ── 4. Caisse : session limitée à l'inactivité ───────────────────────────────
 
 class TestSessionCaisse:
     def _connecter(self, client, etab, role):
@@ -175,7 +222,7 @@ class TestSessionCaisse:
         assert 'js/inactivite' not in client.get(reverse('accounts:profile')).content.decode()
 
 
-# ── 4. Heure du serveur sur les écrans TOTP ──────────────────────────────────
+# ── 5. Heure du serveur sur les écrans TOTP ──────────────────────────────────
 
 def test_heure_serveur_affichee_sur_les_ecrans_totp(client, etab, settings):
     settings.TWO_FACTOR_REQUIRED = True

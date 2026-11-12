@@ -118,8 +118,10 @@ def _admin_required(view_func):
 
 
 def _can_manage(current_user, target_user):
-    """Vérifie qu'un utilisateur peut gérer un autre (même établissement ou super admin)."""
-    if current_user.role == RoleChoices.SUPER_ADMIN:
+    """Seul le Super Admin peut gérer un compte Super Admin ; les autres sont limités à leur établissement."""
+    if target_user.est_super_admin and not current_user.est_super_admin:
+        return False
+    if current_user.est_super_admin:
         return True
     return target_user.etablissement_id == current_user.etablissement_id
 
