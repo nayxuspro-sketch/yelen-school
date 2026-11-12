@@ -143,6 +143,7 @@ def enseignement_matieres(request):
     form = EnseignementForm(data={'classe': request.GET.get('classe', '')}, request=request)
     return render(request, 'pedagogie/partials/enseignement_matiere_options.html', {
         'matieres': form.fields['matiere'].queryset,
+        'enseignants': form.fields['personnel'].queryset,
         'cycle_selectionne': form.classe_selectionnee,
     })
 

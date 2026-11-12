@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.urls import reverse_lazy
 from .models import Matiere, MatiereCycle, Enseignement, Evaluation, Note
 from parametres.models import PeriodeEvaluation
+from personnel.models import MembrePersonnel
 from yelen_school.cycle_filter import filtrer_classe_par_cycle
 
 def _apply_yelen_classes(fields):
@@ -110,6 +111,25 @@ class EnseignementForm(forms.ModelForm):
         else:
             self.fields['matiere'].queryset = Matiere.objects.none()
             self.fields['matiere'].empty_label = '-- Sélectionner d’abord une classe --'
+
+        if classe is not None:
+            portees_enseignant = Q(classe_affectation=classe) | Q(
+                enseignements__classe=classe,
+                enseignements__est_actif=True,
+            )
+            if (self.instance and self.instance.pk and self.instance.classe_id == classe.pk
+                    and self.instance.personnel_id):
+                portees_enseignant |= Q(pk=self.instance.personnel_id)
+            enseignants = MembrePersonnel.objects.filter(
+                etablissement=classe.etablissement,
+                is_active=True,
+            ).filter(portees_enseignant).distinct().order_by('nom', 'prenom')
+            self.fields['personnel'].queryset = enseignants
+            self.fields['personnel'].empty_label = '-- Sélectionner un enseignant --'
+        else:
+            self.fields['personnel'].queryset = MembrePersonnel.objects.none()
+            self.fields['personnel'].empty_label = '-- Sélectionner d’abord une classe --'
+        self.fields['personnel'].label_from_instance = MembrePersonnel.get_nom_complet
 
         self.fields['classe'].widget.attrs.update({
             'hx-get': reverse_lazy('pedagogie:enseignement_matieres'),

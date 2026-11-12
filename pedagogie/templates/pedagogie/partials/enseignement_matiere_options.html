@@ -8,3 +8,16 @@
 <option value="" disabled>Sélectionnez d’abord une classe</option>
   {% endif %}
 {% endfor %}
+
+<select id="id_personnel" hx-swap-oob="innerHTML">
+<option value="">-- Sélectionner un enseignant --</option>
+{% for enseignant in enseignants %}
+<option value="{{ enseignant.pk }}">{{ enseignant.get_nom_complet }}</option>
+{% empty %}
+  {% if cycle_selectionne %}
+<option value="" disabled>Aucun enseignant associé à cette classe</option>
+  {% else %}
+<option value="" disabled>Sélectionnez d’abord une classe</option>
+  {% endif %}
+{% endfor %}
+</select>
