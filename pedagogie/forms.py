@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from django.urls import reverse_lazy
 from .models import Matiere, MatiereCycle, Enseignement, Evaluation, Note
 from parametres.models import PeriodeEvaluation
@@ -85,9 +86,26 @@ class EnseignementForm(forms.ModelForm):
 
         self.classe_selectionnee = classe is not None
         if classe is not None:
-            self.fields['matiere'].queryset = Matiere.objects.filter(
-                configurations_cycle__cycle_id=classe.cycle_id
-            ).order_by('code').distinct()
+            portees = Q(
+                configurations_cycle__cycle_id=classe.cycle_id,
+                configurations_cycle__niveau='',
+                configurations_cycle__serie='',
+            )
+            niveau = (classe.niveau or '').strip()
+            serie = classe.serie_bac or ''
+            if niveau:
+                portees |= Q(
+                    configurations_cycle__cycle_id=classe.cycle_id,
+                    configurations_cycle__niveau=niveau,
+                    configurations_cycle__serie='',
+                )
+                if serie:
+                    portees |= Q(
+                        configurations_cycle__cycle_id=classe.cycle_id,
+                        configurations_cycle__niveau=niveau,
+                        configurations_cycle__serie=serie,
+                    )
+            self.fields['matiere'].queryset = Matiere.objects.filter(portees).order_by('code').distinct()
             self.fields['matiere'].empty_label = '-- Sélectionner une matière --'
         else:
             self.fields['matiere'].queryset = Matiere.objects.none()
