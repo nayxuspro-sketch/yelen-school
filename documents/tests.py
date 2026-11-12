@@ -289,8 +289,10 @@ def test_liste_classe_effectif_par_genre(client, mocker):
     html_cls = mocker.patch('core.pdf.HTML')
     html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
     assert client.get(url + '?format=pdf').status_code == 200
-    assert lignes(html_cls.call_args.kwargs['string'], 'Effectif par genre') == genre_attendu
-    assert lignes(html_cls.call_args.kwargs['string'], 'Répartition des âges par genre') == ages_attendu
+    html_pdf = html_cls.call_args.kwargs['string']
+    assert lignes(html_pdf, 'Effectif par genre') == genre_attendu
+    assert lignes(html_pdf, 'Répartition des âges par genre') == ages_attendu
+    assert re.search(r'\.qr-zone img \{ width: 40px; height: 40px; \}', html_pdf)
 
 
 @pytest.mark.django_db
