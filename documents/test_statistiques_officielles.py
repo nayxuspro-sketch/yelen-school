@@ -6,6 +6,7 @@ import openpyxl
 import pytest
 from django.urls import reverse
 from model_bakery import baker
+from inscriptions.models import Inscription
 
 from documents.statistiques_officielles import rang_niveau, statistiques_fin_annee, statistiques_rentree
 
@@ -100,7 +101,7 @@ class TestCalculs:
 @pytest.mark.django_db
 class TestEcranEtExport:
     def test_ecran(self, client, ecole):
-        client.force_login(baker.make('accounts.User', role='SECRETAIRE', etablissement=ecole['etab'], must_change_password=False))
+        client.force_login(baker.make('accounts.User', role='SECRETAIRE', etablissement=ecole['etab'], est_tous_cycles=True, must_change_password=False))
         html = client.get(reverse('documents:statistiques_officielles')).content.decode()
         for attendu in ('Rentrée 2025-2026', '6ème', '3ème', 'Nouveaux entrants', '11 ans', '15 ans',
                         "Fin d'année 2025-2026", 'BEPC 2026', 'Exporter (Excel)'):
@@ -110,7 +111,7 @@ class TestEcranEtExport:
     def test_disposition(self, client, ecole):
         """Tableaux au style maison (classe .table définie) et défilants, groupes G/F/T séparés, totaux en pied."""
         from pathlib import Path
-        client.force_login(baker.make('accounts.User', role='SECRETAIRE', etablissement=ecole['etab'], must_change_password=False))
+        client.force_login(baker.make('accounts.User', role='SECRETAIRE', etablissement=ecole['etab'], est_tous_cycles=True, must_change_password=False))
         html = client.get(reverse('documents:statistiques_officielles')).content.decode()
         assert html.count('<div class="table-wrapper table-scroll">\n    <table class="table table-stats">') == 4
         assert html.count('<th colspan="3" class="col-groupe">') == 16 and html.count('<td class="td-right col-groupe">') >= 20
@@ -119,7 +120,7 @@ class TestEcranEtExport:
         assert '.table th' in css and '.table-stats .col-groupe' in css and '.table-stats tfoot td' in css
 
     def test_export_excel(self, client, ecole):
-        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=ecole['etab'], must_change_password=False))
+        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=ecole['etab'], est_tous_cycles=True, must_change_password=False))
         reponse = client.get(reverse('documents:statistiques_officielles'), {'annee_id': ecole['annee'].pk, 'format': 'xlsx'})
         assert reponse['Content-Disposition'].endswith('Statistiques_officielles_2025-2026.xlsx"')
         classeur = openpyxl.load_workbook(BytesIO(reponse.content))
@@ -143,3 +144,34 @@ class TestEcranEtExport:
         client.force_login(autre)
         reponse = client.get(reverse('documents:statistiques_officielles'), {'annee_id': ecole['annee'].pk})
         assert reponse.status_code == 200 and 'Aucune année scolaire' in reponse.content.decode()
+
+
+@pytest.mark.django_db
+def test_statistiques_officielles_ne_comptent_que_les_cycles_autorises(client, ecole):
+    etab, annee = ecole['etab'], ecole['annee']
+    cycle_autorise = Inscription.objects.filter(annee_scolaire=annee).first().classe.cycle
+    cycle_interdit = baker.make('parametres.Cycle', etablissement=etab, nom='Primaire', code='PRIM', ordre=0)
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle_interdit, nom='CM2', niveau='CM2')
+    inscription = baker.make(
+        'inscriptions.Inscription', classe=classe, annee_scolaire=annee, statut='AFFECTE',
+        eleve=baker.make('inscriptions.Eleve', genre='M', date_naissance=datetime.date(2015, 1, 1)),
+    )
+    baker.make('examens.InscriptionExamen', session=ecole['session'], inscription=inscription, statut='ADMIS')
+
+    rentree = statistiques_rentree(annee, cycle_ids=[cycle_autorise.pk])
+    fin = statistiques_fin_annee(annee, cycle_ids=[cycle_autorise.pk])
+    assert rentree['total']['effectif'] == {'M': 2, 'F': 3, 'T': 5}
+    assert {ligne['niveau'] for ligne in rentree['lignes']} == {'6ème', '3ème'}
+    examen, = fin['examens']
+    assert examen['inscrits']['T'] == 2 and examen['admis']['T'] == 1
+
+    user = baker.make('accounts.User', role='SECRETAIRE', etablissement=etab, must_change_password=False)
+    user.cycles.add(cycle_autorise)
+    client.force_login(user)
+    html = client.get(reverse('documents:statistiques_officielles')).content.decode()
+    assert 'CM2' not in html and '5 élèves' in html and '6 élèves' not in html
+
+    response = client.get(reverse('documents:statistiques_officielles'), {'format': 'xlsx'})
+    classeur = openpyxl.load_workbook(BytesIO(response.content))
+    rentree_excel = list(classeur['Rentrée'].iter_rows(values_only=True))
+    assert rentree_excel[6][:6] == ('TOTAL', None, 3, 2, 3, 5)

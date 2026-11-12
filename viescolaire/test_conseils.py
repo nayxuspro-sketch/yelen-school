@@ -22,7 +22,8 @@ def contexte(client):
     etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR')
     baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='LE SAVOIR')
     directeur = baker.make('accounts.User', is_superuser=True, role='DIRECTEUR', etablissement=etab,
-                           must_change_password=False, first_name='Awa', last_name='OUEDRAOGO')
+                           est_tous_cycles=True, must_change_password=False,
+                           first_name='Awa', last_name='OUEDRAOGO')
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
                        date_debut=datetime.date(2026, 10, 1), date_fin=datetime.date(2027, 6, 30))
     trimestre = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=1, nom='Trimestre 1',
@@ -202,13 +203,15 @@ def test_appel_list_filtre_par_statut_et_compte_les_attentes(contexte):
     assert filtre.context['statut_filter'] == AppelDecision.StatutChoices.TRAITE
 
 
-def test_appel_list_sans_etablissement_renvoie_aux_conseils(contexte):
-    """Un compte sans établissement (super-admin) n'a pas de liste d'appels : retour aux conseils."""
+def test_appel_list_sans_etablissement_respecte_le_perimetre_tous_cycles(contexte):
+    """Un compte sans établissement mais autorisé à tous les cycles conserve son accès réseau."""
+    appel = _conteste(contexte, contexte['decisions'][0])
     contexte['dire'].etablissement = None
     contexte['dire'].save(update_fields=['etablissement'])
+
     reponse = contexte['client'].get(reverse('viescolaire:appel_decision_list'))
-    assert reponse.status_code == 302
-    assert reponse.url == reverse('viescolaire:conseil_list')
+    assert reponse.status_code == 200
+    assert [a.pk for a in reponse.context['appels']] == [appel.pk]
 
 
 def test_appel_create_depose_une_contestation(contexte):

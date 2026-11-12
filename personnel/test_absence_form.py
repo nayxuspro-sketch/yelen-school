@@ -20,7 +20,7 @@ def ecole(client):
     prof = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='ZONGO', prenom='Paul',
                       fonction='Professeur')
     prof.cycles.add(sec)
-    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False, est_tous_cycles=True)
     client.force_login(user)
     return {'etab': etab, 'prim': prim, 'sec': sec, 'maitre': maitre, 'prof': prof, 'client': client}
 

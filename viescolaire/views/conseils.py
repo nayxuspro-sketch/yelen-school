@@ -4,39 +4,45 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
+from django.db.models import F
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 
-from parametres.models import AnneeScolaire, Classe
 from pedagogie.models import Trimestre, MoyenneGenerale
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import get_etablissement_context
 from ..models import (
     ConseilClasse, DecisionConseil, AppelDecision,
 )
-from .commun import WeasyHTML
+from .commun import WeasyHTML, _get_etab, annees_accessibles, classes_accessibles
+from yelen_school.cycle_filter import get_cycle_ids
 
 
 # ─── Conseils de classe ───────────────────────────────────────────────────────
 
 @login_required
 def conseil_list(request):
-    """Liste des conseils de classe (tous trimestres)."""
-    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-    trimestres = Trimestre.objects.filter(annee_scolaire=annee_courante).order_by('numero') if annee_courante else []
+    """Liste des conseils de classe (tous trimestres) des cycles accessibles."""
+    etab = _get_etab(request)
+    annees_courantes = annees_accessibles(request, etab).filter(est_courante=True)
+    annee_courante = annees_courantes.first()
+    trimestres = Trimestre.objects.filter(
+        annee_scolaire__in=annees_courantes,
+    ).order_by('annee_scolaire__date_debut', 'numero')
 
     trimestre_id = request.GET.get('trimestre')
-    trimestre_selectionne = None
-    if trimestre_id:
-        trimestre_selectionne = Trimestre.objects.filter(pk=trimestre_id).first()
+    trimestre_selectionne = trimestres.filter(pk=trimestre_id).first() if trimestre_id else None
 
-    conseils = ConseilClasse.objects.select_related(
+    conseils = ConseilClasse.objects.filter(
+        classe__in=classes_accessibles(request, etab),
+    ).select_related(
         'classe', 'trimestre', 'president'
     ).order_by('date_conseil')
     if trimestre_selectionne:
         conseils = conseils.filter(trimestre=trimestre_selectionne)
     elif annee_courante:
-        conseils = conseils.filter(trimestre__annee_scolaire=annee_courante)
+        conseils = conseils.filter(trimestre__annee_scolaire__in=annees_courantes)
 
     return render(request, 'viescolaire/conseil_list.html', {
         'conseils': conseils,
@@ -50,10 +56,15 @@ def conseil_list(request):
 def conseil_detail(request, conseil_id):
     """Détail d'un conseil + décisions individuelles."""
     conseil = get_object_or_404(
-        ConseilClasse.objects.select_related('classe', 'trimestre', 'president'),
-        pk=conseil_id
+        ConseilClasse.objects.filter(
+            classe__in=classes_accessibles(request),
+        ).select_related('classe', 'trimestre', 'president'),
+        pk=conseil_id,
     )
-    decisions = conseil.decisions.select_related(
+    decisions = conseil.decisions.filter(
+        inscription__classe=conseil.classe,
+        inscription__annee_scolaire=conseil.trimestre.annee_scolaire,
+    ).select_related(
         'inscription__eleve'
     ).order_by('inscription__eleve__nom')
 
@@ -95,35 +106,46 @@ def conseil_detail(request, conseil_id):
 
 @login_required
 def conseil_create(request):
-    """Créer un conseil de classe pour une classe/trimestre."""
-    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-    classes = Classe.objects.select_related('cycle').order_by('cycle__ordre', 'nom')
-    trimestres = Trimestre.objects.filter(annee_scolaire=annee_courante).order_by('numero') if annee_courante else []
+    """Créer un conseil de classe dans les cycles accessibles."""
+    etab = _get_etab(request)
+    annees_courantes = annees_accessibles(request, etab).filter(est_courante=True)
+    classes = classes_accessibles(request, etab).select_related('cycle').order_by('cycle__ordre', 'nom')
+    trimestres = Trimestre.objects.filter(
+        annee_scolaire__in=annees_courantes,
+    ).order_by('annee_scolaire__date_debut', 'numero')
 
     if request.method == 'POST':
-        classe_id = request.POST.get('classe')
-        trimestre_id = request.POST.get('trimestre')
-        date_conseil = request.POST.get('date_conseil')
+        classe = get_object_or_404(classes, pk=request.POST.get('classe'))
+        trimestre = get_object_or_404(
+            trimestres.filter(annee_scolaire__etablissement=classe.etablissement),
+            pk=request.POST.get('trimestre'),
+        )
         president_id = request.POST.get('president') or None
-
-        classe = get_object_or_404(Classe, pk=classe_id)
-        trimestre = get_object_or_404(Trimestre, pk=trimestre_id)
+        president = None
+        if president_id:
+            presidents = get_user_model().objects.filter(
+                is_active=True, etablissement=classe.etablissement,
+            )
+            cycle_ids = get_cycle_ids(request)
+            if cycle_ids is not None:
+                presidents = presidents.filter(cycles__in=cycle_ids).distinct() if cycle_ids else presidents.none()
+            president = get_object_or_404(presidents, pk=president_id)
 
         conseil, created = ConseilClasse.objects.get_or_create(
             classe=classe,
             trimestre=trimestre,
             defaults={
-                'date_conseil': date_conseil,
-                'president_id': president_id,
+                'date_conseil': request.POST.get('date_conseil'),
+                'president': president,
             }
         )
         if not created:
             messages.warning(request, "Un conseil existe déjà pour cette classe et ce trimestre.")
             return redirect('viescolaire:conseil_detail', conseil_id=conseil.pk)
 
-        # Créer les décisions pour tous les élèves de la classe
+        # Générer les décisions uniquement pour les inscriptions de la classe et de l'année du conseil.
         inscriptions = Inscription.objects.filter(
-            classe=classe, annee_scolaire=trimestre.annee_scolaire
+            classe=classe, annee_scolaire=trimestre.annee_scolaire,
         ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve')
         DecisionConseil.objects.bulk_create([
             DecisionConseil(conseil=conseil, inscription=ins)
@@ -141,15 +163,20 @@ def conseil_create(request):
 
 @login_required
 def conseil_pv_pdf(request, conseil_id):
-    """Génère le PV du conseil de classe en PDF."""
+    """Génère le PV du conseil de classe dans un cycle accessible."""
+    conseil = get_object_or_404(
+        ConseilClasse.objects.filter(
+            classe__in=classes_accessibles(request),
+        ).select_related('classe', 'trimestre', 'president'),
+        pk=conseil_id,
+    )
     if WeasyHTML is None:
         messages.error(request, "WeasyPrint n'est pas installé sur ce serveur.")
         return redirect('viescolaire:conseil_detail', conseil_id=conseil_id)
-    conseil = get_object_or_404(
-        ConseilClasse.objects.select_related('classe', 'trimestre', 'president'),
-        pk=conseil_id
-    )
-    decisions = conseil.decisions.select_related(
+    decisions = conseil.decisions.filter(
+        inscription__classe=conseil.classe,
+        inscription__annee_scolaire=conseil.trimestre.annee_scolaire,
+    ).select_related(
         'inscription__eleve'
     ).order_by('inscription__eleve__nom', 'inscription__eleve__prenom')
 
@@ -181,8 +208,7 @@ def conseil_pv_pdf(request, conseil_id):
     nb_encouragements = sum(1 for d in decisions if d.encouragements)
     nb_mentions = sum(1 for d in decisions if d.mention_honneur)
 
-    etab = getattr(request.user, 'etablissement', None)
-    etab_ctx = get_etablissement_context(etab, request=request)
+    etab_ctx = get_etablissement_context(conseil.classe.etablissement, request=request)
 
     html_string = render_to_string('viescolaire/pdf/conseil_pv.html', {
         'conseil': conseil,
@@ -210,14 +236,19 @@ def conseil_pv_pdf(request, conseil_id):
 
 @login_required
 def appel_decision_list(request):
-    """Liste de tous les appels de décision de l'établissement."""
-    etab = request.user.etablissement
-    if not etab:
-        return redirect('viescolaire:conseil_list')
+    """Liste des appels de décision appartenant aux cycles accessibles."""
+    etab = _get_etab(request)
+    classes = classes_accessibles(request, etab)
 
     qs = (
         AppelDecision.objects
-        .filter(decision_conseil__conseil__classe__etablissement=etab)
+        .filter(
+            decision_conseil__conseil__classe__in=classes,
+            decision_conseil__inscription__classe=F('decision_conseil__conseil__classe'),
+            decision_conseil__inscription__annee_scolaire=F(
+                'decision_conseil__conseil__trimestre__annee_scolaire',
+            ),
+        )
         .select_related(
             'decision_conseil__inscription__eleve',
             'decision_conseil__conseil__classe',
@@ -242,12 +273,14 @@ def appel_decision_list(request):
 
 @login_required
 def appel_decision_create(request, decision_id):
-    """Déposer un appel contre une décision de conseil de classe."""
-    etab = request.user.etablissement
+    """Déposer un appel pour une décision d'un cycle accessible."""
     decision = get_object_or_404(
-        DecisionConseil,
+        DecisionConseil.objects.filter(
+            conseil__classe__in=classes_accessibles(request),
+            inscription__classe=F('conseil__classe'),
+            inscription__annee_scolaire=F('conseil__trimestre__annee_scolaire'),
+        ),
         pk=decision_id,
-        conseil__classe__etablissement=etab,
     )
 
     # Une décision ne peut être contestée qu'une seule fois
@@ -296,12 +329,16 @@ def appel_decision_create(request, decision_id):
 
 @login_required
 def appel_decision_traiter(request, appel_id):
-    """Instruire et clôturer un appel de décision."""
-    etab = request.user.etablissement
+    """Instruire un appel lié à un cycle accessible."""
     appel = get_object_or_404(
-        AppelDecision,
+        AppelDecision.objects.filter(
+            decision_conseil__conseil__classe__in=classes_accessibles(request),
+            decision_conseil__inscription__classe=F('decision_conseil__conseil__classe'),
+            decision_conseil__inscription__annee_scolaire=F(
+                'decision_conseil__conseil__trimestre__annee_scolaire',
+            ),
+        ),
         pk=appel_id,
-        decision_conseil__conseil__classe__etablissement=etab,
     )
 
     if appel.est_traite:

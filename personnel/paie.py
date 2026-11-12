@@ -5,21 +5,25 @@ from decimal import Decimal
 from django.db import transaction
 
 from .models import AbsencePersonnel, MembrePersonnel, SalairePersonnel
+from .selectors import filtrer_par_membres_visibles, membres_visibles
 
 MOIS = dict(SalairePersonnel.MOIS_CHOICES)
 
 
-def salaires_du_mois(etab, mois, annee):
-    return (SalairePersonnel.objects.filter(personnel__etablissement=etab, mois=mois, annee=annee)
-            .select_related('personnel', 'annee_scolaire').order_by('personnel__nom', 'personnel__prenom'))
+def salaires_du_mois(etab, mois, annee, request=None):
+    queryset = SalairePersonnel.objects.filter(personnel__etablissement=etab, mois=mois, annee=annee)
+    queryset = filtrer_par_membres_visibles(queryset, request)
+    return queryset.select_related('personnel', 'annee_scolaire').order_by('personnel__nom', 'personnel__prenom')
 
 
-def agents_a_payer(etab):
-    """Agents permanents de l'établissement (actifs, non vacataires : les vacataires relèvent des bulletins de vacation)."""
-    return MembrePersonnel.objects.filter(etablissement=etab, is_active=True, est_vacataire=False).order_by('nom', 'prenom')
+def agents_a_payer(etab, request=None):
+    """Agents permanents accessibles de l'établissement (actifs, non vacataires)."""
+    queryset = MembrePersonnel.objects.filter(etablissement=etab, is_active=True, est_vacataire=False)
+    queryset = membres_visibles(request, queryset)
+    return queryset.order_by('nom', 'prenom')
 
 
-def preparer(etab, mois, annee, annee_scolaire, par):
+def preparer(etab, mois, annee, annee_scolaire, par, request=None):
     """Crée un brouillon pour chaque agent à payer sans bulletin ce mois-ci : salaire de base, indemnités et retenues
     CNSS / IUTS repris de son dernier bulletin, prime d'ancienneté recalculée, primes exceptionnelles à zéro et
     retenue proposée pour les jours d'absence non justifiés du mois (1/30e du salaire de base par jour).
@@ -28,12 +32,12 @@ def preparer(etab, mois, annee, annee_scolaire, par):
                .values_list('personnel_id', flat=True))
     crees, sans_reference = [], []
     with transaction.atomic():
-        for membre in agents_a_payer(etab).exclude(pk__in=deja):
+        for membre in agents_a_payer(etab, request=request).exclude(pk__in=deja):
             dernier = SalairePersonnel.objects.filter(personnel=membre).order_by('-annee', '-mois').first()
             if dernier is None:
                 sans_reference.append(membre)
                 continue
-            jours = AbsencePersonnel.jours_retenus(membre, mois, annee)
+            jours = AbsencePersonnel.jours_retenus(membre, mois, annee, request=request)
             retenue = (dernier.salaire_base / 30 * jours).quantize(Decimal('1')) if jours else Decimal('0')
             salaire = SalairePersonnel(
                 personnel=membre, annee_scolaire=annee_scolaire, mois=mois, annee=annee,
@@ -49,15 +53,16 @@ def preparer(etab, mois, annee, annee_scolaire, par):
     return crees, sans_reference
 
 
-def valider_brouillons(etab, mois, annee):
-    """BROUILLON → VALIDE pour tout le mois ; retourne le nombre de bulletins validés."""
-    return salaires_du_mois(etab, mois, annee).filter(statut=SalairePersonnel.StatutChoices.BROUILLON).update(
-        statut=SalairePersonnel.StatutChoices.VALIDE)
+def valider_brouillons(etab, mois, annee, request=None):
+    """BROUILLON → VALIDE pour le périmètre accessible ; retourne le nombre de bulletins validés."""
+    return salaires_du_mois(etab, mois, annee, request=request).filter(
+        statut=SalairePersonnel.StatutChoices.BROUILLON
+    ).update(statut=SalairePersonnel.StatutChoices.VALIDE)
 
 
-def livre(etab, mois, annee):
-    """Livre de paie du mois : une ligne par bulletin (brut, retenues, net) et les totaux, agents sans bulletin."""
-    salaires = list(salaires_du_mois(etab, mois, annee))
+def livre(etab, mois, annee, request=None):
+    """Livre de paie du mois limité aux agents accessibles, avec les totaux et agents sans bulletin."""
+    salaires = list(salaires_du_mois(etab, mois, annee, request=request))
     totaux = {cle: Decimal('0') for cle in ('base', 'indemnites', 'primes', 'brut', 'cnss', 'iuts', 'autres_retenues',
                                             'retenues', 'net')}
     par_statut = {code: 0 for code, _ in SalairePersonnel.StatutChoices.choices}
@@ -73,6 +78,6 @@ def livre(etab, mois, annee):
         totaux['net'] += s.salaire_net
         par_statut[s.statut] += 1
     payes = {s.personnel_id for s in salaires}
-    sans_bulletin = [m for m in agents_a_payer(etab) if m.pk not in payes]
+    sans_bulletin = [m for m in agents_a_payer(etab, request=request) if m.pk not in payes]
     return {'salaires': salaires, 'totaux': totaux, 'par_statut': par_statut, 'sans_bulletin': sans_bulletin,
             'mois': mois, 'annee': annee, 'libelle_mois': MOIS[mois]}

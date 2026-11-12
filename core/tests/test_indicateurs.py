@@ -19,7 +19,7 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def ecole(client):
     etab = baker.make('etablissements.Etablissement')
-    user = baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False)
+    user = baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, est_tous_cycles=True, must_change_password=False)
     client.force_login(user)
     classe = baker.make('parametres.Classe', etablissement=etab, nom='6e A')
     precedente = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2025-2026',
@@ -103,3 +103,17 @@ def test_nouvelle_annee_sans_donnees(ecole):
                date_debut=date(2027, 10, 1), date_fin=date(2028, 6, 30))
     lignes = indicateurs.mettre_a_jour(ecole['etab'])
     assert [l.effectif for l in lignes][-1] == 0 and lignes[-1].calcule_le <= timezone.now()
+
+
+@pytest.mark.django_db
+def test_evolution_etablissement_refuse_un_compte_restreint_a_un_cycle(client, ecole):
+    cycle = ecole['classe'].cycle
+    baker.make('parametres.Cycle', etablissement=ecole['etab'], code='AUTRE', nom='Autre cycle')
+    utilisateur = baker.make('accounts.User', role='DIRECTEUR', etablissement=ecole['etab'], must_change_password=False)
+    utilisateur.cycles.add(cycle)
+    client.force_login(utilisateur)
+
+    url = reverse('core:indicateurs_evolution')
+    assert client.get(url).status_code == 403
+    assert client.post(url).status_code == 403
+    assert not IndicateurAnnee.objects.exists()

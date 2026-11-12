@@ -23,8 +23,10 @@ def ecole(client, settings):
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
                        date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
     rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, nom='Scolarité', code='SCO', actif=True)
-    sixieme = baker.make('parametres.Classe', etablissement=etab, nom='6e A', actif=True)
-    cinquieme = baker.make('parametres.Classe', etablissement=etab, nom='5e A', actif=True)
+    cycle_sixieme = baker.make('parametres.Cycle', etablissement=etab, nom='Post-primaire', code='POST', ordre=1)
+    cycle_cinquieme = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', code='SEC', ordre=2)
+    sixieme = baker.make('parametres.Classe', etablissement=etab, cycle=cycle_sixieme, nom='6e A', actif=True)
+    cinquieme = baker.make('parametres.Classe', etablissement=etab, cycle=cycle_cinquieme, nom='5e A', actif=True)
 
     def inscrire(nom, prenom, classe, statut='AFFECTE', **champs):
         eleve = baker.make('inscriptions.Eleve', nom=nom, prenom=prenom, date_naissance=date(2013, 1, 1), photo='', **champs)
@@ -42,10 +44,11 @@ def ecole(client, settings):
     baker.make('finances.Paiement', inscription=paul, montant=Decimal('50000'), rubrique=rubrique)
     baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Salif', telephone='71 11 11 11')
     baker.make('personnel.MembrePersonnel', etablissement=etab, nom='ZIDA', prenom='Aline', telephone='')
-    directeur = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    directeur = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True, must_change_password=False)
     client.force_login(directeur)
-    return {'etab': etab, 'annee': annee, 'sixieme': sixieme, 'cinquieme': cinquieme, 'awa': awa, 'ali': ali,
-            'paul': paul, 'zoe': zoe, 'directeur': directeur}
+    return {'etab': etab, 'annee': annee, 'sixieme': sixieme, 'cinquieme': cinquieme,
+            'cycle_sixieme': cycle_sixieme, 'cycle_cinquieme': cycle_cinquieme,
+            'awa': awa, 'ali': ali, 'paul': paul, 'zoe': zoe, 'directeur': directeur}
 
 
 def _numeros(liste):
@@ -179,3 +182,82 @@ def test_suppression_d_une_campagne_et_de_ses_sms(client, ecole):
     assert retour.redirect_chain[0][0] == liste_url and 'Campagne « Rentrée » supprimée (2 SMS).' in retour.content.decode()
     assert not CampagneSms.objects.filter(pk=campagne.pk).exists()
     assert list(SmsSortant.objects.values_list('pk', flat=True)) == [autre.pk]
+
+
+def test_campagnes_parentales_limitees_aux_cycles_autorises(client, ecole):
+    e = ecole
+    utilisateur = baker.make('accounts.User', etablissement=e['etab'], role='DIRECTEUR', must_change_password=False)
+    utilisateur.cycles.add(e['cycle_sixieme'])
+    client.force_login(utilisateur)
+
+    formulaire = client.get(reverse('communication:campagne_nouvelle'))
+    html = formulaire.content.decode()
+    assert str(e['sixieme'].pk) in html and str(e['cinquieme'].pk) not in html
+
+    apercu = client.post(reverse('communication:campagne_nouvelle'), {
+        'titre': 'Parents du cycle', 'cible': 'PARENTS_TOUS', 'message': 'Bonjour', 'confirmer': '0',
+    })
+    assert apercu.status_code == 200 and apercu.context['nb_destinataires'] == 3
+    assert apercu.context['nb_sans_numero'] == 1
+
+    refus = client.post(reverse('communication:campagne_nouvelle'), {
+        'titre': 'Classe hors périmètre', 'cible': 'PARENTS_CLASSES',
+        'classes': [str(e['cinquieme'].pk)], 'message': 'Bonjour', 'confirmer': '1',
+    })
+    assert refus.status_code == 200 and 'hors de votre établissement ou des cycles accessibles' in refus.content.decode()
+    assert not CampagneSms.objects.exists() and not SmsSortant.objects.exists()
+
+    request = type('Request', (), {
+        'user': utilisateur,
+        'cycles_autorises': e['cycle_sixieme'].__class__.objects.filter(pk=e['cycle_sixieme'].pk),
+        'est_tous_cycles': False,
+    })()
+    assert campagnes.destinataires(e['etab'], e['annee'], 'PARENTS_CLASSES',
+                                   {'classes': [str(e['cinquieme'].pk)]}, request=request)[0] == []
+
+
+def test_historique_sms_restraint_a_sa_portee_de_cycles(client, ecole):
+    e = ecole
+    classe_autorisee = CampagneSms.objects.create(
+        etablissement=e['etab'], annee_scolaire=e['annee'], titre='Cycle accessible', message='Bonjour',
+        cible='PARENTS_CLASSES', criteres={'classes': [str(e['sixieme'].pk)],
+                                           'cycles_autorises': [str(e['cycle_sixieme'].pk)]},
+    )
+    classe_interdite = CampagneSms.objects.create(
+        etablissement=e['etab'], annee_scolaire=e['annee'], titre='Cycle hors périmètre', message='Bonjour',
+        cible='PARENTS_CLASSES', criteres={'classes': [str(e['cinquieme'].pk)]},
+    )
+    globale_ancienne = CampagneSms.objects.create(
+        etablissement=e['etab'], annee_scolaire=e['annee'], titre='Ancienne campagne globale', message='Bonjour',
+        cible='PARENTS_TOUS',
+    )
+    SmsSortant.objects.create(numero='+22670123456', message='Bonjour', campagne=classe_autorisee)
+    utilisateur = baker.make('accounts.User', etablissement=e['etab'], role='DIRECTEUR', must_change_password=False)
+    utilisateur.cycles.add(e['cycle_sixieme'])
+    client.force_login(utilisateur)
+
+    liste = client.get(reverse('communication:campagne_list'))
+    assert [c.pk for c in liste.context['campagnes']] == [classe_autorisee.pk]
+    assert client.get(reverse('communication:campagne_detail', args=[classe_autorisee.pk])).status_code == 200
+    assert client.get(reverse('communication:campagne_detail', args=[classe_interdite.pk])).status_code == 404
+    assert client.get(reverse('communication:campagne_detail', args=[globale_ancienne.pk])).status_code == 404
+
+
+def test_campagne_personnel_ne_cible_que_les_membres_accessibles(ecole):
+    e = ecole
+    membre_accessible = baker.make('personnel.MembrePersonnel', etablissement=e['etab'], nom='AUTORISE', prenom='Cycle',
+                                   telephone='70 00 00 01')
+    membre_hors_cycle = baker.make('personnel.MembrePersonnel', etablissement=e['etab'], nom='HORS CYCLE', prenom='Cycle',
+                                   telephone='70 00 00 02')
+    membre_accessible.cycles.add(e['cycle_sixieme'])
+    membre_hors_cycle.cycles.add(e['cycle_cinquieme'])
+    utilisateur = baker.make('accounts.User', etablissement=e['etab'], role='DIRECTEUR', must_change_password=False)
+    utilisateur.cycles.add(e['cycle_sixieme'])
+    request = type('Request', (), {
+        'user': utilisateur,
+        'cycles_autorises': e['cycle_sixieme'].__class__.objects.filter(pk=e['cycle_sixieme'].pk),
+        'est_tous_cycles': False,
+    })()
+
+    destinataires, _ = campagnes.destinataires(e['etab'], e['annee'], 'PERSONNEL', {}, request=request)
+    assert [d.nom for d in destinataires] == ['AUTORISE Cycle']

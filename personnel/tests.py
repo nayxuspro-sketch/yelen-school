@@ -153,7 +153,7 @@ class TestPersonnelListPdf:
     @pytest.fixture
     def contexte(self):
         etab = baker.make('etablissements.Etablissement', nom='Lycée Yelen', code='LY')
-        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False, est_tous_cycles=True)
         actif = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Zongo', prenom='Ali',
                            genre='M', fonction='Professeur de SVT', is_active=True)
         inactif = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Kabore', prenom='Awa',
@@ -277,7 +277,7 @@ class TestInscriptionPersonnel:
     @pytest.fixture
     def contexte(self, client):
         etab = baker.make('etablissements.Etablissement', nom='Lycée Yelen', code='LY')
-        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False, est_tous_cycles=True)
         membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='Kabore', prenom='Gilbert')
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
         poste = baker.make('parametres.Poste', etablissement=etab, code='ENS', titre='Enseignant')
@@ -286,6 +286,49 @@ class TestInscriptionPersonnel:
         donnees = {'annee_scolaire': annee.pk, 'poste': poste.pk, 'cycle': cycle.pk,
                    'est_actif': 'on', 'heures_hebdomadaires': '0', 'observations': ''}
         return membre, annee, cycle, donnees
+
+    def test_agent_limite_au_cycle_autorise(self, client, contexte):
+        from personnel.models import InscriptionPersonnel
+        membre, annee, cycle, _ = contexte
+        autre = baker.make('parametres.Cycle', etablissement=membre.etablissement, code='PRI', nom='Primaire')
+        classe_autorisee = baker.make('parametres.Classe', etablissement=membre.etablissement,
+                                      cycle=autre, nom='CP2', niveau='CP2', actif=True)
+        classe_interdite = baker.make('parametres.Classe', etablissement=membre.etablissement,
+                                      cycle=cycle, nom='6e A', niveau='6e', actif=True)
+        membre.cycles.add(cycle, autre)
+        membre.classe_affectation = classe_interdite
+        membre.save()
+        baker.make('personnel.InscriptionPersonnel', personnel=membre, annee_scolaire=annee,
+                   cycle=autre, est_actif=True)
+        baker.make('personnel.InscriptionPersonnel', personnel=membre, annee_scolaire=annee,
+                   cycle=cycle, est_actif=True)
+        hors_perimetre = baker.make('personnel.MembrePersonnel', etablissement=membre.etablissement,
+                                    nom='YAMEOGO', prenom='Paul', cycles=[cycle])
+        baker.make('personnel.InscriptionPersonnel', personnel=hors_perimetre, annee_scolaire=annee,
+                   cycle=cycle, est_actif=True)
+        baker.make('personnel.AbsencePersonnel', personnel=membre, classe=classe_autorisee,
+                   date_debut=date(2026, 9, 1), date_fin=date(2026, 9, 1), observation='ABSENCE AUTORISEE')
+        baker.make('personnel.AbsencePersonnel', personnel=membre, classe=classe_interdite,
+                   date_debut=date(2026, 9, 2), date_fin=date(2026, 9, 2), observation='ABSENCE INTERDITE')
+        agent = baker.make('accounts.User', etablissement=membre.etablissement, role='ENSEIGNANT',
+                           must_change_password=False)
+        agent.cycles.add(autre)
+        client.force_login(agent)
+
+        liste = client.get(reverse('personnel:personnel_list'))
+        assert liste.status_code == 200
+        assert f'value="{membre.pk}"' in liste.content.decode()
+        assert 'YAMEOGO' not in liste.content.decode()
+        assert autre.nom in liste.content.decode()
+        assert cycle.nom not in liste.content.decode()
+        assert client.get(reverse('personnel:detail', args=[hors_perimetre.pk])).status_code == 404
+
+        fiche = client.get(reverse('personnel:detail', args=[membre.pk]))
+        assert fiche.status_code == 200
+        html = fiche.content.decode()
+        assert 'Primaire' in html and 'Secondaire' not in html
+        assert 'ABSENCE AUTORISEE' in html and 'ABSENCE INTERDITE' not in html
+        assert InscriptionPersonnel.objects.filter(personnel=membre).count() == 2
 
     def test_inscription_enregistree_et_carte_active(self, client, contexte):
         from personnel.models import InscriptionPersonnel
@@ -345,7 +388,7 @@ class TestColonneInscriptionAnnuelle:
     @pytest.fixture
     def contexte(self, client):
         etab = baker.make('etablissements.Etablissement', nom='Lycée Yelen', code='LY')
-        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False, est_tous_cycles=True)
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True)
         ancienne = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2025-2026', est_courante=False)
         cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')
@@ -462,7 +505,7 @@ class TestMatriculePersonnel:
         """Scénario de production : deux membres « -1 » et « -02 », puis ajout d'un troisième."""
         from personnel.models import MembrePersonnel
         etab = baker.make('etablissements.Etablissement', code='ETAB001')
-        user = baker.make('accounts.User', etablissement=etab, must_change_password=False)
+        user = baker.make('accounts.User', etablissement=etab, must_change_password=False, est_tous_cycles=True)
         baker.make('personnel.MembrePersonnel', etablissement=etab, matricule=self.prefixe(etab) + '1')
         baker.make('personnel.MembrePersonnel', etablissement=etab, matricule=self.prefixe(etab) + '02')
         client.force_login(user)
@@ -485,7 +528,7 @@ def test_titre_de_capacite_dans_le_volet_carriere(client):
     import re
     from personnel.models import MembrePersonnel
     etab = baker.make('etablissements.Etablissement', code='ETAB001')
-    client.force_login(baker.make('accounts.User', etablissement=etab, must_change_password=False))
+    client.force_login(baker.make('accounts.User', etablissement=etab, must_change_password=False, est_tous_cycles=True))
     html = client.get(reverse('personnel:create')).content.decode()
     champ = re.search(r'<input[^>]*name="titre_capacite"[^>]*>', html).group(0)
     assert 'maxlength="35"' in champ and 'type="text"' in champ

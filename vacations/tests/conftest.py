@@ -50,4 +50,4 @@ def contrat(db, annee, personnel):
 @pytest.fixture
 def admin_user(db):
     """Utilisateur superadmin."""
-    return baker.make('accounts.User', is_superuser=True, is_staff=True)
+    return baker.make('accounts.User', is_superuser=True, is_staff=True, role='SUPER_ADMIN')

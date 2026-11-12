@@ -27,7 +27,9 @@ def ecole(client):
     parent = baker.make('accounts.User', etablissement=etab, role='PARENT', must_change_password=False)
     parent.eleves_lies.add(eleve)
     type_sanction = baker.make('parametres.TypeSanction', libelle='Avertissement', code='AVERT')
-    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user = baker.make(
+        'accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True, must_change_password=False,
+    )
     client.force_login(user)
     return {'etab': etab, 'annee': annee, 'classe': classe, 'eleve': eleve, 'inscription': inscription, 'parent': parent,
             'type_sanction': type_sanction, 'user': user, 'client': client}

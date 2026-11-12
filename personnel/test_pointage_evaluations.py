@@ -23,7 +23,7 @@ def ecole(client):
                       fonction='Directrice', is_active=True, photo='', signature='')
     etranger = baker.make('personnel.MembrePersonnel', etablissement=autre, nom='AILLEURS', prenom='Paul',
                           is_active=True, photo='', signature='')
-    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False, est_tous_cycles=True)
     client.force_login(user)
     return {'etab': etab, 'annee': annee, 'agent': agent, 'chef': chef, 'etranger': etranger, 'client': client}
 

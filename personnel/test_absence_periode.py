@@ -17,7 +17,7 @@ def ecole(client):
                         fonction='Enseignant')
     autre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='ZONGO', prenom='Paul',
                        fonction='Professeur')
-    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False, est_tous_cycles=True)
     baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
                date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
     client.force_login(user)

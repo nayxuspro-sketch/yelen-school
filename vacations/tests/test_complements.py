@@ -23,7 +23,8 @@ def etab():
 
 @pytest.fixture
 def utilisateur(etab):
-    return baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False)
+    return baker.make('accounts.User', etablissement=etab, is_superuser=True, role='SUPER_ADMIN',
+                      must_change_password=False)
 
 
 def _contrat(etab):
@@ -52,10 +53,10 @@ def test_valider_une_heure_d_un_autre_etablissement_est_refuse(client, utilisate
     contrat = _contrat(baker.make('etablissements.Etablissement'))
     heure = baker.make('vacations.HeureVacation', contrat=contrat, est_valide=False)
     client.force_login(utilisateur)
-    reponse = client.post(reverse('vacations:valider_heure', args=[heure.pk]), follow=True)
+    reponse = client.post(reverse('vacations:valider_heure', args=[heure.pk]))
     heure.refresh_from_db()
+    assert reponse.status_code == 404
     assert heure.est_valide is False
-    assert 'Accès refusé' in reponse.content.decode()
 
 
 def test_liste_des_bulletins_filtrable_par_mois_annee_statut(client, utilisateur):

@@ -3,6 +3,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+from django.db.models import Q
 from django.views.decorators.http import require_POST
 
 from ..forms import (
@@ -19,6 +20,30 @@ from ..models import (
 )
 
 from .commun import _get_etab, _delete_view
+from personnel.selectors import cycles_accessibles
+from yelen_school.cycle_filter import get_cycle_ids
+
+
+def _types_documents_visibles(request, etab):
+    """Types globaux ou rattachés aux cycles accessibles de l'établissement."""
+    types = TypeDocument.objects.all()
+    if etab is not None:
+        types = types.filter(Q(cycle__isnull=True) | Q(cycle__etablissement=etab))
+    if get_cycle_ids(request) is not None:
+        types = types.filter(Q(cycle__isnull=True) | Q(cycle__in=cycles_accessibles(request, etab)))
+    return types
+
+
+def _types_documents_modifiables(request, etab):
+    """Les types par cycle sont modifiables par les comptes ayant accès à ce cycle.
+
+    Les types généraux (cycle nul) ont une portée transversale : seul un compte sans restriction
+    de cycle peut les modifier ou les supprimer.
+    """
+    types = _types_documents_visibles(request, etab)
+    if get_cycle_ids(request) is not None:
+        types = types.filter(cycle__in=cycles_accessibles(request, etab))
+    return types
 
 
 # ─── POSTES ──────────────────────────────────────────────────────────
@@ -251,20 +276,27 @@ def discipline_form(request, pk=None):
 
 @login_required
 def type_document_list(request):
-    types_documents = TypeDocument.objects.all().select_related('cycle').order_by('cycle__nom', 'categorie', 'libelle')
+    etab = _get_etab(request)
+    types_documents = _types_documents_visibles(request, etab).select_related('cycle').order_by(
+        'cycle__nom', 'categorie', 'libelle'
+    )
     tpl = 'parametres/partials/type_document_list.html' if request.headers.get('HX-Request') else 'parametres/types_documents.html'
     return render(request, tpl, {'types_documents': types_documents})
 
 
 @login_required
 def type_document_form(request, pk=None):
-    type_doc = get_object_or_404(TypeDocument, pk=pk) if pk else None
     etab = _get_etab(request)
-    cycles = (Cycle.objects.filter(etablissement=etab) if etab else Cycle.objects.all()).order_by('ordre', 'nom')
+    types_modifiables = _types_documents_modifiables(request, etab)
+    type_doc = get_object_or_404(types_modifiables, pk=pk) if pk else None
+    cycles = cycles_accessibles(request, etab).order_by('ordre', 'nom')
 
     if request.method == 'POST':
         form = TypeDocumentForm(request.POST, instance=type_doc)
         form.fields['cycle'].queryset = cycles
+        if get_cycle_ids(request) is not None:
+            form.fields['cycle'].required = True
+            form.fields['cycle'].empty_label = None
         if form.is_valid():
             type_doc = form.save()
             # À la création d'un type de document : pré-enregistrer un signataire
@@ -273,25 +305,31 @@ def type_document_form(request, pk=None):
             if not pk:
                 cycles_cibles = (
                     [type_doc.cycle] if type_doc.cycle_id
-                    else list(Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre', 'nom'))
+                    else list(cycles.filter(actif=True))
                 )
                 annee = AnneeScolaire.objects.get_annee_courante(etablissement=etab)
-                for cycle in cycles_cibles:
-                    SignataireDocument.objects.get_or_create(
-                        cycle=cycle,
-                        type_document=type_doc,
-                        annee_scolaire=annee,
-                        defaults={
-                            'membre_personnel_id': None,
-                            'fonction': 'Le Directeur',
-                            'titre_honorifique': '',
-                            'titres_honorifiques': [],
-                            'actif': True,
-                        },
-                    )
+                if annee is not None:
+                    for cycle in cycles_cibles:
+                        SignataireDocument.objects.get_or_create(
+                            cycle=cycle,
+                            type_document=type_doc,
+                            annee_scolaire=annee,
+                            defaults={
+                                'membre_personnel_id': None,
+                                'fonction': 'Le Directeur',
+                                'titre_honorifique': '',
+                                'titres_honorifiques': [],
+                                'actif': True,
+                            },
+                        )
             return HttpResponse(status=204, headers={'HX-Trigger': 'parametreUpdated'})
     else:
         form = TypeDocumentForm(instance=type_doc)
+
+    form.fields['cycle'].queryset = cycles
+    if get_cycle_ids(request) is not None:
+        form.fields['cycle'].required = True
+        form.fields['cycle'].empty_label = None
 
     return render(request, 'parametres/partials/type_document_form.html', {
         'type_doc': type_doc,
@@ -470,7 +508,9 @@ def discipline_delete(request, pk):
 @login_required
 @require_POST
 def type_document_delete(request, pk):
-    obj = get_object_or_404(TypeDocument, pk=pk)
+    obj = get_object_or_404(
+        _types_documents_modifiables(request, _get_etab(request)), pk=pk,
+    )
     return _delete_view(request, obj)
 
 

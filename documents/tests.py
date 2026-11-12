@@ -39,9 +39,12 @@ class TestDocumentsViews:
 def test_convocation_form_selecteur_classe_sans_inline(client):
     """Le filtre de classe est un formulaire GET (CSP) et la liste des élèves s'affiche pour la classe choisie."""
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', etablissement=etab))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
-    classe = baker.make('parametres.Classe', etablissement=etab, actif=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab)
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, actif=True)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user.cycles.add(cycle)
+    client.force_login(user)
     inscription = baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee)
 
     response = client.get(reverse('documents:convocation_form') + f'?classe={classe.pk}')
@@ -62,7 +65,7 @@ class TestCertificatScolariteFiliation:
     @pytest.fixture
     def inscription(self, client):
         etab = baker.make('etablissements.Etablissement')
-        client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+        client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True))
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
         classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
         eleve = baker.make('inscriptions.Eleve', nom_pere='Ouedraogo Jean', nom_mere='Sawadogo Marie')
@@ -101,7 +104,7 @@ class TestCertificatScolariteFiliation:
 @pytest.mark.django_db
 def test_certificat_pdf_format_a5_portrait(client, mocker):
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
     inscription = baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee)
@@ -125,7 +128,7 @@ def test_certificat_signature_scannee_du_signataire(client, mocker, settings, tm
     from parametres.models import TypeDocument
     settings.MEDIA_ROOT = tmp_path
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     cycle = baker.make('parametres.Cycle', etablissement=etab)
     inscription = baker.make('inscriptions.Inscription', annee_scolaire=annee,
@@ -162,7 +165,7 @@ def test_certificat_charge_tient_sur_une_page(client, mocker, settings, tmp_path
     from parametres.models import TypeDocument
     settings.MEDIA_ROOT = tmp_path
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True))
     identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab, type_etablissement='PRIVE',
                           nom_etablissement='COMPLEXE SCOLAIRE PRIVÉ LE SAVOIR DE OUAGADOUGOU', sigle='CSPLS',
                           numero_agrement_mena='N°2024-0147/MENAPLN/SG/DGEPFIC', ville='Ouagadougou',
@@ -214,7 +217,7 @@ def test_circulaire_signature_scannee_du_signataire(client, mocker, settings, tm
     from parametres.models import TypeDocument
     settings.MEDIA_ROOT = tmp_path
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     type_doc, _ = TypeDocument.objects.get_or_create(code='CIRCULAIRE', defaults={'libelle': 'Circulaire', 'categorie': 'ADMINISTRATIF'})
     membre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Salimata')
@@ -253,7 +256,7 @@ def test_document_numero_et_version_generes_a_la_creation(client, mocker):
     assert (premier.numero_document, premier.version) == (f'CERT_SCOL-{annee_civile}-00001', 1)
     assert (second.numero_document, second.version) == (f'CERT_SCOL-{annee_civile}-00002', 2)
 
-    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True))
     html_cls = mocker.patch('core.pdf.HTML')
     html_cls.return_value.write_pdf.return_value = b'%PDF-1.7 test'
     client.get(reverse('documents:certificat_scolarite', kwargs={'inscription_id': inscription.pk}) + '?format=pdf')
@@ -265,7 +268,7 @@ def test_liste_classe_effectif_par_genre(client, mocker):
     """Sous la liste alphabétique, un tableau donne le nombre d'élèves par genre et l'effectif total
     (prévisualisation HTML et PDF)."""
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
     for genre in ('M', 'M', 'F', 'M', 'F'):
@@ -299,7 +302,7 @@ def test_liste_classe_effectif_par_genre(client, mocker):
 def test_liste_personnel_pdf_qr_sous_le_recapitulatif(client, mocker):
     """Le code QR (réduit à 2,5 cm) suit immédiatement le tableau récapitulatif, calé à gauche, avant le signataire."""
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True))
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='SUPER_ADMIN', is_superuser=True))
     cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST')
     baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     html_cls = mocker.patch('core.pdf.HTML')
@@ -341,7 +344,7 @@ def test_liste_personnel_recapitulatif_par_titre_de_capacite_et_genre(client, mo
     (prévisualisation HTML et PDF) : regroupement insensible à la casse (graphie majoritaire affichée), « Non renseigné »
     en dernier."""
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+    client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST')
     poste = baker.make('parametres.Poste', etablissement=etab, categorie='ENSEIGNEMENT')
@@ -367,3 +370,135 @@ def test_liste_personnel_recapitulatif_par_titre_de_capacite_et_genre(client, mo
     html = html_cls.call_args.kwargs['string']
     assert lignes(html, 'Récapitulatif par titre de capacité et par genre') == attendu
     assert html.index('Récapitulatif par catégorie et par genre') < html.index('Récapitulatif par titre de capacité et par genre') < html.index('class="qr-zone"')
+
+
+@pytest.mark.django_db
+def test_documents_direct_access_et_post_limites_aux_cycles(client, mocker):
+    """Les listes et les identifiants d'élèves/classes ne permettent pas de sortir du cycle autorisé."""
+    from documents.models import Document
+    from parametres.models import TypeDocument
+
+    etab = baker.make('etablissements.Etablissement')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle_autorise = baker.make('parametres.Cycle', etablissement=etab, nom='Primaire', code='PRIM')
+    cycle_interdit = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', code='SEC')
+    classe_autorisee = baker.make('parametres.Classe', etablissement=etab, cycle=cycle_autorise, nom='CM2')
+    classe_interdite = baker.make('parametres.Classe', etablissement=etab, cycle=cycle_interdit, nom='Terminale')
+    inscription_autorisee = baker.make('inscriptions.Inscription', classe=classe_autorisee, annee_scolaire=annee)
+    inscription_interdite = baker.make('inscriptions.Inscription', classe=classe_interdite, annee_scolaire=annee)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user.cycles.add(cycle_autorise)
+    client.force_login(user)
+
+    type_doc, _ = TypeDocument.objects.get_or_create(
+        code='TEST_CYCLE', defaults={'libelle': 'Test cycle', 'categorie': 'SCOLARITE', 'actif': True},
+    )
+    doc_autorise = Document.objects.create(type_document=type_doc, annee_scolaire=annee,
+                                           inscription=inscription_autorisee)
+    doc_interdit = Document.objects.create(type_document=type_doc, annee_scolaire=annee,
+                                           inscription=inscription_interdite)
+    doc_general = Document.objects.create(type_document=type_doc, annee_scolaire=annee, observations='Général')
+
+    liste = client.get(reverse('documents:document_list'))
+    visibles = {doc.pk for doc in liste.context['documents'].object_list}
+    assert doc_autorise.pk in visibles
+    assert doc_interdit.pk not in visibles and doc_general.pk not in visibles
+
+    selecteur = client.get(reverse('documents:liste_classes_selector'))
+    assert set(selecteur.context['cycles_dict']) == {'Primaire'}
+    assert client.get(reverse('documents:liste_classe_pdf', kwargs={'classe_id': classe_autorisee.pk})).status_code == 200
+    assert client.get(reverse('documents:liste_classe_pdf', kwargs={'classe_id': classe_interdite.pk})).status_code == 404
+
+    cert_url = reverse('documents:certificat_scolarite', kwargs={'inscription_id': inscription_autorisee.pk})
+    attest_url = reverse('documents:attestation_non_redevabilite', kwargs={'inscription_id': inscription_autorisee.pk})
+    assert client.get(cert_url).status_code == 200
+    assert client.get(attest_url).status_code == 200
+    assert client.get(reverse('documents:certificat_scolarite', kwargs={'inscription_id': inscription_interdite.pk})).status_code == 404
+    assert client.get(reverse('documents:attestation_non_redevabilite', kwargs={'inscription_id': inscription_interdite.pk})).status_code == 404
+
+    convocation_url = reverse('documents:convocation_form')
+    convocation = client.get(convocation_url, {'classe': str(classe_interdite.pk)})
+    assert convocation.status_code == 200
+    assert str(inscription_interdite.pk) not in convocation.content.decode()
+
+    avant = Document.objects.count()
+    mocker.patch('core.pdf.HTML')
+    refus_convocation = client.post(convocation_url, {
+        'classe': str(classe_autorisee.pk), 'inscriptions': [str(inscription_interdite.pk)], 'format': 'pdf',
+    })
+    assert refus_convocation.status_code == 200
+    assert 'hors de la classe ou des cycles accessibles' in refus_convocation.content.decode()
+    assert Document.objects.count() == avant
+
+    refus_circulaire = client.post(reverse('documents:circulaire_form'), {
+        'titre': 'Circulaire', 'corps': 'Texte', 'classes': [str(classe_interdite.pk)], 'format': 'pdf',
+    })
+    assert refus_circulaire.status_code == 200
+    assert 'hors de votre établissement ou des cycles accessibles' in refus_circulaire.content.decode()
+    assert Document.objects.count() == avant
+
+    refus_generale = client.post(reverse('documents:circulaire_form'), {
+        'titre': 'Circulaire', 'corps': 'Texte', 'format': 'pdf',
+    })
+    assert refus_generale.status_code == 200
+    assert 'circulaire générale est réservée' in refus_generale.content.decode()
+    assert Document.objects.count() == avant
+
+
+@pytest.mark.django_db
+def test_fichier_archive_protege_par_cycle_meme_depuis_media(client, settings, tmp_path):
+    """L'URL média ne contourne pas le contrôle par cycle du téléchargement de l'archive."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from documents.models import Document
+    from parametres.models import TypeDocument
+
+    settings.MEDIA_ROOT = tmp_path
+    etab = baker.make('etablissements.Etablissement')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    primaire = baker.make('parametres.Cycle', etablissement=etab, code='PRIM', nom='Primaire')
+    secondaire = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')
+    classe_primaire = baker.make('parametres.Classe', etablissement=etab, cycle=primaire)
+    classe_secondaire = baker.make('parametres.Classe', etablissement=etab, cycle=secondaire)
+    inscription_primaire = baker.make('inscriptions.Inscription', classe=classe_primaire, annee_scolaire=annee)
+    inscription_secondaire = baker.make('inscriptions.Inscription', classe=classe_secondaire, annee_scolaire=annee)
+    type_primaire = baker.make(
+        TypeDocument, code='ARCHIVE_PRIM', libelle='Archive primaire', categorie='SCOLARITE', cycle=primaire,
+    )
+    type_secondaire = baker.make(
+        TypeDocument, code='ARCHIVE_SEC', libelle='Archive secondaire', categorie='SCOLARITE', cycle=secondaire,
+    )
+    type_general = baker.make(
+        TypeDocument, code='ARCHIVE_GEN', libelle='Archive générale', categorie='SCOLARITE', cycle=None,
+    )
+    contenu_visible = b'%PDF-1.4 primaire'
+    doc_visible = baker.make(
+        Document, type_document=type_general, annee_scolaire=annee, inscription=inscription_primaire,
+        fichier=SimpleUploadedFile('primaire.pdf', contenu_visible, content_type='application/pdf'),
+    )
+    contenu_cache = b'%PDF-1.4 secondaire'
+    doc_cache = baker.make(
+        Document, type_document=type_secondaire, annee_scolaire=annee, inscription=inscription_secondaire,
+        fichier=SimpleUploadedFile('secondaire.pdf', contenu_cache, content_type='application/pdf'),
+    )
+    doc_type_hors_cycle = baker.make(
+        Document, type_document=type_secondaire, annee_scolaire=annee, inscription=inscription_primaire,
+        fichier=SimpleUploadedFile('type-secondaire.pdf', b'%PDF-1.4 type secondaire', content_type='application/pdf'),
+    )
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user.cycles.add(primaire)
+    client.force_login(user)
+
+    liste = client.get(reverse('documents:document_list'))
+    types_visibles = set(liste.context['types'])
+    assert type_primaire in types_visibles and type_general in types_visibles
+    assert type_secondaire not in types_visibles
+    documents_visibles = {d.pk for d in liste.context['documents'].object_list}
+    assert doc_visible.pk in documents_visibles
+    assert doc_cache.pk not in documents_visibles and doc_type_hors_cycle.pk not in documents_visibles
+
+    fichier = client.get(reverse('documents:document_download', args=[doc_visible.pk]))
+    assert fichier.status_code == 200 and b''.join(fichier.streaming_content) == contenu_visible
+    assert client.get(reverse('documents:document_download', args=[doc_cache.pk])).status_code == 404
+    assert client.get(reverse('documents:document_download', args=[doc_type_hors_cycle.pk])).status_code == 404
+    # Le chemin générique média ne doit pas ouvrir une seconde voie sans filtrage de cycle.
+    assert client.get(doc_cache.fichier.url).status_code == 404

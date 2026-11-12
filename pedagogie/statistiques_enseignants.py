@@ -27,13 +27,19 @@ def _par_enseignement(qs, cle, **annotations):
     return {ligne[cle]: ligne for ligne in qs.order_by().values(cle).annotate(**annotations)}
 
 
-def statistiques_enseignants(etab, annee, trimestre=None):
+def statistiques_enseignants(etab, annee, trimestre=None, cycle_ids=None):
     """Lignes par enseignant (puis par enseignement) pour l'année ``annee`` ; ``trimestre`` restreint évaluations,
     notes, résultats et cahier de textes à la période. Les enseignements sans enseignant forment la ligne
-    « Non attribué »."""
+    « Non attribué ». Une liste ``cycle_ids`` limite les résultats aux cycles autorisés.
+    """
+    enseignements_qs = Enseignement.objects.filter(
+        annee_scolaire=annee, est_actif=True, classe__etablissement=etab,
+    )
+    if cycle_ids is not None:
+        enseignements_qs = enseignements_qs.filter(classe__cycle_id__in=cycle_ids)
     enseignements = list(
-        Enseignement.objects.filter(annee_scolaire=annee, est_actif=True, classe__etablissement=etab)
-        .select_related('classe', 'matiere', 'personnel').order_by('personnel__nom', 'personnel__prenom', 'classe__nom')
+        enseignements_qs.select_related('classe', 'matiere', 'personnel')
+        .order_by('personnel__nom', 'personnel__prenom', 'classe__nom')
     )
     if not enseignements:
         return []

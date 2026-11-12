@@ -85,7 +85,9 @@ class TestPagesSansGestionnaireInline:
 
     def test_sanction_create_selecteur_classe(self, client):
         etab = baker.make('etablissements.Etablissement')
-        client.force_login(baker.make('accounts.User', etablissement=etab, role='DIRECTEUR'))
+        client.force_login(baker.make(
+            'accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True,
+        ))
         classe = baker.make('parametres.Classe', etablissement=etab, actif=True)
 
         response = client.get(reverse('viescolaire:sanction_create') + f'?classe={classe.pk}')
@@ -97,9 +99,22 @@ class TestPagesSansGestionnaireInline:
 
     def test_appel_decision_traiter_bascule_nouvelle_decision(self, client):
         etab = baker.make('etablissements.Etablissement')
-        client.force_login(baker.make('accounts.User', etablissement=etab))
+        client.force_login(baker.make(
+            'accounts.User', etablissement=etab, est_tous_cycles=True,
+        ))
         classe = baker.make('parametres.Classe', etablissement=etab)
-        appel = baker.make('viescolaire.AppelDecision', decision_conseil__conseil__classe=classe)
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab)
+        trimestre = baker.make('pedagogie.Trimestre', annee_scolaire=annee)
+        inscription = baker.make(
+            'inscriptions.Inscription', classe=classe, annee_scolaire=annee,
+        )
+        conseil = baker.make(
+            'viescolaire.ConseilClasse', classe=classe, trimestre=trimestre,
+        )
+        decision = baker.make(
+            'viescolaire.DecisionConseil', conseil=conseil, inscription=inscription,
+        )
+        appel = baker.make('viescolaire.AppelDecision', decision_conseil=decision)
 
         response = client.get(reverse('viescolaire:appel_decision_traiter', kwargs={'appel_id': appel.pk}))
 
@@ -224,7 +239,8 @@ class TestConfigEDT:
     @pytest.fixture
     def ecole(self, client):
         etab = baker.make('etablissements.Etablissement')
-        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab,
+                                      est_tous_cycles=True, must_change_password=False))
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
         classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab))
         prof = baker.make('personnel.MembrePersonnel', etablissement=etab)
@@ -376,7 +392,8 @@ class TestRetraitSeance:
     def ecole(self, client):
         from datetime import time
         etab = baker.make('etablissements.Etablissement')
-        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab,
+                                      est_tous_cycles=True, must_change_password=False))
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
         classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab), nom='6ème A')
         prof = baker.make('personnel.MembrePersonnel', etablissement=etab)
@@ -424,7 +441,9 @@ class TestRetraitSeance:
         DroitAcces.objects.create(role='ENSEIGNANT', module='viescolaire', fonctionnalite='/viescolaire/emploi-du-temps/',
                                   action='modifier', autorise=False)
         droits.invalider_cache()
-        client.force_login(baker.make('accounts.User', role='ENSEIGNANT', etablissement=ecole['etab'], must_change_password=False))
+        enseignant = baker.make('accounts.User', role='ENSEIGNANT', etablissement=ecole['etab'], must_change_password=False)
+        enseignant.cycles.add(ecole['classe'].cycle)
+        client.force_login(enseignant)
         html = client.get(reverse('viescolaire:emploi_du_temps_prof', args=[ecole['prof'].pk])).content.decode()
         assert 'Mathématiques' in html and 'edt-course-remove' not in html
         lundi, _ = ecole['seances']
@@ -441,7 +460,10 @@ class TestFicheSuivi:
     def ecole(self, client):
         from datetime import date
         etab = baker.make('etablissements.Etablissement')
-        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+        client.force_login(baker.make(
+            'accounts.User', role='DIRECTEUR', etablissement=etab,
+            est_tous_cycles=True, must_change_password=False,
+        ))
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
         classe = baker.make('parametres.Classe', etablissement=etab, cycle=baker.make('parametres.Cycle', etablissement=etab), actif=True)
         eleve = baker.make('inscriptions.Eleve', nom='SAWADOGO', prenom='Aïcha', date_naissance=date(2012, 5, 3))
@@ -494,7 +516,8 @@ class TestConflitsEDT:
     def ecole(self, client):
         from datetime import time
         etab = baker.make('etablissements.Etablissement')
-        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+        client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab,
+                                      est_tous_cycles=True, must_change_password=False))
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
         cycle = baker.make('parametres.Cycle', etablissement=etab)
         c6, c5 = (baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom=nom) for nom in ('6e A', '5e B'))
@@ -578,3 +601,48 @@ class TestConflitsEDT:
         assert sorted(SeanceCours.objects.filter(enseignement=ecole['physique']).values_list('jour', flat=True)) == [2]
         html = unescape(client.get(reverse('viescolaire:emploi_du_temps', args=[ecole['c6'].pk]), {'annee': ecole['annee'].pk}).content.decode())
         assert '1 séance(s) non placée(s) pour éviter un conflit : Physique (la classe 6e A a déjà Mathématiques le lundi 08:00–08:50).' in html
+
+
+@pytest.mark.django_db
+def test_emplois_du_temps_limites_aux_cycles_autorises(client):
+    """Une affectation Primaire n'expose pas les classes ou séances du Secondaire, même par URL directe."""
+    from datetime import time
+
+    etab = baker.make('etablissements.Etablissement')
+    primaire = baker.make('parametres.Cycle', etablissement=etab, code='PRIM', nom='Primaire')
+    secondaire = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    classe_primaire = baker.make('parametres.Classe', etablissement=etab, cycle=primaire, nom='CP1')
+    classe_secondaire = baker.make('parametres.Classe', etablissement=etab, cycle=secondaire, nom='6e A')
+    professeur = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Ali')
+    professeur.cycles.add(primaire, secondaire)
+    matiere_primaire = baker.make('pedagogie.Matiere', code='CYCLEP', nom='Lecture')
+    matiere_secondaire = baker.make('pedagogie.Matiere', code='CYCLES', nom='Physique')
+    enseignement_primaire = baker.make(
+        'pedagogie.Enseignement', classe=classe_primaire, annee_scolaire=annee,
+        personnel=professeur, matiere=matiere_primaire, est_actif=True,
+    )
+    enseignement_secondaire = baker.make(
+        'pedagogie.Enseignement', classe=classe_secondaire, annee_scolaire=annee,
+        personnel=professeur, matiere=matiere_secondaire, est_actif=True,
+    )
+    baker.make('viescolaire.SeanceCours', enseignement=enseignement_primaire, jour=1,
+               heure_debut=time(8, 0), heure_fin=time(8, 50))
+    baker.make('viescolaire.SeanceCours', enseignement=enseignement_secondaire, jour=2,
+               heure_debut=time(9, 0), heure_fin=time(9, 50))
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user.cycles.add(primaire)
+    client.force_login(user)
+
+    index = client.get(reverse('viescolaire:emploi_du_temps_index'))
+    assert index.status_code == 200 and 'CP1' in index.content.decode() and '6e A' not in index.content.decode()
+    assert client.get(reverse('viescolaire:emploi_du_temps', args=[classe_secondaire.pk])).status_code == 404
+
+    professeur_index = client.get(reverse('viescolaire:emploi_du_temps_prof_index'))
+    assert professeur_index.status_code == 200
+    assert list(professeur_index.context['personnel_list']) == [professeur]
+    assert professeur_index.context['personnel_list'][0].nb_enseignements == 1
+
+    grille = client.get(reverse('viescolaire:emploi_du_temps_prof', args=[professeur.pk]))
+    assert grille.status_code == 200
+    assert 'Lecture' in grille.content.decode() and 'Physique' not in grille.content.decode()

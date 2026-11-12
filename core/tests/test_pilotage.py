@@ -23,7 +23,7 @@ def annee(etab):
 
 
 def _connecter(client, etab, role):
-    user = baker.make('accounts.User', role=role, etablissement=etab, must_change_password=False)
+    user = baker.make('accounts.User', role=role, etablissement=etab, est_tous_cycles=True, must_change_password=False)
     client.force_login(user)
     return user
 
@@ -168,3 +168,24 @@ def test_accueil_direction_limite_a_l_etablissement(client, etab, annee):
     context = client.get('/').context
 
     assert context['total_personnel'] == 1 and context['nb_absences_aujourd_hui'] == 0
+
+
+@pytest.mark.django_db
+def test_tableau_de_bord_et_page_limites_aux_cycles_autorises(client, etab, annee, donnees):
+    classes, _ = donnees
+    cycle_autorise = classes['6e A'].cycle
+    cycle_interdit = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', code='SEC', ordre=2)
+    classe_interdite = baker.make('parametres.Classe', etablissement=etab, cycle=cycle_interdit,
+                                  nom='Terminale Z', niveau='Terminale', capacite_max=25)
+    baker.make('inscriptions.Inscription', classe=classe_interdite, annee_scolaire=annee, statut='AFFECTE',
+               eleve=baker.make('inscriptions.Eleve', nom='SECRET', prenom='Eleve', genre='F'))
+
+    tb = tableau_de_bord(etab, annee, aujourdhui=AUJOURDHUI, cycle_ids=[cycle_autorise.pk])
+    assert tb['effectifs']['total'] == 5 and [l['classe'].nom for l in tb['impayes']] == ['3e C', '6e A']
+
+    user = baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False)
+    user.cycles.add(cycle_autorise)
+    client.force_login(user)
+    page = client.get(reverse('core:pilotage'))
+    assert page.status_code == 200 and page.context['effectifs']['total'] == 5
+    assert 'Terminale Z' not in page.content.decode() and 'SECRET' not in page.content.decode()

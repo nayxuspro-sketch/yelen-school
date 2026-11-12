@@ -15,10 +15,15 @@ from django.views.decorators.http import require_POST
 
 from core.utils import get_etablissement_context
 from licences.decorators import requires_licence_feature
-from parametres.models import AnneeScolaire, Cycle
+from parametres.models import AnneeScolaire
 
 from ..forms import (AbsencePersonnelForm, CongePersonnelForm, ObservationAbsenceForm, SalairePersonnelForm)
 from ..models import AbsencePersonnel, CongePersonnel, MembrePersonnel, ObservationAbsence, SalairePersonnel
+from ..selectors import (
+    absences_visibles, cycles_accessibles, filtrer_par_membres_visibles,
+    membres_dans_cycle, membres_visibles,
+)
+from yelen_school.cycle_filter import get_cycle_ids
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +40,7 @@ def salaire_list(request):
     qs = SalairePersonnel.objects.select_related('personnel', 'annee_scolaire')
     if etab:
         qs = qs.filter(personnel__etablissement=etab)
+    qs = filtrer_par_membres_visibles(qs, request)
 
     mois_filtre = request.GET.get('mois', '')
     annee_filtre = request.GET.get('annee', str(date_module.today().year))
@@ -67,7 +73,8 @@ def salaire_list(request):
 def salaire_create(request, pk=None):
     """Créer un bulletin de salaire (pour un membre spécifique ou depuis la liste)."""
     etab = getattr(request.user, 'etablissement', None)
-    membre = get_object_or_404(MembrePersonnel, pk=pk) if pk else None
+    membre = get_object_or_404(membres_visibles(request), pk=pk) if pk else None
+    cycle_ids = get_cycle_ids(request)
 
     today = date_module.today()
     annee_courante = AnneeScolaire.objects.filter(
@@ -92,7 +99,7 @@ def salaire_create(request, pk=None):
             )
 
     if request.method == 'POST':
-        form = SalairePersonnelForm(request.POST, etablissement=etab)
+        form = SalairePersonnelForm(request.POST, etablissement=etab, cycles_autorises=cycle_ids)
         if form.is_valid():
             salaire = form.save(commit=False)
             salaire.created_by = request.user
@@ -104,7 +111,7 @@ def salaire_create(request, pk=None):
             )
             return redirect('personnel:salaire_detail', pk=salaire.pk)
     else:
-        form = SalairePersonnelForm(initial=initial, etablissement=etab)
+        form = SalairePersonnelForm(initial=initial, etablissement=etab, cycles_autorises=cycle_ids)
 
     return render(request, 'personnel/salaire_form.html', {
         'form': form,
@@ -118,8 +125,10 @@ def salaire_create(request, pk=None):
 def salaire_detail(request, pk):
     """Détail d'un bulletin de salaire (aperçu + PDF)."""
     salaire = get_object_or_404(
-        SalairePersonnel.objects.select_related('personnel', 'annee_scolaire', 'created_by'),
-        pk=pk
+        filtrer_par_membres_visibles(
+            SalairePersonnel.objects.select_related('personnel', 'annee_scolaire', 'created_by'), request,
+        ),
+        pk=pk,
     )
     from core.utils import get_etablissement_context
     etab_context = get_etablissement_context(salaire.personnel.etablissement, request)
@@ -148,20 +157,27 @@ def salaire_detail(request, pk):
 @requires_licence_feature('gestion_personnel')
 def salaire_update(request, pk):
     """Modifier un bulletin de salaire (seulement si BROUILLON)."""
-    salaire = get_object_or_404(SalairePersonnel, pk=pk)
+    salaire = get_object_or_404(
+        filtrer_par_membres_visibles(SalairePersonnel.objects.select_related('personnel'), request), pk=pk,
+    )
     if salaire.statut != SalairePersonnel.StatutChoices.BROUILLON:
         messages.error(request, "Seuls les bulletins en brouillon peuvent être modifiés.")
         return redirect('personnel:salaire_detail', pk=pk)
 
     etab = getattr(request.user, 'etablissement', None)
+    cycle_ids = get_cycle_ids(request)
     if request.method == 'POST':
-        form = SalairePersonnelForm(request.POST, instance=salaire, etablissement=etab)
+        form = SalairePersonnelForm(
+            request.POST, instance=salaire, etablissement=etab, cycles_autorises=cycle_ids,
+        )
         if form.is_valid():
             form.save()
             messages.success(request, "Bulletin mis à jour.")
             return redirect('personnel:salaire_detail', pk=pk)
     else:
-        form = SalairePersonnelForm(instance=salaire, etablissement=etab)
+        form = SalairePersonnelForm(
+            instance=salaire, etablissement=etab, cycles_autorises=cycle_ids,
+        )
 
     return render(request, 'personnel/salaire_form.html', {
         'form': form,
@@ -174,7 +190,9 @@ def salaire_update(request, pk):
 @require_POST
 def salaire_valider(request, pk):
     """Passer un bulletin de BROUILLON → VALIDE."""
-    salaire = get_object_or_404(SalairePersonnel, pk=pk)
+    salaire = get_object_or_404(
+        filtrer_par_membres_visibles(SalairePersonnel.objects.select_related('personnel'), request), pk=pk,
+    )
     if salaire.statut == SalairePersonnel.StatutChoices.BROUILLON:
         salaire.statut = SalairePersonnel.StatutChoices.VALIDE
         salaire.save(update_fields=['statut'])
@@ -186,7 +204,9 @@ def salaire_valider(request, pk):
 @require_POST
 def salaire_payer(request, pk):
     """Passer un bulletin de VALIDE → PAYE."""
-    salaire = get_object_or_404(SalairePersonnel, pk=pk)
+    salaire = get_object_or_404(
+        filtrer_par_membres_visibles(SalairePersonnel.objects.select_related('personnel'), request), pk=pk,
+    )
     if salaire.statut == SalairePersonnel.StatutChoices.VALIDE:
         salaire.statut = SalairePersonnel.StatutChoices.PAYE
         salaire.date_paiement = date_module.today()
@@ -200,7 +220,9 @@ def salaire_payer(request, pk):
 @require_POST
 def salaire_delete(request, pk):
     """Supprimer un bulletin (seulement BROUILLON)."""
-    salaire = get_object_or_404(SalairePersonnel, pk=pk)
+    salaire = get_object_or_404(
+        filtrer_par_membres_visibles(SalairePersonnel.objects.select_related('personnel'), request), pk=pk,
+    )
     if salaire.statut != SalairePersonnel.StatutChoices.BROUILLON:
         messages.error(request, "Seuls les bulletins en brouillon peuvent être supprimés.")
         return redirect('personnel:salaire_detail', pk=pk)
@@ -222,6 +244,7 @@ def conge_list(request):
     qs = CongePersonnel.objects.select_related('personnel', 'approuve_par')
     if etab:
         qs = qs.filter(personnel__etablissement=etab)
+    qs = filtrer_par_membres_visibles(qs, request)
 
     statut_filtre = request.GET.get('statut', '')
     type_filtre = request.GET.get('type', '')
@@ -250,14 +273,15 @@ def conge_list(request):
 def conge_create(request, pk=None):
     """Créer une demande de congé."""
     etab = getattr(request.user, 'etablissement', None)
-    membre = get_object_or_404(MembrePersonnel, pk=pk) if pk else None
+    membre = get_object_or_404(membres_visibles(request), pk=pk) if pk else None
+    cycle_ids = get_cycle_ids(request)
 
     initial = {}
     if membre:
         initial['personnel'] = membre
 
     if request.method == 'POST':
-        form = CongePersonnelForm(request.POST, etablissement=etab)
+        form = CongePersonnelForm(request.POST, etablissement=etab, cycles_autorises=cycle_ids)
         if form.is_valid():
             conge = form.save(commit=False)
             conge.created_by = request.user
@@ -271,7 +295,7 @@ def conge_create(request, pk=None):
                 return redirect('personnel:detail', pk=membre.pk)
             return redirect('personnel:conge_list')
     else:
-        form = CongePersonnelForm(initial=initial, etablissement=etab)
+        form = CongePersonnelForm(initial=initial, etablissement=etab, cycles_autorises=cycle_ids)
 
     annee = date_module.today().year
     jours_info = None
@@ -294,12 +318,17 @@ def conge_create(request, pk=None):
 @login_required
 @require_POST
 def conge_approuver(request, pk):
-    """Approuver une demande de congé."""
-    conge = get_object_or_404(CongePersonnel, pk=pk)
-    etab = getattr(request.user, 'etablissement', None)
-    directeur = MembrePersonnel.objects.filter(
-        etablissement=etab, est_directeur=True, is_active=True
-    ).first() if etab else None
+    """Approuver une demande de congé dans un cycle accessible."""
+    conge = get_object_or_404(
+        filtrer_par_membres_visibles(CongePersonnel.objects.select_related('personnel'), request), pk=pk,
+    )
+    directeurs = membres_visibles(
+        request,
+        MembrePersonnel.objects.filter(
+            etablissement=conge.personnel.etablissement, est_directeur=True, is_active=True,
+        ),
+    )
+    directeur = directeurs.first()
 
     conge.statut = CongePersonnel.StatutChoices.APPROUVE
     conge.date_approbation = date_module.today()
@@ -314,10 +343,12 @@ def conge_approuver(request, pk):
 def conge_autorisation_pdf(request, pk):
     """Génère le PDF d'autorisation de jouissance de congé."""
     conge = get_object_or_404(
-        CongePersonnel.objects.select_related(
-            'personnel', 'personnel__etablissement', 'approuve_par'
+        filtrer_par_membres_visibles(
+            CongePersonnel.objects.select_related(
+                'personnel', 'personnel__etablissement', 'approuve_par'
+            ), request,
         ),
-        pk=pk
+        pk=pk,
     )
     etab = conge.personnel.etablissement
 
@@ -385,12 +416,17 @@ def conge_autorisation_pdf(request, pk):
 @login_required
 @require_POST
 def conge_refuser(request, pk):
-    """Refuser une demande de congé."""
-    conge = get_object_or_404(CongePersonnel, pk=pk)
-    etab = getattr(request.user, 'etablissement', None)
-    directeur = MembrePersonnel.objects.filter(
-        etablissement=etab, est_directeur=True, is_active=True
-    ).first() if etab else None
+    """Refuser une demande de congé dans un cycle accessible."""
+    conge = get_object_or_404(
+        filtrer_par_membres_visibles(CongePersonnel.objects.select_related('personnel'), request), pk=pk,
+    )
+    directeurs = membres_visibles(
+        request,
+        MembrePersonnel.objects.filter(
+            etablissement=conge.personnel.etablissement, est_directeur=True, is_active=True,
+        ),
+    )
+    directeur = directeurs.first()
 
     conge.statut = CongePersonnel.StatutChoices.REFUSE
     conge.date_approbation = date_module.today()
@@ -431,7 +467,7 @@ def paie_mois(request):
     from .. import paie
     etab = getattr(request.user, 'etablissement', None)
     mois, annee = _mois_annee(request.GET)
-    contexte = paie.livre(etab, mois, annee) if etab else {'salaires': [], 'sans_bulletin': [], 'totaux': {},
+    contexte = paie.livre(etab, mois, annee, request=request) if etab else {'salaires': [], 'sans_bulletin': [], 'totaux': {},
                                                             'par_statut': {}, 'mois': mois, 'annee': annee,
                                                             'libelle_mois': paie.MOIS[mois]}
     contexte.update({'mois_choices': SalairePersonnel.MOIS_CHOICES, 'annee_courante': date_module.today().year,
@@ -451,7 +487,7 @@ def paie_preparer(request):
     if etab is None or annee_scolaire is None:
         messages.error(request, "Aucune année scolaire courante : la paie ne peut pas être préparée.")
         return redirect(_url_paie(mois, annee))
-    crees, sans_reference = paie.preparer(etab, mois, annee, annee_scolaire, request.user)
+    crees, sans_reference = paie.preparer(etab, mois, annee, annee_scolaire, request.user, request=request)
     texte = f"{len(crees)} bulletin{'s' if len(crees) > 1 else ''} de {paie.MOIS[mois]} {annee} préparé{'s' if len(crees) > 1 else ''} en brouillon."
     if sans_reference:
         texte += (f" {len(sans_reference)} agent{'s' if len(sans_reference) > 1 else ''} sans bulletin de référence à saisir "
@@ -469,7 +505,7 @@ def paie_valider(request):
     from .. import paie
     etab = getattr(request.user, 'etablissement', None)
     mois, annee = _mois_annee(request.POST)
-    nb = paie.valider_brouillons(etab, mois, annee) if etab else 0
+    nb = paie.valider_brouillons(etab, mois, annee, request=request) if etab else 0
     messages.success(request, f"{nb} bulletin{'s' if nb > 1 else ''} validé{'s' if nb > 1 else ''}." if nb else "Aucun brouillon à valider.")
     return redirect(_url_paie(mois, annee))
 
@@ -485,7 +521,10 @@ def livre_paie_pdf(request):
     if etab is None:
         messages.error(request, "Votre compte n'est pas associé à un établissement.")
         return redirect('personnel:salaire_list')
-    contexte = {**paie.livre(etab, mois, annee), **get_etablissement_context(etab, request), 'now': timezone.now()}
+    contexte = {
+        **paie.livre(etab, mois, annee, request=request),
+        **get_etablissement_context(etab, request), 'now': timezone.now(),
+    }
     html_str = render_to_string('personnel/pdf/livre_paie.html', contexte, request=request)
     pdf = HTML(string=html_str, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
@@ -507,7 +546,7 @@ def bulletins_paie_lot_pdf(request):
     etab_context = get_etablissement_context(etab, request)
     fragments = [
         render_to_string('personnel/pdf/bulletin_salaire.html', {'salaire': salaire, **etab_context}, request=request)
-        for salaire in paie.salaires_du_mois(etab, mois, annee)
+        for salaire in paie.salaires_du_mois(etab, mois, annee, request=request)
     ]
     pdf = HTML.lot(fragments, base_url=request.build_absolute_uri('/'))
     response = HttpResponse(pdf, content_type='application/pdf')
@@ -552,11 +591,15 @@ def _periode_demandee(request):
     return date_module(annee, mois, 1), date_module(annee, mois, calendar.monthrange(annee, mois)[1])
 
 
-def _bilan_absences(etab, debut, fin):
-    """Par agent ayant au moins une absence sur la période : absences, jours, jours non justifiés, jours retenus."""
+def _bilan_absences(etab, debut, fin, request=None):
+    """Bilan des absences de la période, limité aux agents et cycles autorisés."""
     lignes = {}
-    for a in (AbsencePersonnel.objects.filter(personnel__etablissement=etab, date_debut__lte=fin, date_fin__gte=debut)
-              .select_related('personnel').order_by('personnel__nom', 'personnel__prenom')):
+    absences = AbsencePersonnel.objects.filter(
+        personnel__etablissement=etab, date_debut__lte=fin, date_fin__gte=debut,
+    )
+    if request is not None:
+        absences = absences_visibles(absences, request)
+    for a in absences.select_related('personnel').order_by('personnel__nom', 'personnel__prenom'):
         ligne = lignes.setdefault(a.personnel_id, {'membre': a.personnel, 'absences': 0, 'jours': 0, 'non_justifies': 0, 'retenus': 0})
         jours = (min(a.date_fin, fin) - max(a.date_debut, debut)).days + 1
         ligne['absences'] += 1
@@ -571,18 +614,20 @@ def _bilan_absences(etab, debut, fin):
 def _absences_de_la_periode(request, etab):
     """Absences de la période demandée (et de l'agent filtré), avec le bilan par agent sur la même période."""
     debut, fin = _periode_demandee(request)
-    qs = (AbsencePersonnel.objects.filter(personnel__etablissement=etab)
-          .select_related('personnel', 'created_by', 'classe', 'matiere')
-          .order_by('-date_debut', 'personnel__nom'))
+    qs = AbsencePersonnel.objects.filter(personnel__etablissement=etab)
+    qs = absences_visibles(qs, request).select_related(
+        'personnel', 'created_by', 'classe', 'matiere'
+    ).order_by('-date_debut', 'personnel__nom')
     membre_id = request.GET.get('personnel')
-    membre = MembrePersonnel.objects.filter(pk=membre_id, etablissement=etab).first() if membre_id else None
-    if membre:
-        qs = qs.filter(personnel=membre)
+    membres = membres_visibles(request, MembrePersonnel.objects.filter(etablissement=etab))
+    membre = membres.filter(pk=membre_id).first() if membre_id else None
+    if membre_id:
+        qs = qs.filter(personnel=membre) if membre else qs.none()
     # Intervalle explicitement demandé, ou aucune période : bornes appliquées. Un agent choisi sans bornes garde
     # son historique complet (comportement de la fiche).
     if membre is None or request.GET.get('du') or request.GET.get('au'):
         qs = qs.filter(date_debut__lte=fin, date_fin__gte=debut)
-    return qs, membre, debut, fin, _bilan_absences(etab, debut, fin)
+    return qs, membre, debut, fin, _bilan_absences(etab, debut, fin, request=request)
 
 
 @login_required
@@ -639,10 +684,18 @@ def absence_create(request, pk=None):
     choisit dans une liste déroulante que le bouton « + » du formulaire permet de compléter (5.57.0).
     """
     etab = getattr(request.user, 'etablissement', None)
-    membre = get_object_or_404(MembrePersonnel, pk=pk, etablissement=etab) if pk else None
+    cycle_ids = get_cycle_ids(request)
+    membres = membres_visibles(request, MembrePersonnel.objects.filter(etablissement=etab))
+    membre = get_object_or_404(membres, pk=pk) if pk else None
     cycle = _cycle_demande(request, etab)
+    if membre and cycle is not None:
+        get_object_or_404(membres_dans_cycle(membres, cycle), pk=membre.pk)
     if request.method == 'POST':
-        form = AbsencePersonnelForm(request.POST, etablissement=etab, cycle=cycle)
+        form = AbsencePersonnelForm(
+            request.POST, etablissement=etab, cycle=cycle, cycles_autorises=cycle_ids,
+        )
+        if membre:
+            form.fields['personnel'].queryset = form.fields['personnel'].queryset.filter(pk=membre.pk)
         if form.is_valid():
             absence = form.save(commit=False)
             absence.created_by = request.user
@@ -657,23 +710,27 @@ def absence_create(request, pk=None):
         initial = {'personnel': membre, 'date': date_module.today(), 'classe': classe}
         if observation:
             initial['observation'] = observation
-        form = AbsencePersonnelForm(initial=initial, etablissement=etab, cycle=cycle,
-                                    annee_scolaire=annee)
+        form = AbsencePersonnelForm(
+            initial=initial, etablissement=etab, cycle=cycle, annee_scolaire=annee,
+            cycles_autorises=cycle_ids,
+        )
+        if membre:
+            form.fields['personnel'].queryset = form.fields['personnel'].queryset.filter(pk=membre.pk)
     return render(request, 'personnel/absence_form.html', {
         'form': form, 'membre': membre, 'titre': "Saisie des absences quotidiennes des professeurs",
         'cycle': cycle,
-        'cycles': Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom') if etab else Cycle.objects.none(),
+        'cycles': cycles_accessibles(request, etab).order_by('ordre', 'nom'),
         'annee_scolaire': (AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
                            if etab else None),
     })
 
 
 def _cycle_demande(request, etab):
-    """Cycle choisi dans le formulaire d'absence (GET ou POST), validé contre les cycles de l'établissement."""
+    """Cycle choisi dans le formulaire d'absence, validé contre les cycles autorisés du compte."""
     valeur = request.POST.get('cycle') or request.GET.get('cycle') or ''
-    if not valeur or etab is None:
+    if not valeur:
         return None
-    return Cycle.objects.filter(pk=valeur, etablissement=etab).first()
+    return cycles_accessibles(request, etab).filter(pk=valeur).first()
 
 
 @login_required
@@ -703,9 +760,13 @@ def observation_absence_create(request):
 
 @login_required
 @require_POST
+@requires_licence_feature('gestion_personnel')
 def absence_delete(request, pk):
     etab = getattr(request.user, 'etablissement', None)
-    absence = get_object_or_404(AbsencePersonnel, pk=pk, personnel__etablissement=etab)
+    absences = absences_visibles(AbsencePersonnel.objects.select_related('personnel', 'classe'), request)
+    if etab is not None:
+        absences = absences.filter(personnel__etablissement=etab)
+    absence = get_object_or_404(absences, pk=pk)
     membre_id = absence.personnel_id
     absence.delete()
     messages.success(request, "Absence supprimée.")

@@ -21,8 +21,10 @@ def ecole(client):
                     date_debut=date(2026, 10, 1), date_fin=date(2026, 12, 20))
     t2 = baker.make('pedagogie.Trimestre', annee_scolaire=annee, nom='Trimestre 2', numero=2,
                     date_debut=date(2027, 1, 5), date_fin=date(2027, 3, 31))
-    c6 = baker.make('parametres.Classe', etablissement=etab, nom='6e A', actif=True)
-    c5 = baker.make('parametres.Classe', etablissement=etab, nom='5e A', actif=True)
+    cycle6 = baker.make('parametres.Cycle', etablissement=etab, nom='Post-primaire', code='POST', ordre=1)
+    cycle5 = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', code='SEC', ordre=2)
+    c6 = baker.make('parametres.Classe', etablissement=etab, cycle=cycle6, nom='6e A', actif=True)
+    c5 = baker.make('parametres.Classe', etablissement=etab, cycle=cycle5, nom='5e A', actif=True)
     maths = baker.make('pedagogie.Matiere', code='MATH', nom='Mathématiques')
     pc = baker.make('pedagogie.Matiere', code='PC', nom='Physique-Chimie')
     prof = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='ZONGO', prenom='Ali', fonction='Professeur')
@@ -61,9 +63,10 @@ def ecole(client):
     baker.make('pedagogie.CahierTextes', enseignement=ens6, date=date(2026, 11, 3), contenu='Fractions')
     baker.make('pedagogie.CahierTextes', enseignement=ens6, date=date(2027, 1, 10), contenu='Décimaux')
     baker.make('pedagogie.CahierTextes', enseignement=libre, date=date(2026, 11, 3), contenu='Sans prof')
-    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True, must_change_password=False)
     client.force_login(user)
-    return {'etab': etab, 'annee': annee, 't1': t1, 't2': t2, 'prof': prof, 'user': user}
+    return {'etab': etab, 'annee': annee, 't1': t1, 't2': t2, 'prof': prof, 'user': user,
+            'cycle6': cycle6, 'cycle5': cycle5}
 
 
 def test_charge_evaluations_saisie_resultats_sur_l_annee(ecole):
@@ -129,3 +132,17 @@ def test_ecran_pdf_et_droits(client, ecole, mocker):
     refus = client.get(url)
     assert refus.status_code == 200 and 'réservées à la direction' in refus.content.decode()
     assert 'lignes' not in refus.context
+
+
+
+def test_statistiques_enseignants_limitees_aux_cycles_accessibles(client, ecole):
+    e = ecole
+    user = baker.make('accounts.User', etablissement=e['etab'], role='DIRECTEUR', must_change_password=False)
+    user.cycles.add(e['cycle6'])
+    client.force_login(user)
+
+    page = client.get(reverse('core:pilotage_enseignants'))
+    assert page.status_code == 200
+    assert [ligne['nom'] for ligne in page.context['lignes']] == ['ZONGO Ali']
+    assert page.context['lignes'][0]['libelle_classes'] == '6e A'
+    assert '5e A' not in page.content.decode()

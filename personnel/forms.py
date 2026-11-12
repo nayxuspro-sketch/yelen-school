@@ -1,9 +1,10 @@
 from django import forms
 from .models import (MembrePersonnel, InscriptionPersonnel, SalairePersonnel, CongePersonnel, AbsencePersonnel,
                     ObservationAbsence)
-from parametres.models import Classe, Cycle, TitreFonction, TitreHonorifiquePersonnel
+from parametres.models import AnneeScolaire, Classe, Cycle, Poste, TitreFonction, TitreHonorifiquePersonnel
 from pedagogie.models import Matiere
 from core.validators import validate_image_upload
+from .selectors import filtrer_membres_par_cycle_ids, membres_dans_cycle
 
 # Import pour le chiffrement
 try:
@@ -62,12 +63,44 @@ class MembrePersonnelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # Établissement du membre : limite la liste des classes proposées à celles de son établissement.
         etablissement = kwargs.pop('etablissement', None)
+        cycles_autorises = kwargs.pop('cycles_autorises', None)
         super().__init__(*args, **kwargs)
-        self._filtrer_classes(etablissement)
+        self._cycles_a_preserver = []
+        self._classe_a_preserver = None
+        etablissement_cible = etablissement
+        if etablissement_cible is None and not self.instance._state.adding and self.instance.etablissement_id:
+            etablissement_cible = self.instance.etablissement
+        if etablissement is not None:
+            self.fields['etablissement'].queryset = self.fields['etablissement'].queryset.filter(pk=etablissement.pk)
+            self.initial.setdefault('etablissement', etablissement)
+        elif cycles_autorises is not None:
+            etablissements_autorises = Cycle.objects.filter(pk__in=cycles_autorises).values('etablissement_id')
+            self.fields['etablissement'].queryset = self.fields['etablissement'].queryset.filter(
+                pk__in=etablissements_autorises
+            )
+            if not etablissement_cible and self.data.get('etablissement'):
+                etablissement_cible = self.fields['etablissement'].queryset.filter(
+                    pk=self.data.get('etablissement')
+                ).first()
+
+        cycles = Cycle.objects.all()
+        if etablissement_cible is not None:
+            cycles = cycles.filter(etablissement=etablissement_cible)
+        if cycles_autorises is not None:
+            cycles = cycles.filter(pk__in=cycles_autorises)
+            if not self.instance._state.adding:
+                self._cycles_a_preserver = list(
+                    self.instance.cycles.exclude(pk__in=cycles_autorises).values_list('pk', flat=True)
+                )
+                classe = self.instance.classe_affectation
+                if classe and classe.cycle_id not in cycles_autorises:
+                    self._classe_a_preserver = classe
+        self.fields['cycles'].queryset = cycles.order_by('ordre', 'nom')
+        self._filtrer_classes(etablissement, cycles_autorises)
         self.fields['qualite_affectation'].required = False      # titulaire par défaut
 
         # Pré-remplir le champ numero_cni avec la valeur déchiffrée (masquée)
-        if self.instance and self.instance.pk:
+        if not self.instance._state.adding:
             cni = self.instance.numero_cni
             if cni:
                 self.initial['numero_cni'] = mask_cni(cni)
@@ -85,12 +118,12 @@ class MembrePersonnelForm(forms.ModelForm):
             )
         _apply_yelen_classes(self.fields)
 
-    def _filtrer_classes(self, etablissement=None):
-        """Classe d'affectation : uniquement les classes de l'établissement du membre (fondé sur la valeur saisie
-        lors d'une création, sur l'instance lors d'une modification, ou sur l'établissement de l'utilisateur)."""
-        from parametres.models import Classe
-
-        etablissement = etablissement or (self.instance.etablissement if self.instance.pk else None)
+    def _filtrer_classes(self, etablissement=None, cycles_autorises=None):
+        """Classe d'affectation : uniquement celles de l'établissement et des cycles accessibles."""
+        etablissement_cible = etablissement
+        if etablissement_cible is None and not self.instance._state.adding and self.instance.etablissement_id:
+            etablissement_cible = self.instance.etablissement
+        etablissement = etablissement_cible
         if etablissement is None:
             saisie = self.data.get('etablissement') if self.data else None
             etablissement = Classe._meta.get_field('etablissement').related_model.objects.filter(pk=saisie).first() \
@@ -98,7 +131,15 @@ class MembrePersonnelForm(forms.ModelForm):
         classes = Classe.objects.all()
         if etablissement is not None:
             classes = classes.filter(etablissement=etablissement)
+        if cycles_autorises is not None:
+            classes = classes.filter(cycle_id__in=cycles_autorises)
         self.fields['classe_affectation'].queryset = classes.select_related('cycle').order_by('cycle__ordre', 'nom')
+
+    def _save_m2m(self):
+        """Un utilisateur limité ne peut modifier ses cycles visibles, ni effacer les autres affectations."""
+        super()._save_m2m()
+        if self._cycles_a_preserver and self.instance.pk:
+            self.instance.cycles.add(*self._cycles_a_preserver)
 
     def clean(self):
         """La classe d'affectation doit appartenir à l'établissement du membre."""
@@ -106,6 +147,8 @@ class MembrePersonnelForm(forms.ModelForm):
         if not donnees.get('qualite_affectation'):
             donnees['qualite_affectation'] = MembrePersonnel.QualiteAffectation.TITULAIRE
         classe, etablissement = donnees.get('classe_affectation'), donnees.get('etablissement')
+        if self._classe_a_preserver and not classe:
+            donnees['classe_affectation'] = classe = self._classe_a_preserver
         if classe and etablissement and classe.etablissement_id != etablissement.pk:
             self.add_error('classe_affectation',
                            "Cette classe n'appartient pas à l'établissement choisi pour le membre.")
@@ -136,7 +179,18 @@ class InscriptionPersonnelForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        etablissement = kwargs.pop('etablissement', None)
+        cycles_autorises = kwargs.pop('cycles_autorises', None)
         super().__init__(*args, **kwargs)
+        if etablissement is not None:
+            self.fields['annee_scolaire'].queryset = AnneeScolaire.objects.filter(etablissement=etablissement)
+            self.fields['poste'].queryset = Poste.objects.filter(etablissement=etablissement)
+        cycles = Cycle.objects.all()
+        if etablissement is not None:
+            cycles = cycles.filter(etablissement=etablissement)
+        if cycles_autorises is not None:
+            cycles = cycles.filter(pk__in=cycles_autorises)
+        self.fields['cycle'].queryset = cycles
         _apply_yelen_classes(self.fields)
 
 
@@ -159,11 +213,14 @@ class SalairePersonnelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         etablissement = kwargs.pop('etablissement', None)
+        cycles_autorises = kwargs.pop('cycles_autorises', None)
         super().__init__(*args, **kwargs)
-        if etablissement:
-            self.fields['personnel'].queryset = MembrePersonnel.objects.filter(
-                etablissement=etablissement, is_active=True
-            ).order_by('nom', 'prenom')
+        membres = MembrePersonnel.objects.filter(is_active=True)
+        if etablissement is not None:
+            membres = membres.filter(etablissement=etablissement)
+        self.fields['personnel'].queryset = filtrer_membres_par_cycle_ids(
+            membres, cycles_autorises
+        ).order_by('nom', 'prenom')
         _apply_yelen_classes(self.fields)
 
 
@@ -185,11 +242,14 @@ class CongePersonnelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         etablissement = kwargs.pop('etablissement', None)
+        cycles_autorises = kwargs.pop('cycles_autorises', None)
         super().__init__(*args, **kwargs)
-        if etablissement:
-            self.fields['personnel'].queryset = MembrePersonnel.objects.filter(
-                etablissement=etablissement, is_active=True
-            ).order_by('nom', 'prenom')
+        membres = MembrePersonnel.objects.filter(is_active=True)
+        if etablissement is not None:
+            membres = membres.filter(etablissement=etablissement)
+        self.fields['personnel'].queryset = filtrer_membres_par_cycle_ids(
+            membres, cycles_autorises
+        ).order_by('nom', 'prenom')
         _apply_yelen_classes(self.fields)
 
 
@@ -230,6 +290,7 @@ class AbsencePersonnelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         etablissement = kwargs.pop('etablissement', None)
         cycle = kwargs.pop('cycle', None)
+        cycles_autorises = kwargs.pop('cycles_autorises', None)
         self.annee_scolaire = kwargs.pop('annee_scolaire', None)
         super().__init__(*args, **kwargs)
 
@@ -239,17 +300,29 @@ class AbsencePersonnelForm(forms.ModelForm):
         if etablissement:
             membres = membres.filter(etablissement=etablissement)
             classes = classes.filter(etablissement=etablissement)
-            self.fields['cycle'].queryset = Cycle.objects.filter(etablissement=etablissement).order_by('ordre', 'nom')
             self.fields['matiere'].queryset = Matiere.objects.order_by('nom')
+        cycles = Cycle.objects.all()
+        if etablissement is not None:
+            cycles = cycles.filter(etablissement=etablissement)
+        if cycles_autorises is not None:
+            cycles = cycles.filter(pk__in=cycles_autorises)
+            membres = filtrer_membres_par_cycle_ids(membres, cycles_autorises)
+            classes = classes.filter(cycle_id__in=cycles_autorises)
+        self.fields['cycle'].queryset = cycles.order_by('ordre', 'nom')
+        self.fields['cycle'].empty_label = (
+            'Tous les cycles autorisés' if cycles_autorises is not None else 'Tous les cycles'
+        )
+
+        # Cycle choisi au rechargement du formulaire : toujours validé contre les choix autorisés.
+        if cycle is None and self.is_bound and self.data.get('cycle'):
+            cycle = self.fields['cycle'].queryset.filter(pk=self.data.get('cycle')).first()
+            if cycle is None:
+                membres = membres.none()
+                classes = classes.none()
         if cycle is not None:
-            membres = membres.filter(cycles=cycle)
+            membres = membres_dans_cycle(membres, cycle)
             classes = classes.filter(cycle=cycle)
             self.fields['cycle'].initial = cycle
-
-        # Cycle choisi au rechargement du formulaire (bouton « Afficher »), sans objet validé.
-        if cycle is None and self.data and self.data.get('cycle'):
-            membres = membres.filter(cycles_id=self.data.get('cycle'))
-            classes = classes.filter(cycle_id=self.data.get('cycle'))
         self.fields['motif'].required = False                  # déduit de l'observation si non précisé
         self.fields['personnel'].queryset = membres.distinct().order_by('nom', 'prenom')
         self.fields['classe'].queryset = classes.select_related('cycle').order_by('cycle__ordre', 'nom')

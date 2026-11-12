@@ -7,6 +7,8 @@ from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
 from django.utils import timezone
 from personnel.models import MembrePersonnel
+from personnel.selectors import cycles_accessibles, membres_visibles
+from yelen_school.cycle_filter import get_cycle_ids
 from inscriptions.models import Eleve, Inscription, StatutInscriptionChoices
 from parametres.models import AnneeScolaire, Classe
 from finances.models import Paiement
@@ -23,18 +25,21 @@ def home(request):
     if role == 'ELEVE':
         return redirect('core:portail_eleve')
 
-    annee_courante = AnneeScolaire.objects.filter(
-        etablissement=request.user.etablissement, est_courante=True
-    ).first() if request.user.etablissement else AnneeScolaire.objects.filter(est_courante=True).first()
     etab = getattr(request.user, 'etablissement', None)
+    annee_courante = AnneeScolaire.objects.filter(
+        etablissement=etab, est_courante=True
+    ).first() if etab else AnneeScolaire.objects.filter(est_courante=True).first()
+    cycles = cycles_accessibles(request, etab)
+    cycle_ids = get_cycle_ids(request)
 
-    # ── Base commune (tous les rôles) ─────────────────────────────────
-    inscriptions_annee = (
-        Inscription.objects.filter(annee_scolaire=annee_courante)
-        .exclude(statut=StatutInscriptionChoices.ABANDON).count()
-        if annee_courante else 0
-    )
-    nb_classes = Classe.objects.filter(etablissement=etab, actif=True).count() if etab else 0
+    # ── Base commune (tous les rôles), restreinte aux classes accessibles ──
+    inscriptions_qs = Inscription.objects.filter(classe__cycle__in=cycles)
+    if annee_courante:
+        inscriptions_qs = inscriptions_qs.filter(annee_scolaire=annee_courante)
+    else:
+        inscriptions_qs = inscriptions_qs.none()
+    inscriptions_annee = inscriptions_qs.exclude(statut=StatutInscriptionChoices.ABANDON).count()
+    nb_classes = Classe.objects.filter(cycle__in=cycles, actif=True).count()
 
     # ── Calendrier scolaire ─────────────────────────────────────────────
     from parametres.models import EvenementCalendrier
@@ -58,45 +63,39 @@ def home(request):
     if role in ('DIRECTEUR', 'CENSEUR', 'SUPER_ADMIN'):
         from presences.models import Presence, Justification
         from viescolaire.models import SanctionDisciplinaire
-        from parametres.models import Cycle
         from django.utils import timezone
 
-        context['total_eleves'] = Eleve.objects.filter(
-            inscriptions__annee_scolaire=annee_courante
-        ).distinct().count() if annee_courante else Eleve.objects.count()
-        context['total_personnel'] = MembrePersonnel.objects.filter(etablissement=etab).count()
+        context['total_eleves'] = inscriptions_qs.values('eleve_id').distinct().count()
+        context['total_personnel'] = membres_visibles(request).count()
 
         qs_fin = (
-            Paiement.objects.filter(inscription__annee_scolaire=annee_courante)
+            Paiement.objects.filter(inscription__annee_scolaire=annee_courante,
+                                    inscription__classe__cycle__in=cycles)
             if annee_courante else Paiement.objects.none()
         )
         context['encaissements_annee'] = qs_fin.aggregate(total=Sum('montant'))['total'] or 0
         context['nb_paiements'] = qs_fin.count()
 
         context['nb_absences_aujourd_hui'] = Presence.objects.filter(
-            statut='ABSENT', appel__date=timezone.now().date(), appel__classe__etablissement=etab,
+            statut='ABSENT', appel__date=timezone.now().date(), appel__classe__cycle__in=cycles,
         ).count()
         context['nb_justifications_attente'] = Justification.objects.filter(
-            statut='EN_ATTENTE',
-            inscription__annee_scolaire=annee_courante,
+            statut='EN_ATTENTE', inscription__annee_scolaire=annee_courante,
+            inscription__classe__cycle__in=cycles,
         ).count() if annee_courante else 0
         context['nb_sanctions_recentes'] = SanctionDisciplinaire.objects.filter(
-            inscription__annee_scolaire=annee_courante,
+            inscription__annee_scolaire=annee_courante, inscription__classe__cycle__in=cycles,
             date_sanction__gte=timezone.now().date() - timezone.timedelta(days=7),
         ).count() if annee_courante else 0
 
         nb_par_cycle = dict(
-            Inscription.objects.filter(
-                annee_scolaire=annee_courante,
-                classe__cycle__etablissement=etab,
-            ).exclude(statut=StatutInscriptionChoices.ABANDON)
-            .values('classe__cycle_id')
-            .annotate(nb=Count('id'))
+            inscriptions_qs.exclude(statut=StatutInscriptionChoices.ABANDON)
+            .values('classe__cycle_id').annotate(nb=Count('id'))
             .values_list('classe__cycle_id', 'nb')
-        ) if (annee_courante and etab) else {}
-        cycles = Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre') if etab else []
+        ) if annee_courante else {}
+        cycles_affiches = cycles.filter(actif=True).order_by('ordre')
         context['repartition_cycles'] = [
-            {'cycle': c, 'nb': nb_par_cycle.get(c.pk, 0)} for c in cycles
+            {'cycle': c, 'nb': nb_par_cycle.get(c.pk, 0)} for c in cycles_affiches
         ]
 
         # ── Widget IA décrochage ──────────────────────────────────────
@@ -104,6 +103,7 @@ def home(request):
         if annee_courante:
             risques_qs = RisqueDecrochage.objects.filter(
                 inscription__annee_scolaire=annee_courante,
+                inscription__classe__cycle__in=cycles,
             ).select_related('inscription__eleve', 'inscription__classe')
 
             context['risques_critiques'] = list(
@@ -138,6 +138,7 @@ def home(request):
         # Périmètre de l'enseignant : ses enseignements (fiche du personnel reliée par e-mail).
         mes_enseignements = Enseignement.objects.filter(
             annee_scolaire=annee_courante, est_actif=True, personnel=filtre_enseignant(request.user),
+            classe__cycle__in=cycles,
         ) if annee_courante else Enseignement.objects.none()
         context['nb_enseignements'] = mes_enseignements.count()
 
@@ -152,10 +153,10 @@ def home(request):
         context['nb_eleves_sans_notes'] = 0
         if annee_courante:
             context['nb_evaluations_annee'] = Evaluation.objects.filter(
-                trimestre__annee_scolaire=annee_courante
+                trimestre__annee_scolaire=annee_courante, enseignement__classe__cycle__in=cycles,
             ).count()
             context['nb_eleves_sans_notes'] = Resultat.objects.filter(
-                trimestre__annee_scolaire=annee_courante,
+                trimestre__annee_scolaire=annee_courante, inscription__classe__cycle__in=cycles,
                 moyenne__isnull=True,
             ).values('inscription').distinct().count()
 
@@ -167,27 +168,29 @@ def home(request):
         debut_mois = aujourd_hui.replace(day=1)
 
         paiements_aujourd_hui = (
-            Paiement.objects.filter(date_paiement=aujourd_hui)
+            Paiement.objects.filter(date_paiement=aujourd_hui, inscription__classe__cycle__in=cycles)
             .select_related('inscription__eleve')
             .order_by('-created_at')[:10]
         )
         context['paiements_aujourd_hui'] = paiements_aujourd_hui
         context['total_aujourd_hui'] = (
-            Paiement.objects.filter(date_paiement=aujourd_hui)
+            Paiement.objects.filter(date_paiement=aujourd_hui, inscription__classe__cycle__in=cycles)
             .aggregate(t=Sum('montant'))['t'] or 0
         )
         context['total_mois'] = (
             Paiement.objects.filter(
                 date_paiement__gte=debut_mois,
                 inscription__annee_scolaire=annee_courante,
+                inscription__classe__cycle__in=cycles,
             ).aggregate(t=Sum('montant'))['t'] or 0
         ) if annee_courante else 0
         context['encaissements_annee'] = (
-            Paiement.objects.filter(inscription__annee_scolaire=annee_courante)
+            Paiement.objects.filter(inscription__annee_scolaire=annee_courante,
+                                   inscription__classe__cycle__in=cycles)
             .aggregate(t=Sum('montant'))['t'] or 0
         ) if annee_courante else 0
         context['nb_redevables'] = (
-            Inscription.objects.filter(annee_scolaire=annee_courante)
+            inscriptions_qs
             .exclude(statut=StatutInscriptionChoices.ABANDON)
             .exclude(paiements__isnull=False)
             .distinct().count()
@@ -198,16 +201,18 @@ def home(request):
         from django.utils import timezone
         from documents.models import Document
 
-        context['total_eleves'] = Eleve.objects.count()
+        context['total_eleves'] = inscriptions_qs.values('eleve_id').distinct().count()
         context['inscriptions_recentes'] = (
-            Inscription.objects
-            .filter(annee_scolaire=annee_courante)
-            .select_related('eleve', 'classe')
-            .order_by('-created_at')[:8]
+            inscriptions_qs.select_related('eleve', 'classe').order_by('-created_at')[:8]
         ) if annee_courante else []
-        context['nb_docs_semaine'] = Document.objects.filter(
-            created_at__gte=timezone.now() - timezone.timedelta(days=7)
-        ).count()
+        documents_qs = Document.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=7))
+        if etab is not None:
+            documents_qs = documents_qs.filter(annee_scolaire__etablissement=etab)
+        if cycle_ids is not None:
+            documents_qs = documents_qs.filter(
+                Q(classe__cycle_id__in=cycle_ids) | Q(inscription__classe__cycle_id__in=cycle_ids)
+            ) if cycle_ids else documents_qs.none()
+        context['nb_docs_semaine'] = documents_qs.count()
 
     # ── AVS ───────────────────────────────────────────────────────────
     elif role == 'AVS':
@@ -217,19 +222,19 @@ def home(request):
 
         aujourd_hui = timezone.now().date()
         context['nb_absences_aujourd_hui'] = Presence.objects.filter(
-            statut='ABSENT', appel__date=aujourd_hui
+            statut='ABSENT', appel__date=aujourd_hui, appel__classe__cycle__in=cycles
         ).count()
         context['nb_retards_aujourd_hui'] = Presence.objects.filter(
-            statut='RETARD', appel__date=aujourd_hui
+            statut='RETARD', appel__date=aujourd_hui, appel__classe__cycle__in=cycles
         ).count()
-        context['nb_appels_aujourd_hui'] = Appel.objects.filter(date=aujourd_hui).count()
+        context['nb_appels_aujourd_hui'] = Appel.objects.filter(date=aujourd_hui, classe__cycle__in=cycles).count()
         context['nb_justifications_attente'] = Justification.objects.filter(
             statut='EN_ATTENTE',
-            inscription__annee_scolaire=annee_courante,
+            inscription__annee_scolaire=annee_courante, inscription__classe__cycle__in=cycles,
         ).count() if annee_courante else 0
         context['sanctions_recentes'] = (
             SanctionDisciplinaire.objects
-            .filter(inscription__annee_scolaire=annee_courante)
+            .filter(inscription__annee_scolaire=annee_courante, inscription__classe__cycle__in=cycles)
             .select_related('inscription__eleve', 'type_sanction')
             .order_by('-date_sanction')[:5]
         ) if annee_courante else []
@@ -252,19 +257,23 @@ def recherche_globale(request):
 
     eleves = (
         Eleve.objects.filter(
-            Q(nom__icontains=q) | Q(prenom__icontains=q) | Q(matricule__icontains=q)
-        ).only('id', 'nom', 'prenom', 'matricule')[:6]
+            Q(nom__icontains=q) | Q(prenom__icontains=q) | Q(matricule__icontains=q),
+            inscriptions__classe__cycle__in=cycles_accessibles(request, etab),
+        ).distinct().only('id', 'nom', 'prenom', 'matricule')[:6]
     )
 
-    personnel = (
-        MembrePersonnel.objects.filter(
-            Q(nom__icontains=q) | Q(prenom__icontains=q) | Q(matricule__icontains=q) | Q(fonction__icontains=q)
-        ).only('id', 'nom', 'prenom', 'matricule', 'fonction')[:6]
+    personnel = MembrePersonnel.objects.filter(
+        Q(nom__icontains=q) | Q(prenom__icontains=q) | Q(matricule__icontains=q) | Q(fonction__icontains=q)
     )
+    if etab is not None:
+        personnel = personnel.filter(etablissement=etab)
+    personnel = membres_visibles(request, personnel).only(
+        'id', 'nom', 'prenom', 'matricule', 'fonction'
+    )[:6]
 
-    classes_qs = Classe.objects.filter(nom__icontains=q).only('id', 'nom', 'niveau')
-    if etab:
-        classes_qs = classes_qs.filter(etablissement=etab)
+    classes_qs = Classe.objects.filter(
+        nom__icontains=q, cycle__in=cycles_accessibles(request, etab),
+    ).only('id', 'nom', 'niveau')
     classes = classes_qs[:6]
 
     resultats = [
@@ -287,6 +296,18 @@ def recherche_globale(request):
     return render(request, 'core/partials/recherche_resultats.html', {'resultats': resultats, 'q': q})
 
 
+def _acces_tous_cycles(request, etab):
+    """Les indicateurs historisés sont établissement-wide : vérifie que le compte couvre tous les cycles."""
+    cycle_ids = get_cycle_ids(request)
+    if cycle_ids is None:
+        return True
+    from parametres.models import Cycle
+    cycles = Cycle.objects.all()
+    if etab is not None:
+        cycles = cycles.filter(etablissement=etab)
+    return set(cycle_ids) == set(cycles.values_list('pk', flat=True))
+
+
 @login_required
 def indicateurs_evolution(request):
     """Évolution pluriannuelle : effectifs, résultats, recouvrement et assiduité, année après année."""
@@ -300,6 +321,10 @@ def indicateurs_evolution(request):
     if not etab:
         messages.error(request, "Votre compte n'est associé à aucun établissement.")
         return redirect('core:home')
+    if not _acces_tous_cycles(request, etab):
+        return render(request, 'core/access_denied.html', {
+            'message': "Ces indicateurs sont calculés à l'échelle de l'établissement et nécessitent l'accès à tous les cycles.",
+        }, status=403)
     if request.method == 'POST':
         lignes = indicateurs.mettre_a_jour(etab)
         messages.success(request, f"Indicateurs recalculés pour {len(lignes)} année(s).")
@@ -351,7 +376,7 @@ def pilotage(request):
     annee = annee or annees.filter(est_courante=True).first() or annees.first()
     context = {'annees': annees, 'annee_selectionnee': annee, 'etablissement_pilote': etab, 'etab_reseau': etab_reseau}
     if annee is not None:
-        context.update(tableau_de_bord(etab, annee))
+        context.update(tableau_de_bord(etab, annee, cycle_ids=get_cycle_ids(request)))
     return render(request, 'core/pilotage.html', context)
 
 
@@ -371,7 +396,7 @@ def pilotage_enseignants(request):
     annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first() if etab else None
     trimestres = list(Trimestre.objects.filter(annee_scolaire=annee).order_by('numero')) if annee else []
     trimestre = next((t for t in trimestres if str(t.pk) == request.GET.get('trimestre', '')), None)
-    lignes = statistiques_enseignants(etab, annee, trimestre) if annee else []
+    lignes = statistiques_enseignants(etab, annee, trimestre, cycle_ids=get_cycle_ids(request)) if annee else []
     contexte = {'annee': annee, 'trimestres': trimestres, 'trimestre': trimestre, 'lignes': lignes}
     if request.GET.get('format') != 'pdf':
         return render(request, 'core/pilotage_enseignants.html', contexte)

@@ -11,13 +11,13 @@ Gère :
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
+from django.http import FileResponse, Http404, HttpResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
 
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from parametres.models import TypeDocument, AnneeScolaire, Classe, Cycle, SignataireDocument
+from parametres.models import TypeDocument, AnneeScolaire, Classe, SignataireDocument
 from inscriptions.models import Inscription, StatutInscriptionChoices
 
 from .models import Document
@@ -25,6 +25,8 @@ from .archivage import archiver_pdf_document
 from core.utils import get_etablissement_context
 from core.statistiques import statistiques_eleves
 from core.models import RoleChoices
+from personnel.selectors import cycles_accessibles
+from yelen_school.cycle_filter import get_cycle_ids
 
 # P2 — filigrane PDF avec licence
 try:
@@ -45,6 +47,63 @@ def _can_generate_document(user):
     return False
 
 
+def _annees_accessibles(request, etab=None):
+    """Années scolaires de l'établissement et des cycles accessibles au compte."""
+    annees = AnneeScolaire.objects.all()
+    cycles = cycles_accessibles(request, etab)
+    if etab is not None:
+        return annees.filter(etablissement=etab)
+    return annees.filter(etablissement_id__in=cycles.values('etablissement_id'))
+
+
+def _classes_accessibles(request, etab=None):
+    """Classes rattachées aux cycles accessibles, dans l'établissement le cas échéant."""
+    return Classe.objects.filter(cycle__in=cycles_accessibles(request, etab))
+
+
+def _inscriptions_accessibles(request, etab=None):
+    """Inscriptions d'élèves dont la classe appartient à un cycle accessible."""
+    inscriptions = Inscription.objects.filter(classe__cycle__in=cycles_accessibles(request, etab))
+    if etab is not None:
+        inscriptions = inscriptions.filter(classe__etablissement=etab, annee_scolaire__etablissement=etab)
+    return inscriptions
+
+
+def _documents_accessibles(request, queryset):
+    """Documents dont le destinataire relève d'un cycle accessible.
+
+    Les documents sans classe ni inscription (par exemple une circulaire générale) restent visibles aux
+    comptes autorisés à tous les cycles ; ils ne sont pas attribuables à un cycle pour les autres comptes.
+    """
+    cycle_ids = get_cycle_ids(request)
+    if cycle_ids is None:
+        return queryset
+    if not cycle_ids:
+        return queryset.none()
+    return queryset.filter(
+        Q(classe__cycle_id__in=cycle_ids) | Q(inscription__classe__cycle_id__in=cycle_ids)
+    )
+
+
+def _types_documents_accessibles(request, etab=None):
+    """Types actifs du bon établissement et des cycles consultables."""
+    types = TypeDocument.objects.filter(actif=True)
+    if etab is not None:
+        types = types.filter(Q(cycle__isnull=True) | Q(cycle__etablissement=etab))
+    if get_cycle_ids(request) is not None:
+        types = types.filter(Q(cycle__isnull=True) | Q(cycle__in=cycles_accessibles(request, etab)))
+    return types
+
+
+def _identifiants_uuid(valeurs):
+    """Normalise une liste d'identifiants UUID ; None signale une valeur mal formée."""
+    import uuid
+    try:
+        return list(dict.fromkeys(str(uuid.UUID(valeur)) for valeur in valeurs))
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
 @login_required
 def document_list(request):
     """Liste des documents générés avec filtres par année, type et recherche."""
@@ -54,9 +113,7 @@ def document_list(request):
     type_id = request.GET.get('type_id', '').strip()
     page_number = request.GET.get('page', 1)
 
-    annees_qs = AnneeScolaire.objects.order_by('-libelle')
-    if etab:
-        annees_qs = annees_qs.filter(etablissement=etab)
+    annees_qs = _annees_accessibles(request, etab).order_by('-libelle')
 
     annee_selectionnee = None
     if annee_id:
@@ -64,15 +121,18 @@ def document_list(request):
     if not annee_selectionnee:
         annee_selectionnee = annees_qs.filter(est_courante=True).first()
 
-    types_qs = TypeDocument.objects.filter(actif=True).order_by('libelle')
+    types_qs = _types_documents_accessibles(request, etab).order_by('libelle')
 
     qs = Document.objects.select_related(
         'type_document', 'annee_scolaire',
         'inscription__eleve', 'classe', 'genere_par'
     ).order_by('-created_at')
 
-    if etab:
+    qs = _documents_accessibles(request, qs).filter(type_document__in=types_qs)
+    if etab is not None:
         qs = qs.filter(annee_scolaire__etablissement=etab)
+    else:
+        qs = qs.filter(annee_scolaire__in=annees_qs)
     if annee_selectionnee:
         qs = qs.filter(annee_scolaire=annee_selectionnee)
     if type_id:
@@ -102,6 +162,32 @@ def document_list(request):
 
 
 @login_required
+def document_download(request, document_id):
+    """Télécharge un PDF archivé uniquement si son destinataire appartient au périmètre autorisé."""
+    etab = getattr(request.user, 'etablissement', None)
+    documents = _documents_accessibles(
+        request,
+        Document.objects.exclude(fichier='').exclude(fichier__isnull=True),
+    ).filter(type_document__in=_types_documents_accessibles(request, etab))
+    if etab is not None:
+        documents = documents.filter(annee_scolaire__etablissement=etab)
+    else:
+        documents = documents.filter(annee_scolaire__in=_annees_accessibles(request, etab))
+
+    document = get_object_or_404(documents, pk=document_id)
+    try:
+        fichier = document.fichier.open('rb')
+    except (FileNotFoundError, OSError):
+        raise Http404
+    return FileResponse(
+        fichier,
+        as_attachment=False,
+        filename=document.fichier.name.rsplit('/', 1)[-1],
+        content_type='application/pdf',
+    )
+
+
+@login_required
 def certificat_scolarite(request, inscription_id):
     """Génère un certificat de scolarité pour un élève."""
     # Vérification du rôle - seul le personnel autorisé peut générer des documents
@@ -112,10 +198,10 @@ def certificat_scolarite(request, inscription_id):
     # Vérification que l'inscription appartient à l'établissement de l'utilisateur
     etab_user = request.user.etablissement
     inscription = get_object_or_404(
-        Inscription.objects.select_related(
+        _inscriptions_accessibles(request, etab_user).select_related(
             'eleve', 'classe__cycle', 'annee_scolaire'
         ),
-        pk=inscription_id
+        pk=inscription_id,
     )
     
     # IDOR - Vérification que l'élève appartient à l'établissement de l'utilisateur
@@ -208,14 +294,15 @@ def certificat_scolarite(request, inscription_id):
 @login_required
 def liste_classes_selector(request):
     """Sélection de la classe et de l'année scolaire pour la liste alphabétique."""
-    annees = AnneeScolaire.objects.order_by('-libelle')
+    etab = getattr(request.user, 'etablissement', None)
+    annees = _annees_accessibles(request, etab).order_by('-libelle')
     annee_courante = annees.filter(est_courante=True).first()
 
     # Année sélectionnée via le formulaire (GET ?annee_id=)
     annee_id = request.GET.get('annee_id')
     annee_selectionnee = None
     if annee_id:
-        annee_selectionnee = AnneeScolaire.objects.filter(pk=annee_id).first()
+        annee_selectionnee = annees.filter(pk=annee_id).first()
     if not annee_selectionnee:
         annee_selectionnee = annee_courante
 
@@ -227,7 +314,7 @@ def liste_classes_selector(request):
         .distinct()
     )
     classes = (
-        Classe.objects
+        _classes_accessibles(request, etab)
         .filter(pk__in=classes_ids)
         .select_related('cycle')
         .order_by('cycle__ordre', 'nom')
@@ -250,18 +337,17 @@ def liste_classes_selector(request):
 def liste_classe_pdf(request, classe_id):
     """Liste alphabétique d'une classe — prévisualisation HTML et export PDF."""
     etab = getattr(request.user, 'etablissement', None)
-    classe = get_object_or_404(Classe.objects.select_related('cycle'), pk=classe_id)
-    
-    if etab and classe.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé. Cette classe n'appartient pas à votre établissement.")
-        return redirect('documents:document_list')
+    classe = get_object_or_404(
+        _classes_accessibles(request, etab).select_related('cycle'), pk=classe_id,
+    )
+    annees = _annees_accessibles(request, classe.etablissement)
 
-    # Année : priorité au paramètre GET, sinon année courante
+    # Année : priorité au paramètre GET, sinon année courante de la classe.
     annee_id = request.GET.get('annee_id')
     if annee_id:
-        annee = get_object_or_404(AnneeScolaire, pk=annee_id)
+        annee = get_object_or_404(annees, pk=annee_id)
     else:
-        annee = AnneeScolaire.objects.filter(est_courante=True).first()
+        annee = annees.filter(est_courante=True).first()
 
     inscriptions = (
         Inscription.objects
@@ -309,8 +395,8 @@ def liste_classe_pdf(request, classe_id):
         signataire_membre = sig.get_membre_personnel()
         signataire_fonction = sig.fonction or sig.titre or 'Le Directeur'
 
-    etab = annee.etablissement if annee else None
-    etab_context = get_etablissement_context(etab, request) if etab else {}
+    etab = classe.etablissement
+    etab_context = get_etablissement_context(etab, request)
 
     context = {
         'classe': classe,
@@ -364,32 +450,23 @@ def liste_personnel_selector(request):
     """Sélection du cycle pour la liste du personnel avec année scolaire."""
     from personnel.models import InscriptionPersonnel
     from parametres.models import AnneeScolaire
+    from personnel.selectors import cycles_accessibles
 
     etab = getattr(request.user, 'etablissement', None)
 
-    # Gestion de l'année scolaire
+    cycles = cycles_accessibles(request, etab).order_by('ordre', 'nom')
+    annees = AnneeScolaire.objects.filter(etablissement=etab) if etab else AnneeScolaire.objects.filter(
+        etablissement__in=cycles.values('etablissement_id')
+    )
+    annees = annees.order_by('-date_debut')
     annee_id = request.GET.get('annee_id')
-    if annee_id:
-        annee = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
-    else:
-        annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
-
-    # Annees scolaires disponibles pour le select
-    annees = []
-    if etab:
-        annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
-
-    cycles = (
-        Cycle.objects
-        .filter(etablissement=etab)
-        .order_by('ordre', 'nom')
-    ) if etab else Cycle.objects.none()
+    annee = get_object_or_404(annees, pk=annee_id) if annee_id else annees.filter(est_courante=True).first()
 
     cycles_ids = []
     if annee:
         cycles_ids = list(
             InscriptionPersonnel.objects
-            .filter(annee_scolaire=annee, est_actif=True)
+            .filter(annee_scolaire=annee, est_actif=True, cycle__in=cycles)
             .values_list('cycle__id', flat=True)
             .distinct()
         )
@@ -407,19 +484,17 @@ def liste_personnel_selector(request):
 def liste_personnel_pdf(request, cycle_id):
     """Liste alphabétique du personnel d'un cycle et année scolaire — prévisualisation HTML et export PDF."""
     from personnel.models import InscriptionPersonnel
+    from personnel.selectors import cycles_accessibles
 
     etab = getattr(request.user, 'etablissement', None)
-    cycle = get_object_or_404(Cycle, pk=cycle_id)
-    
-    if etab and cycle.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé. Ce cycle n'appartient pas à votre établissement.")
-        return redirect('documents:document_list')
+    cycle = get_object_or_404(cycles_accessibles(request, etab), pk=cycle_id)
+    annees = AnneeScolaire.objects.filter(etablissement=cycle.etablissement)
 
     annee_id = request.GET.get('annee_id')
     if annee_id:
-        annee = get_object_or_404(AnneeScolaire, pk=annee_id)
+        annee = get_object_or_404(annees, pk=annee_id)
     else:
-        annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
+        annee = annees.filter(est_courante=True).first()
 
     inscriptions = (
         InscriptionPersonnel.objects
@@ -513,8 +588,8 @@ def liste_personnel_pdf(request, cycle_id):
         signataire_membre = sig.get_membre_personnel()
         signataire_fonction = sig.fonction or sig.titre or 'Le Directeur'
 
-    etab = annee.etablissement if annee else None
-    etab_context = get_etablissement_context(etab, request) if etab else {}
+    etab = cycle.etablissement
+    etab_context = get_etablissement_context(etab, request)
 
     context = {
         'cycle': cycle,
@@ -562,135 +637,141 @@ TYPES_CONVOCATION = [
 
 @login_required
 def convocation_form(request):
-    """
-    Formulaire de convocation : sélection classe + élève(s), type,
-    date / heure / lieu / objet / corps.
-    """
+    """Formulaire de convocation : classe et élèves limités aux cycles accessibles."""
     etab = getattr(request.user, 'etablissement', None)
+    annee_courante = _annees_accessibles(request, etab).filter(est_courante=True).order_by('-date_debut').first()
+    classes = _classes_accessibles(request, etab).filter(actif=True).select_related('cycle').order_by(
+        'cycle__ordre', 'nom'
+    )
 
-    annees = AnneeScolaire.objects.filter(est_courante=True)
-    if etab:
-        annees = annees.filter(etablissement=etab)
-    annee_courante = annees.first()
+    classe_brute = request.GET.get('classe') or request.POST.get('classe')
+    classe_id = ''
+    classe = None
+    if classe_brute:
+        classe_uuid = _identifiants_uuid([classe_brute])
+        if classe_uuid:
+            classe = classes.filter(pk=classe_uuid[0]).first()
+            if classe:
+                classe_id = str(classe.pk)
 
-    classes = (
-        Classe.objects.filter(etablissement=etab, actif=True)
-        .select_related('cycle').order_by('cycle__ordre', 'nom')
-    ) if etab else []
-
-    classe_id    = request.GET.get('classe') or request.POST.get('classe')
-    inscriptions = []
-    if classe_id and annee_courante:
+    inscriptions = Inscription.objects.none()
+    if classe and annee_courante:
         inscriptions = (
-            Inscription.objects
-            .filter(classe_id=classe_id, annee_scolaire=annee_courante)
+            _inscriptions_accessibles(request, etab)
+            .filter(classe=classe, annee_scolaire=annee_courante)
             .exclude(statut=StatutInscriptionChoices.ABANDON)
             .select_related('eleve')
             .order_by('eleve__nom')
         )
 
     if request.method == 'POST':
-        inscription_ids = request.POST.getlist('inscriptions')
-        type_conv  = request.POST.get('type_convocation', 'AUTRE')
-        date_conv  = request.POST.get('date_convocation', '')
-        heure_conv = request.POST.get('heure_convocation', '')
-        lieu_conv  = request.POST.get('lieu', '').strip()
-        objet_conv = request.POST.get('objet', '').strip()
-        corps_conv = request.POST.get('corps', '').strip()
-        format_out = request.POST.get('format', 'apercu')
-
-        if not inscription_ids:
+        inscription_ids_bruts = request.POST.getlist('inscriptions')
+        inscription_ids = _identifiants_uuid(inscription_ids_bruts) if inscription_ids_bruts else []
+        if not inscription_ids_bruts:
             messages.error(request, "Sélectionnez au moins un élève.")
+        elif inscription_ids is None:
+            messages.error(request, "La sélection contient un identifiant invalide.")
+        elif classe is None or annee_courante is None:
+            messages.error(request, "La classe ou l'année sélectionnée n'est pas accessible.")
         else:
-            inscriptions_sel = (
-                Inscription.objects
-                .filter(pk__in=inscription_ids)
+            inscriptions_sel = list(
+                inscriptions.filter(pk__in=inscription_ids)
                 .select_related('eleve', 'classe', 'annee_scolaire')
             )
-            type_label = dict(TYPES_CONVOCATION).get(type_conv, type_conv)
-            type_doc, _ = TypeDocument.objects.get_or_create(
-                code='CONVOCATION',
-                defaults={'libelle': 'Convocation', 'categorie': 'ADMINISTRATIF', 'actif': True}
-            )
+            if len(inscriptions_sel) != len(inscription_ids):
+                messages.error(request, "La sélection contient un élève hors de la classe ou des cycles accessibles.")
+            else:
+                type_conv  = request.POST.get('type_convocation', 'AUTRE')
+                date_conv  = request.POST.get('date_convocation', '')
+                heure_conv = request.POST.get('heure_convocation', '')
+                lieu_conv  = request.POST.get('lieu', '').strip()
+                objet_conv = request.POST.get('objet', '').strip()
+                corps_conv = request.POST.get('corps', '').strip()
+                format_out = request.POST.get('format', 'apercu')
+                type_label = dict(TYPES_CONVOCATION).get(type_conv, type_conv)
+                type_doc, _ = TypeDocument.objects.get_or_create(
+                    code='CONVOCATION',
+                    defaults={'libelle': 'Convocation', 'categorie': 'ADMINISTRATIF', 'actif': True}
+                )
 
-            if format_out == 'pdf':
-                from core.pdf import HTML
-                from django.template.loader import render_to_string
+                if format_out == 'pdf':
+                    from core.pdf import HTML
+                    from django.template.loader import render_to_string
 
-                base_url = request.build_absolute_uri('/')
-                pages = []
-                docs_created = []
+                    base_url = request.build_absolute_uri('/')
+                    pages = []
+                    docs_created = []
 
-                for inscr in inscriptions_sel:
-                    etab_i   = inscr.annee_scolaire.etablissement
-                    etab_ctx = get_etablissement_context(etab_i, request)
-                    sig = SignataireDocument.objects.get_signataire(
-                        cycle=inscr.classe.cycle,
-                        type_document=type_doc,
-                        annee_scolaire=inscr.annee_scolaire,
-                    )
-                    sig_membre = sig.get_membre_personnel() if sig else None
-                    doc = Document.objects.create(
-                        type_document=type_doc,
-                        annee_scolaire=inscr.annee_scolaire,
-                        inscription=inscr,
-                        genere_par=request.user,
-                        signataire_nom=f"{sig_membre.nom} {sig_membre.prenom}" if sig_membre else '',
-                    )
-                    docs_created.append(doc)
-                    conv_ctx = {
-                        'inscription': inscr,
-                        'eleve': inscr.eleve,
-                        'classe': inscr.classe,
-                        'annee_scolaire': inscr.annee_scolaire,
-                        'type_label': type_label,
-                        'date_conv': date_conv,
-                        'heure_conv': heure_conv,
-                        'lieu': lieu_conv,
-                        'objet': objet_conv,
-                        'corps': corps_conv,
-                        'signataire': sig,
-                        'sig_membre': sig_membre,
-                        'identite': etab_ctx.get('identite'),
-                        'logo_url': etab_ctx.get('logo_url'),
-                        'etablissement': etab_i,
-                        'document': doc,
-                    }
-                    conv_ctx = inject_licence_filigrane_context(conv_ctx, request.user, etab_i)
-                    pages.append(render_to_string(
-                        'documents/pdf/convocation.html',
-                        conv_ctx,
-                        request=request,
-                    ))
+                    for inscr in inscriptions_sel:
+                        etab_i   = inscr.annee_scolaire.etablissement
+                        etab_ctx = get_etablissement_context(etab_i, request)
+                        sig = SignataireDocument.objects.get_signataire(
+                            cycle=inscr.classe.cycle,
+                            type_document=type_doc,
+                            annee_scolaire=inscr.annee_scolaire,
+                        )
+                        sig_membre = sig.get_membre_personnel() if sig else None
+                        doc = Document.objects.create(
+                            type_document=type_doc,
+                            annee_scolaire=inscr.annee_scolaire,
+                            inscription=inscr,
+                            genere_par=request.user,
+                            signataire_nom=f"{sig_membre.nom} {sig_membre.prenom}" if sig_membre else '',
+                        )
+                        docs_created.append(doc)
+                        conv_ctx = {
+                            'inscription': inscr,
+                            'eleve': inscr.eleve,
+                            'classe': inscr.classe,
+                            'annee_scolaire': inscr.annee_scolaire,
+                            'type_label': type_label,
+                            'date_conv': date_conv,
+                            'heure_conv': heure_conv,
+                            'lieu': lieu_conv,
+                            'objet': objet_conv,
+                            'corps': corps_conv,
+                            'signataire': sig,
+                            'sig_membre': sig_membre,
+                            'identite': etab_ctx.get('identite'),
+                            'logo_url': etab_ctx.get('logo_url'),
+                            'etablissement': etab_i,
+                            'document': doc,
+                        }
+                        conv_ctx = inject_licence_filigrane_context(conv_ctx, request.user, etab_i)
+                        pages.append(render_to_string(
+                            'documents/pdf/convocation.html',
+                            conv_ctx,
+                            request=request,
+                        ))
 
-                pdf = HTML(string=''.join(pages), base_url=base_url).write_pdf()
+                    pdf = HTML(string=''.join(pages), base_url=base_url).write_pdf()
 
-                # Archive le PDF sur chaque document créé (et prévient la famille dans son portail)
-                for doc in docs_created:
-                    archiver_pdf_document(doc, 'convocation', pdf)
+                    # Archive le PDF sur chaque document créé (et prévient la famille dans son portail)
+                    for doc in docs_created:
+                        archiver_pdf_document(doc, 'convocation', pdf)
 
-                response = HttpResponse(pdf, content_type='application/pdf')
-                response['Content-Disposition'] = 'inline; filename="convocations.pdf"'
-                return response
+                    response = HttpResponse(pdf, content_type='application/pdf')
+                    response['Content-Disposition'] = 'inline; filename="convocations.pdf"'
+                    return response
 
-            return render(request, 'documents/convocation_preview.html', {
-                'inscriptions_sel': inscriptions_sel,
-                'type_label': type_label,
-                'type_conv': type_conv,
-                'date_conv': date_conv,
-                'heure_conv': heure_conv,
-                'lieu': lieu_conv,
-                'objet': objet_conv,
-                'corps': corps_conv,
-                'classes': classes,
-                'types_convocation': TYPES_CONVOCATION,
-                'annee_courante': annee_courante,
-            })
+                return render(request, 'documents/convocation_preview.html', {
+                    'inscriptions_sel': inscriptions_sel,
+                    'type_label': type_label,
+                    'type_conv': type_conv,
+                    'date_conv': date_conv,
+                    'heure_conv': heure_conv,
+                    'lieu': lieu_conv,
+                    'objet': objet_conv,
+                    'corps': corps_conv,
+                    'classes': classes,
+                    'types_convocation': TYPES_CONVOCATION,
+                    'annee_courante': annee_courante,
+                })
 
     return render(request, 'documents/convocation_form.html', {
         'classes': classes,
         'inscriptions': inscriptions,
-        'classe_id': classe_id or '',
+        'classe_id': classe_id,
         'types_convocation': TYPES_CONVOCATION,
         'annee_courante': annee_courante,
     })
@@ -700,115 +781,124 @@ def convocation_form(request):
 
 @login_required
 def circulaire_form(request):
-    """
-    Formulaire de circulaire : titre, objet, corps, destinataires (classes), date.
-    """
+    """Formulaire de circulaire limité aux classes des cycles accessibles."""
     etab = getattr(request.user, 'etablissement', None)
-
-    annees = AnneeScolaire.objects.filter(est_courante=True)
-    if etab:
-        annees = annees.filter(etablissement=etab)
-    annee_courante = annees.first()
-
-    classes = (
-        Classe.objects.filter(etablissement=etab, actif=True)
-        .select_related('cycle').order_by('cycle__ordre', 'nom')
-    ) if etab else []
+    annee_courante = _annees_accessibles(request, etab).filter(est_courante=True).order_by('-date_debut').first()
+    classes = _classes_accessibles(request, etab).filter(actif=True).select_related('cycle').order_by(
+        'cycle__ordre', 'nom'
+    )
 
     if request.method == 'POST':
         titre      = request.POST.get('titre', '').strip()
         objet      = request.POST.get('objet', '').strip()
         corps      = request.POST.get('corps', '').strip()
         date_circ  = request.POST.get('date_circulaire', '')
-        classe_ids = request.POST.getlist('classes')
+        classe_ids_bruts = request.POST.getlist('classes')
+        classe_ids = _identifiants_uuid(classe_ids_bruts)
         format_out = request.POST.get('format', 'apercu')
 
         if not titre:
             messages.error(request, "Le titre est obligatoire.")
-        else:
-            classes_sel = (
-                Classe.objects.filter(pk__in=classe_ids).select_related('cycle')
-                if classe_ids else []
-            )
-            type_doc, _ = TypeDocument.objects.get_or_create(
-                code='CIRCULAIRE',
-                defaults={'libelle': 'Circulaire', 'categorie': 'ADMINISTRATIF', 'actif': True}
-            )
-            etab_ctx = get_etablissement_context(etab, request) if etab else {}
-            cycles_dest = {c.cycle for c in classes_sel if c.cycle_id}
-            sig = SignataireDocument.objects.get_signataire(
-                cycle=cycles_dest.pop() if len(cycles_dest) == 1 else None,
-                type_document=type_doc,
-                annee_scolaire=annee_courante,
-            )
-            sig_membre = sig.get_membre_personnel() if sig else None
+            return render(request, 'documents/circulaire_form.html', {
+                'classes': classes, 'annee_courante': annee_courante,
+            })
+        if classe_ids is None:
+            messages.error(request, "La sélection contient un identifiant de classe invalide.")
+            return render(request, 'documents/circulaire_form.html', {
+                'classes': classes, 'annee_courante': annee_courante,
+            })
+        if get_cycle_ids(request) is not None and not classe_ids:
+            messages.error(request, "Sélectionnez au moins une classe accessible ; une circulaire générale est réservée aux comptes autorisés à tous les cycles.")
+            return render(request, 'documents/circulaire_form.html', {
+                'classes': classes, 'annee_courante': annee_courante,
+            })
 
-            if format_out == 'pdf':
-                from core.pdf import HTML
-                from django.template.loader import render_to_string
+        classes_sel = list(classes.filter(pk__in=classe_ids)) if classe_ids else []
+        if len(classes_sel) != len(classe_ids):
+            messages.error(request, "La sélection contient une classe hors de votre établissement ou des cycles accessibles.")
+            return render(request, 'documents/circulaire_form.html', {
+                'classes': classes, 'annee_courante': annee_courante,
+            })
 
-                from django.core.files.base import ContentFile
+        type_doc, _ = TypeDocument.objects.get_or_create(
+            code='CIRCULAIRE',
+            defaults={'libelle': 'Circulaire', 'categorie': 'ADMINISTRATIF', 'actif': True}
+        )
+        etab_ctx = get_etablissement_context(etab, request) if etab else {}
+        cycles_dest = {c.cycle for c in classes_sel if c.cycle_id}
+        sig = SignataireDocument.objects.get_signataire(
+            cycle=cycles_dest.pop() if len(cycles_dest) == 1 else None,
+            type_document=type_doc,
+            annee_scolaire=annee_courante,
+        )
+        sig_membre = sig.get_membre_personnel() if sig else None
 
-                from datetime import date as _date
-                import uuid as _uuid
-                doc = None
-                if annee_courante:
-                    doc = Document.objects.create(
-                        type_document=type_doc,
-                        annee_scolaire=annee_courante,
-                        genere_par=request.user,
-                        signataire_nom=f"{sig_membre.nom} {sig_membre.prenom}" if sig_membre else '',
-                        observations=titre,
-                    )
-                # Numéro toujours visible même sans annee_courante
-                ref_circ = (
-                    doc.numero_document if (doc and doc.numero_document)
-                    else f"CIRC-{_date.today().year}-{_uuid.uuid4().hex[:6].upper()}"
+        if format_out == 'pdf':
+            from core.pdf import HTML
+            from django.template.loader import render_to_string
+
+            from django.core.files.base import ContentFile
+
+            from datetime import date as _date
+            import uuid as _uuid
+            doc = None
+            if annee_courante:
+                doc = Document.objects.create(
+                    type_document=type_doc,
+                    annee_scolaire=annee_courante,
+                    genere_par=request.user,
+                    signataire_nom=f"{sig_membre.nom} {sig_membre.prenom}" if sig_membre else '',
+                    observations=titre,
                 )
-                circ_ctx = {
-                    'titre': titre,
-                    'objet': objet,
-                    'corps': corps,
-                    'date_circulaire': date_circ,
-                    'classes_sel': classes_sel,
-                    'signataire': sig,
-                    'sig_membre': sig_membre,
-                    'identite': etab_ctx.get('identite'),
-                    'logo_url': etab_ctx.get('logo_url'),
-                    'etablissement': etab,
-                    'annee_scolaire': annee_courante,
-                    'document': doc,
-                    'ref_circ': ref_circ,
-                }
-                circ_ctx = inject_licence_filigrane_context(circ_ctx, request.user, etab)
-                html_string = render_to_string(
-                    'documents/pdf/circulaire.html',
-                    circ_ctx,
-                    request=request,
-                )
-                pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
-                nom = titre.replace(' ', '_')[:40]
-                if doc:
-                    doc.fichier.save(
-                        f"circulaire_{nom}_{doc.numero_document}.pdf",
-                        ContentFile(pdf), save=True
-                    )
-                response = HttpResponse(pdf, content_type='application/pdf')
-                response['Content-Disposition'] = f'inline; filename="circulaire_{nom}.pdf"'
-                return response
-
-            return render(request, 'documents/circulaire_preview.html', {
+            # Numéro toujours visible même sans annee_courante
+            ref_circ = (
+                doc.numero_document if (doc and doc.numero_document)
+                else f"CIRC-{_date.today().year}-{_uuid.uuid4().hex[:6].upper()}"
+            )
+            circ_ctx = {
                 'titre': titre,
                 'objet': objet,
                 'corps': corps,
                 'date_circulaire': date_circ,
                 'classes_sel': classes_sel,
-                'classes': classes,
-                'annee_courante': annee_courante,
                 'signataire': sig,
                 'sig_membre': sig_membre,
                 'identite': etab_ctx.get('identite'),
-            })
+                'logo_url': etab_ctx.get('logo_url'),
+                'etablissement': etab,
+                'annee_scolaire': annee_courante,
+                'document': doc,
+                'ref_circ': ref_circ,
+            }
+            circ_ctx = inject_licence_filigrane_context(circ_ctx, request.user, etab)
+            html_string = render_to_string(
+                'documents/pdf/circulaire.html',
+                circ_ctx,
+                request=request,
+            )
+            pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+            nom = titre.replace(' ', '_')[:40]
+            if doc:
+                doc.fichier.save(
+                    f"circulaire_{nom}_{doc.numero_document}.pdf",
+                    ContentFile(pdf), save=True
+                )
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="circulaire_{nom}.pdf"'
+            return response
+
+        return render(request, 'documents/circulaire_preview.html', {
+            'titre': titre,
+            'objet': objet,
+            'corps': corps,
+            'date_circulaire': date_circ,
+            'classes_sel': classes_sel,
+            'classes': classes,
+            'annee_courante': annee_courante,
+            'signataire': sig,
+            'sig_membre': sig_membre,
+            'identite': etab_ctx.get('identite'),
+        })
 
     return render(request, 'documents/circulaire_form.html', {
         'classes': classes,
@@ -831,7 +921,7 @@ def attestation_non_redevabilite(request, inscription_id):
     # Vérification que l'inscription appartient à l'établissement de l'utilisateur
     etab_user = request.user.etablissement
     inscription = get_object_or_404(
-        Inscription.objects.select_related('eleve', 'classe__cycle', 'annee_scolaire'),
+        _inscriptions_accessibles(request, etab_user).select_related('eleve', 'classe__cycle', 'annee_scolaire'),
         pk=inscription_id,
     )
     
@@ -924,7 +1014,7 @@ def statistiques_officielles(request):
     from .statistiques_officielles import statistiques_fin_annee, statistiques_rentree
 
     etab = request.user.etablissement
-    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut') if etab else AnneeScolaire.objects.none()
+    annees = _annees_accessibles(request, etab).order_by('-date_debut')
     annee = None
     if request.GET.get('annee_id'):
         try:
@@ -935,7 +1025,9 @@ def statistiques_officielles(request):
     if annee is None:
         return render(request, 'documents/statistiques_officielles.html', {'annees': annees})
 
-    rentree, fin_annee = statistiques_rentree(annee), statistiques_fin_annee(annee)
+    cycle_ids = get_cycle_ids(request)
+    rentree = statistiques_rentree(annee, cycle_ids=cycle_ids)
+    fin_annee = statistiques_fin_annee(annee, cycle_ids=cycle_ids)
     if request.GET.get('format') != 'xlsx':
         return render(request, 'documents/statistiques_officielles.html', {
             'annees': annees, 'annee_selectionnee': annee, 'rentree': rentree, 'fin_annee': fin_annee,

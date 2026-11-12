@@ -96,7 +96,7 @@
     <div class="card">
       <div class="card-header"><span class="card-title">Affectations (Cycles)</span></div>
       <div class="p-4 d-flex flex-wrap gap-2">
-        {% for cycle in membre.cycles.all %}
+        {% for cycle in cycles_membre %}
           <span class="badge badge-info">{{ cycle.nom }}</span>
         {% empty %}
           <span class="text-muted">Aucun cycle assigné.</span>
@@ -104,9 +104,9 @@
       </div>
       <div class="p-4" style="border-top:1px solid var(--color-border);">
         <div class="text-muted text-xs text-uppercase">Classe d'affectation</div>
-        {% if membre.classe_affectation %}
-          <p class="mt-2"><strong>{{ membre.classe_affectation.nom }}</strong>
-            <span class="text-muted">({{ membre.classe_affectation.cycle.nom }})</span>
+        {% if classe_affectation %}
+          <p class="mt-2"><strong>{{ classe_affectation.nom }}</strong>
+            <span class="text-muted">({{ classe_affectation.cycle.nom }})</span>
             <span class="badge badge-info">{{ membre.get_qualite_affectation_display }}</span></p>
           <p class="text-muted" style="font-size:.8rem; margin:0;">
             {% if membre.qualite_affectation == 'SUPPLEANT' %}
@@ -128,7 +128,7 @@
     <div class="table-wrapper mb-4">
       <div class="card-header">
         <span class="card-title">Inscriptions Annuelles</span>
-        <span class="text-muted text-xs">Historique complet</span>
+        <span class="text-muted text-xs">{% if cycles_restreints %}Historique des cycles autorisés{% else %}Historique complet{% endif %}</span>
       </div>
       <div class="table-scroll">
         <table class="data-table">
@@ -282,7 +282,6 @@
       </a>
     </div>
 
-    {% with salaires_recents=membre.salaires.all|slice:":4" %}
     {% if salaires_recents %}
     <div class="table-wrapper mt-4">
       <div class="card-header">
@@ -319,9 +318,7 @@
       </div>
     </div>
     {% endif %}
-    {% endwith %}
 
-    {% with absences_recentes=membre.absences.all|slice:":4" %}
     {% if absences_recentes %}
     <div class="table-wrapper mt-4">
       <div class="card-header">
@@ -349,9 +346,7 @@
       </div>
     </div>
     {% endif %}
-    {% endwith %}
 
-    {% with conges_recents=membre.conges.all|slice:":4" %}
     {% if conges_recents %}
     <div class="table-wrapper mt-4">
       <div class="card-header">
@@ -407,7 +402,6 @@
       </div>
     </div>
     {% endif %}
-    {% endwith %}
 
   </div>
 

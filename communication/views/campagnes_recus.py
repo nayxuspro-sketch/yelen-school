@@ -1,11 +1,13 @@
 """Campagnes SMS ciblées, journal des SMS reçus et catalogue de commandes SMS."""
 import logging
 import re
+import uuid
 from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.http import Http404
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -13,7 +15,9 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from inscriptions.models import Eleve
-from parametres.models import AnneeScolaire
+from parametres.models import AnneeScolaire, Classe
+from personnel.selectors import cycles_accessibles
+from yelen_school.cycle_filter import get_cycle_ids
 
 from .commun import _get_etab, _sigle
 
@@ -33,6 +37,52 @@ def _refus_campagne(request):
     }, status=403)
 
 
+def _uuid_liste(valeurs):
+    """Normalise des identifiants UUID postés ; None signale une valeur mal formée."""
+    try:
+        return list(dict.fromkeys(str(uuid.UUID(valeur)) for valeur in valeurs))
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
+def _classes_campagne(request, etab):
+    """Classes actives de l'établissement et des cycles accessibles."""
+    return Classe.objects.filter(
+        etablissement=etab, actif=True, cycle__in=cycles_accessibles(request, etab),
+    ).order_by('cycle__ordre', 'nom')
+
+
+def _campagnes_visibles(request, queryset):
+    """Historique limité aux cycles accessibles ; les anciennes campagnes non scindables restent masquées."""
+    cycle_ids = get_cycle_ids(request)
+    if cycle_ids is None:
+        return queryset
+
+    cycles_autorises = {str(pk) for pk in cycle_ids}
+    classes_autorisees = set(map(str, _classes_campagne(request, _get_etab(request)).values_list('pk', flat=True)))
+    visibles = []
+    for campagne in queryset:
+        criteres = campagne.criteres if isinstance(campagne.criteres, dict) else {}
+        portee = criteres.get('cycles_autorises')
+        if isinstance(portee, list):
+            if portee and {str(pk) for pk in portee}.issubset(cycles_autorises):
+                visibles.append(campagne)
+            continue
+        if campagne.cible == 'PARENTS_CLASSES':
+            ids_classes = criteres.get('classes')
+            if isinstance(ids_classes, list) and ids_classes and {str(pk) for pk in ids_classes}.issubset(classes_autorisees):
+                visibles.append(campagne)
+    return visibles
+
+
+def _campagne_accessible(request, pk):
+    from core.models import CampagneSms
+    campagne = get_object_or_404(CampagneSms, pk=pk, etablissement=_get_etab(request))
+    if not _campagnes_visibles(request, [campagne]):
+        raise Http404
+    return campagne
+
+
 @login_required
 def campagne_list(request):
     """Historique des campagnes SMS de l'établissement, avec envoyés / échecs / en attente."""
@@ -40,7 +90,8 @@ def campagne_list(request):
     refus = _refus_campagne(request)
     if refus:
         return refus
-    campagnes = list(CampagneSms.objects.filter(etablissement=_get_etab(request)).select_related('envoyee_par')[:50])
+    queryset = CampagneSms.objects.filter(etablissement=_get_etab(request)).select_related('envoyee_par')
+    campagnes = _campagnes_visibles(request, queryset)[:50]
     for c in campagnes:
         c.suivi = c.bilan()
     return render(request, 'communication/campagne_list.html', {'campagnes': campagnes})
@@ -61,7 +112,6 @@ def campagne_nouvelle(request):
     rendus, puis « Envoyer » met les SMS en file."""
     from core.models import CampagneSms
     from core.sms import sms_actifs
-    from parametres.models import Classe
     from .. import campagnes
 
     refus = _refus_campagne(request)
@@ -71,7 +121,7 @@ def campagne_nouvelle(request):
     annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first()
     contexte = {
         'cibles': CampagneSms.Cible.choices, 'variables': campagnes.VARIABLES, 'longueur_sms': campagnes.LONGUEUR_SMS,
-        'classes': Classe.objects.filter(etablissement=etab, actif=True).order_by('cycle__ordre', 'nom'),
+        'classes': _classes_campagne(request, etab),
         'annee': annee, 'sms_actifs': sms_actifs(), 'today': timezone.localdate(),
         'titre': '', 'message': '', 'cible': CampagneSms.Cible.PARENTS_TOUS, 'classes_choisies': [], 'date': '',
     }
@@ -85,6 +135,18 @@ def campagne_nouvelle(request):
     contexte.update({'titre': titre, 'message': modele, 'cible': cible,
                      'classes_choisies': criteres.get('classes', []), 'date': criteres.get('date', '')})
     erreurs = []
+    if cible == CampagneSms.Cible.PARENTS_CLASSES:
+        classes_brutes = criteres['classes']
+        classes_ids = _uuid_liste(classes_brutes) if classes_brutes else []
+        if classes_ids is None:
+            erreurs.append("La sélection contient un identifiant de classe invalide.")
+        elif classes_ids:
+            ids_accessibles = {str(pk) for pk in contexte['classes'].values_list('pk', flat=True)}
+            if not set(classes_ids).issubset(ids_accessibles):
+                erreurs.append("La sélection contient une classe hors de votre établissement ou des cycles accessibles.")
+            else:
+                criteres['classes'] = classes_ids
+                contexte['classes_choisies'] = classes_ids
     if cible not in CampagneSms.Cible.values:
         erreurs.append("Choisissez le public de la campagne.")
     if not titre:
@@ -100,7 +162,13 @@ def campagne_nouvelle(request):
             messages.error(request, e)
         return render(request, 'communication/campagne_form.html', contexte)
 
-    liste, compteurs = campagnes.destinataires(etab, annee, cible, criteres, sigle=_sigle(etab))
+    cycle_ids = get_cycle_ids(request)
+    if cycle_ids is not None:
+        criteres['cycles_autorises'] = [str(pk) for pk in cycle_ids]
+
+    liste, compteurs = campagnes.destinataires(
+        etab, annee, cible, criteres, sigle=_sigle(etab), request=request,
+    )
     if request.POST.get('confirmer') == '1':
         if not sms_actifs():
             messages.error(request, "Les SMS sont désactivés (Paramètres → Configuration SMS) : campagne non envoyée.")
@@ -121,11 +189,10 @@ def campagne_nouvelle(request):
 @login_required
 def campagne_detail(request, pk):
     """Suivi d'une campagne : destinataire, statut, erreur ; renvoi des échecs."""
-    from core.models import CampagneSms
     refus = _refus_campagne(request)
     if refus:
         return refus
-    campagne = get_object_or_404(CampagneSms, pk=pk, etablissement=_get_etab(request))
+    campagne = _campagne_accessible(request, pk)
     return render(request, 'communication/campagne_detail.html', {
         'campagne': campagne, 'suivi': campagne.bilan(),
         'sms': campagne.sms.order_by('destinataire', 'numero'),
@@ -135,12 +202,11 @@ def campagne_detail(request, pk):
 @login_required
 @require_POST
 def campagne_renvoyer(request, pk):
-    from core.models import CampagneSms
     from .. import campagnes
     refus = _refus_campagne(request)
     if refus:
         return refus
-    campagne = get_object_or_404(CampagneSms, pk=pk, etablissement=_get_etab(request))
+    campagne = _campagne_accessible(request, pk)
     nb = campagnes.renvoyer_echecs(campagne)
     messages.success(request, f"{nb} SMS remis en file." if nb else "Aucun SMS en échec.")
     return redirect('communication:campagne_detail', pk=campagne.pk)
@@ -150,11 +216,10 @@ def campagne_renvoyer(request, pk):
 @require_POST
 def campagne_supprimer(request, pk):
     """Supprime une campagne et ses SMS ; ceux encore en attente ne partiront pas."""
-    from core.models import CampagneSms
     refus = _refus_campagne(request)
     if refus:
         return refus
-    campagne = get_object_or_404(CampagneSms, pk=pk, etablissement=_get_etab(request))
+    campagne = _campagne_accessible(request, pk)
     titre, nb_sms = campagne.titre, campagne.sms.count()
     campagne.delete()
     messages.success(request, f"Campagne « {titre} » supprimée ({nb_sms} SMS).")

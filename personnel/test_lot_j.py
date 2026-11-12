@@ -25,7 +25,7 @@ def ecole(client):
                           photo='', signature='')
     baker.make('personnel.SalairePersonnel', personnel=agent, annee_scolaire=annee, mois=9, annee=2026,
                salaire_base=Decimal('150000'), retenue_cnss=Decimal('0'), retenue_iuts=Decimal('0'), statut='PAYE')
-    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False, est_tous_cycles=True)
     client.force_login(user)
     return {'etab': etab, 'annee': annee, 'agent': agent, 'etranger': etranger, 'user': user, 'client': client}
 
@@ -181,5 +181,6 @@ def test_attestation_de_travail_apercu_et_pdf(ecole, mocker):
     assert '@page { size: A4 portrait' in source and '<h1>Attestation de travail</h1>' in source and 'KABORE' in source
 
 
-def test_attestation_d_un_agent_d_un_autre_etablissement_introuvable(ecole):
-    assert ecole['client'].get(reverse('personnel:attestation_travail', args=[ecole['etranger'].pk])).status_code == 404
+def test_documents_personnel_d_un_agent_d_un_autre_etablissement_introuvables(ecole):
+    for route in ('personnel:contrat', 'personnel:attestation_travail', 'personnel:badge'):
+        assert ecole['client'].get(reverse(route, args=[ecole['etranger'].pk])).status_code == 404

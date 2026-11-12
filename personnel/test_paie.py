@@ -28,7 +28,7 @@ def ecole(client):
                salaire_base=Decimal('200000'), indemnite_transport=Decimal('15000'), indemnite_logement=Decimal('25000'),
                prime_anciennete=Decimal('0'), autres_primes=Decimal('30000'), retenue_cnss=Decimal('11000'),
                retenue_iuts=Decimal('9000'), autres_retenues=Decimal('5000'), statut='PAYE')
-    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False, est_tous_cycles=True)
     client.force_login(user)
     return {'etab': etab, 'annee': annee, 'ancien': ancien, 'nouveau': nouveau, 'user': user}
 

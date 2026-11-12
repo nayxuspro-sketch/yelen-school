@@ -37,8 +37,11 @@ def _ordonner(lignes):
     return lignes
 
 
-def _inscriptions(annee):
-    return Inscription.objects.filter(annee_scolaire=annee, classe__etablissement=annee.etablissement).values(
+def _inscriptions(annee, cycle_ids=None):
+    inscriptions = Inscription.objects.filter(annee_scolaire=annee, classe__etablissement=annee.etablissement)
+    if cycle_ids is not None:
+        inscriptions = inscriptions.filter(classe__cycle_id__in=cycle_ids)
+    return inscriptions.values(
         'id', 'classe_id', 'classe__niveau', 'classe__cycle__nom', 'classe__cycle__ordre',
         'eleve_id', 'eleve__genre', 'eleve__date_naissance', 'est_redoublant', 'statut',
     )
@@ -65,15 +68,21 @@ def _ligne(lignes, valeur, cles):
     return ligne
 
 
-def statistiques_rentree(annee):
+def statistiques_rentree(annee, cycle_ids=None):
     """Élèves inscrits à la rentrée (abandons ultérieurs compris) : effectif, redoublants, nouveaux entrants par niveau ;
-    répartition par âge (année de la rentrée − année de naissance) et par sexe."""
-    anciens = set(Inscription.objects.filter(
+    répartition par âge (année de la rentrée − année de naissance) et par sexe.
+
+    ``cycle_ids=None`` conserve la vue établissement ; une liste limite les indicateurs au périmètre autorisé.
+    """
+    anciens_qs = Inscription.objects.filter(
         classe__etablissement=annee.etablissement, annee_scolaire__date_debut__lt=annee.date_debut,
-    ).values_list('eleve_id', flat=True))
+    )
+    if cycle_ids is not None:
+        anciens_qs = anciens_qs.filter(classe__cycle_id__in=cycle_ids)
+    anciens = set(anciens_qs.values_list('eleve_id', flat=True))
     cles = ('effectif', 'redoublants', 'nouveaux')
     lignes, ages = {}, {}
-    for valeur in _inscriptions(annee):
+    for valeur in _inscriptions(annee, cycle_ids):
         ligne = _ligne(lignes, valeur, cles)
         genre = valeur['eleve__genre']
         _ajouter(ligne['effectif'], genre)
@@ -107,15 +116,22 @@ _CLE_DECISION = {'PASSAGE': 'passage', 'RACHAT': 'passage', 'REDOUBLEMENT': 'red
                  'ORIENTATION': 'orientation', 'EXCLUSION': 'exclusion'}
 
 
-def statistiques_fin_annee(annee):
+def statistiques_fin_annee(annee, cycle_ids=None):
     """Par niveau : inscrits, abandons, effectif de fin d'année, dernière décision de conseil de classe ;
-    par session d'examen officiel : inscrits, présents, admis et taux de réussite par sexe."""
-    decisions = dict(DecisionConseil.objects.filter(
+    par session d'examen officiel : inscrits, présents, admis et taux de réussite par sexe.
+
+    ``cycle_ids=None`` conserve la vue établissement ; une liste limite les indicateurs au périmètre autorisé.
+    """
+    decisions_qs = DecisionConseil.objects.filter(
         inscription__annee_scolaire=annee, conseil__classe__etablissement=annee.etablissement,
-    ).order_by('conseil__date_conseil', 'created_at').values_list('inscription_id', 'decision'))
+    )
+    if cycle_ids is not None:
+        decisions_qs = decisions_qs.filter(conseil__classe__cycle_id__in=cycle_ids)
+    decisions = dict(decisions_qs.order_by('conseil__date_conseil', 'created_at')
+                     .values_list('inscription_id', 'decision'))
     cles = ('inscrits', 'abandons', 'fin_annee') + tuple(cle for cle, _ in DECISIONS)
     lignes = {}
-    for valeur in _inscriptions(annee):
+    for valeur in _inscriptions(annee, cycle_ids):
         ligne = _ligne(lignes, valeur, cles)
         genre = valeur['eleve__genre']
         _ajouter(ligne['inscrits'], genre)
@@ -127,9 +143,15 @@ def statistiques_fin_annee(annee):
     lignes = _ordonner(lignes)
 
     examens = []
-    for session in SessionExamen.objects.filter(annee_scolaire=annee).order_by('type_examen', 'libelle'):
+    sessions = SessionExamen.objects.filter(annee_scolaire=annee)
+    if cycle_ids is not None:
+        sessions = sessions.filter(inscriptions_examen__inscription__classe__cycle_id__in=cycle_ids).distinct()
+    for session in sessions.order_by('type_examen', 'libelle'):
         compteurs = {cle: _compteur() for cle in ('inscrits', 'presents', 'admis')}
-        for statut, genre in InscriptionExamen.objects.filter(session=session).values_list('statut', 'inscription__eleve__genre'):
+        inscriptions_examen = InscriptionExamen.objects.filter(session=session)
+        if cycle_ids is not None:
+            inscriptions_examen = inscriptions_examen.filter(inscription__classe__cycle_id__in=cycle_ids)
+        for statut, genre in inscriptions_examen.values_list('statut', 'inscription__eleve__genre'):
             _ajouter(compteurs['inscrits'], genre)
             if statut != 'ABSENT':
                 _ajouter(compteurs['presents'], genre)

@@ -24,7 +24,7 @@ def ecole(client):
                           nom='CP2', niveau='CP2')
     baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
                date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
-    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False, est_tous_cycles=True)
     client.force_login(user)
     return {'etab': etab, 'autre': autre, 'cycle': cycle, 'classe': classe, 'ailleurs': ailleurs, 'client': client}
 
@@ -70,6 +70,32 @@ def test_classe_d_un_autre_etablissement_refusee(ecole):
                                etablissement=ecole['etab'])
     assert not form.is_valid()
     assert 'classe_affectation' in form.errors
+
+
+def test_creation_sans_etablissement_reste_dans_les_cycles_accessibles(ecole):
+    client = ecole['client']
+    user = baker.make('accounts.User', role='DIRECTEUR', must_change_password=False)
+    user.cycles.add(ecole['cycle'])
+    client.force_login(user)
+
+    page = client.get(reverse('personnel:create'))
+    assert list(page.context['form'].fields['etablissement'].queryset) == [ecole['etab']]
+    assert list(page.context['form'].fields['cycles'].queryset) == [ecole['cycle']]
+
+    donnees = _donnees(ecole, etablissement=ecole['autre'].pk)
+    reponse = client.post(reverse('personnel:create'), donnees)
+    assert reponse.status_code == 200
+    assert 'etablissement' in reponse.context['form'].errors
+    assert not MembrePersonnel.objects.filter(nom='OUEDRAOGO').exists()
+
+    # Sans établissement ni cycle autorisé, la liste d'établissements est vide : aucun POST ne crée un agent.
+    sans_cycle = baker.make('accounts.User', role='DIRECTEUR', must_change_password=False)
+    client.force_login(sans_cycle)
+    page = client.get(reverse('personnel:create'))
+    assert not page.context['form'].fields['etablissement'].queryset.exists()
+    reponse = client.post(reverse('personnel:create'), _donnees(ecole))
+    assert reponse.status_code == 200 and 'etablissement' in reponse.context['form'].errors
+    assert not MembrePersonnel.objects.filter(nom='OUEDRAOGO').exists()
 
 
 def test_agent_sans_classe_accepte(ecole):

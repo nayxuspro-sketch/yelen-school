@@ -14,18 +14,22 @@ def _taux(part, total):
     return round(float(part) * 100 / float(total), 1) if total else 0.0
 
 
-def tableau_de_bord(etab, annee, aujourdhui=None):
-    """Recouvrement, impayés par classe, effectifs, absences et élèves à risque de ``etab`` pour ``annee``."""
+
+def tableau_de_bord(etab, annee, aujourdhui=None, cycle_ids=None):
+    """Recouvrement, impayés par classe, effectifs, absences et élèves à risque de ``etab`` pour ``annee``.
+
+    ``cycle_ids=None`` conserve la vue établissement ; une liste limite les indicateurs au périmètre autorisé.
+    """
     from finances.views.commun import _situations_financieres_en_lot
     from inscriptions.models import Inscription, StatutInscriptionChoices
     from pedagogie.models import RisqueDecrochage
     from presences.models import Justification, Presence
 
     aujourdhui = aujourdhui or date.today()
-    inscriptions = list(
-        Inscription.objects.filter(annee_scolaire=annee, classe__etablissement=etab)
-        .select_related('eleve', 'classe__cycle', 'statut_eleve')
-    )
+    inscriptions_qs = Inscription.objects.filter(annee_scolaire=annee, classe__etablissement=etab)
+    if cycle_ids is not None:
+        inscriptions_qs = inscriptions_qs.filter(classe__cycle_id__in=cycle_ids)
+    inscriptions = list(inscriptions_qs.select_related('eleve', 'classe__cycle', 'statut_eleve'))
     actives = [i for i in inscriptions if i.statut != StatutInscriptionChoices.ABANDON]
     situations = _situations_financieres_en_lot(actives)
 
@@ -84,12 +88,22 @@ def tableau_de_bord(etab, annee, aujourdhui=None):
     absences = Presence.objects.filter(
         statut=Presence.StatutChoices.ABSENT, appel__annee_scolaire=annee, appel__classe__etablissement=etab,
     )
+    if cycle_ids is not None:
+        absences = absences.filter(appel__classe__cycle_id__in=cycle_ids)
     depuis_30j = aujourdhui - timedelta(days=29)
     absences_30j = absences.filter(appel__date__gte=depuis_30j, appel__date__lte=aujourdhui)
-    pointages_30j = Presence.objects.filter(
+    pointages_qs = Presence.objects.filter(
         appel__annee_scolaire=annee, appel__classe__etablissement=etab,
         appel__date__gte=depuis_30j, appel__date__lte=aujourdhui,
-    ).count()
+    )
+    if cycle_ids is not None:
+        pointages_qs = pointages_qs.filter(appel__classe__cycle_id__in=cycle_ids)
+    pointages_30j = pointages_qs.count()
+    justifications = Justification.objects.filter(
+        statut='EN_ATTENTE', inscription__annee_scolaire=annee, inscription__classe__etablissement=etab,
+    )
+    if cycle_ids is not None:
+        justifications = justifications.filter(inscription__classe__cycle_id__in=cycle_ids)
     classes_30j = (
         absences_30j.values('appel__classe__nom')
         .annotate(nb=Count('id'), eleves=Count('inscription', distinct=True))
@@ -105,9 +119,7 @@ def tableau_de_bord(etab, annee, aujourdhui=None):
         'trente_jours': absences_30j.count(),
         'pointages_30j': pointages_30j,
         'taux_30j': _taux(absences_30j.count(), pointages_30j),
-        'justifications_attente': Justification.objects.filter(
-            statut='EN_ATTENTE', inscription__annee_scolaire=annee, inscription__classe__etablissement=etab,
-        ).count(),
+        'justifications_attente': justifications.count(),
         'classes': list(classes_30j),
         'eleves': list(eleves_annee),
     }
@@ -116,6 +128,8 @@ def tableau_de_bord(etab, annee, aujourdhui=None):
     risques = RisqueDecrochage.objects.filter(
         inscription__annee_scolaire=annee, inscription__classe__etablissement=etab,
     ).exclude(inscription__statut=StatutInscriptionChoices.ABANDON)
+    if cycle_ids is not None:
+        risques = risques.filter(inscription__classe__cycle_id__in=cycle_ids)
     compteurs = defaultdict(int, {
         r['niveau']: r['nb'] for r in risques.values('niveau').annotate(nb=Count('id'))
     })

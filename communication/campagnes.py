@@ -13,6 +13,7 @@ from core.tasks import _vider_file, mettre_en_file_lot
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from parametres.models import ModeleMessage
 from personnel.models import MembrePersonnel
+from personnel.selectors import membres_visibles
 from presences.models import Presence
 
 LONGUEUR_SMS = 160
@@ -42,10 +43,15 @@ def _telephone_parent(eleve):
     return eleve.telephone_parent_valide()
 
 
-def _inscriptions(etab, annee, cible, criteres):
+def _inscriptions(etab, annee, cible, criteres, request=None):
     qs = (Inscription.objects.filter(annee_scolaire=annee, classe__etablissement=etab)
           .exclude(statut=StatutInscriptionChoices.ABANDON)
           .select_related('eleve', 'classe').order_by('classe__nom', 'eleve__nom', 'eleve__prenom'))
+    if request is not None:
+        from yelen_school.cycle_filter import get_cycle_ids
+        cycle_ids = get_cycle_ids(request)
+        if cycle_ids is not None:
+            qs = qs.filter(classe__cycle_id__in=cycle_ids)
     if cible == CampagneSms.Cible.PARENTS_CLASSES:
         qs = qs.filter(classe_id__in=criteres.get('classes') or [])
     elif cible == CampagneSms.Cible.PARENTS_ABSENTS:
@@ -55,12 +61,13 @@ def _inscriptions(etab, annee, cible, criteres):
     return list(qs)
 
 
-def destinataires(etab, annee, cible, criteres, sigle=''):
+def destinataires(etab, annee, cible, criteres, sigle='', request=None):
     """Destinataires dédoublonnés par numéro et compteurs ``{'sans_numero': n}`` (élèves ou agents injoignables).
     Un numéro partagé par plusieurs enfants reçoit un seul SMS ; {eleve} et {classe} y énumèrent les enfants."""
     groupes, sans_numero = {}, 0
     if cible == CampagneSms.Cible.PERSONNEL:
-        for membre in MembrePersonnel.objects.filter(etablissement=etab, is_active=True).order_by('nom', 'prenom'):
+        membres = MembrePersonnel.objects.filter(etablissement=etab, is_active=True)
+        for membre in membres_visibles(request, membres).order_by('nom', 'prenom'):
             brut = (membre.telephone or '').strip()
             if not (brut and _numero_valide(brut)):
                 sans_numero += 1
@@ -71,7 +78,7 @@ def destinataires(etab, annee, cible, criteres, sigle=''):
                                                {'nom': membre.get_nom_complet(), 'etablissement': sigle})
         return list(groupes.values()), {'sans_numero': sans_numero}
 
-    inscriptions = _inscriptions(etab, annee, cible, criteres)
+    inscriptions = _inscriptions(etab, annee, cible, criteres, request=request)
     restes = {}
     if cible == CampagneSms.Cible.PARENTS_RETARD:
         from finances.views.commun import _situations_financieres_en_lot

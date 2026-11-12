@@ -5,7 +5,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 
 from django.contrib import messages
 
-from parametres.models import AnneeScolaire, Classe
 from pedagogie.models import Trimestre, MoyenneGenerale
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from ..models import (
@@ -13,7 +12,7 @@ from ..models import (
     ParticipationActivite,
     ConfigDiscipline,
 )
-from .commun import _get_etab
+from .commun import _get_etab, annees_accessibles, classes_accessibles
 
 
 # ─── Fiche de suivi individuelle ──────────────────────────────────────────────
@@ -30,9 +29,8 @@ def fiche_suivi_eleve(request, inscription_id):
     inscription = get_object_or_404(
         Inscription.objects.select_related(
             'eleve', 'classe', 'annee_scolaire', 'statut_eleve'
-        ),
+        ).filter(classe__in=classes_accessibles(request)),
         pk=inscription_id,
-        classe__etablissement=_get_etab(request),
     )
 
     # ── 1. Presences ──────────────────────────────────────────────────────────
@@ -100,7 +98,11 @@ def fiche_suivi_eleve(request, inscription_id):
     # ── 4. Decisions de conseil ───────────────────────────────────────────────
     decisions = (
         DecisionConseil.objects
-        .filter(inscription=inscription)
+        .filter(
+            inscription=inscription,
+            conseil__classe=inscription.classe,
+            conseil__trimestre__annee_scolaire=inscription.annee_scolaire,
+        )
         .select_related('conseil__trimestre', 'conseil__classe')
         .order_by('-conseil__trimestre__numero')
     )
@@ -108,7 +110,11 @@ def fiche_suivi_eleve(request, inscription_id):
     # ── 5. Activites parascolaires ────────────────────────────────────────────
     participations = (
         ParticipationActivite.objects
-        .filter(inscription=inscription, is_active=True)
+        .filter(
+            inscription=inscription,
+            is_active=True,
+            activite__annee_scolaire__etablissement=inscription.classe.etablissement,
+        )
         .select_related('activite')
         .order_by('activite__type_activite', 'activite__nom')
     )
@@ -124,7 +130,7 @@ def fiche_suivi_eleve(request, inscription_id):
     ]
 
     # ── 6. Capital points discipline ─────────────────────────────────────────
-    etab = getattr(request.user, 'etablissement', None)
+    etab = inscription.classe.etablissement
     config_disc = ConfigDiscipline.get_or_default(etab) if etab else None
     capital = _calcul_capital_points(inscription, config_disc) if config_disc else None
 
@@ -156,27 +162,27 @@ def fiches_suivi_list(request):
     Page de recherche permettant d'acceder a la fiche de suivi
     de n'importe quel eleve de l'etablissement.
     """
-    etab = request.user.etablissement
+    etab = _get_etab(request)
     annee_id = request.GET.get('annee')
     classe_id = request.GET.get('classe')
     q = request.GET.get('q', '').strip()
 
-    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
+    annees = annees_accessibles(request, etab).order_by('-date_debut')
     annee_courante = annees.filter(est_courante=True).first()
     annee_sel = annees.filter(pk=annee_id).first() if annee_id else annee_courante
 
-    classes = Classe.objects.filter(etablissement=etab, actif=True).order_by('nom')
+    classes = classes_accessibles(request, etab).filter(actif=True).order_by('nom')
 
     inscriptions = (
         Inscription.objects
-        .filter(annee_scolaire=annee_sel, classe__etablissement=etab)
+        .filter(annee_scolaire=annee_sel, classe__in=classes)
         .exclude(statut=StatutInscriptionChoices.ABANDON)
         .select_related('eleve', 'classe', 'statut_eleve')
         .order_by('classe__nom', 'eleve__nom', 'eleve__prenom')
     )
 
     if classe_id:
-        inscriptions = inscriptions.filter(classe_id=classe_id)
+        inscriptions = inscriptions.filter(classe__in=classes, classe_id=classe_id)
 
     if q:
         from django.db.models import Q
@@ -260,36 +266,39 @@ def capital_points_list(request):
     Tableau de bord : liste des élèves avec leur solde de points de discipline,
     triés par statut (EXCLUSION → CONSEIL → ALERTE → NORMAL).
     """
-    etab = getattr(request.user, 'etablissement', None)
+    etab = _get_etab(request)
     annee_id = request.GET.get('annee')
     classe_id = request.GET.get('classe')
 
-    annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
+    annees = annees_accessibles(request, etab).order_by('-date_debut')
     annee_courante = annees.filter(est_courante=True).first()
     annee_sel = annees.filter(pk=annee_id).first() if annee_id else annee_courante
 
-    classes = Classe.objects.filter(etablissement=etab, actif=True).order_by('nom')
-
+    classes = classes_accessibles(request, etab).filter(actif=True).order_by('nom')
     config = ConfigDiscipline.get_or_default(etab) if etab else None
 
     inscriptions_qs = (
         Inscription.objects
-        .filter(annee_scolaire=annee_sel, classe__etablissement=etab)
+        .filter(annee_scolaire=annee_sel, classe__in=classes)
         .exclude(statut=StatutInscriptionChoices.ABANDON)
         .select_related('eleve', 'classe')
         .order_by('classe__nom', 'eleve__nom')
     )
     if classe_id:
-        inscriptions_qs = inscriptions_qs.filter(classe_id=classe_id)
+        inscriptions_qs = inscriptions_qs.filter(classe__in=classes, classe_id=classe_id)
+
+    configs = {etab.pk: config} if etab and config else {}
 
     # Calcul du solde pour chaque élève
     ORDER = {'EXCLUSION': 0, 'CONSEIL': 1, 'ALERTE': 2, 'NORMAL': 3}
     lignes = []
     for inscr in inscriptions_qs:
-        if config:
-            cap = _calcul_capital_points(inscr, config)
-        else:
-            cap = {'solde': 20, 'statut': 'NORMAL', 'points_depart': 20, 'total_sanctions': 0}
+        if inscr.classe.etablissement_id not in configs:
+            configs[inscr.classe.etablissement_id] = ConfigDiscipline.get_or_default(
+                inscr.classe.etablissement,
+            )
+        config = configs[inscr.classe.etablissement_id]
+        cap = _calcul_capital_points(inscr, config)
         lignes.append({
             'inscription': inscr,
             'solde': cap['solde'],

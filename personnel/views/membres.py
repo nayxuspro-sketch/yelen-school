@@ -4,7 +4,6 @@ from datetime import date as date_module
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -14,11 +13,15 @@ from django.views.decorators.http import require_POST
 from core.utils import get_etablissement_context
 from licences.decorators import requires_licence_feature
 from licences.pdf_utils import inject_licence_filigrane_context
-from parametres.models import AnneeScolaire, Cycle
+from parametres.models import AnneeScolaire
 
 from ..forms import InscriptionPersonnelForm, MembrePersonnelForm
 from ..models import InscriptionPersonnel, MembrePersonnel
-from ..selectors import annee_courante, avec_inscriptions_annee, personnel_filtre
+from ..selectors import (
+    absences_visibles, annee_courante, avec_inscriptions_annee, cycles_accessibles,
+    inscriptions_visibles, membres_dans_cycle, membres_visibles, personnel_filtre,
+)
+from yelen_school.cycle_filter import get_cycle_ids
 
 logger = logging.getLogger(__name__)
 
@@ -32,33 +35,30 @@ def personnel_list(request):
 
     etab = getattr(request.user, 'etablissement', None)
 
-    personnel = MembrePersonnel.objects.all()
-    if etab:
-        personnel = personnel.filter(etablissement=etab)
-    if not show_all:
-        personnel = personnel.filter(is_active=True)
-    if query:
-        personnel = personnel.filter(
-            Q(nom__icontains=query) |
-            Q(prenom__icontains=query) |
-            Q(matricule__icontains=query)
-        )
+    personnel = personnel_filtre(etab, query, show_all, request=request)
 
-    # Colonne « Inscription annuelle » : inscriptions actives de l'année courante, préchargées
+    # Colonne « Inscription annuelle » : inscriptions actives de l'année courante, limitées aux cycles autorisés.
     annee = annee_courante(etab)
-    personnel = avec_inscriptions_annee(personnel, annee)
+    personnel = avec_inscriptions_annee(personnel, annee, request=request)
 
-    # Grouper par cycle
-    cycles = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom') if etab else Cycle.objects.none()
+    # Ne présenter que les cycles autorisés ; les affectations annuelles et la classe de rattachement
+    # complètent la relation cycles de la fiche, parfois absente sur les anciennes données.
+    cycles = cycles_accessibles(request, etab).order_by('ordre', 'nom')
     cycles_personnel = [
-        {'cycle': cycle, 'membres': personnel.filter(cycles=cycle)}
+        {'cycle': cycle, 'membres': membres_dans_cycle(personnel, cycle)}
         for cycle in cycles
     ]
-    sans_cycle = personnel.filter(cycles__isnull=True)
+    if get_cycle_ids(request) is None:
+        sans_cycle = personnel.filter(
+            cycles__isnull=True, inscriptions__isnull=True, classe_affectation__isnull=True
+        ).distinct()
+    else:
+        sans_cycle = personnel.none()
 
     nb_inactifs = MembrePersonnel.objects.filter(is_active=False)
     if etab:
         nb_inactifs = nb_inactifs.filter(etablissement=etab)
+    nb_inactifs = membres_visibles(request, nb_inactifs)
 
     context = {
         'personnel_list': personnel,
@@ -84,6 +84,7 @@ def personnel_list_csv(request):
     etab = getattr(request.user, 'etablissement', None)
     personnel = personnel_filtre(
         etab, request.GET.get('q', ''), request.GET.get('tous') == '1', request.GET.get('ids', ''),
+        request=request,
     )
 
     nom_fichier = 'personnel'
@@ -133,6 +134,7 @@ def personnel_list_xlsx(request):
     etab = getattr(request.user, 'etablissement', None)
     personnel = personnel_filtre(
         etab, request.GET.get('q', ''), request.GET.get('tous') == '1', request.GET.get('ids', ''),
+        request=request,
     )
 
     nom_fichier = f"personnel{'_' + etab.code if etab else ''}.xlsx"
@@ -173,7 +175,7 @@ def personnel_list_pdf(request):
     query = request.GET.get('q', '').strip()
     show_all = request.GET.get('tous') == '1'
     ids = request.GET.get('ids', '')
-    membres = list(personnel_filtre(etab, query, show_all, ids))
+    membres = list(personnel_filtre(etab, query, show_all, ids, request=request))
 
     etab_context = get_etablissement_context(etab, request) if etab else {}
     context = {
@@ -206,15 +208,23 @@ def personnel_list_pdf(request):
 @login_required
 @requires_licence_feature('gestion_personnel')
 def personnel_detail(request, pk):
-    """Détails d'un membre du personnel."""
-    etab = getattr(request.user, 'etablissement', None)
-    membre = get_object_or_404(MembrePersonnel, pk=pk)
-    
-    if etab and membre.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé. Ce membre n'appartient pas à votre établissement.")
-        return redirect('personnel:personnel_list')
-    
-    inscriptions = membre.inscriptions.all()
+    """Détails d'un membre du personnel, sans affectations hors du périmètre autorisé."""
+    cycle_ids = get_cycle_ids(request)
+    membre = get_object_or_404(
+        membres_visibles(request).select_related('etablissement', 'classe_affectation__cycle')
+        .prefetch_related('cycles'),
+        pk=pk,
+    )
+    inscriptions = inscriptions_visibles(
+        membre.inscriptions.select_related('annee_scolaire', 'cycle', 'poste').order_by('-annee_scolaire'),
+        request,
+    )
+    cycles_membre = membre.cycles.all()
+    classe_affectation = membre.classe_affectation
+    if cycle_ids is not None:
+        cycles_membre = cycles_membre.filter(pk__in=cycle_ids)
+        if classe_affectation and classe_affectation.cycle_id not in cycle_ids:
+            classe_affectation = None
 
     from core.utils import get_etablissement_context
     etab_context = get_etablissement_context(membre.etablissement, request)
@@ -224,6 +234,14 @@ def personnel_detail(request, pk):
     context = {
         'membre': membre,
         'inscriptions': inscriptions,
+        'cycles_membre': cycles_membre,
+        'classe_affectation': classe_affectation,
+        'cycles_restreints': cycle_ids is not None,
+        'salaires_recents': membre.salaires.all()[:4],
+        'absences_recentes': absences_visibles(
+            membre.absences.select_related('classe', 'matiere'), request,
+        )[:4],
+        'conges_recents': membre.conges.all()[:4],
         'est_public': est_public,
     }
     return render(request, 'personnel/personnel_detail.html', context)
@@ -232,15 +250,24 @@ def personnel_detail(request, pk):
 @requires_licence_feature('gestion_personnel')
 def personnel_create(request):
     """Création d'un nouveau membre du personnel."""
+    cycles_autorises = get_cycle_ids(request)
     if request.method == 'POST':
-        form = MembrePersonnelForm(request.POST, request.FILES,
-                                   etablissement=getattr(request.user, 'etablissement', None))
+        form = MembrePersonnelForm(
+            request.POST, request.FILES,
+            etablissement=getattr(request.user, 'etablissement', None),
+            cycles_autorises=cycles_autorises,
+        )
+        form.fields['cycles'].required = cycles_autorises is not None
         if form.is_valid():
             membre = form.save()
             messages.success(request, f"Membre {membre.get_nom_complet()} créé avec succès.")
             return redirect('personnel:detail', pk=membre.pk)
     else:
-        form = MembrePersonnelForm(etablissement=getattr(request.user, 'etablissement', None))
+        form = MembrePersonnelForm(
+            etablissement=getattr(request.user, 'etablissement', None),
+            cycles_autorises=cycles_autorises,
+        )
+        form.fields['cycles'].required = cycles_autorises is not None
 
     return render(request, 'personnel/personnel_form.html', {'form': form, 'title': "Ajouter un membre"})
 
@@ -249,21 +276,21 @@ def personnel_create(request):
 def personnel_update(request, pk):
     """Modification d'un membre du personnel."""
     etab = getattr(request.user, 'etablissement', None)
-    membre = get_object_or_404(MembrePersonnel, pk=pk)
-    
-    if etab and membre.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé. Ce membre n'appartient pas à votre établissement.")
-        return redirect('personnel:personnel_list')
+    membre = get_object_or_404(membres_visibles(request), pk=pk)
     
     if request.method == 'POST':
-        form = MembrePersonnelForm(request.POST, request.FILES, instance=membre,
-                                   etablissement=etab)
+        form = MembrePersonnelForm(
+            request.POST, request.FILES, instance=membre, etablissement=etab,
+            cycles_autorises=get_cycle_ids(request),
+        )
         if form.is_valid():
             membre = form.save()
             messages.success(request, f"Membre {membre.get_nom_complet()} mis à jour.")
             return redirect('personnel:detail', pk=membre.pk)
     else:
-        form = MembrePersonnelForm(instance=membre, etablissement=etab)
+        form = MembrePersonnelForm(
+            instance=membre, etablissement=etab, cycles_autorises=get_cycle_ids(request),
+        )
     
     return render(request, 'personnel/personnel_form.html', {'form': form, 'title': "Modifier le membre", 'membre': membre})
 
@@ -274,13 +301,7 @@ def toggle_active(request, pk):
     if request.method != 'POST':
         return redirect('personnel:detail', pk=pk)
 
-    etab = getattr(request.user, 'etablissement', None)
-    membre = get_object_or_404(MembrePersonnel, pk=pk)
-    
-    if etab and membre.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé.")
-        return redirect('personnel:personnel_list')
-    
+    membre = get_object_or_404(membres_visibles(request), pk=pk)
     membre.is_active = not membre.is_active
     membre.save(update_fields=['is_active'])
 
@@ -293,25 +314,27 @@ def toggle_active(request, pk):
 @requires_licence_feature('gestion_personnel')
 def inscription_create(request, pk):
     """Inscription annuelle d'un membre du personnel."""
-    etab = getattr(request.user, 'etablissement', None)
-    membre = get_object_or_404(MembrePersonnel, pk=pk)
-    
-    if etab and membre.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé.")
-        return redirect('personnel:personnel_list')
+    cycle_ids = get_cycle_ids(request)
+    membre = get_object_or_404(membres_visibles(request), pk=pk)
+    etab = membre.etablissement
     
     if request.method == 'POST':
-        form = InscriptionPersonnelForm(request.POST, instance=InscriptionPersonnel(personnel=membre))
+        form = InscriptionPersonnelForm(
+            request.POST, instance=InscriptionPersonnel(personnel=membre),
+            etablissement=etab, cycles_autorises=cycle_ids,
+        )
         if form.is_valid():
             form.save()
             messages.success(request, f"Inscription enregistrée pour {membre.get_nom_complet()}.")
             return redirect('personnel:detail', pk=membre.pk)
     else:
-        etab = getattr(request.user, 'etablissement', None)
         annee_courante = AnneeScolaire.objects.filter(
             etablissement=etab, est_courante=True
-        ).first() if etab else AnneeScolaire.objects.filter(est_courante=True).first()
-        form = InscriptionPersonnelForm(initial={'annee_scolaire': annee_courante})
+        ).first()
+        form = InscriptionPersonnelForm(
+            initial={'annee_scolaire': annee_courante},
+            etablissement=etab, cycles_autorises=cycle_ids,
+        )
 
     return render(request, 'personnel/inscription_form.html', {
         'form': form,
@@ -324,25 +347,26 @@ def inscription_create(request, pk):
 @requires_licence_feature('gestion_personnel')
 def inscription_edit(request, inscription_id):
     """Modification d'une inscription annuelle du personnel."""
-    etab = getattr(request.user, 'etablissement', None)
-    inscription = get_object_or_404(
-        InscriptionPersonnel.objects.select_related('personnel'), pk=inscription_id
-    )
-    
-    if etab and inscription.personnel.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé.")
-        return redirect('personnel:personnel_list')
-    
+    cycle_ids = get_cycle_ids(request)
+    inscriptions = inscriptions_visibles(
+        InscriptionPersonnel.objects.select_related('personnel'), request,
+    ).filter(personnel__in=membres_visibles(request))
+    inscription = get_object_or_404(inscriptions, pk=inscription_id)
     membre = inscription.personnel
     
     if request.method == 'POST':
-        form = InscriptionPersonnelForm(request.POST, instance=inscription)
+        form = InscriptionPersonnelForm(
+            request.POST, instance=inscription, etablissement=membre.etablissement,
+            cycles_autorises=cycle_ids,
+        )
         if form.is_valid():
             form.save()
             messages.success(request, "Inscription mise à jour.")
             return redirect('personnel:detail', pk=membre.pk)
     else:
-        form = InscriptionPersonnelForm(instance=inscription)
+        form = InscriptionPersonnelForm(
+            instance=inscription, etablissement=membre.etablissement, cycles_autorises=cycle_ids,
+        )
 
     return render(request, 'personnel/inscription_form.html', {
         'form': form,
@@ -354,11 +378,13 @@ def inscription_edit(request, inscription_id):
 
 @login_required
 @require_POST
+@requires_licence_feature('gestion_personnel')
 def inscription_delete(request, inscription_id):
-    """Suppression d'une inscription annuelle du personnel."""
-    inscription = get_object_or_404(
-        InscriptionPersonnel.objects.select_related('personnel'), pk=inscription_id
-    )
+    """Suppression d'une inscription annuelle dans un cycle accessible."""
+    inscriptions = inscriptions_visibles(
+        InscriptionPersonnel.objects.select_related('personnel'), request,
+    ).filter(personnel__in=membres_visibles(request))
+    inscription = get_object_or_404(inscriptions, pk=inscription_id)
     membre = inscription.personnel
     inscription.delete()
     messages.success(request, "Inscription supprimée.")
@@ -370,8 +396,8 @@ def inscription_delete(request, inscription_id):
 def contrat_travail(request, pk):
     """Aperçu et génération PDF du contrat de travail (établissements non-publics uniquement)."""
     membre = get_object_or_404(
-        MembrePersonnel.objects.select_related('etablissement').prefetch_related('cycles'),
-        pk=pk
+        membres_visibles(request).select_related('etablissement').prefetch_related('cycles'),
+        pk=pk,
     )
 
     from core.utils import get_etablissement_context
@@ -389,8 +415,8 @@ def contrat_travail(request, pk):
         etablissement=membre.etablissement, est_courante=True
     ).first()
 
-    inscription_courante = InscriptionPersonnel.objects.filter(
-        personnel=membre, annee_scolaire=annee
+    inscription_courante = inscriptions_visibles(
+        InscriptionPersonnel.objects.filter(personnel=membre, annee_scolaire=annee), request,
     ).select_related('poste', 'cycle').first() if annee else None
 
     from datetime import date as date_module
@@ -451,11 +477,13 @@ def contrat_travail(request, pk):
 @requires_licence_feature('gestion_personnel')
 def attestation_travail(request, pk):
     """Attestation de travail (A4 portrait, signée par le signataire configuré) : aperçu HTML ou PDF (?format=pdf)."""
-    etab = getattr(request.user, 'etablissement', None)
-    membre = get_object_or_404(MembrePersonnel.objects.select_related('etablissement'), pk=pk,
-                               **({'etablissement': etab} if etab else {}))
+    membre = get_object_or_404(
+        membres_visibles(request).select_related('etablissement'), pk=pk,
+    )
     annee = AnneeScolaire.objects.filter(etablissement=membre.etablissement, est_courante=True).first()
-    inscription = InscriptionPersonnel.objects.filter(personnel=membre, annee_scolaire=annee).select_related('poste', 'cycle').first() if annee else None
+    inscription = inscriptions_visibles(
+        InscriptionPersonnel.objects.filter(personnel=membre, annee_scolaire=annee), request,
+    ).select_related('poste', 'cycle').first() if annee else None
     type_contrat = ("contrat à durée déterminée" if membre.est_contractuel else "vacation à temps partiel" if membre.est_vacataire
                     else "contrat à durée indéterminée")
     context = {
@@ -480,8 +508,8 @@ def attestation_travail(request, pk):
 def badge_personnel(request, pk):
     """Aperçu et génération PDF du badge d'un membre du personnel."""
     membre = get_object_or_404(
-        MembrePersonnel.objects.select_related('etablissement').prefetch_related('cycles'),
-        pk=pk
+        membres_visibles(request).select_related('etablissement').prefetch_related('cycles'),
+        pk=pk,
     )
 
     from core.utils import get_etablissement_context
@@ -493,8 +521,8 @@ def badge_personnel(request, pk):
         etablissement=membre.etablissement, est_courante=True
     ).first()
 
-    inscription_courante = InscriptionPersonnel.objects.filter(
-        personnel=membre, annee_scolaire=annee
+    inscription_courante = inscriptions_visibles(
+        InscriptionPersonnel.objects.filter(personnel=membre, annee_scolaire=annee), request,
     ).select_related('poste', 'cycle').first() if annee else None
 
     # Photo URL absolue pour WeasyPrint

@@ -113,7 +113,7 @@
           </td>
           <td style="text-align:center;">
             {% if doc.fichier %}
-            <a href="{{ doc.fichier.url }}" target="_blank"
+            <a href="{% url 'documents:document_download' doc.pk %}" target="_blank"
                class="btn btn-outline btn-sm"
                style="font-size:.78rem; white-space:nowrap;">
               <svg aria-hidden="true" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:3px;">

@@ -16,8 +16,11 @@ from django.template.loader import render_to_string
 
 from parametres.models import AnneeScolaire
 from core.utils import fcfa, get_etablissement_context
-from .models import ContratVacation, HeureVacation, BulletinVacation
+from .models import HeureVacation, BulletinVacation
 from .forms import ContratVacationForm
+from .selectors import (
+    bulletin_vacation_synthese_visible, bulletins_vacation_visibles, contrats_vacation_visibles,
+)
 
 
 from licences.decorators import requires_licence_feature
@@ -25,10 +28,14 @@ from licences.decorators import requires_licence_feature
 @requires_licence_feature('vacations')
 def contrat_list(request):
     """Liste des contrats de vacation actifs."""
-    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-    contrats = ContratVacation.objects.filter(
+    annees = AnneeScolaire.objects.filter(est_courante=True)
+    etab = getattr(request.user, 'etablissement', None)
+    if etab is not None:
+        annees = annees.filter(etablissement=etab)
+    annee_courante = annees.first()
+    contrats = contrats_vacation_visibles(request).filter(
         annee_scolaire=annee_courante,
-        actif=True
+        actif=True,
     ).select_related('personnel', 'enseignement__matiere', 'enseignement__classe')
 
     return render(request, 'vacations/contrat_list.html', {
@@ -41,14 +48,15 @@ def contrat_list(request):
 @requires_licence_feature('vacations')
 def contrat_create(request):
     """Créer un nouveau contrat de vacation."""
+    etab = getattr(request.user, 'etablissement', None)
     if request.method == 'POST':
-        form = ContratVacationForm(request.POST)
+        form = ContratVacationForm(request.POST, request=request, etablissement=etab)
         if form.is_valid():
             contrat = form.save()
             messages.success(request, f"Contrat créé pour {contrat.personnel.get_nom_complet}.")
             return redirect('vacations:contrat_list')
     else:
-        form = ContratVacationForm()
+        form = ContratVacationForm(request=request, etablissement=etab)
 
     return render(request, 'vacations/contrat_form.html', {
         'form': form,
@@ -60,17 +68,12 @@ def contrat_create(request):
 @requires_licence_feature('vacations')
 def saisie_heures(request, contrat_id):
     """Saisie mensuelle des heures pour un contrat."""
-    etab = getattr(request.user, 'etablissement', None)
     contrat = get_object_or_404(
-        ContratVacation.objects.select_related(
+        contrats_vacation_visibles(request).select_related(
             'personnel', 'annee_scolaire'
         ),
-        pk=contrat_id
+        pk=contrat_id,
     )
-    
-    if etab and contrat.annee_scolaire.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé.")
-        return redirect('vacations:contrat_list')
 
     # Récupérer ou créer les enregistrements pour les mois de l'année scolaire
     heures_list = HeureVacation.objects.filter(
@@ -126,13 +129,11 @@ def saisie_heures(request, contrat_id):
 @requires_licence_feature('vacations')
 def valider_heure(request, heure_id):
     """Valider une saisie d'heures."""
-    etab = getattr(request.user, 'etablissement', None)
-    heure = get_object_or_404(HeureVacation, pk=heure_id)
-    
-    if etab and heure.contrat.annee_scolaire.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé.")
-        return redirect('vacations:contrat_list')
-    
+    heure = get_object_or_404(
+        HeureVacation.objects.filter(contrat__in=contrats_vacation_visibles(request)),
+        pk=heure_id,
+    )
+
     heure.est_valide = True
     heure.save(update_fields=['est_valide'])
     messages.success(request, f"Heures de {heure.get_mois_display()} {heure.annee} validées.")
@@ -143,12 +144,10 @@ def valider_heure(request, heure_id):
 @requires_licence_feature('vacations')
 def invalider_heure(request, heure_id):
     """Invalider une saisie d'heures."""
-    etab = getattr(request.user, 'etablissement', None)
-    heure = get_object_or_404(HeureVacation, pk=heure_id)
-    
-    if etab and heure.contrat.annee_scolaire.etablissement_id != etab.pk:
-        messages.error(request, "Accès refusé.")
-        return redirect('vacations:contrat_list')
+    heure = get_object_or_404(
+        HeureVacation.objects.filter(contrat__in=contrats_vacation_visibles(request)),
+        pk=heure_id,
+    )
     heure.est_valide = False
     heure.save(update_fields=['est_valide'])
     messages.warning(request, f"Heures de {heure.get_mois_display()} {heure.annee} invalidées.")
@@ -168,8 +167,8 @@ def bulletin_list(request):
     else:
         annees_scolaires = AnneeScolaire.objects.order_by('-date_debut')[:10]
 
-    # Tous les bulletins sans filtre par année scolaire
-    qs = BulletinVacation.objects.select_related('personnel', 'annee_scolaire').order_by(
+    # Bulletins limités à l'établissement et aux cycles accessibles.
+    qs = bulletins_vacation_visibles(request).select_related('personnel', 'annee_scolaire').order_by(
         '-annee', '-mois', 'personnel__nom'
     )
 
@@ -203,7 +202,12 @@ def bulletin_list(request):
 @requires_licence_feature('vacations')
 def generer_bulletin(request, contrat_id, mois, annee):
     """Génère ou régénère le bulletin de vacation d'un vacataire pour un mois."""
-    contrat = get_object_or_404(ContratVacation, pk=contrat_id)
+    contrat = get_object_or_404(contrats_vacation_visibles(request), pk=contrat_id)
+    if not bulletin_vacation_synthese_visible(
+        request, contrat.personnel_id, contrat.annee_scolaire_id,
+    ):
+        messages.error(request, "Aucun bulletin de vacation n'est disponible pour ce périmètre.")
+        return redirect('vacations:bulletin_list')
 
     bulletin, _ = BulletinVacation.objects.get_or_create(
         personnel=contrat.personnel,
@@ -245,15 +249,19 @@ def generer_tous_bulletins(request):
         messages.error(request, "Aucune année scolaire active trouvée.")
         return redirect('vacations:bulletin_list')
 
-    contrats = ContratVacation.objects.filter(
+    contrats = contrats_vacation_visibles(request).filter(
         annee_scolaire=annee_courante,
-        actif=True
+        actif=True,
     ).select_related('personnel')
 
     count = 0
     bulletins_crees = []
 
     for contrat in contrats:
+        if not bulletin_vacation_synthese_visible(
+            request, contrat.personnel_id, contrat.annee_scolaire_id,
+        ):
+            continue
         heures = HeureVacation.objects.filter(
             contrat=contrat,
             mois=mois_actuel,
@@ -292,7 +300,10 @@ def valider_bulletin(request, bulletin_id):
     if etab and bulletin.annee_scolaire.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé.")
         return redirect('vacations:bulletin_list')
-    
+    if not bulletins_vacation_visibles(request).filter(pk=bulletin.pk).exists():
+        messages.error(request, "Accès refusé.")
+        return redirect('vacations:bulletin_list')
+
     bulletin.statut = BulletinVacation.StatutChoices.VALIDE
     bulletin.save(update_fields=['statut'])
     messages.success(request, f"Bulletin de {bulletin.get_mois_display()} {bulletin.annee} validé.")
@@ -309,7 +320,10 @@ def payer_bulletin(request, bulletin_id):
     if etab and bulletin.annee_scolaire.etablissement_id != etab.pk:
         messages.error(request, "Accès refusé.")
         return redirect('vacations:bulletin_list')
-    
+    if not bulletins_vacation_visibles(request).filter(pk=bulletin.pk).exists():
+        messages.error(request, "Accès refusé.")
+        return redirect('vacations:bulletin_list')
+
     bulletin.statut = BulletinVacation.StatutChoices.PAYE
     from django.utils import timezone
     bulletin.date_paiement = timezone.now().date()
@@ -323,10 +337,10 @@ def payer_bulletin(request, bulletin_id):
 def bulletin_vacation_pdf(request, bulletin_id):
     """Génère le PDF d'un bulletin de vacation."""
     bulletin = get_object_or_404(
-        BulletinVacation.objects.select_related(
+        bulletins_vacation_visibles(request).select_related(
             'personnel', 'annee_scolaire'
         ),
-        pk=bulletin_id
+        pk=bulletin_id,
     )
 
     # Détail des heures par contrat pour ce mois

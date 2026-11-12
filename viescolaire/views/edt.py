@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.http import HttpResponse
+from django.db.models import Q
 from django.utils.dateparse import parse_time
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -18,17 +19,46 @@ from django.views.decorators.http import require_POST
 from parametres.models import AnneeScolaire, Classe, Salle, SignataireDocument, TypeDocument
 from pedagogie.models import Enseignement
 from core.utils import get_etablissement_context
+from personnel.models import MembrePersonnel
+from personnel.selectors import membres_visibles
+from yelen_school.cycle_filter import get_cycle_ids
 from ..forms import ConfigEDTForm
 from ..edt_conflits import conflits_classe, conflits_seance
 from ..models import (
     SeanceCours, JourSemaine, ConfigEDT,
 )
-from .commun import WeasyHTML, _get_etab
+from .commun import WeasyHTML, _get_etab, classes_accessibles
 
 
 def _jours_grille(config, seances):
     """Colonnes de la grille : jours de classe configurés, plus ceux portant déjà des séances."""
     return sorted(set(config.get_jours_actifs()) | {s.jour for s in seances})
+
+
+def _classes_accessibles(request, etab=None):
+    """Classes du périmètre d'établissement et des cycles autorisés du compte."""
+    etab = etab or _get_etab(request)
+    if etab is None:
+        return Classe.objects.none()
+    return classes_accessibles(request, etab)
+
+
+def _personnel_edt_accessible(request, etab, classes, actifs=False):
+    """Personnel affecté à un cycle autorisé, ou enseignant d'une classe accessible."""
+    if etab is None:
+        return MembrePersonnel.objects.none()
+    personnel = MembrePersonnel.objects.filter(etablissement=etab)
+    if actifs:
+        personnel = personnel.filter(is_active=True)
+    cycle_ids = get_cycle_ids(request)
+    if cycle_ids is None:
+        return personnel
+    if not cycle_ids:
+        return personnel.none()
+    membres = membres_visibles(request, personnel)
+    return personnel.filter(
+        Q(pk__in=membres.values('pk')) | Q(enseignements__classe__in=classes)
+    ).distinct()
 
 
 @login_required
@@ -54,11 +84,11 @@ def emploi_du_temps_index(request):
     """Sélecteur de classe pour accéder à l'emploi du temps."""
     etab = _get_etab(request)
     classes = (
-        Classe.objects
-        .filter(etablissement=etab, actif=True)
+        _classes_accessibles(request, etab)
+        .filter(actif=True)
         .select_related('cycle')
         .order_by('cycle__ordre', 'cycle__nom', 'nom')
-    ) if etab else Classe.objects.none()
+    )
 
     # Grouper par cycle
     cycles = {}
@@ -77,7 +107,7 @@ def emploi_du_temps_index(request):
 def emploi_du_temps(request, classe_id):
     """Grille hebdomadaire des séances de cours d'une classe."""
     etab = _get_etab(request)
-    classe = get_object_or_404(Classe, pk=classe_id)
+    classe = get_object_or_404(_classes_accessibles(request, etab), pk=classe_id)
 
     annee_id = request.GET.get('annee')
     if annee_id:
@@ -155,7 +185,7 @@ def emploi_du_temps(request, classe_id):
 def seance_create(request, classe_id):
     """Ajoute une séance de cours (HTMX POST)."""
     etab = _get_etab(request)
-    classe = get_object_or_404(Classe, pk=classe_id)
+    classe = get_object_or_404(_classes_accessibles(request, etab), pk=classe_id)
 
     annee_id = request.POST.get('annee')
     annee = get_object_or_404(AnneeScolaire, pk=annee_id, etablissement=etab)
@@ -242,7 +272,8 @@ def occupation_salles(request):
     labels = dict(JourSemaine.choices)
     seances = (
         SeanceCours.objects
-        .filter(enseignement__annee_scolaire=annee, enseignement__classe__etablissement=etab, enseignement__est_actif=True)
+        .filter(enseignement__annee_scolaire=annee, enseignement__classe__in=_classes_accessibles(request, etab),
+                enseignement__est_actif=True)
         .exclude(salle='')
         .select_related('enseignement__classe', 'enseignement__matiere')
         .order_by('salle', 'jour', 'heure_debut')
@@ -276,7 +307,8 @@ def seance_delete(request, seance_id):
     from django.urls import reverse
     seance = get_object_or_404(
         SeanceCours.objects.select_related('enseignement__matiere', 'enseignement__classe'),
-        pk=seance_id, enseignement__classe__etablissement=_get_etab(request),
+        pk=seance_id,
+        enseignement__classe__in=_classes_accessibles(request),
     )
     enseignement = seance.enseignement
     seance.delete()
@@ -296,7 +328,7 @@ def edt_generer(request, classe_id):
     from ..services import GenerateurEDT
 
     etab = _get_etab(request)
-    classe = get_object_or_404(Classe, pk=classe_id)
+    classe = get_object_or_404(_classes_accessibles(request, etab), pk=classe_id)
 
     annee_id = request.GET.get('annee') or request.POST.get('annee')
     if annee_id:
@@ -375,7 +407,7 @@ def emploi_du_temps_pdf(request, classe_id):
         messages.error(request, "WeasyPrint n'est pas installé sur ce serveur.")
         return redirect('viescolaire:emploi_du_temps_index')
     etab = _get_etab(request)
-    classe = get_object_or_404(Classe, pk=classe_id)
+    classe = get_object_or_404(_classes_accessibles(request, etab), pk=classe_id)
 
     annee_id = request.GET.get('annee')
     if annee_id:
@@ -439,7 +471,6 @@ def emploi_du_temps_pdf(request, classe_id):
 def emploi_du_temps_prof_index(request):
     """Liste des professeurs avec sélecteur d'année scolaire."""
     from django.db.models import Count, Q
-    from personnel.models import MembrePersonnel
 
     etab = _get_etab(request)
     annees = (
@@ -452,12 +483,8 @@ def emploi_du_temps_prof_index(request):
         if annee_id else annees.filter(est_courante=True).first()
     )
 
-    personnel_qs = (
-        MembrePersonnel.objects
-        .filter(etablissement=etab, is_active=True)
-        .order_by('nom', 'prenom')
-        if etab else MembrePersonnel.objects.none()
-    )
+    classes = _classes_accessibles(request, etab)
+    personnel_qs = _personnel_edt_accessible(request, etab, classes, actifs=True).order_by('nom', 'prenom')
     if annee:
         personnel_qs = personnel_qs.annotate(
             nb_enseignements=Count(
@@ -465,6 +492,7 @@ def emploi_du_temps_prof_index(request):
                 filter=Q(
                     enseignements__annee_scolaire=annee,
                     enseignements__est_actif=True,
+                    enseignements__classe__in=classes,
                 ),
             )
         )
@@ -479,10 +507,11 @@ def emploi_du_temps_prof_index(request):
 @login_required
 def emploi_du_temps_prof(request, personnel_id):
     """Grille hebdomadaire de toutes les séances d'un professeur."""
-    from personnel.models import MembrePersonnel
-
     etab = _get_etab(request)
-    personnel = get_object_or_404(MembrePersonnel, pk=personnel_id, etablissement=etab)
+    classes = _classes_accessibles(request, etab)
+    personnel = get_object_or_404(
+        _personnel_edt_accessible(request, etab, classes), pk=personnel_id,
+    )
 
     annees = (
         AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
@@ -496,7 +525,7 @@ def emploi_du_temps_prof(request, personnel_id):
 
     enseignements = (
         Enseignement.objects
-        .filter(personnel=personnel, annee_scolaire=annee, est_actif=True)
+        .filter(personnel=personnel, classe__in=classes, annee_scolaire=annee, est_actif=True)
         .select_related('matiere', 'classe')
         .order_by('classe__nom', 'matiere__nom')
     ) if annee else Enseignement.objects.none()
@@ -542,10 +571,11 @@ def emploi_du_temps_prof_pdf(request, personnel_id):
         messages.error(request, "WeasyPrint n'est pas installé sur ce serveur.")
         return redirect('viescolaire:emploi_du_temps_prof_index')
 
-    from personnel.models import MembrePersonnel
-
     etab = _get_etab(request)
-    personnel = get_object_or_404(MembrePersonnel, pk=personnel_id, etablissement=etab)
+    classes = _classes_accessibles(request, etab)
+    personnel = get_object_or_404(
+        _personnel_edt_accessible(request, etab, classes), pk=personnel_id,
+    )
 
     annees = (
         AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
@@ -559,7 +589,7 @@ def emploi_du_temps_prof_pdf(request, personnel_id):
 
     enseignements = list(
         Enseignement.objects
-        .filter(personnel=personnel, annee_scolaire=annee, est_actif=True)
+        .filter(personnel=personnel, classe__in=classes, annee_scolaire=annee, est_actif=True)
         .select_related('matiere', 'classe')
         .order_by('classe__nom', 'matiere__nom')
     ) if annee else []

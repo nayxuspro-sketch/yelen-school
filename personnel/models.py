@@ -939,11 +939,20 @@ class AbsencePersonnel(BaseModel):
         return self.retenue and not self.justifiee
 
     @classmethod
-    def jours_retenus(cls, membre, mois, annee):
-        """Jours d'absence non justifiés à retenir pour ``membre`` sur le mois civil (bornés au mois)."""
+    def jours_retenus(cls, membre, mois, annee, request=None):
+        """Jours non justifiés du mois ; avec une requête, limite aussi les séances au cycle autorisé."""
         import calendar
         debut, fin = date(annee, mois, 1), date(annee, mois, calendar.monthrange(annee, mois)[1])
+        absences = cls.objects.filter(
+            personnel=membre, retenue=True, justifiee=False, date_debut__lte=fin, date_fin__gte=debut,
+        )
+        if request is not None:
+            from django.db.models import Q
+            from yelen_school.cycle_filter import get_cycle_ids
+            cycle_ids = get_cycle_ids(request)
+            if cycle_ids is not None:
+                absences = absences.filter(Q(classe__isnull=True) | Q(classe__cycle_id__in=cycle_ids))
         total = 0
-        for a in cls.objects.filter(personnel=membre, retenue=True, justifiee=False, date_debut__lte=fin, date_fin__gte=debut):
-            total += (min(a.date_fin, fin) - max(a.date_debut, debut)).days + 1
+        for absence in absences:
+            total += (min(absence.date_fin, fin) - max(absence.date_debut, debut)).days + 1
         return total

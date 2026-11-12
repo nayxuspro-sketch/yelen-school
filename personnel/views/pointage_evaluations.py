@@ -15,6 +15,7 @@ from licences.decorators import requires_licence_feature
 from parametres.models import AnneeScolaire
 
 from ..models import EvaluationAnnuelle, MembrePersonnel, PointagePersonnel, ProfilPointage, ReglagePointage
+from ..selectors import filtrer_par_membres_visibles, membres_visibles
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +24,10 @@ def _etab(request):
     return getattr(request.user, 'etablissement', None)
 
 
-def _membres_actifs(etab):
-    """Agents actifs de l'établissement, dans l'ordre alphabétique."""
-    return MembrePersonnel.objects.filter(etablissement=etab, is_active=True).order_by('nom', 'prenom')
+def _membres_actifs(etab, request=None):
+    """Agents actifs accessibles de l'établissement, dans l'ordre alphabétique."""
+    queryset = MembrePersonnel.objects.filter(etablissement=etab, is_active=True)
+    return membres_visibles(request, queryset).order_by('nom', 'prenom')
 
 
 def _heure(valeur):
@@ -55,7 +57,7 @@ def pointage_jour(request):
     etab = _etab(request)
     reglage = ReglagePointage.pour(etab)
     jour = _date(request.GET.get('date') or request.POST.get('date'), timezone.localdate())
-    membres = list(_membres_actifs(etab))
+    membres = list(_membres_actifs(etab, request=request))
     pointages = {p.personnel_id: p for p in PointagePersonnel.objects.filter(personnel__in=membres, date=jour)}
 
     if request.method == 'POST':
@@ -182,7 +184,7 @@ def pointage_mois(request):
         debut = date(today.year, today.month, 1)
     fin = (debut.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
-    membres = list(_membres_actifs(etab))
+    membres = list(_membres_actifs(etab, request=request))
     pointages = (PointagePersonnel.objects
                  .filter(personnel__in=membres, date__gte=debut, date__lte=fin)
                  .select_related('personnel'))
@@ -238,7 +240,7 @@ def pointage_mois_pdf(request):
         debut = date(today.year, today.month, 1)
     fin = (debut.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
-    membres = list(_membres_actifs(etab))
+    membres = list(_membres_actifs(etab, request=request))
     pointages = (PointagePersonnel.objects
                  .filter(personnel__in=membres, date__gte=debut, date__lte=fin)
                  .select_related('personnel'))
@@ -289,13 +291,15 @@ def evaluation_list(request):
     annee_sel = (annees.filter(pk=request.GET.get('annee')).first() if request.GET.get('annee')
                  else annees.filter(est_courante=True).first() or annees.first())
 
-    evaluations = (EvaluationAnnuelle.objects
-                   .filter(personnel__etablissement=etab,
-                           **({'annee_scolaire': annee_sel} if annee_sel else {}))
-                   .select_related('personnel', 'annee_scolaire', 'evaluateur')
-                   .order_by('-date_entretien'))
+    evaluations = filtrer_par_membres_visibles(
+        EvaluationAnnuelle.objects.filter(
+            personnel__etablissement=etab,
+            **({'annee_scolaire': annee_sel} if annee_sel else {}),
+        ).select_related('personnel', 'annee_scolaire', 'evaluateur'),
+        request,
+    ).order_by('-date_entretien')
     evalues = {e.personnel_id for e in evaluations}
-    a_evaluer = [m for m in _membres_actifs(etab) if m.pk not in evalues]
+    a_evaluer = [m for m in _membres_actifs(etab, request=request) if m.pk not in evalues]
 
     return render(request, 'personnel/evaluation_list.html', {
         'evaluations': evaluations,
@@ -310,19 +314,22 @@ def evaluation_list(request):
 def evaluation_form(request, pk=None):
     """Saisie (ou reprise) de l'entretien annuel d'évaluation d'un agent."""
     etab = _etab(request)
-    evaluation = (get_object_or_404(EvaluationAnnuelle.objects.select_related('personnel', 'annee_scolaire'),
-                                    pk=pk, personnel__etablissement=etab) if pk else None)
-    membres = _membres_actifs(etab)
+    evaluation = (get_object_or_404(
+        filtrer_par_membres_visibles(
+            EvaluationAnnuelle.objects.select_related('personnel', 'annee_scolaire')
+            .filter(personnel__etablissement=etab), request,
+        ), pk=pk,
+    ) if pk else None)
+    membres = _membres_actifs(etab, request=request)
     annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
     annee_courante = annees.filter(est_courante=True).first() or annees.first()
     erreur = None
 
     if request.method == 'POST':
-        personnel = get_object_or_404(MembrePersonnel, pk=request.POST.get('personnel'), etablissement=etab)
+        personnel = get_object_or_404(membres, pk=request.POST.get('personnel'))
         annee = get_object_or_404(AnneeScolaire, pk=request.POST.get('annee_scolaire'), etablissement=etab)
         date_entretien = _date(request.POST.get('date_entretien'), timezone.localdate())
-        evaluateur = MembrePersonnel.objects.filter(pk=request.POST.get('evaluateur') or None,
-                                                    etablissement=etab).first()
+        evaluateur = membres.filter(pk=request.POST.get('evaluateur') or None).first()
         notes = {}
         for champ, libelle in EvaluationAnnuelle.CRITERES:
             try:
@@ -376,8 +383,11 @@ def evaluation_pdf(request, pk):
 
     etab = _etab(request)
     evaluation = get_object_or_404(
-        EvaluationAnnuelle.objects.select_related('personnel', 'annee_scolaire', 'evaluateur'),
-        pk=pk, personnel__etablissement=etab,
+        filtrer_par_membres_visibles(
+            EvaluationAnnuelle.objects.select_related('personnel', 'annee_scolaire', 'evaluateur')
+            .filter(personnel__etablissement=etab), request,
+        ),
+        pk=pk,
     )
     etab_ctx = get_etablissement_context(etab, request)
     html = render_to_string('personnel/pdf/evaluation_annuelle.html', {
@@ -403,7 +413,12 @@ def evaluation_pdf(request, pk):
 def evaluation_delete(request, pk):
     """Supprime une évaluation saisie par erreur (la direction seule, action tracée dans l'audit)."""
     etab = _etab(request)
-    evaluation = get_object_or_404(EvaluationAnnuelle, pk=pk, personnel__etablissement=etab)
+    evaluation = get_object_or_404(
+        filtrer_par_membres_visibles(
+            EvaluationAnnuelle.objects.filter(personnel__etablissement=etab), request,
+        ),
+        pk=pk,
+    )
     nom = evaluation.personnel.get_nom_complet()
     evaluation.delete()
     messages.success(request, f"Évaluation de {nom} supprimée.")

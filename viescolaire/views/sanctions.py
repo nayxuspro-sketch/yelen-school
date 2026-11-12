@@ -1,17 +1,19 @@
 """Sanctions disciplinaires."""
 
+import json
+from decimal import Decimal, InvalidOperation
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
-from django.views.decorators.http import require_POST
 
 from core.notifications import notifier_sanction
-from parametres.models import AnneeScolaire, Classe, TypeSanction
+from parametres.models import TypeSanction
 from parametres.droits import autorise_url
-from yelen_school.cycle_filter import get_cycle_ids, filtrer_classe_par_cycle
+from .commun import _get_etab, annees_accessibles, classes_accessibles
 from pedagogie.models import Trimestre
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from ..models import (
@@ -24,23 +26,20 @@ from ..models import (
 
 @login_required
 def sanction_list(request):
-    """Liste des sanctions disciplinaires, regroupées par classe."""
-    from django.db.models import Q
+    """Liste les sanctions des classes accessibles, regroupées par classe."""
+    etab = _get_etab(request)
+    annees_courantes = annees_accessibles(request, etab).filter(est_courante=True)
+    annee_courante = annees_courantes.first()
+    classes = classes_accessibles(request, etab).select_related('cycle').order_by('cycle__ordre', 'nom')
 
-    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-    qs = SanctionDisciplinaire.objects.select_related(
+    qs = SanctionDisciplinaire.objects.filter(
+        inscription__classe__in=classes,
+    ).select_related(
         'inscription__eleve', 'inscription__classe__cycle', 'prononcee_par', 'trimestre', 'type_sanction'
     ).order_by('inscription__classe__cycle__ordre', 'inscription__classe__nom', '-date_sanction')
 
-    if annee_courante:
-        qs = qs.filter(inscription__annee_scolaire=annee_courante)
-
-    # Filtrage par cycle pour les non-réseau
-    cycle_ids = get_cycle_ids(request)
-    if cycle_ids is not None and not cycle_ids:
-        qs = qs.none()
-    elif cycle_ids:
-        qs = qs.filter(inscription__classe__cycle_id__in=cycle_ids)
+    if annees_courantes.exists():
+        qs = qs.filter(inscription__annee_scolaire__in=annees_courantes)
 
     type_filtre = request.GET.get('type')
     if type_filtre:
@@ -52,7 +51,7 @@ def sanction_list(request):
 
     classe_filtre = request.GET.get('classe')
     if classe_filtre:
-        qs = qs.filter(inscription__classe_id=classe_filtre)
+        qs = qs.filter(inscription__classe__in=classes, inscription__classe_id=classe_filtre)
 
     date_min = request.GET.get('date_min')
     if date_min:
@@ -65,13 +64,6 @@ def sanction_list(request):
             Q(inscription__eleve__prenom__icontains=eleve_q) |
             Q(inscription__eleve__matricule__icontains=eleve_q)
         )
-
-    etab = getattr(request.user, 'etablissement', None)
-    if etab:
-        classes = Classe.objects.filter(etablissement=etab).select_related('cycle').order_by('cycle__ordre', 'nom')
-    else:
-        classes = Classe.objects.select_related('cycle').order_by('cycle__ordre', 'nom')
-    classes = filtrer_classe_par_cycle(classes, request)
 
     groupes = {}
     for s in qs:
@@ -107,22 +99,34 @@ def sanction_create(request):
         messages.error(request, "Vous n'êtes pas autorisé à enregistrer des sanctions.")
         return redirect('viescolaire:sanction_list')
 
-    annee_courante = AnneeScolaire.objects.filter(est_courante=True).first()
-
-    cycle_ids = get_cycle_ids(request)
-    classes_qs = Classe.objects.all()
-    if cycle_ids is not None:
-        if cycle_ids:
-            classes_qs = classes_qs.filter(cycle_id__in=cycle_ids)
-        else:
-            classes_qs = classes_qs.none()
-    classes = classes_qs.select_related('cycle').order_by('cycle__ordre', 'nom')
+    etab = _get_etab(request)
+    annees_courantes = annees_accessibles(request, etab).filter(est_courante=True)
+    annee_courante = annees_courantes.first()
+    classes = classes_accessibles(request, etab).select_related('cycle').order_by('cycle__ordre', 'nom')
+    trimestres = Trimestre.objects.filter(
+        annee_scolaire__in=annees_courantes,
+    ).order_by('annee_scolaire__date_debut', 'numero')
+    types_sanction = TypeSanction.objects.filter(actif=True).order_by('libelle')
+    classe_id = request.GET.get('classe', '')
+    classes_selectionnees = classes.filter(pk=classe_id) if classe_id else classes.none()
+    inscriptions = Inscription.objects.filter(
+        classe__in=classes_selectionnees,
+        annee_scolaire__in=annees_courantes,
+    ).exclude(
+        statut=StatutInscriptionChoices.ABANDON,
+    ).select_related('eleve', 'classe').order_by('eleve__nom', 'eleve__prenom')
+    config_disc = ConfigDiscipline.get_or_default(etab) if etab else None
 
     context = {
         'annee_courante': annee_courante,
         'classes': classes,
-        'types_sanction': TypeSanction.objects.filter(actif=True).order_by('libelle'),
-        'trimestres': Trimestre.objects.filter(annee_scolaire=annee_courante).order_by('numero') if annee_courante else [],
+        'classe_id': classe_id,
+        'inscriptions': inscriptions,
+        'types_sanction': types_sanction,
+        'types_sanction_json': json.dumps({str(t.pk): float(t.points_defaut) for t in types_sanction}),
+        'statut_choices': SanctionDisciplinaire.StatutChoices.choices,
+        'trimestres': trimestres,
+        'config_disc': config_disc,
     }
 
     if request.method == 'POST':
@@ -134,33 +138,56 @@ def sanction_create(request):
         statut = request.POST.get('statut', 'EN_COURS')
 
         try:
-            inscription = Inscription.objects.get(pk=inscription_id)
-            type_sanction = TypeSanction.objects.get(pk=type_sanction_id)
+            inscriptions_accessibles = Inscription.objects.filter(
+                classe__in=classes,
+                annee_scolaire__in=annees_courantes,
+            ).exclude(statut=StatutInscriptionChoices.ABANDON)
+            inscription = inscriptions_accessibles.get(pk=inscription_id)
+            type_sanction = types_sanction.get(pk=type_sanction_id)
             trimestre_id = request.POST.get('trimestre')
-            trimestre = Trimestre.objects.get(pk=trimestre_id) if trimestre_id else None
+            trimestre = trimestres.get(pk=trimestre_id) if trimestre_id else None
+            if trimestre and trimestre.annee_scolaire_id != inscription.annee_scolaire_id:
+                raise ValueError("Le trimestre ne correspond pas à l'année de l'inscription.")
+            if statut not in SanctionDisciplinaire.StatutChoices.values:
+                raise ValueError("Statut de sanction invalide.")
 
-            SanctionDisciplinaire.objects.create(
+            sanction = SanctionDisciplinaire.objects.create(
                 inscription=inscription,
                 type_sanction=type_sanction,
                 trimestre=trimestre,
                 date_sanction=date_sanction,
                 motif=motif,
-                points=int(points) if points else 0,
+                points=Decimal(str(points or '0')),
                 statut=statut,
                 prononcee_par=request.user,
             )
             messages.success(request, "Sanction enregistrée avec succès.")
+            if request.POST.get('prevenir_parents') == 'on':
+                if notifier_sanction(sanction):
+                    sanction.parents_notifies_le = timezone.now()
+                    sanction.save(update_fields=['parents_notifies_le'])
+                    messages.success(request, "Parent informé (portail / SMS).")
+                else:
+                    messages.warning(request, "Parent non informé : aucun compte parent ni numéro de téléphone disponible.")
             return redirect('viescolaire:sanction_list')
-        except (Inscription.DoesNotExist, TypeSanction.DoesNotExist, ValueError, Trimestre.DoesNotExist) as e:
+        except (
+            Inscription.DoesNotExist, TypeSanction.DoesNotExist, Trimestre.DoesNotExist,
+            ValueError, InvalidOperation,
+        ) as e:
             messages.error(request, f"Erreur lors de l'enregistrement : {e}")
 
-    return render(request, 'viescolaire/sanction_form.html', context)
+    return render(request, 'viescolaire/sanction_create.html', context)
 
 
 @login_required
 def sanction_delete(request, sanction_id):
-    """Supprimer une sanction disciplinaire."""
-    sanction = get_object_or_404(SanctionDisciplinaire, pk=sanction_id)
+    """Supprimer une sanction d'une classe accessible."""
+    sanction = get_object_or_404(
+        SanctionDisciplinaire.objects.filter(
+            inscription__classe__in=classes_accessibles(request),
+        ),
+        pk=sanction_id,
+    )
 
     if request.method == 'POST':
         sanction.delete()

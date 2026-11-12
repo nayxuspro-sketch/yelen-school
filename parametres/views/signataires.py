@@ -18,6 +18,7 @@ from ..models import (
     TitreFonction, TitreHonorifiquePersonnel,
 )
 from personnel.models import MembrePersonnel
+from personnel.selectors import cycles_accessibles, membres_visibles
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,10 @@ def signataire_config(request):
     POST : enregistre le signataire pour un cycle × catégorie × année.
     """
     etab = _get_etab(request)
+    cycles_autorises = cycles_accessibles(request, etab).filter(actif=True)
+    personnel = membres_visibles(
+        request, MembrePersonnel.objects.filter(etablissement=etab, is_active=True),
+    ).order_by('nom', 'prenom')
     annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
     annee_id = request.GET.get('annee') or request.POST.get('annee_id')
     annee = AnneeScolaire.objects.filter(id=annee_id, etablissement=etab).first() \
@@ -46,12 +51,13 @@ def signataire_config(request):
         retour = f"{request.path}?annee={annee.id if annee else ''}"
 
         form = SignataireForm(request.POST, request.FILES, etablissement=etab)
+        form.fields['membre_personnel'].queryset = personnel
         if form.is_valid() and cycle_id and categorie and annee:
             membre = form.cleaned_data['membre_personnel']
             fonction = form.cleaned_data['fonction'] or 'Le Directeur'
             titre_h = form.cleaned_data['titre_honorifique']
             try:
-                cycle = Cycle.objects.get(id=cycle_id, etablissement=etab)
+                cycle = get_object_or_404(cycles_autorises, id=cycle_id, etablissement=etab)
                 retour += f"&cycle={cycle.id}"  # rouvre l'onglet du cycle enregistré
                 types = TypeDocument.objects.filter(
                     Q(cycle=cycle) | Q(cycle__isnull=True),
@@ -85,8 +91,7 @@ def signataire_config(request):
         return redirect(retour)
 
     # ── Construction des données pour le template ──
-    cycles = Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre')
-    personnel = MembrePersonnel.objects.filter(etablissement=etab, is_active=True).order_by('nom', 'prenom')
+    cycles = cycles_autorises.order_by('ordre')
     categories = TypeDocument.CategorieChoices.choices
     cycle_actif_id = request.GET.get('cycle', '')
 
@@ -107,7 +112,10 @@ def signataire_config(request):
             if annee:
                 for td in type_docs:
                     sig = SignataireDocument.objects.filter(
-                        cycle=cycle, type_document=td, annee_scolaire=annee, actif=True
+                        cycle=cycle, type_document=td, annee_scolaire=annee, actif=True,
+                    ).filter(
+                        Q(membre_personnel_id__isnull=True)
+                        | Q(membre_personnel_id__in=personnel.values('pk'))
                     ).first()
                     sigs[str(td.id)] = sig
             configured = sum(1 for s in sigs.values() if s)
@@ -149,7 +157,7 @@ def signataire_config(request):
 @login_required
 def signataires_list(request):
     etab = _get_etab(request)
-    cycles = Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre')
+    cycles = cycles_accessibles(request, etab).filter(actif=True).order_by('ordre')
     context = {
         'cycles': cycles,
         'active_cycle': cycles.first(),
@@ -159,8 +167,11 @@ def signataires_list(request):
 
 @login_required
 def signataires_list_detail(request, cycle_id):
-    cycle = get_object_or_404(Cycle, id=cycle_id)
+    cycle = get_object_or_404(cycles_accessibles(request, _get_etab(request)), id=cycle_id)
     etab = cycle.etablissement
+    personnel = membres_visibles(
+        request, MembrePersonnel.objects.filter(etablissement=etab),
+    )
     annee = AnneeScolaire.objects.get_annee_courante(etablissement=etab)
 
     if not annee:
@@ -177,7 +188,12 @@ def signataires_list_detail(request, cycle_id):
     )
     signataires = {
         s.type_document_id: s
-        for s in SignataireDocument.objects.filter(cycle=cycle, annee_scolaire=annee)
+        for s in SignataireDocument.objects.filter(
+            cycle=cycle, annee_scolaire=annee,
+        ).filter(
+            Q(membre_personnel_id__isnull=True)
+            | Q(membre_personnel_id__in=personnel.values('pk'))
+        )
     }
 
     docs_config = [
@@ -214,9 +230,16 @@ _TITRES_HONORIFIQUES_PREDEFINED = [
 
 @login_required
 def signataire_edit(request, cycle_id, document_type_id):
-    cycle = get_object_or_404(Cycle, id=cycle_id)
-    doc_type = get_object_or_404(TypeDocument, id=document_type_id)
+    cycle = get_object_or_404(cycles_accessibles(request, _get_etab(request)), id=cycle_id)
+    doc_type = get_object_or_404(
+        TypeDocument.objects.filter(Q(cycle=cycle) | Q(cycle__isnull=True), actif=True),
+        id=document_type_id,
+    )
     etab = cycle.etablissement
+    cycles = cycles_accessibles(request, etab).filter(actif=True).order_by('ordre')
+    personnel = membres_visibles(
+        request, MembrePersonnel.objects.filter(etablissement=etab, is_active=True),
+    ).order_by('nom', 'prenom')
     annee = AnneeScolaire.objects.get_annee_courante(etablissement=etab)
 
     if not annee:
@@ -237,6 +260,7 @@ def signataire_edit(request, cycle_id, document_type_id):
 
     if request.method == 'POST':
         form = SignataireForm(request.POST, etablissement=etab)
+        form.fields['membre_personnel'].queryset = personnel
         if form.is_valid():
             membre = form.cleaned_data['membre_personnel']
             fonction = form.cleaned_data['fonction']
@@ -260,14 +284,15 @@ def signataire_edit(request, cycle_id, document_type_id):
             return HttpResponse(status=204, headers={'HX-Trigger': 'signataireUpdated'})
     else:
         form = SignataireForm(initial=initial, etablissement=etab)
+        form.fields['membre_personnel'].queryset = personnel
 
     return render(request, 'parametres/partials/signataire_form.html', {
         'cycle': cycle,
-        'cycles': Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre'),
+        'cycles': cycles,
         'categories': TypeDocument.CategorieChoices.choices,
         'doc_type': doc_type,
         'signataire': signataire,
-        'personnel': MembrePersonnel.objects.filter(etablissement=etab, is_active=True).order_by('nom', 'prenom'),
+        'personnel': personnel,
         'form': form,
         'fonctions': TitreFonction.objects.filter(actif=True).order_by('nom'),
         'titres_honorifiques': list(
@@ -295,8 +320,10 @@ def signataires_matricule(request):
     annee = AnneeScolaire.objects.filter(id=annee_id, etablissement=etab).first() \
         if annee_id else AnneeScolaire.objects.get_annee_courante(etablissement=etab)
 
-    cycles = Cycle.objects.filter(etablissement=etab, actif=True).order_by('ordre', 'nom')
-    personnel = MembrePersonnel.objects.filter(etablissement=etab, is_active=True).order_by('nom', 'prenom')
+    cycles = cycles_accessibles(request, etab).filter(actif=True).order_by('ordre', 'nom')
+    personnel = membres_visibles(
+        request, MembrePersonnel.objects.filter(etablissement=etab, is_active=True),
+    ).order_by('nom', 'prenom')
 
     # ── POST : gestion des signataires et cosignataires ──
     if request.method == 'POST' and annee:
@@ -310,7 +337,9 @@ def signataires_matricule(request):
         # « Cycle matching query does not exist » quand ces champs sont absents du POST.
         if cs_id:
             try:
-                nb = CoSignataire.objects.filter(id=cs_id, actif=True).update(actif=False)
+                nb = CoSignataire.objects.filter(
+                    id=cs_id, actif=True, signataire_principal__cycle__in=cycles,
+                ).update(actif=False)
                 if nb:
                     messages.success(request, "Co-signataire supprimé.")
                 else:
@@ -322,8 +351,12 @@ def signataires_matricule(request):
 
         # Pour les autres actions, cycle_id et type_document_id sont requis.
         try:
-            cycle = Cycle.objects.get(id=cycle_id, etablissement=etab)
-            td = TypeDocument.objects.get(id=type_document_id, actif=True)
+            cycle = cycles.get(id=cycle_id)
+            td = TypeDocument.objects.get(
+                Q(cycle=cycle) | Q(cycle__isnull=True),
+                id=type_document_id,
+                actif=True,
+            )
         except (Cycle.DoesNotExist, TypeDocument.DoesNotExist) as e:
             messages.error(request, f"Erreur : {e}")
             return redirect(f"{request.path}?annee={annee.id if annee else ''}")
@@ -341,8 +374,10 @@ def signataires_matricule(request):
                     ).first()
                     if existant and existant.membre_personnel_id:
                         membre_id = existant.membre_personnel_id
-                    if not membre_id:
-                        messages.error(request, "Veuillez sélectionner un membre du personnel.")
+                if not membre_id:
+                    messages.error(request, "Veuillez sélectionner un membre du personnel.")
+                elif not personnel.filter(pk=membre_id).exists():
+                    messages.error(request, "Ce membre n'appartient pas à vos cycles autorisés.")
                 else:
                     SignataireDocument.objects.update_or_create(
                         cycle=cycle,
@@ -386,6 +421,8 @@ def signataires_matricule(request):
                         ordre = 2
                     if not membre_id:
                         messages.error(request, "Veuillez sélectionner un membre du personnel.")
+                    elif not personnel.filter(pk=membre_id).exists():
+                        messages.error(request, "Ce membre n'appartient pas à vos cycles autorisés.")
                     elif CoSignataire.objects.filter(
                         signataire_principal=sig,
                         membre_personnel_id=membre_id,
@@ -426,6 +463,9 @@ def signataires_matricule(request):
             annee_scolaire=annee,
             cycle__in=cycles,
             actif=True,
+        ).filter(
+            Q(membre_personnel_id__isnull=True)
+            | Q(membre_personnel_id__in=personnel.values('pk'))
         )
     }
 
@@ -440,11 +480,16 @@ def signataires_matricule(request):
                 'titres_honorifiques': cs.titres_honorifiques or [],
                 'ordre': cs.ordre,
             }
-            for cs in sig.co_signataires.filter(actif=True).order_by('ordre')
+            for cs in sig.co_signataires.filter(actif=True).filter(
+                Q(membre_personnel_id__isnull=True)
+                | Q(membre_personnel_id__in=personnel.values('pk'))
+            ).order_by('ordre')
         ]
 
     # ── Types de documents actifs, groupés par catégorie ──
-    types_documents = TypeDocument.objects.filter(actif=True).order_by('categorie', 'libelle')
+    types_documents = TypeDocument.objects.filter(actif=True).filter(
+        Q(cycle__isnull=True) | Q(cycle__in=cycles)
+    ).order_by('categorie', 'libelle')
     categories = TypeDocument.CategorieChoices.choices
 
     # ── Matrice : une ligne par type de document, une cellule par cycle ──
@@ -518,8 +563,10 @@ def signataire_formulaire(request):
 
     annee_courante = AnneeScolaire.objects.get_annee_courante(etablissement=etab)
     annees = AnneeScolaire.objects.filter(etablissement=etab).order_by('-date_debut')
-    cycles = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
-    personnel = MembrePersonnel.objects.filter(etablissement=etab).order_by('nom', 'prenom')
+    cycles = cycles_accessibles(request, etab).order_by('ordre', 'nom')
+    personnel = membres_visibles(
+        request, MembrePersonnel.objects.filter(etablissement=etab),
+    ).order_by('nom', 'prenom')
 
     titres_fonctions = TitreFonction.objects.filter(actif=True).order_by('nom')
     titres_honorifiques = list(
@@ -559,6 +606,7 @@ def signataire_formulaire(request):
                 selected_annee_id = str(annee.id) if annee else ''
 
         form = SignataireForm(request.POST, etablissement=etab)
+        form.fields['membre_personnel'].queryset = personnel
         context.update({
             'form': form,
             'annee': annee,
@@ -580,9 +628,9 @@ def signataire_formulaire(request):
 
         try:
             cycles_cibles = (
-                list(Cycle.objects.filter(etablissement=etab))
+                list(cycles)
                 if cycle_id == 'all'
-                else [Cycle.objects.get(id=cycle_id, etablissement=etab)]
+                else [get_object_or_404(cycles, pk=cycle_id)]
             )
             results = []
             for cycle in cycles_cibles:
@@ -615,5 +663,6 @@ def signataire_formulaire(request):
             context['error'] = f"Erreur : {str(e)}"
     else:
         context['form'] = SignataireForm(etablissement=etab)
+        context['form'].fields['membre_personnel'].queryset = personnel
 
     return render(request, 'parametres/signataire_formulaire.html', context)

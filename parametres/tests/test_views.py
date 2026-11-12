@@ -24,7 +24,7 @@ def _image_bruitee(largeur, hauteur, mode, format_):
 class TestParametresViews:
     @pytest.fixture
     def logged_in_client(self, client):
-        user = baker.make('accounts.User', is_superuser=True)
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN')
         client.force_login(user)
         return client
 
@@ -351,7 +351,8 @@ class TestSignataireConfig:
         from datetime import date
         from parametres.models import TitreFonction, TitreHonorifiquePersonnel, TypeDocument
         etab = baker.make('etablissements.Etablissement', code='SIG', nom='Ets Signataires')
-        user = baker.make('accounts.User', is_superuser=True, etablissement=etab, must_change_password=False)
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab,
+                          must_change_password=False)
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027',
                            date_debut=date(2026, 9, 1), date_fin=date(2027, 7, 31), est_courante=True)
         primaire = baker.make('parametres.Cycle', etablissement=etab, code='PRI', nom='Primaire', ordre=1, actif=True)
@@ -495,7 +496,8 @@ class TestSignataireEdit:
         from datetime import date
         from parametres.models import TitreFonction, TypeDocument
         etab = baker.make('etablissements.Etablissement', code='SIG2', nom='Ets Signataires')
-        client.force_login(baker.make('accounts.User', is_superuser=True, etablissement=etab, must_change_password=False))
+        client.force_login(baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN',
+                                      etablissement=etab, must_change_password=False))
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027',
                            date_debut=date(2026, 9, 1), date_fin=date(2027, 7, 31), est_courante=True)
         cycle = baker.make('parametres.Cycle', etablissement=etab, code='PPS', nom='Post-primaire et secondaire', ordre=1, actif=True)
@@ -723,7 +725,9 @@ class TestTypeDocumentForm:
     def test_cycles_de_l_etablissement_proposes_et_enregistres(self, client):
         from parametres.models import TypeDocument
         etab = baker.make(Etablissement, code='TD', nom='Lycée Types')
-        client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, must_change_password=False))
+        client.force_login(baker.make(
+            'accounts.User', etablissement=etab, is_superuser=True, role='SUPER_ADMIN', must_change_password=False,
+        ))
         secondaire = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', code='SEC', ordre=2)
         primaire = baker.make('parametres.Cycle', etablissement=etab, nom='Primaire', code='PRIM', ordre=1)
         autre = baker.make('parametres.Cycle', etablissement=baker.make(Etablissement, code='AUT'), nom='Autre école')
@@ -742,3 +746,90 @@ class TestTypeDocumentForm:
 
         html = client.get(reverse('parametres:type_document_edit', args=[type_doc.pk])).content.decode()
         assert f'<option value="{secondaire.pk}" selected>Secondaire</option>' in html
+
+
+@pytest.mark.django_db
+class TestIsolationCyclesSignataires:
+    """Les listes, formulaires et actions de signataires respectent les cycles du compte connecté."""
+
+    @pytest.fixture
+    def contexte(self, client):
+        from parametres.models import AnneeScolaire, TypeDocument
+        etab = baker.make(Etablissement)
+        primaire = baker.make('parametres.Cycle', etablissement=etab, code='PRIM', nom='Primaire', actif=True)
+        secondaire = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire', actif=True)
+        annee = baker.make(AnneeScolaire, etablissement=etab, est_courante=True)
+        membre_primaire = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORE', prenom='Ali')
+        membre_secondaire = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='ZONGO', prenom='Awa')
+        membre_primaire.cycles.add(primaire)
+        membre_secondaire.cycles.add(secondaire)
+        user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+        user.cycles.add(primaire)
+        client.force_login(user)
+        return etab, annee, primaire, secondaire, membre_primaire, membre_secondaire, TypeDocument.objects.get(code='LISTE_PERSONNEL')
+
+    def test_get_ne_montre_que_le_cycle_et_le_personnel_autorises(self, client, contexte):
+        _, _, primaire, secondaire, membre_primaire, membre_secondaire, _ = contexte
+        for route in ('parametres:signataires_list', 'parametres:signataire_config',
+                      'parametres:signataires_matricule', 'parametres:signataire_formulaire'):
+            response = client.get(reverse(route))
+            assert response.status_code == 200
+            if route == 'parametres:signataire_config':
+                assert all(ligne['cycle'] != secondaire for ligne in response.context['cycles_data'])
+            else:
+                assert secondaire not in response.context['cycles']
+            assert membre_secondaire not in response.context.get('personnel', [])
+        assert primaire in client.get(reverse('parametres:signataires_list')).context['cycles']
+        assert membre_primaire in client.get(reverse('parametres:signataire_config')).context['personnel']
+
+    def test_url_directe_et_post_hors_cycle_sont_refuses(self, client, contexte):
+        from parametres.models import SignataireDocument, TypeDocument
+        _, annee, primaire, secondaire, membre_primaire, membre_secondaire, type_document = contexte
+
+        assert client.get(reverse('parametres:signataires_list_detail', args=[secondaire.pk])).status_code == 404
+        assert client.get(reverse('parametres:signataire_edit', args=[secondaire.pk, type_document.pk])).status_code == 404
+
+        config_url = reverse('parametres:signataire_config')
+        donnees = {
+            'annee_id': str(annee.pk), 'cycle_id': str(secondaire.pk), 'categorie': 'PERSONNEL',
+            'membre_personnel': str(membre_primaire.pk), 'fonction': 'Le Directeur', 'titre_honorifique': '',
+        }
+        assert client.post(config_url, donnees).status_code == 404
+        assert not SignataireDocument.objects.filter(cycle=secondaire).exists()
+
+        # Un membre secondaire ne peut pas être choisi pour configurer le cycle primaire.
+        donnees.update({'cycle_id': str(primaire.pk), 'membre_personnel': str(membre_secondaire.pk)})
+        assert client.post(config_url, donnees).status_code == 302
+        assert not SignataireDocument.objects.filter(cycle=primaire).exists()
+
+        matrice_url = reverse('parametres:signataires_matricule')
+        reponse = client.post(matrice_url, {
+            'annee_id': str(annee.pk), 'action': 'save_signataire', 'cycle_id': str(primaire.pk),
+            'type_document_id': str(type_document.pk), 'membre_personnel': str(membre_secondaire.pk),
+        })
+        assert reponse.status_code == 302
+        assert not SignataireDocument.objects.filter(cycle=primaire).exists()
+
+        # Un identifiant de type documentaire propre au secondaire ne peut pas être posté pour le primaire.
+        type_secondaire = baker.make(
+            'parametres.TypeDocument', code='LISTE_SECONDAIRE', libelle='Liste secondaire',
+            categorie='PERSONNEL', cycle=secondaire, actif=True,
+        )
+        reponse = client.post(matrice_url, {
+            'annee_id': str(annee.pk), 'action': 'save_signataire', 'cycle_id': str(primaire.pk),
+            'type_document_id': str(type_secondaire.pk), 'membre_personnel': str(membre_primaire.pk),
+        })
+        assert reponse.status_code == 302
+        assert not SignataireDocument.objects.filter(cycle=primaire, type_document=type_secondaire).exists()
+
+        types = client.get(reverse('parametres:type_document_list'))
+        assert types.status_code == 200 and type_secondaire not in types.context['types_documents']
+        assert client.get(reverse('parametres:type_document_edit', args=[type_secondaire.pk])).status_code == 404
+        assert client.post(reverse('parametres:type_document_delete', args=[type_secondaire.pk])).status_code == 404
+        assert TypeDocument.objects.filter(pk=type_secondaire.pk).exists()
+        # Le cycle secondaire ne peut pas non plus être choisi à la création par POST direct.
+        reponse = client.post(reverse('parametres:type_document_create'), {
+            'code': 'CREATE_SEC', 'libelle': 'Type secondaire', 'categorie': 'PEDAGOGIE',
+            'cycle': str(secondaire.pk),
+        })
+        assert reponse.status_code == 200 and not TypeDocument.objects.filter(code='CREATE_SEC').exists()
