@@ -22,6 +22,7 @@ from parametres.models import AnneeScolaire, Classe
 from .. import importation
 from ..importation import CHAMPS_ELEVE
 from ..models import Enseignement, Trimestre, TypeEvaluation
+from ..notes_access import separer_inscriptions_saisie_notes
 from ..utils import CalculateurMoyenne
 
 CLE_SESSION = 'import_notes'
@@ -223,10 +224,12 @@ def _analyse(request, etat, parametres):
     matieres = {int(i): par_pk[p] for i, p in etat['matieres'].items() if p in par_pk}
     inscriptions = Inscription.objects.filter(
         classe=parametres['classe'], annee_scolaire=parametres['trimestre'].annee_scolaire,
-    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve')
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve', 'classe', 'annee_scolaire')
+    _, inscriptions_bloquees = separer_inscriptions_saisie_notes(inscriptions)
     analyse = importation.analyser(
         feuille, {c: int(i) for c, i in etat['correspondance'].items()}, matieres, inscriptions,
         parametres['bareme'], parametres['trimestre'], parametres['type_evaluation'], parametres['titre'],
+        inscriptions_bloquees=inscriptions_bloquees,
     )
     return feuille, matieres, analyse
 

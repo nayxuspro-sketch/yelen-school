@@ -148,6 +148,37 @@ def test_import_complet_puis_reimport_met_a_jour(secretaire, ecole):
     assert rapport.status_code == 200 and rapport['Content-Type'].endswith('sheet')
 
 
+def test_import_prive_exclut_un_eleve_non_exonere_sans_paiement(secretaire, ecole):
+    """L'import conserve les élèves payants mais refuse les notes d'un élève privé non exonéré sans versement."""
+    baker.make('parametres.IdentiteEtablissement', etablissement=ecole['etab'], type_etablissement='PRIVE')
+    statut = baker.make('parametres.StatutEleve', etablissement=ecole['etab'])
+    rubrique = baker.make('parametres.RubriquePaiement', etablissement=ecole['etab'], code='SCOL', nom='Scolarité')
+    baker.make('parametres.TarifScolarite', etablissement=ecole['etab'], annee_scolaire=ecole['annee'],
+               cycle=ecole['classe'].cycle, classe=ecole['classe'], statut_eleve=statut,
+               rubrique=rubrique, montant=Decimal('50000'), actif=True)
+
+    ins_paye = ecole['inscriptions']['kader']
+    ins_bloque = ecole['inscriptions']['awa']
+    ins_paye.statut_eleve = statut
+    ins_paye.save(update_fields=['statut_eleve'])
+    ins_bloque.statut_eleve = statut
+    ins_bloque.save(update_fields=['statut_eleve'])
+    baker.make('finances.Paiement', inscription=ins_paye, rubrique=rubrique, montant=Decimal('1'))
+
+    lignes = [LIGNES_NOTES[0], LIGNES_NOTES[1], LIGNES_NOTES[2]]
+    _, donnees = _jusqu_a_la_verification(secretaire, ecole, _xlsx(lignes))
+    secretaire.post(reverse('pedagogie:notes_import_correspondance'), donnees)
+    analyse = secretaire.get(reverse('pedagogie:notes_import_verification')).context['analyse']
+
+    assert analyse.nb_eleves == 1 and analyse.nb_notes == 4
+    assert [motif for _, _, motif in analyse.erreurs] == [
+        'saisie bloquée : aucun versement net positif de scolarité (élève non exonéré)',
+    ]
+    secretaire.post(reverse('pedagogie:notes_import_verification'))
+    assert Note.objects.filter(inscription=ins_paye).count() == 4
+    assert not Note.objects.filter(inscription=ins_bloque).exists()
+
+
 def test_reconnaissance_par_matricule_et_homonymes(secretaire, ecole):
     jumeau = baker.make('inscriptions.Eleve', matricule='ETAB001-25-04', nom='ZONGO', prenom='Fati', genre='F',
                         date_naissance=date(2012, 1, 1))

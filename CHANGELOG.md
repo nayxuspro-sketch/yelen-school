@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.63.57 — 2026-09-06
+
+- **Saisie des notes bloquée sans paiement de scolarité dans le privé.** Pour tout cycle, les élèves privés non exonérés dont le total versé net (paiements moins remboursements) sur l'inscription annuelle est nul sont exclus de la saisie directe et de l'import Excel. Les exonérés et les élèves ayant effectué un versement net positif, même partiel, restent autorisés. Les établissements d'un autre type ne sont pas concernés.
+- Aucun changement de schéma, aucune migration.
+
 ## 5.62.0 — 2026-11-06
 
 - **Extension du filtrage par cycle aux vues restantes.** Le middleware `CycleAccessMiddleware` et les utilitaires `filtrer_classe_par_cycle` / `get_cycle_ids` sont désormais appliqués à : `appel_list` et `appel_csv` (présences), `sanction_list` (sanctions disciplinaires), `classe_result_list`, `bilan_periodes`, `resultat_classe` et `moyennes_disciplines` (résultats/bulletins). Chaque vue vérifie que l'utilisateur a accès au cycle des données affichées ; sinon, une erreur est renvoyée et l'accès est refusé.

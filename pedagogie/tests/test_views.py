@@ -88,7 +88,7 @@ class TestPedagogieViews:
         response = logged_in_client.post(url, {'trimestre_id': trimestre.pk})
         assert response.status_code == 302
 
-    def _contexte_saisie(self, client, etab, type_etab, avec_frais=False):
+    def _contexte_saisie(self, client, etab, type_etab, avec_frais=False, cycle_code='POST'):
         """Construit un contexte de saisie pour un établissement donné.
         Retourne (annee, classe, enseignement, evaluation, statut_eleve, rubrique) —
         les deux derniers sont None si avec_frais est False.
@@ -96,7 +96,7 @@ class TestPedagogieViews:
         baker.make('parametres.IdentiteEtablissement', etablissement=etab, type_etablissement=type_etab)
         client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True, role='SUPER_ADMIN'))
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
-        cycle = baker.make('parametres.Cycle', etablissement=etab)
+        cycle = baker.make('parametres.Cycle', etablissement=etab, code=cycle_code)
         classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle)
         ens = baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe)
         evaluation = baker.make('pedagogie.Evaluation', enseignement=ens, bareme=Decimal('20.00'))
@@ -110,24 +110,47 @@ class TestPedagogieViews:
                        annee_scolaire=annee, montant=Decimal('50000'), actif=True)
         return annee, classe, ens, evaluation, statut_eleve, rubrique
 
-    def test_saisie_notes_prive_exclut_eleve_sans_scolarite(self, client):
-        """Établissement privé avec frais configurés : un élève sans statut élève
-        (total dû = 0) n'apparaît pas pour la saisie des notes (règle métier 5.60.3)."""
+    @pytest.mark.parametrize('cycle_code', ['PRES', 'PRIM', 'POST', 'SEC'])
+    def test_saisie_notes_prive_exclut_les_eleves_sans_paiement(self, client, cycle_code):
+        """Un élève privé non exonéré sans paiement ne peut pas saisir de note, même si des frais sont dus."""
         etab = baker.make('etablissements.Etablissement')
-        annee, classe, ens, evaluation, statut_eleve, rubrique = self._contexte_saisie(
-            client, etab, 'PRIVE', avec_frais=True)
-        # Inscription sans statut_eleve → total_du = 0 → exclue
-        ins_sans = baker.make('inscriptions.Inscription', annee_scolaire=annee, classe=classe)
-        # Inscription avec le statut_eleve du tarif → total_du > 0 → incluse
-        ins_avec = baker.make('inscriptions.Inscription',
-                              annee_scolaire=annee, classe=classe, statut_eleve=statut_eleve)
+        annee, classe, _, evaluation, statut_eleve, _ = self._contexte_saisie(
+            client, etab, 'PRIVE', avec_frais=True, cycle_code=cycle_code)
+        ins_sans_statut = baker.make('inscriptions.Inscription', annee_scolaire=annee, classe=classe)
+        ins_sans_paiement = baker.make('inscriptions.Inscription',
+                                       annee_scolaire=annee, classe=classe, statut_eleve=statut_eleve)
 
         url = reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk})
         response = client.get(url)
         assert response.status_code == 200
         html = response.content.decode()
-        assert ins_sans.eleve.nom not in html, 'Élève privé sans scolarité : ne doit pas apparaître'
-        assert ins_avec.eleve.nom in html, 'Élève privé avec scolarité : doit apparaître'
+        assert ins_sans_statut.eleve.nom not in html
+        assert ins_sans_paiement.eleve.nom not in html
+        response = client.post(url, {f'note_{ins_sans_paiement.pk}': '14'})
+        assert response.status_code == 302
+        assert not Note.objects.filter(inscription=ins_sans_paiement, evaluation=evaluation).exists()
+
+    def test_saisie_notes_prive_autorise_exoneres_et_paiements_partiels(self, client):
+        """Les exonérés et les élèves ayant versé un montant positif, même partiel, restent saisissables."""
+        etab = baker.make('etablissements.Etablissement')
+        annee, classe, _, evaluation, statut_eleve, rubrique = self._contexte_saisie(
+            client, etab, 'PRIVE', avec_frais=True)
+        ins_paye = baker.make('inscriptions.Inscription',
+                              annee_scolaire=annee, classe=classe, statut_eleve=statut_eleve)
+        ins_exonere = baker.make('inscriptions.Inscription',
+                                 annee_scolaire=annee, classe=classe, statut_eleve=statut_eleve,
+                                 est_exonere=True, raison_exoneration='Bourse intégrale')
+        ins_statut_exonere = baker.make('inscriptions.Inscription',
+                                        annee_scolaire=annee, classe=classe, statut='EXONERE')
+        baker.make('finances.Paiement', inscription=ins_paye, rubrique=rubrique, montant=Decimal('1'))
+
+        url = reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk})
+        response = client.get(url)
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert ins_paye.eleve.nom in html, 'Un versement partiel positif suffit'
+        assert ins_exonere.eleve.nom in html
+        assert ins_statut_exonere.eleve.nom in html
 
     def test_saisie_notes_public_inclut_tous_les_eleves(self, client):
         """Établissement public : tous les élèves apparaissent pour la saisie des notes

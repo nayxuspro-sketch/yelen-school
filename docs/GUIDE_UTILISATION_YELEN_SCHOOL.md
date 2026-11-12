@@ -3550,16 +3550,16 @@ Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMP
 - **Évaluations prises en compte** : toute évaluation comportant des notes est moyennée, même si son statut est resté « Planifiée » ; seules les évaluations **annulées** sont écartées.
 - La page Résultats et les bulletins (trimestriel, annuel, palmarès) affichent le barème réel de la classe (« /10 » au primaire) ; le commentaire de bulletin généré automatiquement suit le même barème.
 
-### 9.39 Saisie des notes et scolarité (établissement privé) (5.60.3)
+### 9.39 Saisie des notes et paiement de la scolarité (établissement privé) (5.63.57)
 
-**Règle métier :** dans un établissement **privé** (`IdentiteEtablissement.type_etablissement = PRIVE`), un élève n'apparaît pas dans la page de saisie des notes (`Pédagogie → Évaluations → Saisir les notes`) lorsque :
+**Règle métier :** dans un établissement de type **Privé** (`IdentiteEtablissement.type_etablissement = PRIVE`), si des tarifs de scolarité sont configurés pour l'année, un élève inscrit qui n'est pas exonéré et dont le total versé net (paiements moins remboursements) sur cette inscription annuelle est nul ne peut pas saisir de notes. Il est absent de la saisie directe (`Pédagogie → Évaluations → Saisir les notes`) et ses notes sont refusées à l'import Excel.
 
-- il n'a **pas d'inscription** active pour l'année scolaire et la classe concernées, ou
-- sa **scolarité (total dû) est <= 0** — c'est-à-dire qu'aucun frais de scolarité n'est dû (pas de `statut_eleve`, pas de tarifs configurés, exonération, bourse intégrale ou solde déjà réglé).
+- La règle s'applique à **tous les cycles**.
+- Un élève **exonéré** reste autorisé, même sans paiement.
+- Tout versement net strictement positif suffit, même partiel : le reste à payer ne bloque pas la saisie.
+- Les établissements dont le type n'est pas **Privé** ne sont pas concernés. Si aucun tarif n'est configuré pour l'année, la règle n'est pas appliquée.
 
-Cette règle ne s'applique **pas** aux établissements publics : tous les élèves inscrits apparaissent quelle que soit leur situation financière.
-
-**Objectif :** éviter la saisie de notes pour des élèves non effectivement scolarisés (non inscrits ou sans scolarité due) dans le privé, où la scolarité conditionne l'inscription effective.
+Le contrôle porte sur l'inscription de l'année scolaire concernée. Il n'efface pas les notes déjà enregistrées.
 
 ### 9.40 Samedi comme jour de classe (emploi du temps) (5.60.4)
 
@@ -7951,7 +7951,8 @@ d'évaluation sont définis.
    *Observation* sont ignorées. Une matière = une évaluation.
 3. **Vérification** — élèves reconnus parmi les inscrits de la classe, nombre de notes, notes qui
    seront remplacées (réimport), cellules refusées avec le motif (élève introuvable, homonymes
-   sans matricule, note hors barème, valeur illisible). `ABS` dans une cellule = absent (note 0) ;
+   sans matricule, absence de paiement pour un élève non exonéré du privé, note hors barème, valeur
+   illisible). `ABS` dans une cellule = absent (note 0) ;
    cellule vide = pas de note. Si une évaluation du même titre existe déjà avec un autre barème,
    l'import est bloqué : reprendre ce barème ou changer le titre.
 4. **Résultat** — évaluations créées, notes créées / remplacées, rapport Excel des cellules non

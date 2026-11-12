@@ -7,6 +7,7 @@ du même titre existe déjà pour la matière et le trimestre, ce qui rend un
 second import du même fichier sans effet de bord) ; chaque cellule devient une
 note (créée ou remplacée). Les cellules vides ne touchent à rien.
 """
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from django.db import transaction
@@ -131,10 +132,15 @@ def _evaluation_existante(enseignement, trimestre, type_evaluation, titre):
 
 
 def analyser(feuille, correspondance_eleve: dict, matieres: dict, inscriptions, bareme, trimestre,
-             type_evaluation, titre) -> AnalyseNotes:
-    """Reconnaît chaque ligne parmi les élèves de la classe et convertit les notes, sans rien écrire."""
+             type_evaluation, titre, inscriptions_bloquees: Iterable = ()) -> AnalyseNotes:
+    """Reconnaît les élèves inscrits et convertit les notes sans rien écrire.
+
+    Les inscriptions bloquées restent dans l'index pour éviter qu'un homonyme
+    autorisé ne reçoive les notes d'un élève non autorisé.
+    """
     analyse = AnalyseNotes()
     index = _index_inscriptions(inscriptions)
+    inscriptions_bloquees_ids = {inscription.pk for inscription in inscriptions_bloquees}
     vues = {}
 
     def cellule(ligne, code):
@@ -181,6 +187,12 @@ def analyser(feuille, correspondance_eleve: dict, matieres: dict, inscriptions, 
         if inscription is None:
             if not any(cle in index for cle in cles):
                 analyse.erreurs.append((numero, identite, 'élève introuvable parmi les inscrits de la classe'))
+            continue
+        if inscription.pk in inscriptions_bloquees_ids:
+            analyse.erreurs.append((
+                numero, identite,
+                'saisie bloquée : aucun versement net positif de scolarité (élève non exonéré)',
+            ))
             continue
         if inscription.pk in vues:
             analyse.erreurs.append((numero, identite, f'déjà présent à la ligne {vues[inscription.pk]}'))

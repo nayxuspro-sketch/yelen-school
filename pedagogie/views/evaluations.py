@@ -14,7 +14,8 @@ from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import filtre_enseignant, get_membre_personnel
 from core.hors_ligne import saisie_differee
 from ..utils import CalculateurMoyenne
-from yelen_school.cycle_filter import filtrer_classe_par_cycle, filtrer_eleve_par_cycle
+from yelen_school.cycle_filter import filtrer_classe_par_cycle
+from ..notes_access import separer_inscriptions_saisie_notes
 # Nombre de classes affichées par page dans la liste des évaluations
 # (chaque classe regroupe toutes ses matières et évaluations : ~40 lignes
 # par classe et par trimestre).
@@ -300,33 +301,21 @@ def evaluation_saisie(request, pk):
     inscriptions = Inscription.objects.filter(
         classe=classe,
         annee_scolaire=enseignement.annee_scolaire,
-    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related('eleve').order_by('eleve__nom', 'eleve__prenom')
-
-    # Règle métier (établissement privé) : un élève non inscrit ou dont la
-    # scolarité (total dû) est <= 0 n'apparaît pas pour la saisie des notes.
-    # Ne s'applique que si des frais de scolarité sont configurés pour
-    # l'établissement et l'année (sinon, aucune scolarité n'est exigible).
-    from parametres.models import IdentiteEtablissement, TarifScolarite
-    identite = IdentiteEtablissement.objects.filter(
-        etablissement=classe.etablissement,
-    ).first()
-    est_prive = bool(identite and identite.type_etablissement == 'PRIVE')
-    frais_configures = est_prive and TarifScolarite.objects.filter(
-        etablissement=classe.etablissement,
-        annee_scolaire=enseignement.annee_scolaire,
-        actif=True,
-    ).exists()
-
-    if frais_configures:
-        from decimal import Decimal
-        from finances.views.commun import _situations_financieres_en_lot
-        situations = _situations_financieres_en_lot(inscriptions)
-        inscriptions = [
-            ins for ins in inscriptions
-            if situations.get(ins.pk, {}).get('total_du', Decimal('0')) > 0
-        ]
+    ).exclude(statut=StatutInscriptionChoices.ABANDON).select_related(
+        'eleve', 'classe', 'annee_scolaire',
+    ).order_by('eleve__nom', 'eleve__prenom')
+    inscriptions, inscriptions_bloquees = separer_inscriptions_saisie_notes(inscriptions)
 
     if request.method == 'POST':
+        saisies_bloquees = [
+            ins for ins in inscriptions_bloquees
+            if any(f'{champ}_{ins.pk}' in request.POST for champ in ('note', 'obs', 'abs', 'disp'))
+        ]
+        if saisies_bloquees:
+            messages.warning(
+                request,
+                f"Saisie ignorée pour {len(saisies_bloquees)} élève(s) non exonéré(s) sans versement net positif de scolarité.",
+            )
         updated_count = 0
         errors = []
 
