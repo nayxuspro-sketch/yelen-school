@@ -314,7 +314,8 @@ def evaluation_saisie(request, pk):
         if saisies_bloquees:
             messages.warning(
                 request,
-                f"Saisie ignorée pour {len(saisies_bloquees)} élève(s) non exonéré(s) sans versement net positif de scolarité.",
+                f"Saisie ignorée pour {len(saisies_bloquees)} élève(s) non exonéré(s) "
+                "dont le montant net payé au titre de la scolarité est nul.",
             )
         updated_count = 0
         errors = []

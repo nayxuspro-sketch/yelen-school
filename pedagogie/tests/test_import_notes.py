@@ -172,11 +172,27 @@ def test_import_prive_exclut_un_eleve_non_exonere_sans_paiement(secretaire, ecol
 
     assert analyse.nb_eleves == 1 and analyse.nb_notes == 4
     assert [motif for _, _, motif in analyse.erreurs] == [
-        'saisie bloquée : aucun versement net positif de scolarité (élève non exonéré)',
+        'saisie bloquée : montant net payé au titre de la scolarité nul (élève non exonéré)',
     ]
     secretaire.post(reverse('pedagogie:notes_import_verification'))
     assert Note.objects.filter(inscription=ins_paye).count() == 4
     assert not Note.objects.filter(inscription=ins_bloque).exists()
+
+
+def test_import_prive_bloque_sans_tarif_configure(secretaire, ecole):
+    """L'import refuse aussi un élève sans paiement si aucun tarif n'est configuré pour l'année."""
+    baker.make('parametres.IdentiteEtablissement', etablissement=ecole['etab'], type_etablissement='PRIVE')
+    _, donnees = _jusqu_a_la_verification(secretaire, ecole, _xlsx([LIGNES_NOTES[0], LIGNES_NOTES[1]]))
+    secretaire.post(reverse('pedagogie:notes_import_correspondance'), donnees)
+
+    analyse = secretaire.get(reverse('pedagogie:notes_import_verification')).context['analyse']
+
+    assert analyse.nb_eleves == 0 and analyse.nb_notes == 0
+    assert [motif for _, _, motif in analyse.erreurs] == [
+        'saisie bloquée : montant net payé au titre de la scolarité nul (élève non exonéré)',
+    ]
+    secretaire.post(reverse('pedagogie:notes_import_verification'))
+    assert Note.objects.count() == 0
 
 
 def test_reconnaissance_par_matricule_et_homonymes(secretaire, ecole):

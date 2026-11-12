@@ -191,7 +191,7 @@ def analyser(feuille, correspondance_eleve: dict, matieres: dict, inscriptions, 
         if inscription.pk in inscriptions_bloquees_ids:
             analyse.erreurs.append((
                 numero, identite,
-                'saisie bloquée : aucun versement net positif de scolarité (élève non exonéré)',
+                'saisie bloquée : montant net payé au titre de la scolarité nul (élève non exonéré)',
             ))
             continue
         if inscription.pk in vues:

@@ -130,6 +130,49 @@ class TestPedagogieViews:
         assert response.status_code == 302
         assert not Note.objects.filter(inscription=ins_sans_paiement, evaluation=evaluation).exists()
 
+    def test_saisie_notes_prive_bloque_sans_tarif_configure(self, client):
+        """L'absence de tarif configuré ne désactive pas le contrôle serveur."""
+        etab = baker.make('etablissements.Etablissement')
+        annee, classe, _, evaluation, _, _ = self._contexte_saisie(client, etab, 'PRIVE')
+        ins = baker.make('inscriptions.Inscription', annee_scolaire=annee, classe=classe)
+
+        url = reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk})
+        assert ins.eleve.nom not in client.get(url).content.decode()
+        response = client.post(url, {f'note_{ins.pk}': '7'})
+
+        assert response.status_code == 302
+        assert not Note.objects.filter(inscription=ins, evaluation=evaluation).exists()
+
+    def test_saisie_notes_prive_ne_compte_pas_un_paiement_hors_scolarite(self, client):
+        """Un paiement sur une rubrique hors frais de scolarité ne déverrouille pas la saisie."""
+        etab = baker.make('etablissements.Etablissement')
+        annee, classe, _, evaluation, statut_eleve, _ = self._contexte_saisie(
+            client, etab, 'PRIVE', avec_frais=True)
+        ins = baker.make('inscriptions.Inscription',
+                         annee_scolaire=annee, classe=classe, statut_eleve=statut_eleve)
+        cantine = baker.make('parametres.RubriquePaiement', etablissement=etab, soumise_plafond=False)
+        baker.make('finances.Paiement', inscription=ins, rubrique=cantine, montant=Decimal('1000'))
+
+        url = reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk})
+        assert ins.eleve.nom not in client.get(url).content.decode()
+        client.post(url, {f'note_{ins.pk}': '7'})
+        assert not Note.objects.filter(inscription=ins, evaluation=evaluation).exists()
+
+    def test_saisie_notes_prive_bloque_apres_remboursement_complet(self, client):
+        """Un paiement intégralement remboursé donne un montant net exactement nul."""
+        etab = baker.make('etablissements.Etablissement')
+        annee, classe, _, evaluation, statut_eleve, rubrique = self._contexte_saisie(
+            client, etab, 'PRIVE', avec_frais=True)
+        ins = baker.make('inscriptions.Inscription',
+                         annee_scolaire=annee, classe=classe, statut_eleve=statut_eleve)
+        paiement = baker.make('finances.Paiement', inscription=ins, rubrique=rubrique, montant=Decimal('1000'))
+        baker.make('finances.Remboursement', paiement=paiement, montant=Decimal('1000'))
+
+        url = reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk})
+        assert ins.eleve.nom not in client.get(url).content.decode()
+        client.post(url, {f'note_{ins.pk}': '7'})
+        assert not Note.objects.filter(inscription=ins, evaluation=evaluation).exists()
+
     def test_saisie_notes_prive_autorise_exoneres_et_paiements_partiels(self, client):
         """Les exonérés et les élèves ayant versé un montant positif, même partiel, restent saisissables."""
         etab = baker.make('etablissements.Etablissement')

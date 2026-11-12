@@ -3550,14 +3550,14 @@ Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMP
 - **Évaluations prises en compte** : toute évaluation comportant des notes est moyennée, même si son statut est resté « Planifiée » ; seules les évaluations **annulées** sont écartées.
 - La page Résultats et les bulletins (trimestriel, annuel, palmarès) affichent le barème réel de la classe (« /10 » au primaire) ; le commentaire de bulletin généré automatiquement suit le même barème.
 
-### 9.39 Saisie des notes et paiement de la scolarité (établissement privé) (5.63.57)
+### 9.39 Saisie des notes et paiement de la scolarité (établissement privé) (5.63.58)
 
-**Règle métier :** dans un établissement de type **Privé** (`IdentiteEtablissement.type_etablissement = PRIVE`), si des tarifs de scolarité sont configurés pour l'année, un élève inscrit qui n'est pas exonéré et dont le total versé net (paiements moins remboursements) sur cette inscription annuelle est nul ne peut pas saisir de notes. Il est absent de la saisie directe (`Pédagogie → Évaluations → Saisir les notes`) et ses notes sont refusées à l'import Excel.
+**Règle métier :** dans un établissement de type **Privé** (`IdentiteEtablissement.type_etablissement = PRIVE`), un élève inscrit qui n'est pas exonéré et dont le montant net payé au titre des rubriques de scolarité est exactement nul ne peut pas saisir de notes. Le montant net correspond aux paiements actifs associés aux rubriques marquées **« comptées dans les frais de scolarité plafonnés »**, moins les remboursements actifs correspondants. La règle s'applique même si aucun tarif n'est configuré pour l'année. L'élève est absent de la saisie directe (`Pédagogie → Évaluations → Saisir les notes`) et ses notes sont refusées à l'import Excel.
 
 - La règle s'applique à **tous les cycles**.
 - Un élève **exonéré** reste autorisé, même sans paiement.
-- Tout versement net strictement positif suffit, même partiel : le reste à payer ne bloque pas la saisie.
-- Les établissements dont le type n'est pas **Privé** ne sont pas concernés. Si aucun tarif n'est configuré pour l'année, la règle n'est pas appliquée.
+- Un versement net strictement positif, même partiel, autorise la saisie : le reste à payer ne compte pas.
+- Les établissements dont le type n'est pas **Privé** ne sont pas concernés.
 
 Le contrôle porte sur l'inscription de l'année scolaire concernée. Il n'efface pas les notes déjà enregistrées.
 
