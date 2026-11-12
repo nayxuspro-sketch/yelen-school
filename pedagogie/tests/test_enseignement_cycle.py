@@ -72,7 +72,7 @@ def test_page_nouvelle_affectation_attend_le_choix_de_classe(admin_client, conte
     form = response.context['form']
     assert not form.fields['matiere'].queryset.exists()
     assert form.fields['classe'].widget.attrs['hx-target'] == '#id_matiere'
-    assert list(form.fields).index('classe') < list(form.fields).index('matiere')
+    assert list(form.fields)[:4] == ['annee_scolaire', 'classe', 'personnel', 'matiere']
     assert f'value="{contexte["matiere_primaire"].pk}"' not in response.content.decode()
 
 

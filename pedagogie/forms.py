@@ -137,7 +137,7 @@ class EnseignementForm(forms.ModelForm):
             'hx-target': '#id_matiere',
             'hx-swap': 'innerHTML',
         })
-        self.order_fields(['classe', 'matiere'])
+        self.order_fields(['annee_scolaire', 'classe', 'personnel', 'matiere'])
         _apply_yelen_classes(self.fields)
 
 
