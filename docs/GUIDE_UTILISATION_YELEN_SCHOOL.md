@@ -3550,9 +3550,9 @@ Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMP
 - **Évaluations prises en compte** : toute évaluation comportant des notes est moyennée, même si son statut est resté « Planifiée » ; seules les évaluations **annulées** sont écartées.
 - La page Résultats et les bulletins (trimestriel, annuel, palmarès) affichent le barème réel de la classe (« /10 » au primaire) ; le commentaire de bulletin généré automatiquement suit le même barème.
 
-### 9.39 Saisie des notes et paiement de la scolarité (établissement privé ou confessionnel) (5.63.59)
+### 9.39 Saisie des notes et paiement de la scolarité (établissement privé ou confessionnel) (5.63.60)
 
-**Règle métier :** dans un établissement dont le type configuré est **différent de Public** (notamment `PRIVE` ou `CONFESSIONNEL`), un élève inscrit qui n'est pas exonéré et dont le montant net payé au titre des rubriques de scolarité est exactement nul ne peut pas saisir de notes. Le montant net correspond aux paiements actifs associés aux rubriques marquées **« comptées dans les frais de scolarité plafonnés »**, moins les remboursements actifs correspondants. La règle s'applique même si aucun tarif n'est configuré pour l'année. L'élève est absent de la saisie directe (`Pédagogie → Évaluations → Saisir les notes`) et ses notes sont refusées à l'import Excel.
+**Règle métier :** dans un établissement dont le type configuré est **différent de Public** (notamment `PRIVE` ou `CONFESSIONNEL`), un élève inscrit qui n'est pas exonéré et dont le montant net payé au titre des rubriques de scolarité est exactement nul ne peut pas saisir de notes. Le montant net correspond aux paiements actifs associés aux rubriques marquées **« comptées dans les frais de scolarité plafonnés »**, moins les remboursements actifs correspondants. La règle s'applique même si aucun tarif n'est configuré pour l'année. L'élève est absent de la saisie directe (`Pédagogie → Évaluations → Saisir les notes`) et ses notes sont refusées à l'import Excel. Un contrôle supplémentaire au niveau du modèle bloque aussi les écritures directes qui ne passent pas par ces écrans.
 
 - La règle s'applique à **tous les cycles**.
 - Un élève **exonéré** reste autorisé, même sans paiement.

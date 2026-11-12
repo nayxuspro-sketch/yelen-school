@@ -1,6 +1,8 @@
 """Règles d'accès à la saisie des notes selon les paiements de scolarité."""
 
 from collections.abc import Iterable
+from contextlib import contextmanager
+from contextvars import ContextVar
 from decimal import Decimal
 
 from django.db.models import Sum
@@ -10,6 +12,22 @@ from parametres.models import IdentiteEtablissement
 
 
 ZERO = Decimal('0')
+_CONTROLE_PREALABLE = ContextVar('notes_controle_prealable', default=False)
+
+
+@contextmanager
+def saisies_notes_deja_controlees():
+    """Évite de recalculer l'accès ligne par ligne après un contrôle par lot réussi."""
+    jeton = _CONTROLE_PREALABLE.set(True)
+    try:
+        yield
+    finally:
+        _CONTROLE_PREALABLE.reset(jeton)
+
+
+def controle_note_requis() -> bool:
+    """Indique si le modèle doit vérifier lui-même l'accès à la note."""
+    return not _CONTROLE_PREALABLE.get()
 
 
 def separer_inscriptions_saisie_notes(

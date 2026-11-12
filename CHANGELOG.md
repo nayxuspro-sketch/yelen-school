@@ -3,6 +3,10 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.63.60 — 2026-09-06
+
+- **Contrôle central des notes impayées.** Le modèle `Note` vérifie aussi chaque création ou modification via `.save()` : l'administration et les autres écritures passant par le modèle ne peuvent plus contourner le blocage des formulaires et imports. Tests de régression couvrant le POST direct et l'écriture modèle. Aucun changement de schéma ni migration.
+
 ## 5.63.59 — 2026-09-06
 
 - **Saisie des notes : élargit le contrôle aux types non publics.** Tout type d'établissement configuré autre que `PUBLIC` (notamment `PRIVE` et `CONFESSIONNEL`) déclenche le blocage des élèves non exonérés au montant net de scolarité nul. La saisie directe et les imports sont protégés ; `PUBLIC` reste exclu. Aucun changement de schéma ni migration.

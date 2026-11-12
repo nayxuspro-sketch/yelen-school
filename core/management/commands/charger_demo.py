@@ -32,6 +32,7 @@ from pedagogie.models import Enseignement, Evaluation, Matiere, MatiereCycle, No
 from manuels.models import AttributionManuel, EtatManuel, ExemplaireManuel, ManuelScolaire
 from personnel.models import EvaluationAnnuelle, PointagePersonnel, ReglagePointage
 from pedagogie.utils import CalculateurMoyenne
+from pedagogie.notes_access import saisies_notes_deja_controlees, separer_inscriptions_saisie_notes
 
 MOT_DE_PASSE = 'Demo2026!'
 GRAINE = 2026
@@ -114,10 +115,10 @@ class Command(BaseCommand):
             self._comptes(etab, personnel)
             courantes, precedentes = self._eleves(etab, courante, precedente, classes, statuts, nb_eleves)
             self._familles(etab, courantes)
-            self._pedagogie(annee=precedente, classes=classes, personnel=personnel, eleves=precedentes)
-            self._pedagogie(annee=courante, classes=classes, personnel=personnel, eleves=courantes)
             self._paiements(precedente, precedentes, rubriques, statuts)
             self._paiements(courante, courantes, rubriques, statuts)
+            self._pedagogie(annee=precedente, classes=classes, personnel=personnel, eleves=precedentes)
+            self._pedagogie(annee=courante, classes=classes, personnel=personnel, eleves=courantes)
             self._signataires(courante, personnel)
             self._pointages(courante, personnel)
             self._evaluations(courante, personnel)
@@ -301,6 +302,9 @@ class Command(BaseCommand):
 
     # ── Pédagogie ────────────────────────────────────────────────────────────────────────────────
     def _pedagogie(self, annee, classes, personnel, eleves):
+        _, bloquees = separer_inscriptions_saisie_notes(eleves)
+        if bloquees:
+            raise CommandError("Les notes de démonstration ne peuvent pas être créées pour des élèves sans paiement.")
         enseignants = [m for k, m in personnel.items() if k.startswith('ENS')]
         for code_cycle, matieres in MATIERES.items():
             for code, nom, coefficient in matieres:
@@ -340,11 +344,12 @@ class Command(BaseCommand):
                                   'statut': Evaluation.StatutChoices.TERMINEE},
                     )
                     for inscription in inscriptions:
-                        Note.objects.get_or_create(
-                            inscription=inscription, evaluation=evaluation,
-                            defaults={'valeur': Decimal(hasard.randint(60, 185)) / 10,
-                                      'statut': Note.StatutNoteChoices.VALIDEE},
-                        )
+                        with saisies_notes_deja_controlees():
+                            Note.objects.get_or_create(
+                                inscription=inscription, evaluation=evaluation,
+                                defaults={'valeur': Decimal(hasard.randint(60, 185)) / 10,
+                                          'statut': Note.StatutNoteChoices.VALIDEE},
+                            )
             trimestre.derogation_ouverte = True                         # peuplement de l'historique sans persister de dérogation
             CalculateurMoyenne.recalculer_classe(classe, trimestre)     # moyennes, rangs et bulletins prêts
             trimestre.derogation_ouverte = False

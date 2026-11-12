@@ -15,7 +15,7 @@ from core.utils import filtre_enseignant, get_membre_personnel
 from core.hors_ligne import saisie_differee
 from ..utils import CalculateurMoyenne
 from yelen_school.cycle_filter import filtrer_classe_par_cycle
-from ..notes_access import separer_inscriptions_saisie_notes
+from ..notes_access import saisies_notes_deja_controlees, separer_inscriptions_saisie_notes
 # Nombre de classes affichées par page dans la liste des évaluations
 # (chaque classe regroupe toutes ses matières et évaluations : ~40 lignes
 # par classe et par trimestre).
@@ -371,15 +371,16 @@ def evaluation_saisie(request, pk):
             else:
                 continue  # Champ vide → on ne touche pas la note
 
-            note, created = Note.objects.get_or_create(
-                inscription=ins,
-                evaluation=evaluation,
-                defaults={'valeur': valeur, 'observation': obs_val},
-            )
-            if not created:
-                note.valeur = valeur
-                note.observation = obs_val
-                note.save()
+            with saisies_notes_deja_controlees():
+                note, created = Note.objects.get_or_create(
+                    inscription=ins,
+                    evaluation=evaluation,
+                    defaults={'valeur': valeur, 'observation': obs_val},
+                )
+                if not created:
+                    note.valeur = valeur
+                    note.observation = obs_val
+                    note.save()
             updated_count += 1
 
         if errors:

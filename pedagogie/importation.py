@@ -16,6 +16,7 @@ from core.importation import (
     Champ, cle_nom_complet, cle_personne, en_note, initiales, nombre, normaliser, separer_nom_prenom, texte,
 )
 from .models import Evaluation, Note
+from .notes_access import saisies_notes_deja_controlees
 
 CHAMPS_ELEVE = (
     Champ('matricule', 'Matricule',
@@ -243,18 +244,19 @@ def importer(analyse: AnalyseNotes, matieres: dict, trimestre, type_evaluation, 
             evaluations[ens.pk] = evaluation
         for ligne in analyse.lignes:
             for ens_pk, (valeur, absent) in ligne.notes.items():
-                note, creee = Note.objects.get_or_create(
-                    inscription_id=ligne.inscription_id, evaluation=evaluations[ens_pk],
-                    defaults={'valeur': valeur, 'observation': 'ABS' if absent else ''},
-                )
-                if creee:
-                    resultat.notes_creees += 1
-                    continue
-                note.valeur = valeur
-                if absent:
-                    note.observation = 'ABS'
-                elif note.observation == 'ABS':
-                    note.observation = ''
-                note.save()
-                resultat.notes_remplacees += 1
+                with saisies_notes_deja_controlees():
+                    note, creee = Note.objects.get_or_create(
+                        inscription_id=ligne.inscription_id, evaluation=evaluations[ens_pk],
+                        defaults={'valeur': valeur, 'observation': 'ABS' if absent else ''},
+                    )
+                    if creee:
+                        resultat.notes_creees += 1
+                        continue
+                    note.valeur = valeur
+                    if absent:
+                        note.observation = 'ABS'
+                    elif note.observation == 'ABS':
+                        note.observation = ''
+                    note.save()
+                    resultat.notes_remplacees += 1
     return resultat

@@ -34,7 +34,7 @@ def _eleve(nom, prenom):
 def classe_notee(client):
     etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR', ville='Ouagadougou')
     baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='LE SAVOIR',
-               numero_agrement_mena='2019-0123/MENAPLN')
+               type_etablissement='PUBLIC', numero_agrement_mena='2019-0123/MENAPLN')
     user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab,
                       must_change_password=False)
     client.force_login(user)

@@ -17,7 +17,8 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def cours(client):
     etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR', ville='Ouagadougou')
-    baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='LE SAVOIR')
+    baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='LE SAVOIR',
+               type_etablissement='PUBLIC')
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
                        date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
     cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')

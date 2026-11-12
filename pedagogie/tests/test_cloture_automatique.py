@@ -18,7 +18,8 @@ pytestmark = pytest.mark.django_db
 def contexte(client):
     auj = date.today()
     etab = baker.make('etablissements.Etablissement', nom='Lycée Wend-Kuuni', ville='Ouagadougou')
-    baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='Lycée Wend-Kuuni')
+    baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_etablissement='Lycée Wend-Kuuni',
+               type_etablissement='PUBLIC')
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
                        date_debut=auj - timedelta(days=90), date_fin=auj + timedelta(days=180))
     cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')

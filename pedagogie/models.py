@@ -414,6 +414,17 @@ class Note(BaseModel):
             raise ValidationError({
                 'valeur': f"La note ({self.valeur}) dépasse le barème ({self.evaluation.bareme})."
             })
+        from .notes_access import controle_note_requis, separer_inscriptions_saisie_notes
+
+        if self.inscription_id and controle_note_requis():
+            _, bloquees = separer_inscriptions_saisie_notes([self.inscription])
+            if bloquees:
+                raise ValidationError({
+                    'inscription': (
+                        "Saisie de la note refusée : le montant net payé au titre de la scolarité est nul "
+                        "pour un élève non exonéré."
+                    )
+                })
 
     def save(self, *args, **kwargs):
         self.full_clean()

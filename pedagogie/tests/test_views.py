@@ -2,6 +2,7 @@ import re
 from decimal import Decimal
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from model_bakery import baker
 from pedagogie.models import Matiere, Note
@@ -130,7 +131,33 @@ class TestPedagogieViews:
         assert response.status_code == 302
         assert not Note.objects.filter(inscription=ins_sans_paiement, evaluation=evaluation).exists()
 
-    @pytest.mark.parametrize('type_etab', ['PRIVE', 'CONFESSIONNEL', 'PRIVE_LAIC'])
+    def test_modele_note_refuse_ecriture_directe_pour_prive_impaye(self, client):
+        """Le modèle bloque aussi les écritures ORM/admin hors de la vue de saisie."""
+        etab = baker.make('etablissements.Etablissement')
+        annee, classe, _, evaluation, _, _ = self._contexte_saisie(client, etab, 'PRIVE')
+        ins = baker.make('inscriptions.Inscription', annee_scolaire=annee, classe=classe)
+
+        with pytest.raises(ValidationError, match='montant net payé au titre de la scolarité est nul'):
+            baker.make('pedagogie.Note', inscription=ins, evaluation=evaluation, valeur=Decimal('7'))
+
+    def test_modele_note_autorise_exonere_et_versement_partiel(self, client):
+        """La validation centrale conserve les exceptions métier du privé."""
+        etab = baker.make('etablissements.Etablissement')
+        annee, classe, _, evaluation, statut_eleve, rubrique = self._contexte_saisie(
+            client, etab, 'PRIVE', avec_frais=True)
+        exonere = baker.make('inscriptions.Inscription',
+                             annee_scolaire=annee, classe=classe, est_exonere=True,
+                             raison_exoneration='Bourse intégrale')
+        paye = baker.make('inscriptions.Inscription',
+                          annee_scolaire=annee, classe=classe, statut_eleve=statut_eleve)
+        baker.make('finances.Paiement', inscription=paye, rubrique=rubrique, montant=Decimal('1'))
+
+        Note.objects.create(inscription=exonere, evaluation=evaluation, valeur=Decimal('7'))
+        Note.objects.create(inscription=paye, evaluation=evaluation, valeur=Decimal('7'))
+
+        assert Note.objects.filter(inscription__in=[exonere, paye], evaluation=evaluation).count() == 2
+
+    @pytest.mark.parametrize('type_etab', ['PRIVE', 'CONFESSIONNEL'])
     def test_saisie_notes_prive_bloque_sans_tarif_configure(self, client, type_etab):
         """Tout type configuré non public bloque sans paiement ni tarif configuré."""
         etab = baker.make('etablissements.Etablissement')
