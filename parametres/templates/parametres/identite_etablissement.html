@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Identité Établissement — Paramètres{% endblock %}
+{% block title %}Identité officielle et documents — Paramètres{% endblock %}
 
 {% block content %}
 <div class="page-header animate-fade-up">
@@ -8,9 +8,10 @@
         <p class="page-subtitle">
             <a href="{% url 'parametres:index' %}">Paramètres</a>
             <span class="breadcrumb-sep">/</span>
-            <span class="breadcrumb-current">Identité Établissement</span>
+            <span class="breadcrumb-current">Identité officielle et documents</span>
         </p>
-        <h1 class="page-title">Identité de l'établissement</h1>
+        <h1 class="page-title">Identité officielle et documents</h1>
+        <p class="text-muted">Ces informations concernent ce site scolaire et servent aux documents officiels. La fiche Établissement conserve ses informations de base.</p>
     </div>
 </div>
 
@@ -40,13 +41,13 @@
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11m16-11v11M8 14v.01M12 14v.01M16 14v.01M8 18v.01M12 18v.01M16 18v.01"/>
                 </svg>
-                Informations officielles
+                Informations officielles du site
             </div>
         </div>
 
         <div class="form-grid-2">
             <div class="form-group">
-                <label class="input-label" for="id_nom_etablissement">Nom de l'établissement</label>
+                <label class="input-label" for="id_nom_etablissement">Nom officiel à imprimer sur les documents</label>
                 <input type="text" name="nom_etablissement" value="{{ identite.nom_etablissement|default:etablissement.nom }}"
                     class="input" placeholder="Ex: Lycée d'Excellence Yelen" id="id_nom_etablissement">
             </div>
@@ -111,7 +112,7 @@
 
         <div class="form-grid-2">
             <div class="form-group" style="grid-column:1/-1;">
-                <label class="input-label" for="id_adresse_complete">Adresse complète</label>
+                <label class="input-label" for="id_adresse_complete">Adresse officielle à afficher</label>
                 <textarea name="adresse_complete" rows="2" class="input" placeholder="Adresse complète (Rue, Quartier, Secteur...)" id="id_adresse_complete">{{ identite.adresse_complete|default:'' }}</textarea>
             </div>
 
@@ -139,7 +140,7 @@
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                 </svg>
-                Contact
+                Coordonnées à afficher sur les documents
             </div>
         </div>
 
@@ -163,7 +164,8 @@
             </div>
 
             <div class="form-group">
-                <label class="input-label" for="id_nom_directeur">Nom du Directeur</label>
+                <label class="input-label" for="id_nom_directeur">Directeur général / Proviseur de l'établissement</label>
+                <p class="text-xs text-muted mt-2">Direction de l'établissement dans son ensemble ; les directeurs de cycle sont désignés séparément dans les affectations annuelles du personnel.</p>
                 <input type="text" name="nom_directeur" value="{{ identite.nom_directeur|default:'' }}"
                     class="input" placeholder="Nom et prénom du directeur" id="id_nom_directeur">
             </div>

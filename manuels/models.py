@@ -1,7 +1,8 @@
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from core.models import BaseModel, CycleChoices
+from core.models import BaseModel
 
 
 class EtatManuel(models.TextChoices):
@@ -25,9 +26,10 @@ class ManuelScolaire(BaseModel):
     auteur = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Auteur"))
     editeur = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Éditeur"))
     isbn = models.CharField(max_length=20, blank=True, default='', verbose_name=_("ISBN"))
-    cycle = models.CharField(
-        max_length=20,
-        choices=CycleChoices.choices,
+    cycle = models.ForeignKey(
+        'parametres.Cycle',
+        on_delete=models.PROTECT,
+        related_name='manuels',
         verbose_name=_("Cycle"),
     )
     classe = models.ForeignKey(
@@ -62,6 +64,20 @@ class ManuelScolaire(BaseModel):
         verbose_name = _("Manuel scolaire")
         verbose_name_plural = _("Manuels scolaires")
         ordering = ['cycle', 'titre']
+
+    def clean(self):
+        super().clean()
+        erreurs = {}
+        if self.cycle_id and self.etablissement_id:
+            if self.cycle.etablissement_id != self.etablissement_id:
+                erreurs['cycle'] = _("Le cycle doit appartenir au même établissement que le manuel.")
+        if self.classe_id and self.etablissement_id:
+            if self.classe.etablissement_id != self.etablissement_id:
+                erreurs['classe'] = _("La classe doit appartenir au même établissement que le manuel.")
+            elif self.cycle_id and self.classe.cycle_id != self.cycle_id:
+                erreurs['classe'] = _("La classe doit appartenir au cycle sélectionné.")
+        if erreurs:
+            raise ValidationError(erreurs)
 
     def __str__(self):
         return self.titre

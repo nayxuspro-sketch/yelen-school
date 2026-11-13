@@ -22,9 +22,11 @@ def _attribuer(monde, exemplaire=None, inscription=None, **extra):  # noqa: F811
 
 
 def test_le_catalogue_se_filtre_par_cycle(monde):  # noqa: F811
-    baker.make(ManuelScolaire, etablissement=monde.etab, titre='Lecture CP', cycle='PRIMAIRE')
-    ManuelScolaire.objects.filter(pk=monde.manuel.pk).update(cycle='SECONDAIRE')
-    html = monde.client.get(reverse('manuels:catalogue'), {'cycle': 'PRIMAIRE'}).content.decode()
+    primaire = baker.make(
+        'parametres.Cycle', etablissement=monde.etab, code='PRIM', nom='Primaire', ordre=2,
+    )
+    baker.make(ManuelScolaire, etablissement=monde.etab, titre='Lecture CP', cycle=primaire)
+    html = monde.client.get(reverse('manuels:catalogue'), {'cycle': str(primaire.pk)}).content.decode()
     assert 'Lecture CP' in html and 'Mathématiques 6e' not in html
     html = monde.client.get(reverse('manuels:catalogue')).content.decode()
     assert 'Lecture CP' in html and 'Mathématiques 6e' in html

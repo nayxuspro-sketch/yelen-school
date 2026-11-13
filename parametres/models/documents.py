@@ -346,6 +346,13 @@ class CoSignataire(BaseModel):
         verbose_name = _("Co-Signataire")
         verbose_name_plural = _("Co-Signataires")
         ordering = ['ordre']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['signataire_principal', 'membre_personnel_id'],
+                condition=models.Q(actif=True),
+                name='unique_cosignataire_actif_par_membre',
+            ),
+        ]
 
     def __str__(self):
         m = self.get_membre_personnel()

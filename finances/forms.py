@@ -1,6 +1,9 @@
+from uuid import UUID
+
 from django import forms
+
 from .models import FraisScolarite, Paiement, ModePaiement, Echeancier, ModePenalite, ParametresFinances, TypeBourse
-from parametres.models import RubriquePaiement
+from parametres.models import AnneeScolaire, Classe, RubriquePaiement
 
 class FraisScolariteForm(forms.ModelForm):
     class Meta:
@@ -13,6 +16,47 @@ class FraisScolariteForm(forms.ModelForm):
             'type_frais': forms.Select(attrs={'class': 'input select'}),
             'montant': forms.NumberInput(attrs={'class': 'input', 'step': '0.01'}),
         }
+
+    def __init__(self, *args, etablissement=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if etablissement is None:
+            annee_id = self.data.get('annee_scolaire') if self.is_bound else self.initial.get('annee_scolaire')
+            annee_id = annee_id or getattr(self.instance, 'annee_scolaire_id', None)
+            annee_id = getattr(annee_id, 'pk', annee_id)
+            try:
+                annee_id = UUID(str(annee_id)) if annee_id else None
+            except (TypeError, ValueError):
+                annee_id = None
+            if annee_id:
+                etablissement = AnneeScolaire.objects.filter(pk=annee_id).values_list(
+                    'etablissement_id', flat=True,
+                ).first()
+
+        if etablissement is None:
+            self.fields['annee_scolaire'].queryset = AnneeScolaire.objects.none()
+            self.fields['classe'].queryset = Classe.objects.none()
+            self.fields['cycle'].queryset = self.fields['cycle'].queryset.none()
+            return
+
+        self.fields['annee_scolaire'].queryset = AnneeScolaire.objects.filter(
+            etablissement=etablissement,
+        ).order_by('-libelle')
+        self.fields['classe'].queryset = Classe.objects.filter(
+            etablissement=etablissement,
+        ).select_related('cycle').order_by('cycle__ordre', 'nom')
+        self.fields['cycle'].queryset = self.fields['cycle'].queryset.filter(
+            etablissement=etablissement,
+        ).order_by('ordre', 'nom')
+
+        cycle_id = self.data.get('cycle') if self.is_bound else self.initial.get('cycle')
+        cycle_id = cycle_id or getattr(self.instance, 'cycle_id', None)
+        cycle_id = getattr(cycle_id, 'pk', cycle_id)
+        try:
+            cycle_id = UUID(str(cycle_id)) if cycle_id else None
+        except (TypeError, ValueError):
+            cycle_id = None
+        if cycle_id:
+            self.fields['classe'].queryset = self.fields['classe'].queryset.filter(cycle_id=cycle_id)
 
 class PaiementForm(forms.ModelForm):
     class Meta:

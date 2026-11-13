@@ -26,15 +26,18 @@ def _user(etab=None, **extra):
 
 # ── Fiche de configuration ────────────────────────────────────────────────────────────────────
 
-def test_fiche_affiche_les_stats_de_l_etablissement(client, etab):
+def test_fiche_affiche_les_cycles_reels_et_les_stats_de_l_etablissement(client, etab):
     baker.make('inscriptions.Eleve', _quantity=3)
     baker.make('parametres.Classe', etablissement=etab, _quantity=2)
+    primaire = baker.make('parametres.Cycle', etablissement=etab, nom='Primaire', code='PRIM')
+    secondaire = baker.make('parametres.Cycle', etablissement=etab, nom='Secondaire', code='SEC')
     client.force_login(_user(etab))
     reponse = client.get(reverse('etablissements:detail'))
     assert reponse.status_code == 200
     assert reponse.context['etablissement'] == etab
     assert reponse.context['stats'] == {'eleves': 3, 'personnel': 1, 'classes': 2}
-    assert reponse.context['cycles_selected'] == etab.cycles
+    assert list(reponse.context['cycles_configures']) == [primaire, secondaire]
+    assert 'Primaire' in reponse.content.decode() and 'Secondaire' in reponse.content.decode()
 
 
 def test_fiche_sans_etablissement_explique_le_refus(client):
@@ -50,15 +53,15 @@ def test_super_admin_sans_etablissement_reprend_le_premier(client, etab):
     assert reponse.context['etablissement'] == etab
 
 
-def test_mise_a_jour_de_la_fiche(client, etab):
+def test_mise_a_jour_de_la_fiche_ne_modifie_pas_les_cycles(client, etab):
+    cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Primaire', code='PRIM')
     client.force_login(_user(etab))
     donnees = {'nom': 'Lycée Laafi 2', 'code': 'LAAFI', 'adresse': 'Ouaga 2000', 'telephone': '70 00 00 00',
-               'email': 'contact@laafi.bf', 'ville': 'Ouagadougou', 'pays': 'Burkina Faso',
-               'cycles': ['PRIMAIRE', 'POST_PRIMAIRE']}
+               'email': 'contact@laafi.bf', 'ville': 'Ouagadougou', 'pays': 'Burkina Faso'}
     reponse = client.post(reverse('etablissements:detail'), donnees)
     etab.refresh_from_db()
     assert reponse.status_code == 200
-    assert etab.nom == 'Lycée Laafi 2' and etab.cycles == ['PRIMAIRE', 'POST_PRIMAIRE']
+    assert etab.nom == 'Lycée Laafi 2' and list(reponse.context['cycles_configures']) == [cycle]
     assert reponse.context['success'] == "Configuration enregistrée avec succès."
 
 
@@ -72,12 +75,12 @@ def test_super_admin_cree_et_se_rattache_a_l_etablissement(client):
     utilisateur = _user(None, is_superuser=True)
     client.force_login(utilisateur)
     donnees = {'nom': 'École Nongtaaba', 'code': 'NONGTAABA', 'adresse': 'Pabré', 'telephone': '70 11 11 11',
-               'email': 'nongtaaba@lasafar.bf', 'ville': 'Ouagadougou', 'pays': 'Burkina Faso',
-               'cycles': ['PRESCOLAIRE']}
+               'email': 'nongtaaba@lasafar.bf', 'ville': 'Ouagadougou', 'pays': 'Burkina Faso'}
     reponse = client.post(reverse('etablissements:detail'), donnees)
     cree = Etablissement.objects.get(code='NONGTAABA')
     utilisateur.refresh_from_db()
-    assert reponse.status_code == 200 and cree.cycles == ['PRESCOLAIRE']
+    assert reponse.status_code == 200 and cree.nom == 'École Nongtaaba'
+    assert not cree.cycles_parametres.exists()
     assert utilisateur.etablissement_id == cree.pk
 
 

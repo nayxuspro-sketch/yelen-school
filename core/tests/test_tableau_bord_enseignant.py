@@ -23,8 +23,10 @@ def test_evaluations_recentes_lisibles_et_limitees_a_l_enseignant(client):
     baker.make('pedagogie.Evaluation', enseignement=sien, trimestre=trimestre, titre='Devoir du collègue',
                date_planifiee=datetime.date(2026, 10, 13))
 
-    client.force_login(baker.make('accounts.User', etablissement=etab, role='ENSEIGNANT', email='PROF@ecole.bf',
-                                  must_change_password=False))
+    user = baker.make('accounts.User', etablissement=etab, role='ENSEIGNANT', email='PROF@ecole.bf',
+                      must_change_password=False)
+    user.cycles.add(cycle)  # Droit de consultation distinct de l'affectation professionnelle.
+    client.force_login(user)
     html = client.get('/').content.decode()
 
     assert 'Évaluations récentes' in html

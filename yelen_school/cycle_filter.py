@@ -7,7 +7,7 @@ de l'utilisateur connecté, stockés sur request par CycleAccessMiddleware.
 
 from __future__ import annotations
 
-from django.db.models import QuerySet, Q
+from django.db.models import QuerySet
 
 
 def get_cycle_ids(request) -> list:

@@ -7,7 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from core.fields import URLFieldHTTPS
-from core.models import BaseModel
+from core.models import BaseModel, CycleChoices
 
 
 class IdentiteEtablissement(BaseModel):
@@ -140,8 +140,8 @@ class IdentiteEtablissement(BaseModel):
 
     nom_directeur = models.CharField(
         max_length=200,
-        verbose_name=_("Nom du Directeur/Proviseur"),
-        help_text=_("Nom complet pour les documents officiels")
+        verbose_name=_("Directeur général / Proviseur de l'établissement"),
+        help_text=_("Nom de la direction générale, commune à l'établissement ; les directeurs de cycle sont désignés dans les affectations annuelles du personnel.")
     )
 
     devise = models.TextField(
@@ -181,11 +181,11 @@ class Cycle(BaseModel):
     """
 
     CODE_CHOICES = [
-        ('PRES', _('Préscolaire')),
-        ('PRIM', _('Primaire')),
-        ('POST', _('Post-primaire')),
-        ('SEC', _('Secondaire')),
-        ('TOUT', _('Tout Cycle')),
+        ('PRES', CycleChoices.PRESCOLAIRE.label),
+        ('PRIM', CycleChoices.PRIMAIRE.label),
+        ('POST', CycleChoices.POST_PRIMAIRE.label),
+        ('SEC', CycleChoices.SECONDAIRE.label),
+        ('TOUT', _('Tout Cycle')),  # code conservé pour les anciennes données, absent des créations.
     ]
 
     etablissement = models.ForeignKey(

@@ -10,8 +10,8 @@
 
 <div class="page-header animate-fade-up">
     <div>
-        <h1 class="page-title">Identité de l'Établissement</h1>
-        <p class="page-subtitle">Configurez le cœur de votre système de gestion scolaire.</p>
+        <h1 class="page-title">Fiche de l'établissement</h1>
+        <p class="page-subtitle">Informations de base du site scolaire. Un établissement peut comprendre plusieurs cycles.</p>
     </div>
 </div>
 
@@ -75,8 +75,9 @@
                 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label class="input-label" for="id_nom">Nom officiel *</label>
-                        <input type="text" name="nom" value="{{ etablissement.nom|default:'' }}" required class="input" placeholder="Ex: Lycée d'Excellence Yelen" id="id_nom">
+                        <label class="input-label" for="id_nom">Nom de l'établissement *</label>
+                        <input type="text" name="nom" value="{{ etablissement.nom|default:'' }}" required class="input" placeholder="Ex: Lycée d'Excellence Yelen — site de Sabou" id="id_nom">
+                        <p class="text-xs text-muted mt-2">Nom de ce site scolaire, pas celui du réseau.</p>
                     </div>
 
                     <div class="form-group">
@@ -95,23 +96,25 @@
                     </div>
 
                     <div class="form-group" style="grid-column: span 2;">
-                        <label class="input-label" for="id_ville">Cycles d'enseignement proposés</label>
-                        <div class="d-flex gap-3 flex-wrap" style="background: var(--color-bg-card); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
-                            {% for code, label in cycles_all %}
-                            <label class="d-flex align-center gap-2 cursor-pointer p-2 rounded hover:bg-[var(--color-bg-hover)]" style="user-select: none; transition: background 0.2s;">
-                                <input type="checkbox" name="cycles" value="{{ code }}" class="custom-checkbox" {% if code in cycles_selected %}checked{% endif %}>
-                                <span class="badge {% if code == 'PRESCOLAIRE' %}badge-info{% elif code == 'PRIMAIRE' %}badge-success{% elif code == 'POST_PRIMAIRE' %}badge-warning{% else %}badge-neutral{% endif %}" style="padding: 4px 10px;">{{ label }}</span>
-                            </label>
+                        <label class="input-label">Cycles configurés pour cet établissement</label>
+                        <div class="d-flex gap-2 flex-wrap" style="background: var(--color-bg-card); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                            {% for cycle in cycles_configures %}
+                            <span class="badge {% if cycle.actif %}badge-success{% else %}badge-neutral{% endif %}" style="padding: 4px 10px;">
+                                {{ cycle.nom }}{% if not cycle.actif %} (inactif){% endif %}
+                            </span>
+                            {% empty %}
+                            <span class="text-muted">Aucun cycle n'est encore configuré.</span>
                             {% endfor %}
                         </div>
-                        <p class="text-xs text-muted mt-2">Cochez tous les cycles actifs au sein de votre établissement.</p>
+                        <p class="text-xs text-muted mt-2">Les cycles réels et leurs classes se gèrent dans le module Cycles, et restent tous rattachés à ce même établissement.</p>
+                        <a href="{% url 'parametres:cycle_list' %}" class="btn-secondary btn-sm" style="display:inline-flex; margin-top:8px;">Gérer les cycles</a>
                     </div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Localisation et Siège</h2>
+                    <h2 class="card-title">Localisation du site scolaire</h2>
                 </div>
                 
                 <div class="form-grid-2">

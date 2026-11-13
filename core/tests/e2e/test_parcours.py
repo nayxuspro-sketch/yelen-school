@@ -25,7 +25,7 @@ playwright_api = pytest.importorskip('playwright.sync_api', reason='Playwright n
 from django.urls import reverse  # noqa: E402  (après importorskip : le module est ignoré sans Playwright)
 from playwright.sync_api import expect  # noqa: E402
 
-from core.management.commands.charger_demo import MOT_DE_PASSE  # noqa: E402
+from core.management.commands.charger_demo import CLASSES, MOT_DE_PASSE  # noqa: E402
 from finances.models import Paiement  # noqa: E402
 from inscriptions.models import Inscription  # noqa: E402
 from pedagogie.models import Evaluation, Note  # noqa: E402
@@ -85,7 +85,7 @@ def page(navigateur):
 @pytest.fixture
 def demo():
     """Établissement de démonstration (chantier C4) : tout le parcours part de données réelles."""
-    call_command('charger_demo', '--eleves', '8', verbosity=0)
+    call_command('charger_demo', '--eleves', str(len(CLASSES)), verbosity=0)
     return Inscription.objects.filter(annee_scolaire__est_courante=True).order_by('eleve__nom').first()
 
 

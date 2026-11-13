@@ -23,14 +23,22 @@ def monde(client):
     client.force_login(user)
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
                        date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
-    cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST', nom='Post-primaire')
+    autre_cycle = baker.make('parametres.Cycle', etablissement=autre, code='POST', nom='Post-primaire')
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6e A', actif=True)
     eleve = baker.make('inscriptions.Eleve', nom='TRAORE', prenom='Awa', photo='')
     inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee, statut='ACTIF')
-    manuel = baker.make(ManuelScolaire, etablissement=etab, titre='Mathématiques 6e', prix_remplacement=Decimal('4500'))
-    etranger = baker.make(ManuelScolaire, etablissement=autre, titre='Manuel d\'ailleurs')
-    return SimpleNamespace(client=client, user=user, etab=etab, annee=annee, classe=classe, inscription=inscription,
-                           manuel=manuel, etranger=etranger)
+    manuel = baker.make(
+        ManuelScolaire, etablissement=etab, cycle=cycle,
+        titre='Mathématiques 6e', prix_remplacement=Decimal('4500'),
+    )
+    etranger = baker.make(
+        ManuelScolaire, etablissement=autre, cycle=autre_cycle, titre='Manuel d\'ailleurs',
+    )
+    return SimpleNamespace(
+        client=client, user=user, etab=etab, cycle=cycle, annee=annee, classe=classe,
+        inscription=inscription, manuel=manuel, etranger=etranger,
+    )
 
 
 @pytest.mark.parametrize('nom_url, kwargs', [
@@ -53,9 +61,16 @@ def test_catalogue_creation_modification_suppression(monde):
     assert reponse.status_code == 200 and 'Le titre est obligatoire.' in reponse.content.decode()
     assert ManuelScolaire.objects.filter(etablissement=monde.etab).count() == 1
 
+    cycle_hors_etablissement = c.post(reverse('manuels:manuel_create'), {
+        'titre': 'Manuel interdit', 'cycle': str(monde.etranger.cycle_id),
+    })
+    assert cycle_hors_etablissement.status_code == 200
+    assert 'cycle configuré dans cet établissement' in cycle_hors_etablissement.content.decode()
+    assert not ManuelScolaire.objects.filter(titre='Manuel interdit').exists()
+
     # Création (prix saisi « 3 500 » accepté, FCFA sans décimales)
     reponse = c.post(reverse('manuels:manuel_create'), {
-        'titre': 'Français 6e', 'auteur': 'Collectif', 'cycle': 'SECONDAIRE', 'classe': str(monde.classe.pk),
+        'titre': 'Français 6e', 'auteur': 'Collectif', 'cycle': str(monde.cycle.pk), 'classe': str(monde.classe.pk),
         'annee_edition': '2024', 'prix_remplacement': '3 500'})
     assert reponse.status_code == 302
     francais = ManuelScolaire.objects.get(titre='Français 6e')
@@ -217,7 +232,7 @@ def test_migration_convertit_les_faux_paiements_en_creances(monde):
 def test_prix_de_remplacement_illisible_vaut_zero(monde):
     """« 4 500 » ou « 4500,5 » sont acceptés ; une valeur non numérique ne bloque pas la création (prix 0)."""
     c = monde.client
-    donnees = {'titre': 'Histoire 6e', 'auteur': '', 'editeur': '', 'isbn': '', 'cycle': 'SECONDAIRE',
+    donnees = {'titre': 'Histoire 6e', 'auteur': '', 'editeur': '', 'isbn': '', 'cycle': str(monde.cycle.pk),
                'classe': str(monde.classe.pk), 'matiere': '', 'annee_edition': '2024',
                'prix_remplacement': 'quatre mille'}
     assert c.post(reverse('manuels:manuel_create'), donnees).status_code == 302

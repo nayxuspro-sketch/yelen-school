@@ -8,6 +8,7 @@ import pytest
 from django.urls import reverse
 from model_bakery import baker
 
+from parametres.models import Cycle
 from pedagogie.models import Trimestre
 from pedagogie.views import EVALUATIONS_CLASSES_PAR_PAGE
 
@@ -32,7 +33,10 @@ def admin_client(client, etab):
 
 
 def _classe_avec_evaluations(etab, annee, nom, nb_evaluations=2, trimestre=None, matiere=None):
-    classe = baker.make('parametres.Classe', etablissement=etab, nom=nom)
+    cycle = Cycle.objects.filter(etablissement=etab).first()
+    if cycle is None:
+        cycle = baker.make('parametres.Cycle', etablissement=etab)
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom=nom)
     matiere = matiere or baker.make('pedagogie.Matiere', nom=f'Matière {nom}')
     enseignement = baker.make('pedagogie.Enseignement', classe=classe, matiere=matiere, annee_scolaire=annee)
     trimestre = trimestre or (
@@ -143,7 +147,9 @@ def test_enseignant_ne_voit_que_ses_classes(client, etab, annee):
     # Rapprochement User ↔ MembrePersonnel par e-mail (voir core.utils.get_membre_personnel)
     user = baker.make('accounts.User', role='ENSEIGNANT', etablissement=etab, email='prof@yelen.test')
     membre = baker.make('personnel.MembrePersonnel', etablissement=etab, email='Prof@yelen.test')
-    sa_classe = baker.make('parametres.Classe', etablissement=etab, nom='Sa classe')
+    cycle = Cycle.objects.filter(etablissement=etab).first() or baker.make('parametres.Cycle', etablissement=etab)
+    sa_classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='Sa classe')
+    user.cycles.add(cycle)  # Le droit de consultation est accordé séparément de l'affectation professionnelle.
     ens = baker.make('pedagogie.Enseignement', classe=sa_classe, annee_scolaire=annee, personnel=membre)
     tri = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=1)
     baker.make('pedagogie.Evaluation', enseignement=ens, trimestre=tri, date_planifiee=datetime.date(2026, 10, 1), bareme=20)

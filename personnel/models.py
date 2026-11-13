@@ -16,6 +16,7 @@ import uuid
 from datetime import date
 from typing import Optional
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -265,8 +266,8 @@ class MembrePersonnel(BaseModel):
     # Rôle de direction
     est_directeur = models.BooleanField(
         default=False,
-        verbose_name=_("Directeur/Proviseur"),
-        help_text=_("Cocher si ce membre est le directeur de l'établissement")
+        verbose_name=_("Directeur général / Proviseur de l'établissement"),
+        help_text=_("Cocher uniquement pour la direction générale de l'établissement, pas pour un directeur de cycle.")
     )
     
     est_censeur = models.BooleanField(
@@ -327,7 +328,8 @@ class MembrePersonnel(BaseModel):
         'parametres.Cycle',
         related_name='personnel',
         blank=True,
-        verbose_name=_("Cycles d'enseignement")
+        verbose_name=_("Cycles d'affectation"),
+        help_text=_("Sélectionnez chaque cycle concerné. Pour le personnel partagé entre tous les cycles, sélectionnez-les tous."),
     )
 
     classe_affectation = models.ForeignKey(
@@ -359,6 +361,11 @@ class MembrePersonnel(BaseModel):
         verbose_name_plural = _("Membres du Personnel")
         ordering = ['nom', 'prenom']
     
+    def clean(self):
+        super().clean()
+        from .validations import valider_directeur_general
+        valider_directeur_general(self)
+
     def __str__(self) -> str:
         return f"{self.prenom} {self.nom} ({self.matricule})"
     
@@ -455,6 +462,12 @@ class InscriptionPersonnel(BaseModel):
         related_name='inscriptions_personnel',
         verbose_name=_("Cycle d'affectation")
     )
+
+    est_directeur_cycle = models.BooleanField(
+        default=False,
+        verbose_name=_("Directeur du cycle"),
+        help_text=_("Désigne le directeur de ce cycle pour l'année scolaire sélectionnée. Un seul directeur actif par cycle et par année."),
+    )
     
     est_actif = models.BooleanField(
         default=True,
@@ -499,6 +512,13 @@ class InscriptionPersonnel(BaseModel):
         verbose_name_plural = _("Inscriptions Personnel")
         ordering = ['-annee_scolaire', 'personnel__nom']
         unique_together = [['personnel', 'annee_scolaire', 'cycle']]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['annee_scolaire', 'cycle'],
+                condition=models.Q(is_active=True, est_actif=True, est_directeur_cycle=True),
+                name='personnel_unique_directeur_cycle_annee',
+            ),
+        ]
     
     def __str__(self) -> str:
         return (
@@ -507,24 +527,9 @@ class InscriptionPersonnel(BaseModel):
         )
     
     def clean(self):
-        """Validation métier."""
-        from django.core.exceptions import ValidationError
-
-        # Vérifier qu'une seule inscription active par année × cycle
-        # (ignoré si une FK obligatoire manque : le formulaire signale déjà le champ)
-        if self.est_actif and self.personnel_id and self.annee_scolaire_id and self.cycle_id:
-            existing = InscriptionPersonnel.objects.filter(
-                personnel=self.personnel,
-                annee_scolaire=self.annee_scolaire,
-                cycle=self.cycle,
-                est_actif=True
-            ).exclude(pk=self.pk)
-
-            if existing.exists():
-                raise ValidationError(
-                    _(f"Ce personnel a déjà une inscription active "
-                      f"pour {self.cycle.nom} en {self.annee_scolaire.libelle}")
-                )
+        super().clean()
+        from .validations import valider_inscription_personnel
+        valider_inscription_personnel(self)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -812,7 +817,6 @@ class CongePersonnel(BaseModel):
         return jours
 
     def clean(self):
-        from django.core.exceptions import ValidationError
         if self.date_debut and self.date_fin and self.date_fin < self.date_debut:
             raise ValidationError(_("La date de fin doit être postérieure à la date de début."))
 

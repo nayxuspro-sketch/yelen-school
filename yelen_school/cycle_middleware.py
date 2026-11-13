@@ -8,12 +8,11 @@ voir et stocke le résultat sur l'objet request :
 - request.est_tous_cycles  : booléen — True si l'utilisateur voit tous les cycles
 
 Règles :
-- SUPER_ADMIN / DIRECTEUR_RESEAU : tous les cycles de l'établissement
+- Superutilisateur / SUPER_ADMIN / DIRECTEUR_RESEAU : tous les cycles de l'établissement
 - Utilisateur avec est_tous_cycles=True : tous les cycles de l'établissement
 - Utilisateur avec cycles assignés (ManyToMany) : seulement ces cycles
-- Utilisateur sans cycles et sans est_tous_cycles : aucun cycle (données vides)
-  sauf pour un enseignant (role ENSEIGNANT) : le cycle de sa classe
-  d'affectation est autorisé, afin qu'il voie au moins sa propre classe.
+- Sans droit explicite : aucun cycle ; une affectation professionnelle ne donne pas, à elle seule,
+  un droit de consultation sur le compte utilisateur.
 """
 
 from __future__ import annotations
@@ -38,8 +37,8 @@ class CycleAccessMiddleware:
             user = request.user
             etab = getattr(user, 'etablissement', None)
 
-            # Rôles réseau : tous les cycles de l'établissement
-            if user.role in ('SUPER_ADMIN', 'DIRECTEUR_RESEAU'):
+            # Superutilisateur et rôles réseau : tous les cycles de l'établissement
+            if user.is_superuser or user.role in ('SUPER_ADMIN', 'DIRECTEUR_RESEAU'):
                 if etab:
                     request.cycles_autorises = Cycle.objects.filter(
                         etablissement=etab
@@ -68,26 +67,9 @@ class CycleAccessMiddleware:
                     request.cycles_autorises = user.cycles.all()
                 request.est_tous_cycles = False
 
-            # Aucun cycle assigné et pas "Tous les cycles"
+            # Aucun droit de consultation explicite : l'affectation professionnelle ne le remplace.
             else:
-                # Enseignant : autoriser au moins le cycle de sa classe d'affectation
-                if user.role == 'ENSEIGNANT':
-                    from core.utils import get_membre_personnel
-                    membre = get_membre_personnel(user)
-                    if membre and membre.classe_affectation_id:
-                        cycle_id = membre.classe_affectation.cycle_id
-                        if etab:
-                            request.cycles_autorises = Cycle.objects.filter(
-                                id=cycle_id, etablissement=etab
-                            )
-                        else:
-                            request.cycles_autorises = Cycle.objects.filter(id=cycle_id)
-                        request.est_tous_cycles = False
-                    else:
-                        request.cycles_autorises = Cycle.objects.none()
-                        request.est_tous_cycles = False
-                else:
-                    request.cycles_autorises = Cycle.objects.none()
-                    request.est_tous_cycles = False
+                request.cycles_autorises = Cycle.objects.none()
+                request.est_tous_cycles = False
 
         return self.get_response(request)

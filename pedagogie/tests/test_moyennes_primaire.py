@@ -35,7 +35,8 @@ def primaire(client):
     for nom in ('OUEDRAOGO', 'SAWADOGO', 'TRAORE'):
         eleve = baker.make('inscriptions.Eleve', nom=nom, prenom='Awa')
         eleves[nom] = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee)
-    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
+    user = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', est_tous_cycles=True,
+                      must_change_password=False)
     client.force_login(user)
     return {'etab': etab, 'classe': classe, 'annee': annee, 'trimestre': trimestre, 'maths': maths,
             'francais': fr, 'type': type_eval, 'eleves': eleves, 'client': client}

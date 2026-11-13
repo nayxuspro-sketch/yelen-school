@@ -2,8 +2,11 @@
 import datetime
 
 import pytest
+from django.test import RequestFactory
 from django.urls import reverse
 from model_bakery import baker
+
+from yelen_school.cycle_middleware import CycleAccessMiddleware
 
 pytestmark = pytest.mark.django_db
 
@@ -40,3 +43,26 @@ def test_accueil_et_recherche_ne_revelent_pas_les_autres_cycles(client):
     html = recherche.content.decode()
     assert 'CLOISON Visible' in html and 'CLOISON-PRIM' in html
     assert 'CLOISON Secret' not in html and 'CLOISON-SEC' not in html
+
+
+def test_affectation_professionnelle_ne_donne_pas_un_droit_de_consultation():
+    etab = baker.make('etablissements.Etablissement')
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='PRIM', nom='Primaire')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='CP1')
+    membre = baker.make(
+        'personnel.MembrePersonnel', etablissement=etab, email='prof@ecole.bf', classe_affectation=classe,
+    )
+    user = baker.make(
+        'accounts.User', etablissement=etab, role='ENSEIGNANT', email=membre.email, must_change_password=False,
+    )
+    factory = RequestFactory()
+    middleware = CycleAccessMiddleware(lambda request: request)
+
+    requete = factory.get('/')
+    requete.user = user
+    assert not middleware(requete).cycles_autorises.exists()
+
+    user.cycles.add(cycle)
+    requete = factory.get('/')
+    requete.user = user
+    assert list(middleware(requete).cycles_autorises) == [cycle]

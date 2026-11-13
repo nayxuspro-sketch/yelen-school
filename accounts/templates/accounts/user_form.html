@@ -160,7 +160,7 @@
         </div>
       </div>
 
-      <script>
+      <script nonce="{{ request.csp_nonce }}">
 (function(){
   var tous = document.getElementById('{{ form.est_tous_cycles.id_for_label }}');
   var liste = document.getElementById('cycles-list');

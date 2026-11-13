@@ -1,9 +1,9 @@
 import uuid
+
 from django.db.utils import IntegrityError
 from django.test import TestCase
 from model_bakery import baker
 
-from core.models import CycleChoices
 from etablissements.models import Etablissement
 
 
@@ -13,17 +13,14 @@ class TestEtablissementModel(TestCase):
     def test_heritage_basemodel(self):
         """Vérifie l'héritage de BaseModel (UUID, is_active, created_at, updated_at)."""
         etab = baker.make(Etablissement)
-        
-        # Vérification des champs hérités de BaseModel
+
         assert isinstance(etab.id, uuid.UUID)
         assert etab.is_active is True
         assert etab.created_at is not None
         assert etab.updated_at is not None
 
     def test_tous_les_champs(self):
-        """Vérifie tous les champs spécifiques au modèle Etablissement."""
-        cycles_list = [CycleChoices.PRIMAIRE, CycleChoices.POST_PRIMAIRE, CycleChoices.SECONDAIRE]
-
+        """Vérifie les informations de base de l'établissement."""
         etab = baker.make(
             Etablissement,
             nom="Complexe Scolaire La Joie",
@@ -31,12 +28,10 @@ class TestEtablissementModel(TestCase):
             adresse="Secteur 22, Bobo-Dioulasso",
             telephone="+226 70 10 20 30",
             email="contact@cs-joie.bf",
-            cycles=cycles_list,
             ville="Bobo-Dioulasso",
-            pays="Burkina Faso"
+            pays="Burkina Faso",
         )
 
-        # Vérification des valeurs assignées
         assert etab.nom == "Complexe Scolaire La Joie"
         assert etab.code == "CS-JOIE"
         assert etab.adresse == "Secteur 22, Bobo-Dioulasso"
@@ -44,14 +39,12 @@ class TestEtablissementModel(TestCase):
         assert etab.email == "contact@cs-joie.bf"
         assert etab.ville == "Bobo-Dioulasso"
         assert etab.pays == "Burkina Faso"
-        assert etab.cycles == ['PRIMAIRE', 'POST_PRIMAIRE', 'SECONDAIRE']
-        # Validation d'un champ vide par défaut pour le logo (non fourni via baker)
         assert not etab.logo
 
     def test_code_unique(self):
         """Vérifie que le code de l'établissement est unique."""
         baker.make(Etablissement, code="UNIK-123")
-        
+
         with self.assertRaises(IntegrityError):
             baker.make(Etablissement, code="UNIK-123")
 
@@ -62,27 +55,22 @@ class TestEtablissementModel(TestCase):
 
     def test_pays_default_value(self):
         """Vérifie que le pays par défaut est bien le Burkina Faso."""
-        # Création classique (sans baker) pour observer la valeur par défaut du champ.
-        etab_default = Etablissement.objects.create(
+        etab = Etablissement.objects.create(
             nom="Ecole Privée",
             code="EP-01",
-            ville="Ouahigouya"
+            ville="Ouahigouya",
         )
-        assert etab_default.pays == "Burkina Faso"
+        assert etab.pays == "Burkina Faso"
 
-    def test_cycle_peut_contenir_plusieurs_choix(self):
-        """Vérifie que le champ cycles peut contenir plusieurs CycleChoices sous forme de liste."""
-        etab = Etablissement.objects.create(
-            nom="Groupe Scolaire",
-            code="GRP-SCOL",
-            ville="Koudougou",
-            cycles=[CycleChoices.PRESCOLAIRE, CycleChoices.PRIMAIRE, CycleChoices.POST_PRIMAIRE],
+    def test_cycles_configures_par_relation_unique(self):
+        """Les cycles appartiennent à l'établissement via la relation paramétrable, pas une liste parallèle."""
+        etab = baker.make(Etablissement, code="GRP-SCOL")
+        prescolaire = baker.make(
+            'parametres.Cycle', etablissement=etab, code='PRES', nom='Préscolaire', ordre=1,
+        )
+        primaire = baker.make(
+            'parametres.Cycle', etablissement=etab, code='PRIM', nom='Primaire', ordre=2,
         )
 
-        # Rechargement depuis la base
-        etab.refresh_from_db()
-
-        assert isinstance(etab.cycles, list)
-        assert CycleChoices.PRESCOLAIRE in etab.cycles
-        assert CycleChoices.PRIMAIRE in etab.cycles
-        assert CycleChoices.POST_PRIMAIRE in etab.cycles
+        assert list(etab.cycles_parametres.order_by('ordre')) == [prescolaire, primaire]
+        assert 'cycles' not in {field.name for field in Etablissement._meta.get_fields()}

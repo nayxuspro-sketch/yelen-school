@@ -24,8 +24,12 @@ def contexte():
 
 
 def _enseignant(client, etab, email):
-    client.force_login(baker.make('accounts.User', etablissement=etab, role='ENSEIGNANT', email=email,
-                                  must_change_password=False))
+    from parametres.models import Cycle
+
+    user = baker.make('accounts.User', etablissement=etab, role='ENSEIGNANT', email=email,
+                      must_change_password=False)
+    user.cycles.set(Cycle.objects.filter(etablissement=etab))
+    client.force_login(user)
     return client
 
 
@@ -97,7 +101,8 @@ def test_selection_par_classe_limitee_a_l_etablissement_du_personnel(client, con
     leur établissement (elle listait toutes les classes de tous les établissements)."""
     autre = baker.make('etablissements.Etablissement', code='AUT', nom='Autre collège')
     baker.make('parametres.Classe', etablissement=autre, nom='6e Z', actif=True)
-    user = baker.make('accounts.User', etablissement=contexte['etab'], role='SECRETAIRE', must_change_password=False)
+    user = baker.make('accounts.User', etablissement=contexte['etab'], role='SECRETAIRE',
+                      est_tous_cycles=True, must_change_password=False)
     client.force_login(user)
     classes = client.get(reverse('pedagogie:saisie_classe_select')).context['classes']
     assert {cl.etablissement_id for cl in classes} == {contexte['etab'].pk}

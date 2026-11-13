@@ -26,8 +26,8 @@
             <label class="input-label" for="id_cycle">Cycle</label>
             <select name="cycle" class="input select" data-csp-submit-on-change id="id_cycle">
               <option value="">Tous les cycles</option>
-              {% for val, lbl in cycles %}
-              <option value="{{ val }}" {% if cycle_sel == val %}selected{% endif %}>{{ lbl }}</option>
+              {% for cycle in cycles %}
+              <option value="{{ cycle.pk }}" {% if cycle_sel == cycle.pk|stringformat:'s' %}selected{% endif %}>{{ cycle.nom }}</option>
               {% endfor %}
             </select>
           </div>
@@ -58,7 +58,7 @@
               <a href="{% url 'manuels:manuel_detail' pk=m.pk %}" class="fw-600 link-primary">{{ m.titre }}</a>
               {% if m.auteur %}<br><span class="text-muted text-sm">{{ m.auteur }}</span>{% endif %}
             </td>
-            <td><span class="badge badge-outline">{{ m.get_cycle_display }}</span></td>
+            <td><span class="badge badge-outline">{{ m.cycle.nom }}</span></td>
             <td>{{ m.matiere|default:"—" }}</td>
             <td class="text-right fw-500">{{ m.nb_exemplaires }}</td>
             <td class="text-right">

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
-from core.models import CycleChoices, RoleChoices
+from core.models import RoleChoices
 from accounts.models import User
 
 from .forms import EtablissementForm
@@ -14,9 +14,9 @@ except ImportError:
     Eleve = None
 
 try:
-    from parametres.models import Classe
+    from parametres.models import Classe, Cycle
 except ImportError:
-    Classe = None
+    Classe = Cycle = None
 
 
 from licences.decorators import requires_licence_feature
@@ -53,7 +53,7 @@ def etablissement_detail(request):
 
 
 def _render_etab_detail(request, etab, form=None, success=None, error=None):
-    """Helper pour rendre le template avec toutes les données nécessaires (stats, cycles)."""
+    """Helper pour la fiche du site et ses cycles réellement configurés."""
     stats = {
         'eleves': Eleve.objects.count() if Eleve else 0,
         'personnel': User.objects.exclude(
@@ -61,12 +61,14 @@ def _render_etab_detail(request, etab, form=None, success=None, error=None):
         ).count(),
         'classes': Classe.objects.count() if Classe else 0,
     }
+    cycles_configures = (
+        Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
+        if Cycle and etab else []
+    )
     return render(request, 'etablissements/detail.html', {
         'etablissement': etab,
         'form': form,
-        # Maintenu pour compatibilité avec le template existant
-        'cycles_all': CycleChoices.choices,
-        'cycles_selected': etab.cycles if etab else [],
+        'cycles_configures': cycles_configures,
         'stats': stats,
         'success': success,
         'error': error,

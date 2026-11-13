@@ -1,6 +1,7 @@
 import logging
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from uuid import UUID
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,7 +12,7 @@ from django.views.decorators.http import require_POST
 from core.utils import fcfa, get_etablissement_context
 from finances.models import Creance, OrigineCreance
 from inscriptions.models import Inscription
-from parametres.models import AnneeScolaire, Classe, RubriquePaiement
+from parametres.models import AnneeScolaire, Classe, Cycle, RubriquePaiement
 
 from .models import AttributionManuel, EtatManuel, ExemplaireManuel, ManuelScolaire
 
@@ -38,13 +39,21 @@ def _get_annees(etab):
 def catalogue(request):
     etab = _etab(request)
     cycle_filter = request.GET.get('cycle', '')
-    qs = ManuelScolaire.objects.filter(etablissement=etab, actif=True).select_related('matiere', 'classe')
+    cycles = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
+    qs = ManuelScolaire.objects.filter(etablissement=etab, actif=True).select_related(
+        'cycle', 'matiere', 'classe',
+    )
     if cycle_filter:
-        qs = qs.filter(cycle=cycle_filter)
-    from core.models import CycleChoices
+        try:
+            cycle_id = UUID(cycle_filter)
+        except (TypeError, ValueError):
+            cycle_id = None
+        if cycle_id:
+            qs = qs.filter(cycle_id=cycle_id)
+
     return render(request, 'manuels/catalogue.html', {
         'manuels': qs,
-        'cycles': CycleChoices.choices,
+        'cycles': cycles,
         'cycle_sel': cycle_filter,
     })
 
@@ -53,10 +62,13 @@ def catalogue(request):
 def manuel_form(request, pk=None):
     etab = _etab(request)
     instance = get_object_or_404(ManuelScolaire, pk=pk, etablissement=etab) if pk else None
-    from core.models import CycleChoices
     from pedagogie.models import Matiere
+
+    cycles = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
     matieres = Matiere.objects.all().order_by('code')
-    classes = Classe.objects.filter(etablissement=etab).order_by('nom')
+    classes = Classe.objects.filter(etablissement=etab).select_related('cycle').order_by('cycle__ordre', 'nom')
+    cycle_sel = str(instance.cycle_id) if instance else ''
+    classe_sel = str(instance.classe_id) if instance and instance.classe_id else ''
     error = None
 
     if request.method == 'POST':
@@ -64,14 +76,35 @@ def manuel_form(request, pk=None):
         auteur = request.POST.get('auteur', '').strip()
         editeur = request.POST.get('editeur', '').strip()
         isbn = request.POST.get('isbn', '').strip()
-        cycle = request.POST.get('cycle', '')
-        classe_id = request.POST.get('classe') or None
+        cycle_sel = request.POST.get('cycle', str(instance.cycle_id) if instance else '')
+        classe_sel = request.POST.get(
+            'classe', str(instance.classe_id) if instance and instance.classe_id else '',
+        )
         matiere_id = request.POST.get('matiere') or None
         annee_ed = request.POST.get('annee_edition', '').strip() or None
         prix_str = request.POST.get('prix_remplacement', '0').strip()
 
+        try:
+            cycle_id = UUID(cycle_sel) if cycle_sel else None
+        except (TypeError, ValueError):
+            cycle_id = None
+        cycle = cycles.filter(pk=cycle_id).first() if cycle_id else None
+
+        try:
+            classe_id = UUID(classe_sel) if classe_sel else None
+        except (TypeError, ValueError):
+            classe_id = None
+        classe = classes.filter(pk=classe_id).first() if classe_id else None
+
         if not titre:
             error = "Le titre est obligatoire."
+        elif cycle is None:
+            error = "Sélectionnez un cycle configuré dans cet établissement."
+        elif classe_sel and classe is None:
+            error = "La classe sélectionnée n'appartient pas à cet établissement."
+        elif classe and classe.cycle_id != cycle.pk:
+            error = "La classe sélectionnée n'appartient pas au cycle choisi."
+
         if not error:
             try:
                 prix = Decimal(prix_str.replace(' ', '').replace(',', '.'))
@@ -80,7 +113,7 @@ def manuel_form(request, pk=None):
             kwargs = dict(
                 titre=titre, auteur=auteur, editeur=editeur, isbn=isbn,
                 cycle=cycle,
-                classe_id=classe_id,
+                classe=classe,
                 matiere_id=matiere_id,
                 annee_edition=int(annee_ed) if annee_ed else None,
                 prix_remplacement=prix,
@@ -97,7 +130,9 @@ def manuel_form(request, pk=None):
 
     return render(request, 'manuels/manuel_form.html', {
         'instance': instance,
-        'cycles': CycleChoices.choices,
+        'cycles': cycles,
+        'cycle_sel': cycle_sel,
+        'classe_sel': classe_sel,
         'matieres': matieres,
         'classes': classes,
         'error': error,

@@ -83,6 +83,32 @@ class TestParametresViews:
         assert 'id="cycle-list-container"' in content
         assert cycle.nom in content
 
+    def test_nouveau_cycle_propose_un_cycle_reel_et_est_actif_par_defaut(self, client):
+        etablissement = baker.make(Etablissement, code='TEST-CYCLE-CREATE')
+        user = baker.make(
+            'accounts.User', etablissement=etablissement, role='DIRECTEUR',
+            must_change_password=False,
+        )
+        client.force_login(user)
+
+        formulaire = client.get(reverse('parametres:cycle_create'))
+        html = formulaire.content.decode()
+        assert 'Choisir un cycle' in html
+        assert 'value="TOUT"' not in html
+
+        reponse = client.post(reverse('parametres:cycle_create'), {
+            'nom': 'Primaire', 'code': 'PRIM', 'ordre': '2', 'description': '',
+        })
+        assert reponse.status_code == 204
+        cycle = Cycle.objects.get(etablissement=etablissement, code='PRIM')
+        assert cycle.actif is True
+
+        reponse = client.post(reverse('parametres:cycle_create'), {
+            'nom': 'Tout Cycle', 'code': 'TOUT', 'ordre': '1', 'description': '',
+        })
+        assert reponse.status_code == 200
+        assert not Cycle.objects.filter(etablissement=etablissement, code='TOUT').exists()
+
     def test_sms_auto_config_creates_one_trigger_per_type(self, client):
         etablissement = baker.make(
             Etablissement,

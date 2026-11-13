@@ -147,7 +147,7 @@
             <tr>
               <td class="fw-bold">{{ inscr.annee_scolaire.libelle }}</td>
               <td class="text-secondary">{{ inscr.cycle.nom }}</td>
-              <td class="text-secondary">{{ inscr.poste.titre }}</td>
+              <td class="text-secondary">{{ inscr.poste.titre }}{% if inscr.est_directeur_cycle %}<br><span class="badge badge-info">Directeur du cycle</span>{% endif %}</td>
               <td>
                 {% if inscr.est_actif %}
                   <span class="badge badge-success">Active</span>

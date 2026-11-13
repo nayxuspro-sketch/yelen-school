@@ -12,11 +12,13 @@ from django.urls import reverse
 from model_bakery import baker
 
 from core import mode_demo, push
+from core.management.commands.charger_demo import CLASSES
 from core.notifications import creer_notification
 from core.sms import envoyer_sms, sms_actifs
 from finances.paiements_mobiles import cinetpay_configure
 
 pytestmark = pytest.mark.django_db
+NB_ELEVES_DEMO = len(CLASSES)
 
 
 @pytest.fixture
@@ -132,18 +134,18 @@ def test_reinitialiser_demo_recharge_le_jeu(demo):
     from etablissements.models import Etablissement
     from inscriptions.models import Eleve
 
-    call_command('charger_demo', '--eleves', '8', verbosity=0)
+    call_command('charger_demo', '--eleves', str(NB_ELEVES_DEMO), verbosity=0)
     identite = Etablissement.objects.get(code='DEMO')
     baker.make('inscriptions.Eleve', nom='INTRUS')       # trace laissée par un visiteur
 
     if connection.vendor == 'postgresql':
         with pytest.raises(CommandError, match='immuable'):
-            call_command('reinitialiser_demo', '--eleves', '8', verbosity=0)
+            call_command('reinitialiser_demo', '--eleves', str(NB_ELEVES_DEMO), verbosity=0)
         assert Eleve.objects.filter(nom='INTRUS').exists()
         return
 
-    call_command('reinitialiser_demo', '--eleves', '8', verbosity=0)
+    call_command('reinitialiser_demo', '--eleves', str(NB_ELEVES_DEMO), verbosity=0)
 
     assert not Eleve.objects.filter(nom='INTRUS').exists()
     assert Etablissement.objects.get(code='DEMO').pk != identite.pk
-    assert Eleve.objects.count() == 8
+    assert Eleve.objects.count() == NB_ELEVES_DEMO

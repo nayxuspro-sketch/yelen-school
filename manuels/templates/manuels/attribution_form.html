@@ -33,7 +33,7 @@
                   hx-include="[name='manuel_sel']" id="id_manuel_sel">
             <option value="">-- Choisir un manuel --</option>
             {% for m in manuels %}
-            <option value="{{ m.pk }}">{{ m.titre }} ({{ m.get_cycle_display }})</option>
+            <option value="{{ m.pk }}">{{ m.titre }} ({{ m.cycle.nom }})</option>
             {% endfor %}
           </select>
         </div>

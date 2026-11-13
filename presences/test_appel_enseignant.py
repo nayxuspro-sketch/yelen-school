@@ -1,6 +1,7 @@
 """Un enseignant ne fait l'appel que de ses classes (enseignements actifs de l'année, Pédagogie › Enseignements)."""
 import datetime
 import json
+from types import SimpleNamespace
 
 import pytest
 from django.urls import reverse
@@ -27,16 +28,17 @@ def prof(client, etab):
                       must_change_password=False)
     membre = baker.make('personnel.MembrePersonnel', etablissement=etab, email='prof@yelen.test')
     client.force_login(user)
-    return membre
+    return SimpleNamespace(membre=membre, compte=user)
 
 
 @pytest.fixture
 def classes(etab, annee, prof):
     """6e A (sa classe, Mathématiques) et 5e B (classe d'un collègue)."""
     cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Collège', ordre=1)
+    prof.compte.cycles.add(cycle)  # Droit de consultation explicite, distinct des enseignements attribués.
     sienne = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6e A', actif=True)
     autre = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='5e B', actif=True)
-    baker.make('pedagogie.Enseignement', classe=sienne, annee_scolaire=annee, personnel=prof,
+    baker.make('pedagogie.Enseignement', classe=sienne, annee_scolaire=annee, personnel=prof.membre,
                matiere=baker.make('pedagogie.Matiere', nom='Mathématiques', code='MATH'))
     baker.make('pedagogie.Enseignement', classe=autre, annee_scolaire=annee,
                personnel=baker.make('personnel.MembrePersonnel', etablissement=etab, email='collegue@yelen.test'),
@@ -60,7 +62,9 @@ def test_classe_select_enseignant_ne_voit_que_ses_classes(client, classes):
 
 @pytest.mark.django_db
 def test_classe_select_direction_voit_toutes_les_classes(client, etab, classes):
-    client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+    client.force_login(baker.make(
+        'accounts.User', role='DIRECTEUR', etablissement=etab, est_tous_cycles=True, must_change_password=False,
+    ))
 
     html = _html(client.get(reverse('presences:classe_select')))
 
@@ -71,9 +75,9 @@ def test_classe_select_direction_voit_toutes_les_classes(client, etab, classes):
 def test_enseignement_inactif_ou_d_une_autre_annee_ne_compte_pas(client, etab, annee, prof, classes):
     sienne, autre = classes
     ancienne = baker.make('parametres.Classe', etablissement=etab, cycle=sienne.cycle, nom='4e C', actif=True)
-    baker.make('pedagogie.Enseignement', classe=ancienne, personnel=prof,
+    baker.make('pedagogie.Enseignement', classe=ancienne, personnel=prof.membre,
                annee_scolaire=baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=False))
-    baker.make('pedagogie.Enseignement', classe=autre, annee_scolaire=annee, personnel=prof, est_actif=False)
+    baker.make('pedagogie.Enseignement', classe=autre, annee_scolaire=annee, personnel=prof.membre, est_actif=False)
 
     html = _html(client.get(reverse('presences:classe_select')))
 
@@ -176,7 +180,9 @@ def test_historique_csv_et_impression_limites_a_ses_classes(client, annee, class
 @pytest.mark.django_db
 def test_direction_voit_tous_les_appels(client, etab, annee, classes):
     sienne, autre = classes
-    client.force_login(baker.make('accounts.User', role='CENSEUR', etablissement=etab, must_change_password=False))
+    censeur = baker.make('accounts.User', role='CENSEUR', etablissement=etab, must_change_password=False)
+    censeur.cycles.add(sienne.cycle)
+    client.force_login(censeur)
     baker.make('presences.Appel', classe=sienne, annee_scolaire=annee, date=datetime.date(2026, 10, 29))
     appel = baker.make('presences.Appel', classe=autre, annee_scolaire=annee, date=datetime.date(2026, 10, 29), est_clos=False)
 

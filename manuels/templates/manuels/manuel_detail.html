@@ -9,7 +9,7 @@
     <div>
       <h1 class="page-title">{{ manuel.titre }}</h1>
       <p class="page-subtitle">
-        {{ manuel.get_cycle_display }}
+        {{ manuel.cycle.nom }}
         {% if manuel.matiere %} · {{ manuel.matiere.nom }}{% endif %}
         {% if manuel.classe %} · {{ manuel.classe.nom }}{% endif %}
       </p>

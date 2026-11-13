@@ -31,9 +31,11 @@ def contexte(client):
                               matiere=baker.make('pedagogie.Matiere', nom='Mathématiques'))
     devoir = baker.make('pedagogie.TypeEvaluation', nom='Devoir', coefficient=Decimal('1'), nb_meilleures_notes=0)
     directeur = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', first_name='Issa',
-                           last_name='OUEDRAOGO', username='dir.issa', must_change_password=False)
+                           last_name='OUEDRAOGO', username='dir.issa', est_tous_cycles=True,
+                           must_change_password=False)
     enseignant = baker.make('accounts.User', etablissement=etab, role='ENSEIGNANT', email='moussa@ecole.bf',
                             username='ens.moussa', must_change_password=False)
+    enseignant.cycles.add(cycle)  # Les droits de lecture sont configurés séparément de l'affectation.
     eleve = baker.make('inscriptions.Eleve', nom='SAWADOGO', prenom='Awa', photo='')
     inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee,
                              statut='ACTIF')

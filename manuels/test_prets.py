@@ -21,10 +21,8 @@ def ecole(client, settings):
     etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR')
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
                        date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
-    classe = baker.make('parametres.Classe', etablissement=etab, nom='6e A', actif=True)
-    cycle = baker.make('parametres.Cycle', etablissement=etab)
-    classe.cycle = cycle
-    classe.save()
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST', nom='Post-primaire')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6e A', actif=True)
     eleve = baker.make('inscriptions.Eleve', nom='KABORE', prenom='Issa', photo='', telephone_parent='70 00 00 01')
     inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee)
     parent = baker.make('accounts.User', etablissement=etab, role='PARENT', must_change_password=False)
@@ -32,7 +30,7 @@ def ecole(client, settings):
     compte_eleve = baker.make('accounts.User', etablissement=etab, role='ELEVE', must_change_password=False)
     compte_eleve.eleves_lies.add(eleve)
     directeur = baker.make('accounts.User', etablissement=etab, role='DIRECTEUR', must_change_password=False)
-    manuel = baker.make('manuels.ManuelScolaire', etablissement=etab, titre='Mathématiques 6e', cycle='POST_PRIMAIRE')
+    manuel = baker.make('manuels.ManuelScolaire', etablissement=etab, titre='Mathématiques 6e', cycle=cycle)
     exemplaire = baker.make('manuels.ExemplaireManuel', manuel=manuel)
     client.force_login(directeur)
     return {'etab': etab, 'annee': annee, 'classe': classe, 'eleve': eleve, 'inscription': inscription,

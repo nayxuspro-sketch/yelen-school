@@ -20,11 +20,11 @@ from core.utils import filtre_enseignant, get_membre_personnel
 from core.hors_ligne import saisie_differee
 from pedagogie.models import Enseignement, Matiere
 from viescolaire.models import SeanceCours
-from .models import Appel, Presence, Justification, SeuilAbsences, AlerteAbsences
+from .models import Appel, Presence, Justification
 from .services import notifier_parents_appel
 from .alertes import verifier_seuils
 
-from yelen_school.cycle_filter import filtrer_classe_par_cycle, filtrer_eleve_par_cycle
+from yelen_school.cycle_filter import filtrer_classe_par_cycle
 
 
 def _get_annee_courante(etablissement):
@@ -460,12 +460,13 @@ def mes_cours(request):
 
 @login_required
 def bilan_eleve(request, inscription_id):
-    """Bilan d'absences d'un élève pour l'année en cours."""
+    """Bilan d'absences d'un élève pour son année scolaire."""
     etab = _get_etab(request)
     qs = Inscription.objects.select_related('eleve', 'classe', 'annee_scolaire')
     if etab:
         qs = qs.filter(classe__etablissement=etab)
     inscription = get_object_or_404(qs, pk=inscription_id)
+    annee = inscription.annee_scolaire
 
     # Filtrage par cycle : l'enseignant ne voit que ses classes, les autres uniquement leurs cycles
     if request.user.role == 'ENSEIGNANT':
@@ -971,66 +972,9 @@ def api_qr_pointer(request, appel_id):
     )
 
 
-# ═══════════════════════════════════════════════════════════════════
-# ALERTES D'ABSENCES (seuil)
-# ═══════════════════════════════════════════════════════════════════
-
-_ROLES_SEUIL = ('SUPER_ADMIN', 'DIRECTEUR', 'CENSEUR')
-
-
-@login_required
-def alertes_absences(request):
-    """Élèves ayant atteint le seuil d'absences non justifiées : alertes à traiter, historique, réglage du seuil."""
-    etab = _get_etab(request)
-    reglage = SeuilAbsences.pour(etab) if etab else None
-    toutes = request.GET.get('toutes') == '1'
-    alertes = (AlerteAbsences.objects.filter(inscription__classe__etablissement=etab)
-               .select_related('inscription__eleve', 'inscription__classe', 'traitee_par')) if etab else AlerteAbsences.objects.none()
-    if not toutes:
-        alertes = alertes.filter(traitee=False)
-    return render(request, 'presences/alertes_absences.html', {
-        'reglage': reglage, 'alertes': alertes[:300], 'toutes': toutes,
-        'nb_a_traiter': AlerteAbsences.objects.filter(inscription__classe__etablissement=etab, traitee=False).count() if etab else 0,
-        'peut_regler': request.user.role in _ROLES_SEUIL or request.user.is_superuser,
-    })
-
-
-@login_required
-def alertes_absences_config(request):
-    """Réglage du seuil (direction) : actif, seuil, période, SMS parent."""
-    etab = _get_etab(request)
-    if request.method != 'POST' or etab is None:
-        return redirect('presences:alertes_absences')
-    reglage = SeuilAbsences.pour(etab)
-    try:
-        seuil = int(request.POST.get('seuil', reglage.seuil))
-    except (TypeError, ValueError):
-        seuil = 0
-    if not 1 <= seuil <= 60:
-        messages.error(request, "Le seuil doit être compris entre 1 et 60 absences.")
-        return redirect('presences:alertes_absences')
-    reglage.seuil = seuil
-    reglage.actif = request.POST.get('actif') == 'on'
-    reglage.par_periode = request.POST.get('par_periode') == 'on'
-    reglage.sms_parent = request.POST.get('sms_parent') == 'on'
-    reglage.save(update_fields=['seuil', 'actif', 'par_periode', 'sms_parent', 'updated_at'])
-    messages.success(request, f"Seuil enregistré : {seuil} absences non justifiées par "
-                              f"{'période' if reglage.par_periode else 'année'}"
-                              f"{'' if reglage.actif else ' (alertes désactivées)'}.")
-    return redirect('presences:alertes_absences')
-
-
-@login_required
-def alerte_absences_traiter(request, alerte_id):
-    """Marque l'alerte traitée (convocation, entretien) avec la suite donnée."""
-    from django.utils import timezone
-    if request.method != 'POST':
-        return redirect('presences:alertes_absences')
-    alerte = get_object_or_404(AlerteAbsences, pk=alerte_id, inscription__classe__etablissement=_get_etab(request))
-    alerte.traitee = True
-    alerte.traitee_par = request.user
-    alerte.traitee_le = timezone.now()
-    alerte.observation = request.POST.get('observation', '').strip()[:200]
-    alerte.save(update_fields=['traitee', 'traitee_par', 'traitee_le', 'observation', 'updated_at'])
-    messages.success(request, f"Alerte de {alerte.inscription.eleve.get_nom_complet()} marquée traitée.")
-    return redirect('presences:alertes_absences')
+from .views_alertes import (  # noqa: F401
+    _ROLES_SEUIL,
+    alerte_absences_traiter,
+    alertes_absences,
+    alertes_absences_config,
+)

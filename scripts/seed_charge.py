@@ -51,13 +51,17 @@ NOMS = ['OUEDRAOGO', 'SAWADOGO', 'KABORE', 'ZONGO', 'TRAORE', 'COMPAORE', 'ILBOU
         'YAMEOGO', 'KIENTEGA', 'TAPSOBA', 'SIMPORE', 'ZOUNGRANA', 'BONKOUNGOU', 'NANA', 'GUIGMA', 'SORGHO', 'DIALLO']
 PRENOMS_M = ['Abdoul', 'Issa', 'Moussa', 'Boukary', 'Salif', 'Yacouba', 'Rasmané', 'Adama', 'Wendpouiré', 'Karim']
 PRENOMS_F = ['Aminata', 'Fatimata', 'Salamata', 'Awa', 'Mariam', 'Rasmata', 'Alizèta', 'Bibata', 'Nadège', 'Zalissa']
-CYCLES = [('PRES', 'Préscolaire', 1), ('PRIM', 'Primaire', 2), ('POST', 'Post-primaire', 3), ('SEC', 'Secondaire', 4)]
 NIVEAUX = {
     'PRES': ['PS', 'MS', 'GS'],
     'PRIM': ['CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'],
     'POST': ['6ème', '5ème', '4ème', '3ème'],
     'SEC': ['2nde', '1ère', 'Tle'],
 }
+CYCLES = tuple(
+    (code, nom, ordre)
+    for ordre, (code, nom) in enumerate(Cycle.CODE_CHOICES, start=1)
+    if code in NIVEAUX
+)
 MATIERES = [('FR', 'Français', 4), ('MATH', 'Mathématiques', 4), ('SVT', 'SVT', 2), ('PC', 'Physique-Chimie', 2),
             ('HG', 'Histoire-Géographie', 2), ('ANG', 'Anglais', 2), ('EPS', 'EPS', 1), ('PHILO', 'Philosophie', 2),
             ('ECM', 'Éducation civique', 1), ('ARTS', 'Arts', 1), ('INFO', 'Informatique', 1), ('LV2', 'Allemand', 2)]
@@ -74,8 +78,7 @@ def log(msg):
 def build_etablissement():
     etab, _ = Etablissement.objects.get_or_create(
         code='KDG',
-        defaults=dict(nom='Complexe Scolaire YELEN Koudougou', ville='Koudougou', email='contact@yelen.bf',
-                      cycles=['PRESCOLAIRE', 'PRIMAIRE', 'POST_PRIMAIRE', 'SECONDAIRE']),
+        defaults=dict(nom='Complexe Scolaire YELEN Koudougou', ville='Koudougou', email='contact@yelen.bf'),
     )
     cycles = {}
     for code, nom, ordre in CYCLES:

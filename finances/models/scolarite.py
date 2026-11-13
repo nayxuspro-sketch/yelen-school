@@ -1,10 +1,11 @@
 """Frais de scolarité, échéanciers, paiements, réductions et Mobile Money."""
 import datetime
 import uuid as _uuid
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from core.models import BaseModel
-from parametres.models import AnneeScolaire, Classe
+from parametres.models import AnneeScolaire, Classe, Cycle
 from inscriptions.models import Inscription
 from django.conf import settings
 
@@ -19,15 +20,13 @@ class FraisScolarite(BaseModel):
     """Configuration des frais par classe ou cycle."""
     annee_scolaire = models.ForeignKey(AnneeScolaire, on_delete=models.CASCADE, verbose_name=_("Année Scolaire"))
     classe = models.ForeignKey(Classe, on_delete=models.CASCADE, verbose_name=_("Classe"), null=True, blank=True)
-    cycle = models.CharField(
-        max_length=20, 
-        choices=[
-            ('PRESCOLAIRE', 'Préscolaire'),
-            ('PRIMAIRE', 'Primaire'),
-            ('POST_PRIMAIRE', 'Post-primaire'),
-            ('SECONDAIRE', 'Secondaire'),
-        ],
-        null=True, blank=True
+    cycle = models.ForeignKey(
+        Cycle,
+        on_delete=models.PROTECT,
+        related_name='frais_scolarite',
+        null=True,
+        blank=True,
+        verbose_name=_("Cycle"),
     )
     type_frais = models.CharField(max_length=20, choices=TypeFrais.choices, default=TypeFrais.SCOLARITE)
     montant = models.DecimalField(max_digits=12, decimal_places=2, verbose_name=_("Montant (FCFA)"))
@@ -43,8 +42,25 @@ class FraisScolarite(BaseModel):
             ),
         ]
 
+    def clean(self):
+        super().clean()
+        if not self.annee_scolaire_id:
+            return
+
+        etablissement_id = self.annee_scolaire.etablissement_id
+        erreurs = {}
+        if self.classe_id and self.classe.etablissement_id != etablissement_id:
+            erreurs['classe'] = _("La classe doit appartenir à l'établissement de l'année scolaire.")
+        if self.cycle_id:
+            if self.cycle.etablissement_id != etablissement_id:
+                erreurs['cycle'] = _("Le cycle doit appartenir à l'établissement de l'année scolaire.")
+            elif self.classe_id and self.classe.cycle_id != self.cycle_id:
+                erreurs['classe'] = _("La classe sélectionnée n'appartient pas au cycle choisi.")
+        if erreurs:
+            raise ValidationError(erreurs)
+
     def __str__(self):
-        target = self.classe.nom if self.classe else self.get_cycle_display()
+        target = self.classe.nom if self.classe_id else self.cycle.nom if self.cycle_id else _("Tous les cycles")
         return f"{self.get_type_frais_display()} - {target} ({self.montant} FCFA)"
 
 class ModePaiement(models.TextChoices):

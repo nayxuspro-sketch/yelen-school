@@ -134,7 +134,7 @@ class User(AbstractUser, BaseModel):
         blank=True,
         related_name='utilisateurs',
         verbose_name='Cycles autorisés',
-        help_text='Cycles dont cet utilisateur peut voir les données. Laissez vide pour « Tous les cycles » (selon le rôle).',
+        help_text="Cycles consultables par ce compte. Sans sélection, aucun cycle n'est accessible, sauf pour un superutilisateur, les rôles Super Admin / Directeur Réseau ou l'option « Tous les cycles » activée.",
     )
     est_tous_cycles = models.BooleanField(
         default=False,

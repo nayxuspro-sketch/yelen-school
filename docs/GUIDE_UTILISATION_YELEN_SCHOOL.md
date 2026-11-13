@@ -936,7 +936,7 @@ Ce que la commande installe, dans l'ordre de la mise en route (`§3.11`) :
 |---|---|
 | **Identité** | Complexe Scolaire Laafi (Ouagadougou), N° Agrément, catégorie réglementaire 2, zone 1, directeur |
 | **Années** | année en cours marquée « en cours » + année précédente clôturée (l'évolution `§3.12` a donc un historique) |
-| **Cycles et classes** | préscolaire, primaire et post-primaire ; 8 classes (PS, GS, CP1, CP2, CM1, CM2, 6e A, 5e A) |
+| **Cycles et classes** | préscolaire, primaire, post-primaire et secondaire ; 11 classes (PS, GS, CP1, CP2, CM1, CM2, 6e A, 5e A, 4e A, 3e A, 2nde A) |
 | **Tarifs** | 4 rubriques (inscription, scolarité, cantine, tenue) et des tarifs **conformes aux plafonds** (`§3.9`) |
 | **Personnel et comptes** | 8 fiches (directeur, censeur, secrétaire, comptable, 4 enseignants) et 10 comptes |
 | **Élèves** | élèves burkinabè inscrits, avec leurs deux inscriptions (année précédente et année en cours) |

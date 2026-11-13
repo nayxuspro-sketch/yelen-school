@@ -35,10 +35,9 @@ def seed():
 
     # 3. Cycles
     cycles_data = [
-        ('PRES', 'Préscolaire', 1),
-        ('PRIM', 'Primaire', 2),
-        ('POST', 'Post-primaire', 3),
-        ('SEC', 'Secondaire', 4),
+        (code, nom, ordre)
+        for ordre, (code, nom) in enumerate(Cycle.CODE_CHOICES, start=1)
+        if code != 'TOUT'
     ]
     for code, nom, ordre in cycles_data:
         c, created = Cycle.objects.get_or_create(

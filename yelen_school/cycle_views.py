@@ -13,8 +13,8 @@ from django.db.models.query import QuerySet
 
 from yelen_school.cycle_filter import (
     filtrer_par_cycle,
-    filtrer_eleve_par_cycle,
-    filtrer_classe_par_cycle,
+    filtrer_eleve_par_cycle,  # noqa: F401 — réexport public pour les vues clientes.
+    filtrer_classe_par_cycle,  # noqa: F401 — réexport public pour les vues clientes.
     get_cycle_ids,
 )
 

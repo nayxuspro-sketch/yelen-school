@@ -88,13 +88,20 @@ class UserCreateForm(forms.ModelForm):
         queryset=Cycle.objects.none(),
         required=False,
         label="Cycles autorisés",
-        help_text="Laissez vide pour « Tous les cycles » (selon le rôle).",
+        help_text=(
+            "Sélectionnez les cycles que ce compte peut consulter. Sans sélection, aucun cycle n'est autorisé, "
+            "sauf pour un superutilisateur, les rôles Super Admin / Directeur Réseau ou l'option « Tous les cycles » cochée. "
+            "Cette autorisation ne modifie pas les affectations professionnelles du personnel."
+        ),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'input'}),
     )
     est_tous_cycles = forms.BooleanField(
         required=False,
         label="Tous les cycles",
-        help_text="Si coché, l’utilisateur voit les données de tous les cycles (sous réserve des limites de son rôle).",
+        help_text=(
+            "Accorde la consultation de tous les cycles, dans la limite du rôle ; "
+            "ne modifie pas les affectations professionnelles du personnel."
+        ),
         widget=forms.CheckboxInput(attrs={'class': 'input'}),
     )
 
@@ -171,13 +178,20 @@ class UserUpdateForm(forms.ModelForm):
         queryset=Cycle.objects.none(),
         required=False,
         label="Cycles autorisés",
-        help_text="Laissez vide pour « Tous les cycles » (selon le rôle).",
+        help_text=(
+            "Sélectionnez les cycles que ce compte peut consulter. Sans sélection, aucun cycle n'est autorisé, "
+            "sauf pour un superutilisateur, les rôles Super Admin / Directeur Réseau ou l'option « Tous les cycles » cochée. "
+            "Cette autorisation ne modifie pas les affectations professionnelles du personnel."
+        ),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'input'}),
     )
     est_tous_cycles = forms.BooleanField(
         required=False,
         label="Tous les cycles",
-        help_text="Si coché, l’utilisateur voit les données de tous les cycles (sous réserve des limites de son rôle).",
+        help_text=(
+            "Accorde la consultation de tous les cycles, dans la limite du rôle ; "
+            "ne modifie pas les affectations professionnelles du personnel."
+        ),
         widget=forms.CheckboxInput(attrs={'class': 'input'}),
     )
 

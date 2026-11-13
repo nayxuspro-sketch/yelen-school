@@ -22,7 +22,8 @@ def famille():
     aujourdhui = timezone.localdate()
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
                        date_debut=aujourdhui - timedelta(days=30), date_fin=aujourdhui + timedelta(days=240))
-    classe = baker.make('parametres.Classe', etablissement=etab, nom='5e B', actif=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab)
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='5e B', actif=True)
     eleve = baker.make('inscriptions.Eleve', nom='OUEDRAOGO', prenom='Awa', date_naissance=date(2013, 4, 2), photo='')
     inscription = baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee, statut='AFFECTE')
     maths = baker.make('pedagogie.Enseignement', classe=classe, annee_scolaire=annee, est_actif=True,
@@ -142,6 +143,7 @@ def test_justificatif_du_portail_signale_au_secretariat(client, famille):
     assert j.via_portail
     secretaire = baker.make('accounts.User', etablissement=famille['etab'], role='SECRETAIRE', is_superuser=True,
                             must_change_password=False)
+    secretaire.cycles.add(famille['classe'].cycle)
     client.force_login(secretaire)
     assert 'Portail parent' in client.get(reverse('presences:justification_list')).content.decode()
 

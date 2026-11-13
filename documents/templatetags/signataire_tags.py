@@ -281,7 +281,7 @@ def signataires_classe(context):
         {% signataires_classe as blocs %}{% for bloc in blocs %}<div class="…">{{ bloc }}</div>{% endfor %}
     """
     try:
-        from parametres.models import SignataireDocument, CoSignataire, TypeDocument
+        from parametres.models import SignataireDocument, TypeDocument
 
         classe = _classe_du_contexte(context)
         if classe is None:

@@ -31,6 +31,17 @@ class CycleForm(forms.ModelForm):
         fields = ['nom', 'code', 'description', 'ordre', 'actif']
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance._state.adding:
+            # « Tout Cycle » est conservé pour les anciennes données, mais n'est pas un cycle réel
+            # à créer : la référence doit rester un cycle distinct de l'établissement.
+            self.fields['code'].choices = [
+                (code, label) for code, label in self.fields['code'].choices if code != 'TOUT'
+            ]
+            # Le formulaire de création n'affiche pas de case « actif » : garder le défaut du modèle.
+            self.fields.pop('actif', None)
+
 
 class ClasseForm(forms.ModelForm):
     class Meta:

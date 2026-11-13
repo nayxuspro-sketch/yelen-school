@@ -73,7 +73,7 @@ def monde(settings, tmp_path):
     ens = baker.make('pedagogie.Enseignement', matiere=matiere, classe=classe, annee_scolaire=annee,
                      personnel=prof, coefficient=Decimal('3'), est_actif=True)
     user = baker.make('accounts.User', etablissement=etab, is_superuser=True, is_staff=True,
-                      must_change_password=False, role='DIRECTEUR')
+                      must_change_password=False, role='DIRECTEUR', est_tous_cycles=True)
     salaire = baker.make('personnel.SalairePersonnel', personnel=prof, annee_scolaire=annee, mois=10)
     vacation = baker.make('vacations.BulletinVacation', personnel=prof, annee_scolaire=annee, mois=10, annee=2026)
     conseil = baker.make('viescolaire.ConseilClasse', classe=classe, trimestre=trim, president=user,
@@ -81,9 +81,10 @@ def monde(settings, tmp_path):
     transfert = baker.make('inscriptions.TransfertEleve', inscription=insc, etablissement_destination='Lycée X',
                            date_demande=datetime.date(2026, 11, 2))
     session = baker.make('examens.SessionExamen', annee_scolaire=annee, type_examen='BEPC')
-    paiement = baker.make('finances.Paiement', inscription=insc, montant=Decimal('25000'), reference='R-1',
-                          observation='', mode_paiement='ESPECES', date_paiement=datetime.date(2026, 10, 5))
     rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, nom='Scolarité', code='SCO', actif=True)
+    paiement = baker.make('finances.Paiement', inscription=insc, rubrique=rubrique, montant=Decimal('25000'),
+                          reference='R-1', observation='', mode_paiement='ESPECES',
+                          date_paiement=datetime.date(2026, 10, 5))
     baker.make('parametres.TarifScolarite', etablissement=etab, classe=classe, statut_eleve=statut, rubrique=rubrique,
                annee_scolaire=annee, montant=Decimal('150000'), actif=True)
     conge = baker.make('personnel.CongePersonnel', personnel=prof, date_debut=datetime.date(2026, 11, 2),

@@ -142,23 +142,39 @@ def annee_cloture(request, pk):
 @login_required
 def cycle_list(request):
     etab = _get_etab(request)
-    cycles = Cycle.objects.filter(etablissement=etab).prefetch_related('classes').order_by('ordre', 'nom') if etab else Cycle.objects.none()
+    cycles = list(
+        Cycle.objects.filter(etablissement=etab).prefetch_related('classes').order_by('ordre', 'nom')
+    ) if etab else []
+    annee = AnneeScolaire.objects.filter(etablissement=etab, est_courante=True).first() if etab else None
+    directeurs = {}
+    if annee and cycles:
+        from personnel.models import InscriptionPersonnel
+        directeurs = {
+            inscription.cycle_id: inscription.personnel
+            for inscription in InscriptionPersonnel.objects.filter(
+                cycle__in=cycles, annee_scolaire=annee, is_active=True,
+                est_actif=True, est_directeur_cycle=True,
+            ).select_related('personnel')
+        }
+    for cycle in cycles:
+        cycle.directeur_cycle = directeurs.get(cycle.pk)
+
     tpl = 'parametres/partials/cycle_tree.html' if request.headers.get('HX-Request') else 'parametres/cycles.html'
-    return render(request, tpl, {'cycles': cycles})
+    return render(request, tpl, {'cycles': cycles, 'annee_courante': annee})
 
 
 @login_required
 def cycle_form(request, pk=None):
     etab = _get_etab(request)
     cycle = get_object_or_404(Cycle, pk=pk, etablissement=etab) if pk else None
-    ctx = {'cycle': cycle, 'code_choices': Cycle.CODE_CHOICES}
-    if not cycle:
-        ctx['code_default'] = 'TOUT'
+    form = CycleForm(instance=cycle)
+    ctx = {'cycle': cycle, 'code_choices': form.fields['code'].choices}
 
     if request.method == 'POST':
         if not etab:
             return render(request, 'parametres/partials/cycle_form.html', {**ctx, 'error': "Votre compte n'est pas associé à un établissement."})
         form = CycleForm(request.POST, instance=cycle)
+        ctx['code_choices'] = form.fields['code'].choices
         if form.is_valid():
             instance = form.save(commit=False)
             if not cycle:

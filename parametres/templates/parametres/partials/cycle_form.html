@@ -23,8 +23,9 @@
                     <div class="form-group">
                         <label class="input-label" for="id_code">Code <span style="color:#FF6B7A;">*</span></label>
                         <select name="code" required class="input select" id="id_code">
+                            <option value="" disabled {% if not cycle %}selected{% endif %}>Choisir un cycle</option>
                             {% for val, label in code_choices %}
-                            <option value="{{ val }}" {% if not cycle and val == code_default %}selected{% elif cycle and cycle.code == val %}selected{% endif %}>{{ label }}</option>
+                            {% if val %}<option value="{{ val }}" {% if cycle and cycle.code == val %}selected{% endif %}>{{ label }}</option>{% endif %}
                             {% endfor %}
                         </select>
                     </div>

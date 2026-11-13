@@ -12,7 +12,10 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def ecole(client):
     etab = baker.make('etablissements.Etablissement')
-    client.force_login(baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False))
+    client.force_login(baker.make(
+        'accounts.User', role='DIRECTEUR', etablissement=etab, must_change_password=False,
+        est_tous_cycles=True,
+    ))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     cycle = baker.make('parametres.Cycle', etablissement=etab)
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6ème A', actif=True)

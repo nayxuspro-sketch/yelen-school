@@ -44,18 +44,30 @@ PRENOMS_F = ('Aminata', 'Fatimata', 'Awa', 'Mariam', 'Rasmata', 'Salamata', 'Bal
 PRENOMS_M = ('Issouf', 'Boureima', 'Moussa', 'Adama', 'Salif', 'Karim', 'Rasmané', 'Abdoul', 'Ousmane',
              'Serge', 'Éric', 'Hamado')
 
-# code, nom, ordre
-CYCLES = (('PRES', 'Préscolaire', 1), ('PRIM', 'Primaire', 2), ('POST', 'Post-primaire', 3))
-# nom, niveau, code cycle
-CLASSES = (('Petite section', 'PS', 'PRES'), ('Grande section', 'GS', 'PRES'),
-           ('CP1', 'CP1', 'PRIM'), ('CP2', 'CP2', 'PRIM'), ('CM1', 'CM1', 'PRIM'), ('CM2', 'CM2', 'PRIM'),
-           ('6e A', '6E', 'POST'), ('5e A', '5E', 'POST'))
+# Jeu de démonstration : les quatre cycles sont affichés avec des libellés centralisés sur Cycle.
+CYCLES = tuple(
+    (code, nom, ordre)
+    for ordre, (code, nom) in enumerate(Cycle.CODE_CHOICES, start=1)
+    if code in {'PRES', 'PRIM', 'POST', 'SEC'}
+)
+# nom, niveau, code cycle — 11 classes avec une progression représentée sur deux années.
+CLASSES = (
+    ('Petite section', 'PS', 'PRES'), ('Grande section', 'GS', 'PRES'),
+    ('CP1', 'CP1', 'PRIM'), ('CP2', 'CP2', 'PRIM'), ('CM1', 'CM1', 'PRIM'), ('CM2', 'CM2', 'PRIM'),
+    ('6e A', '6E', 'POST'), ('5e A', '5E', 'POST'), ('4e A', '4E', 'POST'), ('3e A', '3E', 'POST'),
+    ('2nde A', '2NDE', 'SEC'),
+)
 # code, nom, soumise au plafond, ordre
 RUBRIQUES = (('INSCRIPTION', 'Inscription', True, 1), ('SCOLARITE', 'Scolarité', True, 2),
              ('CANTINE', 'Cantine', False, 3), ('TENUE', 'Tenue scolaire', False, 4))
 # code cycle → (inscription, scolarité annuelle, cantine) en FCFA — total plafonné sous le plafond de la
-# catégorie 2 / zone 1 (PRES 100 000, PRIM 80 000, POST 120 000 — parametres.plafonds)
-TARIFS = {'PRES': (7500, 45000, 25000), 'PRIM': (10000, 60000, 30000), 'POST': (15000, 90000, 35000)}
+# catégorie 2 / zone 1 (PRES 100 000, PRIM 80 000, POST 120 000, SEC 170 000 — parametres.plafonds).
+TARIFS = {
+    'PRES': (7500, 45000, 25000),
+    'PRIM': (10000, 60000, 30000),
+    'POST': (15000, 90000, 35000),
+    'SEC': (20000, 120000, 40000),
+}
 # code cycle → (code, nom, coefficient)
 MATIERES = {
     'PRES': (('EVEIL', 'Éveil', 2), ('LANG', 'Langage', 3), ('MOTR', 'Motricité', 1)),
@@ -63,6 +75,9 @@ MATIERES = {
              ('HG', 'Histoire-Géographie', 2), ('ECM', 'Éducation civique et morale', 1)),
     'POST': (('FRA', 'Français', 3), ('MATH', 'Mathématiques', 3), ('SVT', 'Sciences de la vie et de la terre', 3),
              ('PCT', 'Physique-Chimie', 3), ('ANG', 'Anglais', 2), ('HG', 'Histoire-Géographie', 2)),
+    'SEC': (('FRA', 'Français', 3), ('MATH', 'Mathématiques', 3), ('SVT', 'Sciences de la vie et de la terre', 3),
+            ('PCT', 'Physique-Chimie', 3), ('ANG', 'Anglais', 2), ('HG', 'Histoire-Géographie', 2),
+            ('PHILO', 'Philosophie', 2)),
 }
 # matricule, nom, prénom, fonction, est_directeur, est_censeur, compte
 PERSONNEL = (
@@ -134,6 +149,13 @@ class Command(BaseCommand):
         est alors refusée proprement, avec la marche à suivre, au lieu de laisser remonter une erreur SQL."""
         try:
             with transaction.atomic():
+                # Les références de cycle sont protégées contre la suppression isolée d'un cycle.
+                # Lors de la remise à zéro complète, ces données de démonstration sont supprimées d'abord.
+                from finances.models.scolarite import FraisScolarite
+                from manuels.models import ManuelScolaire
+
+                ManuelScolaire.objects.filter(cycle__etablissement__code=code).delete()
+                FraisScolarite.objects.filter(cycle__etablissement__code=code).delete()
                 supprimes = Etablissement.objects.filter(code=code).delete()
         except IntegrityError as exc:
             raise CommandError(
@@ -247,6 +269,7 @@ class Command(BaseCommand):
             user.must_change_password = False
         user.etablissement = etab
         user.role = role
+        user.est_tous_cycles = role == RoleChoices.DIRECTEUR
         user.save()
         return user
 
@@ -254,15 +277,20 @@ class Command(BaseCommand):
         """Élèves et leurs deux inscriptions (année précédente, année en cours) : l'évolution des indicateurs et
         les bulletins ont ainsi un historique réel."""
         hasard = random.Random(GRAINE)
-        annee_naissance = {'PS': 2022, 'GS': 2021, 'CP1': 2019, 'CP2': 2018, 'CM1': 2017, 'CM2': 2016,
-                           '6E': 2015, '5E': 2014}
-        classe_precedente = {'PS': 'PS', 'GS': 'PS', 'CP1': 'GS', 'CP2': 'CP1', 'CM1': 'CP2', 'CM2': 'CM1',
-                             '6E': 'CM2', '5E': '6E'}
+        annee_naissance = {
+            'PS': 2022, 'GS': 2021, 'CP1': 2019, 'CP2': 2018, 'CM1': 2017, 'CM2': 2016,
+            '6E': 2015, '5E': 2014, '4E': 2013, '3E': 2012, '2NDE': 2011,
+        }
+        classe_precedente = {
+            'PS': 'PS', 'GS': 'PS', 'CP1': 'GS', 'CP2': 'CP1', 'CM1': 'CP2', 'CM2': 'CM1',
+            '6E': 'CM2', '5E': '6E', '4E': '5E', '3E': '4E', '2NDE': '3E',
+        }
         par_niveau = {classe.niveau: classe for classe in classes.values()}
         courantes, precedentes = [], []
-        par_classe = nb_eleves // len(classes)
-        for nom_classe, classe in classes.items():
-            for rang in range(par_classe):
+        par_classe, reste = divmod(nb_eleves, len(classes))
+        for index, (nom_classe, classe) in enumerate(classes.items()):
+            effectif_classe = par_classe + int(index < reste)
+            for rang in range(effectif_classe):
                 genre = hasard.choice('FM')
                 prenom = hasard.choice(PRENOMS_F if genre == 'F' else PRENOMS_M)
                 nom = hasard.choice(NOMS)
@@ -455,7 +483,7 @@ class Command(BaseCommand):
         for rang, (titre, editeur, prix) in enumerate(ouvrages):
             manuel, cree = ManuelScolaire.objects.get_or_create(
                 etablissement=etab, titre=titre,
-                defaults={'auteur': '', 'editeur': editeur, 'cycle': 'POST_PRIMAIRE',
+                defaults={'auteur': '', 'editeur': editeur, 'cycle': self.cycles['POST'],
                           'annee_edition': aujourdhui.year - 2, 'prix_remplacement': Decimal(prix),
                           'actif': True},
             )

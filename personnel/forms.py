@@ -96,6 +96,10 @@ class MembrePersonnelForm(forms.ModelForm):
                 if classe and classe.cycle_id not in cycles_autorises:
                     self._classe_a_preserver = classe
         self.fields['cycles'].queryset = cycles.order_by('ordre', 'nom')
+        self.fields['cycles'].help_text = (
+            "Sélectionnez tous les cycles concernés pour un membre partagé entre plusieurs cycles "
+            "(comptabilité, secrétariat, soutien)."
+        )
         self._filtrer_classes(etablissement, cycles_autorises)
         self.fields['qualite_affectation'].required = False      # titulaire par défaut
 
@@ -152,6 +156,7 @@ class MembrePersonnelForm(forms.ModelForm):
         if classe and etablissement and classe.etablissement_id != etablissement.pk:
             self.add_error('classe_affectation',
                            "Cette classe n'appartient pas à l'établissement choisi pour le membre.")
+
         return donnees
 
     def clean_photo(self):
@@ -168,7 +173,7 @@ class InscriptionPersonnelForm(forms.ModelForm):
         model = InscriptionPersonnel
         # 'personnel' est fixé par la vue (instance), jamais saisi dans le formulaire
         fields = [
-            'annee_scolaire', 'poste', 'cycle',
+            'annee_scolaire', 'poste', 'cycle', 'est_directeur_cycle',
             'est_actif', 'date_debut', 'date_fin', 'observations',
             'heures_hebdomadaires'
         ]
@@ -191,6 +196,10 @@ class InscriptionPersonnelForm(forms.ModelForm):
         if cycles_autorises is not None:
             cycles = cycles.filter(pk__in=cycles_autorises)
         self.fields['cycle'].queryset = cycles
+        self.fields['cycle'].help_text = (
+            "Une inscription annuelle correspond à un cycle. Pour un agent affecté à plusieurs cycles, "
+            "créez une inscription par cycle."
+        )
         _apply_yelen_classes(self.fields)
 
 

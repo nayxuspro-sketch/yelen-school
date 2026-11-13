@@ -50,8 +50,8 @@
             <label class="input-label required" for="id_cycle">Cycle</label>
             <select name="cycle" class="input select" required id="id_cycle">
               <option value="">-- Choisir --</option>
-              {% for val, lbl in cycles %}
-              <option value="{{ val }}" {% if instance and instance.cycle == val %}selected{% endif %}>{{ lbl }}</option>
+              {% for cycle in cycles %}
+              <option value="{{ cycle.pk }}" {% if cycle_sel == cycle.pk|stringformat:'s' %}selected{% endif %}>{{ cycle.nom }}</option>
               {% endfor %}
             </select>
           </div>
@@ -60,7 +60,7 @@
             <select name="classe" class="input select" id="id_classe">
               <option value="">Toutes les classes du cycle</option>
               {% for c in classes %}
-              <option value="{{ c.pk }}" {% if instance and instance.classe_id == c.pk %}selected{% endif %}>{{ c.nom }}</option>
+              <option value="{{ c.pk }}" {% if classe_sel == c.pk|stringformat:'s' %}selected{% endif %}>{{ c.nom }} — {{ c.cycle.nom }}</option>
               {% endfor %}
             </select>
           </div>

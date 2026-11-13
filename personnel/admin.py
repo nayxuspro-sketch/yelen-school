@@ -123,6 +123,7 @@ class InscriptionPersonnelAdmin(admin.ModelAdmin):
         'cycle',
         'annee_scolaire',
         'poste',
+        'est_directeur_cycle',
         'est_actif',
         'date_inscription'
     )
@@ -131,6 +132,7 @@ class InscriptionPersonnelAdmin(admin.ModelAdmin):
         'annee_scolaire',
         'cycle',
         'poste',
+        'est_directeur_cycle',
         'est_actif'
     )
     
@@ -159,6 +161,7 @@ class InscriptionPersonnelAdmin(admin.ModelAdmin):
             'fields': (
                 'poste',
                 'cycle',
+                'est_directeur_cycle',
                 'est_actif'
             )
         }),
