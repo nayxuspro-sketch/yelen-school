@@ -105,3 +105,18 @@ def test_commande_verifier_signataires(contexte, settings, tmp_path):
     sortie = io.StringIO()
     call_command('verifier_signataires', stdout=sortie)
     assert 'ANOMALIE : fichier de signature absent' in sortie.getvalue()
+
+
+def test_migration_0051_cree_le_type_liste_des_eleves(contexte):
+    """La liste générale des élèves a son propre type : elle se configure sans toucher aux listes de
+    classe et se rejoue sans doublon."""
+    from importlib import import_module
+    migration = import_module('parametres.migrations.0051_typedocument_liste_eleves')
+
+    # Migration déjà appliquée à la base de test : le type existe, on vérifie qu'elle le complète sans doublon.
+    migration.ajouter_type(apps, None)
+    type_doc = TypeDocument.objects.get(code='LISTE_ELEVES')
+    assert type_doc.libelle == 'Liste des Élèves' and type_doc.categorie == 'SCOLARITE' and type_doc.actif
+
+    migration.ajouter_type(apps, None)
+    assert TypeDocument.objects.filter(code='LISTE_ELEVES').count() == 1

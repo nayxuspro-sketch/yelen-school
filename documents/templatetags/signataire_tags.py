@@ -13,6 +13,9 @@ Le tag auto-détecte le cycle et l'année scolaire depuis le contexte du
 template parent (inscription, classe, trimestre, annee_scolaire, etc.)
 puis applique le repli progressif de SignataireDocument.objects.get_signataire().
 
+La liste générale des élèves (toutes classes) n'a pas de cycle : elle est signée par le
+directeur général de l'établissement — voir ``signataire_directeur_general``.
+
 Codes TypeDocument disponibles
 ────────────────────────────────
   CERT_SCOL         Certificat de Scolarité
@@ -459,3 +462,126 @@ def signataire_auto(context, type_doc_code, variante=''):
     except Exception:
         logger.exception("Signataire : bloc de signature non rendu")
         return mark_safe('')
+
+
+@register.simple_tag(takes_context=True)
+def signataire_directeur_general(context, variante=''):
+    """Bloc de signature du **directeur général** de l'établissement.
+
+    La liste générale des élèves couvre toutes les classes : elle n'a ni cycle ni classe dont déduire
+    un signataire, alors que les signataires se configurent cycle par cycle. Le document est donc signé
+    par la direction générale, désignée sur la fiche du personnel (``MembrePersonnel.est_directeur``,
+    unique et active par établissement) — même rendu que ``signataire_auto`` : fonction, signature
+    scannée, NOM Prénom, titres honorifiques.
+
+    Replis, dans l'ordre : directeur général → titulaire du type « Liste des élèves » (``LISTE_ELEVES``)
+    pour l'année → nom saisi sur la fiche de l'établissement
+    (``IdentiteEtablissement.nom_directeur``), sans signature scannée. Sans aucune de ces sources, le
+    bloc est vide. Le type « Liste Alphabétique de Classe » n'est jamais consulté : il signe les listes
+    d'une classe, pas la liste générale.
+
+    Usage :
+        {% signataire_directeur_general %}
+        {% signataire_directeur_general variante="cellule" %}
+    """
+    try:
+        from personnel.models import MembrePersonnel
+        from parametres.models import SignataireDocument, TypeDocument
+
+        identite = context.get('identite')
+        etablissement = context.get('etablissement')
+        if etablissement is None:
+            etablissement = getattr(identite, 'etablissement', None)
+        if etablissement is None:
+            return mark_safe('')
+
+        # 1. La direction générale de l'établissement, désignée sur la fiche du personnel.
+        membre = (
+            MembrePersonnel.objects
+            .filter(etablissement=etablissement, est_directeur=True, is_active=True)
+            .order_by('date_embauche')
+            .first()
+        )
+        if membre is not None:
+            fonction = (membre.fonction or '').strip() or 'Le Directeur général'
+            titres = [membre.titre_honorifique] if membre.titre_honorifique else []
+            return mark_safe(_bloc_directeur_general(context, fonction, membre, titres, variante))
+
+        # 2. Titulaire explicitement choisi pour la liste générale (type « Liste des élèves »), sans repli :
+        #    le repli de get_signataire irait chercher le signataire d'un cycle, celui-là même qu'on écarte.
+        annee = (context.get('annee_scolaire') or context.get('annee_courante')
+                 or context.get('annee_selected'))
+        type_doc = TypeDocument.objects.filter(code='LISTE_ELEVES', actif=True).first()
+        if type_doc is not None:
+            signataire = (
+                SignataireDocument.objects
+                .filter(type_document=type_doc, annee_scolaire=annee, actif=True)
+                .order_by('-updated_at')
+                .first()
+            )
+            membre = signataire.get_membre_personnel() if signataire else None
+            if membre is not None:
+                titres = (signataire.titres_honorifiques
+                          or ([signataire.titre_honorifique] if signataire.titre_honorifique else []))
+                return mark_safe(_bloc_directeur_general(
+                    context, signataire.fonction or signataire.titre, membre, titres, variante,
+                ))
+
+        # 3. Nom de la direction générale saisi sur la fiche de l'établissement (sans signature scannée).
+        nom_directeur = (getattr(identite, 'nom_directeur', '') or '').strip()
+        if not nom_directeur:
+            return mark_safe('')
+        if variante == 'cellule':
+            return mark_safe(
+                f'{_SIGNATAIRE_CSS}<div class="msig-cellule">'
+                f'<div class="msig-fonction">Le Directeur général</div>'
+                f'<div class="msig-name">{_e(nom_directeur)}</div>'
+                f'</div>'
+            )
+        return mark_safe(
+            f'{_SIGNATAIRE_CSS}'
+            f'<div class="msig-zone" style="text-align:right;">'
+            f'{_ligne_date_html(context, align="right")}'
+            f'<div class="msig-fonction">Le Directeur général</div>'
+            f'<div class="msig-sign"></div>'
+            f'<div class="msig-name">{_e(nom_directeur)}</div>'
+            f'</div>'
+        )
+    except Exception:
+        logger.exception("Signataire : bloc du directeur général non rendu")
+        return mark_safe('')
+
+
+def _ligne_date_html(context, align=None):
+    """Ligne « Ville, le date » du bloc signataire (vide sans identité ni ville, comme ``signataire_auto``)."""
+    from django.utils.formats import date_format
+    identite = context.get('identite')
+    ville_prefix = f"{_e(identite.ville)}, " if getattr(identite, 'ville', None) else ''
+    date_str = date_format(timezone.now(), 'd F Y', use_l10n=True)
+    style = f' style="text-align:{align};"' if align else ''
+    return f'<div class="msig-date"{style}>{ville_prefix}le {date_str}</div>'
+
+
+def _bloc_directeur_general(context, fonction, membre, titres, variante=''):
+    """Bloc signé du directeur général : variante « cellule » ou bloc complet aligné à droite."""
+    if variante == 'cellule':
+        interieur = _bloc_signataire_html(fonction, membre, titres)
+        return f'{_SIGNATAIRE_CSS}<div class="msig-cellule">{interieur}</div>'
+    return (
+        f'{_SIGNATAIRE_CSS}'
+        f'<div class="msig-zone" style="text-align:right;">'
+        f'{_ligne_date_html(context, align="right")}'
+        f'<div class="msig-fonction">{_e(fonction or "Le Directeur général")}</div>'
+        f'{_zone_signature_html(membre)}'
+        f'<div class="msig-name">{_e(membre.nom).upper()} {_e(membre.prenom)}</div>'
+        f'{_titres_html(titres)}'
+        f'</div>'
+    )
+
+
+def _titres_html(titres):
+    """Titres honorifiques sous le nom (un par ligne), '' s'il n'y en a aucun."""
+    lignes = [t for t in (titres or []) if t]
+    if not lignes:
+        return ''
+    return f'<div class="msig-honors">{"<br>".join(_e(t) for t in lignes)}</div>'
