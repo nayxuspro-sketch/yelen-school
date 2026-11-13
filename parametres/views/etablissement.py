@@ -11,7 +11,7 @@ from django.http import HttpResponseForbidden
 from django.views.decorators.http import require_POST
 
 from ..forms import (
-    IdentiteEtablissementForm, RolePersonnaliseForm,
+    EtablissementBaseForm, IdentiteEtablissementForm, RolePersonnaliseForm,
 )
 from ..models import (
     DroitAcces, RolePersonnalise,
@@ -22,23 +22,41 @@ logger = logging.getLogger(__name__)
 from .commun import _get_etab
 
 
-# ─── ÉTABLISSEMENT ────────────────────────────────────────────────────
+# ─── FICHE UNIQUE DE L'ÉTABLISSEMENT ─────────────────────────────────
 
-@login_required
-def etablissement_edit(request):
+_CHAMPS_IDENTITE_PARTAGES = {
+    'nom_etablissement': 'nom',
+    'adresse_complete': 'adresse',
+    'ville': 'ville',
+    'telephone': 'telephone',
+    'email': 'email',
+}
+
+
+def _initial_identite(etab, identite):
+    """Pour les fiches historiques, complète l'identité officielle avec les anciennes données du site."""
+    initial = {}
+    for champ_identite, champ_site in _CHAMPS_IDENTITE_PARTAGES.items():
+        valeur_identite = getattr(identite, champ_identite, '') if identite else ''
+        valeur_site = getattr(etab, champ_site, '')
+        if not valeur_identite and valeur_site:
+            initial[champ_identite] = valeur_site
+    return initial
+
+
+def _fiche_etablissement(request):
+    """Formulaire unique : chaque donnée commune est saisie une fois puis synchronisée pour l'application et les PDF."""
+    from parametres.models import Cycle, IdentiteEtablissement
+
     etab = _get_etab(request)
-
     if not etab and request.user.is_superuser:
         etab = Etablissement.objects.first()
-
     if not etab and request.user.is_superuser:
         etab = Etablissement.objects.create(
-            nom="Mon Établissement",
-            code="ETAB001",
-            pays="Burkina Faso"
+            nom="Mon Établissement", code="ETAB001", pays="Burkina Faso",
         )
         request.user.etablissement = etab
-        request.user.save()
+        request.user.save(update_fields=['etablissement'])
 
     if not etab:
         return render(request, 'parametres/etablissement.html', {
@@ -46,61 +64,47 @@ def etablissement_edit(request):
             'error': "Votre compte n'est pas associé à un établissement.",
         })
 
+    identite = IdentiteEtablissement.objects.filter(etablissement=etab).first()
+    initial = _initial_identite(etab, identite)
     if request.method == 'POST':
-        d = request.POST
-        try:
-            etab.nom = d.get('nom', etab.nom)
-            etab.code = d.get('code', etab.code)
-            etab.adresse = d.get('adresse', etab.adresse)
-            etab.telephone = d.get('telephone', etab.telephone)
-            etab.email = d.get('email', etab.email)
-            etab.ville = d.get('ville', etab.ville)
-            etab.pays = d.get('pays', etab.pays)
-            if 'logo' in request.FILES:
-                etab.logo = request.FILES['logo']
-            etab.save()
-            return render(request, 'parametres/etablissement.html', {
-                'etablissement': etab,
-                'success': "Établissement mis à jour avec succès.",
-            })
-        except (DatabaseError, ValidationError, ValueError, OSError) as e:
-            logger.exception("Mise à jour de l'établissement impossible")
-            return render(request, 'parametres/etablissement.html', {
-                'etablissement': etab,
-                'error': str(e),
-            })
+        identite_form = IdentiteEtablissementForm(request.POST, request.FILES, instance=identite)
+        etablissement_form = EtablissementBaseForm(request.POST, instance=etab)
+        if identite_form.is_valid() and etablissement_form.is_valid():
+            try:
+                from parametres.services import enregistrer_fiche_etablissement
+                etab, identite = enregistrer_fiche_etablissement(etab, identite_form, etablissement_form)
+                messages.success(request, "Fiche de l'établissement mise à jour.")
+                return redirect('parametres:etablissement')
+            except (DatabaseError, ValidationError, ValueError, OSError) as exc:
+                logger.exception("Mise à jour de la fiche établissement impossible")
+                messages.error(request, f"La fiche n'a pas été enregistrée : {exc}")
+        else:
+            messages.error(request, "Corrigez les champs signalés avant d'enregistrer.")
+    else:
+        identite_form = IdentiteEtablissementForm(instance=identite, initial=initial)
+        etablissement_form = EtablissementBaseForm(instance=etab)
 
-    return render(request, 'parametres/etablissement.html', {'etablissement': etab})
+    logo_actuel = (identite.logo if identite and identite.logo else etab.logo)
+    cycles_configures = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
+    return render(request, 'parametres/etablissement.html', {
+        'etablissement': etab,
+        'identite': identite,
+        'cycles_configures': cycles_configures,
+        'identite_form': identite_form,
+        'etablissement_form': etablissement_form,
+        'logo_actuel': logo_actuel,
+    })
+
+
+@login_required
+def etablissement_edit(request):
+    return _fiche_etablissement(request)
 
 
 @login_required
 def identite_etablissement(request):
-    """Vue pour configurer l'identité de l'établissement (logo, adresse, contacts, signature)."""
-    from parametres.models import IdentiteEtablissement
-
-    etab = _get_etab(request)
-
-    if not etab:
-        messages.error(request, "Votre compte n'est pas associé à un établissement.")
-        return redirect('core:index')
-
-    identite = IdentiteEtablissement.objects.filter(etablissement=etab).first()
-
-    if request.method == 'POST':
-        form = IdentiteEtablissementForm(request.POST, request.FILES, instance=identite)
-        if form.is_valid():
-            instance = form.save(commit=False)
-            if not identite:
-                instance.etablissement = etab
-            instance.save()
-            messages.success(request, "Identité de l'établissement mise à jour avec succès.")
-        else:
-            messages.error(request, form.errors.as_text())
-
-    return render(request, 'parametres/identite_etablissement.html', {
-        'identite': identite,
-        'etablissement': etab,
-    })
+    """Ancienne URL conservée : elle ouvre désormais la fiche unique de l'établissement."""
+    return _fiche_etablissement(request)
 
 
 # ─── DROITS D'ACCÈS PAR RÔLE ──────────────────────────────────────

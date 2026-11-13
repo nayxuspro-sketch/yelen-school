@@ -221,16 +221,46 @@ class TestPartialsSansScriptInline:
 
         assert 'previewImage' not in html and 'onchange=' not in html
         for champ, img in (('logo', 'logo'), ('signature_directeur', 'signature'), ('cachet_etablissement', 'cachet')):
-            assert f'name="{champ}" accept="image/*" class="input" data-csp-preview-image="{img}-preview" ' \
-                   f'data-preview-reveal="{img}-preview-container"' in html, champ
+            assert f'name="{champ}"' in html and f'data-csp-preview-image="{img}-preview"' in html, champ
+            assert f'data-preview-reveal="{img}-preview-container"' in html, champ
+        for champ in ('nom_etablissement', 'adresse_complete', 'telephone', 'email', 'ville', 'logo'):
+            assert html.count(f'name="{champ}"') == 1, champ
+        assert 'name="nom"' not in html and 'name="adresse"' not in html
         # Seuls les blocs <script> noncés de la page de base subsistent
         assert all('nonce="' in balise for balise in re.findall(r'<script(?![^>]*\ssrc=)[^>]*>', html))
 
     def test_identite_etablissement_libelle_agrement(self, client_etab):
         html = client_etab.get(reverse('parametres:identite_etablissement')).content.decode()
 
-        assert '<label class="input-label" for="id_numero_agrement_mena">N° Agrément</label>' in html
+        assert 'N° Agrément' in html
         assert 'Agrément MENA' not in html
+
+    def test_creation_initiale_identite_affiche_et_synchronise_la_fiche_unique(self, client_etab):
+        etab = Etablissement.objects.get(code='CSP')
+        donnees = {
+            'nom_etablissement': 'Lycée Yelen', 'code': etab.code, 'pays': 'Burkina Faso',
+            'sigle': 'LY', 'type_etablissement': 'PRIVE', 'numero_agrement_mena': 'AG-CREATION-001',
+            'date_agrement': '2024-09-01', 'categorie_reglementaire': '2', 'zone_implantation': '3',
+            'adresse_complete': 'Secteur 4', 'ville': 'Sabou', 'province': 'Boulkiemdé',
+            'region': 'Centre-Ouest', 'telephone': '+226 70 00 00 00', 'email': 'contact@yelen.bf',
+            'site_web': '', 'nom_directeur': 'Directeur Yelen', 'devise': 'Réussir ensemble',
+        }
+
+        response = client_etab.post(reverse('parametres:identite_etablissement'), donnees)
+        assert response.status_code == 302 and response.url == reverse('parametres:etablissement')
+
+        from parametres.models import IdentiteEtablissement
+        identite = IdentiteEtablissement.objects.get(etablissement=etab)
+        etab.refresh_from_db()
+        assert etab.nom == identite.nom_etablissement == 'Lycée Yelen'
+        assert etab.adresse == identite.adresse_complete == 'Secteur 4'
+        assert etab.ville == identite.ville == 'Sabou'
+        assert etab.telephone == identite.telephone == '+226 70 00 00 00'
+        assert etab.email == identite.email == 'contact@yelen.bf'
+
+        html = client_etab.get(reverse('parametres:etablissement')).content.decode()
+        assert 'value="Lycée Yelen"' in html and 'value="Sabou"' in html
+        assert html.count('name="telephone"') == 1 and html.count('name="email"') == 1
 
     def test_identite_etablissement_telephone_35_caracteres(self, client_etab):
         etab = Etablissement.objects.get(code='CSP')
@@ -241,13 +271,15 @@ class TestPartialsSansScriptInline:
         donnees = {champ: getattr(identite, champ) for champ in (
             'nom_etablissement', 'type_etablissement', 'numero_agrement_mena', 'date_agrement',
             'adresse_complete', 'ville', 'province', 'region', 'email', 'nom_directeur')}
+        donnees.update(code=etab.code, pays=etab.pays)
 
         html = client_etab.get(reverse('parametres:identite_etablissement')).content.decode()
         assert re.search(r'<input[^>]*name="telephone"[^>]*maxlength="35"', html)
 
         client_etab.post(reverse('parametres:identite_etablissement'), {**donnees, 'telephone': tel})
         identite.refresh_from_db()
-        assert identite.telephone == tel
+        etab.refresh_from_db()
+        assert identite.telephone == etab.telephone == tel
 
     def test_signature_et_cachet_acceptes_jusqu_a_5_mo_puis_alleges(self, client_etab, settings, tmp_path):
         """Un scan de signature de 694 Ko était refusé (limite codée à 512 Ko). Signature et cachet sont acceptés
@@ -261,14 +293,14 @@ class TestPartialsSansScriptInline:
         donnees = {champ: getattr(identite, champ) for champ in (
             'nom_etablissement', 'type_etablissement', 'numero_agrement_mena', 'date_agrement',
             'adresse_complete', 'ville', 'province', 'region', 'email', 'nom_directeur')}
-        donnees['telephone'] = '+226 25 36 47 58'
+        donnees.update(code=etab.code, pays=etab.pays, telephone='+226 25 36 47 58')
         url = reverse('parametres:identite_etablissement')
         scan = _image_bruitee(1600, 600, 'RGB', 'JPEG')
         assert 512 * 1024 < len(scan) < 5 * 1024 * 1024, 'scan réaliste : refusé avant, accepté désormais'
 
         reponse = client_etab.post(url, {**donnees, 'signature_directeur': SimpleUploadedFile(
             'signature_directeur.jpg', scan, content_type='image/jpeg')})
-        assert [m.message for m in get_messages(reponse.wsgi_request)] == ["Identité de l'établissement mise à jour avec succès."]
+        assert [m.message for m in get_messages(reponse.wsgi_request)] == ["Fiche de l'établissement mise à jour."]
         identite.refresh_from_db()
         with Image.open(identite.signature_directeur.path) as image:
             assert image.format == 'JPEG' and max(image.size) == 800 and image.size == (800, 300)
@@ -288,7 +320,7 @@ class TestPartialsSansScriptInline:
         assert len(trop) > 5 * 1024 * 1024
         reponse = client_etab.post(url, {**donnees, 'cachet_etablissement': SimpleUploadedFile(
             'cachet.png', trop, content_type='image/png')})
-        assert 'Taille maximale : 5.0 Mo' in ''.join(m.message for m in get_messages(reponse.wsgi_request))
+        assert 'Taille maximale : 5.0 Mo' in reponse.content.decode()
         identite.refresh_from_db()
         with Image.open(identite.cachet_etablissement.path) as image:
             assert image.size == (800, 800), 'image précédente conservée'

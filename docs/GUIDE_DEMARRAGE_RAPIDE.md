@@ -52,7 +52,7 @@ L'ordre compte : chaque étape alimente la suivante. Comptez une demi-journée.
 
 | # | Étape | Où | Guide |
 |---|-------|----|-------|
-| 1 | **Identité de l'établissement** : nom, sigle, N° Agrément, adresse, téléphone, logo, cachet, devise. Ces données figurent sur tous les PDF. | `Paramètres → Identité Établissement` | § 3.1 |
+| 1 | **Fiche unique de l'établissement** : nom, code, agrément, adresse, coordonnées, logo, cachet et devise. Ces données alimentent l'application et les PDF depuis un seul formulaire. | `Paramètres → Établissement` | § 3.1 |
 | 2 | **Année scolaire** : libellé (`2026-2027`), dates, case **Année en cours**. | `Paramètres → Années scolaires` | § 3.3 |
 | 3 | **Périodes d'évaluation** : trimestres (ou semestres) avec leurs dates ; elles pilotent la saisie des notes et les bulletins. | `Paramètres → Périodes` | § 3.4 |
 | 4 | **Classes** : une classe par division (6e A, 6e B…), avec sa **capacité** — l'inscription dans une classe pleine est refusée. | `Paramètres → Classes` | § 4.2 |
@@ -283,7 +283,7 @@ sur les données et le fonctionnement (§ 24).
 
 ## Annexe B — Liste de contrôle de rentrée
 
-- [ ] Identité de l'établissement complète (logo, cachet, N° Agrément)
+- [ ] Fiche de l'établissement complète (logo, cachet, N° Agrément)
 - [ ] Année scolaire courante et périodes d'évaluation créées
 - [ ] Classes avec capacité, salles
 - [ ] Matières configurées par niveau, enseignements de chaque classe

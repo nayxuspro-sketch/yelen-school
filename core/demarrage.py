@@ -33,10 +33,10 @@ def etapes(etablissement, user=None):
 
     identite_complete = bool(identite and identite.nom_etablissement and identite.numero_agrement_mena)
     return [
-        {'cle': 'identite', 'titre': "Identité de l'établissement",
-         'detail': ("Nom, sigle, N° Agrément et devise renseignés" if identite_complete
-                    else "Renseignez le nom, le N° Agrément, la devise et le logo : ils figurent sur tous les PDF"),
-         'fait': identite_complete, 'url': url('identite_etablissement'), 'action': "Compléter l'identité"},
+        {'cle': 'identite', 'titre': "Fiche de l'établissement",
+         'detail': ("Identité, coordonnées et N° Agrément renseignés" if identite_complete
+                    else "Renseignez l'identité, les coordonnées et l'agrément dans la fiche unique"),
+         'fait': identite_complete, 'url': url('etablissement'), 'action': "Compléter la fiche"},
         {'cle': 'annee', 'titre': 'Année scolaire en cours',
          'detail': (f"Année courante : {courante.libelle}" if courante else
                     f"{nb_annees} année(s) déclarée(s), aucune n'est marquée « en cours »"),

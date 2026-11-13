@@ -47,9 +47,9 @@ def test_page_assistant(client, etab):
     assert reponse.status_code == 200
     html = reponse.content.decode()
     assert 'Assistant de démarrage' in html and '0 / 8 étapes' in html
-    for titre in ("Identit\u00e9 de l", "Cycles et classes", "Signataires des documents"):
+    for titre in ("Fiche de l", "Cycles et classes", "Signataires des documents"):
         assert titre in html, titre
-    assert reverse('parametres:identite_etablissement') in html and reverse('inscriptions:eleve_list') in html
+    assert reverse('parametres:etablissement') in html and reverse('inscriptions:eleve_list') in html
     # Carte d'accès depuis les Paramètres, réservée aux rôles ayant accès aux paramètres
     assert reverse('core:demarrage') in client.get(reverse('parametres:index')).content.decode()
     client.force_login(baker.make('accounts.User', role='ENSEIGNANT', etablissement=etab, must_change_password=False))

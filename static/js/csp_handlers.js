@@ -398,7 +398,7 @@
       var lecteur = new FileReader();
       lecteur.onload = function(ev) {
         var img = document.getElementById(sel.dataset.cspPreviewImage);
-        if (img) { img.src = ev.target.result; img.style.display = ''; }
+        if (img) { img.hidden = false; img.src = ev.target.result; img.style.display = ''; }
         parIds(sel.dataset.previewReveal, function(el) { el.style.display = ''; });
         parIds(sel.dataset.previewConceal, function(el) { el.style.display = 'none'; });
       };

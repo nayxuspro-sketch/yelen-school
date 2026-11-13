@@ -7,9 +7,33 @@ YELEN SCHOOL — Logique métier des paramètres généraux.
 import logging
 from datetime import date
 
+from django.db import transaction
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+
+def enregistrer_fiche_etablissement(etablissement, identite_form, etablissement_form):
+    """Enregistre atomiquement l'identité et les données techniques, puis synchronise leurs champs communs."""
+    with transaction.atomic():
+        identite = identite_form.save(commit=False)
+        identite.etablissement = etablissement
+        identite.save()
+
+        etablissement = etablissement_form.save(commit=False)
+        etablissement.nom = identite.nom_etablissement
+        etablissement.adresse = identite.adresse_complete
+        etablissement.ville = identite.ville
+        etablissement.telephone = identite.telephone
+        etablissement.email = identite.email
+        if identite.logo:
+            etablissement.logo = identite.logo.name
+        elif etablissement.logo:
+            identite.logo = etablissement.logo.name
+            identite.save(update_fields=['logo'])
+        etablissement.save()
+
+    return etablissement, identite
 
 
 def auto_generer_annee_scolaire(etablissement=None, force=False):

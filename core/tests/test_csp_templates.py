@@ -88,15 +88,14 @@ def test_barre_actions_groupees_sans_script_ni_gestionnaire_inline():
 
 
 # ── Aperçus d'images et champs conditionnels (lot B) ─────────────────────────────────────
-# identite_etablissement.html et etablissements/detail.html embarquaient un <script> sans nonce
-# (previewImage jamais définie) et des onchange / onmouseover inline ; classe_form.html basculait
-# les champs d'examen par un onchange. Tout passe par csp_handlers.js (data-csp-preview-image,
-# data-csp-toggle-target) et par le CSS (.logo-dropzone:hover).
+# La fiche unique porte les aperçus d'images ; les anciennes pages ne contiennent plus de formulaire
+# dupliqué. Les champs utilisent csp_handlers.js (data-csp-preview-image) sans gestionnaire inline.
 
 def test_apercus_images_et_bascule_examen_sans_inline():
     fichiers = {
-        'parametres/templates/parametres/identite_etablissement.html': 3,
-        'etablissements/templates/etablissements/detail.html': 1,
+        'parametres/templates/parametres/etablissement.html': 3,
+        'parametres/templates/parametres/identite_etablissement.html': 0,
+        'etablissements/templates/etablissements/detail.html': 0,
     }
     for chemin, nb in fichiers.items():
         html = (RACINE / chemin).read_text(encoding='utf-8')

@@ -5,6 +5,7 @@ from django.utils.text import slugify
 from core.models import RoleChoices
 from pedagogie.models import TypeEvaluation
 from personnel.models import MembrePersonnel
+from etablissements.models import Etablissement
 
 from .models import (
     TypeDocument, Cycle, AnneeScolaire, Classe, Poste, LocalisationPoste,
@@ -204,7 +205,26 @@ class EvenementCalendrierForm(forms.ModelForm):
             )
 
 
+class EtablissementBaseForm(forms.ModelForm):
+    """Champs techniques qui complètent la fiche d'identité unique de l'établissement."""
+
+    class Meta:
+        model = Etablissement
+        fields = ['code', 'pays']
+        widgets = {'code': forms.TextInput(attrs={'class': 'input'}),
+                   'pays': forms.TextInput(attrs={'class': 'input'})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['code'].label = "Code interne de l'établissement"
+        self.fields['code'].help_text = "Identifiant technique unique du site ; ce n'est pas son nom officiel."
+        for field in self.fields.values():
+            field.widget.attrs.setdefault('class', 'input')
+
+
 class IdentiteEtablissementForm(forms.ModelForm):
+    """Informations uniques de l'établissement et éléments nécessaires à ses documents."""
+
     class Meta:
         model = IdentiteEtablissement
         fields = [
@@ -220,6 +240,24 @@ class IdentiteEtablissementForm(forms.ModelForm):
             'adresse_complete': forms.Textarea(attrs={'rows': 2}),
             'devise': forms.Textarea(attrs={'rows': 2}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        labels = {
+            'nom_etablissement': "Nom de l'établissement",
+            'adresse_complete': "Adresse complète",
+            'ville': 'Ville',
+            'telephone': 'Téléphone principal',
+            'email': 'Courriel principal',
+            'site_web': 'Site web',
+        }
+        for name, label in labels.items():
+            self.fields[name].label = label
+        for field in self.fields.values():
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs.setdefault('class', 'input select')
+            else:
+                field.widget.attrs.setdefault('class', 'input')
 
     def clean_logo(self):
         image = self.cleaned_data.get('logo')

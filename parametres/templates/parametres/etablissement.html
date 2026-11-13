@@ -1,98 +1,154 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Établissement — Paramètres{% endblock %}
+{% block title %}Fiche de l'établissement — Paramètres{% endblock %}
 
 {% block content %}
 <div class="page-header animate-fade-up">
     <div>
         <p class="page-subtitle">
             <a href="{% url 'parametres:index' %}" class="text-secondary">Paramètres</a>
-            <span class="text-muted"> / </span>
-            <span>Établissement</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-current">Établissement</span>
         </p>
-        <h1 class="page-title">Informations de l'établissement</h1>
+        <h1 class="page-title">Fiche de l'établissement</h1>
+        <p class="text-muted">Une seule fiche pour l'identité, les coordonnées et les documents officiels. Les informations officielles déjà renseignées sont prioritaires ; sinon, les anciennes coordonnées de base sont reprises. Après l'enregistrement, une seule valeur alimente l'application et les documents.</p>
     </div>
 </div>
 
-{% if error %}
-<div class="alert alert-danger mb-4">{{ error }}</div>
-{% endif %}
-
-{% if success %}
-<div class="alert alert-success mb-4">{{ success }}</div>
-{% endif %}
+{% if error %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
 
 {% if etablissement %}
 <div class="card animate-fade-up delay-1">
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+        {% if identite_form.non_field_errors or etablissement_form.non_field_errors %}
+        <div class="alert alert-danger mb-4">
+            {{ identite_form.non_field_errors }}{{ etablissement_form.non_field_errors }}
+        </div>
+        {% endif %}
 
-        <div class="form-grid-2">
-            <div class="form-group">
-                <label class="input-label" for="id_nom">Nom de l'établissement <span style="color:#FF6B7A;">*</span></label>
-                <input type="text" name="nom" value="{{ etablissement.nom }}" required
-                    class="input" placeholder="Ex: Lycée d'Excellence Yelen" id="id_nom">
-            </div>
-
-            <div class="form-group">
-                <label class="input-label" for="id_code">Code <span style="color:#FF6B7A;">*</span></label>
-                <input type="text" name="code" value="{{ etablissement.code }}" required
-                    class="input" placeholder="Ex: LEY-OUA" id="id_code">
-            </div>
-
-            <div class="form-group">
-                <label class="input-label" for="id_telephone">Téléphone</label>
-                <input type="text" name="telephone" value="{{ etablissement.telephone }}"
-                    class="input" placeholder="+226 25 30 00 00" id="id_telephone">
-            </div>
-
-            <div class="form-group">
-                <label class="input-label" for="id_email">Email</label>
-                <input type="email" name="email" value="{{ etablissement.email }}"
-                    class="input" placeholder="direction@yelen.bf" id="id_email">
-            </div>
-
-            <div class="form-group">
-                <label class="input-label" for="id_ville">Ville</label>
-                <input type="text" name="ville" value="{{ etablissement.ville }}"
-                    class="input" placeholder="Ouagadougou" id="id_ville">
-            </div>
-
-            <div class="form-group">
-                <label class="input-label" for="id_pays">Pays</label>
-                <input type="text" name="pays" value="{{ etablissement.pays }}"
-                    class="input" placeholder="Burkina Faso" id="id_pays">
-            </div>
-
-            <div class="form-group" style="grid-column:1/-1;">
-                <label class="input-label" for="id_adresse">Adresse</label>
-                <textarea name="adresse" rows="2"
-                    class="input" placeholder="Secteur, Quartier, Rue..." id="id_adresse">{{ etablissement.adresse }}</textarea>
-            </div>
-
-            <div style="grid-column:1/-1;">
-                <label class="input-label">Logo de l'établissement</label>
-                <div class="d-flex align-center gap-4 mt-4" style="margin-top:0.5rem;">
-                    {% if etablissement.logo %}
-                    <div style="flex-shrink:0;">
-                        <img src="{{ etablissement.logo.url }}" alt="Logo" style="height:5rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); background:var(--color-bg-card);">
-                    </div>
-                    {% endif %}
-                    <div class="flex-1">
-                        <input type="file" name="logo" accept="image/*" class="input">
-                        <p class="text-xs text-muted" style="margin-top:0.25rem;">Formats acceptés: PNG, JPG, SVG. Taille max: 2Mo</p>
-                    </div>
+        <div class="card-header">
+            <div class="card-title">Identification du site</div>
+        </div>
+        <p class="text-muted">Le nom et le code identifient le même établissement dans toute l'application. Le code est un identifiant interne ; il ne remplace pas le nom officiel.</p>
+        <div class="form-grid-2 form-body">
+            {% include 'parametres/partials/form_field.html' with field=identite_form.nom_etablissement %}
+            {% include 'parametres/partials/form_field.html' with field=etablissement_form.code %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.sigle %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.type_etablissement %}
+            {% include 'parametres/partials/form_field.html' with field=etablissement_form.pays %}
+            <div class="form-group form-grid-2-full">
+                <label class="input-label">Cycles rattachés à cet établissement</label>
+                <div class="card p-4 d-flex gap-2 flex-wrap">
+                    {% for cycle in cycles_configures %}
+                    <span class="badge {% if cycle.actif %}badge-success{% else %}badge-neutral{% endif %}">
+                        {{ cycle.nom }}{% if not cycle.actif %} (inactif){% endif %}
+                    </span>
+                    {% empty %}
+                    <span class="text-muted">Aucun cycle n'est encore configuré.</span>
+                    {% endfor %}
                 </div>
+                <p class="text-xs text-muted mt-2">Un établissement peut regrouper plusieurs cycles. La liste et les classes se gèrent séparément.</p>
+                <a href="{% url 'parametres:cycle_list' %}" class="btn-secondary btn-sm">Gérer les cycles</a>
             </div>
         </div>
 
-        <div class="d-flex justify-end gap-3 mt-6" style="padding-top:2rem; border-top:1px solid var(--color-border);">
-            <button type="submit" class="btn-primary">
-                Enregistrer les modifications
-            </button>
+        <div class="card-header">
+            <div class="card-title">Agrément et classement réglementaire</div>
+        </div>
+        <div class="form-grid-2 form-body">
+            {% include 'parametres/partials/form_field.html' with field=identite_form.numero_agrement_mena %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.date_agrement %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.categorie_reglementaire %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.zone_implantation %}
+        </div>
+
+        <div class="card-header">
+            <div class="card-title">Adresse et coordonnées</div>
+        </div>
+        <div class="form-grid-2 form-body">
+            {% include 'parametres/partials/form_field.html' with field=identite_form.adresse_complete full_width=True %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.ville %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.province %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.region %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.telephone %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.email %}
+            {% include 'parametres/partials/form_field.html' with field=identite_form.site_web %}
+        </div>
+
+        <div class="card-header">
+            <div class="card-title">Direction de l'établissement</div>
+        </div>
+        <div class="form-grid-2 form-body">
+            {% include 'parametres/partials/form_field.html' with field=identite_form.nom_directeur full_width=True %}
+            <p class="text-xs text-muted form-grid-2-full">Il s'agit du directeur général / proviseur. Les directeurs de cycle se désignent séparément dans les inscriptions annuelles du personnel.</p>
+        </div>
+
+        <div class="card-header">
+            <div class="card-title">Logo, signature, cachet et devise</div>
+        </div>
+        <div class="form-grid-2 form-body">
+            <div class="form-group">
+                <label class="input-label" for="id_logo">Logo de l'établissement</label>
+                <div class="d-flex align-center gap-4 mt-2">
+                    <div id="logo-preview-container">
+                        {% if logo_actuel %}
+                        <img id="logo-preview" src="{{ logo_actuel.url }}" alt="Logo" width="120" height="64">
+                        {% else %}
+                        <img id="logo-preview" src="" alt="Logo" width="120" height="64" hidden>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <input type="file" name="logo" id="id_logo" accept="image/*" class="input" data-csp-preview-image="logo-preview" data-preview-reveal="logo-preview-container">
+                        <p class="text-xs text-muted mt-2">PNG ou JPG, 300 × 300 px minimum. Un seul logo est utilisé pour le site et les documents.</p>
+                        {% for error in identite_form.logo.errors %}<p class="input-error">{{ error }}</p>{% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="input-label" for="id_signature_directeur">Signature du directeur général</label>
+                <div class="d-flex align-center gap-4 mt-2">
+                    <div id="signature-preview-container">
+                        {% if identite.signature_directeur %}
+                        <img id="signature-preview" src="{{ identite.signature_directeur.url }}" alt="Signature" width="120" height="48">
+                        {% else %}
+                        <img id="signature-preview" src="" alt="Signature" width="120" height="48" hidden>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <input type="file" name="signature_directeur" id="id_signature_directeur" accept="image/*" class="input" data-csp-preview-image="signature-preview" data-preview-reveal="signature-preview-container">
+                        <p class="text-xs text-muted mt-2">Image de signature pour les documents officiels.</p>
+                        {% for error in identite_form.signature_directeur.errors %}<p class="input-error">{{ error }}</p>{% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="input-label" for="id_cachet_etablissement">Cachet officiel</label>
+                <div class="d-flex align-center gap-4 mt-2">
+                    <div id="cachet-preview-container">
+                        {% if identite.cachet_etablissement %}
+                        <img id="cachet-preview" src="{{ identite.cachet_etablissement.url }}" alt="Cachet" width="64" height="64">
+                        {% else %}
+                        <img id="cachet-preview" src="" alt="Cachet" width="64" height="64" hidden>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <input type="file" name="cachet_etablissement" id="id_cachet_etablissement" accept="image/*" class="input" data-csp-preview-image="cachet-preview" data-preview-reveal="cachet-preview-container">
+                        <p class="text-xs text-muted mt-2">Image du cachet officiel.</p>
+                        {% for error in identite_form.cachet_etablissement.errors %}<p class="input-error">{{ error }}</p>{% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {% include 'parametres/partials/form_field.html' with field=identite_form.devise full_width=True %}
+        </div>
+
+        <div class="d-flex justify-end gap-3 p-5">
+            <button type="submit" class="btn-primary">Enregistrer la fiche</button>
         </div>
     </form>
 </div>
 {% endif %}
-
 {% endblock %}

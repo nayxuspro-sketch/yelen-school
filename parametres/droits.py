@@ -323,8 +323,7 @@ MODULES = (
         _f('/documents/statistiques-officielles/', 'Statistiques officielles'),
     )),
     Module('parametres', 'Paramètres', SECTION_CONFIGURATION, (
-        _f('/parametres/etablissement/', 'Établissement'),
-        _f('/parametres/identite-etablissement/', 'Identité établissement'),
+        _f('/parametres/etablissement/', 'Fiche de l’établissement', '/parametres/identite-etablissement/'),
         _f('/parametres/annees/', 'Années scolaires', actions=(
             _a('cloturer', 'Clôturer / rouvrir une année scolaire (verrouillage des inscriptions et des notes)',
                'annee_cloture', roles=_DIRECTION),
@@ -419,7 +418,7 @@ DEFAUTS = {
     'parametres': frozenset({RoleChoices.DIRECTEUR, RoleChoices.CENSEUR}),
 }
 
-CLE_CACHE = 'droits_acces:matrice:v3'
+CLE_CACHE = 'droits_acces:matrice:v4'
 DUREE_CACHE = 60  # secondes — borne la latence d'un cache local par processus
 
 

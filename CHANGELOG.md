@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.0 — 2026-09-06
+
+- **Fiche établissement unique.** Le menu « Établissement » rassemble maintenant les données du site et les informations officielles ; nom, adresse, ville, téléphone, courriel et logo ne sont saisis qu'une fois et sont synchronisés pour les documents et le reste de l'application. L'ancien lien d'identité est retiré du menu mais reste compatible. Les droits existants sont fusionnés sans supprimer d'accès ; les anciennes coordonnées préremplissent les champs officiels lorsqu'ils étaient vides.
+- Le premier enregistrement affiche maintenant la fiche enregistrée ; le code interne et le pays restent des champs distincts, clairement identifiés.
+
 ## 5.64.0 — 2026-09-06
 
 - **Organisation multi-cycle d’un établissement.** Référence des cycles centralisée ; migrations relationnelles préservant les cycles historiques des manuels et des frais de scolarité. Les affectations professionnelles multi-cycles et la désignation annuelle des directeurs de cycle sont distinctes des droits de consultation des comptes ; la direction générale reste distincte.

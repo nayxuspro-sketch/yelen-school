@@ -34,10 +34,10 @@
         <div class="text-sm text-secondary" style="padding-bottom:.5rem;">
             {% if classe_connue %}
             Établissement de <strong>{{ identite.get_categorie_reglementaire_display }}</strong>, zone : <strong>{{ identite.get_zone_implantation_display }}</strong>
-            — <a href="{% url 'parametres:identite_etablissement' %}">modifier</a>.
+            — <a href="{% url 'parametres:etablissement' %}">modifier</a>.
             {% else %}
             Catégorie réglementaire et zone d'implantation non renseignées : aucun plafond n'est appliqué.
-            <a href="{% url 'parametres:identite_etablissement' %}">Les renseigner dans l'identité de l'établissement</a>.
+            <a href="{% url 'parametres:etablissement' %}">Les renseigner dans la fiche de l'établissement</a>.
             {% endif %}
         </div>
     </form>

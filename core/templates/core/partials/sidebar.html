@@ -613,9 +613,6 @@
         {% if '/parametres/etablissement/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:etablissement' %}" class="sb-item-submodern" data-url="/parametres/etablissement/"><span class="sub-item-dot"></span>Établissement</a>
         {% endif %}
-        {% if '/parametres/identite-etablissement/' in droits_fonctionnalites %}
-        <a href="{% url 'parametres:identite_etablissement' %}" class="sb-item-submodern" data-url="/parametres/identite-etablissement/"><span class="sub-item-dot"></span>Identité établissement</a>
-        {% endif %}
         {% if '/parametres/mentions-distinctions/' in droits_fonctionnalites %}
         <a href="{% url 'parametres:distinction_list' %}" class="sb-item-submodern" data-url="/parametres/mentions-distinctions/"><span class="sub-item-dot"></span>Mentions / distinctions</a>
         {% endif %}

@@ -90,6 +90,7 @@ class TestValeursParDefaut:
         assert len(droits.fonctionnalites_autorisees(super_admin)) == NB_FONCTIONNALITES
 
     def test_fonctionnalite_du_chemin_prefixe_le_plus_long(self):
+        assert droits.fonctionnalite_du_chemin('parametres', '/parametres/identite-etablissement/') == '/parametres/etablissement/'
         assert droits.fonctionnalite_du_chemin('finances', '/finances/relances/historique/?page=2') == '/finances/relances/historique/'
         assert droits.fonctionnalite_du_chemin('finances', '/finances/relances/') == '/finances/relances/'
         assert droits.fonctionnalite_du_chemin('finances', '/finances/situation/eleve/x/') == '/finances/paiements/'
@@ -140,6 +141,12 @@ class TestApplicationDesDroits:
         assert 'id="inscriptions-toggle"' in html and 'data-url="/pedagogie/matieres/"' in html
         assert 'id="finances-toggle"' not in html and 'id="params-toggle"' not in html
         assert 'droits-acces' not in html and 'data-url="/parametres/signataires/formulaire/"' not in html
+
+    def test_menu_parametres_ne_propose_qu_une_fiche_etablissement(self, client, etab):
+        _client_role(client, etab, 'DIRECTEUR')
+        html = client.get('/').content.decode()
+        assert html.count('data-url="/parametres/etablissement/"') == 1
+        assert 'data-url="/parametres/identite-etablissement/"' not in html
 
     def test_page_hors_menu_suit_le_module(self, client, etab):
         """Une page du module sans entrée de menu suit l'accès au module (une fonctionnalité au moins)."""

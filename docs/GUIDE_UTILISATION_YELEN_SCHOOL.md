@@ -32,7 +32,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [2.5 Aide en ligne](#25-aide-en-ligne)
   - [2.6 Gestion des Comptes Utilisateurs](#26-gestion-des-comptes-utilisateurs)
 - [3. PARAMÈTRES DE L'ÉTABLISSEMENT](#3-paramètres-de-létablissement)
-  - [3.1 Identité de l'établissement](#31-identité-de-létablissement)
+  - [3.1 Fiche unique de l'établissement](#31-fiche-unique-de-létablissement)
   - [3.2 Gestion des Années Scolaires](#32-gestion-des-années-scolaires)
   - [3.3 Création Manuelle d'une Année Scolaire (recommandé)](#33-création-manuelle-dune-année-scolaire-recommandé)
   - [3.4 Périodes d'évaluation et clôture de trimestre](#34-périodes-dévaluation-et-clôture-de-trimestre)
@@ -629,20 +629,18 @@ imprimable (§19.6).
 
 ## 3. PARAMÈTRES DE L'ÉTABLISSEMENT
 
-### 3.1 Identité de l'établissement
+### 3.1 Fiche unique de l'établissement
 
-> **Accès :** `Paramètres → Identité Établissement`
+> **Accès :** `Paramètres → Établissement`
 
-**À quoi ça sert :** Configurer les informations officielles de l'établissement — nom, adresse, contacts, logo, signature et cachet — qui apparaîtront sur tous les documents PDF (certificats, bulletins, attestations).
+**À quoi ça sert :** Une seule fiche regroupe les informations du site et les informations officielles utilisées sur les documents PDF. Le nom, l'adresse, la ville, le téléphone, le courriel et le logo se saisissent une seule fois et alimentent les deux usages ; l'ancien lien « Identité établissement » ouvre la même fiche. Pour les données existantes, la valeur officielle déjà présente est prioritaire ; si elle était vide, l'ancienne valeur de base préremplit le champ. À l'enregistrement, la valeur affichée devient la référence unique.
 
 **Champs principaux :**
-- **Informations officielles** : nom, sigle, type (public/privé/confessionnel), numéro et date d'agrément
-- **Adresse complète** : rue/quartier, ville, province, région
-- **Contact** : téléphone (35 caractères maximum, plusieurs numéros possibles), email, site web, nom du directeur
-- **Éléments graphiques** : logo (PNG/JPG ≥ 300×300px), signature du directeur (PNG transparent), cachet officiel
-- **Devise** : phrase ou valeur éducative de l'établissement
-
-**Design v2.11 :** La page a été modernisée avec des sections séparées (card-header + card-title), des icônes Lucide par section, et une correction de l'affichage des messages de confirmation.
+- **Identification du site** : nom officiel, code interne, sigle, pays et type (public/privé/confessionnel)
+- **Agrément et classement** : numéro/date d'agrément, catégorie réglementaire et zone d'implantation
+- **Adresse et coordonnées** : adresse complète, ville, province, région, téléphone, courriel et site web
+- **Direction** : directeur général / proviseur de l'établissement ; les directeurs de cycle se désignent séparément dans les inscriptions annuelles du personnel
+- **Documents** : logo commun, signature du directeur, cachet officiel et devise
 
 ---
 
@@ -856,7 +854,7 @@ LPB 30/10: Encaisse 1 250 000 F (23 recus), especes 950 000 F. Depenses 185 000 
 
 **Paramétrage (une fois) :**
 
-1. `Paramètres → Identité Établissement` : renseigner **Catégorie réglementaire** et **Zone d'implantation**. Tant qu'ils sont vides, aucun plafond n'est appliqué (établissement public ou non encore classé).
+1. `Paramètres → Établissement` : renseigner **Catégorie réglementaire** et **Zone d'implantation**. Tant qu'ils sont vides, aucun plafond n'est appliqué (établissement public ou non encore classé).
 2. `Paramètres → Rubriques` : la case **Frais plafonnés** (cochée par défaut) indique les rubriques comptées dans le plafond. La décocher pour les **services annexes** (cantine, transport, internat) et les **frais autorisés par la tutelle**.
 
 **Contrôle à la saisie :** `Paramètres → Tarifs` refuse tout tarif qui porterait le total des rubriques plafonnées d'une classe et d'un statut au-delà du plafond : « Plafond réglementaire dépassé pour 6e A / Nouveau : 95 000 F de frais de scolarité pour un plafond de 90 000 F ». Réduire le montant, ou décocher « Frais plafonnés » sur la rubrique concernée s'il s'agit d'un service annexe.
@@ -892,7 +890,7 @@ Une seule page pour la mise en route d'un établissement : les **huit étapes** 
 
 | # | Étape | Considérée faite quand… |
 |---|---|---|
-| 1 | Identité de l'établissement | nom et N° Agrément renseignés (ils figurent sur tous les PDF) |
+| 1 | Fiche unique de l'établissement | nom et N° Agrément renseignés (ils figurent sur tous les PDF) |
 | 2 | Année scolaire en cours | une année est marquée « en cours » |
 | 3 | Cycles et classes | au moins un cycle et une classe actifs |
 | 4 | Rubriques et tarifs | au moins une rubrique et un tarif actifs |
@@ -1437,7 +1435,7 @@ le bulletin tienne sur une page. Sans classe d'affectation (ou si l'agent est d�
 signés exactement comme auparavant ; la **liste globale des élèves** (toutes classes) ne porte pas de bloc
 d'enseignant de classe.
 
-**Signature scannée (facultatif) :** dans la fenêtre `Paramètres → Signataires → Configurer les Signataires`, chaque carte propose un champ **Signature scannée** (PNG à fond transparent recommandé ; photo ou scan jusqu'à 5 Mo, l'image est automatiquement ramenée à 800 px et allégée pour l'impression — il en va de même pour la signature du directeur et le cachet de `Paramètres → Identité de l'établissement`). L'image est enregistrée sur la fiche du membre du personnel choisi et apposée automatiquement, à l'emplacement prévu pour sa signature, sur **tous** les documents qu'il signe (bulletins trimestriels et annuels, certificats de scolarité, attestations, convocations, circulaires, emplois du temps, cartes scolaires — sous la photo de l'élève —, autorisations, reçus, relances de paiement, listes, états…), sans modifier la mise en page. Sans image, l'espace reste vierge pour la signature manuscrite ; la case **Retirer la signature** supprime l'image enregistrée.
+**Signature scannée (facultatif) :** dans la fenêtre `Paramètres → Signataires → Configurer les Signataires`, chaque carte propose un champ **Signature scannée** (PNG à fond transparent recommandé ; photo ou scan jusqu'à 5 Mo, l'image est automatiquement ramenée à 800 px et allégée pour l'impression — il en va de même pour la signature du directeur et le cachet de `Paramètres → Établissement`). L'image est enregistrée sur la fiche du membre du personnel choisi et apposée automatiquement, à l'emplacement prévu pour sa signature, sur **tous** les documents qu'il signe (bulletins trimestriels et annuels, certificats de scolarité, attestations, convocations, circulaires, emplois du temps, cartes scolaires — sous la photo de l'élève —, autorisations, reçus, relances de paiement, listes, états…), sans modifier la mise en page. Sans image, l'espace reste vierge pour la signature manuscrite ; la case **Retirer la signature** supprime l'image enregistrée.
 
 > **Emploi du temps :** le signataire des emplois du temps (classe et professeur) se configure sur le type `EMPLOI_DU_TEMPS` (« Emploi du Temps », catégorie Pédagogie). Tous les documents signés par l'application (dont Convocation, Circulaire, Autorisation de Congé Personnel) sont proposés dans la fenêtre dès l'installation.
 
@@ -3968,7 +3966,7 @@ Le système génère automatiquement un PDF signé par le responsable configuré
 
 ### 12.6 Carte d'Identité Scolaire
 
-**À quoi ça sert :** Génère une carte scolaire individuelle (format carte plastifiable, face unique) pour l'élève : en-tête avec le nom, le type et le téléphone de l'établissement (`Paramètres → Identité Établissement`), puis son nom, sa classe, sa date de naissance, son matricule, son lieu de résidence, les noms de ses père et mère, le numéro d'urgence en gras (à défaut, le téléphone des parents), sous la photo, la signature scannée du signataire de la Carte d'Identité Scolaire suivie de son nom et de son prénom (voir section 7) et, au bas de la carte, la mention en gras « VALABLE POUR L'ANNÉE SCOLAIRE : » suivie de l'année en cours.
+**À quoi ça sert :** Génère une carte scolaire individuelle (format carte plastifiable, face unique) pour l'élève : en-tête avec le nom, le type et le téléphone de l'établissement (`Paramètres → Établissement`), puis son nom, sa classe, sa date de naissance, son matricule, son lieu de résidence, les noms de ses père et mère, le numéro d'urgence en gras (à défaut, le téléphone des parents), sous la photo, la signature scannée du signataire de la Carte d'Identité Scolaire suivie de son nom et de son prénom (voir section 7) et, au bas de la carte, la mention en gras « VALABLE POUR L'ANNÉE SCOLAIRE : » suivie de l'année en cours.
 
 **Accès :** `Inscriptions → [fiche de l'élève] → Carte scolaire`
 
@@ -7658,7 +7656,7 @@ Le compte est créé automatiquement au premier démarrage si `ENSURE_ADMIN=true
 
 **Actions post-connexion :**
 1. Remplacer le mot de passe temporaire dans le formulaire imposé
-2. Aller dans `Paramètres → Établissement` pour configurer l'identité de l'école
+2. Aller dans `Paramètres → Établissement` pour compléter la fiche unique de l'école
 3. Créer les utilisateurs (Directeur, Enseignants, etc.)
 4. Configurer l'année scolaire dans `Paramètres → Années scolaires`
 5. Vérifier que `ENSURE_ADMIN=false` et que `INITIAL_ADMIN_PASSWORD` est vide dans `.env`
