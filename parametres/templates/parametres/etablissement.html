@@ -82,6 +82,11 @@
         <div class="form-grid-2 form-body">
             {% include 'parametres/partials/form_field.html' with field=identite_form.nom_directeur full_width=True %}
             <p class="text-xs text-muted form-grid-2-full">Il s'agit du directeur général / proviseur. Les directeurs de cycle se désignent séparément dans les inscriptions annuelles du personnel.</p>
+            {% if directeur_general %}
+            <p class="text-xs text-muted form-grid-2-full">Documents signés par la direction : {{ directeur_general.nom|upper }} {{ directeur_general.prenom }} (signature scannée de sa fiche du personnel). Ce nom ci-dessus n'est imprimé qu'en l'absence de directeur général désigné.</p>
+            {% else %}
+            <p class="text-xs text-muted form-grid-2-full">Aucun directeur général n'est désigné dans <a href="{% url 'personnel:personnel_list' %}">Personnel</a> (case « Directeur général / Proviseur de l'établissement » de sa fiche) : les documents signés par la direction impriment, sans signature scannée, le nom saisi ci-dessus.</p>
+            {% endif %}
         </div>
 
         <div class="card-header">

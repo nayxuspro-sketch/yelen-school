@@ -3,6 +3,16 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.2 — 2026-11-13
+
+- **Liste du personnel (tous les cycles) signée par le directeur général.** Le PDF de `Personnel → PDF` couvre l'établissement entier : il porte désormais la signature du directeur général désigné sur sa fiche du personnel, et non plus celle d'un signataire de cycle. Replis : signataire du type « Liste du Personnel » pour l'année, puis nom de la fiche établissement, sans signature scannée. La liste du personnel d'un cycle (`Documents → Liste du personnel`) reste signée par le signataire de ce cycle. L'année scolaire de l'établissement est maintenant transmise au gabarit, ce qui rend ce repli effectif ; même correction pour la liste générale des élèves.
+- Résolution centralisée dans le tag `signataire_direction_generale` (ex-`signataire_directeur_general`, renommé et paramétré par type de document). Aucun changement de schéma, aucune migration.
+
+## 5.65.1 — 2026-11-13
+
+- **Liste générale des élèves signée par le directeur général.** Le PDF de la liste de tous les élèves (exports › liste des élèves) ne reprend plus la signature du cycle — il affiche celle du directeur général désigné dans le personnel. Un signataire propre au type « Liste des Élèves » peut être configuré dans Paramètres › Signataires à défaut ; sinon le nom de la fiche établissement est imprimé, sans signature scannée. Les listes alphabétiques par classe restent signées par le titulaire et le signataire du cycle.
+- La fiche établissement indique désormais si un directeur général est désigné et, à défaut, rappelle que son nom sert de solution de repli. Nouveau type de document `LISTE_ELEVES` (migration `parametres/0051`).
+
 ## 5.65.0 — 2026-09-06
 
 - **Fiche établissement unique.** Le menu « Établissement » rassemble maintenant les données du site et les informations officielles ; nom, adresse, ville, téléphone, courriel et logo ne sont saisis qu'une fois et sont synchronisés pour les documents et le reste de l'application. L'ancien lien d'identité est retiré du menu mais reste compatible. Les droits existants sont fusionnés sans supprimer d'accès ; les anciennes coordonnées préremplissent les champs officiels lorsqu'ils étaient vides.
