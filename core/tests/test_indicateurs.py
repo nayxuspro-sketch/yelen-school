@@ -21,7 +21,8 @@ def ecole(client):
     etab = baker.make('etablissements.Etablissement')
     user = baker.make('accounts.User', role='DIRECTEUR', etablissement=etab, est_tous_cycles=True, must_change_password=False)
     client.force_login(user)
-    classe = baker.make('parametres.Classe', etablissement=etab, nom='6e A')
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='PRIM', nom='Primaire')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6e A')
     precedente = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2025-2026',
                             date_debut=date(2025, 10, 1), date_fin=date(2026, 6, 30))
     courante = baker.make('parametres.AnneeScolaire', etablissement=etab, libelle='2026-2027', est_courante=True,
@@ -108,7 +109,7 @@ def test_nouvelle_annee_sans_donnees(ecole):
 @pytest.mark.django_db
 def test_evolution_etablissement_refuse_un_compte_restreint_a_un_cycle(client, ecole):
     cycle = ecole['classe'].cycle
-    baker.make('parametres.Cycle', etablissement=ecole['etab'], code='AUTRE', nom='Autre cycle')
+    baker.make('parametres.Cycle', etablissement=ecole['etab'], code='SEC', nom='Secondaire')
     utilisateur = baker.make('accounts.User', role='DIRECTEUR', etablissement=ecole['etab'], must_change_password=False)
     utilisateur.cycles.add(cycle)
     client.force_login(utilisateur)
