@@ -131,13 +131,13 @@ def etablissement_avec_directeur_general(cycle):
 
 def test_liste_des_eleves_signee_par_le_directeur_general(cycle, annee, etablissement_avec_directeur_general):
     """Le directeur général signe la liste générale des élèves, avec sa signature scannée."""
-    from documents.templatetags.signataire_tags import signataire_directeur_general
+    from documents.templatetags.signataire_tags import signataire_direction_generale
     etab, dg = etablissement_avec_directeur_general
     identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab, ville='Ouagadougou',
                           nom_directeur='Nom saisi sur la fiche établissement')
     contexte = Context({'identite': identite, 'etablissement': etab, 'annee_scolaire': annee})
 
-    html = signataire_directeur_general(contexte)
+    html = signataire_direction_generale(contexte, 'LISTE_ELEVES')
 
     assert 'OUÉDRAOGO Issa' in html and 'Directeur général' in html
     assert 'class="msig-img"' in html and 'class="msig-zone" style="text-align:right;"' in html
@@ -147,25 +147,25 @@ def test_liste_des_eleves_signee_par_le_directeur_general(cycle, annee, etabliss
 
 def test_liste_des_eleves_ignore_le_signataire_de_cycle_le_plus_recent(cycle, annee, etablissement_avec_directeur_general):
     """Un signataire de cycle modifié après la désignation du directeur général ne signe pas la liste."""
-    from documents.templatetags.signataire_tags import signataire_directeur_general
+    from documents.templatetags.signataire_tags import signataire_direction_generale
     etab, dg = etablissement_avec_directeur_general
     autre = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='KABORÉ', prenom='Salimata')
     _signataire(cycle, annee, autre, TypeDocument.objects.get_or_create(
         code='LISTE_CLASSE', defaults={'libelle': 'Liste Alphabétique de Classe'})[0], fonction='Le Censeur')
 
-    html = signataire_directeur_general(Context({'etablissement': etab, 'annee_scolaire': annee}))
+    html = signataire_direction_generale(Context({'etablissement': etab, 'annee_scolaire': annee}), 'LISTE_ELEVES')
 
     assert 'OUÉDRAOGO Issa' in html and 'KABORÉ Salimata' not in html
 
 
 def test_liste_des_eleves_sans_directeur_general_utilise_le_nom_de_la_fiche(cycle, annee):
     """Aucun directeur général désigné : repli sur le nom de la fiche de l'établissement, sans signature."""
-    from documents.templatetags.signataire_tags import signataire_directeur_general
+    from documents.templatetags.signataire_tags import signataire_direction_generale
     etab = cycle.etablissement
     identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab, ville='Koudougou',
                           nom_directeur='Issa OUÉDRAOGO')
 
-    html = signataire_directeur_general(Context({'identite': identite, 'annee_scolaire': annee}))
+    html = signataire_direction_generale(Context({'identite': identite, 'annee_scolaire': annee}), 'LISTE_ELEVES')
 
     assert 'Issa OUÉDRAOGO' in html and 'Koudougou, le' in html
     assert 'class="msig-img"' not in html and 'class="msig-sign"></div>' in html
@@ -173,7 +173,7 @@ def test_liste_des_eleves_sans_directeur_general_utilise_le_nom_de_la_fiche(cycl
 
 def test_liste_des_eleves_sans_directeur_general_utilise_le_type_liste_eleves(cycle, annee):
     """Sans directeur général désigné, le titulaire du type « Liste des élèves » prime sur le nom de la fiche."""
-    from documents.templatetags.signataire_tags import signataire_directeur_general
+    from documents.templatetags.signataire_tags import signataire_direction_generale
     etab = cycle.etablissement
     type_doc, _ = TypeDocument.objects.get_or_create(
         code='LISTE_ELEVES', defaults={'libelle': 'Liste des Élèves', 'categorie': 'SCOLARITE'})
@@ -182,7 +182,7 @@ def test_liste_des_eleves_sans_directeur_general_utilise_le_type_liste_eleves(cy
                              type_doc, fonction='Le Proviseur')
     identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_directeur='Nom de repli')
 
-    html = signataire_directeur_general(Context({'identite': identite, 'annee_scolaire': annee}))
+    html = signataire_direction_generale(Context({'identite': identite, 'annee_scolaire': annee}), 'LISTE_ELEVES')
 
     assert 'TRAORÉ Awa' in html and 'Le Proviseur' in html
     assert 'Nom de repli' not in html
@@ -190,17 +190,17 @@ def test_liste_des_eleves_sans_directeur_general_utilise_le_type_liste_eleves(cy
 
 
 def test_liste_des_eleves_sans_aucune_source_ne_rend_rien(cycle, annee):
-    from documents.templatetags.signataire_tags import signataire_directeur_general
-    assert signataire_directeur_general(Context({})) == ''
-    assert signataire_directeur_general(
-        Context({'etablissement': cycle.etablissement, 'annee_scolaire': annee})) == ''
+    from documents.templatetags.signataire_tags import signataire_direction_generale
+    assert signataire_direction_generale(Context({}), 'LISTE_ELEVES') == ''
+    assert signataire_direction_generale(
+        Context({'etablissement': cycle.etablissement, 'annee_scolaire': annee}), 'LISTE_ELEVES') == ''
 
 
 def test_liste_des_eleves_variante_cellule(cycle, annee, etablissement_avec_directeur_general):
-    from documents.templatetags.signataire_tags import signataire_directeur_general
+    from documents.templatetags.signataire_tags import signataire_direction_generale
     etab, dg = etablissement_avec_directeur_general
-    html = signataire_directeur_general(
-        Context({'etablissement': etab, 'annee_scolaire': annee}), variante='cellule')
+    html = signataire_direction_generale(
+        Context({'etablissement': etab, 'annee_scolaire': annee}), 'LISTE_ELEVES', variante='cellule')
     assert 'msig-cellule' in html and 'OUÉDRAOGO Issa' in html
     assert '<div class="msig-date"' not in html
 

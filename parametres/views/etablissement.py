@@ -88,7 +88,7 @@ def _fiche_etablissement(request):
     cycles_configures = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
 
     # Signature des documents : la direction générale désignée sur la fiche du personnel prime sur le
-    # nom saisi ici (voir {% signataire_directeur_general %}), qui reste le repli.
+    # nom saisi ici (voir {% signataire_direction_generale %}), qui reste le repli.
     from personnel.models import MembrePersonnel
     directeur_general = (
         MembrePersonnel.objects.filter(etablissement=etab, est_directeur=True, is_active=True)

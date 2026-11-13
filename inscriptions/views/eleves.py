@@ -454,6 +454,8 @@ def eleve_list_pdf(request):
         'nb_eleves': len(rows),
         'etab_nom': etab.nom if etab else 'YELEN SCHOOL',
         'annee_libelle': annee_courante.libelle if annee_courante else '',
+        # Année de l'établissement : {% signataire_direction_generale %} y résout le signataire du repli.
+        'annee_scolaire': annee_courante,
         'filtre_classe': filtre_classe,
         'filtre_statut': filtre_statut,
         'date_edition': _date.today().strftime('%d/%m/%Y'),

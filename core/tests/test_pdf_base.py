@@ -66,7 +66,7 @@ def test_tous_les_documents_pdf_portent_le_signataire_configure():
     fautifs = [
         f.relative_to(RACINE).as_posix() for f in _gabarits_pdf()
         if f.relative_to(RACINE).as_posix() not in SANS_SIGNATAIRE
-        and not re.search(r'{%\s*(signataire_auto|signature_scannee|signataire_directeur_general)\b',
+        and not re.search(r'{%\s*(signataire_auto|signature_scannee|signataire_direction_generale)\b',
                           _source_avec_fragments(f))
     ]
     assert not fautifs, 'Documents PDF sans signataire configuré :\n' + '\n'.join(sorted(fautifs))

@@ -192,6 +192,9 @@ def personnel_list_pdf(request):
         'titre': titre_liste_personnel(etab),
         'date_edition': timezone.localtime().strftime('%d/%m/%Y à %H:%M'),
         'identite': etab_context.get('identite'),
+        # La liste couvre tous les cycles : signature résolue sur la direction générale (identite,
+        # etablissement et annee_scolaire sont lus par {% signataire_direction_generale %}).
+        'annee_scolaire': annee_courante(etab),
         'logo_url': etab_context.get('logo_url') or etab_context.get('etab_logo_url'),
     }
     context = inject_licence_filigrane_context(context, request.user, etab)

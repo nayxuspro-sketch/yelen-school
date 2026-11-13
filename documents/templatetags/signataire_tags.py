@@ -13,8 +13,9 @@ Le tag auto-détecte le cycle et l'année scolaire depuis le contexte du
 template parent (inscription, classe, trimestre, annee_scolaire, etc.)
 puis applique le repli progressif de SignataireDocument.objects.get_signataire().
 
-La liste générale des élèves (toutes classes) n'a pas de cycle : elle est signée par le
-directeur général de l'établissement — voir ``signataire_directeur_general``.
+Les documents globaux (liste de tous les élèves, liste du personnel de tous les cycles) n'ont pas de
+cycle : ils sont signés par la direction générale de l'établissement — voir
+``signataire_direction_generale``.
 
 Codes TypeDocument disponibles
 ────────────────────────────────
@@ -465,24 +466,22 @@ def signataire_auto(context, type_doc_code, variante=''):
 
 
 @register.simple_tag(takes_context=True)
-def signataire_directeur_general(context, variante=''):
-    """Bloc de signature du **directeur général** de l'établissement.
+def signataire_direction_generale(context, type_doc_code, variante=''):
+    """Bloc de signature de la **direction générale** pour un document qui couvre tout l'établissement.
 
-    La liste générale des élèves couvre toutes les classes : elle n'a ni cycle ni classe dont déduire
-    un signataire, alors que les signataires se configurent cycle par cycle. Le document est donc signé
-    par la direction générale, désignée sur la fiche du personnel (``MembrePersonnel.est_directeur``,
-    unique et active par établissement) — même rendu que ``signataire_auto`` : fonction, signature
-    scannée, NOM Prénom, titres honorifiques.
+    Utilisé par les listes globales (toutes classes ou tous cycles) : elles n'ont pas de cycle dont
+    déduire un signataire, alors que les signataires se configurent cycle par cycle. La direction
+    générale est celle désignée sur la fiche du personnel (``MembrePersonnel.est_directeur``) —
+    même rendu que ``signataire_auto`` : fonction, signature scannée, NOM Prénom, titres honorifiques.
 
-    Replis, dans l'ordre : directeur général → titulaire du type « Liste des élèves » (``LISTE_ELEVES``)
-    pour l'année → nom saisi sur la fiche de l'établissement
-    (``IdentiteEtablissement.nom_directeur``), sans signature scannée. Sans aucune de ces sources, le
-    bloc est vide. Le type « Liste Alphabétique de Classe » n'est jamais consulté : il signe les listes
-    d'une classe, pas la liste générale.
+    Replis, dans l'ordre : directeur général → titulaire du type ``type_doc_code``
+    (``LISTE_ELEVES`` ou ``LISTE_PERSONNEL``) pour l'année → nom saisi sur la fiche de
+    l'établissement (``IdentiteEtablissement.nom_directeur``), sans signature scannée. Sans aucune de
+    ces sources, le bloc est vide. Le signataire d'un cycle n'est jamais consulté.
 
     Usage :
-        {% signataire_directeur_general %}
-        {% signataire_directeur_general variante="cellule" %}
+        {% signataire_direction_generale "LISTE_ELEVES" %}
+        {% signataire_direction_generale "LISTE_PERSONNEL" variante="cellule" %}
     """
     try:
         from personnel.models import MembrePersonnel
@@ -505,13 +504,13 @@ def signataire_directeur_general(context, variante=''):
         if membre is not None:
             fonction = (membre.fonction or '').strip() or 'Le Directeur général'
             titres = [membre.titre_honorifique] if membre.titre_honorifique else []
-            return mark_safe(_bloc_directeur_general(context, fonction, membre, titres, variante))
+            return mark_safe(_bloc_direction_generale(context, fonction, membre, titres, variante))
 
-        # 2. Titulaire explicitement choisi pour la liste générale (type « Liste des élèves »), sans repli :
-        #    le repli de get_signataire irait chercher le signataire d'un cycle, celui-là même qu'on écarte.
+        # 2. Titulaire explicitement choisi pour ce document, sans repli : le repli de get_signataire
+        #    irait chercher le signataire d'un cycle, celui-là même qu'on écarte.
         annee = (context.get('annee_scolaire') or context.get('annee_courante')
                  or context.get('annee_selected'))
-        type_doc = TypeDocument.objects.filter(code='LISTE_ELEVES', actif=True).first()
+        type_doc = TypeDocument.objects.filter(code=type_doc_code, actif=True).first()
         if type_doc is not None:
             signataire = (
                 SignataireDocument.objects
@@ -523,7 +522,7 @@ def signataire_directeur_general(context, variante=''):
             if membre is not None:
                 titres = (signataire.titres_honorifiques
                           or ([signataire.titre_honorifique] if signataire.titre_honorifique else []))
-                return mark_safe(_bloc_directeur_general(
+                return mark_safe(_bloc_direction_generale(
                     context, signataire.fonction or signataire.titre, membre, titres, variante,
                 ))
 
@@ -548,7 +547,7 @@ def signataire_directeur_general(context, variante=''):
             f'</div>'
         )
     except Exception:
-        logger.exception("Signataire : bloc du directeur général non rendu")
+        logger.exception("Signataire : bloc de la direction générale non rendu")
         return mark_safe('')
 
 
@@ -562,8 +561,8 @@ def _ligne_date_html(context, align=None):
     return f'<div class="msig-date"{style}>{ville_prefix}le {date_str}</div>'
 
 
-def _bloc_directeur_general(context, fonction, membre, titres, variante=''):
-    """Bloc signé du directeur général : variante « cellule » ou bloc complet aligné à droite."""
+def _bloc_direction_generale(context, fonction, membre, titres, variante=''):
+    """Bloc signé de la direction générale : variante « cellule » ou bloc complet aligné à droite."""
     if variante == 'cellule':
         interieur = _bloc_signataire_html(fonction, membre, titres)
         return f'{_SIGNATAIRE_CSS}<div class="msig-cellule">{interieur}</div>'

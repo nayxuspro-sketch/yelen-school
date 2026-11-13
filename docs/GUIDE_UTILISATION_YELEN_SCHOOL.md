@@ -1038,6 +1038,14 @@ Le PDF s'ouvre dans un nouvel onglet (`personnel_<code établissement>.pdf`). Le
 partagent la même requête (`personnel/selectors.py` → `personnel_filtre`) : une modification des
 filtres de la liste s'applique automatiquement aux trois formats.
 
+**Signature (5.65.2) :** la liste couvre **tous les cycles** de l'établissement, elle est donc signée par le
+**directeur général** désigné sur la fiche du personnel (`Personnel → Modifier le membre → case « Directeur
+général »`), avec sa fonction, sa signature scannée et ses titres — jamais par un signataire de cycle. Si
+aucun directeur général n'est désigné, l'application utilise le signataire du type **« Liste du Personnel »**
+(`Paramètres → Signataires des documents`, catégorie Personnel) pour l'année, puis, à défaut, le nom saisi sur
+la fiche établissement, imprimé sans signature scannée. La **liste du personnel d'un cycle**
+(`Documents → Liste du personnel`, §12.8) reste signée par le signataire configuré pour ce cycle.
+
 ### 5.2 Profil du Personnel (Page de Détail)
 
 **À quoi ça sert :** Affiche la fiche détaillée d'un membre du personnel : informations personnelles, coordonnées, affectations, inscriptions annuelles, bulletins de salaire récents et congés.
@@ -1435,20 +1443,22 @@ le bulletin tienne sur une page. Sans classe d'affectation (ou si l'agent est d�
 signés exactement comme auparavant ; la **liste globale des élèves** (toutes classes) ne porte pas de bloc
 d'enseignant de classe et se signe **par le directeur général** (voir ci-dessous).
 
-**Liste générale des élèves — signature du directeur général (5.65.1) :** le PDF de la liste de **tous** les
+**Listes globales — signature du directeur général (5.65.1, étendue en 5.65.2) :** le PDF de la liste de **tous** les
 élèves (`Élèves → PDF`, toutes classes et tous cycles) ne dépend plus du cycle : il porte la signature du
 membre du personnel désigné **Directeur général** (`Personnel → Modifier le membre → case « Directeur
 général »`), avec sa fonction, son nom et sa signature scannée. Aucun signataire de cycle n'y intervient. Si
 aucun directeur général n'est désigné, l'application utilise le signataire du type **« Liste des Élèves »**
 (`Paramètres → Signataires des documents`, catégorie Scolarité), puis, à défaut, le nom saisi dans la fiche
-établissement — imprimé sans signature scannée. Les **listes alphabétiques par classe** (§12.7) restent
-signées par le titulaire et le signataire du cycle : les deux documents se configurent séparément.
+établissement — imprimé sans signature scannée. La **liste du personnel de tous les cycles**
+(`Personnel → PDF`, §5.1) suit exactement la même règle. Les **listes alphabétiques par classe** (§12.7) et la
+**liste du personnel d'un cycle** (§12.8) restent signées par le signataire du cycle : chaque document se
+configure séparément.
 
 **Signature scannée (facultatif) :** dans la fenêtre `Paramètres → Signataires → Configurer les Signataires`, chaque carte propose un champ **Signature scannée** (PNG à fond transparent recommandé ; photo ou scan jusqu'à 5 Mo, l'image est automatiquement ramenée à 800 px et allégée pour l'impression — il en va de même pour la signature du directeur et le cachet de `Paramètres → Établissement`). L'image est enregistrée sur la fiche du membre du personnel choisi et apposée automatiquement, à l'emplacement prévu pour sa signature, sur **tous** les documents qu'il signe (bulletins trimestriels et annuels, certificats de scolarité, attestations, convocations, circulaires, emplois du temps, cartes scolaires — sous la photo de l'élève —, autorisations, reçus, relances de paiement, listes, états…), sans modifier la mise en page. Sans image, l'espace reste vierge pour la signature manuscrite ; la case **Retirer la signature** supprime l'image enregistrée.
 
 > **Emploi du temps :** le signataire des emplois du temps (classe et professeur) se configure sur le type `EMPLOI_DU_TEMPS` (« Emploi du Temps », catégorie Pédagogie). Tous les documents signés par l'application (dont Convocation, Circulaire, Autorisation de Congé Personnel) sont proposés dans la fenêtre dès l'installation.
 
-> **Tous les documents PDF portent le signataire configuré** (depuis la 5.5.14) : contrat de travail, bulletin de salaire et bulletin de vacation (catégorie Personnel), procès-verbal de conseil de classe et documents manuels scolaires (Pédagogie), dossier de transfert et liste des candidats (Scolarité), liste des boursiers (Finance) ont rejoint le catalogue. Un type jamais configuré reprend le signataire de sa **catégorie** ; la fenêtre « Configurer les Signataires » affecte d'ailleurs un membre à toute une catégorie. Seuls le journal d'audit, l'avis Mobile Money, les analyses indicatives (décrochage, prédictions) et le badge du personnel ne sont pas signés ; la fiche de discipline est signée par l'enseignant qui la certifie (sa propre signature scannée). Exception depuis la 5.65.1 : la **liste générale des élèves** est signée par le **directeur général** désigné dans le personnel, son type `LISTE_ELEVES` ne servant qu'à défaut. Si un type a été désactivé, renommé ou supprimé dans `Paramètres → Types de documents`, le document correspondant reste signé par le signataire configuré pour son cycle ; recréez le type avec son code d'origine (ex. `LISTE_PERSONNEL`) pour le configurer nommément.
+> **Tous les documents PDF portent le signataire configuré** (depuis la 5.5.14) : contrat de travail, bulletin de salaire et bulletin de vacation (catégorie Personnel), procès-verbal de conseil de classe et documents manuels scolaires (Pédagogie), dossier de transfert et liste des candidats (Scolarité), liste des boursiers (Finance) ont rejoint le catalogue. Un type jamais configuré reprend le signataire de sa **catégorie** ; la fenêtre « Configurer les Signataires » affecte d'ailleurs un membre à toute une catégorie. Seuls le journal d'audit, l'avis Mobile Money, les analyses indicatives (décrochage, prédictions) et le badge du personnel ne sont pas signés ; la fiche de discipline est signée par l'enseignant qui la certifie (sa propre signature scannée). Exception depuis la 5.65.1 : la **liste générale des élèves** est signée par le **directeur général** désigné dans le personnel, son type `LISTE_ELEVES` ne servant qu'à défaut ; idem pour la **liste du personnel de tous les cycles** depuis la 5.65.2 (type `LISTE_PERSONNEL` en repli, tandis que ce même type signe la liste d'un cycle). Si un type a été désactivé, renommé ou supprimé dans `Paramètres → Types de documents`, le document correspondant reste signé par le signataire configuré pour son cycle ; recréez le type avec son code d'origine (ex. `LISTE_PERSONNEL`) pour le configurer nommément.
 
 **Vérifier ce que les documents impriment réellement** : `python manage.py verifier_signataires` (en production : `docker compose exec web python manage.py verifier_signataires`) liste, par cycle et type de document, le signataire retenu, le repli utilisé et les anomalies — aucun signataire actif, membre du personnel supprimé, fichier de signature scannée absent du disque. Un document dont le signataire pointe vers un membre supprimé se replie sur le signataire suivant du cycle. Les PDF archivés dans `Documents → Historique` restent tels qu'ils ont été générés : régénérez le document après toute modification des signataires.
 
@@ -4047,6 +4057,8 @@ Le document contient : en-tête de l'établissement, numéro d'ordre, matricule,
 **Récapitulatifs PDF :** deux tableaux de synthèse sous la liste (aperçu et PDF) : **par catégorie et par genre** (chaque catégorie en Hommes / Femmes / Total, plus un sous-total général), puis **par titre de capacité et par genre** (CAPES, CAP-CEG, Licence, Master… tels que saisis sur la fiche de l'agent, regroupés sans tenir compte de la casse ; les agents sans titre saisi sont comptés sur une ligne « Non renseigné », en dernier).
 
 **Contenu du document :** en-tête établissement, année scolaire, tableau alphabétique, récapitulatifs par catégorie et genre puis par titre de capacité et genre, signature du directeur, QR code de l'établissement.
+
+> **Portée de la signature :** ce document porte sur **un cycle** : il est signé par le signataire configuré pour ce cycle (`Paramètres → Signataires des documents`, type « Liste du Personnel »). La liste du personnel de **tous les cycles** (`Personnel → PDF`, §5.1) est, elle, signée par le **directeur général** (5.65.2).
 
 ---
 
