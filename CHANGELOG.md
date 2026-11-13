@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.64.0 — 2026-09-06
+
+- **Organisation multi-cycle d’un établissement.** Référence des cycles centralisée ; migrations relationnelles préservant les cycles historiques des manuels et des frais de scolarité. Les affectations professionnelles multi-cycles et la désignation annuelle des directeurs de cycle sont distinctes des droits de consultation des comptes ; la direction générale reste distincte.
+- **Démonstration étendue au secondaire.** Le jeu inclut les quatre cycles et 11 classes, avec tarifs, matières et progression pour `SEC`. `charger_demo --eleves N` conserve exactement l’effectif demandé, réparti entre les classes.
+
 ## 5.63.61 — 2026-09-06
 
 - **Masquage des résultats et bulletins des élèves sans paiement net admissible.** Les relevés à l'écran et leurs PDF, les tableaux de moyennes, les bulletins trimestriels/annuels individuels et en lot, ainsi que les accès parent/élève et API, appliquent désormais la règle centralisée d'accès aux notes. Un paiement net positif, même partiel, et les exonérations restent autorisés ; aucune note n'est supprimée. Aucun changement de schéma ni migration.
