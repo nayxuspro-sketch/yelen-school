@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.11 — 2026-11-13
+
+- **Le rang du bulletin annonce son effectif.** La ligne récapitulative du bulletin trimestriel affichait « 5e / 5 » — le nombre d'élèves sans dire de quoi il s'agissait — alors que le bloc statistiques du même document écrivait « Rang 5ème / 5 élèves ». Elle affiche désormais « 5e / 5 élèves », au singulier ou au pluriel selon l'effectif.
+- **Une seule orthographe de l'ordinal.** Le bulletin trimestriel mêlait « 5e » et « 5ème » sur la même page ; le bulletin annuel PDF, l'aperçu du bulletin et les infobulles de médailles du relevé de notes utilisaient la forme longue. Toute l'application écrit désormais `1er`, puis `2e`, `3e`… — la forme la plus répandue et l'usage typographique courant.
+- Aucun changement de calcul ni de classement : seul le libellé du rang change. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.10 — 2026-11-13
 
 - **Le relevé des moyennes de la classe annonce le barème du cycle.** La colonne était intitulée « Moyenne /20 » quel que soit le cycle, alors que la moyenne d'un élève du primaire est sur **10** : un élève à 8,45 y passait pour un élève en difficulté. Le libellé suit désormais le barème réel — **« Moyenne /10 »** au préscolaire et au primaire, « Moyenne /20 » au post-primaire et au secondaire — et la légende annonce le bon seuil d'insuffisance (**< 5/10** au primaire, < 10/20 ailleurs).

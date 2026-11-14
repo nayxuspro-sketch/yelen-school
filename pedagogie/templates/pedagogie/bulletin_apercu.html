@@ -68,7 +68,7 @@
       </div>
       <div>
         <div class="text-muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px;">Effectif / Rang</div>
-        <div class="fw-semibold">{{ nb_eleves }} élèves{% if mg.rang %} · {{ mg.rang }}{% if mg.rang == 1 %}er{% else %}ème{% endif %}{% endif %}</div>
+        <div class="fw-semibold">{{ nb_eleves }} élèves{% if mg.rang %} · {{ mg.rang }}{% if mg.rang == 1 %}er{% else %}e{% endif %}{% endif %}</div>
         <div class="text-muted" style="font-size:0.78rem;">Moy. classe : {{ moy_avg_classe|floatformat:2|default:"—" }}</div>
       </div>
     </div>

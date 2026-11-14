@@ -363,7 +363,7 @@ html, body {
             </div>
         </div>
         <div class="bul-rang-line">
-            Rang annuel &nbsp;<span class="bul-rang-badge">{{ moyenne_annuelle.rang|default:"—" }}{% if moyenne_annuelle.rang == 1 %}er{% elif moyenne_annuelle.rang %}ème{% endif %}</span>&nbsp; / {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
+            Rang annuel &nbsp;<span class="bul-rang-badge">{{ moyenne_annuelle.rang|default:"—" }}{% if moyenne_annuelle.rang == 1 %}er{% elif moyenne_annuelle.rang %}e{% endif %}</span>&nbsp; / {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
             {% if moyenne_annuelle.mention %}&nbsp;·&nbsp; <strong>{{ moyenne_annuelle.mention }}</strong>{% endif %}
         </div>
     </div>

@@ -3667,6 +3667,14 @@ En haut de la page de saisie des notes (`Pédagogie → Saisie des notes`), quat
 
 La résolution suit le **cycle de la classe** et l'année scolaire, avec le repli habituel : si le type n'est pas configuré pour cette année, le signataire de la même catégorie est retenu. La fonction imprimée est celle saisie sur le signataire (« Le Directeur », « Le Proviseur », « La Directrice »…).
 
+### 9.46 Rang sur le bulletin : « 5e / 5 élèves » (5.65.11)
+
+La ligne récapitulative du tableau des notes (sous la moyenne générale) affichait le rang suivi du seul effectif — **« 5e / 5 »** — alors que le bloc statistiques, plus bas, écrivait « Rang 5ème / 5 élèves ». Les deux notations sont désormais identiques : **« 5e / 5 élèves »**, avec le mot au singulier ou au pluriel selon l'effectif (« 1er / 1 élève »).
+
+- **Un seul ordinal pour toute l'application** : `1er`, puis `2e`, `3e`… `5e`. La forme longue (« 5ème ») a disparu du bulletin trimestriel, du bulletin annuel, de l'aperçu du bulletin et des infobulles de médailles du relevé de notes.
+- Le rang reste calculé à partir des seuls élèves pourvus d'une moyenne : un élève absent du classement n'est pas compté dans l'effectif affiché.
+- Aucune modification du calcul ni du classement : seule l'écriture change.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
