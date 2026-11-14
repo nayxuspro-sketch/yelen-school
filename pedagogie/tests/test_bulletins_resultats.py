@@ -1134,3 +1134,32 @@ class TestReleveMoyenneBaremeDuCycle:
         moyenne = MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1).moyenne
         # Affichage localisé fr-fr : la virgule remplace le point décimal
         assert f'{moyenne:.2f}'.replace('.', ',') in html
+
+
+@pytest.mark.django_db
+class TestRangSurLeBulletin:
+    """Rang du bulletin : la ligne récapitulative annonce le mot « élèves » (5.65.11) et tout le document
+    écrit l'ordinal de la même façon — « 5e / 5 élèves », jamais « 5ème » à côté d'un « 5e »."""
+
+    def test_la_ligne_recapitulative_annonce_le_mot_eleves(self, primaire_notee, mocker):
+        c = primaire_notee
+        _calculer(c)
+        weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:bulletin_pdf',
+                             kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
+        html = _html(weasy)
+        # Awa est 1re du jeu d'essai (Éric n'a pas de moyenne, Désiré est en abandon) : « 1er / 4 élèves »
+        assert '1er&nbsp;/&nbsp;4 élèves' in html, 'la ligne récapitulative doit annoncer le mot « élèves »'
+        assert '1er&nbsp;/&nbsp;4<' not in html, 'la cellule ne doit pas s\'arrêter au nombre d\'élèves'
+
+    def test_l_ordinal_est_ecrit_de_la_meme_facon_dans_tout_le_bulletin(self, primaire_notee, mocker):
+        """« 5e » ici, « 5ème » là : le document se contredisait. Une seule orthographe désormais."""
+        c = primaire_notee
+        _calculer(c)
+        weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:bulletin_pdf',
+                             kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
+        html = _html(weasy)
+        assert 'ème' not in html, 'plus aucun ordinal long dans le bulletin'
