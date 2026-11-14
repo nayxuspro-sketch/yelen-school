@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.5 — 2026-11-13
+
+- **Sigle de l'évaluation par compétences adapté au cycle.** Au primaire, l'évaluation par compétences relève de l'**Approche Pédagogique Intégratrice (API)** et non de l'APC : les intitulés affichés portent désormais le bon sigle. Le préscolaire, le post-primaire et le secondaire restent en **Approche Par Compétences (APC)**. Concerne l'intitulé de la section du bulletin trimestriel PDF (« Approche Pédagogique Intégratrice (API) » au primaire), le référentiel des compétences (« Catégorie API » / « Catégorie APC », en-tête de colonne compris) et le sous-titre de la page des bulletins de compétences.
+- La règle est portée par deux propriétés du cycle (`sigle_competences`, `libelle_competences`) dans `parametres/models/etablissement.py`, sans changement de schéma ni migration.
+- Vérifications ajoutées : `TestSigleCompetences` (PRIM → API ; PRES, POST, SEC → APC) et deux tests de bulletin (le bulletin primaire porte le libellé API, le bulletin du secondaire n'affiche aucune section de compétences).
+
 ## 5.65.4 — 2026-11-14
 
 - **Règle de signature clarifiée : un document hors cycle se signe sur la fiche de l'établissement.** Les deux listes globales — tous les élèves (`Élèves → PDF`) et tout le personnel (`Personnel → PDF`) — sont désormais signées exclusivement par le directeur général saisi dans `Paramètres → Établissement` : son nom et la signature enregistrée sous « Signature du directeur général ». La case « Directeur général » d'une fiche du personnel et les signataires configurés cycle par cycle (`LISTE_ELEVES`, `LISTE_PERSONNEL`) n'interviennent plus sur ces deux documents. Les documents d'un cycle (bulletins, certificats, listes d'une classe ou d'un cycle…) restent signés par le signataire de leur cycle, sans changement.

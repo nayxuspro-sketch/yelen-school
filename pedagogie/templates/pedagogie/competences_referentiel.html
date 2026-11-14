@@ -84,9 +84,9 @@
         <input type="text" name="libelle" class="input" required
                placeholder="Ex : Reconnaît et écrit les chiffres de 0 à 9" id="id_libelle">
       </div>
-      <!-- Catégorie APC -->
+      <!-- Catégorie de compétence (sigle du cycle) -->
       <div class="form-group">
-        <label class="input-label" for="id_categorie">Catégorie APC</label>
+        <label class="input-label" for="id_categorie">Catégorie {{ cycle.sigle_competences }}</label>
         <select name="categorie" class="input" id="id_categorie">
           {% for val, label in categories.items %}
           <option value="{{ val }}">{{ label }}</option>
@@ -142,7 +142,7 @@
           <th style="width:36px;">#</th>
           <th style="width:110px;">Matière</th>
           <th>Libellé de la compétence</th>
-          <th style="width:130px;">Catégorie APC</th>
+          <th style="width:130px;">Catégorie {{ cycle.sigle_competences }}</th>
           <th style="width:60px;" class="text-center">Ord.</th>
           <th style="width:90px;" class="text-center">Action</th>
         </tr>

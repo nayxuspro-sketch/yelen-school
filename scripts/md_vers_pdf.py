@@ -41,7 +41,7 @@ PARTIES = [
                                     'les productions et les tableaux de bord de la direction.', [12, 13, 14, 15]),
     ('V', 'Références et interface', 'Questions fréquentes, glossaire et design system : le vocabulaire et les règles '
                                      'graphiques de l\'application.', [16, 17, 18]),
-    ('VI', 'Portails, innovations et familles', 'Portail parent, signature électronique, prédiction de réussite, APC, '
+    ('VI', 'Portails, innovations et familles', 'Portail parent, signature électronique, prédiction de réussite, APC/API, '
                                                 'bourses, assistant IA, budget, manuels, hors ligne, communication, '
                                                 'emploi du temps, localisations.', [19, 20, 21, 22, 23, 24, 25, 26,
                                                                                   27, 28, 29, 30]),

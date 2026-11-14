@@ -217,7 +217,7 @@ redige_par: Agent IA — Développement YELEN SCHOOL
   - [21.6 Widget sur la fiche de suivi élève](#216-widget-sur-la-fiche-de-suivi-élève)
   - [21.7 Notes importantes](#217-notes-importantes)
 - [22. Carnet APC Sahélien — Évaluation par Compétences (Préscolaire / Primaire)](#22-carnet-apc-sahélien--évaluation-par-compétences-préscolaire--primaire)
-  - [22.1 Catégories de compétences APC](#221-catégories-de-compétences-apc)
+  - [22.1 Catégories de compétences (APC / API)](#221-catégories-de-compétences-apc--api)
   - [22.2 Accès](#222-accès)
   - [22.3 Étape 1 — Configurer le référentiel](#223-étape-1--configurer-le-référentiel)
   - [22.4 Étape 2 — Saisir les évaluations (HTMX)](#224-étape-2--saisir-les-évaluations-htmx)
@@ -717,7 +717,7 @@ python manage.py auto_generer_annee_scolaire --force   # création forcée
 **Clôture automatique en fin de trimestre :**
 - la saisie reste ouverte jusqu'à **23 h 59 le jour de la Date de fin** de la période ; dès le lendemain, la période passe automatiquement à **Clôturée (fin JJ/MM/AAAA)** côté serveur, sans tâche planifiée ni action à penser ;
 - la direction conserve aussi le bouton cadenas **Clôturer la période** pour verrouiller avant l'échéance dès que les bulletins sont édités ;
-- une fois verrouillée, la saisie des notes (en direct comme hors réseau), la création et la modification d'évaluations, l'import Excel de notes, les appréciations par matière, la saisie des compétences APC et le recalcul des moyennes sont refusés (bandeau « … est clôturé ») ;
+- une fois verrouillée, la saisie des notes (en direct comme hors réseau), la création et la modification d'évaluations, l'import Excel de notes, les appréciations par matière, la saisie des compétences (API / APC) et le recalcul des moyennes sont refusés (bandeau « … est clôturé ») ;
 - moyennes par discipline, moyennes générales, rangs et bulletins restent exactement ceux imprimés — une sanction prononcée après la clôture ne modifie plus la moyenne du trimestre ;
 - la consultation, la fiche du conseil de classe (absences, mentions, appréciation) et l'édition des bulletins restent accessibles.
 
@@ -1438,7 +1438,7 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 - **Titre** : « BULLETIN DE NOTES — TRIMESTRE n — année scolaire »
 - **Identité de l'élève** : matricule, sexe, effectif, nom, classe, date de naissance, cycle, redoublant
 - **Notes du trimestre (5.60.1)** — six colonnes : matières / coef / **moy. sur le barème de la classe** (« Moy. /10 » au préscolaire et au primaire, « Moy. /20 » au post-primaire et au secondaire) / appréciation / professeur / signature ; la colonne « Note pond. » est supprimée. Ligne récapitulative : moyenne générale au même barème (« 7,86 / 10 »), rang, total des points / maximum (coef × barème)
-- **Compétences APC** (préscolaire, primaire) · **Assiduité du trimestre** (absences justifiées / non justifiées en heures, retards) · **Conduite** (si sanctions) · **Statistiques de la classe** + rang · **Appréciation du conseil de classe** · **Signature**
+- **Compétences (APC / API)** (préscolaire, primaire) · **Assiduité du trimestre** (absences justifiées / non justifiées en heures, retards) · **Conduite** (si sanctions) · **Statistiques de la classe** + rang · **Appréciation du conseil de classe** · **Signature**
 - **Code QR** (zone des signatures, à gauche du signataire, sans légende) : encode le matricule, la classe, le trimestre + année scolaire et la moyenne du trimestre (`MAT:` / `CLA:` / `TRI:` / `MOY: 14,50/20`), lisible avec l'appareil photo d'un téléphone — permet de contrôler qu'un bulletin papier n'a pas été modifié.
 - **Assiduité, mentions et appréciation du conseil** : valeurs saisies dans `Bulletins → [classe] → Saisir` (fiche élève × trimestre). Sans fiche, les compteurs s'impriment à 0 ; les mentions cochées s'impriment sur la ligne « Mentions / distinctions », en dernière position de la carte du conseil (après l'appréciation) ; sans appréciation saisie, le commentaire généré automatiquement à partir des résultats est imprimé à la place.
 
@@ -3865,7 +3865,7 @@ L'établissement ne dispose pas d'imprimante couleur. Tous les documents PDF gé
 | Convocation | Bannière encart → fond `#111` blanc ; note obligatoire → fond `#f0f0f0` bordure gauche `4pt solid #111` ; carte destinataire → bordure top `3pt solid #111` fond `#f5f5f5` |
 | Liste de classe | En-tête → `#111`/blanc ; lignes paires → `#f5f5f5` ; bordures tableau visibles `1px solid #ccc` |
 | Liste du personnel | Même règles que liste de classe ; ligne total récap → `#111`/blanc |
-| Bulletin trimestriel PDF | En-tête section → fond `#ebebeb` bordure gauche `3pt solid #111` ; tableau notes → en-tête `#111`/blanc, colonnes à largeur fixe Matières 27 % · Coef 7 % · Moy. /barème 12 % · Appréciation 19 % · Professeur 24 % · Signature 11 % (cellules vides, sans ligne), mode dense automatique au-delà de 12 matières ; une seule page A4 par bulletin (marges 8/12/10/12 mm, identité sur deux lignes, Assiduité et Statistiques côte à côte ; primaire APC garanti jusqu'à ≈ 10 compétences) ; impression par lot → un seul PDF, chaque bulletin paginé à part (« Page 1 / 1 ») ; pied de page « Établissement — Généré le JJ/MM/AAAA HH:MM — Document officiel — Toute falsification expose à des poursuites » (idem bulletin annuel, 6 pt en A5) ; ligne totale → `border-top/bottom: 2pt solid #111` fond `#ebebeb` ; stat-box → `border-left: 3pt solid #111` ; badge rang → bordure `1pt solid #555` ; titre bannière → `border: 1.5pt solid #111` |
+| Bulletin trimestriel PDF | En-tête section → fond `#ebebeb` bordure gauche `3pt solid #111` ; tableau notes → en-tête `#111`/blanc, colonnes à largeur fixe Matières 27 % · Coef 7 % · Moy. /barème 12 % · Appréciation 19 % · Professeur 24 % · Signature 11 % (cellules vides, sans ligne), mode dense automatique au-delà de 12 matières ; une seule page A4 par bulletin (marges 8/12/10/12 mm, identité sur deux lignes, Assiduité et Statistiques côte à côte ; primaire API garanti jusqu'à ≈ 10 compétences) ; impression par lot → un seul PDF, chaque bulletin paginé à part (« Page 1 / 1 ») ; pied de page « Établissement — Généré le JJ/MM/AAAA HH:MM — Document officiel — Toute falsification expose à des poursuites » (idem bulletin annuel, 6 pt en A5) ; ligne totale → `border-top/bottom: 2pt solid #111` fond `#ebebeb` ; stat-box → `border-left: 3pt solid #111` ; badge rang → bordure `1pt solid #555` ; titre bannière → `border: 1.5pt solid #111` |
 | Bulletin annuel PDF | A5 portrait, une page par élève (lot → un seul PDF, chaque bulletin paginé à part « Page 1 / 1 ») ; mêmes règles que bulletin trimestriel (en-tête : nom, **N° Agrément**, devise, adresse, téléphone ; code QR sans légende dans la zone des signatures : `MAT:` / `CLA:` / `ANN: 2025-2026` / `MOY: <moyenne annuelle>/20`) ; **moyenne annuelle = moyenne des moyennes trimestrielles imprimées** (arrondi au centime supérieur à partir de 0,005, comme au trimestre : avec un seul trimestre saisi, l'annuel lui est identique) ; même règle pour le rang, les statistiques de classe et le palmarès annuel ; décision ADMIS → fond `#f5f5f5` bordure `2pt solid #111` ; décision NON ADMIS → fond `#ddd` bordure `2pt solid #111` italique |
 | Bulletin batch (impression groupée) | Mêmes règles bulletin trimestriel ; bloc recap → fond `#f5f5f5` bordure `1.5pt solid #111` ; stat-values → gras sans couleur |
 | Bulletin duplicata | Filigrane `rgba(0,0,0,0.08)` ; tampon → fond `#ddd` bordure `#111` ; titre → fond `#555` blanc ; stat-box → `border-left: 3pt solid #111` |
@@ -6273,9 +6273,9 @@ Si une prédiction a été calculée, un widget apparaît automatiquement sur la
 
 ## 22. Carnet APC Sahélien — Évaluation par Compétences (Préscolaire / Primaire)
 
-Ce module implémente l'**Approche Par Compétences (APC)** obligatoire pour les cycles Préscolaire et Primaire au Burkina Faso. Il remplace les notes chiffrées sur 20 par une évaluation par **feux tricolores** (Acquis / En cours / Non acquis) adaptée au développement du jeune enfant et au contexte sahélien.
+Ce module implémente l'**évaluation par compétences** obligatoire aux cycles Préscolaire et Primaire au Burkina Faso, chacun sous son approche officielle : **Approche Pédagogique Intégratrice (API)** au **primaire** et **Approche Par Compétences (APC)** au **préscolaire**. Le sigle et le libellé affichés dans l'application (référentiel, bulletins PDF) sont déterminés automatiquement par le cycle de l'élève. Il remplace les notes chiffrées sur 20 par une évaluation par **feux tricolores** (Acquis / En cours / Non acquis) adaptée au développement du jeune enfant et au contexte sahélien.
 
-### 22.1 Catégories de compétences APC
+### 22.1 Catégories de compétences (APC / API)
 
 Les compétences sont classées en **6 catégories** adaptées au contexte burkinabè :
 
@@ -6302,11 +6302,11 @@ Avant toute saisie, il faut définir les compétences à évaluer :
 2. Cliquer sur **Référentiel**
 3. Ajouter les compétences une par une :
    - **Libellé** (obligatoire) : ex. "Reconnaît et écrit les chiffres de 0 à 9"
-   - **Catégorie APC** : sélectionner la catégorie appropriée
+   - **Catégorie APC / API** : sélectionner la catégorie appropriée (le libellé affiché suit le cycle : « Catégorie API » au primaire, « Catégorie APC » au préscolaire)
    - **Matière** (facultative) : associer la compétence à une matière du cycle
    - **Ordre** : numéro d'ordre pour organiser l'affichage
 
-Les compétences sont regroupées par **catégorie APC** dans le tableau du référentiel, facilitant la navigation.
+Les compétences sont regroupées par **catégorie** dans le tableau du référentiel, facilitant la navigation.
 
 Exemples de compétences par catégorie :
 
@@ -6341,14 +6341,14 @@ Depuis la page de saisie, section **Bulletins individuels PDF** :
 - Le bulletin s'ouvre dans un nouvel onglet avec :
   - En-tête établissement
   - Identité de l'élève (nom, matricule, classe, trimestre)
-  - Compétences regroupées par catégorie APC avec leur niveau
+  - Compétences regroupées par catégorie (APC ou API selon le cycle) avec leur niveau
   - Barres de progression colorées par catégorie
   - Synthèse des acquisitions (Acquis / En cours / Non acquis)
   - Zone de signatures (enseignant · parent · cachet)
 
 ### 22.6 Intégration au bulletin trimestriel
 
-Pour les cycles Préscolaire et Primaire, la section **Évaluation par compétences (APC)** est automatiquement intégrée au bulletin de notes trimestriel standard, entre les notes et la conduite.
+Pour les cycles Préscolaire et Primaire, la section d'évaluation par compétences est automatiquement intégrée au bulletin de notes trimestriel standard, entre les notes et la conduite. Son intitulé suit le cycle : **« Approche Pédagogique Intégratrice (API) »** au primaire, **« Approche Par Compétences (APC) »** au préscolaire.
 
 Le bulletin inclut :
 - Un tableau détaillé de toutes les compétences par catégorie

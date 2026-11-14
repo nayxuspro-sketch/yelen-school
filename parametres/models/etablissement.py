@@ -233,6 +233,19 @@ class Cycle(BaseModel):
     def __str__(self):
         return f"{self.nom} ({self.code})"
 
+    @property
+    def sigle_competences(self):
+        """Sigle de l'évaluation par compétences : **API** (Approche Pédagogique Intégratrice) au primaire,
+        **APC** (Approche Par Compétences) au préscolaire, au post-primaire et au secondaire."""
+        return 'API' if self.code == 'PRIM' else 'APC'
+
+    @property
+    def libelle_competences(self):
+        """Libellé complet de l'évaluation par compétences, adapté au cycle (voir ``sigle_competences``)."""
+        if self.sigle_competences == 'API':
+            return "Approche Pédagogique Intégratrice (API)"
+        return "Approche Par Compétences (APC)"
+
 
 class Classe(BaseModel):
     """
