@@ -224,7 +224,7 @@ def _build_bulletin_context(request, inscription, trimestre):
         fiche_bulletin, mg, nb_eleves, stats_classe['avg_moy'], resultats_annotes, sanctions_conduite
     )
 
-    # Compétences APC (Préscolaire / Primaire uniquement)
+    # Compétences (API au primaire, APC au préscolaire) — cycles PRES/PRIM uniquement
     competences_data = None
     if cycle and cycle.code in ('PRES', 'PRIM'):
         competences_qs = (
@@ -369,7 +369,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
     ).select_related('type_sanction').order_by('date_sanction'):
         sanctions_par_ins.setdefault(s.inscription_id, []).append(s)
 
-    # Compétences APC (batch: précharger pour tous les élèves du cycle PRES/PRIM)
+    # Compétences (batch : précharger pour tous les élèves du cycle PRES/PRIM)
     cycle = classe.cycle
     competences_par_ins = {}
     if cycle and cycle.code in ('PRES', 'PRIM'):
@@ -399,7 +399,7 @@ def bulletin_classe_batch_pdf(request, class_id, trimestre_id):
             )
             sanctions = sanctions_par_ins.get(ins.pk, [])
 
-            # Compétences APC pour cet élève
+            # Compétences (API au primaire, APC au préscolaire) pour cet élève
             competences_data = None
             if cycle and cycle.code in ('PRES', 'PRIM') and ins.pk in competences_par_ins:
                 cdata = competences_par_ins[ins.pk]

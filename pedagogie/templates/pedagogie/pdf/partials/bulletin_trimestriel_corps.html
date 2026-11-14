@@ -121,9 +121,9 @@ identite, logo_url, etab_logo_url ; is_duplicata + today (duplicata).
 </div>
 
 {% if competences_data %}
-<!-- ══ COMPÉTENCES APC ══ -->
+<!-- ══ COMPÉTENCES (API au primaire, APC ailleurs) ══ -->
 <div class="bul-card">
-    <div class="bul-section-label">Évaluation par compétences (APC)</div>
+    <div class="bul-section-label">{{ inscription.classe.cycle.libelle_competences }}</div>
     <div class="bul-card-body">
         {% with cd=competences_data %}
         <!-- Barres de progression par catégorie -->

@@ -75,9 +75,9 @@ def classe_notee(client):
         baker.make('pedagogie.Note', inscription=ins, evaluation=ev_maths, valeur=Decimal(n_maths))
         baker.make('pedagogie.Note', inscription=ins, evaluation=ev_francais, valeur=Decimal(n_fr))
 
-    return SimpleNamespace(client=client, etab=etab, annee=annee, classe=classe, t1=t1, t2=t2, periode1=periode1,
-                           maths=maths, francais=francais, awa=awa, boubacar=boubacar, chantal=chantal,
-                           eric=eric, desire=desire)
+    return SimpleNamespace(client=client, user=user, etab=etab, annee=annee, classe=classe, t1=t1, t2=t2,
+                           periode1=periode1, maths=maths, francais=francais, awa=awa, boubacar=boubacar,
+                           chantal=chantal, eric=eric, desire=desire)
 
 
 def _calculer(c):
@@ -152,7 +152,7 @@ class TestBulletinTrimestriel:
         assert ctx['appreciation_generale'].libelle == 'Très bien'
         assert [r.appreciation.libelle for r in ctx['resultats_annotes']] == ['Très bien', 'Très bien']
         assert ctx['fiche_bulletin'] is None and 'Retards : <strong>0</strong>' in reponse.content.decode()
-        assert ctx['competences_data'] is None, 'pas de compétences APC au secondaire'
+        assert ctx['competences_data'] is None, 'pas de compétences (API/APC) au secondaire'
         assert ctx['date_lieu'].startswith('Ouagadougou, le ')
 
         url = reverse('pedagogie:bulletin_apercu', kwargs={'inscription_id': c.chantal.pk, 'trimestre_id': c.t1.pk})
@@ -174,6 +174,50 @@ class TestBulletinTrimestriel:
             assert reponse.content.decode().count(f'href="{pdf_url}"') == 2
             assert c.client.get(reponse.context['retour_url']).status_code == 200
             assert c.client.get(pdf_url)['Content-Type'] == 'application/pdf'
+
+    @staticmethod
+    def _html_du_bulletin(c, inscription):
+        """Rend le gabarit du bulletin avec le contexte réel de la vue (sans WeasyPrint)."""
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+        from pedagogie.views.bulletins import _build_bulletin_context
+        requete = RequestFactory().get('/')
+        requete.user = c.user
+        ctx = _build_bulletin_context(requete, inscription, c.t1)
+        return render_to_string('pedagogie/pdf/bulletin_trimestriel.html', ctx)
+
+    def _competence_evaluee(self, c, libelle, niveau='ACQUIS'):
+        from pedagogie.models import Competence, EvaluationCompetence
+        competence = baker.make(Competence, cycle=c.classe.cycle, libelle=libelle, actif=True)
+        baker.make(EvaluationCompetence, inscription=c.awa, competence=competence,
+                   trimestre=c.t1, niveau=niveau)
+
+    def test_bulletin_primaire_porte_le_sigle_api(self, classe_notee):
+        """Le bulletin d'une classe primaire intitule la section « Approche Pédagogique Intégratrice (API) »,
+        jamais « APC » : c'est le sigle du préscolaire, du post-primaire et du secondaire."""
+        c = classe_notee
+        _calculer(c)
+        c.classe.cycle.code = 'PRIM'
+        c.classe.cycle.save(update_fields=['code'])
+        self._competence_evaluee(c, 'Lire un texte court')
+
+        html = self._html_du_bulletin(c, c.awa)
+
+        assert 'Approche Pédagogique Intégratrice (API)' in html
+        assert 'Approche Par Compétences (APC)' not in html
+
+    def test_bulletin_secondaire_n_affiche_aucun_sigle_de_competences(self, classe_notee):
+        """Un bulletin du secondaire ne porte aucune section de compétences (réservée à PRES/PRIM), et le
+        libellé du cycle reste « Approche Par Compétences (APC) » là où il est utilisé."""
+        c = classe_notee
+        _calculer(c)
+        self._competence_evaluee(c, 'Résoudre une équation')
+
+        html = self._html_du_bulletin(c, c.awa)
+
+        assert 'Approche Pédagogique Intégratrice' not in html
+        assert 'Approche Par Compétences (APC)' not in html   # section absente au secondaire
+        assert c.classe.cycle.libelle_competences == 'Approche Par Compétences (APC)'
 
     def test_bulletin_signe_par_l_enseignant_titulaire_de_sa_classe(self, classe_notee, mocker):
         """Au primaire ou au secondaire, le titulaire de la classe signe les bulletins de sa classe (5.55.0)."""
@@ -697,7 +741,7 @@ class TestClotureDePeriode:
             'fichier': fichier, 'classe': c.classe.pk, 'trimestre': c.t1.pk, 'type_evaluation': ev.type_evaluation.pk,
             'titre': 'Import', 'bareme': '20', 'date_evaluation': '01/12/2026'}, follow=True)
         assert 'Import refusé' in reponse.content.decode()
-        # Compétences APC : même verrou
+        # Compétences (API au primaire, APC au préscolaire) : même verrou
         competence = baker.make('pedagogie.Competence', cycle=c.classe.cycle, actif=True)
         reponse = c.client.post(reverse('pedagogie:competence_sauvegarder'), {
             'inscription': c.awa.pk, 'competence': competence.pk, 'trimestre': c.t1.pk, 'niveau': 'ACQUIS'})
