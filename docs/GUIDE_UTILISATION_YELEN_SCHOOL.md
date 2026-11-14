@@ -3612,6 +3612,18 @@ En haut de la page de saisie des notes (`Pédagogie → Saisie des notes`), quat
 - **Moyenne, minimum et maximum restent inchangés** : chaque note n'était déjà comptée qu'une fois dans ces calculs.
 - L'enregistrement des notes n'est pas concerné : chaque élève n'a qu'une note par évaluation, quelle que soit la taille de l'écran.
 
+### 9.43 Supprimer la note d'un élève (5.65.7)
+
+**Supprimer une note : vider son champ puis enregistrer.** Dans la fenêtre de saisie des notes (`Pédagogie → Saisie des notes`), effacer le contenu du champ d'un élève puis cliquer sur **Enregistrer** supprime définitivement sa note pour cette évaluation. La règle est identique au **primaire** et au **secondaire** : la page est la même pour tous les cycles.
+
+- **Confirmation obligatoire** : dès qu'au moins un champ rempli est vidé, un message demande « *N* note(s) seront supprimées définitivement en enregistrant. Continuer ? ». Refuser annule l'envoi, la note reste en place.
+- **Message de bilan** : après enregistrement, la page annonce « *N* note(s) supprimée(s). » à côté du décompte des notes enregistrées. Une suppression n'est jamais silencieuse.
+- **Les moyennes suivent** : la discipline, la moyenne générale et le rang sont recalculés pour la classe au moment de l'enregistrement, comme pour une saisie.
+- **Un élève absent garde sa note** : son champ est vide par nature (l'absence vaut 0), un enregistrement ne la supprime donc jamais. Pour retirer une note d'un élève absent, décocher d'abord **Absent**.
+- **Un élève dispensé n'est pas concerné** : cocher **Dispensé** efface déjà sa note, c'est le mécanisme prévu.
+- **Ce qui reste inchangé** : un champ vide qui ne correspondait à aucune note ne fait rien, et un envoi partiel (formulaire incomplet) n'efface que les champs qu'il transmet réellement.
+- Le mode **hors réseau** suit : la suppression est conservée sur l'appareil puis transmise comme une saisie ordinaire.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
@@ -5133,7 +5145,7 @@ Cela signifie que l'élève n'a pas encore été **enregistré** dans le systèm
 
 ### Q4. J'ai saisi une note incorrecte. Puis-je la modifier ?
 
-Oui. Va dans **Pédagogie → Saisie des notes**, retrouve la classe et l'évaluation concernées, puis modifie la note. Seul l'enseignant concerné, le Directeur ou le Proviseur peuvent modifier une note — tant que la période n'est pas **clôturée** (§ 3.4) ; après clôture, un responsable doit d'abord la rouvrir dans `Paramètres → Périodes`.
+Oui. Va dans **Pédagogie → Saisie des notes**, retrouve la classe et l'évaluation concernées, puis modifie la note. Pour la **supprimer**, vide son champ puis enregistre (§ 9.43) : une confirmation est demandée. Seul l'enseignant concerné, le Directeur ou le Proviseur peuvent modifier une note — tant que la période n'est pas **clôturée** (§ 3.4) ; après clôture, un responsable doit d'abord la rouvrir dans `Paramètres → Périodes`.
 
 ---
 

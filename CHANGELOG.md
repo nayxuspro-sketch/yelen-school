@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.7 — 2026-11-13
+
+- **Supprimer la note d'un élève depuis la fenêtre de saisie.** Vider le champ d'un élève puis enregistrer efface désormais sa note pour l'évaluation — au primaire comme au secondaire, la page étant commune aux cycles. Jusqu'ici un champ vide était ignoré : aucune note ne pouvait être retirée une fois saisie. Une confirmation nomme le nombre de notes concernées avant l'envoi, et un message de bilan « N note(s) supprimée(s). » rend l'opération visible. Les moyennes de la discipline, la moyenne générale et le rang sont recalculés immédiatement.
+- **Garde-fous conservés.** Un élève **absent** garde sa note (son champ est vide par construction : décocher « Absent » d'abord) ; un élève **dispensé** n'est pas concerné (la dispense efface déjà la note) ; un champ vide sans note ne fait rien ; un envoi partiel n'efface que les champs réellement transmis. La clôture du trimestre, le périmètre de l'enseignant et le contrôle de paiement continuent de refuser l'opération comme le reste de la saisie. Le mode hors réseau suit.
+- Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.6 — 2026-11-13
 
 - **La carte « Saisies » de la page de saisie des notes compte des élèves, plus des champs.** La page présente chaque élève deux fois — une ligne de tableau sur ordinateur, une carte sur téléphone — et les deux jeux de champs se recopient. Le compteur les additionnait : il affichait « 10 / 5 » pour cinq élèves notés, et le bandeau du bas doublait également. Le décompte se fait désormais par élève : un absent compte une fois, un dispensé ne compte pas, et le total ne peut plus dépasser l'effectif. Les statistiques (moyenne, minimum, maximum) et l'enregistrement des notes étaient et restent exacts.
