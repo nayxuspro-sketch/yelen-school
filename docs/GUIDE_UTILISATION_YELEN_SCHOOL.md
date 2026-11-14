@@ -3642,12 +3642,29 @@ En haut de la page de saisie des notes (`Pédagogie → Saisie des notes`), quat
 | Relevé des moyennes de la classe | **Titulaire** à gauche, direction à droite | Direction seule |
 | Palmarès annuel | **Titulaire** à gauche, direction à droite | Direction seule |
 | Moyennes par discipline | **Titulaire** à gauche, direction à droite | Direction seule |
+| Cartes scolaires de la classe | **Directeur du cycle** sous la photo | Directeur du cycle |
+| Fiche de discipline | **Enseignant de la matière**, contresigné par le **directeur du cycle** | Directeur du cycle |
 
 - **Sans titulaire désigné**, le document est signé exactement comme auparavant : le signataire du cycle, seul, sur toute la largeur.
 - **Un agent désactivé** n'est pas retenu : la signature se replie de la même façon.
 - **Pas de doublon** : si le titulaire est déjà le signataire paramétré du cycle, il n'est imprimé qu'une fois.
 - Si l'agent possède une **signature scannée** (§ 5.1), elle est apposée au-dessus de son nom.
 - La **liste globale des élèves** (toutes classes) et la **liste du personnel** de tous les cycles ne sont pas des documents de classe : elles restent signées par le **directeur général** de la fiche établissement (§ 5.65.4).
+
+### 9.45 Cartes scolaires et fiche de discipline signées par le directeur de cycle (5.65.9)
+
+**Cartes scolaires** — la carte d'un élève porte, **sous sa photo**, la signature scannée du directeur du cycle, puis son **nom** et son **prénom** ; sans image enregistrée, l'espace reste vierge pour la signature manuscrite. La règle est la même pour la carte individuelle (`fiche élève → Carte scolaire`) et pour l'impression des **cartes de toute une classe** (`Élèves → Cartes de la classe`) : les deux lisent le signataire de type `CARTE_ID` du cycle.
+
+**Fiche de discipline** — la fiche de relevé de notes d'une matière porte désormais **deux signatures côte à côte** : à gauche **l'enseignant de la matière** (« L'Enseignant(e) de Mathématiques »), à droite le **directeur du cycle**, avec sa fonction, sa signature scannée et son nom. La date figure une seule fois, sous la signature de l'enseignant. Sans enseignant affecté à la discipline, seule la signature du directeur est imprimée ; sans signataire configuré pour le cycle, la fiche reste signée par l'enseignant seul, comme auparavant.
+
+**Qui est « le directeur de cycle » ?** Le signataire configuré dans `Paramètres → Signataires des documents` :
+
+| Document | Type de document utilisé |
+|---|---|
+| Cartes scolaires | `CARTE_ID` (Carte d'Identité Scolaire) |
+| Fiche de discipline | `BULLETIN` (Bulletin de Notes) |
+
+La résolution suit le **cycle de la classe** et l'année scolaire, avec le repli habituel : si le type n'est pas configuré pour cette année, le signataire de la même catégorie est retenu. La fonction imprimée est celle saisie sur le signataire (« Le Directeur », « Le Proviseur », « La Directrice »…).
 
 ## 10. EXAMENS
 

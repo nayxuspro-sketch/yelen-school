@@ -1029,3 +1029,70 @@ class TestDocumentsSignesParLeTitulaire:
         assert '{% if bloc_classe %}' in source, gabarit
         # Le signataire du cycle reste présent dans les deux branches (avec et sans titulaire)
         assert source.count('signataire_auto') == 2, gabarit
+
+
+@pytest.mark.django_db
+class TestFicheDisciplineContresignee:
+    """Fiche de discipline : l'enseignant de la matière signe, le **directeur du cycle** contresigne (5.65.9)."""
+
+    def _signataire(self, c, nom='SAWADOGO', prenom='Aline', fonction='Le Directeur'):
+        from parametres.models import SignataireDocument, TypeDocument
+        membre = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom=nom, prenom=prenom,
+                            fonction='Directeur')
+        type_doc, _ = TypeDocument.objects.get_or_create(
+            code='BULLETIN', defaults={'libelle': 'Bulletin de Notes', 'categorie': 'PEDAGOGIE', 'actif': True})
+        return membre, SignataireDocument.objects.create(
+            cycle=c.classe.cycle, type_document=type_doc, annee_scolaire=c.annee,
+            membre_personnel_id=membre.id, fonction=fonction, actif=True)
+
+    def _rendre(self, c, mocker):
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:fiche_discipline_pdf'), {
+            'annee': c.annee.pk, 'enseignement': c.maths.pk, 'periode': c.periode1.pk})
+        return weasy.call_args.kwargs['string']
+
+    def test_la_fiche_porte_les_deux_signatures(self, classe_notee, mocker):
+        c = classe_notee
+        enseignant = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='KABORE', prenom='Salif',
+                                fonction='Enseignant', matricule='MAT-001')
+        c.maths.personnel = enseignant
+        c.maths.save(update_fields=['personnel'])
+        self._signataire(c, nom='SAWADOGO', prenom='Aline')
+
+        html = self._rendre(c, mocker)
+        assert 'KABORE Salif' in html, "l'enseignant de la matière signe toujours"
+        assert "L'Enseignant(e) de Mathématiques" in html
+        assert 'SAWADOGO Aline' in html, 'le directeur du cycle contresigne'
+        assert 'Le Directeur' in html
+
+    def test_sans_signataire_configure_l_enseignant_signe_seul(self, classe_notee, mocker):
+        c = classe_notee
+        enseignant = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='KABORE', prenom='Salif',
+                                fonction='Enseignant')
+        c.maths.personnel = enseignant
+        c.maths.save(update_fields=['personnel'])
+
+        html = self._rendre(c, mocker)
+        assert 'KABORE Salif' in html
+        # La colonne du directeur est rendue vide : aucune fonction ni nom de direction
+        assert '<p class="sig-fonction">Le Directeur</p>' not in html
+        assert 'cert-sig-pair' in html
+
+    def test_le_directeur_est_celui_du_cycle_de_la_classe(self, classe_notee, mocker):
+        """Le contresignataire est le signataire BULLETIN du cycle de la classe, pas celui d'un autre cycle."""
+        c = classe_notee
+        from parametres.models import SignataireDocument, TypeDocument
+        type_doc, _ = TypeDocument.objects.get_or_create(
+            code='BULLETIN', defaults={'libelle': 'Bulletin de Notes', 'categorie': 'PEDAGOGIE', 'actif': True})
+        cycle_primaire = baker.make('parametres.Cycle', etablissement=c.etab, code='PRIM', nom='Primaire')
+        primaire = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='TRAOREL', prenom='Paul')
+        SignataireDocument.objects.create(cycle=cycle_primaire, type_document=type_doc, annee_scolaire=c.annee,
+                                          membre_personnel_id=primaire.id, fonction='La Directrice', actif=True)
+        secondaire = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='SAWADOGO', prenom='Aline')
+        SignataireDocument.objects.create(cycle=c.classe.cycle, type_document=type_doc, annee_scolaire=c.annee,
+                                          membre_personnel_id=secondaire.id, fonction='Le Proviseur', actif=True)
+
+        html = self._rendre(c, mocker)          # classe 3e A, cycle SEC
+        assert 'SAWADOGO Aline' in html and 'Le Proviseur' in html
+        assert 'TRAOREL Paul' not in html and 'La Directrice' not in html
