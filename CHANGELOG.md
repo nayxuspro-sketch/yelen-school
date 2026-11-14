@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.9 — 2026-11-13
+
+- **La fiche de discipline est contresignée par le directeur du cycle.** Elle ne portait que la signature de l'enseignant de la matière. Elle affiche désormais deux signatures côte à côte : **l'enseignant de la matière** à gauche (fonction, signature scannée, nom, matricule) et le **directeur du cycle** à droite (fonction, signature scannée, nom), la date restant rattachée à la signature de l'enseignant. Sans enseignant affecté, seule la signature du directeur est imprimée ; sans signataire configuré pour le cycle, la fiche reste signée par l'enseignant seul.
+- Le contresignataire est celui configuré pour le type `BULLETIN` du **cycle de la classe** dans `Paramètres → Signataires des documents` — même résolution que les bulletins et les relevés.
+- **Cartes scolaires : aucun code modifié.** La carte individuelle et l'impression des cartes de classe portaient déjà, sous la photo, la signature du directeur du cycle (type `CARTE_ID`) ; un test existant le vérifie. Si l'image n'apparaît pas, c'est que le signataire `CARTE_ID` n'est pas configuré ou n'a pas de signature scannée.
+- Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.8 — 2026-11-13
 
 - **Au primaire, le titulaire signe désormais tous les documents de sa classe.** La règle existait pour les bulletins et la liste alphabétique ; elle est étendue au **relevé de notes**, au **relevé des moyennes de la classe**, au **palmarès annuel** et aux **moyennes par discipline**. Chaque document porte le titulaire à gauche et le signataire du cycle à droite, selon le motif déjà en place sur la liste alphabétique ; sans titulaire désigné, il est signé exactement comme auparavant.

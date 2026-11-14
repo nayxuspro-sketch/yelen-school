@@ -848,11 +848,34 @@ def releve_notes_pdf(request):
     return response
 
 
+def _signataire_du_cycle(classe, annee):
+    """Directeur du cycle qui contresigne un document de classe, ou ``None``.
+
+    Le signataire est celui configuré pour le type ``BULLETIN`` du cycle de la classe (même résolution que les
+    bulletins et relevés : repli progressif sur l'année, puis le cycle, puis la catégorie), exposé au gabarit
+    sous la forme ``{'membre': …, 'fonction': …}``.
+    """
+    if classe is None or annee is None:
+        return None
+    from parametres.models import SignataireDocument, TypeDocument
+
+    type_doc = TypeDocument.objects.filter(code='BULLETIN', actif=True).first()
+    if type_doc is None:
+        return None
+    signataire = SignataireDocument.objects.get_signataire(
+        cycle=getattr(classe, 'cycle', None), type_document=type_doc, annee_scolaire=annee,
+    )
+    membre = signataire.get_membre_personnel() if signataire else None
+    if membre is None:
+        return None
+    return {'membre': membre, 'fonction': signataire.fonction or 'Le Directeur'}
+
+
 @login_required
 def fiche_discipline_pdf(request):
     """
     Fiche officielle de relevé de notes par discipline et par évaluation,
-    signée par l'enseignant de la classe pour cette discipline.
+    signée par l'enseignant de la classe pour cette discipline et **contresignée par le directeur du cycle**.
     Mêmes paramètres GET que releve_notes : annee, enseignement, periode.
     """
     if HTML is None:
@@ -894,6 +917,7 @@ def fiche_discipline_pdf(request):
         'etablissement': etab,
         'today': _date.today(),
         'professeur': professeur,
+        'signataire_direction': _signataire_du_cycle(enseignement.classe, ctx.get('annee')),
         'licence_info': _pdf_licence_info(request, etab),
     })
 
