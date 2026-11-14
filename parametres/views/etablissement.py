@@ -87,14 +87,6 @@ def _fiche_etablissement(request):
     logo_actuel = (identite.logo if identite and identite.logo else etab.logo)
     cycles_configures = Cycle.objects.filter(etablissement=etab).order_by('ordre', 'nom')
 
-    # Signature des documents : la direction générale désignée sur la fiche du personnel prime sur le
-    # nom saisi ici (voir {% signataire_direction_generale %}), qui reste le repli.
-    from personnel.models import MembrePersonnel
-    directeur_general = (
-        MembrePersonnel.objects.filter(etablissement=etab, est_directeur=True, is_active=True)
-        .order_by('date_embauche').first()
-    )
-
     return render(request, 'parametres/etablissement.html', {
         'etablissement': etab,
         'identite': identite,
@@ -102,7 +94,6 @@ def _fiche_etablissement(request):
         'identite_form': identite_form,
         'etablissement_form': etablissement_form,
         'logo_actuel': logo_actuel,
-        'directeur_general': directeur_general,
     })
 
 

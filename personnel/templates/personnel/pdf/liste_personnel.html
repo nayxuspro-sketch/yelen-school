@@ -108,6 +108,6 @@ tbody td { padding: 4px 6px; font-size: 8pt; vertical-align: middle; }
   {% if show_all or selection %}<span>Inactifs : <strong>{{ nb_inactifs }}</strong></span>{% endif %}
 </div>
 
-{# Liste du personnel de tous les cycles : pas de cycle dont déduire un signataire → direction générale. #}
-{% signataire_direction_generale "LISTE_PERSONNEL" %}
+{# Liste du personnel de tous les cycles : hors cycle → directeur général de la fiche établissement. #}
+{% signataire_direction_generale %}
 {% endblock %}

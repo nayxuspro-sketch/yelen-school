@@ -81,11 +81,9 @@
         </div>
         <div class="form-grid-2 form-body">
             {% include 'parametres/partials/form_field.html' with field=identite_form.nom_directeur full_width=True %}
-            <p class="text-xs text-muted form-grid-2-full">Il s'agit du directeur général / proviseur. Les directeurs de cycle se désignent séparément dans les inscriptions annuelles du personnel.</p>
-            {% if directeur_general %}
-            <p class="text-xs text-muted form-grid-2-full">Documents signés par la direction : {{ directeur_general.nom|upper }} {{ directeur_general.prenom }} (signature scannée de sa fiche du personnel). Ce nom ci-dessus n'est imprimé qu'en l'absence de directeur général désigné.</p>
-            {% else %}
-            <p class="text-xs text-muted form-grid-2-full">Aucun directeur général n'est désigné dans <a href="{% url 'personnel:personnel_list' %}">Personnel</a> (case « Directeur général / Proviseur de l'établissement » de sa fiche) : les documents signés par la direction impriment, sans signature scannée, le nom saisi ci-dessus.</p>
+            <p class="text-xs text-muted form-grid-2-full">Directeur général de l'établissement. Il signe les documents qui ne relèvent d'aucun cycle — liste de tous les élèves, liste du personnel de tous les cycles — avec la signature déposée plus bas. Les documents d'un cycle restent signés par les signataires configurés pour ce cycle (<a href="{% url 'parametres:signataire_config' %}">Paramètres → Signataires</a>).</p>
+            {% if not identite.signature_directeur %}
+            <p class="text-xs text-warning form-grid-2-full">Aucune signature n'est enregistrée : les listes générales sortiront avec un espace vide, à signer à la main. Déposez l'image dans la section « Logo, signature, cachet et devise » ci-dessous.</p>
             {% endif %}
         </div>
 

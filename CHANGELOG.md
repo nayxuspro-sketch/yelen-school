@@ -3,6 +3,11 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.4 — 2026-11-14
+
+- **Règle de signature clarifiée : un document hors cycle se signe sur la fiche de l'établissement.** Les deux listes globales — tous les élèves (`Élèves → PDF`) et tout le personnel (`Personnel → PDF`) — sont désormais signées exclusivement par le directeur général saisi dans `Paramètres → Établissement` : son nom et la signature enregistrée sous « Signature du directeur général ». La case « Directeur général » d'une fiche du personnel et les signataires configurés cycle par cycle (`LISTE_ELEVES`, `LISTE_PERSONNEL`) n'interviennent plus sur ces deux documents. Les documents d'un cycle (bulletins, certificats, listes d'une classe ou d'un cycle…) restent signés par le signataire de leur cycle, sans changement.
+- Le tag `signataire_direction_generale` ne lit plus qu'une seule source : `IdentiteEtablissement`. La fiche établissement énonce la règle et avertit lorsqu'aucune signature n'est enregistrée. Aucun changement de schéma, aucune migration.
+
 ## 5.65.3 — 2026-11-14
 
 - **Les listes globales impriment la signature du directeur général de la fiche établissement.** Quand aucun directeur général n'est désigné sur une fiche du personnel, le repli sur `Paramètres → Établissement` n'imprimait que le nom : la signature enregistrée sous « Signature du directeur général » est désormais apposée. Concerne les deux listes globales (liste de tous les élèves, liste du personnel de tous les cycles). Sans image enregistrée, rien ne change : l'espace reste vierge pour la signature manuscrite. Aucun changement de schéma, aucune migration.

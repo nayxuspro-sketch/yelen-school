@@ -239,60 +239,60 @@ class TestPersonnelListPdf:
 
         return rendre
 
-    def test_signature_du_directeur_general_sur_la_liste_du_personnel(self, contexte, html_du_pdf,
-                                                                      settings, tmp_path):
-        """La liste du personnel couvre tous les cycles : elle est signée par le directeur général
-        (fonction, signature scannée, NOM Prénom), jamais par un signataire de cycle plus récent."""
+    def test_signature_du_directeur_general_de_la_fiche_etablissement(self, contexte, html_du_pdf,
+                                                                     settings, tmp_path):
+        """La liste du personnel couvre tous les cycles : elle est signée par le directeur général de la
+        fiche établissement (nom + signature), jamais par un directeur de cycle ni par un membre coché
+        « Directeur général » dans le personnel."""
         import io
         from django.core.files.base import ContentFile
         from PIL import Image
-        from parametres.models import TypeDocument
+        from parametres.models import IdentiteEtablissement, TypeDocument
         settings.MEDIA_ROOT = tmp_path
         etab, user, actif, inactif = contexte
         annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
         cycle = baker.make('parametres.Cycle', etablissement=etab)
-        # Un directeur de cycle, configuré plus récemment : il ne signe pas la liste générale.
+
+        identite = baker.make(IdentiteEtablissement, etablissement=etab, nom_directeur='NANA Sylvain')
+        tampon = io.BytesIO()
+        Image.new('RGBA', (300, 110), (0, 0, 0, 0)).save(tampon, 'PNG')
+        identite.signature_directeur.save('directeur.png', ContentFile(tampon.getvalue()), save=True)
+
+        # Sources qui ne doivent pas signer : un signataire de cycle et un membre coché Directeur général.
         baker.make('parametres.SignataireDocument', cycle=cycle, annee_scolaire=annee, actif=True,
                    type_document=TypeDocument.objects.get(code='LISTE_PERSONNEL'), membre_personnel_id=actif.id,
                    fonction='Le Censeur')
-        dg = baker.make('personnel.MembrePersonnel', etablissement=etab, nom='OUÉDRAOGO', prenom='Issa',
-                        fonction='Directeur général', est_directeur=True, is_active=True,
-                        date_embauche=date(2015, 10, 1))
-        tampon = io.BytesIO()
-        Image.new('RGBA', (300, 110), (0, 0, 0, 0)).save(tampon, 'PNG')
-        dg.signature.save('directeur.png', ContentFile(tampon.getvalue()), save=True)
+        baker.make('personnel.MembrePersonnel', etablissement=etab, nom='OUÉDRAOGO', prenom='Issa',
+                   fonction='Directeur général', est_directeur=True, is_active=True,
+                   date_embauche=date(2015, 10, 1))
 
         html = html_du_pdf(user)
 
-        assert '<div class="msig-fonction">Directeur général</div>' in html
-        assert '<div class="msig-sign"><img class="msig-img" src="/media/personnel/signatures/' in html
-        assert '<div class="msig-name">OUÉDRAOGO Issa</div>' in html
-        assert 'ZONGO Ali' not in html and 'Le Censeur' not in html
+        assert '<div class="msig-fonction">Le Directeur général</div>' in html
+        assert '<div class="msig-sign"><img class="msig-img" src="/media/etablissement/signatures/' in html
+        assert '<div class="msig-name">NANA Sylvain</div>' in html
+        # Le nom du directeur général du personnel figure dans le tableau (il est agent) ; ce qui compte,
+        # c'est qu'il ne signe pas : le bloc ne porte que le nom de la fiche.
+        assert 'OUÉDRAOGO Issa</div>' not in html
+        assert '<div class="msig-fonction">Le Censeur</div>' not in html
 
-    def test_sans_directeur_general_le_type_liste_personnel_signe(self, contexte, html_du_pdf):
-        """Aucun directeur général désigné : le titulaire configuré pour « Liste du Personnel » signe."""
+    def test_fiche_sans_signature_laisse_l_espace_vierge(self, contexte, html_du_pdf):
+        """Fiche sans image : le nom est imprimé, l'espace reste libre pour la signature manuscrite."""
         etab, user, actif, inactif = contexte
-        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
-        cycle = baker.make('parametres.Cycle', etablissement=etab)
-        from parametres.models import TypeDocument
-        baker.make('parametres.SignataireDocument', cycle=cycle, annee_scolaire=annee, actif=True,
-                   type_document=TypeDocument.objects.get(code='LISTE_PERSONNEL'), membre_personnel_id=actif.id,
-                   fonction='Le Proviseur')
+        baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_directeur='NANA Sylvain')
 
         html = html_du_pdf(user)
 
-        assert '<div class="msig-fonction">Le Proviseur</div>' in html
-        assert '<div class="msig-name">ZONGO Ali</div>' in html
+        assert '<div class="msig-name">NANA Sylvain</div>' in html
+        assert 'class="msig-img"' not in html and '<div class="msig-sign"></div>' in html
 
-    def test_sans_signataire_le_nom_de_la_fiche_est_imprime(self, contexte, html_du_pdf):
-        """Ni directeur général ni signataire configuré : le nom de la fiche établissement, sans image."""
+    def test_sans_nom_sur_la_fiche_aucun_bloc_de_signature(self, contexte, html_du_pdf):
+        """Ni nom ni signature sur la fiche : aucun bloc, le document reste imprimé."""
         etab, user, actif, inactif = contexte
-        baker.make('parametres.IdentiteEtablissement', etablissement=etab, nom_directeur='Issa OUÉDRAOGO')
 
         html = html_du_pdf(user)
 
-        assert '<div class="msig-name">Issa OUÉDRAOGO</div>' in html
-        assert 'class="msig-img"' not in html
+        assert 'msig-zone' not in html and 'Le Directeur général' not in html
 
     def test_pdf_avec_licence_active(self, client, contexte, mocker):
         """Régression : avec une licence active, le filigrane (filigrane_licence.html) lit
