@@ -243,6 +243,9 @@
         <span class="note-footer-hint ns-desktop">
           Utilisez <kbd class="note-kbd">Tab</kbd> pour naviguer.
         </span>
+        <span class="note-footer-hint">
+          Vider un champ puis <strong>Enregistrer</strong> supprime la note de l'élève.
+        </span>
       </div>
       <div class="note-footer-actions">
         <a href="{% url 'pedagogie:saisie_rapide_classe' evaluation.enseignement.classe.pk %}" class="dash-btn dash-btn-secondary">Annuler</a>
@@ -490,6 +493,22 @@
       invalides[0].scrollIntoView({ behavior:'smooth', block:'center' });
       invalides[0].focus();
       alert(`${invalides.length} note(s) invalide(s) — barème max : ${bareme}`);
+      return;
+    }
+    // Champ vidé sur une note existante → suppression définitive : on demande confirmation.
+    // defaultValue porte la valeur rendue par le serveur, que la saisie ne modifie pas.
+    const pksASupprimer = new Set();
+    document.querySelectorAll('.note-input').forEach(inp => {
+      const pk = inp.dataset.row;
+      if (inp.value !== '' || inp.defaultValue === '') return;
+      const absEl  = document.getElementById('abs-' + pk) || document.getElementById('mabs-' + pk);
+      const dispEl = document.getElementById('disp-' + pk) || document.getElementById('mdisp-' + pk);
+      if (!(absEl && absEl.checked) && !(dispEl && dispEl.checked)) pksASupprimer.add(pk);
+    });
+    if (pksASupprimer.size && !confirm(
+      `${pksASupprimer.size} note(s) seront supprimées définitivement en enregistrant.\n\nContinuer ?`
+    )) {
+      e.preventDefault();
       return;
     }
     const panel = document.getElementById('cq-panel');

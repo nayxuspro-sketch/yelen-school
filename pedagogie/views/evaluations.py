@@ -318,6 +318,7 @@ def evaluation_saisie(request, pk):
                 "dont le montant net payé au titre de la scolarité est nul.",
             )
         updated_count = 0
+        supprimees = 0
         errors = []
 
         for ins in inscriptions:
@@ -369,7 +370,12 @@ def evaluation_saisie(request, pk):
                     )
                     continue
             else:
-                continue  # Champ vide → on ne touche pas la note
+                # Champ vidé : la note est supprimée, mais seulement si le formulaire a bien transmis le champ de
+                # cet élève — un envoi partiel ne doit pas effacer les notes qu'il ne soumet pas. L'absent garde
+                # la sienne (son champ est vide par construction) et un champ vide sans note ne fait rien.
+                if note_vals:
+                    supprimees += Note.objects.filter(inscription=ins, evaluation=evaluation).delete()[0]
+                continue
 
             with saisies_notes_deja_controlees():
                 note, created = Note.objects.get_or_create(
@@ -391,6 +397,8 @@ def evaluation_saisie(request, pk):
             evaluation.statut = 'TERMINEE'
             evaluation.save(update_fields=['statut'])
             messages.success(request, f"{updated_count} note(s) enregistrée(s).")
+        if supprimees > 0:
+            messages.success(request, f"{supprimees} note(s) supprimée(s).")
         # Moyennes de la discipline, moyennes générales et rangs à jour sans passer par « Calculer les moyennes »
         CalculateurMoyenne.recalculer_classe(classe, trimestre, [enseignement])
 

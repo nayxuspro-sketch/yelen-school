@@ -17,7 +17,7 @@ import pytest
 from django.urls import reverse
 from model_bakery import baker
 
-from pedagogie.models import MoyenneGenerale, Resultat
+from pedagogie.models import MoyenneGenerale, Note, Resultat
 from pedagogie.views.bulletins import _compute_palmares_annuel, _get_mention, _match_appreciation
 
 APPRECIATIONS = [
@@ -856,3 +856,92 @@ class TestCompteurSaisieNotes:
         html = page.content.decode()
         assert f'<span id="stat-saisies">{page.context["nb_saisies"]}</span>' in html
         assert f'<span class="text-primary fw-bold" id="footer-saisies">{page.context["nb_saisies"]}</span>' in html
+
+
+@pytest.mark.django_db
+class TestSuppressionDeNote:
+    """Saisie des notes : vider le champ d'un élève supprime sa note, quel que soit le cycle (même vue)."""
+
+    def _url(self, c):
+        return reverse('pedagogie:evaluation_saisie', kwargs={'pk': c.maths.evaluations.get().pk})
+
+    def _poster(self, c, **champs):
+        return c.client.post(self._url(c), champs)
+
+    def test_vider_le_champ_supprime_la_note_au_secondaire(self, classe_notee):
+        c = classe_notee
+        assert Note.objects.filter(inscription=c.awa, evaluation__enseignement=c.maths).exists()
+        reponse = self._poster(c, **{f'note_{c.awa.pk}': ''})
+        assert reponse.status_code == 302
+        assert not Note.objects.filter(inscription=c.awa, evaluation__enseignement=c.maths).exists()
+        # Les autres notes de l'évaluation ne bougent pas (4 notes au départ : Awa, Boubacar, Chantal, Désiré)
+        assert Note.objects.filter(evaluation__enseignement=c.maths).count() == 3
+        page = c.client.get(reponse.url).content.decode()
+        assert '1 note(s) supprimée(s).' in page
+
+    def test_vider_le_champ_supprime_la_note_au_primaire(self, client):
+        """Même vue pour les deux cycles : au primaire, la note supprimée sort aussi du bulletin."""
+        etab = baker.make('etablissements.Etablissement', nom='LE SAVOIR')
+        user = baker.make('accounts.User', is_superuser=True, role='SUPER_ADMIN', etablissement=etab,
+                          must_change_password=False)
+        client.force_login(user)
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True,
+                           date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
+        cycle = baker.make('parametres.Cycle', etablissement=etab, code='PRIM', nom='Primaire')
+        classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='CM2 A', actif=True)
+        trimestre = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=1, nom='Trimestre 1',
+                               date_debut=date(2026, 10, 1), date_fin=date(2026, 12, 20))
+        enseignement = baker.make('pedagogie.Enseignement', classe=classe, annee_scolaire=annee, est_actif=True,
+                                 matiere=baker.make('pedagogie.Matiere', nom='Calcul'))
+        evaluation = baker.make('pedagogie.Evaluation', enseignement=enseignement, trimestre=trimestre,
+                               titre='Devoir 1', bareme=Decimal('10'), statut='TERMINEE',
+                               date_planifiee=date(2026, 11, 5))
+        inscription = baker.make('inscriptions.Inscription', eleve=_eleve('OUEDRAOGO', 'Awa'), classe=classe,
+                                annee_scolaire=annee, statut='ACTIF')
+        Note.objects.create(inscription=inscription, evaluation=evaluation, valeur=Decimal('8'))
+
+        url = reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk})
+        assert client.post(url, {f'note_{inscription.pk}': ''}).status_code == 302
+        assert not Note.objects.filter(inscription=inscription, evaluation=evaluation).exists()
+
+    def test_un_eleve_absent_garde_sa_note(self, classe_notee):
+        """Le champ d'un absent est vide par construction : vider ne doit jamais le supprimer."""
+        c = classe_notee
+        evaluation = c.maths.evaluations.get()
+        reponse = self._poster(c, **{f'note_{c.awa.pk}': '', f'abs_{c.awa.pk}': 'on'})
+        assert reponse.status_code == 302
+        note = Note.objects.get(inscription=c.awa, evaluation=evaluation)
+        assert note.valeur == Decimal('0.00') and note.observation == 'ABS'
+
+    def test_un_champ_vide_sans_note_ne_fait_rien(self, classe_notee):
+        """Éric n'a aucune note : enregistrer un champ vide ne crée ni ne supprime rien."""
+        c = classe_notee
+        evaluation = c.maths.evaluations.get()
+        avant = Note.objects.filter(evaluation=evaluation).count()
+        reponse = self._poster(c, **{f'note_{c.eric.pk}': ''})
+        assert reponse.status_code == 302
+        assert Note.objects.filter(evaluation=evaluation).count() == avant == 4
+        assert 'note(s) supprimée(s).' not in c.client.get(reponse.url).content.decode()
+
+    def test_les_moyennes_sont_recalculees_apres_la_suppression(self, classe_notee):
+        c = classe_notee
+        _calculer(c)
+        assert MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1).moyenne == Decimal('16.00')
+        self._poster(c, **{f'note_{c.awa.pk}': ''})
+        # Plus de note en maths : seule reste la moyenne de français (8/10 = 16/20)
+        assert MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1).moyenne == Decimal('16.00')
+        assert not Resultat.objects.filter(inscription=c.awa, enseignement=c.maths, trimestre=c.t1).exists()
+
+    def test_trimestre_cloture_refuse_la_suppression(self, classe_notee):
+        """Trimestre clôturé : la suppression est refusée comme le reste de la saisie."""
+        c = classe_notee
+        from pedagogie.models import Trimestre
+        Trimestre.objects.filter(pk=c.t1.pk).update(notes_saisies=True)   # clôture manuelle
+        c.t1.refresh_from_db()
+        assert c.t1.verrouille
+        note = Note.objects.get(inscription=c.awa, evaluation__enseignement=c.maths)
+        reponse = self._poster(c, **{f'note_{c.awa.pk}': ''})
+        assert reponse.status_code == 302
+        assert Note.objects.filter(pk=note.pk).exists()
+        assert 'est clôturé' in c.client.get(reponse.url).content.decode()
+
