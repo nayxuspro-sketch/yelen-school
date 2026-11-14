@@ -208,6 +208,8 @@ def releve_moyenne_classe_pdf(request):
         'annee':     trimestre.annee_scolaire,
         'eleves':    eleves,
         'stats':     stats,
+        'bareme':    classe.bareme_moyenne,      # 10 au préscolaire et au primaire, 20 ailleurs (5.65.10)
+        'seuil':     classe.seuil_moyenne,
         'licence_info': _pdf_licence_info(request, etab),
         'etablissement': etab,
     }, request=request)

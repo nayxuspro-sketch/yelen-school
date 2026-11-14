@@ -1096,3 +1096,41 @@ class TestFicheDisciplineContresignee:
         html = self._rendre(c, mocker)          # classe 3e A, cycle SEC
         assert 'SAWADOGO Aline' in html and 'Le Proviseur' in html
         assert 'TRAOREL Paul' not in html and 'La Directrice' not in html
+
+
+@pytest.mark.django_db
+class TestReleveMoyenneBaremeDuCycle:
+    """Relevé des moyennes de la classe : le libellé de la colonne suit le barème du cycle (5.65.10).
+    Au primaire la moyenne est sur 10 : « Moyenne /10 » et un seuil de 5/10, pas « /20 » ni « < 10/20 »."""
+
+    def _html(self, c, mocker):
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:releve_moyenne_classe_pdf'),
+                     {'classe': c.classe.pk, 'trimestre': c.t1.pk})
+        return weasy.call_args.kwargs['string']
+
+    def test_libelles_sur_10_au_primaire(self, primaire_notee, mocker):
+        c = primaire_notee
+        _calculer(c)
+        html = self._html(c, mocker)
+        assert 'Moyenne /10' in html
+        assert 'insuffisante (&lt; 5/10)' in html
+        assert 'Moyenne /20' not in html and '10/20' not in html
+
+    def test_libelles_sur_20_au_secondaire(self, classe_notee, mocker):
+        c = classe_notee
+        _calculer(c)
+        html = self._html(c, mocker)
+        assert 'Moyenne /20' in html
+        assert 'insuffisante (&lt; 10/20)' in html
+        assert 'Moyenne /10' not in html
+
+    def test_les_moyennes_affichees_ne_sont_pas_retouchees(self, primaire_notee, mocker):
+        """Le barème ne change que le libellé : les chiffres restent ceux, déjà bons, du calcul."""
+        c = primaire_notee
+        _calculer(c)
+        html = self._html(c, mocker)
+        moyenne = MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1).moyenne
+        # Affichage localisé fr-fr : la virgule remplace le point décimal
+        assert f'{moyenne:.2f}'.replace('.', ',') in html

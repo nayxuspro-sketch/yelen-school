@@ -3579,6 +3579,7 @@ Les comptes de charge sont regroupés dans `finances/export_comptable.py` (`COMP
 - **Bouton « Calculer les moyennes »** : calcule la moyenne de **chaque élève** de la classe (disciplines, moyenne générale, rang) et **annonce le résultat** — « N moyenne(s) calculée(s) sur 10 pour N élève(s) ». S'il n'y a aucune note sur la période, l'écran affiche un avertissement nommant la classe et la période (plus de « calcul terminé » trompeur) ; vérifiez alors les enseignements de la classe (`Pédagogie → Enseignements`) et la saisie des notes.
 - **Évaluations prises en compte** : toute évaluation comportant des notes est moyennée, même si son statut est resté « Planifiée » ; seules les évaluations **annulées** sont écartées.
 - La page Résultats et les bulletins (trimestriel, annuel, palmarès) affichent le barème réel de la classe (« /10 » au primaire) ; le commentaire de bulletin généré automatiquement suit le même barème.
+- **Relevé des moyennes de la classe** (`Résultats → Bilan par période → Relevé PDF`) : la colonne s'intitule **« Moyenne /10 »** au préscolaire et au primaire, **« Moyenne /20 »** ailleurs, et la légende annonce le bon seuil d'insuffisance (**< 5/10** au primaire, < 10/20 au secondaire). Les chiffres affichés n'ont pas changé : seul le libellé suivait un barème figé sur 20 (5.65.10).
 
 ### 9.39 Saisie des notes et paiement de la scolarité (établissement privé ou confessionnel) (5.63.60)
 
