@@ -158,16 +158,32 @@ def test_liste_des_eleves_ignore_le_signataire_de_cycle_le_plus_recent(cycle, an
     assert 'OUÉDRAOGO Issa' in html and 'KABORÉ Salimata' not in html
 
 
-def test_liste_des_eleves_sans_directeur_general_utilise_le_nom_de_la_fiche(cycle, annee):
-    """Aucun directeur général désigné : repli sur le nom de la fiche de l'établissement, sans signature."""
+def test_liste_des_eleves_sans_directeur_general_utilise_le_nom_et_la_signature_de_la_fiche(cycle, annee):
+    """Aucun directeur général sur une fiche du personnel : le nom de la fiche établissement est imprimé
+    avec la signature qui y est enregistrée (champ « Signature du directeur général »)."""
     from documents.templatetags.signataire_tags import signataire_direction_generale
     etab = cycle.etablissement
     identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab, ville='Koudougou',
-                          nom_directeur='Issa OUÉDRAOGO')
+                          nom_directeur='NANA Sylvain')
+    identite.signature_directeur = SimpleUploadedFile('directeur.png', PNG, content_type='image/png')
+    identite.save(update_fields=['signature_directeur'])
 
     html = signataire_direction_generale(Context({'identite': identite, 'annee_scolaire': annee}), 'LISTE_ELEVES')
 
-    assert 'Issa OUÉDRAOGO' in html and 'Koudougou, le' in html
+    assert 'NANA Sylvain' in html and 'Koudougou, le' in html
+    assert '<div class="msig-sign"><img class="msig-img" src="/media/etablissement/signatures/' in html
+
+
+def test_liste_des_eleves_fiche_sans_signature_laisse_l_espace_vierge(cycle, annee):
+    """Fiche établissement sans signature enregistrée : nom imprimé, espace laissé à la signature manuscrite."""
+    from documents.templatetags.signataire_tags import signataire_direction_generale
+    etab = cycle.etablissement
+    identite = baker.make('parametres.IdentiteEtablissement', etablissement=etab,
+                          nom_directeur='NANA Sylvain')
+
+    html = signataire_direction_generale(Context({'identite': identite, 'annee_scolaire': annee}), 'LISTE_ELEVES')
+
+    assert 'NANA Sylvain' in html
     assert 'class="msig-img"' not in html and 'class="msig-sign"></div>' in html
 
 

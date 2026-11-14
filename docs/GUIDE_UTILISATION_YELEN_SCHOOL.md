@@ -639,7 +639,7 @@ imprimable (§19.6).
 - **Identification du site** : nom officiel, code interne, sigle, pays et type (public/privé/confessionnel)
 - **Agrément et classement** : numéro/date d'agrément, catégorie réglementaire et zone d'implantation
 - **Adresse et coordonnées** : adresse complète, ville, province, région, téléphone, courriel et site web
-- **Direction** : directeur général / proviseur de l'établissement ; les directeurs de cycle se désignent séparément dans les inscriptions annuelles du personnel. Pour que le directeur général *signe* réellement les documents, il doit aussi être enregistré comme membre du personnel avec la case **Directeur général** cochée (`Personnel → Modifier le membre`) ; la fiche rappelle lequel des deux est retenu et, à défaut, que le nom saisi ici sert de repli imprimé sans signature scannée.
+- **Direction** : directeur général / proviseur de l'établissement ; les directeurs de cycle se désignent séparément dans les inscriptions annuelles du personnel. Pour que le directeur général *signe* réellement les documents, il doit aussi être enregistré comme membre du personnel avec la case **Directeur général** cochée (`Personnel → Modifier le membre`) ; la fiche rappelle lequel des deux est retenu et, à défaut, ce sont le nom saisi ici **et la signature enregistrée** juste en dessous (« Signature du directeur général ») qui signent les listes globales.
 - **Documents** : logo commun, signature du directeur, cachet officiel et devise
 
 ---
@@ -1042,9 +1042,10 @@ filtres de la liste s'applique automatiquement aux trois formats.
 **directeur général** désigné sur la fiche du personnel (`Personnel → Modifier le membre → case « Directeur
 général »`), avec sa fonction, sa signature scannée et ses titres — jamais par un signataire de cycle. Si
 aucun directeur général n'est désigné, l'application utilise le signataire du type **« Liste du Personnel »**
-(`Paramètres → Signataires des documents`, catégorie Personnel) pour l'année, puis, à défaut, le nom saisi sur
-la fiche établissement, imprimé sans signature scannée. La **liste du personnel d'un cycle**
-(`Documents → Liste du personnel`, §12.8) reste signée par le signataire configuré pour ce cycle.
+(`Paramètres → Signataires des documents`, catégorie Personnel) pour l'année, puis, à défaut, la direction
+générale de la **fiche établissement** : le nom **et** la signature enregistrée sous « Signature du directeur
+général » (§3.1) — sans image, l'espace reste vierge pour la signature manuscrite. La **liste du personnel d'un
+cycle** (`Documents → Liste du personnel`, §12.8) reste signée par le signataire configuré pour ce cycle.
 
 ### 5.2 Profil du Personnel (Page de Détail)
 
@@ -1448,8 +1449,9 @@ d'enseignant de classe et se signe **par le directeur général** (voir ci-desso
 membre du personnel désigné **Directeur général** (`Personnel → Modifier le membre → case « Directeur
 général »`), avec sa fonction, son nom et sa signature scannée. Aucun signataire de cycle n'y intervient. Si
 aucun directeur général n'est désigné, l'application utilise le signataire du type **« Liste des Élèves »**
-(`Paramètres → Signataires des documents`, catégorie Scolarité), puis, à défaut, le nom saisi dans la fiche
-établissement — imprimé sans signature scannée. La **liste du personnel de tous les cycles**
+(`Paramètres → Signataires des documents`, catégorie Scolarité), puis, à défaut, le nom et la signature du
+directeur général enregistrés sur la **fiche établissement** (§3.1, « Signature du directeur général »). La
+**liste du personnel de tous les cycles**
 (`Personnel → PDF`, §5.1) suit exactement la même règle. Les **listes alphabétiques par classe** (§12.7) et la
 **liste du personnel d'un cycle** (§12.8) restent signées par le signataire du cycle : chaque document se
 configure séparément.

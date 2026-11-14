@@ -194,6 +194,15 @@ def _zone_signature_html(membre):
     return f'<div class="msig-sign">{img}</div>' if img else '<div class="msig-sign"></div>'
 
 
+def _signature_identite_html(identite):
+    """Balise <img> de la signature du directeur général enregistrée sur la fiche de l'établissement
+    (champ « Signature du directeur général ») — '' si elle n'y est pas."""
+    signature = getattr(identite, 'signature_directeur', None) if identite else None
+    if not signature:
+        return ''
+    return f'<img class="msig-img" src="{_e(signature.url)}" alt="">'
+
+
 @register.simple_tag
 def signature_scannee(membre):
     """Signature scannée d'un signataire, pour les gabarits PDF dotés de leur propre bloc de signature.
@@ -475,9 +484,9 @@ def signataire_direction_generale(context, type_doc_code, variante=''):
     même rendu que ``signataire_auto`` : fonction, signature scannée, NOM Prénom, titres honorifiques.
 
     Replis, dans l'ordre : directeur général → titulaire du type ``type_doc_code``
-    (``LISTE_ELEVES`` ou ``LISTE_PERSONNEL``) pour l'année → nom saisi sur la fiche de
-    l'établissement (``IdentiteEtablissement.nom_directeur``), sans signature scannée. Sans aucune de
-    ces sources, le bloc est vide. Le signataire d'un cycle n'est jamais consulté.
+    (``LISTE_ELEVES`` ou ``LISTE_PERSONNEL``) pour l'année → direction générale de la fiche de
+    l'établissement (``nom_directeur`` et ``signature_directeur``). Sans aucune de ces sources, le
+    bloc est vide. Le signataire d'un cycle n'est jamais consulté.
 
     Usage :
         {% signataire_direction_generale "LISTE_ELEVES" %}
@@ -526,14 +535,18 @@ def signataire_direction_generale(context, type_doc_code, variante=''):
                     context, signataire.fonction or signataire.titre, membre, titres, variante,
                 ))
 
-        # 3. Nom de la direction générale saisi sur la fiche de l'établissement (sans signature scannée).
+        # 3. Direction générale saisie sur la fiche de l'établissement : son nom et la signature qui y
+        #    est enregistrée (champ « Signature du directeur général »), sans fiche du personnel.
         nom_directeur = (getattr(identite, 'nom_directeur', '') or '').strip()
         if not nom_directeur:
             return mark_safe('')
+        signature_html = _signature_identite_html(identite)
+        zone_signature = f'<div class="msig-sign">{signature_html}</div>' if signature_html else '<div class="msig-sign"></div>'
         if variante == 'cellule':
             return mark_safe(
                 f'{_SIGNATAIRE_CSS}<div class="msig-cellule">'
                 f'<div class="msig-fonction">Le Directeur général</div>'
+                f'{zone_signature}'
                 f'<div class="msig-name">{_e(nom_directeur)}</div>'
                 f'</div>'
             )
@@ -542,7 +555,7 @@ def signataire_direction_generale(context, type_doc_code, variante=''):
             f'<div class="msig-zone" style="text-align:right;">'
             f'{_ligne_date_html(context, align="right")}'
             f'<div class="msig-fonction">Le Directeur général</div>'
-            f'<div class="msig-sign"></div>'
+            f'{zone_signature}'
             f'<div class="msig-name">{_e(nom_directeur)}</div>'
             f'</div>'
         )

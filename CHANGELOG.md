@@ -3,6 +3,10 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.3 — 2026-11-14
+
+- **Les listes globales impriment la signature du directeur général de la fiche établissement.** Quand aucun directeur général n'est désigné sur une fiche du personnel, le repli sur `Paramètres → Établissement` n'imprimait que le nom : la signature enregistrée sous « Signature du directeur général » est désormais apposée. Concerne les deux listes globales (liste de tous les élèves, liste du personnel de tous les cycles). Sans image enregistrée, rien ne change : l'espace reste vierge pour la signature manuscrite. Aucun changement de schéma, aucune migration.
+
 ## 5.65.2 — 2026-11-13
 
 - **Liste du personnel (tous les cycles) signée par le directeur général.** Le PDF de `Personnel → PDF` couvre l'établissement entier : il porte désormais la signature du directeur général désigné sur sa fiche du personnel, et non plus celle d'un signataire de cycle. Replis : signataire du type « Liste du Personnel » pour l'année, puis nom de la fiche établissement, sans signature scannée. La liste du personnel d'un cycle (`Documents → Liste du personnel`) reste signée par le signataire de ce cycle. L'année scolaire de l'établissement est maintenant transmise au gabarit, ce qui rend ce repli effectif ; même correction pour la liste générale des élèves.
