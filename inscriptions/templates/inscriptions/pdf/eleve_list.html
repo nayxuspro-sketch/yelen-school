@@ -199,8 +199,8 @@ tbody td { padding: 4px 6px; font-size: 8pt; vertical-align: middle; }
 </div>
 {% endif %}
 
-{# Liste de toutes les classes : pas de cycle dont déduire un signataire → direction générale. #}
-{% signataire_direction_generale "LISTE_ELEVES" %}
+{# Liste de toutes les classes : hors cycle → directeur général de la fiche établissement. #}
+{% signataire_direction_generale %}
 
 <div class="footer">
   <span>Édité le {{ date_edition }}</span>
