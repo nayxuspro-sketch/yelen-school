@@ -829,6 +829,7 @@ def releve_notes_pdf(request):
 
     html_string = render_to_string('pedagogie/pdf/releve_notes.html', {
         **ctx,
+        'classe': enseignement.classe,      # signature du titulaire au primaire (5.65.8)
         'identite': etab_context.get('identite'),
         'logo_url': etab_context.get('logo_url'),
         'etab_logo_url': etab_context.get('etab_logo_url'),

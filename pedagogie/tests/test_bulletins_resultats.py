@@ -80,6 +80,18 @@ def classe_notee(client):
                            chantal=chantal, eric=eric, desire=desire)
 
 
+@pytest.fixture
+def primaire_notee(classe_notee):
+    """Même jeu d'essai, la classe passant au **primaire** : le titulaire y signe d'office les documents."""
+    from parametres.models import Cycle
+    c = classe_notee
+    cycle = Cycle.objects.create(etablissement=c.etab, code='PRIM', nom='Primaire')
+    c.classe.cycle = cycle
+    c.classe.save(update_fields=['cycle'])
+    c.classe.refresh_from_db()
+    return c
+
+
 def _calculer(c):
     reponse = c.client.post(reverse('pedagogie:calculer_moyennes_classe', kwargs={'class_id': c.classe.pk}),
                             {'trimestre_id': c.t1.pk})
@@ -219,9 +231,9 @@ class TestBulletinTrimestriel:
         assert 'Approche Par Compétences (APC)' not in html   # section absente au secondaire
         assert c.classe.cycle.libelle_competences == 'Approche Par Compétences (APC)'
 
-    def test_bulletin_signe_par_l_enseignant_titulaire_de_sa_classe(self, classe_notee, mocker):
-        """Au primaire ou au secondaire, le titulaire de la classe signe les bulletins de sa classe (5.55.0)."""
-        c = classe_notee
+    def test_bulletin_signe_par_l_enseignant_titulaire_de_sa_classe(self, primaire_notee, mocker):
+        """Au primaire, le titulaire de la classe signe les bulletins de sa classe (5.55.0, précisé en 5.65.8)."""
+        c = primaire_notee
         _calculer(c)
         baker.make('personnel.MembrePersonnel', etablissement=c.classe.etablissement, nom='KABORE', prenom='Salif',
                    fonction='Enseignant', classe_affectation=c.classe)
@@ -247,6 +259,20 @@ class TestBulletinTrimestriel:
         # Bulletin annuel : même signature.
         c.client.get(reverse('pedagogie:bulletin_annuel_pdf', kwargs={'inscription_id': c.awa.pk}))
         assert 'KABORE Salif' in _html(weasy)
+
+    def test_le_titulaire_ne_signe_pas_au_secondaire(self, classe_notee, mocker):
+        """Primaire uniquement (5.65.8) : au secondaire, le bulletin reste signé par le signataire du cycle."""
+        c = classe_notee          # 3e A, cycle SEC
+        _calculer(c)
+        baker.make('personnel.MembrePersonnel', etablissement=c.classe.etablissement, nom='KABORE', prenom='Salif',
+                   fonction='Enseignant', classe_affectation=c.classe)
+        weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+
+        c.client.get(reverse('pedagogie:bulletin_pdf',
+                             kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
+        html = _html(weasy)
+        assert 'KABORE Salif' not in html and 'Enseignant titulaire' not in html
 
     def test_pdf_individuel_batch_et_duplicata(self, classe_notee, mocker):
         c = classe_notee
@@ -945,3 +971,61 @@ class TestSuppressionDeNote:
         assert Note.objects.filter(pk=note.pk).exists()
         assert 'est clôturé' in c.client.get(reponse.url).content.decode()
 
+
+
+@pytest.mark.django_db
+class TestDocumentsSignesParLeTitulaire:
+    """Au **primaire uniquement**, le titulaire d'une classe est d'office signataire de tous les documents
+    produits pour sa classe (5.65.8). Aux autres cycles, rien ne change : le signataire du cycle signe seul."""
+
+    def _membre(self, c, nom='KABORE', prenom='Salif', qualite='TITULAIRE'):
+        return baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom=nom, prenom=prenom,
+                          fonction='Enseignant', classe_affectation=c.classe, qualite_affectation=qualite)
+
+    def test_releve_de_notes_du_primaire(self, primaire_notee, mocker):
+        """Le relevé de notes d'une classe du primaire porte la signature du titulaire."""
+        c = primaire_notee
+        self._membre(c)
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:releve_notes_pdf'), {
+            'annee': c.annee.pk, 'enseignement': c.maths.pk, 'periode': c.periode1.pk})
+        html = weasy.call_args.kwargs['string']
+        assert 'KABORE Salif' in html and 'Enseignant titulaire' in html
+
+    def test_releve_de_notes_du_secondaire_inchange(self, classe_notee, mocker):
+        c = classe_notee
+        self._membre(c)
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:releve_notes_pdf'), {
+            'annee': c.annee.pk, 'enseignement': c.maths.pk, 'periode': c.periode1.pk})
+        html = weasy.call_args.kwargs['string']
+        assert 'KABORE Salif' not in html and 'Enseignant titulaire' not in html
+
+    def test_sans_titulaire_les_documents_restent_signes_comme_avant(self, primaire_notee, mocker):
+        """Primaire sans enseignant affecté : le signataire du cycle signe seul, la grille n'est pas affichée."""
+        c = primaire_notee
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:releve_notes_pdf'), {
+            'annee': c.annee.pk, 'enseignement': c.maths.pk, 'periode': c.periode1.pk})
+        html = weasy.call_args.kwargs['string']
+        assert 'Enseignant titulaire' not in html
+        assert 'grid-template-columns:1fr 1fr' not in html
+
+    @pytest.mark.parametrize('vue,gabarit', [
+        ('pedagogie:releve_moyenne_classe_pdf', 'pedagogie/pdf/releve_moyenne_classe.html'),
+        ('pedagogie:palmares_annuel_pdf', 'pedagogie/pdf/palmares_annuel.html'),
+        ('pedagogie:moyennes_disciplines_pdf', 'pedagogie/pdf/moyennes_disciplines.html'),
+    ])
+    def test_les_autres_documents_de_classe_portent_le_titulaire(self, primaire_notee, vue, gabarit):
+        """Chaque document par classe appelle le bloc du titulaire, à côté du signataire du cycle."""
+        from pathlib import Path
+        c = primaire_notee
+        self._membre(c)
+        source = (Path(__file__).resolve().parents[2] / 'pedagogie' / 'templates' / gabarit).read_text(encoding='utf-8')
+        assert '{% signataire_classe as bloc_classe %}' in source, gabarit
+        assert '{% if bloc_classe %}' in source, gabarit
+        # Le signataire du cycle reste présent dans les deux branches (avec et sans titulaire)
+        assert source.count('signataire_auto') == 2, gabarit

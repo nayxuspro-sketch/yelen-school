@@ -226,5 +226,13 @@ td.col-rang { color: #555; font-size: 7pt; }
 </p>
 {% endif %}
 
-{% signataire_auto "BULLETIN" %}
+{% signataire_classe as bloc_classe %}
+    {% if bloc_classe %}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12pt;">
+      <div>{{ bloc_classe }}</div>
+      <div>{% signataire_auto "BULLETIN" %}</div>
+    </div>
+    {% else %}
+    {% signataire_auto "BULLETIN" %}
+    {% endif %}
 {% endblock %}

@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.8 — 2026-11-13
+
+- **Au primaire, le titulaire signe désormais tous les documents de sa classe.** La règle existait pour les bulletins et la liste alphabétique ; elle est étendue au **relevé de notes**, au **relevé des moyennes de la classe**, au **palmarès annuel** et aux **moyennes par discipline**. Chaque document porte le titulaire à gauche et le signataire du cycle à droite, selon le motif déjà en place sur la liste alphabétique ; sans titulaire désigné, il est signé exactement comme auparavant.
+- **La règle est maintenant limitée au primaire, comme sa documentation l'annonçait.** Le code appliquait la signature du titulaire à **tous les cycles** : au secondaire, un titulaire affecté à une 3e signait donc aussi. Un seul point de décision (`_titulaire_signe`) conditionne désormais les deux tags de signature : au post-primaire et au secondaire, les documents sont signés par le signataire du cycle, comme avant la 5.55.0.
+- Le relevé de notes reçoit la classe dans son contexte PDF, condition nécessaire pour que le bloc du titulaire soit rendu — la page HTML du relevé était déjà correctement alimentée.
+- Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.7 — 2026-11-13
 
 - **Supprimer la note d'un élève depuis la fenêtre de saisie.** Vider le champ d'un élève puis enregistrer efface désormais sa note pour l'évaluation — au primaire comme au secondaire, la page étant commune aux cycles. Jusqu'ici un champ vide était ignoré : aucune note ne pouvait être retirée une fois saisie. Une confirmation nomme le nombre de notes concernées avant l'envoi, et un message de bilan « N note(s) supprimée(s). » rend l'opération visible. Les moyennes de la discipline, la moyenne générale et le rang sont recalculés immédiatement.

@@ -1034,9 +1034,10 @@ affiche « — ».
 *Ajouter un membre* / *Modifier le membre* propose, dans la section **Cycles d'enseignement**, la **classe
 d'affectation** de l'enseignant (par exemple `CP1` au primaire) et sa **qualité** — *Titulaire de la classe*
 (par défaut) ou *Suppléant de la classe*. La liste ne contient que les classes de l'établissement choisi. La
-fiche du membre rappelle la classe, la qualité et leur effet : **le titulaire et le suppléant signent les
-bulletins de notes de la classe**, le titulaire signe en outre la **liste alphabétique** (§24.2). Laisser vide
-pour l'administration ou un enseignant non affecté.
+fiche du membre rappelle la classe, la qualité et leur effet : **au primaire, le titulaire est d'office
+signataire de tous les documents produits pour sa classe** (§ 9.44) — bulletins, relevés, palmarès, listes ;
+son suppléant signe les bulletins à ses côtés. Les autres cycles ne sont pas concernés : leurs documents
+restent signés par le signataire du cycle. Laisser vide pour l'administration ou un enseignant non affecté.
 
 **Exports :** les trois boutons **CSV**, **Excel** et **PDF** en haut à droite exportent
 **exactement la liste affichée** (mêmes filtres : recherche et inactifs). La barre d'actions
@@ -1444,14 +1445,16 @@ Exemple : Mathématiques, coefficient par défaut 2 ; Secondaire = 3 ; 6ème = 4
 
 **Signataire :** Détecté automatiquement selon le cycle de la classe et l'année scolaire (`Paramètres → Signataires des documents`, type `BULLETIN`).
 
-**Enseignants de la classe : titulaire et suppléant (5.55.0, complété en 5.56.0) :** lorsqu'une classe a un
-**enseignant titulaire** et, le cas échéant, un **suppléant** (`Personnel → Modifier le membre → Classe
+**Enseignants de la classe : titulaire et suppléant (5.55.0, complété en 5.56.0, étendu en 5.65.8) :**
+**au primaire uniquement**, lorsqu'une classe a un **enseignant titulaire** et, le cas échéant, un **suppléant** (`Personnel → Modifier le membre → Classe
 d'affectation` et *Qualité*, §5.1), **tous deux signent les bulletins de notes** (trimestriels et annuels) de la
 classe, à côté du signataire du cycle — donc aux côtés de la direction. La grille des signatures du bulletin
 passe alors à quatre colonnes (code QR, enseignant titulaire, enseignant suppléant, direction) ou trois si la
 classe n'a pas de suppléant ; chaque signature est précédée de sa fonction (« Enseignant titulaire »,
-« Enseignant suppléant ») et la signature scannée est apposée si l'agent en possède une. La **liste alphabétique**
-reste signée par le **titulaire** (à gauche) et le signataire du cycle (à droite). Le bloc reste compact pour que
+« Enseignant suppléant ») et la signature scannée est apposée si l'agent en possède une. Les **autres documents
+de la classe** — liste alphabétique, relevé de notes, relevé des moyennes, palmarès annuel, moyennes par
+discipline — portent le **titulaire** à gauche et le signataire du cycle à droite (§ 9.44). Aux autres
+cycles, aucun enseignant de classe n'intervient : le signataire du cycle signe seul. Le bloc reste compact pour que
 le bulletin tienne sur une page. Sans classe d'affectation (ou si l'agent est désactivé), les documents sont
 signés exactement comme auparavant ; la **liste globale des élèves** (toutes classes) ne porte pas de bloc
 d'enseignant de classe et se signe **par le directeur général** (voir ci-dessous).
@@ -3623,6 +3626,28 @@ En haut de la page de saisie des notes (`Pédagogie → Saisie des notes`), quat
 - **Un élève dispensé n'est pas concerné** : cocher **Dispensé** efface déjà sa note, c'est le mécanisme prévu.
 - **Ce qui reste inchangé** : un champ vide qui ne correspondait à aucune note ne fait rien, et un envoi partiel (formulaire incomplet) n'efface que les champs qu'il transmet réellement.
 - Le mode **hors réseau** suit : la suppression est conservée sur l'appareil puis transmise comme une saisie ordinaire.
+
+### 9.44 Au primaire, le titulaire signe tous les documents de sa classe (5.65.8)
+
+**Règle :** au **primaire uniquement**, l'enseignant **titulaire** d'une classe est **d'office signataire de tous les documents produits pour sa classe** — aucune configuration supplémentaire n'est nécessaire. Aux autres cycles, rien ne change : les documents restent signés par le **signataire du cycle** (`Paramètres → Signataires des documents`).
+
+**Désigner le titulaire :** `Personnel → Modifier le membre → Classe d'affectation` (la classe) et **Qualité = Titulaire de la classe** (§ 5.1). C'est cette affectation qui déclenche la règle, pas la case « Directeur général » de la fiche.
+
+| Document de la classe | Signature au primaire | Autres cycles |
+|---|---|---|
+| Bulletin trimestriel (original, duplicata, impression par lot) | **Titulaire + suppléant** à gauche, direction à droite | Direction seule |
+| Bulletin annuel | **Titulaire** à gauche, direction à droite | Direction seule |
+| Liste alphabétique de la classe | **Titulaire** à gauche, direction à droite | Direction seule |
+| Relevé de notes | **Titulaire** à gauche, direction à droite | Direction seule |
+| Relevé des moyennes de la classe | **Titulaire** à gauche, direction à droite | Direction seule |
+| Palmarès annuel | **Titulaire** à gauche, direction à droite | Direction seule |
+| Moyennes par discipline | **Titulaire** à gauche, direction à droite | Direction seule |
+
+- **Sans titulaire désigné**, le document est signé exactement comme auparavant : le signataire du cycle, seul, sur toute la largeur.
+- **Un agent désactivé** n'est pas retenu : la signature se replie de la même façon.
+- **Pas de doublon** : si le titulaire est déjà le signataire paramétré du cycle, il n'est imprimé qu'une fois.
+- Si l'agent possède une **signature scannée** (§ 5.1), elle est apposée au-dessus de son nom.
+- La **liste globale des élèves** (toutes classes) et la **liste du personnel** de tous les cycles ne sont pas des documents de classe : elles restent signées par le **directeur général** de la fiche établissement (§ 5.65.4).
 
 ## 10. EXAMENS
 
