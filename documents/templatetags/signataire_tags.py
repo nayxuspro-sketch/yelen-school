@@ -245,6 +245,21 @@ def _classe_du_contexte(context):
     return classe if classe is not None else getattr(context.get('inscription'), 'classe', None)
 
 
+def _titulaire_signe(classe):
+    """Enseignant titulaire qui signe les documents de cette classe, ou ``None``.
+
+    Règle : **au primaire uniquement**, l'enseignant titulaire d'une classe est d'office signataire de tous les
+    documents produits pour sa classe. Aux autres cycles, les documents restent signés par le signataire
+    paramétré du cycle (comportement inchangé).
+    """
+    if classe is None:
+        return None
+    cycle = getattr(classe, 'cycle', None)
+    if cycle is None or cycle.code != 'PRIM':
+        return None
+    return getattr(classe, 'enseignant_titulaire', None)
+
+
 def _bloc_enseignant_classe(membre, fonction, context):
     """Bloc HTML d'un enseignant de la classe : fonction, signature scannée, nom.
 
@@ -263,17 +278,16 @@ def _bloc_enseignant_classe(membre, fonction, context):
 def signataire_classe(context, fonction=''):
     """Bloc de signature de l'enseignant **titulaire de la classe** (5.55.0).
 
-    Au primaire, l'enseignant affecté à une classe signe les bulletins de notes et la liste alphabétique de
-    cette classe : ``MembrePersonnel.classe_affectation``. La classe est lue dans le contexte du gabarit
-    (``classe`` ou ``inscription.classe``). Sans titulaire désigné, le bloc est vide et seul le signataire
-    paramétré par cycle signe le document (comportement antérieur inchangé).
+    Au primaire **uniquement** (voir ``_titulaire_signe``), l'enseignant affecté à une classe est d'office
+    signataire de tous les documents produits pour sa classe : ``MembrePersonnel.classe_affectation``. La classe
+    est lue dans le contexte du gabarit (``classe`` ou ``inscription.classe``). Sans titulaire désigné, le bloc
+    est vide et seul le signataire paramétré par cycle signe le document (comportement antérieur inchangé).
 
     Usage :
         {% signataire_classe as bloc %}{% if bloc %}<div class="…">{{ bloc }}</div>{% endif %}
     """
     try:
-        classe = _classe_du_contexte(context)
-        membre = getattr(classe, 'enseignant_titulaire', None) if classe is not None else None
+        membre = _titulaire_signe(_classe_du_contexte(context))
         if not membre:
             return mark_safe('')
         return mark_safe(_bloc_enseignant_classe(membre, fonction or _FONCTION_TITULAIRE, context))
@@ -286,7 +300,7 @@ def signataire_classe(context, fonction=''):
 def signataires_classe(context):
     """Blocs de signature des **enseignants de la classe**, titulaire puis suppléant (5.56.0).
 
-    Au primaire, le titulaire et son suppléant signent tous deux les bulletins de notes de la classe, à côté
+    Au primaire **uniquement**, le titulaire et son suppléant signent tous deux les bulletins de notes de la classe, à côté
     du signataire paramétré du cycle (la direction). Liste vide si aucun enseignant n'est affecté : le document
     est alors signé comme avant.
 
@@ -321,6 +335,9 @@ def signataires_classe(context):
                         m2 = co.get_membre_personnel()
                         if m2:
                             membres_deja_presents.add(m2.id)
+
+        if _titulaire_signe(classe) is None:      # règle du primaire : ailleurs, aucun enseignant de classe
+            return []
 
         blocs = []
         for qualite, fonction in (('TITULAIRE', _FONCTION_TITULAIRE),

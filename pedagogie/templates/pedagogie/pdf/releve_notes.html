@@ -429,5 +429,13 @@ tfoot td.tf-vide { color: #aaa; }
 {% endif %}
 
 <!-- ══ Signataire ══ -->
-{% signataire_auto "RELEVE_NOTES" %}
+{% signataire_classe as bloc_classe %}
+    {% if bloc_classe %}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12pt;">
+      <div>{{ bloc_classe }}</div>
+      <div>{% signataire_auto "RELEVE_NOTES" %}</div>
+    </div>
+    {% else %}
+    {% signataire_auto "RELEVE_NOTES" %}
+    {% endif %}
 {% endblock %}
