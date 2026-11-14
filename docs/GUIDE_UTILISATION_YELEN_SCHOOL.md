@@ -3602,6 +3602,16 @@ Le contrôle porte sur l'inscription de l'année scolaire concernée. Il n'effac
 - Sinon, l'appréciation est déterminée automatiquement par la grille : la moyenne de la matière sur 10 est comparée aux plages `moy_min`/`moy_max` de la grille, et le libellé correspondant s'affiche.
 - Si aucune grille primaire n'est configurée pour l'établissement, la colonne reste vide (comportement inchangé avant cette version).
 
+### 9.42 Compteurs de la page de saisie des notes (5.65.6)
+
+En haut de la page de saisie des notes (`Pédagogie → Saisie des notes`), quatre cartes résument l'avancement : **Élèves**, **Saisies**, **Moyenne**, **Min / Max**. Le bandeau du bas rappelle « *N* / *M* saisies ».
+
+- **« Saisies » compte des élèves, jamais des champs.** La page présente chaque élève deux fois — une ligne de tableau sur ordinateur, une carte sur téléphone — et les deux jeux de champs se recopient : une note saisie une fois compte pour **un** élève. Le compteur ne peut donc pas dépasser le nombre d'élèves (il affichait auparavant le double : « 10 / 5 » pour cinq élèves notés).
+- **Un absent compte pour un élève**, dispensé ne compte pas. Un élève marqué **Absent** est compté une fois, avec la note 0 dans la moyenne ; un élève **dispensé** est exclu du décompte.
+- **Le contrôle qualité suit le même décompte.** Les alertes du panneau *Contrôle qualité* (taux d'absents, zéros non justifiés, notes identiques, moyenne très basse ou très haute, tous au maximum) s'évaluent désormais sur des effectifs réels d'élèves. Auparavant, les seuils étaient atteints avec **deux fois moins d'élèves** que prévu : l'alerte « taux d'absents élevé » se déclenchait dès un absent sur cinq, et « notes identiques suspectes » dès deux notes égales.
+- **Moyenne, minimum et maximum restent inchangés** : chaque note n'était déjà comptée qu'une fois dans ces calculs.
+- L'enregistrement des notes n'est pas concerné : chaque élève n'a qu'une note par évaluation, quelle que soit la taille de l'écran.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire

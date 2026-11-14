@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.6 — 2026-11-13
+
+- **La carte « Saisies » de la page de saisie des notes compte des élèves, plus des champs.** La page présente chaque élève deux fois — une ligne de tableau sur ordinateur, une carte sur téléphone — et les deux jeux de champs se recopient. Le compteur les additionnait : il affichait « 10 / 5 » pour cinq élèves notés, et le bandeau du bas doublait également. Le décompte se fait désormais par élève : un absent compte une fois, un dispensé ne compte pas, et le total ne peut plus dépasser l'effectif. Les statistiques (moyenne, minimum, maximum) et l'enregistrement des notes étaient et restent exacts.
+- **Le contrôle qualité s'évalue sur des effectifs réels.** Les alertes (taux d'absents, zéros non justifiés, notes identiques, moyenne très basse ou très haute, tous au maximum) portaient sur des listes doublées : leurs seuils étaient franchis avec deux fois moins d'élèves, et le message du taux d'absents annonçait un effectif faux. Un seul absent sur cinq ne déclenche plus « taux d'absents élevé » ; deux notes identiques ne déclenchent plus « notes identiques suspectes ».
+- Aucun changement de schéma, aucune migration ; la saisie et l'enregistrement des notes sont inchangés.
+
 ## 5.65.5 — 2026-11-13
 
 - **Sigle de l'évaluation par compétences adapté au cycle.** Au primaire, l'évaluation par compétences relève de l'**Approche Pédagogique Intégratrice (API)** et non de l'APC : les intitulés affichés portent désormais le bon sigle. Le préscolaire, le post-primaire et le secondaire restent en **Approche Par Compétences (APC)**. Concerne l'intitulé de la section du bulletin trimestriel PDF (« Approche Pédagogique Intégratrice (API) » au primaire), le référentiel des compétences (« Catégorie API » / « Catégorie APC », en-tête de colonne compris) et le sous-titre de la page des bulletins de compétences.

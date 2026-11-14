@@ -288,13 +288,23 @@
     }
   }
 
-  function updateStats() {
-    const vals = [];
+  /* Chaque élève possède deux jeux de champs (tableau bureau + cartes mobile) qui se recopient :
+     les statistiques se comptent par élève (data-row), jamais par champ du DOM. */
+  function notesSaisies() {
+    const parEleve = new Map();
     document.querySelectorAll('.note-input:not([disabled])').forEach(inp => {
       const v = parseFloat(inp.value);
-      if (!isNaN(v)) vals.push(v);
+      if (!isNaN(v)) parEleve.set(inp.dataset.row, v);
     });
-    document.querySelectorAll('.abs-checkbox:checked').forEach(() => vals.push(0));
+    document.querySelectorAll('.abs-checkbox:checked:not([disabled])').forEach(cb => {
+      if (!parEleve.has(cb.dataset.row)) parEleve.set(cb.dataset.row, 0);
+    });
+    return parEleve;
+  }
+
+  function updateStats() {
+    const notesParEleve = notesSaisies();
+    const vals = Array.from(notesParEleve.values());
 
     const saisies = vals.length;
     document.getElementById('stat-saisies').textContent = saisies;
@@ -308,25 +318,25 @@
     } else {
       ['stat-moy','stat-min','stat-max'].forEach(id => document.getElementById(id).textContent = '—');
     }
-    checkQualite(vals);
+    checkQualite(notesParEleve);
   }
 
-  function checkQualite(vals) {
+  function checkQualite(notesParEleve) {
     const panel   = document.getElementById('cq-panel');
     const nbTotal = {{ nb_total }};
     const alertes = [];
 
-    if (vals.length < 2) { panel.hidden = true; return; }
+    if (notesParEleve.size < 2) { panel.hidden = true; return; }
 
-    const nbAbs = document.querySelectorAll('.abs-checkbox:checked').length;
+    let nbAbs = 0;
     let nbZerosNonAbs = 0;
-    document.querySelectorAll('.note-input:not([disabled])').forEach(inp => {
-      const v  = parseFloat(inp.value);
-      const pk = inp.dataset.row;
+    notesParEleve.forEach((valeur, pk) => {
       const absEl = document.getElementById('abs-' + pk) || document.getElementById('mabs-' + pk);
-      if (!isNaN(v) && v === 0 && !(absEl && absEl.checked)) nbZerosNonAbs++;
+      if (absEl && absEl.checked) nbAbs++;
+      else if (valeur === 0) nbZerosNonAbs++;
     });
 
+    const vals    = Array.from(notesParEleve.values());
     const moy     = vals.reduce((a, b) => a + b, 0) / vals.length;
     const moyPct  = moy / bareme;
     const saisies = vals.length;
@@ -495,7 +505,7 @@
   });
 
   /* ── Init ── */
-  document.querySelectorAll('.abs-checkbox:checked').forEach(cb => {
+  document.querySelectorAll('.abs-checkbox:checked:not([disabled])').forEach(cb => {
     const pk = cb.dataset.row;
     ['note-','mnote-'].forEach(prefix => {
       const el = document.getElementById(prefix + pk);

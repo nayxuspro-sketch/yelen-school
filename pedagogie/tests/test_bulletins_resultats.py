@@ -812,3 +812,47 @@ class TestClotureDePeriode:
         assert not MoyenneGenerale.objects.filter(inscription=c.chantal, trimestre=c.t1).exists()
         assert Resultat.objects.filter(pk=dispense.pk).exists()
         assert [m.rang for m in MoyenneGenerale.objects.filter(trimestre=c.t1).order_by('rang')] == [1, 2]
+
+
+class TestCompteurSaisieNotes:
+    """Page de saisie des notes : chaque élève a deux jeux de champs (tableau bureau et cartes mobile) qui se
+    recopient. Les statistiques et les contrôles qualité se comptent par élève, sinon tout est doublé : la carte
+    « Saisies » affichait 10 / 5 pour cinq élèves notés et les alertes se déclenchaient sur des effectifs faux."""
+
+    @staticmethod
+    def _gabarit():
+        from pathlib import Path
+        return (Path(__file__).resolve().parents[2]
+                / 'pedagogie/templates/pedagogie/note_saisie.html').read_text(encoding='utf-8')
+
+    def test_les_statistiques_se_comptent_par_eleve(self):
+        source = self._gabarit()
+        bloc = re.search(r'function notesSaisies\(\) \{(.*?)\n  \}', source, re.S).group(1)
+        assert "new Map()" in bloc and 'parEleve.set(inp.dataset.row' in bloc, \
+            'les notes doivent être indexées par élève (data-row), pas accumulées par champ'
+        assert "document.querySelectorAll('.abs-checkbox:checked:not([disabled])')" in bloc, \
+            'un élève absent compte une fois, case bureau ou mobile, et jamais s\'il est dispensé'
+        stats = re.search(r'function updateStats\(\) \{(.*?)\n  \}', source, re.S).group(1)
+        assert 'notesSaisies()' in stats and 'checkQualite(notesParEleve)' in stats
+        assert stats.count("querySelectorAll('.note-input") == 0, \
+            'updateStats ne doit plus compter les champs du DOM : ils sont doublés sur la page'
+
+    def test_les_controles_qualite_se_comptent_par_eleve(self):
+        source = self._gabarit()
+        bloc = re.search(r'function checkQualite\(notesParEleve\) \{(.*?)\n    if \(alertes\.length', source, re.S).group(1)
+        assert 'notesParEleve.size < 2' in bloc
+        assert 'notesParEleve.forEach((valeur, pk)' in bloc, 'absents et zéros se comptent par élève'
+        assert "querySelectorAll('.abs-checkbox:checked')" not in bloc, \
+            'chaque élève porte deux cases « Absent » : les compter doublerait le taux d\'absents'
+
+    @pytest.mark.django_db
+    def test_la_page_affiche_le_compteur_servi_par_le_serveur(self, classe_notee):
+        """Le nombre initial vient du serveur (élèves réellement notés, élèves non dispensés)."""
+        c = classe_notee
+        ev = c.maths.evaluations.get()
+        page = c.client.get(reverse('pedagogie:evaluation_saisie', kwargs={'pk': ev.pk}))
+        assert page.status_code == 200
+        assert page.context['nb_saisies'] == 3 and page.context['nb_total'] == 4   # Éric n'a aucune note
+        html = page.content.decode()
+        assert f'<span id="stat-saisies">{page.context["nb_saisies"]}</span>' in html
+        assert f'<span class="text-primary fw-bold" id="footer-saisies">{page.context["nb_saisies"]}</span>' in html
