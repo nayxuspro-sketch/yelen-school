@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.10 — 2026-11-13
+
+- **Le relevé des moyennes de la classe annonce le barème du cycle.** La colonne était intitulée « Moyenne /20 » quel que soit le cycle, alors que la moyenne d'un élève du primaire est sur **10** : un élève à 8,45 y passait pour un élève en difficulté. Le libellé suit désormais le barème réel — **« Moyenne /10 »** au préscolaire et au primaire, « Moyenne /20 » au post-primaire et au secondaire — et la légende annonce le bon seuil d'insuffisance (**< 5/10** au primaire, < 10/20 ailleurs).
+- Les **chiffres affichés n'ont pas changé** : les moyennes étaient déjà calculées et stockées sur le barème du cycle ; seul le libellé était figé sur 20, y compris dans la légende.
+- Le style de la ligne (gras = admis, gras italique = insuffisant) suit déjà le barème du cycle et reste inchangé.
+- Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.9 — 2026-11-13
 
 - **La fiche de discipline est contresignée par le directeur du cycle.** Elle ne portait que la signature de l'enseignant de la matière. Elle affiche désormais deux signatures côte à côte : **l'enseignant de la matière** à gauche (fonction, signature scannée, nom, matricule) et le **directeur du cycle** à droite (fonction, signature scannée, nom), la date restant rattachée à la signature de l'enseignant. Sans enseignant affecté, seule la signature du directeur est imprimée ; sans signataire configuré pour le cycle, la fiche reste signée par l'enseignant seul.
