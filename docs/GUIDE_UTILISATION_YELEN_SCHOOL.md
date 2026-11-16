@@ -3693,6 +3693,25 @@ La fiche de discipline porte en tête une barre d'informations : **Classe · Dis
 - **Post-primaire et secondaire : inchangé.** Le cartouche garde l'enseignant de la matière, comme la signature.
 - Le titulaire est celui de la **fiche de la classe** (`Paramètres › Classes`), qualité **Titulaire de la classe**, actif — la même personne qui signe les bulletins et la liste alphabétique. Le bloc de signature (titre, nom, matricule) et le contresignataire du cycle ne changent pas. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
 
+### 9.49 Barème du cycle sur le palmarès annuel et la fiche de discipline (5.65.14)
+
+Deux documents imprimés annonçaient « /20 » quel que soit le cycle, alors que la moyenne d'un élève du primaire est sur **10** : un élève à 8,00 y passait pour un élève en difficulté.
+
+**Palmarès annuel** — la colonne « Moy. Annuelle » affichait « 8,00/20 » au primaire. Elle affiche désormais **« 8,00/10 »**, comme la page d'aperçu du même palmarès, qui suivait déjà le barème.
+
+**Fiche de discipline** — quatre mentions étaient figées sur 20 :
+
+| Élément | Primaire | Ailleurs |
+|---|---|---|
+| En-tête de la colonne des moyennes | `Moy /10` | `Moy /20` |
+| Statistiques (meilleure, classe, plus faible) | `/10` | `/20` |
+| Légende | `≥ 5/10 — admis`, `< 5/10 — insuffisant` | `≥ 10/20`, `< 10/20` |
+| Couleur des notes et des moyennes | seuil **5** | seuil **10** |
+
+- Le dernier point est le plus important : les valeurs sont converties au barème du cycle avant l'impression. Avec un seuil resté à 10, **toutes** les moyennes du primaire — y compris 9,50/10 — s'imprimaient en « insuffisant ».
+- **Les chiffres ne changent pas** : ils étaient déjà calculés et convertis sur le barème du cycle. Seuls les libellés et le seuil de couleur étaient figés.
+- Post-primaire et secondaire : rien ne change, tout reste sur 20. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire

@@ -930,6 +930,8 @@ def fiche_discipline_pdf(request):
         'professeur': professeur,
         'enseignant_affiche': enseignant_affiche,
         'primaire': primaire,
+        'bareme': bareme_pdf or Decimal('20'),
+        'seuil_admis': (bareme_pdf or Decimal('20')) / 2,
         'signataire_direction': _signataire_du_cycle(enseignement.classe, ctx.get('annee')),
         'licence_info': _pdf_licence_info(request, etab),
     })

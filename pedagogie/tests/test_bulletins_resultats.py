@@ -1266,3 +1266,72 @@ class TestCartoucheIdentiteFicheDiscipline:
         cartouche = self._cartouche(self._rendre(c, mocker))
         assert 'TRAORE' in cartouche
         assert 'Non assigné' not in cartouche
+
+
+@pytest.mark.django_db
+class TestBaremeDuCycleSurLesDocuments:
+    """Les documents imprimés annoncent le barème du cycle (5.65.14) : au primaire, une moyenne de 8,00 s'écrit
+    « 8,00/10 » — jamais « /20 » — et le seuil d'admission est 5, pas 10."""
+
+    def _palmares(self, c, mocker):
+        weasy = mocker.patch('pedagogie.views.bulletins.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:palmares_annuel_pdf', kwargs={'class_id': c.classe.pk}),
+                     {'annee': c.annee.pk})
+        return weasy.call_args.kwargs['string']
+
+    def _fiche(self, c, mocker):
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:fiche_discipline_pdf'),
+                     {'annee': c.annee.pk, 'enseignement': c.maths.pk, 'periode': c.periode1.pk})
+        return weasy.call_args.kwargs['string']
+
+    @pytest.fixture
+    def palmares_primaire(self, primaire_notee):
+        c = primaire_notee
+        for ins, (p1, p2) in {c.awa: (80, 80), c.boubacar: (50, 50), c.chantal: (40, 40)}.items():
+            for trim, pts in ((c.t1, p1), (c.t2, p2)):
+                baker.make('pedagogie.MoyenneGenerale', inscription=ins, trimestre=trim, total_points=Decimal(pts),
+                           total_coefficients=Decimal('10'), moyenne=Decimal(pts) / 10)
+        return c
+
+    def test_palmares_primaire_sur_10(self, palmares_primaire, mocker):
+        html = self._palmares(palmares_primaire, mocker)
+        assert '<span class="moy-base">/10</span>' in html
+        assert '<span class="moy-base">/20</span>' not in html
+
+    def test_palmares_secondaire_sur_20(self, classe_notee, mocker):
+        c = classe_notee
+        baker.make('pedagogie.MoyenneGenerale', inscription=c.awa, trimestre=c.t1, total_points=Decimal(112),
+                   total_coefficients=Decimal('7'), moyenne=Decimal('16.00'))
+        html = self._palmares(c, mocker)
+        assert '<span class="moy-base">/20</span>' in html
+
+    def test_fiche_discipline_primaire_sur_10(self, primaire_notee, mocker):
+        c = primaire_notee
+        _calculer(c)
+        html = self._fiche(c, mocker)
+        assert 'Moy /10</th>' in html
+        assert '&ge; 5/10 &mdash; admis' in html
+        assert '&lt; 5/10 &mdash; insuffisant' in html
+        assert '/20</span>' not in html and 'Moy /20' not in html
+
+    def test_fiche_discipline_secondaire_sur_20(self, classe_notee, mocker):
+        c = classe_notee
+        _calculer(c)
+        html = self._fiche(c, mocker)
+        assert 'Moy /20</th>' in html
+        assert '&ge; 10/20 &mdash; admis' in html
+        assert 'Moy /10</th>' not in html
+
+    def test_le_seuil_de_couleur_suit_le_bareme(self, primaire_notee, mocker):
+        """Au primaire, 8,00/10 est une moyenne admise : le seuil ne doit pas rester figé à 10, sinon la moyenne
+        de l'élève — pourtant bonne — s'imprimerait en « insuffisant » (gras italique)."""
+        c = primaire_notee
+        _calculer(c)
+        html = self._fiche(c, mocker)
+        assert c.classe.seuil_moyenne == Decimal('5'), 'seuil du primaire'
+        ligne_awa = html.split('OUEDRAOGO', 1)[1].split('</tr>', 1)[0]
+        assert 'td-moy mok' in ligne_awa, 'moyenne de 8,00/10 marquée admise'
+        assert 'td-moy mlow' not in ligne_awa
