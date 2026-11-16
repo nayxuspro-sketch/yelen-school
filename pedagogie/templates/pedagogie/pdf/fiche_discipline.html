@@ -220,9 +220,9 @@ tfoot td.tf-low { color: #000; font-style: italic; }
   </div>
   <div class="ic ic-prof">
     <label>Enseignant(e)</label>
-    {% if professeur %}
-      <span>{{ professeur.prenom }} {{ professeur.nom|upper }}</span>
-      <div class="sub">{{ professeur.matricule }}</div>
+    {% if enseignant_affiche %}
+      <span>{{ enseignant_affiche.prenom }} {{ enseignant_affiche.nom|upper }}</span>
+      <div class="sub">{{ enseignant_affiche.matricule }}</div>
     {% else %}
       <span class="sub">Non assigné</span>
     {% endif %}

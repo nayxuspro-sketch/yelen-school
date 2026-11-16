@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.13 — 2026-11-13
+
+- **Le cartouche d'identité de la fiche de discipline nomme le titulaire au primaire.** La barre d'informations en tête de fiche (« Enseignant(e) ») affichait l'enseignant **de la matière** alors que la signature annonce « L'Enseignant(e) titulaire » : les deux pouvaient désigner deux personnes différentes. Au primaire, le cartouche nomme désormais le **titulaire de la classe**, avec son nom et son matricule.
+- **Replis conservés** : sans titulaire désigné pour la classe, le cartouche garde l'enseignant affecté à la matière ; sans aucun des deux, « Non assigné ».
+- **Post-primaire et secondaire : aucun changement** — le cartouche garde l'enseignant de la matière, comme la signature et comme le reste de la fiche.
+- Le bloc de signature, le contresignataire du cycle et la date sont inchangés. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.12 — 2026-11-13
 
 - **Au primaire, la fiche de discipline nomme « l'Enseignant(e) titulaire ».** Le titre de signature était « L'Enseignant(e) de *Mathématiques* » dans tous les cycles, alors qu'au primaire le titulaire enseigne **toutes** les disciplines de sa classe : chaque matière semblait avoir son professeur. La fiche porte désormais « L'Enseignant(e) titulaire », quel que soit le relevé imprimé.
