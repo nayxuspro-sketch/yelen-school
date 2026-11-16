@@ -907,6 +907,13 @@ def fiche_discipline_pdf(request):
     enseignement = ctx['enseignement']
     professeur = enseignement.personnel  # FK vers MembrePersonnel (peut être None)
 
+    # Au primaire, le titulaire enseigne toutes les disciplines de sa classe : le titre reste « Enseignant(e)
+    # titulaire » et, si aucune matière ne lui est affectée, c'est lui qui signe (5.65.12).
+    classe = enseignement.classe
+    primaire = getattr(getattr(classe, 'cycle', None), 'code', None) == 'PRIM'
+    if primaire:
+        professeur = professeur or getattr(classe, 'enseignant_titulaire', None)
+
     etab = getattr(enseignement.classe, 'etablissement', None)
     etab_context = get_etablissement_context(etab, request) if etab else {}
 
@@ -919,6 +926,7 @@ def fiche_discipline_pdf(request):
         'etablissement': etab,
         'today': _date.today(),
         'professeur': professeur,
+        'primaire': primaire,
         'signataire_direction': _signataire_du_cycle(enseignement.classe, ctx.get('annee')),
         'licence_info': _pdf_licence_info(request, etab),
     })

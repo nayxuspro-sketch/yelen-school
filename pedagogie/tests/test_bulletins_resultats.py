@@ -1163,3 +1163,51 @@ class TestRangSurLeBulletin:
                              kwargs={'inscription_id': c.awa.pk, 'trimestre_id': c.t1.pk}))
         html = _html(weasy)
         assert 'ème' not in html, 'plus aucun ordinal long dans le bulletin'
+
+
+@pytest.mark.django_db
+class TestTitreEnseignantPrimaire:
+    """Au primaire, le titulaire enseigne toutes les disciplines de sa classe : la fiche de discipline porte
+    « L'Enseignant(e) titulaire », sans nom de matière, et se replie sur lui si la matière n'a pas d'enseignant
+    affecté (5.65.12). Au secondaire, le titre nomme toujours la matière."""
+
+    def _rendre(self, c, mocker):
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:fiche_discipline_pdf'), {
+            'annee': c.annee.pk, 'enseignement': c.maths.pk, 'periode': c.periode1.pk})
+        return weasy.call_args.kwargs['string']
+
+    def test_titre_titulaire_au_primaire(self, primaire_notee, mocker):
+        c = primaire_notee
+        baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='KABORE', prenom='Salif',
+                   fonction='Enseignant', classe_affectation=c.classe)
+        html = self._rendre(c, mocker)
+        assert '<p class="sig-fonction">L\'Enseignant(e) titulaire</p>' in html
+        assert "L'Enseignant(e) de Mathématiques" not in html, 'la matière ne figure plus sous sa signature'
+
+    def test_la_matiere_est_nommee_au_secondaire(self, classe_notee, mocker):
+        c = classe_notee
+        baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='KABORE', prenom='Salif',
+                   fonction='Enseignant', classe_affectation=c.classe)
+        html = self._rendre(c, mocker)
+        assert '<p class="sig-fonction">L\'Enseignant(e) de Mathématiques</p>' in html
+        assert "L'Enseignant(e) titulaire" not in html
+
+    def test_le_titulaire_signe_la_matiere_sans_enseignant_affecte(self, primaire_notee, mocker):
+        """Au primaire, la discipline n'a pas de professeur propre : c'est le titulaire de la classe qui signe."""
+        c = primaire_notee
+        assert c.maths.personnel is None
+        baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='KABORE', prenom='Salif',
+                   fonction='Enseignant', classe_affectation=c.classe)
+        html = self._rendre(c, mocker)
+        assert 'KABORE Salif' in html, 'le titulaire de la classe remplace le professeur de la matière'
+        assert 'Aucun enseignant assigné' not in html
+
+    def test_au_secondaire_un_enseignant_affecte_reste_le_sien(self, classe_notee, mocker):
+        """Le repli ne s'applique pas ailleurs : au secondaire, la fiche garde l'enseignant de la matière."""
+        c = classe_notee
+        baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='KABORE', prenom='Salif',
+                   fonction='Enseignant', classe_affectation=c.classe)          # titulaire de la classe
+        html = self._rendre(c, mocker)
+        assert 'KABORE Salif' not in html, 'au secondaire, la matière sans professeur n\'affiche pas le titulaire'

@@ -3675,6 +3675,15 @@ La ligne récapitulative du tableau des notes (sous la moyenne générale) affic
 - Le rang reste calculé à partir des seuls élèves pourvus d'une moyenne : un élève absent du classement n'est pas compté dans l'effectif affiché.
 - Aucune modification du calcul ni du classement : seule l'écriture change.
 
+### 9.47 Fiche de discipline : le titulaire au primaire (5.65.12)
+
+**Au primaire, le titulaire enseigne toutes les disciplines de sa classe.** La fiche de discipline y portait pourtant « L'Enseignant(e) de *Mathématiques* », *Français*, *Sciences d'observation*… comme si chaque matière avait son professeur. Le titre de signature est désormais **« L'Enseignant(e) titulaire »**, quelle que soit la matière imprimée — le nom de l'enseignant et son matricule restent ceux de la signature de gauche.
+
+- **Le repli suit la même règle** : au primaire, si la discipline n'a aucun enseignant affecté, c'est le **titulaire de la classe** qui est imprimé comme signataire (« KABORE Salif », son matricule), au lieu de « (Aucun enseignant assigné à cette discipline) ». C'est déjà lui qui signe les bulletins, le relevé de notes, le relevé des moyennes et le palmarès.
+- **Les autres cycles ne changent pas** : au post-primaire et au secondaire, le titre demeure « L'Enseignant(e) de *Mathématiques* » et la fiche garde l'enseignant de la matière ; le titulaire n'y signe jamais à la place d'un professeur absent.
+- **Le cartouche d'identité en tête de fiche est inchangé** : il continue d'indiquer « Enseignant(e) » avec le nom et le matricule de l'enseignant de la matière.
+- Le contresignataire (directeur du cycle, à droite) et la date ne changent pas. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire

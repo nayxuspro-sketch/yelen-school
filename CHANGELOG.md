@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.12 — 2026-11-13
+
+- **Au primaire, la fiche de discipline nomme « l'Enseignant(e) titulaire ».** Le titre de signature était « L'Enseignant(e) de *Mathématiques* » dans tous les cycles, alors qu'au primaire le titulaire enseigne **toutes** les disciplines de sa classe : chaque matière semblait avoir son professeur. La fiche porte désormais « L'Enseignant(e) titulaire », quel que soit le relevé imprimé.
+- **Le titulaire signe la discipline restée sans enseignant affecté.** Au primaire, si la matière n'a pas de personnel affecté, la fiche imprimait « (Aucun enseignant assigné à cette discipline) » : c'est maintenant le **titulaire de la classe** qui est nommé et signe, comme il signe déjà les bulletins, le relevé de notes, le relevé des moyennes et le palmarès (5.65.8).
+- **Post-primaire et secondaire : aucun changement.** Le titre reste « L'Enseignant(e) de *Mathématiques* » et la fiche conserve l'enseignant de la matière ; le repli sur le titulaire ne s'applique pas. Le cartouche d'identité en tête de fiche, le contresignataire du cycle et la date sont inchangés.
+- Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.11 — 2026-11-13
 
 - **Le rang du bulletin annonce son effectif.** La ligne récapitulative du bulletin trimestriel affichait « 5e / 5 » — le nombre d'élèves sans dire de quoi il s'agissait — alors que le bloc statistiques du même document écrivait « Rang 5ème / 5 élèves ». Elle affiche désormais « 5e / 5 élèves », au singulier ou au pluriel selon l'effectif.
