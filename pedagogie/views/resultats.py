@@ -911,8 +911,10 @@ def fiche_discipline_pdf(request):
     # titulaire » et, si aucune matière ne lui est affectée, c'est lui qui signe (5.65.12).
     classe = enseignement.classe
     primaire = getattr(getattr(classe, 'cycle', None), 'code', None) == 'PRIM'
+    enseignant_affiche = professeur  # cartouche d'identité : titulaire au primaire, professeur de la matière ailleurs
     if primaire:
-        professeur = professeur or getattr(classe, 'enseignant_titulaire', None)
+        enseignant_affiche = getattr(classe, 'enseignant_titulaire', None) or professeur
+        professeur = professeur or enseignant_affiche
 
     etab = getattr(enseignement.classe, 'etablissement', None)
     etab_context = get_etablissement_context(etab, request) if etab else {}
@@ -926,6 +928,7 @@ def fiche_discipline_pdf(request):
         'etablissement': etab,
         'today': _date.today(),
         'professeur': professeur,
+        'enseignant_affiche': enseignant_affiche,
         'primaire': primaire,
         'signataire_direction': _signataire_du_cycle(enseignement.classe, ctx.get('annee')),
         'licence_info': _pdf_licence_info(request, etab),

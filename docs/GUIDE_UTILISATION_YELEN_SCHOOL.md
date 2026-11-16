@@ -3684,6 +3684,15 @@ La ligne récapitulative du tableau des notes (sous la moyenne générale) affic
 - **Le cartouche d'identité en tête de fiche est inchangé** : il continue d'indiquer « Enseignant(e) » avec le nom et le matricule de l'enseignant de la matière.
 - Le contresignataire (directeur du cycle, à droite) et la date ne changent pas. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
 
+### 9.48 Fiche de discipline : le titulaire aussi dans le cartouche (5.65.13)
+
+La fiche de discipline porte en tête une barre d'informations : **Classe · Discipline · Enseignant(e) · Période · Année scolaire**. Le cartouche « Enseignant(e) » nommait l'enseignant **de la matière**, alors que la signature, depuis la 5.65.12, annonce « L'Enseignant(e) titulaire » au primaire : les deux pouvaient désigner deux personnes différentes sur la même fiche.
+
+- **Au primaire**, le cartouche nomme désormais le **titulaire de la classe** (nom et matricule), c'est-à-dire celui qui enseigne réellement la discipline — même si la matière est affectée à quelqu'un d'autre dans `Pédagogie › Enseignements`.
+- **Sans titulaire désigné** pour la classe, le cartouche garde l'enseignant affecté à la matière ; sans aucun des deux, il affiche « Non assigné ».
+- **Post-primaire et secondaire : inchangé.** Le cartouche garde l'enseignant de la matière, comme la signature.
+- Le titulaire est celui de la **fiche de la classe** (`Paramètres › Classes`), qualité **Titulaire de la classe**, actif — la même personne qui signe les bulletins et la liste alphabétique. Le bloc de signature (titre, nom, matricule) et le contresignataire du cycle ne changent pas. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire

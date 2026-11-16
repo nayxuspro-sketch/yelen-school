@@ -1211,3 +1211,58 @@ class TestTitreEnseignantPrimaire:
                    fonction='Enseignant', classe_affectation=c.classe)          # titulaire de la classe
         html = self._rendre(c, mocker)
         assert 'KABORE Salif' not in html, 'au secondaire, la matière sans professeur n\'affiche pas le titulaire'
+
+
+@pytest.mark.django_db
+class TestCartoucheIdentiteFicheDiscipline:
+    """Le cartouche d'identité de la fiche de discipline nomme **le titulaire de la classe au primaire** — c'est lui
+    qui enseigne la discipline — et l'enseignant de la matière ailleurs (5.65.13)."""
+
+    def _cartouche(self, html):
+        """Contenu du seul cartouche « Enseignant(e) » de la barre d'informations (et non la zone de signature)."""
+        bloc = re.search(r'<div class="ic ic-prof">(.*?)</div>\s*</div>', html, re.S)
+        assert bloc, 'cartouche introuvable'
+        return bloc.group(1)
+
+    def _rendre(self, c, mocker):
+        weasy = mocker.patch('pedagogie.views.resultats.HTML')
+        weasy.return_value.write_pdf.return_value = b'%PDF-1.7'
+        c.client.get(reverse('pedagogie:fiche_discipline_pdf'), {
+            'annee': c.annee.pk, 'enseignement': c.maths.pk, 'periode': c.periode1.pk})
+        return weasy.call_args.kwargs['string']
+
+    def test_cartouche_du_titulaire_au_primaire(self, primaire_notee, mocker):
+        c = primaire_notee
+        titulaire = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='KABORE', prenom='Salif',
+                               fonction='Enseignant', classe_affectation=c.classe,
+                               qualite_affectation='TITULAIRE')
+        autre = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='ZONGO', prenom='Aline',
+                           fonction='Enseignant')
+        c.maths.personnel = autre          # la discipline est même affectée à quelqu'un d'autre
+        c.maths.save(update_fields=['personnel'])
+        cartouche = self._cartouche(self._rendre(c, mocker))
+        assert titulaire.prenom in cartouche and 'KABORE' in cartouche
+        assert autre.prenom not in cartouche, 'au primaire, le nom de matière n\'a pas d\'enseignant propre'
+
+    def test_cartouche_de_lenseignant_de_la_matiere_au_secondaire(self, classe_notee, mocker):
+        c = classe_notee
+        baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='KABORE', prenom='Salif',
+                   fonction='Enseignant', classe_affectation=c.classe, qualite_affectation='TITULAIRE')
+        prof = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='TRAORE', prenom='Awa',
+                          fonction='Enseignant')
+        c.maths.personnel = prof
+        c.maths.save(update_fields=['personnel'])
+        cartouche = self._cartouche(self._rendre(c, mocker))
+        assert 'TRAORE' in cartouche and 'Awa' in cartouche
+        assert 'KABORE' not in cartouche, 'au secondaire, le cartouche garde l\'enseignant de la matière'
+
+    def test_cartouche_replie_sur_le_professeur_sans_titulaire(self, primaire_notee, mocker):
+        """Classe primaire sans titulaire désigné : le cartouche garde l'enseignant affecté, pas « Non assigné »."""
+        c = primaire_notee
+        prof = baker.make('personnel.MembrePersonnel', etablissement=c.etab, nom='TRAORE', prenom='Awa',
+                          fonction='Enseignant')
+        c.maths.personnel = prof
+        c.maths.save(update_fields=['personnel'])
+        cartouche = self._cartouche(self._rendre(c, mocker))
+        assert 'TRAORE' in cartouche
+        assert 'Non assigné' not in cartouche
