@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.14 — 2026-11-13
+
+- **Le palmarès annuel annonce le barème du cycle.** La colonne « Moy. Annuelle » affichait « 8,00/20 » pour un élève du primaire dont la moyenne est en réalité sur 10 : elle s'écrit désormais **« 8,00/10 »** au préscolaire et au primaire, « /20 » ailleurs — comme la page d'aperçu du palmarès, qui était déjà correcte.
+- **La fiche de discipline annonce le barème du cycle.** Quatre mentions étaient figées sur 20 : l'en-tête de la colonne des moyennes (`Moy /10` au primaire), les trois statistiques (meilleure moyenne, moyenne de la classe, moyenne la plus faible), la légende (`≥ 5/10 — admis`, `< 5/10 — insuffisant`) et le **seuil de couleur** des notes et des moyennes, qui passe de 10 à 5. Sans ce dernier point, toutes les moyennes du primaire — y compris 9,50/10 — se seraient imprimées en « insuffisant ».
+- **Les chiffres ne changent pas** : les moyennes étaient déjà calculées et converties sur le barème du cycle avant impression. Seuls les libellés et le seuil de couleur étaient figés.
+- Post-primaire et secondaire : aucun changement, tout reste sur 20. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.13 — 2026-11-13
 
 - **Le cartouche d'identité de la fiche de discipline nomme le titulaire au primaire.** La barre d'informations en tête de fiche (« Enseignant(e) ») affichait l'enseignant **de la matière** alors que la signature annonce « L'Enseignant(e) titulaire » : les deux pouvaient désigner deux personnes différentes. Au primaire, le cartouche nomme désormais le **titulaire de la classe**, avec son nom et son matricule.

@@ -272,7 +272,7 @@ html, body {
           {% else %}
             <span class="moy-red">{{ row.moyenne }}</span>
           {% endif %}
-          <span class="moy-base">/20</span>
+          <span class="moy-base">/{{ bareme|default:20|floatformat:"0g" }}</span>
         {% else %}
           <span class="vide-cell">—</span>
         {% endif %}
