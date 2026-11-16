@@ -374,7 +374,7 @@ tfoot td.tf-low { color: #000; font-style: italic; }
         <p class="sig-date">
           {% if identite.ville %}{{ identite.ville }}, le {% else %}Le {% endif %}{{ today|date:"d/m/Y" }}
         </p>
-        <p class="sig-fonction">L'Enseignant(e) de {{ enseignement.matiere.nom }}</p>
+        <p class="sig-fonction">{% if primaire %}L'Enseignant(e) titulaire{% else %}L'Enseignant(e) de {{ enseignement.matiere.nom }}{% endif %}</p>
         {% if professeur %}
           {% if professeur.signature %}<div class="sig-scan">{% signature_scannee professeur %}</div>{% endif %}
           <p class="sig-name">{{ professeur.nom|upper }} {{ professeur.prenom }}</p>
