@@ -3712,6 +3712,19 @@ Deux documents imprimés annonçaient « /20 » quel que soit le cycle, alors qu
 - **Les chiffres ne changent pas** : ils étaient déjà calculés et convertis sur le barème du cycle. Seuls les libellés et le seuil de couleur étaient figés.
 - Post-primaire et secondaire : rien ne change, tout reste sur 20. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
 
+### 9.50 Barème du cycle sur le bulletin annuel et la page parent (5.65.15)
+
+Le bulletin annuel web et la page publique du parent annonçaient « /20 » quel que soit le cycle, et la **mention** se calculait sur 20 même au primaire.
+
+**Bulletin annuel web** (`Élèves → Bulletin annuel`) — trois mentions suivaient le barème figé : la moyenne annuelle (`8,50/20` au primaire), l'en-tête « Moyenne /20 » du tableau des périodes et la ligne de pied « Moyenne annuelle / 20 ». Elles affichent désormais `/10` au préscolaire et au primaire, `/20` ailleurs. La **couleur** des moyennes de période suit aussi le seuil du cycle (5 au primaire), et non plus 10.
+
+**Page publique du parent** — la tuile « Moyenne /20 » affiche le barème de la classe et sa couleur suit le seuil du cycle : un élève du primaire à 8,50 apparaît en réussite, plus en échec.
+
+**La mention suit le barème** — `_get_mention()` compare la moyenne aux seuils 16 / 14 / 12 / 10, qui sont des seuils **sur 20**. Au primaire, une moyenne de 8,50/10 vaut 17/20 et doit donner « Très Bien » ; elle donnait « Insuffisant ». La moyenne est désormais ramenée sur 20 **avant** le calcul de la mention. Au secondaire, un 8,50/20 reste « Insuffisant ».
+
+- **Aucun chiffre de moyenne ne change** : seuls les libellés, les seuils de couleur et la mention. Rangs, décisions d'admission et statistiques de classe étaient déjà corrects.
+- Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
