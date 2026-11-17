@@ -98,8 +98,8 @@
         <div class="pp-stat">
           <div class="pp-glow pp-glow--primary"></div>
           {% if enfant.derniere_mg %}
-            <div class="pp-val {% if enfant.derniere_mg.valeur >= 10 %}pp-val--success{% else %}pp-val--danger{% endif %}">
-              {{ enfant.derniere_mg.valeur|floatformat:2 }}
+            <div class="pp-val {% if enfant.derniere_mg.moyenne_suffisante %}pp-val--success{% else %}pp-val--danger{% endif %}">
+              {{ enfant.derniere_mg.moyenne|floatformat:2 }}<small>/{{ enfant.derniere_mg.bareme }}</small>
             </div>
           {% else %}
             <div class="pp-val pp-val--empty">—</div>

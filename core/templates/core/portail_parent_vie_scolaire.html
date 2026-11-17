@@ -179,7 +179,7 @@
             {% for r in resultats %}
             <div class="pp-devoir">
               <div class="pp-devoir-detail">
-                <div class="pp-devoir-subject">{{ r.enseignement.matiere.nom }} · <span class="{% if r.moyenne >= 10 %}text-success{% else %}text-danger{% endif %}">{% if r.dispense %}Dispensé{% elif r.moyenne is None %}—{% else %}{{ r.moyenne|floatformat:2 }}{% endif %}</span>{% if r.rang %} · {{ r.rang }}<sup>e</sup>{% endif %}</div>
+                <div class="pp-devoir-subject">{{ r.enseignement.matiere.nom }} · <span class="{% if r.moyenne >= enfant.inscription.classe.seuil_moyenne %}text-success{% else %}text-danger{% endif %}">{% if r.dispense %}Dispensé{% elif r.moyenne is None %}—{% else %}{{ r.moyenne|floatformat:2 }}/{{ enfant.inscription.classe.bareme_moyenne|floatformat:"0g" }}{% endif %}</span>{% if r.rang %} · {{ r.rang }}<sup>e</sup>{% endif %}</div>
                 {% if r.appreciation %}<div class="pp-devoir-text">{{ r.appreciation }}</div>{% endif %}
               </div>
             </div>

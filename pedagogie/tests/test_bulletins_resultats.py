@@ -1335,3 +1335,76 @@ class TestBaremeDuCycleSurLesDocuments:
         ligne_awa = html.split('OUEDRAOGO', 1)[1].split('</tr>', 1)[0]
         assert 'td-moy mok' in ligne_awa, 'moyenne de 8,00/10 marquée admise'
         assert 'td-moy mlow' not in ligne_awa
+
+
+@pytest.mark.django_db
+class TestBaremePrimaireSurLesEcrans:
+    """Aucun écran ne doit traiter une moyenne de primaire comme une moyenne sur 20 (5.65.16) : la valeur
+    affichée suit le barème du cycle et la couleur se juge sur la moitié de ce barème (5/10 au primaire)."""
+
+    @pytest.fixture
+    def primaire(self, primaire_notee):
+        c = primaire_notee
+        _calculer(c)                      # moyennes générales réelles : `moyenne` sur 10, `moyenne_sur_20` sur 20
+        return c
+
+    def test_prediction_ne_divise_pas_par_20_une_moyenne_sur_10(self, primaire):
+        """L'élève à 8,00/10 vaut 16/20 : son score de base doit être 80 %, pas 40 %."""
+        from pedagogie.predictions import calculer_prediction
+        prediction = calculer_prediction(primaire.awa)
+        assert prediction is not None
+        facteur = prediction.facteurs[0]
+        assert 'Moyenne générale' in facteur['libelle']
+        assert facteur['detail'].endswith('/20')
+        assert 75 <= facteur['points'] <= 85, f'score de base attendu ≈ 80, obtenu {facteur["points"]}'
+
+    def test_indicateurs_agregent_sur_20(self, primaire):
+        """Le tableau de bord agrège sur `moyenne_sur_20` : un 8,00/10 du primaire pèse 16,00 et compte comme admis,
+        au lieu d'être noyé avec les classes sur 20 ou compté comme un échec."""
+        from decimal import Decimal
+        from core.indicateurs import calculer
+        mesures = calculer(primaire.etab, primaire.annee)
+        assert mesures['moyenne_generale'] is not None
+        assert mesures['moyenne_generale'] > Decimal('10'), 'moyenne de l\'établissement exprimée sur 20'
+        assert mesures['details']['eleves_admis'] >= 1, 'un élève du primaire à 8/10 est admis'
+
+    def test_portail_parent_affiche_la_moyenne_du_cycle(self, primaire):
+        """Les tuiles du portail lisaient `mg.valeur`, qui n'existe sur aucun modèle : elles restaient vides."""
+        from accounts.models import User
+        from django.test import Client
+        parent = User.objects.create_user(username='parent-primaire', password='x',
+                                          email='parent@example.com',
+                                          etablissement=primaire.etab, role='PARENT')
+        parent.eleves_lies.add(primaire.awa.eleve)
+        client = Client()
+        client.force_login(parent)
+        html = client.get(reverse('core:portail_parent')).content.decode()
+        assert '/10' in html, 'le barème du cycle est annoncé'
+        assert '8,00' in html, 'la moyenne du cycle est affichée (avant : tuile vide)'
+
+    def test_fiche_suivi_eleve_suit_le_bareme(self, primaire):
+        from django.test import Client
+        client = Client()
+        client.force_login(primaire.user)
+        html = client.get(reverse('viescolaire:fiche_suivi_eleve',
+                                  kwargs={'inscription_id': primaire.awa.pk})).content.decode()
+        assert '/10' in html, 'moyenne du trimestre annoncée sur le barème du primaire'
+        assert 'fs-period-ok' in html, '8,00/10 est au-dessus de 5/10 : couleur de réussite'
+
+    def test_moyennes_par_discipline_colorent_au_bareme(self, primaire):
+        """Au primaire, le seuil « bien » est 7/10 : 8,00 doit sortir en vert, pas en rouge (seuils 10/14 figés)."""
+        from types import SimpleNamespace
+        from django.template.loader import render_to_string
+        from decimal import Decimal
+        classe = primaire.classe
+        resultat = SimpleNamespace(dispense=False, moyenne=Decimal('8.00'))
+        ligne = SimpleNamespace(eleve=primaire.awa.eleve, resultats=[resultat],
+                                mg=SimpleNamespace(moyenne=Decimal('8.00')), rang=1)
+        html = render_to_string('pedagogie/pdf/moyennes_disciplines.html', {
+            'classe': classe, 'trimestre': primaire.t1, 'annee': primaire.annee,
+            'enseignements': [SimpleNamespace(matiere=primaire.maths.matiere, get_coefficient=4)],
+            'lignes': [ligne], 'identite': None, 'logo_url': None, 'date_impression': '01/01/2027',
+            'licence_info': None, 'etablissement': primaire.etab,
+        })
+        assert 'class="moy-vert"' in html, '8,00/10 est au-dessus de 7/10 : vert'
+        assert 'class="moy-rouge"' not in html and 'moy-rouge\n' not in html.split('<tbody>')[1]

@@ -37,7 +37,7 @@
         <tr>
           <th style="width:3rem;">N°</th>
           <th>Élève</th>
-          <th style="text-align:center; width:7rem;">Moyenne {{ trimestre.nom }}</th>
+          <th style="text-align:center; width:7rem;">Moyenne {{ trimestre.nom }} /{{ enseignement.classe.bareme_moyenne|floatformat:"0g" }}</th>
           <th>Appréciation ({{ longueur_max }} caractères max.)</th>
         </tr>
       </thead>
@@ -51,7 +51,7 @@
           </td>
           <td style="text-align:center; font-weight:600;">
             {% if ligne.resultat.dispense %}<span class="text-muted">Dispensé</span>
-            {% elif ligne.resultat and ligne.resultat.moyenne is not None %}<span class="{% if ligne.resultat.moyenne >= 10 %}text-success{% else %}text-danger{% endif %}">{{ ligne.resultat.moyenne|floatformat:2 }}</span>
+            {% elif ligne.resultat and ligne.resultat.moyenne is not None %}<span class="{% if ligne.resultat.moyenne >= enseignement.classe.seuil_moyenne %}text-success{% else %}text-danger{% endif %}">{{ ligne.resultat.moyenne|floatformat:2 }}</span>
             {% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td>
