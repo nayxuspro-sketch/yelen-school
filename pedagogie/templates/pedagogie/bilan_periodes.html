@@ -121,7 +121,7 @@
               </a>
             </td>
             <td class="dash-td-center">{{ ligne.stats.nb_eleves }}</td>
-            <td class="dash-td-center dash-moyenne {% if ligne.stats.moy_classe and ligne.stats.moy_classe >= 10 %}dash-moyenne-good{% elif ligne.stats.moy_classe %}dash-moyenne-bad{% endif %}">
+            <td class="dash-td-center dash-moyenne {% if ligne.stats.moy_classe and ligne.stats.moy_classe >= ligne.classe.seuil_moyenne %}dash-moyenne-good{% elif ligne.stats.moy_classe %}dash-moyenne-bad{% endif %}">
               {% if ligne.stats.moy_classe %}{{ ligne.stats.moy_classe|floatformat:2 }}{% else %}—{% endif %}
             </td>
             <td class="dash-td-center dash-td-success">

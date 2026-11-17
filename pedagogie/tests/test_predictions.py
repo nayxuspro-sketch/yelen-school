@@ -16,7 +16,7 @@ def classe():
     etab = baker.make('etablissements.Etablissement')
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True,
                        date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
-    cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Post-primaire')
+    cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Post-primaire', code='POST')
     return baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='3e A', niveau='3e', actif=True), annee
 
 
@@ -27,7 +27,8 @@ def _inscrit(classe, annee, *moyennes, statut='AFFECTE'):
         trimestre, _ = Trimestre.objects.get_or_create(
             annee_scolaire=annee, numero=numero,
             defaults={'nom': f'Trimestre {numero}', 'date_debut': date(2026, 10, 1), 'date_fin': date(2027, 6, 30)})
-        baker.make(MoyenneGenerale, inscription=ins, trimestre=trimestre, moyenne=Decimal(moyenne))
+        baker.make(MoyenneGenerale, inscription=ins, trimestre=trimestre, moyenne=Decimal(moyenne),
+                   moyenne_sur_20=Decimal(moyenne))
     return ins
 
 
@@ -100,7 +101,7 @@ def test_score_borne_et_pronostics(classe):
 def test_recalcul_met_a_jour_sans_doublon(classe):
     ins = _inscrit(*classe, '14.00')
     premiere = predictions.calculer_prediction(ins)
-    baker.make(MoyenneGenerale, inscription=ins, moyenne=Decimal('8.00'),
+    baker.make(MoyenneGenerale, inscription=ins, moyenne=Decimal('8.00'), moyenne_sur_20=Decimal('8.00'),
                trimestre=Trimestre.objects.create(annee_scolaire=classe[1], numero=2, nom='Trimestre 2',
                                                   date_debut=date(2027, 1, 1), date_fin=date(2027, 3, 31)))
     seconde = predictions.calculer_prediction(ins)

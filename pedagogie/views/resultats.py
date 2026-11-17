@@ -22,6 +22,24 @@ from ..notes_access import filtrer_inscriptions_autorisees_notes
 from yelen_school.cycle_filter import filtrer_classe_par_cycle, get_cycle_ids
 
 
+def _nb_admis_par_classe(inscriptions):
+    """{(classe_id, trimestre_id): nombre d'admis} — admis = moyenne au moins égale a la moitie du
+    bareme de SA classe (5/10 au primaire, 10/20 ailleurs). Un seuil SQL fige a 10 compterait zero
+    admis dans toutes les classes du primaire."""
+    admis = {}
+    lignes = (
+        MoyenneGenerale.objects
+        .filter(inscription__in=inscriptions, moyenne__isnull=False)
+        .values('inscription__classe_id', 'inscription__classe__cycle__code', 'trimestre_id', 'moyenne')
+    )
+    for ligne in lignes:
+        seuil = Decimal('5') if ligne['inscription__classe__cycle__code'] in ('PRES', 'PRIM') else Decimal('10')
+        if ligne['moyenne'] >= seuil:
+            cle = (ligne['inscription__classe_id'], ligne['trimestre_id'])
+            admis[cle] = admis.get(cle, 0) + 1
+    return admis
+
+
 @login_required
 @requires_licence_feature('rapports_avances')
 def bilan_pdf(request):
@@ -34,7 +52,7 @@ def bilan_pdf(request):
     Paramètre POST optionnel :
       - commentaires (JSON str) : résultats de l'analyse IA
     """
-    from django.db.models import Avg, Max, Min, Count, Q as _Q
+    from django.db.models import Avg, Max, Min, Count
 
     def _get(key):
         return request.POST.get(key) or request.GET.get(key)
@@ -81,15 +99,16 @@ def bilan_pdf(request):
             moy_classe=Avg('moyenne'),
             moy_max=Max('moyenne'),
             moy_min=Min('moyenne'),
-            nb_admis=Count('id', filter=_Q(moyenne__gte=10)),
         )
     )
+    # Admission : le seuil est la moitié du barème de la classe (5/10 au primaire), jamais 10 en dur.
+    nb_admis_par_classe = _nb_admis_par_classe(inscriptions_autorisees)
 
     index = {}
     for row in mg_stats:
         key = (str(row['inscription__classe_id']), str(row['trimestre_id']))
         nb = row['nb_eleves'] or 0
-        nb_admis = row['nb_admis'] or 0
+        nb_admis = nb_admis_par_classe.get((row['inscription__classe_id'], row['trimestre_id']), 0)
         index[key] = {
             'nb_eleves': nb,
             'moy_classe': round(float(row['moy_classe']), 2) if row['moy_classe'] else None,

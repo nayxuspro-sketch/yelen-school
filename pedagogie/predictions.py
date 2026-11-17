@@ -43,7 +43,10 @@ def calculer_prediction(inscription):
         return None
 
     derniere_mg = moyennes[-1]
-    mg_val = float(derniere_mg.moyenne or 0)
+    # La moyenne stockée est sur le barème du cycle (10 au primaire, 20 ailleurs) : le score se calcule
+    # sur l'équivalent /20, sinon un 8,50/10 ne pèserait que 42 % au lieu de 85 %.
+    bareme = float(derniere_mg.bareme or 20)
+    mg_val = float(derniere_mg.moyenne or 0) * 20 / bareme
 
     # ── Score de base (0-100) ─────────────────────────────────────────
     score_base = (mg_val / 20) * 100
@@ -61,7 +64,7 @@ def calculer_prediction(inscription):
     if len(moyennes) >= 2:
         avant_derniere = moyennes[-2]
         if avant_derniere.moyenne and derniere_mg.moyenne:
-            tendance = float(derniere_mg.moyenne) - float(avant_derniere.moyenne)
+            tendance = (float(derniere_mg.moyenne) - float(avant_derniere.moyenne)) * 20 / bareme
             if tendance >= 2:
                 bonus_tendance = 10
             elif tendance >= 0.5:

@@ -56,10 +56,10 @@ def ecole(client):
     for ins in e6:
         baker.make('pedagogie.Note', inscription=ins, evaluation=ev1, valeur=Decimal('12'))
     baker.make('pedagogie.Note', inscription=e6[0], evaluation=ev2, valeur=Decimal('15'))
-    baker.make('pedagogie.Resultat', inscription=e6[0], enseignement=ens6, trimestre=t1, moyenne=Decimal('14.00'), appreciation='Bien')
-    baker.make('pedagogie.Resultat', inscription=e6[1], enseignement=ens6, trimestre=t1, moyenne=Decimal('8.00'), appreciation='')
+    baker.make('pedagogie.Resultat', inscription=e6[0], enseignement=ens6, trimestre=t1, moyenne=Decimal('14.00'), moyenne_sur_20=Decimal('14.00'), appreciation='Bien')
+    baker.make('pedagogie.Resultat', inscription=e6[1], enseignement=ens6, trimestre=t1, moyenne=Decimal('8.00'), moyenne_sur_20=Decimal('8.00'), appreciation='')
     baker.make('pedagogie.Resultat', inscription=e6[2], enseignement=ens6, trimestre=t1, moyenne=None, dispense=True, appreciation='Dispensé')
-    baker.make('pedagogie.Resultat', inscription=e5[0], enseignement=ens5, trimestre=t2, moyenne=Decimal('11.00'), appreciation='Peut mieux faire')
+    baker.make('pedagogie.Resultat', inscription=e5[0], enseignement=ens5, trimestre=t2, moyenne=Decimal('11.00'), moyenne_sur_20=Decimal('11.00'), appreciation='Peut mieux faire')
     baker.make('pedagogie.CahierTextes', enseignement=ens6, date=date(2026, 11, 3), contenu='Fractions')
     baker.make('pedagogie.CahierTextes', enseignement=ens6, date=date(2027, 1, 10), contenu='Décimaux')
     baker.make('pedagogie.CahierTextes', enseignement=libre, date=date(2026, 11, 3), contenu='Sans prof')

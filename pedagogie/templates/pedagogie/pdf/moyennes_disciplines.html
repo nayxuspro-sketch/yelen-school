@@ -172,8 +172,8 @@ td.col-rang { color: #555; font-size: 7pt; }
       {% for r in ligne.resultats %}
       <td
         {% if r and not r.dispense and r.moyenne is not None %}
-          {% if r.moyenne < 10 %}class="moy-rouge"
-          {% elif r.moyenne < 14 %}class="moy-orange"
+          {% if r.moyenne < classe.seuil_moyenne %}class="moy-rouge"
+          {% elif r.moyenne < classe.seuil_bien %}class="moy-orange"
           {% else %}class="moy-vert"{% endif %}
         {% else %}class="moy-vide"{% endif %}
       >
@@ -188,8 +188,8 @@ td.col-rang { color: #555; font-size: 7pt; }
       <!-- Moyenne générale -->
       <td class="col-mg
         {% if mg and mg.moyenne is not None %}
-          {% if mg.moyenne < 10 %}moy-rouge
-          {% elif mg.moyenne < 14 %}moy-orange
+          {% if mg.moyenne < classe.seuil_moyenne %}moy-rouge
+          {% elif mg.moyenne < classe.seuil_bien %}moy-orange
           {% else %}moy-vert{% endif %}
         {% endif %}
       ">

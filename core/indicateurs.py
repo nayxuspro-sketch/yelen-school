@@ -32,10 +32,12 @@ def calculer(etablissement, annee):
     situations = _situations_financieres_en_lot(actives) if actives else {}
     attendu = sum((s['total_du'] for s in situations.values()), Decimal('0'))
     encaisse = sum((s['total_paye'] for s in situations.values()), Decimal('0'))
-    moyenne = MoyenneGenerale.objects.filter(
-        inscription__in=actives, moyenne__isnull=False).aggregate(m=Avg('moyenne'))['m']
-    reussite = MoyenneGenerale.objects.filter(inscription__in=actives, moyenne__gte=10).count()
-    avec_moyenne = MoyenneGenerale.objects.filter(inscription__in=actives, moyenne__isnull=False).count()
+    # Agrégats sur `moyenne_sur_20` : les moyennes sont stockées sur le barème du cycle (10 au primaire),
+    # les additionner avec des classes sur 20 fausserait la moyenne et le taux de réussite de l'établissement.
+    moyennes_classe = MoyenneGenerale.objects.filter(inscription__in=actives, moyenne_sur_20__isnull=False)
+    moyenne = moyennes_classe.aggregate(m=Avg('moyenne_sur_20'))['m']
+    reussite = moyennes_classe.filter(moyenne_sur_20__gte=10).count()
+    avec_moyenne = moyennes_classe.count()
     presences = Presence.objects.filter(appel__annee_scolaire=annee, inscription__in=actives)
     pointages = presences.count()
     absences = presences.filter(statut='ABSENT').count()

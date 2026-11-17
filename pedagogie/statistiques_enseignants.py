@@ -63,9 +63,12 @@ def statistiques_enseignants(etab, annee, trimestre=None, cycle_ids=None):
                             **{f'evaluation__{k}': v for k, v in periode.items()}),
         'evaluation__enseignement_id', n=Count('pk'),
     )
+    # Agrégats sur `moyenne_sur_20` : un enseignant peut couvrir des classes de barèmes différents
+    # (10 au primaire, 20 ailleurs) ; additionner `moyenne` brute fausserait sa moyenne et son taux de réussite.
     resultats = _par_enseignement(
-        Resultat.objects.filter(enseignement_id__in=ids, dispense=False, moyenne__isnull=False, **periode),
-        'enseignement_id', n=Count('pk'), somme=Sum('moyenne'), reussite=Count('pk', filter=Q(moyenne__gte=10)),
+        Resultat.objects.filter(enseignement_id__in=ids, dispense=False, moyenne_sur_20__isnull=False, **periode),
+        'enseignement_id', n=Count('pk'), somme=Sum('moyenne_sur_20'),
+        reussite=Count('pk', filter=Q(moyenne_sur_20__gte=10)),
     )
     appreciations = _par_enseignement(
         Resultat.objects.filter(enseignement_id__in=ids, **periode).exclude(appreciation=''),

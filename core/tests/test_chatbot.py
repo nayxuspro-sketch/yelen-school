@@ -19,7 +19,7 @@ def monde():
                        date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
     annee_autre = baker.make('parametres.AnneeScolaire', etablissement=autre, est_courante=True,
                              date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30))
-    cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Collège')
+    cycle = baker.make('parametres.Cycle', etablissement=etab, nom='Collège', code='SEC')
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6e A', niveau='6e', actif=True)
     statut = baker.make('parametres.StatutEleve')
     rubrique = baker.make('parametres.RubriquePaiement', etablissement=etab, code='SCOL', actif=True)
@@ -38,8 +38,10 @@ def monde():
     t1, t2 = (baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=n, nom=f'T{n}',
                          date_debut=date(2026, 10, 1), date_fin=date(2027, 6, 30)) for n in (1, 2))
     for ins, m1, m2 in ((awa, '14.50', '15.25'), (issa, '9.80', '7.90')):
-        baker.make('pedagogie.MoyenneGenerale', inscription=ins, trimestre=t1, moyenne=Decimal(m1))
-        baker.make('pedagogie.MoyenneGenerale', inscription=ins, trimestre=t2, moyenne=Decimal(m2))
+        baker.make('pedagogie.MoyenneGenerale', inscription=ins, trimestre=t1, moyenne=Decimal(m1),
+                   moyenne_sur_20=Decimal(m1))
+        baker.make('pedagogie.MoyenneGenerale', inscription=ins, trimestre=t2, moyenne=Decimal(m2),
+                   moyenne_sur_20=Decimal(m2))
     a1, a2 = (baker.make('presences.Appel', classe=classe, annee_scolaire=annee, date=date(2026, 11, j)) for j in (3, 4))
     baker.make('presences.Presence', appel=a1, inscription=issa, statut='ABSENT')
     baker.make('presences.Presence', appel=a2, inscription=issa, statut='ABSENT')

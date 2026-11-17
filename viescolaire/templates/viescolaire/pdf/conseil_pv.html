@@ -202,8 +202,8 @@
             </td>
             <td style="text-align:center;">
                 {% if mg and mg.moyenne is not None %}
-                <span class="{% if mg.moyenne >= 10 %}moy-ok{% else %}moy-fail{% endif %}">
-                    {{ mg.moyenne|floatformat:2 }}
+                <span class="{% if mg.moyenne_suffisante %}moy-ok{% else %}moy-fail{% endif %}">
+                    {{ mg.moyenne|floatformat:2 }}/{{ mg.bareme }}
                 </span>
                 {% else %}—{% endif %}
             </td>

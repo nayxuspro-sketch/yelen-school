@@ -174,10 +174,13 @@ def _req_difficultes(etab, classe_nom=None, seuil=10.0, trimestre_numero=None):
     annee = _get_annee(etab)
     if not annee:
         return dict(_SANS_ANNEE)
-    qs = (MoyenneGenerale.objects.filter(inscription__in=_inscrits(etab, annee, classe_nom), moyenne__lt=seuil)
+    # Comparaison sur `moyenne_sur_20` : le seuil demandé est exprimé sur 20, la moyenne stockée suit
+    # le barème du cycle (10 au primaire) — comparer les deux rendrait tous les primaires « en difficulté ».
+    qs = (MoyenneGenerale.objects.filter(inscription__in=_inscrits(etab, annee, classe_nom),
+                                        moyenne_sur_20__lt=seuil)
           .select_related('inscription__eleve', 'inscription__classe'))
     qs, trimestre_numero = _dernier_trimestre(qs, trimestre_numero)
-    resultats = list(qs.order_by('moyenne')[:30])
+    resultats = list(qs.order_by('moyenne_sur_20')[:30])
     return {
         "seuil": seuil,
         "trimestre": trimestre_numero,
@@ -185,7 +188,7 @@ def _req_difficultes(etab, classe_nom=None, seuil=10.0, trimestre_numero=None):
         "eleves": [
             {"eleve": f"{m.inscription.eleve.nom} {m.inscription.eleve.prenom}",
              "classe": m.inscription.classe.nom,
-             "moyenne": round(float(m.moyenne), 2)}
+             "moyenne": round(float(m.moyenne_sur_20), 2)}
             for m in resultats
         ],
     }
@@ -201,9 +204,10 @@ def _req_moyennes(etab, classe_nom, trimestre_numero=None):
     if premier is None:
         return {"erreur": f"Classe « {classe_nom} » introuvable ou sans inscrits."}
     qs, trimestre_numero = _dernier_trimestre(MoyenneGenerale.objects.filter(inscription__in=inscrits), trimestre_numero)
-    stats = qs.aggregate(moy=Avg('moyenne'), maxi=Max('moyenne'), mini=Min('moyenne'))
-    top5 = list(qs.select_related('inscription__eleve').order_by('-moyenne')[:5])
-    faibles = list(qs.select_related('inscription__eleve').filter(moyenne__lt=10).order_by('moyenne')[:5])
+    # Tout est ramené sur 20 (`moyenne_sur_20`) : le texte répondeur annonce « /20 » et compare à 10.
+    stats = qs.aggregate(moy=Avg('moyenne_sur_20'), maxi=Max('moyenne_sur_20'), mini=Min('moyenne_sur_20'))
+    top5 = list(qs.select_related('inscription__eleve').order_by('-moyenne_sur_20')[:5])
+    faibles = list(qs.select_related('inscription__eleve').filter(moyenne_sur_20__lt=10).order_by('moyenne_sur_20')[:5])
     return {
         "classe": premier.classe.nom,
         "trimestre": trimestre_numero,
@@ -212,9 +216,9 @@ def _req_moyennes(etab, classe_nom, trimestre_numero=None):
         "max": round(float(stats['maxi'] or 0), 2),
         "min": round(float(stats['mini'] or 0), 2),
         "top5": [{"eleve": f"{m.inscription.eleve.nom} {m.inscription.eleve.prenom}",
-                  "moy": round(float(m.moyenne), 2)} for m in top5],
+                  "moy": round(float(m.moyenne_sur_20), 2)} for m in top5],
         "faibles": [{"eleve": f"{m.inscription.eleve.nom} {m.inscription.eleve.prenom}",
-                     "moy": round(float(m.moyenne), 2)} for m in faibles],
+                     "moy": round(float(m.moyenne_sur_20), 2)} for m in faibles],
     }
 
 

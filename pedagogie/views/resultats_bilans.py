@@ -55,7 +55,8 @@ def bilan_periodes(request):
     Affiche : effectif, moyenne classe, plus haute/faible moyenne,
     nb admis, taux de réussite.
     """
-    from django.db.models import Avg, Max, Min, Count, Q as _Q
+    from django.db.models import Avg, Max, Min, Count
+    from .resultats import _nb_admis_par_classe
 
     annees = AnneeScolaire.objects.order_by('-date_debut')
     annee_id = request.GET.get('annee')
@@ -89,15 +90,16 @@ def bilan_periodes(request):
             moy_classe=Avg('moyenne'),
             moy_max=Max('moyenne'),
             moy_min=Min('moyenne'),
-            nb_admis=Count('id', filter=_Q(moyenne__gte=10)),
         )
     )
+    # Admission : moitié du barème de la classe (5/10 au primaire), jamais 10 en dur.
+    nb_admis_par_classe = _nb_admis_par_classe(inscriptions_autorisees)
 
     index = {}
     for row in mg_stats:
         key = (str(row['inscription__classe_id']), str(row['trimestre_id']))
         nb = row['nb_eleves'] or 0
-        nb_admis = row['nb_admis'] or 0
+        nb_admis = nb_admis_par_classe.get((row['inscription__classe_id'], row['trimestre_id']), 0)
         index[key] = {
             'nb_eleves': nb,
             'moy_classe': round(float(row['moy_classe']), 2) if row['moy_classe'] else None,

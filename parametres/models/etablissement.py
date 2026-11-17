@@ -346,6 +346,11 @@ class Classe(BaseModel):
         return self.bareme_moyenne / 2
 
     @property
+    def seuil_bien(self):
+        """Seuil de la mention « bien » (14/20 ailleurs) ramené au barème : 7/10 au primaire."""
+        return self.bareme_moyenne * Decimal('14') / Decimal('20')
+
+    @property
     def enseignant_titulaire(self):
         """Enseignant titulaire de cette classe : il signe les bulletins de notes et la liste alphabétique."""
         return self.enseignants_de_classe('TITULAIRE')

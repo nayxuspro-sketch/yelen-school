@@ -92,10 +92,10 @@
         <!-- Stats -->
         <div class="pp-bul-stats">
           <div class="pp-bul-stat">
-            <div class="pp-val {% if mg and mg.valeur >= 10 %}pp-val--success{% elif mg %}pp-val--danger{% else %}pp-val--empty{% endif %}">
-              {% if mg %}{{ mg.valeur|floatformat:2 }}{% else %}—{% endif %}
+            <div class="pp-val {% if mg and mg.moyenne_suffisante %}pp-val--success{% elif mg %}pp-val--danger{% else %}pp-val--empty{% endif %}">
+              {% if mg %}{{ mg.moyenne|floatformat:2 }}<small>/{{ mg.bareme }}</small>{% else %}—{% endif %}
             </div>
-            <div class="pp-stat-label">Moyenne /20</div>
+            <div class="pp-stat-label">Moyenne</div>
           </div>
           <div class="pp-bul-stat">
             <div class="pp-val {% if mg and mg.rang %}pp-val--warning{% else %}pp-val--empty{% endif %}">

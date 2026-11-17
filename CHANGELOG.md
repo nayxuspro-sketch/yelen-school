@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.16 — 2026-11-13
+
+- **Trois écrans donnaient des résultats faux au primaire, pas seulement un libellé.** Le **portail parent** lisait `mg.valeur`, un champ qui n'existe sur aucun modèle : la tuile de moyenne restait **toujours vide**. La **prédiction de réussite** divisait une moyenne sur 10 par 20 : un élève à 8,50/10 obtenait un score de base de 42 % au lieu de 85 %, et son pronostic d'examen était faussé. Le **tableau de bord**, les **statistiques par enseignant** et le **chatbot** agrégeaient des moyennes de barèmes différents : moyenne d'établissement et **taux de réussite faux** dès qu'une classe du primaire existe. Tous s'appuient désormais sur `moyenne_sur_20`, toujours exprimée sur 20.
+- **Les autres écrans suivent le barème du cycle** — fiche de suivi de l'élève, PV du conseil de classe, tableau des bulletins d'une classe, saisie des appréciations, bilan des périodes, portail vie scolaire et moyennes par discipline : valeur, couleur et légende. Les seuils de couleur des moyennes par discipline (10 et 14 sur 20) deviennent 5 et 7 au primaire, via la nouvelle propriété `Classe.seuil_bien`.
+- **Le taux d'admission** du bilan des périodes et du PDF de bilan comptait zéro admis dans toutes les classes du primaire (seuil figé à 10) : il applique le seuil de chaque classe.
+- **Aucun chiffre de moyenne n'est retouché** : seuls les comparaisons, agrégats et libellés étaient faux. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.15 — 2026-11-13
 
 - **Le bulletin annuel et la page parent annoncent le barème du cycle.** Le bulletin annuel web affichait « 8,50/20 » pour un élève du primaire dont la moyenne est sur 10 — dans la tuile de moyenne annuelle, l'en-tête du tableau des périodes et la ligne de pied — et la page publique du parent écrivait « Moyenne /20 ». Les deux suivent désormais le barème : `/10` au préscolaire et au primaire, `/20` ailleurs.

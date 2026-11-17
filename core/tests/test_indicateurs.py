@@ -44,7 +44,8 @@ def ecole(client):
         if moyenne is not None:
             trimestre = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=1, nom='Trimestre 1',
                                    date_debut=annee.date_debut, date_fin=annee.date_debut + timedelta(days=60))
-            baker.make('pedagogie.MoyenneGenerale', inscription=inscription, trimestre=trimestre, moyenne=Decimal(moyenne))
+            baker.make('pedagogie.MoyenneGenerale', inscription=inscription, trimestre=trimestre,
+                       moyenne=Decimal(moyenne), moyenne_sur_20=Decimal(moyenne))   # classe sur 20 dans ce test
         return inscription
 
     # 2025-2026 : 1 élève, payé 50 000, moyenne 8

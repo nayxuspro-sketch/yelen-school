@@ -3725,6 +3725,24 @@ Le bulletin annuel web et la page publique du parent annonçaient « /20 » quel
 - **Aucun chiffre de moyenne ne change** : seuls les libellés, les seuils de couleur et la mention. Rangs, décisions d'admission et statistiques de classe étaient déjà corrects.
 - Aucune nouvelle URL, aucun changement de schéma, aucune migration.
 
+### 9.51 Barème du cycle partout : audit complet des écrans de moyennes (5.65.16)
+
+Un audit de toutes les fiches affichant des moyennes a révélé que plusieurs écrans traitaient encore une moyenne de primaire comme une moyenne sur 20. Trois d'entre eux donnaient des **résultats faux**, pas seulement un libellé faux.
+
+**Calculs corrigés**
+
+| Écran | Ce qui était faux | Effet au primaire |
+|---|---|---|
+| **Portail parent** (accueil et bulletins) | lisait `mg.valeur`, champ inexistant | tuile de moyenne **toujours vide** |
+| **Prédiction de réussite** | divisait une moyenne sur 10 par 20 | score et pronostic **divisés par deux** (8,50/10 comptait 42 % au lieu de 85 %) |
+| **Tableau de bord, statistiques par enseignant, chatbot** | agrégeaient `moyenne` brute de classes de barèmes différents | moyenne d'établissement et **taux de réussite faux** dès qu'un primaire existe |
+
+**Affichages alignés sur le barème du cycle** (valeur, couleur et légende) : **fiche de suivi de l'élève** (moyennes de période et par matière), **PV du conseil de classe**, **tableau des bulletins d'une classe**, **saisie des appréciations** (libellé « Moyenne T1 /10 »), **bilan des périodes** (couleur au seuil de la classe), **portail vie scolaire**, **moyennes par discipline** (les seuils de couleur 10/14 sont désormais 5/7 au primaire), et **taux d'admission** du bilan des périodes et du PDF de bilan.
+
+- **Les chiffres eux-mêmes ne sont pas retouchés** : ce sont les comparaisons, les agrégats et les libellés qui étaient faux. Une moyenne de classe reste ce qu'elle était.
+- Nouvelle propriété `Classe.seuil_bien` (14/20 ramené au barème : 7/10 au primaire) — **aucune migration**, propriété calculée.
+- Aucune nouvelle URL, aucun changement de schéma.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
