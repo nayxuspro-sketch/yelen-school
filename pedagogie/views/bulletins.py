@@ -562,7 +562,7 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
             if ins_id != inscription.pk and moy > moyenne_annuelle
         )
 
-    mention = _get_mention(moyenne_annuelle) if moyenne_annuelle else None
+    mention = _get_mention(moyenne_annuelle * 20 / bareme) if moyenne_annuelle else None
     admis = moyenne_annuelle >= seuil if moyenne_annuelle else False
 
     type_doc_bulletin = (
@@ -612,7 +612,7 @@ def _build_bulletin_annuel_context(request, inscription, annee_scolaire):
 
 
 def _get_mention(moyenne):
-    """Retourne la mention selon la moyenne sur 20."""
+    """Retourne la mention pour une moyenne **sur 20** (les barèmes du primaire sont ramenés en amont)."""
     if moyenne is None:
         return None
     if moyenne >= 16:

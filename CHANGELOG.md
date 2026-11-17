@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.15 — 2026-11-13
+
+- **Le bulletin annuel et la page parent annoncent le barème du cycle.** Le bulletin annuel web affichait « 8,50/20 » pour un élève du primaire dont la moyenne est sur 10 — dans la tuile de moyenne annuelle, l'en-tête du tableau des périodes et la ligne de pied — et la page publique du parent écrivait « Moyenne /20 ». Les deux suivent désormais le barème : `/10` au préscolaire et au primaire, `/20` ailleurs.
+- **Les couleurs suivent le seuil du cycle.** Sur les deux pages, une moyenne de 8,50 au primaire s'affichait en échec (seuil figé à 10) ; elle apparaît en réussite, le seuil étant 5.
+- **La mention se calcule enfin sur le bon barème.** `_get_mention()` compare aux seuils 16 / 14 / 12 / 10, qui sont des seuils sur 20 : au primaire, un 8,50/10 vaut 17/20 et doit donner **« Très Bien »** — il donnait « Insuffisant ». La moyenne est ramenée sur 20 avant le calcul ; au secondaire, un 8,50/20 reste « Insuffisant ».
+- **Aucun chiffre de moyenne ne change** : ni les moyennes, ni les rangs, ni les décisions d'admission, ni les statistiques de classe. Aucune nouvelle URL, aucun changement de schéma, aucune migration.
+
 ## 5.65.14 — 2026-11-13
 
 - **Le palmarès annuel annonce le barème du cycle.** La colonne « Moy. Annuelle » affichait « 8,00/20 » pour un élève du primaire dont la moyenne est en réalité sur 10 : elle s'écrit désormais **« 8,00/10 »** au préscolaire et au primaire, « /20 » ailleurs — comme la page d'aperçu du palmarès, qui était déjà correcte.

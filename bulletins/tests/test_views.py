@@ -201,3 +201,70 @@ def test_moyenne_annuelle_egale_moyenne_des_trimestres(client):
     palmares = {p['eleve'].nom: (p['moyenne'], p['rang']) for p in
                 client.get(reverse('pedagogie:palmares_annuel', kwargs={'class_id': classe.pk}) + f'?annee={annee.pk}').context['palmares']}
     assert palmares['COMPAORE'] == (Decimal('11.63'), 2) and palmares['OUEDRAOGO'] == (Decimal('12.00'), 1)
+
+
+@pytest.mark.django_db
+class TestBaremeDuCycleSurLeBulletinAnnuel:
+    """Le bulletin annuel annonce le barème du cycle (5.65.15) : au primaire une moyenne de 8,50 s'écrit
+    « 8,50/10 », le seuil d'admission est 5 et la mention se calcule sur l'équivalent /20 — 8,50/10 = 17/20,
+    donc « Très Bien », et non « Insuffisant »."""
+
+    @pytest.fixture
+    def primaire(self, client):
+        from decimal import Decimal
+        etab = baker.make('etablissements.Etablissement')
+        client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True,
+                                      must_change_password=False))
+        annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True, libelle='2025-2026')
+        cycle = baker.make('parametres.Cycle', etablissement=etab, code='PRIM', nom='Primaire')
+        classe = baker.make('parametres.Classe', etablissement=etab, nom='CM2 A', cycle=cycle)
+        t1, t2 = (baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=i, nom=f'Trimestre {i}')
+                  for i in (1, 2))
+        ins = baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee, eleve__nom='OUEDRAOGO')
+        for trimestre in (t1, t2):
+            baker.make('pedagogie.MoyenneGenerale', inscription=ins, trimestre=trimestre, moyenne=Decimal('8.50'),
+                       total_points=Decimal('85.00'), total_coefficients=Decimal('10'))
+        from django.utils import timezone
+        baker.make('bulletins.Bulletin', inscription=ins, trimestre=t1, est_publie=True,
+                   token_signature='jeton-de-test-primaire', token_expire_le=timezone.now() + timezone.timedelta(days=15))
+        return {'ins': ins, 'annee': annee, 'classe': classe, 'trimestre': t1}
+
+    def test_bareme_et_mention_du_bulletin_annuel_web(self, client, primaire):
+        d = primaire
+        reponse = client.get(reverse('bulletins:bulletin_annuel',
+                                     kwargs={'inscription_id': d['ins'].pk, 'annee_pk': d['annee'].pk}))
+        html = reponse.content.decode()
+        assert 'Moyenne /10' in html, 'la colonne des périodes suit le barème du primaire'
+        assert 'Moyenne /20' not in html
+        assert '/ 10' in html, 'la ligne « Moyenne annuelle » suit le barème'
+        assert reponse.context['bareme'] == 10 and reponse.context['seuil'] == 5
+        assert reponse.context['moyenne_annuelle']['admis'] is True, '8,50/10 est au-dessus du seuil de 5'
+        assert reponse.context['moyenne_annuelle']['mention'] == 'Très Bien', '8,50/10 = 17/20'
+
+    def test_mention_inchangee_sur_20(self, client, primaire):
+        """Au secondaire, une moyenne de 8,50/20 reste « Insuffisant » : le calcul ne change pas sur 20."""
+        etab = primaire['classe'].etablissement
+        from decimal import Decimal
+        annee = primaire['annee']
+        cycle_sec = baker.make('parametres.Cycle', etablissement=etab, code='SEC', nom='Secondaire')
+        classe = baker.make('parametres.Classe', etablissement=etab, nom='3e A', cycle=cycle_sec)
+        t1 = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=3, nom='Trimestre 3')
+        ins = baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee, eleve__nom='ZONGO')
+        baker.make('pedagogie.MoyenneGenerale', inscription=ins, trimestre=t1, moyenne=Decimal('8.50'),
+                   total_points=Decimal('60.00'), total_coefficients=Decimal('7'))
+        reponse = client.get(reverse('bulletins:bulletin_annuel',
+                                     kwargs={'inscription_id': ins.pk, 'annee_pk': annee.pk}))
+        assert reponse.context['moyenne_annuelle']['mention'] == 'Insuffisant'
+        assert 'Moyenne /20' in reponse.content.decode()
+
+    def test_bulletin_parent_suit_le_bareme(self, client, primaire):
+        """La page publique du parent nomme le barème du cycle et applique le bon seuil de couleur."""
+        from bulletins.models import Bulletin
+        d = primaire
+        bulletin = Bulletin.objects.filter(inscription=d['ins']).first()
+        reponse = client.get(reverse('bulletins:bulletin_parent_consulter',
+                                     kwargs={'token': bulletin.token_signature}), follow=True)
+        html = reponse.content.decode()
+        assert 'Moyenne /10' in html and 'Moyenne /20' not in html
+        assert '<div class="stat-val success">8,50</div>' in html, '8,50/10 est au-dessus de 5/10 : couleur de réussite'
+        assert '<div class="stat-val danger">' not in html
