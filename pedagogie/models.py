@@ -71,7 +71,13 @@ class Matiere(BaseModel):
     moy_min = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name=_("Barème minimal par défaut"))
     moy_max = models.DecimalField(max_digits=5, decimal_places=2, default=20, verbose_name=_("Barème maximal par défaut"))
     heures_hebdomadaires = models.DecimalField(max_digits=4, decimal_places=2, default=0, verbose_name=_("Heures hebdomadaires"))
-    est_discipline = models.BooleanField(default=False, verbose_name=_("Matière de discipline"))
+    est_discipline = models.BooleanField(
+        default=True,
+        verbose_name=_("Matière de discipline"),
+        help_text=_("Coché : la matière compte dans la moyenne générale. Décochez pour une matière suivie "
+                    "hors moyenne (ex. éveil, activité annexe) — ses notes et appréciations restent saisies "
+                    "et imprimées, mais son coefficient est ignoré dans la moyenne."),
+    )
     est_obligatoire = models.BooleanField(default=True, verbose_name=_("Matière obligatoire"))
 
     class Meta:

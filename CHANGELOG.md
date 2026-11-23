@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.17 — 2026-11-13
+
+- **« Matière de discipline » décide enfin de la moyenne.** La case de la fenêtre *Ajouter une matière* était enregistrée mais **lue nulle part** : elle n'avait aucun effet. Cochée (défaut), la matière compte dans la moyenne générale avec son coefficient ; décochée, elle est suivie **hors moyenne** — notes et appréciations conservées et imprimées, coefficient ignoré dans la moyenne, le rang et les décisions.
+- **Aucune moyenne existante n'est bouleversée.** Le champ valait `False` par défaut et n'était lu nulle part : appliquer le filtre tel quel aurait exclu **toutes** les matières de tous les établissements. Le défaut passe à `True` et une reprise de données marque explicitement toutes les matières déjà créées comme disciplines. Un établissement ne perd donc aucune moyenne ; il décoche ensuite, matière par matière, ce qui doit sortir du calcul.
+- **Une aide contextuelle** sous la case explique la règle dans les fenêtres d'ajout et de modification ; le gabarit affiche désormais le texte d'aide des cases à cocher, qui était ignoré.
+- Aucun changement des notes, des résultats par matière ni des documents imprimés. Une migration de données (défaut + reprise), aucune nouvelle URL.
+
 ## 5.65.16 — 2026-11-13
 
 - **Trois écrans donnaient des résultats faux au primaire, pas seulement un libellé.** Le **portail parent** lisait `mg.valeur`, un champ qui n'existe sur aucun modèle : la tuile de moyenne restait **toujours vide**. La **prédiction de réussite** divisait une moyenne sur 10 par 20 : un élève à 8,50/10 obtenait un score de base de 42 % au lieu de 85 %, et son pronostic d'examen était faussé. Le **tableau de bord**, les **statistiques par enseignant** et le **chatbot** agrégeaient des moyennes de barèmes différents : moyenne d'établissement et **taux de réussite faux** dès qu'une classe du primaire existe. Tous s'appuient désormais sur `moyenne_sur_20`, toujours exprimée sur 20.

@@ -3743,6 +3743,23 @@ Un audit de toutes les fiches affichant des moyennes a révélé que plusieurs �
 - Nouvelle propriété `Classe.seuil_bien` (14/20 ramené au barème : 7/10 au primaire) — **aucune migration**, propriété calculée.
 - Aucune nouvelle URL, aucun changement de schéma.
 
+### 9.52 « Matière de discipline » : la case qui décide de la moyenne (5.65.17)
+
+Jusqu'ici, la case **Matière de discipline** de la fenêtre *Ajouter une matière* n'avait **aucun effet** : elle était enregistrée, jamais lue. Elle décide désormais du calcul de la moyenne générale.
+
+**Ce qu'elle fait**
+
+- **Cochée** (par défaut) : la matière compte dans la **moyenne générale**, avec son coefficient. C'est le cas de toutes les matières enseignées.
+- **Décochée** : la matière est suivie **hors moyenne**. Ses notes et ses appréciations restent saisies, consultables et **imprimées** sur les relevés et les bulletins, mais **son coefficient ne pèse plus** dans la moyenne générale, dans le rang et dans les décisions d'admission. Usage type : éveil, activité annexe, matière d'ouverture.
+
+**Ce qu'il faut savoir avant de décocher**
+
+- Une matière décochée ne disparaît d'aucun document : seule sa **pondération** change. La moyenne de l'élève peut donc monter ou descendre, et son rang être recalculé.
+- Si **toutes** les matières d'une classe sont décochées, plus aucune moyenne ne peut être calculée : l'élève se retrouve comme sans note.
+- Le changement ne s'applique qu'**au prochain calcul des moyennes** (`Pédagogie → Calculer les moyennes`). Les moyennes déjà calculées d'un trimestre **clôturé** ne sont pas retouchées.
+- **Aucune matière existante n'est affectée** : la mise à jour marque explicitement toutes les matières déjà créées comme disciplines, y compris celles dont la case était décochée sans effet. Vous décidez donc matière par matière de ce qui doit sortir de la moyenne.
+- Une aide contextuelle sous la case rappelle cette règle dans la fenêtre **Ajouter une matière** et **Modifier une matière**.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire

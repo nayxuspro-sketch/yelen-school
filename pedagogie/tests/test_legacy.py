@@ -43,9 +43,13 @@ class TestMatiere:
         assert matiere.est_obligatoire is True
     
     def test_matiere_est_discipline_par_defaut(self):
-        """Test que est_discipline est False par défaut."""
+        """Une matière créée sans précision est une discipline qui compte dans la moyenne (5.65.17).
+
+        Le défaut était False alors que le champ n'était lu nulle part ; en l'activant, un défaut False
+        aurait exclu de la moyenne toutes les matières de tous les établissements.
+        """
         matiere = Matiere.objects.create(code='TEST', nom='Test')
-        assert matiere.est_discipline is False
+        assert matiere.est_discipline is True
     
     def test_categories_matieres(self):
         """Test que toutes les catégories de matières sont présentes."""
