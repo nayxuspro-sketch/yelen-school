@@ -1408,3 +1408,35 @@ class TestBaremePrimaireSurLesEcrans:
         })
         assert 'class="moy-vert"' in html, '8,00/10 est au-dessus de 7/10 : vert'
         assert 'class="moy-rouge"' not in html and 'moy-rouge\n' not in html.split('<tbody>')[1]
+
+
+@pytest.mark.django_db
+class TestMatiereHorsMoyenne:
+    """Une matière décochée « Matière de discipline » garde ses notes et son résultat, mais ne pèse plus dans la
+    moyenne générale ni dans les totaux de coefficients (5.65.17)."""
+
+    def test_une_matiere_decochee_ne_pese_pas_dans_la_moyenne(self, classe_notee):
+        c = classe_notee
+        _calculer(c)
+        avant = MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1)
+        assert (avant.moyenne, avant.total_coefficients) == (Decimal('16.00'), Decimal('7.00'))
+
+        # Le français (coefficient 3, note 8/20) devient une matière suivie hors moyenne.
+        c.francais.matiere.est_discipline = False
+        c.francais.matiere.save(update_fields=['est_discipline'])
+        _calculer(c)
+
+        apres = MoyenneGenerale.objects.get(inscription=c.awa, trimestre=c.t1)
+        assert apres.total_coefficients == Decimal('4.00'), 'seul le coefficient de maths compte'
+        assert apres.moyenne == Decimal('16.00'), 'moyenne de maths seule'
+        assert Resultat.objects.filter(inscription=c.awa, enseignement=c.francais).exists(), \
+            'le résultat du français est conservé, seule sa pondération disparaît'
+
+    def test_toutes_matieres_hors_moyenne_efface_la_moyenne(self, classe_notee):
+        """Cas limite : plus aucune discipline → plus de moyenne, comme un élève sans note."""
+        c = classe_notee
+        for enseignement in (c.maths, c.francais):
+            enseignement.matiere.est_discipline = False
+            enseignement.matiere.save(update_fields=['est_discipline'])
+        _calculer(c)
+        assert not MoyenneGenerale.objects.filter(inscription=c.awa, trimestre=c.t1).exists()

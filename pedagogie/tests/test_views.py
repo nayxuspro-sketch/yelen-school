@@ -68,6 +68,13 @@ class TestPedagogieViews:
         assert response.status_code == 302
         assert Matiere.objects.filter(code='MAT-FINAL').exists()
 
+    def test_formulaire_matiere_affiche_l_aide_de_la_discipline(self, logged_in_client):
+        """La case « Matière de discipline » explique son effet : la fenêtre Ajouter une matière rend l'aide."""
+        html = logged_in_client.get(reverse('pedagogie:matiere_create')).content.decode()
+        assert 'Matière de discipline' in html
+        assert 'compte dans la moyenne générale' in html, 'aide contextuelle rendue sous la case'
+        assert 'input-hint' in html
+
     def test_evaluation_saisie_post(self, logged_in_client):
         """Vérifie la saisie groupée des notes."""
         annee = baker.make('parametres.AnneeScolaire', est_courante=True)

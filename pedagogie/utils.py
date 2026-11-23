@@ -121,11 +121,12 @@ class CalculateurMoyenne:
         if trimestre.verrouille:
             return MoyenneGenerale.objects.filter(inscription=inscription, trimestre=trimestre).first()
 
-        # 1. Récupérer tous les résultats de matières (hors dispensés)
+        # 1. Récupérer tous les résultats de matières (hors dispensés et hors matières non-disciplines)
         resultats = Resultat.objects.filter(
             inscription=inscription,
             trimestre=trimestre,
             dispense=False,
+            enseignement__matiere__est_discipline=True,
         )
 
         if not resultats.exists():

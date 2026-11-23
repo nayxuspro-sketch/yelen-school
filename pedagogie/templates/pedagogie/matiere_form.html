@@ -35,13 +35,14 @@
     {% csrf_token %}
     <div class="form-grid-2">
       {% for field in form %}
-      <div class="form-group {% if field.field.widget.input_type == 'checkbox' %}d-flex align-center gap-3{% endif %}"
+      <div class="form-group {% if field.field.widget.input_type == 'checkbox' %}mat-group-case{% endif %}"
            {% if field.name == 'nom_complet' %}data-pleine-largeur{% endif %}>
         {% if field.field.widget.input_type == 'checkbox' %}
           <label class="d-flex align-center gap-3 mat-case">
             {{ field }}
             <span class="input-label">{{ field.label }}</span>
           </label>
+          {% if field.help_text %}<p class="input-hint">{{ field.help_text }}</p>{% endif %}
         {% else %}
           <label for="{{ field.id_for_label }}" class="input-label">
             {{ field.label }}{% if field.field.required %} <span class="required-star">*</span>{% endif %}
@@ -128,6 +129,7 @@
 .mat-card-infos { max-width: 720px; }
 .mat-card-config { max-width: 1040px; margin-top: var(--space-6); }
 .mat-card-intro { margin-top: .25rem; }
+.mat-group-case { display: flex; flex-direction: column; }
 .mat-case { cursor: pointer; }
 .mat-case .input-label { margin-bottom: 0; }
 .mat-divider { margin-top: var(--space-6); }
