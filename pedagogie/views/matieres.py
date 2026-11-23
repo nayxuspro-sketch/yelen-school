@@ -145,6 +145,8 @@ def enseignement_matieres(request):
         'matieres': form.fields['matiere'].queryset,
         'enseignants': form.fields['personnel'].queryset,
         'cycle_selectionne': form.classe_selectionnee,
+        # Au primaire, la liste est limitée aux enseignants de la classe ; ailleurs, elle ne l'est pas.
+        'liste_limitee_a_la_classe': form.liste_enseignants_limitee_a_la_classe,
     })
 
 

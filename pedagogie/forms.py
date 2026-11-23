@@ -65,6 +65,8 @@ class EnseignementForm(forms.ModelForm):
 
     def __init__(self, *args, request=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Vrai seulement au primaire : la liste des enseignants y est limitée à la classe choisie.
+        self.liste_enseignants_limitee_a_la_classe = False
         if request is not None:
             self.fields['classe'].queryset = filtrer_classe_par_cycle(
                 self.fields['classe'].queryset, request
@@ -113,18 +115,25 @@ class EnseignementForm(forms.ModelForm):
             self.fields['matiere'].empty_label = '-- Sélectionner d’abord une classe --'
 
         if classe is not None:
-            portees_enseignant = Q(classe_affectation=classe) | Q(
-                enseignements__classe=classe,
-                enseignements__est_actif=True,
-            )
-            if (self.instance and self.instance.pk and self.instance.classe_id == classe.pk
-                    and self.instance.personnel_id):
-                portees_enseignant |= Q(pk=self.instance.personnel_id)
+            # Au primaire, le titulaire couvre toutes les disciplines de sa classe : la liste reste
+            # limitée à la classe. Ailleurs (préscolaire, post-primaire, secondaire), un professeur
+            # intervient dans plusieurs classes de son cycle : la liste couvre le personnel de
+            # l'établissement, comme pour « Nom du professeur » dans les absences.
             enseignants = MembrePersonnel.objects.filter(
                 etablissement=classe.etablissement,
                 is_active=True,
-            ).filter(portees_enseignant).distinct().order_by('nom', 'prenom')
-            self.fields['personnel'].queryset = enseignants
+            )
+            if classe.cycle_id and classe.cycle.code == 'PRIM':
+                self.liste_enseignants_limitee_a_la_classe = True
+                portees_enseignant = Q(classe_affectation=classe) | Q(
+                    enseignements__classe=classe,
+                    enseignements__est_actif=True,
+                )
+                if (self.instance and self.instance.pk and self.instance.classe_id == classe.pk
+                        and self.instance.personnel_id):
+                    portees_enseignant |= Q(pk=self.instance.personnel_id)
+                enseignants = enseignants.filter(portees_enseignant)
+            self.fields['personnel'].queryset = enseignants.distinct().order_by('nom', 'prenom')
             self.fields['personnel'].empty_label = '-- Sélectionner un enseignant --'
         else:
             self.fields['personnel'].queryset = MembrePersonnel.objects.none()

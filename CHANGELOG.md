@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.18 — 2026-11-13
+
+- **Un professeur peut enfin être affecté à plusieurs classes la même année.** Dans la fenêtre *Nouvelle affectation* (`Pédagogie → Enseignements`), la liste des enseignants ne proposait que les personnes **déjà rattachées à la classe choisie** — son titulaire et ceux qui y avaient déjà un enseignement. Un professeur de mathématiques de la 3e A n'apparaissait donc **pas** dans la liste de la 4e B : impossible de l'y affecter, et donc de lui ouvrir la saisie des notes de cette seconde classe. Le modèle, lui, l'autorisait depuis toujours : la contrainte ne porte que sur classe × matière × année, jamais sur l'enseignant.
+- **La liste couvre désormais le personnel actif de l'établissement** au post-primaire, au secondaire et au préscolaire — le même périmètre que la liste « Nom du professeur » des absences. Un enseignant peut recevoir autant de classes et de disciplines que nécessaire.
+- **Le primaire est inchangé.** Le titulaire y couvre toutes les disciplines de sa classe : la liste reste limitée aux enseignants de la classe choisie, et le libellé le rappelle (« Aucun enseignant associé à cette classe »).
+- Le message d'une liste vide ne parle plus de la classe hors primaire (« Aucun personnel actif dans l'établissement »). Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 5.65.17 — 2026-11-13
 
 - **« Matière de discipline » décide enfin de la moyenne.** La case de la fenêtre *Ajouter une matière* était enregistrée mais **lue nulle part** : elle n'avait aucun effet. Cochée (défaut), la matière compte dans la moyenne générale avec son coefficient ; décochée, elle est suivie **hors moyenne** — notes et appréciations conservées et imprimées, coefficient ignoré dans la moyenne, le rang et les décisions.

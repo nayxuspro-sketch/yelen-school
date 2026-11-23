@@ -8435,3 +8435,20 @@ par annulation motivée (direction), jamais par modification.
 | Utilisateur / Mot de passe | `admin` / secret de l'app | identiques à ceux de l'app SMS Gateway |
 | Délai (s) | `10` | au-delà, l'envoi est considéré en échec |
 | Numéro de test | `70 11 22 33` | reçoit le message de vérification du bouton **Tester** |
+
+### 9.53 Enseignant affecté à plusieurs classes la même année (5.65.18)
+
+Au post-primaire et au secondaire, un professeur enseigne **plusieurs classes** : un professeur de mathématiques de la 3e A intervient aussi en 4e B, une même année. L'affectation le permet désormais.
+
+**Ce qui bloquait**
+
+Dans la fenêtre *Nouvelle affectation* (`Pédagogie → Enseignements`), la liste des enseignants ne proposait que les personnes **déjà rattachées à la classe choisie** : son titulaire et ceux qui y avaient déjà un enseignement. Un professeur affecté à la 3e A **n'apparaissait pas** dans la liste de la 4e B ; il était donc impossible de l'y affecter, puis de lui ouvrir la saisie des notes de cette classe.
+
+**Ce qui change**
+
+- **Post-primaire, secondaire et préscolaire** : la liste des enseignants couvre le **personnel actif de l'établissement**, comme la liste « Nom du professeur » des absences. Le même professeur peut recevoir autant de classes et de disciplines que nécessaire — une affectation par classe × matière et par année.
+- **Primaire : aucun changement.** Le titulaire y couvre toutes les disciplines de sa classe (§ 5.1) : la liste reste limitée aux enseignants de la classe choisie, et le libellé le rappelle.
+- La contrainte de doublon ne porte que sur **classe × matière × année** : elle interdit d'affecter deux fois la même matière dans la même classe, jamais d'affecter un enseignant à une seconde classe.
+- Aucun changement des notes, des moyennes, des bulletins ni des documents déjà produits. Aucune migration, aucune nouvelle URL.
+
+**À vérifier après l'affectation :** l'enseignant retrouve ses nouvelles classes dans la saisie des notes, les évaluations et le cahier de textes, à condition que le compte soit relié à sa fiche du personnel par l'adresse e-mail (§ 3.7).

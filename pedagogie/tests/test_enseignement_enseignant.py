@@ -108,3 +108,84 @@ def test_post_refuse_un_enseignant_d_une_autre_classe(admin_client, contexte):
     assert response.status_code == 200
     assert 'personnel' in response.context['form'].errors
     assert Enseignement.objects.filter(classe=contexte['classe'], matiere=contexte['matiere']).count() == 0
+
+
+# ── Post-primaire et secondaire : un professeur intervient dans plusieurs classes ─────────────
+
+@pytest.fixture
+def contexte_secondaire(db):
+    """Un professeur de mathématiques affecté à la 3e A, et une autre classe de son cycle."""
+    etablissement = baker.make('etablissements.Etablissement')
+    cycle = baker.make('parametres.Cycle', etablissement=etablissement, code='POST')
+    troisieme = baker.make('parametres.Classe', etablissement=etablissement, cycle=cycle, nom='3e A', niveau='3E')
+    quatrieme = baker.make('parametres.Classe', etablissement=etablissement, cycle=cycle, nom='4e B', niveau='4E')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etablissement, est_courante=True)
+    mathématiques = Matiere.objects.create(code='MATH', nom='Mathématiques')
+    baker.make('pedagogie.MatiereCycle', matiere=mathématiques, cycle=cycle)
+
+    professeur = baker.make(
+        'personnel.MembrePersonnel', etablissement=etablissement, nom='SAWADOGO', prenom='Rasmané',
+        fonction='Professeur de mathématiques',
+    )
+    baker.make(
+        'pedagogie.Enseignement', classe=troisieme, matiere=mathématiques,
+        annee_scolaire=annee, personnel=professeur,
+    )
+
+    return {
+        'etablissement': etablissement,
+        'annee': annee,
+        'matiere': mathématiques,
+        'troisieme': troisieme,
+        'quatrieme': quatrieme,
+        'professeur': professeur,
+    }
+
+
+@pytest.fixture
+def admin_client_secondaire(client, contexte_secondaire):
+    client.force_login(baker.make(
+        'accounts.User',
+        etablissement=contexte_secondaire['etablissement'],
+        role='SUPER_ADMIN',
+        is_superuser=True,
+    ))
+    return client
+
+
+def test_options_htmx_proposent_un_professeur_deja_affecte_a_une_autre_classe(admin_client_secondaire, contexte_secondaire):
+    """Le professeur de mathématiques de la 3e A doit pouvoir être choisi pour la 4e B."""
+    response = admin_client_secondaire.get(reverse('pedagogie:enseignement_matieres'), {
+        'classe': str(contexte_secondaire['quatrieme'].pk),
+    }, HTTP_HX_REQUEST='true')
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert f'value="{contexte_secondaire["professeur"].pk}"' in html
+
+
+def test_post_affecte_le_meme_professeur_a_une_autre_classe(admin_client_secondaire, contexte_secondaire):
+    """Deux affectations la même année pour le même enseignant : deux classes, deux lignes."""
+    response = admin_client_secondaire.post(reverse('pedagogie:enseignement_create'), {
+        'classe': str(contexte_secondaire['quatrieme'].pk),
+        'matiere': str(contexte_secondaire['matiere'].pk),
+        'annee_scolaire': str(contexte_secondaire['annee'].pk),
+        'personnel': str(contexte_secondaire['professeur'].pk),
+        'est_actif': 'on',
+    })
+
+    assert response.status_code == 302
+    classes = Enseignement.objects.filter(
+        personnel=contexte_secondaire['professeur'], annee_scolaire=contexte_secondaire['annee'],
+    ).values_list('classe__nom', flat=True)
+    assert sorted(classes) == ['3e A', '4e B']
+
+
+def test_libelle_d_absence_au_secondaire_ne_parle_pas_de_la_classe(admin_client_secondaire, contexte_secondaire):
+    """Hors primaire, la liste n'est pas limitée à la classe : le libellé ne doit pas l'affirmer."""
+    response = admin_client_secondaire.get(reverse('pedagogie:enseignement_matieres'), {
+        'classe': str(contexte_secondaire['quatrieme'].pk),
+    }, HTTP_HX_REQUEST='true')
+
+    assert response.status_code == 200
+    assert response.context['liste_limitee_a_la_classe'] is False
