@@ -184,3 +184,38 @@ def test_planifier_un_devoir_sans_message_quand_les_periodes_existent(client, co
 
     response = c.get(reverse('pedagogie:evaluation_create'))
     assert response.context['motif_liste_vide'] is None
+
+
+@pytest.mark.django_db
+def test_planifier_un_devoir_signale_une_affectation_sans_enseignant(client):
+    """Le cas le plus courant : l'affectation existe, mais le champ « Enseignant » est resté vide.
+
+    Le message doit désigner cette cause précise — et non « aucun enseignement attribué »,
+    qui envoyait l'administration créer un doublon au lieu de compléter la ligne existante.
+    """
+    etab = baker.make('etablissements.Etablissement')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True,
+                       libelle='2026-2027')
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle)
+    baker.make('personnel.MembrePersonnel', etablissement=etab, email='eps@ecole.bf')
+    baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe, personnel=None)
+    c = _enseignant(client, etab, 'eps@ecole.bf')
+
+    motif = c.get(reverse('pedagogie:evaluation_create')).context['motif_liste_vide']
+    assert "ne portent pas votre nom" in motif and '2026-2027' in motif
+    assert 'aucun enseignement ne vous est attribué' not in motif
+
+
+@pytest.mark.django_db
+def test_planifier_un_devoir_sans_affectation_garde_le_message_general(client):
+    """Aucune affectation du tout : le message général reste le bon."""
+    etab = baker.make('etablissements.Etablissement')
+    baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC')
+    baker.make('parametres.Classe', etablissement=etab, cycle=cycle)
+    baker.make('personnel.MembrePersonnel', etablissement=etab, email='paul@ecole.bf')
+    c = _enseignant(client, etab, 'paul@ecole.bf')
+
+    motif = c.get(reverse('pedagogie:evaluation_create')).context['motif_liste_vide']
+    assert 'aucun enseignement ne vous est attribué' in motif

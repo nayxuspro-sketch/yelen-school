@@ -39,8 +39,12 @@ def contexte(db):
     matiere_secondaire = _matiere('MAT-SEC', 'Matière secondaire', secondaire)
     matiere_serie_d = _matiere('MAT-TD', 'Matière série D', secondaire, niveau='Tle', serie='D')
     matiere_serie_a = _matiere('MAT-TA', 'Matière série A', secondaire, niveau='Tle', serie='A')
+    # Au primaire la liste reste limitée à la classe : l'enseignant doit y être titulaire.
+    enseignant = baker.make('personnel.MembrePersonnel', etablissement=etablissement,
+                            classe_affectation=classe_primaire, qualite_affectation='TITULAIRE')
 
     return {
+        'enseignant': enseignant,
         'etablissement': etablissement,
         'classe_primaire': classe_primaire,
         'classe_secondaire': classe_secondaire,
@@ -81,6 +85,7 @@ def test_post_accepte_une_matiere_configuree_pour_le_cycle(admin_client, context
         'classe': str(contexte['classe_primaire'].pk),
         'matiere': str(contexte['matiere_primaire'].pk),
         'annee_scolaire': str(contexte['annee'].pk),
+        'personnel': str(contexte['enseignant'].pk),
         'est_actif': 'on',
     })
 
@@ -95,6 +100,7 @@ def test_post_refuse_une_matiere_d_un_autre_cycle(admin_client, contexte):
         'classe': str(contexte['classe_primaire'].pk),
         'matiere': str(contexte['matiere_secondaire'].pk),
         'annee_scolaire': str(contexte['annee'].pk),
+        'personnel': str(contexte['enseignant'].pk),
         'est_actif': 'on',
     })
 
@@ -108,6 +114,7 @@ def test_post_refuse_une_matiere_configuree_pour_un_autre_niveau(admin_client, c
         'classe': str(contexte['classe_primaire'].pk),
         'matiere': str(contexte['matiere_cp2'].pk),
         'annee_scolaire': str(contexte['annee'].pk),
+        'personnel': str(contexte['enseignant'].pk),
         'est_actif': 'on',
     })
 

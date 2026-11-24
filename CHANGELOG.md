@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.21 — 2026-11-13
+
+- **Le message « aucun enseignement ne vous est attribué » cachait trois causes.** La plus fréquente : la ligne d'affectation existe pour l'année, mais son champ **Enseignant** est resté **vide**. L'administration, croyant à une affectation manquante, en créait une seconde — refusée, la matière étant déjà prise dans cette classe. Le message nomme désormais la cause exacte : « les affectations de l'année ne portent pas votre nom : le champ Enseignant y est resté vide ».
+- **Le champ « Enseignant » devient obligatoire** dans *Nouvelle affectation* hors primaire, dès qu'une classe est choisie : une ligne sans enseignant ne donne aucun cours, elle est refusée à la saisie plutôt que créée en silence. Au primaire, la liste restant limitée à la classe, aucune contrainte n'y est ajoutée.
+- **Une ligne déjà muette se corrige par le bouton Modifier**, jamais en créant un doublon.
+- Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 5.65.20 — 2026-11-13
 
 - **« Planifier un devoir » : deuxième cause de blocage, enfin nommée.** Quand **aucune période d'évaluation** n'est configurée pour l'année, le champ *Trimestre / Période* est vide et l'enregistrement échoue sur un champ que l'enseignant ne peut pas remplir. Une alerte explicite indique désormais la cause et la correction (`Paramètres › Périodes`).

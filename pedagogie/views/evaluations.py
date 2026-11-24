@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
-from ..models import Evaluation, Note, Resultat, Trimestre
+from ..models import Enseignement, Evaluation, Note, Resultat, Trimestre
 from ..forms import EvaluationForm
 from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription, StatutInscriptionChoices
@@ -199,17 +199,27 @@ def _formulaire_evaluation(request, *args, **kwargs):
 def _motif_liste_vide(request, form):
     """Motif d'une liste d'enseignements vide pour un enseignant (None s'il y en a au moins un).
 
-    Sans ce message, un enseignant dont la fiche ne porte pas l'adresse e-mail de son compte — ou
-    dont les enseignements ne sont pas encore créés — ne voit qu'une liste déroulante sans choix.
+    Le message nomme la cause exacte : sans cela, trois situations très différentes — fiche non
+    reliée au compte, affectation sans enseignant, aucune affectation — produisaient la même phrase.
     """
     if request.user.role != 'ENSEIGNANT':
         return None
     if form.fields['enseignement'].queryset.exists():
         return None
-    if get_membre_personnel(request.user) is None:
+    membre = get_membre_personnel(request.user)
+    if membre is None:
         return (f"aucune fiche du personnel ne porte l'adresse de votre compte ({request.user.email}) ; "
                 "l'administration doit la renseigner sur votre fiche (Personnel) pour vous relier à vos "
                 "disciplines.")
+    # Des affectations existent pour l'année courante, mais aucune ne porte cette fiche : le champ
+    # « Enseignant » est resté vide à la création. C'est le cas le plus fréquent sur le terrain.
+    annee_courante = AnneeScolaire.objects.filter(
+        etablissement=membre.etablissement_id, est_courante=True).first()
+    if annee_courante is not None and Enseignement.objects.filter(
+            classe__etablissement=membre.etablissement_id, annee_scolaire=annee_courante).exists():
+        return (f"les affectations de l'année ({annee_courante.libelle}) ne portent pas votre nom : le champ "
+                "« Enseignant » y est resté vide. L'administration doit vous désigner dans Pédagogie › "
+                "Enseignements (bouton Modifier, champ Enseignant).")
     return ("aucun enseignement ne vous est attribué pour l'année en cours (Pédagogie › Enseignements) ; "
             "l'administration doit vous affecter vos classes et vos disciplines.")
 
