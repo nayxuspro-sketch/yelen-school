@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.20 — 2026-11-13
+
+- **« Planifier un devoir » : deuxième cause de blocage, enfin nommée.** Quand **aucune période d'évaluation** n'est configurée pour l'année, le champ *Trimestre / Période* est vide et l'enregistrement échoue sur un champ que l'enseignant ne peut pas remplir. Une alerte explicite indique désormais la cause et la correction (`Paramètres › Périodes`).
+- **Elle s'adresse à tous les rôles**, pas seulement aux enseignants : la direction voit le même message et sait immédiatement ce qui manque.
+- Rappel : les périodes ne sont **jamais créées automatiquement** — ni à l'installation, ni par le jeu de démonstration. Leur création reste un préalable obligatoire pour toute évaluation.
+- Aucun message dès qu'une période existe. Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 5.65.19 — 2026-11-13
 
 - **« Planifier un devoir » n'affiche plus une liste muette.** Un enseignant dont la liste **Enseignement** était vide ne voyait qu'une liste déroulante sans aucun choix — aucune cause, aucune correction à demander. Une alerte explicite distingue désormais les deux situations : la **fiche du personnel ne porte pas l'adresse e-mail du compte** (cas le plus fréquent : fiche non reliée, donc aucun enseignement retrouvé) ou **aucun enseignement n'est affecté pour l'année**.

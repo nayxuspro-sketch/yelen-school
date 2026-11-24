@@ -20,7 +20,7 @@ def contexte():
         'orphelin': baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe_b, personnel=None, est_actif=True),
     }
     evals = {cle: baker.make('pedagogie.Evaluation', enseignement=e) for cle, e in ens.items()}
-    return {'etab': etab, 'classe_a': classe_a, 'classe_b': classe_b, 'ens': ens, 'evals': evals}
+    return {'etab': etab, 'annee': annee, 'classe_a': classe_a, 'classe_b': classe_b, 'ens': ens, 'evals': evals}
 
 
 def _enseignant(client, etab, email):
@@ -141,9 +141,46 @@ def test_planifier_un_devoir_explique_une_absence_d_affectation(client):
 
 @pytest.mark.django_db
 def test_planifier_un_devoir_propose_les_disciplines_du_professeur(client, contexte):
-    """Cas nominal : ses disciplines sont proposées et aucun message d'alerte ne s'affiche."""
+    """Ses disciplines sont proposées : le message ne porte que sur les périodes, s'il en manque."""
+    from datetime import date, timedelta
+    auj = date.today()
+    baker.make('parametres.PeriodeEvaluation', etablissement=contexte['etab'],
+               annee_scolaire=contexte['annee'],
+               numero=1, nom='Trimestre 1',
+               date_debut=auj - timedelta(days=30), date_fin=auj + timedelta(days=30))
     c = _enseignant(client, contexte['etab'], 'justin.kabore@ecole.bf')
 
     response = c.get(reverse('pedagogie:evaluation_create'))
     assert response.context['motif_liste_vide'] is None
     assert response.context['form'].fields['enseignement'].queryset.count() == 1
+
+
+@pytest.mark.django_db
+def test_planifier_un_devoir_explique_l_absence_de_periode(client):
+    """Sans période d'évaluation, le champ Trimestre est vide : l'écran doit le dire."""
+    etab = baker.make('etablissements.Etablissement')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle)
+    prof = baker.make('personnel.MembrePersonnel', etablissement=etab, email='eps@ecole.bf')
+    baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe, personnel=prof, est_actif=True)
+    c = _enseignant(client, etab, 'eps@ecole.bf')
+
+    response = c.get(reverse('pedagogie:evaluation_create'))
+    # Le message est échappé dans le HTML (apostrophes typographiques rendues en entités)
+    assert "période d" in response.context['motif_liste_vide'] and 'Périodes' in response.context['motif_liste_vide']
+    assert 'alert-warning' in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_planifier_un_devoir_sans_message_quand_les_periodes_existent(client, contexte):
+    """Cas nominal complet : périodes et enseignements présents, aucune alerte."""
+    from datetime import date, timedelta
+    auj = date.today()
+    baker.make('parametres.PeriodeEvaluation', etablissement=contexte['etab'],
+               annee_scolaire=contexte['etab'].annees_scolaires.get(), numero=1, nom='Trimestre 1',
+               date_debut=auj - timedelta(days=30), date_fin=auj + timedelta(days=30))
+    c = _enseignant(client, contexte['etab'], 'justin.kabore@ecole.bf')
+
+    response = c.get(reverse('pedagogie:evaluation_create'))
+    assert response.context['motif_liste_vide'] is None

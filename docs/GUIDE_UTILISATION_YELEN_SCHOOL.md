@@ -3795,6 +3795,28 @@ Un enseignant du secondaire ouvre `Pédagogie → Évaluations → Planifier un 
 
 Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
 
+### 9.55 « Planifier un devoir » : les périodes d'évaluation manquantes (5.65.20)
+
+Deuxième cause de blocage, distincte de celle de la 5.65.19 : **aucune période d'évaluation n'est configurée** pour l'année. Le champ *Trimestre / Période* est alors **vide**, et l'enregistrement échoue sur un champ que l'enseignant ne peut pas remplir.
+
+**Ce qui change**
+
+- Une alerte explicite s'affiche : *« aucune période d'évaluation n'est configurée pour l'année scolaire ; la direction doit les créer dans Paramètres › Périodes pour permettre la planification d'un devoir. »*
+- Elle est plus large que celle de la 5.65.19 : elle s'adresse à **tout le monde**, pas seulement aux enseignants — la direction voit la même alerte et sait immédiatement quoi faire.
+- Aucun message dès qu'une période existe : le formulaire est inchangé.
+
+**Les périodes ne sont jamais créées automatiquement.** Ni à l'installation, ni par le jeu de démonstration : `Paramètres → Périodes → Nouvelle période` reste un préalable obligatoire (numéro 1 à 3, dates de début et de fin). Sans elles, aucune évaluation — donc aucun devoir, aucune note — ne peut être enregistrée, quel que soit le rôle.
+
+**Récapitulatif des trois causes d'un écran de planification inutilisable**, dans l'ordre où les vérifier :
+
+| Ordre | Cause | Message affiché | Correction |
+|---|---|---|---|
+| 1 | Fiche du personnel sans l'e-mail du compte | « aucune fiche du personnel ne porte l'adresse de votre compte (…) » | `Personnel → Modifier le membre → e-mail` |
+| 2 | Aucun enseignement affecté pour l'année | « aucun enseignement ne vous est attribué (…) » | `Pédagogie → Enseignements → Nouvelle affectation` |
+| 3 | Aucune période d'évaluation configurée | « aucune période d'évaluation n'est configurée (…) » | `Paramètres → Périodes → Nouvelle période` |
+
+Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
