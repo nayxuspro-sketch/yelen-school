@@ -3833,6 +3833,25 @@ Le message *« aucun enseignement ne vous est attribué »* cachait **trois** si
 
 Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
 
+### 9.57 Un enseignant voit ses classes même sans cycle assigné sur son compte (5.65.22)
+
+Un enseignant dont la fiche du personnel est reliée par e-mail, dont l'affectation de l'année existe, mais dont **le compte n'a aucun cycle coché**, ne voyait **ni sa classe ni sa discipline** : la sélection de classe de la saisie des notes, le filtre de la liste des évaluations et la liste d'appel étaient **vides**.
+
+**La cause.** Deux règles se cumulaient. La portée d'un enseignant est son **affectation** (`Pédagogie → Enseignements`) ; s'y ajoutait le filtre des **cycles autorisés du compte** — vides par défaut sur un compte créé à la main. Résultat : l'affectation était correcte, mais le second filtre ne laissait rien passer.
+
+**Ce qui change**
+
+- La portée d'un enseignant est **exclusivement son affectation** : ses cycles de compte ne la restreignent plus. Concernés : la saisie des notes, le filtre par classe des évaluations et la liste d'appel des présences.
+- Les autres rôles sont inchangés : le filtre par cycle continue de s'appliquer à la direction, au censeur, au secrétaire, etc.
+- Le cloisonnement reste entier : un enseignant ne voit toujours que **ses** classes, celles de ses enseignements de l'année.
+
+**Deux corrections possibles côté administration**, au choix :
+
+1. **Cocher les cycles du compte** (`Comptes → Modifier l'utilisateur → Cycles`) — utile de toute façon pour le reste de l'application ;
+2. ne rien faire : la portée étant désormais celle de l'affectation, ses classes apparaissent dès qu'elles lui sont attribuées.
+
+Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire

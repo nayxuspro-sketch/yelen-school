@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.22 — 2026-11-13
+
+- **Un enseignant sans cycle assigné ne voyait ni sa classe ni sa discipline.** Sa portée est son **affectation** (`Pédagogie → Enseignements`) ; s'y ajoutait le filtre des **cycles autorisés du compte**, vides par défaut sur un compte créé à la main. L'affectation était correcte, le second filtre ne laissait rien passer : sélection de classe de la saisie des notes, filtre par classe des évaluations et liste d'appel étaient **vides**.
+- **La portée d'un enseignant est désormais exclusivement son affectation** : ses cycles de compte ne la restreignent plus. Les autres rôles sont inchangés et le filtre par cycle continue de s'appliquer à la direction, au censeur, au secrétaire.
+- Le cloisonnement reste entier : un enseignant ne voit toujours que **ses** classes, celles de ses enseignements de l'année.
+- Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 5.65.21 — 2026-11-13
 
 - **Le message « aucun enseignement ne vous est attribué » cachait trois causes.** La plus fréquente : la ligne d'affectation existe pour l'année, mais son champ **Enseignant** est resté **vide**. L'administration, croyant à une affectation manquante, en créait une seconde — refusée, la matière étant déjà prise dans cette classe. Le message nomme désormais la cause exacte : « les affectations de l'année ne portent pas votre nom : le champ Enseignant y est resté vide ».

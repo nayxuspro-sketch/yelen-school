@@ -219,3 +219,28 @@ def test_planifier_un_devoir_sans_affectation_garde_le_message_general(client):
 
     motif = c.get(reverse('pedagogie:evaluation_create')).context['motif_liste_vide']
     assert 'aucun enseignement ne vous est attribué' in motif
+
+
+# ── Un enseignant voit ses classes même sans cycle assigné sur son compte ─────────────────────
+
+@pytest.mark.django_db
+def test_saisie_notes_liste_ses_classes_sans_cycle_assigne(client):
+    """Sa portée est son affectation : des cycles de compte vides ne doivent rien lui retirer.
+
+    Compte créé à la main (sans cocher de cycle), fiche reliée par e-mail et affectation valide :
+    la sélection de classe de la saisie des notes doit proposer sa classe.
+    """
+    etab = baker.make('etablissements.Etablissement')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='2nde A')
+    baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe, est_actif=True,
+               personnel=baker.make('personnel.MembrePersonnel', etablissement=etab, email='eps@ecole.bf'))
+
+    # Compte créé sans passer par _enseignant : aucun cycle n'est assigné.
+    user = baker.make('accounts.User', etablissement=etab, role='ENSEIGNANT', email='eps@ecole.bf',
+                      must_change_password=False)
+    assert not user.cycles.exists()
+    client.force_login(user)
+
+    assert [cl.pk for cl in client.get(reverse('pedagogie:saisie_classe_select')).context['classes']] == [classe.pk]

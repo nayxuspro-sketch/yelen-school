@@ -57,14 +57,17 @@ def evaluation_list(request):
     if request.user.role == 'ENSEIGNANT':
         evaluations = evaluations.filter(enseignement__personnel=filtre_enseignant(request.user))
 
-    # Listes des filtres : uniquement les classes/trimestres visibles par l'utilisateur
+    # Listes des filtres : uniquement les classes/trimestres visibles par l'utilisateur. La portée
+    # d'un enseignant est son affectation (ses enseignements) : ses cycles de compte ne la
+    # restreignent pas, sinon il ne voit aucune classe quand ils ne lui ont pas été assignés.
     classes = (
         Classe.objects
         .filter(enseignements__evaluations__in=evaluations.values('pk'))
         .distinct()
         .order_by('nom')
     )
-    classes = filtrer_classe_par_cycle(classes, request)
+    if request.user.role != 'ENSEIGNANT':
+        classes = filtrer_classe_par_cycle(classes, request)
     trimestres = Trimestre.objects.filter(annee_scolaire=annee_courante).order_by('numero', 'nom')
 
     classe_ids_valides = {str(c.pk) for c in classes}
@@ -525,8 +528,11 @@ def saisie_classe_select(request):
     etab = getattr(request.user, 'etablissement', None)
     classes = Classe.objects.filter(etablissement=etab) if etab else Classe.objects.all()
     if request.user.role == 'ENSEIGNANT':
+        # Portée = ses affectations de l'année. Ses cycles de compte ne s'y ajoutent pas : non
+        # assignés (compte créé à la main), ils videraient la liste malgré une affectation valide.
         classes = classes.filter(enseignements__personnel=filtre_enseignant(request.user),
                                  enseignements__annee_scolaire__est_courante=True).distinct()
-    classes = filtrer_classe_par_cycle(classes, request)
+    else:
+        classes = filtrer_classe_par_cycle(classes, request)
     classes = classes.order_by('cycle__ordre', 'nom')
     return render(request, 'pedagogie/saisie_classe_select.html', {'classes': classes})
