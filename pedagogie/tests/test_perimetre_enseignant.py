@@ -244,3 +244,45 @@ def test_saisie_notes_liste_ses_classes_sans_cycle_assigne(client):
     client.force_login(user)
 
     assert [cl.pk for cl in client.get(reverse('pedagogie:saisie_classe_select')).context['classes']] == [classe.pk]
+
+
+# ── Deux fiches du personnel portent le même e-mail ──────────────────────────────────────────
+
+@pytest.mark.django_db
+def test_deux_fiches_meme_email_resout_celle_qui_enseigne(client):
+    """Un doublon de fiche ne doit pas rendre l'enseignant invisible.
+
+    Rien n'interdit deux fiches portant la même adresse : prendre la première rendait
+    l'enseignant sans classe ni discipline s'il était affecté sur la seconde.
+    """
+    etab = baker.make('etablissements.Etablissement')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6e A')
+    baker.make('personnel.MembrePersonnel', etablissement=etab, email='eps@ecole.bf')   # fiche fantôme
+    vraie = baker.make('personnel.MembrePersonnel', etablissement=etab, email='eps@ecole.bf')
+    baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe, personnel=vraie, est_actif=True)
+
+    from core.utils import get_membre_personnel
+    user = baker.make('accounts.User', etablissement=etab, role='ENSEIGNANT', email='eps@ecole.bf',
+                      must_change_password=False)
+    assert get_membre_personnel(user).pk == vraie.pk
+    client.force_login(user)
+    assert [c.pk for c in client.get(reverse('pedagogie:saisie_classe_select')).context['classes']] == [classe.pk]
+
+
+@pytest.mark.django_db
+def test_fiche_sans_enseignement_est_ecartee(client):
+    """La fiche qui porte les enseignements est préférée à une fiche vide du même e-mail."""
+    etab = baker.make('etablissements.Etablissement')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle)
+    vide = baker.make('personnel.MembrePersonnel', etablissement=etab, email='p@ecole.bf')
+    active = baker.make('personnel.MembrePersonnel', etablissement=etab, email='p@ecole.bf')
+    baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe, personnel=active, est_actif=True)
+
+    from core.utils import get_membre_personnel
+    user = baker.make('accounts.User', etablissement=etab, role='ENSEIGNANT', email='p@ecole.bf',
+                      must_change_password=False)
+    assert get_membre_personnel(user).pk == active.pk != vide.pk

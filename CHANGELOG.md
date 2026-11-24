@@ -3,6 +3,13 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.23 — 2026-11-13
+
+- **Deux fiches du personnel portant le même e-mail rendaient l'enseignant invisible.** Le lien compte → fiche se fait par l'adresse e-mail ; rien n'interdit à deux fiches de la partager (agent saisi deux fois). L'application retenait **la première trouvée**, sans critère : quand l'affectation se trouvait sur la seconde, l'enseignant n'avait **ni classe ni discipline**, et le message lui disait que les affectations ne portaient pas son nom — alors que tout était correct dans les écrans.
+- **La fiche active qui porte réellement des enseignements est désormais retenue**, à défaut la première. Effet sur tout le parcours enseignant d'un seul coup : saisie des notes, évaluations, présences, cahier de textes, appréciations.
+- Recommandation : désactiver la fiche fantôme (`Personnel → Modifier → Actif` décoché) plutôt que la supprimer, et garder l'adresse du compte sur la fiche réellement affectée.
+- Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 5.65.22 — 2026-11-13
 
 - **Un enseignant sans cycle assigné ne voyait ni sa classe ni sa discipline.** Sa portée est son **affectation** (`Pédagogie → Enseignements`) ; s'y ajoutait le filtre des **cycles autorisés du compte**, vides par défaut sur un compte créé à la main. L'affectation était correcte, le second filtre ne laissait rien passer : sélection de classe de la saisie des notes, filtre par classe des évaluations et liste d'appel étaient **vides**.

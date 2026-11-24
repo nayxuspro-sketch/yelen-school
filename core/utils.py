@@ -1,6 +1,8 @@
 import uuid
 from decimal import Decimal
 
+from django.db.models import Count
+
 
 def fcfa(valeur):
     """Montant lisible pour messages et libellés : milliers séparés par une espace insécable, sans décimales
@@ -24,7 +26,13 @@ def get_membre_personnel(user):
         qs = MembrePersonnel.objects.filter(email__iexact=user.email)
         if getattr(user, 'etablissement_id', None):
             qs = qs.filter(etablissement_id=user.etablissement_id)
-        membre = qs.first()
+        # Rien n'interdit deux fiches portant la même adresse (doublon de saisie) : prendre la
+        # première au hasard rendait l'enseignant invisible s'il était affecté sur l'autre.
+        # On retient la fiche active qui porte réellement des enseignements, à défaut la première.
+        membre = (qs.filter(is_active=True)
+                  .annotate(_nb_enseignements=Count('enseignements'))
+                  .order_by('-_nb_enseignements', 'matricule')
+                  .first()) or qs.first()
     user._membre_personnel_cache = membre
     return membre
 
