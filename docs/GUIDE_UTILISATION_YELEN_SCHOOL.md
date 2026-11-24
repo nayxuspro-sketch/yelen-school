@@ -3760,6 +3760,41 @@ Jusqu'ici, la case **Matière de discipline** de la fenêtre *Ajouter une matiè
 - **Aucune matière existante n'est affectée** : la mise à jour marque explicitement toutes les matières déjà créées comme disciplines, y compris celles dont la case était décochée sans effet. Vous décidez donc matière par matière de ce qui doit sortir de la moyenne.
 - Une aide contextuelle sous la case rappelle cette règle dans la fenêtre **Ajouter une matière** et **Modifier une matière**.
 
+### 9.53 Enseignant affecté à plusieurs classes la même année (5.65.18)
+
+Au post-primaire et au secondaire, un professeur enseigne **plusieurs classes** : un professeur de mathématiques de la 3e A intervient aussi en 4e B, une même année. L'affectation le permet désormais.
+
+**Ce qui bloquait**
+
+Dans la fenêtre *Nouvelle affectation* (`Pédagogie → Enseignements`), la liste des enseignants ne proposait que les personnes **déjà rattachées à la classe choisie** : son titulaire et ceux qui y avaient déjà un enseignement. Un professeur affecté à la 3e A **n'apparaissait pas** dans la liste de la 4e B ; il était donc impossible de l'y affecter, puis de lui ouvrir la saisie des notes de cette classe.
+
+**Ce qui change**
+
+- **Post-primaire, secondaire et préscolaire** : la liste des enseignants couvre le **personnel actif de l'établissement**, comme la liste « Nom du professeur » des absences. Le même professeur peut recevoir autant de classes et de disciplines que nécessaire — une affectation par classe × matière et par année.
+- **Primaire : aucun changement.** Le titulaire y couvre toutes les disciplines de sa classe (§ 5.1) : la liste reste limitée aux enseignants de la classe choisie, et le libellé le rappelle.
+- La contrainte de doublon ne porte que sur **classe × matière × année** : elle interdit d'affecter deux fois la même matière dans la même classe, jamais d'affecter un enseignant à une seconde classe.
+- Aucun changement des notes, des moyennes, des bulletins ni des documents déjà produits. Aucune migration, aucune nouvelle URL.
+
+**À vérifier après l'affectation :** l'enseignant retrouve ses nouvelles classes dans la saisie des notes, les évaluations et le cahier de textes, à condition que le compte soit relié à sa fiche du personnel par l'adresse e-mail (§ 3.7).
+### 9.54 « Planifier un devoir » : une liste vide dit enfin pourquoi (5.65.19)
+
+Un enseignant du secondaire ouvre `Pédagogie → Évaluations → Planifier un devoir`. Jusqu'ici, si la liste **Enseignement** était vide, l'écran n'affichait **qu'une liste déroulante sans aucun choix** : rien n'indiquait la cause ni la correction à demander.
+
+**Ce qui change**
+
+- Une **alerte explicite** s'affiche au-dessus du formulaire, et distingue les deux causes :
+  - *« aucune fiche du personnel ne porte l'adresse de votre compte (adresse@…) ; l'administration doit la renseigner sur votre fiche (Personnel) »* — c'est la cause la plus fréquente : la fiche existe, mais son e-mail diffère de celui du compte ou est vide ;
+  - *« aucun enseignement ne vous est attribué pour l'année en cours (Pédagogie › Enseignements) ; l'administration doit vous affecter vos classes et vos disciplines »* — la fiche est bien reliée, mais ses affectations de l'année manquent.
+- **Aucun message lorsque la liste contient les disciplines** : l'alerte ne s'affiche que si le choix est réellement impossible.
+- Le cloisonnement est inchangé : un enseignant ne voit et ne choisit **que ses propres enseignements**.
+
+**Les deux prérequis côté administration**, à corriger dans cet ordre :
+
+1. la **fiche du personnel** de l'enseignant porte la **même adresse e-mail** que son compte (`Personnel → Modifier le membre`) ;
+2. ses **affectations** de l'année existent (`Pédagogie → Enseignements → Nouvelle affectation`) : une ligne par classe × discipline. Depuis la 5.65.18, un professeur du secondaire peut y recevoir **autant de classes que nécessaire**.
+
+Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
@@ -8436,19 +8471,3 @@ par annulation motivée (direction), jamais par modification.
 | Délai (s) | `10` | au-delà, l'envoi est considéré en échec |
 | Numéro de test | `70 11 22 33` | reçoit le message de vérification du bouton **Tester** |
 
-### 9.53 Enseignant affecté à plusieurs classes la même année (5.65.18)
-
-Au post-primaire et au secondaire, un professeur enseigne **plusieurs classes** : un professeur de mathématiques de la 3e A intervient aussi en 4e B, une même année. L'affectation le permet désormais.
-
-**Ce qui bloquait**
-
-Dans la fenêtre *Nouvelle affectation* (`Pédagogie → Enseignements`), la liste des enseignants ne proposait que les personnes **déjà rattachées à la classe choisie** : son titulaire et ceux qui y avaient déjà un enseignement. Un professeur affecté à la 3e A **n'apparaissait pas** dans la liste de la 4e B ; il était donc impossible de l'y affecter, puis de lui ouvrir la saisie des notes de cette classe.
-
-**Ce qui change**
-
-- **Post-primaire, secondaire et préscolaire** : la liste des enseignants couvre le **personnel actif de l'établissement**, comme la liste « Nom du professeur » des absences. Le même professeur peut recevoir autant de classes et de disciplines que nécessaire — une affectation par classe × matière et par année.
-- **Primaire : aucun changement.** Le titulaire y couvre toutes les disciplines de sa classe (§ 5.1) : la liste reste limitée aux enseignants de la classe choisie, et le libellé le rappelle.
-- La contrainte de doublon ne porte que sur **classe × matière × année** : elle interdit d'affecter deux fois la même matière dans la même classe, jamais d'affecter un enseignant à une seconde classe.
-- Aucun changement des notes, des moyennes, des bulletins ni des documents déjà produits. Aucune migration, aucune nouvelle URL.
-
-**À vérifier après l'affectation :** l'enseignant retrouve ses nouvelles classes dans la saisie des notes, les évaluations et le cahier de textes, à condition que le compte soit relié à sa fiche du personnel par l'adresse e-mail (§ 3.7).

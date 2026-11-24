@@ -107,3 +107,43 @@ def test_selection_par_classe_limitee_a_l_etablissement_du_personnel(client, con
     classes = client.get(reverse('pedagogie:saisie_classe_select')).context['classes']
     assert {cl.etablissement_id for cl in classes} == {contexte['etab'].pk}
     assert '6e Z' not in [cl.nom for cl in classes]
+
+
+# ── « Planifier un devoir » : une liste vide doit dire pourquoi ───────────────────────────────
+
+@pytest.mark.django_db
+def test_planifier_un_devoir_explique_une_fiche_non_reliee(client):
+    """Fiche du personnel sans l'e-mail du compte : la liste serait vide sans explication."""
+    etab = baker.make('etablissements.Etablissement')
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='SEC')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle)
+    baker.make('pedagogie.Enseignement', annee_scolaire=annee, classe=classe,
+               personnel=baker.make('personnel.MembrePersonnel', etablissement=etab, email='autre@ecole.bf'),
+               est_actif=True)
+    c = _enseignant(client, etab, 'prof@ecole.bf')
+
+    html = c.get(reverse('pedagogie:evaluation_create')).content.decode()
+    assert 'aucune fiche du personnel ne porte' in html and '(prof@ecole.bf)' in html
+
+
+@pytest.mark.django_db
+def test_planifier_un_devoir_explique_une_absence_d_affectation(client):
+    """Fiche bien reliée mais aucun enseignement : l'administration doit affecter les disciplines."""
+    etab = baker.make('etablissements.Etablissement')
+    baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    baker.make('personnel.MembrePersonnel', etablissement=etab, email='prof@ecole.bf')
+    c = _enseignant(client, etab, 'prof@ecole.bf')
+
+    html = c.get(reverse('pedagogie:evaluation_create')).content.decode()
+    assert 'aucun enseignement ne vous est attribué' in html
+
+
+@pytest.mark.django_db
+def test_planifier_un_devoir_propose_les_disciplines_du_professeur(client, contexte):
+    """Cas nominal : ses disciplines sont proposées et aucun message d'alerte ne s'affiche."""
+    c = _enseignant(client, contexte['etab'], 'justin.kabore@ecole.bf')
+
+    response = c.get(reverse('pedagogie:evaluation_create'))
+    assert response.context['motif_liste_vide'] is None
+    assert response.context['form'].fields['enseignement'].queryset.count() == 1
