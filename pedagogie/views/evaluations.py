@@ -214,6 +214,18 @@ def _motif_liste_vide(request, form):
             "l'administration doit vous affecter vos classes et vos disciplines.")
 
 
+def _motif_periodes_absentes(form):
+    """Motif d'une liste de périodes vide (None s'il y en a au moins une).
+
+    Les périodes d'évaluation ne sont jamais créées automatiquement : sans elles, le champ
+    « Trimestre / Période » est vide et l'évaluation ne peut pas être enregistrée.
+    """
+    if form.fields['periode'].queryset.exists():
+        return None
+    return ("aucune période d'évaluation n'est configurée pour l'année scolaire ; la direction doit "
+            "les créer dans Paramètres › Périodes pour permettre la planification d'un devoir.")
+
+
 @login_required
 def evaluation_create(request):
     """Création d'une nouvelle évaluation."""
@@ -236,7 +248,7 @@ def evaluation_create(request):
     return render(request, 'pedagogie/evaluation_form.html', {
         'form': form,
         'title': "Planifier une évaluation",
-        'motif_liste_vide': _motif_liste_vide(request, form),
+        'motif_liste_vide': _motif_liste_vide(request, form) or _motif_periodes_absentes(form),
     })
 
 
