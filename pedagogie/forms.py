@@ -146,6 +146,11 @@ class EnseignementForm(forms.ModelForm):
             'hx-target': '#id_matiere',
             'hx-swap': 'innerHTML',
         })
+        # Une affectation sans enseignant ne sert aucun cours : hors primaire, le champ est requis dès
+        # qu'une classe est choisie (la base l'autorise vide, d'où des lignes muettes qui ne donnent
+        # aucun cours). Au primaire, la liste est restreinte à la classe : on n'y ajoute pas de
+        # contrainte, pour ne pas bloquer une affectation dont l'enseignant serait à créer ensuite.
+        self.fields['personnel'].required = classe is not None and not self.liste_enseignants_limitee_a_la_classe
         self.order_fields(['annee_scolaire', 'classe', 'personnel', 'matiere'])
         _apply_yelen_classes(self.fields)
 

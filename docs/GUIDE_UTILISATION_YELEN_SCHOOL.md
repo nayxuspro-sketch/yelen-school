@@ -3817,6 +3817,22 @@ Deuxième cause de blocage, distincte de celle de la 5.65.19 : **aucune période
 
 Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
 
+### 9.56 « Enseignant » ne peut plus rester vide sur une affectation (5.65.21)
+
+Le message *« aucun enseignement ne vous est attribué »* cachait **trois** situations différentes. La plus fréquente sur le terrain : la ligne d'affectation existe bien pour l'année, mais son champ **Enseignant** est resté **vide**. L'administration, croyant à une affectation manquante, en créait une seconde — et la matière étant déjà prise dans cette classe, l'enregistrement était refusé.
+
+**Ce qui change**
+
+- **Le champ « Enseignant » est désormais obligatoire** dans *Nouvelle affectation* (post-primaire, secondaire, préscolaire) dès qu'une classe est choisie. Une ligne sans enseignant ne donne aucun cours : elle est refusée à la saisie au lieu d'être créée silencieusement. Au primaire, la liste restant limitée à la classe, aucune contrainte n'y est ajoutée.
+- **Le message de l'enseignant nomme la cause exacte.** Trois cas, trois phrases :
+  - la fiche du personnel ne porte pas l'e-mail du compte → la renseigner ;
+  - **les affectations de l'année ne portent pas son nom, le champ Enseignant y est resté vide** → *Pédagogie › Enseignements → Modifier → champ Enseignant* ;
+  - aucune affectation du tout → en créer une.
+
+**Ce qu'il faut faire pour une ligne déjà créée sans enseignant**, dite « muette » : `Pédagogie → Enseignements → Modifier` sur la ligne concernée, renseigner le champ **Enseignant**, enregistrer. **Ne créez pas une seconde ligne** pour la même classe et la même matière : la contrainte l'interdit et le message « aucun enseignement ne vous est attribué » vous aurait orienté vers cette impasse.
+
+Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
