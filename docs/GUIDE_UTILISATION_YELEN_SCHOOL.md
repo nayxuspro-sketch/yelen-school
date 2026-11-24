@@ -3867,6 +3867,27 @@ Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documen
 
 Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
 
+### 9.59 Saisie des notes : les élèves écartés par la scolarité sont annoncés (5.65.24)
+
+**Symptôme.** Le professeur voit sa classe, planifie le devoir, mais à la **saisie des notes** la liste des élèves est **vide**, sans un mot d'explication. Le même devoir, ouvert par la direction, affiche bien les élèves.
+
+**La cause.** La règle de scolarité s'applique à la saisie : dans un établissement **non public**, un élève **non exonéré** dont le **montant net payé** au titre de la scolarité est **nul** est écarté de la liste. C'est voulu (on ne note pas un élève qui n'a rien réglé), mais l'écran n'affichait **aucun message** : la liste paraissait vide par accident.
+
+**Ce qui change.** Une alerte nomme désormais la cause et la correction, au-dessus du panneau de statistiques :
+
+> **N élèves non affichés** — Saisie bloquée : montant net payé au titre de la scolarité nul (élève non exonéré). La liste s'ouvre dès qu'un versement est enregistré ou que l'élève est exonéré.
+
+Le libellé est identique à celui que l'**import Excel** des notes affiche déjà pour le même motif : une seule formulation pour une seule règle.
+
+**Ce qui ne change pas.** La règle de scolarité est **inchangée** : aucun élève bloqué n'apparaît à la saisie. L'alerte ne s'affiche que si des élèves sont réellement écartés ; en établissement public, ou dès que tous les versements sont saisis, l'écran est identique à avant.
+
+**Gestes côté établissement, pour ouvrir la liste** — l'un ou l'autre suffit, élève par élève :
+
+- `Finances` → enregistrer un **versement** de scolarité ;
+- `Inscriptions` → marquer l'élève **exonéré**.
+
+Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire

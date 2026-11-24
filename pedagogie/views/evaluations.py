@@ -481,6 +481,9 @@ def evaluation_saisie(request, pk):
         'eleves_data': eleves_data,
         'nb_total': nb_total,
         'nb_saisies': nb_saisies,
+        # Élèves écartés par la règle de scolarité (établissement non public) : sans ce compte,
+        # une liste vide ou incomplète s'affiche sans la moindre explication.
+        'nb_bloques': len(inscriptions_bloquees),
     })
 
 

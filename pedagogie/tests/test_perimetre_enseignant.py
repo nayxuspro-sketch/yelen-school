@@ -286,3 +286,52 @@ def test_fiche_sans_enseignement_est_ecartee(client):
     user = baker.make('accounts.User', etablissement=etab, role='ENSEIGNANT', email='p@ecole.bf',
                       must_change_password=False)
     assert get_membre_personnel(user).pk == active.pk != vide.pk
+
+
+# ── Saisie des notes : les élèves bloqués par la scolarité sont annoncés ─────────────────────
+
+def _evaluation_avec_eleves(etab, type_etablissement=None):
+    """Une évaluation d'EPS en 6e A avec trois élèves inscrits (aucun versement)."""
+    from datetime import date
+    if type_etablissement:
+        baker.make('parametres.IdentiteEtablissement', etablissement=etab, type_etablissement=type_etablissement)
+    annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='POST')
+    classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle, nom='6e A', niveau='6E')
+    trimestre = baker.make('pedagogie.Trimestre', annee_scolaire=annee, numero=1, nom='T1',
+                           date_debut=date(2026, 9, 1), date_fin=date(2027, 6, 30))
+    enseignement = baker.make('pedagogie.Enseignement', classe=classe, annee_scolaire=annee,
+                              personnel=baker.make('personnel.MembrePersonnel', etablissement=etab,
+                                                   email='eps@ecole.bf'),
+                              est_actif=True)
+    evaluation = baker.make('pedagogie.Evaluation', enseignement=enseignement, trimestre=trimestre,
+                            type_evaluation=baker.make('pedagogie.TypeEvaluation'),
+                            date_planifiee=date(2026, 11, 13), bareme=20)
+    for i in range(3):
+        eleve = baker.make('inscriptions.Eleve', nom=f'ELEVE{i}', prenom='Test')
+        baker.make('inscriptions.Inscription', eleve=eleve, classe=classe, annee_scolaire=annee, statut='INSCRIT')
+    return evaluation
+
+
+@pytest.mark.django_db
+def test_saisie_notes_annonce_les_eleves_bloques_par_la_scolarite(client):
+    """Établissement privé, aucun versement : la liste serait vide sans la moindre explication."""
+    etab = baker.make('etablissements.Etablissement')
+    evaluation = _evaluation_avec_eleves(etab, 'PRIVE')
+    c = _enseignant(client, etab, 'eps@ecole.bf')
+
+    response = c.get(reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk}))
+    assert response.context['nb_total'] == 0 and response.context['nb_bloques'] == 3
+    assert 'montant net payé au titre de la scolarité nul' in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_saisie_notes_sans_message_quand_tous_sont_autorises(client):
+    """Établissement public : aucun blocage, aucun message parasite, les trois élèves sont là."""
+    etab = baker.make('etablissements.Etablissement')
+    evaluation = _evaluation_avec_eleves(etab, 'PUBLIC')
+    c = _enseignant(client, etab, 'eps@ecole.bf')
+
+    response = c.get(reverse('pedagogie:evaluation_saisie', kwargs={'pk': evaluation.pk}))
+    assert response.context['nb_total'] == 3 and response.context['nb_bloques'] == 0
+    assert 'dash-alert-warning' not in response.content.decode()
