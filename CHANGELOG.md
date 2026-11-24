@@ -3,6 +3,12 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.19 — 2026-11-13
+
+- **« Planifier un devoir » n'affiche plus une liste muette.** Un enseignant dont la liste **Enseignement** était vide ne voyait qu'une liste déroulante sans aucun choix — aucune cause, aucune correction à demander. Une alerte explicite distingue désormais les deux situations : la **fiche du personnel ne porte pas l'adresse e-mail du compte** (cas le plus fréquent : fiche non reliée, donc aucun enseignement retrouvé) ou **aucun enseignement n'est affecté pour l'année**.
+- **L'alerte ne s'affiche que si le choix est réellement impossible** : dès qu'une discipline est disponible, le formulaire est inchangé.
+- Le cloisonnement enseignant est intact : il ne voit et ne choisit que ses propres enseignements. Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 5.65.18 — 2026-11-13
 
 - **Un professeur peut enfin être affecté à plusieurs classes la même année.** Dans la fenêtre *Nouvelle affectation* (`Pédagogie → Enseignements`), la liste des enseignants ne proposait que les personnes **déjà rattachées à la classe choisie** — son titulaire et ceux qui y avaient déjà un enseignement. Un professeur de mathématiques de la 3e A n'apparaissait donc **pas** dans la liste de la 4e B : impossible de l'y affecter, et donc de lui ouvrir la saisie des notes de cette seconde classe. Le modèle, lui, l'autorisait depuis toujours : la contrainte ne porte que sur classe × matière × année, jamais sur l'enseignant.

@@ -196,6 +196,24 @@ def _formulaire_evaluation(request, *args, **kwargs):
     return form
 
 
+def _motif_liste_vide(request, form):
+    """Motif d'une liste d'enseignements vide pour un enseignant (None s'il y en a au moins un).
+
+    Sans ce message, un enseignant dont la fiche ne porte pas l'adresse e-mail de son compte — ou
+    dont les enseignements ne sont pas encore créés — ne voit qu'une liste déroulante sans choix.
+    """
+    if request.user.role != 'ENSEIGNANT':
+        return None
+    if form.fields['enseignement'].queryset.exists():
+        return None
+    if get_membre_personnel(request.user) is None:
+        return (f"aucune fiche du personnel ne porte l'adresse de votre compte ({request.user.email}) ; "
+                "l'administration doit la renseigner sur votre fiche (Personnel) pour vous relier à vos "
+                "disciplines.")
+    return ("aucun enseignement ne vous est attribué pour l'année en cours (Pédagogie › Enseignements) ; "
+            "l'administration doit vous affecter vos classes et vos disciplines.")
+
+
 @login_required
 def evaluation_create(request):
     """Création d'une nouvelle évaluation."""
@@ -217,7 +235,8 @@ def evaluation_create(request):
 
     return render(request, 'pedagogie/evaluation_form.html', {
         'form': form,
-        'title': "Planifier une évaluation"
+        'title': "Planifier une évaluation",
+        'motif_liste_vide': _motif_liste_vide(request, form),
     })
 
 
