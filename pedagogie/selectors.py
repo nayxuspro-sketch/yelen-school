@@ -79,3 +79,33 @@ def configurations_matiere(matiere):
         lignes += [ligne_configuration(matiere, cycle, n, s, configs) for n, s in portees_cycle(cycle, matiere)]
         resultat.append({'cycle': cycle, 'lignes': lignes, 'nb_portees': len(lignes) - 1})
     return resultat
+
+
+# ─── Bulletins de compétences (API / APC) ─────────────────────────────────────────────────────
+# L'évaluation par compétences ne s'applique qu'au Préscolaire et au Primaire : le post-primaire et le
+# secondaire restent notés sur 20. La fonctionnalité n'est donc ni proposée ni accessible à un
+# enseignant du secondaire.
+CYCLES_COMPETENCES = ('PRES', 'PRIM')
+
+
+def cycles_competences(request, etablissement=None):
+    """Cycles évalués par compétences (Préscolaire, Primaire) que le compte peut ouvrir.
+
+    Un enseignant n'atteint que les cycles où il enseigne cette année — sa portée est son affectation
+    (``Pédagogie › Enseignements``), et non les cycles de son compte (cf. 5.65.22) ; les autres rôles
+    voient ceux de l'établissement. Un établissement du secondaire n'en a aucun : la fonctionnalité
+    disparaît du menu.
+    """
+    from core.utils import filtre_enseignant
+
+    etab = etablissement if etablissement is not None else getattr(request.user, 'etablissement', None)
+    cycles = Cycle.objects.filter(code__in=CYCLES_COMPETENCES)
+    if etab is not None:
+        cycles = cycles.filter(etablissement=etab)
+    if (getattr(request.user, 'role', None) == 'ENSEIGNANT'
+            and not getattr(request.user, 'est_super_admin', False)):
+        cycles = cycles.filter(
+            classes__enseignements__personnel=filtre_enseignant(request.user),
+            classes__enseignements__annee_scolaire__est_courante=True,
+        )
+    return cycles.distinct().order_by('ordre')

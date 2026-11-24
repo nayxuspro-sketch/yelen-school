@@ -254,7 +254,7 @@ def test_competences_saisie_affiche_la_grille(client):
     client.force_login(baker.make('accounts.User', etablissement=etab, is_superuser=True))
     annee = baker.make('parametres.AnneeScolaire', etablissement=etab, est_courante=True)
     baker.make('pedagogie.Trimestre', annee_scolaire=annee)
-    cycle = baker.make('parametres.Cycle', etablissement=etab)
+    cycle = baker.make('parametres.Cycle', etablissement=etab, code='PRIM')   # compétences : PRES / PRIM
     classe = baker.make('parametres.Classe', etablissement=etab, cycle=cycle)
     inscription = baker.make('inscriptions.Inscription', classe=classe, annee_scolaire=annee)
     competence = baker.make('pedagogie.Competence', cycle=cycle, actif=True)
