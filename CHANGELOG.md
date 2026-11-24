@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.24 — 2026-11-13
+
+- **« Le professeur voit sa classe, planifie le devoir, mais ne voit aucun élève à la saisie des notes. »** La règle de scolarité de la saisie écartait les élèves concernés — établissement **non public**, élève **non exonéré**, montant **net payé** au titre de la scolarité **nul** — sans que l'écran affiche la moindre explication : la liste paraissait vide par accident. La règle est **conservée** ; c'est le **silence** qui est corrigé.
+- **L'écran annonce désormais les élèves écartés** : « *N élèves non affichés — Saisie bloquée : montant net payé au titre de la scolarité nul (élève non exonéré). La liste s'ouvre dès qu'un versement est enregistré ou que l'élève est exonéré.* » Même formulation que l'**import Excel** des notes, qui nommait déjà ce motif : une seule règle, un seul vocabulaire.
+- **Aucun message parasite** : l'alerte n'apparaît que si des élèves sont réellement bloqués. En établissement public, ou dès que les versements sont saisis, l'écran est inchangé.
+- **Correction côté établissement** : `Finances` → enregistrer un **versement** de scolarité, ou `Inscriptions` → marquer l'élève **exonéré**.
+- Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 5.65.23 — 2026-11-13
 
 - **Deux fiches du personnel portant le même e-mail rendaient l'enseignant invisible.** Le lien compte → fiche se fait par l'adresse e-mail ; rien n'interdit à deux fiches de la partager (agent saisi deux fois). L'application retenait **la première trouvée**, sans critère : quand l'affectation se trouvait sur la seconde, l'enseignant n'avait **ni classe ni discipline**, et le message lui disait que les affectations ne portaient pas son nom — alors que tout était correct dans les écrans.
