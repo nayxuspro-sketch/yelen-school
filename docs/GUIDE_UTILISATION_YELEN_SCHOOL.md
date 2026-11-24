@@ -3852,6 +3852,21 @@ Un enseignant dont la fiche du personnel est reliée par e-mail, dont l'affectat
 
 Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
 
+### 9.58 Deux fiches du personnel avec le même e-mail : la bonne est retenue (5.65.23)
+
+**Symptôme.** Un enseignant est bien affecté à sa classe (`Pédagogie → Enseignements` porte son nom), mais en se connectant il ne voit **ni sa classe ni sa discipline**, et l'écran affiche *« les affectations de l'année ne portent pas votre nom »*.
+
+**La cause.** Le lien entre un compte et sa fiche du personnel se fait par l'**adresse e-mail** (§ 3.7). Rien n'interdit à deux fiches de porter la même adresse — cas fréquent quand un agent a été saisi deux fois (une fiche créée à la main, puis une seconde). L'application retenait alors **la première fiche trouvée**, sans critère : si l'affectation se trouvait sur l'autre fiche, l'enseignant était invisible aux yeux du système, alors que tout était correct dans les écrans.
+
+**Ce qui change**
+
+- Quand plusieurs fiches partagent l'adresse du compte, l'application retient désormais la **fiche active qui porte réellement des enseignements** ; à défaut, la première (comportement inchangé).
+- Effet sur **tout** le parcours enseignant d'un seul coup, sans rien configurer : saisie des notes, évaluations, présences, cahier de textes, appréciations, emploi du temps — tous retrouvent ses classes.
+
+**Recommandation d'hygiène** : `Personnel`, rechercher l'enseignant, repérer deux fiches portant le même nom et la même adresse. **Désactiver la fiche fantôme** (Modifier → décocher Actif, sans jamais supprimer : elle peut porter un historique), et reporter l'adresse du compte sur la fiche réellement affectée.
+
+Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
