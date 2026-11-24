@@ -7,6 +7,11 @@ def droits_acces(request):
     if user is None or not user.is_authenticated:
         return {}
     modules, fonctionnalites, _ = droits_requete(request)
+    # « Bulletins compétences » (API / APC) ne concerne que le Préscolaire et le Primaire : l'entrée de
+    # menu disparaît d'un établissement du secondaire, et pour un enseignant qui n'y a aucune classe.
+    from pedagogie.selectors import cycles_competences
+    if '/pedagogie/competences/' in fonctionnalites and not cycles_competences(request).exists():
+        fonctionnalites = fonctionnalites - {'/pedagogie/competences/'}
     return {
         'droits_modules': modules,
         'droits_fonctionnalites': fonctionnalites,

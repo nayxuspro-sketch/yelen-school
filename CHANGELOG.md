@@ -3,6 +3,14 @@
 Format : une entrée par version livrée (`VERSION` + tag `vX.Y.Z`). Les correctifs incrémentent le
 troisième chiffre, les évolutions fonctionnelles le deuxième, les changements de rupture le premier.
 
+## 5.65.25 — 2026-11-13
+
+- **« Bulletins compétences » ne concerne pas les enseignants du secondaire.** L'évaluation par compétences (API au primaire, APC au préscolaire) ne s'applique qu'au **Préscolaire et au Primaire** ; le post-primaire et le secondaire restent notés sur 20. Or l'entrée de menu `Pédagogie → Bulletins compétences` était proposée à **tous**, et les écrans n'opposaient aucun filtre d'accès : un professeur du secondaire n'y trouvait que des pages vides, sans explication.
+- **Le périmètre de la fonctionnalité est appliqué en un seul endroit** : Préscolaire et Primaire, dans l'établissement du compte. L'entrée de menu **disparaît** d'un établissement du secondaire, et pour un enseignant qui n'y a aucune classe.
+- **Un enseignant ne voit que les cycles où il enseigne cette année** (`Pédagogie → Enseignements`), jamais la classe d'un collègue ; les autres rôles voient les cycles de l'établissement. Le référentiel, la saisie, la suppression d'une compétence et le bulletin PDF d'un cycle ou d'un élève du secondaire répondent **404** au lieu d'une page vide.
+- **L'écran sans cycle explique la règle** : « Cette évaluation ne concerne que le préscolaire et le primaire : elle ne s'applique ni au post-primaire ni au secondaire, notés sur 20. »
+- Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 5.65.24 — 2026-11-13
 
 - **« Le professeur voit sa classe, planifie le devoir, mais ne voit aucun élève à la saisie des notes. »** La règle de scolarité de la saisie écartait les élèves concernés — établissement **non public**, élève **non exonéré**, montant **net payé** au titre de la scolarité **nul** — sans que l'écran affiche la moindre explication : la liste paraissait vide par accident. La règle est **conservée** ; c'est le **silence** qui est corrigé.

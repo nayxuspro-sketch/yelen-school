@@ -3888,6 +3888,24 @@ Le libellé est identique à celui que l'**import Excel** des notes affiche déj
 
 Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
 
+### 9.60 « Bulletins compétences » ne concerne pas le secondaire (5.65.25)
+
+**Symptôme.** L'entrée `Pédagogie → Bulletins compétences` apparaissait aussi chez les enseignants du **secondaire** ; ouverte, elle n'offrait que des **écrans vides** (aucun cycle, aucune classe, aucun élève), sans explication.
+
+**La cause.** L'évaluation par compétences (API au primaire, APC au préscolaire) ne s'applique **qu'au Préscolaire et au Primaire** — les autres cycles sont notés sur 20. Les quatre écrans filtraient bien sur ces deux cycles, mais **rien ne bornait l'accès** : le menu était proposé à tous et les vues acceptaient n'importe quel cycle, classe ou bulletin.
+
+**Ce qui change.**
+
+- Le périmètre de la fonctionnalité est désormais **appliqué en un seul endroit** : Préscolaire et Primaire, dans l'établissement du compte.
+- **L'entrée de menu disparaît** d'un établissement du post-primaire ou du secondaire, et pour un enseignant qui n'y a aucune classe.
+- **Un enseignant ne voit que les cycles où il enseigne cette année** (`Pédagogie → Enseignements`) : il n'ouvre ni la classe d'un collègue, ni un cycle qui n'est pas le sien. Les autres rôles voient les cycles de l'établissement.
+- Référentiel, saisie, suppression d'une compétence et bulletin PDF d'un cycle ou d'un élève du secondaire répondent **introuvable (404)** au lieu d'afficher une page vide.
+- L'écran sans cycle explique la règle : *« Cette évaluation ne concerne que le préscolaire et le primaire : elle ne s'applique ni au post-primaire ni au secondaire, notés sur 20. »*
+
+**Ce qui ne change pas.** Le référentiel, la saisie (feux tricolores Acquis / En cours / Non acquis), les bulletins de compétences du préscolaire et du primaire et leur intégration au bulletin trimestriel restent identiques.
+
+Aucune migration, aucune nouvelle URL, aucun changement des notes ni des documents.
+
 ## 10. EXAMENS
 
 > **Qui peut accéder :** Directeur, Proviseur, Secrétaire
@@ -6578,7 +6596,7 @@ Les compétences sont classées en **6 catégories** adaptées au contexte burki
 
 `Pédagogie → Bulletins compétences`
 
-Seuls les cycles **Préscolaire** (code PRES) et **Primaire** (code PRIM) sont affichés.
+Seuls les cycles **Préscolaire** (code PRES) et **Primaire** (code PRIM) sont affichés : le post-primaire et le secondaire restent notés sur 20 et ne relèvent pas de l'évaluation par compétences. **L'entrée de menu n'apparaît donc ni dans un établissement du secondaire, ni pour un enseignant du secondaire** ; un enseignant ne voit que les cycles où il a des classes cette année (`Pédagogie → Enseignements`).
 
 ### 22.3 Étape 1 — Configurer le référentiel
 

@@ -9,26 +9,22 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from ..models import Matiere, Trimestre, Competence, EvaluationCompetence
-from parametres.models import AnneeScolaire, Classe, Cycle
+from parametres.models import AnneeScolaire, Classe
 from inscriptions.models import Inscription, StatutInscriptionChoices
 from core.utils import get_etablissement_context
 from .commun import HTML, _pdf_licence_info
 from ..notes_access import exiger_inscription_autorisee_notes
+from ..selectors import cycles_competences
 
 
 @login_required
 def competences_index(request):
     """Sélecteur de cycle pour les bulletins de compétences."""
-    from etablissements.models import Etablissement
-    etab = Etablissement.objects.first()
-    # Seuls les cycles Préscolaire et Primaire utilisent les compétences
-    cycles_cibles = ['PRES', 'PRIM']
-    cycles = (
-        Cycle.objects.filter(etablissement=etab, code__in=cycles_cibles)
-        .order_by('ordre')
-    ) if etab else Cycle.objects.none()
+    etab = getattr(request.user, 'etablissement', None)
+    # Seuls le Préscolaire et le Primaire sont évalués par compétences, et un enseignant n'ouvre que
+    # les cycles où il enseigne : la fonctionnalité est absente du post-primaire et du secondaire.
     return render(request, 'pedagogie/competences_index.html', {
-        'cycles': cycles,
+        'cycles': cycles_competences(request, etab),
         'etablissement': etab,
     })
 
@@ -38,7 +34,7 @@ def competences_referentiel(request, cycle_id):
     """Référentiel de compétences pour un cycle donné (lecture + ajout HTMX)."""
     from etablissements.models import Etablissement
     etab = Etablissement.objects.first()
-    cycle = get_object_or_404(Cycle, pk=cycle_id)
+    cycle = get_object_or_404(cycles_competences(request), pk=cycle_id)
     competences = (
         Competence.objects.filter(cycle=cycle, actif=True)
         .select_related('matiere')
@@ -82,7 +78,7 @@ def competences_referentiel(request, cycle_id):
 @require_POST
 def competence_supprimer(request, pk):
     """Supprime (désactive) une compétence."""
-    comp = get_object_or_404(Competence, pk=pk)
+    comp = get_object_or_404(Competence, pk=pk, cycle__in=cycles_competences(request))
     comp.actif = False
     comp.save(update_fields=['actif'])
     messages.success(request, f"Compétence supprimée : {comp.libelle}")
@@ -94,7 +90,7 @@ def competences_saisie(request, classe_id):
     """Saisie des niveaux de compétences pour une classe et un trimestre."""
     from etablissements.models import Etablissement
     etab = Etablissement.objects.first()
-    classe = get_object_or_404(Classe, pk=classe_id)
+    classe = get_object_or_404(Classe, pk=classe_id, cycle__in=cycles_competences(request))
     annee = AnneeScolaire.objects.filter(
         etablissement=etab, est_courante=True
     ).first() if etab else None
@@ -225,7 +221,7 @@ def competences_bulletin_pdf(request, inscription_id, trimestre_id):
     from etablissements.models import Etablissement
     inscription = get_object_or_404(
         Inscription.objects.select_related('eleve', 'classe__cycle'),
-        pk=inscription_id,
+        pk=inscription_id, classe__cycle__in=cycles_competences(request),
     )
     trimestre = get_object_or_404(
         Trimestre, pk=trimestre_id, annee_scolaire=inscription.annee_scolaire,
