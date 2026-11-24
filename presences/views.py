@@ -109,8 +109,11 @@ def appel_list(request):
         qs = qs.filter(classe_id=classe_id)
 
     classes = _classes_appel(request, etab, annee)
-    classes = filtrer_classe_par_cycle(classes, request)
-    if request.user.role == 'ENSEIGNANT':
+    # Pour un enseignant, _classes_appel a déjà appliqué sa portée (ses enseignements) : ses cycles
+    # de compte ne s'y ajoutent pas, sinon la liste est vide quand ils ne lui ont pas été assignés.
+    if request.user.role != 'ENSEIGNANT':
+        classes = filtrer_classe_par_cycle(classes, request)
+    else:
         qs = qs.filter(classe__in=classes)
 
     # Filtrage par cycle pour les non-enseignants (appels de leurs classes)
