@@ -25,3 +25,5 @@ beautifulsoup4==4.14.2
 lxml==6.1.0
 # Le PDF éditorial du guide (scripts/md_vers_pdf.py) utilise weasyprint (base.txt), markdown (base.txt),
 # beautifulsoup4 et lxml ci-dessus, et les polices livrées dans scripts/guide_pdf/fonts.
+# Repli sans dépendance système (poste sans libpango) : `python scripts/guide_pdf/composer.py`
+# compose le même ouvrage avec reportlab seul, à partir du Markdown et des mêmes polices.
